@@ -1,43 +1,44 @@
 
-*** Ongoing
-profile with full name and photo with a settings buttons
-settings for theme (dark/light) and path to txt file
-date picker for dates but also support manual date input
-tags should show a pick list of all available tags
-10 thoughts per page
-when there are many thoughts on the same day they should be ass follow ---2--[tags] ---3--[tags] and so on
-thoughts are separated by 20 dashes except if the same day then they are separated by 20 stars
+*** Profile & Settings
+- Add authentication, with login (email) and password + the possibility to auth via Gmail
+- Remove the photo upload and display from profile for now
+- Number of thoughts per page is parameterized in settings, 10 by default
+- Setting for theme (dark/light) should be a flip switch not a list
+- Interface language (english, french, ...)
 
-*** Next
-app name : Thoughty, with a simple logo of someone daydreaming, with icon and thumbnail and titlebar
-in settings we also select how many thoughts per page to display
-remove photo upload and display for now
-settings should be saved in a json file
-interface language (english, french, ...)
-tags are separated by commas but without a space after
-if "entry (yyyy.mm.dd)" or "entry (yyyy.mm.dd)--X" then it should link to that thought (X being the thought number per day if there were many)
-photo is to be uploaded
-dark light theme switch not selection
-date is by default today
-date picker for date filter too (and manual entry too)
-tags show a selection list with the ability to add new ones
-path to text file as browse to file
+*** UI & Features
+- Tags should show a pick list of all available tags, both when writing and when filtering, but also be possible to add new ones
+- Date picker for both writing and filtering with the possiblity to manually write the date (defaults to today when writing)
+- App name: Thoughty, with a simple logo of a head daydreaming, with icon and thumbnail and titlebar
+- If there is a reference to another thought, link it (e.g. "entry (yyyy.mm.dd)" or "entry (yyyy.mm.dd)--X", X being the thought number if there were many in that day)
+- Ability to choose a specific page (textbox) in terms of pagination
+- Ability to go the first thought of year or year/month
+- For date filter only allow/display dates where there is an actual thought, the others should be greyed
 
-display counts of thoughts per month/year
-possibility to select pages (textbox)
-ability to go the first thought of year or year/month
-for date filter only allow/display dates where there is an actual thought
+*** Tech
+- Add a database, the file will be converted to and back from the DB (no more file manipulation)
+- Complete README file with details of the app and how to use it
+- Complete Mask file with shortucts commands to run the app easily
 
-make a complete readme file with details of the app and how to use it
-make a complete mask file with shortucts commands to run the app easily
+*** Simple Stats
+- Display counts of thoughts per year and month/year with graphs
+- Tags stats per periods of time with graphs
 
-use a DB instead of file and be able to export it to a text file
-make a parser that would fill the DB from the text file
-the parser could be further customized to support other formats that you configure in the settings
+*** Converter
+- A converter utility that takes the file and transform it for the database
+- A reverse converter that would take all the lines in the database and convert them to a text file
+- The format of the file both in input and output should be parameterized
+- Connect to cloud providers like OneDrive or Google Drive to sync the journal file once converted
+- Configure a fixed schedule for syncing the file to cloud (from the DB)
 
-connect to cloud providers like OneDrive or Google Drive to sync the journal file
+*** File Format
+- When there are many thoughts on the same day they should be ass follow ---2--[tags] ---3--[tags] and so on
+- Tags are separated by commas but without a space after
 
-*** Future
-use AI to autocomplete tags given the text written
-use AI to fix writing errors and style
-ability to pass a thought to AI for analysis or discussion
+*** AI
+- Guess the file format for the converter
+- Autocomplete tags given the text written
+- Fix writing errors and style
+- Pass a thought to AI for analysis or further discussion
+- Tone and mood of thoughts stats (analyzed by AI)
+- Subjects discussed stats (analyzed by AI)
