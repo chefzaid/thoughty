@@ -24,16 +24,7 @@ function SettingsModal({ isOpen, onClose, config, onUpdateConfig }) {
                 <h2 className="text-xl font-bold text-gray-100 mb-4">Settings</h2>
 
                 <div className="space-y-4">
-                    <div>
-                        <label className="block text-sm text-gray-400 mb-1">Journal File Path</label>
-                        <input
-                            type="text"
-                            name="journalFilePath"
-                            value={localConfig.journalFilePath || ''}
-                            onChange={handleChange}
-                            className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                    </div>
+                    {/* Journal File Path input removed as requested */}
 
                     <div>
                         <label className="block text-sm text-gray-400 mb-1">Profile Name</label>
@@ -41,17 +32,6 @@ function SettingsModal({ isOpen, onClose, config, onUpdateConfig }) {
                             type="text"
                             name="profileName"
                             value={localConfig.profileName || ''}
-                            onChange={handleChange}
-                            className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm text-gray-400 mb-1">Profile Photo URL</label>
-                        <input
-                            type="text"
-                            name="profilePhoto"
-                            value={localConfig.profilePhoto || ''}
                             onChange={handleChange}
                             className="w-full bg-gray-900 border border-gray-700 rounded p-2 text-gray-100 focus:ring-2 focus:ring-blue-500 outline-none"
                         />

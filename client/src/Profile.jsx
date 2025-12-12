@@ -1,16 +1,15 @@
 import React from 'react';
 
-function Profile({ name, photo, onOpenSettings }) {
+function Profile({ name, onOpenSettings }) {
+    const initial = (name || 'User').charAt(0).toUpperCase();
+
     return (
         <div className="flex items-center gap-4 mb-8 p-4 bg-gray-800/30 rounded-xl border border-gray-700/30 backdrop-blur-sm">
-            <img
-                src={photo}
-                alt={name}
-                className="w-12 h-12 rounded-full border-2 border-blue-500 shadow-lg object-cover"
-            />
+            <div className="w-12 h-12 rounded-full border-2 border-blue-500 shadow-lg bg-gradient-to-br from-blue-500/60 to-purple-600/60 flex items-center justify-center text-lg font-bold text-white">
+                {initial}
+            </div>
             <div className="flex-1">
                 <h3 className="text-lg font-bold text-gray-100">{name}</h3>
-                <p className="text-xs text-gray-400">Journaling Enthusiast</p>
             </div>
             <button
                 onClick={onOpenSettings}

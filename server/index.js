@@ -1,237 +1,218 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
+const db = require('./db');
+
+const compression = require('compression');
+
+const swaggerUi = require('swagger-ui-express');
+const swaggerJsdoc = require('swagger-jsdoc');
 
 const app = express();
 const PORT = 3001;
-const CONFIG_FILE = path.join(__dirname, 'config.json');
 
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Journal API',
+            version: '1.0.0',
+            description: 'API for Managing Journal Entries',
+        },
+        servers: [
+            {
+                url: 'http://localhost:3001',
+            },
+        ],
+    },
+    apis: ['./index.js'], // files containing annotations as above
+};
+
+const swaggerDocs = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+app.use(compression());
 app.use(cors());
 app.use(bodyParser.json());
 
-const getJournalPath = () => {
-    if (fs.existsSync(CONFIG_FILE)) {
-        const config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-        return path.resolve(__dirname, config.journalFilePath || '../journal.txt');
-    }
-    return path.join(__dirname, '../journal.txt');
-};
 
-const parseEntries = (content) => {
-    const entries = [];
-    if (!content.trim()) {
-        console.log('[PARSE] Content is empty');
-        return [];
-    }
 
-    console.log('[PARSE] Content length:', content.length);
+/**
+ * @swagger
+ * /api/entries:
+ *   get:
+ *     summary: Retrieve a list of journal entries
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search term for content or tags
+ *       - in: query
+ *         name: tags
+ *         schema:
+ *           type: string
+ *         description: Comma-separated list of tags to filter by
+ *       - in: query
+ *         name: date
+ *         schema:
+ *           type: string
+ *         description: Filter by date (YYYY-MM-DD)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *         description: Page number
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: A list of entries
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 entries:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 total:
+ *                   type: integer
+ *                 page:
+ *                   type: integer
+ *                 totalPages:
+ *                   type: integer
+ *                 allTags:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ */
+app.get('/api/entries', async (req, res) => {
+    try {
+        const { search, tags, date, page = 1, limit = 10 } = req.query;
 
-    const dayBlocks = content.split(/^-{80}$/m);
-    console.log('[PARSE] Day blocks count:', dayBlocks.length);
-
-    dayBlocks.forEach((block, blockIndex) => {
-        if (!block.trim()) return;
-
-        const entryBlocks = block.split(/^\*{80}$/m);
-
-        let currentDayDate = null;
-
-        entryBlocks.forEach((entryBlock, entryIndex) => {
-            const trimmed = entryBlock.trim();
-            if (!trimmed) return;
-
-            const lines = trimmed.split('\n');
-            const headerLine = lines[0].trim();
-
-            const headerMatch = /^---(\d{4}\.\d{2}\.\d{2}|\d+)--\[(.*?)\]$/.exec(headerLine);
-
-            if (headerMatch) {
-                const identifier = headerMatch[1];
-                const tags = headerMatch[2].split(',').map(t => t.trim()).filter(t => t);
-                const content = lines.slice(1).join('\n').trim();
-
-                let date;
-                let index = 1;
-
-                if (identifier.includes('.')) {
-                    date = identifier;
-                    currentDayDate = date;
-                } else {
-                    index = parseInt(identifier);
-                    date = currentDayDate;
-                }
-
-                if (date) {
-                    entries.push({
-                        date,
-                        index,
-                        tags,
-                        content
-                    });
-                }
-            }
-        });
-    });
-
-    console.log('[PARSE] Total entries parsed:', entries.length);
-
-    return entries.sort((a, b) => {
-        if (a.date !== b.date) {
-            return new Date(b.date) - new Date(a.date);
-        }
-        return a.index - b.index;
-    });
-};
-
-const serializeEntries = (entries) => {
-    const grouped = {};
-    entries.forEach(e => {
-        if (!grouped[e.date]) grouped[e.date] = [];
-        grouped[e.date].push(e);
-    });
-
-    const dates = Object.keys(grouped).sort((a, b) => new Date(a) - new Date(b));
-
-    const dayBlocks = dates.map(date => {
-        const dayEntries = grouped[date].sort((a, b) => a.index - b.index);
-
-        const serializedDayEntries = dayEntries.map((e, i) => {
-            const index = i + 1;
-            const tagStr = e.tags.join(', ');
-            let header;
-            if (i === 0) {
-                header = `---${date}--[${tagStr}]`;
-            } else {
-                header = `---${index}--[${tagStr}]`;
-            }
-            return `${header}\n${e.content}`;
-        });
-
-        return serializedDayEntries.join('\n\n' + '*'.repeat(80) + '\n\n');
-    });
-
-    return dayBlocks.join('\n\n' + '-'.repeat(80) + '\n\n');
-};
-
-app.get('/api/config', (req, res) => {
-    if (fs.existsSync(CONFIG_FILE)) {
-        res.json(JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')));
-    } else {
-        res.json({});
-    }
-});
-
-app.post('/api/config', (req, res) => {
-    const newConfig = req.body;
-    let config = {};
-    if (fs.existsSync(CONFIG_FILE)) {
-        config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
-    }
-    const updatedConfig = { ...config, ...newConfig };
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(updatedConfig, null, 2));
-    res.json({ success: true });
-});
-
-app.get('/api/entries', (req, res) => {
-    const journalFile = getJournalPath();
-    if (!fs.existsSync(journalFile)) {
-        return res.json({ entries: [], total: 0 });
-    }
-
-    fs.readFile(journalFile, 'utf8', (err, data) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Failed to read journal file' });
-        }
-
-        let entries = parseEntries(data);
-
-        const { search, tag, date, page = 1, limit = 10 } = req.query;
+        let query = 'SELECT * FROM entries WHERE 1=1';
+        const params = [];
+        let paramCount = 1;
 
         if (search) {
-            const searchLower = search.toLowerCase();
-            entries = entries.filter(e =>
-                e.content.toLowerCase().includes(searchLower) ||
-                e.tags.some(t => t.toLowerCase().includes(searchLower))
-            );
+            query += ` AND (content ILIKE $${paramCount} OR $${paramCount} = ANY(tags))`;
+            params.push(`%${search}%`);
+            paramCount++;
         }
 
-        if (tag) {
-            const tagLower = tag.toLowerCase();
-            entries = entries.filter(e => e.tags.some(t => t.toLowerCase() === tagLower));
+        if (tags) {
+            const tagList = tags.split(',').map(t => t.trim()).filter(t => t);
+            if (tagList.length > 0) {
+                query += ` AND tags @> $${paramCount}`;
+                params.push(tagList);
+                paramCount++;
+            }
         }
 
         if (date) {
-            entries = entries.filter(e => e.date === date);
+            query += ` AND date = $${paramCount}`;
+            params.push(date);
+            paramCount++;
         }
 
-        const total = entries.length;
-        const pageNum = parseInt(page);
-        const limitNum = parseInt(limit);
-        const startIndex = (pageNum - 1) * limitNum;
-        const endIndex = startIndex + limitNum;
+        // Count total for pagination
+        const countResult = await db.query(`SELECT COUNT(*) FROM (${query}) AS count_query`, params);
+        const total = parseInt(countResult.rows[0].count);
 
-        const paginatedEntries = entries.slice(startIndex, endIndex);
-        const allTags = [...new Set(entries.flatMap(e => e.tags))];
+        // Add sorting and pagination
+        query += ` ORDER BY date DESC, index ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        const limitNum = parseInt(limit);
+        const offset = (parseInt(page) - 1) * limitNum;
+        params.push(limitNum, offset);
+
+        const result = await db.query(query, params);
+
+        // Get all tags for the filter
+        const tagsResult = await db.query('SELECT DISTINCT UNNEST(tags) as tag FROM entries');
+        const allTags = tagsResult.rows.map(r => r.tag).sort();
 
         res.json({
-            entries: paginatedEntries,
+            entries: result.rows,
             total,
-            page: pageNum,
+            page: parseInt(page),
             totalPages: Math.ceil(total / limitNum),
             allTags
         });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch entries' });
+    }
 });
 
-app.post('/api/entries', (req, res) => {
+/**
+ * @swagger
+ * /api/entries:
+ *   post:
+ *     summary: Create a new journal entry
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - text
+ *             properties:
+ *               text:
+ *                 type: string
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               date:
+ *                 type: string
+ *                 format: date
+ *     responses:
+ *       200:
+ *         description: Entry created successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Server error
+ */
+app.post('/api/entries', async (req, res) => {
     const { text, tags, date } = req.body;
 
     if (!text) {
         return res.status(400).json({ error: 'Text is required' });
     }
 
-    const journalFile = getJournalPath();
-
-    let dateStr;
-    if (date) {
-        dateStr = date;
-    } else {
-        const now = new Date();
-        const yyyy = now.getFullYear();
-        const mm = String(now.getMonth() + 1).padStart(2, '0');
-        const dd = String(now.getDate()).padStart(2, '0');
-        dateStr = `${yyyy}.${mm}.${dd}`;
-    }
-
-    let fileContent = '';
-    if (fs.existsSync(journalFile)) {
-        fileContent = fs.readFileSync(journalFile, 'utf8');
-    }
-
-    const entries = parseEntries(fileContent);
-    const dayEntries = entries.filter(e => e.date === dateStr);
-    const nextIndex = dayEntries.length + 1;
-
-    const newEntry = {
-        date: dateStr,
-        index: nextIndex,
-        tags: tags || [],
-        content: text
-    };
-
-    entries.push(newEntry);
-    const newFileContent = serializeEntries(entries);
-
-    fs.writeFile(journalFile, newFileContent, (err) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Failed to write to journal file' });
+    try {
+        let dateStr;
+        if (date) {
+            dateStr = date;
+        } else {
+            const now = new Date();
+            dateStr = now.toISOString().split('T')[0];
         }
+
+        // Calculate next index for the day
+        const countResult = await db.query('SELECT COUNT(*) FROM entries WHERE date = $1', [dateStr]);
+        const nextIndex = parseInt(countResult.rows[0].count) + 1;
+
+        const query = `
+            INSERT INTO entries (date, index, tags, content)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *
+        `;
+        const values = [dateStr, nextIndex, tags || [], text];
+
+        await db.query(query, values);
         res.json({ success: true });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to create entry' });
+    }
 });
 
 app.listen(PORT, () => {
