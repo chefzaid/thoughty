@@ -5,7 +5,7 @@ WORKDIR /workspace
 # Install basic tools
 RUN apt-get update && apt-get install -y \
     git \
-    wget 
+    wget \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 

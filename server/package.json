@@ -6,7 +6,12 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "migrate": "node migrate.js"
+    "migrate": "node ../scripts/migrate.js",
+    "seed": "node ../scripts/seed.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "coverage:report": "node ../scripts/coverage_report.js",
+    "kill": "node ../scripts/kill_node.js"
   },
   "dependencies": {
     "body-parser": "^1.20.2",
@@ -19,6 +24,8 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.1",
+    "supertest": "^7.0.0"
   }
 }

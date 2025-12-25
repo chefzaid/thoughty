@@ -1,10 +1,11 @@
 import React, { useState, useEffect, Profiler } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import Profile from './Profile';
-import SettingsModal from './SettingsModal';
-import TagPicker from './TagPicker';
-import EntriesList from './EntriesList';
+import Profile from './components/Profile/Profile';
+import SettingsModal from './components/SettingsModal/SettingsModal';
+import TagPicker from './components/TagPicker/TagPicker';
+import EntriesList from './components/EntriesList/EntriesList';
+import ConfirmModal from './components/ConfirmModal/ConfirmModal';
 
 function App() {
   const [entries, setEntries] = useState([]);
@@ -21,7 +22,20 @@ function App() {
   // Search & Filter State
   const [search, setSearch] = useState('');
   const [filterTags, setFilterTags] = useState([]);
-  const [filterDate, setFilterDate] = useState('');
+  const [filterDateObj, setFilterDateObj] = useState(null);
+
+  // Form error state
+  const [formError, setFormError] = useState('');
+
+  // Edit mode state
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [editTags, setEditTags] = useState([]);
+  const [editDate, setEditDate] = useState(null);
+
+  // Delete confirmation modal state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState(null);
 
   // Pagination State
   const [page, setPage] = useState(1);
@@ -30,7 +44,7 @@ function App() {
   useEffect(() => {
     fetchConfig();
     fetchEntries();
-  }, [page, search, filterTags, filterDate]);
+  }, [page, search, filterTags, filterDateObj]);
 
   // Apply theme
   useEffect(() => {
@@ -70,9 +84,11 @@ function App() {
   const fetchEntries = async () => {
     setLoading(true);
     try {
+      const filterDate = filterDateObj ?
+        `${filterDateObj.getFullYear()}-${String(filterDateObj.getMonth() + 1).padStart(2, '0')}-${String(filterDateObj.getDate()).padStart(2, '0')}` : '';
       const params = new URLSearchParams({
         page,
-        limit: 10, // Updated to 10 per page
+        limit: 10,
         search,
         tags: filterTags.join(','),
         date: filterDate
@@ -92,7 +108,17 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newEntryText.trim()) return;
+    setFormError('');
+
+    if (!newEntryText.trim()) {
+      setFormError('Please enter some text');
+      return;
+    }
+
+    if (!tags || tags.length === 0) {
+      setFormError('Please add at least one tag');
+      return;
+    }
 
     const tagList = tags;
 
@@ -121,7 +147,73 @@ function App() {
       fetchEntries();
     } catch (error) {
       console.error('Error saving entry:', error);
-      alert('Failed to save entry. Check console for details.');
+      setFormError('Failed to save entry. Please try again.');
+    }
+  };
+
+  const handleDelete = (entryId) => {
+    setEntryToDelete(entryId);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!entryToDelete) return;
+
+    try {
+      const res = await fetch(`/api/entries/${entryToDelete}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+      fetchEntries();
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      alert('Failed to delete entry.');
+    } finally {
+      setDeleteModalOpen(false);
+      setEntryToDelete(null);
+    }
+  };
+
+  const handleEdit = (entry) => {
+    setEditingEntry(entry);
+    setEditText(entry.content);
+    setEditTags(entry.tags || []);
+    // Parse the date
+    let dateStr = entry.date;
+    if (dateStr.includes('T')) dateStr = dateStr.split('T')[0];
+    const [year, month, day] = dateStr.split('-').map(Number);
+    setEditDate(new Date(year, month - 1, day));
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEntry(null);
+    setEditText('');
+    setEditTags([]);
+    setEditDate(null);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editText.trim() || editTags.length === 0) {
+      alert('Text and at least one tag are required');
+      return;
+    }
+
+    const dateStr = `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`;
+
+    try {
+      const res = await fetch(`/api/entries/${editingEntry.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: editText,
+          tags: editTags,
+          date: dateStr
+        })
+      });
+      if (!res.ok) throw new Error('Failed to update');
+      handleCancelEdit();
+      fetchEntries();
+    } catch (error) {
+      console.error('Error updating entry:', error);
+      alert('Failed to update entry.');
     }
   };
 
@@ -170,6 +262,15 @@ function App() {
             onUpdateConfig={updateConfig}
           />
 
+          <ConfirmModal
+            isOpen={deleteModalOpen}
+            onClose={() => { setDeleteModalOpen(false); setEntryToDelete(null); }}
+            onConfirm={confirmDelete}
+            title="Delete Entry"
+            message="Are you sure you want to delete this entry? This action cannot be undone."
+            theme={config.theme}
+          />
+
           <header className="mb-8 text-center">
             <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
               My Journal
@@ -177,8 +278,8 @@ function App() {
           </header>
 
           {/* New Entry Form */}
-          <div className={`rounded-xl p-6 shadow-lg border mb-8 backdrop-blur-sm bg-opacity-50 ${config.theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <div className={`relative z-40 rounded-xl p-6 shadow-lg border mb-8 backdrop-blur-sm bg-opacity-50 overflow-visible ${config.theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
+            <form onSubmit={handleSubmit} className="space-y-4 overflow-visible">
               <div>
                 <textarea
                   className={`w-full border rounded-lg p-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
@@ -188,8 +289,8 @@ function App() {
                   onChange={(e) => setNewEntryText(e.target.value)}
                 />
               </div>
-              <div className="flex flex-wrap gap-4">
-                <div className="w-40">
+              <div className="flex flex-wrap gap-4 items-end">
+                <div className="w-40 z-10">
                   <DatePicker
                     selected={selectedDate}
                     onChange={(date) => setSelectedDate(date)}
@@ -197,12 +298,13 @@ function App() {
                     dateFormat="yyyy-MM-dd"
                   />
                 </div>
-                <div className="flex-1 relative">
+                <div className="flex-1 relative z-20">
                   <TagPicker
                     availableTags={allTags}
                     selectedTags={tags}
                     onChange={setTags}
                     placeholder="Tags"
+                    theme={config.theme}
                   />
                 </div>
                 <button
@@ -213,10 +315,15 @@ function App() {
                 </button>
               </div>
             </form>
+            {formError && (
+              <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                {formError}
+              </div>
+            )}
           </div>
 
           {/* Search & Filter Controls */}
-          <div className={`flex flex-wrap gap-4 mb-8 p-4 rounded-lg border ${config.theme === 'light' ? 'bg-white/50 border-gray-200' : 'bg-gray-800/50 border-gray-700/50'}`}>
+          <div className={`flex flex-wrap gap-4 mb-8 p-4 rounded-lg border overflow-visible ${config.theme === 'light' ? 'bg-white/50 border-gray-200' : 'bg-gray-800/50 border-gray-700/50'}`}>
             <input
               type="text"
               placeholder="Search content..."
@@ -224,7 +331,7 @@ function App() {
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
-            <div className="w-64">
+            <div className="w-64 relative z-30">
               <TagPicker
                 availableTags={allTags}
                 selectedTags={filterTags}
@@ -235,20 +342,24 @@ function App() {
                 placeholder="Filter by tags..."
                 singleSelect={false}
                 allowNew={false}
+                theme={config.theme}
               />
             </div>
-            <input
-              type="text"
-              placeholder="YYYY-MM-DD"
-              className={`w-32 border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
-              value={filterDate}
-              onChange={(e) => { setFilterDate(e.target.value); setPage(1); }}
-            />
+            <div className="w-40">
+              <DatePicker
+                selected={filterDateObj}
+                onChange={(date) => { setFilterDateObj(date); setPage(1); }}
+                className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
+                dateFormat="yyyy-MM-dd"
+                placeholderText="Filter by date"
+                isClearable
+              />
+            </div>
             <button
               onClick={() => {
                 setSearch('');
                 setFilterTags([]);
-                setFilterDate('');
+                setFilterDateObj(null);
                 setPage(1);
               }}
               className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded transition-all text-sm font-medium"
@@ -263,6 +374,18 @@ function App() {
             entries={entries}
             groupedEntries={groupedEntries}
             config={config}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            editingEntry={editingEntry}
+            editText={editText}
+            setEditText={setEditText}
+            editTags={editTags}
+            setEditTags={setEditTags}
+            editDate={editDate}
+            setEditDate={setEditDate}
+            allTags={allTags}
+            onSaveEdit={handleSaveEdit}
+            onCancelEdit={handleCancelEdit}
           />
 
           {/* Pagination Controls */}

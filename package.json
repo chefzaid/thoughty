@@ -1,0 +1,13 @@
+{
+  "name": "thoughty",
+  "version": "1.0.0",
+  "description": "A modern journal application",
+  "private": true,
+  "scripts": {
+    "migrate": "node scripts/migrate.js",
+    "seed": "node scripts/seed.js",
+    "kill": "node scripts/kill_node.js",
+    "coverage": "node scripts/coverage_report.js"
+  }
+}
+
