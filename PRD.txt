@@ -3,24 +3,16 @@ Remaining features to implement:
 
 *** Profile & Settings
 - Add authentication, with login (email) and password + the possibility to auth via Gmail
-- Number of thoughts per page is parameterized in settings, 10 by default
-- Setting for theme (dark/light) should be a flip switch not a list
-- Interface language (english, french, ...)
 
 *** UI & Features
-- Date picker for both writing and filtering with the possibility to manually write the date (defaults to today when writing)
-- App name: Thoughty, with a simple logo of a head daydreaming, with icon and thumbnail and title bar
 - Keeping a history of modifications on a thought and allow to show the previous versions?
 - If there is a reference to another thought, link it (e.g. "entry (yyyy.mm.dd)" or "entry (yyyy.mm.dd)--X", X being the thought number if there were many in that day)
-- Ability to choose a specific page (textbox) in terms of pagination
 - Ability to go the first thought of year or year/month
 - For date filter only allow/display dates where there is an actual thought, the others should be greyed
+- Social Media like features (messaging, follow, likes, comments) on public thoughts
+- Make the textbox for writing thoughts adapt to the content on the fly
 
-*** Simple Stats
-- Display counts of thoughts per year and month/year with graphs
-- Tags stats per periods of time with graphs
-
-*** Converter
+*** File Importer/Exporter
 - A converter utility that takes the file and transform it for the database
 - A reverse converter that would take all the lines in the database and convert them to a text file
 - The format of the file both in input and output should be parameterized

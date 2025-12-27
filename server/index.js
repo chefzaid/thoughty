@@ -6,6 +6,8 @@ const swaggerUi = require('swagger-ui-express');
 const swaggerJsdoc = require('swagger-jsdoc');
 
 const entriesRouter = require('./src/routes/entries');
+const statsRouter = require('./src/routes/stats');
+const configRouter = require('./src/routes/config');
 
 const app = express();
 
@@ -37,6 +39,8 @@ app.use(bodyParser.json());
 
 // Routes
 app.use('/api/entries', entriesRouter);
+app.use('/api/stats', statsRouter);
+app.use('/api/config', configRouter);
 
 // Start server only when run directly
 const PORT = 3001;

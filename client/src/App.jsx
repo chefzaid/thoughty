@@ -1,11 +1,15 @@
 import React, { useState, useEffect, Profiler } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import Profile from './components/Profile/Profile';
 import SettingsModal from './components/SettingsModal/SettingsModal';
 import TagPicker from './components/TagPicker/TagPicker';
 import EntriesList from './components/EntriesList/EntriesList';
 import ConfirmModal from './components/ConfirmModal/ConfirmModal';
+import NavMenu from './components/NavMenu/NavMenu';
+
+import Stats from './components/Stats/Stats';
+import Footer from './components/Footer/Footer';
+import { getTranslation } from './utils/translations';
 
 function App() {
   const [entries, setEntries] = useState([]);
@@ -32,6 +36,10 @@ function App() {
   const [editText, setEditText] = useState('');
   const [editTags, setEditTags] = useState([]);
   const [editDate, setEditDate] = useState(null);
+  const [editVisibility, setEditVisibility] = useState('private');
+
+  // New entry visibility (will be set from config)
+  const [visibility, setVisibility] = useState(null);
 
   // Delete confirmation modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -40,11 +48,29 @@ function App() {
   // Pagination State
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [inputPage, setInputPage] = useState('1');
+
+  useEffect(() => {
+    setInputPage(page.toString());
+  }, [page]);
+
+  // Navigation State
+  const [currentView, setCurrentView] = useState('journal');
 
   useEffect(() => {
     fetchConfig();
+  }, []);
+
+  useEffect(() => {
     fetchEntries();
-  }, [page, search, filterTags, filterDateObj]);
+  }, [page, search, filterTags, filterDateObj, config.entriesPerPage]);
+
+  // Set default visibility from config when it loads
+  useEffect(() => {
+    if (config.defaultVisibility && visibility === null) {
+      setVisibility(config.defaultVisibility);
+    }
+  }, [config.defaultVisibility]);
 
   // Apply theme
   useEffect(() => {
@@ -81,14 +107,17 @@ function App() {
     }
   };
 
+  const t = (key, params = {}) => getTranslation(config.language || 'en', key, params);
+
   const fetchEntries = async () => {
     setLoading(true);
     try {
       const filterDate = filterDateObj ?
         `${filterDateObj.getFullYear()}-${String(filterDateObj.getMonth() + 1).padStart(2, '0')}-${String(filterDateObj.getDate()).padStart(2, '0')}` : '';
+      const limit = parseInt(config.entriesPerPage) || 10;
       const params = new URLSearchParams({
         page,
-        limit: 10,
+        limit,
         search,
         tags: filterTags.join(','),
         date: filterDate
@@ -137,12 +166,14 @@ function App() {
         body: JSON.stringify({
           text: newEntryText,
           tags: tagList,
-          date: dateStr
+          date: dateStr,
+          visibility: visibility
         }),
       });
       if (!res.ok) throw new Error('Failed to save');
       setNewEntryText('');
       setTags([]);
+      setVisibility(config.defaultVisibility || 'private');
       setPage(1);
       fetchEntries();
     } catch (error) {
@@ -176,6 +207,7 @@ function App() {
     setEditingEntry(entry);
     setEditText(entry.content);
     setEditTags(entry.tags || []);
+    setEditVisibility(entry.visibility || 'private');
     // Parse the date
     let dateStr = entry.date;
     if (dateStr.includes('T')) dateStr = dateStr.split('T')[0];
@@ -188,6 +220,7 @@ function App() {
     setEditText('');
     setEditTags([]);
     setEditDate(null);
+    setEditVisibility('private');
   };
 
   const handleSaveEdit = async () => {
@@ -205,7 +238,8 @@ function App() {
         body: JSON.stringify({
           text: editText,
           tags: editTags,
-          date: dateStr
+          date: dateStr,
+          visibility: editVisibility
         })
       });
       if (!res.ok) throw new Error('Failed to update');
@@ -214,6 +248,46 @@ function App() {
     } catch (error) {
       console.error('Error updating entry:', error);
       alert('Failed to update entry.');
+    }
+  };
+
+  const handleToggleVisibility = async (entry) => {
+    const newVisibility = entry.visibility === 'public' ? 'private' : 'public';
+
+    // Optimistically update the local state immediately
+    setEntries(prevEntries =>
+      prevEntries.map(e =>
+        e.id === entry.id ? { ...e, visibility: newVisibility } : e
+      )
+    );
+
+    try {
+      const res = await fetch(`/api/entries/${entry.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: entry.content,
+          tags: entry.tags,
+          date: entry.date.includes('T') ? entry.date.split('T')[0] : entry.date,
+          visibility: newVisibility
+        })
+      });
+      if (!res.ok) {
+        // Revert on error
+        setEntries(prevEntries =>
+          prevEntries.map(e =>
+            e.id === entry.id ? { ...e, visibility: entry.visibility } : e
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error toggling visibility:', error);
+      // Revert on error
+      setEntries(prevEntries =>
+        prevEntries.map(e =>
+          e.id === entry.id ? { ...e, visibility: entry.visibility } : e
+        )
+      );
     }
   };
 
@@ -232,6 +306,11 @@ function App() {
     return acc;
   }, {});
 
+  // Sort entries within each date group by index
+  Object.keys(groupedEntries).forEach(date => {
+    groupedEntries[date].sort((a, b) => a.index - b.index);
+  });
+
   const onRenderCallback = (
     id, // the "id" prop of the Profiler tree that has just committed
     phase, // either "mount" (if the tree just mounted) or "update" (if it re-rendered)
@@ -248,11 +327,15 @@ function App() {
 
   return (
     <Profiler id="App" onRender={onRenderCallback}>
-      <div className={`min-h-screen p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}>
-        <div className="max-w-4xl mx-auto">
-          <Profile
-            name={config.profileName || 'User'}
+      <div className={`min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}>
+        <div className="max-w-7xl mx-auto">
+          <NavMenu
+            currentView={currentView}
+            onViewChange={setCurrentView}
+            theme={config.theme}
+            name={config.name || 'User'}
             onOpenSettings={() => setIsSettingsOpen(true)}
+            t={t}
           />
 
           <SettingsModal
@@ -260,154 +343,243 @@ function App() {
             onClose={() => setIsSettingsOpen(false)}
             config={config}
             onUpdateConfig={updateConfig}
+            t={t}
           />
 
           <ConfirmModal
             isOpen={deleteModalOpen}
             onClose={() => { setDeleteModalOpen(false); setEntryToDelete(null); }}
             onConfirm={confirmDelete}
-            title="Delete Entry"
-            message="Are you sure you want to delete this entry? This action cannot be undone."
+            title={t('deleteEntryTitle')}
+            message={t('deleteEntryMessage')}
             theme={config.theme}
+            t={t}
           />
 
-          <header className="mb-8 text-center">
-            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
-              My Journal
-            </h1>
-          </header>
-
-          {/* New Entry Form */}
-          <div className={`relative z-40 rounded-xl p-6 shadow-lg border mb-8 backdrop-blur-sm bg-opacity-50 overflow-visible ${config.theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
-            <form onSubmit={handleSubmit} className="space-y-4 overflow-visible">
-              <div>
-                <textarea
-                  className={`w-full border rounded-lg p-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
-                  rows="3"
-                  placeholder="What's on your mind?"
-                  value={newEntryText}
-                  onChange={(e) => setNewEntryText(e.target.value)}
-                />
+          {currentView === 'stats' ? (
+            <Stats theme={config.theme} t={t} />
+          ) : (
+            <>
+              <div className={`relative z-40 rounded-xl p-6 shadow-lg border mb-8 backdrop-blur-sm bg-opacity-50 overflow-visible ${config.theme === 'light' ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'}`}>
+                <form onSubmit={handleSubmit} className="space-y-4 overflow-visible">
+                  <div>
+                    <textarea
+                      className={`w-full border rounded-lg p-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
+                      rows="3"
+                      placeholder={t('whatsOnYourMind')}
+                      value={newEntryText}
+                      onChange={(e) => setNewEntryText(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-4 items-end">
+                    <div className="w-40 z-10">
+                      <DatePicker
+                        selected={selectedDate}
+                        onChange={(date) => setSelectedDate(date)}
+                        className={`w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
+                        dateFormat="yyyy-MM-dd"
+                      />
+                    </div>
+                    <div className="flex-1 relative z-20">
+                      <TagPicker
+                        availableTags={allTags}
+                        selectedTags={tags}
+                        onChange={setTags}
+                        placeholder={t('filterTagsPlaceholder').replace('Filter by ', '')}
+                        theme={config.theme}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setVisibility(v => v === 'private' ? 'public' : 'private')}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${visibility === 'public'
+                        ? 'border-green-500 bg-green-500/10 text-green-500'
+                        : config.theme === 'light'
+                          ? 'border-gray-300 bg-gray-50 text-gray-500'
+                          : 'border-gray-600 bg-gray-800 text-gray-400'
+                        }`}
+                      title={visibility === 'public' ? t('publicTooltip') : t('privateTooltip')}
+                    >
+                      {visibility === 'public' ? (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      )}
+                      <span className="text-sm font-medium">{visibility === 'public' ? t('public') : t('private')}</span>
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-6 py-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-md"
+                    >
+                      {t('save')}
+                    </button>
+                  </div>
+                </form>
+                {formError && (
+                  <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                    {formError}
+                  </div>
+                )}
               </div>
-              <div className="flex flex-wrap gap-4 items-end">
-                <div className="w-40 z-10">
-                  <DatePicker
-                    selected={selectedDate}
-                    onChange={(date) => setSelectedDate(date)}
-                    className={`w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
-                    dateFormat="yyyy-MM-dd"
-                  />
-                </div>
-                <div className="flex-1 relative z-20">
+
+              {/* Search & Filter Controls */}
+              <div className={`flex flex-wrap gap-4 mb-8 p-4 rounded-lg border overflow-visible ${config.theme === 'light' ? 'bg-white/50 border-gray-200' : 'bg-gray-800/50 border-gray-700/50'}`}>
+                <input
+                  type="text"
+                  placeholder={t('searchPlaceholder')}
+                  className={`flex-1 border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
+                  value={search}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                />
+                <div className="w-64 relative z-30">
                   <TagPicker
                     availableTags={allTags}
-                    selectedTags={tags}
-                    onChange={setTags}
-                    placeholder="Tags"
+                    selectedTags={filterTags}
+                    onChange={(newTags) => {
+                      setFilterTags(newTags);
+                      setPage(1);
+                    }}
+                    placeholder={t('filterTagsPlaceholder')}
+                    singleSelect={false}
+                    allowNew={false}
                     theme={config.theme}
                   />
                 </div>
+                <div className="w-40">
+                  <DatePicker
+                    selected={filterDateObj}
+                    onChange={(date) => { setFilterDateObj(date); setPage(1); }}
+                    className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
+                    dateFormat="yyyy-MM-dd"
+                    placeholderText={t('filterDatePlaceholder')}
+                    isClearable
+                  />
+                </div>
                 <button
-                  type="submit"
-                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-6 py-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-md"
+                  onClick={() => {
+                    setSearch('');
+                    setFilterTags([]);
+                    setFilterDateObj(null);
+                    setPage(1);
+                  }}
+                  className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded transition-all text-sm font-medium"
+                  title={t('resetFilters')}
                 >
-                  Save
+                  {t('resetFilters')}
                 </button>
               </div>
-            </form>
-            {formError && (
-              <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                {formError}
+
+              <EntriesList
+                loading={loading}
+                entries={entries}
+                groupedEntries={groupedEntries}
+                config={config}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onToggleVisibility={handleToggleVisibility}
+                editingEntry={editingEntry}
+                editText={editText}
+                setEditText={setEditText}
+                editTags={editTags}
+                setEditTags={setEditTags}
+                editDate={editDate}
+                setEditDate={setEditDate}
+                editVisibility={editVisibility}
+                setEditVisibility={setEditVisibility}
+                allTags={allTags}
+                onSaveEdit={handleSaveEdit}
+                onCancelEdit={handleCancelEdit}
+                t={t}
+              />
+
+              {/* Pagination Controls */}
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <button
+                  onClick={() => setPage(1)}
+                  disabled={page === 1}
+                  className={`p-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 ${config.theme === 'light' ? 'bg-white border-gray-300 hover:bg-gray-50 text-gray-600' : 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-400'}`}
+                  title={t('first')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className={`p-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 ${config.theme === 'light' ? 'bg-white border-gray-300 hover:bg-gray-50 text-gray-600' : 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-400'}`}
+                  title={t('previous')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 text-sm">{t('page', { defaultValue: 'Page' })}</span>
+                  <input
+                    type="number"
+                    min="1"
+                    max={totalPages}
+                    value={inputPage}
+                    onChange={(e) => setInputPage(e.target.value)}
+                    onBlur={() => {
+                      let val = parseInt(inputPage);
+                      if (isNaN(val) || val < 1) val = 1;
+                      if (val > totalPages) val = totalPages;
+                      setPage(val);
+                      setInputPage(val.toString());
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.target.blur();
+                      }
+                    }}
+                    className={`w-16 border rounded px-2 py-1 text-center text-sm focus:ring-1 focus:ring-blue-500 outline-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
+                  />
+                  <span className="text-gray-400 text-sm">{t('ofTotal', { total: totalPages, defaultValue: `of ${totalPages}` })}</span>
+                </div>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className={`p-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 ${config.theme === 'light' ? 'bg-white border-gray-300 hover:bg-gray-50 text-gray-600' : 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-400'}`}
+                  title={t('next')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => setPage(totalPages)}
+                  disabled={page === totalPages}
+                  className={`p-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 ${config.theme === 'light' ? 'bg-white border-gray-300 hover:bg-gray-50 text-gray-600' : 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-400'}`}
+                  title={t('last')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  </svg>
+                </button>
               </div>
-            )}
-          </div>
 
-          {/* Search & Filter Controls */}
-          <div className={`flex flex-wrap gap-4 mb-8 p-4 rounded-lg border overflow-visible ${config.theme === 'light' ? 'bg-white/50 border-gray-200' : 'bg-gray-800/50 border-gray-700/50'}`}>
-            <input
-              type="text"
-              placeholder="Search content..."
-              className={`flex-1 border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            />
-            <div className="w-64 relative z-30">
-              <TagPicker
-                availableTags={allTags}
-                selectedTags={filterTags}
-                onChange={(newTags) => {
-                  setFilterTags(newTags);
-                  setPage(1);
-                }}
-                placeholder="Filter by tags..."
-                singleSelect={false}
-                allowNew={false}
-                theme={config.theme}
-              />
-            </div>
-            <div className="w-40">
-              <DatePicker
-                selected={filterDateObj}
-                onChange={(date) => { setFilterDateObj(date); setPage(1); }}
-                className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${config.theme === 'light' ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'}`}
-                dateFormat="yyyy-MM-dd"
-                placeholderText="Filter by date"
-                isClearable
-              />
-            </div>
-            <button
-              onClick={() => {
-                setSearch('');
-                setFilterTags([]);
-                setFilterDateObj(null);
-                setPage(1);
-              }}
-              className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded transition-all text-sm font-medium"
-              title="Reset Filters"
-            >
-              Reset Filters
-            </button>
-          </div>
+              {/* Back to Top */}
+              <div className="flex justify-center mt-6 mb-8">
+                <button
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  className="text-sm text-gray-400 hover:text-blue-500 transition-colors flex items-center gap-1 group"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transform group-hover:-translate-y-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                  </svg>
+                  {t('backToTop', { defaultValue: 'Back to top' })}
+                </button>
+              </div>
+            </>
+          )}
 
-          <EntriesList
-            loading={loading}
-            entries={entries}
-            groupedEntries={groupedEntries}
-            config={config}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            editingEntry={editingEntry}
-            editText={editText}
-            setEditText={setEditText}
-            editTags={editTags}
-            setEditTags={setEditTags}
-            editDate={editDate}
-            setEditDate={setEditDate}
-            allTags={allTags}
-            onSaveEdit={handleSaveEdit}
-            onCancelEdit={handleCancelEdit}
-          />
-
-          {/* Pagination Controls */}
-          <div className="flex justify-center items-center gap-4 mt-8">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className={`px-4 py-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${config.theme === 'light' ? 'bg-white border-gray-300 hover:bg-gray-50 text-gray-700' : 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-300'}`}
-            >
-              Previous
-            </button>
-            <span className="text-gray-400">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className={`px-4 py-2 border rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${config.theme === 'light' ? 'bg-white border-gray-300 hover:bg-gray-50 text-gray-700' : 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-300'}`}
-            >
-              Next
-            </button>
-          </div>
+          <Footer t={t} theme={config.theme} />
         </div>
       </div >
     </Profiler>

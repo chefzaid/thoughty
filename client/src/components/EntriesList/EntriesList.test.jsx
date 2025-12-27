@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EntriesList from './EntriesList';
@@ -22,6 +22,7 @@ describe('EntriesList', () => {
         config: { theme: 'dark' },
         onEdit: vi.fn(),
         onDelete: vi.fn(),
+        onToggleVisibility: vi.fn(),
         editingEntry: null,
         editText: '',
         setEditText: vi.fn(),
@@ -29,9 +30,28 @@ describe('EntriesList', () => {
         setEditTags: vi.fn(),
         editDate: null,
         setEditDate: vi.fn(),
+        editVisibility: 'private',
+        setEditVisibility: vi.fn(),
         allTags: ['work', 'personal', 'ideas', 'important'],
         onSaveEdit: vi.fn(),
-        onCancelEdit: vi.fn()
+        onCancelEdit: vi.fn(),
+        t: (key, params) => {
+            const translations = {
+                loadingEntries: params?.defaultValue || 'Loading entries...',
+                noEntriesFound: 'No entries found.',
+                edit: 'Edit',
+                delete: 'Delete',
+                save: 'Save',
+                cancel: 'Cancel',
+                public: 'Public',
+                private: 'Private',
+                publicTooltip: 'Public - visible to everyone',
+                privateTooltip: 'Private - only you can see',
+            };
+            // Handle replace logic if needed, but for now exact match or key
+            if (key === 'filterTagsPlaceholder') return 'Filter by tags...';
+            return translations[key] || key;
+        }
     };
 
     beforeEach(() => {

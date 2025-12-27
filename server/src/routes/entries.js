@@ -2,6 +2,18 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+// Default user ID (for now, until authentication is implemented)
+const DEFAULT_USER_ID = 1;
+
+/**
+ * Helper to get user_id from request
+ * For now, uses header 'x-user-id' or defaults to 1
+ */
+function getUserId(req) {
+    const userId = req.headers['x-user-id'];
+    return userId ? parseInt(userId) : DEFAULT_USER_ID;
+}
+
 /**
  * @swagger
  * /api/entries:
@@ -33,17 +45,23 @@ const db = require('../db');
  *         schema:
  *           type: integer
  *         description: Number of items per page
+ *       - in: header
+ *         name: x-user-id
+ *         schema:
+ *           type: integer
+ *         description: User ID (defaults to 1)
  *     responses:
  *       200:
  *         description: A list of entries
  */
 router.get('/', async (req, res) => {
     try {
+        const userId = getUserId(req);
         const { search, tags, date, page = 1, limit = 10 } = req.query;
 
-        let query = 'SELECT * FROM entries WHERE 1=1';
-        const params = [];
-        let paramCount = 1;
+        let query = 'SELECT * FROM entries WHERE user_id = $1';
+        const params = [userId];
+        let paramCount = 2;
 
         if (search) {
             query += ` AND (content ILIKE $${paramCount} OR $${paramCount} = ANY(tags))`;
@@ -78,8 +96,8 @@ router.get('/', async (req, res) => {
 
         const result = await db.query(query, params);
 
-        // Get all tags for the filter
-        const tagsResult = await db.query('SELECT DISTINCT UNNEST(tags) as tag FROM entries');
+        // Get all tags for the filter (user-specific)
+        const tagsResult = await db.query('SELECT DISTINCT UNNEST(tags) as tag FROM entries WHERE user_id = $1', [userId]);
         const allTags = tagsResult.rows.map(r => r.tag).sort();
 
         res.json({
@@ -102,7 +120,8 @@ router.get('/', async (req, res) => {
  *     summary: Create a new journal entry
  */
 router.post('/', async (req, res) => {
-    const { text, tags, date } = req.body;
+    const userId = getUserId(req);
+    const { text, tags, date, visibility = 'private' } = req.body;
 
     if (!text) {
         return res.status(400).json({ error: 'Text is required' });
@@ -121,16 +140,16 @@ router.post('/', async (req, res) => {
             dateStr = now.toISOString().split('T')[0];
         }
 
-        // Calculate next index for the day
-        const countResult = await db.query('SELECT COUNT(*) FROM entries WHERE date = $1', [dateStr]);
+        // Calculate next index for the day (user-specific)
+        const countResult = await db.query('SELECT COUNT(*) FROM entries WHERE user_id = $1 AND date = $2', [userId, dateStr]);
         const nextIndex = parseInt(countResult.rows[0].count) + 1;
 
         const query = `
-            INSERT INTO entries (date, index, tags, content)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO entries (user_id, date, index, tags, content, visibility)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
         `;
-        const values = [dateStr, nextIndex, tags || [], text];
+        const values = [userId, dateStr, nextIndex, tags || [], text, visibility];
 
         await db.query(query, values);
         res.json({ success: true });
@@ -147,8 +166,9 @@ router.post('/', async (req, res) => {
  *     summary: Update an existing journal entry
  */
 router.put('/:id', async (req, res) => {
+    const userId = getUserId(req);
     const { id } = req.params;
-    const { text, tags, date } = req.body;
+    const { text, tags, date, visibility = 'private' } = req.body;
 
     if (!text) {
         return res.status(400).json({ error: 'Text is required' });
@@ -161,11 +181,11 @@ router.put('/:id', async (req, res) => {
     try {
         const query = `
             UPDATE entries 
-            SET content = $1, tags = $2, date = $3
-            WHERE id = $4
+            SET content = $1, tags = $2, date = $3, visibility = $4
+            WHERE id = $5 AND user_id = $6
             RETURNING *
         `;
-        const result = await db.query(query, [text, tags, date, id]);
+        const result = await db.query(query, [text, tags, date, visibility, id, userId]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Entry not found' });
@@ -185,11 +205,12 @@ router.put('/:id', async (req, res) => {
  *     summary: Delete a journal entry
  */
 router.delete('/:id', async (req, res) => {
+    const userId = getUserId(req);
     const { id } = req.params;
 
     try {
-        // Get the entry first to know its date
-        const entryResult = await db.query('SELECT * FROM entries WHERE id = $1', [id]);
+        // Get the entry first to know its date (check user ownership)
+        const entryResult = await db.query('SELECT * FROM entries WHERE id = $1 AND user_id = $2', [id, userId]);
 
         if (entryResult.rows.length === 0) {
             return res.status(404).json({ error: 'Entry not found' });
@@ -199,12 +220,12 @@ router.delete('/:id', async (req, res) => {
         const entryDate = deletedEntry.date;
 
         // Delete the entry
-        await db.query('DELETE FROM entries WHERE id = $1', [id]);
+        await db.query('DELETE FROM entries WHERE id = $1 AND user_id = $2', [id, userId]);
 
-        // Reindex remaining entries for that date
+        // Reindex remaining entries for that date (user-specific)
         const remainingEntries = await db.query(
-            'SELECT id FROM entries WHERE date = $1 ORDER BY index ASC',
-            [entryDate]
+            'SELECT id FROM entries WHERE user_id = $1 AND date = $2 ORDER BY index ASC',
+            [userId, entryDate]
         );
 
         // Update indexes to be consecutive starting from 1

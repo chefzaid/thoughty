@@ -1,19 +1,26 @@
 import React from 'react';
 
-function Profile({ name, onOpenSettings }) {
+function Profile({ name, onOpenSettings, theme }) {
     const initial = (name || 'User').charAt(0).toUpperCase();
+    const isLight = theme === 'light';
 
     return (
-        <div className="flex items-center gap-4 mb-8 p-4 bg-gray-800/30 rounded-xl border border-gray-700/30 backdrop-blur-sm">
+        <div className={`flex items-center gap-4 mb-8 p-4 rounded-xl border backdrop-blur-sm ${isLight
+                ? 'bg-white border-gray-200'
+                : 'bg-gray-800/30 border-gray-700/30'
+            }`}>
             <div className="w-12 h-12 rounded-full border-2 border-blue-500 shadow-lg bg-gradient-to-br from-blue-500/60 to-purple-600/60 flex items-center justify-center text-lg font-bold text-white">
                 {initial}
             </div>
             <div className="flex-1">
-                <h3 className="text-lg font-bold text-gray-100">{name}</h3>
+                <h3 className={`text-lg font-bold ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>{name}</h3>
             </div>
             <button
                 onClick={onOpenSettings}
-                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-full transition-all"
+                className={`p-2 rounded-full transition-all ${isLight
+                        ? 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                    }`}
                 title="Settings"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

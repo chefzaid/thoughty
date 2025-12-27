@@ -59,7 +59,7 @@ describe('App Integration Tests', () => {
             render(<App />);
 
             await waitFor(() => {
-                expect(screen.getByText('My Journal')).toBeInTheDocument();
+                expect(screen.getByText('Thoughty')).toBeInTheDocument();
             });
         });
 
@@ -129,20 +129,41 @@ describe('App Integration Tests', () => {
             render(<App />);
 
             await waitFor(() => {
-                expect(screen.getByText('Previous')).toBeInTheDocument();
-                expect(screen.getByText('Next')).toBeInTheDocument();
+                expect(screen.getByTitle('Previous')).toBeInTheDocument();
+                expect(screen.getByTitle('Next')).toBeInTheDocument();
+                expect(screen.getByTitle('First')).toBeInTheDocument();
+                expect(screen.getByTitle('Last')).toBeInTheDocument();
             });
         });
 
-        it('disables Previous on first page', async () => {
+        it('disables Previous and First on first page', async () => {
             render(<App />);
 
             await waitFor(() => {
-                const prevButton = screen.getByText('Previous');
-                expect(prevButton).toBeDisabled();
+                expect(screen.getByTitle('Previous')).toBeDisabled();
+                expect(screen.getByTitle('First')).toBeDisabled();
             });
         });
+
+        it('supports manual page input', async () => {
+            const user = userEvent.setup();
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByRole('spinbutton')).toBeInTheDocument();
+            });
+
+            const pageInput = screen.getByRole('spinbutton');
+            await user.clear(pageInput);
+            await user.type(pageInput, '1');
+            await user.keyboard('{Enter}');
+
+            // Since we mocked the API to return 1 page, we mainly check if input works without crashing
+            // In a real scenario we'd mock multiple pages to verify page switch
+            expect(pageInput.value).toBe('1');
+        });
     });
+
 
     describe('Settings modal', () => {
         it('opens settings modal when settings button is clicked', async () => {
@@ -304,4 +325,22 @@ describe('App Integration Tests', () => {
             consoleSpy.mockRestore();
         });
     });
+    describe('Back to Top', () => {
+        it('scrolls to top when clicked', async () => {
+            const user = userEvent.setup();
+            const scrollToMock = vi.fn();
+            global.window.scrollTo = scrollToMock;
+
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByText('Back to top')).toBeInTheDocument();
+            });
+
+            await user.click(screen.getByText('Back to top'));
+
+            expect(scrollToMock).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+        });
+    });
 });
+

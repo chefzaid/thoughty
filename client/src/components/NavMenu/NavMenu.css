@@ -1,0 +1,196 @@
+.nav-menu {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.75rem;
+    backdrop-filter: blur(10px);
+}
+
+.nav-menu.dark {
+    background: rgba(31, 41, 55, 0.5);
+    border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.nav-menu.light {
+    background: rgba(255, 255, 255, 1);
+    border: 1px solid rgba(229, 231, 235, 1);
+}
+
+/* Brand section (logo + app name) */
+.nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.brand-logo {
+    width: 2.25rem;
+    height: 2.25rem;
+    object-fit: contain;
+}
+
+.brand-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #3B82F6, #9333EA);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Navigation items container */
+.nav-items {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: transparent;
+}
+
+.nav-menu.dark .nav-item {
+    color: #9ca3af;
+}
+
+.nav-menu.light .nav-item {
+    color: #4b5563;
+}
+
+.nav-menu.dark .nav-item:hover {
+    background: rgba(55, 65, 81, 0.5);
+    color: #f3f4f6;
+}
+
+.nav-menu.light .nav-item:hover {
+    background: rgba(243, 244, 246, 1);
+    color: #111827;
+}
+
+.nav-item.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2));
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.nav-menu.light .nav-item.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15));
+    color: #2563eb;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.nav-item svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* Profile section */
+.nav-profile {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    order: 2;
+}
+
+.profile-avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    border: 2px solid rgba(59, 130, 246, 0.6);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.6), rgba(147, 51, 234, 0.6));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.profile-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.nav-menu.dark .profile-name {
+    color: #f3f4f6;
+}
+
+.nav-menu.light .profile-name {
+    color: #111827;
+}
+
+.settings-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nav-menu.dark .settings-btn {
+    color: #9ca3af;
+}
+
+.nav-menu.light .settings-btn {
+    color: #6b7280;
+}
+
+.nav-menu.dark .settings-btn:hover {
+    background: rgba(55, 65, 81, 0.5);
+    color: #f3f4f6;
+}
+
+.nav-menu.light .settings-btn:hover {
+    background: rgba(243, 244, 246, 1);
+    color: #111827;
+}
+
+.settings-btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .nav-menu {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .nav-menu::before {
+        display: none;
+    }
+
+    .nav-items {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .nav-profile {
+        width: 100%;
+        justify-content: center;
+        padding-top: 0.5rem;
+        border-top: 1px solid rgba(75, 85, 99, 0.3);
+    }
+
+    .nav-menu.light .nav-profile {
+        border-top-color: rgba(209, 213, 219, 1);
+    }
+}

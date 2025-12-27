@@ -4,6 +4,9 @@ const db = require('../server/src/db');
 
 const TEST_DATA_FILE = path.join(__dirname, '..', 'server', 'data', 'test_data.txt');
 
+// Default user ID for seeded data
+const DEFAULT_USER_ID = 1;
+
 /**
  * Parse the test data file in the same format as thoughts.txt
  * Format:
@@ -99,6 +102,16 @@ function parseTestData(content) {
     return entries;
 }
 
+async function ensureDefaultUser() {
+    console.log('Ensuring default user exists...');
+    await db.query(`
+        INSERT INTO users (id, username, email)
+        VALUES ($1, 'default', 'default@example.com')
+        ON CONFLICT (id) DO NOTHING
+    `, [DEFAULT_USER_ID]);
+    console.log('Default user ready.');
+}
+
 async function clearEntries() {
     console.log('Clearing existing entries...');
     await db.query('DELETE FROM entries');
@@ -114,14 +127,17 @@ async function seed() {
         const entries = parseTestData(content);
         console.log(`Found ${entries.length} entries to insert.`);
 
+        // Ensure default user exists
+        await ensureDefaultUser();
+
         // Clear existing entries first
         await clearEntries();
 
         console.log('Inserting entries...');
         for (const entry of entries) {
             await db.query(
-                'INSERT INTO entries (date, index, tags, content) VALUES ($1, $2, $3, $4)',
-                [entry.date, entry.index, entry.tags, entry.content]
+                'INSERT INTO entries (user_id, date, index, tags, content) VALUES ($1, $2, $3, $4, $5)',
+                [DEFAULT_USER_ID, entry.date, entry.index, entry.tags, entry.content]
             );
         }
 

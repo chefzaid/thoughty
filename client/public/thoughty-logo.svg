@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80" fill="none">
+  <defs>
+    <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60A5FA"/>
+      <stop offset="50%" style="stop-color:#A78BFA"/>
+      <stop offset="100%" style="stop-color:#C084FC"/>
+    </linearGradient>
+  </defs>
+  <!-- Cloud shape -->
+  <path d="M25 55 
+           C10 55 5 42 18 35 
+           C15 20 35 12 48 20 
+           C55 10 78 10 82 25 
+           C98 28 98 50 82 55 
+           Z" 
+        fill="url(#cloudGradient)"/>
+  <!-- Dreamy closed eyes -->
+  <path d="M32 38 Q37 33 42 38" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <path d="M55 38 Q60 33 65 38" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  <!-- Peaceful smile -->
+  <path d="M42 48 Q50 55 58 48" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+</svg>

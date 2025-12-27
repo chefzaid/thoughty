@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, theme = 'dark' }) => {
+const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, theme = 'dark', t }) => {
     if (!isOpen) return null;
 
     const isLight = theme === 'light';
@@ -26,13 +26,13 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, theme = 'dar
                         onClick={onClose}
                         className={`px-4 py-2 rounded-lg font-medium transition-colors ${isLight ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' : 'bg-gray-700 hover:bg-gray-600 text-gray-300'}`}
                     >
-                        Cancel
+                        {t ? t('cancel') : 'Cancel'}
                     </button>
                     <button
                         onClick={onConfirm}
                         className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
                     >
-                        Delete
+                        {t ? t('delete') : 'Delete'}
                     </button>
                 </div>
             </div>
