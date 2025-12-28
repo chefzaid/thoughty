@@ -168,13 +168,72 @@ router.put('/:id', async (req, res) => {
     }
 
     try {
+        // Get current entry to check if date is changing
+        const currentEntry = await db.query('SELECT * FROM entries WHERE id = $1 AND user_id = $2', [id, userId]);
+
+        if (currentEntry.rows.length === 0) {
+            return res.status(404).json({ error: 'Entry not found' });
+        }
+
+        const oldDate = currentEntry.rows[0].date;
+        let newIndex = currentEntry.rows[0].index;
+
+        // If date is changing, recalculate the index for the new date
+        if (oldDate !== date) {
+            // Get the next index for the new date
+            const countResult = await db.query('SELECT COUNT(*) FROM entries WHERE user_id = $1 AND date = $2', [userId, date]);
+            newIndex = parseInt(countResult.rows[0].count) + 1;
+        }
+
         const query = `
             UPDATE entries 
-            SET content = $1, tags = $2, date = $3, visibility = $4
-            WHERE id = $5 AND user_id = $6
+            SET content = $1, tags = $2, date = $3, visibility = $4, index = $5
+            WHERE id = $6 AND user_id = $7
             RETURNING *
         `;
-        const result = await db.query(query, [text, tags, date, visibility, id, userId]);
+        const result = await db.query(query, [text, tags, date, visibility, newIndex, id, userId]);
+
+        // If date changed, reindex the old date's entries
+        if (oldDate !== date) {
+            const remainingEntries = await db.query(
+                'SELECT id FROM entries WHERE user_id = $1 AND date = $2 ORDER BY index ASC',
+                [userId, oldDate]
+            );
+            for (let i = 0; i < remainingEntries.rows.length; i++) {
+                await db.query('UPDATE entries SET index = $1 WHERE id = $2', [i + 1, remainingEntries.rows[i].id]);
+            }
+        }
+
+        res.json({ success: true, entry: result.rows[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to update entry' });
+    }
+});
+
+/**
+ * @swagger
+ * /api/entries/{id}/visibility:
+ *   patch:
+ *     summary: Toggle visibility of a journal entry
+ */
+router.patch('/:id/visibility', async (req, res) => {
+    const userId = getUserId(req);
+    const { id } = req.params;
+    const { visibility } = req.body;
+
+    if (!visibility || !['public', 'private'].includes(visibility)) {
+        return res.status(400).json({ error: 'Valid visibility (public/private) is required' });
+    }
+
+    try {
+        const query = `
+            UPDATE entries 
+            SET visibility = $1
+            WHERE id = $2 AND user_id = $3
+            RETURNING *
+        `;
+        const result = await db.query(query, [visibility, id, userId]);
 
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Entry not found' });
@@ -183,7 +242,25 @@ router.put('/:id', async (req, res) => {
         res.json({ success: true, entry: result.rows[0] });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: 'Failed to update entry' });
+        res.status(500).json({ error: 'Failed to update visibility' });
+    }
+});
+
+/**
+ * @swagger
+ * /api/entries/all:
+ *   delete:
+ *     summary: Delete all journal entries for the user
+ */
+router.delete('/all', async (req, res) => {
+    const userId = getUserId(req);
+
+    try {
+        const result = await db.query('DELETE FROM entries WHERE user_id = $1', [userId]);
+        res.json({ success: true, deletedCount: result.rowCount });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to delete all entries' });
     }
 });
 

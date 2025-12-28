@@ -1,9 +1,9 @@
-import React, { memo } from 'react';
+import React from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import TagPicker from '../TagPicker/TagPicker';
 
-const EntriesList = memo(({
+const EntriesList = ({
     loading,
     entries,
     groupedEntries,
@@ -129,6 +129,7 @@ const EntriesList = memo(({
                                                 ))}
                                             </div>
                                             <div className="flex items-center gap-2">
+                                                <span className="text-xs text-gray-500 font-mono">#{entry.index}</span>
                                                 <button
                                                     onClick={() => onToggleVisibility(entry)}
                                                     className={`p-1 rounded transition-colors ${entry.visibility === 'public' ? 'text-green-500 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}
@@ -144,7 +145,6 @@ const EntriesList = memo(({
                                                         </svg>
                                                     )}
                                                 </button>
-                                                <span className="text-xs text-gray-500 font-mono">#{entry.index}</span>
                                                 <button
                                                     onClick={() => onEdit(entry)}
                                                     className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
@@ -177,6 +177,6 @@ const EntriesList = memo(({
             ))}
         </div>
     );
-});
+};
 
 export default EntriesList;

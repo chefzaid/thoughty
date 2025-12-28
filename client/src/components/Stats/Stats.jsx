@@ -90,7 +90,7 @@ function Stats({ theme, t }) {
             <div className="stats-container">
                 <div className="stats-loading">
                     <div className="spinner"></div>
-                    <p>{t('loadingStats', { defaultValue: 'Loading statistics...' })}</p>
+                    <p>{t('loadingStats')}</p>
                 </div>
             </div>
         );
@@ -202,7 +202,7 @@ function Stats({ theme, t }) {
         <div className={`stats-container ${themeClass}`}>
             <div className="stats-header">
                 <h1>{t('stats')}</h1>
-                <p>{t('startOverview', { defaultValue: 'Overview of your journal entries and tags' })}</p>
+                <p>{t('statsOverview')}</p>
             </div>
 
             {/* Summary Cards */}
@@ -213,11 +213,11 @@ function Stats({ theme, t }) {
                 </div>
                 <div className={`stat-card ${themeClass}`}>
                     <div className="stat-value">{stats.uniqueTagsCount}</div>
-                    <div className="stat-label">{t('uniqueTags', { defaultValue: 'Unique Tags' })}</div>
+                    <div className="stat-label">{t('uniqueTags')}</div>
                 </div>
                 <div className={`stat-card ${themeClass}`}>
                     <div className="stat-value">{yearLabels.length}</div>
-                    <div className="stat-label">{t('yearsActive', { defaultValue: 'Years Active' })}</div>
+                    <div className="stat-label">{t('yearsActive')}</div>
                 </div>
                 <div className={`stat-card ${themeClass}`}>
                     <div className="stat-value">
@@ -225,7 +225,7 @@ function Stats({ theme, t }) {
                             ? Math.round(stats.totalThoughts / yearLabels.length)
                             : 0}
                     </div>
-                    <div className="stat-label">{t('avgPerYear', { defaultValue: 'Avg. per Year' })}</div>
+                    <div className="stat-label">{t('avgPerYear')}</div>
                 </div>
             </div>
 
@@ -233,7 +233,7 @@ function Stats({ theme, t }) {
             <div className="charts-grid">
                 {/* Thoughts per Year - with horizontal scroll */}
                 <div className={`chart-card ${themeClass}`}>
-                    <h3>{t('thoughtsPerYear', { defaultValue: 'Thoughts per Year' })}</h3>
+                    <h3>{t('thoughtsPerYear')}</h3>
                     <div className="chart-wrapper chart-scrollable">
                         <div style={{ minWidth: yearLabels.length > 8 ? `${yearLabels.length * 60}px` : '100%', height: '100%' }}>
                             <Bar data={thoughtsPerYearChart} options={chartOptions} />
@@ -244,7 +244,7 @@ function Stats({ theme, t }) {
                 {/* Thoughts per Month - with period selector */}
                 <div className={`chart-card ${themeClass}`}>
                     <div className="chart-header">
-                        <h3>{t('thoughtsPerMonth', { defaultValue: 'Thoughts per Month' })}</h3>
+                        <h3>{t('thoughtsPerMonth')}</h3>
                         <select
                             className={`period-select ${themeClass}`}
                             value={monthsToShow}
@@ -278,7 +278,7 @@ function Stats({ theme, t }) {
                 {/* Tags per Year Breakdown - with pagination */}
                 <div className={`chart-card ${themeClass}`}>
                     <div className="chart-header">
-                        <h3>{t('topTagsByYear', { defaultValue: 'Top Tags by Year' })}</h3>
+                        <h3>{t('topTagsByYear')}</h3>
                         {totalYearPages > 1 && (
                             <div className="pagination-controls">
                                 <button
@@ -307,7 +307,7 @@ function Stats({ theme, t }) {
                         <table className="tag-table">
                             <thead>
                                 <tr>
-                                    <th>{t('year', { defaultValue: 'Year' })}</th>
+                                    <th>{t('year')}</th>
                                     <th>{t('topTags')}</th>
                                 </tr>
                             </thead>

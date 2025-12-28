@@ -3,23 +3,16 @@ Remaining features to implement:
 
 *** Profile & Settings
 - Add authentication, with login (email) and password + the possibility to auth via Google / Facebook
-- Complete deletion of all entries and start a new journal
+- Connect to cloud providers like OneDrive or Google Drive to sync the journal file once exported
+- Configure a fixed schedule for syncing the file from/to cloud (only diff, not the whole file, but there may be changes in previous entries)
 - Delete account feature
 
 *** UI & Features
 - Keeping a history of modifications on a thought and allow to show the previous versions?
 - If there is a reference to another thought, link it (e.g. "entry (yyyy.mm.dd)" or "entry (yyyy.mm.dd)--X", X being the thought number if there were many in that day)
-- Ability to go the first thought of year or year/month
 - For date filter only allow/display dates where there is an actual thought, the others should be greyed
 - Social Media like features (messaging, follow, likes, comments) on public thoughts
-- Make the textbox for writing thoughts adapt to the content on the fly
-
-*** File Importer/Exporter
-- A converter utility that takes the file and transform it for the database
-- A reverse converter that would take all the lines in the database and convert them to a text file
-- The format of the file both in input and output should be parameterized (date prefix, date suffix, date format, entry separator, same day entry separator, tag separator, tag prefix, tag suffix, etc.)
-- Connect to cloud providers like OneDrive or Google Drive to sync the journal file once converted
-- Configure a fixed schedule for syncing the file to cloud (from the DB)
+- Make the textbox for writing thoughts adapt to the content on the fly, when there are too many lines
 
 *** AI
 - Guess the file format for the converter

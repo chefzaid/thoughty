@@ -5,6 +5,7 @@ import EntriesList from './components/EntriesList/EntriesList';
 import ConfirmModal from './components/ConfirmModal/ConfirmModal';
 import NavMenu from './components/NavMenu/NavMenu';
 import Stats from './components/Stats/Stats';
+import ImportExport from './components/ImportExport/ImportExport';
 import Footer from './components/Footer/Footer';
 import EntryForm from './components/EntryForm/EntryForm';
 import FilterControls from './components/FilterControls/FilterControls';
@@ -209,15 +210,10 @@ function App() {
     setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, visibility: newVisibility } : e));
 
     try {
-      const res = await fetch(`/api/entries/${entry.id}`, {
-        method: 'PUT',
+      const res = await fetch(`/api/entries/${entry.id}/visibility`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: entry.content,
-          tags: entry.tags,
-          date: entry.date.includes('T') ? entry.date.split('T')[0] : entry.date,
-          visibility: newVisibility
-        })
+        body: JSON.stringify({ visibility: newVisibility })
       });
       if (!res.ok) {
         setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, visibility: entry.visibility } : e));
@@ -273,6 +269,8 @@ function App() {
 
         {currentView === 'stats' ? (
           <Stats theme={config.theme} t={t} />
+        ) : currentView === 'importExport' ? (
+          <ImportExport theme={config.theme} t={t} />
         ) : (
           <>
             <EntryForm

@@ -1,22 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 80" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
   <defs>
-    <linearGradient id="cloudGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#60A5FA"/>
-      <stop offset="50%" style="stop-color:#A78BFA"/>
-      <stop offset="100%" style="stop-color:#C084FC"/>
+    <linearGradient id="planeGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#06B6D4"/>
+      <stop offset="50%" style="stop-color:#8B5CF6"/>
+      <stop offset="100%" style="stop-color:#A855F7"/>
+    </linearGradient>
+    <linearGradient id="shadowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0891B2"/>
+      <stop offset="100%" style="stop-color:#7C3AED"/>
     </linearGradient>
   </defs>
-  <!-- Cloud shape -->
-  <path d="M25 55 
-           C10 55 5 42 18 35 
-           C15 20 35 12 48 20 
-           C55 10 78 10 82 25 
-           C98 28 98 50 82 55 
-           Z" 
-        fill="url(#cloudGradient)"/>
-  <!-- Dreamy closed eyes -->
-  <path d="M32 38 Q37 33 42 38" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  <path d="M55 38 Q60 33 65 38" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  <!-- Peaceful smile -->
-  <path d="M42 48 Q50 55 58 48" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+  
+  <!-- Paper airplane - tilted upward -->
+  <g transform="translate(10, 15) rotate(-15, 45, 40)">
+    <!-- Left wing (darker, folded under) -->
+    <path d="M5 55 L45 10 L45 50 Z" 
+          fill="url(#shadowGradient)"/>
+    <!-- Right wing (lighter, top surface) -->
+    <path d="M85 55 L45 10 L45 50 Z" 
+          fill="url(#planeGradient)"/>
+    <!-- Center fold highlight -->
+    <path d="M45 10 L45 50" 
+          stroke="white" 
+          stroke-width="2.5" 
+          stroke-opacity="0.7"/>
+    <!-- Paper fold details on left wing -->
+    <path d="M45 30 L20 48" 
+          stroke="white" 
+          stroke-width="1.5" 
+          stroke-opacity="0.3"/>
+    <!-- Paper fold details on right wing -->
+    <path d="M45 30 L70 48" 
+          stroke="white" 
+          stroke-width="1.5" 
+          stroke-opacity="0.3"/>
+    <!-- Tail fold -->
+    <path d="M45 50 L45 65 L38 55 Z" 
+          fill="url(#shadowGradient)"
+          opacity="0.8"/>
+  </g>
 </svg>
