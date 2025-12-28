@@ -1,18 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-
-// Default user ID (for now, until authentication is implemented)
-const DEFAULT_USER_ID = 1;
-
-/**
- * Helper to get user_id from request
- * For now, uses header 'x-user-id' or defaults to 1
- */
-function getUserId(req) {
-    const userId = req.headers['x-user-id'];
-    return userId ? parseInt(userId) : DEFAULT_USER_ID;
-}
+const { getUserId } = require('../utils/auth');
 
 /**
  * @swagger

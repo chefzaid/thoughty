@@ -22,7 +22,7 @@ describe('App Integration Tests', () => {
     };
 
     const mockConfig = {
-        profileName: 'Test User',
+        name: 'Test User',
         theme: 'dark'
     };
 
