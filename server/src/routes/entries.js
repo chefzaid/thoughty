@@ -110,6 +110,29 @@ router.get('/', async (req, res) => {
 
 /**
  * @swagger
+ * /api/entries/dates:
+ *   get:
+ *     summary: Get all distinct dates that have entries
+ *     responses:
+ *       200:
+ *         description: Array of dates with entries
+ */
+router.get('/dates', async (req, res) => {
+    try {
+        const userId = getUserId(req);
+        const result = await db.query(
+            `SELECT DISTINCT TO_CHAR(date, 'YYYY-MM-DD') as date FROM entries WHERE user_id = $1 ORDER BY date DESC`,
+            [userId]
+        );
+        res.json({ dates: result.rows.map(r => r.date) });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch entry dates' });
+    }
+});
+
+/**
+ * @swagger
  * /api/entries/first:
  *   get:
  *     summary: Get page number containing first entry for a year/month

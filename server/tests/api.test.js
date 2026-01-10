@@ -224,6 +224,11 @@ describe('API Endpoints', () => {
 
     describe('PUT /api/entries/:id', () => {
         it('should update an existing entry', async () => {
+            // Mock: get current entry (to check date change)
+            db.query.mockResolvedValueOnce({
+                rows: [{ id: 1, user_id: 1, content: 'Original', tags: ['work'], date: '2024-01-02', index: 1 }]
+            });
+            // Mock: update entry
             db.query.mockResolvedValueOnce({
                 rows: [{ id: 1, user_id: 1, content: 'Updated', tags: ['personal'], date: '2024-01-02' }]
             });
@@ -238,6 +243,11 @@ describe('API Endpoints', () => {
         });
 
         it('should update entry only for matching user_id', async () => {
+            // Mock: get current entry
+            db.query.mockResolvedValueOnce({
+                rows: [{ id: 1, user_id: 2, content: 'Original', tags: ['work'], date: '2024-01-02', index: 1 }]
+            });
+            // Mock: update entry
             db.query.mockResolvedValueOnce({
                 rows: [{ id: 1, user_id: 2, content: 'Updated', tags: ['personal'], date: '2024-01-02' }]
             });
@@ -250,7 +260,7 @@ describe('API Endpoints', () => {
             expect(res.status).toBe(200);
             // Verify UPDATE includes user_id in WHERE clause
             expect(db.query).toHaveBeenCalledWith(
-                expect.stringContaining('user_id = $6'),
+                expect.stringContaining('user_id = $7'),
                 expect.arrayContaining([2])
             );
         });
@@ -385,6 +395,48 @@ describe('API Endpoints', () => {
 
             expect(res.status).toBe(500);
             expect(res.body.error).toBe('Failed to save config');
+        });
+    });
+
+    describe('GET /api/entries/dates', () => {
+        it('should return distinct dates with entries', async () => {
+            db.query.mockResolvedValueOnce({
+                rows: [
+                    { date: '2024-01-15' },
+                    { date: '2024-01-10' },
+                    { date: '2024-01-05' }
+                ]
+            });
+
+            const res = await request(app).get('/api/entries/dates');
+
+            expect(res.status).toBe(200);
+            expect(res.body.dates).toEqual(['2024-01-15', '2024-01-10', '2024-01-05']);
+        });
+
+        it('should filter dates by user_id from header', async () => {
+            db.query.mockResolvedValueOnce({
+                rows: [{ date: '2024-01-15' }]
+            });
+
+            const res = await request(app)
+                .get('/api/entries/dates')
+                .set('x-user-id', '2');
+
+            expect(res.status).toBe(200);
+            expect(db.query).toHaveBeenCalledWith(
+                expect.stringContaining('user_id = $1'),
+                [2]
+            );
+        });
+
+        it('should handle database errors', async () => {
+            db.query.mockRejectedValue(new Error('Database error'));
+
+            const res = await request(app).get('/api/entries/dates');
+
+            expect(res.status).toBe(500);
+            expect(res.body.error).toBe('Failed to fetch entry dates');
         });
     });
 });

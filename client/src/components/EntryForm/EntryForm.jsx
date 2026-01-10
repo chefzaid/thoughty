@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import TagPicker from '../TagPicker/TagPicker';
 
@@ -17,14 +17,25 @@ function EntryForm({
     theme,
     t
 }) {
+    const textareaRef = useRef(null);
+
+    // Auto-resize textarea based on content
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = `${Math.max(textarea.scrollHeight, 76)}px`; // 76px ≈ 3 rows minimum
+        }
+    }, [newEntryText]);
+
     const inputClass = `w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none ${theme === 'light'
-            ? 'bg-gray-50 border-gray-300 text-gray-900'
-            : 'bg-gray-900 border-gray-700 text-gray-100'
+        ? 'bg-gray-50 border-gray-300 text-gray-900'
+        : 'bg-gray-900 border-gray-700 text-gray-100'
         }`;
 
     const containerClass = `relative z-40 rounded-xl p-6 shadow-lg border mb-8 backdrop-blur-sm bg-opacity-50 overflow-visible ${theme === 'light'
-            ? 'bg-white border-gray-200'
-            : 'bg-gray-800 border-gray-700'
+        ? 'bg-white border-gray-200'
+        : 'bg-gray-800 border-gray-700'
         }`;
 
     return (
@@ -32,12 +43,14 @@ function EntryForm({
             <form onSubmit={onSubmit} className="space-y-4 overflow-visible">
                 <div>
                     <textarea
+                        ref={textareaRef}
                         className={`w-full border rounded-lg p-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none ${theme === 'light'
-                                ? 'bg-gray-50 border-gray-300 text-gray-900'
-                                : 'bg-gray-900 border-gray-700 text-gray-100'
+                            ? 'bg-gray-50 border-gray-300 text-gray-900'
+                            : 'bg-gray-900 border-gray-700 text-gray-100'
                             }`}
                         rows="3"
                         placeholder={t('whatsOnYourMind')}
+                        title={t('entryReferenceHint')}
                         value={newEntryText}
                         onChange={(e) => setNewEntryText(e.target.value)}
                     />
@@ -64,10 +77,10 @@ function EntryForm({
                         type="button"
                         onClick={() => setVisibility(v => v === 'private' ? 'public' : 'private')}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${visibility === 'public'
-                                ? 'border-green-500 bg-green-500/10 text-green-500'
-                                : theme === 'light'
-                                    ? 'border-gray-300 bg-gray-50 text-gray-500'
-                                    : 'border-gray-600 bg-gray-800 text-gray-400'
+                            ? 'border-green-500 bg-green-500/10 text-green-500'
+                            : theme === 'light'
+                                ? 'border-gray-300 bg-gray-50 text-gray-500'
+                                : 'border-gray-600 bg-gray-800 text-gray-400'
                             }`}
                         title={visibility === 'public' ? t('publicTooltip') : t('privateTooltip')}
                     >

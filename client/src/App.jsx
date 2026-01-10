@@ -19,6 +19,7 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [allTags, setAllTags] = useState([]);
+  const [entryDates, setEntryDates] = useState([]);
 
   // Config & Settings
   const [config, setConfig] = useState({});
@@ -63,7 +64,7 @@ function App() {
   const [sourceEntry, setSourceEntry] = useState(null); // Track {id, date, index} where user came from
 
   useEffect(() => { setInputPage(page.toString()); }, [page]);
-  useEffect(() => { fetchConfig(); }, []);
+  useEffect(() => { fetchConfig(); fetchEntryDates(); }, []);
   useEffect(() => { fetchEntries(); }, [page, search, filterTags, filterDateObj, filterVisibility, config.entriesPerPage]);
   useEffect(() => {
     if (config.defaultVisibility && visibility === null) {
@@ -87,6 +88,16 @@ function App() {
       setConfig(data);
     } catch (error) {
       console.error('Error fetching config:', error);
+    }
+  };
+
+  const fetchEntryDates = async () => {
+    try {
+      const response = await fetch('/api/entries/dates');
+      const data = await response.json();
+      setEntryDates(data.dates || []);
+    } catch (error) {
+      console.error('Error fetching entry dates:', error);
     }
   };
 
@@ -151,6 +162,7 @@ function App() {
       setVisibility(config.defaultVisibility || 'private');
       setPage(1);
       fetchEntries();
+      fetchEntryDates();
     } catch (error) {
       console.error('Error saving entry:', error);
       setFormError('Failed to save entry. Please try again.');
@@ -421,6 +433,7 @@ function App() {
               filterVisibility={filterVisibility}
               setFilterVisibility={setFilterVisibility}
               allTags={allTags}
+              entryDates={entryDates}
               availableYears={availableYears}
               availableMonths={availableMonths}
               onNavigateToFirst={handleNavigateToFirst}

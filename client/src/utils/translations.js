@@ -123,7 +123,8 @@ export const translations = {
 
         // Entry Cross-References
         backToSource: 'Back to source entry',
-        entryNotFound: 'Entry not found'
+        entryNotFound: 'Entry not found',
+        entryReferenceHint: 'Tip: Reference other entries by writing "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd--X)" where X is the index of the entry for that day'
     },
     fr: {
         // App
@@ -249,7 +250,8 @@ export const translations = {
 
         // Entry Cross-References
         backToSource: 'Retour à l\'entrée source',
-        entryNotFound: 'Entrée non trouvée'
+        entryNotFound: 'Entrée non trouvée',
+        entryReferenceHint: 'Astuce : Référencez d\'autres entrées en écrivant "entry (yyyy-mm-dd)" ou "entry (yyyy-mm-dd--X)" où X est l\'index de l\'entrée pour ce jour'
     }
 };
 

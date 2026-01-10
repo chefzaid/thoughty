@@ -46,3 +46,22 @@ body {
   outline: 2px solid rgba(59, 130, 246, 0.5);
   outline-offset: 1px;
 }
+
+/* Date picker styling for dates with/without entries */
+.react-datepicker__day.no-entry {
+  color: #9ca3af !important;
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.react-datepicker__day.has-entry {
+  font-weight: 600;
+}
+
+.react-datepicker__day.has-entry:not(.react-datepicker__day--selected):not(.react-datepicker__day--keyboard-selected) {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.react-datepicker__day.has-entry:hover:not(.react-datepicker__day--selected) {
+  background-color: rgba(59, 130, 246, 0.25);
+}

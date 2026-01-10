@@ -12,6 +12,7 @@ function FilterControls({
     filterVisibility,
     setFilterVisibility,
     allTags,
+    entryDates,
     setPage,
     theme,
     t
@@ -53,6 +54,17 @@ function FilterControls({
             : 'bg-gray-900 border-gray-700 text-gray-400 hover:bg-gray-800';
     };
 
+    // Convert entryDates to a Set for O(1) lookup
+    const entryDatesSet = new Set(entryDates || []);
+
+    const getDayClassName = (date) => {
+        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        if (entryDatesSet.has(dateStr)) {
+            return 'has-entry';
+        }
+        return 'no-entry';
+    };
+
     return (
         <div className={containerClass}>
             <input
@@ -83,6 +95,7 @@ function FilterControls({
                         }`}
                     dateFormat="yyyy-MM-dd"
                     placeholderText={t('filterDatePlaceholder')}
+                    dayClassName={getDayClassName}
                     isClearable
                 />
             </div>
