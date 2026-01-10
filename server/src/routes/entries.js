@@ -46,7 +46,7 @@ const { getUserId } = require('../utils/auth');
 router.get('/', async (req, res) => {
     try {
         const userId = getUserId(req);
-        const { search, tags, date, page = 1, limit = 10 } = req.query;
+        const { search, tags, date, visibility, page = 1, limit = 10 } = req.query;
 
         let query = 'SELECT * FROM entries WHERE user_id = $1';
         const params = [userId];
@@ -70,6 +70,12 @@ router.get('/', async (req, res) => {
         if (date) {
             query += ` AND date = $${paramCount}`;
             params.push(date);
+            paramCount++;
+        }
+
+        if (visibility && ['public', 'private'].includes(visibility)) {
+            query += ` AND visibility = $${paramCount}`;
+            params.push(visibility);
             paramCount++;
         }
 

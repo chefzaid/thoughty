@@ -8,16 +8,24 @@ Remaining features to implement:
 - Delete account feature
 
 *** UI & Features
-- Keeping a history of modifications on a thought and allow to show the previous versions?
+- Ability to go the first thought of year or year/month
 - If there is a reference to another thought, link it (e.g. "entry (yyyy.mm.dd)" or "entry (yyyy.mm.dd)--X", X being the thought number if there were many in that day)
-- For date filter only allow/display dates where there is an actual thought, the others should be greyed
-- Social Media like features (messaging, follow, likes, comments) on public thoughts
+- Add the format of referencing to import/export
 - Make the textbox for writing thoughts adapt to the content on the fly, when there are too many lines
+- For date filter only allow/display dates where there is an actual thought, the others should be greyed/stroked
+- Social Media like features (messaging, follow, likes, comments) on public thoughts
+- Keeping a history of modifications on a thought and allow to show the previous versions?
 
 *** AI
 - Guess the file format for the converter
-- Autocomplete tags given the text written
+- Suggest tags given the text written
+- Auto tag entries with a number of max tags per entry to parameterize
 - Fix writing errors and style
 - Pass a thought to AI for analysis or further discussion
 - Tone and mood of thoughts stats (analyzed by AI)
 - Subjects discussed stats (analyzed by AI)
+
+*** Book Converter
+- Based on tags to create chapters
+- Connect the entries to form a chapter
+- Do the same for the rest of tags

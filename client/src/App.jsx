@@ -28,6 +28,7 @@ function App() {
   const [search, setSearch] = useState('');
   const [filterTags, setFilterTags] = useState([]);
   const [filterDateObj, setFilterDateObj] = useState(null);
+  const [filterVisibility, setFilterVisibility] = useState('all');
 
   // Form error state
   const [formError, setFormError] = useState('');
@@ -56,7 +57,7 @@ function App() {
 
   useEffect(() => { setInputPage(page.toString()); }, [page]);
   useEffect(() => { fetchConfig(); }, []);
-  useEffect(() => { fetchEntries(); }, [page, search, filterTags, filterDateObj, config.entriesPerPage]);
+  useEffect(() => { fetchEntries(); }, [page, search, filterTags, filterDateObj, filterVisibility, config.entriesPerPage]);
   useEffect(() => {
     if (config.defaultVisibility && visibility === null) {
       setVisibility(config.defaultVisibility);
@@ -104,7 +105,8 @@ function App() {
       const filterDate = filterDateObj ?
         `${filterDateObj.getFullYear()}-${String(filterDateObj.getMonth() + 1).padStart(2, '0')}-${String(filterDateObj.getDate()).padStart(2, '0')}` : '';
       const limit = parseInt(config.entriesPerPage) || 10;
-      const params = new URLSearchParams({ page, limit, search, tags: filterTags.join(','), date: filterDate });
+      const visibility = filterVisibility !== 'all' ? filterVisibility : '';
+      const params = new URLSearchParams({ page, limit, search, tags: filterTags.join(','), date: filterDate, visibility });
 
       const response = await fetch(`/api/entries?${params}`);
       const data = await response.json();
@@ -296,6 +298,8 @@ function App() {
               setFilterTags={setFilterTags}
               filterDateObj={filterDateObj}
               setFilterDateObj={setFilterDateObj}
+              filterVisibility={filterVisibility}
+              setFilterVisibility={setFilterVisibility}
               allTags={allTags}
               setPage={setPage}
               theme={config.theme}
