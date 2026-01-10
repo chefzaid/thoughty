@@ -203,6 +203,92 @@ router.get('/first', async (req, res) => {
  *   post:
  *     summary: Create a new journal entry
  */
+
+/**
+ * @swagger
+ * /api/entries/by-date:
+ *   get:
+ *     summary: Find an entry by date and optional index for cross-reference navigation
+ *     parameters:
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Entry date (YYYY-MM-DD)
+ *       - in: query
+ *         name: index
+ *         schema:
+ *           type: integer
+ *         description: Entry index for that day (defaults to 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *         description: Entries per page for page calculation
+ */
+router.get('/by-date', async (req, res) => {
+    try {
+        const userId = getUserId(req);
+        const { date, index = 1, limit = 10, id } = req.query;
+
+        let entry;
+
+        if (id) {
+            const entryResult = await db.query(
+                `SELECT *, TO_CHAR(date, 'YYYY-MM-DD') as date_str FROM entries WHERE user_id = $1 AND id = $2`,
+                [userId, id]
+            );
+            if (entryResult.rows.length === 0) {
+                return res.json({ found: false, error: 'Entry not found' });
+            }
+            entry = entryResult.rows[0];
+        } else {
+            if (!date) {
+                return res.status(400).json({ error: 'Date is required', found: false });
+            }
+            // Existing logic to find entry by date and index
+            const entryResult = await db.query(
+                'SELECT *, TO_CHAR(date, \'YYYY-MM-DD\') as date_str FROM entries WHERE user_id = $1 AND date = $2 AND index = $3',
+                [userId, date, parseInt(index)]
+            );
+            if (entryResult.rows.length === 0) {
+                return res.json({ found: false, error: 'Entry not found' });
+            }
+            entry = entryResult.rows[0];
+        }
+
+        // Use date_str for reliable comparison
+        const comparisonDate = entry.date_str;
+
+        // Count entries after this date (since we sort DESC, these come before on the page)
+        const countNewerQuery = `SELECT COUNT(*) as count FROM entries WHERE user_id = $1 AND date > $2`;
+        const countResult = await db.query(countNewerQuery, [userId, comparisonDate]);
+        const entriesBefore = parseInt(countResult.rows[0].count);
+
+        // Also count entries on the same date with lower indexes
+        const sameDateCountQuery = `SELECT COUNT(*) as count FROM entries WHERE user_id = $1 AND date = $2 AND index < $3`;
+        const sameDateResult = await db.query(sameDateCountQuery, [userId, comparisonDate, parseInt(entry.index)]);
+        const sameDateBefore = parseInt(sameDateResult.rows[0].count);
+
+        const totalBefore = entriesBefore + sameDateBefore;
+
+        // Calculate page number
+        const limitNum = parseInt(limit);
+        const page = Math.floor(totalBefore / limitNum) + 1;
+
+        res.json({
+            found: true,
+            entry,
+            page,
+            entryId: entry.id
+        });
+    } catch (err) {
+        console.error('Error finding entry by date:', err);
+        res.status(500).json({ error: 'Failed to find entry', found: false });
+    }
+});
+
 router.post('/', async (req, res) => {
     const userId = getUserId(req);
     const { text, tags, date, visibility = 'private' } = req.body;

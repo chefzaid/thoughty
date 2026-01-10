@@ -59,6 +59,8 @@ function App() {
   const [navYear, setNavYear] = useState('');
   const [navMonth, setNavMonth] = useState('');
   const [targetEntryId, setTargetEntryId] = useState(null);
+  const [activeTargetId, setActiveTargetId] = useState(null); // ID of the entry currently being viewed from a reference
+  const [sourceEntry, setSourceEntry] = useState(null); // Track {id, date, index} where user came from
 
   useEffect(() => { setInputPage(page.toString()); }, [page]);
   useEffect(() => { fetchConfig(); }, []);
@@ -255,6 +257,65 @@ function App() {
     }
   };
 
+  // Navigate to a specific entry by date and optional index (for cross-references)
+  // sourceEntryInfo is passed directly from the entry where the link was clicked
+  const handleNavigateToEntry = async (date, index = 1, sourceEntryInfo = null) => {
+    try {
+      const limit = parseInt(config.entriesPerPage) || 10;
+      const params = new URLSearchParams({ date, index, limit });
+
+      // Save source entry info so user can return
+      if (sourceEntryInfo) {
+        setSourceEntry({
+          id: sourceEntryInfo.id,
+          date: sourceEntryInfo.date,
+          index: sourceEntryInfo.index
+        });
+      }
+
+      const res = await fetch(`/api/entries/by-date?${params}`);
+      const data = await res.json();
+
+      if (data.found) {
+        setPage(data.page);
+        setTargetEntryId(data.entryId);
+        setActiveTargetId(data.entryId);
+      } else {
+        alert(t('entryNotFound'));
+        setSourceEntry(null);
+      }
+    } catch (error) {
+      console.error('Error navigating to entry:', error);
+      alert(t('entryNotFound'));
+    }
+  };
+
+  // Handle going back to source entry
+  const handleBackToSource = async () => {
+    if (!sourceEntry) return;
+
+    try {
+      const limit = parseInt(config.entriesPerPage) || 10;
+      const params = new URLSearchParams({
+        id: sourceEntry.id,
+        limit
+      });
+
+      const res = await fetch(`/api/entries/by-date?${params}`);
+      const data = await res.json();
+
+      if (data.found) {
+        setPage(data.page);
+        setTargetEntryId(data.entryId);
+      }
+    } catch (error) {
+      console.error('Error returning to source:', error);
+    }
+
+    setSourceEntry(null);
+    setActiveTargetId(null);
+  };
+
   // Scroll to and highlight target entry when entries load
   useEffect(() => {
     if (targetEntryId && !loading && entries.length > 0) {
@@ -388,6 +449,10 @@ function App() {
               allTags={allTags}
               onSaveEdit={handleSaveEdit}
               onCancelEdit={handleCancelEdit}
+              onNavigateToEntry={handleNavigateToEntry}
+              sourceEntry={sourceEntry}
+              activeTargetId={activeTargetId}
+              onBackToSource={handleBackToSource}
               t={t}
             />
 

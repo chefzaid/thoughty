@@ -855,3 +855,43 @@ Looking back at 10 years of journal entries. What a ride!
 Grateful for family, friends, and this messy beautiful life.
 
 --------------------------------------------------------------------------------
+
+---2026-01-05--[newyear,reflection]
+Starting 2026 with gratitude. Looking back at entry (2025-01-01) and my resolutions - I think I did pretty well!
+
+********************************************************************************
+
+---2--[goals,planning]
+This year I want to focus on being even more present. Remember how I felt in entry (2021-06-26) at our wedding - that pure joy.
+
+--------------------------------------------------------------------------------
+
+---2026-01-08--[family,growth]
+Emma is growing so fast! She reminds me of how nervous I was in entry (2022-10-12) when she was born. Now she's teaching Lucas things!
+
+********************************************************************************
+
+---2--[siblings,love]
+The bond between Emma and Lucas is beautiful. This is what entry (2025-11-15--3) meant by "perfect chaos".
+
+********************************************************************************
+
+---3--[memory,nostalgia]
+Found photos from entry (2017-08-15) - my backpacking trip. Want to take the kids to Europe someday.
+
+--------------------------------------------------------------------------------
+
+---2026-01-10--[journal,milestone]
+10+ years of journaling! Started back in entry (2015-03-15) with my first job. What a journey.
+
+********************************************************************************
+
+---2--[dev,feature]
+Added cross-referencing to my journal app today. Now I can link entries like entry (2026-01-08--2) easily!
+
+********************************************************************************
+
+---3--[gratitude,reflection]
+Looking at entry (2024-12-25--4) reminded me how blessed I am. Two amazing kids, an incredible wife, and a life I love.
+
+--------------------------------------------------------------------------------

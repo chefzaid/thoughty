@@ -2,6 +2,7 @@ import React from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import TagPicker from '../TagPicker/TagPicker';
+import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 
 const EntriesList = ({
     loading,
@@ -22,8 +23,11 @@ const EntriesList = ({
     setEditVisibility,
     allTags,
     onSaveEdit,
-
     onCancelEdit,
+    onNavigateToEntry,
+    sourceEntry,
+    activeTargetId,
+    onBackToSource,
     t
 }) => {
     if (loading) return <p className="text-center text-gray-500">{t('loadingEntries', { defaultValue: 'Loading entries...' })}</p>;
@@ -130,6 +134,27 @@ const EntriesList = ({
                                                 ))}
                                             </div>
                                             <div className="flex items-center gap-2">
+                                                {/* Back to source link */}
+                                                {activeTargetId === entry.id && sourceEntry && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onBackToSource();
+                                                        }}
+                                                        className="text-xs text-blue-500 hover:text-blue-600 hover:underline mr-2 flex items-center gap-1"
+                                                        title={t('backToSource')}
+                                                    >
+                                                        <span>&larr;</span>
+                                                        <span>
+                                                            {t('backToSource')}
+                                                            {sourceEntry.date && sourceEntry.index && (
+                                                                <span className="ml-1 opacity-75">
+                                                                    ({sourceEntry.date}{sourceEntry.index > 1 ? `--${sourceEntry.index}` : ''})
+                                                                </span>
+                                                            )}
+                                                        </span>
+                                                    </button>
+                                                )}
                                                 <span className="text-xs text-gray-500 font-mono">#{entry.index}</span>
                                                 <button
                                                     onClick={() => onToggleVisibility(entry)}
@@ -167,7 +192,16 @@ const EntriesList = ({
                                             </div>
                                         </div>
                                         <p className={`whitespace-pre-wrap leading-relaxed text-sm ${config.theme === 'light' ? 'text-gray-700' : 'text-gray-300'}`}>
-                                            {entry.content}
+                                            <EntryContentRenderer
+                                                content={entry.content}
+                                                onNavigateToEntry={onNavigateToEntry}
+                                                theme={config.theme}
+                                                sourceEntry={{
+                                                    id: entry.id,
+                                                    date: entry.date.includes('T') ? entry.date.split('T')[0] : entry.date,
+                                                    index: entry.index
+                                                }}
+                                            />
                                         </p>
                                     </>
                                 )}

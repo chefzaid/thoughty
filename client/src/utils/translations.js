@@ -119,7 +119,11 @@ export const translations = {
 
         // Auth & Profile
         user: 'User',
-        logout: 'Logout'
+        logout: 'Logout',
+
+        // Entry Cross-References
+        backToSource: 'Back to source entry',
+        entryNotFound: 'Entry not found'
     },
     fr: {
         // App
@@ -241,7 +245,11 @@ export const translations = {
 
         // Auth & Profile
         user: 'Utilisateur',
-        logout: 'Déconnexion'
+        logout: 'Déconnexion',
+
+        // Entry Cross-References
+        backToSource: 'Retour à l\'entrée source',
+        entryNotFound: 'Entrée non trouvée'
     }
 };
 

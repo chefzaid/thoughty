@@ -2,14 +2,16 @@
 Remaining features to implement:
 
 *** Profile & Settings
+- Transform the settings popup into a profile page and clean up residues
 - Add authentication, with login (email) and password + the possibility to auth via Google / Facebook
 - Connect to cloud providers like OneDrive or Google Drive to sync the journal file once exported
 - Configure a fixed schedule for syncing the file from/to cloud (only diff, not the whole file, but there may be changes in previous entries)
+- Configure Gemini API key to use AI features
 - Delete account feature
+- Make the profile/settings page richer
 
 *** UI & Features
-- If there is a reference to another thought, link it (e.g. "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd)--X", X being the thought number if there were many in that day)
-- Add the format of referencing to import/export
+- Add an info on the textbox for writing, stating that you can reference other entries by writing "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd--X)" where X is the index of the entry for that day
 - Make the textbox for writing thoughts adapt to the content on the fly, when there are too many lines
 - For date filter only allow/display dates where there is an actual thought, the others should be greyed/stroked
 - Social Media like features (messaging, follow, likes, comments) on public thoughts
@@ -28,3 +30,9 @@ Remaining features to implement:
 - Based on tags to create chapters
 - Connect the entries to form a chapter
 - Do the same for the rest of tags
+
+*** Import / Export
+- Add the format of referencing to import/export
+- Import from a file will use the configured default visibility
+- Export to a file needs to add a visibility field like --[public/private] just after the tags.
+- Ability to choose whether to export the visibility field or not, by default set to false

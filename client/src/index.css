@@ -11,9 +11,11 @@ body {
   0% {
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
   }
+
   50% {
     box-shadow: 0 0 0 8px rgba(59, 130, 246, 0.3);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
   }
@@ -23,4 +25,24 @@ body {
   animation: highlight-pulse 1s ease-out 2;
   outline: 2px solid rgba(59, 130, 246, 0.5);
   outline-offset: 2px;
+}
+
+/* Entry cross-reference links */
+.entry-reference-link {
+  color: #3b82f6;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s, background-color 0.2s;
+  border-radius: 2px;
+  padding: 0 2px;
+}
+
+.entry-reference-link:hover {
+  color: #60a5fa;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.entry-reference-link:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 1px;
 }
