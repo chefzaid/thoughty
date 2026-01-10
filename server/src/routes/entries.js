@@ -110,6 +110,95 @@ router.get('/', async (req, res) => {
 
 /**
  * @swagger
+ * /api/entries/first:
+ *   get:
+ *     summary: Get page number containing first entry for a year/month
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ */
+router.get('/first', async (req, res) => {
+    try {
+        const userId = getUserId(req);
+        const { year, month, limit = 10 } = req.query;
+
+        // Always fetch available years and months for the dropdowns
+        const yearsResult = await db.query(`
+            SELECT DISTINCT EXTRACT(YEAR FROM date) as year 
+            FROM entries WHERE user_id = $1 
+            ORDER BY year DESC
+        `, [userId]);
+        const years = yearsResult.rows.map(r => parseInt(r.year));
+
+        const monthsResult = await db.query(`
+            SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') as month 
+            FROM entries WHERE user_id = $1 
+            ORDER BY month DESC
+        `, [userId]);
+        const months = monthsResult.rows.map(r => r.month);
+
+        if (!year) {
+            return res.json({ page: 1, found: false, years, months });
+        }
+
+        // Build date filter for target period
+        let dateFilter;
+        if (month) {
+            const monthStr = String(month).padStart(2, '0');
+            dateFilter = `${year}-${monthStr}`;
+        } else {
+            dateFilter = `${year}`;
+        }
+
+        // Find the first entry date in the target period
+        const firstEntryQuery = month
+            ? `SELECT MIN(date) as first_date FROM entries WHERE user_id = $1 AND TO_CHAR(date, 'YYYY-MM') = $2`
+            : `SELECT MIN(date) as first_date FROM entries WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2`;
+
+        const firstEntryResult = await db.query(firstEntryQuery, [userId, month ? dateFilter : parseInt(year)]);
+
+        if (!firstEntryResult.rows[0].first_date) {
+            return res.json({ page: 1, found: false, years, months });
+        }
+
+        const firstDate = firstEntryResult.rows[0].first_date;
+
+        // Get the first entry's ID for scrolling/highlighting
+        const firstEntryIdQuery = month
+            ? `SELECT id FROM entries WHERE user_id = $1 AND TO_CHAR(date, 'YYYY-MM') = $2 ORDER BY date ASC, index ASC LIMIT 1`
+            : `SELECT id FROM entries WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2 ORDER BY date ASC, index ASC LIMIT 1`;
+        const firstEntryIdResult = await db.query(firstEntryIdQuery, [userId, month ? dateFilter : parseInt(year)]);
+        const firstEntryId = firstEntryIdResult.rows[0]?.id;
+
+        // Count entries AFTER this date (since we sort DESC, these come before)
+        const countNewerQuery = `SELECT COUNT(*) as count FROM entries WHERE user_id = $1 AND date > $2`;
+        const countResult = await db.query(countNewerQuery, [userId, firstDate]);
+        const entriesBefore = parseInt(countResult.rows[0].count);
+
+        // Calculate page number
+        const limitNum = parseInt(limit);
+        const page = Math.floor(entriesBefore / limitNum) + 1;
+
+        res.json({ page, found: true, entryId: firstEntryId, years, months });
+    } catch (err) {
+        console.error('Error finding first entry:', err);
+        res.status(500).json({ error: 'Failed to find first entry' });
+    }
+});
+
+/**
+ * @swagger
  * /api/entries:
  *   post:
  *     summary: Create a new journal entry

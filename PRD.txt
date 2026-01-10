@@ -8,8 +8,7 @@ Remaining features to implement:
 - Delete account feature
 
 *** UI & Features
-- Ability to go the first thought of year or year/month
-- If there is a reference to another thought, link it (e.g. "entry (yyyy.mm.dd)" or "entry (yyyy.mm.dd)--X", X being the thought number if there were many in that day)
+- If there is a reference to another thought, link it (e.g. "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd)--X", X being the thought number if there were many in that day)
 - Add the format of referencing to import/export
 - Make the textbox for writing thoughts adapt to the content on the fly, when there are too many lines
 - For date filter only allow/display dates where there is an actual thought, the others should be greyed/stroked

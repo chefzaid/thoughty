@@ -54,6 +54,11 @@ function App() {
 
   // Navigation State
   const [currentView, setCurrentView] = useState('journal');
+  const [availableYears, setAvailableYears] = useState([]);
+  const [availableMonths, setAvailableMonths] = useState([]);
+  const [navYear, setNavYear] = useState('');
+  const [navMonth, setNavMonth] = useState('');
+  const [targetEntryId, setTargetEntryId] = useState(null);
 
   useEffect(() => { setInputPage(page.toString()); }, [page]);
   useEffect(() => { fetchConfig(); }, []);
@@ -226,6 +231,60 @@ function App() {
     }
   };
 
+  const handleNavigateToFirst = async (year, month) => {
+    try {
+      const limit = parseInt(config.entriesPerPage) || 10;
+      const params = new URLSearchParams({ year, limit });
+      if (month) params.append('month', month);
+
+      const res = await fetch(`/api/entries/first?${params}`);
+      const data = await res.json();
+
+      if (data.found) {
+        setPage(data.page);
+        if (data.entryId) {
+          setTargetEntryId(data.entryId);
+        }
+      }
+
+      // Update available years/months for future navigation
+      if (data.years) setAvailableYears(data.years);
+      if (data.months) setAvailableMonths(data.months);
+    } catch (error) {
+      console.error('Error navigating to first entry:', error);
+    }
+  };
+
+  // Scroll to and highlight target entry when entries load
+  useEffect(() => {
+    if (targetEntryId && !loading && entries.length > 0) {
+      const entryElement = document.getElementById(`entry-${targetEntryId}`);
+      if (entryElement) {
+        entryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        entryElement.classList.add('highlight-entry');
+        setTimeout(() => {
+          entryElement.classList.remove('highlight-entry');
+        }, 2000);
+        setTargetEntryId(null);
+      }
+    }
+  }, [targetEntryId, loading, entries]);
+
+  // Fetch available years/months on mount
+  useEffect(() => {
+    const fetchYearsMonths = async () => {
+      try {
+        const res = await fetch('/api/entries/first');
+        const data = await res.json();
+        if (data.years) setAvailableYears(data.years);
+        if (data.months) setAvailableMonths(data.months);
+      } catch (error) {
+        console.error('Error fetching years/months:', error);
+      }
+    };
+    fetchYearsMonths();
+  }, []);
+
   // Group entries by date for display
   const groupedEntries = entries.reduce((acc, entry) => {
     let dateStr = entry.date;
@@ -301,6 +360,9 @@ function App() {
               filterVisibility={filterVisibility}
               setFilterVisibility={setFilterVisibility}
               allTags={allTags}
+              availableYears={availableYears}
+              availableMonths={availableMonths}
+              onNavigateToFirst={handleNavigateToFirst}
               setPage={setPage}
               theme={config.theme}
               t={t}
@@ -338,6 +400,49 @@ function App() {
               theme={config.theme}
               t={t}
             />
+
+            {availableYears.length > 0 && (
+              <div className="flex justify-center items-center gap-3 mt-4">
+                <span className={`text-sm ${config.theme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>{t('goToFirst')}:</span>
+                <select
+                  value={navYear}
+                  onChange={(e) => { setNavYear(e.target.value); setNavMonth(''); }}
+                  className={`border rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${config.theme === 'light'
+                    ? 'bg-gray-50 border-gray-300 text-gray-900'
+                    : 'bg-gray-900 border-gray-700 text-gray-100'
+                    }`}
+                >
+                  <option value="">{t('year')}</option>
+                  {availableYears.map(year => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+                {navYear && availableMonths.filter(m => m.startsWith(navYear)).length > 0 && (
+                  <select
+                    value={navMonth}
+                    onChange={(e) => setNavMonth(e.target.value)}
+                    className={`border rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${config.theme === 'light'
+                      ? 'bg-gray-50 border-gray-300 text-gray-900'
+                      : 'bg-gray-900 border-gray-700 text-gray-100'
+                      }`}
+                  >
+                    <option value="">{t('month')}</option>
+                    {availableMonths.filter(m => m.startsWith(navYear)).map(m => {
+                      const monthNum = parseInt(m.split('-')[1]);
+                      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                      return <option key={m} value={m}>{monthNames[monthNum - 1]}</option>;
+                    })}
+                  </select>
+                )}
+                <button
+                  onClick={() => navYear && handleNavigateToFirst(parseInt(navYear), navMonth ? parseInt(navMonth.split('-')[1]) : null)}
+                  disabled={!navYear}
+                  className="px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/50 rounded transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t('go')}
+                </button>
+              </div>
+            )}
 
             <div className="flex justify-center mt-6 mb-8">
               <button

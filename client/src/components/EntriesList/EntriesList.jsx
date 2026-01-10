@@ -45,6 +45,7 @@ const EntriesList = ({
                         {groupedEntries[date].map((entry, index) => (
                             <div
                                 key={entry.id || index}
+                                id={`entry-${entry.id}`}
                                 className={`rounded-lg p-5 shadow-sm border transition-all ${config.theme === 'light' ? 'bg-white border-gray-200 hover:border-gray-300' : 'bg-gray-800 border-gray-700 hover:border-gray-600'}`}
                             >
                                 {isEditing(entry) ? (
