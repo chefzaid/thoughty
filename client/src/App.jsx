@@ -10,6 +10,8 @@ import Footer from './components/Footer/Footer';
 import EntryForm from './components/EntryForm/EntryForm';
 import FilterControls from './components/FilterControls/FilterControls';
 import Pagination from './components/Pagination/Pagination';
+import DiaryTabs from './components/DiaryTabs/DiaryTabs';
+import DiaryManager from './components/DiaryManager/DiaryManager';
 import { getTranslation } from './utils/translations';
 
 function App() {
@@ -63,9 +65,13 @@ function App() {
   const [activeTargetId, setActiveTargetId] = useState(null); // ID of the entry currently being viewed from a reference
   const [sourceEntry, setSourceEntry] = useState(null); // Track {id, date, index} where user came from
 
+  // Diary State
+  const [diaries, setDiaries] = useState([]);
+  const [currentDiaryId, setCurrentDiaryId] = useState(null);
+
   useEffect(() => { setInputPage(page.toString()); }, [page]);
-  useEffect(() => { fetchConfig(); fetchEntryDates(); }, []);
-  useEffect(() => { fetchEntries(); }, [page, search, filterTags, filterDateObj, filterVisibility, config.entriesPerPage]);
+  useEffect(() => { fetchConfig(); fetchEntryDates(); fetchDiaries(); }, []);
+  useEffect(() => { fetchEntries(); }, [page, search, filterTags, filterDateObj, filterVisibility, config.entriesPerPage, currentDiaryId]);
   useEffect(() => {
     if (config.defaultVisibility && visibility === null) {
       setVisibility(config.defaultVisibility);
@@ -115,6 +121,71 @@ function App() {
     }
   };
 
+  // Diary API functions
+  const fetchDiaries = async () => {
+    try {
+      const response = await fetch('/api/diaries');
+      const data = await response.json();
+      setDiaries(data);
+      // Set default diary as current if not set
+      if (!currentDiaryId && data.length > 0) {
+        const defaultDiary = data.find(d => d.is_default);
+        if (defaultDiary) setCurrentDiaryId(defaultDiary.id);
+      }
+    } catch (error) {
+      console.error('Error fetching diaries:', error);
+    }
+  };
+
+  const handleCreateDiary = async (diaryData) => {
+    const response = await fetch('/api/diaries', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(diaryData)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error);
+    }
+    await fetchDiaries();
+  };
+
+  const handleUpdateDiary = async (id, diaryData) => {
+    const response = await fetch(`/api/diaries/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(diaryData)
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error);
+    }
+    await fetchDiaries();
+  };
+
+  const handleDeleteDiary = async (id) => {
+    const response = await fetch(`/api/diaries/${id}`, { method: 'DELETE' });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error);
+    }
+    if (currentDiaryId === id) {
+      const defaultDiary = diaries.find(d => d.is_default);
+      setCurrentDiaryId(defaultDiary?.id || null);
+    }
+    await fetchDiaries();
+    fetchEntries();
+  };
+
+  const handleSetDefaultDiary = async (id) => {
+    const response = await fetch(`/api/diaries/${id}/default`, { method: 'PATCH' });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error);
+    }
+    await fetchDiaries();
+  };
+
   const t = (key, params = {}) => getTranslation(config.language || 'en', key, params);
 
   const fetchEntries = async () => {
@@ -125,6 +196,9 @@ function App() {
       const limit = parseInt(config.entriesPerPage) || 10;
       const visibility = filterVisibility !== 'all' ? filterVisibility : '';
       const params = new URLSearchParams({ page, limit, search, tags: filterTags.join(','), date: filterDate, visibility });
+      if (currentDiaryId) {
+        params.append('diaryId', currentDiaryId);
+      }
 
       const response = await fetch(`/api/entries?${params}`);
       const data = await response.json();
@@ -154,7 +228,7 @@ function App() {
       const res = await fetch('/api/entries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: newEntryText, tags, date: dateStr, visibility }),
+        body: JSON.stringify({ text: newEntryText, tags, date: dateStr, visibility, diaryId: currentDiaryId }),
       });
       if (!res.ok) throw new Error('Failed to save');
       setNewEntryText('');
@@ -401,12 +475,56 @@ function App() {
           t={t}
         />
 
-        {currentView === 'stats' ? (
-          <Stats theme={config.theme} t={t} />
+        {currentView === 'diaries' ? (
+          <DiaryManager
+            diaries={diaries}
+            onCreateDiary={handleCreateDiary}
+            onUpdateDiary={handleUpdateDiary}
+            onDeleteDiary={handleDeleteDiary}
+            onSetDefault={handleSetDefaultDiary}
+            onBack={() => setCurrentView('journal')}
+            theme={config.theme}
+            t={t}
+          />
+        ) : currentView === 'stats' ? (
+          <>
+            <DiaryTabs
+              diaries={diaries}
+              currentDiaryId={currentDiaryId}
+              onDiaryChange={(id) => { setCurrentDiaryId(id); }}
+              onManageDiaries={() => setCurrentView('diaries')}
+              theme={config.theme}
+              t={t}
+            />
+            <Stats theme={config.theme} t={t} diaryId={currentDiaryId} />
+          </>
         ) : currentView === 'importExport' ? (
-          <ImportExport theme={config.theme} t={t} />
+          <>
+            <DiaryTabs
+              diaries={diaries}
+              currentDiaryId={currentDiaryId}
+              onDiaryChange={(id) => { setCurrentDiaryId(id); }}
+              onManageDiaries={() => setCurrentView('diaries')}
+              theme={config.theme}
+              t={t}
+            />
+            <ImportExport
+              theme={config.theme}
+              t={t}
+              diaryId={currentDiaryId}
+              diaryName={diaries.find(d => d.id === currentDiaryId)?.name || t('allDiaries')}
+            />
+          </>
         ) : (
           <>
+            <DiaryTabs
+              diaries={diaries}
+              currentDiaryId={currentDiaryId}
+              onDiaryChange={(id) => { setCurrentDiaryId(id); setPage(1); }}
+              onManageDiaries={() => setCurrentView('diaries')}
+              theme={config.theme}
+              t={t}
+            />
             <EntryForm
               newEntryText={newEntryText}
               setNewEntryText={setNewEntryText}

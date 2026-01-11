@@ -46,9 +46,9 @@ const { getUserId } = require('../utils/auth');
 router.get('/', async (req, res) => {
     try {
         const userId = getUserId(req);
-        const { search, tags, date, visibility, page = 1, limit = 10 } = req.query;
+        const { search, tags, date, visibility, diaryId, page = 1, limit = 10 } = req.query;
 
-        let query = 'SELECT * FROM entries WHERE user_id = $1';
+        let query = 'SELECT e.*, d.name as diary_name, d.icon as diary_icon FROM entries e LEFT JOIN diaries d ON e.diary_id = d.id WHERE e.user_id = $1';
         const params = [userId];
         let paramCount = 2;
 
@@ -74,8 +74,14 @@ router.get('/', async (req, res) => {
         }
 
         if (visibility && ['public', 'private'].includes(visibility)) {
-            query += ` AND visibility = $${paramCount}`;
+            query += ` AND e.visibility = $${paramCount}`;
             params.push(visibility);
+            paramCount++;
+        }
+
+        if (diaryId) {
+            query += ` AND e.diary_id = $${paramCount}`;
+            params.push(parseInt(diaryId));
             paramCount++;
         }
 
@@ -84,7 +90,7 @@ router.get('/', async (req, res) => {
         const total = parseInt(countResult.rows[0].count);
 
         // Add sorting and pagination
-        query += ` ORDER BY date DESC, index ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+        query += ` ORDER BY e.date DESC, e.index ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
         const limitNum = parseInt(limit);
         const offset = (parseInt(page) - 1) * limitNum;
         params.push(limitNum, offset);
@@ -314,7 +320,7 @@ router.get('/by-date', async (req, res) => {
 
 router.post('/', async (req, res) => {
     const userId = getUserId(req);
-    const { text, tags, date, visibility = 'private' } = req.body;
+    const { text, tags, date, visibility = 'private', diaryId } = req.body;
 
     if (!text) {
         return res.status(400).json({ error: 'Text is required' });
@@ -333,16 +339,28 @@ router.post('/', async (req, res) => {
             dateStr = now.toISOString().split('T')[0];
         }
 
+        // Get diary_id - use provided or get user's default diary
+        let targetDiaryId = diaryId;
+        if (!targetDiaryId) {
+            const defaultDiary = await db.query(
+                'SELECT id FROM diaries WHERE user_id = $1 AND is_default = true',
+                [userId]
+            );
+            if (defaultDiary.rows.length > 0) {
+                targetDiaryId = defaultDiary.rows[0].id;
+            }
+        }
+
         // Calculate next index for the day (user-specific)
         const countResult = await db.query('SELECT COUNT(*) FROM entries WHERE user_id = $1 AND date = $2', [userId, dateStr]);
         const nextIndex = parseInt(countResult.rows[0].count) + 1;
 
         const query = `
-            INSERT INTO entries (user_id, date, index, tags, content, visibility)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO entries (user_id, date, index, tags, content, visibility, diary_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *
         `;
-        const values = [userId, dateStr, nextIndex, tags || [], text, visibility];
+        const values = [userId, dateStr, nextIndex, tags || [], text, visibility, targetDiaryId];
 
         await db.query(query, values);
         res.json({ success: true });
@@ -454,13 +472,28 @@ router.patch('/:id/visibility', async (req, res) => {
  * @swagger
  * /api/entries/all:
  *   delete:
- *     summary: Delete all journal entries for the user
+ *     summary: Delete all journal entries for the user (optionally filtered by diary)
+ *     parameters:
+ *       - in: query
+ *         name: diaryId
+ *         schema:
+ *           type: integer
+ *         description: Optional diary ID to delete entries only from that diary
  */
 router.delete('/all', async (req, res) => {
     const userId = getUserId(req);
+    const diaryId = req.query.diaryId ? parseInt(req.query.diaryId) : null;
 
     try {
-        const result = await db.query('DELETE FROM entries WHERE user_id = $1', [userId]);
+        let query = 'DELETE FROM entries WHERE user_id = $1';
+        let params = [userId];
+
+        if (diaryId) {
+            query += ' AND diary_id = $2';
+            params.push(diaryId);
+        }
+
+        const result = await db.query(query, params);
         res.json({ success: true, deletedCount: result.rowCount });
     } catch (err) {
         console.error(err);

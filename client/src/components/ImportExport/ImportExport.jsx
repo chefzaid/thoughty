@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './ImportExport.css';
 
-function ImportExport({ theme, t }) {
+function ImportExport({ theme, t, diaryId, diaryName }) {
     const [formatConfig, setFormatConfig] = useState({
         entrySeparator: '--------------------------------------------------------------------------------',
         sameDaySeparator: '********************************************************************************',
@@ -60,7 +60,9 @@ function ImportExport({ theme, t }) {
 
     const handleExport = async () => {
         try {
-            const response = await fetch('/api/io/export');
+            const params = new URLSearchParams();
+            if (diaryId) params.append('diaryId', diaryId);
+            const response = await fetch(`/api/io/export?${params}`);
             if (response.ok) {
                 const blob = await response.blob();
                 const filename = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '')
@@ -83,6 +85,7 @@ function ImportExport({ theme, t }) {
         }
     };
 
+
     const handleFileSelect = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -97,7 +100,7 @@ function ImportExport({ theme, t }) {
                 const response = await fetch('/api/io/preview', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content })
+                    body: JSON.stringify({ content, diaryId })
                 });
                 if (response.ok) {
                     const data = await response.json();
@@ -118,7 +121,7 @@ function ImportExport({ theme, t }) {
             const response = await fetch('/api/io/import', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: fileContent, skipDuplicates })
+                body: JSON.stringify({ content: fileContent, skipDuplicates, diaryId })
             });
             if (response.ok) {
                 const data = await response.json();
@@ -151,7 +154,9 @@ function ImportExport({ theme, t }) {
 
         setDeleting(true);
         try {
-            const response = await fetch('/api/entries/all', {
+            const params = new URLSearchParams();
+            if (diaryId) params.append('diaryId', diaryId);
+            const response = await fetch(`/api/entries/all?${params}`, {
                 method: 'DELETE'
             });
             if (response.ok) {
@@ -184,7 +189,7 @@ function ImportExport({ theme, t }) {
             {/* Export Section */}
             <section className="io-section">
                 <h3>{t('export')}</h3>
-                <p className="section-description">{t('exportDescription')}</p>
+                <p className="section-description">{t('exportDescription', { diaryName })}</p>
                 <button className="io-btn primary" onClick={handleExport}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -196,7 +201,7 @@ function ImportExport({ theme, t }) {
             {/* Import Section */}
             <section className="io-section">
                 <h3>{t('import')}</h3>
-                <p className="section-description">{t('importDescription')}</p>
+                <p className="section-description">{t('importDescription', { diaryName })}</p>
 
                 <div className="file-upload">
                     <input
@@ -345,7 +350,7 @@ function ImportExport({ theme, t }) {
             {/* Danger Zone */}
             <section className="io-section danger-zone">
                 <h3>{t('dangerZone')}</h3>
-                <p className="section-description">{t('deleteAllDescription')}</p>
+                <p className="section-description">{t('deleteAllDescription', { diaryName })}</p>
                 <div className="danger-actions">
                     {confirmDeleteAll && (
                         <button

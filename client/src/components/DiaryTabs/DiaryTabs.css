@@ -1,0 +1,118 @@
+.diary-tabs {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.diary-tabs.light {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+.diary-tabs.dark {
+    background: rgba(30, 30, 40, 0.5);
+}
+
+.diary-tabs-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.25rem 0;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+.diary-tabs-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+
+.diary-tabs-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.diary-tabs-scroll::-webkit-scrollbar-thumb {
+    background: rgba(128, 128, 128, 0.3);
+    border-radius: 4px;
+}
+
+.diary-tab {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 2rem;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+}
+
+.diary-tabs.light .diary-tab {
+    color: #4b5563;
+}
+
+.diary-tabs.dark .diary-tab {
+    color: #9ca3af;
+}
+
+.diary-tab:hover {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.diary-tab.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+    border-color: rgba(59, 130, 246, 0.4);
+}
+
+.diary-tabs.light .diary-tab.active {
+    color: #1d4ed8;
+}
+
+.diary-tabs.dark .diary-tab.active {
+    color: #60a5fa;
+}
+
+.diary-icon {
+    font-size: 1.125rem;
+    line-height: 1;
+}
+
+.diary-name {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.default-badge {
+    font-size: 0.75rem;
+    color: #f59e0b;
+    margin-left: -0.25rem;
+}
+
+.diary-tab.manage-btn {
+    padding: 0.5rem;
+    border-style: dashed;
+}
+
+.diary-tabs.light .diary-tab.manage-btn {
+    border-color: rgba(75, 85, 99, 0.3);
+}
+
+.diary-tabs.dark .diary-tab.manage-btn {
+    border-color: rgba(156, 163, 175, 0.3);
+}
+
+.diary-tab.manage-btn:hover {
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.manage-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}

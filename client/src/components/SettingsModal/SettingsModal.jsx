@@ -37,20 +37,12 @@ function SettingsModal({ isOpen, onClose, config, onUpdateConfig, t }) {
         });
     };
 
-    const handleVisibilityToggle = () => {
-        setLocalConfig({
-            ...localConfig,
-            defaultVisibility: localConfig.defaultVisibility === 'private' ? 'public' : 'private'
-        });
-    };
-
     const handleSave = () => {
         onUpdateConfig(localConfig);
         onClose();
     };
 
     const isDark = localConfig.theme !== 'light';
-    const isPublic = localConfig.defaultVisibility === 'public';
 
     const handleBackdropClick = (e) => {
         if (e.target === e.currentTarget) {
@@ -138,24 +130,6 @@ function SettingsModal({ isOpen, onClose, config, onUpdateConfig, t }) {
                                 <span className={`switch-thumb ${isDark ? 'on' : 'off'}`} />
                             </button>
                             <span className={`theme-label ${isDark ? 'active' : ''}`}>Dark</span>
-                        </div>
-                    </div>
-
-
-
-                    <div className="setting-row">
-                        <span className="setting-label">{t('defaultVisibility')}</span>
-                        <div className="theme-switch-container">
-                            <span className={`theme-label ${!isPublic ? 'active' : ''}`}>{t('private')}</span>
-                            <button
-                                type="button"
-                                className={`theme-switch ${isPublic ? 'public' : 'private'}`}
-                                onClick={handleVisibilityToggle}
-                                aria-label="Toggle default visibility"
-                            >
-                                <span className={`switch-thumb ${isPublic ? 'on' : 'off'}`} />
-                            </button>
-                            <span className={`theme-label ${isPublic ? 'active' : ''}`}>{t('public')}</span>
                         </div>
                     </div>
                 </div>

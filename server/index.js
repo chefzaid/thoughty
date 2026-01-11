@@ -9,6 +9,7 @@ const entriesRouter = require('./src/routes/entries');
 const statsRouter = require('./src/routes/stats');
 const configRouter = require('./src/routes/config');
 const ioRouter = require('./src/routes/io');
+const diariesRouter = require('./src/routes/diaries');
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/entries', entriesRouter);
 app.use('/api/stats', statsRouter);
 app.use('/api/config', configRouter);
 app.use('/api/io', ioRouter);
+app.use('/api/diaries', diariesRouter);
 
 // Start server only when run directly
 const PORT = 3001;

@@ -69,8 +69,8 @@ export const translations = {
         uniqueTags: 'Unique Tags',
         yearsActive: 'Years Active',
         avgPerYear: 'Avg. per Year',
-        thoughtsPerYear: 'Thoughts per Year',
-        thoughtsPerMonth: 'Thoughts per Month',
+        thoughtsPerYear: 'Entries per Year',
+        thoughtsPerMonth: 'Entries per Month',
         topTagsByYear: 'Top Tags by Year',
         year: 'Year',
 
@@ -78,8 +78,8 @@ export const translations = {
         importExport: 'Import/Export',
         import: 'Import',
         export: 'Export',
-        exportDescription: 'Download all your journal entries as a text file.',
-        importDescription: 'Upload a text file to import entries into your journal.',
+        exportDescription: 'Download all journal entries from {diaryName} as a text file.',
+        importDescription: 'Upload a text file to import entries into {diaryName}.',
         downloadExport: 'Download Export',
         chooseFile: 'Choose File',
         previewSummary: 'Preview Summary',
@@ -110,7 +110,7 @@ export const translations = {
 
         // Danger Zone
         dangerZone: 'Danger Zone',
-        deleteAllDescription: 'Permanently delete all journal entries and start fresh. This action cannot be undone.',
+        deleteAllDescription: 'Permanently delete all entries from {diaryName}. This action cannot be undone.',
         deleteAllEntries: 'Delete All Entries',
         confirmDeleteAll: 'Yes, Delete Everything',
         deleteAllSuccess: 'All entries have been deleted',
@@ -124,7 +124,23 @@ export const translations = {
         // Entry Cross-References
         backToSource: 'Back to source entry',
         entryNotFound: 'Entry not found',
-        entryReferenceHint: 'Tip: Reference other entries by writing "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd--X)" where X is the index of the entry for that day'
+        entryReferenceHint: 'Tip: Reference other entries by writing "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd--X)" where X is the index of the entry for that day',
+
+        // Diaries
+        diaries: 'Diaries',
+        manageDiaries: 'Manage Diaries',
+        newDiary: 'New Diary',
+        diaryName: 'Diary Name',
+        diaryIcon: 'Icon',
+        setAsDefault: 'Set as Default',
+        defaultDiary: 'Default Diary',
+        deleteDiary: 'Delete Diary',
+        deleteDiaryWarning: 'Entries will be moved to your default diary.',
+        createDiary: 'Create Diary',
+        editDiary: 'Edit Diary',
+        allDiaries: 'All Diaries',
+        noDiaries: 'No diaries found. Create one to get started!',
+        visibilityOverrideHint: 'Can be overridden per entry'
     },
     fr: {
         // App
@@ -196,8 +212,8 @@ export const translations = {
         uniqueTags: 'Tags uniques',
         yearsActive: 'Années actives',
         avgPerYear: 'Moy. par an',
-        thoughtsPerYear: 'Pensées par an',
-        thoughtsPerMonth: 'Pensées par mois',
+        thoughtsPerYear: 'Entrées par an',
+        thoughtsPerMonth: 'Entrées par mois',
         topTagsByYear: 'Top tags par année',
         year: 'Année',
 
@@ -205,8 +221,8 @@ export const translations = {
         importExport: 'Import/Export',
         import: 'Importer',
         export: 'Exporter',
-        exportDescription: 'Téléchargez toutes vos entrées de journal sous forme de fichier texte.',
-        importDescription: 'Téléversez un fichier texte pour importer des entrées dans votre journal.',
+        exportDescription: 'Téléchargez toutes les entrées de {diaryName} sous forme de fichier texte.',
+        importDescription: 'Téléversez un fichier texte pour importer des entrées dans {diaryName}.',
         downloadExport: 'Télécharger l\'export',
         chooseFile: 'Choisir un fichier',
         previewSummary: 'Aperçu',
@@ -237,7 +253,7 @@ export const translations = {
 
         // Danger Zone
         dangerZone: 'Zone de danger',
-        deleteAllDescription: 'Supprimer définitivement toutes les entrées du journal et repartir à zéro. Cette action est irréversible.',
+        deleteAllDescription: 'Supprimer définitivement toutes les entrées de {diaryName}. Cette action est irréversible.',
         deleteAllEntries: 'Supprimer toutes les entrées',
         confirmDeleteAll: 'Oui, tout supprimer',
         deleteAllSuccess: 'Toutes les entrées ont été supprimées',
@@ -251,7 +267,23 @@ export const translations = {
         // Entry Cross-References
         backToSource: 'Retour à l\'entrée source',
         entryNotFound: 'Entrée non trouvée',
-        entryReferenceHint: 'Astuce : Référencez d\'autres entrées en écrivant "entry (yyyy-mm-dd)" ou "entry (yyyy-mm-dd--X)" où X est l\'index de l\'entrée pour ce jour'
+        entryReferenceHint: 'Astuce : Référencez d\'autres entrées en écrivant "entry (yyyy-mm-dd)" ou "entry (yyyy-mm-dd--X)" où X est l\'index de l\'entrée pour ce jour',
+
+        // Diaries
+        diaries: 'Journaux',
+        manageDiaries: 'Gérer les journaux',
+        newDiary: 'Nouveau journal',
+        diaryName: 'Nom du journal',
+        diaryIcon: 'Icône',
+        setAsDefault: 'Définir par défaut',
+        defaultDiary: 'Journal par défaut',
+        deleteDiary: 'Supprimer le journal',
+        deleteDiaryWarning: 'Les entrées seront déplacées vers votre journal par défaut.',
+        createDiary: 'Créer un journal',
+        editDiary: 'Modifier le journal',
+        allDiaries: 'Tous les journaux',
+        noDiaries: 'Aucun journal trouvé. Créez-en un pour commencer !',
+        visibilityOverrideHint: 'Peut être modifié par entrée'
     }
 };
 

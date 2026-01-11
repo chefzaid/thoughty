@@ -14,8 +14,6 @@ Remaining features to implement:
 - Social Media like features (messaging, follow, likes, comments) on public thoughts
 - Keeping a history of modifications on a thought and allow to show the previous versions?
 
-- Configure the default visibility for each diary + remove the default global one from the settings
-
 *** AI
 - Guess the file format for the converter
 - Suggest tags given the text written
@@ -31,7 +29,8 @@ Remaining features to implement:
 - Do the same for the rest of tags
 
 *** Import / Export
-- Import from a file will use the configured default visibility
-- Export to a file needs to add a visibility field like --[public/private] just after the tags.
+- Import from a file will use the configured default visibility of the diary
+- The filename of the export is the name of the diary + the date of the export
 - Ability to choose whether to export the visibility field or not, by default set to false
-- Ability to choose into which diary you import the file
+- Export to a file needs to add a visibility field like --[public/private] just after the tags.
+- Manage the behavior of the import/export when using All Diaries

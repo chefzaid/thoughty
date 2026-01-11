@@ -37,6 +37,18 @@ CREATE TABLE IF NOT EXISTS settings (
     UNIQUE(user_id, key)
 );
 
+-- Create diaries table
+CREATE TABLE IF NOT EXISTS diaries (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(100) NOT NULL,
+    icon VARCHAR(50) DEFAULT '📓',
+    is_default BOOLEAN DEFAULT false,
+    visibility VARCHAR(20) DEFAULT 'private',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, name)
+);
+
 -- Add visibility column to existing entries table if it doesn't exist
 DO $$
 BEGIN
@@ -72,11 +84,41 @@ BEGIN
     END IF;
 END $$;
 
+-- Create default diary for each user if they don't have one
+DO $$
+DECLARE
+    u RECORD;
+BEGIN
+    FOR u IN SELECT id FROM users LOOP
+        IF NOT EXISTS (SELECT 1 FROM diaries WHERE user_id = u.id AND is_default = true) THEN
+            INSERT INTO diaries (user_id, name, icon, is_default, visibility)
+            VALUES (u.id, 'Thoughts', '💭', true, 'private')
+            ON CONFLICT (user_id, name) DO UPDATE SET is_default = true;
+        END IF;
+    END LOOP;
+END $$;
+
+-- Add diary_id column to existing entries table if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'entries' AND column_name = 'diary_id') THEN
+        ALTER TABLE entries ADD COLUMN diary_id INTEGER REFERENCES diaries(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+-- Assign orphan entries to default diary
+UPDATE entries e
+SET diary_id = (SELECT id FROM diaries WHERE user_id = e.user_id AND is_default = true LIMIT 1)
+WHERE e.diary_id IS NULL;
+
 CREATE INDEX IF NOT EXISTS idx_entries_date ON entries(date);
 CREATE INDEX IF NOT EXISTS idx_entries_tags ON entries USING GIN(tags);
 CREATE INDEX IF NOT EXISTS idx_entries_visibility ON entries(visibility);
 CREATE INDEX IF NOT EXISTS idx_entries_user_id ON entries(user_id);
+CREATE INDEX IF NOT EXISTS idx_entries_diary_id ON entries(diary_id);
 CREATE INDEX IF NOT EXISTS idx_settings_user_id ON settings(user_id);
+CREATE INDEX IF NOT EXISTS idx_diaries_user_id ON diaries(user_id);
 `;
 
 async function migrate() {

@@ -69,11 +69,18 @@ router.post('/format', async (req, res) => {
  * @swagger
  * /api/io/export:
  *   get:
- *     summary: Export all entries as a text file
+ *     summary: Export entries as a text file (optionally filtered by diary)
+ *     parameters:
+ *       - in: query
+ *         name: diaryId
+ *         schema:
+ *           type: integer
+ *         description: Optional diary ID to filter export
  */
 router.get('/export', async (req, res) => {
     try {
         const userId = getUserId(req);
+        const diaryId = req.query.diaryId ? parseInt(req.query.diaryId) : null;
 
         // Get format settings
         const settingsResult = await db.query(
@@ -87,16 +94,23 @@ router.get('/export', async (req, res) => {
             formatConfig[key] = row.value;
         }
 
-        // Get all entries for user
-        const entriesResult = await db.query(
-            'SELECT * FROM entries WHERE user_id = $1 ORDER BY date ASC, index ASC',
-            [userId]
-        );
+        // Get entries (optionally filtered by diary)
+        let entriesQuery = 'SELECT * FROM entries WHERE user_id = $1';
+        let params = [userId];
+
+        if (diaryId) {
+            entriesQuery += ' AND diary_id = $2';
+            params.push(diaryId);
+        }
+        entriesQuery += ' ORDER BY date ASC, index ASC';
+
+        const entriesResult = await db.query(entriesQuery, params);
 
         const textContent = generateTextFile(entriesResult.rows, formatConfig);
 
         // Set headers for file download
-        const filename = `thoughty_export_${new Date().toISOString().split('T')[0]}.txt`;
+        const diaryLabel = diaryId ? `diary${diaryId}_` : '';
+        const filename = `thoughty_${diaryLabel}export_${new Date().toISOString().split('T')[0]}.txt`;
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.send(textContent);
@@ -115,7 +129,7 @@ router.get('/export', async (req, res) => {
 router.post('/preview', async (req, res) => {
     try {
         const userId = getUserId(req);
-        const { content } = req.body;
+        const { content, diaryId } = req.body;
 
         if (!content) {
             return res.status(400).json({ error: 'File content is required' });
@@ -136,11 +150,16 @@ router.post('/preview', async (req, res) => {
         // Parse the file content
         const parsedEntries = parseTextFile(content, formatConfig);
 
-        // Get existing entries to check for duplicates
-        const existingResult = await db.query(
-            'SELECT * FROM entries WHERE user_id = $1',
-            [userId]
-        );
+        // Get existing entries to check for duplicates (filtered by diary if specified)
+        let existingQuery = 'SELECT * FROM entries WHERE user_id = $1';
+        let params = [userId];
+
+        if (diaryId) {
+            existingQuery += ' AND diary_id = $2';
+            params.push(diaryId);
+        }
+
+        const existingResult = await db.query(existingQuery, params);
 
         const duplicates = findDuplicates(parsedEntries, existingResult.rows);
 
@@ -163,12 +182,12 @@ router.post('/preview', async (req, res) => {
  * @swagger
  * /api/io/import:
  *   post:
- *     summary: Import entries from parsed content
+ *     summary: Import entries from parsed content (optionally to a specific diary)
  */
 router.post('/import', async (req, res) => {
     try {
         const userId = getUserId(req);
-        const { content, skipDuplicates = true } = req.body;
+        const { content, skipDuplicates = true, diaryId } = req.body;
 
         if (!content) {
             return res.status(400).json({ error: 'File content is required' });
@@ -192,14 +211,31 @@ router.post('/import', async (req, res) => {
         // Get existing entries if we need to skip duplicates
         let duplicatesToSkip = new Set();
         if (skipDuplicates) {
-            const existingResult = await db.query(
-                'SELECT * FROM entries WHERE user_id = $1',
-                [userId]
-            );
+            let existingQuery = 'SELECT * FROM entries WHERE user_id = $1';
+            let params = [userId];
+
+            if (diaryId) {
+                existingQuery += ' AND diary_id = $2';
+                params.push(diaryId);
+            }
+
+            const existingResult = await db.query(existingQuery, params);
             const duplicates = findDuplicates(parsedEntries, existingResult.rows);
             duplicatesToSkip = new Set(duplicates.map(d =>
                 `${d.imported.date}|${d.imported.content.trim()}`
             ));
+        }
+
+        // Determine target diary ID (use provided or get default)
+        let targetDiaryId = diaryId;
+        if (!targetDiaryId) {
+            const defaultDiaryResult = await db.query(
+                'SELECT id FROM diaries WHERE user_id = $1 AND is_default = true',
+                [userId]
+            );
+            if (defaultDiaryResult.rows.length > 0) {
+                targetDiaryId = defaultDiaryResult.rows[0].id;
+            }
         }
 
         let importedCount = 0;
@@ -213,18 +249,18 @@ router.post('/import', async (req, res) => {
                 continue;
             }
 
-            // Get next index for this date
+            // Get next index for this date (within the target diary)
             const countResult = await db.query(
-                'SELECT COUNT(*) FROM entries WHERE user_id = $1 AND date = $2',
-                [userId, entry.date]
+                'SELECT COUNT(*) FROM entries WHERE user_id = $1 AND date = $2 AND diary_id = $3',
+                [userId, entry.date, targetDiaryId]
             );
             const nextIndex = parseInt(countResult.rows[0].count) + 1;
 
             // Insert the entry
             await db.query(
-                `INSERT INTO entries (user_id, date, index, tags, content, visibility)
-                 VALUES ($1, $2, $3, $4, $5, $6)`,
-                [userId, entry.date, nextIndex, entry.tags || [], entry.content, 'private']
+                `INSERT INTO entries (user_id, date, index, tags, content, visibility, diary_id)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [userId, entry.date, nextIndex, entry.tags || [], entry.content, 'private', targetDiaryId]
             );
 
             importedCount++;

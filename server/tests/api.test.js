@@ -141,6 +141,7 @@ describe('API Endpoints', () => {
     describe('POST /api/entries', () => {
         it('should create a new entry', async () => {
             db.query
+                .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // default diary query
                 .mockResolvedValueOnce({ rows: [{ count: '0' }] }) // count for index
                 .mockResolvedValueOnce({ rows: [{ id: 1 }] }); // insert
 
@@ -154,6 +155,7 @@ describe('API Endpoints', () => {
 
         it('should create entry with user_id from header', async () => {
             db.query
+                .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // default diary query
                 .mockResolvedValueOnce({ rows: [{ count: '0' }] })
                 .mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
@@ -172,6 +174,7 @@ describe('API Endpoints', () => {
 
         it('should create entry with auto-generated date if not provided', async () => {
             db.query
+                .mockResolvedValueOnce({ rows: [{ id: 1 }] }) // default diary query
                 .mockResolvedValueOnce({ rows: [{ count: '0' }] })
                 .mockResolvedValueOnce({ rows: [{ id: 1 }] });
 

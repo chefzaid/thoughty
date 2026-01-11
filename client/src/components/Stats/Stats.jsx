@@ -23,7 +23,7 @@ ChartJS.register(
     ArcElement
 );
 
-function Stats({ theme, t }) {
+function Stats({ theme, t, diaryId }) {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -35,12 +35,14 @@ function Stats({ theme, t }) {
 
     useEffect(() => {
         fetchStats();
-    }, []);
+    }, [diaryId]);
 
     const fetchStats = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/stats');
+            const params = new URLSearchParams();
+            if (diaryId) params.append('diaryId', diaryId);
+            const response = await fetch(`/api/stats?${params}`);
             if (!response.ok) throw new Error('Failed to fetch stats');
             const data = await response.json();
             setStats(data);
