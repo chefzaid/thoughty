@@ -40,12 +40,33 @@ export const translations = {
 
         // Settings
         profileName: 'Name',
+        displayName: 'Display Name',
+        displayNameDescription: 'How you want to be known in the app',
+        email: 'Email',
+        emailDescription: 'Your email address for account notifications',
+        enterYourEmail: 'Enter your email',
+        bio: 'Bio',
+        bioDescription: 'A short description about yourself',
+        writeSomethingAboutYourself: 'Write something about yourself...',
+        location: 'Location',
+        locationDescription: 'Where you are based',
+        enterYourLocation: 'Enter your location',
         theme: 'Theme',
+        themeDescription: 'Choose your preferred color scheme',
         entriesPerPage: 'Entries per page',
+        entriesPerPageDescription: 'Number of entries to display per page',
         defaultVisibility: 'Default Visibility',
+        defaultVisibilityDescription: 'Default visibility for new entries',
         language: 'Language',
         cancel: 'Cancel',
-        saveSettings: 'Save',
+        saveSettings: 'Save Changes',
+        personalInfo: 'Personal Information',
+        appearance: 'Appearance',
+        preferences: 'Preferences',
+        memberSince: 'Member since {year}',
+        entries: 'Entries',
+        tags: 'Tags',
+        enterYourName: 'Enter your name',
 
         // Confirm Modal
         deleteEntryTitle: 'Delete Entry',
@@ -72,7 +93,6 @@ export const translations = {
         thoughtsPerYear: 'Entries per Year',
         thoughtsPerMonth: 'Entries per Month',
         topTagsByYear: 'Top Tags by Year',
-        year: 'Year',
 
         // Import/Export
         importExport: 'Import/Export',
@@ -120,6 +140,8 @@ export const translations = {
         // Auth & Profile
         user: 'User',
         logout: 'Logout',
+        profile: 'Profile',
+        back: 'Back',
 
         // Entry Cross-References
         backToSource: 'Back to source entry',
@@ -197,12 +219,33 @@ export const translations = {
 
         // Settings
         profileName: 'Nom',
+        displayName: 'Nom d\'affichage',
+        displayNameDescription: 'Comment vous souhaitez être connu dans l\'application',
+        email: 'Email',
+        emailDescription: 'Votre adresse email pour les notifications du compte',
+        enterYourEmail: 'Entrez votre email',
+        bio: 'Biographie',
+        bioDescription: 'Une courte description de vous-même',
+        writeSomethingAboutYourself: 'Écrivez quelque chose sur vous...',
+        location: 'Localisation',
+        locationDescription: 'Où vous êtes basé',
+        enterYourLocation: 'Entrez votre localisation',
         theme: 'Thème',
+        themeDescription: 'Choisissez votre palette de couleurs',
         entriesPerPage: 'Entrées par page',
+        entriesPerPageDescription: 'Nombre d\'entrées à afficher par page',
         defaultVisibility: 'Visibilité par défaut',
+        defaultVisibilityDescription: 'Visibilité par défaut pour les nouvelles entrées',
         language: 'Langue',
         cancel: 'Annuler',
         saveSettings: 'Enregistrer',
+        personalInfo: 'Informations personnelles',
+        appearance: 'Apparence',
+        preferences: 'Préférences',
+        memberSince: 'Membre depuis {year}',
+        entries: 'Entrées',
+        tags: 'Tags',
+        enterYourName: 'Entrez votre nom',
 
         // Confirm Modal
         deleteEntryTitle: 'Supprimer l\'entrée',
@@ -229,7 +272,6 @@ export const translations = {
         thoughtsPerYear: 'Entrées par an',
         thoughtsPerMonth: 'Entrées par mois',
         topTagsByYear: 'Top tags par année',
-        year: 'Année',
 
         // Import/Export
         importExport: 'Import/Export',
@@ -277,6 +319,8 @@ export const translations = {
         // Auth & Profile
         user: 'Utilisateur',
         logout: 'Déconnexion',
+        profile: 'Profil',
+        back: 'Retour',
 
         // Entry Cross-References
         backToSource: 'Retour à l\'entrée source',

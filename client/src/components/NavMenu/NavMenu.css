@@ -80,15 +80,15 @@
 }
 
 .nav-item.active {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2));
-    color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: #1e3a5f;
+    color: #e0f2fe;
+    border: 1px solid rgba(59, 130, 246, 0.5);
 }
 
 .nav-menu.light .nav-item.active {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15));
-    color: #2563eb;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid rgba(59, 130, 246, 0.4);
 }
 
 .nav-item svg {
@@ -97,11 +97,43 @@
 }
 
 /* Profile section */
-.nav-profile {
+.nav-profile-btn {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     order: 2;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nav-menu.dark .nav-profile-btn {
+    color: #9ca3af;
+}
+
+.nav-menu.light .nav-profile-btn {
+    color: #4b5563;
+}
+
+.nav-menu.dark .nav-profile-btn:hover {
+    background: rgba(55, 65, 81, 0.5);
+}
+
+.nav-menu.light .nav-profile-btn:hover {
+    background: rgba(243, 244, 246, 1);
+}
+
+.nav-profile-btn.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(147, 51, 234, 0.2));
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.nav-menu.light .nav-profile-btn.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15));
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .profile-avatar {
@@ -132,41 +164,6 @@
     color: #111827;
 }
 
-.settings-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.5rem;
-    border-radius: 50%;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.nav-menu.dark .settings-btn {
-    color: #9ca3af;
-}
-
-.nav-menu.light .settings-btn {
-    color: #6b7280;
-}
-
-.nav-menu.dark .settings-btn:hover {
-    background: rgba(55, 65, 81, 0.5);
-    color: #f3f4f6;
-}
-
-.nav-menu.light .settings-btn:hover {
-    background: rgba(243, 244, 246, 1);
-    color: #111827;
-}
-
-.settings-btn svg {
-    width: 1.25rem;
-    height: 1.25rem;
-}
-
 /* Responsive adjustments */
 @media (max-width: 640px) {
     .nav-menu {
@@ -183,14 +180,14 @@
         justify-content: center;
     }
 
-    .nav-profile {
+    .nav-profile-btn {
         width: 100%;
         justify-content: center;
         padding-top: 0.5rem;
         border-top: 1px solid rgba(75, 85, 99, 0.3);
     }
 
-    .nav-menu.light .nav-profile {
+    .nav-menu.light .nav-profile-btn {
         border-top-color: rgba(209, 213, 219, 1);
     }
 }

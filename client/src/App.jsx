@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import "react-datepicker/dist/react-datepicker.css";
-import SettingsModal from './components/SettingsModal/SettingsModal';
+import ProfilePage from './components/ProfilePage/ProfilePage';
 import EntriesList from './components/EntriesList/EntriesList';
 import ConfirmModal from './components/ConfirmModal/ConfirmModal';
 import NavMenu from './components/NavMenu/NavMenu';
@@ -26,7 +26,6 @@ function App() {
 
   // Config & Settings
   const [config, setConfig] = useState({});
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // Search & Filter State
   const [search, setSearch] = useState('');
@@ -73,8 +72,11 @@ function App() {
   const [diaries, setDiaries] = useState([]);
   const [currentDiaryId, setCurrentDiaryId] = useState(null);
 
+  // Profile stats for profile page
+  const [profileStats, setProfileStats] = useState(null);
+
   useEffect(() => { setInputPage(page.toString()); }, [page]);
-  useEffect(() => { fetchConfig(); fetchEntryDates(); fetchDiaries(); }, []);
+  useEffect(() => { fetchConfig(); fetchEntryDates(); fetchDiaries(); fetchProfileStats(); }, []);
   useEffect(() => { fetchEntries(); }, [page, search, filterTags, filterDateObj, filterVisibility, config.entriesPerPage, currentDiaryId]);
   useEffect(() => {
     if (config.defaultVisibility && visibility === null) {
@@ -108,6 +110,23 @@ function App() {
       setEntryDates(data.dates || []);
     } catch (error) {
       console.error('Error fetching entry dates:', error);
+    }
+  };
+
+  const fetchProfileStats = async () => {
+    try {
+      const response = await fetch('/api/stats');
+      const data = await response.json();
+      // Extract relevant stats for profile
+      const years = Object.keys(data.thoughtsPerYear || {});
+      const firstYear = years.length > 0 ? Math.min(...years.map(Number)) : new Date().getFullYear();
+      setProfileStats({
+        totalEntries: data.totalThoughts || 0,
+        uniqueTags: Object.keys(data.thoughtsPerTag || {}).length,
+        firstEntryYear: firstYear
+      });
+    } catch (error) {
+      console.error('Error fetching profile stats:', error);
     }
   };
 
@@ -197,8 +216,8 @@ function App() {
     try {
       const filterDate = filterDateObj ?
         `${filterDateObj.getFullYear()}-${String(filterDateObj.getMonth() + 1).padStart(2, '0')}-${String(filterDateObj.getDate()).padStart(2, '0')}` : '';
-      const limit = parseInt(config.entriesPerPage) || 10;
-      const visibility = filterVisibility !== 'all' ? filterVisibility : '';
+      const limit = Number.parseInt(config.entriesPerPage, 10) || 10;
+      const visibility = filterVisibility === 'all' ? '' : filterVisibility;
       const params = new URLSearchParams({ page, limit, search, tags: filterTags.join(','), date: filterDate, visibility });
       if (currentDiaryId) {
         params.append('diaryId', currentDiaryId);
@@ -325,7 +344,7 @@ function App() {
 
   const handleNavigateToFirst = async (year, month) => {
     try {
-      const limit = parseInt(config.entriesPerPage) || 10;
+      const limit = Number.parseInt(config.entriesPerPage, 10) || 10;
       const params = new URLSearchParams({ year, limit });
       if (month) params.append('month', month);
 
@@ -351,7 +370,7 @@ function App() {
   // sourceEntryInfo is passed directly from the entry where the link was clicked
   const handleNavigateToEntry = async (date, index = 1, sourceEntryInfo = null) => {
     try {
-      const limit = parseInt(config.entriesPerPage) || 10;
+      const limit = Number.parseInt(config.entriesPerPage, 10) || 10;
       const params = new URLSearchParams({ date, index, limit });
 
       // Save source entry info so user can return
@@ -385,7 +404,7 @@ function App() {
     if (!sourceEntry) return;
 
     try {
-      const limit = parseInt(config.entriesPerPage) || 10;
+      const limit = Number.parseInt(config.entriesPerPage, 10) || 10;
       const params = new URLSearchParams({
         id: sourceEntry.id,
         limit
@@ -449,37 +468,21 @@ function App() {
     groupedEntries[date].sort((a, b) => a.index - b.index);
   });
 
-  return (
-    <div className={`min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}>
-      <div className="max-w-7xl mx-auto">
-        <NavMenu
-          currentView={currentView}
-          onViewChange={setCurrentView}
-          theme={config.theme}
-          name={config.name || 'User'}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-          t={t}
-        />
-
-        <SettingsModal
-          isOpen={isSettingsOpen}
-          onClose={() => setIsSettingsOpen(false)}
-          config={config}
-          onUpdateConfig={updateConfig}
-          t={t}
-        />
-
-        <ConfirmModal
-          isOpen={deleteModalOpen}
-          onClose={() => { setDeleteModalOpen(false); setEntryToDelete(null); }}
-          onConfirm={confirmDelete}
-          title={t('deleteEntryTitle')}
-          message={t('deleteEntryMessage')}
-          theme={config.theme}
-          t={t}
-        />
-
-        {currentView === 'diaries' ? (
+  // Render the current view content based on currentView state
+  const renderViewContent = () => {
+    switch (currentView) {
+      case 'profile':
+        return (
+          <ProfilePage
+            config={config}
+            onUpdateConfig={updateConfig}
+            onBack={() => setCurrentView('journal')}
+            t={t}
+            stats={profileStats}
+          />
+        );
+      case 'diaries':
+        return (
           <DiaryManager
             diaries={diaries}
             onCreateDiary={handleCreateDiary}
@@ -490,7 +493,9 @@ function App() {
             theme={config.theme}
             t={t}
           />
-        ) : currentView === 'stats' ? (
+        );
+      case 'stats':
+        return (
           <>
             <DiaryTabs
               diaries={diaries}
@@ -502,7 +507,9 @@ function App() {
             />
             <Stats theme={config.theme} t={t} diaryId={currentDiaryId} />
           </>
-        ) : currentView === 'importExport' ? (
+        );
+      case 'importExport':
+        return (
           <>
             <DiaryTabs
               diaries={diaries}
@@ -519,7 +526,9 @@ function App() {
               diaryName={diaries.find(d => d.id === currentDiaryId)?.name || t('allDiaries')}
             />
           </>
-        ) : (
+        );
+      default: // 'journal' view
+        return (
           <>
             <DiaryTabs
               diaries={diaries}
@@ -628,7 +637,7 @@ function App() {
                     <option key={year} value={year}>{year}</option>
                   ))}
                 </select>
-                {navYear && availableMonths.filter(m => m.startsWith(navYear)).length > 0 && (
+                {navYear && availableMonths.some(m => m.startsWith(navYear)) && (
                   <select
                     value={navMonth}
                     onChange={(e) => setNavMonth(e.target.value)}
@@ -639,14 +648,14 @@ function App() {
                   >
                     <option value="">{t('month')}</option>
                     {availableMonths.filter(m => m.startsWith(navYear)).map(m => {
-                      const monthNum = parseInt(m.split('-')[1]);
+                      const monthNum = Number.parseInt(m.split('-')[1], 10);
                       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                       return <option key={m} value={m}>{monthNames[monthNum - 1]}</option>;
                     })}
                   </select>
                 )}
                 <button
-                  onClick={() => navYear && handleNavigateToFirst(parseInt(navYear), navMonth ? parseInt(navMonth.split('-')[1]) : null)}
+                  onClick={() => navYear && handleNavigateToFirst(Number.parseInt(navYear, 10), navMonth ? Number.parseInt(navMonth.split('-')[1], 10) : null)}
                   disabled={!navYear}
                   className="px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/50 rounded transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -667,7 +676,32 @@ function App() {
               </button>
             </div>
           </>
-        )}
+        );
+    }
+  };
+
+  return (
+    <div className={`min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}>
+      <div className="max-w-7xl mx-auto">
+        <NavMenu
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          theme={config.theme}
+          name={config.name || 'User'}
+          t={t}
+        />
+
+        <ConfirmModal
+          isOpen={deleteModalOpen}
+          onClose={() => { setDeleteModalOpen(false); setEntryToDelete(null); }}
+          onConfirm={confirmDelete}
+          title={t('deleteEntryTitle')}
+          message={t('deleteEntryMessage')}
+          theme={config.theme}
+          t={t}
+        />
+
+        {renderViewContent()}
 
         <Footer t={t} theme={config.theme} />
       </div>

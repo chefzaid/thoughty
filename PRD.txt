@@ -1,18 +1,20 @@
 
 Remaining features to implement:
 
-*** Profile & Settings
-- Transform the settings popup into a profile page and clean up residues
+*** UI Features
 - Add authentication and registration with login (email) and password + the possibility to auth/register via Google / Facebook
 - Connect to cloud providers like OneDrive or Google Drive to sync the journal file once exported
 - Configure a fixed schedule for syncing the file from/to cloud (only diff, not the whole file, but there may be changes in previous entries)
 - Configure Gemini API key to use AI features
 - Delete account feature
-- Make the profile/settings page richer
-
-*** UI & Features
-- Social Media like features (feed, follow, likes, comments, messaging) on public thoughts
 - Keeping a history of modifications on a thought and allow to show the previous versions?
+
+*** Social features
+- Feed that shows public entries from other users and to preview your own public entries
+- Allow users to follow other users
+- Comments on public entries
+- Likes for entries and comments
+- Make messaging private between users
 
 *** AI
 - Guess the file format for the converter
