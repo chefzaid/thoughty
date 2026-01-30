@@ -12,6 +12,7 @@ import FilterControls from './components/FilterControls/FilterControls';
 import Pagination from './components/Pagination/Pagination';
 import DiaryTabs from './components/DiaryTabs/DiaryTabs';
 import DiaryManager from './components/DiaryManager/DiaryManager';
+import ThoughtOfTheDay from './components/ThoughtOfTheDay/ThoughtOfTheDay';
 import { getTranslation } from './utils/translations';
 
 function App() {
@@ -49,6 +50,9 @@ function App() {
   // Delete confirmation modal state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
+
+  // Highlights modal state
+  const [highlightsModalOpen, setHighlightsModalOpen] = useState(false);
 
   // Pagination State
   const [page, setPage] = useState(1);
@@ -525,6 +529,16 @@ function App() {
               theme={config.theme}
               t={t}
             />
+
+            <ThoughtOfTheDay
+              isOpen={highlightsModalOpen}
+              onClose={() => setHighlightsModalOpen(false)}
+              theme={config.theme}
+              t={t}
+              diaryId={currentDiaryId}
+              onNavigateToEntry={handleNavigateToEntry}
+            />
+
             <EntryForm
               newEntryText={newEntryText}
               setNewEntryText={setNewEntryText}
@@ -558,6 +572,7 @@ function App() {
               setPage={setPage}
               theme={config.theme}
               t={t}
+              onOpenHighlights={() => setHighlightsModalOpen(true)}
             />
 
             <EntriesList

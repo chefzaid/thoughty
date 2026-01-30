@@ -11,7 +11,7 @@ Remaining features to implement:
 - Make the profile/settings page richer
 
 *** UI & Features
-- Social Media like features (messaging, follow, likes, comments) on public thoughts
+- Social Media like features (feed, follow, likes, comments, messaging) on public thoughts
 - Keeping a history of modifications on a thought and allow to show the previous versions?
 
 *** AI
@@ -22,6 +22,8 @@ Remaining features to implement:
 - Pass a thought to AI for analysis or further discussion
 - Tone and mood of thoughts stats (analyzed by AI)
 - Subjects discussed stats (analyzed by AI)
+- Personality analysis through the choice of words and subjects
+- AI features should be locked behind a paywall
 
 *** Book Converter
 - Based on tags to create chapters

@@ -140,7 +140,21 @@ export const translations = {
         editDiary: 'Edit Diary',
         allDiaries: 'All Diaries',
         noDiaries: 'No diaries found. Create one to get started!',
-        visibilityOverrideHint: 'Can be overridden per entry'
+        visibilityOverrideHint: 'Can be overridden per entry',
+
+        // Highlights / Thought of the Day
+        highlightsTitle: 'Highlights',
+        randomThought: 'Random Thought',
+        onThisDay: 'On This Day',
+        yearsAgo: '{years} year(s) ago',
+        refreshRandom: 'Get a new random thought',
+        highlightsError: 'Failed to load highlights',
+        tryAgain: 'Try again',
+        expand: 'Expand',
+        collapse: 'Collapse',
+        seeHighlights: 'See Highlights of the Day',
+        highlights: 'Highlights',
+        noHighlights: 'No highlights available yet. Start writing entries to see them here!'
     },
     fr: {
         // App
@@ -283,7 +297,21 @@ export const translations = {
         editDiary: 'Modifier le journal',
         allDiaries: 'Tous les journaux',
         noDiaries: 'Aucun journal trouvé. Créez-en un pour commencer !',
-        visibilityOverrideHint: 'Peut être modifié par entrée'
+        visibilityOverrideHint: 'Peut être modifié par entrée',
+
+        // Highlights / Thought of the Day
+        highlightsTitle: 'À la une',
+        randomThought: 'Pensée aléatoire',
+        onThisDay: 'Ce jour-là',
+        yearsAgo: 'Il y a {years} an(s)',
+        refreshRandom: 'Obtenir une nouvelle pensée aléatoire',
+        highlightsError: 'Échec du chargement des mises en avant',
+        tryAgain: 'Réessayer',
+        expand: 'Développer',
+        collapse: 'Réduire',
+        seeHighlights: 'Voir les moments forts du jour',
+        highlights: 'Moments forts',
+        noHighlights: 'Pas encore de moments forts. Commencez à écrire des entrées pour les voir ici !'
     }
 };
 

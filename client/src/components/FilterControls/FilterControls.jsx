@@ -15,7 +15,8 @@ function FilterControls({
     entryDates,
     setPage,
     theme,
-    t
+    t,
+    onOpenHighlights
 }) {
     const inputClass = `flex-1 border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
         ? 'bg-gray-50 border-gray-300 text-gray-900'
@@ -125,6 +126,16 @@ function FilterControls({
                 title={t('resetFilters')}
             >
                 {t('resetFilters')}
+            </button>
+            <button
+                onClick={onOpenHighlights}
+                className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/50 rounded transition-all text-sm font-medium"
+                title={t('seeHighlights')}
+            >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
+                </svg>
+                {t('highlights')}
             </button>
         </div>
     );

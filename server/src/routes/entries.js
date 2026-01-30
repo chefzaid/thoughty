@@ -470,6 +470,96 @@ router.patch('/:id/visibility', async (req, res) => {
 
 /**
  * @swagger
+ * /api/entries/highlights:
+ *   get:
+ *     summary: Get random thought of the day and entries from this day in previous years
+ *     parameters:
+ *       - in: query
+ *         name: diaryId
+ *         schema:
+ *           type: integer
+ *         description: Optional diary ID to filter entries
+ *     responses:
+ *       200:
+ *         description: Object containing random entry and on-this-day entries
+ */
+router.get('/highlights', async (req, res) => {
+    try {
+        const userId = getUserId(req);
+        const diaryId = req.query.diaryId ? parseInt(req.query.diaryId) : null;
+
+        // Get today's date info
+        const today = new Date();
+        const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
+        const currentDay = String(today.getDate()).padStart(2, '0');
+        const currentYear = today.getFullYear();
+
+        // Build base query conditions
+        let baseCondition = 'WHERE e.user_id = $1';
+        const params = [userId];
+        let paramCount = 2;
+
+        if (diaryId) {
+            baseCondition += ` AND e.diary_id = $${paramCount}`;
+            params.push(diaryId);
+            paramCount++;
+        }
+
+        // Get a random entry
+        const randomQuery = `
+            SELECT e.*, d.name as diary_name, d.icon as diary_icon 
+            FROM entries e 
+            LEFT JOIN diaries d ON e.diary_id = d.id 
+            ${baseCondition}
+            ORDER BY RANDOM() 
+            LIMIT 1
+        `;
+        const randomResult = await db.query(randomQuery, params);
+        const randomEntry = randomResult.rows[0] || null;
+
+        // Get entries from this day in previous years
+        const onThisDayQuery = `
+            SELECT e.*, d.name as diary_name, d.icon as diary_icon,
+                   EXTRACT(YEAR FROM e.date) as entry_year
+            FROM entries e 
+            LEFT JOIN diaries d ON e.diary_id = d.id 
+            ${baseCondition}
+            AND TO_CHAR(e.date, 'MM-DD') = $${paramCount}
+            AND EXTRACT(YEAR FROM e.date) < $${paramCount + 1}
+            ORDER BY e.date DESC
+            LIMIT 10
+        `;
+        const onThisDayParams = [...params, `${currentMonth}-${currentDay}`, currentYear];
+        const onThisDayResult = await db.query(onThisDayQuery, onThisDayParams);
+
+        // Group on-this-day entries by year
+        const onThisDayByYear = onThisDayResult.rows.reduce((acc, entry) => {
+            const year = parseInt(entry.entry_year);
+            const yearsAgo = currentYear - year;
+            if (!acc[yearsAgo]) {
+                acc[yearsAgo] = [];
+            }
+            acc[yearsAgo].push(entry);
+            return acc;
+        }, {});
+
+        res.json({
+            randomEntry,
+            onThisDay: onThisDayByYear,
+            currentDate: {
+                month: currentMonth,
+                day: currentDay,
+                year: currentYear
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to fetch highlights' });
+    }
+});
+
+/**
+ * @swagger
  * /api/entries/all:
  *   delete:
  *     summary: Delete all journal entries for the user (optionally filtered by diary)
