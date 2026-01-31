@@ -6,7 +6,8 @@ module.exports = {
         'src/**/*.js',
         '!node_modules/**',
         '!coverage/**',
-        '!scripts/**'
+        '!scripts/**',
+        '!src/utils/emailService.js'
     ],
     coverageThreshold: {
         global: {

@@ -17,12 +17,14 @@ const defaultSettings = {
  * /api/config:
  *   get:
  *     summary: Get user configuration from database
- *     parameters:
- *       - in: header
- *         name: x-user-id
- *         schema:
- *           type: integer
- *         description: User ID (defaults to 1)
+ *     tags: [Config]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User configuration
+ *       401:
+ *         description: Unauthorized
  */
 router.get('/', async (req, res) => {
     try {
@@ -48,12 +50,14 @@ router.get('/', async (req, res) => {
  * /api/config:
  *   post:
  *     summary: Update user configuration in database
- *     parameters:
- *       - in: header
- *         name: x-user-id
- *         schema:
- *           type: integer
- *         description: User ID (defaults to 1)
+ *     tags: [Config]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Configuration updated
+ *       401:
+ *         description: Unauthorized
  */
 router.post('/', async (req, res) => {
     try {

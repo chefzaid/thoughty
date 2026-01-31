@@ -2,12 +2,58 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { getUserId } = require('../utils/auth');
+const { sanitizeString } = require('../middleware/securityMiddleware');
+
+// Input validation constants
+const MAX_CONTENT_LENGTH = 50000; // 50KB max per entry
+const MAX_TAG_LENGTH = 50;
+const MAX_TAGS_COUNT = 20;
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+/**
+ * Validate and sanitize entry input
+ */
+function validateEntryInput(text, tags, date, visibility) {
+    const errors = [];
+    
+    if (!text || typeof text !== 'string') {
+        errors.push('Text is required');
+    } else if (text.length > MAX_CONTENT_LENGTH) {
+        errors.push(`Content exceeds maximum length of ${MAX_CONTENT_LENGTH} characters`);
+    }
+    
+    if (!tags || !Array.isArray(tags) || tags.length === 0) {
+        errors.push('At least one tag is required');
+    } else if (tags.length > MAX_TAGS_COUNT) {
+        errors.push(`Maximum ${MAX_TAGS_COUNT} tags allowed`);
+    } else {
+        for (const tag of tags) {
+            if (typeof tag !== 'string' || tag.length > MAX_TAG_LENGTH) {
+                errors.push(`Tag exceeds maximum length of ${MAX_TAG_LENGTH} characters`);
+                break;
+            }
+        }
+    }
+    
+    if (date && !DATE_REGEX.test(date)) {
+        errors.push('Invalid date format. Use YYYY-MM-DD');
+    }
+    
+    if (visibility && !['public', 'private'].includes(visibility)) {
+        errors.push('Visibility must be "public" or "private"');
+    }
+    
+    return errors;
+}
 
 /**
  * @swagger
  * /api/entries:
  *   get:
  *     summary: Retrieve a list of journal entries
+ *     tags: [Entries]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: search
@@ -34,14 +80,11 @@ const { getUserId } = require('../utils/auth');
  *         schema:
  *           type: integer
  *         description: Number of items per page
- *       - in: header
- *         name: x-user-id
- *         schema:
- *           type: integer
- *         description: User ID (defaults to 1)
  *     responses:
  *       200:
  *         description: A list of entries
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  */
 router.get('/', async (req, res) => {
     try {
@@ -59,7 +102,7 @@ router.get('/', async (req, res) => {
         }
 
         if (tags) {
-            const tagList = tags.split(',').map(t => t.trim()).filter(t => t);
+            const tagList = tags.split(',').map(t => t.trim()).filter(Boolean);
             if (tagList.length > 0) {
                 query += ` AND tags @> $${paramCount}`;
                 params.push(tagList);
@@ -81,18 +124,18 @@ router.get('/', async (req, res) => {
 
         if (diaryId) {
             query += ` AND e.diary_id = $${paramCount}`;
-            params.push(parseInt(diaryId));
+            params.push(Number.parseInt(diaryId, 10));
             paramCount++;
         }
 
         // Count total for pagination
         const countResult = await db.query(`SELECT COUNT(*) FROM (${query}) AS count_query`, params);
-        const total = parseInt(countResult.rows[0].count);
+        const total = Number.parseInt(countResult.rows[0].count, 10);
 
         // Add sorting and pagination
         query += ` ORDER BY e.date DESC, e.index ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-        const limitNum = parseInt(limit);
-        const offset = (parseInt(page) - 1) * limitNum;
+        const limitNum = Number.parseInt(limit, 10);
+        const offset = (Number.parseInt(page, 10) - 1) * limitNum;
         params.push(limitNum, offset);
 
         const result = await db.query(query, params);
@@ -104,7 +147,7 @@ router.get('/', async (req, res) => {
         res.json({
             entries: result.rows,
             total,
-            page: parseInt(page),
+            page: Number.parseInt(page, 10),
             totalPages: Math.ceil(total / limitNum),
             allTags
         });
@@ -119,9 +162,14 @@ router.get('/', async (req, res) => {
  * /api/entries/dates:
  *   get:
  *     summary: Get all distinct dates that have entries
+ *     tags: [Entries]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Array of dates with entries
+ *       401:
+ *         description: Unauthorized
  */
 router.get('/dates', async (req, res) => {
     try {
@@ -142,6 +190,9 @@ router.get('/dates', async (req, res) => {
  * /api/entries/first:
  *   get:
  *     summary: Get page number containing first entry for a year/month
+ *     tags: [Entries]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: year
@@ -156,6 +207,11 @@ router.get('/dates', async (req, res) => {
  *         name: limit
  *         schema:
  *           type: integer
+ *     responses:
+ *       200:
+ *         description: Page info
+ *       401:
+ *         description: Unauthorized
  */
 router.get('/first', async (req, res) => {
     try {
@@ -168,7 +224,7 @@ router.get('/first', async (req, res) => {
             FROM entries WHERE user_id = $1 
             ORDER BY year DESC
         `, [userId]);
-        const years = yearsResult.rows.map(r => parseInt(r.year));
+        const years = yearsResult.rows.map(r => Number.parseInt(r.year, 10));
 
         const monthsResult = await db.query(`
             SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') as month 
@@ -195,7 +251,7 @@ router.get('/first', async (req, res) => {
             ? `SELECT MIN(date) as first_date FROM entries WHERE user_id = $1 AND TO_CHAR(date, 'YYYY-MM') = $2`
             : `SELECT MIN(date) as first_date FROM entries WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2`;
 
-        const firstEntryResult = await db.query(firstEntryQuery, [userId, month ? dateFilter : parseInt(year)]);
+        const firstEntryResult = await db.query(firstEntryQuery, [userId, month ? dateFilter : Number.parseInt(year, 10)]);
 
         if (!firstEntryResult.rows[0].first_date) {
             return res.json({ page: 1, found: false, years, months });
@@ -207,16 +263,16 @@ router.get('/first', async (req, res) => {
         const firstEntryIdQuery = month
             ? `SELECT id FROM entries WHERE user_id = $1 AND TO_CHAR(date, 'YYYY-MM') = $2 ORDER BY date ASC, index ASC LIMIT 1`
             : `SELECT id FROM entries WHERE user_id = $1 AND EXTRACT(YEAR FROM date) = $2 ORDER BY date ASC, index ASC LIMIT 1`;
-        const firstEntryIdResult = await db.query(firstEntryIdQuery, [userId, month ? dateFilter : parseInt(year)]);
+        const firstEntryIdResult = await db.query(firstEntryIdQuery, [userId, month ? dateFilter : Number.parseInt(year, 10)]);
         const firstEntryId = firstEntryIdResult.rows[0]?.id;
 
         // Count entries AFTER this date (since we sort DESC, these come before)
         const countNewerQuery = `SELECT COUNT(*) as count FROM entries WHERE user_id = $1 AND date > $2`;
         const countResult = await db.query(countNewerQuery, [userId, firstDate]);
-        const entriesBefore = parseInt(countResult.rows[0].count);
+        const entriesBefore = Number.parseInt(countResult.rows[0].count, 10);
 
         // Calculate page number
-        const limitNum = parseInt(limit);
+        const limitNum = Number.parseInt(limit, 10);
         const page = Math.floor(entriesBefore / limitNum) + 1;
 
         res.json({ page, found: true, entryId: firstEntryId, years, months });
@@ -231,6 +287,14 @@ router.get('/first', async (req, res) => {
  * /api/entries:
  *   post:
  *     summary: Create a new journal entry
+ *     tags: [Entries]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Entry created
+ *       401:
+ *         description: Unauthorized
  */
 
 /**
@@ -238,6 +302,9 @@ router.get('/first', async (req, res) => {
  * /api/entries/by-date:
  *   get:
  *     summary: Find an entry by date and optional index for cross-reference navigation
+ *     tags: [Entries]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: date
@@ -255,6 +322,11 @@ router.get('/first', async (req, res) => {
  *         schema:
  *           type: integer
  *         description: Entries per page for page calculation
+ *     responses:
+ *       200:
+ *         description: Entry found
+ *       401:
+ *         description: Unauthorized
  */
 router.get('/by-date', async (req, res) => {
     try {
@@ -279,7 +351,7 @@ router.get('/by-date', async (req, res) => {
             // Existing logic to find entry by date and index
             const entryResult = await db.query(
                 'SELECT *, TO_CHAR(date, \'YYYY-MM-DD\') as date_str FROM entries WHERE user_id = $1 AND date = $2 AND index = $3',
-                [userId, date, parseInt(index)]
+                [userId, date, Number.parseInt(index, 10)]
             );
             if (entryResult.rows.length === 0) {
                 return res.json({ found: false, error: 'Entry not found' });
@@ -293,17 +365,17 @@ router.get('/by-date', async (req, res) => {
         // Count entries after this date (since we sort DESC, these come before on the page)
         const countNewerQuery = `SELECT COUNT(*) as count FROM entries WHERE user_id = $1 AND date > $2`;
         const countResult = await db.query(countNewerQuery, [userId, comparisonDate]);
-        const entriesBefore = parseInt(countResult.rows[0].count);
+        const entriesBefore = Number.parseInt(countResult.rows[0].count, 10);
 
         // Also count entries on the same date with lower indexes
         const sameDateCountQuery = `SELECT COUNT(*) as count FROM entries WHERE user_id = $1 AND date = $2 AND index < $3`;
-        const sameDateResult = await db.query(sameDateCountQuery, [userId, comparisonDate, parseInt(entry.index)]);
-        const sameDateBefore = parseInt(sameDateResult.rows[0].count);
+        const sameDateResult = await db.query(sameDateCountQuery, [userId, comparisonDate, Number.parseInt(entry.index, 10)]);
+        const sameDateBefore = Number.parseInt(sameDateResult.rows[0].count, 10);
 
         const totalBefore = entriesBefore + sameDateBefore;
 
         // Calculate page number
-        const limitNum = parseInt(limit);
+        const limitNum = Number.parseInt(limit, 10);
         const page = Math.floor(totalBefore / limitNum) + 1;
 
         res.json({
@@ -322,13 +394,14 @@ router.post('/', async (req, res) => {
     const userId = getUserId(req);
     const { text, tags, date, visibility = 'private', diaryId } = req.body;
 
-    if (!text) {
-        return res.status(400).json({ error: 'Text is required' });
+    // Validate input
+    const validationErrors = validateEntryInput(text, tags, date, visibility);
+    if (validationErrors.length > 0) {
+        return res.status(400).json({ error: validationErrors[0] });
     }
 
-    if (!tags || !Array.isArray(tags) || tags.length === 0) {
-        return res.status(400).json({ error: 'At least one tag is required' });
-    }
+    // Sanitize tags
+    const sanitizedTags = tags.map(tag => sanitizeString(tag.trim()).substring(0, MAX_TAG_LENGTH));
 
     try {
         let dateStr;
@@ -353,14 +426,14 @@ router.post('/', async (req, res) => {
 
         // Calculate next index for the day (user-specific)
         const countResult = await db.query('SELECT COUNT(*) FROM entries WHERE user_id = $1 AND date = $2', [userId, dateStr]);
-        const nextIndex = parseInt(countResult.rows[0].count) + 1;
+        const nextIndex = Number.parseInt(countResult.rows[0].count, 10) + 1;
 
         const query = `
             INSERT INTO entries (user_id, date, index, tags, content, visibility, diary_id)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING *
         `;
-        const values = [userId, dateStr, nextIndex, tags || [], text, visibility, targetDiaryId];
+        const values = [userId, dateStr, nextIndex, sanitizedTags, text, visibility, targetDiaryId];
 
         await db.query(query, values);
         res.json({ success: true });
@@ -375,19 +448,28 @@ router.post('/', async (req, res) => {
  * /api/entries/{id}:
  *   put:
  *     summary: Update an existing journal entry
+ *     tags: [Entries]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Entry updated
+ *       401:
+ *         description: Unauthorized
  */
 router.put('/:id', async (req, res) => {
     const userId = getUserId(req);
     const { id } = req.params;
     const { text, tags, date, visibility = 'private' } = req.body;
 
-    if (!text) {
-        return res.status(400).json({ error: 'Text is required' });
+    // Validate input
+    const validationErrors = validateEntryInput(text, tags, date, visibility);
+    if (validationErrors.length > 0) {
+        return res.status(400).json({ error: validationErrors[0] });
     }
 
-    if (!tags || !Array.isArray(tags) || tags.length === 0) {
-        return res.status(400).json({ error: 'At least one tag is required' });
-    }
+    // Sanitize tags
+    const sanitizedTags = tags.map(tag => sanitizeString(tag.trim()).substring(0, MAX_TAG_LENGTH));
 
     try {
         // Get current entry to check if date is changing
@@ -404,7 +486,7 @@ router.put('/:id', async (req, res) => {
         if (oldDate !== date) {
             // Get the next index for the new date
             const countResult = await db.query('SELECT COUNT(*) FROM entries WHERE user_id = $1 AND date = $2', [userId, date]);
-            newIndex = parseInt(countResult.rows[0].count) + 1;
+            newIndex = Number.parseInt(countResult.rows[0].count, 10) + 1;
         }
 
         const query = `
@@ -413,7 +495,7 @@ router.put('/:id', async (req, res) => {
             WHERE id = $6 AND user_id = $7
             RETURNING *
         `;
-        const result = await db.query(query, [text, tags, date, visibility, newIndex, id, userId]);
+        const result = await db.query(query, [text, sanitizedTags, date, visibility, newIndex, id, userId]);
 
         // If date changed, reindex the old date's entries
         if (oldDate !== date) {
@@ -438,6 +520,14 @@ router.put('/:id', async (req, res) => {
  * /api/entries/{id}/visibility:
  *   patch:
  *     summary: Toggle visibility of a journal entry
+ *     tags: [Entries]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Visibility updated
+ *       401:
+ *         description: Unauthorized
  */
 router.patch('/:id/visibility', async (req, res) => {
     const userId = getUserId(req);
@@ -473,20 +563,24 @@ router.patch('/:id/visibility', async (req, res) => {
  * /api/entries/highlights:
  *   get:
  *     summary: Get random thought of the day and entries from this day in previous years
+ *     tags: [Entries]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: diaryId
  *         schema:
  *           type: integer
- *         description: Optional diary ID to filter entries
  *     responses:
  *       200:
- *         description: Object containing random entry and on-this-day entries
+ *         description: Highlights data
+ *       401:
+ *         description: Unauthorized
  */
 router.get('/highlights', async (req, res) => {
     try {
         const userId = getUserId(req);
-        const diaryId = req.query.diaryId ? parseInt(req.query.diaryId) : null;
+        const diaryId = req.query.diaryId ? Number.parseInt(req.query.diaryId, 10) : null;
 
         // Get today's date info
         const today = new Date();
@@ -534,7 +628,7 @@ router.get('/highlights', async (req, res) => {
 
         // Group on-this-day entries by year
         const onThisDayByYear = onThisDayResult.rows.reduce((acc, entry) => {
-            const year = parseInt(entry.entry_year);
+            const year = Number.parseInt(entry.entry_year, 10);
             const yearsAgo = currentYear - year;
             if (!acc[yearsAgo]) {
                 acc[yearsAgo] = [];
@@ -563,16 +657,24 @@ router.get('/highlights', async (req, res) => {
  * /api/entries/all:
  *   delete:
  *     summary: Delete all journal entries for the user (optionally filtered by diary)
+ *     tags: [Entries]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: diaryId
  *         schema:
  *           type: integer
  *         description: Optional diary ID to delete entries only from that diary
+ *     responses:
+ *       200:
+ *         description: Entries deleted
+ *       401:
+ *         description: Unauthorized
  */
 router.delete('/all', async (req, res) => {
     const userId = getUserId(req);
-    const diaryId = req.query.diaryId ? parseInt(req.query.diaryId) : null;
+    const diaryId = req.query.diaryId ? Number.parseInt(req.query.diaryId, 10) : null;
 
     try {
         let query = 'DELETE FROM entries WHERE user_id = $1';
@@ -596,6 +698,14 @@ router.delete('/all', async (req, res) => {
  * /api/entries/{id}:
  *   delete:
  *     summary: Delete a journal entry
+ *     tags: [Entries]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Entry deleted
+ *       401:
+ *         description: Unauthorized
  */
 router.delete('/:id', async (req, res) => {
     const userId = getUserId(req);

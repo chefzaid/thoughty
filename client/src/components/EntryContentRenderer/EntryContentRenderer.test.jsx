@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EntryContentRenderer from './EntryContentRenderer';
 
@@ -83,7 +83,7 @@ describe('EntryContentRenderer', () => {
 
             await user.click(screen.getByRole('button'));
 
-            expect(mockOnNavigateToEntry).toHaveBeenCalledWith('2026-01-10', 1);
+            expect(mockOnNavigateToEntry).toHaveBeenCalledWith('2026-01-10', 1, undefined);
         });
 
         it('calls onNavigateToEntry with date and index on click', async () => {
@@ -92,7 +92,7 @@ describe('EntryContentRenderer', () => {
 
             await user.click(screen.getByRole('button'));
 
-            expect(mockOnNavigateToEntry).toHaveBeenCalledWith('2026-01-10', 5);
+            expect(mockOnNavigateToEntry).toHaveBeenCalledWith('2026-01-10', 5, undefined);
         });
 
         it('handles Enter key for accessibility', async () => {

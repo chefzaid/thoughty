@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import './ThoughtOfTheDay.css';
+import { useAuth } from '../../contexts/AuthContext';
 
 function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry }) {
+    const { authFetch } = useAuth();
     const [highlights, setHighlights] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -12,7 +14,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
             setLoading(true);
             const params = new URLSearchParams();
             if (diaryId) params.append('diaryId', diaryId);
-            const response = await fetch(`/api/entries/highlights?${params}`);
+            const response = await authFetch(`/api/entries/highlights?${params}`);
             if (!response.ok) throw new Error('Failed to fetch highlights');
             const data = await response.json();
             setHighlights(data);
@@ -23,7 +25,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
         } finally {
             setLoading(false);
         }
-    }, [diaryId, t]);
+    }, [authFetch, diaryId, t]);
 
     useEffect(() => {
         if (isOpen) {

@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 const Footer = ({ t, theme }) => {
     const year = new Date().getFullYear();
@@ -13,19 +14,24 @@ const Footer = ({ t, theme }) => {
                 </div>
 
                 <div className="flex gap-6">
-                    <a href="#" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
+                    <a href="/privacy" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
                         {t('privacy')}
                     </a>
-                    <a href="#" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
+                    <a href="/terms" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
                         {t('terms')}
                     </a>
-                    <a href="#" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
+                    <a href="/contact" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
                         {t('contact')}
                     </a>
                 </div>
             </div>
         </footer>
     );
+};
+
+Footer.propTypes = {
+    t: PropTypes.func.isRequired,
+    theme: PropTypes.string.isRequired
 };
 
 export default Footer;

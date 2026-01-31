@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import './ImportExport.css';
+import { useAuth } from '../../contexts/AuthContext';
 
 function ImportExport({ theme, t, diaryId, diaryName }) {
+    const { authFetch } = useAuth();
     const [formatConfig, setFormatConfig] = useState({
         entrySeparator: '--------------------------------------------------------------------------------',
         sameDaySeparator: '********************************************************************************',
@@ -30,7 +33,7 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
 
     const fetchFormatSettings = async () => {
         try {
-            const response = await fetch('/api/io/format');
+            const response = await authFetch('/api/io/format');
             if (response.ok) {
                 const data = await response.json();
                 setFormatConfig(data);
@@ -44,7 +47,7 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
 
     const saveFormatSettings = async () => {
         try {
-            const response = await fetch('/api/io/format', {
+            const response = await authFetch('/api/io/format', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formatConfig)
@@ -54,6 +57,7 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                 setTimeout(() => setMessage(null), 3000);
             }
         } catch (error) {
+            console.error('Failed to save format settings:', error);
             setMessage({ type: 'error', text: t('formatSaveError') });
         }
     };
@@ -62,25 +66,26 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
         try {
             const params = new URLSearchParams();
             if (diaryId) params.append('diaryId', diaryId);
-            const response = await fetch(`/api/io/export?${params}`);
+            const response = await authFetch(`/api/io/export?${params}`);
             if (response.ok) {
                 const blob = await response.blob();
-                const filename = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replace(/"/g, '')
+                const filename = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replaceAll('"', '')
                     || `thoughty_export_${new Date().toISOString().split('T')[0]}.txt`;
 
-                const url = window.URL.createObjectURL(blob);
+                const url = globalThis.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = filename;
                 document.body.appendChild(a);
                 a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+                globalThis.URL.revokeObjectURL(url);
+                a.remove();
 
                 setMessage({ type: 'success', text: t('exportSuccess') });
                 setTimeout(() => setMessage(null), 3000);
             }
         } catch (error) {
+            console.error('Export failed:', error);
             setMessage({ type: 'error', text: t('exportError') });
         }
     };
@@ -90,27 +95,24 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
         const file = e.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-            const content = event.target.result;
+        try {
+            const content = await file.text();
             setFileContent(content);
 
             // Get preview
-            try {
-                const response = await fetch('/api/io/preview', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content, diaryId })
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    setPreview(data);
-                }
-            } catch (error) {
-                setMessage({ type: 'error', text: t('previewError') });
+            const response = await authFetch('/api/io/preview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content, diaryId })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setPreview(data);
             }
-        };
-        reader.readAsText(file);
+        } catch (error) {
+            console.error('Preview failed:', error);
+            setMessage({ type: 'error', text: t('previewError') });
+        }
     };
 
     const handleImport = async () => {
@@ -118,7 +120,7 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
 
         setImporting(true);
         try {
-            const response = await fetch('/api/io/import', {
+            const response = await authFetch('/api/io/import', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: fileContent, skipDuplicates, diaryId })
@@ -136,6 +138,7 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                 setFileContent('');
             }
         } catch (error) {
+            console.error('Import failed:', error);
             setMessage({ type: 'error', text: t('importError') });
         } finally {
             setImporting(false);
@@ -156,7 +159,7 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
         try {
             const params = new URLSearchParams();
             if (diaryId) params.append('diaryId', diaryId);
-            const response = await fetch(`/api/entries/all?${params}`, {
+            const response = await authFetch(`/api/entries/all?${params}`, {
                 method: 'DELETE'
             });
             if (response.ok) {
@@ -166,11 +169,20 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                 setMessage({ type: 'error', text: t('deleteAllError') });
             }
         } catch (error) {
+            console.error('Delete all failed:', error);
             setMessage({ type: 'error', text: t('deleteAllError') });
         } finally {
             setDeleting(false);
         }
     };
+
+    let deleteAllLabel = t('deleteAllEntries');
+    if (confirmDeleteAll) {
+        deleteAllLabel = t('confirmDeleteAll');
+    }
+    if (deleting) {
+        deleteAllLabel = t('deleting');
+    }
 
     if (loading) {
         return <div className={`import-export ${isLight ? 'light' : 'dark'}`}>{t('loading')}...</div>;
@@ -186,75 +198,77 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                 </div>
             )}
 
-            {/* Export Section */}
-            <section className="io-section">
-                <h3>{t('export')}</h3>
-                <p className="section-description">{t('exportDescription', { diaryName })}</p>
-                <button className="io-btn primary" onClick={handleExport}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    {t('downloadExport')}
-                </button>
-            </section>
-
-            {/* Import Section */}
-            <section className="io-section">
-                <h3>{t('import')}</h3>
-                <p className="section-description">{t('importDescription', { diaryName })}</p>
-
-                <div className="file-upload">
-                    <input
-                        type="file"
-                        id="file-input"
-                        accept=".txt"
-                        onChange={handleFileSelect}
-                    />
-                    <label htmlFor="file-input" className="file-label">
+            <div className="io-grid">
+                {/* Export Section */}
+                <section className="io-section">
+                    <h3>{t('export')}</h3>
+                    <p className="section-description">{t('exportDescription', { diaryName })}</p>
+                    <button className="io-btn primary" onClick={handleExport}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        {t('chooseFile')}
-                    </label>
-                </div>
+                        {t('downloadExport')}
+                    </button>
+                </section>
 
-                {preview && (
-                    <div className="preview-box">
-                        <h4>{t('previewSummary')}</h4>
-                        <div className="preview-stats">
-                            <div className="stat">
-                                <span className="stat-value">{preview.totalCount}</span>
-                                <span className="stat-label">{t('entriesFound')}</span>
-                            </div>
-                            <div className={`stat ${preview.duplicateCount > 0 ? 'warning' : ''}`}>
-                                <span className="stat-value">{preview.duplicateCount}</span>
-                                <span className="stat-label">{t('duplicatesFound')}</span>
-                            </div>
-                        </div>
+                {/* Import Section */}
+                <section className="io-section">
+                    <h3>{t('import')}</h3>
+                    <p className="section-description">{t('importDescription', { diaryName })}</p>
 
-                        {preview.duplicateCount > 0 && (
-                            <div className="duplicate-option">
-                                <label className="checkbox-label">
-                                    <input
-                                        type="checkbox"
-                                        checked={skipDuplicates}
-                                        onChange={(e) => setSkipDuplicates(e.target.checked)}
-                                    />
-                                    {t('skipDuplicates')}
-                                </label>
-                            </div>
-                        )}
-
-                        <button
-                            className="io-btn primary"
-                            onClick={handleImport}
-                            disabled={importing}
-                        >
-                            {importing ? t('importing') : t('confirmImport')}
-                        </button>
+                    <div className="file-upload">
+                        <input
+                            type="file"
+                            id="file-input"
+                            accept=".txt"
+                            onChange={handleFileSelect}
+                        />
+                        <label htmlFor="file-input" className="file-label">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            {t('chooseFile')}
+                        </label>
                     </div>
-                )}
-            </section>
+
+                    {preview && (
+                        <div className="preview-box">
+                            <h4>{t('previewSummary')}</h4>
+                            <div className="preview-stats">
+                                <div className="stat">
+                                    <span className="stat-value">{preview.totalCount}</span>
+                                    <span className="stat-label">{t('entriesFound')}</span>
+                                </div>
+                                <div className={`stat ${preview.duplicateCount > 0 ? 'warning' : ''}`}>
+                                    <span className="stat-value">{preview.duplicateCount}</span>
+                                    <span className="stat-label">{t('duplicatesFound')}</span>
+                                </div>
+                            </div>
+
+                            {preview.duplicateCount > 0 && (
+                                <div className="duplicate-option">
+                                    <label className="checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={skipDuplicates}
+                                            onChange={(e) => setSkipDuplicates(e.target.checked)}
+                                        />
+                                        {t('skipDuplicates')}
+                                    </label>
+                                </div>
+                            )}
+
+                            <button
+                                className="io-btn primary"
+                                onClick={handleImport}
+                                disabled={importing}
+                            >
+                                {importing ? t('importing') : t('confirmImport')}
+                            </button>
+                        </div>
+                    )}
+                </section>
+            </div>
 
             {/* Format Configuration Section */}
             <section className="io-section format-section">
@@ -262,7 +276,8 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                 <p className="section-description">{t('formatDescription')}</p>
 
                 <div className="format-grid">
-                    <div className="format-field">
+                    <div className="format-row format-row--separators">
+                        <div className="format-field">
                         <label>{t('entrySeparator')}</label>
                         <div className="input-with-count">
                             <input
@@ -272,8 +287,8 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                             />
                             <span className="char-count">{formatConfig.entrySeparator.length}</span>
                         </div>
-                    </div>
-                    <div className="format-field">
+                        </div>
+                        <div className="format-field">
                         <label>{t('sameDaySeparator')}</label>
                         <div className="input-with-count">
                             <input
@@ -283,24 +298,26 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                             />
                             <span className="char-count">{formatConfig.sameDaySeparator.length}</span>
                         </div>
+                        </div>
                     </div>
-                    <div className="format-field small">
+                    <div className="format-row format-row--compact">
+                        <div className="format-field format-field--compact">
                         <label>{t('datePrefix')}</label>
                         <input
                             type="text"
                             value={formatConfig.datePrefix}
                             onChange={(e) => handleInputChange('datePrefix', e.target.value)}
                         />
-                    </div>
-                    <div className="format-field small">
+                        </div>
+                        <div className="format-field format-field--compact">
                         <label>{t('dateSuffix')}</label>
                         <input
                             type="text"
                             value={formatConfig.dateSuffix}
                             onChange={(e) => handleInputChange('dateSuffix', e.target.value)}
                         />
-                    </div>
-                    <div className="format-field small">
+                        </div>
+                        <div className="format-field format-field--compact">
                         <label>{t('tagOpenBracket')}</label>
                         <input
                             type="text"
@@ -308,8 +325,8 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                             onChange={(e) => handleInputChange('tagOpenBracket', e.target.value)}
                             maxLength={2}
                         />
-                    </div>
-                    <div className="format-field small">
+                        </div>
+                        <div className="format-field format-field--compact">
                         <label>{t('tagCloseBracket')}</label>
                         <input
                             type="text"
@@ -317,8 +334,8 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                             onChange={(e) => handleInputChange('tagCloseBracket', e.target.value)}
                             maxLength={2}
                         />
-                    </div>
-                    <div className="format-field small">
+                        </div>
+                        <div className="format-field format-field--compact">
                         <label>{t('tagSeparator')}</label>
                         <input
                             type="text"
@@ -326,19 +343,20 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                             onChange={(e) => handleInputChange('tagSeparator', e.target.value)}
                             maxLength={2}
                         />
-                    </div>
-                    <div className="format-field">
-                        <label>{t('dateFormat')}</label>
-                        <select
-                            value={formatConfig.dateFormat}
-                            onChange={(e) => handleInputChange('dateFormat', e.target.value)}
-                        >
-                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                            <option value="DD-MM-YYYY">DD-MM-YYYY</option>
-                            <option value="MM-DD-YYYY">MM-DD-YYYY</option>
-                            <option value="YYYY/MM/DD">YYYY/MM/DD</option>
-                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                        </select>
+                        </div>
+                        <div className="format-field format-field--compact">
+                            <label>{t('dateFormat')}</label>
+                            <select
+                                value={formatConfig.dateFormat}
+                                onChange={(e) => handleInputChange('dateFormat', e.target.value)}
+                            >
+                                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                                <option value="DD-MM-YYYY">DD-MM-YYYY</option>
+                                <option value="MM-DD-YYYY">MM-DD-YYYY</option>
+                                <option value="YYYY/MM/DD">YYYY/MM/DD</option>
+                                <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -365,7 +383,7 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
                         onClick={handleDeleteAll}
                         disabled={deleting}
                     >
-                        {deleting ? t('deleting') : confirmDeleteAll ? t('confirmDeleteAll') : t('deleteAllEntries')}
+                        {deleteAllLabel}
                     </button>
                 </div>
             </section>
@@ -374,3 +392,10 @@ function ImportExport({ theme, t, diaryId, diaryName }) {
 }
 
 export default ImportExport;
+
+ImportExport.propTypes = {
+    theme: PropTypes.string.isRequired,
+    t: PropTypes.func.isRequired,
+    diaryId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    diaryName: PropTypes.string
+};

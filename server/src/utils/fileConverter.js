@@ -98,8 +98,7 @@ function generateTextFile(entries, formatConfig = {}) {
         if (isNewDate) {
             // Add entry separator before new date (except for first entry)
             if (currentDate !== null) {
-                lines.push('');
-                lines.push(config.entrySeparator);
+                lines.push('', config.entrySeparator);
             }
             currentDate = entryDate;
 
@@ -108,19 +107,14 @@ function generateTextFile(entries, formatConfig = {}) {
             const tagsStr = config.tagOpenBracket +
                 (entry.tags || []).join(config.tagSeparator) +
                 config.tagCloseBracket;
-            lines.push('');
-            lines.push(`${config.datePrefix}${formattedDate}${config.dateSuffix}${tagsStr}`);
+            lines.push('', `${config.datePrefix}${formattedDate}${config.dateSuffix}${tagsStr}`);
         } else {
             // Same day entry - use index instead of date
-            lines.push('');
-            lines.push(config.sameDaySeparator);
-            lines.push('');
-
             // Format: ---2--[tag1,tag2]
             const tagsStr = config.tagOpenBracket +
                 (entry.tags || []).join(config.tagSeparator) +
                 config.tagCloseBracket;
-            lines.push(`${config.datePrefix}${entry.index}${config.dateSuffix}${tagsStr}`);
+            lines.push('', config.sameDaySeparator, '', `${config.datePrefix}${entry.index}${config.dateSuffix}${tagsStr}`);
         }
 
         // Add entry content
@@ -129,8 +123,7 @@ function generateTextFile(entries, formatConfig = {}) {
 
     // Add final separator
     if (sortedEntries.length > 0) {
-        lines.push('');
-        lines.push(config.entrySeparator);
+        lines.push('', config.entrySeparator);
     }
 
     return lines.join('\r\n');
@@ -147,7 +140,7 @@ function parseTextFile(content, formatConfig = {}) {
     const entries = [];
 
     // Normalize line endings
-    const normalizedContent = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const normalizedContent = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
     const lines = normalizedContent.split('\n');
 
     let currentDate = null;
@@ -163,12 +156,12 @@ function parseTextFile(content, formatConfig = {}) {
 
     // Pattern for full date entry: ---YYYY-MM-DD--[tags]
     const datePattern = new RegExp(
-        `^${escapedPrefix}(\\d{4}[-./]\\d{2}[-./]\\d{2})${escapedSuffix}${escapedTagOpen}([^\\]]*?)${escapedTagClose}$`
+        String.raw`^${escapedPrefix}(\d{4}[-./]\d{2}[-./]\d{2})${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}$`
     );
 
     // Pattern for same-day entry: ---N--[tags]
     const indexPattern = new RegExp(
-        `^${escapedPrefix}(\\d+)${escapedSuffix}${escapedTagOpen}([^\\]]*?)${escapedTagClose}$`
+        String.raw`^${escapedPrefix}(\d+)${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}$`
     );
 
     function saveCurrentEntry() {
@@ -182,8 +175,7 @@ function parseTextFile(content, formatConfig = {}) {
         }
     }
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+    for (const line of lines) {
         const trimmedLine = line.trim();
 
         // Check for separators
@@ -193,12 +185,12 @@ function parseTextFile(content, formatConfig = {}) {
         }
 
         // Check for full date entry header
-        const dateMatch = trimmedLine.match(datePattern);
+        const dateMatch = datePattern.exec(trimmedLine);
         if (dateMatch) {
             saveCurrentEntry();
             currentDate = parseDate(dateMatch[1], config.dateFormat);
             currentIndex = 1;
-            const tags = dateMatch[2].split(config.tagSeparator).map(t => t.trim()).filter(t => t);
+            const tags = dateMatch[2].split(config.tagSeparator).map(t => t.trim()).filter(Boolean);
             currentEntry = {
                 date: currentDate,
                 index: currentIndex,
@@ -208,11 +200,11 @@ function parseTextFile(content, formatConfig = {}) {
         }
 
         // Check for same-day entry header
-        const indexMatch = trimmedLine.match(indexPattern);
+        const indexMatch = indexPattern.exec(trimmedLine);
         if (indexMatch) {
             saveCurrentEntry();
-            currentIndex = parseInt(indexMatch[1], 10);
-            const tags = indexMatch[2].split(config.tagSeparator).map(t => t.trim()).filter(t => t);
+            currentIndex = Number.parseInt(indexMatch[1], 10);
+            const tags = indexMatch[2].split(config.tagSeparator).map(t => t.trim()).filter(Boolean);
             currentEntry = {
                 date: currentDate,
                 index: currentIndex,
@@ -239,7 +231,7 @@ function parseTextFile(content, formatConfig = {}) {
  * @returns {string} Escaped string
  */
 function escapeRegex(str) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }
 
 /**

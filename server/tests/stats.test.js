@@ -5,6 +5,20 @@ jest.mock('../src/db', () => ({
     query: jest.fn()
 }));
 
+// Mock auth middleware to bypass authentication in tests
+jest.mock('../src/middleware/authMiddleware', () => ({
+    authenticateToken: (req, res, next) => {
+        req.user = { userId: 1, email: 'test@example.com' };
+        next();
+    },
+    optionalAuth: (req, res, next) => {
+        req.user = { userId: 1, email: 'test@example.com' };
+        next();
+    },
+    getUserIdFromRequest: (req) => req.user?.userId || null,
+    JWT_SECRET: 'test-secret'
+}));
+
 const db = require('../src/db');
 const app = require('../index');
 

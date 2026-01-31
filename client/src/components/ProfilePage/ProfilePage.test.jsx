@@ -3,6 +3,15 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfilePage from './ProfilePage';
 
+// Mock the AuthContext
+vi.mock('../../contexts/AuthContext', () => ({
+    useAuth: () => ({
+        user: { id: 'test-user', name: 'John Doe', email: 'john@example.com', authProvider: 'local' },
+        changePassword: vi.fn().mockResolvedValue({ success: true }),
+        deleteAccount: vi.fn().mockResolvedValue({ success: true })
+    })
+}));
+
 describe('ProfilePage', () => {
     const defaultProps = {
         config: {
@@ -98,13 +107,6 @@ describe('ProfilePage', () => {
             const textarea = screen.getByDisplayValue('Hello world');
             expect(textarea).toBeInTheDocument();
             expect(textarea.tagName.toLowerCase()).toBe('textarea');
-        });
-
-        it('displays location input field', () => {
-            render(<ProfilePage {...defaultProps} config={{ ...defaultProps.config, location: 'Paris, France' }} />);
-
-            const input = screen.getByDisplayValue('Paris, France');
-            expect(input).toBeInTheDocument();
         });
     });
 

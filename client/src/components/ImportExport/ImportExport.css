@@ -1,6 +1,7 @@
 .import-export {
     padding: 2rem;
-    max-width: 900px;
+    width: 100%;
+    max-width: 100%;
     margin: 0 auto;
 }
 
@@ -14,6 +15,13 @@
     margin-bottom: 0.5rem;
     font-size: 1.25rem;
     font-weight: 500;
+}
+
+.io-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .io-section {
@@ -50,8 +58,8 @@
 }
 
 .io-btn.primary {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    color: white;
+    background: linear-gradient(135deg, #4338ca, #6d28d9);
+    color: #f8fafc;
 }
 
 .io-btn.primary:hover {
@@ -61,9 +69,9 @@
 }
 
 .io-btn.secondary {
-    background: rgba(99, 102, 241, 0.15);
-    color: #a5b4fc;
-    border: 1px solid rgba(99, 102, 241, 0.3);
+    background: rgba(67, 56, 202, 0.35);
+    color: #e0e7ff;
+    border: 1px solid rgba(99, 102, 241, 0.5);
 }
 
 .io-btn.secondary:hover {
@@ -176,10 +184,23 @@
 }
 
 .format-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
     margin-bottom: 1.5rem;
+}
+
+.format-row {
+    display: grid;
+    gap: 1rem;
+}
+
+.format-row--separators {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.format-row--compact {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .format-field {
@@ -188,8 +209,9 @@
     gap: 0.5rem;
 }
 
-.format-field.small {
-    max-width: 150px;
+.format-field--compact input,
+.format-field--compact select {
+    text-align: center;
 }
 
 .format-field label {
@@ -211,8 +233,8 @@
 .char-count {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #a5b4fc;
-    background: rgba(99, 102, 241, 0.2);
+    color: #eef2ff;
+    background: rgba(67, 56, 202, 0.6);
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
     min-width: 2rem;
@@ -255,15 +277,15 @@
 }
 
 .message.success {
-    background: rgba(34, 197, 94, 0.15);
-    color: #4ade80;
-    border: 1px solid rgba(34, 197, 94, 0.3);
+    background: rgba(21, 128, 61, 0.85);
+    color: #f8fafc;
+    border: 1px solid rgba(21, 128, 61, 1);
 }
 
 .message.error {
-    background: rgba(239, 68, 68, 0.15);
-    color: #f87171;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(185, 28, 28, 0.85);
+    color: #f8fafc;
+    border: 1px solid rgba(185, 28, 28, 1);
 }
 
 /* Light Theme */
@@ -326,12 +348,16 @@
         padding: 1rem;
     }
 
-    .format-grid {
+    .io-grid {
         grid-template-columns: 1fr;
     }
 
-    .format-field.small {
-        max-width: 100%;
+    .format-grid {
+        gap: 1rem;
+    }
+
+    .format-row {
+        grid-template-columns: 1fr;
     }
 
     .preview-stats {

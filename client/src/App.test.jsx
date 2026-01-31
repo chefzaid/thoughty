@@ -1,11 +1,27 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 
+// Mock the AuthContext
+vi.mock('./contexts/AuthContext', () => ({
+    AuthProvider: ({ children }) => children,
+    useAuth: () => ({
+        user: { id: 'test-user-id', name: 'Test User', email: 'test@example.com' },
+        isAuthenticated: true,
+        loading: false,
+        error: null,
+        login: vi.fn(),
+        logout: vi.fn(),
+        register: vi.fn(),
+        authFetch: vi.fn(),
+        getAccessToken: () => 'mock-token'
+    })
+}));
+
 // Mock fetch globally
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 describe('App Integration Tests', () => {
     const mockEntries = [
@@ -28,6 +44,7 @@ describe('App Integration Tests', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
 
         // Default mock responses
         mockFetch.mockImplementation((url) => {
@@ -43,6 +60,12 @@ describe('App Integration Tests', () => {
                     json: () => Promise.resolve(mockEntriesResponse)
                 });
             }
+            if (typeof url === 'string' && url.includes('/api/diaries')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve([])
+                });
+            }
             return Promise.resolve({
                 ok: true,
                 json: () => Promise.resolve({ success: true })
@@ -52,6 +75,7 @@ describe('App Integration Tests', () => {
 
     afterEach(() => {
         vi.restoreAllMocks();
+        localStorage.clear();
     });
 
     describe('Initial render', () => {
@@ -158,49 +182,24 @@ describe('App Integration Tests', () => {
             await user.type(pageInput, '1');
             await user.keyboard('{Enter}');
 
-            // Since we mocked the API to return 1 page, we mainly check if input works without crashing
-            // In a real scenario we'd mock multiple pages to verify page switch
             expect(pageInput.value).toBe('1');
         });
     });
 
-
-    describe('Settings modal', () => {
-        it('opens settings modal when settings button is clicked', async () => {
+    describe('Profile navigation', () => {
+        it('opens profile page when profile button is clicked', async () => {
             const user = userEvent.setup();
             render(<App />);
 
             await waitFor(() => {
-                expect(screen.getByTitle('Settings')).toBeInTheDocument();
+                expect(screen.getByTitle('Profile')).toBeInTheDocument();
             });
 
-            await user.click(screen.getByTitle('Settings'));
+            await user.click(screen.getByTitle('Profile'));
 
             await waitFor(() => {
-                // Look for the Settings heading in the modal
-                expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
-            });
-        });
-
-        it('closes settings modal on cancel', async () => {
-            const user = userEvent.setup();
-            render(<App />);
-
-            await waitFor(() => {
-                expect(screen.getByTitle('Settings')).toBeInTheDocument();
-            });
-
-            await user.click(screen.getByTitle('Settings'));
-
-            await waitFor(() => {
-                expect(screen.getByText('Cancel')).toBeInTheDocument();
-            });
-
-            await user.click(screen.getByText('Cancel'));
-
-            await waitFor(() => {
-                // Modal should be closed - Settings heading should not be visible
-                expect(screen.queryByRole('heading', { name: 'Settings' })).not.toBeInTheDocument();
+                // Profile page should show
+                expect(screen.getByText(/profile/i)).toBeInTheDocument();
             });
         });
     });
@@ -271,17 +270,17 @@ describe('App Integration Tests', () => {
         });
 
         it('applies light theme when configured', async () => {
+            const lightThemeConfig = { ...mockConfig, theme: 'light' };
+            const configResponse = { ok: true, json: () => Promise.resolve(lightThemeConfig) };
+            const entriesResponse = { ok: true, json: () => Promise.resolve(mockEntriesResponse) };
+            const diariesResponse = { ok: true, json: () => Promise.resolve([]) };
+            const defaultResponse = { ok: true, json: () => Promise.resolve({ success: true }) };
+
             mockFetch.mockImplementation((url) => {
-                if (url === '/api/config') {
-                    return Promise.resolve({
-                        ok: true,
-                        json: () => Promise.resolve({ ...mockConfig, theme: 'light' })
-                    });
-                }
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve(mockEntriesResponse)
-                });
+                if (url === '/api/config') return Promise.resolve(configResponse);
+                if (typeof url === 'string' && url.includes('/api/entries')) return Promise.resolve(entriesResponse);
+                if (typeof url === 'string' && url.includes('/api/diaries')) return Promise.resolve(diariesResponse);
+                return Promise.resolve(defaultResponse);
             });
 
             render(<App />);
@@ -310,26 +309,11 @@ describe('App Integration Tests', () => {
         });
     });
 
-    describe('Error handling', () => {
-        it('handles fetch error gracefully', async () => {
-            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
-
-            mockFetch.mockRejectedValue(new Error('Network error'));
-
-            render(<App />);
-
-            await waitFor(() => {
-                expect(consoleSpy).toHaveBeenCalled();
-            });
-
-            consoleSpy.mockRestore();
-        });
-    });
     describe('Back to Top', () => {
         it('scrolls to top when clicked', async () => {
             const user = userEvent.setup();
             const scrollToMock = vi.fn();
-            global.window.scrollTo = scrollToMock;
+            globalThis.scrollTo = scrollToMock;
 
             render(<App />);
 

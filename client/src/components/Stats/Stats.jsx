@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -11,6 +11,7 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import './Stats.css';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Register Chart.js components
 ChartJS.register(
@@ -24,6 +25,7 @@ ChartJS.register(
 );
 
 function Stats({ theme, t, diaryId }) {
+    const { authFetch } = useAuth();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -33,16 +35,12 @@ function Stats({ theme, t, diaryId }) {
     const [tagsYearPage, setTagsYearPage] = useState(0);
     const tagsYearsPerPage = 5;
 
-    useEffect(() => {
-        fetchStats();
-    }, [diaryId]);
-
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             setLoading(true);
             const params = new URLSearchParams();
             if (diaryId) params.append('diaryId', diaryId);
-            const response = await fetch(`/api/stats?${params}`);
+            const response = await authFetch(`/api/stats?${params}`);
             if (!response.ok) throw new Error('Failed to fetch stats');
             const data = await response.json();
             setStats(data);
@@ -53,7 +51,11 @@ function Stats({ theme, t, diaryId }) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [authFetch, diaryId]);
+
+    useEffect(() => {
+        fetchStats();
+    }, [fetchStats]);
 
     const themeClass = theme === 'light' ? 'light' : 'dark';
     const textColor = theme === 'light' ? '#374151' : '#e5e7eb';
@@ -233,101 +235,105 @@ function Stats({ theme, t, diaryId }) {
 
             {/* Charts Grid */}
             <div className="charts-grid">
-                {/* Thoughts per Year - with horizontal scroll */}
-                <div className={`chart-card ${themeClass}`}>
-                    <h3>{t('thoughtsPerYear')}</h3>
-                    <div className="chart-wrapper chart-scrollable">
-                        <div style={{ minWidth: yearLabels.length > 8 ? `${yearLabels.length * 60}px` : '100%', height: '100%' }}>
-                            <Bar data={thoughtsPerYearChart} options={chartOptions} />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Thoughts per Month - with period selector */}
-                <div className={`chart-card ${themeClass}`}>
-                    <div className="chart-header">
-                        <h3>{t('thoughtsPerMonth')}</h3>
-                        <select
-                            className={`period-select ${themeClass}`}
-                            value={monthsToShow}
-                            onChange={(e) => setMonthsToShow(Number(e.target.value))}
-                        >
-                            {monthPeriodOptions.map(opt => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="chart-wrapper chart-scrollable">
-                        <div style={{ minWidth: monthLabels.length > 12 ? `${monthLabels.length * 50}px` : '100%', height: '100%' }}>
-                            <Bar data={thoughtsPerMonthChart} options={chartOptions} />
-                        </div>
-                    </div>
-                </div>
-
-                <div className={`chart-card ${themeClass}`}>
-                    <h3>{t('topTags')}</h3>
-                    <div className="chart-wrapper">
-                        <Bar
-                            data={thoughtsPerTagChart}
-                            options={{
-                                ...chartOptions,
-                                indexAxis: 'y',
-                            }}
-                        />
-                    </div>
-                </div>
-
-                {/* Tags per Year Breakdown - with pagination */}
-                <div className={`chart-card ${themeClass}`}>
-                    <div className="chart-header">
-                        <h3>{t('topTagsByYear')}</h3>
-                        {totalYearPages > 1 && (
-                            <div className="pagination-controls">
-                                <button
-                                    className={`pagination-btn ${themeClass}`}
-                                    onClick={() => setTagsYearPage(p => Math.max(0, p - 1))}
-                                    disabled={tagsYearPage === 0}
-                                    title="Newer years"
-                                >
-                                    ←
-                                </button>
-                                <span className="pagination-info">
-                                    {tagsYearPage + 1} / {totalYearPages}
-                                </span>
-                                <button
-                                    className={`pagination-btn ${themeClass}`}
-                                    onClick={() => setTagsYearPage(p => Math.min(totalYearPages - 1, p + 1))}
-                                    disabled={tagsYearPage === totalYearPages - 1}
-                                    title="Older years"
-                                >
-                                    →
-                                </button>
+                <div className="charts-row">
+                    {/* Thoughts per Year - with horizontal scroll */}
+                    <div className={`chart-card ${themeClass}`}>
+                        <h3>{t('thoughtsPerYear')}</h3>
+                        <div className="chart-wrapper chart-scrollable">
+                            <div style={{ minWidth: yearLabels.length > 8 ? `${yearLabels.length * 60}px` : '100%', height: '100%' }}>
+                                <Bar data={thoughtsPerYearChart} options={chartOptions} />
                             </div>
-                        )}
+                        </div>
                     </div>
-                    <div className="tag-breakdown">
-                        <table className="tag-table">
-                            <thead>
-                                <tr>
-                                    <th>{t('year')}</th>
-                                    <th>{t('topTags')}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {tagsPerYearData.map(({ year, topTags }) => (
-                                    <tr key={year}>
-                                        <td>{year}</td>
-                                        <td>
-                                            {topTags.map(([tag, count]) => (
-                                                <span key={tag} className="tag-badge" style={{ marginRight: '0.5rem' }}>
-                                                    {tag} ({count})
-                                                </span>
-                                            ))}
-                                        </td>
-                                    </tr>
+
+                    {/* Thoughts per Month - with period selector */}
+                    <div className={`chart-card ${themeClass}`}>
+                        <div className="chart-header">
+                            <h3>{t('thoughtsPerMonth')}</h3>
+                            <select
+                                className={`period-select ${themeClass}`}
+                                value={monthsToShow}
+                                onChange={(e) => setMonthsToShow(Number(e.target.value))}
+                            >
+                                {monthPeriodOptions.map(opt => (
+                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
                                 ))}
-                            </tbody>
-                        </table>
+                            </select>
+                        </div>
+                        <div className="chart-wrapper chart-scrollable">
+                            <div style={{ minWidth: monthLabels.length > 12 ? `${monthLabels.length * 50}px` : '100%', height: '100%' }}>
+                                <Bar data={thoughtsPerMonthChart} options={chartOptions} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="charts-row">
+                    <div className={`chart-card ${themeClass}`}>
+                        <h3>{t('topTags')}</h3>
+                        <div className="chart-wrapper">
+                            <Bar
+                                data={thoughtsPerTagChart}
+                                options={{
+                                    ...chartOptions,
+                                    indexAxis: 'y',
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Tags per Year Breakdown - with pagination */}
+                    <div className={`chart-card ${themeClass}`}>
+                        <div className="chart-header">
+                            <h3>{t('topTagsByYear')}</h3>
+                            {totalYearPages > 1 && (
+                                <div className="pagination-controls">
+                                    <button
+                                        className={`pagination-btn ${themeClass}`}
+                                        onClick={() => setTagsYearPage(p => Math.max(0, p - 1))}
+                                        disabled={tagsYearPage === 0}
+                                        title="Newer years"
+                                    >
+                                        ←
+                                    </button>
+                                    <span className="pagination-info">
+                                        {tagsYearPage + 1} / {totalYearPages}
+                                    </span>
+                                    <button
+                                        className={`pagination-btn ${themeClass}`}
+                                        onClick={() => setTagsYearPage(p => Math.min(totalYearPages - 1, p + 1))}
+                                        disabled={tagsYearPage === totalYearPages - 1}
+                                        title="Older years"
+                                    >
+                                        →
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div className="tag-breakdown">
+                            <table className="tag-table">
+                                <thead>
+                                    <tr>
+                                        <th>{t('year')}</th>
+                                        <th>{t('topTags')}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {tagsPerYearData.map(({ year, topTags }) => (
+                                        <tr key={year}>
+                                            <td>{year}</td>
+                                            <td>
+                                                {topTags.map(([tag, count]) => (
+                                                    <span key={tag} className="tag-badge" style={{ marginRight: '0.5rem' }}>
+                                                        {tag} ({count})
+                                                    </span>
+                                                ))}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>

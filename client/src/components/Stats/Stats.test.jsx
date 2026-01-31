@@ -1,15 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import Stats from './Stats';
+import PropTypes from 'prop-types';
+
+vi.mock('../../contexts/AuthContext', () => {
+    const authFetch = (...args) => globalThis.fetch(...args);
+    return {
+        useAuth: () => ({ authFetch })
+    };
+});
 
 // Mock Chart.js components to avoid canvas rendering issues
-vi.mock('react-chartjs-2', () => ({
-    Bar: ({ data }) => (
-        <div data-testid="mock-bar-chart">
-            {JSON.stringify(data)}
-        </div>
-    )
-}));
+vi.mock('react-chartjs-2', () => {
+    const MockBar = function MockBar(props) {
+        return (
+            <div data-testid="mock-bar-chart">
+                {JSON.stringify(props.data)}
+            </div>
+        );
+    };
+    MockBar.propTypes = {
+        data: PropTypes.any
+    };
+    return { Bar: MockBar };
+});
 
 vi.mock('chart.js', () => ({
     Chart: { register: vi.fn() },
@@ -28,7 +42,7 @@ describe('Stats Component', () => {
         t: (key, params) => {
             const translations = {
                 stats: 'Stats',
-                startOverview: 'Overview',
+                statsOverview: 'Overview',
                 loadingStats: 'Loading...',
                 totalEntries: 'Total Entries',
                 uniqueTags: 'Unique Tags',
@@ -59,19 +73,19 @@ describe('Stats Component', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        global.fetch = vi.fn();
+        globalThis.fetch = vi.fn();
     });
 
     it('displays loading state initially', () => {
         // Return a promise that never resolves immediately to test loading state
-        global.fetch.mockImplementation(() => new Promise(() => { }));
+        globalThis.fetch.mockImplementation(() => new Promise(() => { }));
 
         render(<Stats {...defaultProps} />);
         expect(screen.getByText('Loading...')).toBeInTheDocument();
     });
 
     it('displays error state on fetch failure', async () => {
-        global.fetch.mockRejectedValue(new Error('API Error'));
+        globalThis.fetch.mockRejectedValue(new Error('API Error'));
 
         render(<Stats {...defaultProps} />);
 
@@ -81,7 +95,7 @@ describe('Stats Component', () => {
     });
 
     it('renders stats and charts on successful fetch', async () => {
-        global.fetch.mockResolvedValue({
+        globalThis.fetch.mockResolvedValue({
             ok: true,
             json: async () => mockStatsData
         });
@@ -105,7 +119,7 @@ describe('Stats Component', () => {
     });
 
     it('renders tag breakdown table', async () => {
-        global.fetch.mockResolvedValue({
+        globalThis.fetch.mockResolvedValue({
             ok: true,
             json: async () => mockStatsData
         });
@@ -123,7 +137,7 @@ describe('Stats Component', () => {
     });
 
     it('applies theme classes', async () => {
-        global.fetch.mockResolvedValue({
+        globalThis.fetch.mockResolvedValue({
             ok: true,
             json: async () => mockStatsData
         });

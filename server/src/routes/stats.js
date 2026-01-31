@@ -8,12 +8,10 @@ const { getUserId } = require('../utils/auth');
  * /api/stats:
  *   get:
  *     summary: Retrieve aggregated statistics about journal entries
+ *     tags: [Stats]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
- *       - in: header
- *         name: x-user-id
- *         schema:
- *           type: integer
- *         description: User ID (defaults to 1)
  *       - in: query
  *         name: diaryId
  *         schema:
@@ -22,11 +20,13 @@ const { getUserId } = require('../utils/auth');
  *     responses:
  *       200:
  *         description: Statistics object with counts and breakdowns
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  */
 router.get('/', async (req, res) => {
     try {
         const userId = getUserId(req);
-        const diaryId = req.query.diaryId ? parseInt(req.query.diaryId) : null;
+        const diaryId = req.query.diaryId ? Number.parseInt(req.query.diaryId, 10) : null;
 
         // Build WHERE clause based on filters
         const baseCondition = 'user_id = $1';
@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
             `SELECT COUNT(*) as count FROM entries WHERE ${whereClause}`,
             params
         );
-        const totalThoughts = parseInt(totalResult.rows[0].count);
+        const totalThoughts = Number.parseInt(totalResult.rows[0].count, 10);
 
         // Entries per year
         const perYearResult = await db.query(`
@@ -51,7 +51,7 @@ router.get('/', async (req, res) => {
         `, params);
         const thoughtsPerYear = {};
         perYearResult.rows.forEach(row => {
-            thoughtsPerYear[row.year] = parseInt(row.count);
+            thoughtsPerYear[row.year] = Number.parseInt(row.count, 10);
         });
 
         // Entries per month
@@ -64,7 +64,7 @@ router.get('/', async (req, res) => {
         `, params);
         const thoughtsPerMonth = {};
         perMonthResult.rows.forEach(row => {
-            thoughtsPerMonth[row.month] = parseInt(row.count);
+            thoughtsPerMonth[row.month] = Number.parseInt(row.count, 10);
         });
 
         // Entries per tag
@@ -77,7 +77,7 @@ router.get('/', async (req, res) => {
         `, params);
         const thoughtsPerTag = {};
         perTagResult.rows.forEach(row => {
-            thoughtsPerTag[row.tag] = parseInt(row.count);
+            thoughtsPerTag[row.tag] = Number.parseInt(row.count, 10);
         });
 
         // Tags per year
@@ -94,7 +94,7 @@ router.get('/', async (req, res) => {
             if (!tagsPerYear[year]) {
                 tagsPerYear[year] = {};
             }
-            tagsPerYear[year][row.tag] = parseInt(row.count);
+            tagsPerYear[year][row.tag] = Number.parseInt(row.count, 10);
         });
 
         // Tags per month
@@ -111,7 +111,7 @@ router.get('/', async (req, res) => {
             if (!tagsPerMonth[month]) {
                 tagsPerMonth[month] = {};
             }
-            tagsPerMonth[month][row.tag] = parseInt(row.count);
+            tagsPerMonth[month][row.tag] = Number.parseInt(row.count, 10);
         });
 
         // Unique tags count
@@ -120,7 +120,7 @@ router.get('/', async (req, res) => {
             FROM entries, UNNEST(tags) as tag
             WHERE ${whereClause}
         `, params);
-        const uniqueTagsCount = parseInt(uniqueTagsResult.rows[0].count);
+        const uniqueTagsCount = Number.parseInt(uniqueTagsResult.rows[0].count, 10);
 
         res.json({
             totalThoughts,

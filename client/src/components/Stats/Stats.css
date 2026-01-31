@@ -75,11 +75,19 @@
     gap: 1.5rem;
 }
 
+.charts-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    grid-column: 1 / -1;
+}
+
 .chart-card {
     padding: 1.5rem;
     border-radius: 1rem;
     backdrop-filter: blur(10px);
 }
+
 
 .chart-card.dark {
     background: rgba(31, 41, 55, 0.5);
@@ -192,6 +200,10 @@
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .charts-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .charts-row {
         grid-template-columns: 1fr;
     }
 

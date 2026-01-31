@@ -2,21 +2,25 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { getUserId } = require('../utils/auth');
+const { sanitizeString } = require('../middleware/securityMiddleware');
+
+// Input validation constants
+const MAX_DIARY_NAME_LENGTH = 100;
+const MAX_ICON_LENGTH = 10;
 
 /**
  * @swagger
  * /api/diaries:
  *   get:
  *     summary: Get all diaries for the current user
- *     parameters:
- *       - in: header
- *         name: x-user-id
- *         schema:
- *           type: integer
- *         description: User ID (defaults to 1)
+ *     tags: [Diaries]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of diaries
+ *       401:
+ *         description: Unauthorized - Invalid or missing token
  */
 router.get('/', async (req, res) => {
     try {
@@ -37,21 +41,34 @@ router.get('/', async (req, res) => {
  * /api/diaries:
  *   post:
  *     summary: Create a new diary
+ *     tags: [Diaries]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Diary created
+ *       401:
+ *         description: Unauthorized
  */
 router.post('/', async (req, res) => {
     try {
         const userId = getUserId(req);
         const { name, icon = '📓', visibility = 'private' } = req.body;
 
-        if (!name || !name.trim()) {
+        if (!name?.trim()) {
             return res.status(400).json({ error: 'Diary name is required' });
         }
+
+        // Sanitize and validate inputs
+        const sanitizedName = sanitizeString(name.trim()).substring(0, MAX_DIARY_NAME_LENGTH);
+        const sanitizedIcon = sanitizeString(icon || '📓').substring(0, MAX_ICON_LENGTH);
+        const validVisibility = ['public', 'private'].includes(visibility) ? visibility : 'private';
 
         const result = await db.query(
             `INSERT INTO diaries (user_id, name, icon, visibility, is_default)
              VALUES ($1, $2, $3, $4, false)
              RETURNING *`,
-            [userId, name.trim(), icon, visibility]
+            [userId, sanitizedName, sanitizedIcon, validVisibility]
         );
 
         res.status(201).json(result.rows[0]);
@@ -69,6 +86,14 @@ router.post('/', async (req, res) => {
  * /api/diaries/{id}:
  *   put:
  *     summary: Update a diary
+ *     tags: [Diaries]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Diary updated
+ *       401:
+ *         description: Unauthorized
  */
 router.put('/:id', async (req, res) => {
     try {
@@ -76,16 +101,21 @@ router.put('/:id', async (req, res) => {
         const { id } = req.params;
         const { name, icon, visibility } = req.body;
 
-        if (!name || !name.trim()) {
+        if (!name?.trim()) {
             return res.status(400).json({ error: 'Diary name is required' });
         }
+
+        // Sanitize and validate inputs
+        const sanitizedName = sanitizeString(name.trim()).substring(0, MAX_DIARY_NAME_LENGTH);
+        const sanitizedIcon = sanitizeString(icon || '📓').substring(0, MAX_ICON_LENGTH);
+        const validVisibility = ['public', 'private'].includes(visibility) ? visibility : 'private';
 
         const result = await db.query(
             `UPDATE diaries 
              SET name = $1, icon = $2, visibility = $3
              WHERE id = $4 AND user_id = $5
              RETURNING *`,
-            [name.trim(), icon, visibility, id, userId]
+            [sanitizedName, sanitizedIcon, validVisibility, id, userId]
         );
 
         if (result.rows.length === 0) {
@@ -107,6 +137,14 @@ router.put('/:id', async (req, res) => {
  * /api/diaries/{id}:
  *   delete:
  *     summary: Delete a diary (entries moved to default diary)
+ *     tags: [Diaries]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Diary deleted
+ *       401:
+ *         description: Unauthorized
  */
 router.delete('/:id', async (req, res) => {
     try {
@@ -156,6 +194,14 @@ router.delete('/:id', async (req, res) => {
  * /api/diaries/{id}/default:
  *   patch:
  *     summary: Set a diary as the default
+ *     tags: [Diaries]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Default diary set
+ *       401:
+ *         description: Unauthorized
  */
 router.patch('/:id/default', async (req, res) => {
     try {

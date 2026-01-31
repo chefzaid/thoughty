@@ -1,11 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 const db = require('../server/src/db');
+// Seed runs from repo root where bcryptjs isn't installed, so load it from the server's deps.
+// This keeps the root package.json dependency-free.
+const bcrypt = require('../server/node_modules/bcryptjs');
 
 const TEST_DATA_FILE = path.join(__dirname, '..', 'server', 'data', 'test_data.txt');
 
 // Default user ID for seeded data
 const DEFAULT_USER_ID = 1;
+
+// Default credentials for seeded data
+const DEFAULT_EMAIL = 'test@example.com';
+const DEFAULT_USERNAME = 'test';
+const DEFAULT_PASSWORD = 'Test1234!';
 
 /**
  * Parse the test data file in the same format as thoughts.txt
@@ -104,11 +112,21 @@ function parseTestData(content) {
 
 async function ensureDefaultUser() {
     console.log('Ensuring default user exists...');
+    const saltRounds = 12;
+    const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, saltRounds);
+
     await db.query(`
-        INSERT INTO users (id, username, email)
-        VALUES ($1, 'default', 'default@example.com')
-        ON CONFLICT (id) DO NOTHING
-    `, [DEFAULT_USER_ID]);
+        INSERT INTO users (id, username, email, password_hash, auth_provider, email_verified)
+        VALUES ($1, $2, $3, $4, 'local', true)
+        ON CONFLICT (id)
+        DO UPDATE SET
+            username = EXCLUDED.username,
+            email = EXCLUDED.email,
+            password_hash = EXCLUDED.password_hash,
+            auth_provider = 'local',
+            email_verified = true,
+            updated_at = CURRENT_TIMESTAMP
+    `, [DEFAULT_USER_ID, DEFAULT_USERNAME, DEFAULT_EMAIL, passwordHash]);
     console.log('Default user ready.');
 }
 

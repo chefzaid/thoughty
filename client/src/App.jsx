@@ -13,9 +13,13 @@ import Pagination from './components/Pagination/Pagination';
 import DiaryTabs from './components/DiaryTabs/DiaryTabs';
 import DiaryManager from './components/DiaryManager/DiaryManager';
 import ThoughtOfTheDay from './components/ThoughtOfTheDay/ThoughtOfTheDay';
+import AuthPage from './components/AuthPage/AuthPage';
+import { useAuth } from './contexts/AuthContext';
 import { getTranslation } from './utils/translations';
 
 function App() {
+  const { isAuthenticated, loading: authLoading, user, logout, getAccessToken, authFetch } = useAuth();
+  
   const [entries, setEntries] = useState([]);
   const [newEntryText, setNewEntryText] = useState('');
   const [tags, setTags] = useState([]);
@@ -75,9 +79,57 @@ function App() {
   // Profile stats for profile page
   const [profileStats, setProfileStats] = useState(null);
 
+  // Safe JSON parsing helper
+  const safeJsonParse = async (response) => {
+    try {
+      // If response has json method (including mocks), use it
+      if (typeof response.json === 'function') {
+        return await response.json();
+      }
+      // Otherwise, parse text manually
+      const text = await response.text();
+      return text ? JSON.parse(text) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Helper function for authenticated API calls.
+  // Uses AuthContext's authFetch when available (token refresh), otherwise falls back
+  // to attaching the access token directly (useful for tests/mocks).
+  const authFetchHelper = async (url, options = {}) => {
+    if (typeof authFetch === 'function') {
+      const maybeResponse = await authFetch(url, options);
+      if (maybeResponse && typeof maybeResponse.ok === 'boolean') {
+        return maybeResponse;
+      }
+    }
+
+    const token = typeof getAccessToken === 'function' ? getAccessToken() : null;
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    return fetch(url, { ...options, headers });
+  };
+
   useEffect(() => { setInputPage(page.toString()); }, [page]);
-  useEffect(() => { fetchConfig(); fetchEntryDates(); fetchDiaries(); fetchProfileStats(); }, []);
-  useEffect(() => { fetchEntries(); }, [page, search, filterTags, filterDateObj, filterVisibility, config.entriesPerPage, currentDiaryId]);
+  useEffect(() => { 
+    if (isAuthenticated) {
+      fetchConfig(); 
+      fetchEntryDates(); 
+      fetchDiaries(); 
+      fetchProfileStats(); 
+    }
+  }, [isAuthenticated]);
+  useEffect(() => { 
+    if (isAuthenticated) {
+      fetchEntries(); 
+    }
+  }, [page, search, filterTags, filterDateObj, filterVisibility, config.entriesPerPage, currentDiaryId, isAuthenticated]);
   useEffect(() => {
     if (config.defaultVisibility && visibility === null) {
       setVisibility(config.defaultVisibility);
@@ -95,9 +147,11 @@ function App() {
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch('/api/config');
-      const data = await response.json();
-      setConfig(data);
+      const response = await authFetchHelper('/api/config');
+      const data = await safeJsonParse(response);
+      if (response.ok && data) {
+        setConfig(data);
+      }
     } catch (error) {
       console.error('Error fetching config:', error);
     }
@@ -105,9 +159,11 @@ function App() {
 
   const fetchEntryDates = async () => {
     try {
-      const response = await fetch('/api/entries/dates');
-      const data = await response.json();
-      setEntryDates(data.dates || []);
+      const response = await authFetchHelper('/api/entries/dates');
+      const data = await safeJsonParse(response);
+      if (response.ok && data) {
+        setEntryDates(data.dates || []);
+      }
     } catch (error) {
       console.error('Error fetching entry dates:', error);
     }
@@ -115,16 +171,18 @@ function App() {
 
   const fetchProfileStats = async () => {
     try {
-      const response = await fetch('/api/stats');
-      const data = await response.json();
-      // Extract relevant stats for profile
-      const years = Object.keys(data.thoughtsPerYear || {});
-      const firstYear = years.length > 0 ? Math.min(...years.map(Number)) : new Date().getFullYear();
-      setProfileStats({
-        totalEntries: data.totalThoughts || 0,
-        uniqueTags: Object.keys(data.thoughtsPerTag || {}).length,
-        firstEntryYear: firstYear
-      });
+      const response = await authFetchHelper('/api/stats');
+      const data = await safeJsonParse(response);
+      if (response.ok && data) {
+        // Extract relevant stats for profile
+        const years = Object.keys(data.thoughtsPerYear || {});
+        const firstYear = years.length > 0 ? Math.min(...years.map(Number)) : new Date().getFullYear();
+        setProfileStats({
+          totalEntries: data.totalThoughts || 0,
+          uniqueTags: Object.keys(data.thoughtsPerTag || {}).length,
+          firstEntryYear: firstYear
+        });
+      }
     } catch (error) {
       console.error('Error fetching profile stats:', error);
     }
@@ -132,9 +190,8 @@ function App() {
 
   const updateConfig = async (newConfig) => {
     try {
-      await fetch('/api/config', {
+      await authFetchHelper('/api/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newConfig)
       });
       setConfig(newConfig);
@@ -147,13 +204,15 @@ function App() {
   // Diary API functions
   const fetchDiaries = async () => {
     try {
-      const response = await fetch('/api/diaries');
-      const data = await response.json();
-      setDiaries(data);
-      // Set default diary as current if not set
-      if (!currentDiaryId && data.length > 0) {
-        const defaultDiary = data.find(d => d.is_default);
-        if (defaultDiary) setCurrentDiaryId(defaultDiary.id);
+      const response = await authFetchHelper('/api/diaries');
+      const data = await safeJsonParse(response);
+      if (response.ok && Array.isArray(data)) {
+        setDiaries(data);
+        // Set default diary as current if not set
+        if (!currentDiaryId && data.length > 0) {
+          const defaultDiary = data.find(d => d.is_default);
+          if (defaultDiary) setCurrentDiaryId(defaultDiary.id);
+        }
       }
     } catch (error) {
       console.error('Error fetching diaries:', error);
@@ -161,36 +220,34 @@ function App() {
   };
 
   const handleCreateDiary = async (diaryData) => {
-    const response = await fetch('/api/diaries', {
+    const response = await authFetchHelper('/api/diaries', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(diaryData)
     });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error);
+      const error = await safeJsonParse(response);
+      throw new Error(error?.error || 'Failed to create diary');
     }
     await fetchDiaries();
   };
 
   const handleUpdateDiary = async (id, diaryData) => {
-    const response = await fetch(`/api/diaries/${id}`, {
+    const response = await authFetchHelper(`/api/diaries/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(diaryData)
     });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error);
+      const error = await safeJsonParse(response);
+      throw new Error(error?.error || 'Failed to update diary');
     }
     await fetchDiaries();
   };
 
   const handleDeleteDiary = async (id) => {
-    const response = await fetch(`/api/diaries/${id}`, { method: 'DELETE' });
+    const response = await authFetchHelper(`/api/diaries/${id}`, { method: 'DELETE' });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error);
+      const error = await safeJsonParse(response);
+      throw new Error(error?.error || 'Failed to delete diary');
     }
     if (currentDiaryId === id) {
       const defaultDiary = diaries.find(d => d.is_default);
@@ -201,10 +258,10 @@ function App() {
   };
 
   const handleSetDefaultDiary = async (id) => {
-    const response = await fetch(`/api/diaries/${id}/default`, { method: 'PATCH' });
+    const response = await authFetchHelper(`/api/diaries/${id}/default`, { method: 'PATCH' });
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error);
+      const error = await safeJsonParse(response);
+      throw new Error(error?.error || 'Failed to set default diary');
     }
     await fetchDiaries();
   };
@@ -212,6 +269,7 @@ function App() {
   const t = (key, params = {}) => getTranslation(config.language || 'en', key, params);
 
   const fetchEntries = async () => {
+    if (!isAuthenticated) return;
     setLoading(true);
     try {
       const filterDate = filterDateObj ?
@@ -223,11 +281,13 @@ function App() {
         params.append('diaryId', currentDiaryId);
       }
 
-      const response = await fetch(`/api/entries?${params}`);
-      const data = await response.json();
-      setEntries(data.entries);
-      setTotalPages(data.totalPages);
-      setAllTags(data.allTags || []);
+      const response = await authFetchHelper(`/api/entries?${params}`);
+      const data = await safeJsonParse(response);
+      if (response.ok && data) {
+        setEntries(data.entries || []);
+        setTotalPages(data.totalPages || 1);
+        setAllTags(data.allTags || []);
+      }
     } catch (error) {
       console.error('Error fetching entries:', error);
     } finally {
@@ -248,9 +308,8 @@ function App() {
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
     try {
-      const res = await fetch('/api/entries', {
+      const res = await authFetchHelper('/api/entries', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: newEntryText, tags, date: dateStr, visibility, diaryId: currentDiaryId }),
       });
       if (!res.ok) throw new Error('Failed to save');
@@ -271,7 +330,7 @@ function App() {
   const confirmDelete = async () => {
     if (!entryToDelete) return;
     try {
-      const res = await fetch(`/api/entries/${entryToDelete}`, { method: 'DELETE' });
+      const res = await authFetchHelper(`/api/entries/${entryToDelete}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
       fetchEntries();
     } catch (error) {
@@ -309,9 +368,8 @@ function App() {
     }
     const dateStr = `${editDate.getFullYear()}-${String(editDate.getMonth() + 1).padStart(2, '0')}-${String(editDate.getDate()).padStart(2, '0')}`;
     try {
-      const res = await fetch(`/api/entries/${editingEntry.id}`, {
+      const res = await authFetchHelper(`/api/entries/${editingEntry.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: editText, tags: editTags, date: dateStr, visibility: editVisibility })
       });
       if (!res.ok) throw new Error('Failed to update');
@@ -328,9 +386,8 @@ function App() {
     setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, visibility: newVisibility } : e));
 
     try {
-      const res = await fetch(`/api/entries/${entry.id}/visibility`, {
+      const res = await authFetchHelper(`/api/entries/${entry.id}/visibility`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ visibility: newVisibility })
       });
       if (!res.ok) {
@@ -348,7 +405,7 @@ function App() {
       const params = new URLSearchParams({ year, limit });
       if (month) params.append('month', month);
 
-      const res = await fetch(`/api/entries/first?${params}`);
+      const res = await authFetchHelper(`/api/entries/first?${params}`);
       const data = await res.json();
 
       if (data.found) {
@@ -382,7 +439,7 @@ function App() {
         });
       }
 
-      const res = await fetch(`/api/entries/by-date?${params}`);
+      const res = await authFetchHelper(`/api/entries/by-date?${params}`);
       const data = await res.json();
 
       if (data.found) {
@@ -410,7 +467,7 @@ function App() {
         limit
       });
 
-      const res = await fetch(`/api/entries/by-date?${params}`);
+      const res = await authFetchHelper(`/api/entries/by-date?${params}`);
       const data = await res.json();
 
       if (data.found) {
@@ -442,9 +499,10 @@ function App() {
 
   // Fetch available years/months on mount
   useEffect(() => {
+    if (!isAuthenticated) return;
     const fetchYearsMonths = async () => {
       try {
-        const res = await fetch('/api/entries/first');
+        const res = await authFetchHelper('/api/entries/first');
         const data = await res.json();
         if (data.years) setAvailableYears(data.years);
         if (data.months) setAvailableMonths(data.months);
@@ -453,7 +511,7 @@ function App() {
       }
     };
     fetchYearsMonths();
-  }, []);
+  }, [isAuthenticated]);
 
   // Group entries by date for display
   const groupedEntries = entries.reduce((acc, entry) => {
@@ -680,6 +738,32 @@ function App() {
     }
   };
 
+  // Show loading spinner while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  // Show auth page if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <AuthPage
+        t={t}
+        theme={config.theme || 'dark'}
+        onAuthSuccess={() => {
+          // Re-fetch data after successful auth
+          fetchConfig();
+          fetchDiaries();
+          fetchEntryDates();
+          fetchProfileStats();
+        }}
+      />
+    );
+  }
+
   return (
     <div className={`min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}>
       <div className="max-w-7xl mx-auto">
@@ -687,8 +771,10 @@ function App() {
           currentView={currentView}
           onViewChange={setCurrentView}
           theme={config.theme}
-          name={config.name || 'User'}
+          name={config.name || user?.username || 'User'}
+          avatarUrl={config.avatarUrl || user?.avatarUrl}
           t={t}
+          onLogout={logout}
         />
 
         <ConfirmModal

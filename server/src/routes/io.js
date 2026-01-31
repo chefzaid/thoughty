@@ -10,26 +10,74 @@ const {
     findDuplicates
 } = require('../utils/fileConverter');
 
+// Import size limits
+const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5MB max import file size
+const MAX_ENTRIES_PER_IMPORT = 10000; // Maximum entries per import
+
+/**
+ * Get format configuration for a user
+ */
+async function getFormatConfig(userId) {
+    const settingsResult = await db.query(
+        "SELECT key, value FROM settings WHERE user_id = $1 AND key LIKE 'io_%'",
+        [userId]
+    );
+    const formatConfig = { ...DEFAULT_FORMAT };
+    for (const row of settingsResult.rows) {
+        const key = row.key.replace('io_', '');
+        formatConfig[key] = row.value;
+    }
+    return formatConfig;
+}
+
+/**
+ * Get target diary ID (provided or default)
+ */
+async function getTargetDiaryId(userId, providedDiaryId) {
+    if (providedDiaryId) {
+        return providedDiaryId;
+    }
+    const defaultDiaryResult = await db.query(
+        'SELECT id FROM diaries WHERE user_id = $1 AND is_default = true',
+        [userId]
+    );
+    return defaultDiaryResult.rows[0]?.id || null;
+}
+
+/**
+ * Validate import content
+ */
+function validateImportContent(content) {
+    if (!content) {
+        return { valid: false, status: 400, error: 'File content is required' };
+    }
+    if (typeof content !== 'string') {
+        return { valid: false, status: 400, error: 'Content must be a string' };
+    }
+    if (content.length > MAX_IMPORT_SIZE) {
+        return { valid: false, status: 413, error: `File too large. Maximum size is ${MAX_IMPORT_SIZE / 1024 / 1024}MB` };
+    }
+    return { valid: true };
+}
+
 /**
  * @swagger
  * /api/io/format:
  *   get:
  *     summary: Get current file format settings
+ *     tags: [Import/Export]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Format settings
+ *       401:
+ *         description: Unauthorized
  */
 router.get('/format', async (req, res) => {
     try {
         const userId = getUserId(req);
-        const result = await db.query(
-            "SELECT key, value FROM settings WHERE user_id = $1 AND key LIKE 'io_%'",
-            [userId]
-        );
-
-        const formatConfig = { ...DEFAULT_FORMAT };
-        for (const row of result.rows) {
-            const key = row.key.replace('io_', '');
-            formatConfig[key] = row.value;
-        }
-
+        const formatConfig = await getFormatConfig(userId);
         res.json(formatConfig);
     } catch (err) {
         console.error(err);
@@ -42,6 +90,14 @@ router.get('/format', async (req, res) => {
  * /api/io/format:
  *   post:
  *     summary: Save file format settings
+ *     tags: [Import/Export]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Settings saved
+ *       401:
+ *         description: Unauthorized
  */
 router.post('/format', async (req, res) => {
     try {
@@ -70,33 +126,31 @@ router.post('/format', async (req, res) => {
  * /api/io/export:
  *   get:
  *     summary: Export entries as a text file (optionally filtered by diary)
+ *     tags: [Import/Export]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: diaryId
  *         schema:
  *           type: integer
  *         description: Optional diary ID to filter export
+ *     responses:
+ *       200:
+ *         description: Text file content
+ *       401:
+ *         description: Unauthorized
  */
 router.get('/export', async (req, res) => {
     try {
         const userId = getUserId(req);
-        const diaryId = req.query.diaryId ? parseInt(req.query.diaryId) : null;
+        const diaryId = req.query.diaryId ? Number.parseInt(req.query.diaryId, 10) : null;
 
-        // Get format settings
-        const settingsResult = await db.query(
-            "SELECT key, value FROM settings WHERE user_id = $1 AND key LIKE 'io_%'",
-            [userId]
-        );
-
-        const formatConfig = { ...DEFAULT_FORMAT };
-        for (const row of settingsResult.rows) {
-            const key = row.key.replace('io_', '');
-            formatConfig[key] = row.value;
-        }
+        const formatConfig = await getFormatConfig(userId);
 
         // Get entries (optionally filtered by diary)
         let entriesQuery = 'SELECT * FROM entries WHERE user_id = $1';
-        let params = [userId];
+        const params = [userId];
 
         if (diaryId) {
             entriesQuery += ' AND diary_id = $2';
@@ -125,34 +179,32 @@ router.get('/export', async (req, res) => {
  * /api/io/preview:
  *   post:
  *     summary: Preview import - parse file and check for duplicates
+ *     tags: [Import/Export]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Parsed entries with duplicate info
+ *       401:
+ *         description: Unauthorized
  */
 router.post('/preview', async (req, res) => {
     try {
         const userId = getUserId(req);
         const { content, diaryId } = req.body;
 
-        if (!content) {
-            return res.status(400).json({ error: 'File content is required' });
+        // Validate content
+        const validation = validateImportContent(content);
+        if (!validation.valid) {
+            return res.status(validation.status).json({ error: validation.error });
         }
 
-        // Get format settings
-        const settingsResult = await db.query(
-            "SELECT key, value FROM settings WHERE user_id = $1 AND key LIKE 'io_%'",
-            [userId]
-        );
-
-        const formatConfig = { ...DEFAULT_FORMAT };
-        for (const row of settingsResult.rows) {
-            const key = row.key.replace('io_', '');
-            formatConfig[key] = row.value;
-        }
-
-        // Parse the file content
+        const formatConfig = await getFormatConfig(userId);
         const parsedEntries = parseTextFile(content, formatConfig);
 
         // Get existing entries to check for duplicates (filtered by diary if specified)
         let existingQuery = 'SELECT * FROM entries WHERE user_id = $1';
-        let params = [userId];
+        const params = [userId];
 
         if (diaryId) {
             existingQuery += ' AND diary_id = $2';
@@ -160,7 +212,6 @@ router.post('/preview', async (req, res) => {
         }
 
         const existingResult = await db.query(existingQuery, params);
-
         const duplicates = findDuplicates(parsedEntries, existingResult.rows);
 
         res.json({
@@ -183,88 +234,42 @@ router.post('/preview', async (req, res) => {
  * /api/io/import:
  *   post:
  *     summary: Import entries from parsed content (optionally to a specific diary)
+ *     tags: [Import/Export]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Import results
+ *       401:
+ *         description: Unauthorized
  */
 router.post('/import', async (req, res) => {
     try {
         const userId = getUserId(req);
         const { content, skipDuplicates = true, diaryId } = req.body;
 
-        if (!content) {
-            return res.status(400).json({ error: 'File content is required' });
+        // Validate content
+        const validation = validateImportContent(content);
+        if (!validation.valid) {
+            return res.status(validation.status).json({ error: validation.error });
         }
 
-        // Get format settings
-        const settingsResult = await db.query(
-            "SELECT key, value FROM settings WHERE user_id = $1 AND key LIKE 'io_%'",
-            [userId]
-        );
-
-        const formatConfig = { ...DEFAULT_FORMAT };
-        for (const row of settingsResult.rows) {
-            const key = row.key.replace('io_', '');
-            formatConfig[key] = row.value;
-        }
-
-        // Parse the file content
+        const formatConfig = await getFormatConfig(userId);
         const parsedEntries = parseTextFile(content, formatConfig);
 
-        // Get existing entries if we need to skip duplicates
-        let duplicatesToSkip = new Set();
-        if (skipDuplicates) {
-            let existingQuery = 'SELECT * FROM entries WHERE user_id = $1';
-            let params = [userId];
-
-            if (diaryId) {
-                existingQuery += ' AND diary_id = $2';
-                params.push(diaryId);
-            }
-
-            const existingResult = await db.query(existingQuery, params);
-            const duplicates = findDuplicates(parsedEntries, existingResult.rows);
-            duplicatesToSkip = new Set(duplicates.map(d =>
-                `${d.imported.date}|${d.imported.content.trim()}`
-            ));
+        if (parsedEntries.length > MAX_ENTRIES_PER_IMPORT) {
+            return res.status(400).json({ 
+                error: `Too many entries. Maximum ${MAX_ENTRIES_PER_IMPORT} entries per import. Found ${parsedEntries.length}.` 
+            });
         }
 
-        // Determine target diary ID (use provided or get default)
-        let targetDiaryId = diaryId;
-        if (!targetDiaryId) {
-            const defaultDiaryResult = await db.query(
-                'SELECT id FROM diaries WHERE user_id = $1 AND is_default = true',
-                [userId]
-            );
-            if (defaultDiaryResult.rows.length > 0) {
-                targetDiaryId = defaultDiaryResult.rows[0].id;
-            }
-        }
+        // Build duplicate skip set
+        const duplicatesToSkip = await buildDuplicateSet(userId, parsedEntries, skipDuplicates, diaryId);
+        const targetDiaryId = await getTargetDiaryId(userId, diaryId);
 
-        let importedCount = 0;
-        let skippedCount = 0;
-
-        for (const entry of parsedEntries) {
-            const key = `${entry.date}|${entry.content.trim()}`;
-
-            if (skipDuplicates && duplicatesToSkip.has(key)) {
-                skippedCount++;
-                continue;
-            }
-
-            // Get next index for this date (within the target diary)
-            const countResult = await db.query(
-                'SELECT COUNT(*) FROM entries WHERE user_id = $1 AND date = $2 AND diary_id = $3',
-                [userId, entry.date, targetDiaryId]
-            );
-            const nextIndex = parseInt(countResult.rows[0].count) + 1;
-
-            // Insert the entry
-            await db.query(
-                `INSERT INTO entries (user_id, date, index, tags, content, visibility, diary_id)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-                [userId, entry.date, nextIndex, entry.tags || [], entry.content, 'private', targetDiaryId]
-            );
-
-            importedCount++;
-        }
+        const { importedCount, skippedCount } = await importEntries(
+            userId, parsedEntries, duplicatesToSkip, targetDiaryId, skipDuplicates
+        );
 
         res.json({
             success: true,
@@ -277,5 +282,59 @@ router.post('/import', async (req, res) => {
         res.status(500).json({ error: 'Failed to import entries' });
     }
 });
+
+/**
+ * Build set of duplicate entries to skip
+ */
+async function buildDuplicateSet(userId, parsedEntries, skipDuplicates, diaryId) {
+    if (!skipDuplicates) {
+        return new Set();
+    }
+    
+    let existingQuery = 'SELECT * FROM entries WHERE user_id = $1';
+    const params = [userId];
+
+    if (diaryId) {
+        existingQuery += ' AND diary_id = $2';
+        params.push(diaryId);
+    }
+
+    const existingResult = await db.query(existingQuery, params);
+    const duplicates = findDuplicates(parsedEntries, existingResult.rows);
+    return new Set(duplicates.map(d => `${d.imported.date}|${d.imported.content.trim()}`));
+}
+
+/**
+ * Import entries to database
+ */
+async function importEntries(userId, parsedEntries, duplicatesToSkip, targetDiaryId, skipDuplicates) {
+    let importedCount = 0;
+    let skippedCount = 0;
+
+    for (const entry of parsedEntries) {
+        const key = `${entry.date}|${entry.content.trim()}`;
+
+        if (skipDuplicates && duplicatesToSkip.has(key)) {
+            skippedCount++;
+            continue;
+        }
+
+        const countResult = await db.query(
+            'SELECT COUNT(*) FROM entries WHERE user_id = $1 AND date = $2 AND diary_id = $3',
+            [userId, entry.date, targetDiaryId]
+        );
+        const nextIndex = Number.parseInt(countResult.rows[0].count, 10) + 1;
+
+        await db.query(
+            `INSERT INTO entries (user_id, date, index, tags, content, visibility, diary_id)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [userId, entry.date, nextIndex, entry.tags || [], entry.content, 'private', targetDiaryId]
+        );
+
+        importedCount++;
+    }
+
+    return { importedCount, skippedCount };
+}
 
 module.exports = router;

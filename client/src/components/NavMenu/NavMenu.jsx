@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import './NavMenu.css';
 
-function NavMenu({ currentView, onViewChange, theme, name, t }) {
+function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, t, onLogout }) {
     const initial = (name || t('user')).charAt(0).toUpperCase();
     const isLight = theme === 'light';
 
@@ -46,16 +46,33 @@ function NavMenu({ currentView, onViewChange, theme, name, t }) {
             </div>
 
             {/* User Profile Section */}
-            <button
-                className={`nav-profile-btn ${currentView === 'profile' ? 'active' : ''}`}
-                onClick={() => onViewChange('profile')}
-                title={t('profile')}
-            >
-                <div className="profile-avatar">
-                    {initial}
-                </div>
-                <span className="profile-name">{name || t('user')}</span>
-            </button>
+            <div className="nav-user-section">
+                <button
+                    className={`nav-profile-btn ${currentView === 'profile' ? 'active' : ''}`}
+                    onClick={() => onViewChange('profile')}
+                    title={t('profile')}
+                >
+                    <div className={`profile-avatar ${avatarUrl ? 'has-image' : ''}`}>
+                        {avatarUrl ? (
+                            <img src={avatarUrl} alt={name || t('user')} className="profile-avatar-img" />
+                        ) : (
+                            initial
+                        )}
+                    </div>
+                    <span className="profile-name">{name || t('user')}</span>
+                </button>
+                {onLogout && (
+                    <button
+                        className="nav-logout-btn"
+                        onClick={onLogout}
+                        title={t('logout')}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </button>
+                )}
+            </div>
         </nav>
     );
 }
@@ -65,7 +82,9 @@ NavMenu.propTypes = {
     onViewChange: PropTypes.func.isRequired,
     theme: PropTypes.string,
     name: PropTypes.string,
-    t: PropTypes.func.isRequired
+    avatarUrl: PropTypes.string,
+    t: PropTypes.func.isRequired,
+    onLogout: PropTypes.func
 };
 
 export default NavMenu;

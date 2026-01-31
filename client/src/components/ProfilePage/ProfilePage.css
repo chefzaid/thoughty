@@ -1,5 +1,6 @@
 .profile-page {
-    max-width: 42rem;
+    width: 100%;
+    max-width: 100%;
     margin: 0 auto;
     padding: 1rem;
 }
@@ -73,6 +74,13 @@
     box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.15);
 }
 
+.profile-two-column {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
 .profile-page.dark .profile-header-card {
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(147, 51, 234, 0.15));
     border: 1px solid rgba(59, 130, 246, 0.3);
@@ -81,6 +89,11 @@
 .profile-page.light .profile-header-card {
     background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
     border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.profile-avatar-container {
+    position: relative;
+    flex-shrink: 0;
 }
 
 .profile-avatar-large {
@@ -97,6 +110,75 @@
     color: white;
     box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
     flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+button.profile-avatar-large {
+    padding: 0;
+    border: 3px solid rgba(59, 130, 246, 0.6);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(147, 51, 234, 0.8));
+}
+
+.profile-avatar-large.clickable {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.profile-avatar-large.clickable:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.profile-avatar-large .avatar-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 50%;
+}
+
+.avatar-overlay svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: white;
+}
+
+.profile-avatar-large.clickable:hover .avatar-overlay {
+    opacity: 1;
+}
+
+.hidden-file-input {
+    display: none;
+}
+
+.upload-spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
 }
 
 .profile-header-info {
@@ -104,10 +186,18 @@
     min-width: 0;
 }
 
+.profile-name-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.25rem;
+}
+
 .profile-display-name {
     font-size: 1.375rem;
     font-weight: 700;
-    margin: 0 0 0.25rem 0;
+    margin: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -119,6 +209,20 @@
 
 .profile-page.light .profile-display-name {
     color: #111827;
+}
+
+.profile-username {
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.7;
+}
+
+.profile-page.dark .profile-username {
+    color: #9ca3af;
+}
+
+.profile-page.light .profile-username {
+    color: #6b7280;
 }
 
 .profile-member-since {
@@ -258,6 +362,34 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+}
+
+.settings-row-pair {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+}
+.section-divider {
+    height: 1px;
+    margin: 1.25rem 0;
+    background: rgba(107, 114, 128, 0.3);
+}
+.profile-page.dark .section-divider {
+    background: rgba(75, 85, 99, 0.6);
+}
+.profile-page.light .section-divider {
+    background: rgba(229, 231, 235, 1);
+}
+.section-subtitle {
+    margin: 0 0 0.75rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+}
+.profile-page.dark .section-subtitle {
+    color: #e5e7eb;
+}
+.profile-page.light .section-subtitle {
+    color: #111827;
 }
 
 /* Setting Rows */
@@ -665,4 +797,176 @@
         width: 100%;
         justify-content: center;
     }
+
+    .profile-name-row {
+        justify-content: center;
+    }
+}
+
+/* Password Change Form */
+.password-change-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.password-error {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.password-success {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    background: #dcfce7;
+    color: #14532d;
+    border: 1px solid #86efac;
+}
+
+.btn-change-password {
+    margin-top: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: #4f46e5;
+    color: white;
+    align-self: flex-start;
+}
+
+.btn-change-password:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-change-password:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Delete Account Section */
+.delete-account-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.setting-label.danger {
+    color: #ef4444;
+}
+
+.section-icon.danger {
+    color: #ef4444;
+}
+
+.section-title.danger {
+    color: #ef4444;
+}
+
+.danger-section {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.profile-page.dark .danger-section {
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.profile-page.light .danger-section {
+    background: rgba(239, 68, 68, 0.02);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.btn-delete-account {
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #ef4444;
+    background: transparent;
+    color: #ef4444;
+}
+
+.btn-delete-account:hover {
+    background: #dc2626;
+    color: white;
+}
+
+.delete-confirm-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 300px;
+}
+
+.delete-warning {
+    font-size: 0.875rem;
+    color: #991b1b;
+    margin: 0;
+    padding: 0.75rem;
+    background: rgba(254, 226, 226, 0.95);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.delete-confirm-input::placeholder {
+    color: #ef4444;
+    opacity: 0.7;
+}
+
+.delete-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.btn-cancel-delete {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #6b7280;
+    background: transparent;
+    color: #6b7280;
+}
+
+.btn-cancel-delete:hover {
+    background: rgba(107, 114, 128, 0.1);
+}
+
+.btn-confirm-delete {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: #dc2626;
+    color: white;
+}
+
+.btn-confirm-delete:hover:not(:disabled) {
+    background: #dc2626;
+}
+
+.btn-confirm-delete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

@@ -2,12 +2,11 @@
 Remaining features to implement:
 
 *** UI Features
-- Add authentication and registration with login (email) and password + the possibility to auth/register via Google / Facebook
-- Connect to cloud providers like OneDrive or Google Drive to sync the journal file once exported
-- Configure a fixed schedule for syncing the file from/to cloud (only diff, not the whole file, but there may be changes in previous entries)
-- Configure Gemini API key to use AI features
-- Delete account feature
+- Ability to connect to cloud providers like OneDrive or Google Drive to sync the journal file once exported
+- Ability to configure a fixed schedule for syncing the file from/to cloud (only diff, not the whole file, but there may be changes in previous entries)
+- Ability to configure Gemini API key to use AI features
 - Keeping a history of modifications on a thought and allow to show the previous versions?
+- Intro website to showcase the app features and link to login/sign up
 
 *** Social features
 - Feed that shows public entries from other users and to preview your own public entries
@@ -15,6 +14,11 @@ Remaining features to implement:
 - Comments on public entries
 - Likes for entries and comments
 - Make messaging private between users
+- Notifications for messages, comments, likes, new followers
+- Leaderboard for most active users, most liked entries, most commented entries
+- Feature requests and voting system for new features
+- Add a way to report a public thought (call for violence) and ban the user if needed
+- The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
 
 *** AI
 - Guess the file format for the converter
@@ -25,7 +29,7 @@ Remaining features to implement:
 - Tone and mood of thoughts stats (analyzed by AI)
 - Subjects discussed stats (analyzed by AI)
 - Personality analysis through the choice of words and subjects
-- AI features should be locked behind a paywall
+- AI features should be locked behind a paywall with a free trial
 
 *** Book Converter
 - Based on tags to create chapters
@@ -38,3 +42,32 @@ Remaining features to implement:
 - Ability to choose whether to export the visibility field or not, by default set to false
 - Export to a file needs to add a visibility field like --[public/private] just after the tags.
 - Manage the behavior of the import/export when using All Diaries
+
+*** Security
+- Add 2FA authentication
+- Allow users to see and manage active sessions (logout from other sessions)
+- Spam and bots protection on sign up and login forms
+- Allow users to download their data (GDPR)
+
+*** Technical improvements
+- Add e2e tests for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
+- Infinite scroll for the feed and public entries
+- Caching of frequent requests (public entries, feed)
+- Mask command to nuke DB and start fresh
+- Kubernetes deployment scripts
+- CI/CD pipeline for automated testing and deployment
+- Optimize database for better performance
+- Set up monitoring and alerting for server health and performance
+- Backup and disaster recovery plan for user data
+- Documentation for API endpoints and developer guides
+- Mobile app version for iOS and Android
+- Offline mode for journaling without internet connection
+- Refactor codebase to use modern React features (hooks, context API)
+- Migrate JS code to TypeScript when possible and use modern frameworks and testing libraries
+- Update dependencies to latest versions and ensure compatibility
+- Use WebSockets for real-time updates on public entries and messages
+- Implement lazy loading for components and routes to improve initial load time
+- Implement feature flags to enable/disable features without redeploying
+- Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
+- Add logging for critical actions and errors for better debugging
+- Improve error handling and user feedback for better UX
