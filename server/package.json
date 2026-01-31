@@ -22,7 +22,13 @@
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
     "migration:generate": "npm run typeorm -- migration:generate -d src/database/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts"
+    "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
+    "db:migrate": "npx ts-node -r tsconfig-paths/register scripts/migrate.ts",
+    "db:seed": "npx ts-node -r tsconfig-paths/register scripts/seed.ts",
+    "db:check": "npx ts-node -r tsconfig-paths/register scripts/check-db.ts",
+    "db:nuke": "npx ts-node -r tsconfig-paths/register scripts/nuke-db.ts",
+    "kill-node": "npx ts-node scripts/kill-node.ts",
+    "coverage-report": "npx ts-node scripts/coverage-report.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.0",

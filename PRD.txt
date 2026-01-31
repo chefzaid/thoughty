@@ -52,32 +52,25 @@ Remaining features to implement:
 - Allow users to download their data (GDPR)
 
 *** Technical improvements
-
 - Add e2e tests for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
-
-- Tags on db, should be just plain text sepearated by commas (no []/{})
-- Reseed the DB with the appropriate data after this change
-
-- Scripts are still in JS, they may need to be converted to TS or another solution found
-- Mask command to nuke DB and start fresh importing test data
-- Revamp mask outputs when running and testing the app to be more modern and user friendly
+- Refactor codebase to use modern React 19 features (hooks, context API)
 
 - Setting up the infrastructure for deploying the application
 - Dockerfiles for client and server
 - Kubernetes deployment scripts
 - CI/CD pipeline for automated testing and deployment
 
+- Offline mode for journaling without internet connection
+- Mobile app version for iOS and Android
+
 - Optimize database for better performance
 - Caching of frequent requests (public entries, feed)
 - Set up monitoring and alerting for server health and performance
 - Backup and disaster recovery plan for user data
-- Documentation for API endpoints and developer guides
-- Mobile app version for iOS and Android
-- Offline mode for journaling without internet connection
-- Refactor codebase to use modern React features (hooks, context API)
+- Add logging for critical actions and errors for better debugging
+- Improve error handling and user feedback for better UX
 - Use WebSockets for real-time updates on public entries and messages
 - Implement lazy loading for components and routes to improve initial load time
 - Implement feature flags to enable/disable features without redeploying
 - Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
-- Add logging for critical actions and errors for better debugging
-- Improve error handling and user feedback for better UX
+- Documentation for API endpoints and developer guides

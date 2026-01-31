@@ -1,7 +1,11 @@
-import { createRequire } from 'node:module';
+#!/usr/bin/env ts-node
+/**
+ * Database Migration Script
+ * Creates and updates the database schema
+ */
 
-const require = createRequire(import.meta.url);
-const db = require('../server/src/db');
+import { log, banner, section, summaryBox, fmt } from './lib/logger';
+import { query, closeDatabase } from './lib/db';
 
 const createTableQuery = `
 -- Create users table first with authentication fields
@@ -93,6 +97,15 @@ BEGIN
     END IF;
 END $$;
 
+-- Create refresh_tokens table for JWT refresh token rotation
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_entries_date ON entries(date);
 CREATE INDEX IF NOT EXISTS idx_entries_visibility ON entries(visibility);
@@ -100,18 +113,47 @@ CREATE INDEX IF NOT EXISTS idx_entries_user_id ON entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_entries_diary_id ON entries(diary_id);
 CREATE INDEX IF NOT EXISTS idx_settings_user_id ON settings(user_id);
 CREATE INDEX IF NOT EXISTS idx_diaries_user_id ON diaries(user_id);
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 `;
 
-async function migrate() {
+async function migrate(): Promise<void> {
+    const startTime = Date.now();
+
+    banner('DATABASE MIGRATIONS', 'Applying schema changes');
+
     try {
-        console.log('Running migrations...');
-        await db.query(createTableQuery);
-        console.log('Migrations completed successfully!');
+        section('Running Migrations');
+        log.step('Applying database schema...');
+
+        await query(createTableQuery);
+
+        log.success('Schema applied successfully');
+
+        // Get table info
+        const tables = await query<{ table_name: string }>(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_type = 'BASE TABLE'
+            ORDER BY table_name
+        `);
+
+        const duration = Date.now() - startTime;
+
+        summaryBox('Migration Complete', [
+            ['Status', fmt.green('Success')],
+            ['Tables', tables.map((t) => t.table_name).join(', ')],
+            ['Duration', `${duration}ms`],
+        ]);
+
+        await closeDatabase();
         process.exit(0);
     } catch (err) {
-        console.error('Migration failed:', err);
+        log.error(`Migration failed: ${(err as Error).message}`);
+        console.error(err);
+        await closeDatabase();
         process.exit(1);
     }
 }
 
-await migrate();
+migrate();

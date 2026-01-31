@@ -21,6 +21,11 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', () => {
+            // Silently ignore proxy errors (server not ready yet)
+          });
+        },
       },
     },
   },

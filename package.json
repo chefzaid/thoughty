@@ -4,10 +4,12 @@
   "description": "A modern journal application",
   "private": true,
   "scripts": {
-    "migrate": "node scripts/migrate.mjs",
-    "seed": "node scripts/seed.js",
-    "kill": "node scripts/kill_node.js",
-    "coverage": "node scripts/coverage_report.js"
+    "migrate": "cd server && npm run db:migrate",
+    "seed": "cd server && npm run db:seed",
+    "check-db": "cd server && npm run db:check",
+    "nuke-db": "cd server && npm run db:nuke",
+    "kill": "cd server && npm run kill-node",
+    "coverage": "cd server && npm run coverage-report"
   }
 }
 
