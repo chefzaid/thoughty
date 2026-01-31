@@ -1,0 +1,747 @@
+export type TranslationKey =
+  | 'journal'
+  | 'stats'
+  | 'settings'
+  | 'myJournal'
+  | 'whatsOnYourMind'
+  | 'save'
+  | 'public'
+  | 'private'
+  | 'publicTooltip'
+  | 'privateTooltip'
+  | 'copyright'
+  | 'madeWithLove'
+  | 'privacy'
+  | 'terms'
+  | 'contact'
+  | 'searchPlaceholder'
+  | 'filterTagsPlaceholder'
+  | 'filterDatePlaceholder'
+  | 'filterVisibility'
+  | 'allEntries'
+  | 'resetFilters'
+  | 'year'
+  | 'month'
+  | 'goToYear'
+  | 'goToMonth'
+  | 'goToFirst'
+  | 'go'
+  | 'pageInfo'
+  | 'previous'
+  | 'next'
+  | 'first'
+  | 'last'
+  | 'page'
+  | 'ofTotal'
+  | 'close'
+  | 'backToTop'
+  | 'profileName'
+  | 'fullName'
+  | 'fullNameDescription'
+  | 'enterYourFullName'
+  | 'displayName'
+  | 'displayNameDescription'
+  | 'email'
+  | 'emailDescription'
+  | 'enterYourEmail'
+  | 'bio'
+  | 'bioDescription'
+  | 'writeSomethingAboutYourself'
+  | 'birthday'
+  | 'birthdayDescription'
+  | 'changeProfilePicture'
+  | 'editProfilePicture'
+  | 'clickToUpload'
+  | 'maxFileSize'
+  | 'changeImage'
+  | 'theme'
+  | 'themeDescription'
+  | 'entriesPerPage'
+  | 'entriesPerPageDescription'
+  | 'defaultVisibility'
+  | 'defaultVisibilityDescription'
+  | 'language'
+  | 'security'
+  | 'currentPassword'
+  | 'newPassword'
+  | 'confirmNewPassword'
+  | 'enterCurrentPassword'
+  | 'enterNewPassword'
+  | 'confirmNewPasswordPlaceholder'
+  | 'changePassword'
+  | 'changingPassword'
+  | 'passwordChangeSuccess'
+  | 'passwordChangeFailed'
+  | 'currentAndNewPasswordRequired'
+  | 'cancel'
+  | 'saveSettings'
+  | 'personalInfo'
+  | 'appearance'
+  | 'preferences'
+  | 'memberSince'
+  | 'entries'
+  | 'tags'
+  | 'enterYourName'
+  | 'deleteEntryTitle'
+  | 'deleteEntryMessage'
+  | 'delete'
+  | 'noEntriesFound'
+  | 'edit'
+  | 'readMore'
+  | 'showLess'
+  | 'totalEntries'
+  | 'currentStreak'
+  | 'topTags'
+  | 'entriesOverTime'
+  | 'tagDistribution'
+  | 'loadingStats'
+  | 'statsOverview'
+  | 'uniqueTags'
+  | 'yearsActive'
+  | 'avgPerYear'
+  | 'thoughtsPerYear'
+  | 'thoughtsPerMonth'
+  | 'topTagsByYear'
+  | 'importExport'
+  | 'import'
+  | 'export'
+  | 'exportDescription'
+  | 'importDescription'
+  | 'downloadExport'
+  | 'chooseFile'
+  | 'previewSummary'
+  | 'entriesFound'
+  | 'duplicatesFound'
+  | 'skipDuplicates'
+  | 'confirmImport'
+  | 'importing'
+  | 'importSuccess'
+  | 'importError'
+  | 'exportSuccess'
+  | 'exportError'
+  | 'previewError'
+  | 'formatSettings'
+  | 'formatDescription'
+  | 'entrySeparator'
+  | 'sameDaySeparator'
+  | 'datePrefix'
+  | 'dateSuffix'
+  | 'dateFormat'
+  | 'tagOpenBracket'
+  | 'tagCloseBracket'
+  | 'tagSeparator'
+  | 'saveFormat'
+  | 'formatSaved'
+  | 'formatSaveError'
+  | 'loading'
+  | 'dangerZone'
+  | 'deleteAllDescription'
+  | 'deleteAllEntries'
+  | 'confirmDeleteAll'
+  | 'deleteAllSuccess'
+  | 'deleteAllError'
+  | 'deleting'
+  | 'user'
+  | 'logout'
+  | 'profile'
+  | 'back'
+  | 'signIn'
+  | 'signUp'
+  | 'welcomeBack'
+  | 'createAccount'
+  | 'resetYourPassword'
+  | 'password'
+  | 'confirmPassword'
+  | 'username'
+  | 'emailOrUsername'
+  | 'enterEmail'
+  | 'enterEmailOrUsername'
+  | 'enterPassword'
+  | 'enterUsername'
+  | 'confirmPasswordPlaceholder'
+  | 'showPassword'
+  | 'hidePassword'
+  | 'orContinueWith'
+  | 'continueWithGoogle'
+  | 'dontHaveAccount'
+  | 'alreadyHaveAccount'
+  | 'emailPasswordRequired'
+  | 'identifierPasswordRequired'
+  | 'emailRequired'
+  | 'invalidEmail'
+  | 'passwordMinLength'
+  | 'passwordsDoNotMatch'
+  | 'authFailed'
+  | 'googleSignInFailed'
+  | 'forgotPassword'
+  | 'sendResetLink'
+  | 'backToLogin'
+  | 'resetEmailSent'
+  | 'forgotPasswordFailed'
+  | 'deleteAccount'
+  | 'deleteAccountDescription'
+  | 'deleteAccountWarning'
+  | 'typeDeleteToConfirm'
+  | 'enterYourPassword'
+  | 'confirmDelete'
+  | 'deleteAccountFailed'
+  | 'passwordRequired'
+  | 'backToSource'
+  | 'entryNotFound'
+  | 'entryReferenceHint'
+  | 'diaries'
+  | 'manageDiaries'
+  | 'newDiary'
+  | 'diaryName'
+  | 'diaryIcon'
+  | 'setAsDefault'
+  | 'defaultDiary'
+  | 'deleteDiary'
+  | 'deleteDiaryWarning'
+  | 'createDiary'
+  | 'editDiary'
+  | 'allDiaries'
+  | 'noDiaries'
+  | 'visibilityOverrideHint'
+  | 'highlightsTitle'
+  | 'randomThought'
+  | 'onThisDay'
+  | 'yearsAgo'
+  | 'refreshRandom'
+  | 'highlightsError'
+  | 'tryAgain'
+  | 'expand'
+  | 'collapse'
+  | 'seeHighlights'
+  | 'highlights'
+  | 'noHighlights';
+
+export type Language = 'en' | 'fr';
+
+export type TranslationParams = Record<string, string | number>;
+
+export type Translations = Record<Language, Record<TranslationKey, string>>;
+
+export const translations: Translations = {
+  en: {
+    // App
+    journal: 'Journal',
+    stats: 'Stats',
+    settings: 'Settings',
+    myJournal: 'My Journal',
+    whatsOnYourMind: "What's on your mind?",
+    save: 'Save',
+    public: 'Public',
+    private: 'Private',
+    publicTooltip: 'Public - visible to everyone',
+    privateTooltip: 'Private - only you can see',
+    copyright: '© {year} Thoughty. All rights reserved.',
+    madeWithLove: 'Made with ❤️ in Paris',
+    privacy: 'Privacy Policy',
+    terms: 'Terms of Service',
+    contact: 'Contact Us',
+    searchPlaceholder: 'Search content...',
+    filterTagsPlaceholder: 'Filter by tags...',
+    filterDatePlaceholder: 'Filter by date',
+    filterVisibility: 'Filter by visibility',
+    allEntries: 'All',
+    resetFilters: 'Reset Filters',
+    year: 'Year',
+    month: 'Month',
+    goToYear: 'Go to year',
+    goToMonth: 'Go to month',
+    goToFirst: 'Go to first entry',
+    go: 'Go',
+    pageInfo: 'Page {page} of {totalPages}',
+    previous: 'Previous',
+    next: 'Next',
+    first: 'First',
+    last: 'Last',
+    page: 'Page',
+    ofTotal: 'of {total}',
+    close: 'Close',
+    backToTop: 'Back to top',
+
+    // Settings
+    profileName: 'Name',
+    fullName: 'Full Name',
+    fullNameDescription: 'Your full name as you want it displayed',
+    enterYourFullName: 'Enter your full name',
+    displayName: 'Display Name',
+    displayNameDescription: 'How you want to be known in the app',
+    email: 'Email',
+    emailDescription: 'Your email address for account notifications',
+    enterYourEmail: 'Enter your email',
+    bio: 'Bio',
+    bioDescription: 'A short description about yourself',
+    writeSomethingAboutYourself: 'Write something about yourself...',
+    birthday: 'Birthday',
+    birthdayDescription: 'Your date of birth',
+    changeProfilePicture: 'Change profile picture',
+    editProfilePicture: 'Edit Profile Picture',
+    clickToUpload: 'Click to upload an image',
+    maxFileSize: 'Maximum file size: 5MB',
+    changeImage: 'Choose different image',
+    theme: 'Theme',
+    themeDescription: 'Choose your preferred color scheme',
+    entriesPerPage: 'Entries per page',
+    entriesPerPageDescription: 'Number of entries to display per page',
+    defaultVisibility: 'Default Visibility',
+    defaultVisibilityDescription: 'Default visibility for new entries',
+    language: 'Language',
+
+    // Security
+    security: 'Security',
+    currentPassword: 'Current Password',
+    newPassword: 'New Password',
+    confirmNewPassword: 'Confirm New Password',
+    enterCurrentPassword: 'Enter your current password',
+    enterNewPassword: 'Enter your new password',
+    confirmNewPasswordPlaceholder: 'Confirm your new password',
+    changePassword: 'Change Password',
+    changingPassword: 'Changing...',
+    passwordChangeSuccess: 'Password changed successfully',
+    passwordChangeFailed: 'Failed to change password',
+    currentAndNewPasswordRequired: 'Current and new password are required',
+    cancel: 'Cancel',
+    saveSettings: 'Save Changes',
+    personalInfo: 'Personal Information',
+    appearance: 'Appearance',
+    preferences: 'Preferences',
+    memberSince: 'Member since {year}',
+    entries: 'Entries',
+    tags: 'Tags',
+    enterYourName: 'Enter your name',
+
+    // Confirm Modal
+    deleteEntryTitle: 'Delete Entry',
+    deleteEntryMessage:
+      'Are you sure you want to delete this entry? This action cannot be undone.',
+    delete: 'Delete',
+
+    // Entries List
+    noEntriesFound: 'No entries found',
+    edit: 'Edit',
+    readMore: 'Read more',
+    showLess: 'Show less',
+
+    // Stats
+    totalEntries: 'Total Entries',
+    currentStreak: 'Current Streak',
+    topTags: 'Top Tags',
+    entriesOverTime: 'Entries Over Time',
+    tagDistribution: 'Tag Distribution',
+    loadingStats: 'Loading statistics...',
+    statsOverview: 'Overview of your journal entries and tags',
+    uniqueTags: 'Unique Tags',
+    yearsActive: 'Years Active',
+    avgPerYear: 'Avg. per Year',
+    thoughtsPerYear: 'Entries per Year',
+    thoughtsPerMonth: 'Entries per Month',
+    topTagsByYear: 'Top Tags by Year',
+
+    // Import/Export
+    importExport: 'Import/Export',
+    import: 'Import',
+    export: 'Export',
+    exportDescription: 'Download all journal entries from {diaryName} as a text file.',
+    importDescription: 'Upload a text file to import entries into {diaryName}.',
+    downloadExport: 'Download Export',
+    chooseFile: 'Choose File',
+    previewSummary: 'Preview Summary',
+    entriesFound: 'entries found',
+    duplicatesFound: 'duplicates found',
+    skipDuplicates: 'Skip duplicate entries',
+    confirmImport: 'Import Entries',
+    importing: 'Importing...',
+    importSuccess: 'Successfully imported {imported} entries ({skipped} duplicates skipped)',
+    importError: 'Failed to import entries',
+    exportSuccess: 'Export downloaded successfully',
+    exportError: 'Failed to export entries',
+    previewError: 'Failed to preview file',
+    formatSettings: 'Format Settings',
+    formatDescription: 'Customize the text file format for import and export.',
+    entrySeparator: 'Entry Separator',
+    sameDaySeparator: 'Same Day Separator',
+    datePrefix: 'Date Prefix',
+    dateSuffix: 'Date Suffix',
+    dateFormat: 'Date Format',
+    tagOpenBracket: 'Tag Open Bracket',
+    tagCloseBracket: 'Tag Close Bracket',
+    tagSeparator: 'Tag Separator',
+    saveFormat: 'Save Format Settings',
+    formatSaved: 'Format settings saved',
+    formatSaveError: 'Failed to save format settings',
+    loading: 'Loading',
+
+    // Danger Zone
+    dangerZone: 'Danger Zone',
+    deleteAllDescription:
+      'Permanently delete all entries from {diaryName}. This action cannot be undone.',
+    deleteAllEntries: 'Delete All Entries',
+    confirmDeleteAll: 'Yes, Delete Everything',
+    deleteAllSuccess: 'All entries have been deleted',
+    deleteAllError: 'Failed to delete entries',
+    deleting: 'Deleting...',
+
+    // Auth & Profile
+    user: 'User',
+    logout: 'Logout',
+    profile: 'Profile',
+    back: 'Back',
+
+    // Authentication
+    signIn: 'Sign In',
+    signUp: 'Sign Up',
+    welcomeBack: 'Welcome back',
+    createAccount: 'Create your account',
+    resetYourPassword: 'Reset your password',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    username: 'Username',
+    emailOrUsername: 'Email or Username',
+    enterEmail: 'Enter your email',
+    enterEmailOrUsername: 'Enter your email or username',
+    enterPassword: 'Enter your password',
+    enterUsername: 'Choose a username',
+    confirmPasswordPlaceholder: 'Confirm your password',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
+    orContinueWith: 'or continue with',
+    continueWithGoogle: 'Continue with Google',
+    dontHaveAccount: "Don't have an account?",
+    alreadyHaveAccount: 'Already have an account?',
+    emailPasswordRequired: 'Email and password are required',
+    identifierPasswordRequired: 'Email/username and password are required',
+    emailRequired: 'Email is required',
+    invalidEmail: 'Please enter a valid email address',
+    passwordMinLength: 'Password must be at least 6 characters',
+    passwordsDoNotMatch: 'Passwords do not match',
+    authFailed: 'Authentication failed. Please try again.',
+    googleSignInFailed: 'Google sign-in failed. Please try again.',
+    forgotPassword: 'Forgot password?',
+    sendResetLink: 'Send Reset Link',
+    backToLogin: 'Back to Login',
+    resetEmailSent: 'If an account exists with this email, a reset link will be sent.',
+    forgotPasswordFailed: 'Failed to send reset email. Please try again.',
+
+    // Delete Account
+    deleteAccount: 'Delete Account',
+    deleteAccountDescription: 'Permanently delete your account and all associated data',
+    deleteAccountWarning:
+      'This action cannot be undone. All your data will be permanently deleted.',
+    typeDeleteToConfirm: 'Type DELETE to confirm',
+    enterYourPassword: 'Enter your password',
+    confirmDelete: 'Confirm Delete',
+    deleteAccountFailed: 'Failed to delete account. Please try again.',
+    passwordRequired: 'Password is required',
+
+    // Entry Cross-References
+    backToSource: 'Back to source entry',
+    entryNotFound: 'Entry not found',
+    entryReferenceHint:
+      'Tip: Reference other entries by writing "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd--X)" where X is the index of the entry for that day',
+
+    // Diaries
+    diaries: 'Diaries',
+    manageDiaries: 'Manage Diaries',
+    newDiary: 'New Diary',
+    diaryName: 'Diary Name',
+    diaryIcon: 'Icon',
+    setAsDefault: 'Set as Default',
+    defaultDiary: 'Default Diary',
+    deleteDiary: 'Delete Diary',
+    deleteDiaryWarning: 'Entries will be moved to your default diary.',
+    createDiary: 'Create Diary',
+    editDiary: 'Edit Diary',
+    allDiaries: 'All Diaries',
+    noDiaries: 'No diaries found. Create one to get started!',
+    visibilityOverrideHint: 'Can be overridden per entry',
+
+    // Highlights / Thought of the Day
+    highlightsTitle: 'Highlights',
+    randomThought: 'Random Thought',
+    onThisDay: 'On This Day',
+    yearsAgo: '{years} year(s) ago',
+    refreshRandom: 'Get a new random thought',
+    highlightsError: 'Failed to load highlights',
+    tryAgain: 'Try again',
+    expand: 'Expand',
+    collapse: 'Collapse',
+    seeHighlights: 'See Highlights of the Day',
+    highlights: 'Highlights',
+    noHighlights: 'No highlights available yet. Start writing entries to see them here!',
+  },
+  fr: {
+    // App
+    journal: 'Journal',
+    stats: 'Statistiques',
+    settings: 'Paramètres',
+    myJournal: 'Mon Journal',
+    whatsOnYourMind: "Qu'avez-vous à l'esprit ?",
+    save: 'Enregistrer',
+    public: 'Public',
+    private: 'Privé',
+    publicTooltip: 'Public - visible par tous',
+    privateTooltip: 'Privé - visible uniquement par vous',
+    copyright: '© {year} Thoughty. Tous droits réservés.',
+    madeWithLove: 'Fait avec ❤️ à Paris',
+    privacy: 'Politique de confidentialité',
+    terms: "Conditions d'utilisation",
+    contact: 'Nous contacter',
+    searchPlaceholder: 'Rechercher...',
+    filterTagsPlaceholder: 'Filtrer par tags...',
+    filterDatePlaceholder: 'Filtrer par date',
+    filterVisibility: 'Filtrer par visibilité',
+    allEntries: 'Tous',
+    resetFilters: 'Réinitialiser',
+    year: 'Année',
+    month: 'Mois',
+    goToYear: "Aller à l'année",
+    goToMonth: 'Aller au mois',
+    goToFirst: 'Aller à la première entrée',
+    go: 'Aller',
+    pageInfo: 'Page {page} sur {totalPages}',
+    previous: 'Précédent',
+    next: 'Suivant',
+    first: 'Premier',
+    last: 'Dernier',
+    page: 'Page',
+    ofTotal: 'sur {total}',
+    close: 'Fermer',
+    backToTop: 'Retour en haut',
+
+    // Settings
+    profileName: 'Nom',
+    fullName: 'Nom complet',
+    fullNameDescription: "Votre nom complet tel que vous souhaitez qu'il soit affiché",
+    enterYourFullName: 'Entrez votre nom complet',
+    displayName: "Nom d'affichage",
+    displayNameDescription: "Comment vous souhaitez être connu dans l'application",
+    email: 'Email',
+    emailDescription: 'Votre adresse email pour les notifications du compte',
+    enterYourEmail: 'Entrez votre email',
+    bio: 'Biographie',
+    bioDescription: 'Une courte description de vous-même',
+    writeSomethingAboutYourself: 'Écrivez quelque chose sur vous...',
+    birthday: 'Date de naissance',
+    birthdayDescription: 'Votre date de naissance',
+    changeProfilePicture: 'Changer la photo de profil',
+    editProfilePicture: 'Modifier la photo de profil',
+    clickToUpload: 'Cliquez pour télécharger une image',
+    maxFileSize: 'Taille maximale du fichier : 5 Mo',
+    changeImage: 'Choisir une autre image',
+    theme: 'Thème',
+    themeDescription: 'Choisissez votre palette de couleurs',
+    entriesPerPage: 'Entrées par page',
+    entriesPerPageDescription: "Nombre d'entrées à afficher par page",
+    defaultVisibility: 'Visibilité par défaut',
+    defaultVisibilityDescription: 'Visibilité par défaut pour les nouvelles entrées',
+    language: 'Langue',
+
+    // Security
+    security: 'Sécurité',
+    currentPassword: 'Mot de passe actuel',
+    newPassword: 'Nouveau mot de passe',
+    confirmNewPassword: 'Confirmer le nouveau mot de passe',
+    enterCurrentPassword: 'Entrez votre mot de passe actuel',
+    enterNewPassword: 'Entrez votre nouveau mot de passe',
+    confirmNewPasswordPlaceholder: 'Confirmez votre nouveau mot de passe',
+    changePassword: 'Changer le mot de passe',
+    changingPassword: 'Modification...',
+    passwordChangeSuccess: 'Mot de passe modifié avec succès',
+    passwordChangeFailed: 'Échec de la modification du mot de passe',
+    currentAndNewPasswordRequired: 'Le mot de passe actuel et le nouveau sont requis',
+    cancel: 'Annuler',
+    saveSettings: 'Enregistrer',
+    personalInfo: 'Informations personnelles',
+    appearance: 'Apparence',
+    preferences: 'Préférences',
+    memberSince: 'Membre depuis {year}',
+    entries: 'Entrées',
+    tags: 'Tags',
+    enterYourName: 'Entrez votre nom',
+
+    // Confirm Modal
+    deleteEntryTitle: "Supprimer l'entrée",
+    deleteEntryMessage:
+      'Êtes-vous sûr de vouloir supprimer cette entrée ? Cette action est irréversible.',
+    delete: 'Supprimer',
+
+    // Entries List
+    noEntriesFound: 'Aucune entrée trouvée',
+    edit: 'Modifier',
+    readMore: 'Lire la suite',
+    showLess: 'Voir moins',
+
+    // Stats
+    totalEntries: 'Total des entrées',
+    currentStreak: 'Série actuelle',
+    topTags: 'Tags populaires',
+    entriesOverTime: 'Entrées au fil du temps',
+    tagDistribution: 'Distribution des tags',
+    loadingStats: 'Chargement des statistiques...',
+    statsOverview: 'Aperçu de vos entrées de journal et tags',
+    uniqueTags: 'Tags uniques',
+    yearsActive: 'Années actives',
+    avgPerYear: 'Moy. par an',
+    thoughtsPerYear: 'Entrées par an',
+    thoughtsPerMonth: 'Entrées par mois',
+    topTagsByYear: 'Top tags par année',
+
+    // Import/Export
+    importExport: 'Import/Export',
+    import: 'Importer',
+    export: 'Exporter',
+    exportDescription:
+      'Téléchargez toutes les entrées de {diaryName} sous forme de fichier texte.',
+    importDescription: 'Téléversez un fichier texte pour importer des entrées dans {diaryName}.',
+    downloadExport: "Télécharger l'export",
+    chooseFile: 'Choisir un fichier',
+    previewSummary: 'Aperçu',
+    entriesFound: 'entrées trouvées',
+    duplicatesFound: 'doublons trouvés',
+    skipDuplicates: 'Ignorer les entrées en double',
+    confirmImport: 'Importer les entrées',
+    importing: 'Importation...',
+    importSuccess: '{imported} entrées importées avec succès ({skipped} doublons ignorés)',
+    importError: "Échec de l'importation des entrées",
+    exportSuccess: 'Export téléchargé avec succès',
+    exportError: "Échec de l'exportation des entrées",
+    previewError: "Échec de l'aperçu du fichier",
+    formatSettings: 'Paramètres de format',
+    formatDescription: "Personnalisez le format du fichier texte pour l'import et l'export.",
+    entrySeparator: "Séparateur d'entrées",
+    sameDaySeparator: 'Séparateur du même jour',
+    datePrefix: 'Préfixe de date',
+    dateSuffix: 'Suffixe de date',
+    dateFormat: 'Format de date',
+    tagOpenBracket: 'Crochet ouvrant de tag',
+    tagCloseBracket: 'Crochet fermant de tag',
+    tagSeparator: 'Séparateur de tags',
+    saveFormat: 'Enregistrer les paramètres',
+    formatSaved: 'Paramètres de format enregistrés',
+    formatSaveError: "Échec de l'enregistrement des paramètres",
+    loading: 'Chargement',
+
+    // Danger Zone
+    dangerZone: 'Zone de danger',
+    deleteAllDescription:
+      'Supprimer définitivement toutes les entrées de {diaryName}. Cette action est irréversible.',
+    deleteAllEntries: 'Supprimer toutes les entrées',
+    confirmDeleteAll: 'Oui, tout supprimer',
+    deleteAllSuccess: 'Toutes les entrées ont été supprimées',
+    deleteAllError: 'Échec de la suppression des entrées',
+    deleting: 'Suppression...',
+
+    // Auth & Profile
+    user: 'Utilisateur',
+    logout: 'Déconnexion',
+    profile: 'Profil',
+    back: 'Retour',
+
+    // Authentication
+    signIn: 'Se connecter',
+    signUp: "S'inscrire",
+    welcomeBack: 'Bon retour',
+    createAccount: 'Créez votre compte',
+    resetYourPassword: 'Réinitialiser votre mot de passe',
+    password: 'Mot de passe',
+    confirmPassword: 'Confirmer le mot de passe',
+    username: "Nom d'utilisateur",
+    emailOrUsername: "Email ou nom d'utilisateur",
+    enterEmail: 'Entrez votre email',
+    enterEmailOrUsername: "Entrez votre email ou nom d'utilisateur",
+    enterPassword: 'Entrez votre mot de passe',
+    enterUsername: "Choisissez un nom d'utilisateur",
+    confirmPasswordPlaceholder: 'Confirmez votre mot de passe',
+    showPassword: 'Afficher le mot de passe',
+    hidePassword: 'Masquer le mot de passe',
+    orContinueWith: 'ou continuer avec',
+    continueWithGoogle: 'Continuer avec Google',
+    dontHaveAccount: "Vous n'avez pas de compte ?",
+    alreadyHaveAccount: 'Vous avez déjà un compte ?',
+    emailPasswordRequired: "L'email et le mot de passe sont requis",
+    identifierPasswordRequired: "L'email/nom d'utilisateur et le mot de passe sont requis",
+    emailRequired: "L'email est requis",
+    invalidEmail: 'Veuillez entrer une adresse email valide',
+    passwordMinLength: 'Le mot de passe doit contenir au moins 6 caractères',
+    passwordsDoNotMatch: 'Les mots de passe ne correspondent pas',
+    authFailed: "Échec de l'authentification. Veuillez réessayer.",
+    googleSignInFailed: 'Échec de la connexion Google. Veuillez réessayer.',
+    forgotPassword: 'Mot de passe oublié ?',
+    sendResetLink: 'Envoyer le lien de réinitialisation',
+    backToLogin: 'Retour à la connexion',
+    resetEmailSent:
+      'Si un compte existe avec cet email, un lien de réinitialisation sera envoyé.',
+    forgotPasswordFailed: "Échec de l'envoi de l'email de réinitialisation. Veuillez réessayer.",
+
+    // Delete Account
+    deleteAccount: 'Supprimer le compte',
+    deleteAccountDescription: 'Supprimer définitivement votre compte et toutes les données associées',
+    deleteAccountWarning:
+      'Cette action est irréversible. Toutes vos données seront supprimées définitivement.',
+    typeDeleteToConfirm: 'Tapez DELETE pour confirmer',
+    enterYourPassword: 'Entrez votre mot de passe',
+    confirmDelete: 'Confirmer la suppression',
+    deleteAccountFailed: 'Échec de la suppression du compte. Veuillez réessayer.',
+    passwordRequired: 'Le mot de passe est requis',
+
+    // Entry Cross-References
+    backToSource: "Retour à l'entrée source",
+    entryNotFound: 'Entrée non trouvée',
+    entryReferenceHint:
+      'Astuce : Référencez d\'autres entrées en écrivant "entry (yyyy-mm-dd)" ou "entry (yyyy-mm-dd--X)" où X est l\'index de l\'entrée pour ce jour',
+
+    // Diaries
+    diaries: 'Journaux',
+    manageDiaries: 'Gérer les journaux',
+    newDiary: 'Nouveau journal',
+    diaryName: 'Nom du journal',
+    diaryIcon: 'Icône',
+    setAsDefault: 'Définir par défaut',
+    defaultDiary: 'Journal par défaut',
+    deleteDiary: 'Supprimer le journal',
+    deleteDiaryWarning: 'Les entrées seront déplacées vers votre journal par défaut.',
+    createDiary: 'Créer un journal',
+    editDiary: 'Modifier le journal',
+    allDiaries: 'Tous les journaux',
+    noDiaries: 'Aucun journal trouvé. Créez-en un pour commencer !',
+    visibilityOverrideHint: 'Peut être modifié par entrée',
+
+    // Highlights / Thought of the Day
+    highlightsTitle: 'À la une',
+    randomThought: 'Pensée aléatoire',
+    onThisDay: 'Ce jour-là',
+    yearsAgo: 'Il y a {years} an(s)',
+    refreshRandom: 'Obtenir une nouvelle pensée aléatoire',
+    highlightsError: 'Échec du chargement des mises en avant',
+    tryAgain: 'Réessayer',
+    expand: 'Développer',
+    collapse: 'Réduire',
+    seeHighlights: 'Voir les moments forts du jour',
+    highlights: 'Moments forts',
+    noHighlights:
+      "Pas encore de moments forts. Commencez à écrire des entrées pour les voir ici !",
+  },
+};
+
+export const getTranslation = (
+  lang: string,
+  key: string,
+  params: TranslationParams = {}
+): string => {
+  const language = translations[lang as Language] || translations['en'];
+  let text = language[key as TranslationKey] || key;
+
+  Object.keys(params).forEach((param) => {
+    text = text.replace(`{${param}}`, String(params[param]));
+  });
+
+  return text;
+};
+
+export type TranslationFunction = (
+  key: string,
+  params?: TranslationParams
+) => string;

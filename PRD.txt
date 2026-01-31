@@ -9,13 +9,14 @@ Remaining features to implement:
 - Intro website to showcase the app features and link to login/sign up
 
 *** Social features
-- Feed that shows public entries from other users and to preview your own public entries
+- Feed that shows public entries from other users with infinite scroll and to preview your own public entries
 - Allow users to follow other users
 - Comments on public entries
 - Likes for entries and comments
 - Make messaging private between users
 - Notifications for messages, comments, likes, new followers
 - Leaderboard for most active users, most liked entries, most commented entries
+- Badges for achievements and karma points
 - Feature requests and voting system for new features
 - Add a way to report a public thought (call for violence) and ban the user if needed
 - The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
@@ -29,7 +30,8 @@ Remaining features to implement:
 - Tone and mood of thoughts stats (analyzed by AI)
 - Subjects discussed stats (analyzed by AI)
 - Personality analysis through the choice of words and subjects
-- AI features should be locked behind a paywall with a free trial
+- AI features should be locked behind a paywall with a free trial (except if own API toekn is provided)
+- AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
 
 *** Book Converter
 - Based on tags to create chapters
@@ -50,8 +52,13 @@ Remaining features to implement:
 - Allow users to download their data (GDPR)
 
 *** Technical improvements
+- Migrate server to TypeScript using the most popular framework for TS in Node
+- App.tsx is too big, split into smaller components, do the same for other big components (>500 lines)
+- Separate models/types/interfaces and controllers for better code organization
+- Update dependencies to latest versions and ensure compatibility
+- Use the most modern and popular testing libraries and frameworks
+- Use an ORM for database interactions
 - Add e2e tests for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
-- Infinite scroll for the feed and public entries
 - Caching of frequent requests (public entries, feed)
 - Mask command to nuke DB and start fresh
 - Kubernetes deployment scripts
@@ -63,11 +70,11 @@ Remaining features to implement:
 - Mobile app version for iOS and Android
 - Offline mode for journaling without internet connection
 - Refactor codebase to use modern React features (hooks, context API)
-- Migrate JS code to TypeScript when possible and use modern frameworks and testing libraries
-- Update dependencies to latest versions and ensure compatibility
 - Use WebSockets for real-time updates on public entries and messages
 - Implement lazy loading for components and routes to improve initial load time
 - Implement feature flags to enable/disable features without redeploying
 - Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
 - Add logging for critical actions and errors for better debugging
 - Improve error handling and user feedback for better UX
+
+- Tags on db, should be just plain text sepearated by commas
