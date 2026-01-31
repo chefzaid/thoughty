@@ -4,7 +4,9 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
-![React](https://img.shields.io/badge/react-18.2.0-61dafb.svg)
+![React](https://img.shields.io/badge/react-18.3-61dafb.svg)
+![NestJS](https://img.shields.io/badge/nestjs-11.1-e0234e.svg)
+![TypeScript](https://img.shields.io/badge/typescript-5.8-3178c6.svg)
 
 ---
 
@@ -105,27 +107,33 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 18** — Modern component-based UI
-- **Vite** — Lightning-fast build tooling
-- **Tailwind CSS** — Utility-first styling
+- **React 18** — Modern component-based UI with hooks
+- **TypeScript 5** — Type-safe JavaScript
+- **Vite 7** — Lightning-fast build tooling with HMR
+- **Tailwind CSS 3** — Utility-first styling
 - **Chart.js** — Beautiful data visualizations
 - **react-datepicker** — Intuitive date selection
-- **Vitest** — Fast unit testing
+- **Vitest** — Fast unit testing with v8 coverage
+- **Testing Library** — React component testing
 
 ### Backend
-- **Node.js** — JavaScript runtime
-- **Express** — Web application framework
-- **PostgreSQL** — Robust relational database
-- **JWT** — Secure token-based authentication
-- **bcryptjs** — Password hashing
-- **Nodemailer** — Email functionality
-- **Swagger/OpenAPI** — API documentation
-- **Jest** — Comprehensive testing
+- **NestJS 11** — Progressive Node.js framework
+- **TypeScript 5** — Type-safe development
+- **TypeORM** — Elegant PostgreSQL ORM with migrations
+- **Passport.js** — Authentication with JWT strategy
+- **class-validator** — Declarative DTO validation
+- **Swagger/OpenAPI** — Auto-generated API documentation
+- **Jest 30** — Comprehensive testing framework
+- **Helmet & HPP** — Security middleware
+
+### Database
+- **PostgreSQL 14+** — Robust relational database
 
 ### DevOps & Tooling
 - **Docker** — Containerized development
 - **Docker Compose** — Multi-container orchestration
-- **ESLint** — Code quality enforcement
+- **ESLint 9** — Modern flat config code linting
+- **Prettier** — Code formatting
 - **mask** — Task runner for development commands
 
 ---
@@ -181,6 +189,37 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 | Client | http://localhost:5173 |
 | Server | http://localhost:3001 |
 | API Docs (Swagger) | http://localhost:3001/api-docs |
+
+### Environment Variables
+
+Create `.env` files in both `server/` and `client/` directories:
+
+**Server (.env)**
+```env
+# Database
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
+POSTGRES_DB=journal
+
+# JWT
+JWT_SECRET=your-secret-key-change-in-production
+JWT_EXPIRES_IN=15m
+REFRESH_SECRET=refresh-secret-change-in-production
+
+# CORS
+CORS_ORIGIN=http://localhost:5173,http://localhost:3000
+
+# Server
+PORT=3001
+NODE_ENV=development
+```
+
+**Client (.env)**
+```env
+VITE_API_URL=http://localhost:3001
+```
 
 ---
 
@@ -240,19 +279,27 @@ thoughty/
 │   │   │   ├── TagPicker/          # Tag input
 │   │   │   └── ThoughtOfTheDay/    # Highlights modal
 │   │   ├── contexts/       # React context providers
+│   │   ├── hooks/          # Custom React hooks
+│   │   ├── services/       # API service layer
+│   │   ├── types/          # TypeScript type definitions
 │   │   └── utils/          # Utilities & translations
 │   └── public/             # Static assets
-├── server/                 # Express backend application
+├── server/                 # NestJS backend application
 │   ├── src/
-│   │   ├── routes/         # API route handlers
-│   │   │   ├── auth.js     # Authentication
-│   │   │   ├── diaries.js  # Diary management
-│   │   │   ├── entries.js  # Entry CRUD
-│   │   │   ├── io.js       # Import/Export
-│   │   │   └── stats.js    # Statistics
-│   │   ├── middleware/     # Express middleware
-│   │   └── utils/          # Utilities
-│   └── tests/              # Jest tests
+│   │   ├── common/         # Shared utilities
+│   │   │   ├── decorators/ # Custom decorators (@CurrentUser, @Public)
+│   │   │   └── utils/      # Utility functions
+│   │   ├── database/       # Database configuration
+│   │   │   ├── entities/   # TypeORM entities
+│   │   │   └── migrations/ # Database migrations
+│   │   └── modules/        # Feature modules
+│   │       ├── auth/       # Authentication
+│   │       ├── config/     # User configuration
+│   │       ├── diaries/    # Diary management
+│   │       ├── entries/    # Journal entries
+│   │       ├── io/         # Import/Export
+│   │       └── stats/      # Statistics
+│   └── test/               # E2E tests
 ├── scripts/                # Utility scripts
 └── maskfile.md             # Task runner configuration
 ```

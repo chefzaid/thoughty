@@ -52,14 +52,15 @@ Remaining features to implement:
 - Allow users to download their data (GDPR)
 
 *** Technical improvements
-- Update dependencies to latest versions and ensure compatibility for both backend and frontend
-- Use the most modern and popular testing libraries and frameworks for client and server if that is not already the case
-- Add e2e tests for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
-- Update README file, especially for tech used
 
-- Tags on db, should be just plain text sepearated by commas
-- Mask command to nuke DB and start fresh importing test data
+- Add e2e tests for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
+
+- Tags on db, should be just plain text sepearated by commas (no []/{})
+- Reseed the DB with the appropriate data after this change
+
 - Scripts are still in JS, they may need to be converted to TS or another solution found
+- Mask command to nuke DB and start fresh importing test data
+- Revamp mask outputs when running and testing the app to be more modern and user friendly
 
 - Setting up the infrastructure for deploying the application
 - Dockerfiles for client and server
