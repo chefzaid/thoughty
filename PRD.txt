@@ -52,9 +52,7 @@ Remaining features to implement:
 - Allow users to download their data (GDPR)
 
 *** Technical improvements
-- Migrate server to TypeScript using the most popular framework for TS in Node
-- App.tsx is too big, split into smaller components, do the same for other big components (>500 lines)
-- Separate models/types/interfaces and controllers for better code organization
+- Migrate server to TypeScript using NestJS
 - Update dependencies to latest versions and ensure compatibility
 - Use the most modern and popular testing libraries and frameworks
 - Use an ORM for database interactions

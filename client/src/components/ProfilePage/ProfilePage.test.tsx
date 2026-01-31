@@ -17,7 +17,7 @@ interface ProfileConfig {
     theme?: 'light' | 'dark';
     entriesPerPage?: string;
     language?: string;
-    defaultVisibility?: string;
+    defaultVisibility?: 'public' | 'private';
     email?: string;
     bio?: string;
 }
