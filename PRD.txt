@@ -52,16 +52,22 @@ Remaining features to implement:
 - Allow users to download their data (GDPR)
 
 *** Technical improvements
-- Migrate server to TypeScript using NestJS
-- Update dependencies to latest versions and ensure compatibility
-- Use the most modern and popular testing libraries and frameworks
-- Use an ORM for database interactions
+- Update dependencies to latest versions and ensure compatibility for both backend and frontend
+- Use the most modern and popular testing libraries and frameworks for client and server if that is not already the case
 - Add e2e tests for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
-- Caching of frequent requests (public entries, feed)
-- Mask command to nuke DB and start fresh
+- Update README file, especially for tech used
+
+- Tags on db, should be just plain text sepearated by commas
+- Mask command to nuke DB and start fresh importing test data
+- Scripts are still in JS, they may need to be converted to TS or another solution found
+
+- Setting up the infrastructure for deploying the application
+- Dockerfiles for client and server
 - Kubernetes deployment scripts
 - CI/CD pipeline for automated testing and deployment
+
 - Optimize database for better performance
+- Caching of frequent requests (public entries, feed)
 - Set up monitoring and alerting for server health and performance
 - Backup and disaster recovery plan for user data
 - Documentation for API endpoints and developer guides
@@ -74,5 +80,3 @@ Remaining features to implement:
 - Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
 - Add logging for critical actions and errors for better debugging
 - Improve error handling and user feedback for better UX
-
-- Tags on db, should be just plain text sepearated by commas
