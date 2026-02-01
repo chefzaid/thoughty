@@ -17,7 +17,7 @@ interface CoverageResult {
     coverage: number | null;
 }
 
-async function runTest(name: string, dir: string): Promise<CoverageResult> {
+async function runTest(name: string, dir: string, script: string = 'test:cov'): Promise<CoverageResult> {
     section(`${name.toUpperCase()} COVERAGE`);
     log.step(`Running tests in ${fmt.dim(dir)}...`);
 
@@ -25,7 +25,7 @@ async function runTest(name: string, dir: string): Promise<CoverageResult> {
         // Use npm.cmd on Windows
         const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
-        const child = spawn(npmCmd, ['run', 'test:coverage'], {
+        const child = spawn(npmCmd, ['run', script], {
             cwd: path.resolve(dir),
             shell: true,
             env: { ...process.env, FORCE_COLOR: '0' },
@@ -83,8 +83,8 @@ async function main(): Promise<void> {
 
     const startTime = Date.now();
     const rootDir = path.resolve(__dirname, '..', '..');
-    const backend = await runTest('Backend', path.join(rootDir, 'server'));
-    const frontend = await runTest('Frontend', path.join(rootDir, 'client'));
+    const backend = await runTest('Backend', path.join(rootDir, 'server'), 'test:cov');
+    const frontend = await runTest('Frontend', path.join(rootDir, 'client'), 'test:coverage');
     const duration = Date.now() - startTime;
 
     // Build summary items

@@ -52,8 +52,9 @@ Remaining features to implement:
 - Allow users to download their data (GDPR)
 
 *** Technical improvements
-- Add e2e tests for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
+- Add e2e tests (that open urls and perform actions) for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
 - Refactor codebase to use modern React 19 features (hooks, context API)
+- After saving profile settings, it should not go back to entries, it should stay on profile page (and show a success toast)
 
 - Setting up the infrastructure for deploying the application
 - Dockerfiles for client and server
