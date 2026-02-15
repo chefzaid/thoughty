@@ -7,6 +7,7 @@ Remaining features to implement:
 - Ability to configure Gemini API key to use AI features
 - Keeping a history of modifications on a thought and allow to show the previous versions?
 - Intro website to showcase the app features and link to login/sign up
+- Read entries as audio (either with dates or without)
 
 *** Social features
 - Feed that shows public entries from other users with infinite scroll and to preview your own public entries
@@ -52,7 +53,7 @@ Remaining features to implement:
 - Allow users to download their data (GDPR)
 
 *** Technical improvements
-- Add e2e tests (that open urls and perform actions) for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
+- Add e2e tests with Playwright for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
 - Refactor codebase to use modern React 19 features (hooks, context API)
 - After saving profile settings, it should not go back to entries, it should stay on profile page (and show a success toast)
 
@@ -69,9 +70,14 @@ Remaining features to implement:
 - Set up monitoring and alerting for server health and performance
 - Backup and disaster recovery plan for user data
 - Add logging for critical actions and errors for better debugging
+- Usage and stats of the app and features (telemetery)
 - Improve error handling and user feedback for better UX
 - Use WebSockets for real-time updates on public entries and messages
 - Implement lazy loading for components and routes to improve initial load time
 - Implement feature flags to enable/disable features without redeploying
 - Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
 - Documentation for API endpoints and developer guides
+
+*** Life ERP
+- This project could evolve into a Personal ERP
+- That does exactly all the functions I do with one drive, and the stats file but with an app (health, mood tracker, finances, expenses and subscriptions...)
