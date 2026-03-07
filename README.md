@@ -182,14 +182,6 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
    mask run
    ```
 
-### Access Points
-
-| Service | URL |
-|---------|-----|
-| Client | http://localhost:5173 |
-| Server | http://localhost:3001 |
-| API Docs (Swagger) | http://localhost:3001/api-docs |
-
 ### Environment Variables
 
 Create `.env` files in both `thoughty-server/` and `thoughty-web/` directories:
@@ -257,112 +249,6 @@ This project uses a `maskfile.md` to manage common tasks. If you have [mask](htt
 
 ---
 
-## 📁 Project Structure
-
-```
-thoughty/
-├── thoughty-web/           # React frontend application
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   │   ├── AuthPage/           # Login/Register
-│   │   │   ├── DiaryManager/       # Diary CRUD
-│   │   │   ├── DiaryTabs/          # Diary navigation
-│   │   │   ├── EntriesList/        # Entry display
-│   │   │   ├── EntryForm/          # Create/edit entries
-│   │   │   ├── FilterControls/     # Search & filters
-│   │   │   ├── ImportExport/       # Import/export UI
-│   │   │   ├── NavMenu/            # Navigation
-│   │   │   ├── Pagination/         # Page controls
-│   │   │   ├── ProfilePage/        # User profile
-│   │   │   ├── ProfilePictureEditor/ # Avatar editor
-│   │   │   ├── Stats/              # Statistics & charts
-│   │   │   ├── TagPicker/          # Tag input
-│   │   │   └── ThoughtOfTheDay/    # Highlights modal
-│   │   ├── contexts/       # React context providers
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── services/       # API service layer
-│   │   ├── types/          # TypeScript type definitions
-│   │   └── utils/          # Utilities & translations
-│   └── public/             # Static assets
-├── thoughty-server/        # NestJS backend application
-│   ├── src/
-│   │   ├── common/         # Shared utilities
-│   │   │   ├── decorators/ # Custom decorators (@CurrentUser, @Public)
-│   │   │   └── utils/      # Utility functions
-│   │   ├── database/       # Database configuration
-│   │   │   ├── entities/   # TypeORM entities
-│   │   │   └── migrations/ # Database migrations
-│   │   └── modules/        # Feature modules
-│   │       ├── auth/       # Authentication
-│   │       ├── config/     # User configuration
-│   │       ├── diaries/    # Diary management
-│   │       ├── entries/    # Journal entries
-│   │       ├── io/         # Import/Export
-│   │       └── stats/      # Statistics
-│   └── test/               # E2E tests
-├── scripts/                # Utility scripts
-└── maskfile.md             # Task runner configuration
-```
-
----
-
-## 🔌 API Overview
-
-The backend provides a comprehensive RESTful API documented with Swagger/OpenAPI.
-
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | User registration |
-| POST | `/api/auth/login` | User login |
-| POST | `/api/auth/oauth` | OAuth authentication |
-| POST | `/api/auth/refresh` | Refresh access token |
-| POST | `/api/auth/logout` | User logout |
-| GET | `/api/auth/me` | Get current user |
-| POST | `/api/auth/change-password` | Change password |
-| POST | `/api/auth/forgot-password` | Request reset email |
-| POST | `/api/auth/reset-password` | Reset with token |
-| POST | `/api/auth/delete-account` | Delete account |
-
-### Diaries
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/diaries` | List all diaries |
-| POST | `/api/diaries` | Create new diary |
-| PUT | `/api/diaries/:id` | Update diary |
-| DELETE | `/api/diaries/:id` | Delete diary |
-| PATCH | `/api/diaries/:id/default` | Set as default |
-
-### Entries
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/entries` | List entries (with filters) |
-| POST | `/api/entries` | Create entry |
-| PUT | `/api/entries/:id` | Update entry |
-| DELETE | `/api/entries/:id` | Delete entry |
-| DELETE | `/api/entries/all` | Delete all entries |
-| PATCH | `/api/entries/:id/visibility` | Toggle visibility |
-| GET | `/api/entries/highlights` | Random + On This Day |
-| GET | `/api/entries/dates` | Get dates with entries |
-| GET | `/api/entries/find-page` | Find page for date |
-| GET | `/api/entries/find` | Find entry by date/index |
-
-### Statistics
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/stats` | Get all statistics |
-
-### Import/Export
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/io/format` | Get format settings |
-| PUT | `/api/io/format` | Update format settings |
-| GET | `/api/io/export` | Export entries |
-| POST | `/api/io/import/preview` | Preview import |
-| POST | `/api/io/import` | Import entries |
-
----
-
 ## 🧪 Testing
 
 ### Run All Tests
@@ -410,7 +296,7 @@ Language can be changed in Profile settings. All UI elements, messages, and labe
 
 ## 🔮 Roadmap
 
-See [PRD.txt](PRD.txt) for the complete list of planned features, including:
+See [todo.txt](todo.txt) for the complete list of planned features, including:
 
 - ☁️ Cloud sync (OneDrive, Google Drive)
 - 🤖 AI-powered features (mood analysis, tag suggestions, writing assistance)
@@ -428,4 +314,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 ## 💖 Made with ❤️ in Paris
+
 
