@@ -9,10 +9,7 @@ describe('configService', () => {
   const mockConfig: Config = {
     theme: 'dark',
     language: 'en',
-    dateFormat: 'YYYY-MM-DD',
-    groupEntriesBy: 'day',
     entriesPerPage: 10,
-    showPublicEntries: true,
     defaultVisibility: 'private',
   };
 

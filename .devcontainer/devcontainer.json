@@ -6,7 +6,7 @@
     "features": {
         "ghcr.io/devcontainers/features/git:1": {}
     },
-    "postCreateCommand": "cd server && npm install && cd ../client && npm install",
+    "postCreateCommand": "cd thoughty-server && npm install && cd ../thoughty-web && npm install",
     "customizations": {
         "vscode": {
             "extensions": [

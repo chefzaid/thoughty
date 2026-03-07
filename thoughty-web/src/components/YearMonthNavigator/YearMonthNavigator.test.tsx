@@ -80,7 +80,8 @@ describe('YearMonthNavigator', () => {
   it('calls setNavMonth when month is selected', () => {
     render(<YearMonthNavigator {...defaultProps} navYear="2025" />);
     const selects = screen.getAllByRole('combobox');
-    const monthSelect = selects[1];
+    expect(selects).toHaveLength(2);
+    const monthSelect = selects[1]!;
     fireEvent.change(monthSelect, { target: { value: '2025-06' } });
     expect(mockSetNavMonth).toHaveBeenCalledWith('2025-06');
   });

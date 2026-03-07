@@ -4,12 +4,13 @@
   "description": "A modern journal application",
   "private": true,
   "scripts": {
-    "migrate": "cd server && npm run db:migrate",
-    "seed": "cd server && npm run db:seed",
-    "check-db": "cd server && npm run db:check",
-    "nuke-db": "cd server && npm run db:nuke",
-    "kill": "cd server && npm run kill-node",
-    "coverage": "cd server && npm run coverage-report"
+    "migrate": "cd thoughty-server && npm run db:migrate",
+    "seed": "cd thoughty-server && npm run db:seed",
+    "check-db": "cd thoughty-server && npm run db:check",
+    "nuke-db": "cd thoughty-server && npm run db:nuke",
+    "kill": "cd thoughty-server && npm run kill-node",
+    "coverage": "cd thoughty-server && npm run coverage-report"
   }
 }
+
 

@@ -696,7 +696,7 @@ describe('useAppState Hooks', () => {
 
     it('handleSubmit sets error when text is empty', async () => {
       const mockOnSuccess = vi.fn();
-      const config = { defaultVisibility: 'private', entriesPerPage: 10 };
+      const config = { defaultVisibility: 'private' as const, entriesPerPage: 10 };
       const { result } = renderHook(() => useEntryForm(config, 1, mockOnSuccess));
 
       // Try to submit with empty text
@@ -709,7 +709,7 @@ describe('useAppState Hooks', () => {
 
     it('handleSubmit sets error when no tags selected', async () => {
       const mockOnSuccess = vi.fn();
-      const config = { defaultVisibility: 'private', entriesPerPage: 10 };
+      const config = { defaultVisibility: 'private' as const, entriesPerPage: 10 };
       const { result } = renderHook(() => useEntryForm(config, 1, mockOnSuccess));
 
       // Set text but no tags
@@ -740,7 +740,7 @@ describe('useAppState Hooks', () => {
       });
 
       const mockOnSuccess = vi.fn();
-      const config = { defaultVisibility: 'private', entriesPerPage: 10 };
+      const config = { defaultVisibility: 'private' as const, entriesPerPage: 10 };
       const { result } = renderHook(() => useEntryForm(config, 1, mockOnSuccess));
 
       // Set text and tags
@@ -774,7 +774,7 @@ describe('useAppState Hooks', () => {
       });
 
       const mockOnSuccess = vi.fn();
-      const config = { defaultVisibility: 'private', entriesPerPage: 10 };
+      const config = { defaultVisibility: 'private' as const, entriesPerPage: 10 };
       const { result } = renderHook(() => useEntryForm(config, 1, mockOnSuccess));
 
       // Set text and tags
@@ -811,7 +811,7 @@ describe('useAppState Hooks', () => {
       const { result } = renderHook(() => useEntryEdit(mockOnSave));
 
       // Start editing
-      const entry = { id: 1, text: 'Original', tags: ['tag1'], date: '2024-01-01', visibility: 'private' as const };
+      const entry = { id: 1, content: 'Original', tags: ['tag1'], date: '2024-01-01', visibility: 'private' as const };
       act(() => {
         result.current.handleEdit(entry);
       });
@@ -847,7 +847,7 @@ describe('useAppState Hooks', () => {
       const mockOnSave = vi.fn();
       const { result } = renderHook(() => useEntryEdit(mockOnSave));
 
-      const entry = { id: 1, text: 'Test', tags: ['tag1'], date: '2024-01-01', visibility: 'public' as const };
+      const entry = { id: 1, content: 'Test', tags: ['tag1'], date: '2024-01-01', visibility: 'public' as const };
       const setEntriesMock = vi.fn();
 
       await act(async () => {
@@ -876,7 +876,7 @@ describe('useAppState Hooks', () => {
       const mockOnSave = vi.fn();
       const { result } = renderHook(() => useEntryEdit(mockOnSave));
 
-      const entry = { id: 1, text: 'Test', tags: ['tag1'], date: '2024-01-01', visibility: 'private' as const };
+      const entry = { id: 1, content: 'Test', tags: ['tag1'], date: '2024-01-01', visibility: 'private' as const };
       const setEntriesMock = vi.fn();
 
       await act(async () => {

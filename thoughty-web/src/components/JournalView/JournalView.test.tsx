@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import JournalView from './JournalView';
 import type { Config, Entry, Diary, GroupedEntries } from '../../types';
@@ -21,77 +21,83 @@ vi.mock('../DiaryTabs/DiaryTabs', () => ({
 }));
 
 vi.mock('../ThoughtOfTheDay/ThoughtOfTheDay', () => ({
-  default: ({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry }: {
-    isOpen: boolean; onClose: () => void; theme: string; t: (key: string) => string;
-    diaryId: number | null; onNavigateToEntry: (date: string, index: number) => void;
+  default: (props: {
+    isOpen: boolean;
+    onClose: () => void;
+    diaryId: number | null;
+    onNavigateToEntry: (date: string, index: number) => void;
   }) => (
     <div data-testid="thought-of-day">
-      <span data-testid="totd-open">{isOpen.toString()}</span>
-      <span data-testid="totd-diary-id">{diaryId}</span>
-      <button data-testid="totd-close-btn" onClick={onClose}>Close</button>
-      <button data-testid="totd-navigate-btn" onClick={() => onNavigateToEntry('2024-01-01', 0)}>Navigate</button>
+      <span data-testid="totd-open">{props.isOpen.toString()}</span>
+      <span data-testid="totd-diary-id">{props.diaryId}</span>
+      <button data-testid="totd-close-btn" onClick={props.onClose}>Close</button>
+      <button data-testid="totd-navigate-btn" onClick={() => props.onNavigateToEntry('2024-01-01', 0)}>Navigate</button>
     </div>
   )
 }));
 
 vi.mock('../EntryForm/EntryForm', () => ({
-  default: ({ newEntryText, setNewEntryText, selectedDate, setSelectedDate, tags, setTags, 
-    visibility, setVisibility, allTags, formError, onSubmit, theme, t }: {
-    newEntryText: string; setNewEntryText: (text: string) => void; selectedDate: Date;
-    setSelectedDate: (date: Date) => void; tags: string[]; setTags: (tags: string[]) => void;
-    visibility: string | null; setVisibility: (v: string | null) => void; allTags: string[];
-    formError: string; onSubmit: (e: React.FormEvent) => void; theme: string; t: (key: string) => string;
+  default: (props: {
+    newEntryText: string;
+    setNewEntryText: (text: string) => void;
+    tags: string[];
+    visibility: string | null;
+    formError: string;
+    onSubmit: (e: React.FormEvent) => void;
   }) => (
-    <form data-testid="entry-form" onSubmit={onSubmit}>
-      <input data-testid="entry-text" value={newEntryText} onChange={(e) => setNewEntryText(e.target.value)} />
-      <span data-testid="form-error">{formError}</span>
-      <span data-testid="entry-tags">{tags.join(',')}</span>
-      <span data-testid="entry-visibility">{visibility}</span>
+    <form data-testid="entry-form" onSubmit={props.onSubmit}>
+      <input data-testid="entry-text" value={props.newEntryText} onChange={(e) => props.setNewEntryText(e.target.value)} />
+      <span data-testid="form-error">{props.formError}</span>
+      <span data-testid="entry-tags">{props.tags.join(',')}</span>
+      <span data-testid="entry-visibility">{props.visibility}</span>
       <button type="submit">Submit</button>
     </form>
   )
 }));
 
 vi.mock('../FilterControls/FilterControls', () => ({
-  default: ({ search, setSearch, filterVisibility, setFilterVisibility, setPage, theme, onOpenHighlights }: {
-    search: string; setSearch: (s: string) => void; filterVisibility: string;
-    setFilterVisibility: (v: string) => void; setPage: (p: number) => void;
-    theme: string; onOpenHighlights: () => void;
+  default: (props: {
+    search: string;
+    setSearch: (s: string) => void;
+    filterVisibility: string;
+    onOpenHighlights: () => void;
   }) => (
     <div data-testid="filter-controls">
-      <input data-testid="search-input" value={search} onChange={(e) => setSearch(e.target.value)} />
-      <span data-testid="filter-visibility">{filterVisibility}</span>
-      <button data-testid="open-highlights-btn" onClick={onOpenHighlights}>Highlights</button>
+      <input data-testid="search-input" value={props.search} onChange={(e) => props.setSearch(e.target.value)} />
+      <span data-testid="filter-visibility">{props.filterVisibility}</span>
+      <button data-testid="open-highlights-btn" onClick={props.onOpenHighlights}>Highlights</button>
     </div>
   )
 }));
 
 vi.mock('../EntriesList/EntriesList', () => ({
-  default: ({ loading, entries, onEdit, onDelete, onToggleVisibility, onNavigateToEntry, 
-    sourceEntry, activeTargetId, onBackToSource }: {
-    loading: boolean; entries: Entry[]; onEdit: (e: Entry) => void; onDelete: (id: number) => void;
-    onToggleVisibility: (e: Entry) => void; onNavigateToEntry: (date: string, index: number) => void;
-    sourceEntry: object | null; activeTargetId: number | null; onBackToSource: () => void;
+  default: (props: {
+    loading: boolean;
+    entries: Entry[];
+    sourceEntry: object | null;
+    activeTargetId: number | null;
+    onBackToSource: () => void;
   }) => (
     <div data-testid="entries-list">
-      <span data-testid="loading">{loading.toString()}</span>
-      <span data-testid="entries-count">{entries.length}</span>
-      <span data-testid="active-target-id">{activeTargetId}</span>
-      <span data-testid="has-source-entry">{(!!sourceEntry).toString()}</span>
-      <button data-testid="back-to-source-btn" onClick={onBackToSource}>Back</button>
+      <span data-testid="loading">{props.loading.toString()}</span>
+      <span data-testid="entries-count">{props.entries.length}</span>
+      <span data-testid="active-target-id">{props.activeTargetId}</span>
+      <span data-testid="has-source-entry">{(!!props.sourceEntry).toString()}</span>
+      <button data-testid="back-to-source-btn" onClick={props.onBackToSource}>Back</button>
     </div>
   )
 }));
 
 vi.mock('../Pagination/Pagination', () => ({
-  default: ({ page, totalPages, setPage, inputPage, setInputPage }: {
-    page: number; totalPages: number; setPage: (p: number) => void;
-    inputPage: string; setInputPage: (p: string) => void;
+  default: (props: {
+    page: number;
+    totalPages: number;
+    setPage: (p: number) => void;
   }) => (
     <div data-testid="pagination">
-      <span data-testid="current-page">{page}</span>
-      <span data-testid="total-pages">{totalPages}</span>
-      <button data-testid="next-page-btn" onClick={() => setPage(page + 1)}>Next</button>
+      <span data-testid="current-page">{props.page}</span>
+      <span data-testid="total-pages">{props.totalPages}</span>
+      <button data-testid="next-page-btn" onClick={() => props.setPage(props.page + 1)}>Next</button>
     </div>
   )
 }));
@@ -119,26 +125,23 @@ describe('JournalView', () => {
   const mockConfig: Config = {
     theme: 'dark',
     language: 'en',
-    dateFormat: 'YYYY-MM-DD',
-    groupEntriesBy: 'day',
     entriesPerPage: 10,
-    showPublicEntries: true,
     defaultVisibility: 'private',
   };
 
   const mockDiaries: Diary[] = [
-    { id: 1, name: 'Personal', icon: '📓', isDefault: true },
-    { id: 2, name: 'Work', icon: '💼', isDefault: false },
+    { id: 1, name: 'Personal', icon: '📓', visibility: 'private', is_default: true },
+    { id: 2, name: 'Work', icon: '💼', visibility: 'private', is_default: false },
   ];
 
   const mockEntries: Entry[] = [
-    { id: 1, content: 'Entry 1', date: '2024-01-01', tags: ['tag1'], visibility: 'public', diaryId: 1 },
-    { id: 2, content: 'Entry 2', date: '2024-01-02', tags: ['tag2'], visibility: 'private', diaryId: 1 },
+    { id: 1, content: 'Entry 1', date: '2024-01-01', tags: ['tag1'], visibility: 'public', diary_id: 1 },
+    { id: 2, content: 'Entry 2', date: '2024-01-02', tags: ['tag2'], visibility: 'private', diary_id: 1 },
   ];
 
   const mockGroupedEntries: GroupedEntries = {
-    '2024-01-01': [mockEntries[0]],
-    '2024-01-02': [mockEntries[1]],
+    '2024-01-01': [mockEntries[0]!],
+    '2024-01-02': [mockEntries[1]!],
   };
 
   let defaultProps: Parameters<typeof JournalView>[0];
@@ -317,7 +320,7 @@ describe('JournalView', () => {
   });
 
   it('handles back to source action', () => {
-    render(<JournalView {...defaultProps} sourceEntry={{ date: '2024-01-01', index: 0, id: 1, diaryId: 1 }} />);
+    render(<JournalView {...defaultProps} sourceEntry={{ date: '2024-01-01', index: 0, id: 1 }} />);
     
     expect(screen.getByTestId('has-source-entry')).toHaveTextContent('true');
     

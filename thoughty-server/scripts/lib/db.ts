@@ -7,7 +7,7 @@ import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 import { join } from 'path';
 
-// Load environment variables from server/.env
+// Load environment variables from thoughty-server/.env
 config({ path: join(__dirname, '..', '..', '.env') });
 
 // Create a simple DataSource for scripts (without entities for raw SQL)
@@ -62,3 +62,4 @@ export async function withDatabase<T>(fn: (ds: DataSource) => Promise<T>): Promi
 }
 
 export default { dataSource, initializeDatabase, query, closeDatabase, withDatabase };
+
