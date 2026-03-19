@@ -46,6 +46,22 @@ BEGIN
         ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT false;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'users' AND column_name = 'reset_token') THEN
+        ALTER TABLE users ADD COLUMN reset_token VARCHAR(255);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'users' AND column_name = 'reset_token_expires') THEN
+        ALTER TABLE users ADD COLUMN reset_token_expires TIMESTAMP;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'users' AND column_name = 'deleted_at') THEN
+        ALTER TABLE users ADD COLUMN deleted_at TIMESTAMP;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'users' AND column_name = 'deletion_reason') THEN
+        ALTER TABLE users ADD COLUMN deletion_reason TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                    WHERE table_name = 'users' AND column_name = 'created_at') THEN
         ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
     END IF;
@@ -72,10 +88,28 @@ CREATE TABLE IF NOT EXISTS entries (
 CREATE TABLE IF NOT EXISTS settings (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    config JSONB NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    key VARCHAR(100) NOT NULL,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, key)
 );
+
+-- Migrate settings from old config JSONB column if it exists
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'settings' AND column_name = 'config') THEN
+        ALTER TABLE settings DROP COLUMN config;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'settings' AND column_name = 'key') THEN
+        ALTER TABLE settings ADD COLUMN key VARCHAR(100) NOT NULL DEFAULT '';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'settings' AND column_name = 'value') THEN
+        ALTER TABLE settings ADD COLUMN value TEXT NOT NULL DEFAULT '';
+    END IF;
+END $$;
 
 -- Create diaries table
 CREATE TABLE IF NOT EXISTS diaries (
@@ -83,10 +117,20 @@ CREATE TABLE IF NOT EXISTS diaries (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     icon VARCHAR(10),
+    visibility VARCHAR(20) DEFAULT 'private',
     is_default BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add visibility column to diaries if missing
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'diaries' AND column_name = 'visibility') THEN
+        ALTER TABLE diaries ADD COLUMN visibility VARCHAR(20) DEFAULT 'private';
+    END IF;
+END $$;
 
 -- Add diary_id column if it doesn't exist
 DO $$
@@ -95,16 +139,29 @@ BEGIN
                    WHERE table_name = 'entries' AND column_name = 'diary_id') THEN
         ALTER TABLE entries ADD COLUMN diary_id INTEGER REFERENCES diaries(id) ON DELETE SET NULL;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'entries' AND column_name = 'index') THEN
+        ALTER TABLE entries ADD COLUMN "index" INTEGER DEFAULT 1;
+    END IF;
 END $$;
 
 -- Create refresh_tokens table for JWT refresh token rotation
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token_hash VARCHAR(255) NOT NULL,
+    token VARCHAR(255) NOT NULL,
     expires_at TIMESTAMP NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Rename token_hash to token if the old column exists
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.columns 
+               WHERE table_name = 'refresh_tokens' AND column_name = 'token_hash') THEN
+        ALTER TABLE refresh_tokens RENAME COLUMN token_hash TO token;
+    END IF;
+END $$;
 
 -- Create indexes
 CREATE INDEX IF NOT EXISTS idx_entries_date ON entries(date);

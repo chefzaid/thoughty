@@ -154,6 +154,23 @@ async function ensureDefaultUser(): Promise<void> {
     log.success('Default user ready');
 }
 
+async function ensureDiaries(): Promise<{ thoughtsId: number; dreamsId: number }> {
+    log.step('Creating diaries...');
+    await query('DELETE FROM diaries WHERE user_id = $1', [DEFAULT_USER_ID]);
+
+    const [thoughts] = await query<{ id: number }>(
+        `INSERT INTO diaries (user_id, name, icon, is_default) VALUES ($1, 'Thoughts', '💭', true) RETURNING id`,
+        [DEFAULT_USER_ID],
+    );
+    const [dreams] = await query<{ id: number }>(
+        `INSERT INTO diaries (user_id, name, icon, is_default) VALUES ($1, 'Dreams', '🌙', false) RETURNING id`,
+        [DEFAULT_USER_ID],
+    );
+
+    log.success(`Created diaries: Thoughts (id=${thoughts.id}), Dreams (id=${dreams.id})`);
+    return { thoughtsId: thoughts.id, dreamsId: dreams.id };
+}
+
 async function clearEntries(): Promise<void> {
     log.step('Clearing existing entries...');
     await query('DELETE FROM entries');
@@ -209,14 +226,15 @@ Had a breakthrough idea today. Need to explore it further tomorrow.
         section('Database Setup');
         await ensureDefaultUser();
         await clearEntries();
+        const { thoughtsId } = await ensureDiaries();
 
         section('Inserting Entries');
         log.step(`Inserting ${entries.length} entries...`);
 
         for (const entry of entries) {
             await query(
-                'INSERT INTO entries (user_id, date, index, tags, content) VALUES ($1, $2, $3, $4, $5)',
-                [DEFAULT_USER_ID, entry.date, entry.index, entry.tags, entry.content],
+                'INSERT INTO entries (user_id, diary_id, date, "index", tags, content) VALUES ($1, $2, $3, $4, $5, $6)',
+                [DEFAULT_USER_ID, thoughtsId, entry.date, entry.index, entry.tags, entry.content],
             );
         }
 
