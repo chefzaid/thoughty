@@ -970,3 +970,31 @@ button.profile-avatar-large {
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+.profile-save-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #dcfce7;
+    color: #14532d;
+    border: 1px solid #86efac;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    animation: toast-fade-in 0.3s ease;
+}
+
+@keyframes toast-fade-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(1rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}

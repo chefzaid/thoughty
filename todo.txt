@@ -51,16 +51,13 @@ Remaining features to implement:
 - Allow users to see and manage active sessions (logout from other sessions)
 - Spam and bots protection on sign up and login forms
 - Allow users to download their data (GDPR)
+- Rate limiting and prevent DDOS from too much data sent
 
 *** Technical improvements
 - Add e2e tests with Playwright for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
-- Refactor codebase to use modern React 19 features (hooks, context API)
-- After saving profile settings, it should not go back to entries, it should stay on profile page (and show a success toast)
 
-- Setting up the infrastructure for deploying the application
-- Dockerfiles for client and server
-- Kubernetes deployment scripts
-- CI/CD pipeline for automated testing and deployment
+- Setting up the infrastructure for deploying the application through Kubernetes and Jenkins
+- Dockerfiles for client and server, Kubernetes deployment YAML files, CI/CD pipeline for automated testing and deployment
 
 - Offline mode for journaling without internet connection
 - Mobile app version for iOS and Android
@@ -72,7 +69,6 @@ Remaining features to implement:
 - Add logging for critical actions and errors for better debugging
 - Usage and stats of the app and features (telemetery)
 - Improve error handling and user feedback for better UX
-- Rate limiting and prevent DDOS from too much data sent
 - Use WebSockets for real-time updates on public entries and messages
 - Implement lazy loading for components and routes to improve initial load time
 - Implement feature flags to enable/disable features without redeploying

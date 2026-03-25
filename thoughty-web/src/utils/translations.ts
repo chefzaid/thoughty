@@ -75,6 +75,7 @@ export type TranslationKey =
   | 'currentAndNewPasswordRequired'
   | 'cancel'
   | 'saveSettings'
+  | 'settingsSaved'
   | 'personalInfo'
   | 'appearance'
   | 'preferences'
@@ -305,6 +306,7 @@ export const translations: Translations = {
     currentAndNewPasswordRequired: 'Current and new password are required',
     cancel: 'Cancel',
     saveSettings: 'Save Changes',
+    settingsSaved: 'Settings saved successfully',
     personalInfo: 'Personal Information',
     appearance: 'Appearance',
     preferences: 'Preferences',
@@ -554,6 +556,7 @@ export const translations: Translations = {
     currentAndNewPasswordRequired: 'Le mot de passe actuel et le nouveau sont requis',
     cancel: 'Annuler',
     saveSettings: 'Enregistrer',
+    settingsSaved: 'Paramètres enregistrés avec succès',
     personalInfo: 'Informations personnelles',
     appearance: 'Apparence',
     preferences: 'Préférences',

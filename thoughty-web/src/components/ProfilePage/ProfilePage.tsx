@@ -51,6 +51,9 @@ function ProfilePage({ config, onUpdateConfig, onBack, t, stats }: ProfilePagePr
   const [showPictureEditor, setShowPictureEditor] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Save success toast
+  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+
   // Delete account state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState<string>('');
@@ -160,7 +163,8 @@ function ProfilePage({ config, onUpdateConfig, onBack, t, stats }: ProfilePagePr
 
   const handleSave = (): void => {
     onUpdateConfig(localConfig);
-    onBack();
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
   };
 
   const isLight = localConfig.theme === 'light';
@@ -253,6 +257,10 @@ function ProfilePage({ config, onUpdateConfig, onBack, t, stats }: ProfilePagePr
       />
 
       <ProfileActions onBack={onBack} handleSave={handleSave} t={t} />
+
+      {saveSuccess && (
+        <div className="profile-save-toast">{t('settingsSaved')}</div>
+      )}
     </div>
   );
 }
