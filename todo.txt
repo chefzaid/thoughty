@@ -56,10 +56,7 @@ Remaining features to implement:
 *** Technical improvements
 - Add e2e tests with Playwright for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
 
-- Setting up the infrastructure for deploying the application through Kubernetes and Jenkins
-- Dockerfiles for client and server, Kubernetes deployment YAML files, CI/CD pipeline for automated testing and deployment
-
-- Offline mode for journaling without internet connection
+- Desktop app with offline mode for journaling without internet connection and sync once connected
 - Mobile app version for iOS and Android
 
 - Optimize database for better performance

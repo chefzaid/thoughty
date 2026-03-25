@@ -132,6 +132,10 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 ### DevOps & Tooling
 - **Docker** - Containerized development
 - **Docker Compose** - Multi-container orchestration
+- **Kubernetes** - Production container orchestration
+- **Jenkins** - CI/CD pipeline
+- **HashiCorp Vault** - Secrets management
+- **Nginx** - Web server & reverse proxy
 - **ESLint 9** - Modern flat config code linting
 - **Prettier** - Code formatting
 - **mask** - Task runner for development commands
@@ -294,7 +298,184 @@ Language can be changed in Profile settings. All UI elements, messages, and labe
 
 ---
 
-## 🔮 Roadmap
+## � Production Deployment
+
+### Prerequisites
+
+- A running **Kubernetes** cluster (v1.25+)
+- **kubectl** configured with cluster access
+- **Helm 3** installed
+- **HashiCorp Vault** deployed in the cluster (with the [Vault Agent Injector](https://developer.hashicorp.com/vault/docs/platform/k8s/injector))
+- A **Docker registry** accessible from the cluster
+- **Jenkins** with the following plugins: Pipeline, Docker Pipeline, Kubernetes CLI
+
+### 1. Build & Push Docker Images
+
+```bash
+# Server
+cd thoughty-server
+docker build -t <your-registry>/thoughty-server:latest .
+docker push <your-registry>/thoughty-server:latest
+
+# Web
+cd ../thoughty-web
+docker build -t <your-registry>/thoughty-web:latest .
+docker push <your-registry>/thoughty-web:latest
+```
+
+### 2. Configure HashiCorp Vault
+
+Enable the Kubernetes auth method and store the application secrets:
+
+```bash
+# Enable Kubernetes auth (once per cluster)
+vault auth enable kubernetes
+vault write auth/kubernetes/config \
+  kubernetes_host="https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT"
+
+# Store database secrets
+vault kv put secret/thoughty/database \
+  POSTGRES_USER="thoughty" \
+  POSTGRES_PASSWORD="<secure-password>" \
+  POSTGRES_DB="journal"
+
+# Store application secrets
+vault kv put secret/thoughty/app \
+  JWT_SECRET="<secure-jwt-secret>" \
+  JWT_REFRESH_SECRET="<secure-refresh-secret>" \
+  GOOGLE_CLIENT_ID="<your-google-client-id>" \
+  GOOGLE_CLIENT_SECRET="<your-google-client-secret>" \
+  SMTP_HOST="<smtp-host>" \
+  SMTP_PORT="587" \
+  SMTP_USER="<smtp-user>" \
+  SMTP_PASS="<smtp-password>"
+
+# Create access policies
+vault policy write thoughty-server - <<EOF
+path "secret/data/thoughty/database" { capabilities = ["read"] }
+path "secret/data/thoughty/app"      { capabilities = ["read"] }
+EOF
+
+vault policy write thoughty-postgres - <<EOF
+path "secret/data/thoughty/database" { capabilities = ["read"] }
+EOF
+
+# Bind Kubernetes service accounts to Vault roles
+vault write auth/kubernetes/role/thoughty-server \
+  bound_service_account_names=thoughty-server \
+  bound_service_account_namespaces=thoughty \
+  policies=thoughty-server \
+  ttl=1h
+
+vault write auth/kubernetes/role/thoughty-postgres \
+  bound_service_account_names=thoughty-postgres \
+  bound_service_account_namespaces=thoughty \
+  policies=thoughty-postgres \
+  ttl=1h
+```
+
+### 3. Update Kubernetes Manifests
+
+Before applying the manifests in `deployments/`:
+
+1. Edit `deployments/configmap.yaml` — set `CORS_ORIGIN` to your domain
+2. Edit `deployments/ingress.yaml` — replace `thoughty.example.com` with your domain and configure TLS
+3. Edit `deployments/server-deployment.yaml` and `deployments/web-deployment.yaml` — update the `image:` fields to point to your registry
+
+### 4. Deploy to Kubernetes
+
+```bash
+# Create namespace
+kubectl apply -f deployments/namespace.yaml
+
+# Apply configuration & service accounts
+kubectl apply -f deployments/configmap.yaml
+kubectl apply -f deployments/vault-service-accounts.yaml
+
+# Deploy database
+kubectl apply -f deployments/postgres.yaml
+
+# Wait for PostgreSQL to be ready
+kubectl rollout status deployment/postgres -n thoughty --timeout=120s
+
+# Deploy application
+kubectl apply -f deployments/server-deployment.yaml
+kubectl apply -f deployments/web-deployment.yaml
+kubectl apply -f deployments/ingress.yaml
+
+# Verify all pods are running
+kubectl get pods -n thoughty
+```
+
+### 5. Run Database Migrations
+
+Once the server pod is running, exec into it to run migrations:
+
+```bash
+kubectl exec -it deployment/thoughty-server -n thoughty -- \
+  node -e "require('./dist/database/data-source').default.initialize().then(ds => ds.runMigrations().then(() => { console.log('Migrations complete'); process.exit(0); }))"
+```
+
+### Manifest Overview
+
+| File | Description |
+|------|-------------|
+| `deployments/namespace.yaml` | Creates the `thoughty` namespace |
+| `deployments/configmap.yaml` | Non-sensitive config (NODE_ENV, DB host, CORS origin) |
+| `deployments/vault-service-accounts.yaml` | Service accounts for Vault authentication |
+| `deployments/vault-setup.sh` | Reference script with all Vault setup commands |
+| `deployments/postgres.yaml` | PostgreSQL 16 deployment + headless service + 5Gi PVC |
+| `deployments/server-deployment.yaml` | NestJS server (2 replicas, rolling update, health probes) |
+| `deployments/web-deployment.yaml` | Nginx-served React app (2 replicas, rolling update) |
+| `deployments/ingress.yaml` | Ingress routing `/api` → server, `/` → web |
+
+---
+
+## 🔧 Jenkins CI/CD Pipeline
+
+The [Jenkinsfile](Jenkinsfile) defines a full pipeline that runs on every push.
+
+### Pipeline Stages
+
+| Stage | Description |
+|-------|-------------|
+| **Install Dependencies** | Parallel `npm ci` for server and web |
+| **Lint** | Parallel linting for both projects |
+| **Test** | Parallel unit tests with coverage |
+| **Build Images** | Parallel Docker image builds |
+| **Push Images** | Push to registry (main branch only) |
+| **Deploy** | Apply K8s manifests and trigger rolling deployment (main branch only) |
+
+### Jenkins Setup
+
+1. **Required Plugins** — install via *Manage Jenkins → Plugins*:
+   - Pipeline
+   - Docker Pipeline
+   - Kubernetes CLI (`withKubeConfig` step)
+   - Credentials Binding
+
+2. **Configure Credentials** — add via *Manage Jenkins → Credentials*:
+
+   | Credential ID | Type | Description |
+   |---------------|------|-------------|
+   | `docker-registry-url` | Secret text | Your Docker registry URL (e.g. `registry.example.com`) |
+   | `docker-registry-creds` | Username/Password | Registry login credentials |
+   | `kubeconfig` | Secret file | Kubernetes kubeconfig for the target cluster |
+
+3. **Create the Pipeline Job**:
+   - *New Item → Pipeline*
+   - Under *Pipeline*, select **Pipeline script from SCM**
+   - Point to your Git repository, branch `main`
+   - Script path: `Jenkinsfile`
+
+4. **Agent Requirements** — the Jenkins agent must have:
+   - Node.js 22+
+   - Docker CLI
+   - `kubectl`
+
+---
+
+## �🔮 Roadmap
 
 See [todo.txt](todo.txt) for the complete list of planned features, including:
 

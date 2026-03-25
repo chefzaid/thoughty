@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: thoughty-ingress
+  namespace: thoughty
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: thoughty.example.com  # Replace with your domain
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: thoughty-server
+                port:
+                  number: 3001
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thoughty-web
+                port:
+                  number: 80
+  # Uncomment and configure for TLS
+  # tls:
+  #   - hosts:
+  #       - thoughty.example.com
+  #     secretName: thoughty-tls

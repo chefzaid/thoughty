@@ -1,0 +1,173 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = credentials('docker-registry-url')   // Configure in Jenkins credentials
+        IMAGE_TAG       = "${env.BUILD_NUMBER}-${env.GIT_COMMIT?.take(7) ?: 'latest'}"
+        KUBE_NAMESPACE  = 'thoughty'
+    }
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    stages {
+
+        // ── Install ──────────────────────────────────────────────
+        stage('Install Dependencies') {
+            parallel {
+                stage('Server Deps') {
+                    steps {
+                        dir('thoughty-server') {
+                            sh 'npm ci'
+                        }
+                    }
+                }
+                stage('Web Deps') {
+                    steps {
+                        dir('thoughty-web') {
+                            sh 'npm ci'
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Lint ─────────────────────────────────────────────────
+        stage('Lint') {
+            parallel {
+                stage('Server Lint') {
+                    steps {
+                        dir('thoughty-server') {
+                            sh 'npm run lint'
+                        }
+                    }
+                }
+                stage('Web Lint') {
+                    steps {
+                        dir('thoughty-web') {
+                            sh 'npm run lint'
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Test ─────────────────────────────────────────────────
+        stage('Test') {
+            parallel {
+                stage('Server Tests') {
+                    steps {
+                        dir('thoughty-server') {
+                            sh 'npm run test:cov'
+                        }
+                    }
+                    post {
+                        always {
+                            dir('thoughty-server') {
+                                junit allowEmptyResults: true, testResults: 'coverage/junit.xml'
+                            }
+                        }
+                    }
+                }
+                stage('Web Tests') {
+                    steps {
+                        dir('thoughty-web') {
+                            sh 'npm run test:coverage'
+                        }
+                    }
+                    post {
+                        always {
+                            dir('thoughty-web') {
+                                junit allowEmptyResults: true, testResults: 'coverage/junit.xml'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Build Docker Images ──────────────────────────────────
+        stage('Build Images') {
+            parallel {
+                stage('Build Server Image') {
+                    steps {
+                        dir('thoughty-server') {
+                            sh "docker build -t ${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} ."
+                            sh "docker tag ${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} ${DOCKER_REGISTRY}/thoughty-server:latest"
+                        }
+                    }
+                }
+                stage('Build Web Image') {
+                    steps {
+                        dir('thoughty-web') {
+                            sh "docker build -t ${DOCKER_REGISTRY}/thoughty-web:${IMAGE_TAG} ."
+                            sh "docker tag ${DOCKER_REGISTRY}/thoughty-web:${IMAGE_TAG} ${DOCKER_REGISTRY}/thoughty-web:latest"
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Push Images ──────────────────────────────────────────
+        stage('Push Images') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-registry-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh 'echo "$DOCKER_PASS" | docker login "$DOCKER_REGISTRY" -u "$DOCKER_USER" --password-stdin'
+                    sh "docker push ${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG}"
+                    sh "docker push ${DOCKER_REGISTRY}/thoughty-server:latest"
+                    sh "docker push ${DOCKER_REGISTRY}/thoughty-web:${IMAGE_TAG}"
+                    sh "docker push ${DOCKER_REGISTRY}/thoughty-web:latest"
+                }
+            }
+        }
+
+        // ── Deploy to Kubernetes ─────────────────────────────────
+        stage('Deploy') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withKubeConfig(credentialsId: 'kubeconfig') {
+                    // Apply base manifests
+                    sh 'kubectl apply -f deployments/namespace.yaml'
+                    sh 'kubectl apply -f deployments/configmap.yaml'
+                    sh 'kubectl apply -f deployments/vault-service-accounts.yaml'
+                    sh 'kubectl apply -f deployments/postgres.yaml'
+                    sh 'kubectl apply -f deployments/server-deployment.yaml'
+                    sh 'kubectl apply -f deployments/web-deployment.yaml'
+                    sh 'kubectl apply -f deployments/ingress.yaml'
+
+                    // Update image tags to trigger rollout
+                    sh "kubectl set image deployment/thoughty-server thoughty-server=${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} -n ${KUBE_NAMESPACE}"
+                    sh "kubectl set image deployment/thoughty-web thoughty-web=${DOCKER_REGISTRY}/thoughty-web:${IMAGE_TAG} -n ${KUBE_NAMESPACE}"
+
+                    // Wait for rollout
+                    sh "kubectl rollout status deployment/thoughty-server -n ${KUBE_NAMESPACE} --timeout=120s"
+                    sh "kubectl rollout status deployment/thoughty-web -n ${KUBE_NAMESPACE} --timeout=120s"
+                }
+            }
+        }
+    }
+
+    post {
+        failure {
+            echo 'Pipeline failed — check stage logs above for details.'
+        }
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+        always {
+            cleanWs()
+        }
+    }
+}

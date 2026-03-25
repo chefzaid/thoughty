@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thoughty-config
+  namespace: thoughty
+data:
+  NODE_ENV: "production"
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  CORS_ORIGIN: "http://thoughty-web"
+  PORT: "3001"

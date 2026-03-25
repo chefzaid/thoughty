@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thoughty-server
+  namespace: thoughty
+  labels:
+    app: thoughty-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: thoughty-server
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: thoughty-server
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "thoughty-server"
+        vault.hashicorp.com/agent-inject-secret-database: "secret/data/thoughty/database"
+        vault.hashicorp.com/agent-inject-template-database: |
+          {{- with secret "secret/data/thoughty/database" -}}
+          export POSTGRES_USER="{{ .Data.data.POSTGRES_USER }}"
+          export POSTGRES_PASSWORD="{{ .Data.data.POSTGRES_PASSWORD }}"
+          export POSTGRES_DB="{{ .Data.data.POSTGRES_DB }}"
+          {{- end }}
+        vault.hashicorp.com/agent-inject-secret-app: "secret/data/thoughty/app"
+        vault.hashicorp.com/agent-inject-template-app: |
+          {{- with secret "secret/data/thoughty/app" -}}
+          export JWT_SECRET="{{ .Data.data.JWT_SECRET }}"
+          export JWT_REFRESH_SECRET="{{ .Data.data.JWT_REFRESH_SECRET }}"
+          export GOOGLE_CLIENT_ID="{{ .Data.data.GOOGLE_CLIENT_ID }}"
+          export GOOGLE_CLIENT_SECRET="{{ .Data.data.GOOGLE_CLIENT_SECRET }}"
+          export SMTP_HOST="{{ .Data.data.SMTP_HOST }}"
+          export SMTP_PORT="{{ .Data.data.SMTP_PORT }}"
+          export SMTP_USER="{{ .Data.data.SMTP_USER }}"
+          export SMTP_PASS="{{ .Data.data.SMTP_PASS }}"
+          {{- end }}
+    spec:
+      serviceAccountName: thoughty-server
+      containers:
+        - name: thoughty-server
+          image: thoughty-server:latest
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              source /vault/secrets/database &&
+              source /vault/secrets/app &&
+              node dist/main
+          ports:
+            - containerPort: 3001
+          envFrom:
+            - configMapRef:
+                name: thoughty-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thoughty-server
+  namespace: thoughty
+spec:
+  selector:
+    app: thoughty-server
+  ports:
+    - port: 3001
+      targetPort: 3001
