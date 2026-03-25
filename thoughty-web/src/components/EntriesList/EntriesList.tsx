@@ -1,8 +1,10 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { useMemo, type Dispatch, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import TagPicker from '../TagPicker/TagPicker';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
+import ListenButton from '../ListenButton/ListenButton';
+import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
 
 interface Entry {
     id: number;
@@ -15,6 +17,8 @@ interface Entry {
 
 interface Config {
     theme?: 'light' | 'dark';
+    language?: string;
+    readDates?: boolean;
 }
 
 interface GroupedEntries {
@@ -54,6 +58,9 @@ interface EntriesListProps {
     t: (key: string, params?: Record<string, string | number>) => string;
 }
 
+const extractDate = (date: string): string =>
+    date.includes('T') ? (date.split('T')[0] ?? date) : date;
+
 function EntriesList({
     loading,
     entries,
@@ -80,13 +87,31 @@ function EntriesList({
     onBackToSource,
     t
 }: Readonly<EntriesListProps>) {
+    const { speaking, activeEntryId, speakEntry, speakFromEntry, stop } = useSpeech({
+        language: config.language || 'en',
+        readDates: config.readDates !== false,
+    });
+
+    // Build flat ordered list of entries for continuous reading
+    const sortedDates = useMemo(
+        () => Object.keys(groupedEntries).sort((a, b) => b.localeCompare(a)),
+        [groupedEntries]
+    );
+    const flatEntries: SpeechEntry[] = useMemo(
+        () => sortedDates.flatMap((date) =>
+            (groupedEntries[date] ?? []).map((e) => ({
+                id: e.id,
+                content: e.content,
+                date: extractDate(e.date),
+            }))
+        ),
+        [sortedDates, groupedEntries]
+    );
+
     if (loading) return <p className="text-center text-gray-500">{t('loadingEntries')}</p>;
     if (entries.length === 0) return <p className="text-center text-gray-500">{t('noEntriesFound')}</p>;
 
     const isEditing = (entry: Entry): boolean => editingEntry !== null && editingEntry.id === entry.id;
-
-    // Sort dates in descending order for consistent display
-    const sortedDates = Object.keys(groupedEntries).sort((a, b) => b.localeCompare(a));
 
     return (
         <div className="space-y-8">
@@ -221,6 +246,20 @@ function EntriesList({
                                                         </svg>
                                                     )}
                                                 </button>
+                                                <ListenButton
+                                                    entryId={entry.id}
+                                                    speaking={speaking}
+                                                    activeEntryId={activeEntryId}
+                                                    onListenOne={() => speakEntry({
+                                                        id: entry.id,
+                                                        content: entry.content,
+                                                        date: extractDate(entry.date),
+                                                    })}
+                                                    onListenFrom={() => speakFromEntry(flatEntries, entry.id)}
+                                                    onStop={stop}
+                                                    theme={config.theme}
+                                                    t={t}
+                                                />
                                                 <button
                                                     onClick={() => onEdit(entry)}
                                                     className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
@@ -247,7 +286,7 @@ function EntriesList({
                                                 onNavigateToEntry={onNavigateToEntry}
                                                 sourceEntry={{
                                                     id: entry.id,
-                                                    date: entry.date.includes('T') ? (entry.date.split('T')[0] ?? entry.date) : entry.date,
+                                                    date: extractDate(entry.date),
                                                     index: entry.index || 1
                                                 }}
                                             />

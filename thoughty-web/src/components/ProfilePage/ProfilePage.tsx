@@ -151,7 +151,12 @@ function ProfilePage({ config, onUpdateConfig, onBack, t, stats }: ProfilePagePr
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | { target: { name: string; value: string } }
   ): void => {
-    setLocalConfig({ ...localConfig, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    if (name === 'readDates') {
+      setLocalConfig({ ...localConfig, [name]: value === 'true' });
+    } else {
+      setLocalConfig({ ...localConfig, [name]: value });
+    }
   };
 
   const handleThemeToggle = (): void => {

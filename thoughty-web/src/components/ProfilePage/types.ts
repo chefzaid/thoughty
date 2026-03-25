@@ -10,6 +10,7 @@ export interface ProfileConfig {
   language?: string;
   entriesPerPage?: number | string;
   defaultVisibility?: 'public' | 'private';
+  readDates?: boolean;
 }
 
 export interface ProfileUser {

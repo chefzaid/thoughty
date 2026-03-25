@@ -215,7 +215,13 @@ export type TranslationKey =
   | 'collapse'
   | 'seeHighlights'
   | 'highlights'
-  | 'noHighlights';
+  | 'noHighlights'
+  | 'listen'
+  | 'stopListening'
+  | 'listenThisEntry'
+  | 'listenFromHere'
+  | 'readDates'
+  | 'readDatesDescription';
 
 export type Language = 'en' | 'fr';
 
@@ -473,6 +479,14 @@ export const translations: Translations = {
     seeHighlights: 'See Highlights of the Day',
     highlights: 'Highlights',
     noHighlights: 'No highlights available yet. Start writing entries to see them here!',
+
+    // Text-to-Speech
+    listen: 'Listen',
+    stopListening: 'Stop listening',
+    listenThisEntry: 'Read this entry',
+    listenFromHere: 'Read from here onwards',
+    readDates: 'Read dates aloud',
+    readDatesDescription: 'Include dates when reading entries aloud',
   },
   fr: {
     // App
@@ -726,6 +740,14 @@ export const translations: Translations = {
     highlights: 'Moments forts',
     noHighlights:
       "Pas encore de moments forts. Commencez à écrire des entrées pour les voir ici !",
+
+    // Text-to-Speech
+    listen: 'Écouter',
+    stopListening: "Arrêter l'écoute",
+    listenThisEntry: 'Lire cette entrée',
+    listenFromHere: 'Lire à partir d\'ici',
+    readDates: 'Lire les dates à voix haute',
+    readDatesDescription: 'Inclure les dates lors de la lecture des entrées',
   },
 };
 

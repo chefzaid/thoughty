@@ -60,6 +60,10 @@ describe('EntriesList', () => {
                 private: 'Private',
                 publicTooltip: 'Public - visible to everyone',
                 privateTooltip: 'Private - only you can see',
+                listen: 'Listen',
+                stopListening: 'Stop listening',
+                listenThisEntry: 'Read this entry',
+                listenFromHere: 'Read from here onwards',
             };
             // Handle replace logic if needed, but for now exact match or key
             if (key === 'filterTagsPlaceholder') return 'Filter by tags...';

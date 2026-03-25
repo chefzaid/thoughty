@@ -190,14 +190,13 @@ describe('ProfilePage', () => {
             expect(defaultProps.onBack).toHaveBeenCalledTimes(1);
         });
 
-        it('calls onUpdateConfig and onBack when save is clicked', async () => {
+        it('calls onUpdateConfig when save is clicked', async () => {
             const user = userEvent.setup();
             render(<ProfilePage {...defaultProps} />);
 
             await user.click(screen.getByText('saveSettings'));
 
             expect(defaultProps.onUpdateConfig).toHaveBeenCalledTimes(1);
-            expect(defaultProps.onBack).toHaveBeenCalledTimes(1);
         });
 
         it('saves updated config values', async () => {

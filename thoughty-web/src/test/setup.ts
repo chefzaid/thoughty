@@ -2,6 +2,21 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import { createElement, type ChangeEvent } from 'react';
 
+// Mock the Web Speech API globally for all tests
+if (!globalThis.speechSynthesis) {
+  Object.defineProperty(globalThis, 'speechSynthesis', {
+    value: {
+      speak: vi.fn(),
+      cancel: vi.fn(),
+      getVoices: vi.fn(() => []),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    },
+    writable: true,
+    configurable: true,
+  });
+}
+
 interface DatePickerProps {
   selected: Date | null;
   onChange: (date: Date | null) => void;

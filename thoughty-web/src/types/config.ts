@@ -10,6 +10,7 @@ export interface Config {
   birthday?: string;
   avatarUrl?: string;
   defaultVisibility?: 'public' | 'private';
+  readDates?: boolean;
 }
 
 export interface AppConfig {

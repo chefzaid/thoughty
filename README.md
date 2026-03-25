@@ -1,10 +1,10 @@
-# Thoughty 📓
+﻿# Thoughty 📓
 
 Thoughty is a modern, feature-rich journal application designed to help you capture your thoughts, organize them with tags, manage multiple diaries, and gain meaningful insights through statistics and visualizations. Built with a focus on privacy, flexibility, and a delightful user experience.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
-![React](https://img.shields.io/badge/react-18.3-61dafb.svg)
+![React](https://img.shields.io/badge/react-19-61dafb.svg)
 ![NestJS](https://img.shields.io/badge/nestjs-11.1-e0234e.svg)
 ![TypeScript](https://img.shields.io/badge/typescript-5.8-3178c6.svg)
 
@@ -94,6 +94,15 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Dark/Light Theme** - Full theme support with visual toggle
 - **Internationalization** - English 🇬🇧 and French 🇫🇷 language support
 - **Pagination Settings** - Configure entries per page (5/10/15/20/25/50)
+- **Read Dates Toggle** - Choose whether text-to-speech includes date headers
+
+### 🔊 Text-to-Speech
+- **Read Entries Aloud** - Listen to your journal entries using the browser's Speech Synthesis API
+- **Listen to One** - Read a single entry out loud
+- **Listen From Here** - Continuously read from a selected entry through all subsequent entries
+- **Read Dates Option** - Optionally include spoken date headers before each entry
+- **Language-Aware Voices** - Automatically selects a matching voice for your configured language
+- **Playback Controls** - Stop button and visual indicator showing which entry is currently being read
 
 ### 📱 User Experience
 - **Responsive Design** - Mobile-friendly layout that works on all devices
@@ -107,7 +116,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **React 18** - Modern component-based UI with hooks
+- **React 19** - Modern component-based UI with hooks
 - **TypeScript 5** - Type-safe JavaScript
 - **Vite 7** - Lightning-fast build tooling with HMR
 - **Tailwind CSS 3** - Utility-first styling
@@ -123,7 +132,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Passport.js** - Authentication with JWT strategy
 - **class-validator** - Declarative DTO validation
 - **Swagger/OpenAPI** - Auto-generated API documentation
-- **Jest 30** - Comprehensive testing framework
+- **Jest 29** - Comprehensive testing framework
 - **Helmet & HPP** - Security middleware
 
 ### Database
@@ -298,7 +307,7 @@ Language can be changed in Profile settings. All UI elements, messages, and labe
 
 ---
 
-## � Production Deployment
+## 🚀 Production Deployment
 
 ### Prerequisites
 
@@ -475,7 +484,7 @@ The [Jenkinsfile](Jenkinsfile) defines a full pipeline that runs on every push.
 
 ---
 
-## �🔮 Roadmap
+## 🔮 Roadmap
 
 See [todo.txt](todo.txt) for the complete list of planned features, including:
 

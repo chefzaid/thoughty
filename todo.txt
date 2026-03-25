@@ -1,4 +1,8 @@
 
+Ongoing
+
+---
+
 Remaining features to implement:
 
 *** UI Features
@@ -7,7 +11,6 @@ Remaining features to implement:
 - Ability to configure Gemini API key to use AI features
 - Keeping a history of modifications on a thought and allow to show the previous versions?
 - Intro website to showcase the app features and link to login/sign up
-- Read entries as audio (either with dates or without)
 
 *** Social features
 - Feed that shows public entries from other users with infinite scroll and to preview your own public entries
@@ -74,4 +77,57 @@ Remaining features to implement:
 
 *** Life ERP
 - This project could evolve into a Personal ERP
-- That does exactly all the functions I do with one drive, and the stats file but with an app (health, mood tracker, finances, expenses and subscriptions...)
+- That does exactly all the functions I do with OneDrive, and the Excel stats file but with an app (health, mood tracker, finances, expenses and subscriptions...)
+
+---
+
+Future ideas for upcoming releases:
+
+*** Editing & Content
+- Markdown / rich text support for entries (headings, bold, italic, lists, links) with a toggle between plain text and WYSIWYG editor
+- Entry templates (e.g. gratitude journal, daily reflection, meeting notes) that users can create and select when writing a new entry
+- Entry word count and estimated reading time displayed per entry, with averages added to stats
+- Pinned entries that always show at the top of the list regardless of date sorting
+- Entry attachments and images (media upload support with storage on S3-compatible backend)
+- Search result highlighting to show matching text in results when searching entries
+- Bulk operations on entries (multi-select for bulk delete, bulk tag change, bulk visibility toggle, bulk move between diaries)
+- Backlinks panel showing which entries reference the current one (bidirectional linking like Obsidian/Roam)
+
+*** Personalization & UX
+- Diary-level theming and colors so entries are visually distinguishable in the All Diaries view
+- Custom tag colors and categories for visual organization of tags
+- Keyboard shortcuts for common actions (Ctrl+N new entry, Ctrl+/ focus search, Esc close modals, arrow keys for pagination)
+- Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day
+- Recurring journaling reminders and writing prompts via browser notifications or email at a user-configured time
+- Drag-and-drop reordering for entries on the same day
+
+*** Export Formats
+- JSON export and import alongside the current custom text format
+- CSV export for entries and stats data
+- PDF export with customizable layout and styling
+- Markdown export compatible with Obsidian vaults
+
+*** Public & API Access
+- Public profile pages for viewing another user's public entries without authentication
+- API key / personal access tokens for programmatic access (CLI tools, scripts, third-party integrations)
+- RSS feed for public entries of a user
+
+*** Accessibility
+- Full accessibility audit and remediation (aria-labels, screen reader support, skip-to-content links, focus management)
+- High contrast mode and adjustable font sizes
+- Keyboard-only navigation support for all interactive elements
+
+*** Infrastructure & Reliability
+- Health check endpoint (Kubernetes probes reference /api/health but none exists in the codebase)
+- Database migration files instead of relying on TypeORM synchronize (add a migrations/ folder with versioned migration scripts)
+- Complete the email verification flow (User entity has emailVerified field but no verification endpoint or email is implemented)
+- Database connection pooling configuration in TypeORM data source
+- Structured JSON logging for observability and request tracing
+- Content Security Policy hardening (replace unsafe-inline with nonces)
+- CI pipeline for automated dependency vulnerability scanning (npm audit, Dependabot/Renovate)
+- Blue-green or canary deployment strategy for zero-downtime releases
+- Database read replicas for scaling read-heavy queries (stats, feed, search)
+- Automated database backups with point-in-time recovery
+- Distributed rate limiting with Redis for multi-replica deployments
+
+

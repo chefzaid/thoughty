@@ -97,6 +97,23 @@ function AppearanceSection({
           </button>
         </div>
       </div>
+
+      <div className="setting-row horizontal">
+        <div className="setting-info">
+          <span className="setting-label">{t('readDates')}</span>
+          <span className="setting-description">{t('readDatesDescription')}</span>
+        </div>
+        <div className="theme-switch-container">
+          <button
+            type="button"
+            className={`theme-switch ${localConfig.readDates === false ? 'light' : 'dark'}`}
+            onClick={() => handleChange({ target: { name: 'readDates', value: localConfig.readDates === false ? 'true' : 'false' } })}
+            aria-label={t('readDates')}
+          >
+            <span className={`switch-thumb ${localConfig.readDates === false ? 'off' : 'on'}`} />
+          </button>
+        </div>
+      </div>
     </div>
   </div>
   );
