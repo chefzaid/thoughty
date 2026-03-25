@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useOptimistic, useTransition, type FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { createAuthFetch, createConfigService, createEntriesService, createDiariesService } from '../services/api';
 import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo } from '../types';
@@ -220,9 +220,29 @@ export const useEntries = (
     setAvailableMonths(data.months);
   }, [isAuthenticated, entriesService]);
 
+  // Optimistic visibility toggle (React 19)
+  const [optimisticEntries, addOptimistic] = useOptimistic(
+    entries,
+    (state, update: { id: number; visibility: 'public' | 'private' }) =>
+      state.map(e => e.id === update.id ? { ...e, visibility: update.visibility } : e)
+  );
+
+  const [, startVisibilityTransition] = useTransition();
+
+  const toggleVisibility = useCallback((entry: Entry) => {
+    const newVisibility = entry.visibility === 'public' ? 'private' : 'public';
+    startVisibilityTransition(async () => {
+      addOptimistic({ id: entry.id, visibility: newVisibility });
+      const success = await entriesService.toggleVisibility(entry.id, newVisibility);
+      if (success) {
+        await fetchEntries();
+      }
+    });
+  }, [entriesService, fetchEntries, addOptimistic, startVisibilityTransition]);
+
   // Group entries by date
   const groupedEntries: GroupedEntries = useMemo(() => {
-    const grouped = entries.reduce((acc: GroupedEntries, entry) => {
+    const grouped = optimisticEntries.reduce((acc: GroupedEntries, entry) => {
       let dateStr = entry.date;
       if (dateStr.includes('T')) dateStr = dateStr.split('T')[0] ?? dateStr;
       acc[dateStr] ??= [];
@@ -235,7 +255,7 @@ export const useEntries = (
     });
 
     return grouped;
-  }, [entries]);
+  }, [optimisticEntries]);
 
   // Sync inputPage with page
   useEffect(() => { 
@@ -303,7 +323,8 @@ export const useEntries = (
     fetchEntries,
     fetchEntryDates,
     getLimit,
-    entriesService
+    entriesService,
+    toggleVisibility
   };
 };
 
@@ -330,7 +351,7 @@ export const useEntryForm = (
     }
   }, [config.defaultVisibility, visibility]);
 
-  const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback(async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFormError('');
 
@@ -439,19 +460,6 @@ export const useEntryEdit = (onSave: () => void) => {
     }
   }, [editText, editTags, editDate, editVisibility, editingEntry, entriesService, handleCancelEdit, onSave]);
 
-  const handleToggleVisibility = useCallback(async (
-    entry: Entry,
-    setEntries: React.Dispatch<React.SetStateAction<Entry[]>>
-  ) => {
-    const newVisibility = entry.visibility === 'public' ? 'private' : 'public';
-    setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, visibility: newVisibility } : e));
-
-    const success = await entriesService.toggleVisibility(entry.id, newVisibility);
-    if (!success) {
-      setEntries(prev => prev.map(e => e.id === entry.id ? { ...e, visibility: entry.visibility } : e));
-    }
-  }, [entriesService]);
-
   return {
     editingEntry,
     editText,
@@ -464,8 +472,7 @@ export const useEntryEdit = (onSave: () => void) => {
     setEditVisibility,
     handleEdit,
     handleCancelEdit,
-    handleSaveEdit,
-    handleToggleVisibility
+    handleSaveEdit
   };
 };
 

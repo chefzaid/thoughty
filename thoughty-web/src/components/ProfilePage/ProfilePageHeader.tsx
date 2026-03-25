@@ -1,4 +1,3 @@
-import React from 'react';
 import type { TranslationFunction } from './types';
 
 interface ProfilePageHeaderProps {
@@ -7,7 +6,8 @@ interface ProfilePageHeaderProps {
   t: TranslationFunction;
 }
 
-const ProfilePageHeader: React.FC<ProfilePageHeaderProps> = ({ onBack, isDark, t }) => (
+function ProfilePageHeader({ onBack, isDark, t }: Readonly<ProfilePageHeaderProps>) {
+  return (
   <div className="profile-page-header">
     <button onClick={onBack} className={`back-btn ${isDark ? 'dark' : 'light'}`}>
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -17,6 +17,7 @@ const ProfilePageHeader: React.FC<ProfilePageHeaderProps> = ({ onBack, isDark, t
     </button>
     <h1 className="profile-page-title">{t('profile')}</h1>
   </div>
-);
+  );
+}
 
 export default ProfilePageHeader;

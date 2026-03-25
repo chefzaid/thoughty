@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, TouchEvent, MouseEvent, ChangeEvent } from 'react';
+import { useState, useRef, useCallback, useEffect, type TouchEvent, type MouseEvent, type ChangeEvent } from 'react';
 import './ProfilePictureEditor.css';
 
 interface Position {
@@ -14,7 +14,7 @@ interface ProfilePictureEditorProps {
     readonly isDark?: boolean;
 }
 
-function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePictureEditorProps): React.ReactElement | null {
+function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePictureEditorProps) {
     const [image, setImage] = useState<HTMLImageElement | null>(null);
     const [zoom, setZoom] = useState<number>(1);
     const [position, setPosition] = useState<Position>({ x: 0, y: 0 });

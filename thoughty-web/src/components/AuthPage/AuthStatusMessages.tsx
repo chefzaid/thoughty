@@ -1,11 +1,9 @@
-import React from 'react';
-
 interface AuthStatusMessagesProps {
   error?: string;
   successMessage?: string;
 }
 
-const AuthStatusMessages: React.FC<AuthStatusMessagesProps> = ({ error, successMessage }) => {
+function AuthStatusMessages({ error, successMessage }: Readonly<AuthStatusMessagesProps>) {
   if (!error && !successMessage) return null;
   return (
     <>
@@ -27,6 +25,6 @@ const AuthStatusMessages: React.FC<AuthStatusMessagesProps> = ({ error, successM
       )}
     </>
   );
-};
+}
 
 export default AuthStatusMessages;

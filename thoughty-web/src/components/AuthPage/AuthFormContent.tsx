@@ -1,4 +1,3 @@
-import React from 'react';
 import type { TranslationFunction } from './types';
 import ForgotPasswordForm from './ForgotPasswordForm';
 import LoginRegisterForm from './LoginRegisterForm';
@@ -25,7 +24,7 @@ interface AuthFormContentProps {
   handleBackToLogin: () => void;
 }
 
-const AuthFormContent: React.FC<AuthFormContentProps> = ({
+function AuthFormContent({
   showForgotPassword,
   handleBackToLogin,
   email,
@@ -34,8 +33,8 @@ const AuthFormContent: React.FC<AuthFormContentProps> = ({
   t,
   loading,
   ...loginRegisterProps
-}) =>
-  showForgotPassword ? (
+}: Readonly<AuthFormContentProps>) {
+  return showForgotPassword ? (
     <ForgotPasswordForm
       email={email}
       setEmail={setEmail}
@@ -54,5 +53,6 @@ const AuthFormContent: React.FC<AuthFormContentProps> = ({
       {...loginRegisterProps}
     />
   );
+}
 
 export default AuthFormContent;

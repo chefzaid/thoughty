@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import type { FormEvent } from 'react';
 import JournalView from './JournalView';
 import type { Config, Entry, Diary, GroupedEntries } from '../../types';
 
@@ -43,7 +44,7 @@ vi.mock('../EntryForm/EntryForm', () => ({
     tags: string[];
     visibility: string | null;
     formError: string;
-    onSubmit: (e: React.FormEvent) => void;
+    onSubmit: (e: FormEvent) => void;
   }) => (
     <form data-testid="entry-form" onSubmit={props.onSubmit}>
       <input data-testid="entry-text" value={props.newEntryText} onChange={(e) => props.setNewEntryText(e.target.value)} />

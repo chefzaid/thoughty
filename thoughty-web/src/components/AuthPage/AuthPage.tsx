@@ -1,4 +1,4 @@
-import React, { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateAuthForm, getAuthSubtitleText } from './types';
 import type { TranslationFunction, AuthResult } from './types';
@@ -13,7 +13,7 @@ interface AuthPageProps {
   readonly onAuthSuccess?: () => void;
 }
 
-function AuthPage({ t, theme, onAuthSuccess }: AuthPageProps): React.ReactElement {
+function AuthPage({ t, theme, onAuthSuccess }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState<boolean>(true);
   const [showForgotPassword, setShowForgotPassword] = useState<boolean>(false);
   const [identifier, setIdentifier] = useState<string>('');

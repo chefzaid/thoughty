@@ -1,4 +1,3 @@
-import React from 'react';
 import './NavMenu.css';
 
 interface NavMenuProps {
@@ -11,7 +10,7 @@ interface NavMenuProps {
     readonly onLogout?: () => void;
 }
 
-function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, t, onLogout }: NavMenuProps): React.ReactElement {
+function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, t, onLogout }: NavMenuProps) {
     const initial = (name || t('user')).charAt(0).toUpperCase();
     const isLight = theme === 'light';
 

@@ -1,4 +1,4 @@
-import React, { ChangeEvent } from 'react';
+import type { ChangeEvent } from 'react';
 import type { TranslationFunction, ProfileConfig } from './types';
 
 interface AppearanceSectionProps {
@@ -10,14 +10,15 @@ interface AppearanceSectionProps {
   t: TranslationFunction;
 }
 
-const AppearanceSection: React.FC<AppearanceSectionProps> = ({
+function AppearanceSection({
   localConfig,
   handleChange,
   handleThemeToggle,
   isDark,
   isLight,
   t
-}) => (
+}: Readonly<AppearanceSectionProps>) {
+  return (
   <div className="profile-section">
     <div className="section-header">
       <svg xmlns="http://www.w3.org/2000/svg" className="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,6 +99,7 @@ const AppearanceSection: React.FC<AppearanceSectionProps> = ({
       </div>
     </div>
   </div>
-);
+  );
+}
 
 export default AppearanceSection;

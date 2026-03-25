@@ -1,4 +1,3 @@
-import React from 'react';
 import type { TranslationFunction } from './types';
 
 interface LoginRegisterFormProps {
@@ -21,7 +20,7 @@ interface LoginRegisterFormProps {
   handleForgotPassword: () => void;
 }
 
-const LoginRegisterForm: React.FC<LoginRegisterFormProps> = ({
+function LoginRegisterForm({
   isLogin,
   isDark,
   t,
@@ -39,7 +38,7 @@ const LoginRegisterForm: React.FC<LoginRegisterFormProps> = ({
   showPassword,
   setShowPassword,
   handleForgotPassword
-}) => {
+}: Readonly<LoginRegisterFormProps>) {
   const submitLabel = isLogin ? t('signIn') : t('signUp');
   const passwordType = showPassword ? 'text' : 'password';
 
@@ -144,6 +143,6 @@ const LoginRegisterForm: React.FC<LoginRegisterFormProps> = ({
       </button>
     </>
   );
-};
+}
 
 export default LoginRegisterForm;

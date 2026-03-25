@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, KeyboardEvent } from 'react';
+import { useState, useEffect, useCallback, type KeyboardEvent, type MouseEvent } from 'react';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import './ThoughtOfTheDay.css';
 import { useAuth } from '../../contexts/AuthContext';
@@ -33,7 +33,7 @@ interface ThoughtOfTheDayProps {
     readonly onNavigateToEntry?: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
 }
 
-function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry }: ThoughtOfTheDayProps): React.ReactElement | null {
+function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry }: ThoughtOfTheDayProps) {
     const { authFetch } = useAuth();
     const [highlights, setHighlights] = useState<Highlights | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -105,7 +105,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
         return dateStr;
     };
 
-    const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>): void => {
+    const handleOverlayClick = (e: MouseEvent<HTMLDivElement>): void => {
         if (e.target === e.currentTarget) {
             onClose();
         }

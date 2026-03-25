@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -44,7 +44,7 @@ interface YearTagData {
     topTags: [string, number][];
 }
 
-function Stats({ theme, t, diaryId }: StatsProps): React.ReactElement {
+function Stats({ theme, t, diaryId }: StatsProps) {
     const { authFetch } = useAuth();
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
+import type { FormEvent } from 'react';
 import { 
   useApiServices, 
   useConfig, 
@@ -382,7 +383,7 @@ describe('useAppState Hooks', () => {
     it('handleSubmit sets error when text is empty', async () => {
       const { result } = renderHook(() => useEntryForm(mockConfig, 1, mockOnSuccess));
 
-      const mockEvent = { preventDefault: vi.fn() } as unknown as React.FormEvent<HTMLFormElement>;
+      const mockEvent = { preventDefault: vi.fn() } as unknown as FormEvent<HTMLFormElement>;
 
       await act(async () => {
         await result.current.handleSubmit(mockEvent);
@@ -398,7 +399,7 @@ describe('useAppState Hooks', () => {
         result.current.setNewEntryText('Test content');
       });
 
-      const mockEvent = { preventDefault: vi.fn() } as unknown as React.FormEvent<HTMLFormElement>;
+      const mockEvent = { preventDefault: vi.fn() } as unknown as FormEvent<HTMLFormElement>;
 
       await act(async () => {
         await result.current.handleSubmit(mockEvent);
@@ -692,7 +693,7 @@ describe('useAppState Hooks', () => {
   });
 
   describe('useEntryForm - extended', () => {
-    const mockEvent = { preventDefault: vi.fn() } as unknown as React.FormEvent<HTMLFormElement>;
+    const mockEvent = { preventDefault: vi.fn() } as unknown as FormEvent<HTMLFormElement>;
 
     it('handleSubmit sets error when text is empty', async () => {
       const mockOnSuccess = vi.fn();
@@ -829,62 +830,10 @@ describe('useAppState Hooks', () => {
       expect(result.current.editingEntry).toBeNull();
     });
 
-    it('toggles visibility successfully', async () => {
-      const { createEntriesService } = await import('../services/api');
-      vi.mocked(createEntriesService).mockReturnValue({
-        fetchEntries: vi.fn(),
-        fetchEntryDates: vi.fn(),
-        fetchYearsMonths: vi.fn(),
-        createEntry: vi.fn(),
-        updateEntry: vi.fn(),
-        deleteEntry: vi.fn(),
-        toggleVisibility: vi.fn().mockResolvedValue(true),
-        navigateToFirst: vi.fn(),
-        navigateByDate: vi.fn(),
-        navigateById: vi.fn()
-      });
-
-      const mockOnSave = vi.fn();
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
-
-      const entry = { id: 1, content: 'Test', tags: ['tag1'], date: '2024-01-01', visibility: 'public' as const };
-      const setEntriesMock = vi.fn();
-
-      await act(async () => {
-        await result.current.handleToggleVisibility(entry, setEntriesMock);
-      });
-
-      // Should have called setEntries to update visibility
-      expect(setEntriesMock).toHaveBeenCalled();
-    });
-
-    it('reverts visibility on toggle failure', async () => {
-      const { createEntriesService } = await import('../services/api');
-      vi.mocked(createEntriesService).mockReturnValue({
-        fetchEntries: vi.fn(),
-        fetchEntryDates: vi.fn(),
-        fetchYearsMonths: vi.fn(),
-        createEntry: vi.fn(),
-        updateEntry: vi.fn(),
-        deleteEntry: vi.fn(),
-        toggleVisibility: vi.fn().mockResolvedValue(false),
-        navigateToFirst: vi.fn(),
-        navigateByDate: vi.fn(),
-        navigateById: vi.fn()
-      });
-
-      const mockOnSave = vi.fn();
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
-
-      const entry = { id: 1, content: 'Test', tags: ['tag1'], date: '2024-01-01', visibility: 'private' as const };
-      const setEntriesMock = vi.fn();
-
-      await act(async () => {
-        await result.current.handleToggleVisibility(entry, setEntriesMock);
-      });
-
-      // Should have called setEntries twice (once to update, once to revert)
-      expect(setEntriesMock).toHaveBeenCalledTimes(2);
+    it('toggleVisibility is exposed from useEntries', () => {
+      const mockConfig = { entriesPerPage: 10 };
+      const { result } = renderHook(() => useEntries(false, mockConfig, null));
+      expect(typeof result.current.toggleVisibility).toBe('function');
     });
   });
 

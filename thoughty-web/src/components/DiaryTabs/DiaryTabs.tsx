@@ -1,4 +1,4 @@
-import React from 'react';
+
 import './DiaryTabs.css';
 
 interface Diary {
@@ -17,7 +17,7 @@ interface DiaryTabsProps {
     readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function DiaryTabs({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, theme, t }: DiaryTabsProps): React.ReactElement {
+function DiaryTabs({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, theme, t }: DiaryTabsProps) {
     const isLight = theme === 'light';
 
     return (

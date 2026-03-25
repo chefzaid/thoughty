@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 
@@ -18,7 +19,7 @@ let mockAuthState = {
 
 // Mock the AuthContext
 vi.mock('./contexts/AuthContext', () => ({
-    AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+    AuthProvider: ({ children }: { children: ReactNode }) => children,
     useAuth: () => mockAuthState
 }));
 

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { Config } from '../../types';
 
 interface YearMonthNavigatorProps {
@@ -13,7 +12,7 @@ interface YearMonthNavigatorProps {
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-const YearMonthNavigator: React.FC<YearMonthNavigatorProps> = ({
+function YearMonthNavigator({
   availableYears,
   availableMonths,
   navYear,
@@ -23,7 +22,7 @@ const YearMonthNavigator: React.FC<YearMonthNavigatorProps> = ({
   onNavigate,
   config,
   t
-}) => {
+}: Readonly<YearMonthNavigatorProps>) {
   if (availableYears.length === 0) return null;
 
   const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -76,6 +75,6 @@ const YearMonthNavigator: React.FC<YearMonthNavigatorProps> = ({
       </button>
     </div>
   );
-};
+}
 
 export default YearMonthNavigator;

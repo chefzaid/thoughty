@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
-import React from 'react';
+import { createElement, type ChangeEvent } from 'react';
 
 interface DatePickerProps {
   selected: Date | null;
@@ -19,13 +19,13 @@ vi.mock('react-datepicker', () => ({
     placeholder,
     placeholderText,
   }: DatePickerProps) {
-    return React.createElement('input', {
+    return createElement('input', {
       type: 'text',
       'data-testid': 'date-picker',
       className: className,
       placeholder: placeholder || placeholderText,
       value: selected ? selected.toISOString().split('T')[0] : '',
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange: (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.value) {
           onChange(new Date(e.target.value));
         } else {

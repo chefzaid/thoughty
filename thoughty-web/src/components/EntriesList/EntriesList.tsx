@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import TagPicker from '../TagPicker/TagPicker';
@@ -54,7 +54,7 @@ interface EntriesListProps {
     t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-const EntriesList: React.FC<EntriesListProps> = ({
+function EntriesList({
     loading,
     entries,
     groupedEntries,
@@ -79,7 +79,7 @@ const EntriesList: React.FC<EntriesListProps> = ({
     activeTargetId,
     onBackToSource,
     t
-}) => {
+}: Readonly<EntriesListProps>) {
     if (loading) return <p className="text-center text-gray-500">{t('loadingEntries')}</p>;
     if (entries.length === 0) return <p className="text-center text-gray-500">{t('noEntriesFound')}</p>;
 
@@ -261,6 +261,6 @@ const EntriesList: React.FC<EntriesListProps> = ({
             ))}
         </div>
     );
-};
+}
 
 export default EntriesList;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
+import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import ProfilePictureEditor from '../ProfilePictureEditor/ProfilePictureEditor';
 import './ProfilePage.css';
@@ -34,7 +34,7 @@ interface ProfilePageProps {
   readonly stats?: ProfileStats;
 }
 
-function ProfilePage({ config, onUpdateConfig, onBack, t, stats }: ProfilePageProps): React.ReactElement {
+function ProfilePage({ config, onUpdateConfig, onBack, t, stats }: ProfilePageProps) {
   const { user, changePassword, deleteAccount } = useAuth();
   const [localConfig, setLocalConfig] = useState<ProfileConfig>(config);
 

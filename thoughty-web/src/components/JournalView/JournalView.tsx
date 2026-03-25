@@ -1,4 +1,4 @@
-import React, { useState, Dispatch, SetStateAction } from 'react';
+import { useState, type Dispatch, type SetStateAction, type FormEvent } from 'react';
 import DiaryTabs from '../DiaryTabs/DiaryTabs';
 import ThoughtOfTheDay from '../ThoughtOfTheDay/ThoughtOfTheDay';
 import EntryForm from '../EntryForm/EntryForm';
@@ -31,7 +31,7 @@ interface JournalViewProps {
   setVisibility: Dispatch<SetStateAction<'public' | 'private' | null>>;
   allTags: string[];
   formError: string;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
   
   // Filters
   search: string;
@@ -84,7 +84,7 @@ interface JournalViewProps {
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-const JournalView: React.FC<JournalViewProps> = ({
+function JournalView({
   diaries,
   currentDiaryId,
   onDiaryChange,
@@ -142,7 +142,7 @@ const JournalView: React.FC<JournalViewProps> = ({
   onNavigateToFirst,
   config,
   t
-}) => {
+}: Readonly<JournalViewProps>) {
   const [navYear, setNavYear] = useState<string>('');
   const [navMonth, setNavMonth] = useState<string>('');
 
@@ -251,6 +251,6 @@ const JournalView: React.FC<JournalViewProps> = ({
       <BackToTopButton t={t} />
     </>
   );
-};
+}
 
 export default JournalView;

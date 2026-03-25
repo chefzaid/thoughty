@@ -11,7 +11,7 @@ vi.mock('../../contexts/AuthContext', () => {
 
 // Mock Chart.js components to avoid canvas rendering issues
 vi.mock('react-chartjs-2', () => {
-    const MockBar = function MockBar(props: { data: unknown }): JSX.Element {
+    const MockBar = function MockBar(props: { data: unknown }) {
         return (
             <div data-testid="mock-bar-chart">
                 {JSON.stringify(props.data)}

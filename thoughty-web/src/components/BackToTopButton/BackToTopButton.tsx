@@ -1,10 +1,8 @@
-import React from 'react';
-
 interface BackToTopButtonProps {
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-const BackToTopButton: React.FC<BackToTopButtonProps> = ({ t }) => {
+function BackToTopButton({ t }: Readonly<BackToTopButtonProps>) {
   return (
     <div className="flex justify-center mt-6 mb-8">
       <button
@@ -24,6 +22,6 @@ const BackToTopButton: React.FC<BackToTopButtonProps> = ({ t }) => {
       </button>
     </div>
   );
-};
+}
 
 export default BackToTopButton;

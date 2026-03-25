@@ -1,4 +1,3 @@
-import React from 'react';
 import type { TranslationFunction } from './types';
 
 interface ForgotPasswordFormProps {
@@ -10,14 +9,15 @@ interface ForgotPasswordFormProps {
   handleBackToLogin: () => void;
 }
 
-const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
+function ForgotPasswordForm({
   email,
   setEmail,
   isDark,
   t,
   loading,
   handleBackToLogin
-}) => (
+}: Readonly<ForgotPasswordFormProps>) {
+  return (
   <>
     <div className="form-group">
       <label htmlFor="email">{t('email')}</label>
@@ -40,6 +40,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
       {t('backToLogin')}
     </button>
   </>
-);
+  );
+}
 
 export default ForgotPasswordForm;

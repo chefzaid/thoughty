@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import './ImportExport.css';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -30,7 +30,7 @@ interface ImportExportProps {
     readonly diaryName?: string;
 }
 
-function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps): React.ReactElement {
+function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
     const { authFetch } = useAuth();
     const [formatConfig, setFormatConfig] = useState<FormatConfig>({
         entrySeparator: '--------------------------------------------------------------------------------',

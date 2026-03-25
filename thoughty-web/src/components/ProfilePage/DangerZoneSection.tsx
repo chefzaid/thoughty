@@ -1,4 +1,3 @@
-import React from 'react';
 import type { TranslationFunction } from './types';
 
 interface DangerZoneSectionProps {
@@ -14,7 +13,7 @@ interface DangerZoneSectionProps {
   handleDeleteAccount: () => void;
 }
 
-const DangerZoneSection: React.FC<DangerZoneSectionProps> = ({
+function DangerZoneSection({
   t,
   isDark,
   showDeleteConfirm,
@@ -25,7 +24,8 @@ const DangerZoneSection: React.FC<DangerZoneSectionProps> = ({
   setDeleteError,
   deletingAccount,
   handleDeleteAccount
-}) => (
+}: Readonly<DangerZoneSectionProps>) {
+  return (
   <div className="profile-section danger-section">
     <div className="section-header">
       <svg xmlns="http://www.w3.org/2000/svg" className="section-icon danger" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -80,6 +80,7 @@ const DangerZoneSection: React.FC<DangerZoneSectionProps> = ({
       </div>
     </div>
   </div>
-);
+  );
+}
 
 export default DangerZoneSection;

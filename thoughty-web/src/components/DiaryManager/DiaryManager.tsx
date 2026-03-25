@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+import { useState, type FormEvent } from 'react';
 import './DiaryManager.css';
 
 // Common emoji icons for diaries
@@ -29,7 +29,7 @@ interface DiaryManagerProps {
     readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onBack, theme, t }: DiaryManagerProps): React.ReactElement {
+function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onBack, theme, t }: DiaryManagerProps) {
     const [newDiaryName, setNewDiaryName] = useState<string>('');
     const [newDiaryIcon, setNewDiaryIcon] = useState<string>('📓');
     const [newDiaryVisibility, setNewDiaryVisibility] = useState<'public' | 'private'>('private');

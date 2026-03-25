@@ -1,11 +1,9 @@
-import React from 'react';
-
 interface FooterProps {
     t: (key: string, params?: Record<string, string | number>) => string;
     theme: 'light' | 'dark';
 }
 
-const Footer: React.FC<FooterProps> = ({ t, theme }) => {
+function Footer({ t, theme }: Readonly<FooterProps>) {
     const year = new Date().getFullYear();
     const isLight = theme === 'light';
 
@@ -31,6 +29,6 @@ const Footer: React.FC<FooterProps> = ({ t, theme }) => {
             </div>
         </footer>
     );
-};
+}
 
 export default Footer;

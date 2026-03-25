@@ -1,4 +1,4 @@
-import React, { ChangeEvent, RefObject } from 'react';
+import type { ChangeEvent, RefObject } from 'react';
 import type { TranslationFunction, ProfileConfig, ProfileUser } from './types';
 
 interface ProfileHeaderCardProps {
@@ -8,12 +8,12 @@ interface ProfileHeaderCardProps {
   memberSince: number;
   t: TranslationFunction;
   triggerPictureUpload: () => void;
-  fileInputRef: RefObject<HTMLInputElement>;
+  fileInputRef: RefObject<HTMLInputElement | null>;
   handlePictureUpload: (e: ChangeEvent<HTMLInputElement>) => void;
   uploadingPicture: boolean;
 }
 
-const ProfileHeaderCard: React.FC<ProfileHeaderCardProps> = ({
+function ProfileHeaderCard({
   localConfig,
   user,
   initial,
@@ -23,7 +23,8 @@ const ProfileHeaderCard: React.FC<ProfileHeaderCardProps> = ({
   fileInputRef,
   handlePictureUpload,
   uploadingPicture
-}) => (
+}: Readonly<ProfileHeaderCardProps>) {
+  return (
   <div className="profile-header-card">
     <div className="profile-avatar-container">
       <button
@@ -67,6 +68,7 @@ const ProfileHeaderCard: React.FC<ProfileHeaderCardProps> = ({
       </p>
     </div>
   </div>
-);
+  );
+}
 
 export default ProfileHeaderCard;

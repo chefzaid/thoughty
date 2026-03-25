@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction } from 'react';
+import { type Dispatch, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import TagPicker from '../TagPicker/TagPicker';
 
@@ -36,7 +36,7 @@ function FilterControls({
     theme,
     t,
     onOpenHighlights
-}: FilterControlsProps): React.ReactElement {
+}: FilterControlsProps) {
     const inputClass = `flex-1 border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
         ? 'bg-gray-50 border-gray-300 text-gray-900'
         : 'bg-gray-900 border-gray-700 text-gray-100'
@@ -74,7 +74,7 @@ function FilterControls({
             : 'bg-gray-900 border-gray-700 text-gray-400 hover:bg-gray-800';
     };
 
-    const getVisibilityIcon = (): React.ReactElement => {
+    const getVisibilityIcon = () => {
         if (filterVisibility === 'public') {
             return (
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

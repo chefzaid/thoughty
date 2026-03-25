@@ -72,6 +72,7 @@ Remaining features to implement:
 - Add logging for critical actions and errors for better debugging
 - Usage and stats of the app and features (telemetery)
 - Improve error handling and user feedback for better UX
+- Rate limiting and prevent DDOS from too much data sent
 - Use WebSockets for real-time updates on public entries and messages
 - Implement lazy loading for components and routes to improve initial load time
 - Implement feature flags to enable/disable features without redeploying

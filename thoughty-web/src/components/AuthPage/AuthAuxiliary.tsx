@@ -1,4 +1,3 @@
-import React from 'react';
 import type { TranslationFunction } from './types';
 
 interface AuthAuxiliaryProps {
@@ -11,7 +10,7 @@ interface AuthAuxiliaryProps {
   t: TranslationFunction;
 }
 
-const AuthAuxiliary: React.FC<AuthAuxiliaryProps> = ({
+function AuthAuxiliary({
   showForgotPassword,
   googleClientId,
   loading,
@@ -19,7 +18,7 @@ const AuthAuxiliary: React.FC<AuthAuxiliaryProps> = ({
   isLogin,
   switchMode,
   t
-}) => {
+}: Readonly<AuthAuxiliaryProps>) {
   if (showForgotPassword) return null;
 
   const switchPrompt = isLogin ? t('dontHaveAccount') : t('alreadyHaveAccount');
@@ -60,6 +59,6 @@ const AuthAuxiliary: React.FC<AuthAuxiliaryProps> = ({
       </div>
     </>
   );
-};
+}
 
 export default AuthAuxiliary;

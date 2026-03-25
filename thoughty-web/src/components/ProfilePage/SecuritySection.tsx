@@ -1,4 +1,4 @@
-import React, { FormEvent } from 'react';
+import type { FormEvent } from 'react';
 import type { TranslationFunction } from './types';
 
 interface SecuritySectionProps {
@@ -26,7 +26,7 @@ interface SecuritySectionProps {
   handleDeleteAccount: () => void;
 }
 
-const SecuritySection: React.FC<SecuritySectionProps> = ({
+function SecuritySection({
   t,
   isDark,
   handlePasswordChange,
@@ -49,7 +49,8 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
   setDeleteError,
   deletingAccount,
   handleDeleteAccount
-}) => (
+}: Readonly<SecuritySectionProps>) {
+  return (
   <div className="profile-section">
     <div className="section-header">
       <svg xmlns="http://www.w3.org/2000/svg" className="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -158,6 +159,7 @@ const SecuritySection: React.FC<SecuritySectionProps> = ({
       </div>
     </div>
   </div>
-);
+  );
+}
 
 export default SecuritySection;

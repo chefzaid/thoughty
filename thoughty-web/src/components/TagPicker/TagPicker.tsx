@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, KeyboardEvent, ChangeEvent } from 'react';
+import { useState, useEffect, useRef, type KeyboardEvent, type ChangeEvent } from 'react';
 
 interface TagPickerProps {
     availableTags?: string[];
@@ -10,7 +10,7 @@ interface TagPickerProps {
     theme?: 'light' | 'dark';
 }
 
-const TagPicker: React.FC<TagPickerProps> = ({
+function TagPicker({
     availableTags = [],
     selectedTags = [],
     onChange,
@@ -18,7 +18,7 @@ const TagPicker: React.FC<TagPickerProps> = ({
     placeholder = "Add tags...",
     singleSelect = false,
     theme = 'dark'
-}) => {
+}: Readonly<TagPickerProps>) {
     const [inputValue, setInputValue] = useState<string>('');
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
@@ -154,6 +154,6 @@ const TagPicker: React.FC<TagPickerProps> = ({
             )}
         </div>
     );
-};
+}
 
 export default TagPicker;

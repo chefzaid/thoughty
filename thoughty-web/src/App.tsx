@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import "react-datepicker/dist/react-datepicker.css";
 
 // Components
@@ -26,9 +26,9 @@ import {
 } from './hooks/useAppState';
 
 // Types
-import type { ViewType, SourceEntryInfo, Config, Entry } from './types';
+import type { ViewType, SourceEntryInfo, Config } from './types';
 
-function App(): React.ReactElement {
+function App() {
   const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
   
   // Navigation State
@@ -60,7 +60,6 @@ function App(): React.ReactElement {
   // Entries management
   const {
     entries,
-    setEntries,
     groupedEntries,
     loading,
     allTags,
@@ -88,7 +87,8 @@ function App(): React.ReactElement {
     fetchEntries,
     fetchEntryDates,
     getLimit,
-    entriesService
+    entriesService,
+    toggleVisibility
   } = useEntries(isAuthenticated, config, currentDiaryId);
 
   // Entry form
@@ -122,8 +122,7 @@ function App(): React.ReactElement {
     setEditVisibility,
     handleEdit,
     handleCancelEdit,
-    handleSaveEdit,
-    handleToggleVisibility
+    handleSaveEdit
   } = useEntryEdit(fetchEntries);
 
   // Delete modal
@@ -191,7 +190,7 @@ function App(): React.ReactElement {
   }, [fetchConfig, fetchDiaries, fetchEntryDates, fetchProfileStats]);
 
   // Render view content
-  const renderViewContent = (): React.ReactElement => {
+  const renderViewContent = () => {
     switch (currentView) {
       case 'profile':
         return (
@@ -284,7 +283,7 @@ function App(): React.ReactElement {
             groupedEntries={groupedEntries}
             onEdit={handleEdit}
             onDelete={handleDelete}
-            onToggleVisibility={(entry: Entry) => handleToggleVisibility(entry, setEntries)}
+            onToggleVisibility={toggleVisibility}
             editingEntry={editingEntry}
             editText={editText}
             setEditText={setEditText}

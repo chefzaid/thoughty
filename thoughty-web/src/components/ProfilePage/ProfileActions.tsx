@@ -1,4 +1,3 @@
-import React from 'react';
 import type { TranslationFunction } from './types';
 
 interface ProfileActionsProps {
@@ -7,7 +6,8 @@ interface ProfileActionsProps {
   t: TranslationFunction;
 }
 
-const ProfileActions: React.FC<ProfileActionsProps> = ({ onBack, handleSave, t }) => (
+function ProfileActions({ onBack, handleSave, t }: Readonly<ProfileActionsProps>) {
+  return (
   <div className="profile-actions">
     <button onClick={onBack} className="btn-cancel">
       {t('cancel')}
@@ -16,6 +16,7 @@ const ProfileActions: React.FC<ProfileActionsProps> = ({ onBack, handleSave, t }
       {t('saveSettings')}
     </button>
   </div>
-);
+  );
+}
 
 export default ProfileActions;

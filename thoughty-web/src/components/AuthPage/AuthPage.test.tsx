@@ -1,13 +1,13 @@
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import AuthPage from './AuthPage';
 import { useAuth } from '../../contexts/AuthContext';
 
 // Mock the auth context
 vi.mock('../../contexts/AuthContext', () => ({
     useAuth: vi.fn(),
-    AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>
+    AuthProvider: ({ children }: { children: ReactNode }) => <div>{children}</div>
 }));
 
 const mockT = (key: string): string => key;

@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface SourceEntryInfo {
     id: number;
     date: string;
@@ -28,12 +26,12 @@ interface EntryContentRendererProps {
  * - "entry (yyyy-mm-dd)" - Links to first entry on that date
  * - "entry (yyyy-mm-dd--X)" - Links to entry #X on that date (index inside parenthesis)
  */
-const EntryContentRenderer: React.FC<EntryContentRendererProps> = ({ 
+function EntryContentRenderer({ 
     content, 
     onNavigateToEntry, 
     sourceEntry,
     maxLength 
-}) => {
+}: Readonly<EntryContentRendererProps>) {
     // Regex to match "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd--X)" with index INSIDE parenthesis
     const referencePattern = /entry\s*\((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/gi;
 
@@ -139,6 +137,6 @@ const EntryContentRenderer: React.FC<EntryContentRendererProps> = ({
             })}
         </>
     );
-};
+}
 
 export default EntryContentRenderer;

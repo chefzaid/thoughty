@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, FormEvent, Dispatch, SetStateAction } from 'react';
+import { useRef, useEffect, type FormEvent, type Dispatch, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import TagPicker from '../TagPicker/TagPicker';
 
@@ -32,7 +32,7 @@ function EntryForm({
     onSubmit,
     theme,
     t
-}: EntryFormProps): React.ReactElement {
+}: EntryFormProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const getVisibilityButtonClass = (): string => {

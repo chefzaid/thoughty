@@ -1,4 +1,4 @@
-import React, { ChangeEvent, Dispatch, SetStateAction } from 'react';
+import type { ChangeEvent, Dispatch, SetStateAction } from 'react';
 import type { TranslationFunction, ProfileConfig } from './types';
 import { getDefaultBirthday } from './types';
 
@@ -10,7 +10,8 @@ interface PersonalSectionProps {
   t: TranslationFunction;
 }
 
-const PersonalSection: React.FC<PersonalSectionProps> = ({ localConfig, handleChange, setLocalConfig, isDark, t }) => (
+function PersonalSection({ localConfig, handleChange, setLocalConfig, isDark, t }: Readonly<PersonalSectionProps>) {
+  return (
   <div className="profile-section">
     <div className="section-header">
       <svg xmlns="http://www.w3.org/2000/svg" className="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -85,6 +86,7 @@ const PersonalSection: React.FC<PersonalSectionProps> = ({ localConfig, handleCh
       </div>
     </div>
   </div>
-);
+  );
+}
 
 export default PersonalSection;
