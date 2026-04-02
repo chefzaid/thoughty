@@ -6,6 +6,7 @@ export interface Entry {
   tags: string[];
   date: string;
   visibility: 'public' | 'private';
+  format?: 'plain' | 'markdown';
   diary_id?: number | null;
   diary_name?: string;
   diary_icon?: string;

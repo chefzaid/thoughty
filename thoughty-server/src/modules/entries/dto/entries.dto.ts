@@ -40,6 +40,11 @@ export class CreateEntryDto {
   @IsNumber()
   @Type(() => Number)
   diaryId?: number;
+
+  @ApiPropertyOptional({ enum: ['plain', 'markdown'], default: 'plain' })
+  @IsOptional()
+  @IsEnum(['plain', 'markdown'])
+  format?: 'plain' | 'markdown';
 }
 
 export class UpdateEntryDto {
@@ -63,6 +68,11 @@ export class UpdateEntryDto {
   @IsOptional()
   @IsEnum(['public', 'private'])
   visibility?: 'public' | 'private';
+
+  @ApiPropertyOptional({ enum: ['plain', 'markdown'], default: 'plain' })
+  @IsOptional()
+  @IsEnum(['plain', 'markdown'])
+  format?: 'plain' | 'markdown';
 }
 
 export class UpdateVisibilityDto {

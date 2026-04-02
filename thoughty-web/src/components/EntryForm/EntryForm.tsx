@@ -1,6 +1,8 @@
 import { useRef, useEffect, type FormEvent, type Dispatch, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
+import MDEditor from '@uiw/react-md-editor';
 import TagPicker from '../TagPicker/TagPicker';
+import MarkdownHelp from '../MarkdownHelp/MarkdownHelp';
 
 interface EntryFormProps {
     readonly newEntryText: string;
@@ -11,6 +13,8 @@ interface EntryFormProps {
     readonly setTags: Dispatch<SetStateAction<string[]>>;
     readonly visibility: 'public' | 'private' | null;
     readonly setVisibility: Dispatch<SetStateAction<'public' | 'private' | null>>;
+    readonly format: 'plain' | 'markdown';
+    readonly setFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
     readonly allTags: string[];
     readonly formError: string;
     readonly onSubmit: (e: FormEvent<HTMLFormElement>) => void;
@@ -27,6 +31,8 @@ function EntryForm({
     setTags,
     visibility,
     setVisibility,
+    format,
+    setFormat,
     allTags,
     formError,
     onSubmit,
@@ -67,18 +73,34 @@ function EntryForm({
         <div className={containerClass}>
             <form onSubmit={onSubmit} className="space-y-4 overflow-visible">
                 <div>
-                    <textarea
-                        ref={textareaRef}
-                        className={`w-full border rounded-lg p-4 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none ${theme === 'light'
-                            ? 'bg-gray-50 border-gray-300 text-gray-900'
-                            : 'bg-gray-900 border-gray-700 text-gray-100'
-                            }`}
-                        rows={3}
-                        placeholder={t('whatsOnYourMind')}
-                        title={t('entryReferenceHint')}
-                        value={newEntryText}
-                        onChange={(e) => setNewEntryText(e.target.value)}
-                    />
+                    {format === 'markdown' ? (
+                        <div data-color-mode={theme === 'light' ? 'light' : 'dark'}>
+                            <MDEditor
+                                value={newEntryText}
+                                onChange={(val) => setNewEntryText(val ?? '')}
+                                preview="edit"
+                                visibleDragbar={false}
+                                height={200}
+                                textareaProps={{
+                                    placeholder: t('whatsOnYourMind'),
+                                    title: t('entryReferenceHint'),
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <textarea
+                            ref={textareaRef}
+                            className={`w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none ${theme === 'light'
+                                ? 'bg-gray-50 border-gray-300 text-gray-900'
+                                : 'bg-gray-900 border-gray-700 text-gray-100'
+                                }`}
+                            rows={3}
+                            placeholder={t('whatsOnYourMind')}
+                            title={t('entryReferenceHint')}
+                            value={newEntryText}
+                            onChange={(e) => setNewEntryText(e.target.value)}
+                        />
+                    )}
                 </div>
                 <div className="flex flex-wrap gap-4 items-end">
                     <div className="w-40 z-10">
@@ -98,6 +120,20 @@ function EntryForm({
                             theme={theme}
                         />
                     </div>
+                    <button
+                        type="button"
+                        onClick={() => setFormat(f => f === 'plain' ? 'markdown' : 'plain')}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${format === 'markdown'
+                            ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
+                            : theme === 'light'
+                                ? 'border-gray-300 bg-gray-50 text-gray-500'
+                                : 'border-gray-600 bg-gray-800 text-gray-400'
+                            }`}
+                        title={format === 'markdown' ? t('markdownEnabled') : t('markdownDisabled')}
+                    >
+                        <span className="text-sm font-bold" style={{ fontFamily: 'monospace' }}>MD</span>
+                    </button>
+                    <MarkdownHelp theme={theme} t={t} />
                     <button
                         type="button"
                         onClick={() => setVisibility(v => v === 'private' ? 'public' : 'private')}

@@ -9,6 +9,7 @@ interface Entry {
     date: string;
     index?: number;
     tags?: string[];
+    format?: 'plain' | 'markdown';
     diary_name?: string;
     diary_icon?: string;
 }
@@ -196,7 +197,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                                             )}
                                         </div>
                                         <div className="entry-content">
-                                            <EntryContentRenderer content={highlights.randomEntry.content} maxLength={300} />
+                                            <EntryContentRenderer content={highlights.randomEntry.content} format={highlights.randomEntry.format} maxLength={300} />
                                         </div>
                                         {highlights.randomEntry.tags && highlights.randomEntry.tags.length > 0 && (
                                             <div className="entry-tags">
@@ -250,7 +251,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                                                                 )}
                                                             </div>
                                                             <div className="entry-content">
-                                                                <EntryContentRenderer content={entry.content} maxLength={200} />
+                                                                <EntryContentRenderer content={entry.content} format={entry.format} maxLength={200} />
                                                             </div>
                                                         </div>
                                                     ))}

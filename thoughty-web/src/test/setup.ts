@@ -53,3 +53,26 @@ vi.mock('react-datepicker', () => ({
 
 // Mock CSS imports
 vi.mock('react-datepicker/dist/react-datepicker.css', () => ({}));
+
+// Mock @uiw/react-md-editor which depends on browser APIs unavailable in jsdom
+interface MDEditorMockProps {
+  value?: string;
+  onChange?: (val?: string) => void;
+  preview?: string;
+  height?: number;
+  visibleDragbar?: boolean;
+  textareaProps?: Record<string, string>;
+}
+
+vi.mock('@uiw/react-md-editor', () => ({
+  default: function MockMDEditor({ value, onChange, textareaProps }: MDEditorMockProps) {
+    return createElement('div', { 'data-color-mode': 'dark', 'data-testid': 'md-editor' },
+      createElement('textarea', {
+        value: value || '',
+        onChange: (e: ChangeEvent<HTMLTextAreaElement>) => onChange?.(e.target.value),
+        placeholder: textareaProps?.placeholder,
+        title: textareaProps?.title,
+      })
+    );
+  },
+}));

@@ -14,6 +14,10 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 
 ### 📝 Journaling & Entry Management
 - **Rich Text Entries** - Write and save your thoughts with an auto-resizing textarea interface
+- **Markdown Support** - Toggle Markdown mode for rich formatting with a WYSIWYG-style toolbar
+  - Formatting toolbar with Bold, Italic, Strikethrough, Headings (H1–H3), Bullet & Numbered Lists, Blockquote, Inline Code, Code Block, Link, and Horizontal Rule
+  - Live preview renders Markdown with full GFM (GitHub Flavored Markdown) support including tables, task lists, and strikethrough
+  - Per-entry format saved — plain text entries stay plain, Markdown entries render formatted
 - **Multiple Entries Per Day** - Create as many entries as you want per day with automatic indexing
 - **Date Selection** - Backdate entries using an intuitive date picker
 - **Inline Editing** - Edit entries directly in place, including date, tags, and visibility
@@ -62,6 +66,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 
 ### 📤 Import & Export
 - **Plain Text Format** - Export to portable `.txt` files
+- **Markdown Format Preserved** - Markdown entries flagged with `{md}` in exports and automatically detected on import
 - **Full Export** - Export all entries or per-diary
 - **Customizable Format** - Configure separators, date format, tag brackets
   - Entry separator (between different dates)
@@ -121,6 +126,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Vite 7** - Lightning-fast build tooling with HMR
 - **Tailwind CSS 3** - Utility-first styling
 - **Chart.js** - Beautiful data visualizations
+- **react-markdown** - Markdown rendering with GFM support via remark-gfm
 - **react-datepicker** - Intuitive date selection
 - **Vitest** - Fast unit testing with v8 coverage
 - **Testing Library** - React component testing

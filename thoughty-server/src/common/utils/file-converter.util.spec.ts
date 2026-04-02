@@ -378,15 +378,143 @@ Line 3
       expect(result[0].content).toContain('Line 2');
       expect(result[0].content).toContain('Line 3');
     });
+
+    it('should parse entry with markdown format flag', () => {
+      const content = `
+---2024-01-15--[tag1]{md}
+# Markdown heading
+
+Some **bold** text
+
+--------------------------------------------------------------------------------
+`;
+
+      const result = parseTextFile(content);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].date).toBe('2024-01-15');
+      expect(result[0].format).toBe('markdown');
+      expect(result[0].content).toContain('# Markdown heading');
+    });
+
+    it('should parse entry without format flag as plain', () => {
+      const content = `
+---2024-01-15--[tag1]
+Plain text entry
+
+--------------------------------------------------------------------------------
+`;
+
+      const result = parseTextFile(content);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].format).toBe('plain');
+    });
+
+    it('should parse same-day markdown entries with format flag', () => {
+      const content = `
+---2024-01-15--[tag1]{md}
+# First markdown entry
+
+********************************************************************************
+
+---2--[tag2]
+Second plain entry
+
+--------------------------------------------------------------------------------
+`;
+
+      const result = parseTextFile(content);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].format).toBe('markdown');
+      expect(result[1].format).toBe('plain');
+    });
+
+    it('should parse same-day entry with index and format flag', () => {
+      const content = `
+---2024-01-15--[tag1]
+First plain entry
+
+********************************************************************************
+
+---2--[tag2]{md}
+Second **markdown** entry
+
+--------------------------------------------------------------------------------
+`;
+
+      const result = parseTextFile(content);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].format).toBe('plain');
+      expect(result[1].format).toBe('markdown');
+    });
+  });
+
+  describe('generateTextFile with markdown format', () => {
+    it('should include {md} flag for markdown entries', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['tag1'], content: '# Heading', format: 'markdown' as const },
+      ];
+
+      const result = generateTextFile(entries);
+
+      expect(result).toContain('{md}');
+      expect(result).toContain('# Heading');
+    });
+
+    it('should not include {md} flag for plain entries', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['tag1'], content: 'Plain text' },
+      ];
+
+      const result = generateTextFile(entries);
+
+      expect(result).not.toContain('{md}');
+    });
+
+    it('should handle mixed plain and markdown entries', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['tag1'], content: 'Plain text' },
+        { date: '2024-01-16', index: 1, tags: ['tag2'], content: '# Markdown', format: 'markdown' as const },
+      ];
+
+      const result = generateTextFile(entries);
+
+      // Check that {md} appears only for the markdown entry
+      const lines = result.split('\n');
+      const plainLine = lines.find(l => l.includes('2024-01-15'));
+      const mdLine = lines.find(l => l.includes('2024-01-16'));
+
+      expect(plainLine).not.toContain('{md}');
+      expect(mdLine).toContain('{md}');
+    });
+
+    it('should roundtrip markdown entries through export and import', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['journal'], content: '# My Day\n\nIt was **great**!', format: 'markdown' as const },
+        { date: '2024-01-16', index: 1, tags: ['note'], content: 'Just a plain note' },
+      ];
+
+      const exported = generateTextFile(entries);
+      const imported = parseTextFile(exported);
+
+      expect(imported).toHaveLength(2);
+      expect(imported[0].format).toBe('markdown');
+      expect(imported[0].content).toContain('# My Day');
+      expect(imported[1].format).toBe('plain');
+      expect(imported[1].content).toContain('Just a plain note');
+    });
   });
 
   describe('findDuplicates', () => {
     it('should return empty array when no duplicates', () => {
       const imported = [
-        { date: '2024-01-15', index: 1, tags: [], content: 'New entry' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'New entry', format: 'plain' as const },
       ];
       const existing = [
-        { date: '2024-01-16', index: 1, tags: [], content: 'Old entry' },
+        { date: '2024-01-16', index: 1, tags: [], content: 'Old entry', format: 'plain' as const },
       ];
 
       const result = findDuplicates(imported, existing);
@@ -396,10 +524,10 @@ Line 3
 
     it('should find duplicate by date and content', () => {
       const imported = [
-        { date: '2024-01-15', index: 1, tags: [], content: 'Same content' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'Same content', format: 'plain' as const },
       ];
       const existing = [
-        { date: '2024-01-15', index: 1, tags: [], content: 'Same content' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'Same content', format: 'plain' as const },
       ];
 
       const result = findDuplicates(imported, existing);
@@ -411,10 +539,10 @@ Line 3
 
     it('should not match entries with same date but different content', () => {
       const imported = [
-        { date: '2024-01-15', index: 1, tags: [], content: 'New content' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'New content', format: 'plain' as const },
       ];
       const existing = [
-        { date: '2024-01-15', index: 1, tags: [], content: 'Different content' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'Different content', format: 'plain' as const },
       ];
 
       const result = findDuplicates(imported, existing);
@@ -424,10 +552,10 @@ Line 3
 
     it('should not match entries with same content but different date', () => {
       const imported = [
-        { date: '2024-01-15', index: 1, tags: [], content: 'Same content' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'Same content', format: 'plain' as const },
       ];
       const existing = [
-        { date: '2024-01-16', index: 1, tags: [], content: 'Same content' },
+        { date: '2024-01-16', index: 1, tags: [], content: 'Same content', format: 'plain' as const },
       ];
 
       const result = findDuplicates(imported, existing);
@@ -437,10 +565,10 @@ Line 3
 
     it('should handle Date objects in existing entries', () => {
       const imported = [
-        { date: '2024-01-15', index: 1, tags: [], content: 'Same content' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'Same content', format: 'plain' as const },
       ];
       const existing = [
-        { date: new Date('2024-01-15') as any, index: 1, tags: [], content: 'Same content' },
+        { date: new Date('2024-01-15') as any, index: 1, tags: [], content: 'Same content', format: 'plain' as const },
       ];
 
       const result = findDuplicates(imported, existing);
@@ -450,10 +578,10 @@ Line 3
 
     it('should trim content for comparison', () => {
       const imported = [
-        { date: '2024-01-15', index: 1, tags: [], content: '  Same content  ' },
+        { date: '2024-01-15', index: 1, tags: [], content: '  Same content  ', format: 'plain' as const },
       ];
       const existing = [
-        { date: '2024-01-15', index: 1, tags: [], content: 'Same content' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'Same content', format: 'plain' as const },
       ];
 
       const result = findDuplicates(imported, existing);
@@ -463,13 +591,13 @@ Line 3
 
     it('should find multiple duplicates', () => {
       const imported = [
-        { date: '2024-01-15', index: 1, tags: [], content: 'Entry 1' },
-        { date: '2024-01-16', index: 1, tags: [], content: 'Entry 2' },
-        { date: '2024-01-17', index: 1, tags: [], content: 'New entry' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'Entry 1', format: 'plain' as const },
+        { date: '2024-01-16', index: 1, tags: [], content: 'Entry 2', format: 'plain' as const },
+        { date: '2024-01-17', index: 1, tags: [], content: 'New entry', format: 'plain' as const },
       ];
       const existing = [
-        { date: '2024-01-15', index: 1, tags: [], content: 'Entry 1' },
-        { date: '2024-01-16', index: 1, tags: [], content: 'Entry 2' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'Entry 1', format: 'plain' as const },
+        { date: '2024-01-16', index: 1, tags: [], content: 'Entry 2', format: 'plain' as const },
       ];
 
       const result = findDuplicates(imported, existing);
@@ -479,10 +607,10 @@ Line 3
 
     it('should handle empty content', () => {
       const imported = [
-        { date: '2024-01-15', index: 1, tags: [], content: '' },
+        { date: '2024-01-15', index: 1, tags: [], content: '', format: 'plain' as const },
       ];
       const existing = [
-        { date: '2024-01-15', index: 1, tags: [], content: null as any },
+        { date: '2024-01-15', index: 1, tags: [], content: null as any, format: 'plain' as const },
       ];
 
       const result = findDuplicates(imported, existing);

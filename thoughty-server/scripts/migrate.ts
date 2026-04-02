@@ -143,6 +143,10 @@ BEGIN
                    WHERE table_name = 'entries' AND column_name = 'index') THEN
         ALTER TABLE entries ADD COLUMN "index" INTEGER DEFAULT 1;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'entries' AND column_name = 'format') THEN
+        ALTER TABLE entries ADD COLUMN format VARCHAR(20) DEFAULT 'plain';
+    END IF;
 END $$;
 
 -- Create refresh_tokens table for JWT refresh token rotation

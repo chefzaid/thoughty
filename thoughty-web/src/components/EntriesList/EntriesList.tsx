@@ -1,9 +1,11 @@
 import { useMemo, type Dispatch, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
+import MDEditor from '@uiw/react-md-editor';
 import TagPicker from '../TagPicker/TagPicker';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import ListenButton from '../ListenButton/ListenButton';
+import MarkdownHelp from '../MarkdownHelp/MarkdownHelp';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
 
 interface Entry {
@@ -12,6 +14,7 @@ interface Entry {
     tags: string[];
     date: string;
     visibility: 'public' | 'private';
+    format?: 'plain' | 'markdown';
     index?: number;
 }
 
@@ -48,6 +51,8 @@ interface EntriesListProps {
     setEditDate: Dispatch<SetStateAction<Date | null>>;
     editVisibility: 'public' | 'private';
     setEditVisibility: Dispatch<SetStateAction<'public' | 'private'>>;
+    editFormat: 'plain' | 'markdown';
+    setEditFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
     allTags: string[];
     onSaveEdit: () => void;
     onCancelEdit: () => void;
@@ -88,6 +93,7 @@ function getVisibilityButtonClass(editVisibility: 'public' | 'private', theme?: 
 function EditForm({
     config, editText, setEditText, editDate, setEditDate,
     allTags, editTags, setEditTags, editVisibility, setEditVisibility,
+    editFormat, setEditFormat,
     onSaveEdit, onCancelEdit, t
 }: Readonly<{
     config: Config;
@@ -100,6 +106,8 @@ function EditForm({
     setEditTags: Dispatch<SetStateAction<string[]>>;
     editVisibility: 'public' | 'private';
     setEditVisibility: Dispatch<SetStateAction<'public' | 'private'>>;
+    editFormat: 'plain' | 'markdown';
+    setEditFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
     onSaveEdit: () => void;
     onCancelEdit: () => void;
     t: (key: string) => string;
@@ -111,12 +119,26 @@ function EditForm({
 
     return (
         <div className="space-y-4">
-            <textarea
-                className={`w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none resize-none ${inputClass}`}
-                rows={3}
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-            />
+            <div>
+                {editFormat === 'markdown' ? (
+                    <div data-color-mode={isDark ? 'dark' : 'light'}>
+                        <MDEditor
+                            value={editText}
+                            onChange={(val) => setEditText(val ?? '')}
+                            preview="edit"
+                            visibleDragbar={false}
+                            height={200}
+                        />
+                    </div>
+                ) : (
+                    <textarea
+                        className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none ${inputClass}`}
+                        rows={3}
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                    />
+                )}
+            </div>
             <div className="flex flex-wrap gap-3">
                 <div className="w-40">
                     <DatePicker
@@ -135,6 +157,20 @@ function EditForm({
                         theme={config.theme}
                     />
                 </div>
+                <button
+                    type="button"
+                    onClick={() => setEditFormat(f => f === 'plain' ? 'markdown' : 'plain')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${editFormat === 'markdown'
+                        ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
+                        : config.theme === 'light'
+                            ? 'border-gray-300 bg-gray-50 text-gray-500'
+                            : 'border-gray-600 bg-gray-800 text-gray-400'
+                        }`}
+                    title={editFormat === 'markdown' ? t('markdownEnabled') : t('markdownDisabled')}
+                >
+                    <span className="text-sm font-bold" style={{ fontFamily: 'monospace' }}>MD</span>
+                </button>
+                <MarkdownHelp theme={config.theme} t={t} />
                 <button
                     type="button"
                     onClick={() => setEditVisibility(v => v === 'private' ? 'public' : 'private')}
@@ -279,9 +315,10 @@ function EntryViewMode({
                     </button>
                 </div>
             </div>
-            <p className={`whitespace-pre-wrap leading-relaxed text-sm ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+            <div className={`leading-relaxed text-sm ${entry.format === 'markdown' ? '' : 'whitespace-pre-wrap'} ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                 <EntryContentRenderer
                     content={entry.content}
+                    format={entry.format}
                     onNavigateToEntry={onNavigateToEntry}
                     sourceEntry={{
                         id: entry.id,
@@ -289,7 +326,7 @@ function EntryViewMode({
                         index: entry.index || 1
                     }}
                 />
-            </p>
+            </div>
         </>
     );
 }
@@ -311,6 +348,8 @@ function EntriesList({
     setEditDate,
     editVisibility,
     setEditVisibility,
+    editFormat,
+    setEditFormat,
     allTags,
     onSaveEdit,
     onCancelEdit,
@@ -372,6 +411,8 @@ function EntriesList({
                                         setEditTags={setEditTags}
                                         editVisibility={editVisibility}
                                         setEditVisibility={setEditVisibility}
+                                        editFormat={editFormat}
+                                        setEditFormat={setEditFormat}
                                         onSaveEdit={onSaveEdit}
                                         onCancelEdit={onCancelEdit}
                                         t={t}

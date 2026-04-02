@@ -77,6 +77,7 @@ interface ParsedEntry {
   index: number;
   tags: string[];
   content: string;
+  format: 'plain' | 'markdown';
 }
 
 interface EntryData {
@@ -84,6 +85,7 @@ interface EntryData {
   index: number;
   tags: string[];
   content: string;
+  format?: 'plain' | 'markdown';
 }
 
 /**
@@ -115,13 +117,15 @@ export function generateTextFile(entries: EntryData[], formatConfig: Partial<For
       currentDate = entryDate;
 
       const formattedDate = formatDate(entryDate, config.dateFormat);
+      const formatFlag = entry.format === 'markdown' ? '{md}' : '';
       const tagsStr =
         config.tagOpenBracket + (entry.tags || []).join(config.tagSeparator) + config.tagCloseBracket;
-      lines.push('', `${config.datePrefix}${formattedDate}${config.dateSuffix}${tagsStr}`);
+      lines.push('', `${config.datePrefix}${formattedDate}${config.dateSuffix}${tagsStr}${formatFlag}`);
     } else {
+      const formatFlag = entry.format === 'markdown' ? '{md}' : '';
       const tagsStr =
         config.tagOpenBracket + (entry.tags || []).join(config.tagSeparator) + config.tagCloseBracket;
-      lines.push('', config.sameDaySeparator, '', `${config.datePrefix}${entry.index}${config.dateSuffix}${tagsStr}`);
+      lines.push('', config.sameDaySeparator, '', `${config.datePrefix}${entry.index}${config.dateSuffix}${tagsStr}${formatFlag}`);
     }
 
     lines.push(entry.content || '');
@@ -159,11 +163,11 @@ export function parseTextFile(
   const escapedTagClose = escapeRegex(config.tagCloseBracket);
 
   const datePattern = new RegExp(
-    String.raw`^${escapedPrefix}(\d{4}[-./]\d{2}[-./]\d{2})${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}$`,
+    String.raw`^${escapedPrefix}(\d{4}[-./]\d{2}[-./]\d{2})${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}(\{md\})?$`,
   );
 
   const indexPattern = new RegExp(
-    String.raw`^${escapedPrefix}(\d+)${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}$`,
+    String.raw`^${escapedPrefix}(\d+)${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}(\{md\})?$`,
   );
 
   function saveCurrentEntry(): void {
@@ -194,11 +198,13 @@ export function parseTextFile(
         .split(config.tagSeparator)
         .map((t) => t.trim())
         .filter(Boolean);
+      const format: 'plain' | 'markdown' = dateMatch[3] ? 'markdown' : 'plain';
       currentEntry = {
         date: currentDate,
         index: currentIndex,
         tags,
         content: '',
+        format,
       };
       continue;
     }
@@ -211,11 +217,13 @@ export function parseTextFile(
         .split(config.tagSeparator)
         .map((t) => t.trim())
         .filter(Boolean);
+      const format: 'plain' | 'markdown' = indexMatch[3] ? 'markdown' : 'plain';
       currentEntry = {
         date: currentDate,
         index: currentIndex,
         tags,
         content: '',
+        format,
       };
       continue;
     }

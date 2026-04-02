@@ -87,6 +87,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     tags: string[];
     date: string;
     visibility: 'public' | 'private' | null;
+    format?: 'plain' | 'markdown';
     diaryId: number | null;
   }): Promise<boolean> => {
     try {
@@ -119,7 +120,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
    */
   const updateEntry = async (
     id: number,
-    data: { text: string; tags: string[]; date: string; visibility: 'public' | 'private' }
+    data: { text: string; tags: string[]; date: string; visibility: 'public' | 'private'; format?: 'plain' | 'markdown' }
   ): Promise<boolean> => {
     try {
       const response = await authFetch(`/api/entries/${id}`, {

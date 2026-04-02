@@ -1,3 +1,6 @@
+import Markdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 interface SourceEntryInfo {
     id: number;
     date: string;
@@ -15,6 +18,7 @@ interface ContentPart {
 
 interface EntryContentRendererProps {
     readonly content: string;
+    readonly format?: 'plain' | 'markdown';
     readonly onNavigateToEntry?: (date: string, index: number, sourceEntry?: SourceEntryInfo) => void;
     readonly sourceEntry?: SourceEntryInfo;
     readonly maxLength?: number;
@@ -28,6 +32,7 @@ interface EntryContentRendererProps {
  */
 function EntryContentRenderer({ 
     content, 
+    format,
     onNavigateToEntry, 
     sourceEntry,
     maxLength 
@@ -102,10 +107,59 @@ function EntryContentRenderer({
 
     const parts = parseContent();
 
+    // Apply maxLength truncation for display
+    const displayContent = maxLength && content && content.length > maxLength 
+        ? content.slice(0, maxLength) + '...' 
+        : content;
+
+    // Markdown rendering mode
+    if (format === 'markdown') {
+        // For markdown entries, render markdown first, then handle references
+        // We still support cross-references inside markdown content
+        if (!parts || parts.length === 0) {
+            return (
+                <span className="markdown-content">
+                    <Markdown remarkPlugins={[remarkGfm]}>{displayContent}</Markdown>
+                </span>
+            );
+        }
+
+        return (
+            <>
+                {parts.map((part) => {
+                    if (part.type === 'text') {
+                        return (
+                            <span key={part.key} className="markdown-content">
+                                <Markdown remarkPlugins={[remarkGfm]}>{part.content || ''}</Markdown>
+                            </span>
+                        );
+                    }
+
+                    if (part.type === 'reference' && part.date && part.displayText) {
+                        return (
+                            <button
+                                key={part.key}
+                                type="button"
+                                className="entry-reference-link"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleReferenceClick(part.date!, part.index || 1);
+                                }}
+                                title={getTitle(part.date, part.index || 1)}
+                            >
+                                {part.displayText}
+                            </button>
+                        );
+                    }
+
+                    return null;
+                })}
+            </>
+        );
+    }
+
+    // Plain text rendering mode (original behavior)
     if (!parts || parts.length === 0) {
-        const displayContent = maxLength && content && content.length > maxLength 
-            ? content.slice(0, maxLength) + '...' 
-            : content;
         return <>{displayContent}</>;
     }
 

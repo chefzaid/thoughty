@@ -201,6 +201,7 @@ export class IoService {
         index: nextIndex,
         tags: entry.tags,
         content: entry.content,
+        format: entry.format || 'plain',
         visibility: 'private',
         diaryId: targetDiaryId,
       });

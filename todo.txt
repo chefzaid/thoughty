@@ -8,9 +8,10 @@ Remaining features to implement:
 *** UI Features
 - Ability to connect to cloud providers like OneDrive or Google Drive to sync the journal file once exported
 - Ability to configure a fixed schedule for syncing the file from/to cloud (only diff, not the whole file, but there may be changes in previous entries)
-- Ability to configure Gemini API key to use AI features
+- Ability to configure API key to use AI features (OpenRouter)
 - Keeping a history of modifications on a thought and allow to show the previous versions?
 - Intro website to showcase the app features and link to login/sign up
+- Marking an entry as Favorite, and have a special Favorites journal
 
 *** Social features
 - Feed that shows public entries from other users with infinite scroll and to preview your own public entries
@@ -36,11 +37,13 @@ Remaining features to implement:
 - Personality analysis through the choice of words and subjects
 - AI features should be locked behind a paywall with a free trial (except if own API toekn is provided)
 - AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
+- Local LLM processing for privacy
 
 *** Book Converter
 - Based on tags to create chapters
 - Connect the entries to form a chapter
 - Do the same for the rest of tags
+- PDF format
 
 *** Import / Export
 - Import from a file will use the configured default visibility of the diary
@@ -48,6 +51,7 @@ Remaining features to implement:
 - Ability to choose whether to export the visibility field or not, by default set to false
 - Export to a file needs to add a visibility field like --[public/private] just after the tags.
 - Manage the behavior of the import/export when using All Diaries
+- Supporting TXT, JSON, and MD format import export
 
 *** Security
 - Add 2FA authentication
@@ -81,36 +85,20 @@ Remaining features to implement:
 
 ---
 
-Future ideas for upcoming releases:
+Other ideas for upcoming releases:
 
 *** Editing & Content
-- Markdown / rich text support for entries (headings, bold, italic, lists, links) with a toggle between plain text and WYSIWYG editor
-- Entry templates (e.g. gratitude journal, daily reflection, meeting notes) that users can create and select when writing a new entry
-- Entry word count and estimated reading time displayed per entry, with averages added to stats
-- Pinned entries that always show at the top of the list regardless of date sorting
-- Entry attachments and images (media upload support with storage on S3-compatible backend)
 - Search result highlighting to show matching text in results when searching entries
 - Bulk operations on entries (multi-select for bulk delete, bulk tag change, bulk visibility toggle, bulk move between diaries)
-- Backlinks panel showing which entries reference the current one (bidirectional linking like Obsidian/Roam)
+- Entry attachments and images (media upload support with storage on S3-compatible backend)
 
 *** Personalization & UX
 - Diary-level theming and colors so entries are visually distinguishable in the All Diaries view
 - Custom tag colors and categories for visual organization of tags
 - Keyboard shortcuts for common actions (Ctrl+N new entry, Ctrl+/ focus search, Esc close modals, arrow keys for pagination)
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day
-- Recurring journaling reminders and writing prompts via browser notifications or email at a user-configured time
+- Recurring journaling reminders and writing prompts via app notifications at a user-configured time
 - Drag-and-drop reordering for entries on the same day
-
-*** Export Formats
-- JSON export and import alongside the current custom text format
-- CSV export for entries and stats data
-- PDF export with customizable layout and styling
-- Markdown export compatible with Obsidian vaults
-
-*** Public & API Access
-- Public profile pages for viewing another user's public entries without authentication
-- API key / personal access tokens for programmatic access (CLI tools, scripts, third-party integrations)
-- RSS feed for public entries of a user
 
 *** Accessibility
 - Full accessibility audit and remediation (aria-labels, screen reader support, skip-to-content links, focus management)

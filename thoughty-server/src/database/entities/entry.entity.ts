@@ -32,6 +32,9 @@ export class Entry {
   @Column({ type: 'text' })
   content: string;
 
+  @Column({ type: 'varchar', length: 20, default: 'plain' })
+  format: 'plain' | 'markdown';
+
   @Column({ type: 'varchar', length: 20, default: 'private' })
   visibility: 'public' | 'private';
 

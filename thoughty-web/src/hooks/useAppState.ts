@@ -342,6 +342,7 @@ export const useEntryForm = (
   const [tags, setTags] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [visibility, setVisibility] = useState<'public' | 'private' | null>(null);
+  const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
   const [formError, setFormError] = useState<string>('');
 
   // Set default visibility from config
@@ -374,18 +375,20 @@ export const useEntryForm = (
       tags,
       date: dateStr,
       visibility,
+      format,
       diaryId: currentDiaryId
     });
 
     if (success) {
       setNewEntryText('');
       setTags([]);
+      setFormat('plain');
       setVisibility(config.defaultVisibility || 'private');
       onSuccess();
     } else {
       setFormError('Failed to save entry. Please try again.');
     }
-  }, [newEntryText, tags, selectedDate, visibility, currentDiaryId, config.defaultVisibility, entriesService, onSuccess]);
+  }, [newEntryText, tags, selectedDate, visibility, format, currentDiaryId, config.defaultVisibility, entriesService, onSuccess]);
 
   return {
     newEntryText,
@@ -396,6 +399,8 @@ export const useEntryForm = (
     setSelectedDate,
     visibility,
     setVisibility,
+    format,
+    setFormat,
     formError,
     setFormError,
     handleSubmit
@@ -413,12 +418,14 @@ export const useEntryEdit = (onSave: () => void) => {
   const [editTags, setEditTags] = useState<string[]>([]);
   const [editDate, setEditDate] = useState<Date | null>(null);
   const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
+  const [editFormat, setEditFormat] = useState<'plain' | 'markdown'>('plain');
 
   const handleEdit = useCallback((entry: Entry) => {
     setEditingEntry(entry);
     setEditText(entry.content);
     setEditTags(entry.tags || []);
     setEditVisibility(entry.visibility || 'private');
+    setEditFormat(entry.format || 'plain');
     let dateStr = entry.date;
     if (dateStr.includes('T')) dateStr = dateStr.split('T')[0] ?? dateStr;
     const parts = dateStr.split('-').map(Number);
@@ -434,6 +441,7 @@ export const useEntryEdit = (onSave: () => void) => {
     setEditTags([]);
     setEditDate(null);
     setEditVisibility('private');
+    setEditFormat('plain');
   }, []);
 
   const handleSaveEdit = useCallback(async () => {
@@ -449,7 +457,8 @@ export const useEntryEdit = (onSave: () => void) => {
       text: editText,
       tags: editTags,
       date: dateStr,
-      visibility: editVisibility
+      visibility: editVisibility,
+      format: editFormat
     });
 
     if (success) {
@@ -458,7 +467,7 @@ export const useEntryEdit = (onSave: () => void) => {
     } else {
       alert('Failed to update entry.');
     }
-  }, [editText, editTags, editDate, editVisibility, editingEntry, entriesService, handleCancelEdit, onSave]);
+  }, [editText, editTags, editDate, editVisibility, editFormat, editingEntry, entriesService, handleCancelEdit, onSave]);
 
   return {
     editingEntry,
@@ -470,6 +479,8 @@ export const useEntryEdit = (onSave: () => void) => {
     setEditDate,
     editVisibility,
     setEditVisibility,
+    editFormat,
+    setEditFormat,
     handleEdit,
     handleCancelEdit,
     handleSaveEdit

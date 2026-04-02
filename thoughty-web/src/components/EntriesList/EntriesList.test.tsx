@@ -41,6 +41,8 @@ describe('EntriesList', () => {
         setEditDate: vi.fn(),
         editVisibility: 'private' as const,
         setEditVisibility: vi.fn(),
+        editFormat: 'plain' as const,
+        setEditFormat: vi.fn(),
         allTags: ['work', 'personal', 'ideas', 'important'],
         onSaveEdit: vi.fn(),
         onCancelEdit: vi.fn(),

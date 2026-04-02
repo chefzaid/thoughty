@@ -84,6 +84,7 @@ export class EntriesService {
         index: e.index,
         tags: e.tags,
         content: e.content,
+        format: e.format,
         visibility: e.visibility,
         diary_name: e.diary?.name,
         diary_icon: e.diary?.icon,
@@ -275,6 +276,7 @@ export class EntriesService {
       index: nextIndex,
       tags: sanitizedTags,
       content: dto.text,
+      format: dto.format || 'plain',
       visibility: dto.visibility || 'private',
       diaryId: targetDiaryId,
     });
@@ -310,6 +312,7 @@ export class EntriesService {
     entry.content = dto.text;
     entry.tags = sanitizedTags;
     entry.date = dto.date;
+    entry.format = dto.format || entry.format;
     entry.visibility = dto.visibility || 'private';
     entry.index = newIndex;
 

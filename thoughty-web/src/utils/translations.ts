@@ -221,7 +221,28 @@ export type TranslationKey =
   | 'listenThisEntry'
   | 'listenFromHere'
   | 'readDates'
-  | 'readDatesDescription';
+  | 'readDatesDescription'
+  | 'markdownEnabled'
+  | 'markdownDisabled'
+  | 'markdownToolbar'
+  | 'markdownHelp'
+  | 'markdownHelpSyntax'
+  | 'markdownHelpResult'
+  | 'markdownHelpShortcut'
+  | 'bold'
+  | 'italic'
+  | 'strikethrough'
+  | 'heading1'
+  | 'heading2'
+  | 'heading3'
+  | 'bulletList'
+  | 'numberedList'
+  | 'blockquote'
+  | 'inlineCode'
+  | 'codeBlock'
+  | 'link'
+  | 'horizontalRule'
+  | 'loadingEntries';
 
 export type Language = 'en' | 'fr';
 
@@ -487,6 +508,27 @@ export const translations: Translations = {
     listenFromHere: 'Read from here onwards',
     readDates: 'Read dates aloud',
     readDatesDescription: 'Include dates when reading entries aloud',
+    markdownEnabled: 'Markdown enabled - click to switch to plain text',
+    markdownDisabled: 'Plain text - click to enable Markdown formatting',
+    markdownToolbar: 'Markdown formatting toolbar',
+    markdownHelp: 'Markdown syntax help',
+    markdownHelpSyntax: 'Syntax',
+    markdownHelpResult: 'Result',
+    markdownHelpShortcut: 'Shortcut',
+    bold: 'Bold',
+    italic: 'Italic',
+    strikethrough: 'Strikethrough',
+    heading1: 'Heading 1',
+    heading2: 'Heading 2',
+    heading3: 'Heading 3',
+    bulletList: 'Bullet list',
+    numberedList: 'Numbered list',
+    blockquote: 'Blockquote',
+    inlineCode: 'Inline code',
+    codeBlock: 'Code block',
+    link: 'Link',
+    horizontalRule: 'Horizontal rule',
+    loadingEntries: 'Loading entries...',
   },
   fr: {
     // App
@@ -748,6 +790,27 @@ export const translations: Translations = {
     listenFromHere: 'Lire à partir d\'ici',
     readDates: 'Lire les dates à voix haute',
     readDatesDescription: 'Inclure les dates lors de la lecture des entrées',
+    markdownEnabled: 'Markdown activé - cliquez pour passer au texte brut',
+    markdownDisabled: 'Texte brut - cliquez pour activer le formatage Markdown',
+    markdownToolbar: 'Barre d\'outils de formatage Markdown',
+    markdownHelp: 'Aide syntaxe Markdown',
+    markdownHelpSyntax: 'Syntaxe',
+    markdownHelpResult: 'Résultat',
+    markdownHelpShortcut: 'Raccourci',
+    bold: 'Gras',
+    italic: 'Italique',
+    strikethrough: 'Barré',
+    heading1: 'Titre 1',
+    heading2: 'Titre 2',
+    heading3: 'Titre 3',
+    bulletList: 'Liste à puces',
+    numberedList: 'Liste numérotée',
+    blockquote: 'Citation',
+    inlineCode: 'Code en ligne',
+    codeBlock: 'Bloc de code',
+    link: 'Lien',
+    horizontalRule: 'Ligne horizontale',
+    loadingEntries: 'Chargement des entrées...',
   },
 };
 

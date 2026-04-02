@@ -29,6 +29,8 @@ interface JournalViewProps {
   setTags: Dispatch<SetStateAction<string[]>>;
   visibility: 'public' | 'private' | null;
   setVisibility: Dispatch<SetStateAction<'public' | 'private' | null>>;
+  format: 'plain' | 'markdown';
+  setFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
   allTags: string[];
   formError: string;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
@@ -61,6 +63,8 @@ interface JournalViewProps {
   setEditDate: Dispatch<SetStateAction<Date | null>>;
   editVisibility: 'public' | 'private';
   setEditVisibility: Dispatch<SetStateAction<'public' | 'private'>>;
+  editFormat: 'plain' | 'markdown';
+  setEditFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
   onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
@@ -99,6 +103,8 @@ function JournalView({
   setTags,
   visibility,
   setVisibility,
+  format,
+  setFormat,
   allTags,
   formError,
   onSubmit,
@@ -127,6 +133,8 @@ function JournalView({
   setEditDate,
   editVisibility,
   setEditVisibility,
+  editFormat,
+  setEditFormat,
   onSaveEdit,
   onCancelEdit,
   onNavigateToEntry,
@@ -175,6 +183,8 @@ function JournalView({
         setTags={setTags}
         visibility={visibility}
         setVisibility={setVisibility}
+        format={format}
+        setFormat={setFormat}
         allTags={allTags}
         formError={formError}
         onSubmit={onSubmit}
@@ -216,6 +226,8 @@ function JournalView({
         setEditDate={setEditDate}
         editVisibility={editVisibility}
         setEditVisibility={setEditVisibility}
+        editFormat={editFormat}
+        setEditFormat={setEditFormat}
         allTags={allTags}
         onSaveEdit={onSaveEdit}
         onCancelEdit={onCancelEdit}

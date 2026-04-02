@@ -101,6 +101,8 @@ function App() {
     setSelectedDate,
     visibility,
     setVisibility,
+    format,
+    setFormat,
     formError,
     handleSubmit
   } = useEntryForm(config, currentDiaryId, () => {
@@ -120,6 +122,8 @@ function App() {
     setEditDate,
     editVisibility,
     setEditVisibility,
+    editFormat,
+    setEditFormat,
     handleEdit,
     handleCancelEdit,
     handleSaveEdit
@@ -265,6 +269,8 @@ function App() {
             setTags={setTags}
             visibility={visibility}
             setVisibility={setVisibility}
+            format={format}
+            setFormat={setFormat}
             allTags={allTags}
             formError={formError}
             onSubmit={handleSubmit}
@@ -293,6 +299,8 @@ function App() {
             setEditDate={setEditDate}
             editVisibility={editVisibility}
             setEditVisibility={setEditVisibility}
+            editFormat={editFormat}
+            setEditFormat={setEditFormat}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
             onNavigateToEntry={handleNavigateToEntry}
