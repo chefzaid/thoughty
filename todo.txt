@@ -38,6 +38,7 @@ Remaining features to implement:
 - AI features should be locked behind a paywall with a free trial (except if own API toekn is provided)
 - AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
 - Local LLM processing for privacy
+- Graph of all thoughs or at least tags, interconencted between them using AI
 
 *** Book Converter
 - Based on tags to create chapters
