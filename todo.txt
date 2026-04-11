@@ -39,6 +39,8 @@ Remaining features to implement:
 - AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
 - Local LLM processing for privacy
 - Graph of all thoughs or at least tags, interconencted between them using AI
+- Transcription from an Audio note with options for grammar and rewriting style
+- Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
 
 *** Book Converter
 - Based on tags to create chapters
