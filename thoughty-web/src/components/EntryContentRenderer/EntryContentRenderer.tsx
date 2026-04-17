@@ -1,5 +1,6 @@
-import Markdown from 'react-markdown';
+import Markdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import React, { useMemo } from 'react';
 
 interface SourceEntryInfo {
     id: number;
@@ -22,6 +23,51 @@ interface EntryContentRendererProps {
     readonly onNavigateToEntry?: (date: string, index: number, sourceEntry?: SourceEntryInfo) => void;
     readonly sourceEntry?: SourceEntryInfo;
     readonly maxLength?: number;
+    readonly searchTerm?: string;
+}
+
+function escapeRegExp(str: string): string {
+    return str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+}
+
+function highlightText(text: string, key: string, searchTerm: string): React.ReactNode {
+    const escaped = escapeRegExp(searchTerm);
+    const searchRegex = new RegExp(`(${escaped})`, 'gi');
+    const segments = text.split(searchRegex);
+    if (segments.length <= 1) return text;
+    return (
+        <>
+            {segments.map((segment, i) =>
+                searchRegex.test(segment)
+                    ? <mark key={`${key}-hl-${i}`} className="bg-yellow-300 dark:bg-yellow-500/40 text-inherit rounded-sm px-0.5">{segment}</mark>
+                    : segment
+            )}
+        </>
+    );
+}
+
+function highlightChildren(children: React.ReactNode, keyPrefix: string, searchTerm: string): React.ReactNode {
+    return React.Children.map(children, (child, i) => {
+        if (typeof child === 'string') {
+            return highlightText(child, `${keyPrefix}-${i}`, searchTerm);
+        }
+        return child;
+    });
+}
+
+function createMarkdownHighlightComponents(searchTerm: string): Components {
+    const hl = (children: React.ReactNode, prefix: string) => highlightChildren(children, prefix, searchTerm);
+    return {
+        p: ({ children, ...props }) => <p {...props}>{hl(children, 'md-p')}</p>,
+        li: ({ children, ...props }) => <li {...props}>{hl(children, 'md-li')}</li>,
+        strong: ({ children, ...props }) => <strong {...props}>{hl(children, 'md-strong')}</strong>,
+        em: ({ children, ...props }) => <em {...props}>{hl(children, 'md-em')}</em>,
+        td: ({ children, ...props }) => <td {...props}>{hl(children, 'md-td')}</td>,
+        th: ({ children, ...props }) => <th {...props}>{hl(children, 'md-th')}</th>,
+        h1: ({ children, ...props }) => <h1 {...props}>{hl(children, 'md-h1')}</h1>,
+        h2: ({ children, ...props }) => <h2 {...props}>{hl(children, 'md-h2')}</h2>,
+        h3: ({ children, ...props }) => <h3 {...props}>{hl(children, 'md-h3')}</h3>,
+    };
 }
 
 /**
@@ -35,10 +81,16 @@ function EntryContentRenderer({
     format,
     onNavigateToEntry, 
     sourceEntry,
-    maxLength 
+    maxLength,
+    searchTerm
 }: Readonly<EntryContentRendererProps>) {
     // Regex to match "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd--X)" with index INSIDE parenthesis
     const referencePattern = /entry\s*\((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/gi;
+
+    const markdownComponents = useMemo(
+        () => searchTerm && searchTerm.trim() !== '' ? createMarkdownHighlightComponents(searchTerm) : undefined,
+        [searchTerm]
+    );
 
     const parseContent = (): ContentPart[] | null => {
         if (!content) return null;
@@ -119,7 +171,7 @@ function EntryContentRenderer({
         if (!parts || parts.length === 0) {
             return (
                 <span className="markdown-content">
-                    <Markdown remarkPlugins={[remarkGfm]}>{displayContent}</Markdown>
+                    <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{displayContent}</Markdown>
                 </span>
             );
         }
@@ -130,7 +182,7 @@ function EntryContentRenderer({
                     if (part.type === 'text') {
                         return (
                             <span key={part.key} className="markdown-content">
-                                <Markdown remarkPlugins={[remarkGfm]}>{part.content || ''}</Markdown>
+                                <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{part.content || ''}</Markdown>
                             </span>
                         );
                     }
@@ -160,14 +212,14 @@ function EntryContentRenderer({
 
     // Plain text rendering mode (original behavior)
     if (!parts || parts.length === 0) {
-        return <>{displayContent}</>;
+        return <>{searchTerm ? highlightText(displayContent, 'root', searchTerm) : displayContent}</>;
     }
 
     return (
         <>
             {parts.map((part) => {
                 if (part.type === 'text') {
-                    return <span key={part.key}>{part.content}</span>;
+                    return <span key={part.key}>{searchTerm ? highlightText(part.content || '', part.key, searchTerm) : part.content}</span>;
                 }
 
                 if (part.type === 'reference' && part.date && part.displayText) {

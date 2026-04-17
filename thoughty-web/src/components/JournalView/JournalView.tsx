@@ -235,6 +235,7 @@ function JournalView({
         sourceEntry={sourceEntry}
         activeTargetId={activeTargetId}
         onBackToSource={onBackToSource}
+        searchTerm={search}
         t={t}
       />
 

@@ -60,6 +60,7 @@ interface EntriesListProps {
     sourceEntry: SourceEntryInfo | null;
     activeTargetId: number | null;
     onBackToSource: () => void;
+    searchTerm?: string;
     t: (key: string, params?: Record<string, string | number>) => string;
 }
 
@@ -228,7 +229,7 @@ function BackToSourceButton({ sourceEntry, onBackToSource, t }: Readonly<{
 function EntryViewMode({
     entry, config, speaking, activeEntryId, activeTargetId, sourceEntry,
     flatEntries, speakEntry: speak, speakFromEntry: speakFrom, stop,
-    onToggleVisibility, onEdit, onDelete, onNavigateToEntry, onBackToSource, t
+    onToggleVisibility, onEdit, onDelete, onNavigateToEntry, onBackToSource, searchTerm, t
 }: Readonly<{
     entry: Entry;
     config: Config;
@@ -245,6 +246,7 @@ function EntryViewMode({
     onDelete: (id: number) => void;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     onBackToSource: () => void;
+    searchTerm?: string;
     t: (key: string) => string;
 }>) {
     const isDark = config.theme !== 'light';
@@ -325,6 +327,7 @@ function EntryViewMode({
                         date: extractDate(entry.date),
                         index: entry.index || 1
                     }}
+                    searchTerm={searchTerm}
                 />
             </div>
         </>
@@ -357,6 +360,7 @@ function EntriesList({
     sourceEntry,
     activeTargetId,
     onBackToSource,
+    searchTerm,
     t
 }: Readonly<EntriesListProps>) {
     const { speaking, activeEntryId, speakEntry, speakFromEntry, stop } = useSpeech({
@@ -434,6 +438,7 @@ function EntriesList({
                                         onDelete={onDelete}
                                         onNavigateToEntry={onNavigateToEntry}
                                         onBackToSource={onBackToSource}
+                                        searchTerm={searchTerm}
                                         t={t}
                                     />
                                 )}
