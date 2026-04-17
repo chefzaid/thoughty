@@ -20,6 +20,7 @@ describe('EntriesController', () => {
       updateVisibility: jest.fn(),
       deleteAll: jest.fn(),
       delete: jest.fn(),
+      bulkOperation: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -148,6 +149,38 @@ describe('EntriesController', () => {
 
       const result = await controller.delete(mockUser as any, 7);
       expect(entriesService.delete).toHaveBeenCalledWith(1, 7);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('bulkOperation', () => {
+    it('delegates to entriesService.bulkOperation', async () => {
+      const dto = { ids: [1, 2, 3], action: 'delete' as const };
+      const expected = { success: true, affectedCount: 3 };
+      entriesService.bulkOperation!.mockResolvedValue(expected);
+
+      const result = await controller.bulkOperation(mockUser as any, dto as any);
+      expect(entriesService.bulkOperation).toHaveBeenCalledWith(1, dto);
+      expect(result).toBe(expected);
+    });
+
+    it('delegates bulk visibility operation', async () => {
+      const dto = { ids: [1], action: 'visibility' as const, visibility: 'public' as const };
+      const expected = { success: true, affectedCount: 1 };
+      entriesService.bulkOperation!.mockResolvedValue(expected);
+
+      const result = await controller.bulkOperation(mockUser as any, dto as any);
+      expect(entriesService.bulkOperation).toHaveBeenCalledWith(1, dto);
+      expect(result).toBe(expected);
+    });
+
+    it('delegates bulk move operation', async () => {
+      const dto = { ids: [1, 2], action: 'move' as const, diaryId: 5 };
+      const expected = { success: true, affectedCount: 2 };
+      entriesService.bulkOperation!.mockResolvedValue(expected);
+
+      const result = await controller.bulkOperation(mockUser as any, dto as any);
+      expect(entriesService.bulkOperation).toHaveBeenCalledWith(1, dto);
       expect(result).toBe(expected);
     });
   });

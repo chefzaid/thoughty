@@ -17,6 +17,7 @@ import {
   CreateEntryDto,
   UpdateEntryDto,
   UpdateVisibilityDto,
+  BulkOperationDto,
   GetEntriesQueryDto,
   GetFirstEntryQueryDto,
   GetEntryByDateQueryDto,
@@ -90,6 +91,16 @@ export class EntriesController {
     @Body() dto: CreateEntryDto,
   ): Promise<{ success: boolean }> {
     return this.entriesService.create(user.userId, dto);
+  }
+
+  @Post('bulk')
+  @ApiOperation({ summary: 'Perform bulk operations on entries' })
+  @ApiResponse({ status: 200, description: 'Bulk operation completed' })
+  async bulkOperation(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: BulkOperationDto,
+  ): Promise<{ success: boolean; affectedCount: number }> {
+    return this.entriesService.bulkOperation(user.userId, dto);
   }
 
   @Put(':id')

@@ -42,6 +42,7 @@ Remaining features to implement:
 - Transcription from an Audio note with options for grammar and rewriting style
 - Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
 
+
 *** Book Converter
 - Based on tags to create chapters
 - Connect the entries to form a chapter
@@ -91,15 +92,13 @@ Remaining features to implement:
 Other ideas for upcoming releases:
 
 *** Editing & Content
-- Search result highlighting to show matching text in results when searching entries
-- Bulk operations on entries (multi-select for bulk delete, bulk tag change, bulk visibility toggle, bulk move between diaries)
-- Entry attachments and images (media upload support with storage on S3-compatible backend)
+- Entry attachments and images 
 
 *** Personalization & UX
 - Diary-level theming and colors so entries are visually distinguishable in the All Diaries view
 - Custom tag colors and categories for visual organization of tags
 - Keyboard shortcuts for common actions (Ctrl+N new entry, Ctrl+/ focus search, Esc close modals, arrow keys for pagination)
-- Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day
+- Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
 - Recurring journaling reminders and writing prompts via app notifications at a user-configured time
 - Drag-and-drop reordering for entries on the same day
 
@@ -120,5 +119,6 @@ Other ideas for upcoming releases:
 - Database read replicas for scaling read-heavy queries (stats, feed, search)
 - Automated database backups with point-in-time recovery
 - Distributed rate limiting with Redis for multi-replica deployments
+- Move media upload and storage ton S3-compatible backend
 
 

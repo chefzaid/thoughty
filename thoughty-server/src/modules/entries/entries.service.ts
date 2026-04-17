@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Entry, Diary } from '@/database/entities';
 import { sanitizeString } from '@/common/utils';
 import {
@@ -10,6 +10,7 @@ import {
   GetFirstEntryQueryDto,
   GetEntryByDateQueryDto,
   GetHighlightsQueryDto,
+  BulkOperationDto,
   EntriesListResponseDto,
 } from './dto';
 
@@ -458,5 +459,120 @@ export class EntriesService {
     }
 
     return { success: true };
+  }
+
+  async bulkOperation(
+    userId: number,
+    dto: BulkOperationDto,
+  ): Promise<{ success: boolean; affectedCount: number }> {
+    // Verify all entries belong to the user
+    const entries = await this.entryRepository.find({
+      where: { userId, id: In(dto.ids) },
+    });
+
+    if (entries.length === 0) {
+      throw new NotFoundException('No matching entries found');
+    }
+
+    const validIds = entries.map((e) => e.id);
+
+    switch (dto.action) {
+      case 'delete':
+        return this.bulkDelete(userId, entries, validIds);
+      case 'visibility':
+        return this.bulkUpdateVisibility(userId, validIds, dto.visibility);
+      case 'tags':
+        return this.bulkAddTags(entries, dto.tags);
+      case 'move':
+        return this.bulkMove(userId, validIds, dto.diaryId);
+      default:
+        throw new BadRequestException('Invalid action');
+    }
+  }
+
+  private async bulkDelete(
+    userId: number,
+    entries: Entry[],
+    validIds: number[],
+  ): Promise<{ success: boolean; affectedCount: number }> {
+    const affectedDates = [...new Set(entries.map((e) => e.date))];
+
+    await this.entryRepository.delete({ id: In(validIds), userId });
+
+    for (const date of affectedDates) {
+      const remaining = await this.entryRepository.find({
+        where: { userId, date },
+        order: { index: 'ASC' },
+      });
+      for (let i = 0; i < remaining.length; i++) {
+        remaining[i].index = i + 1;
+        await this.entryRepository.save(remaining[i]);
+      }
+    }
+
+    return { success: true, affectedCount: validIds.length };
+  }
+
+  private async bulkUpdateVisibility(
+    userId: number,
+    validIds: number[],
+    visibility?: 'public' | 'private',
+  ): Promise<{ success: boolean; affectedCount: number }> {
+    if (!visibility) {
+      throw new BadRequestException('Visibility value is required');
+    }
+
+    await this.entryRepository.update(
+      { id: In(validIds), userId },
+      { visibility },
+    );
+
+    return { success: true, affectedCount: validIds.length };
+  }
+
+  private async bulkAddTags(
+    entries: Entry[],
+    tags?: string[],
+  ): Promise<{ success: boolean; affectedCount: number }> {
+    if (!tags) {
+      throw new BadRequestException('Tags are required');
+    }
+
+    const sanitizedTags = tags.map((tag: string) =>
+      sanitizeString(tag.trim()).substring(0, 50),
+    );
+
+    for (const entry of entries) {
+      const mergedTags = [...new Set([...entry.tags, ...sanitizedTags])];
+      entry.tags = mergedTags.slice(0, 20);
+      await this.entryRepository.save(entry);
+    }
+
+    return { success: true, affectedCount: entries.length };
+  }
+
+  private async bulkMove(
+    userId: number,
+    validIds: number[],
+    diaryId?: number,
+  ): Promise<{ success: boolean; affectedCount: number }> {
+    if (diaryId === undefined || diaryId === null) {
+      throw new BadRequestException('Diary ID is required');
+    }
+
+    const diary = await this.diaryRepository.findOne({
+      where: { id: diaryId, userId },
+    });
+
+    if (!diary) {
+      throw new NotFoundException('Target diary not found');
+    }
+
+    await this.entryRepository.update(
+      { id: In(validIds), userId },
+      { diaryId },
+    );
+
+    return { success: true, affectedCount: validIds.length };
   }
 }

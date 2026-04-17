@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { EntriesService } from './entries.service';
 import { Entry, Diary } from '@/database/entities';
 
@@ -374,6 +374,190 @@ describe('EntriesService', () => {
       await service.delete(1, 1);
 
       expect(entryRepository.save).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('bulkOperation', () => {
+    const mockEntries = [
+      { ...mockEntry, id: 1, date: '2024-01-15', tags: ['tag1'], visibility: 'private' },
+      { ...mockEntry, id: 2, date: '2024-01-15', tags: ['tag2'], visibility: 'private' },
+      { ...mockEntry, id: 3, date: '2024-01-16', tags: ['tag1'], visibility: 'public' },
+    ];
+
+    describe('bulk delete', () => {
+      it('should delete entries and reindex remaining', async () => {
+        entryRepository.find
+          .mockResolvedValueOnce(mockEntries) // ownership check
+          .mockResolvedValueOnce([]) // reindex date 1
+          .mockResolvedValueOnce([]); // reindex date 2
+        entryRepository.delete.mockResolvedValue({ affected: 3 });
+
+        const result = await service.bulkOperation(1, {
+          ids: [1, 2, 3],
+          action: 'delete',
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.affectedCount).toBe(3);
+        expect(entryRepository.delete).toHaveBeenCalled();
+      });
+
+      it('should reindex entries on each affected date', async () => {
+        entryRepository.find
+          .mockResolvedValueOnce([mockEntries[0], mockEntries[1]]) // ownership
+          .mockResolvedValueOnce([{ ...mockEntry, id: 5, index: 3 }]); // remaining on date
+        entryRepository.delete.mockResolvedValue({ affected: 2 });
+        entryRepository.save.mockResolvedValue(mockEntry);
+
+        await service.bulkOperation(1, {
+          ids: [1, 2],
+          action: 'delete',
+        });
+
+        expect(entryRepository.save).toHaveBeenCalledWith(
+          expect.objectContaining({ index: 1 }),
+        );
+      });
+    });
+
+    describe('bulk visibility', () => {
+      it('should update visibility for all entries', async () => {
+        entryRepository.find.mockResolvedValue(mockEntries);
+        entryRepository.update.mockResolvedValue({ affected: 3 });
+
+        const result = await service.bulkOperation(1, {
+          ids: [1, 2, 3],
+          action: 'visibility',
+          visibility: 'public',
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.affectedCount).toBe(3);
+        expect(entryRepository.update).toHaveBeenCalledWith(
+          expect.objectContaining({ userId: 1 }),
+          { visibility: 'public' },
+        );
+      });
+
+      it('should throw BadRequestException when visibility not provided', async () => {
+        entryRepository.find.mockResolvedValue(mockEntries);
+
+        await expect(
+          service.bulkOperation(1, { ids: [1, 2], action: 'visibility' }),
+        ).rejects.toThrow(BadRequestException);
+      });
+    });
+
+    describe('bulk tags', () => {
+      it('should merge tags onto entries', async () => {
+        entryRepository.find.mockResolvedValue([
+          { ...mockEntry, id: 1, tags: ['existing'] },
+        ]);
+        entryRepository.save.mockResolvedValue(mockEntry);
+
+        const result = await service.bulkOperation(1, {
+          ids: [1],
+          action: 'tags',
+          tags: ['newTag'],
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.affectedCount).toBe(1);
+        expect(entryRepository.save).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tags: expect.arrayContaining(['existing', 'newTag']),
+          }),
+        );
+      });
+
+      it('should deduplicate merged tags', async () => {
+        entryRepository.find.mockResolvedValue([
+          { ...mockEntry, id: 1, tags: ['tag1', 'tag2'] },
+        ]);
+        entryRepository.save.mockResolvedValue(mockEntry);
+
+        await service.bulkOperation(1, {
+          ids: [1],
+          action: 'tags',
+          tags: ['tag1', 'tag3'],
+        });
+
+        expect(entryRepository.save).toHaveBeenCalledWith(
+          expect.objectContaining({
+            tags: ['tag1', 'tag2', 'tag3'],
+          }),
+        );
+      });
+
+      it('should throw BadRequestException when tags not provided', async () => {
+        entryRepository.find.mockResolvedValue(mockEntries);
+
+        await expect(
+          service.bulkOperation(1, { ids: [1], action: 'tags' }),
+        ).rejects.toThrow(BadRequestException);
+      });
+    });
+
+    describe('bulk move', () => {
+      it('should move entries to target diary', async () => {
+        entryRepository.find.mockResolvedValue(mockEntries);
+        entryRepository.update.mockResolvedValue({ affected: 3 });
+        diaryRepository.findOne.mockResolvedValue({ id: 5, userId: 1, name: 'Target' });
+
+        const result = await service.bulkOperation(1, {
+          ids: [1, 2, 3],
+          action: 'move',
+          diaryId: 5,
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.affectedCount).toBe(3);
+        expect(entryRepository.update).toHaveBeenCalledWith(
+          expect.objectContaining({ userId: 1 }),
+          { diaryId: 5 },
+        );
+      });
+
+      it('should throw NotFoundException when target diary not found', async () => {
+        entryRepository.find.mockResolvedValue(mockEntries);
+        diaryRepository.findOne.mockResolvedValue(null);
+
+        await expect(
+          service.bulkOperation(1, { ids: [1], action: 'move', diaryId: 999 }),
+        ).rejects.toThrow(NotFoundException);
+      });
+
+      it('should throw BadRequestException when diaryId not provided', async () => {
+        entryRepository.find.mockResolvedValue(mockEntries);
+
+        await expect(
+          service.bulkOperation(1, { ids: [1], action: 'move' }),
+        ).rejects.toThrow(BadRequestException);
+      });
+    });
+
+    describe('common', () => {
+      it('should throw NotFoundException when no entries match', async () => {
+        entryRepository.find.mockResolvedValue([]);
+
+        await expect(
+          service.bulkOperation(1, { ids: [999], action: 'delete' }),
+        ).rejects.toThrow(NotFoundException);
+      });
+
+      it('should only operate on entries belonging to the user', async () => {
+        // Only 2 of 3 IDs match
+        entryRepository.find.mockResolvedValue([mockEntries[0], mockEntries[1]]);
+        entryRepository.update.mockResolvedValue({ affected: 2 });
+
+        const result = await service.bulkOperation(1, {
+          ids: [1, 2, 999],
+          action: 'visibility',
+          visibility: 'public',
+        });
+
+        expect(result.affectedCount).toBe(2);
+      });
     });
   });
 });

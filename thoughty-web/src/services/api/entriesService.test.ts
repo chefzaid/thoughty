@@ -402,4 +402,59 @@ describe('entriesService', () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe('bulkOperation', () => {
+    it('should send bulk operation and return result', async () => {
+      const mockResult = { success: true, affectedCount: 3 };
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResult),
+        text: () => Promise.resolve(JSON.stringify(mockResult)),
+      } as unknown as Response);
+
+      const result = await service.bulkOperation([1, 2, 3], 'delete');
+
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries/bulk', {
+        method: 'POST',
+        body: JSON.stringify({ ids: [1, 2, 3], action: 'delete' }),
+      });
+      expect(result).toEqual(mockResult);
+    });
+
+    it('should pass options with bulk operation', async () => {
+      const mockResult = { success: true, affectedCount: 2 };
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockResult),
+        text: () => Promise.resolve(JSON.stringify(mockResult)),
+      } as unknown as Response);
+
+      await service.bulkOperation([1, 2], 'visibility', { visibility: 'public' });
+
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries/bulk', {
+        method: 'POST',
+        body: JSON.stringify({ ids: [1, 2], action: 'visibility', visibility: 'public' }),
+      });
+    });
+
+    it('should return null when response is not ok', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: false,
+        text: () => Promise.resolve('error'),
+      } as unknown as Response);
+
+      const result = await service.bulkOperation([1], 'delete');
+      expect(result).toBeNull();
+    });
+
+    it('should return null and log error on exception', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockAuthFetch.mockRejectedValue(new Error('Network error'));
+
+      const result = await service.bulkOperation([1], 'delete');
+
+      expect(result).toBeNull();
+      consoleSpy.mockRestore();
+    });
+  });
 });

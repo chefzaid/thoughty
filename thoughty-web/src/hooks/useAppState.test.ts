@@ -8,7 +8,8 @@ import {
   useEntries, 
   useEntryForm, 
   useEntryEdit, 
-  useDeleteModal 
+  useDeleteModal,
+  useBulkSelect 
 } from './useAppState';
 
 // Mock the AuthContext
@@ -37,7 +38,8 @@ vi.mock('../services/api', () => ({
     createEntry: vi.fn(),
     updateEntry: vi.fn(),
     deleteEntry: vi.fn(),
-    toggleVisibility: vi.fn()
+    toggleVisibility: vi.fn(),
+    bulkOperation: vi.fn()
   })),
   createDiariesService: vi.fn(() => ({
     fetchDiaries: vi.fn(),
@@ -967,6 +969,234 @@ describe('useAppState Hooks', () => {
 
       expect(document.body.classList.contains('light-mode')).toBe(true);
       expect(document.body.classList.contains('dark-mode')).toBe(false);
+    });
+  });
+
+  describe('useBulkSelect', () => {
+    const mockOnComplete = vi.fn();
+
+    it('initializes with default state', () => {
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+
+      expect(result.current.bulkMode).toBe(false);
+      expect(result.current.selectedIds.size).toBe(0);
+      expect(result.current.bulkModalOpen).toBe(false);
+      expect(result.current.pendingAction).toBeNull();
+    });
+
+    it('toggleBulkMode enables and disables bulk mode', () => {
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+
+      act(() => {
+        result.current.toggleBulkMode();
+      });
+      expect(result.current.bulkMode).toBe(true);
+
+      act(() => {
+        result.current.toggleBulkMode();
+      });
+      expect(result.current.bulkMode).toBe(false);
+    });
+
+    it('clears selection when exiting bulk mode', () => {
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+
+      act(() => {
+        result.current.toggleBulkMode();
+      });
+
+      act(() => {
+        result.current.toggleSelect(1);
+        result.current.toggleSelect(2);
+      });
+      expect(result.current.selectedIds.size).toBe(2);
+
+      act(() => {
+        result.current.toggleBulkMode();
+      });
+      expect(result.current.selectedIds.size).toBe(0);
+    });
+
+    it('toggleSelect adds and removes entries', () => {
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+
+      act(() => {
+        result.current.toggleSelect(1);
+      });
+      expect(result.current.selectedIds.has(1)).toBe(true);
+
+      act(() => {
+        result.current.toggleSelect(1);
+      });
+      expect(result.current.selectedIds.has(1)).toBe(false);
+    });
+
+    it('selectAll sets all provided ids', () => {
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+
+      act(() => {
+        result.current.selectAll([1, 2, 3]);
+      });
+      expect(result.current.selectedIds.size).toBe(3);
+      expect(result.current.selectedIds.has(1)).toBe(true);
+      expect(result.current.selectedIds.has(2)).toBe(true);
+      expect(result.current.selectedIds.has(3)).toBe(true);
+    });
+
+    it('clearSelection empties the selection set', () => {
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+
+      act(() => {
+        result.current.selectAll([1, 2, 3]);
+      });
+      act(() => {
+        result.current.clearSelection();
+      });
+      expect(result.current.selectedIds.size).toBe(0);
+    });
+
+    it('requestBulkAction with delete opens confirm modal', () => {
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+
+      act(() => {
+        result.current.toggleSelect(1);
+      });
+
+      act(() => {
+        result.current.requestBulkAction('delete');
+      });
+
+      expect(result.current.bulkModalOpen).toBe(true);
+      expect(result.current.pendingAction).toEqual({ action: 'delete' });
+    });
+
+    it('requestBulkAction does nothing when no entries selected', async () => {
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+
+      await act(async () => {
+        result.current.requestBulkAction('delete');
+      });
+
+      expect(result.current.bulkModalOpen).toBe(false);
+    });
+
+    it('requestBulkAction with non-delete executes immediately', async () => {
+      const mockBulkOperation = vi.fn().mockResolvedValue({ success: true, affectedCount: 1 });
+      const { createEntriesService } = await import('../services/api');
+      vi.mocked(createEntriesService).mockReturnValue({
+        fetchEntries: vi.fn(),
+        fetchEntryDates: vi.fn(),
+        fetchYearsMonths: vi.fn(),
+        createEntry: vi.fn(),
+        updateEntry: vi.fn(),
+        deleteEntry: vi.fn(),
+        toggleVisibility: vi.fn(),
+        bulkOperation: mockBulkOperation,
+        navigateToFirst: vi.fn(),
+        navigateByDate: vi.fn(),
+        navigateById: vi.fn()
+      });
+
+      const onComplete = vi.fn();
+      const { result } = renderHook(() => useBulkSelect(onComplete));
+
+      act(() => {
+        result.current.toggleSelect(1);
+      });
+
+      await act(async () => {
+        result.current.requestBulkAction('visibility', { visibility: 'public' });
+      });
+
+      expect(mockBulkOperation).toHaveBeenCalledWith([1], 'visibility', { visibility: 'public' });
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    it('cancelBulkModal closes modal and clears pending action', () => {
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+
+      act(() => {
+        result.current.toggleSelect(1);
+      });
+      act(() => {
+        result.current.requestBulkAction('delete');
+      });
+      expect(result.current.bulkModalOpen).toBe(true);
+
+      act(() => {
+        result.current.cancelBulkModal();
+      });
+      expect(result.current.bulkModalOpen).toBe(false);
+      expect(result.current.pendingAction).toBeNull();
+    });
+
+    it('confirmBulkDelete executes delete and clears state', async () => {
+      const mockBulkOperation = vi.fn().mockResolvedValue({ success: true, affectedCount: 2 });
+      const { createEntriesService } = await import('../services/api');
+      vi.mocked(createEntriesService).mockReturnValue({
+        fetchEntries: vi.fn(),
+        fetchEntryDates: vi.fn(),
+        fetchYearsMonths: vi.fn(),
+        createEntry: vi.fn(),
+        updateEntry: vi.fn(),
+        deleteEntry: vi.fn(),
+        toggleVisibility: vi.fn(),
+        bulkOperation: mockBulkOperation,
+        navigateToFirst: vi.fn(),
+        navigateByDate: vi.fn(),
+        navigateById: vi.fn()
+      });
+
+      const onComplete = vi.fn();
+      const { result } = renderHook(() => useBulkSelect(onComplete));
+
+      act(() => {
+        result.current.toggleSelect(1);
+        result.current.toggleSelect(2);
+      });
+      act(() => {
+        result.current.requestBulkAction('delete');
+      });
+
+      await act(async () => {
+        await result.current.confirmBulkDelete();
+      });
+
+      expect(mockBulkOperation).toHaveBeenCalledWith([1, 2], 'delete', undefined);
+      expect(result.current.bulkModalOpen).toBe(false);
+      expect(result.current.selectedIds.size).toBe(0);
+      expect(result.current.bulkMode).toBe(false);
+      expect(onComplete).toHaveBeenCalled();
+    });
+
+    it('executeBulkAction shows alert on failure', async () => {
+      const mockBulkOperation = vi.fn().mockResolvedValue(null);
+      const { createEntriesService } = await import('../services/api');
+      vi.mocked(createEntriesService).mockReturnValue({
+        fetchEntries: vi.fn(),
+        fetchEntryDates: vi.fn(),
+        fetchYearsMonths: vi.fn(),
+        createEntry: vi.fn(),
+        updateEntry: vi.fn(),
+        deleteEntry: vi.fn(),
+        toggleVisibility: vi.fn(),
+        bulkOperation: mockBulkOperation,
+        navigateToFirst: vi.fn(),
+        navigateByDate: vi.fn(),
+        navigateById: vi.fn()
+      });
+
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+
+      act(() => {
+        result.current.toggleSelect(1);
+      });
+
+      await act(async () => {
+        await result.current.executeBulkAction('delete');
+      });
+
+      expect(global.alert).toHaveBeenCalledWith('Bulk operation failed.');
     });
   });
 });

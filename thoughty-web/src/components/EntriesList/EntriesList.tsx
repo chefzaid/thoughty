@@ -1,4 +1,4 @@
-import { useMemo, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useState as useLocalState, type Dispatch, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import MDEditor from '@uiw/react-md-editor';
@@ -34,6 +34,12 @@ interface SourceEntryInfo {
     index: number;
 }
 
+interface Diary {
+    id: number;
+    name: string;
+    icon: string;
+}
+
 interface EntriesListProps {
     loading: boolean;
     entries: Entry[];
@@ -61,6 +67,14 @@ interface EntriesListProps {
     activeTargetId: number | null;
     onBackToSource: () => void;
     searchTerm?: string;
+    bulkMode?: boolean;
+    selectedIds?: Set<number>;
+    onToggleSelect?: (id: number) => void;
+    onSelectAll?: (ids: number[]) => void;
+    onClearSelection?: () => void;
+    onBulkAction?: (action: 'delete' | 'visibility' | 'tags' | 'move', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number }) => void;
+    onToggleBulkMode?: () => void;
+    diaries?: Diary[];
     t: (key: string, params?: Record<string, string | number>) => string;
 }
 
@@ -89,6 +103,16 @@ function getVisibilityButtonClass(editVisibility: 'public' | 'private', theme?: 
     return theme === 'light'
         ? 'border-gray-300 bg-gray-50 text-gray-500'
         : 'border-gray-600 bg-gray-800 text-gray-400';
+}
+
+function getBulkModeButtonClass(isDark: boolean): string {
+    return isDark
+        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+        : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
+}
+
+function getSelectedRingClass(isDark: boolean): string {
+    return isDark ? 'ring-2 ring-blue-500/50' : 'ring-2 ring-blue-400/50';
 }
 
 function EditForm({
@@ -334,6 +358,116 @@ function EntryViewMode({
     );
 }
 
+function BulkActionBar({
+    selectedCount, allTags, diaries, isDark,
+    onBulkAction, onClearSelection, t
+}: Readonly<{
+    selectedCount: number;
+    allTags: string[];
+    diaries: Diary[];
+    isDark: boolean;
+    onBulkAction: (action: 'delete' | 'visibility' | 'tags' | 'move', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number }) => void;
+    onClearSelection: () => void;
+    t: (key: string, params?: Record<string, string | number>) => string;
+}>) {
+    const [showTagPicker, setShowTagPicker] = useLocalState(false);
+    const [showMovePicker, setShowMovePicker] = useLocalState(false);
+    const [bulkTags, setBulkTags] = useLocalState<string[]>([]);
+
+    if (selectedCount === 0) return null;
+
+    return (
+        <div className={`sticky top-0 z-10 flex flex-wrap items-center gap-2 p-3 rounded-lg border shadow-md mb-4 ${isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+            <span className={`text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                {t('bulkSelected', { count: selectedCount })}
+            </span>
+            <div className="flex flex-wrap gap-2 ml-auto">
+                <button
+                    onClick={() => onBulkAction('delete')}
+                    className="px-3 py-1.5 text-xs font-medium bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                >
+                    {t('bulkDelete')}
+                </button>
+                <button
+                    onClick={() => onBulkAction('visibility', { visibility: 'public' })}
+                    className="px-3 py-1.5 text-xs font-medium bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
+                >
+                    {t('bulkMakePublic')}
+                </button>
+                <button
+                    onClick={() => onBulkAction('visibility', { visibility: 'private' })}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${isDark ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-400 hover:bg-gray-500 text-white'}`}
+                >
+                    {t('bulkMakePrivate')}
+                </button>
+                <div className="relative">
+                    <button
+                        onClick={() => { setShowTagPicker(!showTagPicker); setShowMovePicker(false); }}
+                        className="px-3 py-1.5 text-xs font-medium bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
+                    >
+                        {t('bulkAddTags')}
+                    </button>
+                    {showTagPicker && (
+                        <div className={`absolute top-full mt-1 right-0 p-3 rounded-lg border shadow-lg z-20 min-w-[220px] ${isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+                            <TagPicker
+                                availableTags={allTags}
+                                selectedTags={bulkTags}
+                                onChange={setBulkTags}
+                                placeholder={t('selectTags')}
+                                theme={isDark ? 'dark' : 'light'}
+                            />
+                            <div className="flex gap-2 mt-2">
+                                <button
+                                    onClick={() => { onBulkAction('tags', { tags: bulkTags }); setShowTagPicker(false); setBulkTags([]); }}
+                                    disabled={bulkTags.length === 0}
+                                    className="px-3 py-1 text-xs bg-purple-500 hover:bg-purple-600 disabled:opacity-50 text-white rounded transition-colors"
+                                >
+                                    {t('apply')}
+                                </button>
+                                <button
+                                    onClick={() => { setShowTagPicker(false); setBulkTags([]); }}
+                                    className="px-3 py-1 text-xs bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+                                >
+                                    {t('cancel')}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+                {diaries.length > 1 && (
+                    <div className="relative">
+                        <button
+                            onClick={() => { setShowMovePicker(!showMovePicker); setShowTagPicker(false); }}
+                            className="px-3 py-1.5 text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+                        >
+                            {t('bulkMove')}
+                        </button>
+                        {showMovePicker && (
+                            <div className={`absolute top-full mt-1 right-0 p-2 rounded-lg border shadow-lg z-20 min-w-[180px] ${isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+                                {diaries.map((diary) => (
+                                    <button
+                                        key={diary.id}
+                                        onClick={() => { onBulkAction('move', { diaryId: diary.id }); setShowMovePicker(false); }}
+                                        className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${isDark ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-700'}`}
+                                    >
+                                        {diary.icon} {diary.name}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+                <button
+                    onClick={onClearSelection}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${isDark ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                >
+                    {t('bulkClearSelection')}
+                </button>
+            </div>
+        </div>
+    );
+}
+
 function EntriesList({
     loading,
     entries,
@@ -361,6 +495,14 @@ function EntriesList({
     activeTargetId,
     onBackToSource,
     searchTerm,
+    bulkMode,
+    selectedIds,
+    onToggleSelect,
+    onSelectAll,
+    onClearSelection,
+    onBulkAction,
+    onToggleBulkMode,
+    diaries,
     t
 }: Readonly<EntriesListProps>) {
     const { speaking, activeEntryId, speakEntry, speakFromEntry, stop } = useSpeech({
@@ -388,65 +530,126 @@ function EntriesList({
 
     const isEditing = (entry: Entry): boolean => editingEntry !== null && editingEntry.id === entry.id;
     const isDark = config.theme !== 'light';
+    const allEntryIds = entries.map((e) => e.id);
+    const allSelected = bulkMode && selectedIds && allEntryIds.length > 0 && allEntryIds.every((id) => selectedIds.has(id));
 
     return (
-        <div className="space-y-8">
-            {sortedDates.map((date) => (
-                <div key={date} className="space-y-4">
-                    <h2 className={`text-xl font-bold border-b pb-2 ${isDark ? 'text-gray-300 border-gray-700' : 'text-gray-800 border-gray-300'}`}>
-                        {date}
-                    </h2>
-                    <div className="space-y-4">
-                        {(groupedEntries[date] ?? []).map((entry) => (
-                            <div
-                                key={entry.id}
-                                id={`entry-${entry.id}`}
-                                className={`rounded-lg p-5 shadow-sm border transition-all ${isDark ? 'bg-gray-800 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'}`}
-                            >
-                                {isEditing(entry) ? (
-                                    <EditForm
-                                        config={config}
-                                        editText={editText}
-                                        setEditText={setEditText}
-                                        editDate={editDate}
-                                        setEditDate={setEditDate}
-                                        allTags={allTags}
-                                        editTags={editTags}
-                                        setEditTags={setEditTags}
-                                        editVisibility={editVisibility}
-                                        setEditVisibility={setEditVisibility}
-                                        editFormat={editFormat}
-                                        setEditFormat={setEditFormat}
-                                        onSaveEdit={onSaveEdit}
-                                        onCancelEdit={onCancelEdit}
-                                        t={t}
-                                    />
-                                ) : (
-                                    <EntryViewMode
-                                        entry={entry}
-                                        config={config}
-                                        speaking={speaking}
-                                        activeEntryId={activeEntryId}
-                                        activeTargetId={activeTargetId}
-                                        sourceEntry={sourceEntry}
-                                        flatEntries={flatEntries}
-                                        speakEntry={speakEntry}
-                                        speakFromEntry={speakFromEntry}
-                                        stop={stop}
-                                        onToggleVisibility={onToggleVisibility}
-                                        onEdit={onEdit}
-                                        onDelete={onDelete}
-                                        onNavigateToEntry={onNavigateToEntry}
-                                        onBackToSource={onBackToSource}
-                                        searchTerm={searchTerm}
-                                        t={t}
-                                    />
-                                )}
-                            </div>
-                        ))}
-                    </div>
+        <div className="space-y-4">
+            {/* Bulk mode toggle and select all */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    {bulkMode && onSelectAll && onClearSelection && selectedIds && (
+                        <label className={`flex items-center gap-2 text-sm cursor-pointer ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                            <input
+                                type="checkbox"
+                                checked={allSelected}
+                                onChange={() => allSelected ? onClearSelection() : onSelectAll(allEntryIds)}
+                                className="w-4 h-4 rounded accent-blue-500"
+                            />
+                            {t('selectAll')}
+                        </label>
+                    )}
                 </div>
-            ))}
+                {onToggleBulkMode && (
+                    <button
+                        onClick={onToggleBulkMode}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                            bulkMode
+                                ? 'bg-blue-500 text-white hover:bg-blue-600'
+                                : getBulkModeButtonClass(isDark)
+                        }`}
+                    >
+                        {bulkMode ? t('bulkModeExit') : t('bulkModeEnter')}
+                    </button>
+                )}
+            </div>
+
+            {/* Bulk action bar */}
+            {bulkMode && onBulkAction && onClearSelection && selectedIds && (
+                <BulkActionBar
+                    selectedCount={selectedIds.size}
+                    allTags={allTags}
+                    diaries={diaries || []}
+                    isDark={isDark}
+                    onBulkAction={onBulkAction}
+                    onClearSelection={onClearSelection}
+                    t={t}
+                />
+            )}
+
+            {/* Entries */}
+            <div className="space-y-8">
+                {sortedDates.map((date) => (
+                    <div key={date} className="space-y-4">
+                        <h2 className={`text-xl font-bold border-b pb-2 ${isDark ? 'text-gray-300 border-gray-700' : 'text-gray-800 border-gray-300'}`}>
+                            {date}
+                        </h2>
+                        <div className="space-y-4">
+                            {(groupedEntries[date] ?? []).map((entry) => (
+                                <div
+                                    key={entry.id}
+                                    id={`entry-${entry.id}`}
+                                    className={`rounded-lg p-5 shadow-sm border transition-all flex gap-3 ${
+                                        isDark ? 'bg-gray-800 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'
+                                    } ${bulkMode && selectedIds?.has(entry.id) ? getSelectedRingClass(isDark) : ''}`}
+                                >
+                                    {bulkMode && onToggleSelect && selectedIds && (
+                                        <div className="flex items-start pt-1">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.has(entry.id)}
+                                                onChange={() => onToggleSelect(entry.id)}
+                                                className="w-4 h-4 rounded accent-blue-500 cursor-pointer"
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        {isEditing(entry) ? (
+                                            <EditForm
+                                                config={config}
+                                                editText={editText}
+                                                setEditText={setEditText}
+                                                editDate={editDate}
+                                                setEditDate={setEditDate}
+                                                allTags={allTags}
+                                                editTags={editTags}
+                                                setEditTags={setEditTags}
+                                                editVisibility={editVisibility}
+                                                setEditVisibility={setEditVisibility}
+                                                editFormat={editFormat}
+                                                setEditFormat={setEditFormat}
+                                                onSaveEdit={onSaveEdit}
+                                                onCancelEdit={onCancelEdit}
+                                                t={t}
+                                            />
+                                        ) : (
+                                            <EntryViewMode
+                                                entry={entry}
+                                                config={config}
+                                                speaking={speaking}
+                                                activeEntryId={activeEntryId}
+                                                activeTargetId={activeTargetId}
+                                                sourceEntry={sourceEntry}
+                                                flatEntries={flatEntries}
+                                                speakEntry={speakEntry}
+                                                speakFromEntry={speakFromEntry}
+                                                stop={stop}
+                                                onToggleVisibility={onToggleVisibility}
+                                                onEdit={onEdit}
+                                                onDelete={onDelete}
+                                                onNavigateToEntry={onNavigateToEntry}
+                                                onBackToSource={onBackToSource}
+                                                searchTerm={searchTerm}
+                                                t={t}
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

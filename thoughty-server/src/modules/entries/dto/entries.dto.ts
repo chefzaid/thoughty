@@ -8,6 +8,8 @@ import {
   ArrayMaxSize,
   IsNumber,
   Min,
+  IsInt,
+  ArrayMinSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
@@ -79,6 +81,38 @@ export class UpdateVisibilityDto {
   @ApiProperty({ enum: ['public', 'private'] })
   @IsEnum(['public', 'private'])
   visibility: 'public' | 'private';
+}
+
+export class BulkOperationDto {
+  @ApiProperty({ description: 'Entry IDs to operate on', type: [Number] })
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one entry ID is required' })
+  @IsInt({ each: true })
+  @Type(() => Number)
+  ids: number[];
+
+  @ApiProperty({ description: 'Bulk action to perform', enum: ['delete', 'visibility', 'tags', 'move'] })
+  @IsEnum(['delete', 'visibility', 'tags', 'move'])
+  action: 'delete' | 'visibility' | 'tags' | 'move';
+
+  @ApiPropertyOptional({ enum: ['public', 'private'] })
+  @IsOptional()
+  @IsEnum(['public', 'private'])
+  visibility?: 'public' | 'private';
+
+  @ApiPropertyOptional({ description: 'Tags to set on entries', type: [String] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @IsString({ each: true })
+  @MaxLength(50, { each: true })
+  tags?: string[];
+
+  @ApiPropertyOptional({ description: 'Diary ID to move entries to' })
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  diaryId?: number;
 }
 
 export class GetEntriesQueryDto {

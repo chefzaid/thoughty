@@ -72,6 +72,15 @@ interface JournalViewProps {
   activeTargetId: number | null;
   onBackToSource: () => void;
   
+  // Bulk operations
+  bulkMode?: boolean;
+  selectedIds?: Set<number>;
+  onToggleSelect?: (id: number) => void;
+  onSelectAll?: (ids: number[]) => void;
+  onClearSelection?: () => void;
+  onBulkAction?: (action: 'delete' | 'visibility' | 'tags' | 'move', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number }) => void;
+  onToggleBulkMode?: () => void;
+  
   // Pagination
   page: number;
   totalPages: number;
@@ -141,6 +150,13 @@ function JournalView({
   sourceEntry,
   activeTargetId,
   onBackToSource,
+  bulkMode,
+  selectedIds,
+  onToggleSelect,
+  onSelectAll,
+  onClearSelection,
+  onBulkAction,
+  onToggleBulkMode,
   page,
   totalPages,
   inputPage,
@@ -236,6 +252,14 @@ function JournalView({
         activeTargetId={activeTargetId}
         onBackToSource={onBackToSource}
         searchTerm={search}
+        bulkMode={bulkMode}
+        selectedIds={selectedIds}
+        onToggleSelect={onToggleSelect}
+        onSelectAll={onSelectAll}
+        onClearSelection={onClearSelection}
+        onBulkAction={onBulkAction}
+        onToggleBulkMode={onToggleBulkMode}
+        diaries={diaries}
         t={t}
       />
 

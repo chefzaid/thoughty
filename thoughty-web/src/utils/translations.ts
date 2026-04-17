@@ -242,7 +242,21 @@ export type TranslationKey =
   | 'codeBlock'
   | 'link'
   | 'horizontalRule'
-  | 'loadingEntries';
+  | 'loadingEntries'
+  | 'selectAll'
+  | 'bulkModeEnter'
+  | 'bulkModeExit'
+  | 'bulkSelected'
+  | 'bulkDelete'
+  | 'bulkMakePublic'
+  | 'bulkMakePrivate'
+  | 'bulkAddTags'
+  | 'bulkMove'
+  | 'bulkClearSelection'
+  | 'bulkDeleteTitle'
+  | 'bulkDeleteMessage'
+  | 'selectTags'
+  | 'apply';
 
 export type Language = 'en' | 'fr';
 
@@ -529,6 +543,20 @@ export const translations: Translations = {
     link: 'Link',
     horizontalRule: 'Horizontal rule',
     loadingEntries: 'Loading entries...',
+    selectAll: 'Select all',
+    bulkModeEnter: 'Select',
+    bulkModeExit: 'Cancel selection',
+    bulkSelected: '{count} selected',
+    bulkDelete: 'Delete',
+    bulkMakePublic: 'Make public',
+    bulkMakePrivate: 'Make private',
+    bulkAddTags: 'Add tags',
+    bulkMove: 'Move to diary',
+    bulkClearSelection: 'Clear',
+    bulkDeleteTitle: 'Delete entries',
+    bulkDeleteMessage: 'Are you sure you want to delete {count} entries? This cannot be undone.',
+    selectTags: 'Select tags...',
+    apply: 'Apply',
   },
   fr: {
     // App
@@ -811,6 +839,20 @@ export const translations: Translations = {
     link: 'Lien',
     horizontalRule: 'Ligne horizontale',
     loadingEntries: 'Chargement des entrées...',
+    selectAll: 'Tout sélectionner',
+    bulkModeEnter: 'Sélectionner',
+    bulkModeExit: 'Annuler la sélection',
+    bulkSelected: '{count} sélectionné(s)',
+    bulkDelete: 'Supprimer',
+    bulkMakePublic: 'Rendre public',
+    bulkMakePrivate: 'Rendre privé',
+    bulkAddTags: 'Ajouter des tags',
+    bulkMove: 'Déplacer vers le journal',
+    bulkClearSelection: 'Effacer',
+    bulkDeleteTitle: 'Supprimer les entrées',
+    bulkDeleteMessage: 'Êtes-vous sûr de vouloir supprimer {count} entrées ? Cette action est irréversible.',
+    selectTags: 'Sélectionner des tags...',
+    apply: 'Appliquer',
   },
 };
 

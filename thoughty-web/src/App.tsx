@@ -22,7 +22,8 @@ import {
   useEntries, 
   useEntryForm, 
   useEntryEdit, 
-  useDeleteModal 
+  useDeleteModal,
+  useBulkSelect
 } from './hooks/useAppState';
 
 // Types
@@ -136,6 +137,20 @@ function App() {
     confirmDelete,
     cancelDelete
   } = useDeleteModal(fetchEntries);
+
+  // Bulk operations
+  const {
+    bulkMode,
+    selectedIds,
+    bulkModalOpen,
+    toggleBulkMode,
+    toggleSelect,
+    selectAll,
+    clearSelection,
+    requestBulkAction,
+    confirmBulkDelete,
+    cancelBulkModal,
+  } = useBulkSelect(fetchEntries);
 
   // Navigation handlers
   const handleNavigateToFirst = useCallback(async (year: number, month: number | null) => {
@@ -307,6 +322,13 @@ function App() {
             sourceEntry={sourceEntry}
             activeTargetId={activeTargetId}
             onBackToSource={handleBackToSource}
+            bulkMode={bulkMode}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onSelectAll={selectAll}
+            onClearSelection={clearSelection}
+            onBulkAction={requestBulkAction}
+            onToggleBulkMode={toggleBulkMode}
             page={page}
             totalPages={totalPages}
             inputPage={inputPage}
@@ -356,6 +378,15 @@ function App() {
           onConfirm={confirmDelete}
           title={t('deleteEntryTitle')}
           message={t('deleteEntryMessage')}
+          theme={config.theme}
+        />
+
+        <ConfirmModal
+          isOpen={bulkModalOpen}
+          onClose={cancelBulkModal}
+          onConfirm={confirmBulkDelete}
+          title={t('bulkDeleteTitle')}
+          message={t('bulkDeleteMessage', { count: selectedIds.size })}
           theme={config.theme}
         />
 

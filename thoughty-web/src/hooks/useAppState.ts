@@ -528,3 +528,99 @@ export const useDeleteModal = (onDelete: () => void) => {
     cancelDelete
   };
 };
+
+/**
+ * Hook to manage bulk selection and operations on entries
+ */
+type BulkAction = 'delete' | 'visibility' | 'tags' | 'move';
+type BulkOptions = { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number };
+
+export const useBulkSelect = (onComplete: () => void) => {
+  const { entriesService } = useApiServices();
+
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    action: BulkAction;
+    options?: BulkOptions;
+  } | null>(null);
+
+  const toggleBulkMode = useCallback(() => {
+    setBulkMode((prev) => {
+      if (prev) setSelectedIds(new Set());
+      return !prev;
+    });
+  }, []);
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback((ids: number[]) => {
+    setSelectedIds(new Set(ids));
+  }, []);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds(new Set());
+  }, []);
+
+  const executeBulkAction = useCallback(
+    async (action: BulkAction, options?: BulkOptions) => {
+      const ids = Array.from(selectedIds);
+      const result = await entriesService.bulkOperation(ids, action, options);
+      if (result?.success) {
+        setSelectedIds(new Set());
+        setBulkMode(false);
+        onComplete();
+      } else {
+        alert('Bulk operation failed.');
+      }
+    },
+    [selectedIds, entriesService, onComplete],
+  );
+
+  const requestBulkAction = useCallback(
+    (action: BulkAction, options?: BulkOptions) => {
+      if (selectedIds.size === 0) return;
+      if (action === 'delete') {
+        setPendingAction({ action });
+        setBulkModalOpen(true);
+      } else {
+        executeBulkAction(action, options);
+      }
+    },
+    [selectedIds, executeBulkAction],
+  );
+
+  const confirmBulkDelete = useCallback(async () => {
+    setBulkModalOpen(false);
+    await executeBulkAction('delete');
+    setPendingAction(null);
+  }, [executeBulkAction]);
+
+  const cancelBulkModal = useCallback(() => {
+    setBulkModalOpen(false);
+    setPendingAction(null);
+  }, []);
+
+  return {
+    bulkMode,
+    selectedIds,
+    bulkModalOpen,
+    pendingAction,
+    toggleBulkMode,
+    toggleSelect,
+    selectAll,
+    clearSelection,
+    requestBulkAction,
+    executeBulkAction,
+    confirmBulkDelete,
+    cancelBulkModal,
+  };
+};

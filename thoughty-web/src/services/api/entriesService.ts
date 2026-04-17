@@ -150,6 +150,24 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     }
   };
 
+  const bulkOperation = async (
+    ids: number[],
+    action: 'delete' | 'visibility' | 'tags' | 'move',
+    options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number }
+  ): Promise<{ success: boolean; affectedCount: number } | null> => {
+    try {
+      const response = await authFetch('/api/entries/bulk', {
+        method: 'POST',
+        body: JSON.stringify({ ids, action, ...options })
+      });
+      if (!response.ok) return null;
+      return safeJsonParse<{ success: boolean; affectedCount: number }>(response);
+    } catch (error) {
+      console.error('Error performing bulk operation:', error);
+      return null;
+    }
+  };
+
   /**
    * Navigate to first entry of a year/month
    */
@@ -238,6 +256,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     deleteEntry,
     updateEntry,
     toggleVisibility,
+    bulkOperation,
     navigateToFirst,
     navigateByDate,
     navigateById,
