@@ -13,11 +13,13 @@ interface DiaryTabsProps {
     readonly currentDiaryId: number | null;
     readonly onDiaryChange: (id: number | null) => void;
     readonly onManageDiaries: () => void;
+    readonly filterFavorites?: boolean;
+    readonly onFilterFavorites?: (active: boolean) => void;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function DiaryTabs({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, theme, t }: DiaryTabsProps) {
+function DiaryTabs({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, filterFavorites, onFilterFavorites, theme, t }: DiaryTabsProps) {
     const isLight = theme === 'light';
 
     return (
@@ -25,20 +27,32 @@ function DiaryTabs({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, th
             <div className="diary-tabs-scroll">
                 {/* All Diaries Option */}
                 <button
-                    className={`diary-tab ${currentDiaryId === null ? 'active' : ''}`}
-                    onClick={() => onDiaryChange(null)}
+                    className={`diary-tab ${currentDiaryId === null && !filterFavorites ? 'active' : ''}`}
+                    onClick={() => { onFilterFavorites?.(false); onDiaryChange(null); }}
                     title={t('allDiaries')}
                 >
                     <span className="diary-icon">📚</span>
                     <span className="diary-name">{t('allDiaries')}</span>
                 </button>
 
+                {/* Favorites Tab */}
+                {onFilterFavorites && (
+                    <button
+                        className={`diary-tab ${filterFavorites ? 'active' : ''}`}
+                        onClick={() => { onFilterFavorites(true); onDiaryChange(null); }}
+                        title={t('favorites')}
+                    >
+                        <span className="diary-icon">⭐</span>
+                        <span className="diary-name">{t('favorites')}</span>
+                    </button>
+                )}
+
                 {/* Individual Diary Tabs */}
                 {diaries.map(diary => (
                     <button
                         key={diary.id}
-                        className={`diary-tab ${currentDiaryId === diary.id ? 'active' : ''} ${diary.is_default ? 'default' : ''}`}
-                        onClick={() => onDiaryChange(diary.id)}
+                        className={`diary-tab ${currentDiaryId === diary.id && !filterFavorites ? 'active' : ''} ${diary.is_default ? 'default' : ''}`}
+                        onClick={() => { onFilterFavorites?.(false); onDiaryChange(diary.id); }}
                         title={diary.name}
                     >
                         <span className="diary-icon">{diary.icon || '📓'}</span>

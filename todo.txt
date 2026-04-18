@@ -8,10 +8,6 @@ Remaining features to implement:
 *** UI Features
 - Ability to connect to cloud providers like OneDrive or Google Drive to sync the journal file once exported
 - Ability to configure a fixed schedule for syncing the file from/to cloud (only diff, not the whole file, but there may be changes in previous entries)
-- Ability to configure API key to use AI features (OpenRouter)
-- Keeping a history of modifications on a thought and allow to show the previous versions?
-- Intro website to showcase the app features and link to login/sign up
-- Marking an entry as Favorite, and have a special Favorites journal
 
 *** Social features
 - Feed that shows public entries from other users with infinite scroll and to preview your own public entries
@@ -27,11 +23,6 @@ Remaining features to implement:
 - The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
 
 *** AI
-- Guess the file format for the converter
-- Suggest tags given the text written
-- Auto tag entries with a number of max tags per entry to parameterize
-- Fix writing errors and style
-- Pass a thought to AI for analysis or further discussion
 - Tone and mood of thoughts stats (analyzed by AI)
 - Subjects discussed stats (analyzed by AI)
 - Personality analysis through the choice of words and subjects
@@ -49,24 +40,13 @@ Remaining features to implement:
 - Do the same for the rest of tags
 - PDF format
 
-*** Import / Export
-- Import from a file will use the configured default visibility of the diary
-- The filename of the export is the name of the diary + the date of the export
-- Ability to choose whether to export the visibility field or not, by default set to false
-- Export to a file needs to add a visibility field like --[public/private] just after the tags.
-- Manage the behavior of the import/export when using All Diaries
-- Supporting TXT, JSON, and MD format import export
-
 *** Security
 - Add 2FA authentication
 - Allow users to see and manage active sessions (logout from other sessions)
 - Spam and bots protection on sign up and login forms
-- Allow users to download their data (GDPR)
 - Rate limiting and prevent DDOS from too much data sent
 
 *** Technical improvements
-- Add e2e tests with Playwright for critical user flows (sign up, login, create entry, edit entry, delete entry, export file, import file)
-
 - Desktop app with offline mode for journaling without internet connection and sync once connected
 - Mobile app version for iOS and Android
 

@@ -17,6 +17,8 @@ describe('EntryForm', () => {
         setFormat: vi.fn(),
         allTags: ['work', 'personal'],
         formError: '',
+        suggestingTags: false,
+        onSuggestTags: vi.fn(),
         onSubmit: vi.fn((e) => e.preventDefault()),
         theme: 'dark' as const,
         t: (key: string) => {
@@ -34,6 +36,8 @@ describe('EntryForm', () => {
                 bold: 'Bold',
                 italic: 'Italic',
                 filterTagsPlaceholder: 'Filter by tags...',
+                suggestTags: 'Suggest Tags',
+                suggestingTags: 'Suggesting...',
             };
             return translations[key] || key;
         },
@@ -107,6 +111,19 @@ describe('EntryForm', () => {
             await user.click(screen.getByText('Save'));
 
             expect(onSubmit).toHaveBeenCalled();
+        });
+    });
+
+    describe('AI tag suggestions', () => {
+        it('calls onSuggestTags when the suggest button is clicked', async () => {
+            const onSuggestTags = vi.fn();
+            const user = userEvent.setup();
+
+            render(<EntryForm {...defaultProps} onSuggestTags={onSuggestTags} />);
+
+            await user.click(screen.getByText('Suggest Tags'));
+
+            expect(onSuggestTags).toHaveBeenCalled();
         });
     });
 

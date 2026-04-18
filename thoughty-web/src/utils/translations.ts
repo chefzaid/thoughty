@@ -109,6 +109,11 @@ export type TranslationKey =
   | 'exportDescription'
   | 'importDescription'
   | 'downloadExport'
+  | 'includeVisibility'
+  | 'exportFormat'
+  | 'formatTxt'
+  | 'formatJson'
+  | 'formatMd'
   | 'chooseFile'
   | 'previewSummary'
   | 'entriesFound'
@@ -135,6 +140,11 @@ export type TranslationKey =
   | 'formatSaved'
   | 'formatSaveError'
   | 'loading'
+  | 'dataPrivacy'
+  | 'downloadMyData'
+  | 'downloadMyDataDescription'
+  | 'downloading'
+  | 'downloadDataError'
   | 'dangerZone'
   | 'deleteAllDescription'
   | 'deleteAllEntries'
@@ -146,6 +156,30 @@ export type TranslationKey =
   | 'logout'
   | 'profile'
   | 'back'
+  | 'landingEyebrow'
+  | 'landingTitle'
+  | 'landingSubtitle'
+  | 'landingPulseLabel'
+  | 'landingPulseTitle'
+  | 'landingPulseBody'
+  | 'landingFeatureSection'
+  | 'landingFeaturePrivateTitle'
+  | 'landingFeaturePrivateBody'
+  | 'landingFeatureOrganizeTitle'
+  | 'landingFeatureOrganizeBody'
+  | 'landingFeatureExportTitle'
+  | 'landingFeatureExportBody'
+  | 'landingFeatureInsightTitle'
+  | 'landingFeatureInsightBody'
+  | 'suggestTags'
+  | 'suggestingTags'
+  | 'fixWriting'
+  | 'fixingWriting'
+  | 'discussEntry'
+  | 'aiChat'
+  | 'aiThinking'
+  | 'aiChatPlaceholder'
+  | 'aiChatError'
   | 'signIn'
   | 'signUp'
   | 'welcomeBack'
@@ -247,7 +281,25 @@ export type TranslationKey =
   | 'attachmentTypeNotAllowed'
   | 'attachmentTooLarge'
   | 'downloadAttachment'
-  | 'closeImage';
+  | 'closeImage'
+  | 'favorite'
+  | 'unfavorite'
+  | 'favorites'
+  | 'filterFavorites'
+  | 'dragToReorder'
+  | 'aiConfiguration'
+  | 'openRouterApiKey'
+  | 'openRouterApiKeyDescription'
+  | 'autoTagMaxTags'
+  | 'autoTagMaxTagsDescription'
+  | 'enterApiKey'
+  | 'showApiKey'
+  | 'hideApiKey'
+  | 'history'
+  | 'viewHistory'
+  | 'noRevisions'
+  | 'revision'
+  | 'restoredFrom';
 
 export type Language = 'en' | 'fr';
 
@@ -381,6 +433,11 @@ export const translations: Translations = {
     exportDescription: 'Download all journal entries from {diaryName} as a text file.',
     importDescription: 'Upload a text file to import entries into {diaryName}.',
     downloadExport: 'Download Export',
+    includeVisibility: 'Include visibility (public/private) in export',
+    exportFormat: 'Export format',
+    formatTxt: 'Text (.txt)',
+    formatJson: 'JSON (.json)',
+    formatMd: 'Markdown (.md)',
     chooseFile: 'Choose File',
     previewSummary: 'Preview Summary',
     entriesFound: 'entries found',
@@ -409,6 +466,11 @@ export const translations: Translations = {
     loading: 'Loading',
 
     // Danger Zone
+    dataPrivacy: 'Data & Privacy',
+    downloadMyData: 'Download My Data',
+    downloadMyDataDescription: 'Download all your data as a JSON file (GDPR)',
+    downloading: 'Downloading...',
+    downloadDataError: 'Failed to download data. Please try again.',
     dangerZone: 'Danger Zone',
     deleteAllDescription:
       'Permanently delete all entries from {diaryName}. This action cannot be undone.',
@@ -423,6 +485,36 @@ export const translations: Translations = {
     logout: 'Logout',
     profile: 'Profile',
     back: 'Back',
+    landingEyebrow: 'Private writing, built to stay useful',
+    landingTitle: 'A journal that feels calm when you write and sharp when you search.',
+    landingSubtitle:
+      'Thoughty gives you structured diaries, fast import and export, rich entries, and privacy-first controls without turning journaling into admin work.',
+    landingPulseLabel: 'Why people stay',
+    landingPulseTitle: 'Everything important is still yours',
+    landingPulseBody:
+      'Keep entries portable with TXT, JSON, and Markdown exports, then bring them back with duplicate checks and diary-aware imports.',
+    landingFeatureSection: 'Thoughty feature highlights',
+    landingFeaturePrivateTitle: 'Private by default',
+    landingFeaturePrivateBody:
+      'Write freely, control visibility per entry, and download your personal data whenever you need a full export.',
+    landingFeatureOrganizeTitle: 'Organized across diaries',
+    landingFeatureOrganizeBody:
+      'Split life into focused diaries, reorder them, mark favorites, and still browse everything together in All Diaries view.',
+    landingFeatureExportTitle: 'Portable import and export',
+    landingFeatureExportBody:
+      'Move between TXT, JSON, and Markdown formats, preserve metadata, and keep diary names attached when exporting from All Diaries.',
+    landingFeatureInsightTitle: 'Useful after the writing',
+    landingFeatureInsightBody:
+      'Search quickly, filter by tags and visibility, revisit highlights, and use the stats view to spot patterns over time.',
+    suggestTags: 'Suggest Tags',
+    suggestingTags: 'Suggesting...',
+    fixWriting: 'Fix Writing',
+    fixingWriting: 'Fixing...',
+    discussEntry: 'Discuss with AI',
+    aiChat: 'AI Chat',
+    aiThinking: 'Thinking...',
+    aiChatPlaceholder: 'Ask something about this entry...',
+    aiChatError: 'Unable to get a response. Check your OpenRouter API key and try again.',
 
     // Authentication
     signIn: 'Sign In',
@@ -539,6 +631,24 @@ export const translations: Translations = {
     attachmentTooLarge: 'File is too large. Maximum size is 5 MB.',
     downloadAttachment: 'Download attachment',
     closeImage: 'Close image',
+    favorite: 'Add to favorites',
+    unfavorite: 'Remove from favorites',
+    favorites: 'Favorites',
+    filterFavorites: 'Show favorites only',
+    dragToReorder: 'Drag to reorder',
+    history: 'History',
+    viewHistory: 'View history',
+    noRevisions: 'No previous versions',
+    revision: 'Revision',
+    restoredFrom: 'Restored from',
+    aiConfiguration: 'AI Configuration',
+    openRouterApiKey: 'OpenRouter API Key',
+    openRouterApiKeyDescription: 'Enter your OpenRouter API key to enable AI features like tag suggestions and writing assistance',
+    autoTagMaxTags: 'Automatic Tag Limit',
+    autoTagMaxTagsDescription: 'Set the maximum number of AI-generated tags to add when you save an entry. Use 0 to disable auto-tagging.',
+    enterApiKey: 'Enter your API key',
+    showApiKey: 'Show API key',
+    hideApiKey: 'Hide API key',
   },
   fr: {
     // App
@@ -666,6 +776,11 @@ export const translations: Translations = {
       'Téléchargez toutes les entrées de {diaryName} sous forme de fichier texte.',
     importDescription: 'Téléversez un fichier texte pour importer des entrées dans {diaryName}.',
     downloadExport: "Télécharger l'export",
+    includeVisibility: 'Inclure la visibilité (public/privé) dans l\'export',
+    exportFormat: 'Format d\'export',
+    formatTxt: 'Texte (.txt)',
+    formatJson: 'JSON (.json)',
+    formatMd: 'Markdown (.md)',
     chooseFile: 'Choisir un fichier',
     previewSummary: 'Aperçu',
     entriesFound: 'entrées trouvées',
@@ -694,6 +809,11 @@ export const translations: Translations = {
     loading: 'Chargement',
 
     // Danger Zone
+    dataPrivacy: 'Données et confidentialité',
+    downloadMyData: 'Télécharger mes données',
+    downloadMyDataDescription: 'Téléchargez toutes vos données au format JSON (RGPD)',
+    downloading: 'Téléchargement...',
+    downloadDataError: 'Échec du téléchargement. Veuillez réessayer.',
     dangerZone: 'Zone de danger',
     deleteAllDescription:
       'Supprimer définitivement toutes les entrées de {diaryName}. Cette action est irréversible.',
@@ -708,6 +828,36 @@ export const translations: Translations = {
     logout: 'Déconnexion',
     profile: 'Profil',
     back: 'Retour',
+    landingEyebrow: 'Une écriture privée, pensée pour rester utile',
+    landingTitle: 'Un journal apaisant à l\'écriture et précis quand il faut retrouver une idée.',
+    landingSubtitle:
+      'Thoughty combine journaux structurés, import et export rapides, entrées riches et contrôle de la confidentialité sans transformer l\'écriture en corvée.',
+    landingPulseLabel: 'Pourquoi on y reste',
+    landingPulseTitle: 'Tout ce qui compte vous appartient toujours',
+    landingPulseBody:
+      'Conservez vos entrées en TXT, JSON ou Markdown, puis réimportez-les avec détection des doublons et attribution intelligente aux journaux.',
+    landingFeatureSection: 'Points forts de Thoughty',
+    landingFeaturePrivateTitle: 'Privé par défaut',
+    landingFeaturePrivateBody:
+      'Écrivez librement, contrôlez la visibilité de chaque entrée et téléchargez vos données personnelles quand vous le souhaitez.',
+    landingFeatureOrganizeTitle: 'Organisé par journaux',
+    landingFeatureOrganizeBody:
+      'Séparez les sujets par journal, réorganisez-les, marquez vos favoris et conservez une vue unifiée avec Tous les journaux.',
+    landingFeatureExportTitle: 'Import et export portables',
+    landingFeatureExportBody:
+      'Passez du TXT au JSON ou au Markdown, préservez les métadonnées et gardez le nom du journal lors des exports Tous les journaux.',
+    landingFeatureInsightTitle: 'Utile après l\'écriture',
+    landingFeatureInsightBody:
+      'Recherchez vite, filtrez par tags et visibilité, retrouvez les temps forts et observez vos tendances dans les statistiques.',
+    suggestTags: 'Suggérer des tags',
+    suggestingTags: 'Suggestion...',
+    fixWriting: 'Corriger l\'écriture',
+    fixingWriting: 'Correction...',
+    discussEntry: 'Discuter avec l\'IA',
+    aiChat: 'Chat IA',
+    aiThinking: 'Réflexion...',
+    aiChatPlaceholder: 'Posez une question sur cette entrée...',
+    aiChatError: 'Impossible d\'obtenir une réponse. Vérifiez votre clé API OpenRouter et réessayez.',
 
     // Authentication
     signIn: 'Se connecter',
@@ -826,6 +976,24 @@ export const translations: Translations = {
     attachmentTooLarge: 'Le fichier est trop volumineux. Taille maximale : 5 Mo.',
     downloadAttachment: 'Télécharger la pièce jointe',
     closeImage: "Fermer l'image",
+    favorite: 'Ajouter aux favoris',
+    unfavorite: 'Retirer des favoris',
+    favorites: 'Favoris',
+    filterFavorites: 'Afficher les favoris uniquement',
+    dragToReorder: 'Glisser pour réorganiser',
+    history: 'Historique',
+    viewHistory: 'Voir l\'historique',
+    noRevisions: 'Aucune version précédente',
+    revision: 'Révision',
+    restoredFrom: 'Restauré à partir de',
+    aiConfiguration: 'Configuration IA',
+    openRouterApiKey: 'Clé API OpenRouter',
+    openRouterApiKeyDescription: 'Entrez votre clé API OpenRouter pour activer les fonctionnalités IA comme les suggestions de tags et l\'aide à la rédaction',
+    autoTagMaxTags: 'Limite de tags automatiques',
+    autoTagMaxTagsDescription: 'Définissez le nombre maximum de tags générés par l\'IA à ajouter lors de l\'enregistrement. Utilisez 0 pour désactiver l\'auto-tagging.',
+    enterApiKey: 'Entrez votre clé API',
+    showApiKey: 'Afficher la clé API',
+    hideApiKey: 'Masquer la clé API',
   },
 };
 

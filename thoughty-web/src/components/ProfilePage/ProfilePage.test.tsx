@@ -20,6 +20,7 @@ interface ProfileConfig {
     defaultVisibility?: 'public' | 'private';
     email?: string;
     bio?: string;
+    autoTagMaxTags?: string;
 }
 
 interface Stats {
@@ -35,9 +36,11 @@ describe('ProfilePage', () => {
             theme: 'dark' as const,
             entriesPerPage: '10',
             language: 'en',
-            defaultVisibility: 'private'
+            defaultVisibility: 'private',
+            autoTagMaxTags: '0'
         } as ProfileConfig,
         onUpdateConfig: vi.fn(),
+        onDownloadData: vi.fn().mockResolvedValue(true),
         onBack: vi.fn(),
         t: (key: string, params: Record<string, string | number> = {}): string => {
             if (key === 'memberSince') return `Member since ${params.year}`;
@@ -169,6 +172,17 @@ describe('ProfilePage', () => {
 
             expect(frBtn).toHaveClass('active');
         });
+
+        it('updates the automatic tag limit', async () => {
+            const user = userEvent.setup();
+            render(<ProfilePage {...defaultProps} />);
+
+            const input = screen.getByDisplayValue('0');
+            await user.clear(input);
+            await user.type(input, '3');
+
+            expect((input as HTMLInputElement).value).toBe('3');
+        });
     });
 
     describe('Actions', () => {
@@ -210,6 +224,20 @@ describe('ProfilePage', () => {
 
             expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
                 expect.objectContaining({ name: 'Jane' })
+            );
+        });
+
+        it('saves the automatic tag limit', async () => {
+            const user = userEvent.setup();
+            render(<ProfilePage {...defaultProps} />);
+
+            const input = screen.getByDisplayValue('0');
+            await user.clear(input);
+            await user.type(input, '4');
+            await user.click(screen.getByText('saveSettings'));
+
+            expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
+                expect.objectContaining({ autoTagMaxTags: '4' })
             );
         });
     });

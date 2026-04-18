@@ -93,12 +93,33 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
     }
   };
 
+  /**
+   * Reorder diaries
+   */
+  const reorderDiaries = async (orderedIds: number[]): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await authFetch('/api/diaries/reorder', {
+        method: 'PATCH',
+        body: JSON.stringify({ orderedIds }),
+      });
+      if (!response.ok) {
+        const error = await safeJsonParse<{ error?: string }>(response);
+        return { success: false, error: error?.error || 'Failed to reorder diaries' };
+      }
+      return { success: true };
+    } catch (error) {
+      console.error('Error reordering diaries:', error);
+      return { success: false, error: 'Failed to reorder diaries' };
+    }
+  };
+
   return {
     fetchDiaries,
     createDiary,
     updateDiary,
     deleteDiary,
-    setDefaultDiary
+    setDefaultDiary,
+    reorderDiaries
   };
 };
 

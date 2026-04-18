@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsNumber, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 
@@ -50,6 +50,17 @@ export class ExportQueryDto {
   @Transform(({ value }) => Number.parseInt(value, 10))
   @IsNumber()
   diaryId?: number;
+
+  @ApiPropertyOptional({ description: 'Include visibility field in export', default: false })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  includeVisibility?: boolean;
+
+  @ApiPropertyOptional({ description: 'Export file format', enum: ['txt', 'json', 'md'], default: 'txt' })
+  @IsOptional()
+  @IsIn(['txt', 'json', 'md'])
+  format?: 'txt' | 'json' | 'md';
 }
 
 export class PreviewImportDto {

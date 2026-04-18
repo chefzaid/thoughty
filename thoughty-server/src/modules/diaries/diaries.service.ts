@@ -17,7 +17,7 @@ export class DiariesService {
   async findAll(userId: number): Promise<Diary[]> {
     return this.diaryRepository.find({
       where: { userId },
-      order: { isDefault: 'DESC', createdAt: 'ASC' },
+      order: { position: 'ASC', createdAt: 'ASC' },
     });
   }
 
@@ -29,12 +29,15 @@ export class DiariesService {
       : 'private';
 
     try {
+      // Set position to the end
+      const count = await this.diaryRepository.count({ where: { userId } });
       return await this.diaryRepository.save({
         userId,
         name: sanitizedName,
         icon: sanitizedIcon,
         visibility,
         isDefault: false,
+        position: count,
       });
     } catch (error: unknown) {
       if ((error as { code?: string }).code === '23505') {
@@ -116,5 +119,28 @@ export class DiariesService {
     // Set new default
     diary.isDefault = true;
     return this.diaryRepository.save(diary);
+  }
+
+  async reorder(
+    userId: number,
+    orderedIds: number[],
+  ): Promise<{ success: boolean }> {
+    // Verify all diary IDs belong to the user
+    const diaries = await this.diaryRepository.find({ where: { userId } });
+    const userDiaryIds = new Set(diaries.map((d) => d.id));
+
+    for (const id of orderedIds) {
+      if (!userDiaryIds.has(id)) {
+        throw new BadRequestException(`Diary ${id} not found`);
+      }
+    }
+
+    // Update positions
+    const updates = orderedIds.map((id, index) =>
+      this.diaryRepository.update({ id, userId }, { position: index }),
+    );
+    await Promise.all(updates);
+
+    return { success: true };
   }
 }

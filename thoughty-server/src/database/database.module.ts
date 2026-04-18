@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { User, Diary, Entry, RefreshToken, Setting, Attachment } from './entities';
+import { User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment } from './entities';
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { User, Diary, Entry, RefreshToken, Setting, Attachment } from './entitie
         username: configService.get<string>('POSTGRES_USER', 'postgres'),
         password: configService.get<string>('POSTGRES_PASSWORD', 'password'),
         database: configService.get<string>('POSTGRES_DB', 'journal'),
-        entities: [User, Diary, Entry, RefreshToken, Setting, Attachment],
+        entities: [User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment],
         synchronize: false, // Don't auto-sync in production; use migrations
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),

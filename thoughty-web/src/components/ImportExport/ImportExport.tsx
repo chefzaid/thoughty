@@ -48,6 +48,8 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
     const [fileContent, setFileContent] = useState<string>('');
     const [message, setMessage] = useState<MessageState | null>(null);
     const [skipDuplicates, setSkipDuplicates] = useState<boolean>(true);
+    const [includeVisibility, setIncludeVisibility] = useState<boolean>(false);
+    const [exportFormat, setExportFormat] = useState<'txt' | 'json' | 'md'>('txt');
     const [confirmDeleteAll, setConfirmDeleteAll] = useState<boolean>(false);
     const [deleting, setDeleting] = useState<boolean>(false);
 
@@ -93,6 +95,8 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
         try {
             const params = new URLSearchParams();
             if (diaryId) params.append('diaryId', diaryId.toString());
+            if (includeVisibility) params.append('includeVisibility', 'true');
+            if (exportFormat !== 'txt') params.append('format', exportFormat);
             const response = await authFetch(`/api/io/export?${params}`);
             if (response.ok) {
                 const blob = await response.blob();
@@ -229,6 +233,26 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
                 <section className="io-section">
                     <h3>{t('export')}</h3>
                     <p className="section-description">{t('exportDescription', { diaryName: diaryName || '' })}</p>
+                    <div className="format-field">
+                        <label>{t('exportFormat')}</label>
+                        <select
+                            value={exportFormat}
+                            onChange={(e) => setExportFormat(e.target.value as 'txt' | 'json' | 'md')}
+                            className="format-select"
+                        >
+                            <option value="txt">{t('formatTxt')}</option>
+                            <option value="json">{t('formatJson')}</option>
+                            <option value="md">{t('formatMd')}</option>
+                        </select>
+                    </div>
+                    <label className="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={includeVisibility}
+                            onChange={() => setIncludeVisibility(!includeVisibility)}
+                        />
+                        {t('includeVisibility')}
+                    </label>
                     <button className="io-btn primary" onClick={handleExport}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -246,7 +270,7 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
                         <input
                             type="file"
                             id="file-input"
-                            accept=".txt"
+                            accept=".txt,.json,.md"
                             onChange={handleFileSelect}
                         />
                         <label htmlFor="file-input" className="file-label">

@@ -12,6 +12,7 @@ describe('ConfigController', () => {
     configService = {
       getConfig: jest.fn(),
       updateConfig: jest.fn(),
+      downloadData: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -46,6 +47,25 @@ describe('ConfigController', () => {
       const result = await controller.updateConfig(mockUser as any, newConfig);
       expect(configService.updateConfig).toHaveBeenCalledWith(1, newConfig);
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('downloadData', () => {
+    it('delegates to configService.downloadData and sets response headers', async () => {
+      const mockData = { exportedAt: '2024-01-01', user: { id: 1 }, entries: [] };
+      configService.downloadData!.mockResolvedValue(mockData);
+
+      const res = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      };
+
+      await controller.downloadData(mockUser as any, res as any);
+
+      expect(configService.downloadData).toHaveBeenCalledWith(1);
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json; charset=utf-8');
+      expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', expect.stringContaining('thoughty_data_'));
+      expect(res.send).toHaveBeenCalledWith(JSON.stringify(mockData, null, 2));
     });
   });
 });

@@ -40,6 +40,9 @@ export class Entry {
   @Column({ type: 'varchar', length: 20, default: 'private' })
   visibility: 'public' | 'private';
 
+  @Column({ name: 'is_favorite', type: 'boolean', default: false })
+  isFavorite: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

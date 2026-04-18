@@ -58,6 +58,7 @@ describe('IoService', () => {
 
     diaryRepository = {
       findOne: jest.fn(),
+      find: jest.fn().mockResolvedValue([]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -139,7 +140,7 @@ describe('IoService', () => {
       expect(result).toHaveProperty('content');
       expect(result).toHaveProperty('filename');
       expect(result.filename).toContain('thoughty_');
-      expect(result.filename).toContain('export_');
+      expect(result.filename).toContain('all_diaries_');
     });
 
     it('should filter by diaryId when provided', async () => {
@@ -147,9 +148,10 @@ describe('IoService', () => {
       const mockQb = entryRepository.createQueryBuilder();
       mockQb.getMany.mockResolvedValue([mockEntry]);
 
+      diaryRepository.findOne.mockResolvedValue(mockDiary);
       const result = await service.export(1, 1);
 
-      expect(result.filename).toContain('diary1_');
+      expect(result.filename).toContain('Test_Diary_');
       expect(mockQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 1 });
     });
 
@@ -161,6 +163,103 @@ describe('IoService', () => {
       const result = await service.export(1);
 
       expect(result.content).toBe('');
+    });
+
+    it('should include visibility when includeVisibility is true', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+
+      const result = await service.export(1, undefined, true);
+
+      expect(result.content).toContain('[private]');
+    });
+
+    it('should not include visibility by default', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+
+      const result = await service.export(1);
+
+      expect(result.content).not.toContain('[private]');
+      expect(result.content).not.toContain('[public]');
+    });
+
+    it('should use diary name in filename when diary exists', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+      diaryRepository.findOne.mockResolvedValue({ ...mockDiary, name: 'My Journal' });
+
+      const result = await service.export(1, 1);
+
+      expect(result.filename).toContain('My_Journal_');
+    });
+
+    it('should fallback to diaryId label when diary not found', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+      diaryRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.export(1, 99);
+
+      expect(result.filename).toContain('diary99_');
+    });
+
+    it('should export as JSON format', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+
+      const result = await service.export(1, undefined, false, 'json');
+
+      expect(result.filename).toContain('.json');
+      expect(result.contentType).toBe('application/json; charset=utf-8');
+      const parsed = JSON.parse(result.content);
+      expect(parsed.entries).toHaveLength(1);
+    });
+
+    it('should export as Markdown format', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+
+      const result = await service.export(1, undefined, false, 'md');
+
+      expect(result.filename).toContain('.md');
+      expect(result.contentType).toBe('text/markdown; charset=utf-8');
+      expect(result.content).toContain('# 2024-01-15');
+    });
+
+    it('should default to txt format', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+
+      const result = await service.export(1);
+
+      expect(result.filename).toContain('.txt');
+      expect(result.contentType).toBe('text/plain; charset=utf-8');
+    });
+
+    it('should include diary names when exporting all diaries as JSON', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      diaryRepository.find.mockResolvedValue([
+        { id: 1, name: 'Work' },
+        { id: 2, name: 'Personal' },
+      ]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([
+        { ...mockEntry, diaryId: 1 },
+        { ...mockEntry, id: 2, diaryId: 2, content: 'Second entry' },
+      ]);
+
+      const result = await service.export(1, undefined, false, 'json');
+
+      expect(result.content).toContain('"diary": "Work"');
+      expect(result.content).toContain('"diary": "Personal"');
     });
   });
 
@@ -216,6 +315,36 @@ Test entry content
       const result = await service.preview(1, { content });
 
       expect(result.duplicateCount).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should preview JSON content', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([]);
+
+      const content = JSON.stringify({
+        entries: [
+          { date: '2024-01-15', index: 1, tags: ['tag1'], content: 'JSON entry' },
+        ],
+      });
+
+      const result = await service.preview(1, { content });
+
+      expect(result.totalCount).toBe(1);
+      expect(result.entries[0].content).toBe('JSON entry');
+    });
+
+    it('should preview Markdown content', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([]);
+
+      const content = `# 2024-01-15\n\nMarkdown entry content`;
+
+      const result = await service.preview(1, { content });
+
+      expect(result.totalCount).toBe(1);
+      expect(result.entries[0].content).toBe('Markdown entry content');
     });
   });
 
@@ -306,6 +435,128 @@ Test content
         expect.objectContaining({
           diaryId: 5,
         }),
+      );
+    });
+
+    it('should use diary default visibility when entry has no visibility', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      diaryRepository.findOne.mockResolvedValue({ ...mockDiary, visibility: 'public' });
+      entryRepository.count.mockResolvedValue(0);
+      entryRepository.save.mockResolvedValue(mockEntry);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([]);
+
+      const content = `
+---2024-01-15--[tag1]
+Test content
+
+--------------------------------------------------------------------------------
+`;
+
+      await service.import(1, { content, diaryId: 1 });
+
+      expect(entryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          visibility: 'public',
+        }),
+      );
+    });
+
+    it('should use entry visibility from file when present', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      diaryRepository.findOne.mockResolvedValue({ ...mockDiary, visibility: 'public' });
+      entryRepository.count.mockResolvedValue(0);
+      entryRepository.save.mockResolvedValue(mockEntry);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([]);
+
+      const content = `
+---2024-01-15--[tag1]--[private]
+Test content
+
+--------------------------------------------------------------------------------
+`;
+
+      await service.import(1, { content, diaryId: 1 });
+
+      expect(entryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          visibility: 'private',
+        }),
+      );
+    });
+
+    it('should match diary by name when importing all diaries', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      diaryRepository.findOne.mockResolvedValue(mockDiary);
+      diaryRepository.find.mockResolvedValue([
+        { id: 10, userId: 1, name: 'Work' },
+        { id: 20, userId: 1, name: 'Personal' },
+      ]);
+      entryRepository.count.mockResolvedValue(0);
+      entryRepository.save.mockResolvedValue(mockEntry);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([]);
+
+      const content = JSON.stringify({
+        entries: [
+          {
+            date: '2024-01-15',
+            index: 1,
+            tags: ['tag1'],
+            content: 'Work entry',
+            format: 'plain',
+            diary: 'Work',
+          },
+          {
+            date: '2024-01-16',
+            index: 1,
+            tags: ['tag2'],
+            content: 'Personal entry',
+            format: 'plain',
+            diary: 'Personal',
+          },
+        ],
+      });
+
+      await service.import(1, { content });
+
+      expect(entryRepository.save).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ diaryId: 10 }),
+      );
+      expect(entryRepository.save).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ diaryId: 20 }),
+      );
+    });
+
+    it('should fall back to default diary when imported diary name does not match', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      diaryRepository.findOne.mockResolvedValue({ ...mockDiary, id: 5, isDefault: true, visibility: 'private' });
+      diaryRepository.find.mockResolvedValue([{ id: 10, userId: 1, name: 'Work' }]);
+      entryRepository.count.mockResolvedValue(0);
+      entryRepository.save.mockResolvedValue(mockEntry);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([]);
+
+      const content = JSON.stringify({
+        entries: [
+          {
+            date: '2024-01-15',
+            index: 1,
+            tags: ['tag1'],
+            content: 'Unmatched diary entry',
+            format: 'plain',
+            diary: 'Unknown Diary',
+          },
+        ],
+      });
+
+      await service.import(1, { content });
+
+      expect(entryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ diaryId: 5 }),
       );
     });
 

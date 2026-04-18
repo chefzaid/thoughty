@@ -131,6 +131,58 @@ describe('ImportExport', () => {
         });
     });
 
+    it('includes includeVisibility param when checkbox is checked', async () => {
+        const mockBlob = new Blob(['data'], { type: 'text/plain' });
+        (globalThis.fetch as Mock)
+            .mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig })
+            .mockResolvedValueOnce({
+                ok: true,
+                blob: async () => mockBlob,
+                headers: new Headers({ 'Content-Disposition': 'attachment; filename="export.txt"' })
+            });
+
+        render(<ImportExport theme="dark" t={mockT} />);
+
+        await waitFor(() => {
+            expect(screen.getByText('includeVisibility')).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByText('includeVisibility'));
+        fireEvent.click(screen.getByText('downloadExport'));
+
+        await waitFor(() => {
+            const exportCall = (globalThis.fetch as Mock).mock.calls.find((c: unknown[]) => (c[0] as string).includes('/api/io/export'));
+            expect(exportCall).toBeTruthy();
+            expect((exportCall as [string])[0]).toContain('includeVisibility=true');
+        });
+    });
+
+    it('includes format param when JSON format is selected', async () => {
+        const mockBlob = new Blob(['{}'], { type: 'application/json' });
+        (globalThis.fetch as Mock)
+            .mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig })
+            .mockResolvedValueOnce({
+                ok: true,
+                blob: async () => mockBlob,
+                headers: new Headers({ 'Content-Disposition': 'attachment; filename="export.json"' })
+            });
+
+        render(<ImportExport theme="dark" t={mockT} />);
+
+        await waitFor(() => {
+            expect(screen.getByText('exportFormat')).toBeInTheDocument();
+        });
+
+        fireEvent.change(screen.getByDisplayValue('formatTxt'), { target: { value: 'json' } });
+        fireEvent.click(screen.getByText('downloadExport'));
+
+        await waitFor(() => {
+            const exportCall = (globalThis.fetch as Mock).mock.calls.find((c: unknown[]) => (c[0] as string).includes('/api/io/export'));
+            expect(exportCall).toBeTruthy();
+            expect((exportCall as [string])[0]).toContain('format=json');
+        });
+    });
+
     it('handles delete all confirmation and delete', async () => {
         (globalThis.fetch as Mock)
             .mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig })

@@ -19,6 +19,7 @@ describe('entriesService', () => {
       filterTags: [],
       filterDate: '',
       filterVisibility: 'all',
+      favorites: false,
       diaryId: null,
     };
 
@@ -454,6 +455,113 @@ describe('entriesService', () => {
       const result = await service.bulkOperation([1], 'delete');
 
       expect(result).toBeNull();
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('toggleFavorite', () => {
+    it('should send PATCH request to toggle favorite', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ success: true }),
+      });
+
+      const result = await service.toggleFavorite(1, true);
+
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries/1/favorite', {
+        method: 'PATCH',
+        body: JSON.stringify({ isFavorite: true }),
+      });
+      expect(result).toBe(true);
+    });
+
+    it('should return false when response is not ok', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: false,
+      });
+
+      const result = await service.toggleFavorite(999, true);
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false on network error', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockAuthFetch.mockRejectedValue(new Error('Network error'));
+
+      const result = await service.toggleFavorite(1, true);
+
+      expect(result).toBe(false);
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('fetchEntries with favorites filter', () => {
+    const baseParams = {
+      page: 1,
+      limit: 10,
+      search: '',
+      filterTags: [] as string[],
+      filterDate: '',
+      filterVisibility: 'all',
+      favorites: false,
+      diaryId: null,
+    };
+
+    it('should include favorites param when true', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+      });
+
+      await service.fetchEntries({ ...baseParams, favorites: true });
+
+      expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('favorites=true'));
+    });
+
+    it('should not include favorites param when false', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+      });
+
+      await service.fetchEntries({ ...baseParams, favorites: false });
+
+      expect(mockAuthFetch).not.toHaveBeenCalledWith(expect.stringContaining('favorites=true'));
+    });
+  });
+
+  describe('fetchEntryHistory', () => {
+    it('returns revisions on success', async () => {
+      const mockRevisions = [
+        { id: 1, entryId: 5, content: 'old content', tags: ['a'], date: '2024-01-01', format: 'plaintext', visibility: 'private', createdAt: '2024-01-01T00:00:00Z' },
+      ];
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve(mockRevisions),
+      });
+
+      const result = await service.fetchEntryHistory(5);
+
+      expect(result).toEqual(mockRevisions);
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries/5/history');
+    });
+
+    it('returns empty array on failure', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: false });
+
+      const result = await service.fetchEntryHistory(5);
+
+      expect(result).toEqual([]);
+    });
+
+    it('returns empty array on network error', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockAuthFetch.mockRejectedValue(new Error('Network error'));
+
+      const result = await service.fetchEntryHistory(5);
+
+      expect(result).toEqual([]);
       consoleSpy.mockRestore();
     });
   });

@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { Entry, Diary } from '@/database/entities';
+import { Entry, EntryRevision, Diary } from '@/database/entities';
 import { sanitizeString } from '@/common/utils';
+import { AiService } from '@/modules/ai';
+import { ConfigService } from '@/modules/config';
 import {
   CreateEntryDto,
   UpdateEntryDto,
@@ -19,12 +21,38 @@ export class EntriesService {
   constructor(
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
+    @InjectRepository(EntryRevision)
+    private readonly revisionRepository: Repository<EntryRevision>,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
+    private readonly configService: ConfigService,
+    private readonly aiService: AiService,
   ) {}
 
+  private async resolveSavedTags(userId: number, text: string, rawTags: string[]): Promise<string[]> {
+    const sanitizedTags = [...new Set(rawTags
+      .map((tag: string) => sanitizeString(tag.trim()).substring(0, 50))
+      .filter(Boolean))];
+
+    const config = await this.configService.getConfig(userId);
+    const autoTagMaxTags = Number.parseInt(String(config.autoTagMaxTags || '0'), 10);
+
+    if (!Number.isFinite(autoTagMaxTags) || autoTagMaxTags <= 0 || sanitizedTags.length >= autoTagMaxTags) {
+      return sanitizedTags;
+    }
+
+    const suggestedTags = await this.aiService.autoTagEntry(
+      userId,
+      text,
+      sanitizedTags,
+      autoTagMaxTags - sanitizedTags.length,
+    );
+
+    return [...sanitizedTags, ...suggestedTags];
+  }
+
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
-    const { search, tags, date, visibility, diaryId, page = 1, limit = 10 } = query;
+    const { search, tags, date, visibility, favorites, diaryId, page = 1, limit = 10 } = query;
 
     const qb = this.entryRepository
       .createQueryBuilder('e')
@@ -61,6 +89,10 @@ export class EntriesService {
       qb.andWhere('e.diary_id = :diaryId', { diaryId });
     }
 
+    if (favorites) {
+      qb.andWhere('e.is_favorite = true');
+    }
+
     const total = await qb.getCount();
 
     qb.orderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
@@ -88,6 +120,7 @@ export class EntriesService {
         content: e.content,
         format: e.format,
         visibility: e.visibility,
+        is_favorite: e.isFavorite,
         diary_name: e.diary?.name,
         diary_icon: e.diary?.icon,
         created_at: e.createdAt,
@@ -260,7 +293,7 @@ export class EntriesService {
   }
 
   async create(userId: number, dto: CreateEntryDto): Promise<{ success: boolean; entryId: number }> {
-    const sanitizedTags = dto.tags.map((tag: string) => sanitizeString(tag.trim()).substring(0, 50));
+    const resolvedTags = await this.resolveSavedTags(userId, dto.text, dto.tags);
 
     const dateStr = dto.date || new Date().toISOString().split('T')[0];
 
@@ -283,7 +316,7 @@ export class EntriesService {
       userId,
       date: dateStr,
       index: nextIndex,
-      tags: sanitizedTags,
+      tags: resolvedTags,
       content: dto.text,
       format: dto.format || 'plain',
       visibility: dto.visibility || 'private',
@@ -306,7 +339,18 @@ export class EntriesService {
       throw new NotFoundException('Entry not found');
     }
 
-    const sanitizedTags = dto.tags.map((tag: string) => sanitizeString(tag.trim()).substring(0, 50));
+    // Save revision of the current state before modifying
+    await this.revisionRepository.save({
+      entryId: entry.id,
+      userId: entry.userId,
+      content: entry.content,
+      tags: entry.tags,
+      date: entry.date,
+      format: entry.format,
+      visibility: entry.visibility,
+    });
+
+    const resolvedTags = await this.resolveSavedTags(userId, dto.text, dto.tags);
     const oldDate = entry.date;
     let newIndex = entry.index;
 
@@ -319,7 +363,7 @@ export class EntriesService {
     }
 
     entry.content = dto.text;
-    entry.tags = sanitizedTags;
+  entry.tags = resolvedTags;
     entry.date = dto.date;
     entry.format = dto.format || entry.format;
     entry.visibility = dto.visibility || 'private';
@@ -357,6 +401,25 @@ export class EntriesService {
     }
 
     entry.visibility = visibility;
+    const updated = await this.entryRepository.save(entry);
+
+    return { success: true, entry: updated };
+  }
+
+  async toggleFavorite(
+    userId: number,
+    id: number,
+    isFavorite: boolean,
+  ): Promise<{ success: boolean; entry: Entry }> {
+    const entry = await this.entryRepository.findOne({
+      where: { id, userId },
+    });
+
+    if (!entry) {
+      throw new NotFoundException('Entry not found');
+    }
+
+    entry.isFavorite = isFavorite;
     const updated = await this.entryRepository.save(entry);
 
     return { success: true, entry: updated };
@@ -582,5 +645,20 @@ export class EntriesService {
     );
 
     return { success: true, affectedCount: validIds.length };
+  }
+
+  async getRevisions(userId: number, entryId: number): Promise<EntryRevision[]> {
+    const entry = await this.entryRepository.findOne({
+      where: { id: entryId, userId },
+    });
+
+    if (!entry) {
+      throw new NotFoundException('Entry not found');
+    }
+
+    return this.revisionRepository.find({
+      where: { entryId, userId },
+      order: { createdAt: 'DESC' },
+    });
   }
 }

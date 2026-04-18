@@ -8,9 +8,11 @@ import ProfilePageHeader from './ProfilePageHeader';
 import ProfileHeaderCard from './ProfileHeaderCard';
 import PersonalSection from './PersonalSection';
 import AppearanceSection from './AppearanceSection';
+import AISection from './AISection';
 import SecuritySection from './SecuritySection';
 import DangerZoneSection from './DangerZoneSection';
 import ProfileActions from './ProfileActions';
+import DataPrivacySection from './DataPrivacySection';
 
 // Import types and utilities
 import type { 
@@ -29,12 +31,13 @@ import {
 interface ProfilePageProps {
   readonly config: ProfileConfig;
   readonly onUpdateConfig: (config: ProfileConfig) => void;
+  readonly onDownloadData: () => Promise<boolean>;
   readonly onBack: () => void;
   readonly t: TranslationFunction;
   readonly stats?: ProfileStats;
 }
 
-function ProfilePage({ config, onUpdateConfig, onBack, t, stats }: ProfilePageProps) {
+function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats }: ProfilePageProps) {
   const { user, changePassword, deleteAccount } = useAuth();
   const [localConfig, setLocalConfig] = useState<ProfileConfig>(config);
 
@@ -211,6 +214,14 @@ function ProfilePage({ config, onUpdateConfig, onBack, t, stats }: ProfilePagePr
           t={t}
         />
 
+        <DataPrivacySection
+          t={t}
+          isDark={isDark}
+          onDownloadData={onDownloadData}
+        />
+      </div>
+
+      <div className="profile-two-column">
         {isLocalAuth ? (
           <SecuritySection
             t={t}
@@ -258,6 +269,12 @@ function ProfilePage({ config, onUpdateConfig, onBack, t, stats }: ProfilePagePr
         handleThemeToggle={handleThemeToggle}
         isDark={isDark}
         isLight={isLight}
+        t={t}
+      />
+
+      <AISection
+        localConfig={localConfig}
+        handleChange={handleChange}
         t={t}
       />
 

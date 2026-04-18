@@ -32,6 +32,9 @@ export class Diary {
   @Column({ name: 'is_default', type: 'boolean', default: false })
   isDefault: boolean;
 
+  @Column({ type: 'integer', default: 0 })
+  position: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

@@ -190,4 +190,50 @@ describe('configService', () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe('downloadUserData', () => {
+    it('downloads user data and triggers file download', async () => {
+      const mockBlob = new Blob(['{}'], { type: 'application/json' });
+      const mockUrl = 'blob:http://localhost/test';
+      vi.spyOn(URL, 'createObjectURL').mockReturnValue(mockUrl);
+      vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+
+      const mockAnchor = { href: '', download: '', click: vi.fn() } as unknown as HTMLAnchorElement;
+      vi.spyOn(document, 'createElement').mockReturnValue(mockAnchor);
+      vi.spyOn(document.body, 'appendChild').mockImplementation(() => mockAnchor);
+      vi.spyOn(document.body, 'removeChild').mockImplementation(() => mockAnchor);
+
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        blob: () => Promise.resolve(mockBlob),
+        headers: new Headers({ 'Content-Disposition': 'attachment; filename="thoughty_data_2024-01-01.json"' }),
+      });
+
+      const result = await service.downloadUserData();
+
+      expect(result).toBe(true);
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/config/download-data');
+      expect(mockAnchor.download).toBe('thoughty_data_2024-01-01.json');
+      expect(mockAnchor.click).toHaveBeenCalled();
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith(mockUrl);
+    });
+
+    it('returns false when response is not ok', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: false });
+
+      const result = await service.downloadUserData();
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false on error', async () => {
+      mockAuthFetch.mockRejectedValue(new Error('Network error'));
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await service.downloadUserData();
+
+      expect(result).toBe(false);
+      consoleSpy.mockRestore();
+    });
+  });
 });

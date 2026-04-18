@@ -15,6 +15,7 @@ describe('DiariesController', () => {
       update: jest.fn(),
       delete: jest.fn(),
       setDefault: jest.fn(),
+      reorder: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -83,6 +84,17 @@ describe('DiariesController', () => {
       const result = await controller.setDefault(mockUser as any, 2);
       expect(diariesService.setDefault).toHaveBeenCalledWith(1, 2);
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('reorder', () => {
+    it('delegates to diariesService.reorder with userId and orderedIds', async () => {
+      const expected = { success: true };
+      diariesService.reorder!.mockResolvedValue(expected);
+
+      const result = await controller.reorder(mockUser as any, { orderedIds: [3, 1, 2] });
+      expect(diariesService.reorder).toHaveBeenCalledWith(1, [3, 1, 2]);
+      expect(result).toEqual(expected);
     });
   });
 });

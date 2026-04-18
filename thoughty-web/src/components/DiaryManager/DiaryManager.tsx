@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useRef, type FormEvent } from 'react';
 import './DiaryManager.css';
 
 // Common emoji icons for diaries
@@ -24,12 +24,13 @@ interface DiaryManagerProps {
     readonly onUpdateDiary: (id: number, data: DiaryFormData) => Promise<void>;
     readonly onDeleteDiary: (id: number) => Promise<void>;
     readonly onSetDefault: (id: number) => Promise<void>;
+    readonly onReorderDiaries: (orderedIds: number[]) => Promise<void>;
     readonly onBack: () => void;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onBack, theme, t }: DiaryManagerProps) {
+function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onReorderDiaries, onBack, theme, t }: DiaryManagerProps) {
     const [newDiaryName, setNewDiaryName] = useState<string>('');
     const [newDiaryIcon, setNewDiaryIcon] = useState<string>('📓');
     const [newDiaryVisibility, setNewDiaryVisibility] = useState<'public' | 'private'>('private');
@@ -39,6 +40,8 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
     const [error, setError] = useState<string>('');
     const [showIconPicker, setShowIconPicker] = useState<'new' | number | null>(null);
+    const dragItem = useRef<number | null>(null);
+    const dragOverItem = useRef<number | null>(null);
 
     const isLight = theme === 'light';
 
@@ -106,6 +109,33 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
             await onSetDefault(diary.id);
         } catch (err) {
             setError((err as Error).message || 'Failed to set default diary');
+        }
+    };
+
+    const handleDragStart = (index: number): void => {
+        dragItem.current = index;
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number): void => {
+        e.preventDefault();
+        dragOverItem.current = index;
+    };
+
+    const handleDrop = async (): Promise<void> => {
+        if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) {
+            dragItem.current = null;
+            dragOverItem.current = null;
+            return;
+        }
+        const reordered = [...diaries];
+        const [removed] = reordered.splice(dragItem.current, 1);
+        reordered.splice(dragOverItem.current, 0, removed!);
+        dragItem.current = null;
+        dragOverItem.current = null;
+        try {
+            await onReorderDiaries(reordered.map(d => d.id));
+        } catch (err) {
+            setError((err as Error).message || 'Failed to reorder diaries');
         }
     };
 
@@ -196,10 +226,14 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                     <p className="no-diaries">{t('noDiaries')}</p>
                 ) : (
                     <div className="diary-cards">
-                        {diaries.map(diary => (
+                        {diaries.map((diary, index) => (
                             <div
                                 key={diary.id}
                                 className={`diary-card ${diary.is_default ? 'default' : ''} ${editingDiary?.id === diary.id ? 'editing' : ''}`}
+                                draggable={editingDiary?.id !== diary.id}
+                                onDragStart={() => handleDragStart(index)}
+                                onDragOver={(e) => handleDragOver(e, index)}
+                                onDrop={handleDrop}
                             >
                                 {editingDiary?.id === diary.id ? (
                                     <div className="edit-form">
@@ -261,6 +295,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                 ) : (
                                     <>
                                         <div className="diary-info">
+                                            <span className="drag-handle" title={t('dragToReorder')}>⠿</span>
                                             <span className="diary-icon">{diary.icon || '📓'}</span>
                                             <div className="diary-details">
                                                 <span className="diary-name">{diary.name}</span>

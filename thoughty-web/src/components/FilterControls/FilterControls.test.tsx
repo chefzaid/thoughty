@@ -41,6 +41,8 @@ describe('FilterControls', () => {
     setFilterDateObj: mockSetFilterDateObj,
     filterVisibility: 'all' as const,
     setFilterVisibility: mockSetFilterVisibility,
+    filterFavorites: false,
+    setFilterFavorites: vi.fn(),
     allTags: ['tag1', 'tag2', 'tag3'],
     entryDates: ['2026-01-15', '2026-01-20'],
     setPage: mockSetPage,

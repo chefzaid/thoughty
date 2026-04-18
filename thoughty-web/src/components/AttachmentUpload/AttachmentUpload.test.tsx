@@ -20,7 +20,6 @@ describe('AttachmentUpload', () => {
   it('renders the attach button', () => {
     render(<AttachmentUpload {...defaultProps} />);
     expect(screen.getByTitle('attachFiles')).toBeInTheDocument();
-    expect(screen.getByText('attach')).toBeInTheDocument();
   });
 
   it('shows pending files with name and size', () => {

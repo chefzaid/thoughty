@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsEnum, MaxLength, IsArray, IsInt } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateDiaryDto {
@@ -57,5 +57,15 @@ export class DiaryResponseDto {
   isDefault: boolean;
 
   @ApiProperty()
+  position: number;
+
+  @ApiProperty()
   createdAt: Date;
+}
+
+export class ReorderDiariesDto {
+  @ApiProperty({ description: 'Ordered array of diary IDs', type: [Number] })
+  @IsArray()
+  @IsInt({ each: true })
+  orderedIds: number[];
 }

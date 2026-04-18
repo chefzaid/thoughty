@@ -1,4 +1,4 @@
-import { useRef, useEffect, type FormEvent, type Dispatch, type SetStateAction } from 'react';
+import { useRef, useEffect, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import MDEditor from '@uiw/react-md-editor';
 import TagPicker from '../TagPicker/TagPicker';
@@ -18,7 +18,11 @@ interface EntryFormProps {
     readonly setFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
     readonly allTags: string[];
     readonly formError: string;
-    readonly onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+    readonly suggestingTags?: boolean;
+    readonly onSuggestTags?: () => Promise<boolean> | boolean;
+    readonly fixingWriting?: boolean;
+    readonly onFixWriting?: () => Promise<boolean> | boolean;
+    readonly onSubmit: NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly pendingFiles?: File[];
@@ -41,6 +45,10 @@ function EntryForm({
     setFormat,
     allTags,
     formError,
+    suggestingTags = false,
+    onSuggestTags,
+    fixingWriting = false,
+    onFixWriting,
     onSubmit,
     theme,
     t,
@@ -79,6 +87,10 @@ function EntryForm({
         ? 'bg-white border-gray-200'
         : 'bg-gray-800 border-gray-700'
         }`;
+
+    const markdownToggleClass = format === 'markdown'
+        ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
+        : getVisibilityButtonClass();
 
     return (
         <div className={containerClass}>
@@ -131,15 +143,34 @@ function EntryForm({
                             theme={theme}
                         />
                     </div>
+                    {onSuggestTags && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onSuggestTags();
+                            }}
+                            disabled={suggestingTags}
+                            className="px-3 py-2 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {suggestingTags ? t('suggestingTags') : t('suggestTags')}
+                        </button>
+                    )}
+                    {onFixWriting && (
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onFixWriting();
+                            }}
+                            disabled={fixingWriting}
+                            className="px-3 py-2 rounded-lg border border-teal-500/40 bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {fixingWriting ? t('fixingWriting') : t('fixWriting')}
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={() => setFormat(f => f === 'plain' ? 'markdown' : 'plain')}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${format === 'markdown'
-                            ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
-                            : theme === 'light'
-                                ? 'border-gray-300 bg-gray-50 text-gray-500'
-                                : 'border-gray-600 bg-gray-800 text-gray-400'
-                            }`}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${markdownToggleClass}`}
                         title={format === 'markdown' ? t('markdownEnabled') : t('markdownDisabled')}
                     >
                         <span className="text-sm font-bold" style={{ fontFamily: 'monospace' }}>MD</span>

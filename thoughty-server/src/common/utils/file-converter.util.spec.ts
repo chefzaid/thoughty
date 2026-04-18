@@ -4,6 +4,10 @@ import {
   parseDate,
   generateTextFile,
   parseTextFile,
+  generateJsonFile,
+  parseJsonFile,
+  generateMarkdownFile,
+  parseMarkdownFile,
   findDuplicates,
   DEFAULT_FORMAT,
 } from './file-converter.util';
@@ -217,6 +221,16 @@ describe('file-converter.util', () => {
       const result = generateTextFile(entries);
 
       expect(result).toContain('2024-01-15');
+    });
+
+    it('should include diary name when provided', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['tag1'], content: 'Test', diaryName: 'Work' },
+      ];
+
+      const result = generateTextFile(entries);
+
+      expect(result).toContain('--{diary:Work}');
     });
   });
 
@@ -450,6 +464,39 @@ Second **markdown** entry
       expect(result[0].format).toBe('plain');
       expect(result[1].format).toBe('markdown');
     });
+
+    it('should parse diary name from dated entries', () => {
+      const content = `
+---2024-01-15--[tag1]--{diary:Work}
+Diary entry
+
+--------------------------------------------------------------------------------
+`;
+
+      const result = parseTextFile(content);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].diaryName).toBe('Work');
+    });
+
+    it('should parse diary name from same-day entries', () => {
+      const content = `
+---2024-01-15--[tag1]
+First entry
+
+********************************************************************************
+
+---2--[tag2]--{diary:Personal}
+Second entry
+
+--------------------------------------------------------------------------------
+`;
+
+      const result = parseTextFile(content);
+
+      expect(result).toHaveLength(2);
+      expect(result[1].diaryName).toBe('Personal');
+    });
   });
 
   describe('generateTextFile with markdown format', () => {
@@ -505,6 +552,97 @@ Second **markdown** entry
       expect(imported[0].content).toContain('# My Day');
       expect(imported[1].format).toBe('plain');
       expect(imported[1].content).toContain('Just a plain note');
+    });
+  });
+
+  describe('generateTextFile with visibility', () => {
+    it('should include visibility marker when includeVisibility is true', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['tag1'], content: 'Test', visibility: 'public' as const },
+      ];
+
+      const result = generateTextFile(entries, undefined, true);
+
+      expect(result).toContain('--[public]');
+    });
+
+    it('should not include visibility marker when includeVisibility is false', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['tag1'], content: 'Test', visibility: 'public' as const },
+      ];
+
+      const result = generateTextFile(entries, undefined, false);
+
+      expect(result).not.toContain('--[public]');
+    });
+
+    it('should default visibility to private when not specified', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['tag1'], content: 'Test' },
+      ];
+
+      const result = generateTextFile(entries, undefined, true);
+
+      expect(result).toContain('--[private]');
+    });
+
+    it('should roundtrip visibility through export and import', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['journal'], content: 'Public entry', visibility: 'public' as const },
+        { date: '2024-01-16', index: 1, tags: ['note'], content: 'Private entry', visibility: 'private' as const },
+      ];
+
+      const exported = generateTextFile(entries, undefined, true);
+      const imported = parseTextFile(exported);
+
+      expect(imported).toHaveLength(2);
+      expect(imported[0].visibility).toBe('public');
+      expect(imported[1].visibility).toBe('private');
+    });
+  });
+
+  describe('parseTextFile with visibility', () => {
+    it('should parse visibility marker from entry header', () => {
+      const content = `
+---2024-01-15--[tag1]--[public]
+Public entry
+
+--------------------------------------------------------------------------------
+`;
+
+      const result = parseTextFile(content);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].visibility).toBe('public');
+    });
+
+    it('should handle entry without visibility marker', () => {
+      const content = `
+---2024-01-15--[tag1]
+No visibility entry
+
+--------------------------------------------------------------------------------
+`;
+
+      const result = parseTextFile(content);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].visibility).toBeUndefined();
+    });
+
+    it('should parse visibility with markdown format flag', () => {
+      const content = `
+---2024-01-15--[tag1]--[private]{md}
+# Markdown with visibility
+
+--------------------------------------------------------------------------------
+`;
+
+      const result = parseTextFile(content);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].visibility).toBe('private');
+      expect(result[0].format).toBe('markdown');
     });
   });
 
@@ -616,6 +754,322 @@ Second **markdown** entry
       const result = findDuplicates(imported, existing);
 
       expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('generateJsonFile', () => {
+    it('should generate empty JSON for empty entries', () => {
+      const result = generateJsonFile([]);
+      const parsed = JSON.parse(result);
+      expect(parsed.entries).toEqual([]);
+    });
+
+    it('should generate valid JSON with entries', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['happy'], content: 'Test entry', format: 'plain' as const },
+      ];
+
+      const result = generateJsonFile(entries);
+      const parsed = JSON.parse(result);
+
+      expect(parsed.entries).toHaveLength(1);
+      expect(parsed.entries[0].date).toBe('2024-01-15');
+      expect(parsed.entries[0].tags).toEqual(['happy']);
+      expect(parsed.entries[0].content).toBe('Test entry');
+      expect(parsed.entries[0].format).toBe('plain');
+    });
+
+    it('should include visibility when requested', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: [], content: 'Test', visibility: 'public' as const },
+      ];
+
+      const result = generateJsonFile(entries, true);
+      const parsed = JSON.parse(result);
+
+      expect(parsed.entries[0].visibility).toBe('public');
+    });
+
+    it('should not include visibility by default', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: [], content: 'Test', visibility: 'public' as const },
+      ];
+
+      const result = generateJsonFile(entries);
+      const parsed = JSON.parse(result);
+
+      expect(parsed.entries[0].visibility).toBeUndefined();
+    });
+
+    it('should sort entries by date then index', () => {
+      const entries = [
+        { date: '2024-01-16', index: 1, tags: [], content: 'Later' },
+        { date: '2024-01-15', index: 1, tags: [], content: 'Earlier' },
+      ];
+
+      const result = generateJsonFile(entries);
+      const parsed = JSON.parse(result);
+
+      expect(parsed.entries[0].date).toBe('2024-01-15');
+      expect(parsed.entries[1].date).toBe('2024-01-16');
+    });
+
+    it('should include diary name when provided', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: [], content: 'Diary entry', diaryName: 'Work' },
+      ];
+
+      const result = generateJsonFile(entries);
+      const parsed = JSON.parse(result);
+
+      expect(parsed.entries[0].diary).toBe('Work');
+    });
+  });
+
+  describe('parseJsonFile', () => {
+    it('should parse JSON with entries array', () => {
+      const json = JSON.stringify({
+        entries: [
+          { date: '2024-01-15', index: 1, tags: ['tag1'], content: 'Test entry' },
+        ],
+      });
+
+      const result = parseJsonFile(json);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].date).toBe('2024-01-15');
+      expect(result[0].tags).toEqual(['tag1']);
+      expect(result[0].content).toBe('Test entry');
+    });
+
+    it('should parse plain JSON array', () => {
+      const json = JSON.stringify([
+        { date: '2024-01-15', index: 1, tags: [], content: 'Test' },
+      ]);
+
+      const result = parseJsonFile(json);
+      expect(result).toHaveLength(1);
+    });
+
+    it('should parse visibility from JSON', () => {
+      const json = JSON.stringify({
+        entries: [
+          { date: '2024-01-15', index: 1, tags: [], content: 'Test', visibility: 'public' },
+        ],
+      });
+
+      const result = parseJsonFile(json);
+      expect(result[0].visibility).toBe('public');
+    });
+
+    it('should skip entries without content', () => {
+      const json = JSON.stringify({
+        entries: [
+          { date: '2024-01-15', index: 1, tags: [], content: '' },
+          { date: '2024-01-15', index: 2, tags: [], content: 'Valid' },
+        ],
+      });
+
+      const result = parseJsonFile(json);
+      expect(result).toHaveLength(1);
+      expect(result[0].content).toBe('Valid');
+    });
+
+    it('should return empty for invalid structure', () => {
+      const result = parseJsonFile('{"noEntries": true}');
+      expect(result).toEqual([]);
+    });
+
+    it('should roundtrip through JSON export/import', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['journal'], content: 'Day one', format: 'markdown' as const, visibility: 'public' as const },
+        { date: '2024-01-16', index: 1, tags: ['note'], content: 'Day two', visibility: 'private' as const },
+      ];
+
+      const exported = generateJsonFile(entries, true);
+      const imported = parseJsonFile(exported);
+
+      expect(imported).toHaveLength(2);
+      expect(imported[0].content).toBe('Day one');
+      expect(imported[0].format).toBe('markdown');
+      expect(imported[0].visibility).toBe('public');
+      expect(imported[1].visibility).toBe('private');
+    });
+
+    it('should parse diary name from JSON', () => {
+      const json = JSON.stringify({
+        entries: [
+          { date: '2024-01-15', index: 1, tags: [], content: 'Test', diary: 'Work' },
+        ],
+      });
+
+      const result = parseJsonFile(json);
+
+      expect(result[0].diaryName).toBe('Work');
+    });
+  });
+
+  describe('generateMarkdownFile', () => {
+    it('should generate markdown with date headings', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['happy'], content: 'Test entry' },
+      ];
+
+      const result = generateMarkdownFile(entries);
+
+      expect(result).toContain('# 2024-01-15');
+      expect(result).toContain('`happy`');
+      expect(result).toContain('Test entry');
+    });
+
+    it('should separate same-day entries with ---', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: [], content: 'Entry 1' },
+        { date: '2024-01-15', index: 2, tags: [], content: 'Entry 2' },
+      ];
+
+      const result = generateMarkdownFile(entries);
+
+      expect(result).toContain('---');
+      expect(result).toContain('Entry 1');
+      expect(result).toContain('Entry 2');
+    });
+
+    it('should include visibility when requested', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: [], content: 'Test', visibility: 'public' as const },
+      ];
+
+      const result = generateMarkdownFile(entries, true);
+
+      expect(result).toContain('**Visibility:** public');
+    });
+
+    it('should not include visibility by default', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: [], content: 'Test', visibility: 'public' as const },
+      ];
+
+      const result = generateMarkdownFile(entries);
+
+      expect(result).not.toContain('Visibility');
+    });
+
+    it('should include diary name when provided', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: [], content: 'Test', diaryName: 'Work' },
+      ];
+
+      const result = generateMarkdownFile(entries);
+
+      expect(result).toContain('**Diary:** Work');
+    });
+  });
+
+  describe('parseMarkdownFile', () => {
+    it('should parse markdown with date headings', () => {
+      const content = `# 2024-01-15
+
+**Tags:** \`happy\`, \`productive\`
+
+Test entry content`;
+
+      const result = parseMarkdownFile(content);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].date).toBe('2024-01-15');
+      expect(result[0].tags).toEqual(['happy', 'productive']);
+      expect(result[0].content).toBe('Test entry content');
+      expect(result[0].format).toBe('markdown');
+    });
+
+    it('should parse multiple entries on different dates', () => {
+      const content = `# 2024-01-15
+
+Entry 1
+
+# 2024-01-16
+
+Entry 2`;
+
+      const result = parseMarkdownFile(content);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].date).toBe('2024-01-15');
+      expect(result[1].date).toBe('2024-01-16');
+    });
+
+    it('should parse same-day entries separated by ---', () => {
+      const content = `# 2024-01-15
+
+Entry 1
+
+---
+
+Entry 2`;
+
+      const result = parseMarkdownFile(content);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].date).toBe('2024-01-15');
+      expect(result[0].index).toBe(1);
+      expect(result[1].date).toBe('2024-01-15');
+      expect(result[1].index).toBe(2);
+    });
+
+    it('should parse visibility metadata', () => {
+      const content = `# 2024-01-15
+
+**Tags:** \`tag1\` | **Visibility:** public
+
+Public entry`;
+
+      const result = parseMarkdownFile(content);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].visibility).toBe('public');
+      expect(result[0].tags).toEqual(['tag1']);
+    });
+
+    it('should skip entries with empty content', () => {
+      const content = `# 2024-01-15
+
+
+# 2024-01-16
+
+Valid entry`;
+
+      const result = parseMarkdownFile(content);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].date).toBe('2024-01-16');
+    });
+
+    it('should roundtrip through markdown export/import', () => {
+      const entries = [
+        { date: '2024-01-15', index: 1, tags: ['journal'], content: 'Day one' },
+        { date: '2024-01-16', index: 1, tags: ['note'], content: 'Day two' },
+      ];
+
+      const exported = generateMarkdownFile(entries);
+      const imported = parseMarkdownFile(exported);
+
+      expect(imported).toHaveLength(2);
+      expect(imported[0].content).toBe('Day one');
+      expect(imported[0].tags).toEqual(['journal']);
+      expect(imported[1].content).toBe('Day two');
+    });
+
+    it('should parse diary metadata', () => {
+      const content = `# 2024-01-15
+
+**Tags:** \`tag1\` | **Diary:** Work
+
+Entry content`;
+
+      const result = parseMarkdownFile(content);
+
+      expect(result[0].diaryName).toBe('Work');
     });
   });
 });

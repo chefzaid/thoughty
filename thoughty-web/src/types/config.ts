@@ -11,6 +11,8 @@ export interface Config {
   avatarUrl?: string;
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;
+  openRouterApiKey?: string;
+  autoTagMaxTags?: string | number;
 }
 
 export interface AppConfig {

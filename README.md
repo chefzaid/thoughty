@@ -25,21 +25,29 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Cross-References** - Link entries together using `[[YYYY-MM-DD]]` or `[[YYYY-MM-DD#index]]` syntax with clickable navigation
 - **Entry Highlighting** - Visual highlighting when navigating to specific entries from references
 - **Visibility Control** - Toggle entries between public and private with one click
+- **Favorites** - Star/unstar entries as favorites and filter to show only favorites
+- **Modification History** - View previous versions of edited entries with timestamps
 - **File Uploads** - Attach images and files (JPEG, PNG, GIF, WebP, SVG, PDF, TXT) to journal entries
 - **Read Entries Aloud** - Listen to your journal entries using the many options of the Text-to-Speech feature
+- **AI Fix Writing** - One-click grammar, spelling, and style correction powered by OpenRouter; the corrected text replaces the draft so you can review changes immediately
+- **AI Discussion** - Open a chat conversation with AI about any journal entry; the AI uses the entry as context to provide thoughtful analysis, reflection prompts, and deeper insight
 
 ### 📚 Multiple Diaries
 - **Unlimited Diaries** - Create themed diaries for different aspects of your life
 - **Custom Icons** - Choose from 20 emoji icons to personalize each diary
+- **Drag & Drop Reordering** - Reorder your diaries by dragging and dropping
 - **All Diaries View** - View entries from all diaries in a unified timeline
 - **Default Visibility** - Set per-diary default visibility (public/private) for new entries
 - **Set Default Diary** - Designate any diary as your default for quick entry creation
 - **Diary Tabs** - Quick navigation between diaries with a tabbed interface
+- **Favorites Journal** - A dedicated ⭐ Favorites tab in the diary bar that shows all starred entries across diaries in one view
 
 ### 🏷️ Tagging System
 - **Multi-Tag Support** - Add multiple tags to each entry for rich categorization
 - **Auto-Complete** - Smart suggestions from your existing tags as you type
 - **Create New Tags** - Add new tags inline while writing
+- **AI Tag Suggestions** - Generate draft tags from your entry content when your OpenRouter API key is configured
+- **Automatic AI Tagging** - Optionally fill in tags on save and cap the number of AI-generated tags per entry from profile settings
 - **Tag Chips** - Visual tag display with easy removal
 - **Keyboard Navigation** - Use Enter to add and Backspace to remove tags
 
@@ -70,8 +78,13 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 
 ### 📤 Import & Export
 - **Plain Text Format** - Export to portable `.txt` files
+- **Multiple Export Formats** - Export as TXT, JSON, or Markdown
+- **Auto-Detect Import Format** - Automatically detects TXT, JSON, and Markdown files on import
 - **Markdown Format Preserved** - Markdown entries flagged with `{md}` in exports and automatically detected on import
 - **Full Export** - Export all entries or per-diary
+- **Smart Filenames** - Export files named with diary name and date (e.g., `thoughty_My_Journal_2024-01-15.txt`)
+- **Visibility Export** - Optionally include entry visibility (public/private) in exported files
+- **All Diaries Mapping** - Exports from All Diaries preserve each entry's diary name, and imports map entries back to matching diaries when possible
 - **Customizable Format** - Configure separators, date format, tag brackets
   - Entry separator (between different dates)
   - Same-day separator (between entries on same date)
@@ -80,6 +93,8 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Preview Before Import** - Parse and review entries before importing
 - **Duplicate Detection** - Identify and optionally skip duplicate entries
 - **Import Statistics** - See how many entries were imported vs skipped
+- **Diary Default Visibility** - Imported entries inherit the target diary's visibility setting
+- **Safe Diary Fallback** - If an imported diary name does not match an existing diary, the entry is imported into the default target diary instead
 
 ### 🔐 Authentication & Security
 - **Email/Password Registration** - Secure signup with password requirements
@@ -90,6 +105,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Password Reset** - Email-based secure reset with 1-hour expiry tokens
 - **Change Password** - Update password with current password verification
 - **Account Deletion** - Soft delete with confirmation and password verification
+- **GDPR Data Download** - Download all personal data as a JSON file from the profile page
 - **Password Hashing** - bcrypt with 10 salt rounds
 - **Token Revocation** - All sessions invalidated on password change
 
@@ -104,8 +120,17 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Internationalization** - English 🇬🇧 and French 🇫🇷 language support
 - **Pagination Settings** - Configure entries per page (5/10/15/20/25/50)
 - **Read Dates Toggle** - Choose whether text-to-speech includes date headers
+- **OpenRouter API Key** - Configure your own API key for AI-powered features (encrypted at rest)
+- **Automatic Tag Limit** - Set how many AI-generated tags can be added automatically when an entry is saved; use `0` to disable it
+
+When an OpenRouter API key is saved in Profile -> AI Configuration, the journal entry form exposes a Suggest Tags action and a Fix Writing action for the current draft. The key is encrypted at rest on the backend and masked when it is read back into the profile UI.
+
+Fix Writing sends the draft text to the AI, which corrects grammar, spelling, and punctuation while preserving the original meaning, tone, and voice. The corrected text replaces the draft inline so you can review and accept or undo the changes.
+
+Automatic tagging uses the same OpenRouter configuration. When `Automatic Tag Limit` is above `0`, new entries and edited entries can be saved without manually adding tags first, and the backend will try to append AI-generated tags up to the configured limit.
 
 ### 📱 User Experience
+- **Public Intro Page** - A landing page that showcases the app and routes visitors directly into sign-in or sign-up
 - **Responsive Design** - Mobile-friendly layout that works on all devices
 - **Confirmation Modals** - Safe deletion with confirmation dialogs
 - **Loading States** - Smooth loading indicators throughout
@@ -229,6 +254,9 @@ S3_BUCKET=thoughty-attachments
 S3_ACCESS_KEY=minioadmin
 S3_SECRET_KEY=minioadmin
 S3_REGION=us-east-1
+
+# Config encryption (for sensitive settings like API keys)
+CONFIG_ENCRYPTION_SECRET=your-encryption-secret-change-in-production
 ```
 
 > **Note:** For local development, no `.env` file is needed for S3 — the defaults connect to the MinIO container started by `docker-compose`. For production, see [S3 Configuration for Production](#-s3-configuration-for-production).
@@ -290,6 +318,13 @@ mask test --coverage
 ```bash
 cd thoughty-web && npm test
 ```
+
+### Frontend Browser Tests
+```bash
+cd thoughty-web && npm run test:e2e
+```
+
+Playwright runs Chromium in headless mode against the Vite dev server. The critical-flow specs cover the public intro page, sign up, login, create entry, edit entry, delete entry, and import/export browser flows using stateful mocked API responses so they stay deterministic in local development and CI.
 
 ### Backend Tests Only
 ```bash

@@ -12,7 +12,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { DiariesService } from './diaries.service';
-import { CreateDiaryDto, UpdateDiaryDto, DiaryResponseDto } from './dto';
+import { CreateDiaryDto, UpdateDiaryDto, DiaryResponseDto, ReorderDiariesDto } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 
@@ -77,5 +77,15 @@ export class DiariesController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<DiaryResponseDto> {
     return this.diariesService.setDefault(user.userId, id);
+  }
+
+  @Patch('reorder')
+  @ApiOperation({ summary: 'Reorder diaries' })
+  @ApiResponse({ status: 200, description: 'Diaries reordered' })
+  async reorder(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ReorderDiariesDto,
+  ): Promise<{ success: boolean }> {
+    return this.diariesService.reorder(user.userId, dto.orderedIds);
   }
 }

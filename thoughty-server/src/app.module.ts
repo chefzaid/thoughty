@@ -10,6 +10,7 @@ import { StatsModule } from './modules/stats';
 import { UserConfigModule } from './modules/config';
 import { IoModule } from './modules/io';
 import { AttachmentsModule } from './modules/attachments';
+import { AiModule } from './modules/ai';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AttachmentsModule } from './modules/attachments';
     UserConfigModule,
     IoModule,
     AttachmentsModule,
+    AiModule,
   ],
   providers: [
     // Global JWT Auth Guard

@@ -11,10 +11,12 @@ interface AuthPageProps {
   readonly t: TranslationFunction;
   readonly theme?: 'light' | 'dark';
   readonly onAuthSuccess?: () => void;
+  readonly initialMode?: 'login' | 'register';
+  readonly onBack?: () => void;
 }
 
-function AuthPage({ t, theme, onAuthSuccess }: AuthPageProps) {
-  const [isLogin, setIsLogin] = useState<boolean>(true);
+function AuthPage({ t, theme, onAuthSuccess, initialMode = 'login', onBack }: AuthPageProps) {
+  const [isLogin, setIsLogin] = useState<boolean>(initialMode !== 'register');
   const [showForgotPassword, setShowForgotPassword] = useState<boolean>(false);
   const [identifier, setIdentifier] = useState<string>('');
   const [email, setEmail] = useState<string>('');
@@ -40,6 +42,10 @@ function AuthPage({ t, theme, onAuthSuccess }: AuthPageProps) {
       document.body.appendChild(script);
     }
   }, [googleClientId]);
+
+  useEffect(() => {
+    setIsLogin(initialMode !== 'register');
+  }, [initialMode]);
 
   const validateForm = (): boolean => {
     const validationError = validateAuthForm({
@@ -145,6 +151,11 @@ function AuthPage({ t, theme, onAuthSuccess }: AuthPageProps) {
   return (
     <div className={`auth-page ${isDark ? 'dark' : 'light'}`}>
       <div className="auth-container">
+        {onBack && (
+          <button type="button" className="auth-back-btn" onClick={onBack}>
+            {t('back')}
+          </button>
+        )}
         <div className="auth-header">
           <img src="/thoughty-logo.svg" alt="Thoughty" className="auth-logo" />
           <h1 className="auth-title">Thoughty</h1>

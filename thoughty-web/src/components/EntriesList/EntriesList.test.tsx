@@ -32,6 +32,7 @@ describe('EntriesList', () => {
         onEdit: vi.fn(),
         onDelete: vi.fn(),
         onToggleVisibility: vi.fn(),
+        onToggleFavorite: vi.fn(),
         editingEntry: null as Entry | null,
         editText: '',
         setEditText: vi.fn(),

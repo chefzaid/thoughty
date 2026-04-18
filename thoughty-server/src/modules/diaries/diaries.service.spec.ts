@@ -36,6 +36,7 @@ describe('DiariesService', () => {
       save: jest.fn(),
       delete: jest.fn(),
       update: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
     };
 
     entryRepository = {
@@ -66,7 +67,7 @@ describe('DiariesService', () => {
       expect(result).toHaveLength(2);
       expect(diaryRepository.find).toHaveBeenCalledWith({
         where: { userId: 1 },
-        order: { isDefault: 'DESC', createdAt: 'ASC' },
+        order: { position: 'ASC', createdAt: 'ASC' },
       });
     });
 
@@ -96,6 +97,7 @@ describe('DiariesService', () => {
         icon: '📓',
         visibility: 'private',
         isDefault: false,
+        position: 0,
       });
     });
 
@@ -288,6 +290,44 @@ describe('DiariesService', () => {
       diaryRepository.findOne.mockResolvedValue(null);
 
       await expect(service.setDefault(1, 999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('reorder', () => {
+    it('should reorder diaries successfully', async () => {
+      diaryRepository.find.mockResolvedValue([
+        { id: 1, userId: 1 },
+        { id: 2, userId: 1 },
+        { id: 3, userId: 1 },
+      ]);
+      diaryRepository.update.mockResolvedValue({ affected: 1 });
+
+      const result = await service.reorder(1, [3, 1, 2]);
+
+      expect(result).toEqual({ success: true });
+      expect(diaryRepository.update).toHaveBeenCalledTimes(3);
+      expect(diaryRepository.update).toHaveBeenCalledWith({ id: 3, userId: 1 }, { position: 0 });
+      expect(diaryRepository.update).toHaveBeenCalledWith({ id: 1, userId: 1 }, { position: 1 });
+      expect(diaryRepository.update).toHaveBeenCalledWith({ id: 2, userId: 1 }, { position: 2 });
+    });
+
+    it('should throw BadRequestException if diary does not belong to user', async () => {
+      diaryRepository.find.mockResolvedValue([
+        { id: 1, userId: 1 },
+        { id: 2, userId: 1 },
+      ]);
+
+      await expect(service.reorder(1, [1, 2, 999])).rejects.toThrow(BadRequestException);
+    });
+
+    it('should handle empty orderedIds', async () => {
+      diaryRepository.find.mockResolvedValue([{ id: 1, userId: 1 }]);
+      diaryRepository.update.mockResolvedValue({ affected: 1 });
+
+      const result = await service.reorder(1, []);
+
+      expect(result).toEqual({ success: true });
+      expect(diaryRepository.update).not.toHaveBeenCalled();
     });
   });
 });

@@ -147,6 +147,14 @@ BEGIN
                    WHERE table_name = 'entries' AND column_name = 'format') THEN
         ALTER TABLE entries ADD COLUMN format VARCHAR(20) DEFAULT 'plain';
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'entries' AND column_name = 'is_favorite') THEN
+        ALTER TABLE entries ADD COLUMN is_favorite BOOLEAN DEFAULT false;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'diaries' AND column_name = 'position') THEN
+        ALTER TABLE diaries ADD COLUMN position INTEGER DEFAULT 0;
+    END IF;
 END $$;
 
 -- Create refresh_tokens table for JWT refresh token rotation
@@ -172,6 +180,7 @@ CREATE INDEX IF NOT EXISTS idx_entries_date ON entries(date);
 CREATE INDEX IF NOT EXISTS idx_entries_visibility ON entries(visibility);
 CREATE INDEX IF NOT EXISTS idx_entries_user_id ON entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_entries_diary_id ON entries(diary_id);
+CREATE INDEX IF NOT EXISTS idx_entries_is_favorite ON entries(is_favorite);
 CREATE INDEX IF NOT EXISTS idx_settings_user_id ON settings(user_id);
 CREATE INDEX IF NOT EXISTS idx_diaries_user_id ON diaries(user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
@@ -190,6 +199,22 @@ CREATE TABLE IF NOT EXISTS attachments (
 
 CREATE INDEX IF NOT EXISTS idx_attachments_user_id ON attachments(user_id);
 CREATE INDEX IF NOT EXISTS idx_attachments_entry_id ON attachments(entry_id);
+
+-- Create entry_revisions table for modification history
+CREATE TABLE IF NOT EXISTS entry_revisions (
+    id SERIAL PRIMARY KEY,
+    entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    tags TEXT,
+    date VARCHAR(10) NOT NULL,
+    format VARCHAR(20) DEFAULT 'plaintext',
+    visibility VARCHAR(20) DEFAULT 'private',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_entry_revisions_entry_id ON entry_revisions(entry_id);
+CREATE INDEX IF NOT EXISTS idx_entry_revisions_user_id ON entry_revisions(user_id);
 `;
 
 async function migrate(): Promise<void> {

@@ -33,6 +33,7 @@ describe('DiaryManager', () => {
         onUpdateDiary: vi.fn().mockResolvedValue({}),
         onDeleteDiary: vi.fn().mockResolvedValue({}),
         onSetDefault: vi.fn().mockResolvedValue({}),
+        onReorderDiaries: vi.fn().mockResolvedValue({}),
         onBack: vi.fn(),
         theme: 'dark' as const,
         t: mockT

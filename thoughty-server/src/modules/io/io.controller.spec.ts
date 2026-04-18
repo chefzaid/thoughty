@@ -58,6 +58,7 @@ describe('IoController', () => {
       ioService.export!.mockResolvedValue({
         content: 'exported data',
         filename: 'diary.txt',
+        contentType: 'text/plain; charset=utf-8',
       });
 
       const mockRes = {
@@ -67,7 +68,7 @@ describe('IoController', () => {
 
       await controller.export(mockUser as any, query, mockRes);
 
-      expect(ioService.export).toHaveBeenCalledWith(1, 1);
+      expect(ioService.export).toHaveBeenCalledWith(1, 1, undefined, undefined);
       expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/plain; charset=utf-8');
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',

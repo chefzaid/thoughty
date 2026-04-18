@@ -13,6 +13,8 @@ import DiaryManager from './components/DiaryManager/DiaryManager';
 import AuthPage from './components/AuthPage/AuthPage';
 import JournalView from './components/JournalView/JournalView';
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
+import IntroPage from './components/IntroPage/IntroPage';
+import AiChatModal from './components/AiChatModal/AiChatModal';
 
 // Context and Hooks
 import { useAuth } from './contexts/AuthContext';
@@ -23,14 +25,16 @@ import {
   useEntryForm, 
   useEntryEdit, 
   useDeleteModal,
-  useBulkSelect
+  useBulkSelect,
+  useApiServices
 } from './hooks/useAppState';
 
 // Types
-import type { ViewType, SourceEntryInfo, Config } from './types';
+import type { ViewType, SourceEntryInfo, Config, Entry } from './types';
 
 function App() {
   const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
+  const [authView, setAuthView] = useState<'intro' | 'login' | 'register'>('intro');
   
   // Navigation State
   const [currentView, setCurrentView] = useState<ViewType>('journal');
@@ -43,6 +47,7 @@ function App() {
     fetchConfig, 
     fetchProfileStats, 
     updateConfig, 
+    downloadUserData,
     t 
   } = useConfig(isAuthenticated);
 
@@ -55,7 +60,8 @@ function App() {
     handleCreateDiary,
     handleUpdateDiary,
     handleDeleteDiary,
-    handleSetDefaultDiary
+    handleSetDefaultDiary,
+    handleReorderDiaries
   } = useDiaries(isAuthenticated);
 
   // Entries management
@@ -78,6 +84,8 @@ function App() {
     setFilterDateObj,
     filterVisibility,
     setFilterVisibility,
+    filterFavorites,
+    setFilterFavorites,
     availableYears,
     availableMonths,
     setTargetEntryId,
@@ -89,7 +97,9 @@ function App() {
     fetchEntryDates,
     getLimit,
     entriesService,
-    toggleVisibility
+    toggleVisibility,
+    toggleFavorite,
+    fetchEntryHistory
   } = useEntries(isAuthenticated, config, currentDiaryId);
 
   // Entry form
@@ -105,6 +115,10 @@ function App() {
     format,
     setFormat,
     formError,
+    suggestingTags,
+    handleSuggestTags,
+    fixingWriting,
+    handleFixWriting,
     handleSubmit,
     pendingFiles,
     uploadedAttachments,
@@ -138,7 +152,7 @@ function App() {
     addEditPendingFile,
     removeEditPendingFile,
     removeEditAttachment
-  } = useEntryEdit(fetchEntries);
+  } = useEntryEdit(config, fetchEntries);
 
   // Delete modal
   const {
@@ -218,6 +232,23 @@ function App() {
     fetchProfileStats();
   }, [fetchConfig, fetchDiaries, fetchEntryDates, fetchProfileStats]);
 
+  const handleLogout = useCallback(async () => {
+    await logout();
+    setAuthView('intro');
+  }, [logout]);
+
+  // AI Chat
+  const { aiService } = useApiServices();
+  const [chatEntry, setChatEntry] = useState<Entry | null>(null);
+
+  const handleDiscuss = useCallback((entry: Entry) => {
+    setChatEntry(entry);
+  }, []);
+
+  const handleAiChat = useCallback(async (entryContent: string, messages: { role: 'user' | 'assistant'; content: string }[]) => {
+    return aiService.chat(entryContent, messages);
+  }, [aiService]);
+
   // Render view content
   const renderViewContent = () => {
     switch (currentView) {
@@ -226,6 +257,7 @@ function App() {
           <ProfilePage
             config={config}
             onUpdateConfig={(newConfig: Config) => updateConfig(newConfig)}
+            onDownloadData={downloadUserData}
             onBack={() => setCurrentView('journal')}
             t={t}
             stats={profileStats ?? undefined}
@@ -239,6 +271,7 @@ function App() {
             onUpdateDiary={handleUpdateDiary}
             onDeleteDiary={(id: number) => handleDeleteDiary(id, fetchEntries)}
             onSetDefault={handleSetDefaultDiary}
+            onReorderDiaries={handleReorderDiaries}
             onBack={() => setCurrentView('journal')}
             theme={config.theme}
             t={t}
@@ -298,6 +331,10 @@ function App() {
             setFormat={setFormat}
             allTags={allTags}
             formError={formError}
+            suggestingTags={suggestingTags}
+            onSuggestTags={handleSuggestTags}
+            fixingWriting={fixingWriting}
+            onFixWriting={handleFixWriting}
             onSubmit={handleSubmit}
             pendingFiles={pendingFiles}
             uploadedAttachments={uploadedAttachments}
@@ -312,6 +349,8 @@ function App() {
             setFilterDateObj={setFilterDateObj}
             filterVisibility={filterVisibility}
             setFilterVisibility={setFilterVisibility}
+            filterFavorites={filterFavorites}
+            setFilterFavorites={setFilterFavorites}
             entryDates={entryDates}
             setPage={setPage}
             loading={loading}
@@ -320,6 +359,7 @@ function App() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onToggleVisibility={toggleVisibility}
+            onToggleFavorite={toggleFavorite}
             editingEntry={editingEntry}
             editText={editText}
             setEditText={setEditText}
@@ -356,6 +396,8 @@ function App() {
             availableYears={availableYears}
             availableMonths={availableMonths}
             onNavigateToFirst={handleNavigateToFirst}
+            onFetchHistory={fetchEntryHistory}
+            onDiscuss={handleDiscuss}
             config={config}
             t={t}
           />
@@ -370,11 +412,24 @@ function App() {
 
   // Show auth page if not authenticated
   if (!isAuthenticated) {
+    if (authView === 'intro') {
+      return (
+        <IntroPage
+          theme={config.theme || 'dark'}
+          t={t}
+          onSignIn={() => setAuthView('login')}
+          onSignUp={() => setAuthView('register')}
+        />
+      );
+    }
+
     return (
       <AuthPage
         t={t}
         theme={config.theme || 'dark'}
+        initialMode={authView === 'register' ? 'register' : 'login'}
         onAuthSuccess={handleAuthSuccess}
+        onBack={() => setAuthView('intro')}
       />
     );
   }
@@ -389,7 +444,7 @@ function App() {
           name={config.name || user?.username || 'User'}
           avatarUrl={config.avatarUrl || user?.avatarUrl}
           t={t}
-          onLogout={logout}
+          onLogout={handleLogout}
         />
 
         <ConfirmModal
@@ -409,6 +464,17 @@ function App() {
           message={t('bulkDeleteMessage', { count: selectedIds.size })}
           theme={config.theme}
         />
+
+        {chatEntry && (
+          <AiChatModal
+            entry={chatEntry}
+            isOpen={!!chatEntry}
+            onClose={() => setChatEntry(null)}
+            onSend={handleAiChat}
+            theme={config.theme}
+            t={t}
+          />
+        )}
 
         {renderViewContent()}
 

@@ -13,8 +13,14 @@ let mockAuthState = {
     login: vi.fn(),
     logout: vi.fn(),
     register: vi.fn(),
+    signInWithGoogle: vi.fn(),
+    forgotPassword: vi.fn(),
+    changePassword: vi.fn(),
+    resetPassword: vi.fn(),
+    deleteAccount: vi.fn(),
     authFetch: vi.fn(),
-    getAccessToken: () => 'mock-token'
+    getAccessToken: () => 'mock-token',
+    googleClientId: ''
 };
 
 // Mock the AuthContext
@@ -43,7 +49,8 @@ describe('App Integration Tests', () => {
 
     const mockConfig = {
         name: 'Test User',
-        theme: 'dark'
+        theme: 'dark',
+        autoTagMaxTags: '0'
     };
 
     beforeEach(() => {
@@ -59,8 +66,14 @@ describe('App Integration Tests', () => {
             login: vi.fn(),
             logout: vi.fn(),
             register: vi.fn(),
+            signInWithGoogle: vi.fn(),
+            forgotPassword: vi.fn(),
+            changePassword: vi.fn(),
+            resetPassword: vi.fn(),
+            deleteAccount: vi.fn(),
             authFetch: vi.fn(),
-            getAccessToken: () => 'mock-token'
+            getAccessToken: () => 'mock-token',
+            googleClientId: ''
         };
 
         // Default mock responses
@@ -99,6 +112,41 @@ describe('App Integration Tests', () => {
     afterEach(() => {
         vi.restoreAllMocks();
         localStorage.clear();
+    });
+
+    describe('Public intro flow', () => {
+        it('shows the public intro page when the user is not authenticated', () => {
+            mockAuthState = {
+                ...mockAuthState,
+                user: null,
+                isAuthenticated: false
+            };
+
+            render(<App />);
+
+            expect(screen.getByText('A journal that feels calm when you write and sharp when you search.')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Sign Up' })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument();
+        });
+
+        it('navigates from the intro page to sign in and sign up modes', async () => {
+            const user = userEvent.setup();
+            mockAuthState = {
+                ...mockAuthState,
+                user: null,
+                isAuthenticated: false
+            };
+
+            render(<App />);
+
+            await user.click(screen.getByRole('button', { name: 'Sign In' }));
+            expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
+            expect(screen.getByText('Welcome back')).toBeInTheDocument();
+
+            await user.click(screen.getByRole('button', { name: 'Back' }));
+            await user.click(screen.getByRole('button', { name: 'Sign Up' }));
+            expect(screen.getByText('Create your account')).toBeInTheDocument();
+        });
     });
 
     describe('Initial render', () => {
@@ -167,6 +215,47 @@ describe('App Integration Tests', () => {
 
             await waitFor(() => {
                 expect(screen.getByText('Please add at least one tag')).toBeInTheDocument();
+            });
+        });
+
+        it('allows saving without manual tags when auto-tagging is enabled', async () => {
+            const user = userEvent.setup();
+            mockFetch.mockImplementation((url: string, options?: RequestInit) => {
+                if (url === '/api/config') {
+                    return Promise.resolve({
+                        ok: true,
+                        json: () => Promise.resolve({ ...mockConfig, autoTagMaxTags: '3' })
+                    });
+                }
+                if (url === '/api/entries' && options?.method === 'POST') {
+                    return Promise.resolve({
+                        ok: true,
+                        json: () => Promise.resolve({ success: true, entryId: 3 })
+                    });
+                }
+                if (typeof url === 'string' && url.includes('/api/entries')) {
+                    return Promise.resolve({
+                        ok: true,
+                        json: () => Promise.resolve(mockEntriesResponse)
+                    });
+                }
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ success: true })
+                });
+            });
+
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByPlaceholderText("What's on your mind?")).toBeInTheDocument();
+            });
+
+            await user.type(screen.getByPlaceholderText("What's on your mind?"), 'Entry without manual tags');
+            await user.click(screen.getByRole('button', { name: 'Save' }));
+
+            await waitFor(() => {
+                expect(screen.queryByText('Please add at least one tag')).not.toBeInTheDocument();
             });
         });
     });

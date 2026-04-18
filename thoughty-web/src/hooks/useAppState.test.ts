@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import type { FormEvent } from 'react';
+import type { FormEventHandler } from 'react';
 import { 
   useApiServices, 
   useConfig, 
@@ -29,7 +29,8 @@ vi.mock('../services/api', () => ({
   createConfigService: vi.fn(() => ({
     fetchConfig: vi.fn(),
     fetchProfileStats: vi.fn(),
-    updateConfig: vi.fn()
+    updateConfig: vi.fn(),
+    downloadUserData: vi.fn()
   })),
   createEntriesService: vi.fn(() => ({
     fetchEntries: vi.fn(),
@@ -42,14 +43,17 @@ vi.mock('../services/api', () => ({
     bulkOperation: vi.fn(),
     navigateToFirst: vi.fn(),
     navigateByDate: vi.fn(),
-    navigateById: vi.fn()
+    navigateById: vi.fn(),
+    toggleFavorite: vi.fn(),
+    fetchEntryHistory: vi.fn()
   })),
   createDiariesService: vi.fn(() => ({
     fetchDiaries: vi.fn(),
     createDiary: vi.fn(),
     updateDiary: vi.fn(),
     deleteDiary: vi.fn(),
-    setDefaultDiary: vi.fn()
+    setDefaultDiary: vi.fn(),
+    reorderDiaries: vi.fn()
   })),
   createAttachmentsService: vi.fn(() => ({
     uploadAttachment: vi.fn(),
@@ -57,6 +61,9 @@ vi.mock('../services/api', () => ({
     linkAttachment: vi.fn(),
     deleteAttachment: vi.fn(),
     getAttachmentUrl: vi.fn()
+  })),
+  createAiService: vi.fn(() => ({
+    suggestTags: vi.fn()
   }))
 }));
 
@@ -82,6 +89,7 @@ describe('useAppState Hooks', () => {
       expect(result.current.entriesService).toBeDefined();
       expect(result.current.diariesService).toBeDefined();
       expect(result.current.attachmentsService).toBeDefined();
+      expect(result.current.aiService).toBeDefined();
     });
 
     it('memoizes services correctly', () => {
@@ -331,7 +339,7 @@ describe('useAppState Hooks', () => {
   });
 
   describe('useEntryForm', () => {
-    const mockConfig = { defaultVisibility: 'private' as const };
+    const mockConfig = { defaultVisibility: 'private' as const, autoTagMaxTags: '0' };
     const mockOnSuccess = vi.fn();
 
     it('initializes with default state', () => {
@@ -396,7 +404,7 @@ describe('useAppState Hooks', () => {
     it('handleSubmit sets error when text is empty', async () => {
       const { result } = renderHook(() => useEntryForm(mockConfig, 1, mockOnSuccess));
 
-      const mockEvent = { preventDefault: vi.fn() } as unknown as FormEvent<HTMLFormElement>;
+      const mockEvent = { preventDefault: vi.fn() } as Parameters<FormEventHandler<HTMLFormElement>>[0];
 
       await act(async () => {
         await result.current.handleSubmit(mockEvent);
@@ -412,7 +420,7 @@ describe('useAppState Hooks', () => {
         result.current.setNewEntryText('Test content');
       });
 
-      const mockEvent = { preventDefault: vi.fn() } as unknown as FormEvent<HTMLFormElement>;
+      const mockEvent = { preventDefault: vi.fn() } as Parameters<FormEventHandler<HTMLFormElement>>[0];
 
       await act(async () => {
         await result.current.handleSubmit(mockEvent);
@@ -420,13 +428,46 @@ describe('useAppState Hooks', () => {
 
       expect(result.current.formError).toBe('Please add at least one tag');
     });
+
+    it('handleSubmit allows empty tags when automatic tagging is enabled', async () => {
+      const { createEntriesService } = await import('../services/api');
+      vi.mocked(createEntriesService).mockReturnValue({
+        fetchEntries: vi.fn(),
+        fetchEntryDates: vi.fn(),
+        fetchYearsMonths: vi.fn(),
+        createEntry: vi.fn().mockResolvedValue({ success: true, entryId: 42 }),
+        updateEntry: vi.fn(),
+        deleteEntry: vi.fn(),
+        toggleVisibility: vi.fn(),
+        toggleFavorite: vi.fn(),
+        bulkOperation: vi.fn(),
+        navigateToFirst: vi.fn(),
+        navigateByDate: vi.fn(),
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn()
+      });
+
+      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', autoTagMaxTags: '3' }, 1, mockOnSuccess));
+
+      act(() => {
+        result.current.setNewEntryText('Auto-tag this draft');
+      });
+
+      const mockEvent = { preventDefault: vi.fn() } as Parameters<FormEventHandler<HTMLFormElement>>[0];
+
+      await act(async () => {
+        await result.current.handleSubmit(mockEvent);
+      });
+
+      expect(result.current.formError).toBe('');
+    });
   });
 
   describe('useEntryEdit', () => {
     const mockOnSave = vi.fn();
 
     it('initializes with null editingEntry', () => {
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
 
       expect(result.current.editingEntry).toBeNull();
       expect(result.current.editText).toBe('');
@@ -435,7 +476,7 @@ describe('useAppState Hooks', () => {
     });
 
     it('handleEdit sets editing state', () => {
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
 
       const mockEntry = {
         id: 1,
@@ -457,7 +498,7 @@ describe('useAppState Hooks', () => {
     });
 
     it('handleEdit handles date with T separator', () => {
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
 
       const mockEntry = {
         id: 1,
@@ -477,7 +518,7 @@ describe('useAppState Hooks', () => {
     });
 
     it('handleCancelEdit clears editing state', () => {
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
 
       const mockEntry = {
         id: 1,
@@ -502,7 +543,7 @@ describe('useAppState Hooks', () => {
     });
 
     it('handleSaveEdit shows alert when text empty', async () => {
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
 
       const mockEntry = {
         id: 1,
@@ -529,7 +570,7 @@ describe('useAppState Hooks', () => {
     });
 
     it('handleSaveEdit shows alert when no tags', async () => {
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
 
       const mockEntry = {
         id: 1,
@@ -556,7 +597,7 @@ describe('useAppState Hooks', () => {
     });
 
     it('provides setEditText function', () => {
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
 
       act(() => {
         result.current.setEditText('New text');
@@ -566,7 +607,7 @@ describe('useAppState Hooks', () => {
     });
 
     it('provides setEditTags function', () => {
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
 
       act(() => {
         result.current.setEditTags(['new-tag']);
@@ -576,7 +617,7 @@ describe('useAppState Hooks', () => {
     });
 
     it('provides setEditDate function', () => {
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
       const newDate = new Date('2024-06-15');
 
       act(() => {
@@ -587,7 +628,7 @@ describe('useAppState Hooks', () => {
     });
 
     it('provides setEditVisibility function', () => {
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
 
       act(() => {
         result.current.setEditVisibility('private');
@@ -655,10 +696,12 @@ describe('useAppState Hooks', () => {
         updateEntry: vi.fn(),
         deleteEntry: vi.fn().mockResolvedValue(true),
         toggleVisibility: vi.fn(),
+        toggleFavorite: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn()
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn()
       });
 
       const onDeleteMock = vi.fn();
@@ -686,10 +729,12 @@ describe('useAppState Hooks', () => {
         updateEntry: vi.fn(),
         deleteEntry: vi.fn().mockResolvedValue(false),
         toggleVisibility: vi.fn(),
+        toggleFavorite: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn()
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn()
       });
 
       const onDeleteMock = vi.fn();
@@ -708,7 +753,7 @@ describe('useAppState Hooks', () => {
   });
 
   describe('useEntryForm - extended', () => {
-    const mockEvent = { preventDefault: vi.fn() } as unknown as FormEvent<HTMLFormElement>;
+    const mockEvent = { preventDefault: vi.fn() } as Parameters<FormEventHandler<HTMLFormElement>>[0];
 
     it('handleSubmit sets error when text is empty', async () => {
       const mockOnSuccess = vi.fn();
@@ -750,10 +795,12 @@ describe('useAppState Hooks', () => {
         updateEntry: vi.fn(),
         deleteEntry: vi.fn(),
         toggleVisibility: vi.fn(),
+        toggleFavorite: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn()
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn()
       });
 
       const mockOnSuccess = vi.fn();
@@ -785,10 +832,12 @@ describe('useAppState Hooks', () => {
         updateEntry: vi.fn(),
         deleteEntry: vi.fn(),
         toggleVisibility: vi.fn(),
+        toggleFavorite: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn()
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn()
       });
 
       const mockOnSuccess = vi.fn();
@@ -807,6 +856,50 @@ describe('useAppState Hooks', () => {
 
       expect(result.current.formError).toBe('Failed to save entry. Please try again.');
     });
+
+    it('handleSuggestTags merges AI suggestions into the existing tags', async () => {
+      const { createAiService } = await import('../services/api');
+      vi.mocked(createAiService).mockReturnValue({
+        suggestTags: vi.fn().mockResolvedValue(['focus', 'writing'])
+      });
+
+      const mockOnSuccess = vi.fn();
+      const config = { defaultVisibility: 'private' as const, entriesPerPage: 10 };
+      const { result } = renderHook(() => useEntryForm(config, 1, mockOnSuccess));
+
+      act(() => {
+        result.current.setNewEntryText('I wrote about focus and deep work all morning.');
+        result.current.setTags(['journal']);
+      });
+
+      await act(async () => {
+        await result.current.handleSuggestTags();
+      });
+
+      expect(result.current.tags).toEqual(['journal', 'focus', 'writing']);
+      expect(result.current.formError).toBe('');
+    });
+
+    it('handleSuggestTags surfaces a configuration error when the AI request fails', async () => {
+      const { createAiService } = await import('../services/api');
+      vi.mocked(createAiService).mockReturnValue({
+        suggestTags: vi.fn().mockResolvedValue(null)
+      });
+
+      const mockOnSuccess = vi.fn();
+      const config = { defaultVisibility: 'private' as const, entriesPerPage: 10 };
+      const { result } = renderHook(() => useEntryForm(config, 1, mockOnSuccess));
+
+      act(() => {
+        result.current.setNewEntryText('This draft should trigger the AI error path.');
+      });
+
+      await act(async () => {
+        await result.current.handleSuggestTags();
+      });
+
+      expect(result.current.formError).toBe('Unable to suggest tags. Check your OpenRouter API key and try again.');
+    });
   });
 
   describe('useEntryEdit - handleSaveEdit', () => {
@@ -820,14 +913,16 @@ describe('useAppState Hooks', () => {
         updateEntry: vi.fn().mockResolvedValue(true),
         deleteEntry: vi.fn(),
         toggleVisibility: vi.fn(),
+        toggleFavorite: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn()
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn()
       });
 
       const mockOnSave = vi.fn();
-      const { result } = renderHook(() => useEntryEdit(mockOnSave));
+      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
 
       // Start editing
       const entry = { id: 1, content: 'Original', tags: ['tag1'], date: '2024-01-01', visibility: 'private' as const };
@@ -863,7 +958,8 @@ describe('useAppState Hooks', () => {
         createDiary: vi.fn().mockResolvedValue({ success: false, error: 'Failed' }),
         updateDiary: vi.fn(),
         deleteDiary: vi.fn(),
-        setDefaultDiary: vi.fn()
+        setDefaultDiary: vi.fn(),
+        reorderDiaries: vi.fn()
       });
 
       const { result } = renderHook(() => useDiaries(true));
@@ -882,7 +978,8 @@ describe('useAppState Hooks', () => {
         createDiary: vi.fn(),
         updateDiary: vi.fn().mockResolvedValue({ success: false, error: 'Update failed' }),
         deleteDiary: vi.fn(),
-        setDefaultDiary: vi.fn()
+        setDefaultDiary: vi.fn(),
+        reorderDiaries: vi.fn()
       });
 
       const { result } = renderHook(() => useDiaries(true));
@@ -901,7 +998,8 @@ describe('useAppState Hooks', () => {
         createDiary: vi.fn(),
         updateDiary: vi.fn(),
         deleteDiary: vi.fn().mockResolvedValue({ success: true }),
-        setDefaultDiary: vi.fn()
+        setDefaultDiary: vi.fn(),
+        reorderDiaries: vi.fn()
       });
 
       const { result } = renderHook(() => useDiaries(true));
@@ -932,7 +1030,8 @@ describe('useAppState Hooks', () => {
         createDiary: vi.fn(),
         updateDiary: vi.fn(),
         deleteDiary: vi.fn(),
-        setDefaultDiary: vi.fn().mockResolvedValue({ success: false, error: 'Set default failed' })
+        setDefaultDiary: vi.fn().mockResolvedValue({ success: false, error: 'Set default failed' }),
+        reorderDiaries: vi.fn()
       });
 
       const { result } = renderHook(() => useDiaries(true));
@@ -951,7 +1050,8 @@ describe('useAppState Hooks', () => {
       vi.mocked(createConfigService).mockReturnValue({
         fetchConfig: vi.fn().mockResolvedValue({ theme: 'dark', language: 'en' }),
         fetchProfileStats: vi.fn().mockResolvedValue(null),
-        updateConfig: vi.fn().mockResolvedValue({ success: true })
+        updateConfig: vi.fn().mockResolvedValue({ success: true }),
+        downloadUserData: vi.fn().mockResolvedValue(true)
       });
 
       const { result } = renderHook(() => useConfig(true));
@@ -973,7 +1073,8 @@ describe('useAppState Hooks', () => {
       vi.mocked(createConfigService).mockReturnValue({
         fetchConfig: vi.fn().mockResolvedValue({ theme: 'light', language: 'en' }),
         fetchProfileStats: vi.fn().mockResolvedValue(null),
-        updateConfig: vi.fn()
+        updateConfig: vi.fn(),
+        downloadUserData: vi.fn().mockResolvedValue(true)
       });
 
       const { result } = renderHook(() => useConfig(true));
@@ -1108,9 +1209,11 @@ describe('useAppState Hooks', () => {
         deleteEntry: vi.fn(),
         toggleVisibility: vi.fn(),
         bulkOperation: mockBulkOperation,
+        toggleFavorite: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn()
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn()
       });
 
       const onComplete = vi.fn();
@@ -1158,9 +1261,11 @@ describe('useAppState Hooks', () => {
         deleteEntry: vi.fn(),
         toggleVisibility: vi.fn(),
         bulkOperation: mockBulkOperation,
+        toggleFavorite: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn()
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn()
       });
 
       const onComplete = vi.fn();
@@ -1197,9 +1302,11 @@ describe('useAppState Hooks', () => {
         deleteEntry: vi.fn(),
         toggleVisibility: vi.fn(),
         bulkOperation: mockBulkOperation,
+        toggleFavorite: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
-        navigateById: vi.fn()
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn()
       });
 
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));

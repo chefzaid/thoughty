@@ -1,8 +1,23 @@
-import { useState, useEffect, useCallback, useMemo, useOptimistic, useTransition, type FormEvent } from 'react';
+import { useState, useEffect, useCallback, useMemo, useOptimistic, useTransition } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { createAuthFetch, createConfigService, createEntriesService, createDiariesService, createAttachmentsService } from '../services/api';
+import { createAuthFetch, createConfigService, createEntriesService, createDiariesService, createAttachmentsService, createAiService } from '../services/api';
 import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo, Attachment } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
+
+const getAutoTagLimit = (value: string | number | undefined): number => {
+  const parsed = Number.parseInt(String(value ?? '0'), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return 0;
+  }
+  return Math.min(parsed, 10);
+};
+
+const formatEntryDate = (date: Date): string => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
 
 /**
  * Hook to create authenticated API services
@@ -18,8 +33,9 @@ export const useApiServices = () => {
   const entriesService = useMemo(() => createEntriesService(authFetchHelper), [authFetchHelper]);
   const diariesService = useMemo(() => createDiariesService(authFetchHelper), [authFetchHelper]);
   const attachmentsService = useMemo(() => createAttachmentsService(authFetchHelper), [authFetchHelper]);
+  const aiService = useMemo(() => createAiService(authFetchHelper), [authFetchHelper]);
 
-  return { authFetchHelper, configService, entriesService, diariesService, attachmentsService };
+  return { authFetchHelper, configService, entriesService, diariesService, attachmentsService, aiService };
 };
 
 /**
@@ -68,6 +84,10 @@ export const useConfig = (isAuthenticated: boolean) => {
     return getTranslation(config.language || 'en', key as TranslationKey, params);
   }, [config.language]);
 
+  const downloadUserData = useCallback(async () => {
+    return configService.downloadUserData();
+  }, [configService]);
+
   return {
     config,
     setConfig,
@@ -75,6 +95,7 @@ export const useConfig = (isAuthenticated: boolean) => {
     fetchConfig,
     fetchProfileStats,
     updateConfig,
+    downloadUserData,
     t
   };
 };
@@ -125,6 +146,12 @@ export const useDiaries = (isAuthenticated: boolean) => {
     await fetchDiaries();
   }, [diariesService, fetchDiaries]);
 
+  const handleReorderDiaries = useCallback(async (orderedIds: number[]) => {
+    const result = await diariesService.reorderDiaries(orderedIds);
+    if (!result.success) throw new Error(result.error);
+    await fetchDiaries();
+  }, [diariesService, fetchDiaries]);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchDiaries();
@@ -139,7 +166,8 @@ export const useDiaries = (isAuthenticated: boolean) => {
     handleCreateDiary,
     handleUpdateDiary,
     handleDeleteDiary,
-    handleSetDefaultDiary
+    handleSetDefaultDiary,
+    handleReorderDiaries
   };
 };
 
@@ -169,6 +197,7 @@ export const useEntries = (
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [filterDateObj, setFilterDateObj] = useState<Date | null>(null);
   const [filterVisibility, setFilterVisibility] = useState<'all' | 'public' | 'private'>('all');
+  const [filterFavorites, setFilterFavorites] = useState<boolean>(false);
   
   // Navigation state
   const [availableYears, setAvailableYears] = useState<number[]>([]);
@@ -203,6 +232,7 @@ export const useEntries = (
       filterTags,
       filterDate,
       filterVisibility: filterVisibility === 'all' ? '' : filterVisibility,
+      favorites: filterFavorites,
       diaryId: currentDiaryId
     });
     
@@ -212,7 +242,7 @@ export const useEntries = (
       setAllTags(result.allTags);
     }
     setLoading(false);
-  }, [isAuthenticated, entriesService, page, search, filterTags, filterDateObj, filterVisibility, currentDiaryId, getLimit]);
+  }, [isAuthenticated, entriesService, page, search, filterTags, filterDateObj, filterVisibility, filterFavorites, currentDiaryId, getLimit]);
 
   const fetchYearsMonths = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -241,6 +271,18 @@ export const useEntries = (
     });
   }, [entriesService, fetchEntries, addOptimistic, startVisibilityTransition]);
 
+  const toggleFavorite = useCallback(async (entry: Entry) => {
+    const newFavorite = !entry.is_favorite;
+    const success = await entriesService.toggleFavorite(entry.id, newFavorite);
+    if (success) {
+      await fetchEntries();
+    }
+  }, [entriesService, fetchEntries]);
+
+  const fetchEntryHistory = useCallback(async (entryId: number) => {
+    return entriesService.fetchEntryHistory(entryId);
+  }, [entriesService]);
+
   // Group entries by date
   const groupedEntries: GroupedEntries = useMemo(() => {
     const grouped = optimisticEntries.reduce((acc: GroupedEntries, entry) => {
@@ -266,7 +308,7 @@ export const useEntries = (
   // Fetch entries on dependency change
   useEffect(() => {
     fetchEntries();
-  }, [page, search, filterTags, filterDateObj, filterVisibility, config.entriesPerPage, currentDiaryId, isAuthenticated]);
+  }, [page, search, filterTags, filterDateObj, filterVisibility, filterFavorites, config.entriesPerPage, currentDiaryId, isAuthenticated]);
 
   // Fetch years/months on mount
   useEffect(() => {
@@ -311,6 +353,8 @@ export const useEntries = (
     setFilterDateObj,
     filterVisibility,
     setFilterVisibility,
+    filterFavorites,
+    setFilterFavorites,
     // Navigation
     availableYears,
     availableMonths,
@@ -325,7 +369,9 @@ export const useEntries = (
     fetchEntryDates,
     getLimit,
     entriesService,
-    toggleVisibility
+    toggleVisibility,
+    toggleFavorite,
+    fetchEntryHistory
   };
 };
 
@@ -337,7 +383,7 @@ export const useEntryForm = (
   currentDiaryId: number | null,
   onSuccess: () => void
 ) => {
-  const { entriesService, attachmentsService } = useApiServices();
+  const { entriesService, attachmentsService, aiService } = useApiServices();
   
   const [newEntryText, setNewEntryText] = useState<string>('');
   const [tags, setTags] = useState<string[]>([]);
@@ -345,8 +391,30 @@ export const useEntryForm = (
   const [visibility, setVisibility] = useState<'public' | 'private' | null>(null);
   const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
   const [formError, setFormError] = useState<string>('');
+  const [suggestingTags, setSuggestingTags] = useState<boolean>(false);
+  const [fixingWriting, setFixingWriting] = useState<boolean>(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedAttachments, setUploadedAttachments] = useState<Attachment[]>([]);
+  const autoTagLimit = getAutoTagLimit(config.autoTagMaxTags);
+
+  const resetEntryForm = useCallback(() => {
+    setNewEntryText('');
+    setTags([]);
+    setFormat('plain');
+    setVisibility(config.defaultVisibility || 'private');
+    setPendingFiles([]);
+    setUploadedAttachments([]);
+  }, [config.defaultVisibility]);
+
+  const validateEntryForm = useCallback(() => {
+    if (!newEntryText.trim()) {
+      return 'Please enter some text';
+    }
+    if ((!tags || tags.length === 0) && autoTagLimit === 0) {
+      return 'Please add at least one tag';
+    }
+    return '';
+  }, [newEntryText, tags, autoTagLimit]);
 
   // Set default visibility from config
   useEffect(() => {
@@ -355,23 +423,17 @@ export const useEntryForm = (
     }
   }, [config.defaultVisibility, visibility]);
 
-  const handleSubmit = useCallback(async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = useCallback(async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     setFormError('');
 
-    if (!newEntryText.trim()) {
-      setFormError('Please enter some text');
-      return;
-    }
-    if (!tags || tags.length === 0) {
-      setFormError('Please add at least one tag');
+    const validationError = validateEntryForm();
+    if (validationError) {
+      setFormError(validationError);
       return;
     }
 
-    const yyyy = selectedDate.getFullYear();
-    const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const dd = String(selectedDate.getDate()).padStart(2, '0');
-    const dateStr = `${yyyy}-${mm}-${dd}`;
+    const dateStr = formatEntryDate(selectedDate);
 
     const result = await entriesService.createEntry({
       text: newEntryText,
@@ -400,17 +462,12 @@ export const useEntryForm = (
         }
       }
 
-      setNewEntryText('');
-      setTags([]);
-      setFormat('plain');
-      setVisibility(config.defaultVisibility || 'private');
-      setPendingFiles([]);
-      setUploadedAttachments([]);
+      resetEntryForm();
       onSuccess();
     } else {
       setFormError('Failed to save entry. Please try again.');
     }
-  }, [newEntryText, tags, selectedDate, visibility, format, currentDiaryId, config.defaultVisibility, entriesService, attachmentsService, pendingFiles, uploadedAttachments, onSuccess]);
+  }, [newEntryText, tags, selectedDate, visibility, format, currentDiaryId, entriesService, attachmentsService, pendingFiles, uploadedAttachments, validateEntryForm, resetEntryForm, onSuccess]);
 
   const addPendingFile = useCallback((file: File) => {
     setPendingFiles(prev => [...prev, file]);
@@ -425,6 +482,60 @@ export const useEntryForm = (
     setUploadedAttachments(prev => prev.filter(a => a.id !== attachmentId));
   }, [attachmentsService]);
 
+  const handleSuggestTags = useCallback(async () => {
+    if (!newEntryText.trim()) {
+      setFormError('Write a thought before asking for tag suggestions');
+      return false;
+    }
+
+    setFormError('');
+    setSuggestingTags(true);
+
+    const suggestedTags = await aiService.suggestTags(newEntryText, tags, autoTagLimit || 5);
+
+    setSuggestingTags(false);
+
+    if (suggestedTags === null) {
+      setFormError('Unable to suggest tags. Check your OpenRouter API key and try again.');
+      return false;
+    }
+
+    if (suggestedTags.length === 0) {
+      setFormError('No tag suggestions were returned. Try adding more detail.');
+      return false;
+    }
+
+    setTags((prev) => [...new Set([...prev, ...suggestedTags])]);
+    return true;
+  }, [aiService, newEntryText, tags]);
+
+  const handleFixWriting = useCallback(async () => {
+    if (!newEntryText.trim()) {
+      setFormError('Write a thought before asking for writing fixes');
+      return false;
+    }
+
+    setFormError('');
+    setFixingWriting(true);
+
+    const corrected = await aiService.fixWriting(newEntryText);
+
+    setFixingWriting(false);
+
+    if (corrected === null) {
+      setFormError('Unable to fix writing. Check your OpenRouter API key and try again.');
+      return false;
+    }
+
+    if (corrected === newEntryText) {
+      setFormError('No corrections were needed.');
+      return false;
+    }
+
+    setNewEntryText(corrected);
+    return true;
+  }, [aiService, newEntryText]);
+
   return {
     newEntryText,
     setNewEntryText,
@@ -438,6 +549,10 @@ export const useEntryForm = (
     setFormat,
     formError,
     setFormError,
+    suggestingTags,
+    handleSuggestTags,
+    fixingWriting,
+    handleFixWriting,
     handleSubmit,
     pendingFiles,
     uploadedAttachments,
@@ -450,8 +565,9 @@ export const useEntryForm = (
 /**
  * Hook to manage entry editing
  */
-export const useEntryEdit = (onSave: () => void) => {
+export const useEntryEdit = (config: Config, onSave: () => void) => {
   const { entriesService, attachmentsService } = useApiServices();
+  const autoTagLimit = getAutoTagLimit(config.autoTagMaxTags);
   
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [editText, setEditText] = useState<string>('');
@@ -491,7 +607,7 @@ export const useEntryEdit = (onSave: () => void) => {
   }, []);
 
   const handleSaveEdit = useCallback(async () => {
-    if (!editText.trim() || editTags.length === 0) {
+    if (!editText.trim() || (editTags.length === 0 && autoTagLimit === 0)) {
       alert('Text and at least one tag are required');
       return;
     }
@@ -527,7 +643,7 @@ export const useEntryEdit = (onSave: () => void) => {
     } else {
       alert('Failed to update entry.');
     }
-  }, [editText, editTags, editDate, editVisibility, editFormat, editingEntry, entriesService, attachmentsService, editPendingFiles, editExistingAttachments, handleCancelEdit, onSave]);
+  }, [editText, editTags, editDate, editVisibility, editFormat, editingEntry, autoTagLimit, entriesService, attachmentsService, editPendingFiles, editExistingAttachments, handleCancelEdit, onSave]);
 
   const addEditPendingFile = useCallback((file: File) => {
     setEditPendingFiles(prev => [...prev, file]);

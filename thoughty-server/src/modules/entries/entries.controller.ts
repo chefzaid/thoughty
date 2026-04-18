@@ -17,6 +17,7 @@ import {
   CreateEntryDto,
   UpdateEntryDto,
   UpdateVisibilityDto,
+  UpdateFavoriteDto,
   BulkOperationDto,
   GetEntriesQueryDto,
   GetFirstEntryQueryDto,
@@ -125,6 +126,29 @@ export class EntriesController {
     @Body() dto: UpdateVisibilityDto,
   ) {
     return this.entriesService.updateVisibility(user.userId, id, dto.visibility);
+  }
+
+  @Patch(':id/favorite')
+  @ApiOperation({ summary: 'Toggle favorite status of an entry' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Favorite status updated' })
+  async toggleFavorite(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateFavoriteDto,
+  ) {
+    return this.entriesService.toggleFavorite(user.userId, id, dto.isFavorite);
+  }
+
+  @Get(':id/history')
+  @ApiOperation({ summary: 'Get revision history for an entry' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Entry revision history' })
+  async getHistory(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.entriesService.getRevisions(user.userId, id);
   }
 
   @Delete('all')

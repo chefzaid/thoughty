@@ -16,6 +16,7 @@ export interface Entry {
   tags: string[];
   date: string;
   visibility: 'public' | 'private';
+  is_favorite?: boolean;
   format?: 'plain' | 'markdown';
   diary_id?: number | null;
   diary_name?: string;
@@ -50,6 +51,7 @@ export interface EntryFilters {
   tags?: string[];
   date?: string;
   visibility?: 'all' | 'public' | 'private';
+  favorites?: boolean;
   diaryId?: number | null;
   page?: number;
   limit?: number;
@@ -59,4 +61,15 @@ export interface EntriesResponse {
   entries: Entry[];
   totalPages: number;
   allTags: string[];
+}
+
+export interface EntryRevision {
+  id: number;
+  entryId: number;
+  content: string;
+  tags: string[];
+  date: string;
+  format: string;
+  visibility: string;
+  createdAt: string;
 }

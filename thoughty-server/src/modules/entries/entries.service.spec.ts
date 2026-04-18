@@ -2,12 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { EntriesService } from './entries.service';
-import { Entry, Diary } from '@/database/entities';
+import { Entry, EntryRevision, Diary } from '@/database/entities';
+import { AiService } from '@/modules/ai';
+import { ConfigService } from '@/modules/config';
 
 describe('EntriesService', () => {
   let service: EntriesService;
   let entryRepository: any;
+  let revisionRepository: any;
   let diaryRepository: any;
+  let configService: any;
+  let aiService: any;
 
   const mockEntry = {
     id: 1,
@@ -71,11 +76,27 @@ describe('EntriesService', () => {
       findOne: jest.fn(),
     };
 
+    configService = {
+      getConfig: jest.fn().mockResolvedValue({ autoTagMaxTags: '0' }),
+    };
+
+    aiService = {
+      autoTagEntry: jest.fn().mockResolvedValue([]),
+    };
+
+    revisionRepository = {
+      save: jest.fn(),
+      find: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EntriesService,
         { provide: getRepositoryToken(Entry), useValue: entryRepository },
+        { provide: getRepositoryToken(EntryRevision), useValue: revisionRepository },
         { provide: getRepositoryToken(Diary), useValue: diaryRepository },
+        { provide: ConfigService, useValue: configService },
+        { provide: AiService, useValue: aiService },
       ],
     }).compile();
 
@@ -250,6 +271,27 @@ describe('EntriesService', () => {
         }),
       );
     });
+
+    it('should auto-tag new entries when enabled in config', async () => {
+      diaryRepository.findOne.mockResolvedValue(mockDiary);
+      entryRepository.count.mockResolvedValue(0);
+      entryRepository.save.mockResolvedValue(mockEntry);
+      configService.getConfig.mockResolvedValue({ autoTagMaxTags: '3' });
+      aiService.autoTagEntry.mockResolvedValue(['focus', 'writing']);
+
+      await service.create(1, {
+        tags: [],
+        text: 'A reflective draft about focus and writing',
+        date: '2024-01-15',
+      });
+
+      expect(aiService.autoTagEntry).toHaveBeenCalledWith(1, 'A reflective draft about focus and writing', [], 3);
+      expect(entryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tags: ['focus', 'writing'],
+        }),
+      );
+    });
   });
 
   describe('update', () => {
@@ -293,6 +335,27 @@ describe('EntriesService', () => {
       });
 
       expect(entryRepository.find).toHaveBeenCalled();
+    });
+
+    it('should auto-tag updated entries when enabled in config', async () => {
+      entryRepository.findOne.mockResolvedValue(mockEntry);
+      entryRepository.save.mockResolvedValue(mockEntry);
+      entryRepository.find.mockResolvedValue([]);
+      configService.getConfig.mockResolvedValue({ autoTagMaxTags: '2' });
+      aiService.autoTagEntry.mockResolvedValue(['review']);
+
+      await service.update(1, 1, {
+        tags: ['work'],
+        text: 'Updated content for review',
+        date: '2024-01-15',
+      });
+
+      expect(aiService.autoTagEntry).toHaveBeenCalledWith(1, 'Updated content for review', ['work'], 1);
+      expect(entryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tags: ['work', 'review'],
+        }),
+      );
     });
   });
 
@@ -558,6 +621,122 @@ describe('EntriesService', () => {
 
         expect(result.affectedCount).toBe(2);
       });
+    });
+  });
+
+  describe('toggleFavorite', () => {
+    it('should set entry as favorite', async () => {
+      const entry = { ...mockEntry, isFavorite: false };
+      entryRepository.findOne.mockResolvedValue(entry);
+      entryRepository.save.mockResolvedValue({ ...entry, isFavorite: true });
+
+      const result = await service.toggleFavorite(1, 1, true);
+
+      expect(result.success).toBe(true);
+      expect(result.entry.isFavorite).toBe(true);
+      expect(entryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ isFavorite: true }),
+      );
+    });
+
+    it('should unset entry as favorite', async () => {
+      const entry = { ...mockEntry, isFavorite: true };
+      entryRepository.findOne.mockResolvedValue(entry);
+      entryRepository.save.mockResolvedValue({ ...entry, isFavorite: false });
+
+      const result = await service.toggleFavorite(1, 1, false);
+
+      expect(result.success).toBe(true);
+      expect(result.entry.isFavorite).toBe(false);
+    });
+
+    it('should throw NotFoundException when entry not found', async () => {
+      entryRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.toggleFavorite(1, 999, true)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should only toggle favorites for entries owned by the user', async () => {
+      entryRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.toggleFavorite(2, 1, true)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(entryRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1, userId: 2 },
+      });
+    });
+  });
+
+  describe('getEntries with favorites filter', () => {
+    it('should filter by favorites when favorites is true', async () => {
+      const result = await service.getEntries(1, { favorites: true, page: 1, limit: 10 });
+
+      expect(result.entries).toBeDefined();
+    });
+  });
+
+  describe('update saves revision', () => {
+    it('should save a revision before updating', async () => {
+      const originalEntry = {
+        id: 1,
+        userId: 1,
+        diaryId: 1,
+        date: '2024-01-15',
+        index: 1,
+        tags: ['tag1', 'tag2'],
+        content: 'Original content',
+        format: 'plaintext',
+        visibility: 'private',
+        createdAt: new Date(),
+      };
+      entryRepository.findOne.mockResolvedValue(originalEntry);
+      entryRepository.save.mockResolvedValue(originalEntry);
+      entryRepository.find.mockResolvedValue([]);
+      revisionRepository.save.mockResolvedValue({});
+
+      await service.update(1, 1, {
+        tags: ['updated'],
+        text: 'Updated content',
+        date: '2024-01-15',
+      });
+
+      expect(revisionRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          entryId: 1,
+          userId: 1,
+          content: 'Original content',
+          tags: ['tag1', 'tag2'],
+          date: '2024-01-15',
+          visibility: 'private',
+        }),
+      );
+    });
+  });
+
+  describe('getRevisions', () => {
+    it('should return revisions for an entry', async () => {
+      const mockRevisions = [
+        { id: 1, entryId: 1, content: 'Old content', createdAt: new Date() },
+      ];
+      entryRepository.findOne.mockResolvedValue(mockEntry);
+      revisionRepository.find.mockResolvedValue(mockRevisions);
+
+      const result = await service.getRevisions(1, 1);
+
+      expect(result).toEqual(mockRevisions);
+      expect(revisionRepository.find).toHaveBeenCalledWith({
+        where: { entryId: 1, userId: 1 },
+        order: { createdAt: 'DESC' },
+      });
+    });
+
+    it('should throw NotFoundException for non-existent entry', async () => {
+      entryRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.getRevisions(1, 999)).rejects.toThrow(NotFoundException);
     });
   });
 });

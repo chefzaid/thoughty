@@ -1,5 +1,5 @@
 import { safeJsonParse } from './base';
-import type { Entry, EntriesResponse } from '../../types';
+import type { Entry, EntriesResponse, EntryRevision } from '../../types';
 
 export interface NavigateToFirstResponse {
   found?: boolean;
@@ -26,6 +26,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     filterTags: string[];
     filterDate: string;
     filterVisibility: string;
+    favorites: boolean;
     diaryId: number | null;
   }): Promise<EntriesResponse | null> => {
     try {
@@ -39,6 +40,9 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
       });
       if (params.diaryId) {
         urlParams.append('diaryId', params.diaryId.toString());
+      }
+      if (params.favorites) {
+        urlParams.append('favorites', 'true');
       }
 
       const response = await authFetch(`/api/entries?${urlParams}`);
@@ -253,6 +257,38 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     }
   };
 
+  /**
+   * Toggle entry favorite status
+   */
+  const toggleFavorite = async (id: number, isFavorite: boolean): Promise<boolean> => {
+    try {
+      const response = await authFetch(`/api/entries/${id}/favorite`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isFavorite })
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      return false;
+    }
+  };
+
+  /**
+   * Fetch revision history for an entry
+   */
+  const fetchEntryHistory = async (id: number): Promise<EntryRevision[]> => {
+    try {
+      const response = await authFetch(`/api/entries/${id}/history`);
+      if (response.ok) {
+        return await response.json();
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching entry history:', error);
+      return [];
+    }
+  };
+
   return {
     fetchEntries,
     fetchEntryDates,
@@ -260,11 +296,13 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     deleteEntry,
     updateEntry,
     toggleVisibility,
+    toggleFavorite,
     bulkOperation,
     navigateToFirst,
     navigateByDate,
     navigateById,
-    fetchYearsMonths
+    fetchYearsMonths,
+    fetchEntryHistory
   };
 };
 

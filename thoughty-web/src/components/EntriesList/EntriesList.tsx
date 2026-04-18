@@ -1,4 +1,4 @@
-import { useMemo, useState as useLocalState, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useState as useLocalState, useCallback, type Dispatch, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import MDEditor from '@uiw/react-md-editor';
@@ -8,7 +8,7 @@ import ListenButton from '../ListenButton/ListenButton';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
 import AttachmentDisplay from '../AttachmentDisplay/AttachmentDisplay';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
-import type { Attachment } from '../../types';
+import type { Attachment, EntryRevision } from '../../types';
 
 interface Entry {
     id: number;
@@ -16,6 +16,7 @@ interface Entry {
     tags: string[];
     date: string;
     visibility: 'public' | 'private';
+    is_favorite?: boolean;
     format?: 'plain' | 'markdown';
     index?: number;
     attachments?: Attachment[];
@@ -51,6 +52,7 @@ interface EntriesListProps {
     onEdit: (entry: Entry) => void;
     onDelete: (id: number) => void;
     onToggleVisibility: (entry: Entry) => void;
+    onToggleFavorite: (entry: Entry) => void;
     editingEntry: Entry | null;
     editText: string;
     setEditText: Dispatch<SetStateAction<string>>;
@@ -83,6 +85,8 @@ interface EntriesListProps {
     onBulkAction?: (action: 'delete' | 'visibility' | 'tags' | 'move', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number }) => void;
     onToggleBulkMode?: () => void;
     diaries?: Diary[];
+    onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
+    onDiscuss?: (entry: Entry) => void;
     t: (key: string, params?: Record<string, string | number>) => string;
 }
 
@@ -277,7 +281,7 @@ function BackToSourceButton({ sourceEntry, onBackToSource, t }: Readonly<{
 function EntryViewMode({
     entry, config, speaking, activeEntryId, activeTargetId, sourceEntry,
     flatEntries, speakEntry: speak, speakFromEntry: speakFrom, stop,
-    onToggleVisibility, onEdit, onDelete, onNavigateToEntry, onBackToSource, searchTerm, t
+    onToggleVisibility, onToggleFavorite, onEdit, onDelete, onNavigateToEntry, onBackToSource, onFetchHistory, onDiscuss, searchTerm, t
 }: Readonly<{
     entry: Entry;
     config: Config;
@@ -290,14 +294,36 @@ function EntryViewMode({
     speakFromEntry: (entries: SpeechEntry[], id: number) => void;
     stop: () => void;
     onToggleVisibility: (entry: Entry) => void;
+    onToggleFavorite: (entry: Entry) => void;
     onEdit: (entry: Entry) => void;
     onDelete: (id: number) => void;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     onBackToSource: () => void;
+    onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
+    onDiscuss?: (entry: Entry) => void;
     searchTerm?: string;
     t: (key: string) => string;
 }>) {
     const isDark = config.theme !== 'light';
+    const [showHistory, setShowHistory] = useLocalState(false);
+    const [revisions, setRevisions] = useLocalState<EntryRevision[]>([]);
+    const [loadingHistory, setLoadingHistory] = useLocalState(false);
+
+    const handleToggleHistory = useCallback(async () => {
+        if (showHistory) {
+            setShowHistory(false);
+            return;
+        }
+        if (!onFetchHistory) return;
+        setLoadingHistory(true);
+        try {
+            const data = await onFetchHistory(entry.id);
+            setRevisions(data);
+        } finally {
+            setLoadingHistory(false);
+        }
+        setShowHistory(true);
+    }, [showHistory, onFetchHistory, entry.id]);
 
     return (
         <>
@@ -324,6 +350,15 @@ function EntryViewMode({
                         />
                     )}
                     <span className="text-xs text-gray-500 font-mono">#{entry.index}</span>
+                    <button
+                        onClick={() => onToggleFavorite(entry)}
+                        className={`p-1 rounded transition-colors ${entry.is_favorite ? 'text-yellow-500 hover:bg-yellow-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}
+                        title={entry.is_favorite ? t('unfavorite') : t('favorite')}
+                    >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill={entry.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
+                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                    </button>
                     <button
                         onClick={() => onToggleVisibility(entry)}
                         className={`p-1 rounded transition-colors ${entry.visibility === 'public' ? 'text-green-500 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}
@@ -354,6 +389,28 @@ function EntryViewMode({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                     </button>
+                    {onDiscuss && (
+                        <button
+                            onClick={() => onDiscuss(entry)}
+                            className="p-1.5 text-teal-400 hover:text-teal-300 hover:bg-teal-500/10 rounded transition-colors"
+                            title={t('discussEntry')}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                        </button>
+                    )}
+                    {onFetchHistory && (
+                        <button
+                            onClick={handleToggleHistory}
+                            className={`p-1.5 rounded transition-colors ${showHistory ? 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10' : 'text-gray-500 hover:text-gray-400 hover:bg-gray-500/10'}`}
+                            title={t('viewHistory')}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </button>
+                    )}
                     <button
                         onClick={() => onDelete(entry.id)}
                         className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
@@ -384,6 +441,51 @@ function EntryViewMode({
                     theme={config.theme}
                     t={t}
                 />
+            )}
+            {showHistory && (
+                <div className={`mt-4 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+                    <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {t('history')}
+                    </h4>
+                    {loadingHistory ? (
+                        <p className="text-sm text-gray-500">...</p>
+                    ) : revisions.length === 0 ? (
+                        <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('noRevisions')}</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {revisions.map((rev, idx) => (
+                                <div
+                                    key={rev.id}
+                                    className={`p-3 rounded-lg border text-sm ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                                >
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                            {t('revision')} #{revisions.length - idx}
+                                        </span>
+                                        <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                            {new Date(rev.createdAt).toLocaleString()}
+                                        </span>
+                                    </div>
+                                    <div className={`whitespace-pre-wrap ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                        {rev.content}
+                                    </div>
+                                    {rev.tags.length > 0 && (
+                                        <div className="flex gap-1 mt-2 flex-wrap">
+                                            {rev.tags.map(tag => (
+                                                <span
+                                                    key={tag}
+                                                    className={`text-xs px-1.5 py-0.5 rounded-full ${isDark ? 'bg-purple-900/20 text-purple-400' : 'bg-purple-50 text-purple-600'}`}
+                                                >
+                                                    #{tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             )}
         </>
     );
@@ -507,6 +609,7 @@ function EntriesList({
     onEdit,
     onDelete,
     onToggleVisibility,
+    onToggleFavorite,
     editingEntry,
     editText,
     setEditText,
@@ -539,6 +642,8 @@ function EntriesList({
     onBulkAction,
     onToggleBulkMode,
     diaries,
+    onFetchHistory,
+    onDiscuss,
     t
 }: Readonly<EntriesListProps>) {
     const { speaking, activeEntryId, speakEntry, speakFromEntry, stop } = useSpeech({
@@ -676,10 +781,13 @@ function EntriesList({
                                                 speakFromEntry={speakFromEntry}
                                                 stop={stop}
                                                 onToggleVisibility={onToggleVisibility}
+                                                onToggleFavorite={onToggleFavorite}
                                                 onEdit={onEdit}
                                                 onDelete={onDelete}
                                                 onNavigateToEntry={onNavigateToEntry}
                                                 onBackToSource={onBackToSource}
+                                                onFetchHistory={onFetchHistory}
+                                                onDiscuss={onDiscuss}
                                                 searchTerm={searchTerm}
                                                 t={t}
                                             />

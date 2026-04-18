@@ -251,4 +251,42 @@ describe('diariesService', () => {
       consoleSpy.mockRestore();
     });
   });
+
+  describe('reorderDiaries', () => {
+    it('sends PATCH request with ordered IDs', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ success: true }),
+      });
+
+      const result = await service.reorderDiaries([3, 1, 2]);
+
+      expect(result).toEqual({ success: true });
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/diaries/reorder', {
+        method: 'PATCH',
+        body: JSON.stringify({ orderedIds: [3, 1, 2] }),
+      });
+    });
+
+    it('returns error when response is not ok', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: false,
+        json: () => Promise.resolve({ error: 'Invalid order' }),
+      });
+
+      const result = await service.reorderDiaries([3, 1, 2]);
+
+      expect(result).toEqual({ success: false, error: 'Invalid order' });
+    });
+
+    it('returns error on exception', async () => {
+      mockAuthFetch.mockRejectedValue(new Error('Network error'));
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await service.reorderDiaries([3, 1, 2]);
+
+      expect(result).toEqual({ success: false, error: 'Failed to reorder diaries' });
+      consoleSpy.mockRestore();
+    });
+  });
 });

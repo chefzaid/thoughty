@@ -11,6 +11,8 @@ export interface ProfileConfig {
   entriesPerPage?: number | string;
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;
+  openRouterApiKey?: string;
+  autoTagMaxTags?: string | number;
 }
 
 export interface ProfileUser {

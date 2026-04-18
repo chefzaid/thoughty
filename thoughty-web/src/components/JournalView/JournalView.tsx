@@ -1,4 +1,4 @@
-import { useState, type Dispatch, type SetStateAction, type FormEvent } from 'react';
+import { useState, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
 import DiaryTabs from '../DiaryTabs/DiaryTabs';
 import ThoughtOfTheDay from '../ThoughtOfTheDay/ThoughtOfTheDay';
 import EntryForm from '../EntryForm/EntryForm';
@@ -7,7 +7,7 @@ import EntriesList from '../EntriesList/EntriesList';
 import Pagination from '../Pagination/Pagination';
 import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
-import type { Entry, Diary, Config, GroupedEntries, SourceEntryInfo, VisibilityFilter, Attachment } from '../../types';
+import type { Entry, Diary, Config, GroupedEntries, SourceEntryInfo, VisibilityFilter, Attachment, EntryRevision } from '../../types';
 
 interface JournalViewProps {
   // Diaries
@@ -33,7 +33,11 @@ interface JournalViewProps {
   setFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
   allTags: string[];
   formError: string;
-  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  suggestingTags?: boolean;
+  onSuggestTags?: () => Promise<boolean> | boolean;
+  fixingWriting?: boolean;
+  onFixWriting?: () => Promise<boolean> | boolean;
+  onSubmit: NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>;
   
   // Attachments
   pendingFiles?: File[];
@@ -51,6 +55,8 @@ interface JournalViewProps {
   setFilterDateObj: Dispatch<SetStateAction<Date | null>>;
   filterVisibility: VisibilityFilter;
   setFilterVisibility: Dispatch<SetStateAction<VisibilityFilter>>;
+  filterFavorites: boolean;
+  setFilterFavorites: Dispatch<SetStateAction<boolean>>;
   entryDates: string[];
   setPage: Dispatch<SetStateAction<number>>;
   
@@ -61,6 +67,7 @@ interface JournalViewProps {
   onEdit: (entry: Entry) => void;
   onDelete: (id: number) => void;
   onToggleVisibility: (entry: Entry) => void;
+  onToggleFavorite: (entry: Entry) => void;
   editingEntry: Entry | null;
   editText: string;
   setEditText: Dispatch<SetStateAction<string>>;
@@ -104,6 +111,12 @@ interface JournalViewProps {
   availableMonths: string[];
   onNavigateToFirst: (year: number, month: number | null) => void;
   
+  // History
+  onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
+  
+  // AI Chat
+  onDiscuss?: (entry: Entry) => void;
+  
   // Config
   config: Config;
   t: (key: string, params?: Record<string, string | number>) => string;
@@ -128,6 +141,10 @@ function JournalView({
   setFormat,
   allTags,
   formError,
+  suggestingTags,
+  onSuggestTags,
+  fixingWriting,
+  onFixWriting,
   onSubmit,
   pendingFiles,
   uploadedAttachments,
@@ -142,6 +159,8 @@ function JournalView({
   setFilterDateObj,
   filterVisibility,
   setFilterVisibility,
+  filterFavorites,
+  setFilterFavorites,
   entryDates,
   setPage,
   loading,
@@ -150,6 +169,7 @@ function JournalView({
   onEdit,
   onDelete,
   onToggleVisibility,
+  onToggleFavorite,
   editingEntry,
   editText,
   setEditText,
@@ -186,6 +206,8 @@ function JournalView({
   availableYears,
   availableMonths,
   onNavigateToFirst,
+  onFetchHistory,
+  onDiscuss,
   config,
   t
 }: Readonly<JournalViewProps>) {
@@ -199,6 +221,8 @@ function JournalView({
         currentDiaryId={currentDiaryId}
         onDiaryChange={(id: number | null) => { onDiaryChange(id); setPage(1); }}
         onManageDiaries={onManageDiaries}
+        filterFavorites={filterFavorites}
+        onFilterFavorites={(active: boolean) => { setFilterFavorites(active); setPage(1); }}
         theme={config.theme}
         t={t}
       />
@@ -225,6 +249,10 @@ function JournalView({
         setFormat={setFormat}
         allTags={allTags}
         formError={formError}
+        suggestingTags={suggestingTags}
+        onSuggestTags={onSuggestTags}
+        fixingWriting={fixingWriting}
+        onFixWriting={onFixWriting}
         onSubmit={onSubmit}
         theme={config.theme}
         t={t}
@@ -244,6 +272,8 @@ function JournalView({
         setFilterDateObj={setFilterDateObj}
         filterVisibility={filterVisibility}
         setFilterVisibility={setFilterVisibility}
+        filterFavorites={filterFavorites}
+        setFilterFavorites={setFilterFavorites}
         allTags={allTags}
         entryDates={entryDates}
         setPage={setPage}
@@ -260,6 +290,7 @@ function JournalView({
         onEdit={onEdit}
         onDelete={onDelete}
         onToggleVisibility={onToggleVisibility}
+        onToggleFavorite={onToggleFavorite}
         editingEntry={editingEntry}
         editText={editText}
         setEditText={setEditText}
@@ -292,6 +323,8 @@ function JournalView({
         onBulkAction={onBulkAction}
         onToggleBulkMode={onToggleBulkMode}
         diaries={diaries}
+        onFetchHistory={onFetchHistory}
+        onDiscuss={onDiscuss}
         t={t}
       />
 

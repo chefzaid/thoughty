@@ -21,6 +21,8 @@ describe('EntriesController', () => {
       deleteAll: jest.fn(),
       delete: jest.fn(),
       bulkOperation: jest.fn(),
+      toggleFavorite: jest.fn(),
+      getRevisions: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -181,6 +183,39 @@ describe('EntriesController', () => {
 
       const result = await controller.bulkOperation(mockUser as any, dto as any);
       expect(entriesService.bulkOperation).toHaveBeenCalledWith(1, dto);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('toggleFavorite', () => {
+    it('delegates to entriesService.toggleFavorite', async () => {
+      const dto = { isFavorite: true };
+      const expected = { success: true, entry: { id: 1, isFavorite: true } };
+      entriesService.toggleFavorite!.mockResolvedValue(expected);
+
+      const result = await controller.toggleFavorite(mockUser as any, 1, dto as any);
+      expect(entriesService.toggleFavorite).toHaveBeenCalledWith(1, 1, true);
+      expect(result).toBe(expected);
+    });
+
+    it('delegates unfavorite to entriesService.toggleFavorite', async () => {
+      const dto = { isFavorite: false };
+      const expected = { success: true, entry: { id: 1, isFavorite: false } };
+      entriesService.toggleFavorite!.mockResolvedValue(expected);
+
+      const result = await controller.toggleFavorite(mockUser as any, 1, dto as any);
+      expect(entriesService.toggleFavorite).toHaveBeenCalledWith(1, 1, false);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('getHistory', () => {
+    it('delegates to entriesService.getRevisions', async () => {
+      const expected = [{ id: 1, content: 'Old content', createdAt: new Date() }];
+      entriesService.getRevisions!.mockResolvedValue(expected);
+
+      const result = await controller.getHistory(mockUser as any, 1);
+      expect(entriesService.getRevisions).toHaveBeenCalledWith(1, 1);
       expect(result).toBe(expected);
     });
   });

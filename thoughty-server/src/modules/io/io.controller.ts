@@ -45,9 +45,9 @@ export class IoController {
     @Query() query: ExportQueryDto,
     @Res() res: Response,
   ) {
-    const { content, filename } = await this.ioService.export(user.userId, query.diaryId);
+    const { content, filename, contentType } = await this.ioService.export(user.userId, query.diaryId, query.includeVisibility, query.format);
 
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(content);
   }

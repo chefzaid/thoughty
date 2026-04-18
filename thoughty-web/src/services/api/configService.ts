@@ -68,10 +68,37 @@ export const createConfigService = (authFetch: (url: string, options?: RequestIn
     }
   };
 
+  /**
+   * Download all user data (GDPR)
+   */
+  const downloadUserData = async (): Promise<boolean> => {
+    try {
+      const response = await authFetch('/api/config/download-data');
+      if (!response?.ok) return false;
+      const blob = await response.blob();
+      const disposition = response.headers.get('Content-Disposition') || '';
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match?.[1] || 'thoughty_data.json';
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      return true;
+    } catch (error) {
+      console.error('Error downloading user data:', error);
+      return false;
+    }
+  };
+
   return {
     fetchConfig,
     updateConfig,
-    fetchProfileStats
+    fetchProfileStats,
+    downloadUserData
   };
 };
 

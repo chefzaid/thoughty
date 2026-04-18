@@ -115,6 +115,12 @@ export class BulkOperationDto {
   diaryId?: number;
 }
 
+export class UpdateFavoriteDto {
+  @ApiProperty({ description: 'Whether the entry is a favorite' })
+  @Transform(({ value }) => value === true || value === 'true')
+  isFavorite: boolean;
+}
+
 export class GetEntriesQueryDto {
   @ApiPropertyOptional({ description: 'Search term for content or tags' })
   @IsOptional()
@@ -136,6 +142,11 @@ export class GetEntriesQueryDto {
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEnum(['public', 'private'])
   visibility?: 'public' | 'private';
+
+  @ApiPropertyOptional({ description: 'Filter by favorites only' })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  favorites?: boolean;
 
   @ApiPropertyOptional({ description: 'Diary ID' })
   @IsOptional()
@@ -255,6 +266,9 @@ export class EntryResponseDto {
 
   @ApiProperty()
   visibility: 'public' | 'private';
+
+  @ApiProperty()
+  is_favorite: boolean;
 
   @ApiPropertyOptional()
   diary_name?: string;

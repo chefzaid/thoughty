@@ -7,6 +7,7 @@ export interface Diary {
   visibility: 'public' | 'private';
   description?: string;
   is_default?: boolean;
+  position?: number;
   user_id?: number;
   created_at?: string;
   updated_at?: string;
