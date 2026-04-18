@@ -451,7 +451,7 @@ export const useEntryForm = (
  * Hook to manage entry editing
  */
 export const useEntryEdit = (onSave: () => void) => {
-  const { entriesService } = useApiServices();
+  const { entriesService, attachmentsService } = useApiServices();
   
   const [editingEntry, setEditingEntry] = useState<Entry | null>(null);
   const [editText, setEditText] = useState<string>('');
@@ -459,6 +459,8 @@ export const useEntryEdit = (onSave: () => void) => {
   const [editDate, setEditDate] = useState<Date | null>(null);
   const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
   const [editFormat, setEditFormat] = useState<'plain' | 'markdown'>('plain');
+  const [editPendingFiles, setEditPendingFiles] = useState<File[]>([]);
+  const [editExistingAttachments, setEditExistingAttachments] = useState<Attachment[]>([]);
 
   const handleEdit = useCallback((entry: Entry) => {
     setEditingEntry(entry);
@@ -466,6 +468,8 @@ export const useEntryEdit = (onSave: () => void) => {
     setEditTags(entry.tags || []);
     setEditVisibility(entry.visibility || 'private');
     setEditFormat(entry.format || 'plain');
+    setEditPendingFiles([]);
+    setEditExistingAttachments(entry.attachments || []);
     let dateStr = entry.date;
     if (dateStr.includes('T')) dateStr = dateStr.split('T')[0] ?? dateStr;
     const parts = dateStr.split('-').map(Number);
@@ -482,6 +486,8 @@ export const useEntryEdit = (onSave: () => void) => {
     setEditDate(null);
     setEditVisibility('private');
     setEditFormat('plain');
+    setEditPendingFiles([]);
+    setEditExistingAttachments([]);
   }, []);
 
   const handleSaveEdit = useCallback(async () => {
@@ -502,12 +508,38 @@ export const useEntryEdit = (onSave: () => void) => {
     });
 
     if (success) {
+      // Upload pending files and link to entry
+      for (const file of editPendingFiles) {
+        await attachmentsService.uploadAttachment(file, editingEntry.id);
+      }
+
+      // Delete removed attachments
+      const originalIds = new Set((editingEntry.attachments || []).map(a => a.id));
+      const remainingIds = new Set(editExistingAttachments.map(a => a.id));
+      for (const id of originalIds) {
+        if (!remainingIds.has(id)) {
+          await attachmentsService.deleteAttachment(id);
+        }
+      }
+
       handleCancelEdit();
       onSave();
     } else {
       alert('Failed to update entry.');
     }
-  }, [editText, editTags, editDate, editVisibility, editFormat, editingEntry, entriesService, handleCancelEdit, onSave]);
+  }, [editText, editTags, editDate, editVisibility, editFormat, editingEntry, entriesService, attachmentsService, editPendingFiles, editExistingAttachments, handleCancelEdit, onSave]);
+
+  const addEditPendingFile = useCallback((file: File) => {
+    setEditPendingFiles(prev => [...prev, file]);
+  }, []);
+
+  const removeEditPendingFile = useCallback((index: number) => {
+    setEditPendingFiles(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const removeEditAttachment = useCallback(async (attachmentId: number) => {
+    setEditExistingAttachments(prev => prev.filter(a => a.id !== attachmentId));
+  }, []);
 
   return {
     editingEntry,
@@ -523,7 +555,12 @@ export const useEntryEdit = (onSave: () => void) => {
     setEditFormat,
     handleEdit,
     handleCancelEdit,
-    handleSaveEdit
+    handleSaveEdit,
+    editPendingFiles,
+    editExistingAttachments,
+    addEditPendingFile,
+    removeEditPendingFile,
+    removeEditAttachment
   };
 };
 

@@ -2,7 +2,6 @@ import { useRef, useEffect, type FormEvent, type Dispatch, type SetStateAction }
 import DatePicker from 'react-datepicker';
 import MDEditor from '@uiw/react-md-editor';
 import TagPicker from '../TagPicker/TagPicker';
-import MarkdownHelp from '../MarkdownHelp/MarkdownHelp';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import type { Attachment } from '../../types';
 
@@ -145,7 +144,17 @@ function EntryForm({
                     >
                         <span className="text-sm font-bold" style={{ fontFamily: 'monospace' }}>MD</span>
                     </button>
-                    <MarkdownHelp theme={theme} t={t} />
+                    {onAddFile && (
+                        <AttachmentUpload
+                            pendingFiles={pendingFiles || []}
+                            uploadedAttachments={uploadedAttachments || []}
+                            onAddFile={onAddFile}
+                            onRemovePendingFile={onRemovePendingFile || (() => {})}
+                            onRemoveUploadedAttachment={onRemoveUploadedAttachment || (() => {})}
+                            theme={theme}
+                            t={t}
+                        />
+                    )}
                     <button
                         type="button"
                         onClick={() => setVisibility(v => v === 'private' ? 'public' : 'private')}
@@ -161,19 +170,7 @@ function EntryForm({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                             </svg>
                         )}
-                        <span className="text-sm font-medium">{visibility === 'public' ? t('public') : t('private')}</span>
                     </button>
-                    {onAddFile && (
-                        <AttachmentUpload
-                            pendingFiles={pendingFiles || []}
-                            uploadedAttachments={uploadedAttachments || []}
-                            onAddFile={onAddFile}
-                            onRemovePendingFile={onRemovePendingFile || (() => {})}
-                            onRemoveUploadedAttachment={onRemoveUploadedAttachment || (() => {})}
-                            theme={theme}
-                            t={t}
-                        />
-                    )}
                     <button
                         type="submit"
                         className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-6 py-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-md"

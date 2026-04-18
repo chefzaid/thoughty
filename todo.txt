@@ -98,6 +98,7 @@ Other ideas for upcoming releases:
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
 - Recurring journaling reminders and writing prompts via app notifications at a user-configured time
 - Drag-and-drop reordering for entries on the same day
+- Voice personalization for TTS
 
 *** Accessibility
 - Full accessibility audit and remediation (aria-labels, screen reader support, skip-to-content links, focus management)

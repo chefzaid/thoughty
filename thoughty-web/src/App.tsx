@@ -132,7 +132,12 @@ function App() {
     setEditFormat,
     handleEdit,
     handleCancelEdit,
-    handleSaveEdit
+    handleSaveEdit,
+    editPendingFiles,
+    editExistingAttachments,
+    addEditPendingFile,
+    removeEditPendingFile,
+    removeEditAttachment
   } = useEntryEdit(fetchEntries);
 
   // Delete modal
@@ -328,6 +333,11 @@ function App() {
             setEditFormat={setEditFormat}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
+            editPendingFiles={editPendingFiles}
+            editExistingAttachments={editExistingAttachments}
+            onAddEditFile={addEditPendingFile}
+            onRemoveEditPendingFile={removeEditPendingFile}
+            onRemoveEditAttachment={removeEditAttachment}
             onNavigateToEntry={handleNavigateToEntry}
             sourceEntry={sourceEntry}
             activeTargetId={activeTargetId}

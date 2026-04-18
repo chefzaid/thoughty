@@ -74,6 +74,11 @@ interface JournalViewProps {
   setEditFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
   onSaveEdit: () => void;
   onCancelEdit: () => void;
+  editPendingFiles?: File[];
+  editExistingAttachments?: Attachment[];
+  onAddEditFile?: (file: File) => void;
+  onRemoveEditPendingFile?: (index: number) => void;
+  onRemoveEditAttachment?: (id: number) => void;
   onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
   sourceEntry: SourceEntryInfo | null;
   activeTargetId: number | null;
@@ -158,6 +163,11 @@ function JournalView({
   setEditFormat,
   onSaveEdit,
   onCancelEdit,
+  editPendingFiles,
+  editExistingAttachments,
+  onAddEditFile,
+  onRemoveEditPendingFile,
+  onRemoveEditAttachment,
   onNavigateToEntry,
   sourceEntry,
   activeTargetId,
@@ -264,6 +274,11 @@ function JournalView({
         allTags={allTags}
         onSaveEdit={onSaveEdit}
         onCancelEdit={onCancelEdit}
+        editPendingFiles={editPendingFiles}
+        editExistingAttachments={editExistingAttachments}
+        onAddEditFile={onAddEditFile}
+        onRemoveEditPendingFile={onRemoveEditPendingFile}
+        onRemoveEditAttachment={onRemoveEditAttachment}
         onNavigateToEntry={onNavigateToEntry}
         sourceEntry={sourceEntry}
         activeTargetId={activeTargetId}

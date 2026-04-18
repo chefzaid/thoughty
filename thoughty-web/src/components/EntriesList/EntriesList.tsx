@@ -5,9 +5,9 @@ import MDEditor from '@uiw/react-md-editor';
 import TagPicker from '../TagPicker/TagPicker';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import ListenButton from '../ListenButton/ListenButton';
-import MarkdownHelp from '../MarkdownHelp/MarkdownHelp';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
 import AttachmentDisplay from '../AttachmentDisplay/AttachmentDisplay';
+import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import type { Attachment } from '../../types';
 
 interface Entry {
@@ -65,6 +65,11 @@ interface EntriesListProps {
     allTags: string[];
     onSaveEdit: () => void;
     onCancelEdit: () => void;
+    editPendingFiles?: File[];
+    editExistingAttachments?: Attachment[];
+    onAddEditFile?: (file: File) => void;
+    onRemoveEditPendingFile?: (index: number) => void;
+    onRemoveEditAttachment?: (id: number) => void;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     sourceEntry: SourceEntryInfo | null;
     activeTargetId: number | null;
@@ -122,6 +127,7 @@ function EditForm({
     config, editText, setEditText, editDate, setEditDate,
     allTags, editTags, setEditTags, editVisibility, setEditVisibility,
     editFormat, setEditFormat,
+    editPendingFiles, editExistingAttachments, onAddEditFile, onRemoveEditPendingFile, onRemoveEditAttachment,
     onSaveEdit, onCancelEdit, t
 }: Readonly<{
     config: Config;
@@ -136,6 +142,11 @@ function EditForm({
     setEditVisibility: Dispatch<SetStateAction<'public' | 'private'>>;
     editFormat: 'plain' | 'markdown';
     setEditFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
+    editPendingFiles?: File[];
+    editExistingAttachments?: Attachment[];
+    onAddEditFile?: (file: File) => void;
+    onRemoveEditPendingFile?: (index: number) => void;
+    onRemoveEditAttachment?: (id: number) => void;
     onSaveEdit: () => void;
     onCancelEdit: () => void;
     t: (key: string) => string;
@@ -198,7 +209,17 @@ function EditForm({
                 >
                     <span className="text-sm font-bold" style={{ fontFamily: 'monospace' }}>MD</span>
                 </button>
-                <MarkdownHelp theme={config.theme} t={t} />
+                {onAddEditFile && (
+                    <AttachmentUpload
+                        pendingFiles={editPendingFiles || []}
+                        uploadedAttachments={editExistingAttachments || []}
+                        onAddFile={onAddEditFile}
+                        onRemovePendingFile={onRemoveEditPendingFile || (() => {})}
+                        onRemoveUploadedAttachment={onRemoveEditAttachment || (() => {})}
+                        theme={config.theme}
+                        t={t}
+                    />
+                )}
                 <button
                     type="button"
                     onClick={() => setEditVisibility(v => v === 'private' ? 'public' : 'private')}
@@ -500,6 +521,11 @@ function EntriesList({
     allTags,
     onSaveEdit,
     onCancelEdit,
+    editPendingFiles,
+    editExistingAttachments,
+    onAddEditFile,
+    onRemoveEditPendingFile,
+    onRemoveEditAttachment,
     onNavigateToEntry,
     sourceEntry,
     activeTargetId,
@@ -628,6 +654,11 @@ function EntriesList({
                                                 setEditVisibility={setEditVisibility}
                                                 editFormat={editFormat}
                                                 setEditFormat={setEditFormat}
+                                                editPendingFiles={editPendingFiles}
+                                                editExistingAttachments={editExistingAttachments}
+                                                onAddEditFile={onAddEditFile}
+                                                onRemoveEditPendingFile={onRemoveEditPendingFile}
+                                                onRemoveEditAttachment={onRemoveEditAttachment}
                                                 onSaveEdit={onSaveEdit}
                                                 onCancelEdit={onCancelEdit}
                                                 t={t}
