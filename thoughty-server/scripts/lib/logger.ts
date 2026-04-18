@@ -125,19 +125,57 @@ export function section(title: string): void {
 }
 
 /**
+ * Calculate the visual/display width of a string in a terminal,
+ * accounting for ANSI escape codes (zero width) and emoji (double width).
+ */
+// eslint-disable-next-line no-control-regex
+const ANSI_RE = /\x1b\[\d+m/g;
+
+function visualWidth(str: string): number {
+    const clean = str.replace(ANSI_RE, '');
+    let width = 0;
+    for (const ch of clean) {
+        const cp = ch.codePointAt(0)!;
+        // Variation selectors (FE0E/FE0F) have no width
+        if (cp === 0xfe0e || cp === 0xfe0f) continue;
+        // Common emoji / symbol ranges that render as 2 columns
+        if (
+            (cp >= 0x1f000 && cp <= 0x1ffff) || // Supplemental Symbols / Emoticons
+            (cp >= 0x2600 && cp <= 0x27bf) ||    // Misc Symbols & Dingbats
+            (cp >= 0x23e9 && cp <= 0x23fa) ||    // Misc Technical symbols
+            (cp >= 0x2b50 && cp <= 0x2b55) ||    // Stars, circles
+            (cp >= 0xfe00 && cp <= 0xfe0f) ||    // Variation selectors (already handled)
+            (cp >= 0x200d && cp <= 0x200d)        // ZWJ
+        ) {
+            width += 2;
+        } else {
+            width += 1;
+        }
+    }
+    return width;
+}
+
+function padEndVisual(str: string, target: number): string {
+    const w = visualWidth(str);
+    return w >= target ? str : str + ' '.repeat(target - w);
+}
+
+/**
  * Create a summary box
  */
 export function summaryBox(title: string, items: [string, string][]): void {
-    const maxKeyLen = Math.max(...items.map(([k]) => k.length));
+    const BOX_INNER = 48;
+    const maxKeyVis = Math.max(...items.map(([k]) => visualWidth(k)));
     console.log('');
-    console.log(`${c.bold}${c.white}┌${'─'.repeat(48)}┐${c.reset}`);
-    console.log(`${c.bold}${c.white}│${c.reset} ${c.bold}${title.padEnd(46)}${c.bold}${c.white} │${c.reset}`);
-    console.log(`${c.bold}${c.white}├${'─'.repeat(48)}┤${c.reset}`);
+    console.log(`${c.bold}${c.white}┌${'─'.repeat(BOX_INNER)}┐${c.reset}`);
+    console.log(`${c.bold}${c.white}│${c.reset} ${c.bold}${title.padEnd(BOX_INNER - 2)}${c.bold}${c.white} │${c.reset}`);
+    console.log(`${c.bold}${c.white}├${'─'.repeat(BOX_INNER)}┤${c.reset}`);
     for (const [key, value] of items) {
-        const paddedKey = key.padEnd(maxKeyLen);
-        console.log(`${c.bold}${c.white}│${c.reset} ${c.dim}${paddedKey}${c.reset}  ${value.toString().padEnd(46 - maxKeyLen - 2)}${c.bold}${c.white}│${c.reset}`);
+        const paddedKey = padEndVisual(`${c.dim}${key}${c.reset}`, maxKeyVis + visualWidth(`${c.dim}${c.reset}`));
+        const valStr = padEndVisual(value.toString(), BOX_INNER - 1 - maxKeyVis - 2);
+        console.log(`${c.bold}${c.white}│${c.reset} ${paddedKey}  ${valStr}${c.bold}${c.white}│${c.reset}`);
     }
-    console.log(`${c.bold}${c.white}└${'─'.repeat(48)}┘${c.reset}`);
+    console.log(`${c.bold}${c.white}└${'─'.repeat(BOX_INNER)}┘${c.reset}`);
     console.log('');
 }
 

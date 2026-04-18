@@ -39,7 +39,10 @@ vi.mock('../services/api', () => ({
     updateEntry: vi.fn(),
     deleteEntry: vi.fn(),
     toggleVisibility: vi.fn(),
-    bulkOperation: vi.fn()
+    bulkOperation: vi.fn(),
+    navigateToFirst: vi.fn(),
+    navigateByDate: vi.fn(),
+    navigateById: vi.fn()
   })),
   createDiariesService: vi.fn(() => ({
     fetchDiaries: vi.fn(),
@@ -47,6 +50,13 @@ vi.mock('../services/api', () => ({
     updateDiary: vi.fn(),
     deleteDiary: vi.fn(),
     setDefaultDiary: vi.fn()
+  })),
+  createAttachmentsService: vi.fn(() => ({
+    uploadAttachment: vi.fn(),
+    getAttachmentsByEntry: vi.fn(),
+    linkAttachment: vi.fn(),
+    deleteAttachment: vi.fn(),
+    getAttachmentUrl: vi.fn()
   }))
 }));
 
@@ -71,6 +81,7 @@ describe('useAppState Hooks', () => {
       expect(result.current.configService).toBeDefined();
       expect(result.current.entriesService).toBeDefined();
       expect(result.current.diariesService).toBeDefined();
+      expect(result.current.attachmentsService).toBeDefined();
     });
 
     it('memoizes services correctly', () => {
@@ -644,6 +655,7 @@ describe('useAppState Hooks', () => {
         updateEntry: vi.fn(),
         deleteEntry: vi.fn().mockResolvedValue(true),
         toggleVisibility: vi.fn(),
+        bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
         navigateById: vi.fn()
@@ -674,6 +686,7 @@ describe('useAppState Hooks', () => {
         updateEntry: vi.fn(),
         deleteEntry: vi.fn().mockResolvedValue(false),
         toggleVisibility: vi.fn(),
+        bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
         navigateById: vi.fn()
@@ -733,10 +746,11 @@ describe('useAppState Hooks', () => {
         fetchEntries: vi.fn(),
         fetchEntryDates: vi.fn(),
         fetchYearsMonths: vi.fn(),
-        createEntry: vi.fn().mockResolvedValue(true),
+        createEntry: vi.fn().mockResolvedValue({ success: true, entryId: 42 }),
         updateEntry: vi.fn(),
         deleteEntry: vi.fn(),
         toggleVisibility: vi.fn(),
+        bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
         navigateById: vi.fn()
@@ -767,10 +781,11 @@ describe('useAppState Hooks', () => {
         fetchEntries: vi.fn(),
         fetchEntryDates: vi.fn(),
         fetchYearsMonths: vi.fn(),
-        createEntry: vi.fn().mockResolvedValue(false),
+        createEntry: vi.fn().mockResolvedValue({ success: false }),
         updateEntry: vi.fn(),
         deleteEntry: vi.fn(),
         toggleVisibility: vi.fn(),
+        bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
         navigateById: vi.fn()
@@ -805,6 +820,7 @@ describe('useAppState Hooks', () => {
         updateEntry: vi.fn().mockResolvedValue(true),
         deleteEntry: vi.fn(),
         toggleVisibility: vi.fn(),
+        bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
         navigateById: vi.fn()

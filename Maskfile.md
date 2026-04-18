@@ -220,9 +220,9 @@ if [ "$kill" == "true" ]; then
   echo ""
 fi
 
-echo -e "${CYAN}→${NC} Starting database..."
-docker-compose -f .devcontainer/docker-compose.yml up -d db
-echo -e "${GREEN}✔${NC} Database started"
+echo -e "${CYAN}→${NC} Starting database and storage..."
+docker-compose -f .devcontainer/docker-compose.yml up -d db minio
+echo -e "${GREEN}✔${NC} Database and MinIO started"
 echo ""
 
 echo -e "${CYAN}→${NC} Starting server in background..."
@@ -261,9 +261,9 @@ if ($env:kill -eq "true") {
     Write-Host ""
 }
 
-Write-Step "Starting database..."
-docker-compose -f .devcontainer/docker-compose.yml up -d db
-Write-Ok "Database started"
+Write-Step "Starting database and storage..."
+docker-compose -f .devcontainer/docker-compose.yml up -d db minio
+Write-Ok "Database and MinIO started"
 Write-Host ""
 
 Write-Step "Starting server in background..."

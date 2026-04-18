@@ -256,7 +256,15 @@ export type TranslationKey =
   | 'bulkDeleteTitle'
   | 'bulkDeleteMessage'
   | 'selectTags'
-  | 'apply';
+  | 'apply'
+  | 'attach'
+  | 'attachFiles'
+  | 'attachments'
+  | 'removeAttachment'
+  | 'attachmentTypeNotAllowed'
+  | 'attachmentTooLarge'
+  | 'downloadAttachment'
+  | 'closeImage';
 
 export type Language = 'en' | 'fr';
 
@@ -557,6 +565,14 @@ export const translations: Translations = {
     bulkDeleteMessage: 'Are you sure you want to delete {count} entries? This cannot be undone.',
     selectTags: 'Select tags...',
     apply: 'Apply',
+    attach: 'Attach',
+    attachFiles: 'Attach files',
+    attachments: 'Attachments',
+    removeAttachment: 'Remove attachment',
+    attachmentTypeNotAllowed: 'This file type is not allowed. Allowed: images, PDF, plain text.',
+    attachmentTooLarge: 'File is too large. Maximum size is 5 MB.',
+    downloadAttachment: 'Download attachment',
+    closeImage: 'Close image',
   },
   fr: {
     // App
@@ -853,6 +869,14 @@ export const translations: Translations = {
     bulkDeleteMessage: 'Êtes-vous sûr de vouloir supprimer {count} entrées ? Cette action est irréversible.',
     selectTags: 'Sélectionner des tags...',
     apply: 'Appliquer',
+    attach: 'Joindre',
+    attachFiles: 'Joindre des fichiers',
+    attachments: 'Pièces jointes',
+    removeAttachment: 'Supprimer la pièce jointe',
+    attachmentTypeNotAllowed: "Ce type de fichier n'est pas autorisé. Autorisés : images, PDF, texte brut.",
+    attachmentTooLarge: 'Le fichier est trop volumineux. Taille maximale : 5 Mo.',
+    downloadAttachment: 'Télécharger la pièce jointe',
+    closeImage: "Fermer l'image",
   },
 };
 

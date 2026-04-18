@@ -89,7 +89,7 @@ export class EntriesController {
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateEntryDto,
-  ): Promise<{ success: boolean }> {
+  ): Promise<{ success: boolean; entryId: number }> {
     return this.entriesService.create(user.userId, dto);
   }
 

@@ -21,9 +21,12 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Multiple Entries Per Day** - Create as many entries as you want per day with automatic indexing
 - **Date Selection** - Backdate entries using an intuitive date picker
 - **Inline Editing** - Edit entries directly in place, including date, tags, and visibility
+- **Bulk Entry Actions** - Select multiple entries at once for batch delete, visibility changes, tag updates, or moving entries between diaries
 - **Cross-References** - Link entries together using `[[YYYY-MM-DD]]` or `[[YYYY-MM-DD#index]]` syntax with clickable navigation
 - **Entry Highlighting** - Visual highlighting when navigating to specific entries from references
 - **Visibility Control** - Toggle entries between public and private with one click
+- **File Uploads** - Attach images and files (JPEG, PNG, GIF, WebP, SVG, PDF, TXT) to journal entries
+- **Read Entries Aloud** - Listen to your journal entries using the many options of the Text-to-Speech feature
 
 ### 📚 Multiple Diaries
 - **Unlimited Diaries** - Create themed diaries for different aspects of your life
@@ -42,6 +45,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 
 ### 🔍 Search & Filtering
 - **Full-Text Search** - Search across all entry content with keywords
+- **Search Match Highlighting** - Matching search terms are highlighted directly inside plain text and Markdown entry results for faster scanning
 - **Tag Filtering** - Filter by multiple tags simultaneously
 - **Date Filtering** - Calendar picker with visual indicators for dates containing entries
 - **Visibility Filtering** - Filter by All / Public / Private entries
@@ -101,14 +105,6 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Pagination Settings** - Configure entries per page (5/10/15/20/25/50)
 - **Read Dates Toggle** - Choose whether text-to-speech includes date headers
 
-### 🔊 Text-to-Speech
-- **Read Entries Aloud** - Listen to your journal entries using the browser's Speech Synthesis API
-- **Listen to One** - Read a single entry out loud
-- **Listen From Here** - Continuously read from a selected entry through all subsequent entries
-- **Read Dates Option** - Optionally include spoken date headers before each entry
-- **Language-Aware Voices** - Automatically selects a matching voice for your configured language
-- **Playback Controls** - Stop button and visual indicator showing which entry is currently being read
-
 ### 📱 User Experience
 - **Responsive Design** - Mobile-friendly layout that works on all devices
 - **Confirmation Modals** - Safe deletion with confirmation dialogs
@@ -141,8 +137,9 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Jest 29** - Comprehensive testing framework
 - **Helmet & HPP** - Security middleware
 
-### Database
+### Database & Storage
 - **PostgreSQL 14+** - Robust relational database
+- **S3** - S3-compatible object storage for attachments (MinIO for local dev) and AWS S3 or any S3-compatible provider for production
 
 ### DevOps & Tooling
 - **Docker** - Containerized development
@@ -185,9 +182,9 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
    - Copy `.env.example` to `.env` in both `thoughty-server/` and `thoughty-web/` directories
    - Update database credentials and JWT secrets
 
-4. **Start the database**
+4. **Start the database and storage**
    ```bash
-   docker-compose -f .devcontainer/docker-compose.yml up -d db
+   docker-compose -f .devcontainer/docker-compose.yml up -d db minio
    ```
 
 5. **Run migrations and seed data**
@@ -225,7 +222,16 @@ CORS_ORIGIN=http://localhost:5173,http://localhost:3000
 # Server
 PORT=3001
 NODE_ENV=development
+
+# S3 / Object Storage (defaults work with local MinIO, no .env needed for local dev)
+S3_ENDPOINT=http://localhost:9000
+S3_BUCKET=thoughty-attachments
+S3_ACCESS_KEY=minioadmin
+S3_SECRET_KEY=minioadmin
+S3_REGION=us-east-1
 ```
+
+> **Note:** For local development, no `.env` file is needed for S3 — the defaults connect to the MinIO container started by `docker-compose`. For production, see [S3 Configuration for Production](#-s3-configuration-for-production).
 
 **Client (.env)**
 ```env
@@ -363,7 +369,12 @@ vault kv put secret/thoughty/app \
   SMTP_HOST="<smtp-host>" \
   SMTP_PORT="587" \
   SMTP_USER="<smtp-user>" \
-  SMTP_PASS="<smtp-password>"
+  SMTP_PASS="<smtp-password>" \
+  S3_ENDPOINT="https://s3.amazonaws.com" \
+  S3_BUCKET="your-thoughty-bucket" \
+  S3_ACCESS_KEY="<aws-access-key-id>" \
+  S3_SECRET_KEY="<aws-secret-access-key>" \
+  S3_REGION="eu-west-1"
 
 # Create access policies
 vault policy write thoughty-server - <<EOF
@@ -487,6 +498,69 @@ The [Jenkinsfile](Jenkinsfile) defines a full pipeline that runs on every push.
    - Node.js 22+
    - Docker CLI
    - `kubectl`
+
+---
+
+## ☁️ S3 Configuration for Production
+
+Attachments are stored in S3-compatible object storage. In local development, MinIO runs automatically via Docker Compose with zero configuration. For production, you need to configure a real S3 provider.
+
+### AWS S3
+
+1. Create an S3 bucket (e.g. `my-thoughty-attachments`)
+2. Create an IAM user with `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject`, and `s3:ListBucket` permissions on that bucket
+3. Set the following environment variables:
+
+```env
+S3_ENDPOINT=https://s3.amazonaws.com
+S3_BUCKET=my-thoughty-attachments
+S3_ACCESS_KEY=AKIA...
+S3_SECRET_KEY=...
+S3_REGION=eu-west-1
+```
+
+### Other S3-Compatible Providers
+
+Any S3-compatible provider works (DigitalOcean Spaces, Cloudflare R2, Backblaze B2, self-hosted MinIO, etc.). Set `S3_ENDPOINT` to the provider's endpoint URL:
+
+| Provider | Endpoint Example |
+|----------|------------------|
+| AWS S3 | `https://s3.amazonaws.com` |
+| DigitalOcean Spaces | `https://nyc3.digitaloceanspaces.com` |
+| Cloudflare R2 | `https://<account-id>.r2.cloudflarestorage.com` |
+| Backblaze B2 | `https://s3.us-west-004.backblazeb2.com` |
+| Self-hosted MinIO | `https://minio.example.com` |
+
+### IAM Policy (AWS)
+
+Minimum required IAM policy for the S3 user:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject"
+      ],
+      "Resource": "arn:aws:s3:::my-thoughty-attachments/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:CreateBucket"
+      ],
+      "Resource": "arn:aws:s3:::my-thoughty-attachments"
+    }
+  ]
+}
+```
+
+> **Tip:** The server auto-creates the bucket on startup if it doesn't exist. You can remove `s3:CreateBucket` from the policy if you pre-create the bucket.
 
 ---
 

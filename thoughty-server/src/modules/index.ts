@@ -4,3 +4,4 @@ export * from './diaries';
 export * from './stats';
 export * from './config';
 export * from './io';
+export * from './attachments';

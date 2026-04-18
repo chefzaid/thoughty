@@ -1,5 +1,15 @@
 // Entry-related types
 
+export interface Attachment {
+  id: number;
+  original_filename: string;
+  stored_filename: string;
+  mimetype: string;
+  size: number;
+  entry_id?: number | null;
+  created_at?: string;
+}
+
 export interface Entry {
   id: number;
   content: string;
@@ -14,6 +24,7 @@ export interface Entry {
   created_at?: string;
   updated_at?: string;
   index?: number;
+  attachments?: Attachment[];
 }
 
 export interface EntryFormData {

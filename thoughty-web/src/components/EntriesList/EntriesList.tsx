@@ -7,6 +7,8 @@ import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import ListenButton from '../ListenButton/ListenButton';
 import MarkdownHelp from '../MarkdownHelp/MarkdownHelp';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
+import AttachmentDisplay from '../AttachmentDisplay/AttachmentDisplay';
+import type { Attachment } from '../../types';
 
 interface Entry {
     id: number;
@@ -16,6 +18,7 @@ interface Entry {
     visibility: 'public' | 'private';
     format?: 'plain' | 'markdown';
     index?: number;
+    attachments?: Attachment[];
 }
 
 interface Config {
@@ -354,6 +357,13 @@ function EntryViewMode({
                     searchTerm={searchTerm}
                 />
             </div>
+            {entry.attachments && entry.attachments.length > 0 && (
+                <AttachmentDisplay
+                    attachments={entry.attachments}
+                    theme={config.theme}
+                    t={t}
+                />
+            )}
         </>
     );
 }

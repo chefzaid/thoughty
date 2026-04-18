@@ -9,6 +9,7 @@ import { DiariesModule } from './modules/diaries';
 import { StatsModule } from './modules/stats';
 import { UserConfigModule } from './modules/config';
 import { IoModule } from './modules/io';
+import { AttachmentsModule } from './modules/attachments';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { IoModule } from './modules/io';
     StatsModule,
     UserConfigModule,
     IoModule,
+    AttachmentsModule,
   ],
   providers: [
     // Global JWT Auth Guard

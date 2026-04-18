@@ -140,11 +140,11 @@ describe('entriesService', () => {
     };
 
     it('returns true on successful creation', async () => {
-      mockAuthFetch.mockResolvedValue({ ok: true });
+      mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ success: true, entryId: 42 }) });
 
       const result = await service.createEntry(newEntry);
 
-      expect(result).toBe(true);
+      expect(result).toEqual({ success: true, entryId: 42 });
       expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries', {
         method: 'POST',
         body: JSON.stringify(newEntry),
@@ -156,7 +156,7 @@ describe('entriesService', () => {
 
       const result = await service.createEntry(newEntry);
 
-      expect(result).toBe(false);
+      expect(result).toEqual({ success: false });
     });
 
     it('returns false on error', async () => {
@@ -165,7 +165,7 @@ describe('entriesService', () => {
 
       const result = await service.createEntry(newEntry);
 
-      expect(result).toBe(false);
+      expect(result).toEqual({ success: false });
       consoleSpy.mockRestore();
     });
   });

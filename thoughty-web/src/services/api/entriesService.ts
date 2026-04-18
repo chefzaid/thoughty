@@ -89,16 +89,20 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     visibility: 'public' | 'private' | null;
     format?: 'plain' | 'markdown';
     diaryId: number | null;
-  }): Promise<boolean> => {
+  }): Promise<{ success: boolean; entryId?: number }> => {
     try {
       const response = await authFetch('/api/entries', {
         method: 'POST',
         body: JSON.stringify(entry)
       });
-      return response.ok;
+      if (response.ok) {
+        const data = await response.json() as { success: boolean; entryId: number };
+        return { success: true, entryId: data.entryId };
+      }
+      return { success: false };
     } catch (error) {
       console.error('Error saving entry:', error);
-      return false;
+      return { success: false };
     }
   };
 

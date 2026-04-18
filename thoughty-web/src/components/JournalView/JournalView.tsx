@@ -7,7 +7,7 @@ import EntriesList from '../EntriesList/EntriesList';
 import Pagination from '../Pagination/Pagination';
 import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
-import type { Entry, Diary, Config, GroupedEntries, SourceEntryInfo, VisibilityFilter } from '../../types';
+import type { Entry, Diary, Config, GroupedEntries, SourceEntryInfo, VisibilityFilter, Attachment } from '../../types';
 
 interface JournalViewProps {
   // Diaries
@@ -34,6 +34,13 @@ interface JournalViewProps {
   allTags: string[];
   formError: string;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  
+  // Attachments
+  pendingFiles?: File[];
+  uploadedAttachments?: Attachment[];
+  onAddFile?: (file: File) => void;
+  onRemovePendingFile?: (index: number) => void;
+  onRemoveUploadedAttachment?: (id: number) => void;
   
   // Filters
   search: string;
@@ -117,6 +124,11 @@ function JournalView({
   allTags,
   formError,
   onSubmit,
+  pendingFiles,
+  uploadedAttachments,
+  onAddFile,
+  onRemovePendingFile,
+  onRemoveUploadedAttachment,
   search,
   setSearch,
   filterTags,
@@ -206,6 +218,11 @@ function JournalView({
         onSubmit={onSubmit}
         theme={config.theme}
         t={t}
+        pendingFiles={pendingFiles}
+        uploadedAttachments={uploadedAttachments}
+        onAddFile={onAddFile}
+        onRemovePendingFile={onRemovePendingFile}
+        onRemoveUploadedAttachment={onRemoveUploadedAttachment}
       />
 
       <FilterControls

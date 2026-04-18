@@ -83,33 +83,24 @@ async function main(): Promise<void> {
 
     const startTime = Date.now();
     const rootDir = path.resolve(__dirname, '..', '..');
-    const backend = await runTest('Backend', path.join(rootDir, 'server'), 'test:cov');
-    const frontend = await runTest('Frontend', path.join(rootDir, 'client'), 'test:coverage');
+    const backend = await runTest('Backend', path.join(rootDir, 'thoughty-server'), 'test:cov');
+    const frontend = await runTest('Frontend', path.join(rootDir, 'thoughty-web'), 'test:coverage');
     const duration = Date.now() - startTime;
 
     // Build summary items
     const summaryItems: [string, string][] = [
-        ['⚙️  Backend', fmtScore(backend.coverage)],
-        ['🖥️  Frontend', fmtScore(frontend.coverage)],
+        ['Backend', fmtScore(backend.coverage)],
+        ['Frontend', fmtScore(frontend.coverage)],
     ];
 
     if (backend.coverage !== null && frontend.coverage !== null) {
         const average = ((backend.coverage + frontend.coverage) / 2).toFixed(2);
         const avgNum = Number.parseFloat(average);
 
-        let emoji = '😐';
-        if (avgNum >= 90) emoji = '🚀';
-        else if (avgNum >= 80) emoji = '🎉';
-        else if (avgNum >= 70) emoji = '👍';
-        else if (avgNum >= 50) emoji = '🔨';
-        else emoji = '⚠️';
-
-        summaryItems.push(['', '']);
-        summaryItems.push([`${emoji} Average`, fmtScore(avgNum)]);
+        summaryItems.push(['Average', fmtScore(avgNum)]);
     }
 
-    summaryItems.push(['', '']);
-    summaryItems.push(['⏱️  Duration', `${Math.round(duration / 1000)}s`]);
+    summaryItems.push(['Duration', `${Math.round(duration / 1000)}s`]);
 
     summaryBox('COVERAGE SUMMARY', summaryItems);
 }

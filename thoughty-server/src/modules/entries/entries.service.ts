@@ -29,6 +29,7 @@ export class EntriesService {
     const qb = this.entryRepository
       .createQueryBuilder('e')
       .leftJoinAndSelect('e.diary', 'd')
+      .leftJoinAndSelect('e.attachments', 'a')
       .where('e.user_id = :userId', { userId });
 
     if (search) {
@@ -90,6 +91,13 @@ export class EntriesService {
         diary_name: e.diary?.name,
         diary_icon: e.diary?.icon,
         created_at: e.createdAt,
+        attachments: (e.attachments || []).map((a) => ({
+          id: a.id,
+          original_filename: a.originalFilename,
+          stored_filename: a.storedFilename,
+          mimetype: a.mimetype,
+          size: a.size,
+        })),
       })),
       total,
       page,
@@ -251,7 +259,7 @@ export class EntriesService {
     return { found: true, entry, page, entryId: entry.id };
   }
 
-  async create(userId: number, dto: CreateEntryDto): Promise<{ success: boolean }> {
+  async create(userId: number, dto: CreateEntryDto): Promise<{ success: boolean; entryId: number }> {
     const sanitizedTags = dto.tags.map((tag: string) => sanitizeString(tag.trim()).substring(0, 50));
 
     const dateStr = dto.date || new Date().toISOString().split('T')[0];
@@ -271,7 +279,7 @@ export class EntriesService {
     });
     const nextIndex = countResult + 1;
 
-    await this.entryRepository.save({
+    const entry = await this.entryRepository.save({
       userId,
       date: dateStr,
       index: nextIndex,
@@ -282,7 +290,7 @@ export class EntriesService {
       diaryId: targetDiaryId,
     });
 
-    return { success: true };
+    return { success: true, entryId: entry.id };
   }
 
   async update(

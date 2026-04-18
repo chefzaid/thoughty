@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useOptimistic, useTransition, type FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { createAuthFetch, createConfigService, createEntriesService, createDiariesService } from '../services/api';
-import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo } from '../types';
+import { createAuthFetch, createConfigService, createEntriesService, createDiariesService, createAttachmentsService } from '../services/api';
+import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo, Attachment } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 
 /**
@@ -17,8 +17,9 @@ export const useApiServices = () => {
   const configService = useMemo(() => createConfigService(authFetchHelper), [authFetchHelper]);
   const entriesService = useMemo(() => createEntriesService(authFetchHelper), [authFetchHelper]);
   const diariesService = useMemo(() => createDiariesService(authFetchHelper), [authFetchHelper]);
+  const attachmentsService = useMemo(() => createAttachmentsService(authFetchHelper), [authFetchHelper]);
 
-  return { authFetchHelper, configService, entriesService, diariesService };
+  return { authFetchHelper, configService, entriesService, diariesService, attachmentsService };
 };
 
 /**
@@ -336,7 +337,7 @@ export const useEntryForm = (
   currentDiaryId: number | null,
   onSuccess: () => void
 ) => {
-  const { entriesService } = useApiServices();
+  const { entriesService, attachmentsService } = useApiServices();
   
   const [newEntryText, setNewEntryText] = useState<string>('');
   const [tags, setTags] = useState<string[]>([]);
@@ -344,6 +345,8 @@ export const useEntryForm = (
   const [visibility, setVisibility] = useState<'public' | 'private' | null>(null);
   const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
   const [formError, setFormError] = useState<string>('');
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploadedAttachments, setUploadedAttachments] = useState<Attachment[]>([]);
 
   // Set default visibility from config
   useEffect(() => {
@@ -370,7 +373,7 @@ export const useEntryForm = (
     const dd = String(selectedDate.getDate()).padStart(2, '0');
     const dateStr = `${yyyy}-${mm}-${dd}`;
 
-    const success = await entriesService.createEntry({
+    const result = await entriesService.createEntry({
       text: newEntryText,
       tags,
       date: dateStr,
@@ -379,16 +382,48 @@ export const useEntryForm = (
       diaryId: currentDiaryId
     });
 
-    if (success) {
+    if (result.success && result.entryId) {
+      // Upload pending files and link uploaded attachments to the new entry
+      const allAttachmentIds = uploadedAttachments.map(a => a.id);
+      
+      for (const file of pendingFiles) {
+        const uploaded = await attachmentsService.uploadAttachment(file, result.entryId);
+        if (uploaded) {
+          allAttachmentIds.push(uploaded.id);
+        }
+      }
+
+      // Link any pre-uploaded attachments
+      for (const att of uploadedAttachments) {
+        if (!att.entry_id) {
+          await attachmentsService.linkAttachment(att.id, result.entryId);
+        }
+      }
+
       setNewEntryText('');
       setTags([]);
       setFormat('plain');
       setVisibility(config.defaultVisibility || 'private');
+      setPendingFiles([]);
+      setUploadedAttachments([]);
       onSuccess();
     } else {
       setFormError('Failed to save entry. Please try again.');
     }
-  }, [newEntryText, tags, selectedDate, visibility, format, currentDiaryId, config.defaultVisibility, entriesService, onSuccess]);
+  }, [newEntryText, tags, selectedDate, visibility, format, currentDiaryId, config.defaultVisibility, entriesService, attachmentsService, pendingFiles, uploadedAttachments, onSuccess]);
+
+  const addPendingFile = useCallback((file: File) => {
+    setPendingFiles(prev => [...prev, file]);
+  }, []);
+
+  const removePendingFile = useCallback((index: number) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const removeUploadedAttachment = useCallback(async (attachmentId: number) => {
+    await attachmentsService.deleteAttachment(attachmentId);
+    setUploadedAttachments(prev => prev.filter(a => a.id !== attachmentId));
+  }, [attachmentsService]);
 
   return {
     newEntryText,
@@ -403,7 +438,12 @@ export const useEntryForm = (
     setFormat,
     formError,
     setFormError,
-    handleSubmit
+    handleSubmit,
+    pendingFiles,
+    uploadedAttachments,
+    addPendingFile,
+    removePendingFile,
+    removeUploadedAttachment
   };
 };
 

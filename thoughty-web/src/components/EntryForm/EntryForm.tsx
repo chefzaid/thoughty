@@ -3,6 +3,8 @@ import DatePicker from 'react-datepicker';
 import MDEditor from '@uiw/react-md-editor';
 import TagPicker from '../TagPicker/TagPicker';
 import MarkdownHelp from '../MarkdownHelp/MarkdownHelp';
+import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
+import type { Attachment } from '../../types';
 
 interface EntryFormProps {
     readonly newEntryText: string;
@@ -20,6 +22,11 @@ interface EntryFormProps {
     readonly onSubmit: (e: FormEvent<HTMLFormElement>) => void;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
+    readonly pendingFiles?: File[];
+    readonly uploadedAttachments?: Attachment[];
+    readonly onAddFile?: (file: File) => void;
+    readonly onRemovePendingFile?: (index: number) => void;
+    readonly onRemoveUploadedAttachment?: (id: number) => void;
 }
 
 function EntryForm({
@@ -37,7 +44,12 @@ function EntryForm({
     formError,
     onSubmit,
     theme,
-    t
+    t,
+    pendingFiles,
+    uploadedAttachments,
+    onAddFile,
+    onRemovePendingFile,
+    onRemoveUploadedAttachment
 }: EntryFormProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -151,6 +163,17 @@ function EntryForm({
                         )}
                         <span className="text-sm font-medium">{visibility === 'public' ? t('public') : t('private')}</span>
                     </button>
+                    {onAddFile && (
+                        <AttachmentUpload
+                            pendingFiles={pendingFiles || []}
+                            uploadedAttachments={uploadedAttachments || []}
+                            onAddFile={onAddFile}
+                            onRemovePendingFile={onRemovePendingFile || (() => {})}
+                            onRemoveUploadedAttachment={onRemoveUploadedAttachment || (() => {})}
+                            theme={theme}
+                            t={t}
+                        />
+                    )}
                     <button
                         type="submit"
                         className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-6 py-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-md"

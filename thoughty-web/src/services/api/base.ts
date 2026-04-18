@@ -35,8 +35,9 @@ export const createAuthFetch = (
     }
 
     const token = typeof getAccessToken === 'function' ? getAccessToken() : null;
+    const isFormData = options.body instanceof FormData;
     const headers: HeadersInit = {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options.headers,
     };
     if (token) {

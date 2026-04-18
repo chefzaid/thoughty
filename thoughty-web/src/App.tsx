@@ -105,7 +105,12 @@ function App() {
     format,
     setFormat,
     formError,
-    handleSubmit
+    handleSubmit,
+    pendingFiles,
+    uploadedAttachments,
+    addPendingFile,
+    removePendingFile,
+    removeUploadedAttachment
   } = useEntryForm(config, currentDiaryId, () => {
     setPage(1);
     fetchEntries();
@@ -289,6 +294,11 @@ function App() {
             allTags={allTags}
             formError={formError}
             onSubmit={handleSubmit}
+            pendingFiles={pendingFiles}
+            uploadedAttachments={uploadedAttachments}
+            onAddFile={addPendingFile}
+            onRemovePendingFile={removePendingFile}
+            onRemoveUploadedAttachment={removeUploadedAttachment}
             search={search}
             setSearch={setSearch}
             filterTags={filterTags}

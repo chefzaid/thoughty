@@ -4,10 +4,12 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Diary } from './diary.entity';
+import { Attachment } from './attachment.entity';
 
 @Entity('entries')
 export class Entry {
@@ -48,4 +50,7 @@ export class Entry {
   @ManyToOne(() => Diary, (diary) => diary.entries, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'diary_id' })
   diary: Diary | null;
+
+  @OneToMany(() => Attachment, (attachment) => attachment.entry, { cascade: true })
+  attachments: Attachment[];
 }
