@@ -1,13 +1,14 @@
 
-Ongoing
-
----
-
 Remaining features to implement:
 
-*** UI Features
-- Ability to connect to cloud providers like OneDrive or Google Drive to sync the journal file once exported
-- Ability to configure a fixed schedule for syncing the file from/to cloud (only diff, not the whole file, but there may be changes in previous entries)
+*** Personalization & UX
+- Diary-level theming and colors so entries are visually distinguishable in the All Diaries view
+- Custom tag colors and categories for visual organization of tags
+- Keyboard shortcuts for common actions (Ctrl+N new entry, Ctrl+/ focus search, Esc close modals, arrow keys for pagination)
+- Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
+- Recurring journaling reminders and writing prompts via app notifications at a user-configured time
+- Drag-and-drop reordering for entries on the same day
+- Voice personalization for TTS
 
 *** Social features
 - Feed that shows public entries from other users with infinite scroll and to preview your own public entries
@@ -33,7 +34,6 @@ Remaining features to implement:
 - Transcription from an Audio note with options for grammar and rewriting style
 - Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
 
-
 *** Book Converter
 - Based on tags to create chapters
 - Connect the entries to form a chapter
@@ -46,10 +46,9 @@ Remaining features to implement:
 - Spam and bots protection on sign up and login forms
 - Rate limiting and prevent DDOS from too much data sent
 
-*** Technical improvements
+*** Infrastructure & Reliability
 - Desktop app with offline mode for journaling without internet connection and sync once connected
 - Mobile app version for iOS and Android
-
 - Optimize database for better performance
 - Caching of frequent requests (public entries, feed)
 - Set up monitoring and alerting for server health and performance
@@ -62,30 +61,6 @@ Remaining features to implement:
 - Implement feature flags to enable/disable features without redeploying
 - Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
 - Documentation for API endpoints and developer guides
-
-*** Life ERP
-- This project could evolve into a Personal ERP
-- That does exactly all the functions I do with OneDrive, and the Excel stats file but with an app (health, mood tracker, finances, expenses and subscriptions...)
-
----
-
-Other ideas for upcoming releases:
-
-*** Personalization & UX
-- Diary-level theming and colors so entries are visually distinguishable in the All Diaries view
-- Custom tag colors and categories for visual organization of tags
-- Keyboard shortcuts for common actions (Ctrl+N new entry, Ctrl+/ focus search, Esc close modals, arrow keys for pagination)
-- Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
-- Recurring journaling reminders and writing prompts via app notifications at a user-configured time
-- Drag-and-drop reordering for entries on the same day
-- Voice personalization for TTS
-
-*** Accessibility
-- Full accessibility audit and remediation (aria-labels, screen reader support, skip-to-content links, focus management)
-- High contrast mode and adjustable font sizes
-- Keyboard-only navigation support for all interactive elements
-
-*** Infrastructure & Reliability
 - Health check endpoint (Kubernetes probes reference /api/health but none exists in the codebase)
 - Database migration files instead of relying on TypeORM synchronize (add a migrations/ folder with versioned migration scripts)
 - Complete the email verification flow (User entity has emailVerified field but no verification endpoint or email is implemented)
@@ -97,3 +72,13 @@ Other ideas for upcoming releases:
 - Database read replicas for scaling read-heavy queries (stats, feed, search)
 - Automated database backups with point-in-time recovery
 - Distributed rate limiting with Redis for multi-replica deployments
+
+*** Accessibility
+- Full accessibility audit and remediation (aria-labels, screen reader support, skip-to-content links, focus management)
+- High contrast mode and adjustable font sizes
+- Keyboard-only navigation support for all interactive elements
+
+*** Life ERP
+- This project could evolve into a Personal ERP
+- That does exactly all the functions I do with OneDrive, and the Excel stats file but with an app (health, mood tracker, finances, expenses and subscriptions...)
+- Needs to details the features once the main subject (journaling) is complete

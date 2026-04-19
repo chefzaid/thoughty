@@ -397,3 +397,239 @@
     background: rgba(239, 68, 68, 0.05);
     border-color: rgba(239, 68, 68, 0.2);
 }
+
+/* Cloud Sync Section */
+.cloud-sync-section {
+    margin-top: 1.5rem;
+}
+
+.cloud-sync-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1rem;
+}
+
+.cloud-sync-card {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cloud-sync-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+}
+
+.cloud-sync-card-icon {
+    font-size: 1.25rem;
+}
+
+.cloud-sync-active-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+    margin-left: auto;
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.cloud-sync-row {
+    margin-bottom: 1rem;
+}
+
+.cloud-sync-upload-options {
+    margin-bottom: 0.75rem;
+}
+
+.cloud-upload-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.cloud-upload-row label {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.6);
+    min-width: 4rem;
+}
+
+.cloud-upload-row select {
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: inherit;
+    font-size: 0.85rem;
+}
+
+.cloud-sync-schedule {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cloud-sync-schedule h4 {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.cloud-schedule-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    border-radius: 6px;
+}
+
+.cloud-schedule-status.active {
+    background: rgba(34, 197, 94, 0.1);
+    color: #86efac;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.cloud-schedule-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+}
+
+.cloud-schedule-meta {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 0.5rem;
+}
+
+.cloud-schedule-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+}
+
+/* Cloud Import */
+.cloud-import-section {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cloud-import-section h4 {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.cloud-import-providers {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.cloud-files-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cloud-file-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cloud-file-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.cloud-file-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cloud-file-meta {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.cloud-files-loading,
+.cloud-files-empty {
+    text-align: center;
+    padding: 1rem;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+}
+
+/* Light theme overrides */
+.import-export.light .cloud-sync-card {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.import-export.light .cloud-sync-schedule {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.import-export.light .cloud-upload-row label,
+.import-export.light .cloud-schedule-meta,
+.import-export.light .cloud-file-meta,
+.import-export.light .cloud-files-loading,
+.import-export.light .cloud-files-empty {
+    color: rgba(0, 0, 0, 0.55);
+}
+
+.import-export.light .cloud-upload-row select {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+.import-export.light .cloud-schedule-status.active {
+    background: rgba(34, 197, 94, 0.08);
+    color: #15803d;
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+.import-export.light .cloud-file-row {
+    background: rgba(0, 0, 0, 0.02);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.import-export.light .cloud-import-section {
+    border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+@media (max-width: 640px) {
+    .cloud-sync-grid {
+        grid-template-columns: 1fr;
+    }
+}
+}

@@ -96,6 +96,22 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Diary Default Visibility** - Imported entries inherit the target diary's visibility setting
 - **Safe Diary Fallback** - If an imported diary name does not match an existing diary, the entry is imported into the default target diary instead
 
+### ☁️ Cloud Sync
+- **Google Drive Integration** - Connect your Google account to sync journal exports to Google Drive
+- **OneDrive Integration** - Connect your Microsoft account to sync journal exports to OneDrive
+- **Dropbox Integration** - Connect your Dropbox account to sync journal exports to Dropbox
+- **OAuth 2.0 Authentication** - Secure popup-based OAuth flow for connecting cloud providers (configured in Settings/Profile)
+- **Upload Exports** - Export your journal in TXT, JSON, or Markdown format directly to a "Thoughty" folder in your cloud storage
+- **Browse & Import Cloud Files** - View files in your Thoughty cloud folder and import them directly into your journal
+- **Download Files** - Download any file from your cloud storage back to your device
+- **Multiple Providers** - Connect to Google Drive, OneDrive, and Dropbox simultaneously
+- **Token Management** - Encrypted token storage with automatic refresh when tokens expire
+- **Per-Diary Export** - Upload exports for a specific diary or all diaries
+- **Scheduled Sync** - Configure automatic sync on a fixed schedule (every 6h, 12h, daily, or weekly) from Import/Export
+- **Diff-Based Sync** - Only uploads when content has changed since the last sync, using SHA-256 hash comparison
+- **Auto-Sync Timer** - Client-side timer checks for due syncs every minute and triggers them automatically
+- **Sync Now** - Manually trigger a diff-based sync at any time
+
 ### 🔐 Authentication & Security
 - **Email/Password Registration** - Secure signup with password requirements
 - **Login Flexibility** - Sign in with either email or username
@@ -603,7 +619,6 @@ Minimum required IAM policy for the S3 user:
 
 See [todo.txt](todo.txt) for the complete list of planned features, including:
 
-- ☁️ Cloud sync (OneDrive, Google Drive)
 - 🤖 AI-powered features (mood analysis, tag suggestions, writing assistance)
 - 👥 Social features (public feed, follows, comments, likes)
 - 📖 Book converter (create chapters from tagged entries)

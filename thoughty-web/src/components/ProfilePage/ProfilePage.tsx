@@ -9,6 +9,7 @@ import ProfileHeaderCard from './ProfileHeaderCard';
 import PersonalSection from './PersonalSection';
 import AppearanceSection from './AppearanceSection';
 import AISection from './AISection';
+import CloudProvidersSection from './CloudProvidersSection';
 import SecuritySection from './SecuritySection';
 import DangerZoneSection from './DangerZoneSection';
 import ProfileActions from './ProfileActions';
@@ -276,6 +277,11 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
         localConfig={localConfig}
         handleChange={handleChange}
         t={t}
+      />
+
+      <CloudProvidersSection
+        t={t}
+        isDark={isDark}
       />
 
       <ProfileActions onBack={onBack} handleSave={handleSave} t={t} />

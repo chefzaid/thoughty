@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useOptimistic, useTransition } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { createAuthFetch, createConfigService, createEntriesService, createDiariesService, createAttachmentsService, createAiService } from '../services/api';
+import { createAuthFetch, createConfigService, createEntriesService, createDiariesService, createAttachmentsService, createAiService, createCloudSyncService } from '../services/api';
 import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo, Attachment } from '../types';
 import { getTranslation, TranslationKey } from '../utils/translations';
 
@@ -34,8 +34,9 @@ export const useApiServices = () => {
   const diariesService = useMemo(() => createDiariesService(authFetchHelper), [authFetchHelper]);
   const attachmentsService = useMemo(() => createAttachmentsService(authFetchHelper), [authFetchHelper]);
   const aiService = useMemo(() => createAiService(authFetchHelper), [authFetchHelper]);
+  const cloudSyncService = useMemo(() => createCloudSyncService(authFetchHelper), [authFetchHelper]);
 
-  return { authFetchHelper, configService, entriesService, diariesService, attachmentsService, aiService };
+  return { authFetchHelper, configService, entriesService, diariesService, attachmentsService, aiService, cloudSyncService };
 };
 
 /**

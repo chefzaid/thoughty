@@ -12,6 +12,24 @@ vi.mock('../../contexts/AuthContext', () => ({
     })
 }));
 
+vi.mock('../../hooks/useAppState', () => ({
+    useApiServices: () => ({
+        cloudSyncService: {
+            getStatus: vi.fn().mockResolvedValue({}),
+            getAuthUrl: vi.fn(),
+            connect: vi.fn(),
+            disconnect: vi.fn(),
+            listFiles: vi.fn(),
+            uploadExport: vi.fn(),
+            downloadFile: vi.fn(),
+            getSchedules: vi.fn(),
+            setSchedule: vi.fn(),
+            deleteSchedule: vi.fn(),
+            triggerSync: vi.fn(),
+        },
+    }),
+}));
+
 interface ProfileConfig {
     name?: string;
     theme?: 'light' | 'dark';
@@ -104,6 +122,7 @@ describe('ProfilePage', () => {
             expect(screen.getByText('personalInfo')).toBeInTheDocument();
             expect(screen.getByText('appearance')).toBeInTheDocument();
             expect(screen.getByText('security')).toBeInTheDocument();
+            expect(screen.getByText('cloudProviders')).toBeInTheDocument();
         });
 
         it('displays member since year', () => {

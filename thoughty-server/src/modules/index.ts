@@ -6,3 +6,4 @@ export * from './config';
 export * from './io';
 export * from './attachments';
 export * from './ai';
+export * from './cloud-sync';

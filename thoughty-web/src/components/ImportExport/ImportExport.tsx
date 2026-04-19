@@ -1,6 +1,10 @@
-import { useState, useEffect, type ChangeEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
 import './ImportExport.css';
 import { useAuth } from '../../contexts/AuthContext';
+import { useApiServices } from '../../hooks/useAppState';
+import type { CloudProviderType, CloudFileInfo, SyncScheduleConfig, SyncFrequency } from '../../services/api/cloudSyncService';
+
+type ExportFormatType = 'txt' | 'json' | 'md';
 
 interface FormatConfig {
     entrySeparator: string;
@@ -32,6 +36,7 @@ interface ImportExportProps {
 
 function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
     const { authFetch } = useAuth();
+    const { cloudSyncService } = useApiServices();
     const [formatConfig, setFormatConfig] = useState<FormatConfig>({
         entrySeparator: '--------------------------------------------------------------------------------',
         sameDaySeparator: '********************************************************************************',
@@ -49,9 +54,33 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
     const [message, setMessage] = useState<MessageState | null>(null);
     const [skipDuplicates, setSkipDuplicates] = useState<boolean>(true);
     const [includeVisibility, setIncludeVisibility] = useState<boolean>(false);
-    const [exportFormat, setExportFormat] = useState<'txt' | 'json' | 'md'>('txt');
+    const [exportFormat, setExportFormat] = useState<ExportFormatType>('txt');
     const [confirmDeleteAll, setConfirmDeleteAll] = useState<boolean>(false);
     const [deleting, setDeleting] = useState<boolean>(false);
+
+    // Cloud sync state
+    const [cloudStatus, setCloudStatus] = useState<Record<string, { connected: boolean; connectedAt?: string }>>({});
+    const [cloudLoading, setCloudLoading] = useState(true);
+    const [uploading, setUploading] = useState<CloudProviderType | null>(null);
+    const [syncing, setSyncing] = useState<CloudProviderType | null>(null);
+    const [schedules, setSchedules] = useState<Record<string, SyncScheduleConfig>>({});
+    const [scheduleFrequency, setScheduleFrequency] = useState<Record<string, SyncFrequency>>({
+        google_drive: 'daily', onedrive: 'daily', dropbox: 'daily',
+    });
+    const [scheduleFormat, setScheduleFormat] = useState<Record<string, ExportFormatType>>({
+        google_drive: 'txt', onedrive: 'txt', dropbox: 'txt',
+    });
+    const [scheduleIncludeVisibility, setScheduleIncludeVisibility] = useState<Record<string, boolean>>({
+        google_drive: false, onedrive: false, dropbox: false,
+    });
+    const [cloudExportFormat, setCloudExportFormat] = useState<ExportFormatType>('txt');
+    const [cloudIncludeVisibility, setCloudIncludeVisibility] = useState(false);
+    // Cloud import state
+    const [cloudImportProvider, setCloudImportProvider] = useState<CloudProviderType | null>(null);
+    const [cloudFiles, setCloudFiles] = useState<CloudFileInfo[]>([]);
+    const [loadingCloudFiles, setLoadingCloudFiles] = useState(false);
+    const [importingCloudFile, setImportingCloudFile] = useState<string | null>(null);
+    const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const isLight = theme === 'light';
 
@@ -179,6 +208,179 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
         setFormatConfig(prev => ({ ...prev, [key]: value }));
     };
 
+    // Cloud sync functions
+    const PROVIDER_CONFIG: Record<CloudProviderType, { name: string; icon: string }> = {
+        google_drive: { name: 'Google Drive', icon: '📁' },
+        onedrive: { name: 'OneDrive', icon: '☁️' },
+        dropbox: { name: 'Dropbox', icon: '📦' },
+    };
+
+    const fetchCloudStatus = useCallback(async () => {
+        const data = await cloudSyncService.getStatus();
+        if (data) setCloudStatus(data as unknown as Record<string, { connected: boolean; connectedAt?: string }>);
+        setCloudLoading(false);
+    }, [cloudSyncService]);
+
+    const fetchSchedules = useCallback(async () => {
+        const data = await cloudSyncService.getSchedules();
+        if (data) {
+            setSchedules(data);
+            for (const [provider, config] of Object.entries(data)) {
+                if (config.frequency) {
+                    setScheduleFrequency(prev => ({ ...prev, [provider]: config.frequency as SyncFrequency }));
+                }
+                if (config.format) {
+                    setScheduleFormat(prev => ({ ...prev, [provider]: config.format as ExportFormatType }));
+                }
+                if (config.includeVisibility !== undefined) {
+                    setScheduleIncludeVisibility(prev => ({ ...prev, [provider]: config.includeVisibility! }));
+                }
+            }
+        }
+    }, [cloudSyncService]);
+
+    useEffect(() => {
+        fetchCloudStatus();
+        fetchSchedules();
+    }, [fetchCloudStatus, fetchSchedules]);
+
+    // Auto-sync timer
+    useEffect(() => {
+        const checkAndSync = async () => {
+            for (const [provider, config] of Object.entries(schedules)) {
+                if (!config.enabled || !config.nextSyncAt) continue;
+                const providerStatus = cloudStatus[provider];
+                if (!providerStatus?.connected) continue;
+                const nextSyncTime = new Date(config.nextSyncAt).getTime();
+                if (Date.now() >= nextSyncTime) {
+                    const result = await cloudSyncService.triggerSync(provider as CloudProviderType);
+                    if (result) await fetchSchedules();
+                }
+            }
+        };
+        syncTimerRef.current = setInterval(checkAndSync, 60000);
+        return () => { if (syncTimerRef.current) clearInterval(syncTimerRef.current); };
+    }, [schedules, cloudStatus, cloudSyncService, fetchSchedules]);
+
+    const handleCloudUpload = async (provider: CloudProviderType) => {
+        setUploading(provider);
+        const result = await cloudSyncService.uploadExport(provider, {
+            diaryId: diaryId ?? undefined,
+            format: cloudExportFormat,
+            includeVisibility: cloudIncludeVisibility,
+        });
+        if (result) {
+            setMessage({ type: 'success', text: t('cloudUploadSuccess', { name: result.name }) });
+        } else {
+            setMessage({ type: 'error', text: t('cloudUploadError') });
+        }
+        setUploading(null);
+        setTimeout(() => setMessage(null), 4000);
+    };
+
+    const handleSaveSchedule = async (provider: CloudProviderType) => {
+        const success = await cloudSyncService.setSchedule(provider, {
+            frequency: scheduleFrequency[provider] || 'daily',
+            format: scheduleFormat[provider],
+            diaryId: diaryId ?? undefined,
+            includeVisibility: scheduleIncludeVisibility[provider],
+        });
+        if (success) {
+            setMessage({ type: 'success', text: t('cloudScheduleSaved') });
+            await fetchSchedules();
+        } else {
+            setMessage({ type: 'error', text: t('cloudScheduleSaveError') });
+        }
+        setTimeout(() => setMessage(null), 4000);
+    };
+
+    const handleRemoveSchedule = async (provider: CloudProviderType) => {
+        const success = await cloudSyncService.deleteSchedule(provider);
+        if (success) {
+            setMessage({ type: 'success', text: t('cloudScheduleRemoved') });
+            await fetchSchedules();
+        } else {
+            setMessage({ type: 'error', text: t('cloudScheduleRemoveError') });
+        }
+        setTimeout(() => setMessage(null), 4000);
+    };
+
+    const handleSyncNow = async (provider: CloudProviderType) => {
+        setSyncing(provider);
+        const result = await cloudSyncService.triggerSync(provider);
+        if (result) {
+            if (result.synced) {
+                setMessage({ type: 'success', text: t('cloudSyncSuccess', { name: result.file?.name || '' }) });
+            } else {
+                setMessage({ type: 'success', text: t('cloudSyncNoChanges') });
+            }
+            await fetchSchedules();
+        } else {
+            setMessage({ type: 'error', text: t('cloudSyncError') });
+        }
+        setSyncing(null);
+        setTimeout(() => setMessage(null), 4000);
+    };
+
+    const handleBrowseCloudFiles = async (provider: CloudProviderType) => {
+        if (cloudImportProvider === provider) {
+            setCloudImportProvider(null);
+            setCloudFiles([]);
+            return;
+        }
+        setCloudImportProvider(provider);
+        setLoadingCloudFiles(true);
+        const data = await cloudSyncService.listFiles(provider);
+        setCloudFiles(data);
+        setLoadingCloudFiles(false);
+    };
+
+    const handleCloudFileImport = async (provider: CloudProviderType, file: CloudFileInfo) => {
+        setImportingCloudFile(file.id);
+        const content = await cloudSyncService.downloadFile(provider, file.id);
+        if (content) {
+            // Preview the cloud file content like a local file
+            setFileContent(content);
+            try {
+                const response = await authFetch('/api/io/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content, diaryId })
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setPreview(data);
+                    setMessage({ type: 'success', text: t('cloudDownloadSuccess', { name: file.name }) });
+                }
+            } catch (error) {
+                console.error('Cloud file preview failed:', error);
+                setMessage({ type: 'error', text: t('previewError') });
+            }
+        } else {
+            setMessage({ type: 'error', text: t('cloudDownloadError') });
+        }
+        setImportingCloudFile(null);
+        setTimeout(() => setMessage(null), 4000);
+    };
+
+    const formatCloudDate = (dateStr: string): string => {
+        try {
+            return new Date(dateStr).toLocaleDateString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit',
+            });
+        } catch { return dateStr; }
+    };
+
+    const formatFileSize = (bytes: number): string => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    const connectedProviders = (Object.keys(PROVIDER_CONFIG) as CloudProviderType[])
+        .filter(p => cloudStatus[p]?.connected);
+
     const handleDeleteAll = async (): Promise<void> => {
         if (!confirmDeleteAll) {
             setConfirmDeleteAll(true);
@@ -237,7 +439,7 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
                         <label>{t('exportFormat')}</label>
                         <select
                             value={exportFormat}
-                            onChange={(e) => setExportFormat(e.target.value as 'txt' | 'json' | 'md')}
+                            onChange={(e) => setExportFormat(e.target.value as ExportFormatType)}
                             className="format-select"
                         >
                             <option value="txt">{t('formatTxt')}</option>
@@ -317,8 +519,187 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
                             </button>
                         </div>
                     )}
+
+                    {/* Cloud file import */}
+                    {!cloudLoading && connectedProviders.length > 0 && (
+                        <div className="cloud-import-section">
+                            <h4>{t('cloudImportFromCloud')}</h4>
+                            <p className="section-description">{t('cloudSelectFileToImport')}</p>
+                            <div className="cloud-import-providers">
+                                {connectedProviders.map(provider => (
+                                    <button
+                                        key={provider}
+                                        className={`io-btn ${cloudImportProvider === provider ? 'primary' : 'secondary'}`}
+                                        onClick={() => handleBrowseCloudFiles(provider)}
+                                    >
+                                        {PROVIDER_CONFIG[provider].icon} {PROVIDER_CONFIG[provider].name}
+                                    </button>
+                                ))}
+                            </div>
+                            {cloudImportProvider && (
+                                <div className="cloud-files-list">
+                                    {loadingCloudFiles && <div className="cloud-files-loading">{t('loading')}...</div>}
+                                    {!loadingCloudFiles && cloudFiles.length === 0 && (
+                                        <div className="cloud-files-empty">{t('cloudNoFiles')}</div>
+                                    )}
+                                    {!loadingCloudFiles && cloudFiles.map(file => (
+                                        <div key={file.id} className="cloud-file-row">
+                                            <div className="cloud-file-info">
+                                                <span className="cloud-file-name">{file.name}</span>
+                                                <span className="cloud-file-meta">
+                                                    {formatFileSize(file.size)} · {formatCloudDate(file.modifiedAt)}
+                                                </span>
+                                            </div>
+                                            <button
+                                                className="io-btn secondary"
+                                                onClick={() => handleCloudFileImport(cloudImportProvider, file)}
+                                                disabled={importingCloudFile === file.id}
+                                            >
+                                                {importingCloudFile === file.id ? t('importing') : t('import')}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </section>
             </div>
+
+            {/* Cloud Sync Section */}
+            {!cloudLoading && connectedProviders.length > 0 && (
+                <section className="io-section cloud-sync-section">
+                    <h3>{t('cloudSync')}</h3>
+                    <p className="section-description">{t('cloudSyncDescription')}</p>
+
+                    <div className="cloud-sync-grid">
+                        {connectedProviders.map(provider => {
+                            const config = PROVIDER_CONFIG[provider];
+                            const schedule = schedules[provider];
+
+                            return (
+                                <div key={provider} className="cloud-sync-card">
+                                    <div className="cloud-sync-card-header">
+                                        <span className="cloud-sync-card-icon">{config.icon}</span>
+                                        <span className="cloud-sync-card-name">{config.name}</span>
+                                        {schedule?.enabled && <span className="cloud-sync-active-dot" />}
+                                    </div>
+
+                                    {/* Upload */}
+                                    <div className="cloud-sync-row">
+                                        <div className="cloud-sync-upload-options">
+                                            <div className="cloud-upload-row">
+                                                <label>{t('exportFormat')}</label>
+                                                <select
+                                                    value={cloudExportFormat}
+                                                    onChange={e => setCloudExportFormat(e.target.value as ExportFormatType)}
+                                                >
+                                                    <option value="txt">{t('formatTxt')}</option>
+                                                    <option value="json">{t('formatJson')}</option>
+                                                    <option value="md">{t('formatMd')}</option>
+                                                </select>
+                                            </div>
+                                            <label className="checkbox-label">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={cloudIncludeVisibility}
+                                                    onChange={() => setCloudIncludeVisibility(!cloudIncludeVisibility)}
+                                                />
+                                                {t('includeVisibility')}
+                                            </label>
+                                        </div>
+                                        <button
+                                            className="io-btn primary"
+                                            onClick={() => handleCloudUpload(provider)}
+                                            disabled={uploading === provider}
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                            </svg>
+                                            {uploading === provider ? t('cloudUploading') : t('cloudUpload')}
+                                        </button>
+                                    </div>
+
+                                    {/* Schedule */}
+                                    <div className="cloud-sync-schedule">
+                                        <h4>{t('cloudSchedule')}</h4>
+                                        <p className="section-description">{t('cloudScheduleDescription')}</p>
+
+                                        {schedule?.enabled && (
+                                            <div className="cloud-schedule-status active">
+                                                <span className="cloud-schedule-status-dot" />
+                                                {t('cloudScheduleEnabled')}
+                                            </div>
+                                        )}
+
+                                        {schedule?.lastSyncAt && (
+                                            <div className="cloud-schedule-meta">{t('cloudLastSync', { date: formatCloudDate(schedule.lastSyncAt) })}</div>
+                                        )}
+                                        {schedule?.nextSyncAt && schedule?.enabled && (
+                                            <div className="cloud-schedule-meta">{t('cloudNextSync', { date: formatCloudDate(schedule.nextSyncAt) })}</div>
+                                        )}
+
+                                        <div className="cloud-upload-row">
+                                            <label>{t('cloudScheduleFrequency')}</label>
+                                            <select
+                                                value={scheduleFrequency[provider]}
+                                                onChange={e => setScheduleFrequency(prev => ({ ...prev, [provider]: e.target.value as SyncFrequency }))}
+                                            >
+                                                <option value="every_6h">{t('cloudScheduleEvery6h')}</option>
+                                                <option value="every_12h">{t('cloudScheduleEvery12h')}</option>
+                                                <option value="daily">{t('cloudScheduleDaily')}</option>
+                                                <option value="weekly">{t('cloudScheduleWeekly')}</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="cloud-upload-row">
+                                            <label>{t('exportFormat')}</label>
+                                            <select
+                                                value={scheduleFormat[provider]}
+                                                onChange={e => setScheduleFormat(prev => ({ ...prev, [provider]: e.target.value as ExportFormatType }))}
+                                            >
+                                                <option value="txt">{t('formatTxt')}</option>
+                                                <option value="json">{t('formatJson')}</option>
+                                                <option value="md">{t('formatMd')}</option>
+                                            </select>
+                                        </div>
+
+                                        <label className="checkbox-label">
+                                            <input
+                                                type="checkbox"
+                                                checked={scheduleIncludeVisibility[provider]}
+                                                onChange={() => setScheduleIncludeVisibility(prev => ({ ...prev, [provider]: !prev[provider] }))}
+                                            />
+                                            {t('includeVisibility')}
+                                        </label>
+
+                                        <div className="cloud-schedule-actions">
+                                            <button className="io-btn primary" onClick={() => handleSaveSchedule(provider)}>
+                                                {t('cloudScheduleEnable')}
+                                            </button>
+                                            {schedule?.enabled && (
+                                                <button className="io-btn danger" onClick={() => handleRemoveSchedule(provider)}>
+                                                    {t('cloudScheduleDisable')}
+                                                </button>
+                                            )}
+                                            <button
+                                                className="io-btn secondary"
+                                                onClick={() => handleSyncNow(provider)}
+                                                disabled={syncing === provider}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                {syncing === provider ? t('cloudSyncing') : t('cloudSyncNow')}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </section>
+            )}
 
             {/* Format Configuration Section */}
             <section className="io-section format-section">

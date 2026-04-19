@@ -64,6 +64,19 @@ vi.mock('../services/api', () => ({
   })),
   createAiService: vi.fn(() => ({
     suggestTags: vi.fn()
+  })),
+  createCloudSyncService: vi.fn(() => ({
+    getStatus: vi.fn(),
+    getAuthUrl: vi.fn(),
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    listFiles: vi.fn(),
+    uploadExport: vi.fn(),
+    downloadFile: vi.fn(),
+    getSchedules: vi.fn(),
+    setSchedule: vi.fn(),
+    deleteSchedule: vi.fn(),
+    triggerSync: vi.fn()
   }))
 }));
 

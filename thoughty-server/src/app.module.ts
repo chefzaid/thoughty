@@ -11,6 +11,7 @@ import { UserConfigModule } from './modules/config';
 import { IoModule } from './modules/io';
 import { AttachmentsModule } from './modules/attachments';
 import { AiModule } from './modules/ai';
+import { CloudSyncModule } from './modules/cloud-sync';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { AiModule } from './modules/ai';
     IoModule,
     AttachmentsModule,
     AiModule,
+    CloudSyncModule,
   ],
   providers: [
     // Global JWT Auth Guard
