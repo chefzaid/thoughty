@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting, User, Diary, Entry, EntryRevision, Attachment } from '@/database/entities';
-import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'crypto';
 
 const DEFAULT_SETTINGS: Record<string, string> = {
   theme: 'dark',
@@ -13,13 +12,8 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   autoTagMaxTags: '0',
 };
 
-const SENSITIVE_KEYS = new Set(['openRouterApiKey']);
-const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
-
 @Injectable()
 export class ConfigService {
-  private readonly encryptionKey: Buffer;
-
   constructor(
     @InjectRepository(Setting)
     private readonly settingRepository: Repository<Setting>,
@@ -33,38 +27,7 @@ export class ConfigService {
     private readonly revisionRepository: Repository<EntryRevision>,
     @InjectRepository(Attachment)
     private readonly attachmentRepository: Repository<Attachment>,
-  ) {
-    const secret = process.env.CONFIG_ENCRYPTION_SECRET || 'thoughty-default-config-secret-key';
-    this.encryptionKey = scryptSync(secret, 'salt', 32);
-  }
-
-  private encrypt(text: string): string {
-    const iv = randomBytes(16);
-    const cipher = createCipheriv(ENCRYPTION_ALGORITHM, this.encryptionKey, iv);
-    const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
-    const authTag = cipher.getAuthTag();
-    return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted.toString('hex')}`;
-  }
-
-  private decrypt(encryptedText: string): string {
-    try {
-      const [ivHex, authTagHex, encryptedHex] = encryptedText.split(':');
-      if (!ivHex || !authTagHex || !encryptedHex) return '';
-      const iv = Buffer.from(ivHex, 'hex');
-      const authTag = Buffer.from(authTagHex, 'hex');
-      const encrypted = Buffer.from(encryptedHex, 'hex');
-      const decipher = createDecipheriv(ENCRYPTION_ALGORITHM, this.encryptionKey, iv);
-      decipher.setAuthTag(authTag);
-      return decipher.update(encrypted) + decipher.final('utf8');
-    } catch {
-      return '';
-    }
-  }
-
-  private maskApiKey(key: string): string {
-    if (key.length <= 4) return '****';
-    return '*'.repeat(key.length - 4) + key.slice(-4);
-  }
+  ) {}
 
   async getConfig(userId: number): Promise<Record<string, string>> {
     const settings = await this.settingRepository.find({
@@ -73,12 +36,7 @@ export class ConfigService {
 
     const config = { ...DEFAULT_SETTINGS };
     for (const setting of settings) {
-      if (SENSITIVE_KEYS.has(setting.key)) {
-        const decrypted = this.decrypt(setting.value);
-        config[setting.key] = decrypted ? this.maskApiKey(decrypted) : '';
-      } else {
-        config[setting.key] = setting.value;
-      }
+      config[setting.key] = setting.value;
     }
 
     return config;
@@ -89,26 +47,16 @@ export class ConfigService {
       where: { userId, key },
     });
     if (!setting) return '';
-    if (SENSITIVE_KEYS.has(key)) {
-      return this.decrypt(setting.value);
-    }
     return setting.value;
   }
 
   async updateConfig(userId: number, newConfig: Record<string, string>): Promise<{ success: boolean }> {
     for (const [key, value] of Object.entries(newConfig)) {
-      // Skip masked values (user didn't change the API key)
-      if (SENSITIVE_KEYS.has(key) && value.startsWith('*')) {
-        continue;
-      }
-
-      const storedValue = SENSITIVE_KEYS.has(key) && value ? this.encrypt(value) : String(value);
-
       await this.settingRepository.upsert(
         {
           userId,
           key,
-          value: storedValue,
+          value: String(value),
         },
         ['userId', 'key'],
       );
@@ -140,9 +88,7 @@ export class ConfigService {
         }
       : null;
 
-    const safeSettings = settings
-      .filter((s) => !SENSITIVE_KEYS.has(s.key))
-      .map((s) => ({ key: s.key, value: s.value, updatedAt: s.updatedAt }));
+    const safeSettings = settings.map((s) => ({ key: s.key, value: s.value, updatedAt: s.updatedAt }));
 
     return {
       exportedAt: new Date().toISOString(),

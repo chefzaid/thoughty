@@ -120,7 +120,7 @@ async function check(): Promise<void> {
         // Summary box
         const totalUsers = users.length;
         const totalDiaries = diaries.length;
-        const totalEntries = parseInt(entriesCount[0].count);
+        const totalEntries = Number.parseInt(entriesCount[0].count, 10);
         const totalTagsResult = await query<{ count: string }>(
             'SELECT COUNT(*) as count FROM (SELECT DISTINCT unnest(tags) as tag FROM entries) t',
         );

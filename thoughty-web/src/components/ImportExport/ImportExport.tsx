@@ -3,6 +3,7 @@ import './ImportExport.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApiServices } from '../../hooks/useAppState';
 import type { CloudProviderType, CloudFileInfo, SyncScheduleConfig, SyncFrequency } from '../../services/api/cloudSyncService';
+import { CLOUD_PROVIDER_ICONS, CLOUD_PROVIDER_NAMES } from '../CloudProviderIcons';
 
 type ExportFormatType = 'txt' | 'json' | 'md';
 
@@ -209,10 +210,10 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
     };
 
     // Cloud sync functions
-    const PROVIDER_CONFIG: Record<CloudProviderType, { name: string; icon: string }> = {
-        google_drive: { name: 'Google Drive', icon: '📁' },
-        onedrive: { name: 'OneDrive', icon: '☁️' },
-        dropbox: { name: 'Dropbox', icon: '📦' },
+    const PROVIDER_CONFIG: Record<CloudProviderType, { name: string }> = {
+        google_drive: { name: CLOUD_PROVIDER_NAMES.google_drive },
+        onedrive: { name: CLOUD_PROVIDER_NAMES.onedrive },
+        dropbox: { name: CLOUD_PROVIDER_NAMES.dropbox },
     };
 
     const fetchCloudStatus = useCallback(async () => {
@@ -526,15 +527,19 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
                             <h4>{t('cloudImportFromCloud')}</h4>
                             <p className="section-description">{t('cloudSelectFileToImport')}</p>
                             <div className="cloud-import-providers">
-                                {connectedProviders.map(provider => (
+                                {connectedProviders.map(provider => {
+                                    const ProvIcon = CLOUD_PROVIDER_ICONS[provider];
+                                    return (
                                     <button
                                         key={provider}
                                         className={`io-btn ${cloudImportProvider === provider ? 'primary' : 'secondary'}`}
                                         onClick={() => handleBrowseCloudFiles(provider)}
                                     >
-                                        {PROVIDER_CONFIG[provider].icon} {PROVIDER_CONFIG[provider].name}
+                                        {ProvIcon && <ProvIcon width={16} height={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.25rem' }} />}
+                                        {PROVIDER_CONFIG[provider].name}
                                     </button>
-                                ))}
+                                    );
+                                })}
                             </div>
                             {cloudImportProvider && (
                                 <div className="cloud-files-list">
@@ -576,11 +581,12 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
                         {connectedProviders.map(provider => {
                             const config = PROVIDER_CONFIG[provider];
                             const schedule = schedules[provider];
+                            const IconComponent = CLOUD_PROVIDER_ICONS[provider];
 
                             return (
                                 <div key={provider} className="cloud-sync-card">
                                     <div className="cloud-sync-card-header">
-                                        <span className="cloud-sync-card-icon">{config.icon}</span>
+                                        <span className="cloud-sync-card-icon">{IconComponent && <IconComponent width={20} height={20} />}</span>
                                         <span className="cloud-sync-card-name">{config.name}</span>
                                         {schedule?.enabled && <span className="cloud-sync-active-dot" />}
                                     </div>

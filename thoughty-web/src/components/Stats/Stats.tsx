@@ -51,9 +51,12 @@ function Stats({ theme, t, diaryId }: StatsProps) {
     const [error, setError] = useState<string | null>(null);
 
     // Period selection states
-    const [monthsToShow, setMonthsToShow] = useState<number>(12);
     const [tagsYearPage, setTagsYearPage] = useState<number>(0);
     const tagsYearsPerPage = 5;
+    const [yearPage, setYearPage] = useState<number>(0);
+    const yearsPerPage = 8;
+    const [monthPage, setMonthPage] = useState<number>(0);
+    const monthsPerPage = 12;
 
     const fetchStats = useCallback(async (): Promise<void> => {
         try {
@@ -131,8 +134,10 @@ function Stats({ theme, t, diaryId }: StatsProps) {
         );
     }
 
-    // Prepare chart data
-    const yearLabels = Object.keys(stats.thoughtsPerYear).sort((a, b) => a.localeCompare(b));
+    // Prepare chart data - with pagination for years
+    const allYearLabels = Object.keys(stats.thoughtsPerYear).sort((a, b) => a.localeCompare(b));
+    const totalYearChartPages = Math.ceil(allYearLabels.length / yearsPerPage);
+    const yearLabels = allYearLabels.slice(yearPage * yearsPerPage, (yearPage + 1) * yearsPerPage);
     const yearData = yearLabels.map(year => stats.thoughtsPerYear[year]);
 
     const thoughtsPerYearChart = {
@@ -148,9 +153,10 @@ function Stats({ theme, t, diaryId }: StatsProps) {
         ],
     };
 
-    // Monthly data - configurable period
+    // Monthly data - with pagination
     const allMonthLabels = Object.keys(stats.thoughtsPerMonth).sort((a, b) => a.localeCompare(b));
-    const monthLabels = allMonthLabels.slice(-monthsToShow);
+    const totalMonthPages = Math.ceil(allMonthLabels.length / monthsPerPage);
+    const monthLabels = allMonthLabels.slice(monthPage * monthsPerPage, (monthPage + 1) * monthsPerPage);
     const monthData = monthLabels.map(month => stats.thoughtsPerMonth[month]);
 
     const thoughtsPerMonthChart = {
@@ -207,20 +213,11 @@ function Stats({ theme, t, diaryId }: StatsProps) {
                 .slice(0, 5),
         }));
 
-    const totalYearPages = Math.ceil(allTagsPerYear.length / tagsYearsPerPage);
+    const totalTagsYearPages = Math.ceil(allTagsPerYear.length / tagsYearsPerPage);
     const tagsPerYearData = allTagsPerYear.slice(
         tagsYearPage * tagsYearsPerPage,
         (tagsYearPage + 1) * tagsYearsPerPage
     );
-
-    // Month period options
-    const monthPeriodOptions = [
-        { value: 6, label: '6 months' },
-        { value: 12, label: '12 months' },
-        { value: 24, label: '24 months' },
-        { value: 36, label: '3 years' },
-        { value: allMonthLabels.length, label: 'All time' },
-    ];
 
     return (
         <div className={`stats-container ${themeClass}`}>
@@ -240,13 +237,13 @@ function Stats({ theme, t, diaryId }: StatsProps) {
                     <div className="stat-label">{t('uniqueTags')}</div>
                 </div>
                 <div className={`stat-card ${themeClass}`}>
-                    <div className="stat-value">{yearLabels.length}</div>
+                    <div className="stat-value">{allYearLabels.length}</div>
                     <div className="stat-label">{t('yearsActive')}</div>
                 </div>
                 <div className={`stat-card ${themeClass}`}>
                     <div className="stat-value">
-                        {stats.totalThoughts && yearLabels.length
-                            ? Math.round(stats.totalThoughts / yearLabels.length)
+                        {stats.totalThoughts && allYearLabels.length
+                            ? Math.round(stats.totalThoughts / allYearLabels.length)
                             : 0}
                     </div>
                     <div className="stat-label">{t('avgPerYear')}</div>
@@ -258,11 +255,34 @@ function Stats({ theme, t, diaryId }: StatsProps) {
                 <div className="charts-row">
                     {/* Thoughts per Year */}
                     <div className={`chart-card ${themeClass}`}>
-                        <h3>{t('thoughtsPerYear')}</h3>
-                        <div className="chart-wrapper chart-scrollable">
-                            <div style={{ minWidth: yearLabels.length > 8 ? `${yearLabels.length * 60}px` : '100%', height: '100%' }}>
-                                <Bar data={thoughtsPerYearChart} options={chartOptions} />
-                            </div>
+                        <div className="chart-header">
+                            <h3>{t('thoughtsPerYear')}</h3>
+                            {totalYearChartPages > 1 && (
+                                <div className="pagination-controls">
+                                    <button
+                                        className={`pagination-btn ${themeClass}`}
+                                        onClick={() => setYearPage(p => Math.max(0, p - 1))}
+                                        disabled={yearPage === 0}
+                                        title="Previous"
+                                    >
+                                        ←
+                                    </button>
+                                    <span className="pagination-info">
+                                        {yearPage + 1} / {totalYearChartPages}
+                                    </span>
+                                    <button
+                                        className={`pagination-btn ${themeClass}`}
+                                        onClick={() => setYearPage(p => Math.min(totalYearChartPages - 1, p + 1))}
+                                        disabled={yearPage === totalYearChartPages - 1}
+                                        title="Next"
+                                    >
+                                        →
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div className="chart-wrapper">
+                            <Bar data={thoughtsPerYearChart} options={chartOptions} />
                         </div>
                     </div>
 
@@ -270,20 +290,32 @@ function Stats({ theme, t, diaryId }: StatsProps) {
                     <div className={`chart-card ${themeClass}`}>
                         <div className="chart-header">
                             <h3>{t('thoughtsPerMonth')}</h3>
-                            <select
-                                className={`period-select ${themeClass}`}
-                                value={monthsToShow}
-                                onChange={(e) => setMonthsToShow(Number(e.target.value))}
-                            >
-                                {monthPeriodOptions.map(opt => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                ))}
-                            </select>
+                            {totalMonthPages > 1 && (
+                                <div className="pagination-controls">
+                                    <button
+                                        className={`pagination-btn ${themeClass}`}
+                                        onClick={() => setMonthPage(p => Math.max(0, p - 1))}
+                                        disabled={monthPage === 0}
+                                        title="Previous"
+                                    >
+                                        ←
+                                    </button>
+                                    <span className="pagination-info">
+                                        {monthPage + 1} / {totalMonthPages}
+                                    </span>
+                                    <button
+                                        className={`pagination-btn ${themeClass}`}
+                                        onClick={() => setMonthPage(p => Math.min(totalMonthPages - 1, p + 1))}
+                                        disabled={monthPage === totalMonthPages - 1}
+                                        title="Next"
+                                    >
+                                        →
+                                    </button>
+                                </div>
+                            )}
                         </div>
-                        <div className="chart-wrapper chart-scrollable">
-                            <div style={{ minWidth: monthLabels.length > 12 ? `${monthLabels.length * 50}px` : '100%', height: '100%' }}>
-                                <Bar data={thoughtsPerMonthChart} options={chartOptions} />
-                            </div>
+                        <div className="chart-wrapper">
+                            <Bar data={thoughtsPerMonthChart} options={chartOptions} />
                         </div>
                     </div>
                 </div>
@@ -306,7 +338,7 @@ function Stats({ theme, t, diaryId }: StatsProps) {
                     <div className={`chart-card ${themeClass}`}>
                         <div className="chart-header">
                             <h3>{t('topTagsByYear')}</h3>
-                            {totalYearPages > 1 && (
+                            {totalTagsYearPages > 1 && (
                                 <div className="pagination-controls">
                                     <button
                                         className={`pagination-btn ${themeClass}`}
@@ -317,12 +349,12 @@ function Stats({ theme, t, diaryId }: StatsProps) {
                                         ←
                                     </button>
                                     <span className="pagination-info">
-                                        {tagsYearPage + 1} / {totalYearPages}
+                                        {tagsYearPage + 1} / {totalTagsYearPages}
                                     </span>
                                     <button
                                         className={`pagination-btn ${themeClass}`}
-                                        onClick={() => setTagsYearPage(p => Math.min(totalYearPages - 1, p + 1))}
-                                        disabled={tagsYearPage === totalYearPages - 1}
+                                        onClick={() => setTagsYearPage(p => Math.min(totalTagsYearPages - 1, p + 1))}
+                                        disabled={tagsYearPage === totalTagsYearPages - 1}
                                         title="Older years"
                                     >
                                         →

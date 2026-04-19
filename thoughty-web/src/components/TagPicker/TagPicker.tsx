@@ -45,33 +45,43 @@ function TagPicker({
         setIsOpen(true);
     };
 
+    const commitTag = (tags: string[], keepOpen: boolean): void => {
+        onChange(tags);
+        setInputValue('');
+        setIsOpen(keepOpen);
+    };
+
+    const selectSingleTag = (tag: string): void => {
+        commitTag([tag], false);
+    };
+
+    const selectMultipleTags = (tag: string): void => {
+        commitTag([...selectedTags, tag], true);
+    };
+
     const handleSelectTag = (tag: string): void => {
-        if (singleSelect) {
-            onChange([tag]);
-            setInputValue('');
-            setIsOpen(false);
-        } else {
-            onChange([...selectedTags, tag]);
-            setInputValue('');
-            setIsOpen(true);
-        }
+        const selectTag = singleSelect ? selectSingleTag : selectMultipleTags;
+        selectTag(tag);
+    };
+
+    const addSingleTag = (tag: string): void => {
+        commitTag([tag], false);
+    };
+
+    const addMultipleTags = (tag: string): void => {
+        commitTag([...selectedTags, tag], false);
     };
 
     const handleCreateTag = (): void => {
-        if (!inputValue.trim()) return;
         const newTag = inputValue.trim();
+        if (!newTag) return;
         if (selectedTags.includes(newTag)) {
             setInputValue('');
             return;
         }
 
-        if (singleSelect) {
-            onChange([newTag]);
-        } else {
-            onChange([...selectedTags, newTag]);
-        }
-        setInputValue('');
-        setIsOpen(false);
+        const addTag = singleSelect ? addSingleTag : addMultipleTags;
+        addTag(newTag);
     };
 
     const handleRemoveTag = (tagToRemove: string): void => {
@@ -97,7 +107,7 @@ function TagPicker({
 
     return (
         <div className="relative" ref={wrapperRef}>
-            <div className={`flex flex-wrap gap-2 p-2 border rounded-lg focus-within:ring-2 focus-within:ring-blue-500 transition-colors ${isLight ? 'bg-gray-50 border-gray-300' : 'bg-gray-900 border-gray-700'}`}>
+            <div className={`flex min-h-10 flex-wrap items-center gap-2 rounded-lg border px-3 py-1 focus-within:ring-2 focus-within:ring-blue-500 transition-colors ${isLight ? 'bg-gray-50 border-gray-300' : 'bg-gray-900 border-gray-700'}`}>
                 {selectedTags.map(tag => (
                     <span key={tag} className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm ${isLight ? 'bg-blue-100 text-blue-800' : 'bg-blue-900 text-blue-200'}`}>
                         {tag}
@@ -112,7 +122,7 @@ function TagPicker({
                 ))}
                 <input
                     type="text"
-                    className={`flex-1 min-w-[120px] outline-none bg-transparent placeholder-gray-500 ${isLight ? 'text-gray-900' : 'text-gray-100'}`}
+                    className={`min-h-8 flex-1 min-w-[120px] outline-none bg-transparent placeholder-gray-500 ${isLight ? 'text-gray-900' : 'text-gray-100'}`}
                     placeholder={selectedTags.length === 0 ? placeholder : ''}
                     value={inputValue}
                     onChange={handleInputChange}

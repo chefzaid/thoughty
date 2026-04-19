@@ -41,12 +41,13 @@ function FilterControls({
     t,
     onOpenHighlights
 }: FilterControlsProps) {
-    const inputClass = `flex-1 border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
+    const isLight = theme === 'light';
+    const inputClass = `border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
         ? 'bg-gray-50 border-gray-300 text-gray-900'
         : 'bg-gray-900 border-gray-700 text-gray-100'
         }`;
 
-    const containerClass = `flex flex-wrap gap-4 mb-8 p-4 rounded-lg border overflow-visible ${theme === 'light'
+    const containerClass = `flex flex-nowrap items-center gap-3 mb-8 p-4 rounded-lg border overflow-x-auto overflow-y-visible ${theme === 'light'
         ? 'bg-white/50 border-gray-200'
         : 'bg-gray-800/50 border-gray-700/50'
         }`;
@@ -71,12 +72,28 @@ function FilterControls({
     const getVisibilityButtonStyle = (): string => {
         if (filterVisibility === 'public') {
             return 'bg-green-500/10 border-green-500/50 text-green-500 hover:bg-green-500/20';
-        } else if (filterVisibility === 'private') {
+        }
+        if (filterVisibility === 'private') {
             return 'bg-gray-500/10 border-gray-500/50 text-gray-500 hover:bg-gray-500/20';
         }
-        return theme === 'light'
-            ? 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
-            : 'bg-gray-900 border-gray-700 text-gray-400 hover:bg-gray-800';
+
+        if (isLight) {
+            return 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100';
+        }
+
+        return 'bg-gray-900 border-gray-700 text-gray-400 hover:bg-gray-800';
+    };
+
+    const getFavoriteButtonClass = (): string => {
+        if (filterFavorites) {
+            return 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/20';
+        }
+
+        if (isLight) {
+            return 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100';
+        }
+
+        return 'bg-gray-900 border-gray-700 text-gray-400 hover:bg-gray-800';
     };
 
     const getVisibilityIcon = () => {
@@ -100,27 +117,16 @@ function FilterControls({
         );
     };
 
-    // Convert entryDates to a Set for O(1) lookup
-    const entryDatesSet = new Set(entryDates || []);
-
-    const getDayClassName = (date: Date): string => {
-        const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        if (entryDatesSet.has(dateStr)) {
-            return 'has-entry';
-        }
-        return 'no-entry';
-    };
-
     return (
         <div className={containerClass}>
             <input
                 type="text"
                 placeholder={t('searchPlaceholder')}
-                className={inputClass}
+                className={`${inputClass} w-[21.25rem] shrink-0`}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
-            <div className="w-64 relative z-30">
+            <div className="w-56 shrink-0 relative z-30">
                 <TagPicker
                     availableTags={allTags}
                     selectedTags={filterTags}
@@ -131,37 +137,34 @@ function FilterControls({
                     theme={theme}
                 />
             </div>
-            <div className="w-40">
-                <DatePicker
-                    selected={filterDateObj}
-                    onChange={(date: Date | null) => { setFilterDateObj(date); setPage(1); }}
-                    className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
-                        ? 'bg-gray-50 border-gray-300 text-gray-900'
-                        : 'bg-gray-900 border-gray-700 text-gray-100'
-                        }`}
-                    dateFormat="yyyy-MM-dd"
-                    placeholderText={t('filterDatePlaceholder')}
-                    dayClassName={getDayClassName}
-                    isClearable
-                />
+            <div className="flex shrink-0 items-center gap-0 -space-x-3">
+                <div className="w-52 relative z-20">
+                    <DatePicker
+                        selected={filterDateObj}
+                        onChange={(date: Date | null) => { setFilterDateObj(date); setPage(1); }}
+                        className={`w-full border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
+                            ? 'bg-gray-50 border-gray-300 text-gray-900'
+                            : 'bg-gray-900 border-gray-700 text-gray-100'
+                            }`}
+                        dateFormat="yyyy-MM-dd"
+                        placeholderText={t('filterDatePlaceholder')}
+                        popperPlacement="bottom-start"
+                        portalId="datepicker-portal"
+                        isClearable
+                    />
+                </div>
+                <button
+                    onClick={cycleVisibility}
+                    className={`flex h-10 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getVisibilityButtonStyle()}`}
+                    title={t('filterVisibility')}
+                >
+                    {getVisibilityIcon()}
+                    <span>{t(filterVisibility === 'all' ? 'allEntries' : filterVisibility)}</span>
+                </button>
             </div>
             <button
-                onClick={cycleVisibility}
-                className={`flex items-center gap-2 px-3 py-2 rounded border transition-all text-sm font-medium ${getVisibilityButtonStyle()}`}
-                title={t('filterVisibility')}
-            >
-                {getVisibilityIcon()}
-                <span>{t(filterVisibility === 'all' ? 'allEntries' : filterVisibility)}</span>
-            </button>
-            <button
                 onClick={() => { setFilterFavorites(!filterFavorites); setPage(1); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded border transition-all text-sm font-medium ${
-                    filterFavorites
-                        ? 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/20'
-                        : theme === 'light'
-                            ? 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100'
-                            : 'bg-gray-900 border-gray-700 text-gray-400 hover:bg-gray-800'
-                }`}
+                className={`flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getFavoriteButtonClass()}`}
                 title={t('filterFavorites')}
             >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill={filterFavorites ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
@@ -171,14 +174,14 @@ function FilterControls({
             </button>
             <button
                 onClick={handleReset}
-                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded transition-all text-sm font-medium"
+                className="h-10 shrink-0 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded-lg transition-all text-sm font-medium"
                 title={t('resetFilters')}
             >
                 {t('resetFilters')}
             </button>
             <button
                 onClick={onOpenHighlights}
-                className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/50 rounded transition-all text-sm font-medium"
+                className="flex h-10 shrink-0 items-center gap-2 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/50 rounded-lg transition-all text-sm font-medium"
                 title={t('seeHighlights')}
             >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

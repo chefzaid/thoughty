@@ -25,7 +25,6 @@ import {
   GetHighlightsQueryDto,
   DeleteAllQueryDto,
   EntriesListResponseDto,
-  EntryResponseDto,
 } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
@@ -149,6 +148,19 @@ export class EntriesController {
     @Param('id', ParseIntPipe) id: number,
   ) {
     return this.entriesService.getRevisions(user.userId, id);
+  }
+
+  @Delete(':id/history/:revisionId')
+  @ApiOperation({ summary: 'Delete a specific revision from entry history' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiParam({ name: 'revisionId', type: Number })
+  @ApiResponse({ status: 200, description: 'Revision deleted' })
+  async deleteRevision(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('revisionId', ParseIntPipe) revisionId: number,
+  ): Promise<{ success: boolean }> {
+    return this.entriesService.deleteRevision(user.userId, id, revisionId);
   }
 
   @Delete('all')

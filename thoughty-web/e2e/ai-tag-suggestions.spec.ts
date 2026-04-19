@@ -13,7 +13,7 @@ test('suggests tags for the current draft', async ({ page }) => {
   await expect(page.getByPlaceholder("What's on your mind?")).toBeVisible();
 
   await page.getByPlaceholder("What's on your mind?").fill('I spent the morning writing a reflective note about focus and slowing down.');
-  await page.getByRole('button', { name: 'Suggest Tags' }).click();
+  await page.getByRole('button', { name: 'Auto-Tags' }).click();
 
   await expect(page.locator('span').filter({ hasText: 'focus' })).toBeVisible();
   await expect(page.locator('span').filter({ hasText: 'reflection' })).toBeVisible();

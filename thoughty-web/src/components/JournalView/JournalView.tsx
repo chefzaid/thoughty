@@ -113,6 +113,7 @@ interface JournalViewProps {
   
   // History
   onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
+  onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
   
   // AI Chat
   onDiscuss?: (entry: Entry) => void;
@@ -207,6 +208,7 @@ function JournalView({
   availableMonths,
   onNavigateToFirst,
   onFetchHistory,
+  onDeleteRevision,
   onDiscuss,
   config,
   t
@@ -221,8 +223,6 @@ function JournalView({
         currentDiaryId={currentDiaryId}
         onDiaryChange={(id: number | null) => { onDiaryChange(id); setPage(1); }}
         onManageDiaries={onManageDiaries}
-        filterFavorites={filterFavorites}
-        onFilterFavorites={(active: boolean) => { setFilterFavorites(active); setPage(1); }}
         theme={config.theme}
         t={t}
       />
@@ -324,6 +324,7 @@ function JournalView({
         onToggleBulkMode={onToggleBulkMode}
         diaries={diaries}
         onFetchHistory={onFetchHistory}
+        onDeleteRevision={onDeleteRevision}
         onDiscuss={onDiscuss}
         t={t}
       />

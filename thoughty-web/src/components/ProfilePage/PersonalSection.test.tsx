@@ -11,6 +11,7 @@ describe('PersonalSection', () => {
       bio: 'A short bio',
       email: 'john@example.com',
       birthday: '1990-05-15',
+      gender: 'male',
     } as ProfileConfig,
     handleChange: vi.fn(),
     setLocalConfig: vi.fn(),
@@ -48,6 +49,13 @@ describe('PersonalSection', () => {
     expect(screen.getByDisplayValue('1990-05-15')).toBeInTheDocument();
   });
 
+  it('renders gender select with current value', () => {
+    const { container } = render(<PersonalSection {...defaultProps} />);
+    const genderSelect = container.querySelector('select[name="gender"]') as HTMLSelectElement;
+    expect(genderSelect).toBeInTheDocument();
+    expect(genderSelect.value).toBe('male');
+  });
+
   it('calls handleChange when name is typed', async () => {
     const user = userEvent.setup();
     render(<PersonalSection {...defaultProps} />);
@@ -68,6 +76,19 @@ describe('PersonalSection', () => {
     expect(defaultProps.handleChange).toHaveBeenCalled();
   });
 
+  it('calls handleChange when gender is selected', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<PersonalSection {...defaultProps} />);
+
+    const genderSelect = container.querySelector('select[name="gender"]');
+    expect(genderSelect).toBeInstanceOf(HTMLSelectElement);
+    if (!(genderSelect instanceof HTMLSelectElement)) {
+      throw new TypeError('Gender select not found');
+    }
+    await user.selectOptions(genderSelect, 'other');
+    expect(defaultProps.handleChange).toHaveBeenCalled();
+  });
+
   it('sets default birthday on focus when birthday is empty', () => {
     const { container } = render(
       <PersonalSection
@@ -76,7 +97,11 @@ describe('PersonalSection', () => {
       />
     );
 
-    const birthdayInput = container.querySelector('input[name="birthday"]')!;
+    const birthdayInput = container.querySelector('input[name="birthday"]');
+    expect(birthdayInput).toBeInstanceOf(HTMLInputElement);
+    if (!(birthdayInput instanceof HTMLInputElement)) {
+      throw new TypeError('Birthday input not found');
+    }
     fireEvent.focus(birthdayInput);
     expect(defaultProps.setLocalConfig).toHaveBeenCalled();
   });
@@ -98,6 +123,7 @@ describe('PersonalSection', () => {
     );
     expect(screen.getByPlaceholderText('enterYourFullName')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('writeSomethingAboutYourself')).toBeInTheDocument();
+    expect(screen.getByText('genderNotSpecified')).toBeInTheDocument();
   });
 
   it('renders dark theme classes', () => {

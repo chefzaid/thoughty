@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ChangeEvent, type FormEvent } from 'react';
+import { useState, useEffect, useRef, type ChangeEvent, type ComponentProps } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import ProfilePictureEditor from '../ProfilePictureEditor/ProfilePictureEditor';
 import './ProfilePage.css';
@@ -10,8 +10,6 @@ import PersonalSection from './PersonalSection';
 import AppearanceSection from './AppearanceSection';
 import AISection from './AISection';
 import CloudProvidersSection from './CloudProvidersSection';
-import SecuritySection from './SecuritySection';
-import DangerZoneSection from './DangerZoneSection';
 import ProfileActions from './ProfileActions';
 import DataPrivacySection from './DataPrivacySection';
 
@@ -37,6 +35,8 @@ interface ProfilePageProps {
   readonly t: TranslationFunction;
   readonly stats?: ProfileStats;
 }
+
+type FormSubmitHandler = NonNullable<ComponentProps<'form'>['onSubmit']>;
 
 function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats }: ProfilePageProps) {
   const { user, changePassword, deleteAccount } = useAuth();
@@ -97,34 +97,36 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
     setLocalConfig((prev) => mergeUserProfileDefaults(prev, user as ProfileUser));
   }, [user]);
 
-  const handlePasswordChangeAction = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const handlePasswordChangeAction: FormSubmitHandler = (event) => {
     event.preventDefault();
-    setPasswordError('');
-    setPasswordSuccess('');
+    void (async () => {
+      setPasswordError('');
+      setPasswordSuccess('');
 
-    const validationError = validatePasswordChange({
-      currentPassword,
-      newPassword,
-      confirmNewPassword,
-      t
-    });
-    if (validationError) {
-      setPasswordError(validationError);
-      return;
-    }
+      const validationError = validatePasswordChange({
+        currentPassword,
+        newPassword,
+        confirmNewPassword,
+        t
+      });
+      if (validationError) {
+        setPasswordError(validationError);
+        return;
+      }
 
-    setChangingPassword(true);
-    const result = await changePassword(currentPassword, newPassword);
-    setChangingPassword(false);
+      setChangingPassword(true);
+      const result = await changePassword(currentPassword, newPassword);
+      setChangingPassword(false);
 
-    if (result.success) {
-      setPasswordSuccess(t('passwordChangeSuccess'));
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmNewPassword('');
-    } else {
-      setPasswordError(result.error || t('passwordChangeFailed'));
-    }
+      if (result.success) {
+        setPasswordSuccess(t('passwordChangeSuccess'));
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+      } else {
+        setPasswordError(result.error || t('passwordChangeFailed'));
+      }
+    })();
   };
 
   const handlePictureUpload = (event: ChangeEvent<HTMLInputElement>): void => {
@@ -219,49 +221,28 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
           t={t}
           isDark={isDark}
           onDownloadData={onDownloadData}
+          showDeleteConfirm={showDeleteConfirm}
+          setShowDeleteConfirm={setShowDeleteConfirm}
+          deleteConfirmText={deleteConfirmText}
+          setDeleteConfirmText={setDeleteConfirmText}
+          deletePassword={deletePassword}
+          setDeletePassword={setDeletePassword}
+          deleteError={deleteError}
+          setDeleteError={setDeleteError}
+          deletingAccount={deletingAccount}
+          handleDeleteAccount={handleDeleteAccountAction}
+          isLocalAuth={isLocalAuth}
+          handlePasswordChange={isLocalAuth ? handlePasswordChangeAction : undefined}
+          currentPassword={currentPassword}
+          setCurrentPassword={setCurrentPassword}
+          newPassword={newPassword}
+          setNewPassword={setNewPassword}
+          confirmNewPassword={confirmNewPassword}
+          setConfirmNewPassword={setConfirmNewPassword}
+          passwordError={passwordError}
+          passwordSuccess={passwordSuccess}
+          changingPassword={changingPassword}
         />
-      </div>
-
-      <div className="profile-two-column">
-        {isLocalAuth ? (
-          <SecuritySection
-            t={t}
-            isDark={isDark}
-            handlePasswordChange={handlePasswordChangeAction}
-            currentPassword={currentPassword}
-            setCurrentPassword={setCurrentPassword}
-            newPassword={newPassword}
-            setNewPassword={setNewPassword}
-            confirmNewPassword={confirmNewPassword}
-            setConfirmNewPassword={setConfirmNewPassword}
-            passwordError={passwordError}
-            passwordSuccess={passwordSuccess}
-            changingPassword={changingPassword}
-            showDeleteConfirm={showDeleteConfirm}
-            setShowDeleteConfirm={setShowDeleteConfirm}
-            deleteConfirmText={deleteConfirmText}
-            setDeleteConfirmText={setDeleteConfirmText}
-            deletePassword={deletePassword}
-            setDeletePassword={setDeletePassword}
-            deleteError={deleteError}
-            setDeleteError={setDeleteError}
-            deletingAccount={deletingAccount}
-            handleDeleteAccount={handleDeleteAccountAction}
-          />
-        ) : (
-          <DangerZoneSection
-            t={t}
-            isDark={isDark}
-            showDeleteConfirm={showDeleteConfirm}
-            setShowDeleteConfirm={setShowDeleteConfirm}
-            deleteConfirmText={deleteConfirmText}
-            setDeleteConfirmText={setDeleteConfirmText}
-            deleteError={deleteError}
-            setDeleteError={setDeleteError}
-            deletingAccount={deletingAccount}
-            handleDeleteAccount={handleDeleteAccountAction}
-          />
-        )}
       </div>
 
       <AppearanceSection

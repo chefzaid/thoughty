@@ -15,25 +15,32 @@ type OpenRouterResponse = {
 @Injectable()
 export class AiService {
   private readonly openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
-  private readonly model = process.env.OPENROUTER_TAG_MODEL || 'openai/gpt-4o-mini';
+  private readonly defaultModel = process.env.OPENROUTER_TAG_MODEL || 'openai/gpt-4o-mini';
+  private readonly apiKey = process.env.OPENROUTER_API_KEY || '';
 
   constructor(private readonly configService: ConfigService) {}
+
+  private async getModel(userId: number): Promise<string> {
+    const model = await this.configService.getDecryptedConfig(userId, 'openRouterModel');
+    return model || this.defaultModel;
+  }
 
   async suggestTags(userId: number, dto: SuggestTagsDto): Promise<{ tags: string[] }> {
     if (!dto.content.trim()) {
       throw new BadRequestException('Content is required for tag suggestions');
     }
 
-    const apiKey = await this.configService.getDecryptedConfig(userId, 'openRouterApiKey');
-    if (!apiKey) {
+    if (!this.apiKey) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
 
     const maxTags = Math.min(Math.max(dto.maxTags ?? 5, 1), 10);
     const existingTags = dto.existingTags?.filter(Boolean) ?? [];
 
+    const model = await this.getModel(userId);
+
     return {
-      tags: await this.requestTags(apiKey, dto.content, existingTags, maxTags),
+      tags: await this.requestTags(dto.content, existingTags, maxTags, model),
     };
   }
 
@@ -47,34 +54,34 @@ export class AiService {
       return [];
     }
 
-    const apiKey = await this.configService.getDecryptedConfig(userId, 'openRouterApiKey');
-    if (!apiKey) {
+    if (!this.apiKey) {
       return [];
     }
 
     try {
-      return await this.requestTags(apiKey, content, existingTags, Math.min(Math.max(maxTags, 1), 10));
+      const model = await this.getModel(userId);
+      return await this.requestTags(content, existingTags, Math.min(Math.max(maxTags, 1), 10), model);
     } catch {
       return [];
     }
   }
 
   private async requestTags(
-    apiKey: string,
     content: string,
     existingTags: string[],
     maxTags: number,
+    model: string,
   ): Promise<string[]> {
 
     const response = await fetch(this.openRouterUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
         'X-Title': 'Thoughty',
       },
       body: JSON.stringify({
-        model: this.model,
+        model,
         temperature: 0.2,
         messages: [
           {
@@ -113,20 +120,21 @@ export class AiService {
       throw new BadRequestException('Content is required for writing fixes');
     }
 
-    const apiKey = await this.configService.getDecryptedConfig(userId, 'openRouterApiKey');
-    if (!apiKey) {
+    if (!this.apiKey) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
+
+    const model = await this.getModel(userId);
 
     const response = await fetch(this.openRouterUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
         'X-Title': 'Thoughty',
       },
       body: JSON.stringify({
-        model: this.model,
+        model,
         temperature: 0.2,
         messages: [
           {
@@ -161,20 +169,21 @@ export class AiService {
       throw new BadRequestException('At least one message is required');
     }
 
-    const apiKey = await this.configService.getDecryptedConfig(userId, 'openRouterApiKey');
-    if (!apiKey) {
+    if (!this.apiKey) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
+
+    const model = await this.getModel(userId);
 
     const response = await fetch(this.openRouterUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
         'X-Title': 'Thoughty',
       },
       body: JSON.stringify({
-        model: this.model,
+        model,
         temperature: 0.5,
         messages: [
           {
@@ -206,6 +215,31 @@ export class AiService {
     }
 
     return { reply };
+  }
+
+  async listModels(): Promise<{ id: string; name: string }[]> {
+    if (!this.apiKey) {
+      throw new BadRequestException('OpenRouter API key is not configured on the server');
+    }
+
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'X-Title': 'Thoughty',
+      },
+    });
+
+    if (!response.ok) {
+      throw new BadGatewayException('Failed to fetch models from OpenRouter');
+    }
+
+    const data = (await response.json()) as { data?: Array<{ id?: string; name?: string }> };
+    const models = data.data ?? [];
+
+    return models
+      .filter((m): m is { id: string; name: string } => typeof m.id === 'string' && typeof m.name === 'string')
+      .map(({ id, name }) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   private parseTags(rawContent: string): string[] {

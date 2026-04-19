@@ -4,10 +4,9 @@ Remaining features to implement:
 *** Personalization & UX
 - Diary-level theming and colors so entries are visually distinguishable in the All Diaries view
 - Custom tag colors and categories for visual organization of tags
-- Keyboard shortcuts for common actions (Ctrl+N new entry, Ctrl+/ focus search, Esc close modals, arrow keys for pagination)
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
 - Recurring journaling reminders and writing prompts via app notifications at a user-configured time
-- Drag-and-drop reordering for entries on the same day
+- Drag-and-drop reordering for entries on the same day and update the numbering accordingly
 - Voice personalization for TTS
 
 *** Social features

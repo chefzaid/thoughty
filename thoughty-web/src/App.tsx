@@ -99,7 +99,8 @@ function App() {
     entriesService,
     toggleVisibility,
     toggleFavorite,
-    fetchEntryHistory
+    fetchEntryHistory,
+    deleteRevision
   } = useEntries(isAuthenticated, config, currentDiaryId);
 
   // Entry form
@@ -190,7 +191,8 @@ function App() {
   const handleNavigateToEntry = useCallback(async (
     date: string,
     index: number = 1,
-    sourceEntryInfo: SourceEntryInfo | null = null
+    sourceEntryInfo: SourceEntryInfo | null = null,
+    highlight: boolean = true
   ) => {
     if (sourceEntryInfo) {
       setSourceEntry({
@@ -203,7 +205,9 @@ function App() {
     const data = await entriesService.navigateByDate(date, index, getLimit());
     if (data?.found) {
       setPage(data.page || 1);
-      setTargetEntryId(data.entryId || null);
+      if (highlight) {
+        setTargetEntryId(data.entryId || null);
+      }
       setActiveTargetId(data.entryId || null);
     } else {
       alert(t('entryNotFound'));
@@ -397,6 +401,7 @@ function App() {
             availableMonths={availableMonths}
             onNavigateToFirst={handleNavigateToFirst}
             onFetchHistory={fetchEntryHistory}
+            onDeleteRevision={deleteRevision}
             onDiscuss={handleDiscuss}
             config={config}
             t={t}

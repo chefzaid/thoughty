@@ -46,7 +46,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Multi-Tag Support** - Add multiple tags to each entry for rich categorization
 - **Auto-Complete** - Smart suggestions from your existing tags as you type
 - **Create New Tags** - Add new tags inline while writing
-- **AI Tag Suggestions** - Generate draft tags from your entry content when your OpenRouter API key is configured
+- **AI Tag Suggestions** - Generate draft tags from your entry content using OpenRouter
 - **Automatic AI Tagging** - Optionally fill in tags on save and cap the number of AI-generated tags per entry from profile settings
 - **Tag Chips** - Visual tag display with easy removal
 - **Keyboard Navigation** - Use Enter to add and Backspace to remove tags
@@ -136,10 +136,10 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Internationalization** - English 🇬🇧 and French 🇫🇷 language support
 - **Pagination Settings** - Configure entries per page (5/10/15/20/25/50)
 - **Read Dates Toggle** - Choose whether text-to-speech includes date headers
-- **OpenRouter API Key** - Configure your own API key for AI-powered features (encrypted at rest)
+- **AI Model Selection** - Choose from all available OpenRouter models via a searchable dropdown in profile settings
 - **Automatic Tag Limit** - Set how many AI-generated tags can be added automatically when an entry is saved; use `0` to disable it
 
-When an OpenRouter API key is saved in Profile -> AI Configuration, the journal entry form exposes a Suggest Tags action and a Fix Writing action for the current draft. The key is encrypted at rest on the backend and masked when it is read back into the profile UI.
+AI features (tag suggestions, writing fixes, AI chat) are powered by [OpenRouter](https://openrouter.ai). The API key is configured once on the server via the `OPENROUTER_API_KEY` environment variable — users only choose which model to use from the profile settings dropdown.
 
 Fix Writing sends the draft text to the AI, which corrects grammar, spelling, and punctuation while preserving the original meaning, tone, and voice. The corrected text replaces the draft inline so you can review and accept or undo the changes.
 
@@ -271,11 +271,27 @@ S3_ACCESS_KEY=minioadmin
 S3_SECRET_KEY=minioadmin
 S3_REGION=us-east-1
 
-# Config encryption (for sensitive settings like API keys)
+# Config encryption (for sensitive settings)
 CONFIG_ENCRYPTION_SECRET=your-encryption-secret-change-in-production
+
+# AI (OpenRouter) — get your key at https://openrouter.ai/keys
+OPENROUTER_API_KEY=your-openrouter-api-key
+OPENROUTER_TAG_MODEL=openai/gpt-4o-mini
+
+# Cloud Sync OAuth (optional)
+GOOGLE_DRIVE_CLIENT_ID=
+GOOGLE_DRIVE_CLIENT_SECRET=
+ONEDRIVE_CLIENT_ID=
+ONEDRIVE_CLIENT_SECRET=
+DROPBOX_CLIENT_ID=
+DROPBOX_CLIENT_SECRET=
 ```
 
 > **Note:** For local development, no `.env` file is needed for S3 — the defaults connect to the MinIO container started by `docker-compose`. For production, see [S3 Configuration for Production](#-s3-configuration-for-production).
+
+> **Cloud Sync:** To enable cloud sync, create OAuth 2.0 credentials for each provider you want to support. Set the redirect URI to `<your-frontend-url>/cloud-callback` (e.g. `http://localhost:5173/cloud-callback` for local dev). Without these credentials, the cloud sync UI will still appear but connections will fail.
+
+> **AI:** Sign up at [OpenRouter](https://openrouter.ai) and create an API key. Set `OPENROUTER_API_KEY` in your server `.env`. Users choose their preferred model from the profile settings — the key is shared across all users.
 
 **Client (.env)**
 ```env

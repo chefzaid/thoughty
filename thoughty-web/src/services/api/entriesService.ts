@@ -289,6 +289,18 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     }
   };
 
+  const deleteRevision = async (entryId: number, revisionId: number): Promise<boolean> => {
+    try {
+      const response = await authFetch(`/api/entries/${entryId}/history/${revisionId}`, {
+        method: 'DELETE',
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Error deleting revision:', error);
+      return false;
+    }
+  };
+
   return {
     fetchEntries,
     fetchEntryDates,
@@ -302,7 +314,8 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     navigateByDate,
     navigateById,
     fetchYearsMonths,
-    fetchEntryHistory
+    fetchEntryHistory,
+    deleteRevision
   };
 };
 

@@ -27,6 +27,9 @@ vi.mock('../../hooks/useAppState', () => ({
             deleteSchedule: vi.fn(),
             triggerSync: vi.fn(),
         },
+        aiService: {
+            fetchModels: vi.fn().mockResolvedValue([]),
+        },
     }),
 }));
 
@@ -38,6 +41,7 @@ interface ProfileConfig {
     defaultVisibility?: 'public' | 'private';
     email?: string;
     bio?: string;
+    gender?: string;
     autoTagMaxTags?: string;
 }
 
@@ -121,7 +125,6 @@ describe('ProfilePage', () => {
 
             expect(screen.getByText('personalInfo')).toBeInTheDocument();
             expect(screen.getByText('appearance')).toBeInTheDocument();
-            expect(screen.getByText('security')).toBeInTheDocument();
             expect(screen.getByText('cloudProviders')).toBeInTheDocument();
         });
 
@@ -145,6 +148,15 @@ describe('ProfilePage', () => {
             const textarea = screen.getByDisplayValue('Hello world');
             expect(textarea).toBeInTheDocument();
             expect(textarea.tagName.toLowerCase()).toBe('textarea');
+        });
+
+        it('displays gender input field', () => {
+            const { container } = render(<ProfilePage {...defaultProps} config={{ ...defaultProps.config, gender: 'male' }} />);
+
+            const input = container.querySelector('select[name="gender"]') as HTMLSelectElement;
+            expect(input).toBeInTheDocument();
+            expect(input).toHaveAttribute('name', 'gender');
+            expect(input.value).toBe('male');
         });
     });
 
@@ -174,9 +186,9 @@ describe('ProfilePage', () => {
 
         it('updates entries per page', async () => {
             const user = userEvent.setup();
-            render(<ProfilePage {...defaultProps} />);
+            const { container } = render(<ProfilePage {...defaultProps} />);
 
-            const select = screen.getByRole('combobox');
+            const select = container.querySelector('select[name="entriesPerPage"]') as HTMLSelectElement;
             await user.selectOptions(select, '25');
 
             expect((select as HTMLSelectElement).value).toBe('25');
@@ -201,6 +213,15 @@ describe('ProfilePage', () => {
             await user.type(input, '3');
 
             expect((input as HTMLInputElement).value).toBe('3');
+        });
+
+        it('calls onDownloadData when download button is clicked', async () => {
+            const user = userEvent.setup();
+            render(<ProfilePage {...defaultProps} />);
+
+            await user.click(screen.getByRole('button', { name: 'downloadMyData' }));
+
+            expect(defaultProps.onDownloadData).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -257,6 +278,19 @@ describe('ProfilePage', () => {
 
             expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
                 expect.objectContaining({ autoTagMaxTags: '4' })
+            );
+        });
+
+        it('saves updated gender', async () => {
+            const user = userEvent.setup();
+            const { container } = render(<ProfilePage {...defaultProps} />);
+
+            const input = container.querySelector('select[name="gender"]') as HTMLSelectElement;
+            await user.selectOptions(input, 'other');
+            await user.click(screen.getByText('saveSettings'));
+
+            expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
+                expect.objectContaining({ gender: 'other' })
             );
         });
     });

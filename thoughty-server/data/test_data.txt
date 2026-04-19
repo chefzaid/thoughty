@@ -5,12 +5,12 @@
 
 --------------------------------------------------------------------------------
 
----2026-01-09--[dev,feature]
+---2--[dev,feature]
 Added cross-referencing to my journal app today. Now I can link entries like entry (2026-01-08--2) easily!
 
 --------------------------------------------------------------------------------
 
----2026-01-09--[gratitude,reflection]
+---3--[gratitude,reflection]
 Looking at entry (2024-12-25--4) reminded me how blessed I am. Two amazing kids, an incredible wife, and a life I love.
 
 --------------------------------------------------------------------------------
@@ -20,12 +20,12 @@ Emma is growing so fast! She reminds me of how nervous I was in entry (2022-10-1
 
 --------------------------------------------------------------------------------
 
----2026-01-07--[siblings,love]
+---2--[siblings,love]
 The bond between Emma and Lucas is beautiful. This is what entry (2025-11-15--3) meant by "perfect chaos".
 
 --------------------------------------------------------------------------------
 
----2026-01-07--[memory,nostalgia]
+---3--[memory,nostalgia]
 Found photos from entry (2017-08-15) - my backpacking trip. Want to take the kids to Europe someday.
 
 --------------------------------------------------------------------------------
@@ -35,7 +35,7 @@ Starting 2026 with gratitude. Looking back at entry (2025-01-01) and my resoluti
 
 --------------------------------------------------------------------------------
 
----2026-01-04--[goals,planning]
+---2--[goals,planning]
 This year I want to focus on being even more present. Remember how I felt in entry (2021-06-26) at our wedding - that pure joy.
 
 --------------------------------------------------------------------------------
@@ -45,17 +45,17 @@ Lucas's first Christmas. Emma helped him open presents.
 
 --------------------------------------------------------------------------------
 
----2025-12-24--[joy,parenting]
+---2--[joy,parenting]
 Watching them together is everything.
 
 --------------------------------------------------------------------------------
 
----2025-12-24--[gratitude,decade]
+---3--[gratitude,decade]
 Looking back at 10 years of journal entries. What a ride!
 
 --------------------------------------------------------------------------------
 
----2025-12-24--[love,forever]
+---4--[love,forever]
 Grateful for family, friends, and this messy beautiful life.
 
 --------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ Last-minute gift shopping. Classic me.
 
 --------------------------------------------------------------------------------
 
----2025-12-19--[tradition,procrastination]
+---2--[tradition,procrastination]
 Some things never change!
 
 --------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ Getting ready for Christmas with two kids.
 
 --------------------------------------------------------------------------------
 
----2025-12-14--[busy,life]
+---2--[busy,life]
 Exhausted but wouldn't change a thing.
 
 --------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ Big project launch at work. Went smoothly.
 
 --------------------------------------------------------------------------------
 
----2025-12-09--[achievement,team]
+---2--[achievement,team]
 Great team makes all the difference.
 
 --------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ Still loving remote work after all these years.
 
 --------------------------------------------------------------------------------
 
----2025-11-30--[balance,life]
+---2--[balance,life]
 Being there for school dropoff is priceless.
 
 --------------------------------------------------------------------------------
@@ -105,17 +105,17 @@ Baby Lucas is here! Emma is officially a big sister.
 
 --------------------------------------------------------------------------------
 
----2025-11-14--[love,doubled]
+---2--[love,doubled]
 Heart somehow expanded to love two kids equally.
 
 --------------------------------------------------------------------------------
 
----2025-11-14--[family,complete]
+---3--[family,complete]
 Our family of four. Perfect chaos.
 
 --------------------------------------------------------------------------------
 
----2025-11-14--[gratitude,life]
+---4--[gratitude,life]
 Living my best life.
 
 --------------------------------------------------------------------------------
@@ -125,7 +125,7 @@ Living my best life.
 
 --------------------------------------------------------------------------------
 
----2025-10-04--[reflection,growth]
+---2--[reflection,growth]
 From nervous new grad to team lead. What a journey.
 
 --------------------------------------------------------------------------------
@@ -135,12 +135,12 @@ Started preparing for baby number 2.
 
 --------------------------------------------------------------------------------
 
----2025-08-14--[nesting,home]
+---2--[nesting,home]
 Moving Emma to a big girl room.
 
 --------------------------------------------------------------------------------
 
----2025-08-14--[transition,change]
+---3--[transition,change]
 So much change coming. Exciting and overwhelming.
 
 --------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ Got a kiddie pool for the backyard.
 
 --------------------------------------------------------------------------------
 
----2025-06-14--[play,toddler]
+---2--[play,toddler]
 Emma is a little fish. Loves the water.
 
 --------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ Sarah is superwoman. Managing pregnancy and a toddler.
 
 --------------------------------------------------------------------------------
 
----2025-05-10--[support,partner]
+---2--[support,partner]
 Trying to help more around the house.
 
 --------------------------------------------------------------------------------
@@ -170,12 +170,12 @@ Baby number 2 on the way! Due in November.
 
 --------------------------------------------------------------------------------
 
----2025-03-19--[excitement,family]
+---2--[excitement,family]
 Emma is going to be a big sister!
 
 --------------------------------------------------------------------------------
 
----2025-03-19--[planning,future]
+---3--[planning,future]
 Time to think about a bigger car.
 
 --------------------------------------------------------------------------------
@@ -185,7 +185,7 @@ New year resolutions: more patience, less phone, more present.
 
 --------------------------------------------------------------------------------
 
----2024-12-31--[goals,family]
+---2--[goals,family]
 Want to be the best dad and husband I can be.
 
 --------------------------------------------------------------------------------
@@ -195,17 +195,17 @@ Christmas magic with a 2-year-old is the best.
 
 --------------------------------------------------------------------------------
 
----2024-12-24--[santa,belief]
+---2--[santa,belief]
 She truly believes in Santa. Protecting that magic.
 
 --------------------------------------------------------------------------------
 
----2024-12-24--[presents,joy]
+---3--[presents,joy]
 More excited about boxes than actual toys.
 
 --------------------------------------------------------------------------------
 
----2024-12-24--[family,blessed]
+---4--[family,blessed]
 So grateful for this life we've built.
 
 --------------------------------------------------------------------------------
@@ -215,12 +215,12 @@ Thanksgiving at our house. Emma "helped" with the turkey.
 
 --------------------------------------------------------------------------------
 
----2024-11-27--[family,gathering]
+---2--[family,gathering]
 Four generations at one table.
 
 --------------------------------------------------------------------------------
 
----2024-11-27--[cooking,tradition]
+---3--[cooking,tradition]
 Mom passed down her pie recipe to Sarah.
 
 --------------------------------------------------------------------------------
@@ -230,12 +230,12 @@ Emma is 2! The terrible twos begin.
 
 --------------------------------------------------------------------------------
 
----2024-10-11--[party,princess]
+---2--[party,princess]
 Princess-themed party. She loved her dress.
 
 --------------------------------------------------------------------------------
 
----2024-10-11--[gratitude,family]
+---3--[gratitude,family]
 Another year of watching her grow.
 
 --------------------------------------------------------------------------------
@@ -245,12 +245,12 @@ Emma started preschool! She was so brave.
 
 --------------------------------------------------------------------------------
 
----2024-08-24--[emotion,parenthood]
+---2--[emotion,parenthood]
 I was the one who cried, not her.
 
 --------------------------------------------------------------------------------
 
----2024-08-24--[growth,milestone]
+---3--[growth,milestone]
 She's becoming such a little person.
 
 --------------------------------------------------------------------------------
@@ -260,12 +260,12 @@ Installed a swing set for Emma.
 
 --------------------------------------------------------------------------------
 
----2024-06-14--[playtime,fatherhood]
+---2--[playtime,fatherhood]
 Pushing her on the swing is my new favorite activity.
 
 --------------------------------------------------------------------------------
 
----2024-06-14--[nostalgia,childhood]
+---3--[nostalgia,childhood]
 Remembering my own swing set days.
 
 --------------------------------------------------------------------------------
@@ -275,7 +275,7 @@ Garden is thriving this year. Tomatoes coming in strong.
 
 --------------------------------------------------------------------------------
 
----2024-04-19--[hobby,satisfaction]
+---2--[hobby,satisfaction]
 There's something special about growing your own food.
 
 --------------------------------------------------------------------------------
@@ -285,7 +285,7 @@ Valentine's Day with my two girls.
 
 --------------------------------------------------------------------------------
 
----2024-02-13--[love,everyday]
+---2--[love,everyday]
 Romance looks different with a toddler around.
 
 --------------------------------------------------------------------------------
@@ -295,12 +295,12 @@ Christmas with a walking toddler. Chaos!
 
 --------------------------------------------------------------------------------
 
----2023-12-24--[joy,holiday]
+---2--[joy,holiday]
 Her wonder at the tree and lights was priceless.
 
 --------------------------------------------------------------------------------
 
----2023-12-24--[family,tradition]
+---3--[family,tradition]
 Starting to build our own family traditions.
 
 --------------------------------------------------------------------------------
@@ -310,12 +310,12 @@ Emma's first birthday! Time flies.
 
 --------------------------------------------------------------------------------
 
----2023-10-11--[party,celebration]
+---2--[party,celebration]
 Smash cake was a hit. So much frosting everywhere!
 
 --------------------------------------------------------------------------------
 
----2023-10-11--[milestone,baby]
+---3--[milestone,baby]
 She took her first steps today!
 
 --------------------------------------------------------------------------------
@@ -325,12 +325,12 @@ First family vacation with Emma. Beach trip!
 
 --------------------------------------------------------------------------------
 
----2023-07-31--[travel,adaptation]
+---2--[travel,adaptation]
 Traveling with a baby requires so much stuff.
 
 --------------------------------------------------------------------------------
 
----2023-07-31--[memories,family]
+---3--[memories,family]
 Emma loved the sand and waves.
 
 --------------------------------------------------------------------------------
@@ -340,7 +340,7 @@ My first Father's Day! Got a "Dad #1" mug.
 
 --------------------------------------------------------------------------------
 
----2023-06-17--[gratitude,parenthood]
+---2--[gratitude,parenthood]
 Being a dad is the best job I've ever had.
 
 --------------------------------------------------------------------------------
@@ -350,7 +350,7 @@ Sarah's first real Mother's Day. Made her breakfast in bed.
 
 --------------------------------------------------------------------------------
 
----2023-05-13--[family,love]
+---2--[family,love]
 Watching Sarah with Emma melts my heart.
 
 --------------------------------------------------------------------------------
@@ -360,7 +360,7 @@ Sarah returned to work. Adjustment period for everyone.
 
 --------------------------------------------------------------------------------
 
----2023-03-14--[daycare,stress]
+---2--[daycare,stress]
 First day of daycare for Emma. Harder on us than her!
 
 --------------------------------------------------------------------------------
@@ -370,7 +370,7 @@ First New Year as parents. In bed by 9pm!
 
 --------------------------------------------------------------------------------
 
----2022-12-31--[reflection,life]
+---2--[reflection,life]
 Life is so different now. Better different.
 
 --------------------------------------------------------------------------------
@@ -380,7 +380,7 @@ Emma's first Christmas. She slept through most of it!
 
 --------------------------------------------------------------------------------
 
----2022-12-24--[family,complete]
+---2--[family,complete]
 Our little family feels complete.
 
 --------------------------------------------------------------------------------
@@ -390,17 +390,17 @@ Baby Emma is here! 7 lbs 4 oz of perfection.
 
 --------------------------------------------------------------------------------
 
----2022-10-11--[love,family]
+---2--[love,family]
 Never knew a love like this existed.
 
 --------------------------------------------------------------------------------
 
----2022-10-11--[gratitude,miracle]
+---3--[gratitude,miracle]
 Sleep deprived but couldn't be happier.
 
 --------------------------------------------------------------------------------
 
----2022-10-11--[family,support]
+---4--[family,support]
 Grandparents are already in love.
 
 --------------------------------------------------------------------------------
@@ -410,7 +410,7 @@ Finished setting up the nursery.
 
 --------------------------------------------------------------------------------
 
----2022-08-14--[nesting,baby]
+---2--[nesting,baby]
 Sarah's nesting instincts are in full swing.
 
 --------------------------------------------------------------------------------
@@ -420,12 +420,12 @@ Fourth of July party at our house this year!
 
 --------------------------------------------------------------------------------
 
----2022-07-03--[hosting,home]
+---2--[hosting,home]
 First big party in the new house.
 
 --------------------------------------------------------------------------------
 
----2022-07-03--[friends,gathering]
+---3--[friends,gathering]
 So good to have everyone together again.
 
 --------------------------------------------------------------------------------
@@ -435,7 +435,7 @@ First Mother's Day for Sarah (pregnant version).
 
 --------------------------------------------------------------------------------
 
----2022-05-07--[love,gratitude]
+---2--[love,gratitude]
 She's going to be an amazing mom.
 
 --------------------------------------------------------------------------------
@@ -445,12 +445,12 @@ We're expecting! Due in October.
 
 --------------------------------------------------------------------------------
 
----2022-03-19--[joy,family]
+---2--[joy,family]
 Can't believe we're going to be parents.
 
 --------------------------------------------------------------------------------
 
----2022-03-19--[preparation,baby]
+---3--[preparation,baby]
 Started reading parenting books.
 
 --------------------------------------------------------------------------------
@@ -460,7 +460,7 @@ Started a vegetable garden in the backyard.
 
 --------------------------------------------------------------------------------
 
----2022-01-14--[learning,nature]
+---2--[learning,nature]
 Gardening is harder than it looks.
 
 --------------------------------------------------------------------------------
@@ -470,12 +470,12 @@ First Christmas in our new home.
 
 --------------------------------------------------------------------------------
 
----2021-12-24--[decorating,christmas]
+---2--[decorating,christmas]
 Decorated the whole house. Looks magical.
 
 --------------------------------------------------------------------------------
 
----2021-12-24--[family,gathering]
+---3--[family,gathering]
 Hosted family for the first time.
 
 --------------------------------------------------------------------------------
@@ -485,12 +485,12 @@ Bought our first house! Closing went smoothly.
 
 --------------------------------------------------------------------------------
 
----2021-09-30--[milestone,adult]
+---2--[milestone,adult]
 Homeownership is scary and exciting.
 
 --------------------------------------------------------------------------------
 
----2021-09-30--[moving,home]
+---3--[moving,home]
 Third move in three years. Getting good at packing!
 
 --------------------------------------------------------------------------------
@@ -500,12 +500,12 @@ Honeymoon in Hawaii. Paradise found.
 
 --------------------------------------------------------------------------------
 
----2021-08-14--[beach,relaxation]
+---2--[beach,relaxation]
 Lazy days on the beach with my wife.
 
 --------------------------------------------------------------------------------
 
----2021-08-14--[adventure,travel]
+---3--[adventure,travel]
 Went snorkeling for the first time. Amazing marine life!
 
 --------------------------------------------------------------------------------
@@ -515,22 +515,22 @@ WE GOT MARRIED! Best day of my life!
 
 --------------------------------------------------------------------------------
 
----2021-06-25--[love,milestone]
+---2--[love,milestone]
 All the waiting was worth it.
 
 --------------------------------------------------------------------------------
 
----2021-06-25--[family,celebration]
+---3--[family,celebration]
 Everyone we love was there to celebrate.
 
 --------------------------------------------------------------------------------
 
----2021-06-25--[dancing,joy]
+---4--[dancing,joy]
 First dance to our song. Pure magic.
 
 --------------------------------------------------------------------------------
 
----2021-06-25--[gratitude,life]
+---5--[gratitude,life]
 Feeling so blessed.
 
 --------------------------------------------------------------------------------
@@ -540,7 +540,7 @@ Got my first vaccine shot! Relief and hope.
 
 --------------------------------------------------------------------------------
 
----2021-04-14--[gratitude,science]
+---2--[gratitude,science]
 Science is amazing.
 
 --------------------------------------------------------------------------------
@@ -550,7 +550,7 @@ Two years since we got engaged. Still going strong.
 
 --------------------------------------------------------------------------------
 
----2021-02-13--[romance,home]
+---2--[romance,home]
 Made a fancy dinner at home.
 
 --------------------------------------------------------------------------------
@@ -560,7 +560,7 @@ Small Christmas with just Sarah this year.
 
 --------------------------------------------------------------------------------
 
----2020-12-24--[reflection,growth]
+---2--[reflection,growth]
 2020 taught us what really matters.
 
 --------------------------------------------------------------------------------
@@ -570,7 +570,7 @@ Virtual Thanksgiving this year. Weird but still nice.
 
 --------------------------------------------------------------------------------
 
----2020-11-25--[family,love]
+---2--[family,love]
 Technology keeping us connected.
 
 --------------------------------------------------------------------------------
@@ -580,7 +580,7 @@ Set up a home gym in the garage.
 
 --------------------------------------------------------------------------------
 
----2020-08-31--[adaptation,life]
+---2--[adaptation,life]
 Learning to adapt to the new normal.
 
 --------------------------------------------------------------------------------
@@ -590,7 +590,7 @@ Had to postpone the wedding. Disappointed but necessary.
 
 --------------------------------------------------------------------------------
 
----2020-06-14--[love,support]
+---2--[love,support]
 Sarah is being so understanding about it all.
 
 --------------------------------------------------------------------------------
@@ -600,7 +600,7 @@ Started baking sourdough like everyone else.
 
 --------------------------------------------------------------------------------
 
----2020-05-09--[cooking,quarantine]
+---2--[cooking,quarantine]
 Kitchen skills improving during quarantine.
 
 --------------------------------------------------------------------------------
@@ -610,12 +610,12 @@ One week into lockdown. This is surreal.
 
 --------------------------------------------------------------------------------
 
----2020-03-19--[health,concern]
+---2--[health,concern]
 Worried about family and friends.
 
 --------------------------------------------------------------------------------
 
----2020-03-19--[gratitude,life]
+---3--[gratitude,life]
 Thankful to be healthy and have a job.
 
 --------------------------------------------------------------------------------
@@ -625,12 +625,12 @@ Started working from home due to the pandemic.
 
 --------------------------------------------------------------------------------
 
----2020-01-14--[adjustment,change]
+---2--[adjustment,change]
 Miss the office but appreciating the flexibility.
 
 --------------------------------------------------------------------------------
 
----2020-01-14--[productivity,work]
+---3--[productivity,work]
 Set up a proper home office. Makes a difference.
 
 --------------------------------------------------------------------------------
@@ -640,7 +640,7 @@ Wedding planning is stressful but exciting.
 
 --------------------------------------------------------------------------------
 
----2019-11-30--[budget,wedding]
+---2--[budget,wedding]
 Trying to keep costs reasonable. It's not easy!
 
 --------------------------------------------------------------------------------
@@ -650,12 +650,12 @@ Ran a half marathon! 2 hours 15 minutes.
 
 --------------------------------------------------------------------------------
 
----2019-10-19--[achievement,persistence]
+---2--[achievement,persistence]
 Training for 6 months was worth it.
 
 --------------------------------------------------------------------------------
 
----2019-10-19--[fitness,milestone]
+---3--[fitness,milestone]
 Already thinking about a full marathon next year.
 
 --------------------------------------------------------------------------------
@@ -665,7 +665,7 @@ Annual Fourth of July gathering. Now with Max joining us!
 
 --------------------------------------------------------------------------------
 
----2019-07-03--[friendship,gratitude]
+---2--[friendship,gratitude]
 Good friends make life so much better.
 
 --------------------------------------------------------------------------------
@@ -675,12 +675,12 @@ Sarah and I got engaged! She said yes!
 
 --------------------------------------------------------------------------------
 
----2019-05-17--[love,romance]
+---2--[love,romance]
 Planning the rest of our lives together.
 
 --------------------------------------------------------------------------------
 
----2019-05-17--[family,celebration]
+---3--[family,celebration]
 Both families are thrilled. Big celebrations all around.
 
 --------------------------------------------------------------------------------
@@ -690,12 +690,12 @@ Adopted a rescue dog! Named him Max.
 
 --------------------------------------------------------------------------------
 
----2019-03-09--[love,pet]
+---2--[love,pet]
 Max is already the best thing that happened to me.
 
 --------------------------------------------------------------------------------
 
----2019-03-09--[responsibility,life]
+---3--[responsibility,life]
 Dog ownership teaches you a lot about responsibility.
 
 --------------------------------------------------------------------------------
@@ -705,7 +705,7 @@ Last day of 2018. What a year it's been.
 
 --------------------------------------------------------------------------------
 
----2018-12-30--[goals,future]
+---2--[goals,future]
 Next year I want to travel more and stress less.
 
 --------------------------------------------------------------------------------
@@ -715,7 +715,7 @@ Started learning guitar. Fingers hurt but it's fun.
 
 --------------------------------------------------------------------------------
 
----2018-09-07--[practice,hobby]
+---2--[practice,hobby]
 Can play three chords now. Baby steps!
 
 --------------------------------------------------------------------------------
@@ -725,7 +725,7 @@ Switched to a new company. 40% salary increase!
 
 --------------------------------------------------------------------------------
 
----2018-06-29--[nervous,change]
+---2--[nervous,change]
 New job jitters are real. Hope I made the right choice.
 
 --------------------------------------------------------------------------------
@@ -735,12 +735,12 @@ Moving day! First apartment that's truly mine.
 
 --------------------------------------------------------------------------------
 
----2018-03-31--[independence,life]
+---2--[independence,life]
 Adulting is expensive but rewarding.
 
 --------------------------------------------------------------------------------
 
----2018-03-31--[decorating,home]
+---3--[decorating,home]
 Started decorating the living room. Going for a minimalist look.
 
 --------------------------------------------------------------------------------
@@ -750,7 +750,7 @@ Completed my first 5K race! Time was 28 minutes.
 
 --------------------------------------------------------------------------------
 
----2018-01-19--[achievement,fitness]
+---2--[achievement,fitness]
 Never thought I'd become a runner.
 
 --------------------------------------------------------------------------------
@@ -760,7 +760,7 @@ Leading my first major project at work. Feeling the pressure.
 
 --------------------------------------------------------------------------------
 
----2017-11-14--[stress,myself]
+---2--[stress,myself]
 Need to learn to delegate better.
 
 --------------------------------------------------------------------------------
@@ -770,7 +770,7 @@ Rome is breathtaking. So much history everywhere.
 
 --------------------------------------------------------------------------------
 
----2017-08-27--[reflection,travel]
+---2--[reflection,travel]
 Travel really broadens your perspective on life.
 
 --------------------------------------------------------------------------------
@@ -780,7 +780,7 @@ In Barcelona now. The architecture is incredible.
 
 --------------------------------------------------------------------------------
 
----2017-08-21--[food,travel]
+---2--[food,travel]
 Best paella I've ever had.
 
 --------------------------------------------------------------------------------
@@ -790,7 +790,7 @@ Backpacking trip through Europe. Starting in Paris today.
 
 --------------------------------------------------------------------------------
 
----2017-08-14--[photography,travel]
+---2--[photography,travel]
 Eiffel Tower at night is magical.
 
 --------------------------------------------------------------------------------
@@ -800,12 +800,12 @@ Finished my online master's degree! Two years of evening classes paid off.
 
 --------------------------------------------------------------------------------
 
----2017-05-19--[celebration,achievement]
+---2--[celebration,achievement]
 Family threw a surprise graduation party.
 
 --------------------------------------------------------------------------------
 
----2017-05-19--[gratitude,family]
+---3--[gratitude,family]
 So thankful for everyone's support during the program.
 
 --------------------------------------------------------------------------------
@@ -815,7 +815,7 @@ First Valentine's Day with Sarah. Cooked dinner at home.
 
 --------------------------------------------------------------------------------
 
----2017-02-13--[romance,life]
+---2--[romance,life]
 Sometimes the simple moments are the most special.
 
 --------------------------------------------------------------------------------
@@ -835,7 +835,7 @@ Fourth of July BBQ at Jake's place. Fireworks were amazing.
 
 --------------------------------------------------------------------------------
 
----2016-07-03--[cooking,hobby]
+---2--[cooking,hobby]
 Tried making pulled pork for the first time. Turned out great!
 
 --------------------------------------------------------------------------------
@@ -845,7 +845,7 @@ Got my first promotion! Hard work is paying off.
 
 --------------------------------------------------------------------------------
 
----2016-04-17--[celebration,friends]
+---2--[celebration,friends]
 Dinner with friends to celebrate. They're so supportive.
 
 --------------------------------------------------------------------------------
@@ -855,7 +855,7 @@ New year, new goals. Planning to learn a new programming language this year.
 
 --------------------------------------------------------------------------------
 
----2015-12-31--[reflection,myself]
+---2--[reflection,myself]
 Looking back at 2015, it was a year of growth and new beginnings.
 
 --------------------------------------------------------------------------------
@@ -865,7 +865,7 @@ Thanksgiving dinner with the whole family. Mom made her famous pie.
 
 --------------------------------------------------------------------------------
 
----2015-11-27--[gratitude,life]
+---2--[gratitude,life]
 Grateful for another year surrounded by loved ones.
 
 --------------------------------------------------------------------------------
@@ -880,7 +880,7 @@ Beach vacation with college friends. Best week ever.
 
 --------------------------------------------------------------------------------
 
----2015-06-21--[photography,hobby]
+---2--[photography,hobby]
 Captured beautiful sunset photos at the beach.
 
 --------------------------------------------------------------------------------
@@ -890,7 +890,7 @@ Started my first software job today. Feeling excited and nervous about this new 
 
 --------------------------------------------------------------------------------
 
----2015-03-14--[learning,dev]
+---2--[learning,dev]
 Spent the evening setting up my development environment. So much to learn!
 
 --------------------------------------------------------------------------------

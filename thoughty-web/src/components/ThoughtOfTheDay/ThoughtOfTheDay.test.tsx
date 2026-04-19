@@ -83,17 +83,21 @@ describe('ThoughtOfTheDay', () => {
     });
 
     it('refreshes highlights', async () => {
+        const mockHighlights = {
+            randomEntry: { id: 1, date: '2024-01-01', content: 'Random', tags: [], index: 1 },
+            onThisDay: {}
+        };
         (globalThis.fetch as Mock)
-            .mockResolvedValueOnce({ ok: true, json: async () => ({ randomEntry: null, onThisDay: {} }) })
-            .mockResolvedValueOnce({ ok: true, json: async () => ({ randomEntry: null, onThisDay: {} }) });
+            .mockResolvedValueOnce({ ok: true, json: async () => mockHighlights })
+            .mockResolvedValueOnce({ ok: true, json: async () => mockHighlights });
 
         render(<ThoughtOfTheDay isOpen={true} onClose={vi.fn()} theme="dark" t={mockT} />);
 
         await waitFor(() => {
-            expect(screen.getByTitle('refreshRandom')).toBeInTheDocument();
+            expect(screen.getByTitle('randomize')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByTitle('refreshRandom'));
+        fireEvent.click(screen.getByTitle('randomize'));
 
         await waitFor(() => {
             expect(globalThis.fetch).toHaveBeenCalledTimes(2);
@@ -154,7 +158,7 @@ describe('ThoughtOfTheDay', () => {
 
         fireEvent.click(screen.getByText('Hello'));
 
-        expect(onNavigateToEntry).toHaveBeenCalledWith('2024-01-01', 3);
+        expect(onNavigateToEntry).toHaveBeenCalledWith('2024-01-01', 3, null, true);
         expect(onClose).toHaveBeenCalled();
     });
 });

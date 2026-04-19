@@ -40,6 +40,7 @@ function parseTestData(content: string): Entry[] {
 
     let currentDate: string | null = null;
     let currentIndex = 0;
+    const dateIndexMap: Record<string, number> = {};
     let i = 0;
 
     while (i < lines.length) {
@@ -50,7 +51,8 @@ function parseTestData(content: string): Entry[] {
         if (dateMatch) {
             const [, year, month, day, tagsStr] = dateMatch;
             currentDate = `${year}-${month}-${day}`;
-            currentIndex = 1;
+            dateIndexMap[currentDate] = (dateIndexMap[currentDate] || 0) + 1;
+            currentIndex = dateIndexMap[currentDate];
             const tags = tagsStr
                 .split(',')
                 .map((t) => t.trim())

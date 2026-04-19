@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useOptimistic, useTransition } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { createAuthFetch, createConfigService, createEntriesService, createDiariesService, createAttachmentsService, createAiService, createCloudSyncService } from '../services/api';
 import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo, Attachment } from '../types';
@@ -252,25 +252,13 @@ export const useEntries = (
     setAvailableMonths(data.months);
   }, [isAuthenticated, entriesService]);
 
-  // Optimistic visibility toggle (React 19)
-  const [optimisticEntries, addOptimistic] = useOptimistic(
-    entries,
-    (state, update: { id: number; visibility: 'public' | 'private' }) =>
-      state.map(e => e.id === update.id ? { ...e, visibility: update.visibility } : e)
-  );
-
-  const [, startVisibilityTransition] = useTransition();
-
-  const toggleVisibility = useCallback((entry: Entry) => {
+  const toggleVisibility = useCallback(async (entry: Entry) => {
     const newVisibility = entry.visibility === 'public' ? 'private' : 'public';
-    startVisibilityTransition(async () => {
-      addOptimistic({ id: entry.id, visibility: newVisibility });
-      const success = await entriesService.toggleVisibility(entry.id, newVisibility);
-      if (success) {
-        await fetchEntries();
-      }
-    });
-  }, [entriesService, fetchEntries, addOptimistic, startVisibilityTransition]);
+    const success = await entriesService.toggleVisibility(entry.id, newVisibility);
+    if (success) {
+      await fetchEntries();
+    }
+  }, [entriesService, fetchEntries]);
 
   const toggleFavorite = useCallback(async (entry: Entry) => {
     const newFavorite = !entry.is_favorite;
@@ -284,9 +272,13 @@ export const useEntries = (
     return entriesService.fetchEntryHistory(entryId);
   }, [entriesService]);
 
+  const deleteRevision = useCallback(async (entryId: number, revisionId: number) => {
+    return entriesService.deleteRevision(entryId, revisionId);
+  }, [entriesService]);
+
   // Group entries by date
   const groupedEntries: GroupedEntries = useMemo(() => {
-    const grouped = optimisticEntries.reduce((acc: GroupedEntries, entry) => {
+    const grouped = entries.reduce((acc: GroupedEntries, entry) => {
       let dateStr = entry.date;
       if (dateStr.includes('T')) dateStr = dateStr.split('T')[0] ?? dateStr;
       acc[dateStr] ??= [];
@@ -299,7 +291,7 @@ export const useEntries = (
     });
 
     return grouped;
-  }, [optimisticEntries]);
+  }, [entries]);
 
   // Sync inputPage with page
   useEffect(() => { 
@@ -372,7 +364,8 @@ export const useEntries = (
     entriesService,
     toggleVisibility,
     toggleFavorite,
-    fetchEntryHistory
+    fetchEntryHistory,
+    deleteRevision
   };
 };
 

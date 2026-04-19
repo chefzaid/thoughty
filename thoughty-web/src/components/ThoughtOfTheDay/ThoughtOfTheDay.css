@@ -154,6 +154,19 @@
     animation: spin 0.5s ease-in-out;
 }
 
+/* Inline refresh button next to section title */
+.action-button.inline-refresh {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 0.375rem;
+    margin-left: 0.25rem;
+}
+
+.action-button.inline-refresh svg {
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
@@ -220,8 +233,6 @@
 }
 
 .thought-of-day-modal.light .highlight-entry:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
     transform: translateY(-2px);
 }
 
@@ -231,9 +242,29 @@
 }
 
 .thought-of-day-modal.dark .highlight-entry:hover {
+    transform: translateY(-2px);
+}
+
+/* Blue highlight only for random thought entry */
+.thought-of-day-modal.light .random-thought .highlight-entry:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.thought-of-day-modal.dark .random-thought .highlight-entry:hover {
     border-color: #3b82f6;
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
-    transform: translateY(-2px);
+}
+
+/* Subtle hover for on-this-day entries */
+.thought-of-day-modal.light .on-this-day .highlight-entry:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.thought-of-day-modal.dark .on-this-day .highlight-entry:hover {
+    border-color: #475569;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .highlight-entry.compact {

@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { JwtAuthGuard } from '@/modules/auth/guards';
@@ -13,6 +13,13 @@ import { ChatDto } from './dto/chat.dto';
 @Controller('ai')
 export class AiController {
   constructor(private readonly aiService: AiService) {}
+
+  @Get('models')
+  @ApiOperation({ summary: 'List available OpenRouter models' })
+  @ApiResponse({ status: 200, description: 'List of available models' })
+  async listModels(): Promise<{ id: string; name: string }[]> {
+    return this.aiService.listModels();
+  }
 
   @Post('suggest-tags')
   @ApiOperation({ summary: 'Suggest tags for journal content using OpenRouter' })

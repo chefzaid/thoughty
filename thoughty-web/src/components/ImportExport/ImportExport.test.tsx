@@ -290,7 +290,7 @@ describe('ImportExport', () => {
         it('shows cloud sync section when a provider is connected', async () => {
             await renderWithConnectedProvider();
 
-            expect(screen.getByText('Google Drive')).toBeInTheDocument();
+            expect(screen.getAllByText('Google Drive').length).toBeGreaterThanOrEqual(1);
             expect(screen.getByText('cloudUpload')).toBeInTheDocument();
         });
 
@@ -478,8 +478,8 @@ describe('ImportExport', () => {
             render(<ImportExport theme="dark" t={mockT} />);
 
             await waitFor(() => {
-                expect(screen.getByText('Google Drive')).toBeInTheDocument();
-                expect(screen.getByText('OneDrive')).toBeInTheDocument();
+                expect(screen.getAllByText('Google Drive').length).toBeGreaterThanOrEqual(1);
+                expect(screen.getAllByText('OneDrive').length).toBeGreaterThanOrEqual(1);
             });
 
             const uploadButtons = screen.getAllByText('cloudUpload');

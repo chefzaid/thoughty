@@ -86,6 +86,7 @@ interface EntriesListProps {
     onToggleBulkMode?: () => void;
     diaries?: Diary[];
     onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
+    onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onDiscuss?: (entry: Entry) => void;
     t: (key: string, params?: Record<string, string | number>) => string;
 }
@@ -112,6 +113,16 @@ function getVisibilityButtonClass(editVisibility: 'public' | 'private', theme?: 
     if (editVisibility === 'public') {
         return 'border-green-500 bg-green-500/10 text-green-500';
     }
+    return theme === 'light'
+        ? 'border-gray-300 bg-gray-50 text-gray-500'
+        : 'border-gray-600 bg-gray-800 text-gray-400';
+}
+
+function getEditFormatButtonClass(editFormat: 'plain' | 'markdown', theme?: 'light' | 'dark'): string {
+    if (editFormat === 'markdown') {
+        return 'border-indigo-500 bg-indigo-500/10 text-indigo-500';
+    }
+
     return theme === 'light'
         ? 'border-gray-300 bg-gray-50 text-gray-500'
         : 'border-gray-600 bg-gray-800 text-gray-400';
@@ -159,6 +170,7 @@ function EditForm({
     const inputClass = isDark
         ? 'bg-gray-900 border-gray-700 text-gray-100'
         : 'bg-gray-50 border-gray-300 text-gray-900';
+    const editFormatButtonClass = getEditFormatButtonClass(editFormat, config.theme);
 
     return (
         <div className="space-y-4">
@@ -203,12 +215,7 @@ function EditForm({
                 <button
                     type="button"
                     onClick={() => setEditFormat(f => f === 'plain' ? 'markdown' : 'plain')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${editFormat === 'markdown'
-                        ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
-                        : config.theme === 'light'
-                            ? 'border-gray-300 bg-gray-50 text-gray-500'
-                            : 'border-gray-600 bg-gray-800 text-gray-400'
-                        }`}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${editFormatButtonClass}`}
                     title={editFormat === 'markdown' ? t('markdownEnabled') : t('markdownDisabled')}
                 >
                     <span className="text-sm font-bold" style={{ fontFamily: 'monospace' }}>MD</span>
@@ -278,10 +285,97 @@ function BackToSourceButton({ sourceEntry, onBackToSource, t }: Readonly<{
     );
 }
 
+function EntryHistorySection({
+    isVisible,
+    isDark,
+    loadingHistory,
+    revisions,
+    onDeleteRevision,
+    onHandleDeleteRevision,
+    t,
+}: Readonly<{
+    isVisible: boolean;
+    isDark: boolean;
+    loadingHistory: boolean;
+    revisions: EntryRevision[];
+    onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
+    onHandleDeleteRevision: (revisionId: number) => Promise<void>;
+    t: (key: string) => string;
+}>) {
+    if (!isVisible) {
+        return null;
+    }
+
+    let content: JSX.Element;
+
+    if (loadingHistory) {
+        content = <p className="text-sm text-gray-500">...</p>;
+    } else if (revisions.length === 0) {
+        content = <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('noRevisions')}</p>;
+    } else {
+        content = (
+            <div className="space-y-3">
+                {revisions.map((rev, idx) => (
+                    <div
+                        key={rev.id}
+                        className={`p-3 rounded-lg border text-sm ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
+                    >
+                        <div className="flex justify-between items-center mb-2">
+                            <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {t('revision')} #{revisions.length - idx}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    {new Date(rev.createdAt).toLocaleString()}
+                                </span>
+                                {onDeleteRevision && (
+                                    <button
+                                        onClick={() => void onHandleDeleteRevision(rev.id)}
+                                        className="p-0.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
+                                        title={t('delete')}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        <div className={`whitespace-pre-wrap ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                            {rev.content}
+                        </div>
+                        {rev.tags.length > 0 && (
+                            <div className="flex gap-1 mt-2 flex-wrap">
+                                {rev.tags.map(tag => (
+                                    <span
+                                        key={tag}
+                                        className={`text-xs px-1.5 py-0.5 rounded-full ${isDark ? 'bg-purple-900/20 text-purple-400' : 'bg-purple-50 text-purple-600'}`}
+                                    >
+                                        #{tag}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        );
+    }
+
+    return (
+        <div className={`mt-4 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
+            <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                {t('history')}
+            </h4>
+            {content}
+        </div>
+    );
+}
+
 function EntryViewMode({
     entry, config, speaking, activeEntryId, activeTargetId, sourceEntry,
     flatEntries, speakEntry: speak, speakFromEntry: speakFrom, stop,
-    onToggleVisibility, onToggleFavorite, onEdit, onDelete, onNavigateToEntry, onBackToSource, onFetchHistory, onDiscuss, searchTerm, t
+    onToggleVisibility, onToggleFavorite, onEdit, onDelete, onNavigateToEntry, onBackToSource, onFetchHistory, onDeleteRevision, onDiscuss, searchTerm, t
 }: Readonly<{
     entry: Entry;
     config: Config;
@@ -300,6 +394,7 @@ function EntryViewMode({
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     onBackToSource: () => void;
     onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
+    onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onDiscuss?: (entry: Entry) => void;
     searchTerm?: string;
     t: (key: string) => string;
@@ -324,6 +419,14 @@ function EntryViewMode({
         }
         setShowHistory(true);
     }, [showHistory, onFetchHistory, entry.id]);
+
+    const handleDeleteRevision = useCallback(async (revisionId: number) => {
+        if (!onDeleteRevision) return;
+        const success = await onDeleteRevision(entry.id, revisionId);
+        if (success) {
+            setRevisions(revisions.filter(r => r.id !== revisionId));
+        }
+    }, [onDeleteRevision, entry.id, revisions]);
 
     return (
         <>
@@ -351,6 +454,13 @@ function EntryViewMode({
                     )}
                     <span className="text-xs text-gray-500 font-mono">#{entry.index}</span>
                     <button
+                        onClick={() => onToggleVisibility(entry)}
+                        className={`p-1 rounded transition-colors ${entry.visibility === 'public' ? 'text-green-500 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}
+                        title={entry.visibility === 'public' ? t('publicTooltip') : t('privateTooltip')}
+                    >
+                        <VisibilityIcon visibility={entry.visibility} />
+                    </button>
+                    <button
                         onClick={() => onToggleFavorite(entry)}
                         className={`p-1 rounded transition-colors ${entry.is_favorite ? 'text-yellow-500 hover:bg-yellow-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}
                         title={entry.is_favorite ? t('unfavorite') : t('favorite')}
@@ -358,13 +468,6 @@ function EntryViewMode({
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill={entry.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
                             <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                         </svg>
-                    </button>
-                    <button
-                        onClick={() => onToggleVisibility(entry)}
-                        className={`p-1 rounded transition-colors ${entry.visibility === 'public' ? 'text-green-500 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}
-                        title={entry.visibility === 'public' ? t('publicTooltip') : t('privateTooltip')}
-                    >
-                        <VisibilityIcon visibility={entry.visibility} />
                     </button>
                     <ListenButton
                         entryId={entry.id}
@@ -380,15 +483,6 @@ function EntryViewMode({
                         theme={config.theme}
                         t={t}
                     />
-                    <button
-                        onClick={() => onEdit(entry)}
-                        className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
-                        title={t('edit')}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                    </button>
                     {onDiscuss && (
                         <button
                             onClick={() => onDiscuss(entry)}
@@ -411,6 +505,15 @@ function EntryViewMode({
                             </svg>
                         </button>
                     )}
+                    <button
+                        onClick={() => onEdit(entry)}
+                        className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 rounded transition-colors"
+                        title={t('edit')}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </button>
                     <button
                         onClick={() => onDelete(entry.id)}
                         className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors"
@@ -442,51 +545,15 @@ function EntryViewMode({
                     t={t}
                 />
             )}
-            {showHistory && (
-                <div className={`mt-4 pt-4 border-t ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <h4 className={`text-sm font-semibold mb-3 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                        {t('history')}
-                    </h4>
-                    {loadingHistory ? (
-                        <p className="text-sm text-gray-500">...</p>
-                    ) : revisions.length === 0 ? (
-                        <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('noRevisions')}</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {revisions.map((rev, idx) => (
-                                <div
-                                    key={rev.id}
-                                    className={`p-3 rounded-lg border text-sm ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
-                                >
-                                    <div className="flex justify-between items-center mb-2">
-                                        <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                            {t('revision')} #{revisions.length - idx}
-                                        </span>
-                                        <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                                            {new Date(rev.createdAt).toLocaleString()}
-                                        </span>
-                                    </div>
-                                    <div className={`whitespace-pre-wrap ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                        {rev.content}
-                                    </div>
-                                    {rev.tags.length > 0 && (
-                                        <div className="flex gap-1 mt-2 flex-wrap">
-                                            {rev.tags.map(tag => (
-                                                <span
-                                                    key={tag}
-                                                    className={`text-xs px-1.5 py-0.5 rounded-full ${isDark ? 'bg-purple-900/20 text-purple-400' : 'bg-purple-50 text-purple-600'}`}
-                                                >
-                                                    #{tag}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
+            <EntryHistorySection
+                isVisible={showHistory}
+                isDark={isDark}
+                loadingHistory={loadingHistory}
+                revisions={revisions}
+                onDeleteRevision={onDeleteRevision}
+                onHandleDeleteRevision={handleDeleteRevision}
+                t={t}
+            />
         </>
     );
 }
@@ -643,6 +710,7 @@ function EntriesList({
     onToggleBulkMode,
     diaries,
     onFetchHistory,
+    onDeleteRevision,
     onDiscuss,
     t
 }: Readonly<EntriesListProps>) {
@@ -787,6 +855,7 @@ function EntriesList({
                                                 onNavigateToEntry={onNavigateToEntry}
                                                 onBackToSource={onBackToSource}
                                                 onFetchHistory={onFetchHistory}
+                                                onDeleteRevision={onDeleteRevision}
                                                 onDiscuss={onDiscuss}
                                                 searchTerm={searchTerm}
                                                 t={t}

@@ -49,6 +49,12 @@ export type TranslationKey =
   | 'writeSomethingAboutYourself'
   | 'birthday'
   | 'birthdayDescription'
+  | 'gender'
+  | 'genderDescription'
+  | 'genderNotSpecified'
+  | 'genderMale'
+  | 'genderFemale'
+  | 'genderOther'
   | 'changeProfilePicture'
   | 'editProfilePicture'
   | 'clickToUpload'
@@ -243,6 +249,7 @@ export type TranslationKey =
   | 'onThisDay'
   | 'yearsAgo'
   | 'refreshRandom'
+  | 'randomize'
   | 'highlightsError'
   | 'tryAgain'
   | 'expand'
@@ -288,13 +295,13 @@ export type TranslationKey =
   | 'filterFavorites'
   | 'dragToReorder'
   | 'aiConfiguration'
-  | 'openRouterApiKey'
-  | 'openRouterApiKeyDescription'
+  | 'aiConfigDescription'
+  | 'openRouterModel'
+  | 'searchModels'
+  | 'noModelsFound'
+  | 'loadingModels'
   | 'autoTagMaxTags'
   | 'autoTagMaxTagsDescription'
-  | 'enterApiKey'
-  | 'showApiKey'
-  | 'hideApiKey'
   | 'history'
   | 'viewHistory'
   | 'noRevisions'
@@ -410,6 +417,12 @@ export const translations: Translations = {
     writeSomethingAboutYourself: 'Write something about yourself...',
     birthday: 'Birthday',
     birthdayDescription: 'Your date of birth',
+    gender: 'Gender',
+    genderDescription: 'Optional',
+    genderNotSpecified: 'Prefer not to say',
+    genderMale: 'Male',
+    genderFemale: 'Female',
+    genderOther: 'Other',
     changeProfilePicture: 'Change profile picture',
     editProfilePicture: 'Edit Profile Picture',
     clickToUpload: 'Click to upload an image',
@@ -514,7 +527,7 @@ export const translations: Translations = {
     loading: 'Loading',
 
     // Danger Zone
-    dataPrivacy: 'Data & Privacy',
+    dataPrivacy: 'Privacy',
     downloadMyData: 'Download My Data',
     downloadMyDataDescription: 'Download all your data as a JSON file (GDPR)',
     downloading: 'Downloading...',
@@ -554,10 +567,10 @@ export const translations: Translations = {
     landingFeatureInsightTitle: 'Useful after the writing',
     landingFeatureInsightBody:
       'Search quickly, filter by tags and visibility, revisit highlights, and use the stats view to spot patterns over time.',
-    suggestTags: 'Suggest Tags',
-    suggestingTags: 'Suggesting...',
-    fixWriting: 'Fix Writing',
-    fixingWriting: 'Fixing...',
+    suggestTags: 'Auto-Tags',
+    suggestingTags: 'Tagging...',
+    fixWriting: 'Rephrase',
+    fixingWriting: 'Rephrasing...',
     discussEntry: 'Discuss with AI',
     aiChat: 'AI Chat',
     aiThinking: 'Thinking...',
@@ -638,6 +651,7 @@ export const translations: Translations = {
     onThisDay: 'On This Day',
     yearsAgo: '{years} year(s) ago',
     refreshRandom: 'Get a new random thought',
+    randomize: 'Randomize',
     highlightsError: 'Failed to load highlights',
     tryAgain: 'Try again',
     expand: 'Expand',
@@ -690,13 +704,13 @@ export const translations: Translations = {
     revision: 'Revision',
     restoredFrom: 'Restored from',
     aiConfiguration: 'AI Configuration',
-    openRouterApiKey: 'OpenRouter API Key',
-    openRouterApiKeyDescription: 'Enter your OpenRouter API key to enable AI features like tag suggestions and writing assistance',
+    aiConfigDescription: 'AI features are powered by OpenRouter. The API key is configured on the server.',
+    openRouterModel: 'Model',
+    searchModels: 'Search models...',
+    noModelsFound: 'No models found',
+    loadingModels: 'Loading models...',
     autoTagMaxTags: 'Automatic Tag Limit',
     autoTagMaxTagsDescription: 'Set the maximum number of AI-generated tags to add when you save an entry. Use 0 to disable auto-tagging.',
-    enterApiKey: 'Enter your API key',
-    showApiKey: 'Show API key',
-    hideApiKey: 'Hide API key',
 
     // Cloud Sync
     cloudSync: 'Cloud Sync',
@@ -803,6 +817,12 @@ export const translations: Translations = {
     writeSomethingAboutYourself: 'Écrivez quelque chose sur vous...',
     birthday: 'Date de naissance',
     birthdayDescription: 'Votre date de naissance',
+    gender: 'Genre',
+    genderDescription: 'Optionnel',
+    genderNotSpecified: 'Préfère ne pas répondre',
+    genderMale: 'Homme',
+    genderFemale: 'Femme',
+    genderOther: 'Autre',
     changeProfilePicture: 'Changer la photo de profil',
     editProfilePicture: 'Modifier la photo de profil',
     clickToUpload: 'Cliquez pour télécharger une image',
@@ -908,7 +928,7 @@ export const translations: Translations = {
     loading: 'Chargement',
 
     // Danger Zone
-    dataPrivacy: 'Données et confidentialité',
+    dataPrivacy: 'Confidentialité',
     downloadMyData: 'Télécharger mes données',
     downloadMyDataDescription: 'Téléchargez toutes vos données au format JSON (RGPD)',
     downloading: 'Téléchargement...',
@@ -948,10 +968,10 @@ export const translations: Translations = {
     landingFeatureInsightTitle: 'Utile après l\'écriture',
     landingFeatureInsightBody:
       'Recherchez vite, filtrez par tags et visibilité, retrouvez les temps forts et observez vos tendances dans les statistiques.',
-    suggestTags: 'Suggérer des tags',
-    suggestingTags: 'Suggestion...',
-    fixWriting: 'Corriger l\'écriture',
-    fixingWriting: 'Correction...',
+    suggestTags: 'Auto-Tags',
+    suggestingTags: 'Tagging...',
+    fixWriting: 'Reformuler',
+    fixingWriting: 'Reformulation...',
     discussEntry: 'Discuter avec l\'IA',
     aiChat: 'Chat IA',
     aiThinking: 'Réflexion...',
@@ -1033,6 +1053,7 @@ export const translations: Translations = {
     onThisDay: 'Ce jour-là',
     yearsAgo: 'Il y a {years} an(s)',
     refreshRandom: 'Obtenir une nouvelle pensée aléatoire',
+    randomize: 'Aléatoire',
     highlightsError: 'Échec du chargement des mises en avant',
     tryAgain: 'Réessayer',
     expand: 'Développer',
@@ -1086,13 +1107,13 @@ export const translations: Translations = {
     revision: 'Révision',
     restoredFrom: 'Restauré à partir de',
     aiConfiguration: 'Configuration IA',
-    openRouterApiKey: 'Clé API OpenRouter',
-    openRouterApiKeyDescription: 'Entrez votre clé API OpenRouter pour activer les fonctionnalités IA comme les suggestions de tags et l\'aide à la rédaction',
+    aiConfigDescription: 'Les fonctionnalités IA sont alimentées par OpenRouter. La clé API est configurée sur le serveur.',
+    openRouterModel: 'Modèle',
+    searchModels: 'Rechercher des modèles...',
+    noModelsFound: 'Aucun modèle trouvé',
+    loadingModels: 'Chargement des modèles...',
     autoTagMaxTags: 'Limite de tags automatiques',
     autoTagMaxTagsDescription: 'Définissez le nombre maximum de tags générés par l\'IA à ajouter lors de l\'enregistrement. Utilisez 0 pour désactiver l\'auto-tagging.',
-    enterApiKey: 'Entrez votre clé API',
-    showApiKey: 'Afficher la clé API',
-    hideApiKey: 'Masquer la clé API',
 
     // Cloud Sync
     cloudSync: 'Synchronisation Cloud',

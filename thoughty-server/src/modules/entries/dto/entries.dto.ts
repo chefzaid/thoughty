@@ -10,6 +10,7 @@ import {
   Min,
   IsInt,
   ArrayMinSize,
+  IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
@@ -117,6 +118,7 @@ export class BulkOperationDto {
 
 export class UpdateFavoriteDto {
   @ApiProperty({ description: 'Whether the entry is a favorite' })
+  @IsBoolean()
   @Transform(({ value }) => value === true || value === 'true')
   isFavorite: boolean;
 }

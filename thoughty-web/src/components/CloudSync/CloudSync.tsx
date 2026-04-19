@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import './CloudSync.css';
 import { useApiServices } from '../../hooks/useAppState';
 import type { CloudProviderType, CloudFileInfo, SyncScheduleConfig, SyncFrequency } from '../../services/api/cloudSyncService';
+import { CLOUD_PROVIDER_ICONS, CLOUD_PROVIDER_NAMES } from '../CloudProviderIcons';
+
+type ExportFormat = 'txt' | 'json' | 'md';
 
 interface CloudSyncProps {
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly diaryId?: number | null;
-    readonly diaryName?: string;
 }
 
 interface CloudProviderStatus {
@@ -20,10 +22,10 @@ interface MessageState {
     text: string;
 }
 
-const PROVIDER_CONFIG: Record<CloudProviderType, { name: string; icon: string }> = {
-    google_drive: { name: 'Google Drive', icon: '📁' },
-    onedrive: { name: 'OneDrive', icon: '☁️' },
-    dropbox: { name: 'Dropbox', icon: '📦' },
+const PROVIDER_CONFIG: Record<CloudProviderType, { name: string }> = {
+    google_drive: { name: CLOUD_PROVIDER_NAMES.google_drive },
+    onedrive: { name: CLOUD_PROVIDER_NAMES.onedrive },
+    dropbox: { name: CLOUD_PROVIDER_NAMES.dropbox },
 };
 
 function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
@@ -33,7 +35,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
     const [connecting, setConnecting] = useState<CloudProviderType | null>(null);
     const [uploading, setUploading] = useState<CloudProviderType | null>(null);
     const [message, setMessage] = useState<MessageState | null>(null);
-    const [exportFormat, setExportFormat] = useState<'txt' | 'json' | 'md'>('txt');
+    const [exportFormat, setExportFormat] = useState<ExportFormat>('txt');
     const [includeVisibility, setIncludeVisibility] = useState(false);
     const [expandedProvider, setExpandedProvider] = useState<CloudProviderType | null>(null);
     const [files, setFiles] = useState<CloudFileInfo[]>([]);
@@ -45,7 +47,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
         onedrive: 'daily',
         dropbox: 'daily',
     });
-    const [scheduleFormat, setScheduleFormat] = useState<Record<string, 'txt' | 'json' | 'md'>>({
+    const [scheduleFormat, setScheduleFormat] = useState<Record<string, ExportFormat>>({
         google_drive: 'txt',
         onedrive: 'txt',
         dropbox: 'txt',
@@ -76,7 +78,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                     setScheduleFrequency(prev => ({ ...prev, [provider]: config.frequency as SyncFrequency }));
                 }
                 if (config.format) {
-                    setScheduleFormat(prev => ({ ...prev, [provider]: config.format as 'txt' | 'json' | 'md' }));
+                    setScheduleFormat(prev => ({ ...prev, [provider]: config.format as ExportFormat }));
                 }
                 if (config.includeVisibility !== undefined) {
                     setScheduleIncludeVisibility(prev => ({ ...prev, [provider]: config.includeVisibility! }));
@@ -311,11 +313,12 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                     const config = PROVIDER_CONFIG[provider];
                     const providerStatus = status[provider];
                     const isConnected = providerStatus?.connected ?? false;
+                    const IconComponent = CLOUD_PROVIDER_ICONS[provider];
 
                     return (
                         <div key={provider} className={`cloud-provider-card ${isConnected ? 'connected' : ''}`}>
                             <div className="cloud-provider-header">
-                                <div className="cloud-provider-icon">{config.icon}</div>
+                                <div className="cloud-provider-icon">{IconComponent && <IconComponent width={24} height={24} />}</div>
                                 <div className="cloud-provider-info">
                                     <div className="cloud-provider-name">{config.name}</div>
                                     <div className={`cloud-provider-status ${isConnected ? 'connected' : ''}`}>
@@ -378,7 +381,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                                         <label>{t('exportFormat')}</label>
                                         <select
                                             value={exportFormat}
-                                            onChange={e => setExportFormat(e.target.value as 'txt' | 'json' | 'md')}
+                                            onChange={e => setExportFormat(e.target.value as ExportFormat)}
                                         >
                                             <option value="txt">{t('formatTxt')}</option>
                                             <option value="json">{t('formatJson')}</option>
@@ -413,12 +416,12 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
 
                                     {schedules[provider]?.lastSyncAt && (
                                         <div className="cloud-schedule-meta">
-                                            {t('cloudLastSync', { date: formatDate(schedules[provider].lastSyncAt!) })}
+                                            {t('cloudLastSync', { date: formatDate(schedules[provider].lastSyncAt) })}
                                         </div>
                                     )}
                                     {schedules[provider]?.nextSyncAt && schedules[provider]?.enabled && (
                                         <div className="cloud-schedule-meta">
-                                            {t('cloudNextSync', { date: formatDate(schedules[provider].nextSyncAt!) })}
+                                            {t('cloudNextSync', { date: formatDate(schedules[provider].nextSyncAt) })}
                                         </div>
                                     )}
 
@@ -439,7 +442,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                                         <label>{t('exportFormat')}</label>
                                         <select
                                             value={scheduleFormat[provider]}
-                                            onChange={e => setScheduleFormat(prev => ({ ...prev, [provider]: e.target.value as 'txt' | 'json' | 'md' }))}
+                                            onChange={e => setScheduleFormat(prev => ({ ...prev, [provider]: e.target.value as ExportFormat }))}
                                         >
                                             <option value="txt">{t('formatTxt')}</option>
                                             <option value="json">{t('formatJson')}</option>

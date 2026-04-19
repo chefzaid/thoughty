@@ -1,10 +1,12 @@
-import type { FormEvent } from 'react';
+import type { ComponentProps } from 'react';
 import type { TranslationFunction } from './types';
+
+type FormSubmitHandler = NonNullable<ComponentProps<'form'>['onSubmit']>;
 
 interface SecuritySectionProps {
   t: TranslationFunction;
   isDark: boolean;
-  handlePasswordChange: (e: FormEvent<HTMLFormElement>) => void;
+  handlePasswordChange: FormSubmitHandler;
   currentPassword: string;
   setCurrentPassword: (value: string) => void;
   newPassword: string;
@@ -14,16 +16,6 @@ interface SecuritySectionProps {
   passwordError: string;
   passwordSuccess: string;
   changingPassword: boolean;
-  showDeleteConfirm: boolean;
-  setShowDeleteConfirm: (value: boolean) => void;
-  deleteConfirmText: string;
-  setDeleteConfirmText: (value: string) => void;
-  deletePassword: string;
-  setDeletePassword: (value: string) => void;
-  deleteError: string;
-  setDeleteError: (value: string) => void;
-  deletingAccount: boolean;
-  handleDeleteAccount: () => void;
 }
 
 function SecuritySection({
@@ -39,16 +31,6 @@ function SecuritySection({
   passwordError,
   passwordSuccess,
   changingPassword,
-  showDeleteConfirm,
-  setShowDeleteConfirm,
-  deleteConfirmText,
-  setDeleteConfirmText,
-  deletePassword,
-  setDeletePassword,
-  deleteError,
-  setDeleteError,
-  deletingAccount,
-  handleDeleteAccount
 }: Readonly<SecuritySectionProps>) {
   return (
   <div className="profile-section">
@@ -102,61 +84,6 @@ function SecuritySection({
           {changingPassword ? t('changingPassword') : t('changePassword')}
         </button>
       </form>
-
-      <div className="delete-account-section">
-        <div className="setting-row">
-          <div className="setting-info">
-            <span className="setting-label danger">{t('deleteAccount')}</span>
-            <span className="setting-description">{t('deleteAccountDescription')}</span>
-          </div>
-          {showDeleteConfirm ? (
-            <div className="delete-confirm-container">
-              <p className="delete-warning">{t('deleteAccountWarning')}</p>
-              <input
-                type="text"
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder={t('typeDeleteToConfirm')}
-                className={`setting-input delete-confirm-input ${isDark ? 'dark' : 'light'}`}
-              />
-              <input
-                type="password"
-                value={deletePassword}
-                onChange={(e) => setDeletePassword(e.target.value)}
-                placeholder={t('enterYourPassword')}
-                className={`setting-input ${isDark ? 'dark' : 'light'}`}
-              />
-              {deleteError && <div className="password-error">{deleteError}</div>}
-              <div className="delete-actions">
-                <button
-                  type="button"
-                  className="btn-cancel-delete"
-                  onClick={() => {
-                    setShowDeleteConfirm(false);
-                    setDeleteConfirmText('');
-                    setDeletePassword('');
-                    setDeleteError('');
-                  }}
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="button"
-                  className="btn-confirm-delete"
-                  onClick={handleDeleteAccount}
-                  disabled={deletingAccount || deleteConfirmText !== 'DELETE'}
-                >
-                  {deletingAccount ? t('deleting') : t('confirmDelete')}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button type="button" className="btn-delete-account" onClick={() => setShowDeleteConfirm(true)}>
-              {t('deleteAccount')}
-            </button>
-          )}
-        </div>
-      </div>
     </div>
   </div>
   );

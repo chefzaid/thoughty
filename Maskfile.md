@@ -225,6 +225,59 @@ docker-compose -f .devcontainer/docker-compose.yml up -d db minio
 echo -e "${GREEN}✔${NC} Database and MinIO started"
 echo ""
 
+# Wait for Postgres to be ready
+echo -e "${CYAN}→${NC} Waiting for database to be ready..."
+for i in $(seq 1 30); do
+  if (cd thoughty-server && npx ts-node -r tsconfig-paths/register -e "
+    const { query, closeDatabase } = require('./scripts/lib/db');
+    (async () => { try { await query('SELECT 1'); await closeDatabase(); process.exit(0); } catch { await closeDatabase().catch(()=>{}); process.exit(1); } })();
+  " 2>/dev/null); then
+    break
+  fi
+  sleep 1
+done
+echo -e "${GREEN}✔${NC} Database is ready"
+echo ""
+
+# Check if tables exist and run migrations only if needed
+TABLES_EXIST=$(cd thoughty-server && npx ts-node -r tsconfig-paths/register -e "
+  const { query, closeDatabase } = require('./scripts/lib/db');
+  (async () => {
+    try {
+      const rows = await query(\"SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users','entries','diaries')\");
+      await closeDatabase();
+      process.stdout.write(parseInt(rows[0].count) >= 3 ? 'yes' : 'no');
+    } catch { await closeDatabase().catch(()=>{}); process.stdout.write('no'); }
+  })();
+" 2>/dev/null)
+if [ "$TABLES_EXIST" != "yes" ]; then
+  echo -e "${CYAN}→${NC} Running database migrations..."
+  (cd thoughty-server && npm run db:migrate)
+  echo ""
+else
+  echo -e "${GREEN}✔${NC} Database tables already exist, skipping migrations"
+  echo ""
+fi
+
+# Seed if database is empty
+NEEDS_SEED=$(cd thoughty-server && npx ts-node -r tsconfig-paths/register -e "
+  const { query, closeDatabase } = require('./scripts/lib/db');
+  (async () => {
+    try {
+      const rows = await query('SELECT COUNT(*) as count FROM users');
+      await closeDatabase();
+      process.stdout.write(rows[0].count === '0' ? 'yes' : 'no');
+    } catch { await closeDatabase().catch(()=>{}); process.stdout.write('yes'); }
+  })();
+" 2>/dev/null)
+if [ "$NEEDS_SEED" = "yes" ]; then
+  echo -e "${YELLOW}⚠${NC} Empty database detected — seeding with test data..."
+  (cd thoughty-server && npm run db:seed)
+else
+  echo -e "${GREEN}✔${NC} Database already has data, skipping seed"
+fi
+echo ""
+
 echo -e "${CYAN}→${NC} Starting server in background..."
 cd thoughty-server && npm run dev &
 
@@ -264,6 +317,47 @@ if ($env:kill -eq "true") {
 Write-Step "Starting database and storage..."
 docker-compose -f .devcontainer/docker-compose.yml up -d db minio
 Write-Ok "Database and MinIO started"
+Write-Host ""
+
+# Wait for Postgres to be ready
+Write-Step "Waiting for database to be ready..."
+for ($i = 1; $i -le 30; $i++) {
+    try {
+        Push-Location thoughty-server
+        npx ts-node -r tsconfig-paths/register -e "const { query, closeDatabase } = require('./scripts/lib/db'); (async () => { try { await query('SELECT 1'); await closeDatabase(); process.exit(0); } catch { await closeDatabase().catch(()=>{}); process.exit(1); } })();" 2>$null
+        Pop-Location
+        if ($LASTEXITCODE -eq 0) { break }
+    } catch {
+        Pop-Location
+    }
+    Start-Sleep -Seconds 1
+}
+Write-Ok "Database is ready"
+Write-Host ""
+
+# Check if tables exist and run migrations only if needed
+Push-Location thoughty-server
+$tablesExist = npx ts-node -r tsconfig-paths/register -e "const { query, closeDatabase } = require('./scripts/lib/db'); (async () => { try { const rows = await query(`"SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users','entries','diaries')`"); await closeDatabase(); process.stdout.write(parseInt(rows[0].count) >= 3 ? 'yes' : 'no'); } catch { await closeDatabase().catch(()=>{}); process.stdout.write('no'); } })();" 2>$null
+Pop-Location
+if ($tablesExist -ne "yes") {
+    Write-Step "Running database migrations..."
+    Push-Location thoughty-server; npm run db:migrate; Pop-Location
+    Write-Host ""
+} else {
+    Write-Ok "Database tables already exist, skipping migrations"
+    Write-Host ""
+}
+
+# Seed if database is empty
+Push-Location thoughty-server
+$needsSeed = npx ts-node -r tsconfig-paths/register -e "const { query, closeDatabase } = require('./scripts/lib/db'); (async () => { try { const rows = await query('SELECT COUNT(*) as count FROM users'); await closeDatabase(); process.stdout.write(rows[0].count === '0' ? 'yes' : 'no'); } catch { await closeDatabase().catch(()=>{}); process.stdout.write('yes'); } })();" 2>$null
+Pop-Location
+if ($needsSeed -eq "yes") {
+    Write-Warn "Empty database detected — seeding with test data..."
+    Push-Location thoughty-server; npm run db:seed; Pop-Location
+} else {
+    Write-Ok "Database already has data, skipping seed"
+}
 Write-Host ""
 
 Write-Step "Starting server in background..."

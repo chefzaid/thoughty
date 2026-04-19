@@ -153,62 +153,13 @@ describe('ConfigService', () => {
       expect(result.success).toBe(true);
       expect(settingRepository.upsert).not.toHaveBeenCalled();
     });
-
-    it('should encrypt sensitive keys when saving', async () => {
-      settingRepository.upsert.mockResolvedValue({});
-
-      await service.updateConfig(1, { openRouterApiKey: 'sk-or-test-key-12345' });
-
-      expect(settingRepository.upsert).toHaveBeenCalledTimes(1);
-      const call = settingRepository.upsert.mock.calls[0];
-      expect(call[0].key).toBe('openRouterApiKey');
-      // Value should be encrypted (contains colons from iv:authTag:encrypted format)
-      expect(call[0].value).toContain(':');
-      expect(call[0].value).not.toBe('sk-or-test-key-12345');
-    });
-
-    it('should skip masked sensitive values', async () => {
-      settingRepository.upsert.mockResolvedValue({});
-
-      await service.updateConfig(1, { openRouterApiKey: '***************2345' });
-
-      expect(settingRepository.upsert).not.toHaveBeenCalled();
-    });
   });
 
-  describe('sensitive key handling', () => {
-    it('should mask API key in getConfig', async () => {
-      // First store an encrypted key
-      settingRepository.upsert.mockResolvedValue({});
-      await service.updateConfig(1, { openRouterApiKey: 'sk-or-test-key-12345' });
-
-      const encryptedValue = settingRepository.upsert.mock.calls[0][0].value;
-
-      settingRepository.find.mockResolvedValue([
-        { key: 'openRouterApiKey', value: encryptedValue },
-      ]);
-
-      const config = await service.getConfig(1);
-      expect(config.openRouterApiKey).toMatch(/^\*+2345$/);
-      expect(config.openRouterApiKey).not.toBe('sk-or-test-key-12345');
-    });
-
-    it('should return decrypted value via getDecryptedConfig', async () => {
-      settingRepository.upsert.mockResolvedValue({});
-      await service.updateConfig(1, { openRouterApiKey: 'sk-or-test-key-12345' });
-
-      const encryptedValue = settingRepository.upsert.mock.calls[0][0].value;
-
-      settingRepository.findOne.mockResolvedValue({ key: 'openRouterApiKey', value: encryptedValue });
-
-      const decrypted = await service.getDecryptedConfig(1, 'openRouterApiKey');
-      expect(decrypted).toBe('sk-or-test-key-12345');
-    });
-
+  describe('getDecryptedConfig', () => {
     it('should return empty string for non-existent key', async () => {
       settingRepository.findOne.mockResolvedValue(null);
 
-      const result = await service.getDecryptedConfig(1, 'openRouterApiKey');
+      const result = await service.getDecryptedConfig(1, 'openRouterModel');
       expect(result).toBe('');
     });
   });
@@ -276,7 +227,7 @@ describe('ConfigService', () => {
       expect(user.resetToken).toBeUndefined();
     });
 
-    it('should exclude sensitive settings', async () => {
+    it('should include all settings in export', async () => {
       userRepository.findOne.mockResolvedValue({ id: 1, username: 'u', email: 'e', authProvider: 'local', avatarUrl: null, emailVerified: true, createdAt: new Date(), updatedAt: new Date() });
       diaryRepository.find.mockResolvedValue([]);
       entryRepository.find.mockResolvedValue([]);
@@ -284,14 +235,15 @@ describe('ConfigService', () => {
       attachmentRepository.find.mockResolvedValue([]);
       settingRepository.find.mockResolvedValue([
         { key: 'theme', value: 'dark', updatedAt: new Date() },
-        { key: 'openRouterApiKey', value: 'encrypted-value', updatedAt: new Date() },
+        { key: 'openRouterModel', value: 'openai/gpt-4o', updatedAt: new Date() },
       ]);
 
       const result = await service.downloadData(1);
       const settings = result.settings as Array<{ key: string }>;
 
-      expect(settings).toHaveLength(1);
+      expect(settings).toHaveLength(2);
       expect(settings[0].key).toBe('theme');
+      expect(settings[1].key).toBe('openRouterModel');
     });
 
     it('should handle null user gracefully', async () => {

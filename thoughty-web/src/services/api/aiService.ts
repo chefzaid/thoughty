@@ -65,5 +65,19 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     }
   };
 
-  return { suggestTags, fixWriting, chat };
+  const fetchModels = async (): Promise<{ id: string; name: string }[]> => {
+    try {
+      const response = await authFetch('/api/ai/models');
+      if (!response.ok) {
+        return [];
+      }
+      const data = await response.json();
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('Error fetching models:', error);
+      return [];
+    }
+  };
+
+  return { suggestTags, fixWriting, chat, fetchModels };
 };

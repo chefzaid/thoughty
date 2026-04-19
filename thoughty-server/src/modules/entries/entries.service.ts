@@ -661,4 +661,17 @@ export class EntriesService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  async deleteRevision(userId: number, entryId: number, revisionId: number): Promise<{ success: boolean }> {
+    const revision = await this.revisionRepository.findOne({
+      where: { id: revisionId, entryId, userId },
+    });
+
+    if (!revision) {
+      throw new NotFoundException('Revision not found');
+    }
+
+    await this.revisionRepository.remove(revision);
+    return { success: true };
+  }
 }

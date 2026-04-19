@@ -8,9 +8,11 @@ describe('AiService', () => {
   let configService: { getDecryptedConfig: jest.Mock };
   const fetchMock = jest.fn();
 
-  beforeEach(async () => {
+  const createService = async (apiKey = 'sk-or-test-key') => {
+    process.env.OPENROUTER_API_KEY = apiKey;
+
     configService = {
-      getDecryptedConfig: jest.fn(),
+      getDecryptedConfig: jest.fn().mockResolvedValue(''),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -20,12 +22,17 @@ describe('AiService', () => {
       ],
     }).compile();
 
-    service = module.get<AiService>(AiService);
-    global.fetch = fetchMock as any;
+    return module.get<AiService>(AiService);
+  };
+
+  beforeEach(async () => {
+    service = await createService();
+    globalThis.fetch = fetchMock as any;
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    delete process.env.OPENROUTER_API_KEY;
   });
 
   it('throws when content is empty', async () => {
@@ -33,13 +40,12 @@ describe('AiService', () => {
   });
 
   it('throws when no OpenRouter API key is configured', async () => {
-    configService.getDecryptedConfig.mockResolvedValue('');
+    service = await createService('');
 
     await expect(service.suggestTags(1, { content: 'Need tags' })).rejects.toThrow(BadRequestException);
   });
 
   it('returns normalized tag suggestions', async () => {
-    configService.getDecryptedConfig.mockResolvedValue('sk-or-test-key');
     fetchMock.mockResolvedValue({
       ok: true,
       json: jest.fn().mockResolvedValue({
@@ -70,7 +76,6 @@ describe('AiService', () => {
   });
 
   it('filters tags that already exist on the draft', async () => {
-    configService.getDecryptedConfig.mockResolvedValue('sk-or-test-key');
     fetchMock.mockResolvedValue({
       ok: true,
       json: jest.fn().mockResolvedValue({
@@ -93,14 +98,13 @@ describe('AiService', () => {
   });
 
   it('throws when OpenRouter returns an error', async () => {
-    configService.getDecryptedConfig.mockResolvedValue('sk-or-test-key');
     fetchMock.mockResolvedValue({ ok: false, json: jest.fn() });
 
     await expect(service.suggestTags(1, { content: 'Need tags' })).rejects.toThrow(BadGatewayException);
   });
 
   it('returns an empty array for auto-tagging when the API key is missing', async () => {
-    configService.getDecryptedConfig.mockResolvedValue('');
+    service = await createService('');
 
     const result = await service.autoTagEntry(1, 'Write about focus', [], 3);
 
@@ -108,7 +112,6 @@ describe('AiService', () => {
   });
 
   it('returns tags for auto-tagging when the AI request succeeds', async () => {
-    configService.getDecryptedConfig.mockResolvedValue('sk-or-test-key');
     fetchMock.mockResolvedValue({
       ok: true,
       json: jest.fn().mockResolvedValue({
@@ -133,13 +136,12 @@ describe('AiService', () => {
     });
 
     it('throws when no OpenRouter API key is configured', async () => {
-      configService.getDecryptedConfig.mockResolvedValue('');
+      service = await createService('');
 
       await expect(service.fixWriting(1, { content: 'Fix this' })).rejects.toThrow(BadRequestException);
     });
 
     it('returns corrected content from the AI', async () => {
-      configService.getDecryptedConfig.mockResolvedValue('sk-or-test-key');
       fetchMock.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
@@ -159,7 +161,6 @@ describe('AiService', () => {
     });
 
     it('returns original content when AI response is empty', async () => {
-      configService.getDecryptedConfig.mockResolvedValue('sk-or-test-key');
       fetchMock.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
@@ -173,7 +174,6 @@ describe('AiService', () => {
     });
 
     it('throws when OpenRouter returns an error', async () => {
-      configService.getDecryptedConfig.mockResolvedValue('sk-or-test-key');
       fetchMock.mockResolvedValue({ ok: false, json: jest.fn() });
 
       await expect(service.fixWriting(1, { content: 'Fix this' })).rejects.toThrow(BadGatewayException);
@@ -195,13 +195,12 @@ describe('AiService', () => {
     });
 
     it('throws when no OpenRouter API key is configured', async () => {
-      configService.getDecryptedConfig.mockResolvedValue('');
+      service = await createService('');
 
       await expect(service.chat(1, chatDto)).rejects.toThrow(BadRequestException);
     });
 
     it('returns the AI reply', async () => {
-      configService.getDecryptedConfig.mockResolvedValue('sk-or-test-key');
       fetchMock.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
@@ -223,14 +222,12 @@ describe('AiService', () => {
     });
 
     it('throws when OpenRouter returns an error', async () => {
-      configService.getDecryptedConfig.mockResolvedValue('sk-or-test-key');
       fetchMock.mockResolvedValue({ ok: false, json: jest.fn() });
 
       await expect(service.chat(1, chatDto)).rejects.toThrow(BadGatewayException);
     });
 
     it('throws when AI returns an empty response', async () => {
-      configService.getDecryptedConfig.mockResolvedValue('sk-or-test-key');
       fetchMock.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
@@ -239,6 +236,100 @@ describe('AiService', () => {
       });
 
       await expect(service.chat(1, chatDto)).rejects.toThrow(BadGatewayException);
+    });
+  });
+
+  describe('listModels', () => {
+    it('throws when no API key is configured', async () => {
+      service = await createService('');
+
+      await expect(service.listModels()).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws when OpenRouter returns an error', async () => {
+      fetchMock.mockResolvedValue({ ok: false, json: jest.fn() });
+
+      await expect(service.listModels()).rejects.toThrow(BadGatewayException);
+    });
+
+    it('returns sorted models from OpenRouter', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          data: [
+            { id: 'openai/gpt-4o', name: 'GPT-4o' },
+            { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' },
+            { id: 'meta/llama-3', name: 'Llama 3' },
+          ],
+        }),
+      });
+
+      const result = await service.listModels();
+
+      expect(result).toEqual([
+        { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' },
+        { id: 'openai/gpt-4o', name: 'GPT-4o' },
+        { id: 'meta/llama-3', name: 'Llama 3' },
+      ]);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://openrouter.ai/api/v1/models',
+        expect.objectContaining({
+          headers: expect.objectContaining({ Authorization: 'Bearer sk-or-test-key' }),
+        }),
+      );
+    });
+
+    it('filters out models with missing id or name', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          data: [
+            { id: 'openai/gpt-4o', name: 'GPT-4o' },
+            { id: 'broken-model' },
+            { name: 'No ID Model' },
+            { id: null, name: null },
+          ],
+        }),
+      });
+
+      const result = await service.listModels();
+
+      expect(result).toEqual([{ id: 'openai/gpt-4o', name: 'GPT-4o' }]);
+    });
+  });
+
+  describe('getModel (model resolution)', () => {
+    it('uses configured model from user settings', async () => {
+      configService.getDecryptedConfig
+        .mockResolvedValueOnce('anthropic/claude-3.5-sonnet');
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          choices: [{ message: { content: '["focus"]' } }],
+        }),
+      });
+
+      await service.suggestTags(1, { content: 'Test entry' });
+
+      const fetchCall = fetchMock.mock.calls[0];
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('anthropic/claude-3.5-sonnet');
+    });
+
+    it('falls back to default model when none configured', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          choices: [{ message: { content: '["focus"]' } }],
+        }),
+      });
+
+      await service.suggestTags(1, { content: 'Test entry' });
+
+      const fetchCall = fetchMock.mock.calls[0];
+      const body = JSON.parse(fetchCall[1].body);
+      expect(body.model).toBe('openai/gpt-4o-mini');
     });
   });
 });

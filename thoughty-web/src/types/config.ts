@@ -8,10 +8,11 @@ export interface Config {
   bio?: string;
   email?: string;
   birthday?: string;
+  gender?: string;
   avatarUrl?: string;
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;
-  openRouterApiKey?: string;
+  openRouterModel?: string;
   autoTagMaxTags?: string | number;
 }
 

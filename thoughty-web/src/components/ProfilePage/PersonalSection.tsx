@@ -84,6 +84,24 @@ function PersonalSection({ localConfig, handleChange, setLocalConfig, isDark, t 
           className={`setting-input ${isDark ? 'dark' : 'light'}`}
         />
       </div>
+
+      <div className="setting-row">
+        <div className="setting-info">
+          <label className="setting-label">{t('gender')}</label>
+          <span className="setting-description">{t('genderDescription')}</span>
+        </div>
+        <select
+          name="gender"
+          value={localConfig.gender || ''}
+          onChange={handleChange}
+          className={`setting-select ${isDark ? 'dark' : 'light'}`}
+        >
+          <option value="">{t('genderNotSpecified')}</option>
+          <option value="male">{t('genderMale')}</option>
+          <option value="female">{t('genderFemale')}</option>
+          <option value="other">{t('genderOther')}</option>
+        </select>
+      </div>
     </div>
   </div>
   );

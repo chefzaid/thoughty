@@ -36,8 +36,8 @@ describe('EntryForm', () => {
                 bold: 'Bold',
                 italic: 'Italic',
                 filterTagsPlaceholder: 'Filter by tags...',
-                suggestTags: 'Suggest Tags',
-                suggestingTags: 'Suggesting...',
+                suggestTags: 'Auto-Tags',
+                suggestingTags: 'Tagging...',
             };
             return translations[key] || key;
         },
@@ -121,7 +121,7 @@ describe('EntryForm', () => {
 
             render(<EntryForm {...defaultProps} onSuggestTags={onSuggestTags} />);
 
-            await user.click(screen.getByText('Suggest Tags'));
+            await user.click(screen.getByText('Auto-Tags'));
 
             expect(onSuggestTags).toHaveBeenCalled();
         });

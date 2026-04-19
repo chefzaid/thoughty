@@ -5,13 +5,14 @@ export interface ProfileConfig {
   bio?: string;
   email?: string;
   birthday?: string;
+  gender?: string;
   avatarUrl?: string;
   theme?: 'light' | 'dark';
   language?: string;
   entriesPerPage?: number | string;
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;
-  openRouterApiKey?: string;
+  openRouterModel?: string;
   autoTagMaxTags?: string | number;
 }
 

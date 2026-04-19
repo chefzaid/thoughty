@@ -27,6 +27,28 @@ function AppearanceSection({
       <h3 className="section-title">{t('appearance')}</h3>
     </div>
     <div className="section-content">
+      <div className="setting-row">
+        <span className="setting-label">{t('language')}</span>
+        <div className="language-selector">
+          <button
+            type="button"
+            className={`lang-btn ${localConfig.language === 'en' ? 'active' : ''} ${isDark ? 'dark' : 'light'}`}
+            onClick={() => handleChange({ target: { name: 'language', value: 'en' } })}
+            title="English"
+          >
+            <img src="/flags/gb.svg" alt="UK Flag" className="flag-icon" /> English
+          </button>
+          <button
+            type="button"
+            className={`lang-btn ${localConfig.language === 'fr' ? 'active' : ''} ${isDark ? 'dark' : 'light'}`}
+            onClick={() => handleChange({ target: { name: 'language', value: 'fr' } })}
+            title="Français"
+          >
+            <img src="/flags/fr.svg" alt="French Flag" className="flag-icon" /> Français
+          </button>
+        </div>
+      </div>
+
       <div className="settings-row-pair">
         <div className="setting-row horizontal">
           <div className="setting-info">
@@ -76,34 +98,12 @@ function AppearanceSection({
         </div>
       </div>
 
-      <div className="setting-row">
-        <span className="setting-label">{t('language')}</span>
-        <div className="language-selector">
-          <button
-            type="button"
-            className={`lang-btn ${localConfig.language === 'en' ? 'active' : ''} ${isDark ? 'dark' : 'light'}`}
-            onClick={() => handleChange({ target: { name: 'language', value: 'en' } })}
-            title="English"
-          >
-            <img src="/flags/gb.svg" alt="UK Flag" className="flag-icon" /> English
-          </button>
-          <button
-            type="button"
-            className={`lang-btn ${localConfig.language === 'fr' ? 'active' : ''} ${isDark ? 'dark' : 'light'}`}
-            onClick={() => handleChange({ target: { name: 'language', value: 'fr' } })}
-            title="Français"
-          >
-            <img src="/flags/fr.svg" alt="French Flag" className="flag-icon" /> Français
-          </button>
-        </div>
-      </div>
-
-      <div className="setting-row horizontal">
+      <div className="setting-row horizontal read-dates-row">
         <div className="setting-info">
           <span className="setting-label">{t('readDates')}</span>
           <span className="setting-description">{t('readDatesDescription')}</span>
         </div>
-        <div className="theme-switch-container">
+        <div className="theme-switch-container setting-row-control">
           <button
             type="button"
             className={`theme-switch ${localConfig.readDates === false ? 'light' : 'dark'}`}
