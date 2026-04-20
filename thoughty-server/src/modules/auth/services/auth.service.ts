@@ -13,7 +13,7 @@ import { Repository, MoreThan } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'node:crypto';
 import { User, RefreshToken, Diary } from '@/database/entities';
-import { sanitizeString } from '@/common/utils';
+import { getDefaultDiaryColor, sanitizeString } from '@/common/utils';
 import { EmailService } from './email.service';
 import {
   RegisterDto,
@@ -91,6 +91,7 @@ export class AuthService {
       userId: user.id,
       name: 'Thoughts',
       icon: '💭',
+      color: getDefaultDiaryColor(0),
       isDefault: true,
       visibility: 'private',
     });
@@ -221,6 +222,7 @@ export class AuthService {
           userId: user.id,
           name: 'Thoughts',
           icon: '💭',
+          color: getDefaultDiaryColor(0),
           isDefault: true,
           visibility: 'private',
         });

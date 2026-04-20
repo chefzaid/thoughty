@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { FormEvent } from 'react';
+import type { ComponentPropsWithoutRef } from 'react';
 import JournalView from './JournalView';
 import type { Config, Entry, Diary, GroupedEntries } from '../../types';
+
+type SubmitEvent = Parameters<NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>>[0];
 
 // Mock all child components
 vi.mock('../DiaryTabs/DiaryTabs', () => ({
@@ -44,7 +46,7 @@ vi.mock('../EntryForm/EntryForm', () => ({
     tags: string[];
     visibility: string | null;
     formError: string;
-    onSubmit: (e: FormEvent) => void;
+    onSubmit: (e: SubmitEvent) => void;
   }) => (
     <form data-testid="entry-form" onSubmit={props.onSubmit}>
       <input data-testid="entry-text" value={props.newEntryText} onChange={(e) => props.setNewEntryText(e.target.value)} />
@@ -141,8 +143,8 @@ describe('JournalView', () => {
   ];
 
   const mockGroupedEntries: GroupedEntries = {
-    '2024-01-01': [mockEntries[0]!],
-    '2024-01-02': [mockEntries[1]!],
+    '2024-01-01': [mockEntries[0]],
+    '2024-01-02': [mockEntries[1]],
   };
 
   let defaultProps: Parameters<typeof JournalView>[0];
@@ -179,7 +181,6 @@ describe('JournalView', () => {
       setFilterVisibility: vi.fn(),
       filterFavorites: false,
       setFilterFavorites: vi.fn(),
-      entryDates: ['2024-01-01', '2024-01-02'],
       setPage: vi.fn(),
       loading: false,
       entries: mockEntries,

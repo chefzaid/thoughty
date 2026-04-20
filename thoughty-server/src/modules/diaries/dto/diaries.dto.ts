@@ -1,5 +1,7 @@
-import { IsString, IsOptional, IsEnum, MaxLength, IsArray, IsInt } from 'class-validator';
+import { IsString, IsOptional, IsEnum, MaxLength, IsArray, IsInt, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+const DIARY_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 
 export class CreateDiaryDto {
   @ApiProperty({ description: 'Diary name' })
@@ -17,6 +19,12 @@ export class CreateDiaryDto {
   @IsOptional()
   @IsEnum(['public', 'private'])
   visibility?: 'public' | 'private';
+
+  @ApiPropertyOptional({ description: 'Diary accent color in hex format', example: '#2A9D8F' })
+  @IsOptional()
+  @IsString()
+  @Matches(DIARY_COLOR_PATTERN)
+  color?: string;
 }
 
 export class UpdateDiaryDto {
@@ -35,6 +43,12 @@ export class UpdateDiaryDto {
   @IsOptional()
   @IsEnum(['public', 'private'])
   visibility?: 'public' | 'private';
+
+  @ApiPropertyOptional({ description: 'Diary accent color in hex format', example: '#2A9D8F' })
+  @IsOptional()
+  @IsString()
+  @Matches(DIARY_COLOR_PATTERN)
+  color?: string;
 }
 
 export class DiaryResponseDto {
@@ -49,6 +63,9 @@ export class DiaryResponseDto {
 
   @ApiProperty()
   icon: string;
+
+  @ApiPropertyOptional()
+  color?: string | null;
 
   @ApiProperty()
   visibility: 'public' | 'private';

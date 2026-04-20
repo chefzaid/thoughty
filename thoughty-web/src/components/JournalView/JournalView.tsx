@@ -57,7 +57,6 @@ interface JournalViewProps {
   setFilterVisibility: Dispatch<SetStateAction<VisibilityFilter>>;
   filterFavorites: boolean;
   setFilterFavorites: Dispatch<SetStateAction<boolean>>;
-  entryDates: string[];
   setPage: Dispatch<SetStateAction<number>>;
   
   // Entries list
@@ -162,7 +161,6 @@ function JournalView({
   setFilterVisibility,
   filterFavorites,
   setFilterFavorites,
-  entryDates,
   setPage,
   loading,
   entries,
@@ -275,7 +273,6 @@ function JournalView({
         filterFavorites={filterFavorites}
         setFilterFavorites={setFilterFavorites}
         allTags={allTags}
-        entryDates={entryDates}
         setPage={setPage}
         theme={config.theme}
         t={t}

@@ -1,5 +1,6 @@
-import { useState, useRef, type FormEvent } from 'react';
+import { useState, useRef, type ComponentPropsWithoutRef, type CSSProperties } from 'react';
 import './DiaryManager.css';
+import { DEFAULT_DIARY_COLORS, normalizeDiaryColor, resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 
 // Common emoji icons for diaries
 const DIARY_ICONS = ['📓', '💭', '💤', '💖', '🎯', '✨', '🌟', '📝', '🌈', '🌙', '☀️', '🔥', '💡', '🎨', '🎵', '📚', '🌺', '🍀', '⭐', '🌸'];
@@ -8,6 +9,7 @@ interface Diary {
     id: number;
     name: string;
     icon: string;
+    color?: string | null;
     visibility: 'public' | 'private';
     is_default?: boolean;
 }
@@ -15,7 +17,47 @@ interface Diary {
 interface DiaryFormData {
     name: string;
     icon: string;
+    color?: string | null;
     visibility: 'public' | 'private';
+}
+
+const DEFAULT_NEW_DIARY_COLOR = DEFAULT_DIARY_COLORS[0] ?? '#E76F51';
+
+function DiaryColorField({
+    color,
+    onChange,
+    label,
+}: Readonly<{
+    color: string;
+    onChange: (color: string) => void;
+    label: string;
+}>) {
+    return (
+        <div className="color-section">
+            <span className="visibility-label">{label}</span>
+            <div className="color-picker-row">
+                <input
+                    type="color"
+                    value={color}
+                    onChange={(event) => onChange(event.target.value.toUpperCase())}
+                    className="diary-color-input"
+                    aria-label={label}
+                />
+                <div className="diary-color-swatches">
+                    {DEFAULT_DIARY_COLORS.map((swatch) => (
+                        <button
+                            key={swatch}
+                            type="button"
+                            className={`diary-color-swatch ${color === swatch ? 'selected' : ''}`}
+                            style={{ backgroundColor: swatch }}
+                            onClick={() => onChange(swatch)}
+                            aria-label={`${label} ${swatch}`}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 interface DiaryManagerProps {
@@ -33,10 +75,12 @@ interface DiaryManagerProps {
 function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onReorderDiaries, onBack, theme, t }: DiaryManagerProps) {
     const [newDiaryName, setNewDiaryName] = useState<string>('');
     const [newDiaryIcon, setNewDiaryIcon] = useState<string>('📓');
+    const [newDiaryColor, setNewDiaryColor] = useState<string>(DEFAULT_NEW_DIARY_COLOR);
     const [newDiaryVisibility, setNewDiaryVisibility] = useState<'public' | 'private'>('private');
     const [editingDiary, setEditingDiary] = useState<Diary | null>(null);
     const [editName, setEditName] = useState<string>('');
     const [editIcon, setEditIcon] = useState<string>('');
+    const [editColor, setEditColor] = useState<string>(DEFAULT_NEW_DIARY_COLOR);
     const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
     const [error, setError] = useState<string>('');
     const [showIconPicker, setShowIconPicker] = useState<'new' | number | null>(null);
@@ -45,7 +89,15 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
 
     const isLight = theme === 'light';
 
-    const handleCreate = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+    const getDiaryAccentStyle = (diary: Pick<Diary, 'id' | 'name' | 'color'>): CSSProperties => {
+        const diaryColor = resolveDiaryColor(diary);
+        return {
+            '--diary-accent': diaryColor,
+            '--diary-accent-soft': withAlpha(diaryColor, isLight ? 0.14 : 0.18),
+        } as CSSProperties;
+    };
+
+    const handleCreate = async (e: Parameters<NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>>[0]) => {
         e.preventDefault();
         setError('');
 
@@ -58,10 +110,12 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
             await onCreateDiary({
                 name: newDiaryName.trim(),
                 icon: newDiaryIcon,
+                color: normalizeDiaryColor(newDiaryColor) ?? DEFAULT_NEW_DIARY_COLOR,
                 visibility: newDiaryVisibility
             });
             setNewDiaryName('');
             setNewDiaryIcon('📓');
+            setNewDiaryColor(DEFAULT_NEW_DIARY_COLOR);
             setNewDiaryVisibility('private');
         } catch (err) {
             setError((err as Error).message || 'Failed to create diary');
@@ -72,6 +126,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         setEditingDiary(diary);
         setEditName(diary.name);
         setEditIcon(diary.icon);
+        setEditColor(resolveDiaryColor(diary));
         setEditVisibility(diary.visibility);
     };
 
@@ -82,6 +137,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
             await onUpdateDiary(editingDiary.id, {
                 name: editName.trim(),
                 icon: editIcon,
+                color: normalizeDiaryColor(editColor) ?? resolveDiaryColor(editingDiary),
                 visibility: editVisibility
             });
             setEditingDiary(null);
@@ -129,11 +185,34 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         }
         const reordered = [...diaries];
         const [removed] = reordered.splice(dragItem.current, 1);
-        reordered.splice(dragOverItem.current, 0, removed!);
+        if (!removed) {
+            return;
+        }
+        reordered.splice(dragOverItem.current, 0, removed);
         dragItem.current = null;
         dragOverItem.current = null;
         try {
             await onReorderDiaries(reordered.map(d => d.id));
+        } catch (err) {
+            setError((err as Error).message || 'Failed to reorder diaries');
+        }
+    };
+
+    const handleKeyboardReorder = async (index: number, direction: -1 | 1): Promise<void> => {
+        const targetIndex = index + direction;
+        if (targetIndex < 0 || targetIndex >= diaries.length) {
+            return;
+        }
+
+        const reordered = [...diaries];
+        const [movedDiary] = reordered.splice(index, 1);
+        if (!movedDiary) {
+            return;
+        }
+        reordered.splice(targetIndex, 0, movedDiary);
+
+        try {
+            await onReorderDiaries(reordered.map((diary) => diary.id));
         } catch (err) {
             setError((err as Error).message || 'Failed to reorder diaries');
         }
@@ -196,6 +275,11 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                             placeholder={t('diaryName')}
                             className="diary-name-input"
                         />
+                        <DiaryColorField
+                            color={newDiaryColor}
+                            onChange={setNewDiaryColor}
+                            label={t('diaryColor')}
+                        />
                         <div className="visibility-section">
                             <span className="visibility-label">{t('defaultVisibility')}</span>
                             <div className="visibility-toggle">
@@ -225,15 +309,16 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                 {diaries.length === 0 ? (
                     <p className="no-diaries">{t('noDiaries')}</p>
                 ) : (
-                    <div className="diary-cards">
+                    <ul className="diary-cards">
                         {diaries.map((diary, index) => (
-                            <div
+                            <li
                                 key={diary.id}
                                 className={`diary-card ${diary.is_default ? 'default' : ''} ${editingDiary?.id === diary.id ? 'editing' : ''}`}
                                 draggable={editingDiary?.id !== diary.id}
                                 onDragStart={() => handleDragStart(index)}
                                 onDragOver={(e) => handleDragOver(e, index)}
                                 onDrop={handleDrop}
+                                style={getDiaryAccentStyle(diary)}
                             >
                                 {editingDiary?.id === diary.id ? (
                                     <div className="edit-form">
@@ -270,6 +355,11 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                 onChange={(e) => setEditName(e.target.value)}
                                                 className="diary-name-input"
                                             />
+                                            <DiaryColorField
+                                                color={editColor}
+                                                onChange={setEditColor}
+                                                label={t('diaryColor')}
+                                            />
                                             <div className="visibility-section">
                                                 <span className="visibility-label">{t('defaultVisibility')}</span>
                                                 <div className="visibility-toggle">
@@ -295,10 +385,31 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                 ) : (
                                     <>
                                         <div className="diary-info">
-                                            <span className="drag-handle" title={t('dragToReorder')}>⠿</span>
+                                            <button
+                                                type="button"
+                                                className="drag-handle"
+                                                title={t('dragToReorder')}
+                                                aria-label={`${diary.name} ${t('dragToReorder')}`}
+                                                onKeyDown={(event) => {
+                                                    if (event.key === 'ArrowUp') {
+                                                        event.preventDefault();
+                                                        void handleKeyboardReorder(index, -1);
+                                                    }
+
+                                                    if (event.key === 'ArrowDown') {
+                                                        event.preventDefault();
+                                                        void handleKeyboardReorder(index, 1);
+                                                    }
+                                                }}
+                                            >
+                                                ⠿
+                                            </button>
                                             <span className="diary-icon">{diary.icon || '📓'}</span>
                                             <div className="diary-details">
-                                                <span className="diary-name">{diary.name}</span>
+                                                <span className="diary-name-row">
+                                                    <span className="diary-color-dot" />
+                                                    <span className="diary-name">{diary.name}</span>
+                                                </span>
                                                 <span className="diary-visibility">{t('defaultVisibility')}: {t(diary.visibility)}</span>
                                             </div>
                                             {diary.is_default && (
@@ -334,9 +445,9 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                         </div>
                                     </>
                                 )}
-                            </div>
+                            </li>
                         ))}
-                    </div>
+                    </ul>
                 )}
             </div>
         </div>

@@ -4,6 +4,7 @@ export interface Diary {
   id: number;
   name: string;
   icon: string;
+  color?: string | null;
   visibility: 'public' | 'private';
   description?: string;
   is_default?: boolean;
@@ -16,6 +17,7 @@ export interface Diary {
 export interface DiaryFormData {
   name: string;
   icon: string;
+  color?: string | null;
   description?: string;
   visibility?: 'public' | 'private';
 }

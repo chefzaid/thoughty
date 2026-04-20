@@ -2,8 +2,8 @@
 Remaining features to implement:
 
 *** Personalization & UX
-- Diary-level theming and colors so entries are visually distinguishable in the All Diaries view
 - Custom tag colors and categories for visual organization of tags
+- Permalink for each entry to easily share or bookmark specific thoughts + Share button
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
 - Recurring journaling reminders and writing prompts via app notifications at a user-configured time
 - Drag-and-drop reordering for entries on the same day and update the numbering accordingly
@@ -23,6 +23,7 @@ Remaining features to implement:
 - The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
 
 *** AI
+- Keep history of AI chats and allow users to export them as text files
 - Tone and mood of thoughts stats (analyzed by AI)
 - Subjects discussed stats (analyzed by AI)
 - Personality analysis through the choice of words and subjects

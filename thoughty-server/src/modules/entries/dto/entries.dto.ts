@@ -278,6 +278,9 @@ export class EntryResponseDto {
   @ApiPropertyOptional()
   diary_icon?: string;
 
+  @ApiPropertyOptional()
+  diary_color?: string;
+
   @ApiProperty()
   created_at: Date;
 }

@@ -130,6 +130,10 @@ BEGIN
                    WHERE table_name = 'diaries' AND column_name = 'visibility') THEN
         ALTER TABLE diaries ADD COLUMN visibility VARCHAR(20) DEFAULT 'private';
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'diaries' AND column_name = 'color') THEN
+        ALTER TABLE diaries ADD COLUMN color VARCHAR(7);
+    END IF;
 END $$;
 
 -- Add diary_id column if it doesn't exist
@@ -156,6 +160,20 @@ BEGIN
         ALTER TABLE diaries ADD COLUMN position INTEGER DEFAULT 0;
     END IF;
 END $$;
+
+-- Backfill diary colors for existing rows
+UPDATE diaries
+SET color = CASE MOD(COALESCE(position, 0), 8)
+    WHEN 0 THEN '#E76F51'
+    WHEN 1 THEN '#2A9D8F'
+    WHEN 2 THEN '#3A86FF'
+    WHEN 3 THEN '#F4A261'
+    WHEN 4 THEN '#D62828'
+    WHEN 5 THEN '#6A994E'
+    WHEN 6 THEN '#8C5E58'
+    ELSE '#264653'
+END
+WHERE color IS NULL;
 
 -- Create refresh_tokens table for JWT refresh token rotation
 CREATE TABLE IF NOT EXISTS refresh_tokens (

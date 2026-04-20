@@ -1,4 +1,4 @@
-import { useMemo, useState as useLocalState, useCallback, type Dispatch, type SetStateAction } from 'react';
+import { useMemo, useState as useLocalState, useCallback, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import MDEditor from '@uiw/react-md-editor';
@@ -9,6 +9,7 @@ import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
 import AttachmentDisplay from '../AttachmentDisplay/AttachmentDisplay';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import type { Attachment, EntryRevision } from '../../types';
+import { resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 
 interface Entry {
     id: number;
@@ -18,6 +19,10 @@ interface Entry {
     visibility: 'public' | 'private';
     is_favorite?: boolean;
     format?: 'plain' | 'markdown';
+    diary_id?: number | null;
+    diary_name?: string;
+    diary_icon?: string;
+    diary_color?: string | null;
     index?: number;
     attachments?: Attachment[];
 }
@@ -42,6 +47,7 @@ interface Diary {
     id: number;
     name: string;
     icon: string;
+    color?: string | null;
 }
 
 interface EntriesListProps {
@@ -136,6 +142,38 @@ function getBulkModeButtonClass(isDark: boolean): string {
 
 function getSelectedRingClass(isDark: boolean): string {
     return isDark ? 'ring-2 ring-blue-500/50' : 'ring-2 ring-blue-400/50';
+}
+
+function getEntryDiaryBadgeStyle(entry: Entry, isDark: boolean): CSSProperties {
+    const diaryColor = resolveDiaryColor({
+        color: entry.diary_color,
+        id: entry.diary_id,
+        name: entry.diary_name,
+    });
+
+    return {
+        color: diaryColor,
+        borderColor: withAlpha(diaryColor, isDark ? 0.5 : 0.25),
+        backgroundColor: withAlpha(diaryColor, isDark ? 0.18 : 0.12),
+    };
+}
+
+function getEntryCardStyle(entry: Entry): CSSProperties | undefined {
+    if (!entry.diary_name && !entry.diary_id) {
+        return undefined;
+    }
+
+    const diaryColor = resolveDiaryColor({
+        color: entry.diary_color,
+        id: entry.diary_id,
+        name: entry.diary_name,
+    });
+
+    return {
+        borderLeftWidth: '5px',
+        borderLeftStyle: 'solid',
+        borderLeftColor: diaryColor,
+    };
 }
 
 function EditForm({
@@ -306,7 +344,7 @@ function EntryHistorySection({
         return null;
     }
 
-    let content: JSX.Element;
+    let content: ReactNode;
 
     if (loadingHistory) {
         content = <p className="text-sm text-gray-500">...</p>;
@@ -375,7 +413,7 @@ function EntryHistorySection({
 function EntryViewMode({
     entry, config, speaking, activeEntryId, activeTargetId, sourceEntry,
     flatEntries, speakEntry: speak, speakFromEntry: speakFrom, stop,
-    onToggleVisibility, onToggleFavorite, onEdit, onDelete, onNavigateToEntry, onBackToSource, onFetchHistory, onDeleteRevision, onDiscuss, searchTerm, t
+    onToggleVisibility, onToggleFavorite, onEdit, onDelete, onNavigateToEntry, onBackToSource, onFetchHistory, onDeleteRevision, onDiscuss, searchTerm, showDiaryLabel, t
 }: Readonly<{
     entry: Entry;
     config: Config;
@@ -397,6 +435,7 @@ function EntryViewMode({
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onDiscuss?: (entry: Entry) => void;
     searchTerm?: string;
+    showDiaryLabel: boolean;
     t: (key: string) => string;
 }>) {
     const isDark = config.theme !== 'light';
@@ -431,7 +470,16 @@ function EntryViewMode({
     return (
         <>
             <div className="flex justify-between items-start mb-3">
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap items-center">
+                    {showDiaryLabel && entry.diary_name && (
+                        <span
+                            className="inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-full border font-medium"
+                            style={getEntryDiaryBadgeStyle(entry, isDark)}
+                        >
+                            <span>{entry.diary_icon || '📓'}</span>
+                            <span>{entry.diary_name}</span>
+                        </span>
+                    )}
                     {entry.tags.map((tag) => (
                         <span
                             key={tag}
@@ -733,6 +781,21 @@ function EntriesList({
         ),
         [sortedDates, groupedEntries]
     );
+    const showDiaryAccent = useMemo(() => {
+        const diaryKeys = new Set<string>();
+        for (const entry of entries) {
+            if (entry.diary_id !== undefined && entry.diary_id !== null) {
+                diaryKeys.add(`id:${entry.diary_id}`);
+                continue;
+            }
+
+            if (entry.diary_name) {
+                diaryKeys.add(`name:${entry.diary_name}`);
+            }
+        }
+
+        return diaryKeys.size > 1;
+    }, [entries]);
 
     if (loading) return <p className="text-center text-gray-500">{t('loadingEntries')}</p>;
     if (entries.length === 0) return <p className="text-center text-gray-500">{t('noEntriesFound')}</p>;
@@ -801,6 +864,7 @@ function EntriesList({
                                     className={`rounded-lg p-5 shadow-sm border transition-all flex gap-3 ${
                                         isDark ? 'bg-gray-800 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'
                                     } ${bulkMode && selectedIds?.has(entry.id) ? getSelectedRingClass(isDark) : ''}`}
+                                    style={getEntryCardStyle(entry)}
                                 >
                                     {bulkMode && onToggleSelect && selectedIds && (
                                         <div className="flex items-start pt-1">
@@ -858,6 +922,7 @@ function EntriesList({
                                                 onDeleteRevision={onDeleteRevision}
                                                 onDiscuss={onDiscuss}
                                                 searchTerm={searchTerm}
+                                                showDiaryLabel={showDiaryAccent}
                                                 t={t}
                                             />
                                         )}

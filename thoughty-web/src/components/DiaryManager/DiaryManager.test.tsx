@@ -8,13 +8,14 @@ interface Diary {
     id: number;
     name: string;
     icon: string;
+    color?: string | null;
     is_default: boolean;
     visibility: 'public' | 'private';
 }
 
 const defaultDiaries: Diary[] = [
-    { id: 1, name: 'Personal', icon: '📓', is_default: true, visibility: 'private' },
-    { id: 2, name: 'Work', icon: '💼', is_default: false, visibility: 'public' }
+    { id: 1, name: 'Personal', icon: '📓', color: '#E76F51', is_default: true, visibility: 'private' },
+    { id: 2, name: 'Work', icon: '💼', color: '#2A9D8F', is_default: false, visibility: 'public' }
 ];
 
 describe('DiaryManager', () => {
@@ -60,6 +61,7 @@ describe('DiaryManager', () => {
             expect(baseProps.onCreateDiary).toHaveBeenCalledWith({
                 name: 'New Diary',
                 icon: '📓',
+                color: '#E76F51',
                 visibility: 'private'
             });
         });
@@ -88,15 +90,16 @@ describe('DiaryManager', () => {
     it('edits and saves diary', async () => {
         render(<DiaryManager {...baseProps} />);
         const editButtons = screen.getAllByTitle('edit');
-        fireEvent.click(editButtons[1]!); // Click edit on second diary (Work)
+        fireEvent.click(editButtons[1]); // Click edit on second diary (Work)
 
         const editInputs = screen.getAllByDisplayValue('Work');
-        fireEvent.change(editInputs[0]!, { target: { value: 'Work Updated' } });
+        fireEvent.change(editInputs[0], { target: { value: 'Work Updated' } });
         fireEvent.click(screen.getByText('save'));
 
         await waitFor(() => {
             expect(baseProps.onUpdateDiary).toHaveBeenCalledWith(2, expect.objectContaining({
-                name: 'Work Updated'
+                name: 'Work Updated',
+                color: '#2A9D8F'
             }));
         });
     });
@@ -104,7 +107,7 @@ describe('DiaryManager', () => {
     it('cancels edit mode', async () => {
         render(<DiaryManager {...baseProps} />);
         const editButtons = screen.getAllByTitle('edit');
-        fireEvent.click(editButtons[0]!);
+        fireEvent.click(editButtons[0]);
         fireEvent.click(screen.getByText('cancel'));
         await waitFor(() => {
             expect(screen.queryByText('save')).not.toBeInTheDocument();

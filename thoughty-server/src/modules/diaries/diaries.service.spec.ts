@@ -14,6 +14,7 @@ describe('DiariesService', () => {
     userId: 1,
     name: 'Test Diary',
     icon: '📓',
+    color: '#E76F51',
     visibility: 'private',
     isDefault: false,
     createdAt: new Date(),
@@ -24,6 +25,7 @@ describe('DiariesService', () => {
     userId: 1,
     name: 'Default Diary',
     icon: '💭',
+    color: '#2A9D8F',
     visibility: 'private',
     isDefault: true,
     createdAt: new Date(),
@@ -87,6 +89,7 @@ describe('DiariesService', () => {
       const result = await service.create(1, {
         name: 'Test Diary',
         icon: '📓',
+        color: '#112233',
         visibility: 'private',
       });
 
@@ -95,6 +98,7 @@ describe('DiariesService', () => {
         userId: 1,
         name: 'Test Diary',
         icon: '📓',
+        color: '#112233',
         visibility: 'private',
         isDefault: false,
         position: 0,
@@ -111,6 +115,20 @@ describe('DiariesService', () => {
       expect(diaryRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           icon: '📓',
+        }),
+      );
+    });
+
+    it('should assign a default color if not provided', async () => {
+      diaryRepository.save.mockResolvedValue(mockDiary);
+
+      await service.create(1, {
+        name: 'Test Diary',
+      });
+
+      expect(diaryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          color: '#E76F51',
         }),
       );
     });
@@ -174,10 +192,16 @@ describe('DiariesService', () => {
       const result = await service.update(1, 1, {
         name: 'Updated Diary',
         icon: '📓',
+        color: '#445566',
         visibility: 'public',
       });
 
       expect(result.name).toBe('Updated Diary');
+      expect(diaryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          color: '#445566',
+        }),
+      );
     });
 
     it('should throw NotFoundException for non-existent diary', async () => {

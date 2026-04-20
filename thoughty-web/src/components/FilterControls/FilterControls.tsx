@@ -16,7 +16,6 @@ interface FilterControlsProps {
     readonly filterFavorites: boolean;
     readonly setFilterFavorites: Dispatch<SetStateAction<boolean>>;
     readonly allTags: string[];
-    readonly entryDates: string[];
     readonly setPage: Dispatch<SetStateAction<number>>;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
@@ -35,7 +34,6 @@ function FilterControls({
     filterFavorites,
     setFilterFavorites,
     allTags,
-    entryDates,
     setPage,
     theme,
     t,

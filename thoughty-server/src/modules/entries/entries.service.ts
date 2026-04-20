@@ -107,7 +107,7 @@ export class EntriesService {
       .where('e.user_id = :userId', { userId })
       .getRawMany();
 
-    const allTags = tagsResult.map((r) => r.tag).sort();
+    const allTags = tagsResult.map((r) => r.tag).sort((left, right) => left.localeCompare(right));
 
     return {
       entries: entries.map((e) => ({
@@ -123,6 +123,7 @@ export class EntriesService {
         is_favorite: e.isFavorite,
         diary_name: e.diary?.name,
         diary_icon: e.diary?.icon,
+        diary_color: e.diary?.color ?? undefined,
         created_at: e.createdAt,
         attachments: (e.attachments || []).map((a) => ({
           id: a.id,

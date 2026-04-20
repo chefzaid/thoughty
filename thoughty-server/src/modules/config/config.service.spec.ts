@@ -179,7 +179,7 @@ describe('ConfigService', () => {
         updatedAt: new Date('2024-06-01'),
       });
       diaryRepository.find.mockResolvedValue([
-        { id: 1, name: 'My Diary', icon: '📓', visibility: 'private', isDefault: true, position: 0, createdAt: new Date('2024-01-01') },
+        { id: 1, name: 'My Diary', icon: '📓', color: '#E76F51', visibility: 'private', isDefault: true, position: 0, createdAt: new Date('2024-01-01') },
       ]);
       entryRepository.find.mockResolvedValue([
         { id: 1, diaryId: 1, date: '2024-01-15', index: 1, content: 'Hello', tags: ['tag1'], format: 'plaintext', visibility: 'private', isFavorite: false, createdAt: new Date('2024-01-15') },
@@ -195,6 +195,7 @@ describe('ConfigService', () => {
       expect(result.exportedAt).toBeDefined();
       expect(result.user).toEqual(expect.objectContaining({ id: 1, username: 'testuser', email: 'test@example.com' }));
       expect(result.diaries).toHaveLength(1);
+      expect(result.diaries).toEqual(expect.arrayContaining([expect.objectContaining({ color: '#E76F51' })]));
       expect(result.entries).toHaveLength(1);
       expect(result.revisions).toHaveLength(0);
       expect(result.attachments).toHaveLength(0);

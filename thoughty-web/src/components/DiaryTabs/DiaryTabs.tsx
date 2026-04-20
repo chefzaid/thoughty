@@ -1,10 +1,12 @@
-
+import type { CSSProperties } from 'react';
 import './DiaryTabs.css';
+import { resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 
 interface Diary {
     id: number;
     name: string;
     icon?: string;
+    color?: string | null;
     is_default?: boolean;
 }
 
@@ -40,8 +42,13 @@ function DiaryTabs({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, th
                         className={`diary-tab ${currentDiaryId === diary.id ? 'active' : ''} ${diary.is_default ? 'default' : ''}`}
                         onClick={() => { onDiaryChange(diary.id); }}
                         title={diary.name}
+                        style={{
+                            '--diary-accent': resolveDiaryColor(diary),
+                            '--diary-accent-soft': withAlpha(resolveDiaryColor(diary), currentDiaryId === diary.id ? 0.22 : 0.12),
+                        } as CSSProperties}
                     >
                         <span className="diary-icon">{diary.icon || '📓'}</span>
+                        <span className="diary-accent-dot" />
                         <span className="diary-name">{diary.name}</span>
                         {diary.is_default && <span className="default-badge">★</span>}
                     </button>

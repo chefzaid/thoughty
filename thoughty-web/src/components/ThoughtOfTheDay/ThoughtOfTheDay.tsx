@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type MouseEvent } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import './ThoughtOfTheDay.css';
 import { useAuth } from '../../contexts/AuthContext';
@@ -93,6 +93,7 @@ function OnThisDaySection({
 
 function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry }: ThoughtOfTheDayProps) {
     const { authFetch } = useAuth();
+    const modalRef = useRef<HTMLDivElement | null>(null);
     const [highlights, setHighlights] = useState<Highlights | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -120,6 +121,29 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
             fetchHighlights();
         }
     }, [isOpen, fetchHighlights]);
+
+    useEffect(() => {
+        if (!isOpen) {
+            return;
+        }
+
+        const handleDocumentMouseDown = (event: globalThis.MouseEvent): void => {
+            const modalElement = modalRef.current;
+            if (!modalElement) {
+                return;
+            }
+
+            if (event.target instanceof Node && !modalElement.contains(event.target)) {
+                onClose();
+            }
+        };
+
+        document.addEventListener('mousedown', handleDocumentMouseDown);
+
+        return () => {
+            document.removeEventListener('mousedown', handleDocumentMouseDown);
+        };
+    }, [isOpen, onClose]);
 
     // Close on Escape key
     useEffect(() => {
@@ -163,12 +187,6 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
         return dateStr;
     };
 
-    const handleOverlayClick = (e: MouseEvent<HTMLDivElement>): void => {
-        if (e.target === e.currentTarget) {
-            onClose();
-        }
-    };
-
     const renderBodyContent = () => {
         if (loading) {
             return (
@@ -203,7 +221,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
 
         return (
             <div className="thought-of-day-content">
-                {hasRandomEntry && highlights?.randomEntry && (
+                {hasRandomEntry && randomEntry && (
                     <div className="highlight-section random-thought">
                         <h3 className="section-title">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -223,26 +241,26 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                         <button
                             type="button"
                             className="highlight-entry clickable"
-                            onClick={() => handleEntryClick(highlights.randomEntry)}
+                            onClick={() => handleEntryClick(randomEntry)}
                         >
                             <div className="entry-meta">
-                                <span className="entry-date">{formatDate(highlights.randomEntry.date)}</span>
-                                {highlights.randomEntry.diary_name && (
+                                <span className="entry-date">{formatDate(randomEntry.date)}</span>
+                                {randomEntry.diary_name && (
                                     <span className="entry-diary">
-                                        {highlights.randomEntry.diary_icon} {highlights.randomEntry.diary_name}
+                                        {randomEntry.diary_icon} {randomEntry.diary_name}
                                     </span>
                                 )}
                             </div>
                             <div className="entry-content">
-                                <EntryContentRenderer content={highlights.randomEntry.content} format={highlights.randomEntry.format} maxLength={300} />
+                                <EntryContentRenderer content={randomEntry.content} format={randomEntry.format} maxLength={300} />
                             </div>
-                            {highlights.randomEntry.tags && highlights.randomEntry.tags.length > 0 && (
+                            {randomEntry.tags && randomEntry.tags.length > 0 && (
                                 <div className="entry-tags">
-                                    {highlights.randomEntry.tags.slice(0, 5).map((tag) => (
+                                    {randomEntry.tags.slice(0, 5).map((tag) => (
                                         <span key={tag} className="tag">{tag}</span>
                                     ))}
-                                    {highlights.randomEntry.tags.length > 5 && (
-                                        <span className="tag more">+{highlights.randomEntry.tags.length - 5}</span>
+                                    {randomEntry.tags.length > 5 && (
+                                        <span className="tag more">+{randomEntry.tags.length - 5}</span>
                                     )}
                                 </div>
                             )}
@@ -265,12 +283,13 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
     if (!isOpen) return null;
 
     const themeClass = theme === 'light' ? 'light' : 'dark';
-    const hasRandomEntry = highlights?.randomEntry;
+    const randomEntry = highlights?.randomEntry ?? null;
+    const hasRandomEntry = randomEntry !== null;
     const hasOnThisDay = highlights?.onThisDay && Object.keys(highlights.onThisDay).length > 0;
 
     return (
-        <div className={`thought-of-day-overlay ${themeClass}`} onMouseDown={handleOverlayClick}>
-            <div className={`thought-of-day-modal ${themeClass}`}>
+        <div className={`thought-of-day-overlay ${themeClass}`}>
+            <div ref={modalRef} className={`thought-of-day-modal ${themeClass}`}>
                 <div className="thought-of-day-header">
                     <h2 className="thought-of-day-title">
                         <svg className="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

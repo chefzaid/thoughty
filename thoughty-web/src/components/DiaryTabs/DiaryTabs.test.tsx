@@ -8,9 +8,9 @@ describe('DiaryTabs', () => {
   const mockOnManageDiaries = vi.fn();
 
   const mockDiaries = [
-    { id: 1, name: 'Personal', icon: '📔', is_default: true },
-    { id: 2, name: 'Work', icon: '💼', is_default: false },
-    { id: 3, name: 'Travel', is_default: false }
+    { id: 1, name: 'Personal', icon: '📔', color: '#E76F51', is_default: true },
+    { id: 2, name: 'Work', icon: '💼', color: '#2A9D8F', is_default: false },
+    { id: 3, name: 'Travel', color: '#3A86FF', is_default: false }
   ];
 
   const defaultProps = {

@@ -236,6 +236,7 @@ export type TranslationKey =
   | 'newDiary'
   | 'diaryName'
   | 'diaryIcon'
+  | 'diaryColor'
   | 'setAsDefault'
   | 'defaultDiary'
   | 'deleteDiary'
@@ -637,6 +638,7 @@ export const translations: Translations = {
     newDiary: 'New Diary',
     diaryName: 'Diary Name',
     diaryIcon: 'Icon',
+    diaryColor: 'Color',
     setAsDefault: 'Set as Default',
     defaultDiary: 'Default Diary',
     deleteDiary: 'Delete Diary',
@@ -1040,6 +1042,7 @@ export const translations: Translations = {
     newDiary: 'Nouveau journal',
     diaryName: 'Nom du journal',
     diaryIcon: 'Icône',
+    diaryColor: 'Couleur',
     setAsDefault: 'Définir par défaut',
     defaultDiary: 'Journal par défaut',
     deleteDiary: 'Supprimer le journal',

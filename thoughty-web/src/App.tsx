@@ -70,7 +70,6 @@ function App() {
     groupedEntries,
     loading,
     allTags,
-    entryDates,
     page,
     setPage,
     totalPages,
@@ -355,7 +354,6 @@ function App() {
             setFilterVisibility={setFilterVisibility}
             filterFavorites={filterFavorites}
             setFilterFavorites={setFilterFavorites}
-            entryDates={entryDates}
             setPage={setPage}
             loading={loading}
             entries={entries}

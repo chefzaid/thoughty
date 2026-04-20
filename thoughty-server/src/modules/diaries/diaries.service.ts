@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ConflictException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Diary, Entry } from '@/database/entities';
-import { sanitizeString } from '@/common/utils';
+import { getDefaultDiaryColor, normalizeDiaryColor, sanitizeString } from '@/common/utils';
 import { CreateDiaryDto, UpdateDiaryDto } from './dto';
 
 @Injectable()
@@ -27,6 +27,7 @@ export class DiariesService {
     const visibility = ['public', 'private'].includes(dto.visibility || '')
       ? dto.visibility
       : 'private';
+    const requestedColor = normalizeDiaryColor(dto.color);
 
     try {
       // Set position to the end
@@ -35,6 +36,7 @@ export class DiariesService {
         userId,
         name: sanitizedName,
         icon: sanitizedIcon,
+        color: requestedColor ?? getDefaultDiaryColor(count),
         visibility,
         isDefault: false,
         position: count,
@@ -61,9 +63,11 @@ export class DiariesService {
     const visibility = ['public', 'private'].includes(dto.visibility || '')
       ? dto.visibility
       : diary.visibility;
+    const requestedColor = normalizeDiaryColor(dto.color);
 
     diary.name = sanitizedName;
     diary.icon = sanitizedIcon;
+    diary.color = dto.color === undefined ? diary.color : requestedColor ?? diary.color;
     diary.visibility = visibility as 'public' | 'private';
 
     try {

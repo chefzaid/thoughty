@@ -65,8 +65,8 @@
 }
 
 .diary-tab.active {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
-    border-color: rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, var(--diary-accent-soft, rgba(59, 130, 246, 0.15)), rgba(255, 255, 255, 0.04));
+    border-color: var(--diary-accent, rgba(59, 130, 246, 0.4));
 }
 
 .diary-tabs.light .diary-tab.active {
@@ -80,6 +80,15 @@
 .diary-icon {
     font-size: 1.125rem;
     line-height: 1;
+}
+
+.diary-accent-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--diary-accent, #3b82f6);
+    box-shadow: 0 0 0 3px var(--diary-accent-soft, rgba(59, 130, 246, 0.12));
+    flex: 0 0 auto;
 }
 
 .diary-name {

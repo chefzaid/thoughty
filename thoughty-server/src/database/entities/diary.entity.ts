@@ -26,6 +26,9 @@ export class Diary {
   @Column({ type: 'varchar', length: 10, default: '📓' })
   icon: string;
 
+  @Column({ type: 'varchar', length: 7, nullable: true })
+  color: string | null;
+
   @Column({ type: 'varchar', length: 20, default: 'private' })
   visibility: 'public' | 'private';
 

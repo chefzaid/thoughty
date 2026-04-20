@@ -21,6 +21,7 @@ export interface Entry {
   diary_id?: number | null;
   diary_name?: string;
   diary_icon?: string;
+  diary_color?: string | null;
   user_id?: number;
   created_at?: string;
   updated_at?: string;

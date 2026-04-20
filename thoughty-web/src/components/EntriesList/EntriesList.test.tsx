@@ -10,18 +10,22 @@ interface Entry {
     content: string;
     tags: string[];
     visibility: 'public' | 'private';
+    diary_id?: number | null;
+    diary_name?: string;
+    diary_icon?: string;
+    diary_color?: string | null;
 }
 
 describe('EntriesList', () => {
     const mockEntries: Entry[] = [
-        { id: 1, date: '2024-01-15', index: 1, content: 'First entry', tags: ['work', 'important'], visibility: 'private' },
-        { id: 2, date: '2024-01-15', index: 2, content: 'Second entry', tags: ['personal'], visibility: 'public' },
-        { id: 3, date: '2024-01-14', index: 1, content: 'Third entry', tags: ['ideas'], visibility: 'private' }
+        { id: 1, date: '2024-01-15', index: 1, content: 'First entry', tags: ['work', 'important'], visibility: 'private', diary_id: 1, diary_name: 'Work', diary_icon: '💼', diary_color: '#2A9D8F' },
+        { id: 2, date: '2024-01-15', index: 2, content: 'Second entry', tags: ['personal'], visibility: 'public', diary_id: 2, diary_name: 'Personal', diary_icon: '📓', diary_color: '#E76F51' },
+        { id: 3, date: '2024-01-14', index: 1, content: 'Third entry', tags: ['ideas'], visibility: 'private', diary_id: 1, diary_name: 'Work', diary_icon: '💼', diary_color: '#2A9D8F' }
     ];
 
     const mockGroupedEntries: Record<string, Entry[]> = {
-        '2024-01-15': [mockEntries[0]!, mockEntries[1]!],
-        '2024-01-14': [mockEntries[2]!]
+        '2024-01-15': [mockEntries[0], mockEntries[1]],
+        '2024-01-14': [mockEntries[2]]
     };
 
     const defaultProps = {
@@ -125,6 +129,29 @@ describe('EntriesList', () => {
             const indices = screen.getAllByText(/#\d/);
             expect(indices.length).toBeGreaterThan(0);
         });
+
+        it('displays diary badges when entries come from multiple diaries', () => {
+            render(<EntriesList {...defaultProps} />);
+
+            expect(screen.getAllByText('Work').length).toBeGreaterThan(0);
+            expect(screen.getByText('Personal')).toBeInTheDocument();
+        });
+
+        it('shows a journal-colored accent line on each entry card', () => {
+            render(<EntriesList {...defaultProps} />);
+
+            const firstCard = document.getElementById('entry-1');
+            const secondCard = document.getElementById('entry-2');
+
+            expect(firstCard).not.toBeNull();
+            expect(secondCard).not.toBeNull();
+            expect(firstCard?.style.borderLeftColor).toBe('rgb(42, 157, 143)');
+            expect(firstCard?.style.borderLeftWidth).toBe('5px');
+            expect(firstCard?.style.borderLeftStyle).toBe('solid');
+            expect(secondCard?.style.borderLeftColor).toBe('rgb(231, 111, 81)');
+            expect(secondCard?.style.borderLeftWidth).toBe('5px');
+            expect(secondCard?.style.borderLeftStyle).toBe('solid');
+        });
     });
 
     describe('Theme styling', () => {
@@ -150,7 +177,7 @@ describe('EntriesList', () => {
             render(<EntriesList {...defaultProps} onEdit={onEdit} />);
 
             const editButtons = screen.getAllByTitle('Edit');
-            await user.click(editButtons[0]!);
+            await user.click(editButtons[0]);
 
             expect(onEdit).toHaveBeenCalledWith(mockEntries[0]);
         });
@@ -161,7 +188,7 @@ describe('EntriesList', () => {
             render(<EntriesList {...defaultProps} onDelete={onDelete} />);
 
             const deleteButtons = screen.getAllByTitle('Delete');
-            await user.click(deleteButtons[0]!);
+            await user.click(deleteButtons[0]);
 
             expect(onDelete).toHaveBeenCalledWith(1);
         });
@@ -170,7 +197,7 @@ describe('EntriesList', () => {
     describe('Edit mode', () => {
         const editModeProps = {
             ...defaultProps,
-            editingEntry: mockEntries[0]!,
+            editingEntry: mockEntries[0],
             editText: 'Edited content',
             editTags: ['work'],
             editDate: new Date('2024-01-15')

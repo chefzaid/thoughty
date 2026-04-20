@@ -97,6 +97,7 @@ export class ConfigService {
         id: d.id,
         name: d.name,
         icon: d.icon,
+        color: d.color,
         visibility: d.visibility,
         isDefault: d.isDefault,
         position: d.position,

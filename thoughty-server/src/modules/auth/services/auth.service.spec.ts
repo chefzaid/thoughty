@@ -115,6 +115,7 @@ describe('AuthService', () => {
         expect.objectContaining({
           name: 'Thoughts',
           icon: '💭',
+          color: '#E76F51',
           isDefault: true,
         }),
       );
@@ -293,7 +294,11 @@ describe('AuthService', () => {
       });
 
       expect(result.user.isNewUser).toBe(true);
-      expect(diaryRepository.save).toHaveBeenCalled();
+      expect(diaryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          color: '#E76F51',
+        }),
+      );
     });
   });
 
