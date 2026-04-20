@@ -436,32 +436,38 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
                 <section className="io-section">
                     <h3>{t('export')}</h3>
                     <p className="section-description">{t('exportDescription', { diaryName: diaryName || '' })}</p>
-                    <div className="format-field">
-                        <label>{t('exportFormat')}</label>
-                        <select
-                            value={exportFormat}
-                            onChange={(e) => setExportFormat(e.target.value as ExportFormatType)}
-                            className="format-select"
-                        >
-                            <option value="txt">{t('formatTxt')}</option>
-                            <option value="json">{t('formatJson')}</option>
-                            <option value="md">{t('formatMd')}</option>
-                        </select>
+                    <div className="export-controls">
+                        <div className="export-option-row export-option-row--split">
+                            <div className="export-option-group export-option-group--format">
+                                <label>{t('exportFormat')}</label>
+                                <select
+                                    value={exportFormat}
+                                    onChange={(e) => setExportFormat(e.target.value as ExportFormatType)}
+                                    className="format-select"
+                                >
+                                    <option value="txt">{t('formatTxt')}</option>
+                                    <option value="json">{t('formatJson')}</option>
+                                    <option value="md">{t('formatMd')}</option>
+                                </select>
+                            </div>
+                            <div className="export-option-group export-option-group--visibility">
+                                <label className="checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={includeVisibility}
+                                        onChange={() => setIncludeVisibility(!includeVisibility)}
+                                    />
+                                    {t('includeVisibilityShort')}
+                                </label>
+                            </div>
+                            <button className="io-btn primary" onClick={handleExport}>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                {t('downloadExport')}
+                            </button>
+                        </div>
                     </div>
-                    <label className="checkbox-label">
-                        <input
-                            type="checkbox"
-                            checked={includeVisibility}
-                            onChange={() => setIncludeVisibility(!includeVisibility)}
-                        />
-                        {t('includeVisibility')}
-                    </label>
-                    <button className="io-btn primary" onClick={handleExport}>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        {t('downloadExport')}
-                    </button>
                 </section>
 
                 {/* Import Section */}

@@ -164,10 +164,10 @@ describe('ImportExport', () => {
         render(<ImportExport theme="dark" t={mockT} />);
 
         await waitFor(() => {
-            expect(screen.getByText('includeVisibility')).toBeInTheDocument();
+            expect(screen.getByText('includeVisibilityShort')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByText('includeVisibility'));
+        fireEvent.click(screen.getByText('includeVisibilityShort'));
         fireEvent.click(screen.getByText('downloadExport'));
 
         await waitFor(() => {

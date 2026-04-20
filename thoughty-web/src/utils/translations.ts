@@ -116,6 +116,7 @@ export type TranslationKey =
   | 'importDescription'
   | 'downloadExport'
   | 'includeVisibility'
+  | 'includeVisibilityShort'
   | 'exportFormat'
   | 'formatTxt'
   | 'formatJson'
@@ -493,9 +494,10 @@ export const translations: Translations = {
     export: 'Export',
     exportDescription: 'Download all journal entries from {diaryName} as a text file.',
     importDescription: 'Upload a text file to import entries into {diaryName}.',
-    downloadExport: 'Download Export',
+    downloadExport: 'Download',
     includeVisibility: 'Include visibility (public/private) in export',
-    exportFormat: 'Export format',
+    includeVisibilityShort: 'Include visibility',
+    exportFormat: 'Format',
     formatTxt: 'Text (.txt)',
     formatJson: 'JSON (.json)',
     formatMd: 'Markdown (.md)',
@@ -894,9 +896,10 @@ export const translations: Translations = {
     exportDescription:
       'Téléchargez toutes les entrées de {diaryName} sous forme de fichier texte.',
     importDescription: 'Téléversez un fichier texte pour importer des entrées dans {diaryName}.',
-    downloadExport: "Télécharger l'export",
+    downloadExport: 'Télécharger',
     includeVisibility: 'Inclure la visibilité (public/privé) dans l\'export',
-    exportFormat: 'Format d\'export',
+    includeVisibilityShort: 'Inclure la visibilité',
+    exportFormat: 'Format',
     formatTxt: 'Texte (.txt)',
     formatJson: 'JSON (.json)',
     formatMd: 'Markdown (.md)',
