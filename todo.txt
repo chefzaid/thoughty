@@ -24,6 +24,8 @@ Remaining features to implement:
 
 *** AI
 - Keep history of AI chats and allow users to export them as text files
+- Rephrase on existing entries (button next to chat)
+- Make options for rephrasing: Grammar/form, slight writing style enhancements, and a complete rewrite
 - Tone and mood of thoughts stats (analyzed by AI)
 - Subjects discussed stats (analyzed by AI)
 - Personality analysis through the choice of words and subjects
