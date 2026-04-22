@@ -1,6 +1,6 @@
 // Navigation and view types
 
-export type ViewType = 'journal' | 'profile' | 'diaries' | 'stats' | 'importExport';
+export type ViewType = 'journal' | 'tags' | 'profile' | 'diaries' | 'stats' | 'importExport';
 
 export interface NavigationState {
   currentView: ViewType;

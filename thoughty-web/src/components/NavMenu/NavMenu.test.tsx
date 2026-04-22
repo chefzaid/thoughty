@@ -37,6 +37,11 @@ describe('NavMenu', () => {
     expect(screen.getByText('stats')).toBeInTheDocument();
   });
 
+  it('renders tags navigation item', () => {
+    render(<NavMenu {...defaultProps} />);
+    expect(screen.getByText('tags')).toBeInTheDocument();
+  });
+
   it('renders import/export navigation item', () => {
     render(<NavMenu {...defaultProps} />);
     expect(screen.getByText('importExport')).toBeInTheDocument();
@@ -66,6 +71,13 @@ describe('NavMenu', () => {
     const statsButton = screen.getByText('stats');
     fireEvent.click(statsButton);
     expect(mockOnViewChange).toHaveBeenCalledWith('stats');
+  });
+
+  it('calls onViewChange when tags is clicked', () => {
+    render(<NavMenu {...defaultProps} />);
+    const tagsButton = screen.getByText('tags');
+    fireEvent.click(tagsButton);
+    expect(mockOnViewChange).toHaveBeenCalledWith('tags');
   });
 
   it('calls onViewChange when importExport is clicked', () => {
@@ -112,7 +124,10 @@ describe('NavMenu', () => {
   it('calls onViewChange with profile when profile button is clicked', () => {
     render(<NavMenu {...defaultProps} />);
     const profileButton = screen.getByText('T').closest('button');
-    fireEvent.click(profileButton!);
+    expect(profileButton).not.toBeNull();
+    if (profileButton) {
+      fireEvent.click(profileButton);
+    }
     expect(mockOnViewChange).toHaveBeenCalledWith('profile');
   });
 

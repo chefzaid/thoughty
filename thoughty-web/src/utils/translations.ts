@@ -67,6 +67,16 @@ export type TranslationKey =
   | 'defaultVisibility'
   | 'defaultVisibilityDescription'
   | 'language'
+  | 'tagOrganization'
+  | 'tagOrganizationDescription'
+  | 'tagName'
+  | 'tagCategory'
+  | 'tagCategoryPlaceholder'
+  | 'tagColor'
+  | 'renameTag'
+  | 'renameTagPlaceholder'
+  | 'noTagsToOrganize'
+  | 'resetTagAppearance'
   | 'security'
   | 'currentPassword'
   | 'newPassword'
@@ -437,6 +447,16 @@ export const translations: Translations = {
     defaultVisibility: 'Default Visibility',
     defaultVisibilityDescription: 'Default visibility for new entries',
     language: 'Language',
+    tagOrganization: 'Tag Organization',
+    tagOrganizationDescription: 'Assign categories and colors to your existing tags so related ideas are easier to scan.',
+    tagName: 'Tag name',
+    tagCategory: 'Category',
+    tagCategoryPlaceholder: 'Examples: Work, Health, Ideas',
+    tagColor: 'Color',
+    renameTag: 'Rename',
+    renameTagPlaceholder: 'Rename tag',
+    noTagsToOrganize: 'Create or save a few tags first, then organize them here.',
+    resetTagAppearance: 'Reset',
 
     // Security
     security: 'Security',
@@ -839,6 +859,16 @@ export const translations: Translations = {
     defaultVisibility: 'Visibilité par défaut',
     defaultVisibilityDescription: 'Visibilité par défaut pour les nouvelles entrées',
     language: 'Langue',
+    tagOrganization: 'Organisation des tags',
+    tagOrganizationDescription: 'Attribuez des catégories et des couleurs à vos tags existants pour repérer plus vite les idées liées.',
+    tagName: 'Nom du tag',
+    tagCategory: 'Catégorie',
+    tagCategoryPlaceholder: 'Exemples : Travail, Santé, Idées',
+    tagColor: 'Couleur',
+    renameTag: 'Renommer',
+    renameTagPlaceholder: 'Renommer le tag',
+    noTagsToOrganize: 'Créez ou enregistrez quelques tags puis organisez-les ici.',
+    resetTagAppearance: 'Réinitialiser',
 
     // Security
     security: 'Sécurité',

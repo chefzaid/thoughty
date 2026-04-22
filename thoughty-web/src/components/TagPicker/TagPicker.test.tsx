@@ -33,6 +33,19 @@ describe('TagPicker', () => {
             expect(screen.getByText('personal')).toBeInTheDocument();
         });
 
+        it('renders tag category metadata with selected tags', () => {
+            render(
+                <TagPicker
+                    {...defaultProps}
+                    selectedTags={['work']}
+                    tagMetadata={{ work: { color: '#2563EB', category: 'Focus' } }}
+                />
+            );
+
+            expect(screen.getByText('Focus')).toBeInTheDocument();
+            expect(screen.getByText('work')).toBeInTheDocument();
+        });
+
         it('hides placeholder when tags are selected', () => {
             render(<TagPicker {...defaultProps} selectedTags={['work']} />);
 

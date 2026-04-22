@@ -14,6 +14,7 @@ export interface Config {
   readDates?: boolean;
   openRouterModel?: string;
   autoTagMaxTags?: string | number;
+  tagMetadata?: string;
 }
 
 export interface AppConfig {

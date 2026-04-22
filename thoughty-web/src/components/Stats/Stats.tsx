@@ -12,6 +12,8 @@ import {
 import { Bar } from 'react-chartjs-2';
 import './Stats.css';
 import { useAuth } from '../../contexts/AuthContext';
+import TagBadge from '../TagBadge/TagBadge';
+import type { TagMetadataMap } from '../../utils/tagMetadata';
 
 // Register Chart.js components
 ChartJS.register(
@@ -28,6 +30,7 @@ interface StatsProps {
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly diaryId?: number | null;
+    readonly tagMetadata?: TagMetadataMap;
 }
 
 interface StatsData {
@@ -44,7 +47,7 @@ interface YearTagData {
     topTags: [string, number][];
 }
 
-function Stats({ theme, t, diaryId }: StatsProps) {
+function Stats({ theme, t, diaryId, tagMetadata }: StatsProps) {
     const { authFetch } = useAuth();
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -376,9 +379,16 @@ function Stats({ theme, t, diaryId }: StatsProps) {
                                             <td>{year}</td>
                                             <td>
                                                 {topTags.map(([tag, count]) => (
-                                                    <span key={tag} className="tag-badge" style={{ marginRight: '0.5rem' }}>
-                                                        {tag} ({count})
-                                                    </span>
+                                                    <TagBadge
+                                                        key={tag}
+                                                        tag={tag}
+                                                        metadata={tagMetadata}
+                                                        theme={theme}
+                                                        showHash={false}
+                                                        size="xs"
+                                                        suffix={` (${count})`}
+                                                        className="mr-2"
+                                                    />
                                                 ))}
                                             </td>
                                         </tr>

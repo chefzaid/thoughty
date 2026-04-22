@@ -41,9 +41,9 @@ function AISection({
 
   useEffect(() => {
     if (models.length === 0) {
-      loadModels();
+      void loadModels();
     }
-  }, []);
+  }, [loadModels, models.length]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {

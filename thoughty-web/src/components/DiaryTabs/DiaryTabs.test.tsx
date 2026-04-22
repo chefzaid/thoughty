@@ -80,7 +80,7 @@ describe('DiaryTabs', () => {
 
   it('calls onManageDiaries when manage button is clicked', () => {
     render(<DiaryTabs {...defaultProps} />);
-    const manageButton = screen.getByTitle('manageDiaries');
+    const manageButton = screen.getByTitle('Manage Diaries');
     fireEvent.click(manageButton);
     expect(mockOnManageDiaries).toHaveBeenCalled();
   });
@@ -97,11 +97,11 @@ describe('DiaryTabs', () => {
     expect(tabsContainer).toHaveClass('dark');
   });
 
-  it('renders manage diaries button with plus icon', () => {
+  it('renders manage diaries button with gear icon', () => {
     render(<DiaryTabs {...defaultProps} />);
-    const manageButton = screen.getByTitle('manageDiaries');
+    const manageButton = screen.getByTitle('Manage Diaries');
     expect(manageButton).toHaveClass('manage-btn');
-    expect(manageButton.querySelector('svg')).toBeInTheDocument();
+    expect(manageButton.querySelector('.codicon-settings-gear')).toBeInTheDocument();
   });
 
   it('renders diary names', () => {

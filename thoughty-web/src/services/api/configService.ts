@@ -1,8 +1,5 @@
 import { safeJsonParse } from './base';
 import type { Config, ProfileStats } from '../../types';
-
-export interface ConfigResponse extends Config {}
-
 export interface StatsApiResponse {
   totalThoughts?: number;
   thoughtsPerYear?: Record<string, number>;
@@ -77,15 +74,19 @@ export const createConfigService = (authFetch: (url: string, options?: RequestIn
       if (!response?.ok) return false;
       const blob = await response.blob();
       const disposition = response.headers.get('Content-Disposition') || '';
-      const match = disposition.match(/filename="?([^"]+)"?/);
-      const filename = match?.[1] || 'thoughty_data.json';
+      const filenameMatch = /filename="?([^"]+)"?/.exec(disposition);
+      const filename = filenameMatch?.[1] || 'thoughty_data.json';
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = filename;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      if (typeof a.remove === 'function') {
+        a.remove();
+      } else {
+        document.body.removeChild(a);
+      }
       URL.revokeObjectURL(url);
       return true;
     } catch (error) {

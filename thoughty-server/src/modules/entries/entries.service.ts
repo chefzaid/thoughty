@@ -51,6 +51,10 @@ export class EntriesService {
     return [...sanitizedTags, ...suggestedTags];
   }
 
+  private sanitizeTagName(tag?: string | null): string {
+    return sanitizeString(String(tag ?? '').trim()).substring(0, 50);
+  }
+
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
     const { search, tags, date, visibility, favorites, diaryId, page = 1, limit = 10 } = query;
 
@@ -560,6 +564,40 @@ export class EntriesService {
       default:
         throw new BadRequestException('Invalid action');
     }
+  }
+
+  async renameTag(
+    userId: number,
+    oldTag: string,
+    newTag: string,
+  ): Promise<{ success: boolean; affectedCount: number }> {
+    const sourceTag = this.sanitizeTagName(oldTag);
+    const targetTag = this.sanitizeTagName(newTag);
+
+    if (!sourceTag || !targetTag) {
+      throw new BadRequestException('Both old and new tags are required');
+    }
+
+    if (sourceTag === targetTag) {
+      throw new BadRequestException('New tag name must be different');
+    }
+
+    const entries = await this.entryRepository
+      .createQueryBuilder('e')
+      .where('e.user_id = :userId', { userId })
+      .andWhere(':sourceTag = ANY(e.tags)', { sourceTag })
+      .getMany();
+
+    if (entries.length === 0) {
+      throw new NotFoundException('No entries found with that tag');
+    }
+
+    for (const entry of entries) {
+      entry.tags = [...new Set(entry.tags.map((tag) => (tag === sourceTag ? targetTag : tag)))].slice(0, 20);
+      await this.entryRepository.save(entry);
+    }
+
+    return { success: true, affectedCount: entries.length };
   }
 
   private async bulkDelete(

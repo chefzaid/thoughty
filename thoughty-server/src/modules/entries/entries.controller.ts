@@ -19,6 +19,7 @@ import {
   UpdateVisibilityDto,
   UpdateFavoriteDto,
   BulkOperationDto,
+  RenameTagDto,
   GetEntriesQueryDto,
   GetFirstEntryQueryDto,
   GetEntryByDateQueryDto,
@@ -101,6 +102,16 @@ export class EntriesController {
     @Body() dto: BulkOperationDto,
   ): Promise<{ success: boolean; affectedCount: number }> {
     return this.entriesService.bulkOperation(user.userId, dto);
+  }
+
+  @Patch('tags/rename')
+  @ApiOperation({ summary: 'Rename a tag across all of the current user\'s entries' })
+  @ApiResponse({ status: 200, description: 'Tag renamed across entries' })
+  async renameTag(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RenameTagDto,
+  ): Promise<{ success: boolean; affectedCount: number }> {
+    return this.entriesService.renameTag(user.userId, dto.oldTag, dto.newTag);
   }
 
   @Put(':id')

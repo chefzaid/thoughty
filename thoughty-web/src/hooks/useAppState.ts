@@ -58,9 +58,13 @@ export const useConfig = (isAuthenticated: boolean) => {
   }, [configService]);
 
   const updateConfig = useCallback(async (newConfig: Config) => {
-    await configService.updateConfig(newConfig);
+    const previousConfig = config;
     setConfig(newConfig);
-  }, [configService]);
+    const success = await configService.updateConfig(newConfig);
+    if (!success) {
+      setConfig(previousConfig);
+    }
+  }, [config, configService]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -127,6 +131,7 @@ export const useDiaries = (isAuthenticated: boolean) => {
   const handleUpdateDiary = useCallback(async (id: number, diaryData: Partial<Diary>) => {
     const result = await diariesService.updateDiary(id, diaryData);
     if (!result.success) throw new Error(result.error);
+    setDiaries((prev) => prev.map((diary) => (diary.id === id ? { ...diary, ...diaryData } : diary)));
     await fetchDiaries();
   }, [diariesService, fetchDiaries]);
 
@@ -157,7 +162,7 @@ export const useDiaries = (isAuthenticated: boolean) => {
     if (isAuthenticated) {
       fetchDiaries();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchDiaries]);
 
   return {
     diaries,
@@ -300,13 +305,13 @@ export const useEntries = (
 
   // Fetch entries on dependency change
   useEffect(() => {
-    fetchEntries();
-  }, [page, search, filterTags, filterDateObj, filterVisibility, filterFavorites, config.entriesPerPage, currentDiaryId, isAuthenticated]);
+    void fetchEntries();
+  }, [fetchEntries, page, search, filterTags, filterDateObj, filterVisibility, filterFavorites, config.entriesPerPage, currentDiaryId, isAuthenticated]);
 
   // Fetch years/months on mount
   useEffect(() => {
-    fetchYearsMonths();
-  }, [isAuthenticated]);
+    void fetchYearsMonths();
+  }, [isAuthenticated, fetchYearsMonths]);
 
   // Scroll to target entry
   useEffect(() => {
@@ -501,7 +506,7 @@ export const useEntryForm = (
 
     setTags((prev) => [...new Set([...prev, ...suggestedTags])]);
     return true;
-  }, [aiService, newEntryText, tags]);
+  }, [aiService, newEntryText, tags, autoTagLimit]);
 
   const handleFixWriting = useCallback(async () => {
     if (!newEntryText.trim()) {

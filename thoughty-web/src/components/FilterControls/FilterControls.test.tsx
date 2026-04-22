@@ -79,7 +79,7 @@ describe('FilterControls', () => {
 
   it('cycles visibility filter when button is clicked', () => {
     render(<FilterControls {...defaultProps} filterVisibility="all" />);
-    const visibilityButton = screen.getByTitle('filterVisibility');
+    const visibilityButton = screen.getByTitle('Visibility');
     fireEvent.click(visibilityButton);
     expect(mockSetFilterVisibility).toHaveBeenCalledWith('public');
     expect(mockSetPage).toHaveBeenCalledWith(1);
@@ -87,14 +87,14 @@ describe('FilterControls', () => {
 
   it('cycles from public to private', () => {
     render(<FilterControls {...defaultProps} filterVisibility="public" />);
-    const visibilityButton = screen.getByTitle('filterVisibility');
+    const visibilityButton = screen.getByTitle('Visibility');
     fireEvent.click(visibilityButton);
     expect(mockSetFilterVisibility).toHaveBeenCalledWith('private');
   });
 
   it('cycles from private to all', () => {
     render(<FilterControls {...defaultProps} filterVisibility="private" />);
-    const visibilityButton = screen.getByTitle('filterVisibility');
+    const visibilityButton = screen.getByTitle('Visibility');
     fireEvent.click(visibilityButton);
     expect(mockSetFilterVisibility).toHaveBeenCalledWith('all');
   });
@@ -146,13 +146,13 @@ describe('FilterControls', () => {
 
   it('applies correct styling for public visibility button', () => {
     render(<FilterControls {...defaultProps} filterVisibility="public" />);
-    const visibilityButton = screen.getByTitle('filterVisibility');
+    const visibilityButton = screen.getByTitle('Visibility');
     expect(visibilityButton).toHaveClass('text-green-500');
   });
 
   it('applies correct styling for private visibility button', () => {
     render(<FilterControls {...defaultProps} filterVisibility="private" />);
-    const visibilityButton = screen.getByTitle('filterVisibility');
+    const visibilityButton = screen.getByTitle('Visibility');
     expect(visibilityButton).toHaveClass('text-gray-500');
   });
 });

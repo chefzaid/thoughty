@@ -1,4 +1,4 @@
-import type { TranslationFunction } from '@/utils/translations';
+import type { TranslationFunction } from '../../utils/translations';
 
 interface ConfirmModalProps {
   isOpen: boolean;

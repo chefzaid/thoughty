@@ -4,6 +4,7 @@ import MDEditor from '@uiw/react-md-editor';
 import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import type { Attachment } from '../../types';
+import type { TagMetadataMap } from '../../utils/tagMetadata';
 
 interface EntryFormProps {
     readonly newEntryText: string;
@@ -17,6 +18,7 @@ interface EntryFormProps {
     readonly format: 'plain' | 'markdown';
     readonly setFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
     readonly allTags: string[];
+    readonly tagMetadata?: TagMetadataMap;
     readonly formError: string;
     readonly suggestingTags?: boolean;
     readonly onSuggestTags?: () => Promise<boolean> | boolean;
@@ -44,6 +46,7 @@ function EntryForm({
     format,
     setFormat,
     allTags,
+    tagMetadata,
     formError,
     suggestingTags = false,
     onSuggestTags,
@@ -138,6 +141,7 @@ function EntryForm({
                         <TagPicker
                             availableTags={allTags}
                             selectedTags={tags}
+                            tagMetadata={tagMetadata}
                             onChange={setTags}
                             placeholder={t('filterTagsPlaceholder').replace('Filter by ', '')}
                             theme={theme}

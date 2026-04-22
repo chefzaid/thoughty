@@ -14,6 +14,7 @@ export interface ProfileConfig {
   readDates?: boolean;
   openRouterModel?: string;
   autoTagMaxTags?: string | number;
+  tagMetadata?: string;
 }
 
 export interface ProfileUser {

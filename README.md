@@ -48,6 +48,9 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Create New Tags** - Add new tags inline while writing
 - **AI Tag Suggestions** - Generate draft tags from your entry content using OpenRouter
 - **Automatic AI Tagging** - Optionally fill in tags on save and cap the number of AI-generated tags per entry from profile settings
+- **Dedicated Tags Tab** - Manage all tags from a standalone Tags view between Journal and Stats
+- **Custom Tag Colors & Categories** - Give tags their own color and optional category for faster visual scanning
+- **Global Tag Rename** - Rename a tag once and update it across all entries using it
 - **Tag Chips** - Visual tag display with easy removal
 - **Keyboard Navigation** - Use Enter to add and Backspace to remove tags
 

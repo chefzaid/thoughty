@@ -29,7 +29,7 @@ import {
 
 interface ProfilePageProps {
   readonly config: ProfileConfig;
-  readonly onUpdateConfig: (config: ProfileConfig) => void;
+  readonly onUpdateConfig: (config: ProfileConfig) => Promise<void>;
   readonly onDownloadData: () => Promise<boolean>;
   readonly onBack: () => void;
   readonly t: TranslationFunction;
@@ -131,7 +131,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
 
   const handlePictureUpload = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
-    if (!isValidImageFile(file)) return;
+    if (!file || !isValidImageFile(file)) return;
 
     setUploadingPicture(true);
 
@@ -143,7 +143,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
     reader.onerror = () => {
       setUploadingPicture(false);
     };
-    reader.readAsDataURL(file!);
+    reader.readAsDataURL(file);
   };
 
   const handlePictureSave = (dataUrl: string): void => {
@@ -173,9 +173,11 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
   };
 
   const handleSave = (): void => {
-    onUpdateConfig(localConfig);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    void (async () => {
+      await onUpdateConfig(localConfig);
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    })();
   };
 
   const isLight = localConfig.theme === 'light';

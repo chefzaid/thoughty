@@ -347,8 +347,9 @@ describe('App Integration Tests', () => {
             });
 
             const editButtons = screen.queryAllByTitle('Edit');
-            if (editButtons.length > 0) {
-                await user.click(editButtons[0]!);
+            const firstEditButton = editButtons[0];
+            if (firstEditButton) {
+                await user.click(firstEditButton);
 
                 await waitFor(() => {
                     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
@@ -475,6 +476,21 @@ describe('App Integration Tests', () => {
 
             await waitFor(() => {
                 expect(screen.getByText(/profile/i)).toBeInTheDocument();
+            });
+        });
+
+        it('navigates to tags view', async () => {
+            const user = userEvent.setup();
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /^Tags$/i })).toBeInTheDocument();
+            });
+
+            await user.click(screen.getByRole('button', { name: /^Tags$/i }));
+
+            await waitFor(() => {
+                expect(screen.getByRole('heading', { name: 'Tags' })).toBeInTheDocument();
             });
         });
 

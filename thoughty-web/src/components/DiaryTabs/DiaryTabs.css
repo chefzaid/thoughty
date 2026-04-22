@@ -104,8 +104,12 @@
 }
 
 .diary-tab.manage-btn {
-    padding: 0.5rem;
-    border-style: dashed;
+    width: 2.625rem;
+    height: 2.625rem;
+    justify-content: center;
+    padding: 0;
+    border-style: solid;
+    background: rgba(59, 130, 246, 0.06);
 }
 
 .diary-tabs.light .diary-tab.manage-btn {
@@ -118,10 +122,14 @@
 
 .diary-tab.manage-btn:hover {
     border-color: rgba(59, 130, 246, 0.5);
-    background: rgba(59, 130, 246, 0.1);
+    background: rgba(59, 130, 246, 0.14);
 }
 
 .manage-icon {
-    width: 1.25rem;
-    height: 1.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    line-height: 1;
+    flex: 0 0 auto;
 }

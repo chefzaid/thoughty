@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
   use,
@@ -107,6 +108,13 @@ const API_BASE = '/api/auth';
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
+interface GoogleCredentialPayload {
+  sub: string;
+  email: string;
+  name: string;
+  picture: string;
+}
+
 // Safe JSON parsing helper - returns null if parsing fails
 const safeJsonParse = async <T = unknown>(response: Response): Promise<T | null> => {
   try {
@@ -119,6 +127,15 @@ const safeJsonParse = async <T = unknown>(response: Response): Promise<T | null>
     return null;
   }
 };
+
+function parseGoogleCredentialPayload(credential: string): GoogleCredentialPayload {
+  const payloadPart = credential.split('.')[1];
+  if (!payloadPart) {
+    throw new Error('Invalid JWT format');
+  }
+
+  return JSON.parse(atob(payloadPart)) as GoogleCredentialPayload;
+}
 
 export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
   const [user, setUser] = useState<User | null>(null);
@@ -341,29 +358,18 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       }
 
       const handleGoogleCallback = (response: GoogleCredentialResponse): void => {
-        const processCallback = async (): Promise<void> => {
-          try {
-            // Decode JWT to get user info
-            const jwtParts = response.credential.split('.');
-            const payloadPart = jwtParts[1];
-            if (!payloadPart) {
-              reject(new Error('Invalid JWT format'));
-              return;
-            }
-            const payload = JSON.parse(atob(payloadPart));
-            const result = await oauthLogin(
-              'google',
-              payload.sub,
-              payload.email,
-              payload.name,
-              payload.picture
-            );
-            resolve(result);
-          } catch (err) {
-            reject(err);
-          }
-        };
-        void processCallback();
+        let payload: GoogleCredentialPayload;
+
+        try {
+          payload = parseGoogleCredentialPayload(response.credential);
+        } catch (error) {
+          reject(error);
+          return;
+        }
+
+        void oauthLogin('google', payload.sub, payload.email, payload.name, payload.picture)
+          .then(resolve)
+          .catch(reject);
       };
 
       google.accounts.id.initialize({
@@ -499,26 +505,36 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     }
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      error,
-      isAuthenticated: !!user,
-      register,
-      login,
-      logout,
-      signInWithGoogle,
-      changePassword,
-      forgotPassword,
-      resetPassword,
-      deleteAccount,
-      authFetch,
-      getAccessToken,
-      googleClientId: GOOGLE_CLIENT_ID,
-    }),
-    [user, loading, error, authFetch]
-  );
+  const value = useMemo<AuthContextValue>(() => ({
+    user,
+    loading,
+    error,
+    isAuthenticated: !!user,
+    register,
+    login,
+    logout,
+    signInWithGoogle,
+    changePassword,
+    forgotPassword,
+    resetPassword,
+    deleteAccount,
+    authFetch,
+    getAccessToken,
+    googleClientId: GOOGLE_CLIENT_ID,
+  }), [
+    user,
+    loading,
+    error,
+    register,
+    login,
+    logout,
+    signInWithGoogle,
+    changePassword,
+    forgotPassword,
+    resetPassword,
+    deleteAccount,
+    authFetch,
+  ]);
 
   return <AuthContext value={value}>{children}</AuthContext>;
 }
@@ -530,5 +546,3 @@ export function useAuth(): AuthContextValue {
   }
   return context;
 }
-
-export default AuthContext;

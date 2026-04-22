@@ -8,6 +8,7 @@ import Pagination from '../Pagination/Pagination';
 import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
 import type { Entry, Diary, Config, GroupedEntries, SourceEntryInfo, VisibilityFilter, Attachment, EntryRevision } from '../../types';
+import type { TagMetadataMap } from '../../utils/tagMetadata';
 
 interface JournalViewProps {
   // Diaries
@@ -32,6 +33,7 @@ interface JournalViewProps {
   format: 'plain' | 'markdown';
   setFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
   allTags: string[];
+  tagMetadata?: TagMetadataMap;
   formError: string;
   suggestingTags?: boolean;
   onSuggestTags?: () => Promise<boolean> | boolean;
@@ -140,6 +142,7 @@ function JournalView({
   format,
   setFormat,
   allTags,
+  tagMetadata,
   formError,
   suggestingTags,
   onSuggestTags,
@@ -246,6 +249,7 @@ function JournalView({
         format={format}
         setFormat={setFormat}
         allTags={allTags}
+        tagMetadata={tagMetadata}
         formError={formError}
         suggestingTags={suggestingTags}
         onSuggestTags={onSuggestTags}
@@ -273,6 +277,7 @@ function JournalView({
         filterFavorites={filterFavorites}
         setFilterFavorites={setFilterFavorites}
         allTags={allTags}
+        tagMetadata={tagMetadata}
         setPage={setPage}
         theme={config.theme}
         t={t}
@@ -300,6 +305,7 @@ function JournalView({
         editFormat={editFormat}
         setEditFormat={setEditFormat}
         allTags={allTags}
+        tagMetadata={tagMetadata}
         onSaveEdit={onSaveEdit}
         onCancelEdit={onCancelEdit}
         editPendingFiles={editPendingFiles}

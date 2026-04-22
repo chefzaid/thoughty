@@ -10,6 +10,8 @@ import AttachmentDisplay from '../AttachmentDisplay/AttachmentDisplay';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import type { Attachment, EntryRevision } from '../../types';
 import { resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
+import TagBadge from '../TagBadge/TagBadge';
+import type { TagMetadataMap } from '../../utils/tagMetadata';
 
 interface Entry {
     id: number;
@@ -71,6 +73,7 @@ interface EntriesListProps {
     editFormat: 'plain' | 'markdown';
     setEditFormat: Dispatch<SetStateAction<'plain' | 'markdown'>>;
     allTags: string[];
+    tagMetadata?: TagMetadataMap;
     onSaveEdit: () => void;
     onCancelEdit: () => void;
     editPendingFiles?: File[];
@@ -178,7 +181,7 @@ function getEntryCardStyle(entry: Entry): CSSProperties | undefined {
 
 function EditForm({
     config, editText, setEditText, editDate, setEditDate,
-    allTags, editTags, setEditTags, editVisibility, setEditVisibility,
+    allTags, tagMetadata, editTags, setEditTags, editVisibility, setEditVisibility,
     editFormat, setEditFormat,
     editPendingFiles, editExistingAttachments, onAddEditFile, onRemoveEditPendingFile, onRemoveEditAttachment,
     onSaveEdit, onCancelEdit, t
@@ -189,6 +192,7 @@ function EditForm({
     editDate: Date | null;
     setEditDate: Dispatch<SetStateAction<Date | null>>;
     allTags: string[];
+    tagMetadata: TagMetadataMap;
     editTags: string[];
     setEditTags: Dispatch<SetStateAction<string[]>>;
     editVisibility: 'public' | 'private';
@@ -245,6 +249,7 @@ function EditForm({
                     <TagPicker
                         availableTags={allTags}
                         selectedTags={editTags}
+                        tagMetadata={tagMetadata}
                         onChange={setEditTags}
                         placeholder={t('filterTagsPlaceholder').replace('Filter by ', '')}
                         theme={config.theme}
@@ -328,6 +333,7 @@ function EntryHistorySection({
     isDark,
     loadingHistory,
     revisions,
+    tagMetadata,
     onDeleteRevision,
     onHandleDeleteRevision,
     t,
@@ -336,6 +342,7 @@ function EntryHistorySection({
     isDark: boolean;
     loadingHistory: boolean;
     revisions: EntryRevision[];
+    tagMetadata: TagMetadataMap;
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onHandleDeleteRevision: (revisionId: number) => Promise<void>;
     t: (key: string) => string;
@@ -385,12 +392,13 @@ function EntryHistorySection({
                         {rev.tags.length > 0 && (
                             <div className="flex gap-1 mt-2 flex-wrap">
                                 {rev.tags.map(tag => (
-                                    <span
+                                    <TagBadge
                                         key={tag}
-                                        className={`text-xs px-1.5 py-0.5 rounded-full ${isDark ? 'bg-purple-900/20 text-purple-400' : 'bg-purple-50 text-purple-600'}`}
-                                    >
-                                        #{tag}
-                                    </span>
+                                        tag={tag}
+                                        metadata={tagMetadata}
+                                        theme={isDark ? 'dark' : 'light'}
+                                        size="xs"
+                                    />
                                 ))}
                             </div>
                         )}
@@ -413,7 +421,7 @@ function EntryHistorySection({
 function EntryViewMode({
     entry, config, speaking, activeEntryId, activeTargetId, sourceEntry,
     flatEntries, speakEntry: speak, speakFromEntry: speakFrom, stop,
-    onToggleVisibility, onToggleFavorite, onEdit, onDelete, onNavigateToEntry, onBackToSource, onFetchHistory, onDeleteRevision, onDiscuss, searchTerm, showDiaryLabel, t
+    onToggleVisibility, onToggleFavorite, onEdit, onDelete, onNavigateToEntry, onBackToSource, onFetchHistory, onDeleteRevision, onDiscuss, searchTerm, showDiaryLabel, tagMetadata, t
 }: Readonly<{
     entry: Entry;
     config: Config;
@@ -436,6 +444,7 @@ function EntryViewMode({
     onDiscuss?: (entry: Entry) => void;
     searchTerm?: string;
     showDiaryLabel: boolean;
+    tagMetadata: TagMetadataMap;
     t: (key: string) => string;
 }>) {
     const isDark = config.theme !== 'light';
@@ -457,7 +466,7 @@ function EntryViewMode({
             setLoadingHistory(false);
         }
         setShowHistory(true);
-    }, [showHistory, onFetchHistory, entry.id]);
+    }, [showHistory, onFetchHistory, entry.id, setLoadingHistory, setRevisions, setShowHistory]);
 
     const handleDeleteRevision = useCallback(async (revisionId: number) => {
         if (!onDeleteRevision) return;
@@ -465,7 +474,7 @@ function EntryViewMode({
         if (success) {
             setRevisions(revisions.filter(r => r.id !== revisionId));
         }
-    }, [onDeleteRevision, entry.id, revisions]);
+    }, [onDeleteRevision, entry.id, revisions, setRevisions]);
 
     return (
         <>
@@ -481,15 +490,13 @@ function EntryViewMode({
                         </span>
                     )}
                     {entry.tags.map((tag) => (
-                        <span
+                        <TagBadge
                             key={tag}
-                            className={`text-xs px-2 py-1 rounded-full border ${isDark
-                                ? 'bg-purple-900/30 text-purple-300 border-purple-500/20'
-                                : 'bg-purple-100 text-purple-700 border-purple-300'
-                                }`}
-                        >
-                            #{tag}
-                        </span>
+                            tag={tag}
+                            metadata={tagMetadata}
+                            theme={config.theme}
+                            size="xs"
+                        />
                     ))}
                 </div>
                 <div className="flex items-center gap-2">
@@ -598,6 +605,7 @@ function EntryViewMode({
                 isDark={isDark}
                 loadingHistory={loadingHistory}
                 revisions={revisions}
+                tagMetadata={tagMetadata}
                 onDeleteRevision={onDeleteRevision}
                 onHandleDeleteRevision={handleDeleteRevision}
                 t={t}
@@ -607,11 +615,12 @@ function EntryViewMode({
 }
 
 function BulkActionBar({
-    selectedCount, allTags, diaries, isDark,
+    selectedCount, allTags, tagMetadata, diaries, isDark,
     onBulkAction, onClearSelection, t
 }: Readonly<{
     selectedCount: number;
     allTags: string[];
+    tagMetadata: TagMetadataMap;
     diaries: Diary[];
     isDark: boolean;
     onBulkAction: (action: 'delete' | 'visibility' | 'tags' | 'move', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number }) => void;
@@ -660,6 +669,7 @@ function BulkActionBar({
                             <TagPicker
                                 availableTags={allTags}
                                 selectedTags={bulkTags}
+                                tagMetadata={tagMetadata}
                                 onChange={setBulkTags}
                                 placeholder={t('selectTags')}
                                 theme={isDark ? 'dark' : 'light'}
@@ -737,6 +747,7 @@ function EntriesList({
     editFormat,
     setEditFormat,
     allTags,
+    tagMetadata = {},
     onSaveEdit,
     onCancelEdit,
     editPendingFiles,
@@ -841,6 +852,7 @@ function EntriesList({
                 <BulkActionBar
                     selectedCount={selectedIds.size}
                     allTags={allTags}
+                    tagMetadata={tagMetadata}
                     diaries={diaries || []}
                     isDark={isDark}
                     onBulkAction={onBulkAction}
@@ -885,6 +897,7 @@ function EntriesList({
                                                 editDate={editDate}
                                                 setEditDate={setEditDate}
                                                 allTags={allTags}
+                                                tagMetadata={tagMetadata}
                                                 editTags={editTags}
                                                 setEditTags={setEditTags}
                                                 editVisibility={editVisibility}
@@ -923,6 +936,7 @@ function EntriesList({
                                                 onDiscuss={onDiscuss}
                                                 searchTerm={searchTerm}
                                                 showDiaryLabel={showDiaryAccent}
+                                                tagMetadata={tagMetadata}
                                                 t={t}
                                             />
                                         )}

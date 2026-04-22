@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef, type KeyboardEvent, type ChangeEvent } from 'react';
+import TagBadge from '../TagBadge/TagBadge';
+import { getTagMetadata, type TagMetadataMap } from '../../utils/tagMetadata';
 
 interface TagPickerProps {
     availableTags?: string[];
     selectedTags?: string[];
+    tagMetadata?: TagMetadataMap;
     onChange: (tags: string[]) => void;
     allowNew?: boolean;
     placeholder?: string;
@@ -13,6 +16,7 @@ interface TagPickerProps {
 function TagPicker({
     availableTags = [],
     selectedTags = [],
+    tagMetadata,
     onChange,
     allowNew = true,
     placeholder = "Add tags...",
@@ -35,10 +39,21 @@ function TagPicker({
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const filteredTags = availableTags.filter(tag =>
-        tag.toLowerCase().includes(inputValue.toLowerCase()) &&
-        !selectedTags.includes(tag)
-    );
+    const filteredTags = availableTags
+        .filter(tag =>
+            tag.toLowerCase().includes(inputValue.toLowerCase()) &&
+            !selectedTags.includes(tag)
+        )
+        .sort((left, right) => {
+            const leftCategory = getTagMetadata(left, tagMetadata || {})?.category || '';
+            const rightCategory = getTagMetadata(right, tagMetadata || {})?.category || '';
+            const categoryOrder = leftCategory.localeCompare(rightCategory);
+            if (categoryOrder === 0) {
+                return left.localeCompare(right);
+            }
+
+            return categoryOrder;
+        });
 
     const handleInputChange = (e: ChangeEvent<HTMLInputElement>): void => {
         setInputValue(e.target.value);
@@ -109,16 +124,15 @@ function TagPicker({
         <div className="relative" ref={wrapperRef}>
             <div className={`flex min-h-10 flex-wrap items-center gap-2 rounded-lg border px-3 py-1 focus-within:ring-2 focus-within:ring-blue-500 transition-colors ${isLight ? 'bg-gray-50 border-gray-300' : 'bg-gray-900 border-gray-700'}`}>
                 {selectedTags.map(tag => (
-                    <span key={tag} className={`flex items-center gap-1 px-2 py-1 rounded-full text-sm ${isLight ? 'bg-blue-100 text-blue-800' : 'bg-blue-900 text-blue-200'}`}>
-                        {tag}
-                        <button
-                            type="button"
-                            onClick={() => handleRemoveTag(tag)}
-                            className={`font-bold ${isLight ? 'hover:text-blue-600' : 'hover:text-blue-100'}`}
-                        >
-                            &times;
-                        </button>
-                    </span>
+                    <TagBadge
+                        key={tag}
+                        tag={tag}
+                        metadata={tagMetadata}
+                        theme={theme}
+                        showHash={false}
+                        removable={true}
+                        onRemove={() => handleRemoveTag(tag)}
+                    />
                 ))}
                 <input
                     type="text"
@@ -140,7 +154,13 @@ function TagPicker({
                                 onClick={() => handleSelectTag(tag)}
                                 className={`w-full text-left px-4 py-2 cursor-pointer ${isLight ? 'hover:bg-gray-100 text-gray-900' : 'hover:bg-gray-700 text-gray-100'}`}
                             >
-                                {tag}
+                                <TagBadge
+                                    tag={tag}
+                                    metadata={tagMetadata}
+                                    theme={theme}
+                                    showHash={false}
+                                    size="xs"
+                                />
                             </button>
                         </li>
                     ))}

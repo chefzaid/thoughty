@@ -14,7 +14,7 @@ describe('useSpeech', () => {
     onendCallback = null;
 
     // Reset the global mock methods for each test
-    (synth.speak as ReturnType<typeof vi.fn>).mockReset().mockImplementation((utterance: any) => {
+    (synth.speak as ReturnType<typeof vi.fn>).mockReset().mockImplementation((utterance: { onend: (() => void) | null }) => {
       onendCallback = utterance.onend;
     });
     (synth.cancel as ReturnType<typeof vi.fn>).mockReset();
@@ -330,7 +330,7 @@ describe('useSpeech', () => {
     // cancel should have been called (at least once for the stop before new speak)
     expect(cancelMock).toHaveBeenCalled();
     // The last utterance should be "Second"
-    const lastCall = speakMock.mock.calls[speakMock.mock.calls.length - 1][0];
+    const lastCall = speakMock.mock.calls.at(-1)?.[0];
     expect(lastCall.text).toBe('Second');
   });
 });

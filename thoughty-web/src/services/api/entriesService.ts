@@ -15,6 +15,11 @@ export interface NavigateByDateResponse {
   entryId?: number;
 }
 
+export interface RenameTagResponse {
+  success: boolean;
+  affectedCount: number;
+}
+
 export const createEntriesService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
   /**
    * Fetch entries with filters and pagination
@@ -301,6 +306,22 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     }
   };
 
+  const renameTag = async (oldTag: string, newTag: string): Promise<RenameTagResponse | null> => {
+    try {
+      const response = await authFetch('/api/entries/tags/rename', {
+        method: 'PATCH',
+        body: JSON.stringify({ oldTag, newTag })
+      });
+      if (!response.ok) {
+        return null;
+      }
+      return safeJsonParse<RenameTagResponse>(response);
+    } catch (error) {
+      console.error('Error renaming tag:', error);
+      return null;
+    }
+  };
+
   return {
     fetchEntries,
     fetchEntryDates,
@@ -310,6 +331,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     toggleVisibility,
     toggleFavorite,
     bulkOperation,
+    renameTag,
     navigateToFirst,
     navigateByDate,
     navigateById,

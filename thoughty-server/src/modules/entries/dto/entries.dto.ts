@@ -116,6 +116,18 @@ export class BulkOperationDto {
   diaryId?: number;
 }
 
+export class RenameTagDto {
+  @ApiProperty({ description: 'Current tag name to rename' })
+  @IsString()
+  @MaxLength(50)
+  oldTag: string;
+
+  @ApiProperty({ description: 'New tag name that should replace the current tag' })
+  @IsString()
+  @MaxLength(50)
+  newTag: string;
+}
+
 export class UpdateFavoriteDto {
   @ApiProperty({ description: 'Whether the entry is a favorite' })
   @IsBoolean()

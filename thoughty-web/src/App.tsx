@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import "react-datepicker/dist/react-datepicker.css";
 
 // Components
@@ -7,6 +7,7 @@ import ConfirmModal from './components/ConfirmModal/ConfirmModal';
 import NavMenu from './components/NavMenu/NavMenu';
 import Stats from './components/Stats/Stats';
 import ImportExport from './components/ImportExport/ImportExport';
+import TagManagerPage from './components/TagManagerPage/TagManagerPage';
 import Footer from './components/Footer/Footer';
 import DiaryTabs from './components/DiaryTabs/DiaryTabs';
 import DiaryManager from './components/DiaryManager/DiaryManager';
@@ -15,6 +16,7 @@ import JournalView from './components/JournalView/JournalView';
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
 import IntroPage from './components/IntroPage/IntroPage';
 import AiChatModal from './components/AiChatModal/AiChatModal';
+import { assignMissingTagColors, parseTagMetadata, serializeTagMetadata } from './utils/tagMetadata';
 
 // Context and Hooks
 import { useAuth } from './contexts/AuthContext';
@@ -252,6 +254,42 @@ function App() {
     return aiService.chat(entryContent, messages);
   }, [aiService]);
 
+  const tagMetadata = useMemo(() => parseTagMetadata(config.tagMetadata), [config.tagMetadata]);
+  const serializedTagMetadata = useMemo(() => serializeTagMetadata(tagMetadata), [tagMetadata]);
+
+  const handleRenameTag = useCallback(async (currentTag: string, nextTag: string) => {
+    const result = await entriesService.renameTag(currentTag, nextTag);
+    if (!result?.success) {
+      return false;
+    }
+
+    setTags((prev) => [...new Set(prev.map((tag) => (tag === currentTag ? nextTag : tag)))]);
+    setEditTags((prev) => [...new Set(prev.map((tag) => (tag === currentTag ? nextTag : tag)))]);
+    setFilterTags((prev) => [...new Set(prev.map((tag) => (tag === currentTag ? nextTag : tag)))]);
+
+    fetchEntries();
+    fetchProfileStats();
+    return true;
+  }, [entriesService, fetchEntries, fetchProfileStats, setEditTags, setFilterTags, setTags]);
+
+  useEffect(() => {
+    if (!isAuthenticated || allTags.length === 0) {
+      return;
+    }
+
+    const nextTagMetadata = assignMissingTagColors(allTags, tagMetadata);
+    const nextSerializedTagMetadata = serializeTagMetadata(nextTagMetadata);
+
+    if (nextSerializedTagMetadata === serializedTagMetadata) {
+      return;
+    }
+
+    void updateConfig({
+      ...config,
+      tagMetadata: nextSerializedTagMetadata,
+    });
+  }, [allTags, config, isAuthenticated, serializedTagMetadata, tagMetadata, updateConfig]);
+
   // Render view content
   const renderViewContent = () => {
     switch (currentView) {
@@ -266,12 +304,25 @@ function App() {
             stats={profileStats ?? undefined}
           />
         );
+      case 'tags':
+        return (
+          <TagManagerPage
+            config={config}
+            allTags={allTags}
+            onUpdateConfig={(newConfig: Config) => updateConfig(newConfig)}
+            onRenameTag={handleRenameTag}
+            t={t}
+          />
+        );
       case 'diaries':
         return (
           <DiaryManager
             diaries={diaries}
             onCreateDiary={handleCreateDiary}
-            onUpdateDiary={handleUpdateDiary}
+            onUpdateDiary={async (id, data) => {
+              await handleUpdateDiary(id, data);
+              fetchEntries();
+            }}
             onDeleteDiary={(id: number) => handleDeleteDiary(id, fetchEntries)}
             onSetDefault={handleSetDefaultDiary}
             onReorderDiaries={handleReorderDiaries}
@@ -291,7 +342,7 @@ function App() {
               theme={config.theme}
               t={t}
             />
-            <Stats theme={config.theme} t={t} diaryId={currentDiaryId} />
+            <Stats theme={config.theme} t={t} diaryId={currentDiaryId} tagMetadata={tagMetadata} />
           </>
         );
       case 'importExport':
@@ -333,6 +384,7 @@ function App() {
             format={format}
             setFormat={setFormat}
             allTags={allTags}
+            tagMetadata={tagMetadata}
             formError={formError}
             suggestingTags={suggestingTags}
             onSuggestTags={handleSuggestTags}

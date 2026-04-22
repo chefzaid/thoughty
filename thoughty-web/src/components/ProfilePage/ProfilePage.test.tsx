@@ -43,6 +43,7 @@ interface ProfileConfig {
     bio?: string;
     gender?: string;
     autoTagMaxTags?: string;
+    tagMetadata?: string;
 }
 
 interface Stats {
@@ -61,6 +62,7 @@ describe('ProfilePage', () => {
             defaultVisibility: 'private',
             autoTagMaxTags: '0'
         } as ProfileConfig,
+        allTags: ['focus', 'reflection'],
         onUpdateConfig: vi.fn(),
         onDownloadData: vi.fn().mockResolvedValue(true),
         onBack: vi.fn(),
@@ -191,7 +193,7 @@ describe('ProfilePage', () => {
             const select = container.querySelector('select[name="entriesPerPage"]') as HTMLSelectElement;
             await user.selectOptions(select, '25');
 
-            expect((select as HTMLSelectElement).value).toBe('25');
+            expect(select.value).toBe('25');
         });
 
         it('updates language on click', async () => {
@@ -293,6 +295,7 @@ describe('ProfilePage', () => {
                 expect.objectContaining({ gender: 'other' })
             );
         });
+
     });
 
     describe('Avatar', () => {

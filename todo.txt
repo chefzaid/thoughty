@@ -1,13 +1,14 @@
 
-Remaining features to implement:
+Features to implement:
 
 *** Personalization & UX
-- Custom tag colors and categories for visual organization of tags
+- Routes and paths for each view (Journal, Stats, Profile, Tags, etc.)
 - Permalink for each entry to easily share or bookmark specific thoughts + Share button
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
-- Recurring journaling reminders and writing prompts via app notifications at a user-configured time
 - Drag-and-drop reordering for entries on the same day and update the numbering accordingly
 - Voice personalization for TTS
+- Font customization (type, size, color) for better readability and user preference in Profile settings
+- Add other languages support (i18n) for the UI (Spanish, Italian, German, etc.)
 
 *** Social features
 - Feed that shows public entries from other users with infinite scroll and to preview your own public entries
@@ -25,15 +26,15 @@ Remaining features to implement:
 *** AI
 - Keep history of AI chats and allow users to export them as text files
 - Rephrase on existing entries (button next to chat)
-- Make options for rephrasing: Grammar/form, slight writing style enhancements, and a complete rewrite
+- Give options for rephrasing: Grammar/form, slight writing style enhancements, and a complete rewrite
 - Tone and mood of thoughts stats (analyzed by AI)
 - Subjects discussed stats (analyzed by AI)
 - Personality analysis through the choice of words and subjects
 - AI features should be locked behind a paywall with a free trial (except if own API toekn is provided)
 - AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
 - Local LLM processing for privacy
-- Graph of all thoughs or at least tags, interconencted between them using AI
-- Transcription from an Audio note with options for grammar and rewriting style
+- Graph of all thoughts or at least tags, interconnected between them using AI
+- Transcription from an Audio note
 - Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
 
 *** Book Converter
@@ -48,9 +49,13 @@ Remaining features to implement:
 - Spam and bots protection on sign up and login forms
 - Rate limiting and prevent DDOS from too much data sent
 
+*** Future apps
+- Mobile app version for iOS and Android with offline mode for journaling without internet connection and sync once connected
+- Recurring journaling reminders and writing prompts via app notifications at a user-configured time
+
 *** Infrastructure & Reliability
-- Desktop app with offline mode for journaling without internet connection and sync once connected
-- Mobile app version for iOS and Android
+- Split README into multiple files under docs directory (ADR, development setup, deployment guide, etc.) for better organization and readability
+- Playwright end-to-end tests for critical user flows (sign up, login, create entry, edit entry, delete entry, view stats)
 - Optimize database for better performance
 - Caching of frequent requests (public entries, feed)
 - Set up monitoring and alerting for server health and performance
@@ -83,4 +88,5 @@ Remaining features to implement:
 *** Life ERP
 - This project could evolve into a Personal ERP
 - That does exactly all the functions I do with OneDrive, and the Excel stats file but with an app (health, mood tracker, finances, expenses and subscriptions...)
+- Track happiness, socials, health, finances, subscriptions, productivity, and other life metrics and correlate them with the journaling data to provide insights and suggestions for improving well-being and productivity
 - Needs to details the features once the main subject (journaling) is complete

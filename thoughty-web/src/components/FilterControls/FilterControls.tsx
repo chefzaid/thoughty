@@ -1,6 +1,7 @@
 import { type Dispatch, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import TagPicker from '../TagPicker/TagPicker';
+import type { TagMetadataMap } from '../../utils/tagMetadata';
 
 type VisibilityFilter = 'all' | 'public' | 'private';
 
@@ -16,6 +17,7 @@ interface FilterControlsProps {
     readonly filterFavorites: boolean;
     readonly setFilterFavorites: Dispatch<SetStateAction<boolean>>;
     readonly allTags: string[];
+    readonly tagMetadata?: TagMetadataMap;
     readonly setPage: Dispatch<SetStateAction<number>>;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
@@ -34,6 +36,7 @@ function FilterControls({
     filterFavorites,
     setFilterFavorites,
     allTags,
+    tagMetadata,
     setPage,
     theme,
     t,
@@ -120,7 +123,7 @@ function FilterControls({
             <input
                 type="text"
                 placeholder={t('searchPlaceholder')}
-                className={`${inputClass} w-[21.25rem] shrink-0`}
+                className={`${inputClass} w-[20rem] shrink-0`}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
@@ -128,6 +131,7 @@ function FilterControls({
                 <TagPicker
                     availableTags={allTags}
                     selectedTags={filterTags}
+                    tagMetadata={tagMetadata}
                     onChange={(newTags) => { setFilterTags(newTags); setPage(1); }}
                     placeholder={t('filterTagsPlaceholder')}
                     singleSelect={false}
@@ -135,8 +139,8 @@ function FilterControls({
                     theme={theme}
                 />
             </div>
-            <div className="flex shrink-0 items-center gap-0 -space-x-3">
-                <div className="w-52 relative z-20">
+            <div className="flex shrink-0 items-center gap-[12px]">
+                <div className="w-[11.125rem] relative z-20">
                     <DatePicker
                         selected={filterDateObj}
                         onChange={(date: Date | null) => { setFilterDateObj(date); setPage(1); }}
@@ -154,7 +158,8 @@ function FilterControls({
                 <button
                     onClick={cycleVisibility}
                     className={`flex h-10 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getVisibilityButtonStyle()}`}
-                    title={t('filterVisibility')}
+                    title="Visibility"
+                    aria-label="Visibility"
                 >
                     {getVisibilityIcon()}
                     <span>{t(filterVisibility === 'all' ? 'allEntries' : filterVisibility)}</span>

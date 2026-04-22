@@ -34,6 +34,18 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, t, onLogou
                     {t('journal')}
                 </button>
                 <button
+                    className={`nav-item ${currentView === 'tags' ? 'active' : ''}`}
+                    onClick={() => onViewChange('tags')}
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="nav-tags-icon">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M9 4 7 20" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M17 4 15 20" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M4 9h14" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.3} d="M3 15h14" />
+                    </svg>
+                    {t('tags')}
+                </button>
+                <button
                     className={`nav-item ${currentView === 'stats' ? 'active' : ''}`}
                     onClick={() => onViewChange('stats')}
                 >

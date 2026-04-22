@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AttachmentDisplay from './AttachmentDisplay';
@@ -16,7 +16,7 @@ describe('AttachmentDisplay', () => {
 
   it('renders nothing when attachments is undefined', () => {
     const { container } = render(
-      <AttachmentDisplay attachments={undefined as any} theme="dark" t={mockT} />
+      <AttachmentDisplay attachments={undefined} theme="dark" t={mockT} />
     );
     expect(container.innerHTML).toBe('');
   });

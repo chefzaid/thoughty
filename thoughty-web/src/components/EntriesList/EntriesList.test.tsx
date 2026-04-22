@@ -123,6 +123,22 @@ describe('EntriesList', () => {
             expect(screen.getByText('#ideas')).toBeInTheDocument();
         });
 
+        it('applies custom tag color metadata to entry chips', () => {
+            render(
+                <EntriesList
+                    {...defaultProps}
+                    tagMetadata={{ work: { color: '#2563EB', category: 'Focus' } }}
+                />
+            );
+
+            const workLabel = screen.getByText('#work');
+            const chip = workLabel.parentElement;
+
+            expect(screen.getByText('Focus')).toBeInTheDocument();
+            expect(chip?.style.borderColor).toBe('rgba(37, 99, 235, 0.85)');
+            expect(chip?.style.backgroundColor).toBe('rgba(37, 99, 235, 0.28)');
+        });
+
         it('displays entry index', () => {
             render(<EntriesList {...defaultProps} />);
 

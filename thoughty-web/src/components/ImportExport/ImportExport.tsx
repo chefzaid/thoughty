@@ -86,11 +86,7 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
     const isLight = theme === 'light';
 
     // Fetch current format settings on mount
-    useEffect(() => {
-        fetchFormatSettings();
-    }, []);
-
-    const fetchFormatSettings = async (): Promise<void> => {
+    const fetchFormatSettings = useCallback(async (): Promise<void> => {
         try {
             const response = await authFetch('/api/io/format');
             if (response.ok) {
@@ -102,7 +98,11 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [authFetch]);
+
+    useEffect(() => {
+        void fetchFormatSettings();
+    }, [fetchFormatSettings]);
 
     const saveFormatSettings = async (): Promise<void> => {
         try {

@@ -279,6 +279,31 @@ describe('entriesService', () => {
     });
   });
 
+  describe('renameTag', () => {
+    it('returns the affected count when rename succeeds', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ success: true, affectedCount: 3 }),
+      });
+
+      const result = await service.renameTag('old-tag', 'new-tag');
+
+      expect(result).toEqual({ success: true, affectedCount: 3 });
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries/tags/rename', {
+        method: 'PATCH',
+        body: JSON.stringify({ oldTag: 'old-tag', newTag: 'new-tag' }),
+      });
+    });
+
+    it('returns null when rename response is not ok', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: false });
+
+      const result = await service.renameTag('old-tag', 'new-tag');
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('navigateToFirst', () => {
     it('returns navigation data on successful request', async () => {
       const mockResponse = { found: true, page: 3, entryId: 42 };
