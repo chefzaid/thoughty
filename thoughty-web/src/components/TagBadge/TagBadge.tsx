@@ -1,3 +1,4 @@
+import { memo, useMemo } from 'react';
 import { withAlpha } from '../../utils/diaryColors';
 import {
   normalizeTagCategory,
@@ -82,15 +83,27 @@ function TagBadge({
   className = '',
 }: Readonly<TagBadgeProps>) {
   const isLight = theme === 'light';
-  const tagMetadata = metadata ? getTagMetadata(tag, metadata) : undefined;
-  const resolvedColor = normalizeTagColor(color ?? tagMetadata?.color ?? null);
-  const resolvedCategory = normalizeTagCategory(category ?? tagMetadata?.category ?? '');
+  const tagMetadata = useMemo(
+    () => (metadata ? getTagMetadata(tag, metadata) : undefined),
+    [metadata, tag],
+  );
+  const resolvedColor = useMemo(
+    () => normalizeTagColor(color ?? tagMetadata?.color ?? null),
+    [color, tagMetadata?.color],
+  );
+  const resolvedCategory = useMemo(
+    () => normalizeTagCategory(category ?? tagMetadata?.category ?? ''),
+    [category, tagMetadata?.category],
+  );
 
-  const baseClass = getBadgeSizeClass(size);
-  const fallbackToneClass = getFallbackToneClass(isLight);
-  const style = getBadgeStyle(resolvedColor, isLight);
-  const categoryStyle = getCategoryStyle(resolvedColor, isLight);
-  const categoryClass = getCategoryClass(size);
+  const baseClass = useMemo(() => getBadgeSizeClass(size), [size]);
+  const fallbackToneClass = useMemo(() => getFallbackToneClass(isLight), [isLight]);
+  const style = useMemo(() => getBadgeStyle(resolvedColor, isLight), [resolvedColor, isLight]);
+  const categoryStyle = useMemo(
+    () => getCategoryStyle(resolvedColor, isLight),
+    [resolvedColor, isLight],
+  );
+  const categoryClass = useMemo(() => getCategoryClass(size), [size]);
 
   return (
     <span
@@ -124,4 +137,4 @@ function TagBadge({
   );
 }
 
-export default TagBadge;
+export default memo(TagBadge);

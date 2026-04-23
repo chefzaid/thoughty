@@ -248,6 +248,19 @@ export class GetHighlightsQueryDto {
   diaryId?: number;
 }
 
+export class ReorderEntriesDto {
+  @ApiProperty({ description: 'Date of the entries to reorder (YYYY-MM-DD)' })
+  @IsDateString()
+  date: string;
+
+  @ApiProperty({ description: 'Entry IDs in the desired order', type: [Number] })
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one entry ID is required' })
+  @IsInt({ each: true })
+  @Type(() => Number)
+  orderedIds: number[];
+}
+
 export class DeleteAllQueryDto {
   @ApiPropertyOptional({ description: 'Diary ID to delete entries from' })
   @IsOptional()

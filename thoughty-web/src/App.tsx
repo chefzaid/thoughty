@@ -101,7 +101,8 @@ function App() {
     toggleVisibility,
     toggleFavorite,
     fetchEntryHistory,
-    deleteRevision
+    deleteRevision,
+    reorderEntries
   } = useEntries(isAuthenticated, config, currentDiaryId);
 
   // Entry form
@@ -452,6 +453,7 @@ function App() {
             onNavigateToFirst={handleNavigateToFirst}
             onFetchHistory={fetchEntryHistory}
             onDeleteRevision={deleteRevision}
+            onReorderEntries={reorderEntries}
             onDiscuss={handleDiscuss}
             config={config}
             t={t}

@@ -281,6 +281,31 @@ export const useEntries = (
     return entriesService.deleteRevision(entryId, revisionId);
   }, [entriesService]);
 
+  const reorderEntries = useCallback(async (date: string, orderedIds: number[]) => {
+    // Optimistic update: reorder locally first
+    setEntries(prev => {
+      const updated = [...prev];
+      const dateEntries = updated.filter(e => {
+        const d = e.date.includes('T') ? e.date.split('T')[0] : e.date;
+        return d === date;
+      });
+      const indexMap = new Map(orderedIds.map((id, i) => [id, i + 1]));
+      for (const entry of dateEntries) {
+        const newIndex = indexMap.get(entry.id);
+        if (newIndex !== undefined) {
+          entry.index = newIndex;
+        }
+      }
+      return updated;
+    });
+
+    const success = await entriesService.reorderEntries(date, orderedIds);
+    if (!success) {
+      // Revert on failure
+      await fetchEntries();
+    }
+  }, [entriesService, fetchEntries]);
+
   // Group entries by date
   const groupedEntries: GroupedEntries = useMemo(() => {
     const grouped = entries.reduce((acc: GroupedEntries, entry) => {
@@ -370,7 +395,8 @@ export const useEntries = (
     toggleVisibility,
     toggleFavorite,
     fetchEntryHistory,
-    deleteRevision
+    deleteRevision,
+    reorderEntries
   };
 };
 

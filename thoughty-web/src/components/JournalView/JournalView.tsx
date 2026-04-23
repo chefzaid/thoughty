@@ -116,6 +116,9 @@ interface JournalViewProps {
   onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
   onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
   
+  // Reorder
+  onReorderEntries?: (date: string, orderedIds: number[]) => void;
+  
   // AI Chat
   onDiscuss?: (entry: Entry) => void;
   
@@ -210,6 +213,7 @@ function JournalView({
   onNavigateToFirst,
   onFetchHistory,
   onDeleteRevision,
+  onReorderEntries,
   onDiscuss,
   config,
   t
@@ -328,6 +332,7 @@ function JournalView({
         diaries={diaries}
         onFetchHistory={onFetchHistory}
         onDeleteRevision={onDeleteRevision}
+        onReorderEntries={onReorderEntries}
         onDiscuss={onDiscuss}
         t={t}
       />

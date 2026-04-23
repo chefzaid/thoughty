@@ -170,29 +170,26 @@ export function renameTagMetadata(
   return nextMetadata;
 }
 
-function shuffleColors(colors: readonly string[], randomFn: () => number): string[] {
-  const shuffled = [...colors];
-
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(randomFn() * (index + 1));
-    const currentColor = shuffled[index];
-    const swapColor = shuffled[swapIndex];
-
-    if (currentColor === undefined || swapColor === undefined) {
-      continue;
-    }
-
-    shuffled[index] = swapColor;
-    shuffled[swapIndex] = currentColor;
+function pickStableAutoColor(tag: string, usedColors: Set<string>, fallbackIndex: number): string {
+  if (AUTO_TAG_COLORS.length === 0) {
+    return DEFAULT_TAG_COLOR;
   }
 
-  return shuffled;
+  const preferredIndex = getColorSeed(tag) % AUTO_TAG_COLORS.length;
+
+  for (let offset = 0; offset < AUTO_TAG_COLORS.length; offset += 1) {
+    const color = AUTO_TAG_COLORS[(preferredIndex + offset) % AUTO_TAG_COLORS.length];
+    if (color && !usedColors.has(color)) {
+      return color;
+    }
+  }
+
+  return AUTO_TAG_COLORS[fallbackIndex % AUTO_TAG_COLORS.length] ?? DEFAULT_TAG_COLOR;
 }
 
 export function assignMissingTagColors(
   tags: readonly string[],
   metadata: TagMetadataMap,
-  randomFn: () => number = Math.random,
 ): TagMetadataMap {
   const missingTags = Array.from(
     new Set(tags.map((tag) => normalizeTagKey(tag)).filter(Boolean)),
@@ -204,12 +201,18 @@ export function assignMissingTagColors(
     return metadata;
   }
 
-  const shuffledColors = shuffleColors(AUTO_TAG_COLORS, randomFn);
   const nextMetadata: TagMetadataMap = { ...metadata };
+  const usedColors = new Set(
+    Object.values(nextMetadata)
+      .map((value) => normalizeTagColor(value?.color ?? null))
+      .filter((value): value is string => value !== null),
+  );
 
   missingTags.forEach((tag, index) => {
     const existingCategory = normalizeTagCategory(nextMetadata[tag]?.category ?? '');
-    const assignedColor = shuffledColors[index % shuffledColors.length] ?? DEFAULT_TAG_COLOR;
+    const assignedColor = pickStableAutoColor(tag, usedColors, index);
+
+    usedColors.add(assignedColor);
 
     nextMetadata[tag] = {
       ...(existingCategory ? { category: existingCategory } : {}),

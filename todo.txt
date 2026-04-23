@@ -2,12 +2,12 @@
 Features to implement:
 
 *** Personalization & UX
+- Random color for newly created tags, randomize at import too
+- Font customization (type, size, color) for better readability and user preference in Profile settings
 - Routes and paths for each view (Journal, Stats, Profile, Tags, etc.)
 - Permalink for each entry to easily share or bookmark specific thoughts + Share button
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
-- Drag-and-drop reordering for entries on the same day and update the numbering accordingly
 - Voice personalization for TTS
-- Font customization (type, size, color) for better readability and user preference in Profile settings
 - Add other languages support (i18n) for the UI (Spanish, Italian, German, etc.)
 
 *** Social features

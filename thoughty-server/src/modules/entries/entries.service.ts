@@ -686,6 +686,37 @@ export class EntriesService {
     return { success: true, affectedCount: validIds.length };
   }
 
+  async reorderEntries(
+    userId: number,
+    date: string,
+    orderedIds: number[],
+  ): Promise<{ success: boolean }> {
+    const entries = await this.entryRepository.find({
+      where: { userId, date },
+      order: { index: 'ASC' },
+    });
+
+    const entryMap = new Map(entries.map((e) => [e.id, e]));
+
+    // Verify all provided IDs belong to this user+date
+    for (const id of orderedIds) {
+      if (!entryMap.has(id)) {
+        throw new BadRequestException(`Entry ${id} not found for this date`);
+      }
+    }
+
+    // Update indices based on new order
+    for (let i = 0; i < orderedIds.length; i++) {
+      const entry = entryMap.get(orderedIds[i]);
+      if (entry && entry.index !== i + 1) {
+        entry.index = i + 1;
+        await this.entryRepository.save(entry);
+      }
+    }
+
+    return { success: true };
+  }
+
   async getRevisions(userId: number, entryId: number): Promise<EntryRevision[]> {
     const entry = await this.entryRepository.findOne({
       where: { id: entryId, userId },

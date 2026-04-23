@@ -239,25 +239,10 @@ done
 echo -e "${GREEN}✔${NC} Database is ready"
 echo ""
 
-# Check if tables exist and run migrations only if needed
-TABLES_EXIST=$(cd thoughty-server && npx ts-node -r tsconfig-paths/register -e "
-  const { query, closeDatabase } = require('./scripts/lib/db');
-  (async () => {
-    try {
-      const rows = await query(\"SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users','entries','diaries')\");
-      await closeDatabase();
-      process.stdout.write(parseInt(rows[0].count) >= 3 ? 'yes' : 'no');
-    } catch { await closeDatabase().catch(()=>{}); process.stdout.write('no'); }
-  })();
-" 2>/dev/null)
-if [ "$TABLES_EXIST" != "yes" ]; then
-  echo -e "${CYAN}→${NC} Running database migrations..."
-  (cd thoughty-server && npm run db:migrate)
-  echo ""
-else
-  echo -e "${GREEN}✔${NC} Database tables already exist, skipping migrations"
-  echo ""
-fi
+# Apply idempotent migrations on every run so existing databases pick up new columns/indexes
+echo -e "${CYAN}→${NC} Running database migrations..."
+(cd thoughty-server && npm run db:migrate)
+echo ""
 
 # Seed if database is empty
 NEEDS_SEED=$(cd thoughty-server && npx ts-node -r tsconfig-paths/register -e "
@@ -335,18 +320,10 @@ for ($i = 1; $i -le 30; $i++) {
 Write-Ok "Database is ready"
 Write-Host ""
 
-# Check if tables exist and run migrations only if needed
-Push-Location thoughty-server
-$tablesExist = npx ts-node -r tsconfig-paths/register -e "const { query, closeDatabase } = require('./scripts/lib/db'); (async () => { try { const rows = await query(`"SELECT COUNT(*) as count FROM information_schema.tables WHERE table_schema = 'public' AND table_name IN ('users','entries','diaries')`"); await closeDatabase(); process.stdout.write(parseInt(rows[0].count) >= 3 ? 'yes' : 'no'); } catch { await closeDatabase().catch(()=>{}); process.stdout.write('no'); } })();" 2>$null
-Pop-Location
-if ($tablesExist -ne "yes") {
-    Write-Step "Running database migrations..."
-    Push-Location thoughty-server; npm run db:migrate; Pop-Location
-    Write-Host ""
-} else {
-    Write-Ok "Database tables already exist, skipping migrations"
-    Write-Host ""
-}
+# Apply idempotent migrations on every run so existing databases pick up new columns/indexes
+Write-Step "Running database migrations..."
+Push-Location thoughty-server; npm run db:migrate; Pop-Location
+Write-Host ""
 
 # Seed if database is empty
 Push-Location thoughty-server

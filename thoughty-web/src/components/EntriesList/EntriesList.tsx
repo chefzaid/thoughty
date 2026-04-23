@@ -1,4 +1,4 @@
-import { useMemo, useState as useLocalState, useCallback, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { memo, useEffect, useMemo, useState as useLocalState, useCallback, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import MDEditor from '@uiw/react-md-editor';
@@ -96,6 +96,7 @@ interface EntriesListProps {
     diaries?: Diary[];
     onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
+    onReorderEntries?: (date: string, orderedIds: number[]) => void;
     onDiscuss?: (entry: Entry) => void;
     t: (key: string, params?: Record<string, string | number>) => string;
 }
@@ -177,6 +178,137 @@ function getEntryCardStyle(entry: Entry): CSSProperties | undefined {
         borderLeftStyle: 'solid',
         borderLeftColor: diaryColor,
     };
+}
+
+function getEntryDragHighlightClass(
+    isDark: boolean,
+    isDraggedEntry: boolean,
+    isDropTarget: boolean,
+): string {
+    if (isDraggedEntry) {
+        return isDark
+            ? ' border-indigo-400 bg-gray-800/95 ring-2 ring-indigo-400/55 shadow-2xl shadow-indigo-950/35 scale-[1.01]'
+            : ' border-blue-500 bg-blue-50 ring-2 ring-blue-400/55 shadow-xl shadow-blue-200/70 scale-[1.01]';
+    }
+
+    if (isDropTarget) {
+        return isDark
+            ? ' border-indigo-400 bg-indigo-500/10 ring-2 ring-indigo-400/45 shadow-lg shadow-indigo-950/20'
+            : ' border-blue-500 bg-blue-50 ring-2 ring-blue-300/70 shadow-lg shadow-blue-100';
+    }
+
+    return '';
+}
+
+function getDragBadgeClass(isDark: boolean): string {
+    return isDark ? 'bg-indigo-500/20 text-indigo-200' : 'bg-blue-100 text-blue-700';
+}
+
+function getDragHandleClass(isDark: boolean, isDraggedEntry: boolean): string {
+    if (isDraggedEntry) {
+        return isDark
+            ? 'bg-indigo-500/20 text-indigo-200 scale-110'
+            : 'bg-blue-100 text-blue-700 scale-110';
+    }
+
+    return isDark
+        ? 'text-gray-600 hover:text-gray-400 hover:bg-gray-700/70'
+        : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100';
+}
+
+function getDropIndicatorClass(isDark: boolean): string {
+    return isDark
+    ? 'bg-indigo-400 shadow-[0_0_18px_rgba(129,140,248,0.6)]'
+    : 'bg-blue-500 shadow-[0_0_14px_rgba(59,130,246,0.35)]';
+}
+
+interface EntryReorderControlsProps {
+    readonly isDraggable: boolean;
+    readonly reserveSpace: boolean;
+    readonly isDraggedEntry: boolean;
+    readonly isDropTarget: boolean;
+    readonly isDark: boolean;
+    readonly dragDateMatches: boolean;
+    readonly dragToReorderLabel: string;
+    readonly dropHereLabel: string;
+    readonly onHandlePointerDown: (event: React.PointerEvent) => void;
+    readonly onHandleKeyDown: (event: React.KeyboardEvent) => void;
+    readonly onTargetPointerEnter: () => void;
+    readonly onTargetPointerUp: () => void;
+}
+
+function EntryReorderControls({
+    isDraggable,
+    reserveSpace,
+    isDraggedEntry,
+    isDropTarget,
+    isDark,
+    dragDateMatches,
+    dragToReorderLabel,
+    dropHereLabel,
+    onHandlePointerDown,
+    onHandleKeyDown,
+    onTargetPointerEnter,
+    onTargetPointerUp,
+}: Readonly<EntryReorderControlsProps>) {
+    if (!isDraggable) {
+        return reserveSpace ? <div aria-hidden="true" className="relative z-40 w-6 shrink-0" /> : null;
+    }
+
+    const dragBadgeClass = getDragBadgeClass(isDark);
+    const dragHandleClass = getDragHandleClass(isDark, isDraggedEntry);
+    const dropIndicatorClass = getDropIndicatorClass(isDark);
+
+    return (
+        <>
+            {dragDateMatches && (
+                <button
+                    type="button"
+                    onPointerEnter={onTargetPointerEnter}
+                    onPointerUp={onTargetPointerUp}
+                    className={`absolute inset-0 z-30 rounded-lg ${isDropTarget ? 'cursor-grabbing' : 'cursor-grab'}`}
+                    aria-label={dragToReorderLabel}
+                />
+            )}
+
+            {isDropTarget && (
+                <div className="pointer-events-none absolute inset-x-4 top-2 z-40">
+                    <div className={`h-1 rounded-full ${dropIndicatorClass}`} />
+                    <div className="mt-2 flex justify-end">
+                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${dragBadgeClass}`}>
+                            {dropHereLabel}
+                        </span>
+                    </div>
+                </div>
+            )}
+
+            <button
+                type="button"
+                onPointerDown={onHandlePointerDown}
+                onKeyDown={onHandleKeyDown}
+                className={`relative z-40 flex items-center rounded-md px-1 py-0.5 transition-all cursor-grab active:cursor-grabbing select-none ${dragHandleClass}`}
+                title={dragToReorderLabel}
+                aria-label={dragToReorderLabel}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="currentColor" viewBox="0 0 24 24">
+                    <circle cx="9" cy="6" r="1.5" />
+                    <circle cx="15" cy="6" r="1.5" />
+                    <circle cx="9" cy="12" r="1.5" />
+                    <circle cx="15" cy="12" r="1.5" />
+                    <circle cx="9" cy="18" r="1.5" />
+                    <circle cx="15" cy="18" r="1.5" />
+                </svg>
+            </button>
+
+            {isDraggedEntry && (
+                <div className="pointer-events-none absolute left-12 top-3 z-40">
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] ${dragBadgeClass}`}>
+                        {dragToReorderLabel}
+                    </span>
+                </div>
+            )}
+        </>
+    );
 }
 
 function EditForm({
@@ -770,9 +902,77 @@ function EntriesList({
     diaries,
     onFetchHistory,
     onDeleteRevision,
+    onReorderEntries,
     onDiscuss,
     t
 }: Readonly<EntriesListProps>) {
+    // Drag-and-drop state
+    const [dragEntryId, setDragEntryId] = useLocalState<number | null>(null);
+    const [dragDate, setDragDate] = useLocalState<string | null>(null);
+    const [dragOverId, setDragOverId] = useLocalState<number | null>(null);
+
+    const handleDragStart = useCallback((event: React.PointerEvent, entryId: number, date: string) => {
+        if (event.pointerType === 'mouse' && event.button !== 0) {
+            return;
+        }
+
+        event.preventDefault();
+        setDragEntryId(entryId);
+        setDragDate(date);
+        setDragOverId(entryId);
+    }, [setDragDate, setDragEntryId, setDragOverId]);
+
+    const handleDragOver = useCallback((entryId: number) => {
+        setDragOverId(entryId);
+    }, [setDragOverId]);
+
+    const handleDragEnd = useCallback(() => {
+        setDragEntryId(null);
+        setDragDate(null);
+        setDragOverId(null);
+    }, [setDragDate, setDragEntryId, setDragOverId]);
+
+    const applyReorder = useCallback((date: string, targetEntryId: number) => {
+        const fromId = dragEntryId;
+        const toId = targetEntryId;
+        if (fromId == null || toId == null || fromId === toId || !onReorderEntries) {
+            handleDragEnd();
+            return;
+        }
+        const dayEntries = groupedEntries[date] ?? [];
+        const ids = dayEntries.map(en => en.id);
+        const fromIdx = ids.indexOf(fromId);
+        const toIdx = ids.indexOf(toId);
+        if (fromIdx === -1 || toIdx === -1) {
+            handleDragEnd();
+            return;
+        }
+        ids.splice(fromIdx, 1);
+        ids.splice(toIdx, 0, fromId);
+        onReorderEntries(date, ids);
+        handleDragEnd();
+    }, [dragEntryId, groupedEntries, onReorderEntries, handleDragEnd]);
+
+    const handleDropKeyDown = useCallback((e: React.KeyboardEvent, date: string, targetEntryId: number) => {
+        if ((e.key === 'Enter' || e.key === ' ') && dragEntryId != null) {
+            e.preventDefault();
+            applyReorder(date, targetEntryId);
+        }
+    }, [applyReorder, dragEntryId]);
+
+    useEffect(() => {
+        if (dragEntryId == null) {
+            return undefined;
+        }
+
+        const handlePointerUp = (): void => {
+            handleDragEnd();
+        };
+
+        globalThis.addEventListener('pointerup', handlePointerUp);
+        return () => globalThis.removeEventListener('pointerup', handlePointerUp);
+    }, [dragEntryId, handleDragEnd]);
+
     const { speaking, activeEntryId, speakEntry, speakFromEntry, stop } = useSpeech({
         language: config.language || 'en',
         readDates: config.readDates !== false,
@@ -808,16 +1008,27 @@ function EntriesList({
         return diaryKeys.size > 1;
     }, [entries]);
 
-    if (loading) return <p className="text-center text-gray-500">{t('loadingEntries')}</p>;
+    const showInitialLoading = loading && entries.length === 0;
+    const isRefreshing = loading && entries.length > 0;
+
+    if (showInitialLoading) return <p className="text-center text-gray-500">{t('loadingEntries')}</p>;
     if (entries.length === 0) return <p className="text-center text-gray-500">{t('noEntriesFound')}</p>;
 
     const isEditing = (entry: Entry): boolean => editingEntry !== null && editingEntry.id === entry.id;
     const isDark = config.theme !== 'light';
+    const dragToReorderLabel = t('dragToReorder') === 'dragToReorder' ? 'Drag to reorder' : t('dragToReorder');
+    const dropHereLabel = t('dropToReorder') === 'dropToReorder' ? 'Release to move here' : t('dropToReorder');
     const allEntryIds = entries.map((e) => e.id);
     const allSelected = bulkMode && selectedIds && allEntryIds.length > 0 && allEntryIds.every((id) => selectedIds.has(id));
 
     return (
         <div className="space-y-4">
+            {isRefreshing && (
+                <div className={`rounded-lg border px-3 py-2 text-xs ${isDark ? 'border-gray-700 bg-gray-900/70 text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-500'}`}>
+                    {t('loadingEntries')}
+                </div>
+            )}
+
             {/* Bulk mode toggle and select all */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -869,15 +1080,35 @@ function EntriesList({
                             {date}
                         </h2>
                         <div className="space-y-4">
-                            {(groupedEntries[date] ?? []).map((entry) => (
+                            {(groupedEntries[date] ?? []).map((entry) => {
+                                const isDraggable = !bulkMode && !isEditing(entry) && !!onReorderEntries && (groupedEntries[date] ?? []).length > 1;
+                                const isDraggedEntry = dragEntryId === entry.id && dragDate === date;
+                                const isDropTarget = dragOverId === entry.id && dragDate === date && dragEntryId !== entry.id;
+                                const dragHighlightClass = getEntryDragHighlightClass(isDark, isDraggedEntry, isDropTarget);
+
+                                return (
                                 <div
                                     key={entry.id}
                                     id={`entry-${entry.id}`}
-                                    className={`rounded-lg p-5 shadow-sm border transition-all flex gap-3 ${
+                                    className={`relative rounded-lg p-5 shadow-sm border transition-all flex gap-3 ${
                                         isDark ? 'bg-gray-800 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'
-                                    } ${bulkMode && selectedIds?.has(entry.id) ? getSelectedRingClass(isDark) : ''}`}
+                                    } ${bulkMode && selectedIds?.has(entry.id) ? getSelectedRingClass(isDark) : ''}${dragHighlightClass}`}
                                     style={getEntryCardStyle(entry)}
                                 >
+                                    <EntryReorderControls
+                                        isDraggable={isDraggable}
+                                        reserveSpace={!bulkMode && !!onReorderEntries}
+                                        isDraggedEntry={isDraggedEntry}
+                                        isDropTarget={isDropTarget}
+                                        isDark={isDark}
+                                        dragDateMatches={dragDate === date}
+                                        dragToReorderLabel={dragToReorderLabel}
+                                        dropHereLabel={dropHereLabel}
+                                        onHandlePointerDown={(event) => handleDragStart(event, entry.id, date)}
+                                        onHandleKeyDown={(event) => handleDropKeyDown(event, date, entry.id)}
+                                        onTargetPointerEnter={() => handleDragOver(entry.id)}
+                                        onTargetPointerUp={() => applyReorder(date, entry.id)}
+                                    />
                                     {bulkMode && onToggleSelect && selectedIds && (
                                         <div className="flex items-start pt-1">
                                             <input
@@ -888,7 +1119,7 @@ function EntriesList({
                                             />
                                         </div>
                                     )}
-                                    <div className="flex-1 min-w-0">
+                                    <div className="relative z-20 flex-1 min-w-0">
                                         {isEditing(entry) ? (
                                             <EditForm
                                                 config={config}
@@ -942,7 +1173,8 @@ function EntriesList({
                                         )}
                                     </div>
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 ))}
@@ -951,4 +1183,4 @@ function EntriesList({
     );
 }
 
-export default EntriesList;
+export default memo(EntriesList);

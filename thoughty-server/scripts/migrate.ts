@@ -111,6 +111,16 @@ BEGIN
     END IF;
 END $$;
 
+-- Ensure settings upserts have the required unique index on (user_id, key)
+DELETE FROM settings duplicate
+USING settings survivor
+WHERE duplicate.user_id = survivor.user_id
+    AND duplicate.key = survivor.key
+    AND duplicate.id < survivor.id;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_settings_user_id_key_unique
+ON settings(user_id, key);
+
 -- Create diaries table
 CREATE TABLE IF NOT EXISTS diaries (
     id SERIAL PRIMARY KEY,

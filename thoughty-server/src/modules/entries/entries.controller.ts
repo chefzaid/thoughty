@@ -20,6 +20,7 @@ import {
   UpdateFavoriteDto,
   BulkOperationDto,
   RenameTagDto,
+  ReorderEntriesDto,
   GetEntriesQueryDto,
   GetFirstEntryQueryDto,
   GetEntryByDateQueryDto,
@@ -112,6 +113,16 @@ export class EntriesController {
     @Body() dto: RenameTagDto,
   ): Promise<{ success: boolean; affectedCount: number }> {
     return this.entriesService.renameTag(user.userId, dto.oldTag, dto.newTag);
+  }
+
+  @Patch('reorder')
+  @ApiOperation({ summary: 'Reorder entries within a single day' })
+  @ApiResponse({ status: 200, description: 'Entries reordered' })
+  async reorderEntries(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ReorderEntriesDto,
+  ): Promise<{ success: boolean }> {
+    return this.entriesService.reorderEntries(user.userId, dto.date, dto.orderedIds);
   }
 
   @Put(':id')

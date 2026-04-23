@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EntriesList from './EntriesList';
 
@@ -83,10 +83,18 @@ describe('EntriesList', () => {
     });
 
     describe('Loading state', () => {
-        it('displays loading message when loading', () => {
+        it('displays loading message when loading with no existing entries', () => {
+            render(<EntriesList {...defaultProps} loading={true} entries={[]} groupedEntries={{}} />);
+
+            expect(screen.getByText('Loading entries...')).toBeInTheDocument();
+        });
+
+        it('keeps existing entries visible while refreshing', () => {
             render(<EntriesList {...defaultProps} loading={true} />);
 
             expect(screen.getByText('Loading entries...')).toBeInTheDocument();
+            expect(screen.getByText('First entry')).toBeInTheDocument();
+            expect(screen.getByText('Second entry')).toBeInTheDocument();
         });
     });
 
@@ -207,6 +215,33 @@ describe('EntriesList', () => {
             await user.click(deleteButtons[0]);
 
             expect(onDelete).toHaveBeenCalledWith(1);
+        });
+    });
+
+    describe('Reordering', () => {
+        it('calls onReorderEntries when an entry is dropped onto another entry on the same day', () => {
+            const onReorderEntries = vi.fn();
+            render(<EntriesList {...defaultProps} onReorderEntries={onReorderEntries} />);
+
+            const dragHandles = screen.getAllByTitle('Drag to reorder');
+            const targetCard = document.getElementById('entry-2');
+
+            expect(targetCard).not.toBeNull();
+            if (!targetCard) {
+                throw new Error('Expected target entry card to exist');
+            }
+
+            fireEvent.pointerDown(dragHandles[0], { button: 0, pointerType: 'mouse' });
+
+            const targetDropZone = targetCard.querySelector('button.absolute');
+            if (!targetDropZone) {
+                throw new Error('Expected target drop zone to exist');
+            }
+
+            fireEvent.pointerEnter(targetDropZone, { pointerType: 'mouse' });
+            fireEvent.pointerUp(targetDropZone, { pointerType: 'mouse' });
+
+            expect(onReorderEntries).toHaveBeenCalledWith('2024-01-15', [2, 1]);
         });
     });
 

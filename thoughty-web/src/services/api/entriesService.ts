@@ -306,6 +306,22 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     }
   };
 
+  /**
+   * Reorder entries within a single day
+   */
+  const reorderEntries = async (date: string, orderedIds: number[]): Promise<boolean> => {
+    try {
+      const response = await authFetch('/api/entries/reorder', {
+        method: 'PATCH',
+        body: JSON.stringify({ date, orderedIds })
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Error reordering entries:', error);
+      return false;
+    }
+  };
+
   const renameTag = async (oldTag: string, newTag: string): Promise<RenameTagResponse | null> => {
     try {
       const response = await authFetch('/api/entries/tags/rename', {
@@ -337,7 +353,8 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     navigateById,
     fetchYearsMonths,
     fetchEntryHistory,
-    deleteRevision
+    deleteRevision,
+    reorderEntries
   };
 };
 
