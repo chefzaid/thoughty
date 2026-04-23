@@ -128,14 +128,15 @@ export function section(title: string): void {
  * Calculate the visual/display width of a string in a terminal,
  * accounting for ANSI escape codes (zero width) and emoji (double width).
  */
-// eslint-disable-next-line no-control-regex
+ 
 const ANSI_RE = /\x1b\[\d+m/g;
+const DEFAULT_THRESHOLDS: Thresholds = { good: 80, warn: 50 };
 
 function visualWidth(str: string): number {
-    const clean = str.replace(ANSI_RE, '');
+    const clean = str.replaceAll(ANSI_RE, '');
     let width = 0;
     for (const ch of clean) {
-        const cp = ch.codePointAt(0)!;
+        const cp = ch.codePointAt(0) ?? 0;
         // Variation selectors (FE0E/FE0F) have no width
         if (cp === 0xfe0e || cp === 0xfe0f) continue;
         // Common emoji / symbol ranges that render as 2 columns
@@ -246,13 +247,13 @@ interface Thresholds {
 /**
  * Format a score with color based on threshold
  */
-export function formatScore(value: number | null | undefined, thresholds: Thresholds = { good: 80, warn: 50 }): string {
+export function formatScore(value: number | null | undefined, thresholds: Thresholds = DEFAULT_THRESHOLDS): string {
     if (value === null || value === undefined) {
         return `${c.dim}N/A${c.reset}`;
     }
 
     const num = Number(value);
-    if (isNaN(num)) {
+    if (Number.isNaN(num)) {
         return `${c.dim}${value}${c.reset}`;
     }
 

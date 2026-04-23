@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AttachmentUpload from './AttachmentUpload';
 import type { Attachment } from '../../types';
@@ -95,5 +95,49 @@ describe('AttachmentUpload', () => {
     const { container } = render(<AttachmentUpload {...defaultProps} />);
     // Only the button row should be present, no file grid
     expect(container.querySelectorAll('.mt-3')).toHaveLength(0);
+  });
+
+  it('opens the hidden file input when attach button is clicked', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<AttachmentUpload {...defaultProps} />);
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const clickSpy = vi.spyOn(fileInput, 'click');
+
+    await user.click(screen.getByTitle('attachFiles'));
+
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it('validates selected files and resets input value', () => {
+    const onAddFile = vi.fn();
+    const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
+    const { container } = render(<AttachmentUpload {...defaultProps} onAddFile={onAddFile} />);
+
+    const validFile = new File(['ok'], 'ok.txt', { type: 'text/plain' });
+    const invalidTypeFile = new File(['bad'], 'bad.exe', { type: 'application/x-msdownload' });
+    const tooLargeFile = new File([new Uint8Array((5 * 1024 * 1024) + 1)], 'huge.pdf', { type: 'application/pdf' });
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, {
+      target: {
+        files: [invalidTypeFile, tooLargeFile, validFile],
+      },
+    });
+
+    expect(alertSpy).toHaveBeenCalledWith('attachmentTypeNotAllowed');
+    expect(alertSpy).toHaveBeenCalledWith('attachmentTooLarge');
+    expect(onAddFile).toHaveBeenCalledTimes(1);
+    expect(onAddFile).toHaveBeenCalledWith(validFile);
+    expect(fileInput.value).toBe('');
+
+    alertSpy.mockRestore();
+  });
+
+  it('renders file size using MB when file is larger than 1 MB', () => {
+    const largeFile = new File([new Uint8Array(2 * 1024 * 1024)], 'big.pdf', { type: 'application/pdf' });
+
+    render(<AttachmentUpload {...defaultProps} pendingFiles={[largeFile]} />);
+
+    expect(screen.getByText('2.0 MB')).toBeInTheDocument();
   });
 });

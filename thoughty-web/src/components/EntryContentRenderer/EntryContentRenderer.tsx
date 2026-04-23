@@ -1,6 +1,5 @@
-import Markdown, { type Components } from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import React, { useMemo } from 'react';
+import React, { Suspense, lazy, useMemo } from 'react';
+import type { Components } from 'react-markdown';
 
 interface SourceEntryInfo {
     id: number;
@@ -25,6 +24,8 @@ interface EntryContentRendererProps {
     readonly maxLength?: number;
     readonly searchTerm?: string;
 }
+
+const LazyMarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
 
 function escapeRegExp(str: string): string {
     return str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
@@ -170,9 +171,9 @@ function EntryContentRenderer({
         // We still support cross-references inside markdown content
         if (!parts || parts.length === 0) {
             return (
-                <span className="markdown-content">
-                    <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{displayContent}</Markdown>
-                </span>
+                <Suspense fallback={<span className="markdown-content">{displayContent}</span>}>
+                    <LazyMarkdownRenderer content={displayContent} components={markdownComponents} />
+                </Suspense>
             );
         }
 
@@ -181,9 +182,9 @@ function EntryContentRenderer({
                 {parts.map((part) => {
                     if (part.type === 'text') {
                         return (
-                            <span key={part.key} className="markdown-content">
-                                <Markdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{part.content || ''}</Markdown>
-                            </span>
+                            <Suspense key={part.key} fallback={<span className="markdown-content">{part.content || ''}</span>}>
+                                <LazyMarkdownRenderer content={part.content || ''} components={markdownComponents} />
+                            </Suspense>
                         );
                     }
 
@@ -195,7 +196,7 @@ function EntryContentRenderer({
                                 className="entry-reference-link"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleReferenceClick(part.date!, part.index || 1);
+                                    handleReferenceClick(part.date, part.index || 1);
                                 }}
                                 title={getTitle(part.date, part.index || 1)}
                             >
@@ -230,7 +231,7 @@ function EntryContentRenderer({
                             className="entry-reference-link"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleReferenceClick(part.date!, part.index || 1);
+                                handleReferenceClick(part.date, part.index || 1);
                             }}
                             title={getTitle(part.date, part.index || 1)}
                         >

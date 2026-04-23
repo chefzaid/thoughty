@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '@/database/entities';
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from 'node:crypto';
-import { IoService } from '@/modules/io/io.service';
+import { IoService, type ExportFormat } from '@/modules/io/io.service';
 import { GoogleDriveProvider } from './providers/google-drive.provider';
 import { OneDriveProvider } from './providers/onedrive.provider';
 import { DropboxProvider } from './providers/dropbox.provider';
@@ -182,7 +182,7 @@ export class CloudSyncService {
     userId: number,
     provider: CloudProviderType,
     diaryId?: number,
-    format: 'txt' | 'json' | 'md' = 'txt',
+    format: ExportFormat = 'txt',
     includeVisibility?: boolean,
   ): Promise<CloudFileInfo> {
     const accessToken = await this.getValidAccessToken(userId, provider);
@@ -214,7 +214,16 @@ export class CloudSyncService {
     nextSyncAt?: string;
   }>> {
     const providers: CloudProviderType[] = ['google_drive', 'onedrive', 'dropbox'];
-    const result: Record<string, any> = {};
+    const result: Record<string, {
+      enabled: boolean;
+      frequency?: SyncFrequency;
+      format?: string;
+      diaryId?: number;
+      includeVisibility?: boolean;
+      lastSyncAt?: string;
+      lastSyncHash?: string;
+      nextSyncAt?: string;
+    }> = {};
 
     for (const provider of providers) {
       const fields = ['sync_enabled', 'sync_frequency', 'sync_format', 'sync_diary_id', 'sync_include_visibility', 'last_sync_at', 'last_sync_hash'];
@@ -253,7 +262,7 @@ export class CloudSyncService {
     userId: number,
     provider: CloudProviderType,
     frequency: SyncFrequency,
-    format: 'txt' | 'json' | 'md' = 'txt',
+    format: ExportFormat = 'txt',
     diaryId?: number,
     includeVisibility?: boolean,
   ): Promise<{ success: boolean }> {
@@ -312,7 +321,7 @@ export class CloudSyncService {
       this.settingRepository.findOne({ where: { userId, key: this.settingKey(provider, 'last_sync_hash') } }),
     ]);
 
-    const format = (formatSetting?.value as 'txt' | 'json' | 'md') || 'txt';
+    const format = (formatSetting?.value as ExportFormat) || 'txt';
     const diaryId = diaryIdSetting?.value ? Number.parseInt(diaryIdSetting.value, 10) : undefined;
     const includeVisibility = includeVisibilitySetting?.value === 'true';
     const lastHash = lastHashSetting?.value || '';

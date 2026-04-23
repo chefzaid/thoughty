@@ -2,7 +2,6 @@
 Features to implement:
 
 *** Personalization & UX
-- Random color for newly created tags, randomize at import too
 - Font customization (type, size, color) for better readability and user preference in Profile settings
 - Routes and paths for each view (Journal, Stats, Profile, Tags, etc.)
 - Permalink for each entry to easily share or bookmark specific thoughts + Share button
@@ -79,6 +78,7 @@ Features to implement:
 - Database read replicas for scaling read-heavy queries (stats, feed, search)
 - Automated database backups with point-in-time recovery
 - Distributed rate limiting with Redis for multi-replica deployments
+- Security and performance audits and remediation
 
 *** Accessibility
 - Full accessibility audit and remediation (aria-labels, screen reader support, skip-to-content links, focus management)

@@ -29,11 +29,6 @@ describe('IoService', () => {
     isDefault: true,
   };
 
-  const mockSettings = [
-    { key: 'io_entrySeparator', value: '---' },
-    { key: 'io_dateFormat', value: 'YYYY-MM-DD' },
-  ];
-
   beforeEach(async () => {
     const mockQueryBuilder = {
       where: jest.fn().mockReturnThis(),

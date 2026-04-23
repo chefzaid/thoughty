@@ -146,7 +146,7 @@ export class DropboxProvider implements CloudProvider {
       }));
   }
 
-  async uploadFile(accessToken: string, filename: string, content: string, mimeType: string): Promise<CloudFileInfo> {
+  async uploadFile(accessToken: string, filename: string, content: string, _mimeType: string): Promise<CloudFileInfo> {
     await this.ensureAppFolder(accessToken);
     const filePath = `${APP_FOLDER_PATH}/${filename}`;
 

@@ -1,10 +1,11 @@
-import { useRef, useEffect, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
+import { Suspense, lazy, useRef, useEffect, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
-import MDEditor from '@uiw/react-md-editor';
 import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import type { Attachment } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
+
+const LazyMDEditor = lazy(() => import('@uiw/react-md-editor'));
 
 interface EntryFormProps {
     readonly newEntryText: string;
@@ -100,19 +101,36 @@ function EntryForm({
             <form onSubmit={onSubmit} className="space-y-4 overflow-visible">
                 <div>
                     {format === 'markdown' ? (
-                        <div data-color-mode={theme === 'light' ? 'light' : 'dark'}>
-                            <MDEditor
-                                value={newEntryText}
-                                onChange={(val) => setNewEntryText(val ?? '')}
-                                preview="edit"
-                                visibleDragbar={false}
-                                height={200}
-                                textareaProps={{
-                                    placeholder: t('whatsOnYourMind'),
-                                    title: t('entryReferenceHint'),
-                                }}
-                            />
-                        </div>
+                        <Suspense
+                            fallback={(
+                                <textarea
+                                    ref={textareaRef}
+                                    className={`w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none ${theme === 'light'
+                                        ? 'bg-gray-50 border-gray-300 text-gray-900'
+                                        : 'bg-gray-900 border-gray-700 text-gray-100'
+                                        }`}
+                                    rows={3}
+                                    placeholder={t('whatsOnYourMind')}
+                                    title={t('entryReferenceHint')}
+                                    value={newEntryText}
+                                    onChange={(e) => setNewEntryText(e.target.value)}
+                                />
+                            )}
+                        >
+                            <div data-color-mode={theme === 'light' ? 'light' : 'dark'}>
+                                <LazyMDEditor
+                                    value={newEntryText}
+                                    onChange={(val) => setNewEntryText(val ?? '')}
+                                    preview="edit"
+                                    visibleDragbar={false}
+                                    height={200}
+                                    textareaProps={{
+                                        placeholder: t('whatsOnYourMind'),
+                                        title: t('entryReferenceHint'),
+                                    }}
+                                />
+                            </div>
+                        </Suspense>
                     ) : (
                         <textarea
                             ref={textareaRef}

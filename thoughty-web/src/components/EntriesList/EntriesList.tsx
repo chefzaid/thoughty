@@ -1,7 +1,6 @@
-import { memo, useEffect, useMemo, useState as useLocalState, useCallback, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { Suspense, lazy, memo, useEffect, useMemo, useState as useLocalState, useCallback, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import MDEditor from '@uiw/react-md-editor';
 import TagPicker from '../TagPicker/TagPicker';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import ListenButton from '../ListenButton/ListenButton';
@@ -12,6 +11,8 @@ import type { Attachment, EntryRevision } from '../../types';
 import { resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 import TagBadge from '../TagBadge/TagBadge';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
+
+const LazyMDEditor = lazy(() => import('@uiw/react-md-editor'));
 
 interface Entry {
     id: number;
@@ -350,15 +351,26 @@ function EditForm({
         <div className="space-y-4">
             <div>
                 {editFormat === 'markdown' ? (
-                    <div data-color-mode={isDark ? 'dark' : 'light'}>
-                        <MDEditor
-                            value={editText}
-                            onChange={(val) => setEditText(val ?? '')}
-                            preview="edit"
-                            visibleDragbar={false}
-                            height={200}
-                        />
-                    </div>
+                    <Suspense
+                        fallback={(
+                            <textarea
+                                className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none ${inputClass}`}
+                                rows={3}
+                                value={editText}
+                                onChange={(e) => setEditText(e.target.value)}
+                            />
+                        )}
+                    >
+                        <div data-color-mode={isDark ? 'dark' : 'light'}>
+                            <LazyMDEditor
+                                value={editText}
+                                onChange={(val) => setEditText(val ?? '')}
+                                preview="edit"
+                                visibleDragbar={false}
+                                height={200}
+                            />
+                        </div>
+                    </Suspense>
                 ) : (
                     <textarea
                         className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none ${inputClass}`}

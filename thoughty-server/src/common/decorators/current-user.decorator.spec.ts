@@ -5,7 +5,7 @@ import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
 // Helper to get the factory function from a param decorator
 function getParamDecoratorFactory(decorator: Function) {
   class TestClass {
-    test(@decorator() user: AuthenticatedUser) {}
+    test(@decorator() _user: AuthenticatedUser) { return _user; }
   }
 
   const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, TestClass, 'test');
@@ -54,7 +54,7 @@ describe('CurrentUser Decorator', () => {
 
   it('should return specific property when data key is provided', () => {
     class TestClass {
-      test(@CurrentUser('userId') userId: number) {}
+      test(@CurrentUser('userId') _userId: number) { return _userId; }
     }
 
     const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, TestClass, 'test');
@@ -68,7 +68,7 @@ describe('CurrentUser Decorator', () => {
 
   it('should return email when email key is provided', () => {
     class TestClass {
-      test(@CurrentUser('email') email: string) {}
+      test(@CurrentUser('email') _email: string) { return _email; }
     }
 
     const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, TestClass, 'test');
@@ -82,7 +82,7 @@ describe('CurrentUser Decorator', () => {
 
   it('should return username when username key is provided', () => {
     class TestClass {
-      test(@CurrentUser('username') username: string) {}
+      test(@CurrentUser('username') _username: string) { return _username; }
     }
 
     const args = Reflect.getMetadata(ROUTE_ARGS_METADATA, TestClass, 'test');

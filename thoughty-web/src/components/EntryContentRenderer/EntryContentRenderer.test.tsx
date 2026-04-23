@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EntryContentRenderer from './EntryContentRenderer';
 
@@ -15,6 +15,14 @@ describe('EntryContentRenderer', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
+
+    const waitForSelector = async (container: HTMLElement, selector: string): Promise<Element> => {
+        await waitFor(() => {
+            expect(container.querySelector(selector)).toBeInTheDocument();
+        });
+
+        return container.querySelector(selector) as Element;
+    };
 
     describe('Plain text rendering', () => {
         it('renders plain text without links', () => {
@@ -150,92 +158,83 @@ describe('EntryContentRenderer', () => {
     });
 
     describe('Markdown rendering', () => {
-        it('renders markdown content with bold text', () => {
+        it('renders markdown content with bold text', async () => {
             const { container } = render(
                 <EntryContentRenderer {...defaultProps} content="This is **bold** text" format="markdown" />
             );
 
-            const strong = container.querySelector('strong');
-            expect(strong).toBeInTheDocument();
+            const strong = await waitForSelector(container, 'strong');
             expect(strong?.textContent).toBe('bold');
         });
 
-        it('renders markdown content with italic text', () => {
+        it('renders markdown content with italic text', async () => {
             const { container } = render(
                 <EntryContentRenderer {...defaultProps} content="This is _italic_ text" format="markdown" />
             );
 
-            const em = container.querySelector('em');
-            expect(em).toBeInTheDocument();
+            const em = await waitForSelector(container, 'em');
             expect(em?.textContent).toBe('italic');
         });
 
-        it('renders markdown headings', () => {
+        it('renders markdown headings', async () => {
             const { container } = render(
                 <EntryContentRenderer {...defaultProps} content="# Heading 1" format="markdown" />
             );
 
-            const h1 = container.querySelector('h1');
-            expect(h1).toBeInTheDocument();
+            const h1 = await waitForSelector(container, 'h1');
             expect(h1?.textContent).toBe('Heading 1');
         });
 
-        it('renders markdown lists', () => {
+        it('renders markdown lists', async () => {
             const listContent = '- Item 1\n- Item 2\n- Item 3';
             const { container } = render(
                 <EntryContentRenderer {...defaultProps} content={listContent} format="markdown" />
             );
 
-            const ul = container.querySelector('ul');
-            expect(ul).toBeInTheDocument();
+            await waitForSelector(container, 'ul');
         });
 
-        it('renders markdown code blocks', () => {
+        it('renders markdown code blocks', async () => {
             const { container } = render(
                 <EntryContentRenderer {...defaultProps} content="```\nconst x = 1;\n```" format="markdown" />
             );
 
-            const code = container.querySelector('code');
-            expect(code).toBeInTheDocument();
+            await waitForSelector(container, 'code');
         });
 
-        it('renders markdown inline code', () => {
+        it('renders markdown inline code', async () => {
             const { container } = render(
                 <EntryContentRenderer {...defaultProps} content="Use `const` here" format="markdown" />
             );
 
-            const code = container.querySelector('code');
-            expect(code).toBeInTheDocument();
+            const code = await waitForSelector(container, 'code');
             expect(code?.textContent).toBe('const');
         });
 
-        it('renders markdown blockquotes', () => {
+        it('renders markdown blockquotes', async () => {
             const { container } = render(
                 <EntryContentRenderer {...defaultProps} content="> A wise quote" format="markdown" />
             );
 
-            const blockquote = container.querySelector('blockquote');
-            expect(blockquote).toBeInTheDocument();
+            await waitForSelector(container, 'blockquote');
         });
 
-        it('renders markdown links', () => {
+        it('renders markdown links', async () => {
             const { container } = render(
                 <EntryContentRenderer {...defaultProps} content="[Click here](https://example.com)" format="markdown" />
             );
 
-            const link = container.querySelector('a');
-            expect(link).toBeInTheDocument();
+            const link = await waitForSelector(container, 'a');
             expect(link?.textContent).toBe('Click here');
             expect(link?.getAttribute('href')).toBe('https://example.com');
         });
 
-        it('renders markdown strikethrough (GFM)', () => {
+        it('renders markdown strikethrough (GFM)', async () => {
             const { container } = render(
                 <EntryContentRenderer {...defaultProps} content="This is ~~deleted~~ text" format="markdown" />
             );
 
-            const del = container.querySelector('del');
-            expect(del).toBeInTheDocument();
+            const del = await waitForSelector(container, 'del');
             expect(del?.textContent).toBe('deleted');
         });
 
@@ -288,14 +287,13 @@ describe('EntryContentRenderer', () => {
             expect(refButton).toHaveTextContent('entry (2026-01-10)');
         });
 
-        it('renders markdown tables (GFM)', () => {
+        it('renders markdown tables (GFM)', async () => {
             const tableContent = '| Header 1 | Header 2 |\n| --- | --- |\n| Cell 1 | Cell 2 |';
             const { container } = render(
                 <EntryContentRenderer {...defaultProps} content={tableContent} format="markdown" />
             );
 
-            const table = container.querySelector('table');
-            expect(table).toBeInTheDocument();
+            await waitForSelector(container, 'table');
         });
 
         it('handles maxLength truncation with markdown format', () => {
@@ -402,7 +400,7 @@ describe('EntryContentRenderer', () => {
         });
 
         describe('Markdown highlighting', () => {
-            it('highlights text inside markdown paragraphs', () => {
+            it('highlights text inside markdown paragraphs', async () => {
                 const { container } = render(
                     <EntryContentRenderer
                         {...defaultProps}
@@ -412,12 +410,16 @@ describe('EntryContentRenderer', () => {
                     />
                 );
 
+                await waitFor(() => {
+                    expect(container.querySelectorAll('mark')).toHaveLength(1);
+                });
+
                 const marks = container.querySelectorAll('mark');
                 expect(marks).toHaveLength(1);
                 expect(marks[0].textContent).toBe('test');
             });
 
-            it('highlights text inside bold markdown', () => {
+            it('highlights text inside bold markdown', async () => {
                 const { container } = render(
                     <EntryContentRenderer
                         {...defaultProps}
@@ -427,12 +429,16 @@ describe('EntryContentRenderer', () => {
                     />
                 );
 
+                await waitFor(() => {
+                    expect(container.querySelectorAll('mark')).toHaveLength(1);
+                });
+
                 const marks = container.querySelectorAll('mark');
                 expect(marks).toHaveLength(1);
                 expect(marks[0].textContent).toBe('test');
             });
 
-            it('highlights text inside italic markdown', () => {
+            it('highlights text inside italic markdown', async () => {
                 const { container } = render(
                     <EntryContentRenderer
                         {...defaultProps}
@@ -442,11 +448,15 @@ describe('EntryContentRenderer', () => {
                     />
                 );
 
+                await waitFor(() => {
+                    expect(container.querySelectorAll('mark')).toHaveLength(1);
+                });
+
                 const marks = container.querySelectorAll('mark');
                 expect(marks).toHaveLength(1);
             });
 
-            it('highlights text inside list items', () => {
+            it('highlights text inside list items', async () => {
                 const { container } = render(
                     <EntryContentRenderer
                         {...defaultProps}
@@ -455,6 +465,10 @@ describe('EntryContentRenderer', () => {
                         searchTerm="test"
                     />
                 );
+
+                await waitFor(() => {
+                    expect(container.querySelectorAll('mark')).toHaveLength(2);
+                });
 
                 const marks = container.querySelectorAll('mark');
                 expect(marks).toHaveLength(2);

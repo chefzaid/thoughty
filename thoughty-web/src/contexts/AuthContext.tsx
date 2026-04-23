@@ -143,20 +143,20 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
   const [error, setError] = useState<string | null>(null);
 
   // Get tokens from localStorage
-  const getAccessToken = (): string | null => localStorage.getItem('accessToken');
-  const getRefreshToken = (): string | null => localStorage.getItem('refreshToken');
+  const getAccessToken = useCallback((): string | null => localStorage.getItem('accessToken'), []);
+  const getRefreshToken = useCallback((): string | null => localStorage.getItem('refreshToken'), []);
 
   // Save tokens to localStorage
-  const saveTokens = (accessToken: string, refreshToken: string): void => {
+  const saveTokens = useCallback((accessToken: string, refreshToken: string): void => {
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);
-  };
+  }, []);
 
   // Clear tokens from localStorage
-  const clearTokens = (): void => {
+  const clearTokens = useCallback((): void => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
-  };
+  }, []);
 
   // Refresh access token
   const refreshAccessToken = useCallback(async (): Promise<string | null> => {
@@ -184,7 +184,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setUser(null);
       return null;
     }
-  }, []);
+  }, [clearTokens, getRefreshToken]);
 
   // Fetch with auto token refresh
   const authFetch = useCallback(
@@ -214,7 +214,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
 
       return response;
     },
-    [refreshAccessToken]
+    [getAccessToken, refreshAccessToken]
   );
 
   // Check if user is logged in on mount
@@ -246,10 +246,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     };
 
     checkAuth();
-  }, [authFetch]);
+  }, [authFetch, clearTokens, getAccessToken]);
 
   // Register with email/password
-  const register = async (
+  const register = useCallback(async (
     email: string,
     password: string,
     username: string
@@ -280,10 +280,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setError(message);
       return { success: false, error: message };
     }
-  };
+  }, [saveTokens]);
 
   // Login with email or username
-  const login = async (identifier: string, password: string): Promise<AuthResult> => {
+  const login = useCallback(async (identifier: string, password: string): Promise<AuthResult> => {
     setError(null);
     try {
       const response = await fetch(`${API_BASE}/login`, {
@@ -310,10 +310,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setError(message);
       return { success: false, error: message };
     }
-  };
+  }, [saveTokens]);
 
   // OAuth login (Google/Facebook)
-  const oauthLogin = async (
+  const oauthLogin = useCallback(async (
     provider: string,
     providerId: string,
     email: string,
@@ -346,10 +346,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setError(message);
       return { success: false, error: message };
     }
-  };
+  }, [saveTokens]);
 
   // Google Sign In
-  const signInWithGoogle = async (): Promise<AuthResult> => {
+  const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
     return new Promise((resolve, reject) => {
       const google = (globalThis as unknown as { google?: GoogleApi }).google;
       if (!google || !GOOGLE_CLIENT_ID) {
@@ -387,10 +387,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         }
       });
     });
-  };
+  }, [oauthLogin]);
 
   // Logout
-  const logout = async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<void> => {
     const refreshToken = getRefreshToken();
     try {
       await fetch(`${API_BASE}/logout`, {
@@ -403,10 +403,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     }
     clearTokens();
     setUser(null);
-  };
+  }, [clearTokens, getRefreshToken]);
 
   // Change password
-  const changePassword = async (
+  const changePassword = useCallback(async (
     currentPassword: string,
     newPassword: string
   ): Promise<AuthResult> => {
@@ -429,10 +429,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setError(message);
       return { success: false, error: message };
     }
-  };
+  }, [authFetch]);
 
   // Forgot password - request reset email
-  const forgotPassword = async (email: string): Promise<AuthResult> => {
+  const forgotPassword = useCallback(async (email: string): Promise<AuthResult> => {
     setError(null);
     try {
       const response = await fetch(`${API_BASE}/forgot-password`, {
@@ -453,10 +453,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setError(message);
       return { success: false, error: message };
     }
-  };
+  }, []);
 
   // Reset password with token
-  const resetPassword = async (token: string, newPassword: string): Promise<AuthResult> => {
+  const resetPassword = useCallback(async (token: string, newPassword: string): Promise<AuthResult> => {
     setError(null);
     try {
       const response = await fetch(`${API_BASE}/reset-password`, {
@@ -477,10 +477,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setError(message);
       return { success: false, error: message };
     }
-  };
+  }, []);
 
   // Delete account (flags for deletion)
-  const deleteAccount = async (password: string): Promise<AuthResult> => {
+  const deleteAccount = useCallback(async (password: string): Promise<AuthResult> => {
     setError(null);
     try {
       const response = await authFetch(`${API_BASE}/delete-account`, {
@@ -503,7 +503,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setError(message);
       return { success: false, error: message };
     }
-  };
+  }, [authFetch, clearTokens]);
 
   const value = useMemo<AuthContextValue>(() => ({
     user,
@@ -534,6 +534,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     resetPassword,
     deleteAccount,
     authFetch,
+    getAccessToken,
   ]);
 
   return <AuthContext value={value}>{children}</AuthContext>;

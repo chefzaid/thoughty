@@ -58,14 +58,16 @@ describe('EntryForm', () => {
         it('shows inactive style when format is plain', () => {
             render(<EntryForm {...defaultProps} format="plain" />);
 
-            const mdButton = screen.getByText('MD').closest('button')!;
+            const mdButton = screen.getByText('MD').closest('button');
             expect(mdButton).not.toHaveClass('border-indigo-500');
         });
 
-        it('shows active style when format is markdown', () => {
+        it('shows active style when format is markdown', async () => {
             render(<EntryForm {...defaultProps} format="markdown" />);
 
-            const mdButton = screen.getByText('MD').closest('button')!;
+            await screen.findByTestId('md-editor');
+
+            const mdButton = screen.getByText('MD').closest('button');
             expect(mdButton).toHaveClass('border-indigo-500');
         });
 
@@ -74,7 +76,7 @@ describe('EntryForm', () => {
             const user = userEvent.setup();
             render(<EntryForm {...defaultProps} setFormat={setFormat} />);
 
-            await user.click(screen.getByText('MD').closest('button')!);
+            await user.click(screen.getByText('MD').closest('button') as Element);
 
             expect(setFormat).toHaveBeenCalled();
         });

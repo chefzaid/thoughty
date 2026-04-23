@@ -45,4 +45,102 @@ describe('aiService', () => {
     expect(consoleSpy).toHaveBeenCalledWith('Error suggesting tags:', expect.any(Error));
     consoleSpy.mockRestore();
   });
+
+  it('returns an empty array when tags payload is not an array', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ tags: 'not-an-array' }),
+    });
+
+    const result = await service.suggestTags('Some draft text');
+
+    expect(result).toEqual([]);
+  });
+
+  it('fixWriting returns fixed content when response is valid', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ content: 'Improved text' }),
+    });
+
+    const result = await service.fixWriting('raw text');
+
+    expect(result).toBe('Improved text');
+    expect(mockAuthFetch).toHaveBeenCalledWith('/api/ai/fix-writing', {
+      method: 'POST',
+      body: JSON.stringify({ content: 'raw text' }),
+    });
+  });
+
+  it('fixWriting returns null for malformed payload', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ content: 123 }),
+    });
+
+    const result = await service.fixWriting('raw text');
+
+    expect(result).toBeNull();
+  });
+
+  it('chat returns assistant reply on success', async () => {
+    const messages = [{ role: 'user' as const, content: 'Hello' }];
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ reply: 'Hi there' }),
+    });
+
+    const result = await service.chat('Entry content', messages);
+
+    expect(result).toBe('Hi there');
+    expect(mockAuthFetch).toHaveBeenCalledWith('/api/ai/chat', {
+      method: 'POST',
+      body: JSON.stringify({ entryContent: 'Entry content', messages }),
+    });
+  });
+
+  it('chat returns null for malformed reply payload', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ reply: 10 }),
+    });
+
+    const result = await service.chat('Entry content', []);
+
+    expect(result).toBeNull();
+  });
+
+  it('fetchModels returns models only when response is ok and array-shaped', async () => {
+    mockAuthFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([{ id: 'm1', name: 'Model 1' }]),
+    });
+    mockAuthFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 'm1', name: 'Model 1' }),
+    });
+    mockAuthFetch.mockResolvedValueOnce({ ok: false, json: () => Promise.resolve([]) });
+
+    await expect(service.fetchModels()).resolves.toEqual([{ id: 'm1', name: 'Model 1' }]);
+    await expect(service.fetchModels()).resolves.toEqual([]);
+    await expect(service.fetchModels()).resolves.toEqual([]);
+  });
+
+  it('returns fallback values when fixWriting, chat, or fetchModels throws', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    mockAuthFetch.mockRejectedValueOnce(new Error('fix writing network'));
+    mockAuthFetch.mockRejectedValueOnce(new Error('chat network'));
+    mockAuthFetch.mockRejectedValueOnce(new Error('models network'));
+
+    await expect(service.fixWriting('raw')).resolves.toBeNull();
+    await expect(service.chat('entry', [])).resolves.toBeNull();
+    await expect(service.fetchModels()).resolves.toEqual([]);
+
+    expect(consoleSpy).toHaveBeenCalledWith('Error fixing writing:', expect.any(Error));
+    expect(consoleSpy).toHaveBeenCalledWith('Error in AI chat:', expect.any(Error));
+    expect(consoleSpy).toHaveBeenCalledWith('Error fetching models:', expect.any(Error));
+
+    consoleSpy.mockRestore();
+  });
 });

@@ -97,5 +97,4 @@ async function bootstrap() {
   console.log(`📚 API Documentation available at http://localhost:${port}/api-docs`);
 }
 
-// eslint-disable-next-line unicorn/prefer-top-level-await
 void bootstrap();

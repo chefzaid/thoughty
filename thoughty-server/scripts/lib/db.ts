@@ -5,7 +5,7 @@
 
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
-import { join } from 'path';
+import { join } from 'node:path';
 
 // Load environment variables from thoughty-server/.env
 config({ path: join(__dirname, '..', '..', '.env') });
@@ -14,7 +14,7 @@ config({ path: join(__dirname, '..', '..', '.env') });
 export const dataSource = new DataSource({
     type: 'postgres',
     host: process.env.POSTGRES_HOST || 'localhost',
-    port: parseInt(process.env.POSTGRES_PORT || '5432', 10),
+    port: Number.parseInt(process.env.POSTGRES_PORT || '5432', 10),
     username: process.env.POSTGRES_USER || 'postgres',
     password: process.env.POSTGRES_PASSWORD || 'password',
     database: process.env.POSTGRES_DB || 'journal',
@@ -35,7 +35,7 @@ export async function initializeDatabase(): Promise<DataSource> {
 /**
  * Execute a raw SQL query
  */
-export async function query<T = any>(sql: string, parameters: any[] = []): Promise<T[]> {
+export async function query<T = unknown>(sql: string, parameters: unknown[] = []): Promise<T[]> {
     const ds = await initializeDatabase();
     return ds.query(sql, parameters);
 }

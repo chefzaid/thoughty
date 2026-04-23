@@ -4,12 +4,12 @@
  * Runs tests with coverage for both backend and frontend, then summarizes results
  */
 
-import { spawn } from 'child_process';
-import * as path from 'path';
+import { spawn } from 'node:child_process';
+import * as path from 'node:path';
 import { banner, section, summaryBox, log, fmt, formatScore as fmtScore } from './lib/logger';
 
 // Regex to strip ANSI escape codes
-// eslint-disable-next-line no-control-regex
+ 
 const STRIP_ANSI = /\x1B\[\d+m/g;
 
 interface CoverageResult {
@@ -59,17 +59,21 @@ async function runTest(name: string, dir: string, script: string = 'test:cov'): 
 
                     if (parts.length > 4) {
                         const val = Number.parseFloat(parts[4]);
-                        if (!Number.isNaN(val)) coverage = val;
+                        if (!Number.isNaN(val)) {
+                            coverage = val;
+                        }
                     }
-                    // Break if we found it (assuming first match is what we want)
-                    if (coverage !== null) break;
+                    if (coverage === null) {
+                        continue;
+                    }
+                    break;
                 }
             }
 
-            if (coverage !== null) {
-                log.success(`${name} coverage: ${fmtScore(coverage)}`);
-            } else {
+            if (coverage === null) {
                 log.warning(`Could not parse ${name} coverage`);
+            } else {
+                log.success(`${name} coverage: ${fmtScore(coverage)}`);
             }
 
             resolve({ name, coverage });

@@ -72,24 +72,239 @@ function escapeRegex(str: string): string {
   return str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 }
 
-interface ParsedEntry {
+export interface ParsedEntry {
   date: string;
   index: number;
   tags: string[];
   content: string;
-  format: 'plain' | 'markdown';
-  visibility?: 'public' | 'private';
+  format: EntryFormat;
+  visibility?: EntryVisibility;
   diaryName?: string;
 }
+
+export type EntryFormat = 'plain' | 'markdown';
+export type EntryVisibility = 'public' | 'private';
 
 interface EntryData {
   date: string | Date;
   index: number;
   tags: string[];
   content: string;
-  format?: 'plain' | 'markdown';
-  visibility?: 'public' | 'private';
+  format?: EntryFormat;
+  visibility?: EntryVisibility;
   diaryName?: string;
+}
+
+interface MarkdownParseState {
+  currentDate: string | null;
+  currentIndex: number;
+  currentTags: string[];
+  currentVisibility?: EntryVisibility;
+  currentDiaryName?: string;
+  contentLines: string[];
+  inEntry: boolean;
+}
+
+interface MarkdownMetadata {
+  tags: string[];
+  visibility?: EntryVisibility;
+  diaryName?: string;
+}
+
+function normalizeEntryDate(date: string | Date): string {
+  return date instanceof Date
+    ? date.toISOString().split('T')[0]
+    : String(date).split('T')[0];
+}
+
+function sortEntries(entries: EntryData[]): EntryData[] {
+  return [...entries].sort((a, b) => {
+    const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
+    if (dateCompare !== 0) {
+      return dateCompare;
+    }
+    return a.index - b.index;
+  });
+}
+
+function parseTagList(rawTags: string, separator: string): string[] {
+  return rawTags
+    .split(separator)
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
+function buildTextEntryHeader(
+  entry: EntryData,
+  entryDate: string,
+  currentDate: string | null,
+  config: FormatConfig,
+  includeVisibility: boolean,
+): string[] {
+  const formatFlag = entry.format === 'markdown' ? '{md}' : '';
+  const tagsStr = `${config.tagOpenBracket}${(entry.tags || []).join(config.tagSeparator)}${config.tagCloseBracket}`;
+  const visibilityStr = includeVisibility
+    ? `--${config.tagOpenBracket}${entry.visibility || 'private'}${config.tagCloseBracket}`
+    : '';
+  const diaryStr = entry.diaryName ? `--{diary:${entry.diaryName}}` : '';
+
+  if (entryDate !== currentDate) {
+    const formattedDate = formatDate(entryDate, config.dateFormat);
+    if (currentDate === null) {
+      return ['', `${config.datePrefix}${formattedDate}${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}`];
+    }
+
+    return [
+      '',
+      config.entrySeparator,
+      '',
+      `${config.datePrefix}${formattedDate}${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}`,
+    ];
+  }
+
+  return [
+    '',
+    config.sameDaySeparator,
+    '',
+    `${config.datePrefix}${entry.index}${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}`,
+  ];
+}
+
+function createParsedTextEntry(
+  match: RegExpExecArray,
+  date: string,
+  index: number,
+  config: FormatConfig,
+): ParsedEntry {
+  const visibility = match[3] as EntryVisibility | undefined;
+  const diaryName = match[4] || undefined;
+  const format: EntryFormat = match[5] ? 'markdown' : 'plain';
+
+  return {
+    date,
+    index,
+    tags: parseTagList(match[2], config.tagSeparator),
+    content: '',
+    format,
+    ...(visibility && { visibility }),
+    ...(diaryName && { diaryName }),
+  };
+}
+
+function parseTextHeader(
+  trimmedLine: string,
+  currentDate: string | null,
+  config: FormatConfig,
+  datePattern: RegExp,
+  indexPattern: RegExp,
+): { nextDate: string; nextIndex: number; entry: ParsedEntry } | null {
+  const dateMatch = datePattern.exec(trimmedLine);
+  if (dateMatch) {
+    const nextDate = parseDate(dateMatch[1], config.dateFormat);
+    return {
+      nextDate,
+      nextIndex: 1,
+      entry: createParsedTextEntry(dateMatch, nextDate, 1, config),
+    };
+  }
+
+  if (!currentDate) {
+    return null;
+  }
+
+  const indexMatch = indexPattern.exec(trimmedLine);
+  if (!indexMatch) {
+    return null;
+  }
+
+  const nextIndex = Number.parseInt(indexMatch[1], 10);
+  return {
+    nextDate: currentDate,
+    nextIndex,
+    entry: createParsedTextEntry(indexMatch, currentDate, nextIndex, config),
+  };
+}
+
+function buildMarkdownMetaLines(entry: EntryData, includeVisibility: boolean): string[] {
+  const tagLabels = (entry.tags || []).map((tag) => `\`${tag}\``).join(', ');
+  const tagsStr = tagLabels ? `**Tags:** ${tagLabels}` : '';
+  const visStr = includeVisibility ? `**Visibility:** ${entry.visibility || 'private'}` : '';
+  const diaryStr = entry.diaryName ? `**Diary:** ${entry.diaryName}` : '';
+  const meta = [tagsStr, visStr, diaryStr].filter(Boolean).join(' | ');
+
+  return meta ? [meta, ''] : [];
+}
+
+function createMarkdownParseState(): MarkdownParseState {
+  return {
+    currentDate: null,
+    currentIndex: 0,
+    currentTags: [],
+    currentVisibility: undefined,
+    currentDiaryName: undefined,
+    contentLines: [],
+    inEntry: false,
+  };
+}
+
+function finalizeMarkdownEntry(entries: ParsedEntry[], state: MarkdownParseState): MarkdownParseState {
+  if (state.currentDate && state.contentLines.length > 0) {
+    const content = state.contentLines.join('\n').trim();
+    if (content) {
+      entries.push({
+        date: state.currentDate,
+        index: state.currentIndex,
+        tags: state.currentTags,
+        content,
+        format: 'markdown',
+        ...(state.currentVisibility && { visibility: state.currentVisibility }),
+        ...(state.currentDiaryName && { diaryName: state.currentDiaryName }),
+      });
+    }
+  }
+
+  return {
+    ...state,
+    currentTags: [],
+    currentVisibility: undefined,
+    currentDiaryName: undefined,
+    contentLines: [],
+    inEntry: false,
+  };
+}
+
+function parseMarkdownTag(tag: string): string {
+  return tag.trim().replaceAll(/^`|`$/g, '');
+}
+
+function parseMarkdownMetadataLine(trimmed: string): MarkdownMetadata | null {
+  const tagsMatch = /^\*\*Tags:\*\*\s*(.+?)(?:\s*\|\s*\*\*Visibility:\*\*\s*(public|private))?(?:\s*\|\s*\*\*Diary:\*\*\s*(.+?))?$/.exec(trimmed);
+  if (tagsMatch) {
+    return {
+      tags: tagsMatch[1].split(',').map(parseMarkdownTag).filter(Boolean),
+      visibility: tagsMatch[2] as EntryVisibility | undefined,
+      diaryName: tagsMatch[3]?.trim() || undefined,
+    };
+  }
+
+  const visibilityMatch = /^\*\*Visibility:\*\*\s*(public|private)(?:\s*\|\s*\*\*Diary:\*\*\s*(.+?))?$/.exec(trimmed);
+  if (visibilityMatch) {
+    return {
+      tags: [],
+      visibility: visibilityMatch[1] as EntryVisibility,
+      diaryName: visibilityMatch[2]?.trim() || undefined,
+    };
+  }
+
+  const diaryMatch = /^\*\*Diary:\*\*\s*(.+)$/.exec(trimmed);
+  if (diaryMatch) {
+    return {
+      tags: [],
+      diaryName: diaryMatch[1].trim(),
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -99,42 +314,12 @@ export function generateTextFile(entries: EntryData[], formatConfig: Partial<For
   const config = validateFormatConfig(formatConfig);
   const lines: string[] = [];
   let currentDate: string | null = null;
-
-  // Sort entries by date (ascending) then by index
-  const sortedEntries = [...entries].sort((a, b) => {
-    const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
-    if (dateCompare !== 0) return dateCompare;
-    return a.index - b.index;
-  });
+  const sortedEntries = sortEntries(entries);
 
   for (const entry of sortedEntries) {
-    const entryDate =
-      entry.date instanceof Date
-        ? entry.date.toISOString().split('T')[0]
-        : String(entry.date).split('T')[0];
-    const isNewDate = entryDate !== currentDate;
-
-    const formatFlag = entry.format === 'markdown' ? '{md}' : '';
-    const tagsStr =
-      config.tagOpenBracket + (entry.tags || []).join(config.tagSeparator) + config.tagCloseBracket;
-    const visibilityStr = includeVisibility
-      ? `--${config.tagOpenBracket}${entry.visibility || 'private'}${config.tagCloseBracket}`
-      : '';
-    const diaryStr = entry.diaryName
-      ? `--{diary:${entry.diaryName}}`
-      : '';
-
-    if (isNewDate) {
-      if (currentDate !== null) {
-        lines.push('', config.entrySeparator);
-      }
-      currentDate = entryDate;
-
-      const formattedDate = formatDate(entryDate, config.dateFormat);
-      lines.push('', `${config.datePrefix}${formattedDate}${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}`);
-    } else {
-      lines.push('', config.sameDaySeparator, '', `${config.datePrefix}${entry.index}${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}`);
-    }
+    const entryDate = normalizeEntryDate(entry.date);
+    lines.push(...buildTextEntryHeader(entry, entryDate, currentDate, config, includeVisibility));
+    currentDate = entryDate;
 
     lines.push(entry.content || '');
   }
@@ -161,7 +346,6 @@ export function parseTextFile(
   const lines = normalizedContent.split('\n');
 
   let currentDate: string | null = null;
-  let currentIndex = 0;
   let currentEntry: ParsedEntry | null = null;
   let contentLines: string[] = [];
 
@@ -197,50 +381,11 @@ export function parseTextFile(
       continue;
     }
 
-    const dateMatch = datePattern.exec(trimmedLine);
-    if (dateMatch) {
+    const parsedHeader = parseTextHeader(trimmedLine, currentDate, config, datePattern, indexPattern);
+    if (parsedHeader) {
       saveCurrentEntry();
-      currentDate = parseDate(dateMatch[1], config.dateFormat);
-      currentIndex = 1;
-      const tags = dateMatch[2]
-        .split(config.tagSeparator)
-        .map((t) => t.trim())
-        .filter(Boolean);
-      const visibility = dateMatch[3] as 'public' | 'private' | undefined;
-      const diaryName = dateMatch[4] || undefined;
-      const format: 'plain' | 'markdown' = dateMatch[5] ? 'markdown' : 'plain';
-      currentEntry = {
-        date: currentDate,
-        index: currentIndex,
-        tags,
-        content: '',
-        format,
-        ...(visibility && { visibility }),
-        ...(diaryName && { diaryName }),
-      };
-      continue;
-    }
-
-    const indexMatch = indexPattern.exec(trimmedLine);
-    if (indexMatch && currentDate) {
-      saveCurrentEntry();
-      currentIndex = Number.parseInt(indexMatch[1], 10);
-      const tags = indexMatch[2]
-        .split(config.tagSeparator)
-        .map((t) => t.trim())
-        .filter(Boolean);
-      const visibility = indexMatch[3] as 'public' | 'private' | undefined;
-      const diaryName = indexMatch[4] || undefined;
-      const format: 'plain' | 'markdown' = indexMatch[5] ? 'markdown' : 'plain';
-      currentEntry = {
-        date: currentDate,
-        index: currentIndex,
-        tags,
-        content: '',
-        format,
-        ...(visibility && { visibility }),
-        ...(diaryName && { diaryName }),
-      };
+      currentDate = parsedHeader.nextDate;
+      currentEntry = parsedHeader.entry;
       continue;
     }
 
@@ -286,19 +431,11 @@ export function findDuplicates(
  * Generate JSON export content from entries
  */
 export function generateJsonFile(entries: EntryData[], includeVisibility = false): string {
-  const sorted = [...entries].sort((a, b) => {
-    const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
-    if (dateCompare !== 0) return dateCompare;
-    return a.index - b.index;
-  });
+  const sorted = sortEntries(entries);
 
   const exportEntries = sorted.map((entry) => {
-    const date =
-      entry.date instanceof Date
-        ? entry.date.toISOString().split('T')[0]
-        : String(entry.date).split('T')[0];
     const obj: Record<string, unknown> = {
-      date,
+      date: normalizeEntryDate(entry.date),
       index: entry.index,
       tags: entry.tags || [],
       content: entry.content || '',
@@ -328,13 +465,15 @@ export function parseJsonFile(content: string): ParsedEntry[] {
   }
 
   return rawEntries
-    .filter((e: Record<string, unknown>) => e.date && e.content && typeof e.content === 'string' && (e.content as string).trim())
-    .map((e: Record<string, unknown>) => {
+    .filter((e: Record<string, unknown>): e is Record<string, unknown> & { date: string; content: string } =>
+      typeof e.date === 'string' && e.date.length > 0 && typeof e.content === 'string' && e.content.trim().length > 0
+    )
+    .map((e: Record<string, unknown> & { date: string; content: string }) => {
       const entry: ParsedEntry = {
-        date: String(e.date).split('T')[0],
+        date: e.date.split('T')[0],
         index: typeof e.index === 'number' ? e.index : 1,
         tags: Array.isArray(e.tags) ? (e.tags as string[]).map(String) : [],
-        content: String(e.content).trim(),
+        content: e.content.trim(),
         format: e.format === 'markdown' ? 'markdown' : 'plain',
       };
       if (e.visibility === 'public' || e.visibility === 'private') {
@@ -351,20 +490,13 @@ export function parseJsonFile(content: string): ParsedEntry[] {
  * Generate Markdown export content from entries
  */
 export function generateMarkdownFile(entries: EntryData[], includeVisibility = false): string {
-  const sorted = [...entries].sort((a, b) => {
-    const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
-    if (dateCompare !== 0) return dateCompare;
-    return a.index - b.index;
-  });
+  const sorted = sortEntries(entries);
 
   const lines: string[] = [];
   let currentDate: string | null = null;
 
   for (const entry of sorted) {
-    const entryDate =
-      entry.date instanceof Date
-        ? entry.date.toISOString().split('T')[0]
-        : String(entry.date).split('T')[0];
+    const entryDate = normalizeEntryDate(entry.date);
     const isNewDate = entryDate !== currentDate;
 
     if (isNewDate) {
@@ -372,31 +504,12 @@ export function generateMarkdownFile(entries: EntryData[], includeVisibility = f
         lines.push('');
       }
       currentDate = entryDate;
-      lines.push(`# ${entryDate}`);
-      lines.push('');
+      lines.push(`# ${entryDate}`, '');
     } else {
-      lines.push('');
-      lines.push('---');
-      lines.push('');
+      lines.push('', '---', '');
     }
 
-    const tagsStr = (entry.tags || []).length > 0
-      ? `**Tags:** ${(entry.tags || []).map((t) => `\`${t}\``).join(', ')}`
-      : '';
-    const visStr = includeVisibility
-      ? `**Visibility:** ${entry.visibility || 'private'}`
-      : '';
-    const diaryStr = entry.diaryName
-      ? `**Diary:** ${entry.diaryName}`
-      : '';
-
-    const meta = [tagsStr, visStr, diaryStr].filter(Boolean).join(' | ');
-    if (meta) {
-      lines.push(meta);
-      lines.push('');
-    }
-
-    lines.push(entry.content || '');
+    lines.push(...buildMarkdownMetaLines(entry, includeVisibility), entry.content || '');
   }
 
   return lines.join('\n');
@@ -409,105 +522,43 @@ export function parseMarkdownFile(content: string): ParsedEntry[] {
   const entries: ParsedEntry[] = [];
   const normalizedContent = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
   const lines = normalizedContent.split('\n');
+  let state = createMarkdownParseState();
 
-  let currentDate: string | null = null;
-  let currentIndex = 0;
-  let currentTags: string[] = [];
-  let currentVisibility: 'public' | 'private' | undefined;
-  let currentDiaryName: string | undefined;
-  let contentLines: string[] = [];
-  let inEntry = false;
-
-  function saveCurrentEntry(): void {
-    if (currentDate && contentLines.length > 0) {
-      const content = contentLines.join('\n').trim();
-      if (content) {
-        const entry: ParsedEntry = {
-          date: currentDate,
-          index: currentIndex,
-          tags: currentTags,
-          content,
-          format: 'markdown',
-        };
-        if (currentVisibility) {
-          entry.visibility = currentVisibility;
-        }
-        if (currentDiaryName) {
-          entry.diaryName = currentDiaryName;
-        }
-        entries.push(entry);
-      }
-    }
-    contentLines = [];
-    currentTags = [];
-    currentVisibility = undefined;
-    currentDiaryName = undefined;
-    inEntry = false;
-  }
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+  for (const line of lines) {
     const trimmed = line.trim();
 
-    // Date heading: # YYYY-MM-DD
     const dateMatch = /^#\s+(\d{4}-\d{2}-\d{2})/.exec(trimmed);
     if (dateMatch) {
-      saveCurrentEntry();
-      currentDate = dateMatch[1];
-      currentIndex = 1;
-      inEntry = true;
+      state = finalizeMarkdownEntry(entries, state);
+      state = { ...state, currentDate: dateMatch[1], currentIndex: 1, inEntry: true };
       continue;
     }
 
-    // Same-day separator: ---
-    if (trimmed === '---' && currentDate) {
-      saveCurrentEntry();
-      currentIndex++;
-      inEntry = true;
+    if (trimmed === '---' && state.currentDate) {
+      state = finalizeMarkdownEntry(entries, state);
+      state = { ...state, currentIndex: state.currentIndex + 1, inEntry: true };
       continue;
     }
 
-    // Tags/visibility/diary metadata line
-    const tagsMatch = /^\*\*Tags:\*\*\s*(.+?)(?:\s*\|\s*\*\*Visibility:\*\*\s*(public|private))?(?:\s*\|\s*\*\*Diary:\*\*\s*(.+?))?$/.exec(trimmed);
-    if (tagsMatch && inEntry && contentLines.every((l) => l.trim() === '')) {
-      currentTags = tagsMatch[1]
-        .split(',')
-        .map((t) => t.trim().replace(/^`|`$/g, ''))
-        .filter(Boolean);
-      if (tagsMatch[2]) {
-        currentVisibility = tagsMatch[2] as 'public' | 'private';
-      }
-      if (tagsMatch[3]) {
-        currentDiaryName = tagsMatch[3].trim();
-      }
-      contentLines = [];
+    const metadata = state.inEntry && state.contentLines.every((contentLine) => contentLine.trim() === '')
+      ? parseMarkdownMetadataLine(trimmed)
+      : null;
+    if (metadata) {
+      state = {
+        ...state,
+        currentTags: metadata.tags,
+        currentVisibility: metadata.visibility,
+        currentDiaryName: metadata.diaryName,
+        contentLines: [],
+      };
       continue;
     }
 
-    // Visibility-only or visibility+diary metadata line
-    const visOnlyMatch = /^\*\*Visibility:\*\*\s*(public|private)(?:\s*\|\s*\*\*Diary:\*\*\s*(.+?))?$/.exec(trimmed);
-    if (visOnlyMatch && inEntry && contentLines.every((l) => l.trim() === '')) {
-      currentVisibility = visOnlyMatch[1] as 'public' | 'private';
-      if (visOnlyMatch[2]) {
-        currentDiaryName = visOnlyMatch[2].trim();
-      }
-      contentLines = [];
-      continue;
-    }
-
-    // Diary-only metadata line
-    const diaryOnlyMatch = /^\*\*Diary:\*\*\s*(.+)$/.exec(trimmed);
-    if (diaryOnlyMatch && inEntry && contentLines.every((l) => l.trim() === '')) {
-      currentDiaryName = diaryOnlyMatch[1].trim();
-      contentLines = [];
-      continue;
-    }
-
-    if (inEntry) {
-      contentLines.push(line);
+    if (state.inEntry) {
+      state.contentLines.push(line);
     }
   }
 
-  saveCurrentEntry();
+  finalizeMarkdownEntry(entries, state);
   return entries;
 }

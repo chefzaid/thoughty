@@ -13,11 +13,14 @@ import {
   parseMarkdownFile,
   findDuplicates,
   FormatConfig,
+  ParsedEntry,
 } from '@/common/utils';
 import { FormatConfigDto, PreviewImportDto, ImportDto, PreviewResponseDto, ImportResponseDto } from './dto';
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_ENTRIES_PER_IMPORT = 10000;
+
+export type ExportFormat = 'txt' | 'json' | 'md';
 
 @Injectable()
 export class IoService {
@@ -72,6 +75,98 @@ export class IoService {
     }
   }
 
+  private async buildDiaryNameMap(
+    userId: number,
+    parsedEntries: ParsedEntry[],
+    diaryId?: number,
+  ): Promise<Map<string, number> | undefined> {
+    if (diaryId || !parsedEntries.some((entry) => entry.diaryName)) {
+      return undefined;
+    }
+
+    const diaries = await this.diaryRepository.find({ where: { userId } });
+    return new Map(diaries.map((diary) => [diary.name.toLowerCase(), diary.id]));
+  }
+
+  private async buildDuplicatesToSkip(
+    userId: number,
+    parsedEntries: ParsedEntry[],
+    skipDuplicates: boolean,
+    diaryId?: number,
+  ): Promise<Set<number>> {
+    const duplicatesToSkip = new Set<number>();
+    if (!skipDuplicates) {
+      return duplicatesToSkip;
+    }
+
+    const qb = this.entryRepository
+      .createQueryBuilder('e')
+      .where('e.user_id = :userId', { userId });
+
+    if (diaryId) {
+      qb.andWhere('e.diary_id = :diaryId', { diaryId });
+    }
+
+    const existingEntries = await qb.getMany();
+    const duplicates = findDuplicates(parsedEntries, existingEntries);
+
+    for (const duplicate of duplicates) {
+      const index = parsedEntries.indexOf(duplicate.imported);
+      if (index !== -1) {
+        duplicatesToSkip.add(index);
+      }
+    }
+
+    return duplicatesToSkip;
+  }
+
+  private async getDefaultVisibility(
+    userId: number,
+    diaryId?: number,
+  ): Promise<'public' | 'private'> {
+    if (!diaryId) {
+      return 'private';
+    }
+
+    const diary = await this.diaryRepository.findOne({ where: { id: diaryId, userId } });
+    return diary?.visibility ?? 'private';
+  }
+
+  private resolveEntryDiaryId(
+    entry: ParsedEntry,
+    targetDiaryId?: number,
+    diaryNameMap?: Map<string, number>,
+  ): number | undefined {
+    if (!diaryNameMap || !entry.diaryName) {
+      return targetDiaryId;
+    }
+
+    return diaryNameMap.get(entry.diaryName.toLowerCase()) ?? targetDiaryId;
+  }
+
+  private async saveImportedEntry(
+    userId: number,
+    entry: ParsedEntry,
+    defaultVisibility: 'public' | 'private',
+    diaryId?: number,
+  ): Promise<void> {
+    const countResult = await this.entryRepository.count({
+      where: { userId, date: entry.date },
+    });
+    const nextIndex = countResult + 1;
+
+    await this.entryRepository.save({
+      userId,
+      date: entry.date,
+      index: nextIndex,
+      tags: entry.tags,
+      content: entry.content,
+      format: entry.format || 'plain',
+      visibility: entry.visibility || defaultVisibility,
+      diaryId,
+    });
+  }
+
   async getFormat(userId: number): Promise<FormatConfig> {
     return this.getFormatConfig(userId);
   }
@@ -80,11 +175,16 @@ export class IoService {
     const config = validateFormatConfig(dto);
 
     for (const [key, value] of Object.entries(config)) {
+      const serializedValue =
+        typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean'
+          ? String(value)
+          : JSON.stringify(value);
+
       await this.settingRepository.upsert(
         {
           userId,
           key: `io_${key}`,
-          value: String(value),
+          value: serializedValue,
         },
         ['userId', 'key'],
       );
@@ -93,7 +193,7 @@ export class IoService {
     return { success: true, config };
   }
 
-  async export(userId: number, diaryId?: number, includeVisibility?: boolean, format: 'txt' | 'json' | 'md' = 'txt'): Promise<{ content: string; filename: string; contentType: string }> {
+  async export(userId: number, diaryId?: number, includeVisibility?: boolean, format: ExportFormat = 'txt'): Promise<{ content: string; filename: string; contentType: string }> {
     const formatConfig = await this.getFormatConfig(userId);
 
     const qb = this.entryRepository
@@ -144,7 +244,7 @@ export class IoService {
     let diaryLabel = '';
     if (diaryId) {
       const diary = await this.diaryRepository.findOne({ where: { id: diaryId, userId } });
-      diaryLabel = diary ? diary.name.replace(/[^a-zA-Z0-9_-]/g, '_') : `diary${diaryId}`;
+      diaryLabel = diary ? diary.name.replaceAll(/[^a-zA-Z0-9_-]/g, '_') : `diary${diaryId}`;
     } else {
       diaryLabel = 'all_diaries';
     }
@@ -216,50 +316,14 @@ export class IoService {
 
     const skipDuplicates = dto.skipDuplicates !== false;
     const targetDiaryId = await this.getTargetDiaryId(userId, dto.diaryId);
-
-    // Build diary name -> id map for entries with diary names
-    let diaryNameMap: Map<string, number> | undefined;
-    if (!dto.diaryId) {
-      const hasDiaryNames = parsedEntries.some((e) => e.diaryName);
-      if (hasDiaryNames) {
-        const diaries = await this.diaryRepository.find({ where: { userId } });
-        diaryNameMap = new Map(diaries.map((d) => [d.name.toLowerCase(), d.id]));
-      }
-    }
-
-    // Build duplicate skip set
-    const duplicatesToSkip = new Set<number>();
-    if (skipDuplicates) {
-      const qb = this.entryRepository
-        .createQueryBuilder('e')
-        .where('e.user_id = :userId', { userId });
-
-      if (dto.diaryId) {
-        qb.andWhere('e.diary_id = :diaryId', { diaryId: dto.diaryId });
-      }
-
-      const existingEntries = await qb.getMany();
-      const duplicates = findDuplicates(parsedEntries, existingEntries);
-
-      for (const dup of duplicates) {
-        const index = parsedEntries.indexOf(dup.imported);
-        if (index !== -1) {
-          duplicatesToSkip.add(index);
-        }
-      }
-    }
+    const [diaryNameMap, duplicatesToSkip, defaultVisibility] = await Promise.all([
+      this.buildDiaryNameMap(userId, parsedEntries, dto.diaryId),
+      this.buildDuplicatesToSkip(userId, parsedEntries, skipDuplicates, dto.diaryId),
+      this.getDefaultVisibility(userId, targetDiaryId),
+    ]);
 
     let importedCount = 0;
     let skippedCount = 0;
-
-    // Get diary's default visibility
-    let defaultVisibility: 'public' | 'private' = 'private';
-    if (targetDiaryId) {
-      const diary = await this.diaryRepository.findOne({ where: { id: targetDiaryId, userId } });
-      if (diary?.visibility) {
-        defaultVisibility = diary.visibility;
-      }
-    }
 
     for (let i = 0; i < parsedEntries.length; i++) {
       if (duplicatesToSkip.has(i)) {
@@ -268,32 +332,8 @@ export class IoService {
       }
 
       const entry = parsedEntries[i];
-
-      // Calculate index for the day
-      const countResult = await this.entryRepository.count({
-        where: { userId, date: entry.date },
-      });
-      const nextIndex = countResult + 1;
-
-      // Resolve diary: use diary name if present, otherwise fall back to target diary
-      let entryDiaryId = targetDiaryId;
-      if (diaryNameMap && entry.diaryName) {
-        const matchedId = diaryNameMap.get(entry.diaryName.toLowerCase());
-        if (matchedId) {
-          entryDiaryId = matchedId;
-        }
-      }
-
-      await this.entryRepository.save({
-        userId,
-        date: entry.date,
-        index: nextIndex,
-        tags: entry.tags,
-        content: entry.content,
-        format: entry.format || 'plain',
-        visibility: entry.visibility || defaultVisibility,
-        diaryId: entryDiaryId,
-      });
+      const entryDiaryId = this.resolveEntryDiaryId(entry, targetDiaryId, diaryNameMap);
+      await this.saveImportedEntry(userId, entry, defaultVisibility, entryDiaryId);
 
       importedCount++;
     }
