@@ -295,7 +295,7 @@ Write-Banner "THOUGHTY DEV SERVER"
 
 if ($env:kill -eq "true") {
     Write-Warn "Killing existing node processes..."
-    npm run kill 2>$null
+  npm.cmd run kill 2>$null
     Write-Host ""
 }
 
@@ -309,7 +309,7 @@ Write-Step "Waiting for database to be ready..."
 for ($i = 1; $i -le 30; $i++) {
     try {
         Push-Location thoughty-server
-        npx ts-node -r tsconfig-paths/register -e "const { query, closeDatabase } = require('./scripts/lib/db'); (async () => { try { await query('SELECT 1'); await closeDatabase(); process.exit(0); } catch { await closeDatabase().catch(()=>{}); process.exit(1); } })();" 2>$null
+    npx.cmd ts-node -r tsconfig-paths/register -e "const { query, closeDatabase } = require('./scripts/lib/db'); (async () => { try { await query('SELECT 1'); await closeDatabase(); process.exit(0); } catch { await closeDatabase().catch(()=>{}); process.exit(1); } })();" 2>$null
         Pop-Location
         if ($LASTEXITCODE -eq 0) { break }
     } catch {
@@ -322,23 +322,23 @@ Write-Host ""
 
 # Apply idempotent migrations on every run so existing databases pick up new columns/indexes
 Write-Step "Running database migrations..."
-Push-Location thoughty-server; npm run db:migrate; Pop-Location
+Push-Location thoughty-server; npm.cmd run db:migrate; Pop-Location
 Write-Host ""
 
 # Seed if database is empty
 Push-Location thoughty-server
-$needsSeed = npx ts-node -r tsconfig-paths/register -e "const { query, closeDatabase } = require('./scripts/lib/db'); (async () => { try { const rows = await query('SELECT COUNT(*) as count FROM users'); await closeDatabase(); process.stdout.write(rows[0].count === '0' ? 'yes' : 'no'); } catch { await closeDatabase().catch(()=>{}); process.stdout.write('yes'); } })();" 2>$null
+$needsSeed = npx.cmd ts-node -r tsconfig-paths/register -e "const { query, closeDatabase } = require('./scripts/lib/db'); (async () => { try { const rows = await query('SELECT COUNT(*) as count FROM users'); await closeDatabase(); process.stdout.write(rows[0].count === '0' ? 'yes' : 'no'); } catch { await closeDatabase().catch(()=>{}); process.stdout.write('yes'); } })();" 2>$null
 Pop-Location
 if ($needsSeed -eq "yes") {
     Write-Warn "Empty database detected — seeding with test data..."
-    Push-Location thoughty-server; npm run db:seed; Pop-Location
+  Push-Location thoughty-server; npm.cmd run db:seed; Pop-Location
 } else {
     Write-Ok "Database already has data, skipping seed"
 }
 Write-Host ""
 
 Write-Step "Starting server in background..."
-Start-Process -NoNewWindow -FilePath "cmd.exe" -ArgumentList "/c", "cd thoughty-server && npm run dev"
+Start-Process -NoNewWindow -FilePath "cmd.exe" -ArgumentList "/c", "cd thoughty-server && npm.cmd run dev"
 
 # Wait for server to be ready before showing URLs
 Start-Sleep -Seconds 4
@@ -355,7 +355,7 @@ Write-Host ""
 
 Write-Step "Starting client..."
 Set-Location thoughty-web
-npm run dev
+npm.cmd run dev
 ```
 
 ## seed
@@ -371,7 +371,7 @@ cd thoughty-server && npm run db:seed
 ```powershell
 $ErrorActionPreference = "Stop"
 Write-Host ""
-Set-Location thoughty-server; npm run db:seed
+Set-Location thoughty-server; npm.cmd run db:seed
 ```
 
 ## migrate
@@ -407,7 +407,7 @@ Write-Host "  📋 DATABASE MIGRATIONS" -ForegroundColor White
 Write-Host "──────────────────────────────────────────────────`n" -ForegroundColor Magenta
 
 Write-Host "→ Running migrations..." -ForegroundColor Cyan
-Set-Location thoughty-server; npm run db:migrate
+Set-Location thoughty-server; npm.cmd run db:migrate
 Write-Host ""
 Write-Host "✔ " -NoNewline -ForegroundColor Green; Write-Host "Migrations completed!"
 ```
@@ -448,9 +448,9 @@ if ($env:entries -eq "true") {
     $args += "--entries-only"
 }
 if ($args.Count -gt 0) {
-    npm run db:nuke -- @args
+  npm.cmd run db:nuke -- @args
 } else {
-    npm run db:nuke
+  npm.cmd run db:nuke
 }
 ```
 
@@ -465,7 +465,7 @@ cd thoughty-server && npm run db:check
 
 ```powershell
 $ErrorActionPreference = "Stop"
-Set-Location thoughty-server; npm run db:check
+Set-Location thoughty-server; npm.cmd run db:check
 ```
 
 ## kill
@@ -477,7 +477,7 @@ cd thoughty-server && npm run kill-node
 ```
 
 ```powershell
-Set-Location thoughty-server; npm run kill-node
+Set-Location thoughty-server; npm.cmd run kill-node
 ```
 
 ## coverage
@@ -491,7 +491,7 @@ cd thoughty-server && npm run coverage-report
 
 ```powershell
 $ErrorActionPreference = "Stop"
-Set-Location thoughty-server; npm run coverage-report
+Set-Location thoughty-server; npm.cmd run coverage-report
 ```
 
 ## lint
@@ -551,12 +551,12 @@ if ($env:fix -eq "true") {
 
 Write-Host "`n▸ LINTING SERVER" -ForegroundColor Cyan
 Set-Location thoughty-server
-npm run lint $FIX_FLAG
+npm.cmd run lint $FIX_FLAG
 Set-Location ..
 
 Write-Host "`n▸ LINTING CLIENT" -ForegroundColor Cyan
 Set-Location thoughty-web
-npx eslint . $FIX_FLAG
+npx.cmd eslint . $FIX_FLAG
 Set-Location ..
 
 Write-Host ""
