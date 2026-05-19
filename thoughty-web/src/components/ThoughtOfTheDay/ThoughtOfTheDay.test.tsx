@@ -18,6 +18,7 @@ const mockT = (key: string): string => key;
 describe('ThoughtOfTheDay', () => {
     beforeEach(() => {
         globalThis.fetch = vi.fn();
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
     });
 
     afterEach(() => {

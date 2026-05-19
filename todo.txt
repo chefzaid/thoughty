@@ -4,7 +4,6 @@ Features to implement:
 *** Personalization & UX
 - Font customization (type, size, color) for better readability and user preference in Profile settings
 - Routes and paths for each view (Journal, Stats, Profile, Tags, etc.)
-- Permalink for each entry to easily share or bookmark specific thoughts + Share button
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
 - Voice personalization for TTS
 - Add other languages support (i18n) for the UI (Spanish, Italian, German, etc.)

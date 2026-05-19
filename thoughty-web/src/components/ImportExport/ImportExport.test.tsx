@@ -45,6 +45,7 @@ describe('ImportExport', () => {
         globalThis.fetch = vi.fn();
         globalThis.URL.createObjectURL = vi.fn(() => 'blob:test');
         globalThis.URL.revokeObjectURL = vi.fn();
+        vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
         mockCloudSyncService.getStatus.mockResolvedValue({});
         mockCloudSyncService.getSchedules.mockResolvedValue([]);
     });
@@ -262,6 +263,8 @@ describe('ImportExport', () => {
 
     it('shows loading state when format config is being fetched', () => {
         (globalThis.fetch as Mock).mockReturnValue(new Promise(() => {}));
+        mockCloudSyncService.getStatus.mockReturnValue(new Promise(() => {}));
+        mockCloudSyncService.getSchedules.mockReturnValue(new Promise(() => {}));
 
         render(<ImportExport theme="dark" t={mockT} />);
 
@@ -610,7 +613,11 @@ describe('ImportExport', () => {
 
             // Click the import button on the file row (not the section heading)
             const importButtons = screen.getAllByText('import');
-            const fileImportButton = importButtons.find(el => el.tagName === 'BUTTON')!;
+            const fileImportButton = importButtons.find(el => el.tagName === 'BUTTON');
+            expect(fileImportButton).toBeDefined();
+            if (!fileImportButton) {
+                throw new Error('Expected a file import button in the cloud file row');
+            }
             fireEvent.click(fileImportButton);
 
             await waitFor(() => {
@@ -644,7 +651,11 @@ describe('ImportExport', () => {
             });
 
             const importButtons = screen.getAllByText('import');
-            const fileImportButton = importButtons.find(el => el.tagName === 'BUTTON')!;
+            const fileImportButton = importButtons.find(el => el.tagName === 'BUTTON');
+            expect(fileImportButton).toBeDefined();
+            if (!fileImportButton) {
+                throw new Error('Expected a file import button in the cloud file row');
+            }
             fireEvent.click(fileImportButton);
 
             await waitFor(() => {

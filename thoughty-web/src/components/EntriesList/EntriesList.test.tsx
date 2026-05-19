@@ -52,6 +52,8 @@ describe('EntriesList', () => {
         onSaveEdit: vi.fn(),
         onCancelEdit: vi.fn(),
         onNavigateToEntry: vi.fn(),
+        onShareEntry: vi.fn().mockResolvedValue(true),
+        getEntryPermalink: (entryId: number) => `https://thoughty.test/?entry=${entryId}`,
         sourceEntry: null,
         activeTargetId: null,
         onBackToSource: vi.fn(),
@@ -67,6 +69,9 @@ describe('EntriesList', () => {
                 private: 'Private',
                 publicTooltip: 'Public - visible to everyone',
                 privateTooltip: 'Private - only you can see',
+                entryPermalink: 'Open entry permalink',
+                shareEntry: 'Share entry',
+                entryLinkCopied: 'Entry link copied',
                 listen: 'Listen',
                 stopListening: 'Stop listening',
                 listenThisEntry: 'Read this entry',
@@ -215,6 +220,20 @@ describe('EntriesList', () => {
             await user.click(deleteButtons[0]);
 
             expect(onDelete).toHaveBeenCalledWith(1);
+        });
+
+        it('renders a permalink and shares the entry when requested', async () => {
+            const onShareEntry = vi.fn().mockResolvedValue(true);
+            const user = userEvent.setup();
+            render(<EntriesList {...defaultProps} onShareEntry={onShareEntry} />);
+
+            const permalinkLinks = screen.getAllByLabelText('Open entry permalink');
+            expect(permalinkLinks[0]).toHaveAttribute('href', 'https://thoughty.test/?entry=1');
+
+            const shareButtons = screen.getAllByLabelText('Share entry');
+            await user.click(shareButtons[0]);
+
+            expect(onShareEntry).toHaveBeenCalledWith(mockEntries[0]);
         });
     });
 

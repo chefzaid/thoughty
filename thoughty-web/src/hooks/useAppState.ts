@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { createAuthFetch, createConfigService, createEntriesService, createDiariesService, createAttachmentsService, createAiService, createCloudSyncService } from '../services/api';
 import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo, Attachment } from '../types';
-import { getTranslation, TranslationKey } from '../utils/translations';
+import { getTranslation } from '../utils/translations';
 
 const getAutoTagLimit = (value: string | number | undefined): number => {
   const parsed = Number.parseInt(String(value ?? '0'), 10);
@@ -86,7 +86,7 @@ export const useConfig = (isAuthenticated: boolean) => {
 
   // Translation function
   const t = useCallback((key: string, params: Record<string, string | number> = {}): string => {
-    return getTranslation(config.language || 'en', key as TranslationKey, params);
+    return getTranslation(config.language || 'en', key, params);
   }, [config.language]);
 
   const downloadUserData = useCallback(async () => {
@@ -108,7 +108,7 @@ export const useConfig = (isAuthenticated: boolean) => {
 /**
  * Hook to manage diaries
  */
-export const useDiaries = (isAuthenticated: boolean) => {
+export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelection = false) => {
   const { diariesService } = useApiServices();
   const [diaries, setDiaries] = useState<Diary[]>([]);
   const [currentDiaryId, setCurrentDiaryId] = useState<number | null>(null);
@@ -116,11 +116,11 @@ export const useDiaries = (isAuthenticated: boolean) => {
   const fetchDiaries = useCallback(async () => {
     const data = await diariesService.fetchDiaries();
     setDiaries(data);
-    if (!currentDiaryId && data.length > 0) {
+    if (!suppressDefaultDiarySelection && !currentDiaryId && data.length > 0) {
       const defaultDiary = data.find(d => d.is_default);
       if (defaultDiary) setCurrentDiaryId(defaultDiary.id);
     }
-  }, [diariesService, currentDiaryId]);
+  }, [diariesService, currentDiaryId, suppressDefaultDiarySelection]);
 
   const handleCreateDiary = useCallback(async (diaryData: Partial<Diary>) => {
     const result = await diariesService.createDiary(diaryData);
@@ -343,7 +343,9 @@ export const useEntries = (
     if (targetEntryId && !loading && entries.length > 0) {
       const entryElement = document.getElementById(`entry-${targetEntryId}`);
       if (entryElement) {
-        entryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (typeof entryElement.scrollIntoView === 'function') {
+          entryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
         entryElement.classList.add('highlight-entry');
         setTimeout(() => {
           entryElement.classList.remove('highlight-entry');

@@ -1,33 +1,27 @@
 import { useEffect } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
-import { render, waitFor } from '@testing-library/react';
+import { act, render, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthContext';
 
-interface AuthContextValue {
-    user: { email: string } | null;
-    loading: boolean;
-    error: string | null;
-    login: (email: string, password: string) => Promise<{ success: boolean }>;
-    register: (email: string, password: string, username: string) => Promise<{ success: boolean }>;
-    logout: () => Promise<void>;
-    authFetch: (url: string, options?: RequestInit) => Promise<Response>;
-    forgotPassword: (email: string) => Promise<{ success: boolean }>;
-    resetPassword: (token: string, password: string) => Promise<{ success: boolean }>;
-    changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean }>;
-    deleteAccount: (password: string) => Promise<{ success: boolean }>;
-    signInWithGoogle: () => Promise<{ success: boolean }>;
-}
+type AuthContextValue = ReturnType<typeof useAuth>;
 
 interface ContextSpyProps {
     onReady: (ctx: AuthContextValue) => void;
 }
 
 function ContextSpy({ onReady }: ContextSpyProps): null {
-    const ctx = useAuth() as AuthContextValue;
+    const ctx = useAuth();
     useEffect(() => {
         onReady(ctx);
     }, [ctx, onReady]);
     return null;
+}
+
+function requireContext(ctx: AuthContextValue | undefined): AuthContextValue {
+    if (!ctx) {
+        throw new Error('Auth context was not ready');
+    }
+    return ctx;
 }
 
 describe('AuthContext', () => {
@@ -59,8 +53,7 @@ describe('AuthContext', () => {
         );
 
         await waitFor(() => {
-            expect(ctx).toBeTruthy();
-            expect(ctx!.loading).toBe(false);
+            expect(requireContext(ctx).loading).toBe(false);
         });
     });
 
@@ -79,7 +72,7 @@ describe('AuthContext', () => {
         );
 
         await waitFor(() => {
-            expect(ctx!.user?.email).toBe('user@example.com');
+            expect(requireContext(ctx).user?.email).toBe('user@example.com');
         });
     });
 
@@ -100,11 +93,18 @@ describe('AuthContext', () => {
             </AuthProvider>
         );
 
-        const result = await ctx!.register('new@example.com', 'pass123', 'newuser');
+        await waitFor(() => {
+            requireContext(ctx);
+        });
+
+        let result: { success: boolean } | undefined;
+        await act(async () => {
+            result = await requireContext(ctx).register('new@example.com', 'pass123', 'newuser');
+        });
         expect(result.success).toBe(true);
         expect(localStorage.getItem('accessToken')).toBe('access');
         await waitFor(() => {
-            expect(ctx!.user?.email).toBe('new@example.com');
+            expect(requireContext(ctx).user?.email).toBe('new@example.com');
         });
     });
 
@@ -121,10 +121,17 @@ describe('AuthContext', () => {
             </AuthProvider>
         );
 
-        const result = await ctx!.register('bad@example.com', 'pass', 'bad');
+        await waitFor(() => {
+            requireContext(ctx);
+        });
+
+        let result: { success: boolean } | undefined;
+        await act(async () => {
+            result = await requireContext(ctx).register('bad@example.com', 'pass', 'bad');
+        });
         expect(result.success).toBe(false);
         await waitFor(() => {
-            expect(ctx!.error).toBe('Registration failed');
+            expect(requireContext(ctx).error).toBe('Registration failed');
         });
     });
 
@@ -145,11 +152,18 @@ describe('AuthContext', () => {
             </AuthProvider>
         );
 
-        const result = await ctx!.login('login@example.com', 'pass');
+        await waitFor(() => {
+            requireContext(ctx);
+        });
+
+        let result: { success: boolean } | undefined;
+        await act(async () => {
+            result = await requireContext(ctx).login('login@example.com', 'pass');
+        });
         expect(result.success).toBe(true);
         expect(localStorage.getItem('refreshToken')).toBe('refresh');
         await waitFor(() => {
-            expect(ctx!.user?.email).toBe('login@example.com');
+            expect(requireContext(ctx).user?.email).toBe('login@example.com');
         });
     });
 
@@ -159,6 +173,13 @@ describe('AuthContext', () => {
 
         let callCount = 0;
         (globalThis.fetch as Mock).mockImplementation((url: string) => {
+            if (url === '/api/auth/me') {
+                return Promise.resolve({
+                    status: 200,
+                    ok: true,
+                    json: async () => ({ id: 1, email: 'refresh@example.com' }),
+                });
+            }
             if (url.endsWith('/refresh')) {
                 return Promise.resolve({
                     ok: true,
@@ -182,7 +203,14 @@ describe('AuthContext', () => {
             </AuthProvider>
         );
 
-        const response = await ctx!.authFetch('/api/protected');
+        await waitFor(() => {
+            expect(requireContext(ctx).loading).toBe(false);
+        });
+
+        let response: Response | undefined;
+        await act(async () => {
+            response = await requireContext(ctx).authFetch('/api/protected');
+        });
         expect(response.ok).toBe(true);
         expect(callCount).toBe(2);
     });
@@ -204,13 +232,21 @@ describe('AuthContext', () => {
             </AuthProvider>
         );
 
-        await ctx!.login('logout@example.com', 'pass');
+        await waitFor(() => {
+            requireContext(ctx);
+        });
+
+        await act(async () => {
+            await requireContext(ctx).login('logout@example.com', 'pass');
+        });
         (globalThis.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => ({}) });
-        await ctx!.logout();
+        await act(async () => {
+            await requireContext(ctx).logout();
+        });
 
         expect(localStorage.getItem('accessToken')).toBe(null);
         await waitFor(() => {
-            expect(ctx!.user).toBe(null);
+            expect(requireContext(ctx).user).toBe(null);
         });
     });
 
@@ -228,16 +264,32 @@ describe('AuthContext', () => {
             </AuthProvider>
         );
 
-        const forgot = await ctx!.forgotPassword('a@b.com');
+        await waitFor(() => {
+            requireContext(ctx);
+        });
+
+        let forgot: { success: boolean } | undefined;
+        await act(async () => {
+            forgot = await requireContext(ctx).forgotPassword('a@b.com');
+        });
         expect(forgot.success).toBe(true);
 
-        const reset = await ctx!.resetPassword('token', 'newpass');
+        let reset: { success: boolean } | undefined;
+        await act(async () => {
+            reset = await requireContext(ctx).resetPassword('token', 'newpass');
+        });
         expect(reset.success).toBe(true);
 
-        const change = await ctx!.changePassword('old', 'new');
+        let change: { success: boolean } | undefined;
+        await act(async () => {
+            change = await requireContext(ctx).changePassword('old', 'new');
+        });
         expect(change.success).toBe(true);
 
-        const del = await ctx!.deleteAccount('pass');
+        let del: { success: boolean } | undefined;
+        await act(async () => {
+            del = await requireContext(ctx).deleteAccount('pass');
+        });
         expect(del.success).toBe(true);
     });
 
@@ -249,6 +301,20 @@ describe('AuthContext', () => {
             </AuthProvider>
         );
 
-        await expect(ctx!.signInWithGoogle()).rejects.toThrow('Google Sign-In not configured');
+        await waitFor(() => {
+            requireContext(ctx);
+        });
+
+        let error: unknown;
+        await act(async () => {
+            try {
+                await requireContext(ctx).signInWithGoogle();
+            } catch (caughtError) {
+                error = caughtError;
+            }
+        });
+
+        expect(error).toBeInstanceOf(Error);
+        expect((error as Error).message).toBe('Google Sign-In not configured');
     });
 });

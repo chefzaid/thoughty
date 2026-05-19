@@ -3,7 +3,7 @@ import { GoogleDriveProvider } from './google-drive.provider';
 
 // Mock global fetch
 const mockFetch = jest.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 describe('GoogleDriveProvider', () => {
   let provider: GoogleDriveProvider;
@@ -20,6 +20,7 @@ describe('GoogleDriveProvider', () => {
 
     provider = new GoogleDriveProvider(configService as ConfigService);
     jest.clearAllMocks();
+    jest.spyOn((provider as any).logger, 'error').mockImplementation();
   });
 
   describe('getAuthUrl', () => {

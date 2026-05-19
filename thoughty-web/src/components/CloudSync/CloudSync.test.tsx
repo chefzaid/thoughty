@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CloudSync from './CloudSync';
 
@@ -43,6 +43,7 @@ describe('CloudSync', () => {
 
     it('renders loading state initially', () => {
         mockCloudSyncService.getStatus.mockReturnValue(new Promise(() => {})); // never resolves
+        mockCloudSyncService.getSchedules.mockReturnValue(new Promise(() => {})); // never resolves
         render(<CloudSync theme="dark" t={mockT} />);
 
         expect(screen.getByText('loading...')).toBeInTheDocument();

@@ -83,6 +83,8 @@ interface EntriesListProps {
     onRemoveEditPendingFile?: (index: number) => void;
     onRemoveEditAttachment?: (id: number) => void;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
+    onShareEntry?: (entry: Entry) => Promise<boolean>;
+    getEntryPermalink?: (entryId: number) => string;
     sourceEntry: SourceEntryInfo | null;
     activeTargetId: number | null;
     onBackToSource: () => void;
@@ -565,7 +567,7 @@ function EntryHistorySection({
 function EntryViewMode({
     entry, config, speaking, activeEntryId, activeTargetId, sourceEntry,
     flatEntries, speakEntry: speak, speakFromEntry: speakFrom, stop,
-    onToggleVisibility, onToggleFavorite, onEdit, onDelete, onNavigateToEntry, onBackToSource, onFetchHistory, onDeleteRevision, onDiscuss, searchTerm, showDiaryLabel, tagMetadata, t
+    onToggleVisibility, onToggleFavorite, onEdit, onDelete, onNavigateToEntry, onShareEntry, getEntryPermalink, onBackToSource, onFetchHistory, onDeleteRevision, onDiscuss, searchTerm, showDiaryLabel, tagMetadata, t
 }: Readonly<{
     entry: Entry;
     config: Config;
@@ -582,6 +584,8 @@ function EntryViewMode({
     onEdit: (entry: Entry) => void;
     onDelete: (id: number) => void;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
+    onShareEntry?: (entry: Entry) => Promise<boolean>;
+    getEntryPermalink?: (entryId: number) => string;
     onBackToSource: () => void;
     onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
@@ -595,6 +599,8 @@ function EntryViewMode({
     const [showHistory, setShowHistory] = useLocalState(false);
     const [revisions, setRevisions] = useLocalState<EntryRevision[]>([]);
     const [loadingHistory, setLoadingHistory] = useLocalState(false);
+    const [shareReady, setShareReady] = useLocalState(false);
+    const entryPermalink = getEntryPermalink?.(entry.id);
 
     const handleToggleHistory = useCallback(async () => {
         if (showHistory) {
@@ -619,6 +625,19 @@ function EntryViewMode({
             setRevisions(revisions.filter(r => r.id !== revisionId));
         }
     }, [onDeleteRevision, entry.id, revisions, setRevisions]);
+
+    const handleShare = useCallback(async () => {
+        if (!onShareEntry) {
+            return;
+        }
+
+        const success = await onShareEntry(entry);
+        setShareReady(success);
+
+        if (success) {
+            globalThis.setTimeout(() => setShareReady(false), 2000);
+        }
+    }, [entry, onShareEntry]);
 
     return (
         <>
@@ -651,7 +670,31 @@ function EntryViewMode({
                             t={t}
                         />
                     )}
+                    {entryPermalink && (
+                        <a
+                            href={entryPermalink}
+                            className="p-1 rounded text-gray-500 hover:text-blue-400 hover:bg-blue-500/10 transition-colors"
+                            title={t('entryPermalink')}
+                            aria-label={t('entryPermalink')}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14a3 3 0 004.243 0l3.536-3.536a3 3 0 00-4.243-4.243L11 8m3 8l-2.293 2.293a3 3 0 01-4.243-4.243L11 11" />
+                            </svg>
+                        </a>
+                    )}
                     <span className="text-xs text-gray-500 font-mono">#{entry.index}</span>
+                    {onShareEntry && (
+                        <button
+                            onClick={() => void handleShare()}
+                            className={`p-1.5 rounded transition-colors ${shareReady ? 'text-green-400 hover:bg-green-500/10' : 'text-gray-500 hover:text-sky-400 hover:bg-sky-500/10'}`}
+                            title={shareReady ? t('entryLinkCopied') : t('shareEntry')}
+                            aria-label={shareReady ? t('entryLinkCopied') : t('shareEntry')}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.882 13.119 9 12.825 9 12.5a2.5 2.5 0 10-2.5 2.5c.325 0 .619-.118.842-.316l8.632 4.316A2.49 2.49 0 0016 19.5a2.5 2.5 0 102.5-2.5c-.325 0-.619.118-.842.316l-8.632-4.316A2.49 2.49 0 009 12.5c0-.325-.118-.619-.316-.842l8.632-4.316A2.49 2.49 0 0018.5 7a2.5 2.5 0 10-2.5-2.5c0 .325.118.619.316.842l-8.632 4.316z" />
+                            </svg>
+                        </button>
+                    )}
                     <button
                         onClick={() => onToggleVisibility(entry)}
                         className={`p-1 rounded transition-colors ${entry.visibility === 'public' ? 'text-green-500 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}
@@ -900,6 +943,8 @@ function EntriesList({
     onRemoveEditPendingFile,
     onRemoveEditAttachment,
     onNavigateToEntry,
+    onShareEntry,
+    getEntryPermalink,
     sourceEntry,
     activeTargetId,
     onBackToSource,
@@ -1173,6 +1218,8 @@ function EntriesList({
                                                 onEdit={onEdit}
                                                 onDelete={onDelete}
                                                 onNavigateToEntry={onNavigateToEntry}
+                                                onShareEntry={onShareEntry}
+                                                getEntryPermalink={getEntryPermalink}
                                                 onBackToSource={onBackToSource}
                                                 onFetchHistory={onFetchHistory}
                                                 onDeleteRevision={onDeleteRevision}

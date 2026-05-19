@@ -82,6 +82,16 @@ describe('EntriesController', () => {
       expect(entriesService.getEntryByDate).toHaveBeenCalledWith(1, query);
       expect(result).toBe(expected);
     });
+
+    it('delegates permalink lookups by entry id to entriesService.getEntryByDate', async () => {
+      const query = { id: 42, limit: 10 } as any;
+      const expected = { found: true, page: 3, entryId: 42 };
+      entriesService.getEntryByDate!.mockResolvedValue(expected);
+
+      const result = await controller.getEntryByDate(mockUser as any, query);
+      expect(entriesService.getEntryByDate).toHaveBeenCalledWith(1, query);
+      expect(result).toBe(expected);
+    });
   });
 
   describe('getHighlights', () => {

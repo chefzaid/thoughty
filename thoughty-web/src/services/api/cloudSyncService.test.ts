@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createCloudSyncService } from './cloudSyncService';
 
 describe('cloudSyncService', () => {
@@ -8,6 +8,11 @@ describe('cloudSyncService', () => {
   beforeEach(() => {
     authFetch = vi.fn();
     service = createCloudSyncService(authFetch);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   describe('getStatus', () => {

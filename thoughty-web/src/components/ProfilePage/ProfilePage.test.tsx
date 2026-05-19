@@ -1,7 +1,27 @@
+import { type ComponentProps } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfilePage from './ProfilePage';
+
+vi.mock('./AISection', () => ({
+    default: ({ localConfig, handleChange }: { localConfig: { autoTagMaxTags?: string; theme?: 'light' | 'dark' }; handleChange: (event: { target: { name: string; value: string } }) => void }) => (
+        <div>
+            <div>aiConfiguration</div>
+            <input
+                type="number"
+                name="autoTagMaxTags"
+                value={localConfig.autoTagMaxTags ?? '0'}
+                onChange={(event) => handleChange({ target: { name: 'autoTagMaxTags', value: event.target.value } })}
+                className={localConfig.theme === 'light' ? 'light' : 'dark'}
+            />
+        </div>
+    ),
+}));
+
+vi.mock('./CloudProvidersSection', () => ({
+    default: () => <div>cloudProviders</div>,
+}));
 
 // Mock the AuthContext
 vi.mock('../../contexts/AuthContext', () => ({
@@ -33,35 +53,16 @@ vi.mock('../../hooks/useAppState', () => ({
     }),
 }));
 
-interface ProfileConfig {
-    name?: string;
-    theme?: 'light' | 'dark';
-    entriesPerPage?: string;
-    language?: string;
-    defaultVisibility?: 'public' | 'private';
-    email?: string;
-    bio?: string;
-    gender?: string;
-    autoTagMaxTags?: string;
-    tagMetadata?: string;
-}
-
-interface Stats {
-    totalEntries: number;
-    uniqueTags: number;
-    firstEntryYear: number;
-}
-
 describe('ProfilePage', () => {
-    const defaultProps = {
+    const defaultProps: ComponentProps<typeof ProfilePage> = {
         config: {
             name: 'John Doe',
-            theme: 'dark' as const,
+            theme: 'dark',
             entriesPerPage: '10',
             language: 'en',
             defaultVisibility: 'private',
             autoTagMaxTags: '0'
-        } as ProfileConfig,
+        },
         allTags: ['focus', 'reflection'],
         onUpdateConfig: vi.fn(),
         onDownloadData: vi.fn().mockResolvedValue(true),
@@ -74,7 +75,7 @@ describe('ProfilePage', () => {
             totalEntries: 42,
             uniqueTags: 15,
             firstEntryYear: 2023
-        } as Stats
+        }
     };
 
     beforeEach(() => {

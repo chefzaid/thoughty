@@ -66,6 +66,7 @@ describe('CloudSyncService', () => {
     }).compile();
 
     service = module.get<CloudSyncService>(CloudSyncService);
+    jest.spyOn((service as any).logger, 'error').mockImplementation();
   });
 
   afterEach(() => {

@@ -305,6 +305,9 @@ export type TranslationKey =
   | 'unfavorite'
   | 'favorites'
   | 'filterFavorites'
+  | 'entryPermalink'
+  | 'shareEntry'
+  | 'entryLinkCopied'
   | 'dragToReorder'
   | 'aiConfiguration'
   | 'aiConfigDescription'
@@ -721,6 +724,9 @@ export const translations: Translations = {
     unfavorite: 'Remove from favorites',
     favorites: 'Favorites',
     filterFavorites: 'Show favorites only',
+    entryPermalink: 'Open entry permalink',
+    shareEntry: 'Share entry',
+    entryLinkCopied: 'Entry link copied',
     dragToReorder: 'Drag to reorder',
     history: 'History',
     viewHistory: 'View history',
@@ -1136,6 +1142,9 @@ export const translations: Translations = {
     unfavorite: 'Retirer des favoris',
     favorites: 'Favoris',
     filterFavorites: 'Afficher les favoris uniquement',
+    entryPermalink: 'Ouvrir le permalien de l\'entrée',
+    shareEntry: 'Partager l\'entrée',
+    entryLinkCopied: 'Lien de l\'entrée copié',
     dragToReorder: 'Glisser pour réorganiser',
     history: 'Historique',
     viewHistory: 'Voir l\'historique',

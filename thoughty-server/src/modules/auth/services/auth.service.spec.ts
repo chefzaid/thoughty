@@ -543,6 +543,7 @@ describe('AuthService', () => {
       userRepository.save.mockResolvedValue({ ...mockUser, deletedAt: new Date() });
       refreshTokenRepository.delete.mockResolvedValue({ affected: 1 });
       emailService.sendAccountDeletionEmail.mockRejectedValue(new Error('SMTP error'));
+      jest.spyOn(console, 'log').mockImplementation(() => undefined);
 
       const result = await service.deleteAccount(1);
 

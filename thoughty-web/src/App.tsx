@@ -34,9 +34,40 @@ import {
 // Types
 import type { ViewType, SourceEntryInfo, Config, Entry } from './types';
 
+const ENTRY_PERMALINK_PARAM = 'entry';
+
+function getPermalinkEntryIdFromLocation(): number | null {
+  const params = new URLSearchParams(globalThis.location.search);
+  const rawEntryId = params.get(ENTRY_PERMALINK_PARAM);
+
+  if (!rawEntryId) {
+    return null;
+  }
+
+  const entryId = Number.parseInt(rawEntryId, 10);
+  return Number.isFinite(entryId) && entryId > 0 ? entryId : null;
+}
+
+function buildEntryPermalink(entryId: number): string {
+  const url = new URL(globalThis.location.pathname, globalThis.location.origin);
+  url.searchParams.set(ENTRY_PERMALINK_PARAM, entryId.toString());
+  return url.toString();
+}
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  if (!globalThis.navigator.clipboard?.writeText) {
+    return false;
+  }
+
+  await globalThis.navigator.clipboard.writeText(text);
+  return true;
+}
+
 function App() {
   const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
   const [authView, setAuthView] = useState<'intro' | 'login' | 'register'>('intro');
+  const [activePermalinkEntryId, setActivePermalinkEntryId] = useState<number | null>(() => getPermalinkEntryIdFromLocation());
+  const [pendingPermalinkEntryId, setPendingPermalinkEntryId] = useState<number | null>(() => getPermalinkEntryIdFromLocation());
   
   // Navigation State
   const [currentView, setCurrentView] = useState<ViewType>('journal');
@@ -64,7 +95,7 @@ function App() {
     handleDeleteDiary,
     handleSetDefaultDiary,
     handleReorderDiaries
-  } = useDiaries(isAuthenticated);
+  } = useDiaries(isAuthenticated, activePermalinkEntryId !== null);
 
   // Entries management
   const {
@@ -229,6 +260,141 @@ function App() {
     setSourceEntry(null);
     setActiveTargetId(null);
   }, [sourceEntry, entriesService, getLimit, setPage, setTargetEntryId, setSourceEntry, setActiveTargetId]);
+
+  const handleShareEntry = useCallback(async (entry: Entry): Promise<boolean> => {
+    const url = buildEntryPermalink(entry.id);
+
+    try {
+      if (typeof globalThis.navigator.share === 'function') {
+        await globalThis.navigator.share({
+          title: t('shareEntry'),
+          url,
+        });
+        return true;
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return false;
+      }
+    }
+
+    try {
+      return await copyTextToClipboard(url);
+    } catch (error) {
+      console.error('Error sharing entry:', error);
+      return false;
+    }
+  }, [t]);
+
+  const resetJournalFiltersForPermalink = useCallback((): boolean => {
+    let didReset = false;
+
+    if (search !== '') {
+      setSearch('');
+      didReset = true;
+    }
+
+    if (filterTags.length > 0) {
+      setFilterTags([]);
+      didReset = true;
+    }
+
+    if (filterDateObj !== null) {
+      setFilterDateObj(null);
+      didReset = true;
+    }
+
+    if (filterVisibility !== 'all') {
+      setFilterVisibility('all');
+      didReset = true;
+    }
+
+    if (filterFavorites) {
+      setFilterFavorites(false);
+      didReset = true;
+    }
+
+    if (currentDiaryId !== null) {
+      setCurrentDiaryId(null);
+      didReset = true;
+    }
+
+    if (page !== 1) {
+      setPage(1);
+      didReset = true;
+    }
+
+    return didReset;
+  }, [
+    currentDiaryId,
+    filterDateObj,
+    filterFavorites,
+    filterTags,
+    filterVisibility,
+    page,
+    search,
+    setCurrentDiaryId,
+    setFilterDateObj,
+    setFilterFavorites,
+    setFilterTags,
+    setFilterVisibility,
+    setPage,
+    setSearch,
+  ]);
+
+  const navigateToPermalinkEntry = useCallback((entryId: number) => {
+    let cancelled = false;
+
+    void (async () => {
+      const data = await entriesService.navigateById(entryId, getLimit());
+      if (cancelled) {
+        return;
+      }
+
+      if (data?.found) {
+        const resolvedEntryId = data.entryId || entryId;
+        setPage(data.page || 1);
+        setTargetEntryId(resolvedEntryId);
+        setActiveTargetId(resolvedEntryId);
+      } else {
+        alert(t('entryNotFound'));
+      }
+
+      setPendingPermalinkEntryId(null);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [entriesService, getLimit, setActiveTargetId, setPage, setTargetEntryId, t]);
+
+  useEffect(() => {
+    const syncPermalinkFromLocation = () => {
+      const entryId = getPermalinkEntryIdFromLocation();
+      setActivePermalinkEntryId(entryId);
+      setPendingPermalinkEntryId(entryId);
+    };
+
+    globalThis.addEventListener('popstate', syncPermalinkFromLocation);
+    return () => globalThis.removeEventListener('popstate', syncPermalinkFromLocation);
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated || pendingPermalinkEntryId === null) {
+      return;
+    }
+
+    if (currentView !== 'journal') {
+      setCurrentView('journal');
+      return;
+    }
+
+    if (resetJournalFiltersForPermalink()) {
+      return;
+    }
+
+    return navigateToPermalinkEntry(pendingPermalinkEntryId);
+  }, [currentView, isAuthenticated, navigateToPermalinkEntry, pendingPermalinkEntryId, resetJournalFiltersForPermalink]);
 
   // Auth success handler
   const handleAuthSuccess = useCallback(() => {
@@ -434,6 +600,8 @@ function App() {
             onRemoveEditPendingFile={removeEditPendingFile}
             onRemoveEditAttachment={removeEditAttachment}
             onNavigateToEntry={handleNavigateToEntry}
+            onShareEntry={handleShareEntry}
+            getEntryPermalink={buildEntryPermalink}
             sourceEntry={sourceEntry}
             activeTargetId={activeTargetId}
             onBackToSource={handleBackToSource}

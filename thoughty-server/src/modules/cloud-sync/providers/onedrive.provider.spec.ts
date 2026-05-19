@@ -3,7 +3,7 @@ import { OneDriveProvider } from './onedrive.provider';
 
 // Mock global fetch
 const mockFetch = jest.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 describe('OneDriveProvider', () => {
   let provider: OneDriveProvider;
@@ -20,6 +20,7 @@ describe('OneDriveProvider', () => {
 
     provider = new OneDriveProvider(configService as ConfigService);
     jest.clearAllMocks();
+    jest.spyOn((provider as any).logger, 'error').mockImplementation();
   });
 
   describe('getAuthUrl', () => {

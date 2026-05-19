@@ -3,7 +3,7 @@ import { DropboxProvider } from './dropbox.provider';
 
 // Mock global fetch
 const mockFetch = jest.fn();
-global.fetch = mockFetch;
+globalThis.fetch = mockFetch;
 
 describe('DropboxProvider', () => {
   let provider: DropboxProvider;
@@ -20,6 +20,7 @@ describe('DropboxProvider', () => {
 
     provider = new DropboxProvider(configService as ConfigService);
     jest.clearAllMocks();
+    jest.spyOn((provider as any).logger, 'error').mockImplementation();
   });
 
   describe('getAuthUrl', () => {

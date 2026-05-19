@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import Stats from './Stats';
 
@@ -70,6 +70,11 @@ describe('Stats Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         globalThis.fetch = vi.fn();
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('displays loading state initially', () => {

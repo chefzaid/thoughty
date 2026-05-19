@@ -88,6 +88,8 @@ interface JournalViewProps {
   onRemoveEditPendingFile?: (index: number) => void;
   onRemoveEditAttachment?: (id: number) => void;
   onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
+  onShareEntry?: (entry: Entry) => Promise<boolean>;
+  getEntryPermalink?: (entryId: number) => string;
   sourceEntry: SourceEntryInfo | null;
   activeTargetId: number | null;
   onBackToSource: () => void;
@@ -194,6 +196,8 @@ function JournalView({
   onRemoveEditPendingFile,
   onRemoveEditAttachment,
   onNavigateToEntry,
+  onShareEntry,
+  getEntryPermalink,
   sourceEntry,
   activeTargetId,
   onBackToSource,
@@ -318,6 +322,8 @@ function JournalView({
         onRemoveEditPendingFile={onRemoveEditPendingFile}
         onRemoveEditAttachment={onRemoveEditAttachment}
         onNavigateToEntry={onNavigateToEntry}
+        onShareEntry={onShareEntry}
+        getEntryPermalink={getEntryPermalink}
         sourceEntry={sourceEntry}
         activeTargetId={activeTargetId}
         onBackToSource={onBackToSource}

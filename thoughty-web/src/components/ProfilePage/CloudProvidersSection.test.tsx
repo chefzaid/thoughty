@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CloudProvidersSection from './CloudProvidersSection';
 
 const mockCloudSyncService = {
@@ -192,9 +192,11 @@ describe('CloudProvidersSection', () => {
         });
 
         // Simulate OAuth callback
-        globalThis.dispatchEvent(new MessageEvent('message', {
-            data: { type: 'cloud-oauth-callback', provider: 'google_drive', code: 'auth-code-123' },
-        }));
+        await act(async () => {
+            globalThis.dispatchEvent(new MessageEvent('message', {
+                data: { type: 'cloud-oauth-callback', provider: 'google_drive', code: 'auth-code-123' },
+            }));
+        });
 
         await waitFor(() => {
             expect(mockCloudSyncService.connect).toHaveBeenCalledWith(

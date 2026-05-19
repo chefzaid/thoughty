@@ -4,6 +4,10 @@ import type { ReactNode } from 'react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 
+vi.mock('react-chartjs-2', () => ({
+    Bar: () => <div data-testid="mock-bar-chart" />,
+}));
+
 // Track the current mock state
 let mockAuthState = {
     user: { id: 'test-user-id', username: 'TestUser', email: 'test@example.com' },
@@ -18,7 +22,7 @@ let mockAuthState = {
     changePassword: vi.fn(),
     resetPassword: vi.fn(),
     deleteAccount: vi.fn(),
-    authFetch: vi.fn(),
+    authFetch: vi.fn((url: string, options?: RequestInit) => mockFetch(url, options)),
     getAccessToken: () => 'mock-token',
     googleClientId: ''
 };
@@ -56,6 +60,7 @@ describe('App Integration Tests', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         localStorage.clear();
+        globalThis.history.replaceState({}, '', '/');
 
         // Reset auth state to authenticated
         mockAuthState = {
@@ -71,7 +76,7 @@ describe('App Integration Tests', () => {
             changePassword: vi.fn(),
             resetPassword: vi.fn(),
             deleteAccount: vi.fn(),
-            authFetch: vi.fn(),
+            authFetch: vi.fn((url: string, options?: RequestInit) => mockFetch(url, options)),
             getAccessToken: () => 'mock-token',
             googleClientId: ''
         };
@@ -82,6 +87,18 @@ describe('App Integration Tests', () => {
                 return Promise.resolve({
                     ok: true,
                     json: () => Promise.resolve(mockConfig)
+                });
+            }
+            if (typeof url === 'string' && url.includes('/api/entries/by-date')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ found: true, page: 1, entryId: 2 })
+                });
+            }
+            if (typeof url === 'string' && url.includes('/api/entries/first')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({ years: [2024], months: ['2024-01'] })
                 });
             }
             if (typeof url === 'string' && url.includes('/api/entries')) {
@@ -99,7 +116,41 @@ describe('App Integration Tests', () => {
             if (typeof url === 'string' && url.includes('/api/stats')) {
                 return Promise.resolve({
                     ok: true,
-                    json: () => Promise.resolve({ totalEntries: 100, streak: 5 })
+                    json: () => Promise.resolve({
+                        totalThoughts: 100,
+                        uniqueTagsCount: 2,
+                        thoughtsPerYear: { '2024': 100 },
+                        thoughtsPerMonth: { '2024-01': 20 },
+                        thoughtsPerTag: { work: 50, personal: 50 },
+                        tagsPerYear: { '2024': { work: 50, personal: 50 } },
+                    })
+                });
+            }
+            if (typeof url === 'string' && url.includes('/api/io/format')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({
+                        entrySeparator: '--------------------------------------------------------------------------------',
+                        sameDaySeparator: '********************************************************************************',
+                        datePrefix: '---',
+                        dateSuffix: '--',
+                        dateFormat: 'YYYY-MM-DD',
+                        tagOpenBracket: '[',
+                        tagCloseBracket: ']',
+                        tagSeparator: ',',
+                    })
+                });
+            }
+            if (typeof url === 'string' && url.includes('/api/cloud-sync/status')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({})
+                });
+            }
+            if (typeof url === 'string' && url.includes('/api/cloud-sync/schedules')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: () => Promise.resolve({})
                 });
             }
             return Promise.resolve({
@@ -180,6 +231,19 @@ describe('App Integration Tests', () => {
 
             await waitFor(() => {
                 expect(screen.getByPlaceholderText("What's on your mind?")).toBeInTheDocument();
+            });
+        });
+
+        it('navigates to a permalink entry from the URL', async () => {
+            globalThis.history.replaceState({}, '', '/?entry=2');
+
+            render(<App />);
+
+            await waitFor(() => {
+                expect(mockFetch).toHaveBeenCalledWith(
+                    '/api/entries/by-date?id=2&limit=10',
+                    {}
+                );
             });
         });
     });

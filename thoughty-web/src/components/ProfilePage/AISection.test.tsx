@@ -22,10 +22,10 @@ const mockModels = [
 describe('AISection', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockFetchModels.mockResolvedValue([]);
+        mockFetchModels.mockReturnValue(new Promise(() => {}));
     });
 
-    it('renders all AI settings fields', () => {
+    it('renders all AI settings fields', async () => {
         render(
             <AISection
                 localConfig={{ theme: 'dark' }}
@@ -33,13 +33,17 @@ describe('AISection', () => {
                 t={mockT}
             />
         );
+
+        await waitFor(() => {
+            expect(mockFetchModels).toHaveBeenCalled();
+        });
 
         expect(screen.getByText('aiConfiguration')).toBeInTheDocument();
         expect(screen.getByText('openRouterModel')).toBeInTheDocument();
         expect(screen.getByText('autoTagMaxTags')).toBeInTheDocument();
     });
 
-    it('shows text input for model when models have not loaded', () => {
+    it('shows text input for model when models have not loaded', async () => {
         render(
             <AISection
                 localConfig={{ theme: 'dark' }}
@@ -47,6 +51,10 @@ describe('AISection', () => {
                 t={mockT}
             />
         );
+
+        await waitFor(() => {
+            expect(mockFetchModels).toHaveBeenCalled();
+        });
 
         const modelInput = screen.getByPlaceholderText('openai/gpt-4o-mini');
         expect(modelInput).toBeInTheDocument();
@@ -195,7 +203,7 @@ describe('AISection', () => {
         });
     });
 
-    it('renders with light theme', () => {
+    it('renders with light theme', async () => {
         render(
             <AISection
                 localConfig={{ theme: 'light' }}
@@ -203,6 +211,10 @@ describe('AISection', () => {
                 t={mockT}
             />
         );
+
+        await waitFor(() => {
+            expect(mockFetchModels).toHaveBeenCalled();
+        });
 
         const modelInput = screen.getByPlaceholderText('openai/gpt-4o-mini');
         expect(modelInput).toHaveClass('light');

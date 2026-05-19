@@ -8,6 +8,7 @@ describe('createAttachmentsService', () => {
   beforeEach(() => {
     authFetch = vi.fn();
     service = createAttachmentsService(authFetch);
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
   afterEach(() => {
