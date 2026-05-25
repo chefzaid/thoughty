@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: thoughty-server
+  name: thoughty-cloud-sync-worker
   namespace: thoughty
   labels:
-    app: thoughty-server
+    app: thoughty-cloud-sync-worker
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
-      app: thoughty-server
+      app: thoughty-cloud-sync-worker
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -18,7 +18,7 @@ spec:
   template:
     metadata:
       labels:
-        app: thoughty-server
+        app: thoughty-cloud-sync-worker
       annotations:
         vault.hashicorp.com/agent-inject: "true"
         vault.hashicorp.com/role: "thoughty-server"
@@ -44,7 +44,7 @@ spec:
     spec:
       serviceAccountName: thoughty-server
       containers:
-        - name: thoughty-server
+        - name: thoughty-cloud-sync-worker
           image: thoughty-server:latest
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
@@ -52,9 +52,7 @@ spec:
             - |
               source /vault/secrets/database &&
               source /vault/secrets/app &&
-              node dist/src/main.js
-          ports:
-            - containerPort: 3001
+              node dist/src/cloud-sync-worker.js
           envFrom:
             - configMapRef:
                 name: thoughty-config
@@ -65,27 +63,3 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
-          livenessProbe:
-            httpGet:
-              path: /api/health
-              port: 3001
-            initialDelaySeconds: 30
-            periodSeconds: 10
-          readinessProbe:
-            httpGet:
-              path: /api/health
-              port: 3001
-            initialDelaySeconds: 10
-            periodSeconds: 5
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: thoughty-server
-  namespace: thoughty
-spec:
-  selector:
-    app: thoughty-server
-  ports:
-    - port: 3001
-      targetPort: 3001

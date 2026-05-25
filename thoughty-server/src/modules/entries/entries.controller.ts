@@ -28,6 +28,14 @@ import {
   GetHighlightsQueryDto,
   DeleteAllQueryDto,
   EntriesListResponseDto,
+  EntryDatesResponseDto,
+  FirstEntryResponseDto,
+  EntryLookupResponseDto,
+  CreateEntryResponseDto,
+  EntryMutationResponseDto,
+  CountedMutationResponseDto,
+  DeleteAllResponseDto,
+  SuccessResponseDto,
 } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
@@ -51,14 +59,14 @@ export class EntriesController {
 
   @Get('dates')
   @ApiOperation({ summary: 'Get all distinct dates that have entries' })
-  @ApiResponse({ status: 200, description: 'Array of dates with entries' })
+  @ApiResponse({ status: 200, description: 'Array of dates with entries', type: EntryDatesResponseDto })
   async getDates(@CurrentUser() user: AuthenticatedUser): Promise<{ dates: string[] }> {
     return this.entriesService.getDates(user.userId);
   }
 
   @Get('first')
   @ApiOperation({ summary: 'Get page number containing first entry for a year/month' })
-  @ApiResponse({ status: 200, description: 'Page info' })
+  @ApiResponse({ status: 200, description: 'Page info', type: FirstEntryResponseDto })
   async getFirstEntry(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetFirstEntryQueryDto,
@@ -68,7 +76,7 @@ export class EntriesController {
 
   @Get('by-date')
   @ApiOperation({ summary: 'Find an entry by date and optional index' })
-  @ApiResponse({ status: 200, description: 'Entry found' })
+  @ApiResponse({ status: 200, description: 'Entry found', type: EntryLookupResponseDto })
   async getEntryByDate(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetEntryByDateQueryDto,
@@ -88,48 +96,48 @@ export class EntriesController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new entry' })
-  @ApiResponse({ status: 201, description: 'Entry created' })
+  @ApiResponse({ status: 201, description: 'Entry created', type: CreateEntryResponseDto })
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateEntryDto,
-  ): Promise<{ success: boolean; entryId: number }> {
+  ): Promise<CreateEntryResponseDto> {
     return this.entriesService.create(user.userId, dto);
   }
 
   @Post('bulk')
   @ApiOperation({ summary: 'Perform bulk operations on entries' })
-  @ApiResponse({ status: 200, description: 'Bulk operation completed' })
+  @ApiResponse({ status: 200, description: 'Bulk operation completed', type: CountedMutationResponseDto })
   async bulkOperation(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: BulkOperationDto,
-  ): Promise<{ success: boolean; affectedCount: number }> {
+  ): Promise<CountedMutationResponseDto> {
     return this.entriesService.bulkOperation(user.userId, dto);
   }
 
   @Patch('tags/rename')
   @ApiOperation({ summary: 'Rename a tag across all of the current user\'s entries' })
-  @ApiResponse({ status: 200, description: 'Tag renamed across entries' })
+  @ApiResponse({ status: 200, description: 'Tag renamed across entries', type: CountedMutationResponseDto })
   async renameTag(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: RenameTagDto,
-  ): Promise<{ success: boolean; affectedCount: number }> {
+  ): Promise<CountedMutationResponseDto> {
     return this.entriesService.renameTag(user.userId, dto.oldTag, dto.newTag);
   }
 
   @Patch('reorder')
   @ApiOperation({ summary: 'Reorder entries within a single day' })
-  @ApiResponse({ status: 200, description: 'Entries reordered' })
+  @ApiResponse({ status: 200, description: 'Entries reordered', type: SuccessResponseDto })
   async reorderEntries(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ReorderEntriesDto,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.entriesService.reorderEntries(user.userId, dto.date, dto.orderedIds);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update an existing entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Entry updated' })
+  @ApiResponse({ status: 200, description: 'Entry updated', type: EntryMutationResponseDto })
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -141,7 +149,7 @@ export class EntriesController {
   @Patch(':id/visibility')
   @ApiOperation({ summary: 'Toggle visibility of an entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Visibility updated' })
+  @ApiResponse({ status: 200, description: 'Visibility updated', type: EntryMutationResponseDto })
   async updateVisibility(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -153,7 +161,7 @@ export class EntriesController {
   @Patch(':id/favorite')
   @ApiOperation({ summary: 'Toggle favorite status of an entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Favorite status updated' })
+  @ApiResponse({ status: 200, description: 'Favorite status updated', type: EntryMutationResponseDto })
   async toggleFavorite(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -165,7 +173,7 @@ export class EntriesController {
   @Patch(':id/archive')
   @ApiOperation({ summary: 'Toggle archive status of an entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Archive status updated' })
+  @ApiResponse({ status: 200, description: 'Archive status updated', type: EntryMutationResponseDto })
   async toggleArchived(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -189,33 +197,33 @@ export class EntriesController {
   @ApiOperation({ summary: 'Delete a specific revision from entry history' })
   @ApiParam({ name: 'id', type: Number })
   @ApiParam({ name: 'revisionId', type: Number })
-  @ApiResponse({ status: 200, description: 'Revision deleted' })
+  @ApiResponse({ status: 200, description: 'Revision deleted', type: SuccessResponseDto })
   async deleteRevision(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
     @Param('revisionId', ParseIntPipe) revisionId: number,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.entriesService.deleteRevision(user.userId, id, revisionId);
   }
 
   @Delete('all')
   @ApiOperation({ summary: 'Delete all entries (optionally filtered by diary)' })
-  @ApiResponse({ status: 200, description: 'Entries deleted' })
+  @ApiResponse({ status: 200, description: 'Entries deleted', type: DeleteAllResponseDto })
   async deleteAll(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: DeleteAllQueryDto,
-  ): Promise<{ success: boolean; deletedCount: number }> {
+  ): Promise<DeleteAllResponseDto> {
     return this.entriesService.deleteAll(user.userId, query.diaryId);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Entry deleted' })
+  @ApiResponse({ status: 200, description: 'Entry deleted', type: SuccessResponseDto })
   async delete(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.entriesService.delete(user.userId, id);
   }
 }

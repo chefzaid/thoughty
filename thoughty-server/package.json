@@ -12,7 +12,9 @@
     "dev": "nest start --watch",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/src/main.js",
+    "start:cloud-sync-worker": "node dist/src/cloud-sync-worker.js",
+    "cloud-sync-worker": "npx ts-node -r tsconfig-paths/register src/cloud-sync-worker.ts",
     "lint": "eslint \"{src,scripts,test}/**/*.ts\" --fix",
     "test": "jest --passWithNoTests",
     "test:watch": "jest --watch",
@@ -24,12 +26,14 @@
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
     "db:migrate": "npx ts-node -r tsconfig-paths/register scripts/migrate.ts",
+    "db:migrate:dist": "node dist/scripts/migrate.js",
     "db:validate-seed": "npx ts-node -r tsconfig-paths/register scripts/seed.ts --validate-only",
     "db:seed": "npx ts-node -r tsconfig-paths/register scripts/seed.ts",
     "db:check": "npx ts-node -r tsconfig-paths/register scripts/check-db.ts",
     "db:nuke": "npx ts-node -r tsconfig-paths/register scripts/nuke-db.ts",
     "kill-node": "npx ts-node scripts/kill-node.ts",
-    "coverage-report": "npx ts-node scripts/coverage-report.ts"
+    "coverage-report": "npx ts-node scripts/coverage-report.ts",
+    "openapi:export": "npx ts-node -r tsconfig-paths/register scripts/export-openapi.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1032.0",

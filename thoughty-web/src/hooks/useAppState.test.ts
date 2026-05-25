@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
-import type { FormEventHandler } from 'react';
+import { renderHook as rtlRenderHook, act, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createElement, type FormEventHandler, type ReactNode } from 'react';
 import { 
   useApiServices, 
   useConfig, 
@@ -82,6 +83,27 @@ vi.mock('../services/api', () => ({
 
 // Mock alert
 global.alert = vi.fn();
+
+function createQueryClientWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+      mutations: {
+        retry: false,
+      },
+    },
+  });
+
+  return function QueryClientWrapper({ children }: Readonly<{ children: ReactNode }>) {
+    return createElement(QueryClientProvider, { client: queryClient }, children);
+  };
+}
+
+function renderHook<TResult>(callback: () => TResult) {
+  return rtlRenderHook(callback, { wrapper: createQueryClientWrapper() });
+}
 
 describe('useAppState Hooks', () => {
   beforeEach(() => {

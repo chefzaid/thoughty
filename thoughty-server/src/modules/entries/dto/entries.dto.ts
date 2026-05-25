@@ -295,7 +295,7 @@ export class EntryResponseDto {
   @ApiProperty()
   user_id: number;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: Number, nullable: true })
   diary_id: number | null;
 
   @ApiProperty()
@@ -309,6 +309,9 @@ export class EntryResponseDto {
 
   @ApiProperty()
   content: string;
+
+  @ApiProperty({ enum: ['plain', 'markdown'] })
+  format: 'plain' | 'markdown';
 
   @ApiProperty()
   visibility: 'public' | 'private';
@@ -327,6 +330,9 @@ export class EntryResponseDto {
 
   @ApiPropertyOptional()
   diary_color?: string;
+
+  @ApiPropertyOptional({ type: () => [AttachmentResponseDto] })
+  attachments?: AttachmentResponseDto[];
 
   @ApiProperty()
   created_at: Date;
@@ -347,4 +353,97 @@ export class EntriesListResponseDto {
 
   @ApiProperty({ type: [String] })
   allTags: string[];
+}
+
+export class AttachmentResponseDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  original_filename: string;
+
+  @ApiProperty()
+  stored_filename: string;
+
+  @ApiProperty()
+  mimetype: string;
+
+  @ApiProperty()
+  size: number;
+}
+
+export class EntryDatesResponseDto {
+  @ApiProperty({ type: [String] })
+  dates: string[];
+}
+
+export class FirstEntryResponseDto {
+  @ApiProperty()
+  page: number;
+
+  @ApiProperty()
+  found: boolean;
+
+  @ApiPropertyOptional()
+  entryId?: number;
+
+  @ApiProperty({ type: [Number] })
+  years: number[];
+
+  @ApiProperty({ type: [String] })
+  months: string[];
+}
+
+export class EntryLookupResponseDto {
+  @ApiProperty()
+  found: boolean;
+
+  @ApiPropertyOptional({ type: EntryResponseDto })
+  entry?: EntryResponseDto;
+
+  @ApiPropertyOptional()
+  page?: number;
+
+  @ApiPropertyOptional()
+  entryId?: number;
+
+  @ApiPropertyOptional()
+  error?: string;
+}
+
+export class CreateEntryResponseDto {
+  @ApiProperty()
+  success: boolean;
+
+  @ApiProperty()
+  entryId: number;
+}
+
+export class EntryMutationResponseDto {
+  @ApiProperty()
+  success: boolean;
+
+  @ApiProperty({ type: EntryResponseDto })
+  entry: EntryResponseDto;
+}
+
+export class CountedMutationResponseDto {
+  @ApiProperty()
+  success: boolean;
+
+  @ApiProperty()
+  affectedCount: number;
+}
+
+export class DeleteAllResponseDto {
+  @ApiProperty()
+  success: boolean;
+
+  @ApiProperty()
+  deletedCount: number;
+}
+
+export class SuccessResponseDto {
+  @ApiProperty()
+  success: boolean;
 }

@@ -111,6 +111,51 @@ pipeline {
             }
         }
 
+                // ── Smoke Test Built Server Image ──────────────────────
+                stage('Smoke Test Server Image') {
+                        steps {
+                                sh '''
+                                        set -euo pipefail
+
+                                        NETWORK="thoughty-ci-${BUILD_NUMBER}"
+                                        POSTGRES_CONTAINER="thoughty-ci-db-${BUILD_NUMBER}"
+
+                                        cleanup() {
+                                            docker rm -f "$POSTGRES_CONTAINER" >/dev/null 2>&1 || true
+                                            docker network rm "$NETWORK" >/dev/null 2>&1 || true
+                                        }
+
+                                        trap cleanup EXIT
+
+                                        docker network create "$NETWORK" >/dev/null
+                                        docker run -d --name "$POSTGRES_CONTAINER" --network "$NETWORK" \
+                                            -e POSTGRES_USER=postgres \
+                                            -e POSTGRES_PASSWORD=password \
+                                            -e POSTGRES_DB=journal \
+                                            postgres:16-alpine >/dev/null
+
+                                        for i in $(seq 1 30); do
+                                            if docker exec "$POSTGRES_CONTAINER" pg_isready -U postgres -d journal >/dev/null 2>&1; then
+                                                break
+                                            fi
+
+                                            sleep 2
+                                        done
+
+                                        docker exec "$POSTGRES_CONTAINER" pg_isready -U postgres -d journal >/dev/null
+
+                                        docker run --rm --network "$NETWORK" \
+                                            -e POSTGRES_HOST="$POSTGRES_CONTAINER" \
+                                            -e POSTGRES_PORT=5432 \
+                                            -e POSTGRES_USER=postgres \
+                                            -e POSTGRES_PASSWORD=password \
+                                            -e POSTGRES_DB=journal \
+                                            ${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} \
+                                            npm run db:migrate:dist
+                                '''
+                        }
+                }
+
         // ── Push Images ──────────────────────────────────────────
         stage('Push Images') {
             when {
@@ -144,15 +189,27 @@ pipeline {
                     sh 'kubectl apply -f deployments/vault-service-accounts.yaml'
                     sh 'kubectl apply -f deployments/postgres.yaml'
                     sh 'kubectl apply -f deployments/server-deployment.yaml'
-                    sh 'kubectl apply -f deployments/web-deployment.yaml'
                     sh 'kubectl apply -f deployments/ingress.yaml'
 
                     // Update image tags to trigger rollout
                     sh "kubectl set image deployment/thoughty-server thoughty-server=${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} -n ${KUBE_NAMESPACE}"
+
+                    // Roll server first so migrations run before the worker starts polling.
+                    sh "kubectl rollout status deployment/thoughty-server -n ${KUBE_NAMESPACE} --timeout=120s"
+
+                    // Apply schema changes against the target database.
+                    sh "kubectl exec deployment/thoughty-server -n ${KUBE_NAMESPACE} -- npm run db:migrate:dist"
+
+                    // Deploy the dedicated worker after the required schema is present.
+                    sh 'kubectl apply -f deployments/cloud-sync-worker-deployment.yaml'
+                    sh "kubectl set image deployment/thoughty-cloud-sync-worker thoughty-cloud-sync-worker=${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} -n ${KUBE_NAMESPACE}"
+
+                    // Deploy and update the remaining application surfaces.
+                    sh 'kubectl apply -f deployments/web-deployment.yaml'
                     sh "kubectl set image deployment/thoughty-web thoughty-web=${DOCKER_REGISTRY}/thoughty-web:${IMAGE_TAG} -n ${KUBE_NAMESPACE}"
 
-                    // Wait for rollout
-                    sh "kubectl rollout status deployment/thoughty-server -n ${KUBE_NAMESPACE} --timeout=120s"
+                    // Wait for rollouts
+                    sh "kubectl rollout status deployment/thoughty-cloud-sync-worker -n ${KUBE_NAMESPACE} --timeout=120s"
                     sh "kubectl rollout status deployment/thoughty-web -n ${KUBE_NAMESPACE} --timeout=120s"
                 }
             }

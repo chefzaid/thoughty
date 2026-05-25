@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment } from './entities';
+import { User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment, CloudSyncJob } from './entities';
 
 @Module({
   imports: [
@@ -15,12 +15,12 @@ import { User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment } 
         username: configService.get<string>('POSTGRES_USER', 'postgres'),
         password: configService.get<string>('POSTGRES_PASSWORD', 'password'),
         database: configService.get<string>('POSTGRES_DB', 'journal'),
-        entities: [User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment],
+        entities: [User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment, CloudSyncJob],
         synchronize: false, // Don't auto-sync in production; use migrations
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),
     }),
-    TypeOrmModule.forFeature([User, Diary, Entry, RefreshToken, Setting, Attachment]),
+    TypeOrmModule.forFeature([User, Diary, Entry, RefreshToken, Setting, Attachment, CloudSyncJob]),
   ],
   exports: [TypeOrmModule],
 })

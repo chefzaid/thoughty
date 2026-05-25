@@ -12,6 +12,7 @@ build/
 *.tsbuildinfo
 *.d.ts
 !src/**/*.d.ts
+!thoughty-web/src/**/*.d.ts
 
 # Environment variables
 .env

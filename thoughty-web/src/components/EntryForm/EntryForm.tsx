@@ -5,7 +5,7 @@ import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
 import type { Attachment } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 
-const LazyMDEditor = lazy(() => import('@uiw/react-md-editor'));
+const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
 interface EntryFormProps {
     readonly newEntryText: string;

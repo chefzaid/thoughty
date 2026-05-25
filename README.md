@@ -480,7 +480,7 @@ Before applying the manifests in `deployments/`:
 
 1. Edit `deployments/configmap.yaml` — set `CORS_ORIGIN` to your domain
 2. Edit `deployments/ingress.yaml` — replace `thoughty.example.com` with your domain and configure TLS
-3. Edit `deployments/server-deployment.yaml` and `deployments/web-deployment.yaml` — update the `image:` fields to point to your registry
+3. Edit `deployments/server-deployment.yaml`, `deployments/cloud-sync-worker-deployment.yaml`, and `deployments/web-deployment.yaml` — update the `image:` fields to point to your registry
 
 ### 4. Deploy to Kubernetes
 
@@ -498,8 +498,15 @@ kubectl apply -f deployments/postgres.yaml
 # Wait for PostgreSQL to be ready
 kubectl rollout status deployment/postgres -n thoughty --timeout=120s
 
-# Deploy application
+# Deploy the API server first
 kubectl apply -f deployments/server-deployment.yaml
+
+# Wait for the server rollout, then apply schema changes
+kubectl rollout status deployment/thoughty-server -n thoughty --timeout=120s
+kubectl exec deployment/thoughty-server -n thoughty -- npm run db:migrate:dist
+
+# Deploy the worker and web app
+kubectl apply -f deployments/cloud-sync-worker-deployment.yaml
 kubectl apply -f deployments/web-deployment.yaml
 kubectl apply -f deployments/ingress.yaml
 
@@ -509,11 +516,10 @@ kubectl get pods -n thoughty
 
 ### 5. Run Database Migrations
 
-Once the server pod is running, exec into it to run migrations:
+If you need to rerun migrations later, execute the same command against the server deployment:
 
 ```bash
-kubectl exec -it deployment/thoughty-server -n thoughty -- \
-  node -e "require('./dist/database/data-source').default.initialize().then(ds => ds.runMigrations().then(() => { console.log('Migrations complete'); process.exit(0); }))"
+kubectl exec deployment/thoughty-server -n thoughty -- npm run db:migrate:dist
 ```
 
 ### Manifest Overview
@@ -526,6 +532,7 @@ kubectl exec -it deployment/thoughty-server -n thoughty -- \
 | `deployments/vault-setup.sh` | Reference script with all Vault setup commands |
 | `deployments/postgres.yaml` | PostgreSQL 16 deployment + headless service + 5Gi PVC |
 | `deployments/server-deployment.yaml` | NestJS server (2 replicas, rolling update, health probes) |
+| `deployments/cloud-sync-worker-deployment.yaml` | Dedicated cloud sync worker deployment using the backend image |
 | `deployments/web-deployment.yaml` | Nginx-served React app (2 replicas, rolling update) |
 | `deployments/ingress.yaml` | Ingress routing `/api` → server, `/` → web |
 
@@ -543,6 +550,7 @@ The [Jenkinsfile](Jenkinsfile) defines a full pipeline that runs on every push.
 | **Lint** | Parallel linting for both projects |
 | **Test** | Parallel unit tests with coverage |
 | **Build Images** | Parallel Docker image builds |
+| **Smoke Test Server Image** | Runs `npm run db:migrate:dist` inside the built server image against disposable PostgreSQL |
 | **Push Images** | Push to registry (main branch only) |
 | **Deploy** | Apply K8s manifests and trigger rolling deployment (main branch only) |
 

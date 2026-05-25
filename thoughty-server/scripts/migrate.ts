@@ -248,6 +248,31 @@ CREATE TABLE IF NOT EXISTS entry_revisions (
 
 CREATE INDEX IF NOT EXISTS idx_entry_revisions_entry_id ON entry_revisions(entry_id);
 CREATE INDEX IF NOT EXISTS idx_entry_revisions_user_id ON entry_revisions(user_id);
+
+-- Create cloud_sync_jobs table for durable scheduled sync execution
+CREATE TABLE IF NOT EXISTS cloud_sync_jobs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider VARCHAR(32) NOT NULL,
+    trigger_type VARCHAR(32) NOT NULL DEFAULT 'scheduled',
+    status VARCHAR(32) NOT NULL DEFAULT 'queued',
+    attempt_count INTEGER NOT NULL DEFAULT 0,
+    max_attempts INTEGER NOT NULL DEFAULT 3,
+    run_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    locked_at TIMESTAMP,
+    locked_by VARCHAR(120),
+    last_error TEXT,
+    result_message TEXT,
+    finished_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_cloud_sync_jobs_user_id ON cloud_sync_jobs(user_id);
+CREATE INDEX IF NOT EXISTS idx_cloud_sync_jobs_status_run_at ON cloud_sync_jobs(status, run_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cloud_sync_jobs_active_unique
+    ON cloud_sync_jobs(user_id, provider)
+    WHERE status IN ('queued', 'running');
 `;
 
 async function migrate(): Promise<void> {

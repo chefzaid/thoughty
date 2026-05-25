@@ -1,23 +1,20 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { BrowserRouter, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import "react-datepicker/dist/react-datepicker.css";
 
 // Components
-import ProfilePage from './components/ProfilePage/ProfilePage';
-import ConfirmModal from './components/ConfirmModal/ConfirmModal';
-import NavMenu from './components/NavMenu/NavMenu';
-import Stats from './components/Stats/Stats';
-import ImportExport from './components/ImportExport/ImportExport';
-import TagManagerPage from './components/TagManagerPage/TagManagerPage';
-import Footer from './components/Footer/Footer';
-import DiaryTabs from './components/DiaryTabs/DiaryTabs';
-import DiaryManager from './components/DiaryManager/DiaryManager';
 import AuthPage from './components/AuthPage/AuthPage';
-import JournalView from './components/JournalView/JournalView';
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
 import IntroPage from './components/IntroPage/IntroPage';
-import AiChatModal from './components/AiChatModal/AiChatModal';
 import { assignMissingTagColors, parseTagMetadata, serializeTagMetadata } from './utils/tagMetadata';
+import AuthenticatedAppLayout from './routes/AuthenticatedAppLayout';
+import ProfileRoute from './routes/ProfileRoute';
+import TagManagerRoute from './routes/TagManagerRoute';
+import DiariesRoute from './routes/DiariesRoute';
+import StatsRoute from './routes/StatsRoute';
+import ImportExportRoute from './routes/ImportExportRoute';
+import JournalRoute from './routes/JournalRoute';
 
 // Context and Hooks
 import { useAuth } from './contexts/AuthContext';
@@ -50,6 +47,14 @@ import {
 } from './types';
 
 const ENTRY_PERMALINK_PARAM = 'entry';
+const appQueryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function buildEntryPermalink(entryId: number): string {
   const url = new URL(getPathForView('journal'), globalThis.location.origin);
@@ -723,191 +728,6 @@ function AppContent() {
     setCurrentDiaryId(routeDiaryId);
   }, [currentDiaryId, isAuthenticated, routeDiaryId, setCurrentDiaryId]);
 
-  // Render view content
-  const renderViewContent = () => {
-    if (!currentView) {
-      return null;
-    }
-
-    switch (currentView) {
-      case 'profile':
-        return (
-          <ProfilePage
-            config={config}
-            onUpdateConfig={(newConfig: Config) => updateConfig(newConfig)}
-            onDownloadData={downloadUserData}
-            onBack={() => handleViewChange('journal')}
-            t={t}
-            stats={profileStats ?? undefined}
-          />
-        );
-      case 'tags':
-        return (
-          <TagManagerPage
-            config={config}
-            allTags={allTags}
-            onUpdateConfig={(newConfig: Config) => updateConfig(newConfig)}
-            onRenameTag={handleRenameTag}
-            t={t}
-          />
-        );
-      case 'diaries':
-        return (
-          <DiaryManager
-            diaries={diaries}
-            onCreateDiary={handleCreateDiary}
-            onUpdateDiary={async (id, data) => {
-              await handleUpdateDiary(id, data);
-              fetchEntries();
-            }}
-            onDeleteDiary={(id: number) => handleDeleteDiary(id, fetchEntries)}
-            onSetDefault={handleSetDefaultDiary}
-            onReorderDiaries={handleReorderDiaries}
-            onBack={handleBackFromDiaries}
-            theme={config.theme}
-            t={t}
-          />
-        );
-      case 'stats':
-        return (
-          <>
-            <DiaryTabs
-              diaries={diaries}
-              currentDiaryId={currentDiaryId}
-              onDiaryChange={handleDiaryChange}
-              onManageDiaries={() => handleManageDiaries('stats')}
-              theme={config.theme}
-              t={t}
-            />
-            <Stats theme={config.theme} t={t} diaryId={currentDiaryId} tagMetadata={tagMetadata} />
-          </>
-        );
-      case 'importExport':
-        return (
-          <>
-            <DiaryTabs
-              diaries={diaries}
-              currentDiaryId={currentDiaryId}
-              onDiaryChange={handleDiaryChange}
-              onManageDiaries={() => handleManageDiaries('importExport')}
-              theme={config.theme}
-              t={t}
-            />
-            <ImportExport
-              theme={config.theme}
-              t={t}
-              diaryId={currentDiaryId}
-              diaryName={diaries.find(d => d.id === currentDiaryId)?.name || t('allDiaries')}
-              initialSection={importExportSection}
-              initialExportFormat={importExportFormat}
-              initialIncludeVisibility={importExportIncludeVisibility}
-              onRouteStateChange={handleImportExportRouteStateChange}
-            />
-          </>
-        );
-      default: // 'journal' view
-        return (
-          <JournalView
-            diaries={diaries}
-            currentDiaryId={currentDiaryId}
-            onDiaryChange={handleDiaryChange}
-            onManageDiaries={() => handleManageDiaries('journal')}
-            highlightsModalOpen={highlightsModalOpen}
-            setHighlightsModalOpen={setHighlightsModalOpen}
-            newEntryText={newEntryText}
-            setNewEntryText={setNewEntryText}
-            selectedDate={selectedDate}
-            setSelectedDate={setSelectedDate}
-            tags={tags}
-            setTags={setTags}
-            visibility={visibility}
-            setVisibility={setVisibility}
-            format={format}
-            setFormat={setFormat}
-            allTags={allTags}
-            tagMetadata={tagMetadata}
-            formError={formError}
-            suggestingTags={suggestingTags}
-            onSuggestTags={handleSuggestTags}
-            fixingWriting={fixingWriting}
-            onFixWriting={handleFixWriting}
-            onSubmit={handleSubmit}
-            pendingFiles={pendingFiles}
-            uploadedAttachments={uploadedAttachments}
-            onAddFile={addPendingFile}
-            onRemovePendingFile={removePendingFile}
-            onRemoveUploadedAttachment={removeUploadedAttachment}
-            search={search}
-            setSearch={setSearch}
-            filterTags={filterTags}
-            setFilterTags={setFilterTags}
-            filterDateObj={filterDateObj}
-            setFilterDateObj={setFilterDateObj}
-            filterVisibility={filterVisibility}
-            setFilterVisibility={setFilterVisibility}
-            filterFavorites={filterFavorites}
-            setFilterFavorites={setFilterFavorites}
-            filterArchiveStatus={filterArchiveStatus}
-            setFilterArchiveStatus={setFilterArchiveStatus}
-            setPage={setPage}
-            loading={loading}
-            entries={entries}
-            groupedEntries={groupedEntries}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onToggleVisibility={toggleVisibility}
-            onToggleFavorite={toggleFavorite}
-            onToggleArchived={toggleArchived}
-            editingEntry={editingEntry}
-            editText={editText}
-            setEditText={setEditText}
-            editTags={editTags}
-            setEditTags={setEditTags}
-            editDate={editDate}
-            setEditDate={setEditDate}
-            editVisibility={editVisibility}
-            setEditVisibility={setEditVisibility}
-            editFormat={editFormat}
-            setEditFormat={setEditFormat}
-            onSaveEdit={handleSaveEdit}
-            onCancelEdit={handleCancelEdit}
-            editPendingFiles={editPendingFiles}
-            editExistingAttachments={editExistingAttachments}
-            onAddEditFile={addEditPendingFile}
-            onRemoveEditPendingFile={removeEditPendingFile}
-            onRemoveEditAttachment={removeEditAttachment}
-            onNavigateToEntry={handleNavigateToEntry}
-            onShareEntry={handleShareEntry}
-            getEntryPermalink={buildEntryPermalink}
-            sourceEntry={sourceEntry}
-            targetEntryId={targetEntryId}
-            activeTargetId={activeTargetId}
-            onBackToSource={handleBackToSource}
-            bulkMode={bulkMode}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelect}
-            onSelectAll={selectAll}
-            onClearSelection={clearSelection}
-            onBulkAction={requestBulkAction}
-            onToggleBulkMode={toggleBulkMode}
-            page={page}
-            totalPages={totalPages}
-            inputPage={inputPage}
-            setInputPage={setInputPage}
-            availableYears={availableYears}
-            availableMonths={availableMonths}
-            onNavigateToFirst={handleNavigateToFirst}
-            onFetchHistory={fetchEntryHistory}
-            onDeleteRevision={deleteRevision}
-            onReorderEntries={reorderEntries}
-            onDiscuss={handleDiscuss}
-            config={config}
-            t={t}
-          />
-        );
-    }
-  };
-
   // Show loading spinner while checking auth
   if (authLoading) {
     return <LoadingSpinner />;
@@ -951,73 +771,217 @@ function AppContent() {
   }
 
   return (
-    <div className={`min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}>
-      <div className="max-w-7xl mx-auto">
-        <NavMenu
-          currentView={currentView}
-          onViewChange={handleViewChange}
-          theme={config.theme ?? 'dark'}
-          name={config.name || user?.username || 'User'}
-          avatarUrl={config.avatarUrl || user?.avatarUrl}
-          t={t}
-          onLogout={handleLogout}
+    <AuthenticatedAppLayout
+      config={config}
+      currentView={currentView}
+      userName={config.name || user?.username || 'User'}
+      avatarUrl={config.avatarUrl || user?.avatarUrl}
+      onViewChange={handleViewChange}
+      onLogout={handleLogout}
+      t={t}
+      deleteModalOpen={deleteModalOpen}
+      onCloseDeleteModal={cancelDelete}
+      onConfirmDelete={confirmDelete}
+      bulkModalOpen={bulkModalOpen}
+      onCloseBulkModal={cancelBulkModal}
+      onConfirmBulkDelete={confirmBulkDelete}
+      selectedCount={selectedIds.size}
+      entryToastVisible={entryToastVisible}
+      chatEntry={chatEntry}
+      onCloseChat={() => setChatEntry(null)}
+      onSendChat={handleAiChat}
+    >
+      <Routes>
+        <Route
+          path={getPathForView('profile')}
+          element={(
+            <ProfileRoute
+              config={config}
+              onUpdateConfig={(newConfig: Config) => updateConfig(newConfig)}
+              onDownloadData={downloadUserData}
+              onBack={() => handleViewChange('journal')}
+              t={t}
+              stats={profileStats ?? undefined}
+            />
+          )}
         />
-
-        <ConfirmModal
-          isOpen={deleteModalOpen}
-          onClose={cancelDelete}
-          onConfirm={confirmDelete}
-          title={t('deleteEntryTitle')}
-          message={t('deleteEntryMessage')}
-          theme={config.theme}
+        <Route
+          path={getPathForView('tags')}
+          element={(
+            <TagManagerRoute
+              config={config}
+              allTags={allTags}
+              onUpdateConfig={(newConfig: Config) => updateConfig(newConfig)}
+              onRenameTag={handleRenameTag}
+              t={t}
+            />
+          )}
         />
-
-        <ConfirmModal
-          isOpen={bulkModalOpen}
-          onClose={cancelBulkModal}
-          onConfirm={confirmBulkDelete}
-          title={t('bulkDeleteTitle')}
-          message={t('bulkDeleteMessage', { count: selectedIds.size })}
-          theme={config.theme}
+        <Route
+          path={getPathForView('diaries')}
+          element={(
+            <DiariesRoute
+              diaries={diaries}
+              onCreateDiary={handleCreateDiary}
+              onUpdateDiary={async (id, data) => {
+                await handleUpdateDiary(id, data);
+                await fetchEntries();
+              }}
+              onDeleteDiary={(id: number) => handleDeleteDiary(id, () => { void fetchEntries(); })}
+              onSetDefault={handleSetDefaultDiary}
+              onReorderDiaries={handleReorderDiaries}
+              onBack={handleBackFromDiaries}
+              theme={config.theme}
+              t={t}
+            />
+          )}
         />
-
-        {entryToastVisible && (
-          <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 px-4">
-            <div
-              role="alert"
-              aria-live="assertive"
-              className={`pointer-events-auto rounded-xl border px-4 py-3 shadow-xl backdrop-blur ${config.theme === 'light' ? 'border-amber-200 bg-white/95 text-gray-900' : 'border-amber-400/30 bg-gray-800/95 text-gray-100'}`}
-            >
-              <p className="text-sm font-semibold text-amber-500">{t('entryNotFound')}</p>
-              <p className={`mt-1 text-sm ${config.theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>{t('entryNotFoundMessage')}</p>
-            </div>
-          </div>
-        )}
-
-        {chatEntry && (
-          <AiChatModal
-            entry={chatEntry}
-            isOpen={!!chatEntry}
-            onClose={() => setChatEntry(null)}
-            onSend={handleAiChat}
-            theme={config.theme}
-            t={t}
-          />
-        )}
-
-        {renderViewContent()}
-
-        <Footer t={t} theme={config.theme ?? 'dark'} />
-      </div>
-    </div>
+        <Route
+          path={getPathForView('stats')}
+          element={(
+            <StatsRoute
+              diaries={diaries}
+              currentDiaryId={currentDiaryId}
+              onDiaryChange={handleDiaryChange}
+              onManageDiaries={() => handleManageDiaries('stats')}
+              theme={config.theme}
+              t={t}
+              tagMetadata={tagMetadata}
+            />
+          )}
+        />
+        <Route
+          path={getPathForView('importExport')}
+          element={(
+            <ImportExportRoute
+              diaries={diaries}
+              currentDiaryId={currentDiaryId}
+              onDiaryChange={handleDiaryChange}
+              onManageDiaries={() => handleManageDiaries('importExport')}
+              theme={config.theme}
+              t={t}
+              initialSection={importExportSection}
+              initialExportFormat={importExportFormat}
+              initialIncludeVisibility={importExportIncludeVisibility}
+              onRouteStateChange={handleImportExportRouteStateChange}
+            />
+          )}
+        />
+        <Route
+          path={getPathForView('journal')}
+          element={(
+            <JournalRoute
+              diaries={diaries}
+              currentDiaryId={currentDiaryId}
+              onDiaryChange={handleDiaryChange}
+              onManageDiaries={() => handleManageDiaries('journal')}
+              highlightsModalOpen={highlightsModalOpen}
+              setHighlightsModalOpen={setHighlightsModalOpen}
+              newEntryText={newEntryText}
+              setNewEntryText={setNewEntryText}
+              selectedDate={selectedDate}
+              setSelectedDate={setSelectedDate}
+              tags={tags}
+              setTags={setTags}
+              visibility={visibility}
+              setVisibility={setVisibility}
+              format={format}
+              setFormat={setFormat}
+              allTags={allTags}
+              tagMetadata={tagMetadata}
+              formError={formError}
+              suggestingTags={suggestingTags}
+              onSuggestTags={handleSuggestTags}
+              fixingWriting={fixingWriting}
+              onFixWriting={handleFixWriting}
+              onSubmit={handleSubmit}
+              pendingFiles={pendingFiles}
+              uploadedAttachments={uploadedAttachments}
+              onAddFile={addPendingFile}
+              onRemovePendingFile={removePendingFile}
+              onRemoveUploadedAttachment={removeUploadedAttachment}
+              search={search}
+              setSearch={setSearch}
+              filterTags={filterTags}
+              setFilterTags={setFilterTags}
+              filterDateObj={filterDateObj}
+              setFilterDateObj={setFilterDateObj}
+              filterVisibility={filterVisibility}
+              setFilterVisibility={setFilterVisibility}
+              filterFavorites={filterFavorites}
+              setFilterFavorites={setFilterFavorites}
+              filterArchiveStatus={filterArchiveStatus}
+              setFilterArchiveStatus={setFilterArchiveStatus}
+              setPage={setPage}
+              loading={loading}
+              entries={entries}
+              groupedEntries={groupedEntries}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onToggleVisibility={toggleVisibility}
+              onToggleFavorite={toggleFavorite}
+              onToggleArchived={toggleArchived}
+              editingEntry={editingEntry}
+              editText={editText}
+              setEditText={setEditText}
+              editTags={editTags}
+              setEditTags={setEditTags}
+              editDate={editDate}
+              setEditDate={setEditDate}
+              editVisibility={editVisibility}
+              setEditVisibility={setEditVisibility}
+              editFormat={editFormat}
+              setEditFormat={setEditFormat}
+              onSaveEdit={handleSaveEdit}
+              onCancelEdit={handleCancelEdit}
+              editPendingFiles={editPendingFiles}
+              editExistingAttachments={editExistingAttachments}
+              onAddEditFile={addEditPendingFile}
+              onRemoveEditPendingFile={removeEditPendingFile}
+              onRemoveEditAttachment={removeEditAttachment}
+              onNavigateToEntry={handleNavigateToEntry}
+              onShareEntry={handleShareEntry}
+              getEntryPermalink={buildEntryPermalink}
+              sourceEntry={sourceEntry}
+              targetEntryId={targetEntryId}
+              activeTargetId={activeTargetId}
+              onBackToSource={handleBackToSource}
+              bulkMode={bulkMode}
+              selectedIds={selectedIds}
+              onToggleSelect={toggleSelect}
+              onSelectAll={selectAll}
+              onClearSelection={clearSelection}
+              onBulkAction={requestBulkAction}
+              onToggleBulkMode={toggleBulkMode}
+              page={page}
+              totalPages={totalPages}
+              inputPage={inputPage}
+              setInputPage={setInputPage}
+              availableYears={availableYears}
+              availableMonths={availableMonths}
+              onNavigateToFirst={handleNavigateToFirst}
+              onFetchHistory={fetchEntryHistory}
+              onDeleteRevision={deleteRevision}
+              onReorderEntries={reorderEntries}
+              onDiscuss={handleDiscuss}
+              config={config}
+              t={t}
+            />
+          )}
+        />
+        <Route path="*" element={<Navigate to={getPathForView('journal')} replace />} />
+      </Routes>
+    </AuthenticatedAppLayout>
   );
 }
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
+    <QueryClientProvider client={appQueryClient}>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 

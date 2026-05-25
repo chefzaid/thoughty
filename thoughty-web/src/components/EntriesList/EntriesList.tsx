@@ -12,7 +12,7 @@ import { resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 import TagBadge from '../TagBadge/TagBadge';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 
-const LazyMDEditor = lazy(() => import('@uiw/react-md-editor'));
+const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
 interface Entry {
     id: number;
@@ -689,7 +689,7 @@ function EntryViewMode({
         if (success) {
             globalThis.setTimeout(() => setShareReady(false), 2000);
         }
-    }, [entry, onShareEntry]);
+    }, [entry, onShareEntry, setShareReady]);
 
     return (
         <>

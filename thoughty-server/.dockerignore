@@ -6,7 +6,6 @@ npm-debug.log
 coverage
 test
 data
-scripts
 *.md
 .git
 .gitignore

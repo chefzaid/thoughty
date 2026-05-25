@@ -1,0 +1,3354 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          },
+          "409": {
+            "description": "Email already registered"
+          }
+        },
+        "summary": "Register a new user",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "AuthController_login",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "Login with email/username and password",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/oauth": {
+      "post": {
+        "operationId": "AuthController_oauth",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OAuth authentication successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing required fields"
+          }
+        },
+        "summary": "Authenticate with OAuth provider",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/refresh": {
+      "post": {
+        "operationId": "AuthController_refresh",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New access token"
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
+          }
+        },
+        "summary": "Refresh access token",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logged out successfully"
+          }
+        },
+        "summary": "Logout and invalidate refresh token",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "AuthController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current user info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current user info",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/change-password": {
+      "post": {
+        "operationId": "AuthController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "401": {
+            "description": "Unauthorized or incorrect current password"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change user password",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "operationId": "AuthController_forgotPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reset email sent if account exists"
+          }
+        },
+        "summary": "Request password reset email",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "operationId": "AuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successfully"
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          }
+        },
+        "summary": "Reset password with token",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/delete-account": {
+      "post": {
+        "operationId": "AuthController_deleteAccount",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account deleted"
+          },
+          "401": {
+            "description": "Invalid password"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete user account",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/entries": {
+      "get": {
+        "operationId": "EntriesController_getEntries",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search term for content or tags",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated list of tags to filter by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Filter by date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "visibility",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "public",
+                "private"
+              ]
+            }
+          },
+          {
+            "name": "favorites",
+            "required": false,
+            "in": "query",
+            "description": "Filter by favorites only",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "archiveStatus",
+            "required": false,
+            "in": "query",
+            "description": "Filter by archive state",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "active",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntriesListResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all entries with optional filters and pagination",
+        "tags": [
+          "Entries"
+        ]
+      },
+      "post": {
+        "operationId": "EntriesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Entry created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateEntryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new entry",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/dates": {
+      "get": {
+        "operationId": "EntriesController_getDates",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Array of dates with entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryDatesResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all distinct dates that have entries",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/first": {
+      "get": {
+        "operationId": "EntriesController_getFirstEntry",
+        "parameters": [
+          {
+            "name": "year",
+            "required": false,
+            "in": "query",
+            "description": "Year to find first entry",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "month",
+            "required": false,
+            "in": "query",
+            "description": "Month to find first entry",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FirstEntryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get page number containing first entry for a year/month",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/by-date": {
+      "get": {
+        "operationId": "EntriesController_getEntryByDate",
+        "parameters": [
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Entry date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "index",
+            "required": false,
+            "in": "query",
+            "description": "Entry index for that day",
+            "schema": {
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "id",
+            "required": false,
+            "in": "query",
+            "description": "Entry ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entry found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryLookupResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Find an entry by date and optional index",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/highlights": {
+      "get": {
+        "operationId": "EntriesController_getHighlights",
+        "parameters": [
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Highlights data"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get random thought and entries from this day in previous years",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/bulk": {
+      "post": {
+        "operationId": "EntriesController_bulkOperation",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkOperationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bulk operation completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountedMutationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Perform bulk operations on entries",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/tags/rename": {
+      "patch": {
+        "operationId": "EntriesController_renameTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameTagDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Tag renamed across entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountedMutationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rename a tag across all of the current user's entries",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/reorder": {
+      "patch": {
+        "operationId": "EntriesController_reorderEntries",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderEntriesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entries reordered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reorder entries within a single day",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/{id}": {
+      "put": {
+        "operationId": "EntriesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEntryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entry updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryMutationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update an existing entry",
+        "tags": [
+          "Entries"
+        ]
+      },
+      "delete": {
+        "operationId": "EntriesController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entry deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an entry",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/{id}/visibility": {
+      "patch": {
+        "operationId": "EntriesController_updateVisibility",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateVisibilityDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Visibility updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryMutationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Toggle visibility of an entry",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/{id}/favorite": {
+      "patch": {
+        "operationId": "EntriesController_toggleFavorite",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFavoriteDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Favorite status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryMutationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Toggle favorite status of an entry",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/{id}/archive": {
+      "patch": {
+        "operationId": "EntriesController_toggleArchived",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateArchivedDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Archive status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryMutationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Toggle archive status of an entry",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/{id}/history": {
+      "get": {
+        "operationId": "EntriesController_getHistory",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entry revision history"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get revision history for an entry",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/{id}/history/{revisionId}": {
+      "delete": {
+        "operationId": "EntriesController_deleteRevision",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "revisionId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revision deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a specific revision from entry history",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/all": {
+      "delete": {
+        "operationId": "EntriesController_deleteAll",
+        "parameters": [
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID to delete entries from",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entries deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteAllResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete all entries (optionally filtered by diary)",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/config": {
+      "get": {
+        "operationId": "ConfigController_getConfig",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User configuration"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get user configuration",
+        "tags": [
+          "Config"
+        ]
+      },
+      "post": {
+        "operationId": "ConfigController_updateConfig",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Configuration updated"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update user configuration",
+        "tags": [
+          "Config"
+        ]
+      }
+    },
+    "/api/config/download-data": {
+      "get": {
+        "operationId": "ConfigController_downloadData",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "JSON file with all user data"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Download all user data (GDPR)",
+        "tags": [
+          "Config"
+        ]
+      }
+    },
+    "/api/ai/models": {
+      "get": {
+        "operationId": "AiController_listModels",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of available models"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List available OpenRouter models",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/api/ai/suggest-tags": {
+      "post": {
+        "operationId": "AiController_suggestTags",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestTagsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Suggested tags returned successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Suggest tags for journal content using OpenRouter",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/api/ai/fix-writing": {
+      "post": {
+        "operationId": "AiController_fixWriting",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FixWritingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Corrected content returned successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Fix grammar, spelling, and style in journal content using OpenRouter",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/api/ai/chat": {
+      "post": {
+        "operationId": "AiController_chat",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI reply returned successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Chat about a journal entry with AI for analysis or discussion",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/api/diaries": {
+      "get": {
+        "operationId": "DiariesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of diaries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DiaryResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all diaries for the current user",
+        "tags": [
+          "Diaries"
+        ]
+      },
+      "post": {
+        "operationId": "DiariesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDiaryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Diary created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryResponseDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new diary",
+        "tags": [
+          "Diaries"
+        ]
+      }
+    },
+    "/api/diaries/{id}": {
+      "put": {
+        "operationId": "DiariesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDiaryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Diary updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Diary not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a diary",
+        "tags": [
+          "Diaries"
+        ]
+      },
+      "delete": {
+        "operationId": "DiariesController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Diary deleted"
+          },
+          "400": {
+            "description": "Cannot delete default diary"
+          },
+          "404": {
+            "description": "Diary not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a diary (entries moved to default diary)",
+        "tags": [
+          "Diaries"
+        ]
+      }
+    },
+    "/api/diaries/{id}/default": {
+      "patch": {
+        "operationId": "DiariesController_setDefault",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Default diary set",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiaryResponseDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Diary not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set a diary as the default",
+        "tags": [
+          "Diaries"
+        ]
+      }
+    },
+    "/api/diaries/reorder": {
+      "patch": {
+        "operationId": "DiariesController_reorder",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderDiariesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Diaries reordered"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reorder diaries",
+        "tags": [
+          "Diaries"
+        ]
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "operationId": "StatsController_getStats",
+        "parameters": [
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics object with counts and breakdowns"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get aggregated statistics about journal entries",
+        "tags": [
+          "Stats"
+        ]
+      }
+    },
+    "/api/io/format": {
+      "get": {
+        "operationId": "IoController_getFormat",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Format settings"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current file format settings",
+        "tags": [
+          "Import/Export"
+        ]
+      },
+      "post": {
+        "operationId": "IoController_saveFormat",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FormatConfigDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings saved"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save file format settings",
+        "tags": [
+          "Import/Export"
+        ]
+      }
+    },
+    "/api/io/export": {
+      "get": {
+        "operationId": "IoController_export",
+        "parameters": [
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID to filter export",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "includeVisibility",
+            "required": false,
+            "in": "query",
+            "description": "Include visibility field in export",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "Export file format",
+            "schema": {
+              "default": "txt",
+              "type": "string",
+              "enum": [
+                "txt",
+                "json",
+                "md"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Text file content"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export entries as a text file",
+        "tags": [
+          "Import/Export"
+        ]
+      }
+    },
+    "/api/io/preview": {
+      "post": {
+        "operationId": "IoController_preview",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewImportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Parsed entries with duplicate info",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Preview import - parse file and check for duplicates",
+        "tags": [
+          "Import/Export"
+        ]
+      }
+    },
+    "/api/io/import": {
+      "post": {
+        "operationId": "IoController_import",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Import results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import entries from parsed content",
+        "tags": [
+          "Import/Export"
+        ]
+      }
+    },
+    "/api/attachments/upload": {
+      "post": {
+        "operationId": "AttachmentsController_upload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload a file attachment",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/entry/{entryId}": {
+      "get": {
+        "operationId": "AttachmentsController_getByEntry",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of attachments"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all attachments for an entry",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/{id}/link": {
+      "post": {
+        "operationId": "AttachmentsController_linkToEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attachment linked to entry"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link an attachment to an entry",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/{id}": {
+      "delete": {
+        "operationId": "AttachmentsController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment deleted"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an attachment",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/file/{filename}": {
+      "get": {
+        "operationId": "AttachmentsController_serveFile",
+        "parameters": [
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Serve an attachment file",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/cloud-sync/status": {
+      "get": {
+        "operationId": "CloudSyncController_getStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Connection status for each provider"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get cloud provider connection status",
+        "tags": [
+          "Cloud Sync"
+        ]
+      }
+    },
+    "/api/cloud-sync/auth-url": {
+      "post": {
+        "operationId": "CloudSyncController_getAuthUrl",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloudAuthUrlDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authorization URL"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get OAuth authorization URL for a provider",
+        "tags": [
+          "Cloud Sync"
+        ]
+      }
+    },
+    "/api/cloud-sync/connect": {
+      "post": {
+        "operationId": "CloudSyncController_connect",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloudConnectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Provider connected"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Connect a cloud provider with OAuth code",
+        "tags": [
+          "Cloud Sync"
+        ]
+      }
+    },
+    "/api/cloud-sync/disconnect": {
+      "post": {
+        "operationId": "CloudSyncController_disconnect",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloudDisconnectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Provider disconnected"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect a cloud provider",
+        "tags": [
+          "Cloud Sync"
+        ]
+      }
+    },
+    "/api/cloud-sync/files": {
+      "get": {
+        "operationId": "CloudSyncController_listFiles",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "description": "Cloud provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google_drive",
+                "onedrive",
+                "dropbox"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of files"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List files in cloud storage",
+        "tags": [
+          "Cloud Sync"
+        ]
+      }
+    },
+    "/api/cloud-sync/upload": {
+      "post": {
+        "operationId": "CloudSyncController_upload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloudUploadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "File uploaded"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Export and upload journal to cloud storage",
+        "tags": [
+          "Cloud Sync"
+        ]
+      }
+    },
+    "/api/cloud-sync/download": {
+      "post": {
+        "operationId": "CloudSyncController_download",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CloudDownloadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "File content"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Download a file from cloud storage",
+        "tags": [
+          "Cloud Sync"
+        ]
+      }
+    },
+    "/api/cloud-sync/schedules": {
+      "get": {
+        "operationId": "CloudSyncController_getSchedules",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Sync schedule configurations"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get sync schedules for all providers",
+        "tags": [
+          "Cloud Sync"
+        ]
+      }
+    },
+    "/api/cloud-sync/schedule": {
+      "post": {
+        "operationId": "CloudSyncController_setSchedule",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetSyncScheduleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Schedule configured"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Set or update a sync schedule",
+        "tags": [
+          "Cloud Sync"
+        ]
+      },
+      "delete": {
+        "operationId": "CloudSyncController_deleteSchedule",
+        "parameters": [
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "description": "Cloud provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google_drive",
+                "onedrive",
+                "dropbox"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Schedule removed"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a sync schedule",
+        "tags": [
+          "Cloud Sync"
+        ]
+      }
+    },
+    "/api/cloud-sync/sync": {
+      "post": {
+        "operationId": "CloudSyncController_triggerSync",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TriggerSyncDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sync result"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Trigger a diff-based sync (uploads only if content has changed)",
+        "tags": [
+          "Cloud Sync"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Thoughty Journal API",
+    "description": "API for Managing Journal Entries",
+    "version": "1.0.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [
+    {
+      "url": "http://localhost:3001"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "description": "Enter your JWT access token"
+      }
+    },
+    "schemas": {
+      "RegisterDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "example": "Password123!"
+          },
+          "username": {
+            "type": "string",
+            "example": "johndoe"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ]
+      },
+      "AuthResponseDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "user",
+          "accessToken",
+          "refreshToken"
+        ]
+      },
+      "LoginDto": {
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "Email or username"
+          },
+          "password": {
+            "type": "string",
+            "example": "Password123!"
+          }
+        },
+        "required": [
+          "identifier",
+          "password"
+        ]
+      },
+      "OAuthDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "example": "google",
+            "enum": [
+              "google",
+              "facebook"
+            ]
+          },
+          "providerId": {
+            "type": "string",
+            "example": "123456789"
+          },
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          },
+          "name": {
+            "type": "string",
+            "example": "John Doe"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "example": "https://example.com/avatar.jpg"
+          }
+        },
+        "required": [
+          "provider",
+          "providerId",
+          "email"
+        ]
+      },
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "UserResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string"
+          },
+          "authProvider": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "email",
+          "authProvider",
+          "createdAt"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ]
+      },
+      "DeleteAccountDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string",
+            "description": "Password required for local accounts"
+          }
+        }
+      },
+      "AttachmentResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "original_filename": {
+            "type": "string"
+          },
+          "stored_filename": {
+            "type": "string"
+          },
+          "mimetype": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "original_filename",
+          "stored_filename",
+          "mimetype",
+          "size"
+        ]
+      },
+      "EntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "user_id": {
+            "type": "number"
+          },
+          "diary_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "date": {
+            "type": "string"
+          },
+          "index": {
+            "type": "number"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ]
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "is_favorite": {
+            "type": "boolean"
+          },
+          "is_archived": {
+            "type": "boolean"
+          },
+          "diary_name": {
+            "type": "string"
+          },
+          "diary_icon": {
+            "type": "string"
+          },
+          "diary_color": {
+            "type": "string"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AttachmentResponseDto"
+            }
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "user_id",
+          "date",
+          "index",
+          "tags",
+          "content",
+          "format",
+          "visibility",
+          "is_favorite",
+          "is_archived",
+          "created_at"
+        ]
+      },
+      "EntriesListResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntryResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "totalPages": {
+            "type": "number"
+          },
+          "allTags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "entries",
+          "total",
+          "page",
+          "totalPages",
+          "allTags"
+        ]
+      },
+      "EntryDatesResponseDto": {
+        "type": "object",
+        "properties": {
+          "dates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "dates"
+        ]
+      },
+      "FirstEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "number"
+          },
+          "found": {
+            "type": "boolean"
+          },
+          "entryId": {
+            "type": "number"
+          },
+          "years": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "months": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "page",
+          "found",
+          "years",
+          "months"
+        ]
+      },
+      "EntryLookupResponseDto": {
+        "type": "object",
+        "properties": {
+          "found": {
+            "type": "boolean"
+          },
+          "entry": {
+            "$ref": "#/components/schemas/EntryResponseDto"
+          },
+          "page": {
+            "type": "number"
+          },
+          "entryId": {
+            "type": "number"
+          },
+          "error": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "found"
+        ]
+      },
+      "CreateEntryDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Entry content"
+          },
+          "tags": {
+            "description": "Tags for the entry",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "date": {
+            "type": "string",
+            "description": "Entry date (YYYY-MM-DD)"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "default": "private"
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Diary ID"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ],
+            "default": "plain"
+          }
+        },
+        "required": [
+          "text",
+          "tags"
+        ]
+      },
+      "CreateEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "entryId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "success",
+          "entryId"
+        ]
+      },
+      "BulkOperationDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "description": "Entry IDs to operate on",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "action": {
+            "type": "string",
+            "description": "Bulk action to perform",
+            "enum": [
+              "delete",
+              "visibility",
+              "tags",
+              "move",
+              "archive"
+            ]
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "tags": {
+            "description": "Tags to set on entries",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Diary ID to move entries to"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "description": "Whether the entries should be archived"
+          }
+        },
+        "required": [
+          "ids",
+          "action"
+        ]
+      },
+      "CountedMutationResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "affectedCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "success",
+          "affectedCount"
+        ]
+      },
+      "RenameTagDto": {
+        "type": "object",
+        "properties": {
+          "oldTag": {
+            "type": "string",
+            "description": "Current tag name to rename"
+          },
+          "newTag": {
+            "type": "string",
+            "description": "New tag name that should replace the current tag"
+          }
+        },
+        "required": [
+          "oldTag",
+          "newTag"
+        ]
+      },
+      "ReorderEntriesDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "Date of the entries to reorder (YYYY-MM-DD)"
+          },
+          "orderedIds": {
+            "description": "Entry IDs in the desired order",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "date",
+          "orderedIds"
+        ]
+      },
+      "SuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ]
+      },
+      "UpdateEntryDto": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Entry content"
+          },
+          "tags": {
+            "description": "Tags for the entry",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "date": {
+            "type": "string",
+            "description": "Entry date (YYYY-MM-DD)"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ],
+            "default": "plain"
+          }
+        },
+        "required": [
+          "text",
+          "tags",
+          "date"
+        ]
+      },
+      "EntryMutationResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "entry": {
+            "$ref": "#/components/schemas/EntryResponseDto"
+          }
+        },
+        "required": [
+          "success",
+          "entry"
+        ]
+      },
+      "UpdateVisibilityDto": {
+        "type": "object",
+        "properties": {
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          }
+        },
+        "required": [
+          "visibility"
+        ]
+      },
+      "UpdateFavoriteDto": {
+        "type": "object",
+        "properties": {
+          "isFavorite": {
+            "type": "boolean",
+            "description": "Whether the entry is a favorite"
+          }
+        },
+        "required": [
+          "isFavorite"
+        ]
+      },
+      "UpdateArchivedDto": {
+        "type": "object",
+        "properties": {
+          "isArchived": {
+            "type": "boolean",
+            "description": "Whether the entry is archived"
+          }
+        },
+        "required": [
+          "isArchived"
+        ]
+      },
+      "DeleteAllResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "deletedCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "success",
+          "deletedCount"
+        ]
+      },
+      "SuggestTagsDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Entry content to analyze for tag suggestions"
+          },
+          "existingTags": {
+            "description": "Existing tags already attached to the draft",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "maxTags": {
+            "type": "number",
+            "description": "Maximum number of tags to return",
+            "default": 5
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "FixWritingDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Entry content to fix for grammar, spelling, and style"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "ChatMessageDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "Role of the message sender",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "description": "Message content"
+          }
+        },
+        "required": [
+          "role",
+          "content"
+        ]
+      },
+      "ChatDto": {
+        "type": "object",
+        "properties": {
+          "entryContent": {
+            "type": "string",
+            "description": "The journal entry content to discuss"
+          },
+          "messages": {
+            "description": "Conversation messages",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageDto"
+            }
+          }
+        },
+        "required": [
+          "entryContent",
+          "messages"
+        ]
+      },
+      "DiaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "userId": {
+            "type": "number"
+          },
+          "name": {
+            "type": "string"
+          },
+          "icon": {
+            "type": "string"
+          },
+          "color": {
+            "type": "object"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "isDefault": {
+            "type": "boolean"
+          },
+          "position": {
+            "type": "number"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "name",
+          "icon",
+          "visibility",
+          "isDefault",
+          "position",
+          "createdAt"
+        ]
+      },
+      "CreateDiaryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Diary name"
+          },
+          "icon": {
+            "type": "string",
+            "description": "Diary icon",
+            "default": "📓"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "default": "private"
+          },
+          "color": {
+            "type": "string",
+            "description": "Diary accent color in hex format",
+            "example": "#2A9D8F"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateDiaryDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Diary name"
+          },
+          "icon": {
+            "type": "string",
+            "description": "Diary icon"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "description": "Diary accent color in hex format",
+            "example": "#2A9D8F"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "ReorderDiariesDto": {
+        "type": "object",
+        "properties": {
+          "orderedIds": {
+            "description": "Ordered array of diary IDs",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "orderedIds"
+        ]
+      },
+      "FormatConfigDto": {
+        "type": "object",
+        "properties": {
+          "entrySeparator": {
+            "type": "string"
+          },
+          "sameDaySeparator": {
+            "type": "string"
+          },
+          "datePrefix": {
+            "type": "string"
+          },
+          "dateSuffix": {
+            "type": "string"
+          },
+          "dateFormat": {
+            "type": "string"
+          },
+          "tagOpenBracket": {
+            "type": "string"
+          },
+          "tagCloseBracket": {
+            "type": "string"
+          },
+          "tagSeparator": {
+            "type": "string"
+          }
+        }
+      },
+      "PreviewImportDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "File content to preview"
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Diary ID"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "PreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "totalCount": {
+            "type": "number"
+          },
+          "duplicates": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "duplicateCount": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "entries",
+          "totalCount",
+          "duplicates",
+          "duplicateCount"
+        ]
+      },
+      "ImportDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "File content to import"
+          },
+          "skipDuplicates": {
+            "type": "boolean",
+            "description": "Skip duplicate entries",
+            "default": true
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Diary ID"
+          }
+        },
+        "required": [
+          "content"
+        ]
+      },
+      "ImportResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "importedCount": {
+            "type": "number"
+          },
+          "skippedCount": {
+            "type": "number"
+          },
+          "totalProcessed": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "success",
+          "importedCount",
+          "skippedCount",
+          "totalProcessed"
+        ]
+      },
+      "LinkAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "description": "Entry ID to link attachment to"
+          }
+        }
+      },
+      "CloudAuthUrlDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "description": "Cloud provider",
+            "enum": [
+              "google_drive",
+              "onedrive",
+              "dropbox"
+            ]
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "OAuth redirect URI"
+          }
+        },
+        "required": [
+          "provider",
+          "redirectUri"
+        ]
+      },
+      "CloudConnectDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "OAuth authorization code"
+          },
+          "provider": {
+            "type": "string",
+            "description": "Cloud provider",
+            "enum": [
+              "google_drive",
+              "onedrive",
+              "dropbox"
+            ]
+          },
+          "redirectUri": {
+            "type": "string",
+            "description": "OAuth redirect URI used in the authorization request"
+          }
+        },
+        "required": [
+          "code",
+          "provider",
+          "redirectUri"
+        ]
+      },
+      "CloudDisconnectDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "description": "Cloud provider",
+            "enum": [
+              "google_drive",
+              "onedrive",
+              "dropbox"
+            ]
+          }
+        },
+        "required": [
+          "provider"
+        ]
+      },
+      "CloudUploadDto": {
+        "type": "object",
+        "properties": {
+          "diaryId": {
+            "type": "number",
+            "description": "Diary ID to export"
+          },
+          "format": {
+            "type": "string",
+            "description": "Export format",
+            "enum": [
+              "txt",
+              "json",
+              "md"
+            ],
+            "default": "txt"
+          },
+          "provider": {
+            "type": "string",
+            "description": "Cloud provider",
+            "enum": [
+              "google_drive",
+              "onedrive",
+              "dropbox"
+            ]
+          },
+          "includeVisibility": {
+            "type": "boolean",
+            "description": "Include visibility field",
+            "default": false
+          }
+        },
+        "required": [
+          "provider"
+        ]
+      },
+      "CloudDownloadDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "description": "Cloud provider",
+            "enum": [
+              "google_drive",
+              "onedrive",
+              "dropbox"
+            ]
+          },
+          "fileId": {
+            "type": "string",
+            "description": "File ID in cloud storage"
+          }
+        },
+        "required": [
+          "provider",
+          "fileId"
+        ]
+      },
+      "SetSyncScheduleDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "description": "Cloud provider",
+            "enum": [
+              "google_drive",
+              "onedrive",
+              "dropbox"
+            ]
+          },
+          "frequency": {
+            "type": "string",
+            "description": "Sync frequency",
+            "enum": [
+              "every_6h",
+              "every_12h",
+              "daily",
+              "weekly"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "description": "Export format",
+            "enum": [
+              "txt",
+              "json",
+              "md"
+            ],
+            "default": "txt"
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Diary ID to export"
+          },
+          "includeVisibility": {
+            "type": "boolean",
+            "description": "Include visibility field",
+            "default": false
+          }
+        },
+        "required": [
+          "provider",
+          "frequency"
+        ]
+      },
+      "TriggerSyncDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "description": "Cloud provider",
+            "enum": [
+              "google_drive",
+              "onedrive",
+              "dropbox"
+            ]
+          }
+        },
+        "required": [
+          "provider"
+        ]
+      }
+    }
+  }
+}

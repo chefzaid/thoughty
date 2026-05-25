@@ -1,104 +1,42 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { EntriesService } from './entries.service';
-import { Entry, EntryRevision, Diary } from '@/database/entities';
-import { AiService } from '@/modules/ai';
-import { ConfigService } from '@/modules/config';
+import { EntriesQueryService } from './entries-query.service';
+import { EntriesCommandService } from './entries-command.service';
 
 describe('EntriesService', () => {
   let service: EntriesService;
-  let entryRepository: any;
-  let revisionRepository: any;
-  let diaryRepository: any;
-  let configService: any;
-  let aiService: any;
-
-  const mockEntry = {
-    id: 1,
-    userId: 1,
-    diaryId: 1,
-    date: '2024-01-15',
-    index: 1,
-    tags: ['tag1', 'tag2'],
-    content: 'Test entry content',
-    visibility: 'private',
-    isFavorite: false,
-    isArchived: false,
-    createdAt: new Date(),
-    diary: { id: 1, name: 'Test Diary', icon: '📓' },
-  };
-
-  const mockDiary = {
-    id: 1,
-    userId: 1,
-    name: 'Test Diary',
-    icon: '📓',
-    isDefault: true,
-  };
+  let entriesQueryService: Record<string, jest.Mock>;
+  let entriesCommandService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
-    const mockQueryBuilder = {
-      leftJoinAndSelect: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      addOrderBy: jest.fn().mockReturnThis(),
-      skip: jest.fn().mockReturnThis(),
-      take: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      select: jest.fn().mockReturnThis(),
-      addSelect: jest.fn().mockReturnThis(),
-      groupBy: jest.fn().mockReturnThis(),
-      addGroupBy: jest.fn().mockReturnThis(),
-      getMany: jest.fn().mockResolvedValue([mockEntry]),
-      getOne: jest.fn().mockResolvedValue(mockEntry),
-      getCount: jest.fn().mockResolvedValue(1),
-      getRawMany: jest.fn().mockResolvedValue([{ tag: 'tag1' }, { tag: 'tag2' }]),
-      getRawOne: jest.fn().mockResolvedValue({ first_date: '2024-01-15', e_id: 1 }),
-      getRawAndEntities: jest.fn().mockResolvedValue({
-        entities: [mockEntry],
-        raw: [{ entry_year: '2023' }],
-      }),
-      delete: jest.fn().mockReturnThis(),
-      execute: jest.fn().mockResolvedValue({ affected: 1 }),
+    entriesQueryService = {
+      getEntries: jest.fn(),
+      getDates: jest.fn(),
+      getFirstEntry: jest.fn(),
+      getEntryByDate: jest.fn(),
+      getHighlights: jest.fn(),
+      getRevisions: jest.fn(),
     };
 
-    entryRepository = {
-      findOne: jest.fn(),
-      find: jest.fn(),
-      save: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
+    entriesCommandService = {
+      create: jest.fn(),
       update: jest.fn(),
-      createQueryBuilder: jest.fn(() => mockQueryBuilder),
-    };
-
-    diaryRepository = {
-      findOne: jest.fn(),
-    };
-
-    configService = {
-      getConfig: jest.fn().mockResolvedValue({ autoTagMaxTags: '0' }),
-    };
-
-    aiService = {
-      autoTagEntry: jest.fn().mockResolvedValue([]),
-    };
-
-    revisionRepository = {
-      save: jest.fn(),
-      find: jest.fn(),
+      updateVisibility: jest.fn(),
+      toggleFavorite: jest.fn(),
+      toggleArchived: jest.fn(),
+      deleteAll: jest.fn(),
+      delete: jest.fn(),
+      bulkOperation: jest.fn(),
+      renameTag: jest.fn(),
+      reorderEntries: jest.fn(),
+      deleteRevision: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EntriesService,
-        { provide: getRepositoryToken(Entry), useValue: entryRepository },
-        { provide: getRepositoryToken(EntryRevision), useValue: revisionRepository },
-        { provide: getRepositoryToken(Diary), useValue: diaryRepository },
-        { provide: ConfigService, useValue: configService },
-        { provide: AiService, useValue: aiService },
+        { provide: EntriesQueryService, useValue: entriesQueryService },
+        { provide: EntriesCommandService, useValue: entriesCommandService },
       ],
     }).compile();
 
@@ -109,705 +47,176 @@ describe('EntriesService', () => {
     jest.clearAllMocks();
   });
 
-  describe('getEntries', () => {
-    it('should return paginated entries', async () => {
-      const result = await service.getEntries(1, { page: 1, limit: 10 });
+  it('delegates getEntries to EntriesQueryService', async () => {
+    const expected = { entries: [], total: 0, page: 1, totalPages: 1, allTags: [] };
+    entriesQueryService.getEntries.mockResolvedValue(expected);
 
-      expect(result).toHaveProperty('entries');
-      expect(result).toHaveProperty('total');
-      expect(result).toHaveProperty('page');
-      expect(result).toHaveProperty('totalPages');
-      expect(result).toHaveProperty('allTags');
-    });
+    const result = await service.getEntries(1, { page: 1, limit: 10 });
 
-    it('should filter by search term', async () => {
-      const result = await service.getEntries(1, { search: 'test', page: 1, limit: 10 });
-
-      expect(result.entries).toBeDefined();
-    });
-
-    it('should filter by tags', async () => {
-      const result = await service.getEntries(1, { tags: 'tag1,tag2', page: 1, limit: 10 });
-
-      expect(result.entries).toBeDefined();
-    });
-
-    it('should filter by date', async () => {
-      const result = await service.getEntries(1, { date: '2024-01-15', page: 1, limit: 10 });
-
-      expect(result.entries).toBeDefined();
-    });
-
-    it('should filter by visibility', async () => {
-      const result = await service.getEntries(1, { visibility: 'private', page: 1, limit: 10 });
-
-      expect(result.entries).toBeDefined();
-    });
-
-    it('should filter by diaryId', async () => {
-      const result = await service.getEntries(1, { diaryId: 1, page: 1, limit: 10 });
-
-      expect(result.entries).toBeDefined();
-    });
+    expect(entriesQueryService.getEntries).toHaveBeenCalledWith(1, { page: 1, limit: 10 });
+    expect(result).toBe(expected);
   });
 
-  describe('getDates', () => {
-    it('should return list of dates', async () => {
-      const mockQb = entryRepository.createQueryBuilder();
-      mockQb.getRawMany.mockResolvedValue([{ date: '2024-01-15' }, { date: '2024-01-14' }]);
+  it('delegates getDates to EntriesQueryService', async () => {
+    const expected = { dates: ['2024-01-15'] };
+    entriesQueryService.getDates.mockResolvedValue(expected);
 
-      const result = await service.getDates(1);
+    const result = await service.getDates(1);
 
-      expect(result).toHaveProperty('dates');
-      expect(Array.isArray(result.dates)).toBe(true);
-    });
+    expect(entriesQueryService.getDates).toHaveBeenCalledWith(1);
+    expect(result).toBe(expected);
   });
 
-  describe('getFirstEntry', () => {
-    it('should return first entry info with years and months', async () => {
-      const result = await service.getFirstEntry(1, { year: 2024, month: 1, limit: 10 });
+  it('delegates getFirstEntry to EntriesQueryService', async () => {
+    const expected = { page: 1, found: true, years: [2024], months: ['2024-01'] };
+    entriesQueryService.getFirstEntry.mockResolvedValue(expected);
 
-      expect(result).toHaveProperty('page');
-      expect(result).toHaveProperty('found');
-      expect(result).toHaveProperty('years');
-      expect(result).toHaveProperty('months');
-    });
+    const result = await service.getFirstEntry(1, { year: 2024, limit: 10 });
 
-    it('should return page 1 when no year specified', async () => {
-      const result = await service.getFirstEntry(1, { limit: 10 });
-
-      expect(result.page).toBe(1);
-      expect(result.found).toBe(false);
-    });
-
-    it('should return not found when no entry exists', async () => {
-      const mockQb = entryRepository.createQueryBuilder();
-      mockQb.getRawOne.mockResolvedValue({ first_date: null });
-
-      const result = await service.getFirstEntry(1, { year: 2024, limit: 10 });
-
-      expect(result.found).toBe(false);
-    });
+    expect(entriesQueryService.getFirstEntry).toHaveBeenCalledWith(1, { year: 2024, limit: 10 });
+    expect(result).toBe(expected);
   });
 
-  describe('getEntryByDate', () => {
-    it('should find entry by date and index', async () => {
-      entryRepository.findOne.mockResolvedValue(mockEntry);
+  it('delegates getEntryByDate to EntriesQueryService', async () => {
+    const expected = { found: true, entryId: 1 };
+    entriesQueryService.getEntryByDate.mockResolvedValue(expected);
 
-      const result = await service.getEntryByDate(1, { date: '2024-01-15', index: 1, limit: 10 });
+    const result = await service.getEntryByDate(1, { date: '2024-01-15', index: 1, limit: 10 });
 
-      expect(result.found).toBe(true);
-      expect(result.entry).toBeDefined();
-    });
-
-    it('should find entry by id', async () => {
-      entryRepository.findOne.mockResolvedValue(mockEntry);
-
-      const result = await service.getEntryByDate(1, { id: 1, limit: 10 });
-
-      expect(result.found).toBe(true);
-    });
-
-    it('should return error when date not provided and no id', async () => {
-      const result = await service.getEntryByDate(1, { limit: 10 });
-
-      expect(result.found).toBe(false);
-      expect(result.error).toBe('Date is required');
-    });
-
-    it('should return not found for non-existent entry', async () => {
-      entryRepository.findOne.mockResolvedValue(null);
-
-      const result = await service.getEntryByDate(1, { date: '2024-01-15', index: 1, limit: 10 });
-
-      expect(result.found).toBe(false);
-      expect(result.error).toBe('Entry not found');
-    });
+    expect(entriesQueryService.getEntryByDate).toHaveBeenCalledWith(1, { date: '2024-01-15', index: 1, limit: 10 });
+    expect(result).toBe(expected);
   });
 
-  describe('create', () => {
-    it('should create new entry', async () => {
-      diaryRepository.findOne.mockResolvedValue(mockDiary);
-      entryRepository.count.mockResolvedValue(0);
-      entryRepository.save.mockResolvedValue(mockEntry);
+  it('delegates getHighlights to EntriesQueryService', async () => {
+    const expected = { randomEntry: null, onThisDay: {}, currentDate: { month: '01', day: '01', year: 2024 } };
+    entriesQueryService.getHighlights.mockResolvedValue(expected);
 
-      const result = await service.create(1, {
-        tags: ['tag1'],
-        text: 'New entry content',
-        date: '2024-01-15',
-      });
+    const result = await service.getHighlights(1, {});
 
-      expect(result.success).toBe(true);
-      expect(entryRepository.save).toHaveBeenCalled();
-    });
-
-    it('should use default diary when diaryId not provided', async () => {
-      diaryRepository.findOne.mockResolvedValue(mockDiary);
-      entryRepository.count.mockResolvedValue(0);
-      entryRepository.save.mockResolvedValue(mockEntry);
-
-      await service.create(1, {
-        tags: ['tag1'],
-        text: 'New entry content',
-      });
-
-      expect(diaryRepository.findOne).toHaveBeenCalledWith({
-        where: { userId: 1, isDefault: true },
-      });
-    });
-
-    it('should increment index for same day entries', async () => {
-      diaryRepository.findOne.mockResolvedValue(mockDiary);
-      entryRepository.count.mockResolvedValue(2);
-      entryRepository.save.mockResolvedValue(mockEntry);
-
-      await service.create(1, {
-        tags: ['tag1'],
-        text: 'New entry content',
-        date: '2024-01-15',
-      });
-
-      expect(entryRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          index: 3,
-        }),
-      );
-    });
-
-    it('should auto-tag new entries when enabled in config', async () => {
-      diaryRepository.findOne.mockResolvedValue(mockDiary);
-      entryRepository.count.mockResolvedValue(0);
-      entryRepository.save.mockResolvedValue(mockEntry);
-      configService.getConfig.mockResolvedValue({ autoTagMaxTags: '3' });
-      aiService.autoTagEntry.mockResolvedValue(['focus', 'writing']);
-
-      await service.create(1, {
-        tags: [],
-        text: 'A reflective draft about focus and writing',
-        date: '2024-01-15',
-      });
-
-      expect(aiService.autoTagEntry).toHaveBeenCalledWith(1, 'A reflective draft about focus and writing', [], 3);
-      expect(entryRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tags: ['focus', 'writing'],
-        }),
-      );
-    });
+    expect(entriesQueryService.getHighlights).toHaveBeenCalledWith(1, {});
+    expect(result).toBe(expected);
   });
 
-  describe('update', () => {
-    it('should update existing entry', async () => {
-      entryRepository.findOne.mockResolvedValue(mockEntry);
-      entryRepository.save.mockResolvedValue(mockEntry);
-      entryRepository.find.mockResolvedValue([]);
+  it('delegates getRevisions to EntriesQueryService', async () => {
+    const expected = [{ id: 1 }];
+    entriesQueryService.getRevisions.mockResolvedValue(expected);
 
-      const result = await service.update(1, 1, {
-        tags: ['updated'],
-        text: 'Updated content',
-        date: '2024-01-15',
-      });
+    const result = await service.getRevisions(1, 5);
 
-      expect(result.success).toBe(true);
-      expect(result.entry).toBeDefined();
-    });
-
-    it('should throw NotFoundException for non-existent entry', async () => {
-      entryRepository.findOne.mockResolvedValue(null);
-
-      await expect(
-        service.update(1, 999, {
-          tags: ['updated'],
-          text: 'Updated content',
-          date: '2024-01-15',
-        }),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should reindex old date entries when date changes', async () => {
-      entryRepository.findOne.mockResolvedValue({ ...mockEntry, date: '2024-01-14' });
-      entryRepository.save.mockResolvedValue(mockEntry);
-      entryRepository.count.mockResolvedValue(0);
-      entryRepository.find.mockResolvedValue([{ ...mockEntry, id: 2, index: 2 }]);
-
-      await service.update(1, 1, {
-        tags: ['updated'],
-        text: 'Updated content',
-        date: '2024-01-15',
-      });
-
-      expect(entryRepository.find).toHaveBeenCalled();
-    });
-
-    it('should auto-tag updated entries when enabled in config', async () => {
-      entryRepository.findOne.mockResolvedValue(mockEntry);
-      entryRepository.save.mockResolvedValue(mockEntry);
-      entryRepository.find.mockResolvedValue([]);
-      configService.getConfig.mockResolvedValue({ autoTagMaxTags: '2' });
-      aiService.autoTagEntry.mockResolvedValue(['review']);
-
-      await service.update(1, 1, {
-        tags: ['work'],
-        text: 'Updated content for review',
-        date: '2024-01-15',
-      });
-
-      expect(aiService.autoTagEntry).toHaveBeenCalledWith(1, 'Updated content for review', ['work'], 1);
-      expect(entryRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tags: ['work', 'review'],
-        }),
-      );
-    });
+    expect(entriesQueryService.getRevisions).toHaveBeenCalledWith(1, 5);
+    expect(result).toBe(expected);
   });
 
-  describe('updateVisibility', () => {
-    it('should update entry visibility', async () => {
-      entryRepository.findOne.mockResolvedValue(mockEntry);
-      entryRepository.save.mockResolvedValue({ ...mockEntry, visibility: 'public' });
+  it('delegates create to EntriesCommandService', async () => {
+    const dto = { tags: ['tag1'], text: 'New entry content', date: '2024-01-15' };
+    const expected = { success: true, entryId: 1 };
+    entriesCommandService.create.mockResolvedValue(expected);
 
-      const result = await service.updateVisibility(1, 1, 'public');
+    const result = await service.create(1, dto);
 
-      expect(result.success).toBe(true);
-      expect(result.entry.visibility).toBe('public');
-    });
-
-    it('should throw NotFoundException for non-existent entry', async () => {
-      entryRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.updateVisibility(1, 999, 'public')).rejects.toThrow(NotFoundException);
-    });
+    expect(entriesCommandService.create).toHaveBeenCalledWith(1, dto);
+    expect(result).toBe(expected);
   });
 
-  describe('getHighlights', () => {
-    it('should return random entry and on this day entries', async () => {
-      const result = await service.getHighlights(1, {});
+  it('delegates update to EntriesCommandService', async () => {
+    const dto = { text: 'Updated content', tags: ['work'], date: '2024-01-16' };
+    const expected = { success: true, entry: { id: 1 } };
+    entriesCommandService.update.mockResolvedValue(expected);
 
-      expect(result).toHaveProperty('randomEntry');
-      expect(result).toHaveProperty('onThisDay');
-      expect(result).toHaveProperty('currentDate');
-    });
+    const result = await service.update(1, 1, dto as never);
 
-    it('should filter by diaryId', async () => {
-      const result = await service.getHighlights(1, { diaryId: 1 });
-
-      expect(result).toHaveProperty('randomEntry');
-    });
+    expect(entriesCommandService.update).toHaveBeenCalledWith(1, 1, dto);
+    expect(result).toBe(expected);
   });
 
-  describe('deleteAll', () => {
-    it('should delete all entries for user', async () => {
-      const result = await service.deleteAll(1);
+  it('delegates updateVisibility to EntriesCommandService', async () => {
+    const expected = { success: true, entry: { id: 1, visibility: 'public' } };
+    entriesCommandService.updateVisibility.mockResolvedValue(expected);
 
-      expect(result.success).toBe(true);
-      expect(result.deletedCount).toBeDefined();
-    });
+    const result = await service.updateVisibility(1, 1, 'public');
 
-    it('should delete entries for specific diary', async () => {
-      const result = await service.deleteAll(1, 1);
-
-      expect(result.success).toBe(true);
-    });
+    expect(entriesCommandService.updateVisibility).toHaveBeenCalledWith(1, 1, 'public');
+    expect(result).toBe(expected);
   });
 
-  describe('delete', () => {
-    it('should delete entry and reindex remaining', async () => {
-      entryRepository.findOne.mockResolvedValue(mockEntry);
-      entryRepository.delete.mockResolvedValue({ affected: 1 });
-      entryRepository.find.mockResolvedValue([]);
+  it('delegates toggleFavorite to EntriesCommandService', async () => {
+    const expected = { success: true, entry: { id: 1, isFavorite: true } };
+    entriesCommandService.toggleFavorite.mockResolvedValue(expected);
 
-      const result = await service.delete(1, 1);
+    const result = await service.toggleFavorite(1, 1, true);
 
-      expect(result.success).toBe(true);
-    });
-
-    it('should throw NotFoundException for non-existent entry', async () => {
-      entryRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.delete(1, 999)).rejects.toThrow(NotFoundException);
-    });
-
-    it('should reindex remaining entries after deletion', async () => {
-      entryRepository.findOne.mockResolvedValue(mockEntry);
-      entryRepository.delete.mockResolvedValue({ affected: 1 });
-      entryRepository.find.mockResolvedValue([
-        { ...mockEntry, id: 2, index: 3 },
-        { ...mockEntry, id: 3, index: 4 },
-      ]);
-      entryRepository.save.mockResolvedValue(mockEntry);
-
-      await service.delete(1, 1);
-
-      expect(entryRepository.save).toHaveBeenCalledTimes(2);
-    });
+    expect(entriesCommandService.toggleFavorite).toHaveBeenCalledWith(1, 1, true);
+    expect(result).toBe(expected);
   });
 
-  describe('bulkOperation', () => {
-    const mockEntries = [
-      { ...mockEntry, id: 1, date: '2024-01-15', tags: ['tag1'], visibility: 'private' },
-      { ...mockEntry, id: 2, date: '2024-01-15', tags: ['tag2'], visibility: 'private' },
-      { ...mockEntry, id: 3, date: '2024-01-16', tags: ['tag1'], visibility: 'public' },
-    ];
+  it('delegates toggleArchived to EntriesCommandService', async () => {
+    const expected = { success: true, entry: { id: 1, isArchived: true } };
+    entriesCommandService.toggleArchived.mockResolvedValue(expected);
 
-    describe('bulk delete', () => {
-      it('should delete entries and reindex remaining', async () => {
-        entryRepository.find
-          .mockResolvedValueOnce(mockEntries) // ownership check
-          .mockResolvedValueOnce([]) // reindex date 1
-          .mockResolvedValueOnce([]); // reindex date 2
-        entryRepository.delete.mockResolvedValue({ affected: 3 });
+    const result = await service.toggleArchived(1, 1, true);
 
-        const result = await service.bulkOperation(1, {
-          ids: [1, 2, 3],
-          action: 'delete',
-        });
-
-        expect(result.success).toBe(true);
-        expect(result.affectedCount).toBe(3);
-        expect(entryRepository.delete).toHaveBeenCalled();
-      });
-
-      it('should reindex entries on each affected date', async () => {
-        entryRepository.find
-          .mockResolvedValueOnce([mockEntries[0], mockEntries[1]]) // ownership
-          .mockResolvedValueOnce([{ ...mockEntry, id: 5, index: 3 }]); // remaining on date
-        entryRepository.delete.mockResolvedValue({ affected: 2 });
-        entryRepository.save.mockResolvedValue(mockEntry);
-
-        await service.bulkOperation(1, {
-          ids: [1, 2],
-          action: 'delete',
-        });
-
-        expect(entryRepository.save).toHaveBeenCalledWith(
-          expect.objectContaining({ index: 1 }),
-        );
-      });
-    });
-
-    describe('bulk visibility', () => {
-      it('should update visibility for all entries', async () => {
-        entryRepository.find.mockResolvedValue(mockEntries);
-        entryRepository.update.mockResolvedValue({ affected: 3 });
-
-        const result = await service.bulkOperation(1, {
-          ids: [1, 2, 3],
-          action: 'visibility',
-          visibility: 'public',
-        });
-
-        expect(result.success).toBe(true);
-        expect(result.affectedCount).toBe(3);
-        expect(entryRepository.update).toHaveBeenCalledWith(
-          expect.objectContaining({ userId: 1 }),
-          { visibility: 'public' },
-        );
-      });
-
-      it('should throw BadRequestException when visibility not provided', async () => {
-        entryRepository.find.mockResolvedValue(mockEntries);
-
-        await expect(
-          service.bulkOperation(1, { ids: [1, 2], action: 'visibility' }),
-        ).rejects.toThrow(BadRequestException);
-      });
-    });
-
-    describe('bulk tags', () => {
-      it('should merge tags onto entries', async () => {
-        entryRepository.find.mockResolvedValue([
-          { ...mockEntry, id: 1, tags: ['existing'] },
-        ]);
-        entryRepository.save.mockResolvedValue(mockEntry);
-
-        const result = await service.bulkOperation(1, {
-          ids: [1],
-          action: 'tags',
-          tags: ['newTag'],
-        });
-
-        expect(result.success).toBe(true);
-        expect(result.affectedCount).toBe(1);
-        expect(entryRepository.save).toHaveBeenCalledWith(
-          expect.objectContaining({
-            tags: expect.arrayContaining(['existing', 'newTag']),
-          }),
-        );
-      });
-
-      it('should deduplicate merged tags', async () => {
-        entryRepository.find.mockResolvedValue([
-          { ...mockEntry, id: 1, tags: ['tag1', 'tag2'] },
-        ]);
-        entryRepository.save.mockResolvedValue(mockEntry);
-
-        await service.bulkOperation(1, {
-          ids: [1],
-          action: 'tags',
-          tags: ['tag1', 'tag3'],
-        });
-
-        expect(entryRepository.save).toHaveBeenCalledWith(
-          expect.objectContaining({
-            tags: ['tag1', 'tag2', 'tag3'],
-          }),
-        );
-      });
-
-      it('should throw BadRequestException when tags not provided', async () => {
-        entryRepository.find.mockResolvedValue(mockEntries);
-
-        await expect(
-          service.bulkOperation(1, { ids: [1], action: 'tags' }),
-        ).rejects.toThrow(BadRequestException);
-      });
-    });
-
-    describe('bulk move', () => {
-      it('should move entries to target diary', async () => {
-        entryRepository.find.mockResolvedValue(mockEntries);
-        entryRepository.update.mockResolvedValue({ affected: 3 });
-        diaryRepository.findOne.mockResolvedValue({ id: 5, userId: 1, name: 'Target' });
-
-        const result = await service.bulkOperation(1, {
-          ids: [1, 2, 3],
-          action: 'move',
-          diaryId: 5,
-        });
-
-        expect(result.success).toBe(true);
-        expect(result.affectedCount).toBe(3);
-        expect(entryRepository.update).toHaveBeenCalledWith(
-          expect.objectContaining({ userId: 1 }),
-          { diaryId: 5 },
-        );
-      });
-
-      it('should throw NotFoundException when target diary not found', async () => {
-        entryRepository.find.mockResolvedValue(mockEntries);
-        diaryRepository.findOne.mockResolvedValue(null);
-
-        await expect(
-          service.bulkOperation(1, { ids: [1], action: 'move', diaryId: 999 }),
-        ).rejects.toThrow(NotFoundException);
-      });
-
-      it('should throw BadRequestException when diaryId not provided', async () => {
-        entryRepository.find.mockResolvedValue(mockEntries);
-
-        await expect(
-          service.bulkOperation(1, { ids: [1], action: 'move' }),
-        ).rejects.toThrow(BadRequestException);
-      });
-    });
-
-    describe('bulk archive', () => {
-      it('should update archive status for all entries', async () => {
-        entryRepository.find.mockResolvedValue(mockEntries);
-        entryRepository.update.mockResolvedValue({ affected: 3 });
-
-        const result = await service.bulkOperation(1, {
-          ids: [1, 2, 3],
-          action: 'archive',
-          isArchived: true,
-        });
-
-        expect(result.success).toBe(true);
-        expect(result.affectedCount).toBe(3);
-        expect(entryRepository.update).toHaveBeenCalledWith(
-          expect.objectContaining({ userId: 1 }),
-          { isArchived: true },
-        );
-      });
-
-      it('should throw BadRequestException when isArchived not provided', async () => {
-        entryRepository.find.mockResolvedValue(mockEntries);
-
-        await expect(
-          service.bulkOperation(1, { ids: [1], action: 'archive' }),
-        ).rejects.toThrow(BadRequestException);
-      });
-    });
-
-    describe('common', () => {
-      it('should throw NotFoundException when no entries match', async () => {
-        entryRepository.find.mockResolvedValue([]);
-
-        await expect(
-          service.bulkOperation(1, { ids: [999], action: 'delete' }),
-        ).rejects.toThrow(NotFoundException);
-      });
-
-      it('should only operate on entries belonging to the user', async () => {
-        // Only 2 of 3 IDs match
-        entryRepository.find.mockResolvedValue([mockEntries[0], mockEntries[1]]);
-        entryRepository.update.mockResolvedValue({ affected: 2 });
-
-        const result = await service.bulkOperation(1, {
-          ids: [1, 2, 999],
-          action: 'visibility',
-          visibility: 'public',
-        });
-
-        expect(result.affectedCount).toBe(2);
-      });
-    });
+    expect(entriesCommandService.toggleArchived).toHaveBeenCalledWith(1, 1, true);
+    expect(result).toBe(expected);
   });
 
-  describe('toggleFavorite', () => {
-    it('should set entry as favorite', async () => {
-      const entry = { ...mockEntry, isFavorite: false };
-      entryRepository.findOne.mockResolvedValue(entry);
-      entryRepository.save.mockResolvedValue({ ...entry, isFavorite: true });
+  it('delegates deleteAll to EntriesCommandService', async () => {
+    const expected = { success: true, deletedCount: 10 };
+    entriesCommandService.deleteAll.mockResolvedValue(expected);
 
-      const result = await service.toggleFavorite(1, 1, true);
+    const result = await service.deleteAll(1, 3);
 
-      expect(result.success).toBe(true);
-      expect(result.entry.isFavorite).toBe(true);
-      expect(entryRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({ isFavorite: true }),
-      );
-    });
-
-    it('should unset entry as favorite', async () => {
-      const entry = { ...mockEntry, isFavorite: true };
-      entryRepository.findOne.mockResolvedValue(entry);
-      entryRepository.save.mockResolvedValue({ ...entry, isFavorite: false });
-
-      const result = await service.toggleFavorite(1, 1, false);
-
-      expect(result.success).toBe(true);
-      expect(result.entry.isFavorite).toBe(false);
-    });
-
-    it('should throw NotFoundException when entry not found', async () => {
-      entryRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.toggleFavorite(1, 999, true)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('should only toggle favorites for entries owned by the user', async () => {
-      entryRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.toggleFavorite(2, 1, true)).rejects.toThrow(
-        NotFoundException,
-      );
-      expect(entryRepository.findOne).toHaveBeenCalledWith({
-        where: { id: 1, userId: 2 },
-      });
-    });
+    expect(entriesCommandService.deleteAll).toHaveBeenCalledWith(1, 3);
+    expect(result).toBe(expected);
   });
 
-  describe('toggleArchived', () => {
-    it('should archive an entry', async () => {
-      const entry = { ...mockEntry, isArchived: false };
-      entryRepository.findOne.mockResolvedValue(entry);
-      entryRepository.save.mockResolvedValue({ ...entry, isArchived: true });
+  it('delegates delete to EntriesCommandService', async () => {
+    const expected = { success: true };
+    entriesCommandService.delete.mockResolvedValue(expected);
 
-      const result = await service.toggleArchived(1, 1, true);
+    const result = await service.delete(1, 9);
 
-      expect(result.success).toBe(true);
-      expect(result.entry.isArchived).toBe(true);
-      expect(entryRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({ isArchived: true }),
-      );
-    });
-
-    it('should unarchive an entry', async () => {
-      const entry = { ...mockEntry, isArchived: true };
-      entryRepository.findOne.mockResolvedValue(entry);
-      entryRepository.save.mockResolvedValue({ ...entry, isArchived: false });
-
-      const result = await service.toggleArchived(1, 1, false);
-
-      expect(result.success).toBe(true);
-      expect(result.entry.isArchived).toBe(false);
-    });
-
-    it('should throw NotFoundException when entry not found', async () => {
-      entryRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.toggleArchived(1, 999, true)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
+    expect(entriesCommandService.delete).toHaveBeenCalledWith(1, 9);
+    expect(result).toBe(expected);
   });
 
-  describe('getEntries with favorites filter', () => {
-    it('should filter by favorites when favorites is true', async () => {
-      const result = await service.getEntries(1, { favorites: true, page: 1, limit: 10 });
+  it('delegates bulkOperation to EntriesCommandService', async () => {
+    const dto = { ids: [1, 2], action: 'delete' as const };
+    const expected = { success: true, affectedCount: 2 };
+    entriesCommandService.bulkOperation.mockResolvedValue(expected);
 
-      expect(result.entries).toBeDefined();
-    });
+    const result = await service.bulkOperation(1, dto);
 
-    it('should filter by archive status when archived is requested', async () => {
-      const result = await service.getEntries(1, { archiveStatus: 'archived', page: 1, limit: 10 });
-
-      expect(result.entries).toBeDefined();
-    });
+    expect(entriesCommandService.bulkOperation).toHaveBeenCalledWith(1, dto);
+    expect(result).toBe(expected);
   });
 
-  describe('update saves revision', () => {
-    it('should save a revision before updating', async () => {
-      const originalEntry = {
-        id: 1,
-        userId: 1,
-        diaryId: 1,
-        date: '2024-01-15',
-        index: 1,
-        tags: ['tag1', 'tag2'],
-        content: 'Original content',
-        format: 'plaintext',
-        visibility: 'private',
-        createdAt: new Date(),
-      };
-      entryRepository.findOne.mockResolvedValue(originalEntry);
-      entryRepository.save.mockResolvedValue(originalEntry);
-      entryRepository.find.mockResolvedValue([]);
-      revisionRepository.save.mockResolvedValue({});
+  it('delegates renameTag to EntriesCommandService', async () => {
+    const expected = { success: true, affectedCount: 4 };
+    entriesCommandService.renameTag.mockResolvedValue(expected);
 
-      await service.update(1, 1, {
-        tags: ['updated'],
-        text: 'Updated content',
-        date: '2024-01-15',
-      });
+    const result = await service.renameTag(1, 'old', 'new');
 
-      expect(revisionRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          entryId: 1,
-          userId: 1,
-          content: 'Original content',
-          tags: ['tag1', 'tag2'],
-          date: '2024-01-15',
-          visibility: 'private',
-        }),
-      );
-    });
+    expect(entriesCommandService.renameTag).toHaveBeenCalledWith(1, 'old', 'new');
+    expect(result).toBe(expected);
   });
 
-  describe('getRevisions', () => {
-    it('should return revisions for an entry', async () => {
-      const mockRevisions = [
-        { id: 1, entryId: 1, content: 'Old content', createdAt: new Date() },
-      ];
-      entryRepository.findOne.mockResolvedValue(mockEntry);
-      revisionRepository.find.mockResolvedValue(mockRevisions);
+  it('delegates reorderEntries to EntriesCommandService', async () => {
+    const expected = { success: true };
+    entriesCommandService.reorderEntries.mockResolvedValue(expected);
 
-      const result = await service.getRevisions(1, 1);
+    const result = await service.reorderEntries(1, '2024-01-15', [2, 1]);
 
-      expect(result).toEqual(mockRevisions);
-      expect(revisionRepository.find).toHaveBeenCalledWith({
-        where: { entryId: 1, userId: 1 },
-        order: { createdAt: 'DESC' },
-      });
-    });
+    expect(entriesCommandService.reorderEntries).toHaveBeenCalledWith(1, '2024-01-15', [2, 1]);
+    expect(result).toBe(expected);
+  });
 
-    it('should throw NotFoundException for non-existent entry', async () => {
-      entryRepository.findOne.mockResolvedValue(null);
+  it('delegates deleteRevision to EntriesCommandService', async () => {
+    const expected = { success: true };
+    entriesCommandService.deleteRevision.mockResolvedValue(expected);
 
-      await expect(service.getRevisions(1, 999)).rejects.toThrow(NotFoundException);
-    });
+    const result = await service.deleteRevision(1, 2, 3);
+
+    expect(entriesCommandService.deleteRevision).toHaveBeenCalledWith(1, 2, 3);
+    expect(result).toBe(expected);
   });
 });

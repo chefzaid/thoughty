@@ -1,7 +1,8 @@
 import React, { Suspense, lazy, useMemo } from 'react';
 import type { Components } from 'react-markdown';
 
-const referencePattern = /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]|entry\s*\((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/gi;
+const BRACKET_REFERENCE_PATTERN = /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]/i;
+const LEGACY_REFERENCE_PATTERN = /entry\s*\((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/i;
 
 interface SourceEntryInfo {
     id: number;
@@ -9,13 +10,28 @@ interface SourceEntryInfo {
     index: number;
 }
 
-interface ContentPart {
-    type: 'text' | 'reference';
+interface TextContentPart {
+    type: 'text';
     content?: string;
-    date?: string;
-    index?: number;
-    displayText?: string;
     key: string;
+}
+
+interface ReferenceContentPart {
+    type: 'reference';
+    date: string;
+    index: number;
+    displayText: string;
+    key: string;
+}
+
+type ContentPart = TextContentPart | ReferenceContentPart;
+
+interface ReferenceMatch {
+    matchText: string;
+    date: string;
+    index: number;
+    startIndex: number;
+    endIndex: number;
 }
 
 interface EntryContentRendererProps {
@@ -28,6 +44,33 @@ interface EntryContentRendererProps {
 }
 
 const LazyMarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
+
+function findNextReference(content: string, startIndex: number): ReferenceMatch | null {
+    const remainingContent = content.slice(startIndex);
+    const bracketMatch = BRACKET_REFERENCE_PATTERN.exec(remainingContent);
+    const legacyMatch = LEGACY_REFERENCE_PATTERN.exec(remainingContent);
+
+    const match = [
+        bracketMatch && {
+            matchText: bracketMatch[0],
+            date: bracketMatch[1],
+            index: bracketMatch[2] ? Number.parseInt(bracketMatch[2], 10) : 1,
+            startIndex: startIndex + bracketMatch.index,
+            endIndex: startIndex + bracketMatch.index + bracketMatch[0].length,
+        },
+        legacyMatch && {
+            matchText: legacyMatch[0],
+            date: legacyMatch[1],
+            index: legacyMatch[2] ? Number.parseInt(legacyMatch[2], 10) : 1,
+            startIndex: startIndex + legacyMatch.index,
+            endIndex: startIndex + legacyMatch.index + legacyMatch[0].length,
+        },
+    ]
+        .filter((candidate): candidate is ReferenceMatch => candidate !== null)
+        .sort((left, right) => left.startIndex - right.startIndex)[0];
+
+    return match ?? null;
+}
 
 function escapeRegExp(str: string): string {
     return str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
@@ -103,45 +146,41 @@ function EntryContentRenderer({
             : content;
 
         const parts: ContentPart[] = [];
-        let lastIndex = 0;
-        let match: RegExpExecArray | null;
+        let currentIndex = 0;
         let partIndex = 0;
 
-        // Reset regex lastIndex
-        referencePattern.lastIndex = 0;
+        while (currentIndex < displayContent.length) {
+            const nextReference = findNextReference(displayContent, currentIndex);
+            if (!nextReference) {
+                break;
+            }
 
-        while ((match = referencePattern.exec(displayContent)) !== null) {
             // Add text before the match
-            if (match.index > lastIndex) {
+            if (nextReference.startIndex > currentIndex) {
                 parts.push({
                     type: 'text',
-                    content: displayContent.slice(lastIndex, match.index),
+                    content: displayContent.slice(currentIndex, nextReference.startIndex),
                     key: `text-${partIndex++}`
                 });
             }
 
             // Add the reference link
-            const date = match[1] ?? match[3];
-            const rawIndex = match[2] ?? match[4];
-            const index = rawIndex ? Number.parseInt(rawIndex, 10) : 1;
-            const displayText = match[0];
-
             parts.push({
                 type: 'reference',
-                date,
-                index,
-                displayText,
-                key: `ref-${date}-${index}-${partIndex++}`
+                date: nextReference.date,
+                index: nextReference.index,
+                displayText: nextReference.matchText,
+                key: `ref-${nextReference.date}-${nextReference.index}-${partIndex++}`
             });
 
-            lastIndex = match.index + match[0].length;
+            currentIndex = nextReference.endIndex;
         }
 
         // Add remaining text after last match
-        if (lastIndex < displayContent.length) {
+        if (currentIndex < displayContent.length) {
             parts.push({
                 type: 'text',
-                content: displayContent.slice(lastIndex),
+                content: displayContent.slice(currentIndex),
                 key: `text-${partIndex++}`
             });
         }
@@ -190,7 +229,7 @@ function EntryContentRenderer({
                         );
                     }
 
-                    if (part.type === 'reference' && part.date && part.displayText) {
+                    if (part.type === 'reference') {
                         return (
                             <button
                                 key={part.key}
@@ -198,9 +237,9 @@ function EntryContentRenderer({
                                 className="entry-reference-link"
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleReferenceClick(part.date, part.index || 1);
+                                    handleReferenceClick(part.date, part.index);
                                 }}
-                                title={getTitle(part.date, part.index || 1)}
+                                title={getTitle(part.date, part.index)}
                             >
                                 {part.displayText}
                             </button>
@@ -225,7 +264,7 @@ function EntryContentRenderer({
                     return <span key={part.key}>{searchTerm ? highlightText(part.content || '', part.key, searchTerm) : part.content}</span>;
                 }
 
-                if (part.type === 'reference' && part.date && part.displayText) {
+                if (part.type === 'reference') {
                     return (
                         <button
                             key={part.key}
@@ -233,9 +272,9 @@ function EntryContentRenderer({
                             className="entry-reference-link"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                handleReferenceClick(part.date, part.index || 1);
+                                handleReferenceClick(part.date, part.index);
                             }}
-                            title={getTitle(part.date, part.index || 1)}
+                            title={getTitle(part.date, part.index)}
                         >
                             {part.displayText}
                         </button>

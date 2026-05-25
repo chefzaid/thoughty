@@ -146,10 +146,13 @@ describe('entriesService', () => {
       const result = await service.createEntry(newEntry);
 
       expect(result).toEqual({ success: true, entryId: 42 });
-      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries', {
-        method: 'POST',
-        body: JSON.stringify(newEntry),
-      });
+      expect(mockAuthFetch).toHaveBeenCalledWith(
+        '/api/entries',
+        expect.objectContaining({ method: 'POST' }),
+      );
+      const requestOptions = mockAuthFetch.mock.calls[0]?.[1];
+      expect(requestOptions).toBeDefined();
+      expect(JSON.parse(String(requestOptions?.body))).toEqual({ ...newEntry, format: 'plain' });
     });
 
     it('returns false when response is not ok', async () => {
@@ -436,7 +439,7 @@ describe('entriesService', () => {
         ok: true,
         json: () => Promise.resolve(mockResult),
         text: () => Promise.resolve(JSON.stringify(mockResult)),
-      } as unknown as Response);
+      });
 
       const result = await service.bulkOperation([1, 2, 3], 'delete');
 
@@ -453,7 +456,7 @@ describe('entriesService', () => {
         ok: true,
         json: () => Promise.resolve(mockResult),
         text: () => Promise.resolve(JSON.stringify(mockResult)),
-      } as unknown as Response);
+      });
 
       await service.bulkOperation([1, 2], 'visibility', { visibility: 'public' });
 
@@ -467,7 +470,7 @@ describe('entriesService', () => {
       mockAuthFetch.mockResolvedValue({
         ok: false,
         text: () => Promise.resolve('error'),
-      } as unknown as Response);
+      });
 
       const result = await service.bulkOperation([1], 'delete');
       expect(result).toBeNull();

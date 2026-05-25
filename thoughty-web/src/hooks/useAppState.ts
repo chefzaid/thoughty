@@ -1,8 +1,20 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { createAuthFetch, createConfigService, createEntriesService, createDiariesService, createAttachmentsService, createAiService, createCloudSyncService } from '../services/api';
 import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo, Attachment, ArchiveStatusFilter } from '../types';
 import { getTranslation } from '../utils/translations';
+
+const CONFIG_QUERY_KEY = ['app', 'config'] as const;
+const PROFILE_STATS_QUERY_KEY = ['app', 'profile-stats'] as const;
+const DIARIES_QUERY_KEY = ['app', 'diaries'] as const;
+const ENTRY_DATES_QUERY_KEY = ['app', 'entry-dates'] as const;
+const ENTRY_YEARS_MONTHS_QUERY_KEY = ['app', 'entry-years-months'] as const;
+const ENTRIES_QUERY_KEY = 'entries';
+const EMPTY_DIARIES: Diary[] = [];
+const EMPTY_ENTRIES: Entry[] = [];
+const EMPTY_STRINGS: string[] = [];
+const EMPTY_NUMBERS: number[] = [];
 
 const getAutoTagLimit = (value: string | number | undefined): number => {
   const parsed = Number.parseInt(String(value ?? '0'), 10);
@@ -44,34 +56,49 @@ export const useApiServices = () => {
  */
 export const useConfig = (isAuthenticated: boolean) => {
   const { configService } = useApiServices();
-  const [config, setConfig] = useState<Config>({});
-  const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
+  const queryClient = useQueryClient();
+
+  const configQuery = useQuery({
+    queryKey: CONFIG_QUERY_KEY,
+    queryFn: async (): Promise<Config> => {
+      const data = await configService.fetchConfig();
+      return data ?? {};
+    },
+    enabled: isAuthenticated,
+  });
+
+  const profileStatsQuery = useQuery({
+    queryKey: PROFILE_STATS_QUERY_KEY,
+    queryFn: async (): Promise<ProfileStats | null> => {
+      const stats = await configService.fetchProfileStats();
+      return stats ?? null;
+    },
+    enabled: isAuthenticated,
+  });
+
+  const config = configQuery.data ?? {};
+  const profileStats = profileStatsQuery.data ?? null;
 
   const fetchConfig = useCallback(async () => {
-    const data = await configService.fetchConfig();
-    if (data) setConfig(data);
-  }, [configService]);
+    return configQuery.refetch();
+  }, [configQuery]);
 
   const fetchProfileStats = useCallback(async () => {
-    const stats = await configService.fetchProfileStats();
-    if (stats) setProfileStats(stats);
-  }, [configService]);
+    return profileStatsQuery.refetch();
+  }, [profileStatsQuery]);
+
+  const setConfig = useCallback((nextConfig: Config) => {
+    queryClient.setQueryData<Config>(CONFIG_QUERY_KEY, nextConfig);
+  }, [queryClient]);
 
   const updateConfig = useCallback(async (newConfig: Config) => {
-    const previousConfig = config;
-    setConfig(newConfig);
+    const previousConfig = queryClient.getQueryData<Config>(CONFIG_QUERY_KEY) ?? {};
+    queryClient.setQueryData<Config>(CONFIG_QUERY_KEY, newConfig);
     const success = await configService.updateConfig(newConfig);
     if (!success) {
-      setConfig(previousConfig);
+      queryClient.setQueryData<Config>(CONFIG_QUERY_KEY, previousConfig);
     }
-  }, [config, configService]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchConfig();
-      fetchProfileStats();
-    }
-  }, [isAuthenticated, fetchConfig, fetchProfileStats]);
+  }, [configService, queryClient]);
 
   // Apply theme
   useEffect(() => {
@@ -110,25 +137,24 @@ export const useConfig = (isAuthenticated: boolean) => {
  */
 export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelection = false) => {
   const { diariesService } = useApiServices();
-  const [diaries, setDiaries] = useState<Diary[]>([]);
+  const queryClient = useQueryClient();
   const [currentDiaryId, setCurrentDiaryId] = useState<number | null>(null);
   const hasInitializedDiarySelection = useRef(false);
 
+  const diariesQuery = useQuery({
+    queryKey: DIARIES_QUERY_KEY,
+    queryFn: async (): Promise<Diary[]> => {
+      const data = await diariesService.fetchDiaries();
+      return data ?? [];
+    },
+    enabled: isAuthenticated,
+  });
+
+  const diaries = diariesQuery.data ?? EMPTY_DIARIES;
+
   const fetchDiaries = useCallback(async () => {
-    const data = await diariesService.fetchDiaries();
-    setDiaries(data);
-
-    if (hasInitializedDiarySelection.current) {
-      return;
-    }
-
-    hasInitializedDiarySelection.current = true;
-
-    if (!suppressDefaultDiarySelection && currentDiaryId === null && data.length > 0) {
-      const defaultDiary = data.find(d => d.is_default);
-      if (defaultDiary) setCurrentDiaryId(defaultDiary.id);
-    }
-  }, [diariesService, currentDiaryId, suppressDefaultDiarySelection]);
+    return diariesQuery.refetch();
+  }, [diariesQuery]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -138,18 +164,41 @@ export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelecti
     hasInitializedDiarySelection.current = false;
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    if (hasInitializedDiarySelection.current) {
+      return;
+    }
+
+    if (!diariesQuery.isFetched) {
+      return;
+    }
+
+    if (diaries.length === 0) {
+      return;
+    }
+
+    hasInitializedDiarySelection.current = true;
+
+    if (!suppressDefaultDiarySelection && currentDiaryId === null && diaries.length > 0) {
+      const defaultDiary = diaries.find(d => d.is_default);
+      if (defaultDiary) setCurrentDiaryId(defaultDiary.id);
+    }
+  }, [currentDiaryId, diaries, diariesQuery.isFetched, suppressDefaultDiarySelection]);
+
   const handleCreateDiary = useCallback(async (diaryData: Partial<Diary>) => {
     const result = await diariesService.createDiary(diaryData);
     if (!result.success) throw new Error(result.error);
-    await fetchDiaries();
-  }, [diariesService, fetchDiaries]);
+    await queryClient.invalidateQueries({ queryKey: DIARIES_QUERY_KEY });
+  }, [diariesService, queryClient]);
 
   const handleUpdateDiary = useCallback(async (id: number, diaryData: Partial<Diary>) => {
     const result = await diariesService.updateDiary(id, diaryData);
     if (!result.success) throw new Error(result.error);
-    setDiaries((prev) => prev.map((diary) => (diary.id === id ? { ...diary, ...diaryData } : diary)));
-    await fetchDiaries();
-  }, [diariesService, fetchDiaries]);
+    queryClient.setQueryData<Diary[]>(DIARIES_QUERY_KEY, (previousDiaries = []) => (
+      previousDiaries.map((diary) => (diary.id === id ? { ...diary, ...diaryData } : diary))
+    ));
+    await queryClient.invalidateQueries({ queryKey: DIARIES_QUERY_KEY });
+  }, [diariesService, queryClient]);
 
   const handleDeleteDiary = useCallback(async (id: number, refreshEntries: () => void) => {
     const result = await diariesService.deleteDiary(id);
@@ -158,27 +207,21 @@ export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelecti
       const defaultDiary = diaries.find(d => d.is_default);
       setCurrentDiaryId(defaultDiary?.id || null);
     }
-    await fetchDiaries();
+    await queryClient.invalidateQueries({ queryKey: DIARIES_QUERY_KEY });
     refreshEntries();
-  }, [diariesService, currentDiaryId, diaries, fetchDiaries]);
+  }, [diariesService, currentDiaryId, diaries, queryClient]);
 
   const handleSetDefaultDiary = useCallback(async (id: number) => {
     const result = await diariesService.setDefaultDiary(id);
     if (!result.success) throw new Error(result.error);
-    await fetchDiaries();
-  }, [diariesService, fetchDiaries]);
+    await queryClient.invalidateQueries({ queryKey: DIARIES_QUERY_KEY });
+  }, [diariesService, queryClient]);
 
   const handleReorderDiaries = useCallback(async (orderedIds: number[]) => {
     const result = await diariesService.reorderDiaries(orderedIds);
     if (!result.success) throw new Error(result.error);
-    await fetchDiaries();
-  }, [diariesService, fetchDiaries]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchDiaries();
-    }
-  }, [isAuthenticated, fetchDiaries]);
+    await queryClient.invalidateQueries({ queryKey: DIARIES_QUERY_KEY });
+  }, [diariesService, queryClient]);
 
   return {
     diaries,
@@ -202,16 +245,10 @@ export const useEntries = (
   currentDiaryId: number | null
 ) => {
   const { entriesService } = useApiServices();
-  
-  // Entries state
-  const [entries, setEntries] = useState<Entry[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [allTags, setAllTags] = useState<string[]>([]);
-  const [entryDates, setEntryDates] = useState<string[]>([]);
+  const queryClient = useQueryClient();
   
   // Pagination state
   const [page, setPage] = useState<number>(1);
-  const [totalPages, setTotalPages] = useState<number>(1);
   const [inputPage, setInputPage] = useState<string>('1');
   
   // Filter state
@@ -223,8 +260,6 @@ export const useEntries = (
   const [filterArchiveStatus, setFilterArchiveStatus] = useState<ArchiveStatusFilter>('active');
   
   // Navigation state
-  const [availableYears, setAvailableYears] = useState<number[]>([]);
-  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
   const [targetEntryId, setTargetEntryId] = useState<number | null>(null);
   const [activeTargetId, setActiveTargetId] = useState<number | null>(null);
   const [sourceEntry, setSourceEntry] = useState<SourceEntryInfo | null>(null);
@@ -235,69 +270,130 @@ export const useEntries = (
       : Number.parseInt(config.entriesPerPage || '10', 10) || 10;
   }, [config.entriesPerPage]);
 
-  const fetchEntryDates = useCallback(async () => {
-    const dates = await entriesService.fetchEntryDates();
-    setEntryDates(dates);
-  }, [entriesService]);
-
-  const fetchEntries = useCallback(async () => {
-    if (!isAuthenticated) return;
-    setLoading(true);
-    
-    const filterDate = filterDateObj
-      ? `${filterDateObj.getFullYear()}-${String(filterDateObj.getMonth() + 1).padStart(2, '0')}-${String(filterDateObj.getDate()).padStart(2, '0')}`
-      : '';
-    
-    const result = await entriesService.fetchEntries({
+  const entriesQueryKey = useMemo(() => [
+    'app',
+    ENTRIES_QUERY_KEY,
+    {
       page,
       limit: getLimit(),
       search,
       filterTags,
-      filterDate,
-      filterVisibility: filterVisibility === 'all' ? '' : filterVisibility,
-      favorites: filterFavorites,
-      archiveStatus: filterArchiveStatus,
-      diaryId: currentDiaryId
-    });
-    
-    if (result) {
-      setEntries(result.entries);
-      setTotalPages(result.totalPages);
-      setAllTags(result.allTags);
-    }
-    setLoading(false);
-  }, [isAuthenticated, entriesService, page, search, filterTags, filterDateObj, filterVisibility, filterFavorites, filterArchiveStatus, currentDiaryId, getLimit]);
+      filterDate: filterDateObj
+        ? `${filterDateObj.getFullYear()}-${String(filterDateObj.getMonth() + 1).padStart(2, '0')}-${String(filterDateObj.getDate()).padStart(2, '0')}`
+        : '',
+      filterVisibility,
+      filterFavorites,
+      filterArchiveStatus,
+      currentDiaryId,
+    },
+  ] as const, [currentDiaryId, filterArchiveStatus, filterDateObj, filterFavorites, filterTags, filterVisibility, getLimit, page, search]);
 
-  const fetchYearsMonths = useCallback(async () => {
-    if (!isAuthenticated) return;
-    const data = await entriesService.fetchYearsMonths();
-    setAvailableYears(data.years);
-    setAvailableMonths(data.months);
-  }, [isAuthenticated, entriesService]);
+  const entriesQuery = useQuery({
+    queryKey: entriesQueryKey,
+    queryFn: async (): Promise<{ entries: Entry[]; totalPages: number; allTags: string[] }> => {
+      const filterDate = filterDateObj
+        ? `${filterDateObj.getFullYear()}-${String(filterDateObj.getMonth() + 1).padStart(2, '0')}-${String(filterDateObj.getDate()).padStart(2, '0')}`
+        : '';
+
+      const result = await entriesService.fetchEntries({
+        page,
+        limit: getLimit(),
+        search,
+        filterTags,
+        filterDate,
+        filterVisibility: filterVisibility === 'all' ? '' : filterVisibility,
+        favorites: filterFavorites,
+        archiveStatus: filterArchiveStatus,
+        diaryId: currentDiaryId,
+      });
+
+      return result ?? { entries: [], totalPages: 1, allTags: [] };
+    },
+    enabled: isAuthenticated,
+  });
+
+  const entryDatesQuery = useQuery({
+    queryKey: ENTRY_DATES_QUERY_KEY,
+    queryFn: async (): Promise<string[]> => {
+      const dates = await entriesService.fetchEntryDates();
+      return dates ?? [];
+    },
+    enabled: isAuthenticated,
+  });
+
+  const yearsMonthsQuery = useQuery({
+    queryKey: ENTRY_YEARS_MONTHS_QUERY_KEY,
+    queryFn: async (): Promise<{ years: number[]; months: string[] }> => {
+      const data = await entriesService.fetchYearsMonths();
+      return data ?? { years: [], months: [] };
+    },
+    enabled: isAuthenticated,
+  });
+
+  const entries = entriesQuery.data?.entries ?? EMPTY_ENTRIES;
+  const totalPages = entriesQuery.data?.totalPages ?? 1;
+  const allTags = entriesQuery.data?.allTags ?? EMPTY_STRINGS;
+  const entryDates = entryDatesQuery.data ?? EMPTY_STRINGS;
+  const loading = !isAuthenticated || entriesQuery.isLoading || entriesQuery.isFetching;
+  const availableYears = yearsMonthsQuery.data?.years ?? EMPTY_NUMBERS;
+  const availableMonths = yearsMonthsQuery.data?.months ?? EMPTY_STRINGS;
+
+  const setEntries = useCallback((nextEntries: Entry[] | ((previousEntries: Entry[]) => Entry[])) => {
+    queryClient.setQueryData<{ entries: Entry[]; totalPages: number; allTags: string[] }>(
+      entriesQueryKey,
+      (currentData) => {
+        const resolvedEntries = typeof nextEntries === 'function'
+          ? nextEntries(currentData?.entries ?? [])
+          : nextEntries;
+
+        return {
+          entries: resolvedEntries,
+          totalPages: currentData?.totalPages ?? 1,
+          allTags: currentData?.allTags ?? [],
+        };
+      },
+    );
+  }, [entriesQueryKey, queryClient]);
+
+  const fetchEntryDates = useCallback(async () => {
+    return entryDatesQuery.refetch();
+  }, [entryDatesQuery]);
+
+  const fetchEntries = useCallback(async () => {
+    return entriesQuery.refetch();
+  }, [entriesQuery]);
+
+  const refreshEntryQueries = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['app', ENTRIES_QUERY_KEY] }),
+      queryClient.invalidateQueries({ queryKey: ENTRY_DATES_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: ENTRY_YEARS_MONTHS_QUERY_KEY }),
+    ]);
+  }, [queryClient]);
 
   const toggleVisibility = useCallback(async (entry: Entry) => {
     const newVisibility = entry.visibility === 'public' ? 'private' : 'public';
     const success = await entriesService.toggleVisibility(entry.id, newVisibility);
     if (success) {
-      await fetchEntries();
+      await refreshEntryQueries();
     }
-  }, [entriesService, fetchEntries]);
+  }, [entriesService, refreshEntryQueries]);
 
   const toggleFavorite = useCallback(async (entry: Entry) => {
     const newFavorite = !entry.is_favorite;
     const success = await entriesService.toggleFavorite(entry.id, newFavorite);
     if (success) {
-      await fetchEntries();
+      await refreshEntryQueries();
     }
-  }, [entriesService, fetchEntries]);
+  }, [entriesService, refreshEntryQueries]);
 
   const toggleArchived = useCallback(async (entry: Entry) => {
     const newArchived = !entry.is_archived;
     const success = await entriesService.toggleArchived(entry.id, newArchived);
     if (success) {
-      await fetchEntries();
+      await refreshEntryQueries();
     }
-  }, [entriesService, fetchEntries]);
+  }, [entriesService, refreshEntryQueries]);
 
   const fetchEntryHistory = useCallback(async (entryId: number) => {
     return entriesService.fetchEntryHistory(entryId);
@@ -328,9 +424,9 @@ export const useEntries = (
     const success = await entriesService.reorderEntries(date, orderedIds);
     if (!success) {
       // Revert on failure
-      await fetchEntries();
+      await refreshEntryQueries();
     }
-  }, [entriesService, fetchEntries]);
+  }, [entriesService, refreshEntryQueries, setEntries]);
 
   // Group entries by date
   const groupedEntries: GroupedEntries = useMemo(() => {
@@ -353,16 +449,6 @@ export const useEntries = (
   useEffect(() => { 
     setInputPage(page.toString()); 
   }, [page]);
-
-  // Fetch entries on dependency change
-  useEffect(() => {
-    void fetchEntries();
-  }, [fetchEntries, page, search, filterTags, filterDateObj, filterVisibility, filterFavorites, filterArchiveStatus, config.entriesPerPage, currentDiaryId, isAuthenticated]);
-
-  // Fetch years/months on mount
-  useEffect(() => {
-    void fetchYearsMonths();
-  }, [isAuthenticated, fetchYearsMonths]);
 
   // Scroll to target entry
   useEffect(() => {

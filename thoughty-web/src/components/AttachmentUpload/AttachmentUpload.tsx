@@ -31,18 +31,6 @@ interface ActiveUploadPreview {
     readonly downloadUrl?: string;
 }
 
-function PendingAttachmentPreview({ file }: Readonly<{ file: File }>) {
-    const previewUrl = usePendingAttachmentPreviewUrl(file);
-
-    return (
-        <AttachmentPreviewContent
-            name={file.name}
-            mimetype={file.type}
-            sourceUrl={previewUrl}
-        />
-    );
-}
-
 function StoredAttachmentPreview({ attachment }: Readonly<{ attachment: Attachment }>) {
     return (
         <AttachmentPreviewContent

@@ -1,10 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
+import { createSwaggerDocument } from './swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -67,23 +68,7 @@ async function bootstrap() {
   );
 
   // Swagger documentation
-  const config = new DocumentBuilder()
-    .setTitle('Thoughty Journal API')
-    .setDescription('API for Managing Journal Entries')
-    .setVersion('1.0.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        description: 'Enter your JWT access token',
-      },
-      'bearerAuth',
-    )
-    .addServer(`http://localhost:${process.env.PORT || 3001}`)
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
+  const document = createSwaggerDocument(app);
   SwaggerModule.setup('api-docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,

@@ -17,23 +17,16 @@ export default defineConfig({
             return 'charts';
           }
 
-          if (
-            id.includes('react-markdown') ||
-            id.includes('remark-gfm') ||
-            id.includes('micromark') ||
-            id.includes('mdast') ||
-            id.includes('hast') ||
-            id.includes('unist')
-          ) {
-            return 'markdown';
-          }
-
           if (id.includes('react-datepicker') || id.includes('date-fns')) {
             return 'datepicker';
           }
 
           if (id.includes('@uiw/react-md-editor')) {
             return 'editor';
+          }
+
+          if (id.includes('react-router') || id.includes('@tanstack/react-query')) {
+            return 'routing-data';
           }
         },
       },

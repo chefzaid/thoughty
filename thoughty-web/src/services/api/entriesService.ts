@@ -1,24 +1,25 @@
 import { safeJsonParse } from './base';
-import type { Entry, EntriesResponse, EntryRevision } from '../../types';
-import type { ArchiveStatusFilter } from '../../types';
+import type { ArchiveStatusFilter, Entry, EntriesResponse, EntryRevision } from '../../types';
+import type { components, paths } from '../../generated/openapi';
 
-export interface NavigateToFirstResponse {
-  found?: boolean;
-  page?: number;
-  entryId?: number;
-  years?: number[];
-  months?: string[];
-}
+type CreateEntryRequestDto = components['schemas']['CreateEntryDto'];
+type UpdateEntryRequestDto = components['schemas']['UpdateEntryDto'];
+type BulkOperationRequestDto = components['schemas']['BulkOperationDto'];
+type EntriesListApiResponse = paths['/api/entries']['get']['responses'][200]['content']['application/json'];
+type EntryDatesApiResponse = paths['/api/entries/dates']['get']['responses'][200]['content']['application/json'];
+type CreateEntryApiResponse = paths['/api/entries']['post']['responses'][201]['content']['application/json'];
+export type NavigateToFirstResponse = paths['/api/entries/first']['get']['responses'][200]['content']['application/json'];
+export type NavigateByDateResponse = paths['/api/entries/by-date']['get']['responses'][200]['content']['application/json'];
+type BulkOperationResponse = paths['/api/entries/bulk']['post']['responses'][200]['content']['application/json'];
+export type RenameTagResponse = paths['/api/entries/tags/rename']['patch']['responses'][200]['content']['application/json'];
 
-export interface NavigateByDateResponse {
-  found?: boolean;
-  page?: number;
-  entryId?: number;
-}
-
-export interface RenameTagResponse {
-  success: boolean;
-  affectedCount: number;
+interface CreateEntryInput {
+  text: string;
+  tags: string[];
+  date: string;
+  visibility: CreateEntryRequestDto['visibility'] | null;
+  format?: CreateEntryRequestDto['format'];
+  diaryId: number | null;
 }
 
 export const createEntriesService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
@@ -56,15 +57,11 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
       }
 
       const response = await authFetch(`/api/entries?${urlParams}`);
-      const data = await safeJsonParse<{
-        entries?: Entry[];
-        totalPages?: number;
-        allTags?: string[];
-      }>(response);
+      const data = await safeJsonParse<EntriesListApiResponse>(response);
 
       if (response.ok && data) {
         return {
-          entries: data.entries || [],
+          entries: (data.entries as Entry[]) || [],
           totalPages: data.totalPages || 1,
           allTags: data.allTags || []
         };
@@ -82,7 +79,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   const fetchEntryDates = async (): Promise<string[]> => {
     try {
       const response = await authFetch('/api/entries/dates');
-      const data = await safeJsonParse<{ dates?: string[] }>(response);
+      const data = await safeJsonParse<EntryDatesApiResponse>(response);
       if (response.ok && data) {
         return data.dates || [];
       }
@@ -96,22 +93,24 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   /**
    * Create a new entry
    */
-  const createEntry = async (entry: {
-    text: string;
-    tags: string[];
-    date: string;
-    visibility: 'public' | 'private' | null;
-    format?: 'plain' | 'markdown';
-    diaryId: number | null;
-  }): Promise<{ success: boolean; entryId?: number }> => {
+  const createEntry = async (entry: CreateEntryInput): Promise<{ success: boolean; entryId?: number }> => {
     try {
+      const payload: CreateEntryRequestDto = {
+        text: entry.text,
+        tags: entry.tags,
+        date: entry.date,
+        visibility: entry.visibility ?? 'private',
+        format: entry.format ?? 'plain',
+        ...(entry.diaryId ? { diaryId: entry.diaryId } : {}),
+      };
+
       const response = await authFetch('/api/entries', {
         method: 'POST',
-        body: JSON.stringify(entry)
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
-        const data = await response.json() as { success: boolean; entryId: number };
-        return { success: true, entryId: data.entryId };
+        const data = await safeJsonParse<CreateEntryApiResponse>(response);
+        return { success: true, entryId: data?.entryId };
       }
       return { success: false };
     } catch (error) {
@@ -138,7 +137,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
    */
   const updateEntry = async (
     id: number,
-    data: { text: string; tags: string[]; date: string; visibility: 'public' | 'private'; format?: 'plain' | 'markdown' }
+    data: UpdateEntryRequestDto
   ): Promise<boolean> => {
     try {
       const response = await authFetch(`/api/entries/${id}`, {
@@ -170,16 +169,16 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
 
   const bulkOperation = async (
     ids: number[],
-    action: 'delete' | 'visibility' | 'tags' | 'move' | 'archive',
-    options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean }
-  ): Promise<{ success: boolean; affectedCount: number } | null> => {
+    action: BulkOperationRequestDto['action'],
+    options?: Omit<BulkOperationRequestDto, 'ids' | 'action'>
+  ): Promise<BulkOperationResponse | null> => {
     try {
       const response = await authFetch('/api/entries/bulk', {
         method: 'POST',
         body: JSON.stringify({ ids, action, ...options })
       });
       if (!response.ok) return null;
-      return safeJsonParse<{ success: boolean; affectedCount: number }>(response);
+      return safeJsonParse<BulkOperationResponse>(response);
     } catch (error) {
       console.error('Error performing bulk operation:', error);
       return null;
@@ -202,7 +201,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
       if (month) params.append('month', month.toString());
 
       const response = await authFetch(`/api/entries/first?${params}`);
-      return await response.json() as NavigateToFirstResponse;
+      return safeJsonParse<NavigateToFirstResponse>(response);
     } catch (error) {
       console.error('Error navigating to first entry:', error);
       return null;
@@ -225,7 +224,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
       });
 
       const response = await authFetch(`/api/entries/by-date?${params}`);
-      return await response.json() as NavigateByDateResponse;
+      return safeJsonParse<NavigateByDateResponse>(response);
     } catch (error) {
       console.error('Error navigating to entry:', error);
       return null;
@@ -243,7 +242,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
       });
 
       const response = await authFetch(`/api/entries/by-date?${params}`);
-      return await response.json() as NavigateByDateResponse;
+      return safeJsonParse<NavigateByDateResponse>(response);
     } catch (error) {
       console.error('Error navigating to entry:', error);
       return null;
@@ -256,10 +255,10 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   const fetchYearsMonths = async (): Promise<{ years: number[]; months: string[] }> => {
     try {
       const response = await authFetch('/api/entries/first');
-      const data = await response.json() as { years?: number[]; months?: string[] };
+      const data = await safeJsonParse<NavigateToFirstResponse>(response);
       return {
-        years: data.years || [],
-        months: data.months || []
+        years: data?.years || [],
+        months: data?.months || []
       };
     } catch (error) {
       console.error('Error fetching years/months:', error);

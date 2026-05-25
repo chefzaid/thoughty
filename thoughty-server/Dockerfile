@@ -28,4 +28,4 @@ EXPOSE 3001
 
 USER appuser
 
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main.js"]

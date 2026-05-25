@@ -98,7 +98,6 @@ function ImportExport({
     const [cloudFiles, setCloudFiles] = useState<CloudFileInfo[]>([]);
     const [loadingCloudFiles, setLoadingCloudFiles] = useState(false);
     const [importingCloudFile, setImportingCloudFile] = useState<string | null>(null);
-    const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const exportSectionRef = useRef<HTMLElement | null>(null);
     const importSectionRef = useRef<HTMLElement | null>(null);
 
@@ -281,7 +280,7 @@ function ImportExport({
                     setScheduleFrequency(prev => ({ ...prev, [provider]: config.frequency as SyncFrequency }));
                 }
                 if (config.format) {
-                    setScheduleFormat(prev => ({ ...prev, [provider]: config.format as ExportFormatType }));
+                    setScheduleFormat(prev => ({ ...prev, [provider]: config.format as ImportExportFormat }));
                 }
                 if (config.includeVisibility !== undefined) {
                     setScheduleIncludeVisibility(prev => ({ ...prev, [provider]: config.includeVisibility! }));
@@ -294,24 +293,6 @@ function ImportExport({
         fetchCloudStatus();
         fetchSchedules();
     }, [fetchCloudStatus, fetchSchedules]);
-
-    // Auto-sync timer
-    useEffect(() => {
-        const checkAndSync = async () => {
-            for (const [provider, config] of Object.entries(schedules)) {
-                if (!config.enabled || !config.nextSyncAt) continue;
-                const providerStatus = cloudStatus[provider];
-                if (!providerStatus?.connected) continue;
-                const nextSyncTime = new Date(config.nextSyncAt).getTime();
-                if (Date.now() >= nextSyncTime) {
-                    const result = await cloudSyncService.triggerSync(provider as CloudProviderType);
-                    if (result) await fetchSchedules();
-                }
-            }
-        };
-        syncTimerRef.current = setInterval(checkAndSync, 60000);
-        return () => { if (syncTimerRef.current) clearInterval(syncTimerRef.current); };
-    }, [schedules, cloudStatus, cloudSyncService, fetchSchedules]);
 
     const handleCloudUpload = async (provider: CloudProviderType) => {
         setUploading(provider);
@@ -475,7 +456,7 @@ function ImportExport({
         <div className={`import-export ${isLight ? 'light' : 'dark'}`}>
             <h2>{t('importExport')}</h2>
 
-            <div className="io-route-actions" role="navigation" aria-label={t('importExport')}>
+            <nav className="io-route-actions" aria-label={t('importExport')}>
                 <button
                     type="button"
                     className={`io-btn ${activeSection === 'export' ? 'primary' : 'secondary'}`}
@@ -507,7 +488,7 @@ function ImportExport({
                 >
                     {t('formatJson')}
                 </button>
-            </div>
+            </nav>
 
             {message && (
                 <div className={`message ${message.type}`}>
@@ -704,7 +685,7 @@ function ImportExport({
                                                 <label>{t('exportFormat')}</label>
                                                 <select
                                                     value={cloudExportFormat}
-                                                    onChange={e => setCloudExportFormat(e.target.value as ExportFormatType)}
+                                                    onChange={e => setCloudExportFormat(e.target.value as ImportExportFormat)}
                                                 >
                                                     <option value="txt">{t('formatTxt')}</option>
                                                     <option value="json">{t('formatJson')}</option>
@@ -768,7 +749,7 @@ function ImportExport({
                                             <label>{t('exportFormat')}</label>
                                             <select
                                                 value={scheduleFormat[provider]}
-                                                onChange={e => setScheduleFormat(prev => ({ ...prev, [provider]: e.target.value as ExportFormatType }))}
+                                                onChange={e => setScheduleFormat(prev => ({ ...prev, [provider]: e.target.value as ImportExportFormat }))}
                                             >
                                                 <option value="txt">{t('formatTxt')}</option>
                                                 <option value="json">{t('formatJson')}</option>

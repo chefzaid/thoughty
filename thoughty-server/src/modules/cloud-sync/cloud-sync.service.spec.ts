@@ -18,6 +18,7 @@ describe('CloudSyncService', () => {
 
   beforeEach(async () => {
     settingRepository = {
+      find: jest.fn(),
       findOne: jest.fn(),
       upsert: jest.fn(),
       delete: jest.fn(),

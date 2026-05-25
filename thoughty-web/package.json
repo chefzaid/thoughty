@@ -12,9 +12,11 @@
     "test:e2e": "playwright test",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "api:types": "node ./scripts/generate-api-types.mjs"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.100.14",
     "@uiw/react-md-editor": "^4.1.0",
     "@vscode/codicons": "^0.0.45",
     "chart.js": "^4.5.1",
@@ -45,6 +47,7 @@
     "globals": "^16.2.0",
     "jiti": "^2.6.1",
     "jsdom": "^26.1.0",
+    "openapi-typescript": "^7.10.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.8.3",

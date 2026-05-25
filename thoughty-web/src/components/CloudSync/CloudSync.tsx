@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './CloudSync.css';
 import { useApiServices } from '../../hooks/useAppState';
 import type { CloudProviderType, CloudFileInfo, SyncScheduleConfig, SyncFrequency } from '../../services/api/cloudSyncService';
@@ -58,7 +58,6 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
         dropbox: false,
     });
     const [syncing, setSyncing] = useState<CloudProviderType | null>(null);
-    const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const isLight = theme === 'light';
 
@@ -116,30 +115,6 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
         globalThis.addEventListener('message', handleMessage);
         return () => globalThis.removeEventListener('message', handleMessage);
     }, [cloudSyncService, fetchStatus, t]);
-
-    // Auto-sync timer: check every 60 seconds if any schedule is due
-    useEffect(() => {
-        const checkAndSync = async () => {
-            for (const [provider, config] of Object.entries(schedules)) {
-                if (!config.enabled || !config.nextSyncAt) continue;
-                const providerStatus = status[provider];
-                if (!providerStatus?.connected) continue;
-
-                const nextSyncTime = new Date(config.nextSyncAt).getTime();
-                if (Date.now() >= nextSyncTime) {
-                    const result = await cloudSyncService.triggerSync(provider as CloudProviderType);
-                    if (result) {
-                        await fetchSchedules();
-                    }
-                }
-            }
-        };
-
-        syncTimerRef.current = setInterval(checkAndSync, 60000);
-        return () => {
-            if (syncTimerRef.current) clearInterval(syncTimerRef.current);
-        };
-    }, [schedules, status, cloudSyncService, fetchSchedules]);
 
     const handleSaveSchedule = async (provider: CloudProviderType) => {
         const success = await cloudSyncService.setSchedule(provider, {

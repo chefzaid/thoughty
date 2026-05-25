@@ -76,15 +76,20 @@ interface MDEditorMockProps {
   textareaProps?: Record<string, string>;
 }
 
-vi.mock('@uiw/react-md-editor', () => ({
-  default: function MockMDEditor({ value, onChange, textareaProps }: MDEditorMockProps) {
-    return createElement('div', { 'data-color-mode': 'dark', 'data-testid': 'md-editor' },
-      createElement('textarea', {
-        value: value || '',
-        onChange: (e: ChangeEvent<HTMLTextAreaElement>) => onChange?.(e.target.value),
-        placeholder: textareaProps?.placeholder,
-        title: textareaProps?.title,
-      })
-    );
-  },
-}));
+function createMDEditorMock() {
+  return {
+    default: function MockMDEditor({ value, onChange, textareaProps }: MDEditorMockProps) {
+      return createElement('div', { 'data-color-mode': 'dark', 'data-testid': 'md-editor' },
+        createElement('textarea', {
+          value: value || '',
+          onChange: (e: ChangeEvent<HTMLTextAreaElement>) => onChange?.(e.target.value),
+          placeholder: textareaProps?.placeholder,
+          title: textareaProps?.title,
+        })
+      );
+    },
+  };
+}
+
+vi.mock('@uiw/react-md-editor', createMDEditorMock);
+vi.mock('@uiw/react-md-editor/nohighlight', createMDEditorMock);

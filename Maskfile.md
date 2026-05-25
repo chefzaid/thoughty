@@ -72,14 +72,14 @@ if ($env:clean -eq "true") {
 }
 
 Write-Step "Installing server dependencies..."
-Set-Location thoughty-server; npm install
+Set-Location thoughty-server; npm.cmd install
 Write-Ok "Server dependencies installed"
 
 Write-Host ""
 Set-Location ..
 
 Write-Step "Installing client dependencies..."
-Set-Location thoughty-web; npm install
+Set-Location thoughty-web; npm.cmd install
 Write-Ok "Client dependencies installed"
 
 Write-Host ""
@@ -162,7 +162,7 @@ Write-Banner "THOUGHTY TEST RUNNER"
 
 if ($env:coverage -eq "true") {
     Write-Host "→ Running full coverage report..." -ForegroundColor Cyan
-    npm run coverage
+  npm.cmd run coverage
     exit 0
 }
 
@@ -174,14 +174,14 @@ if ($env:backend -eq "true" -or $env:frontend -eq "true") {
 if ($RUN_ALL -or $env:backend -eq "true") {
     Write-Section "BACKEND TESTS"
     Set-Location thoughty-server
-    npm test
+  npm.cmd test
     Set-Location ..
 }
 
 if ($RUN_ALL -or $env:frontend -eq "true") {
     Write-Section "FRONTEND TESTS"
     Set-Location thoughty-web
-    npm test
+  npm.cmd test
     Set-Location ..
 }
 
