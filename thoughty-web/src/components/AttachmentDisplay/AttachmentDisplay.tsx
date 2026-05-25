@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import type { Attachment } from '../../types';
-
-function isImageType(mimetype: string): boolean {
-    return mimetype.startsWith('image/');
-}
-
-function formatFileSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+import {
+    formatAttachmentSize,
+    getAttachmentKindLabel,
+    getAttachmentUrl,
+    hasInlineAttachmentPreview,
+    isImageAttachment,
+} from '../../utils/attachments';
+import AttachmentPreviewContent from '../AttachmentPreview/AttachmentPreviewContent';
+import AttachmentPreviewDialog from '../AttachmentPreview/AttachmentPreviewDialog';
 
 interface AttachmentDisplayProps {
     readonly attachments: Attachment[];
@@ -17,29 +16,49 @@ interface AttachmentDisplayProps {
     readonly t: (key: string) => string;
 }
 
+interface ActivePreviewAttachment {
+    readonly name: string;
+    readonly mimetype: string;
+    readonly url: string;
+    readonly size: number;
+}
+
 function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
-    const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+    const [activePreview, setActivePreview] = useState<ActivePreviewAttachment | null>(null);
     const isDark = theme !== 'light';
 
     if (!attachments || attachments.length === 0) return null;
 
-    const images = attachments.filter(a => isImageType(a.mimetype));
-    const files = attachments.filter(a => !isImageType(a.mimetype));
+    const images = attachments.filter(a => isImageAttachment(a.mimetype));
+    const previewFiles = attachments.filter(a => !isImageAttachment(a.mimetype) && hasInlineAttachmentPreview(a.mimetype));
+    const files = attachments.filter(a => !hasInlineAttachmentPreview(a.mimetype));
+
+    const openPreview = (attachment: Attachment) => {
+        setActivePreview({
+            name: attachment.original_filename,
+            mimetype: attachment.mimetype,
+            url: getAttachmentUrl(attachment.stored_filename),
+            size: attachment.size,
+        });
+    };
+
+    const closePreview = () => {
+        setActivePreview(null);
+    };
 
     return (
         <div className="mt-3">
-            {/* Image grid */}
             {images.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-2">
                     {images.map((img) => (
                         <button
                             key={img.id}
                             type="button"
-                            onClick={() => setLightboxImage(`/api/attachments/file/${img.stored_filename}`)}
+                            onClick={() => openPreview(img)}
                             className="relative group cursor-pointer"
                         >
                             <img
-                                src={`/api/attachments/file/${img.stored_filename}`}
+                                src={getAttachmentUrl(img.stored_filename)}
                                 alt={img.original_filename}
                                 className={`max-h-48 max-w-xs rounded-lg border object-cover transition-opacity group-hover:opacity-90 ${isDark ? 'border-gray-600' : 'border-gray-300'}`}
                                 loading="lazy"
@@ -52,13 +71,57 @@ function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
                 </div>
             )}
 
-            {/* File list */}
+            {previewFiles.length > 0 && (
+                <div className="mb-2 grid gap-2 sm:grid-cols-2">
+                    {previewFiles.map((file) => (
+                        <div
+                            key={file.id}
+                            className={`rounded-lg border p-3 ${isDark
+                                ? 'bg-gray-700/50 border-gray-600 text-gray-200'
+                                : 'bg-gray-50 border-gray-300 text-gray-800'
+                            }`}
+                        >
+                            <p className="mb-2 truncate text-sm font-medium">{file.original_filename}</p>
+                            <div className={`flex min-h-[72px] items-center justify-center overflow-hidden rounded-md border px-2 py-2 ${isDark ? 'border-gray-600 bg-gray-900/50' : 'border-gray-200 bg-white'}`}>
+                                <AttachmentPreviewContent
+                                    name={file.original_filename}
+                                    mimetype={file.mimetype}
+                                    sourceUrl={getAttachmentUrl(file.stored_filename)}
+                                    variant="detail"
+                                />
+                            </div>
+                            <div className="mt-2 flex items-center justify-between gap-2 text-xs text-gray-500">
+                                <span>{getAttachmentKindLabel(file.mimetype)} · {formatAttachmentSize(file.size)}</span>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => openPreview(file)}
+                                        className={`${isDark ? 'text-blue-300 hover:text-blue-200' : 'text-blue-700 hover:text-blue-800'}`}
+                                        aria-label={`${t('previewAttachment')} ${file.original_filename}`}
+                                    >
+                                        {t('previewAttachment')}
+                                    </button>
+                                    <a
+                                        href={getAttachmentUrl(file.stored_filename)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`${isDark ? 'text-blue-300 hover:text-blue-200' : 'text-blue-700 hover:text-blue-800'}`}
+                                    >
+                                        {t('downloadAttachment')}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
             {files.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                     {files.map((file) => (
                         <a
                             key={file.id}
-                            href={`/api/attachments/file/${file.stored_filename}`}
+                            href={getAttachmentUrl(file.stored_filename)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition-colors ${isDark
@@ -70,38 +133,24 @@ function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>
                             <span className="truncate max-w-[150px]">{file.original_filename}</span>
-                            <span className="text-xs text-gray-500">({formatFileSize(file.size)})</span>
+                            <span className="text-xs text-gray-500">({formatAttachmentSize(file.size)})</span>
                         </a>
                     ))}
                 </div>
             )}
 
-            {/* Lightbox */}
-            {lightboxImage && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
-                    onClick={() => setLightboxImage(null)}
-                    onKeyDown={(e) => { if (e.key === 'Escape') setLightboxImage(null); }}
-                    role="dialog"
-                    tabIndex={0}
-                    aria-label={t('closeImage')}
-                >
-                    <button
-                        type="button"
-                        onClick={() => setLightboxImage(null)}
-                        className="absolute top-4 right-4 text-white text-3xl hover:text-gray-300 z-10"
-                        aria-label={t('close')}
-                    >
-                        ×
-                    </button>
-                    <img
-                        src={lightboxImage}
-                        alt=""
-                        className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                </div>
-            )}
+            <AttachmentPreviewDialog
+                preview={activePreview ? {
+                    name: activePreview.name,
+                    mimetype: activePreview.mimetype,
+                    sourceUrl: activePreview.url,
+                    size: activePreview.size,
+                    downloadUrl: activePreview.url,
+                } : null}
+                isDark={isDark}
+                onClose={closePreview}
+                t={t}
+            />
         </div>
     );
 }

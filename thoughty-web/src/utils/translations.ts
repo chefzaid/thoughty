@@ -300,6 +300,7 @@ export type TranslationKey =
   | 'removeAttachment'
   | 'attachmentTypeNotAllowed'
   | 'attachmentTooLarge'
+  | 'previewAttachment'
   | 'downloadAttachment'
   | 'closeImage'
   | 'favorite'
@@ -718,8 +719,9 @@ export const translations: Translations = {
     attachFiles: 'Attach files',
     attachments: 'Attachments',
     removeAttachment: 'Remove attachment',
-    attachmentTypeNotAllowed: 'This file type is not allowed. Allowed: images, PDF, plain text.',
+    attachmentTypeNotAllowed: 'This file type is not allowed. Allowed: images, audio, PDF, plain text.',
     attachmentTooLarge: 'File is too large. Maximum size is 5 MB.',
+    previewAttachment: 'Preview',
     downloadAttachment: 'Download attachment',
     closeImage: 'Close image',
     favorite: 'Add to favorites',
@@ -1137,8 +1139,9 @@ export const translations: Translations = {
     attachFiles: 'Joindre des fichiers',
     attachments: 'Pièces jointes',
     removeAttachment: 'Supprimer la pièce jointe',
-    attachmentTypeNotAllowed: "Ce type de fichier n'est pas autorisé. Autorisés : images, PDF, texte brut.",
+    attachmentTypeNotAllowed: "Ce type de fichier n'est pas autorisé. Autorisés : images, audio, PDF, texte brut.",
     attachmentTooLarge: 'Le fichier est trop volumineux. Taille maximale : 5 Mo.',
+    previewAttachment: 'Apercu',
     downloadAttachment: 'Télécharger la pièce jointe',
     closeImage: "Fermer l'image",
     favorite: 'Ajouter aux favoris',

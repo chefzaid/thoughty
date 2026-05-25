@@ -1,27 +1,17 @@
-import { useRef, type ChangeEvent } from 'react';
+import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import type { Attachment } from '../../types';
-
-const ALLOWED_TYPES = [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'image/svg+xml',
-    'application/pdf',
-    'text/plain',
-];
+import {
+    ALLOWED_ATTACHMENT_TYPES,
+    formatAttachmentSize,
+    getAttachmentKindLabel,
+    getAttachmentUrl,
+    hasInlineAttachmentPreview,
+} from '../../utils/attachments';
+import AttachmentPreviewContent from '../AttachmentPreview/AttachmentPreviewContent';
+import AttachmentPreviewDialog from '../AttachmentPreview/AttachmentPreviewDialog';
+import { usePendingAttachmentPreviewUrl } from '../AttachmentPreview/usePendingAttachmentPreviewUrl';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
-function isImageType(mimetype: string): boolean {
-    return mimetype.startsWith('image/');
-}
-
-function formatFileSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 interface AttachmentUploadProps {
     readonly pendingFiles: File[];
@@ -31,6 +21,196 @@ interface AttachmentUploadProps {
     readonly onRemoveUploadedAttachment: (id: number) => void;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string) => string;
+}
+
+interface ActiveUploadPreview {
+    readonly name: string;
+    readonly mimetype: string;
+    readonly sourceUrl: string;
+    readonly size: number;
+    readonly downloadUrl?: string;
+}
+
+function PendingAttachmentPreview({ file }: Readonly<{ file: File }>) {
+    const previewUrl = usePendingAttachmentPreviewUrl(file);
+
+    return (
+        <AttachmentPreviewContent
+            name={file.name}
+            mimetype={file.type}
+            sourceUrl={previewUrl}
+        />
+    );
+}
+
+function StoredAttachmentPreview({ attachment }: Readonly<{ attachment: Attachment }>) {
+    return (
+        <AttachmentPreviewContent
+            name={attachment.original_filename}
+            mimetype={attachment.mimetype}
+            sourceUrl={getAttachmentUrl(attachment.stored_filename)}
+        />
+    );
+}
+
+function AttachmentCard({
+    name,
+    size,
+    kind,
+    preview,
+    isDark,
+    onRemove,
+    accentClass,
+    action,
+    t,
+}: Readonly<{
+    name: string;
+    size: number;
+    kind: string;
+    preview: ReactNode;
+    isDark: boolean;
+    onRemove: () => void;
+    accentClass: string;
+    action?: ReactNode;
+    t: (key: string) => string;
+}>) {
+    return (
+        <div
+            className={`relative group flex w-full max-w-[240px] flex-col gap-3 rounded-lg border p-3 ${accentClass}`}
+        >
+            <div className={`flex min-h-[72px] items-center justify-center overflow-hidden rounded-md border px-2 py-2 ${isDark ? 'border-gray-600 bg-gray-900/50' : 'border-gray-200 bg-white'}`}>
+                {preview}
+            </div>
+            <div className="min-w-0">
+                <p className={`text-sm font-medium truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                    {name}
+                </p>
+                <p className="text-xs text-gray-500">{kind} · {formatAttachmentSize(size)}</p>
+            </div>
+            {action && <div>{action}</div>}
+            <button
+                type="button"
+                onClick={onRemove}
+                className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100"
+                title={t('removeAttachment')}
+            >
+                ×
+            </button>
+        </div>
+    );
+}
+
+function PendingAttachmentCard({
+    file,
+    index,
+    isDark,
+    onRemove,
+    onPreview,
+    t,
+}: Readonly<{
+    file: File;
+    index: number;
+    isDark: boolean;
+    onRemove: (index: number) => void;
+    onPreview: (preview: ActiveUploadPreview) => void;
+    t: (key: string) => string;
+}>) {
+    const previewUrl = usePendingAttachmentPreviewUrl(file);
+    const canPreview = Boolean(previewUrl) && hasInlineAttachmentPreview(file.type);
+
+    return (
+        <AttachmentCard
+            key={`${file.name}-${file.lastModified}-${file.size}`}
+            name={file.name}
+            size={file.size}
+            kind={getAttachmentKindLabel(file.type)}
+            preview={(
+                <AttachmentPreviewContent
+                    name={file.name}
+                    mimetype={file.type}
+                    sourceUrl={previewUrl}
+                />
+            )}
+            isDark={isDark}
+            accentClass={isDark ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-100 border-gray-300'}
+            action={canPreview ? (
+                <button
+                    type="button"
+                    onClick={() => onPreview({
+                        name: file.name,
+                        mimetype: file.type,
+                        sourceUrl: previewUrl!,
+                        size: file.size,
+                    })}
+                    className={`text-xs font-medium ${isDark ? 'text-blue-300 hover:text-blue-200' : 'text-blue-700 hover:text-blue-800'}`}
+                    aria-label={`${t('previewAttachment')} ${file.name}`}
+                >
+                    {t('previewAttachment')}
+                </button>
+            ) : undefined}
+            onRemove={() => onRemove(index)}
+            t={t}
+        />
+    );
+}
+
+function UploadedAttachmentCard({
+    attachment,
+    isDark,
+    onRemove,
+    onPreview,
+    t,
+}: Readonly<{
+    attachment: Attachment;
+    isDark: boolean;
+    onRemove: (id: number) => void;
+    onPreview: (preview: ActiveUploadPreview) => void;
+    t: (key: string) => string;
+}>) {
+    const fileUrl = getAttachmentUrl(attachment.stored_filename);
+    const canPreview = hasInlineAttachmentPreview(attachment.mimetype);
+
+    return (
+        <AttachmentCard
+            key={`uploaded-${attachment.id}`}
+            name={attachment.original_filename}
+            size={attachment.size}
+            kind={getAttachmentKindLabel(attachment.mimetype)}
+            preview={<StoredAttachmentPreview attachment={attachment} />}
+            isDark={isDark}
+            accentClass={isDark ? 'bg-gray-700/50 border-green-600/30' : 'bg-green-50 border-green-300'}
+            action={(
+                <div className="flex items-center gap-3">
+                    {canPreview && (
+                        <button
+                            type="button"
+                            onClick={() => onPreview({
+                                name: attachment.original_filename,
+                                mimetype: attachment.mimetype,
+                                sourceUrl: fileUrl,
+                                size: attachment.size,
+                                downloadUrl: fileUrl,
+                            })}
+                            className={`text-xs font-medium ${isDark ? 'text-green-300 hover:text-green-200' : 'text-green-700 hover:text-green-800'}`}
+                            aria-label={`${t('previewAttachment')} ${attachment.original_filename}`}
+                        >
+                            {t('previewAttachment')}
+                        </button>
+                    )}
+                    <a
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`text-xs font-medium ${isDark ? 'text-green-300 hover:text-green-200' : 'text-green-700 hover:text-green-800'}`}
+                    >
+                        {t('downloadAttachment')}
+                    </a>
+                </div>
+            )}
+            onRemove={() => onRemove(attachment.id)}
+            t={t}
+        />
+    );
 }
 
 function AttachmentUpload({
@@ -43,6 +223,7 @@ function AttachmentUpload({
     t
 }: AttachmentUploadProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [activePreview, setActivePreview] = useState<ActiveUploadPreview | null>(null);
     const isDark = theme !== 'light';
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -50,7 +231,7 @@ function AttachmentUpload({
         if (!files) return;
 
         for (const file of Array.from(files)) {
-            if (!ALLOWED_TYPES.includes(file.type)) {
+            if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type as (typeof ALLOWED_ATTACHMENT_TYPES)[number])) {
                 alert(t('attachmentTypeNotAllowed'));
                 continue;
             }
@@ -88,88 +269,44 @@ function AttachmentUpload({
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept={ALLOWED_TYPES.join(',')}
+                accept={ALLOWED_ATTACHMENT_TYPES.join(',')}
                 onChange={handleFileChange}
                 className="hidden"
             />
 
             {hasAttachments && (
                 <div className="mt-3 flex flex-wrap gap-3">
-                    {/* Pending files (not yet uploaded) */}
                     {pendingFiles.map((file, index) => (
-                        <div
-                            key={`pending-${index}`}
-                            className={`relative group flex items-center gap-2 px-3 py-2 rounded-lg border ${isDark
-                                ? 'bg-gray-700/50 border-gray-600'
-                                : 'bg-gray-100 border-gray-300'
-                            }`}
-                        >
-                            {isImageType(file.type) ? (
-                                <img
-                                    src={URL.createObjectURL(file)}
-                                    alt={file.name}
-                                    className="w-10 h-10 object-cover rounded"
-                                />
-                            ) : (
-                                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                            )}
-                            <div className="min-w-0">
-                                <p className={`text-xs truncate max-w-[120px] ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                    {file.name}
-                                </p>
-                                <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => onRemovePendingFile(index)}
-                                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                title={t('removeAttachment')}
-                            >
-                                ×
-                            </button>
-                        </div>
+                        <PendingAttachmentCard
+                            key={`${file.name}-${file.lastModified}-${file.size}`}
+                            file={file}
+                            index={index}
+                            isDark={isDark}
+                            onRemove={onRemovePendingFile}
+                            onPreview={setActivePreview}
+                            t={t}
+                        />
                     ))}
 
-                    {/* Already uploaded attachments */}
                     {uploadedAttachments.map((att) => (
-                        <div
+                        <UploadedAttachmentCard
                             key={`uploaded-${att.id}`}
-                            className={`relative group flex items-center gap-2 px-3 py-2 rounded-lg border ${isDark
-                                ? 'bg-gray-700/50 border-green-600/30'
-                                : 'bg-green-50 border-green-300'
-                            }`}
-                        >
-                            {isImageType(att.mimetype) ? (
-                                <img
-                                    src={`/api/attachments/file/${att.stored_filename}`}
-                                    alt={att.original_filename}
-                                    className="w-10 h-10 object-cover rounded"
-                                />
-                            ) : (
-                                <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                            )}
-                            <div className="min-w-0">
-                                <p className={`text-xs truncate max-w-[120px] ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                                    {att.original_filename}
-                                </p>
-                                <p className="text-xs text-gray-500">{formatFileSize(att.size)}</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => onRemoveUploadedAttachment(att.id)}
-                                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                                title={t('removeAttachment')}
-                            >
-                                ×
-                            </button>
-                        </div>
+                            attachment={att}
+                            isDark={isDark}
+                            onRemove={onRemoveUploadedAttachment}
+                            onPreview={setActivePreview}
+                            t={t}
+                        />
                     ))}
                 </div>
             )}
+
+            <AttachmentPreviewDialog
+                preview={activePreview}
+                isDark={isDark}
+                onClose={() => setActivePreview(null)}
+                t={t}
+            />
         </div>
     );
 }

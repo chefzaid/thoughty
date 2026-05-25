@@ -22,6 +22,16 @@ const ALLOWED_MIMETYPES = [
   'image/svg+xml',
   'application/pdf',
   'text/plain',
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/aac',
+  'audio/ogg',
+  'audio/wav',
+  'audio/wave',
+  'audio/x-wav',
+  'audio/webm',
 ];
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB

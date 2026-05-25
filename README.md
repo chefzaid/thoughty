@@ -29,7 +29,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Visibility Control** - Toggle entries between public and private with one click
 - **Favorites** - Star/unstar entries as favorites and filter to show only favorites
 - **Modification History** - View previous versions of edited entries with timestamps
-- **File Uploads** - Attach images and files (JPEG, PNG, GIF, WebP, SVG, PDF, TXT) to journal entries
+- **File Uploads & Previews** - Attach images, audio notes, and documents (JPEG, PNG, GIF, WebP, SVG, PDF, TXT, MP3, WAV, OGG, M4A, WebM) to journal entries with inline previews, audio playback, and expanded in-app preview dialogs for supported files
 - **Read Entries Aloud** - Listen to your journal entries using the many options of the Text-to-Speech feature
 - **AI Fix Writing** - One-click grammar, spelling, and style correction powered by OpenRouter; the corrected text replaces the draft so you can review changes immediately
 - **AI Discussion** - Open a chat conversation with AI about any journal entry; the AI uses the entry as context to provide thoughtful analysis, reflection prompts, and deeper insight

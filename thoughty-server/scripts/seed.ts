@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 /**
  * Database Seeding Script
- * Seeds the database with test data from test_data.txt
+ * Seeds the database with test data from journal_test_data.txt
  */
 
 import * as fs from 'fs';
@@ -10,7 +10,8 @@ import * as bcrypt from 'bcryptjs';
 import { query, closeDatabase } from './lib/db';
 import { log, banner, section, summaryBox, fmt, table } from './lib/logger';
 
-const TEST_DATA_FILE = path.join(__dirname, '..', 'data', 'test_data.txt');
+const JOURNAL_TEST_DATA_FILE = path.join(__dirname, '..', 'data', 'journal_test_data.txt');
+const DREAMS_TEST_DATA_FILE = path.join(__dirname, '..', 'data', 'dreams_test_data.txt');
 const SEED_ENTRY_REFERENCE_PATTERN = /entry \((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/g;
 const validateOnlyFlag = process.argv.includes('--validate-only');
 
@@ -187,6 +188,26 @@ function validateEntryReferences(entries: Entry[]): void {
     throw new Error(`Found ${missingReferences.length} invalid seed cross-reference(s):\n${details}`);
 }
 
+function ensureSeedDataFile(filePath: string, label: string): void {
+    if (!fs.existsSync(filePath)) {
+        throw new Error(`${label} test data file not found: ${filePath}`);
+    }
+}
+
+function loadEntriesFromFile(filePath: string): Entry[] {
+    const content = fs.readFileSync(filePath, 'utf-8');
+    return parseTestData(content);
+}
+
+async function insertEntries(diaryId: number, entries: Entry[]): Promise<void> {
+    for (const entry of entries) {
+        await query(
+            'INSERT INTO entries (user_id, diary_id, date, "index", tags, content) VALUES ($1, $2, $3, $4, $5, $6)',
+            [DEFAULT_USER_ID, diaryId, entry.date, entry.index, entry.tags, entry.content],
+        );
+    }
+}
+
 async function ensureDefaultUser(): Promise<void> {
     log.step('Ensuring default user exists...');
     const saltRounds = 12;
@@ -240,55 +261,31 @@ async function seed(): Promise<void> {
     banner('DATABASE SEEDER', 'Populating database with test data');
 
     try {
-        // Check if test data file exists
-        if (!fs.existsSync(TEST_DATA_FILE)) {
-            log.warning(`Test data file not found: ${TEST_DATA_FILE}`);
-            log.info('Creating empty test data file...');
-
-            // Create the directory if it doesn't exist
-            const dataDir = path.dirname(TEST_DATA_FILE);
-            if (!fs.existsSync(dataDir)) {
-                fs.mkdirSync(dataDir, { recursive: true });
-            }
-
-            // Create a sample test data file
-            const sampleData = `---2024-01-15--[reflection,goals]
-Starting the new year with fresh perspectives and ambitious goals.
-
---------------------------------------------------------------------------------
-
----2024-01-16--[daily,work]
-Productive day at work. Made progress on the main project.
-
-********************************************************************************
-
----2--[evening,thoughts]
-Reflecting on the day's achievements. Feeling accomplished.
-
---------------------------------------------------------------------------------
-
----2024-01-17--[ideas,creativity]
-Had a breakthrough idea today. Need to explore it further tomorrow.
-`;
-            fs.writeFileSync(TEST_DATA_FILE, sampleData, 'utf-8');
-            log.success('Sample test data file created');
-        }
+        ensureSeedDataFile(JOURNAL_TEST_DATA_FILE, 'Journal');
+        ensureSeedDataFile(DREAMS_TEST_DATA_FILE, 'Dreams');
 
         section('Reading Test Data');
         log.step('Parsing test data file...');
-        const content = fs.readFileSync(TEST_DATA_FILE, 'utf-8');
-        const entries = parseTestData(content);
-        log.success(`Found ${fmt.bold(entries.length.toString())} entries to insert`);
+        const thoughtEntries = loadEntriesFromFile(JOURNAL_TEST_DATA_FILE);
+        const dreamEntries = loadEntriesFromFile(DREAMS_TEST_DATA_FILE);
+        const totalSeedEntries = thoughtEntries.length + dreamEntries.length;
+        log.success(
+            `Found ${fmt.bold(thoughtEntries.length.toString())} Thoughts entries and ${fmt.bold(dreamEntries.length.toString())} Dreams entries to insert`,
+        );
 
         section('Validating Test Data');
         log.step('Checking seed cross-references...');
-        validateEntryReferences(entries);
+        validateEntryReferences(thoughtEntries);
+        validateEntryReferences(dreamEntries);
 
         if (validateOnlyFlag) {
             summaryBox('Seed Validation Complete', [
-                ['Entries', entries.length.toString()],
+                ['Thoughts entries', thoughtEntries.length.toString()],
+                ['Dreams entries', dreamEntries.length.toString()],
+                ['Total entries', totalSeedEntries.toString()],
                 ['Cross-references', 'Valid'],
-                ['File', TEST_DATA_FILE],
+                ['Journal file', JOURNAL_TEST_DATA_FILE],
+                ['Dreams file', DREAMS_TEST_DATA_FILE],
             ]);
             process.exit(0);
         }
@@ -296,19 +293,16 @@ Had a breakthrough idea today. Need to explore it further tomorrow.
         section('Database Setup');
         await ensureDefaultUser();
         await clearEntries();
-        const { thoughtsId } = await ensureDiaries();
+        const { thoughtsId, dreamsId } = await ensureDiaries();
 
         section('Inserting Entries');
-        log.step(`Inserting ${entries.length} entries...`);
+        log.step(`Inserting ${totalSeedEntries} entries across both diaries...`);
+        await insertEntries(thoughtsId, thoughtEntries);
+        await insertEntries(dreamsId, dreamEntries);
 
-        for (const entry of entries) {
-            await query(
-                'INSERT INTO entries (user_id, diary_id, date, "index", tags, content) VALUES ($1, $2, $3, $4, $5, $6)',
-                [DEFAULT_USER_ID, thoughtsId, entry.date, entry.index, entry.tags, entry.content],
-            );
-        }
-
-        log.success(`Successfully seeded ${fmt.bold(entries.length.toString())} entries`);
+        log.success(
+            `Successfully seeded ${fmt.bold(totalSeedEntries.toString())} entries (${thoughtEntries.length} Thoughts, ${dreamEntries.length} Dreams)`,
+        );
 
         section('Summary');
 
@@ -339,7 +333,8 @@ Had a breakthrough idea today. Need to explore it further tomorrow.
         const duration = Date.now() - startTime;
 
         summaryBox('Seed Complete', [
-            ['Entries', entries.length.toString()],
+            ['Entries', totalSeedEntries.toString()],
+            ['Diaries', 'Thoughts, Dreams'],
             ['Dates', dateData.length.toString()],
             ['Tags', uniqueTags.length.toString()],
             ['Duration', `${duration}ms`],
