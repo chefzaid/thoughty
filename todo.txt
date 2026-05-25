@@ -1,4 +1,10 @@
 
+Fixes
+- Colored pastilles for each journal are not correct
+- When changing journals the interface become erratic
+- Entries cross references not working anymore
+- When entry not found toast instead of pop-up 
+
 Features to implement:
 
 *** Personalization & UX
