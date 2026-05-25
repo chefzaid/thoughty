@@ -964,6 +964,37 @@ describe('useAppState Hooks', () => {
   });
 
   describe('useDiaries - extended', () => {
+    it('does not re-select the default diary after the user switches to all diaries', async () => {
+      const { createDiariesService } = await import('../services/api');
+      vi.mocked(createDiariesService).mockReturnValue({
+        fetchDiaries: vi.fn().mockResolvedValue([
+          { id: 1, name: 'Default', is_default: true },
+          { id: 2, name: 'Work', is_default: false },
+        ]),
+        createDiary: vi.fn(),
+        updateDiary: vi.fn(),
+        deleteDiary: vi.fn(),
+        setDefaultDiary: vi.fn(),
+        reorderDiaries: vi.fn(),
+      });
+
+      const { result } = renderHook(() => useDiaries(true));
+
+      await waitFor(() => {
+        expect(result.current.currentDiaryId).toBe(1);
+      });
+
+      act(() => {
+        result.current.setCurrentDiaryId(null);
+      });
+
+      await act(async () => {
+        await result.current.fetchDiaries();
+      });
+
+      expect(result.current.currentDiaryId).toBeNull();
+    });
+
     it('handleCreateDiary throws on failure', async () => {
       const { createDiariesService } = await import('../services/api');
       vi.mocked(createDiariesService).mockReturnValue({

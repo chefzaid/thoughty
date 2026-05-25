@@ -1,8 +1,9 @@
 import './NavMenu.css';
+import type { ViewType } from '../../types';
 
 interface NavMenuProps {
-    readonly currentView: string;
-    readonly onViewChange: (view: string) => void;
+    readonly currentView: ViewType;
+    readonly onViewChange: (view: ViewType) => void;
     readonly theme?: 'light' | 'dark';
     readonly name?: string;
     readonly avatarUrl?: string;

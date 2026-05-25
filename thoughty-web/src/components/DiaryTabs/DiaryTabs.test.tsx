@@ -71,6 +71,23 @@ describe('DiaryTabs', () => {
     expect(mockOnDiaryChange).toHaveBeenCalledWith(null);
   });
 
+  it('renders tab actions as non-submit buttons', () => {
+    render(<DiaryTabs {...defaultProps} />);
+
+    expect(screen.getByTitle('allDiaries')).toHaveAttribute('type', 'button');
+    expect(screen.getByTitle('Work')).toHaveAttribute('type', 'button');
+    expect(screen.getByTitle('Manage Diaries')).toHaveAttribute('type', 'button');
+  });
+
+  it('renders an accent pastille for the all diaries and diary-specific tabs', () => {
+    const { container } = render(<DiaryTabs {...defaultProps} />);
+
+    const accentDots = container.querySelectorAll('.diary-accent-dot');
+    expect(accentDots).toHaveLength(4);
+    expect(screen.getByTitle('allDiaries')).toHaveStyle('--diary-accent: #94A3B8');
+    expect(screen.getByTitle('Work')).toHaveStyle('--diary-accent: #2A9D8F');
+  });
+
   it('calls onDiaryChange with diary id when diary tab is clicked', () => {
     render(<DiaryTabs {...defaultProps} />);
     const workButton = screen.getByTitle('Work');

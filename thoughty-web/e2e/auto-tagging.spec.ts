@@ -25,7 +25,7 @@ test('automatically adds AI tags on save when the profile setting is enabled', a
   await page.getByPlaceholder("What's on your mind?").fill('This entry relies on automatic AI tags during save.');
   await page.getByRole('button', { name: 'Save' }).click();
 
-  await expect(page.locator('span').filter({ hasText: 'focus' })).toBeVisible();
-  await expect(page.locator('span').filter({ hasText: 'reflection' })).toBeVisible();
+  await expect(page.locator('.truncate').filter({ hasText: /^#focus$/ })).toBeVisible();
+  await expect(page.locator('.truncate').filter({ hasText: /^#reflection$/ })).toBeVisible();
   await expect.poll(() => state.entries[0]?.tags).toEqual(['focus', 'reflection']);
 });

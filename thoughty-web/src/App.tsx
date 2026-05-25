@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { BrowserRouter, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import "react-datepicker/dist/react-datepicker.css";
 
 // Components
@@ -20,36 +21,38 @@ import { assignMissingTagColors, parseTagMetadata, serializeTagMetadata } from '
 
 // Context and Hooks
 import { useAuth } from './contexts/AuthContext';
-import { 
-  useConfig, 
-  useDiaries, 
-  useEntries, 
-  useEntryForm, 
-  useEntryEdit, 
+import {
+  useConfig,
+  useDiaries,
+  useEntries,
+  useEntryForm,
+  useEntryEdit,
   useDeleteModal,
   useBulkSelect,
   useApiServices
 } from './hooks/useAppState';
 
 // Types
-import type { ViewType, SourceEntryInfo, Config, Entry } from './types';
+import type { ViewType, PublicViewType, DiaryReturnViewType, ImportExportFormat, ImportExportSection, SourceEntryInfo, Config, Entry } from './types';
+import {
+  formatDiarySearchParam,
+  getPathForView,
+  getPublicPathForView,
+  getPublicViewForPath,
+  getViewForPath,
+  parseBooleanSearchParam,
+  parseDiaryReturnView,
+  parseDiarySearchParam,
+  parseEntrySearchParam,
+  parseImportExportFormat,
+  parseImportExportSection,
+  viewSupportsDiarySearch,
+} from './types';
 
 const ENTRY_PERMALINK_PARAM = 'entry';
 
-function getPermalinkEntryIdFromLocation(): number | null {
-  const params = new URLSearchParams(globalThis.location.search);
-  const rawEntryId = params.get(ENTRY_PERMALINK_PARAM);
-
-  if (!rawEntryId) {
-    return null;
-  }
-
-  const entryId = Number.parseInt(rawEntryId, 10);
-  return Number.isFinite(entryId) && entryId > 0 ? entryId : null;
-}
-
 function buildEntryPermalink(entryId: number): string {
-  const url = new URL(globalThis.location.pathname, globalThis.location.origin);
+  const url = new URL(getPathForView('journal'), globalThis.location.origin);
   url.searchParams.set(ENTRY_PERMALINK_PARAM, entryId.toString());
   return url.toString();
 }
@@ -63,15 +66,64 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
   return true;
 }
 
-function App() {
+function toSearchString(searchParams: URLSearchParams): string {
+  const serialized = searchParams.toString();
+  return serialized ? `?${serialized}` : '';
+}
+
+function buildDiaryRouteSearchParams(
+  view: ViewType,
+  diaryId: number | null,
+  options?: {
+    importExportSection?: ImportExportSection;
+    importExportFormat?: ImportExportFormat;
+    importExportIncludeVisibility?: boolean;
+  },
+): URLSearchParams {
+  const nextSearchParams = new URLSearchParams();
+
+  if (viewSupportsDiarySearch(view)) {
+    nextSearchParams.set('diary', formatDiarySearchParam(diaryId));
+  }
+
+  if (view === 'importExport') {
+    nextSearchParams.set('section', options?.importExportSection ?? 'export');
+    nextSearchParams.set('format', options?.importExportFormat ?? 'txt');
+
+    if (options?.importExportIncludeVisibility) {
+      nextSearchParams.set('includeVisibility', 'true');
+    }
+  }
+
+  return nextSearchParams;
+}
+
+function AppContent() {
   const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
-  const [authView, setAuthView] = useState<'intro' | 'login' | 'register'>('intro');
-  const [activePermalinkEntryId, setActivePermalinkEntryId] = useState<number | null>(() => getPermalinkEntryIdFromLocation());
-  const [pendingPermalinkEntryId, setPendingPermalinkEntryId] = useState<number | null>(() => getPermalinkEntryIdFromLocation());
-  
-  // Navigation State
-  const [currentView, setCurrentView] = useState<ViewType>('journal');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const currentView = getViewForPath(location.pathname);
+  const publicView = getPublicViewForPath(location.pathname);
+  const routeDiaryId = currentView && viewSupportsDiarySearch(currentView)
+    ? parseDiarySearchParam(searchParams)
+    : undefined;
+  const routeEntryId = currentView === 'journal'
+    ? parseEntrySearchParam(searchParams)
+    : undefined;
+  const diaryReturnView = parseDiaryReturnView(searchParams) ?? 'journal';
+  const importExportSection = parseImportExportSection(searchParams) ?? 'export';
+  const importExportFormat = parseImportExportFormat(searchParams) ?? 'txt';
+  const importExportIncludeVisibility = parseBooleanSearchParam(searchParams, 'includeVisibility') ?? false;
   const [highlightsModalOpen, setHighlightsModalOpen] = useState<boolean>(false);
+  const [entryToastVisible, setEntryToastVisible] = useState<boolean>(false);
+  const [entryToastToken, setEntryToastToken] = useState<number>(0);
+  const [handledPermalinkEntryId, setHandledPermalinkEntryId] = useState<number | null>(null);
+  const [pendingEntryTarget, setPendingEntryTarget] = useState<{
+    date: string;
+    index: number;
+    highlight: boolean;
+  } | null>(null);
 
   // Config and profile stats
   const { 
@@ -95,7 +147,7 @@ function App() {
     handleDeleteDiary,
     handleSetDefaultDiary,
     handleReorderDiaries
-  } = useDiaries(isAuthenticated, activePermalinkEntryId !== null);
+  } = useDiaries(isAuthenticated, routeEntryId !== undefined || routeDiaryId !== undefined);
 
   // Entries management
   const {
@@ -120,6 +172,7 @@ function App() {
     setFilterFavorites,
     availableYears,
     availableMonths,
+    targetEntryId,
     setTargetEntryId,
     activeTargetId,
     setActiveTargetId,
@@ -221,33 +274,6 @@ function App() {
     }
   }, [entriesService, getLimit, setPage, setTargetEntryId]);
 
-  const handleNavigateToEntry = useCallback(async (
-    date: string,
-    index: number = 1,
-    sourceEntryInfo: SourceEntryInfo | null = null,
-    highlight: boolean = true
-  ) => {
-    if (sourceEntryInfo) {
-      setSourceEntry({
-        id: sourceEntryInfo.id,
-        date: sourceEntryInfo.date,
-        index: sourceEntryInfo.index
-      });
-    }
-
-    const data = await entriesService.navigateByDate(date, index, getLimit());
-    if (data?.found) {
-      setPage(data.page || 1);
-      if (highlight) {
-        setTargetEntryId(data.entryId || null);
-      }
-      setActiveTargetId(data.entryId || null);
-    } else {
-      alert(t('entryNotFound'));
-      setSourceEntry(null);
-    }
-  }, [entriesService, getLimit, setPage, setTargetEntryId, setActiveTargetId, setSourceEntry, t]);
-
   const handleBackToSource = useCallback(async () => {
     if (!sourceEntry) return;
 
@@ -259,6 +285,7 @@ function App() {
 
     setSourceEntry(null);
     setActiveTargetId(null);
+    setPendingEntryTarget(null);
   }, [sourceEntry, entriesService, getLimit, setPage, setTargetEntryId, setSourceEntry, setActiveTargetId]);
 
   const handleShareEntry = useCallback(async (entry: Entry): Promise<boolean> => {
@@ -286,52 +313,103 @@ function App() {
     }
   }, [t]);
 
-  const resetJournalFiltersForPermalink = useCallback((): boolean => {
-    let didReset = false;
-
+  const needsJournalResetForPermalink = useCallback((): boolean => {
     if (search !== '') {
-      setSearch('');
-      didReset = true;
+      return true;
     }
 
     if (filterTags.length > 0) {
-      setFilterTags([]);
-      didReset = true;
+      return true;
     }
 
     if (filterDateObj !== null) {
-      setFilterDateObj(null);
-      didReset = true;
+      return true;
     }
 
     if (filterVisibility !== 'all') {
-      setFilterVisibility('all');
-      didReset = true;
+      return true;
     }
 
     if (filterFavorites) {
-      setFilterFavorites(false);
-      didReset = true;
+      return true;
     }
 
     if (currentDiaryId !== null) {
-      setCurrentDiaryId(null);
-      didReset = true;
+      return true;
     }
 
-    if (page !== 1) {
-      setPage(1);
-      didReset = true;
+    if (currentView === 'journal' && searchParams.get('diary') !== 'all') {
+      return true;
     }
 
-    return didReset;
+    return page !== 1;
   }, [
     currentDiaryId,
+    currentView,
     filterDateObj,
     filterFavorites,
     filterTags,
     filterVisibility,
     page,
+    search,
+    searchParams,
+  ]);
+
+  const resetJournalFiltersForPermalink = useCallback((): void => {
+    if (!needsJournalResetForPermalink()) {
+      return;
+    }
+
+    if (search !== '') {
+      setSearch('');
+    }
+
+    if (filterTags.length > 0) {
+      setFilterTags([]);
+    }
+
+    if (filterDateObj !== null) {
+      setFilterDateObj(null);
+    }
+
+    if (filterVisibility !== 'all') {
+      setFilterVisibility('all');
+    }
+
+    if (filterFavorites) {
+      setFilterFavorites(false);
+    }
+
+    if (currentDiaryId !== null) {
+      setCurrentDiaryId(null);
+    }
+
+    if (currentView === 'journal') {
+      const nextSearchParams = new URLSearchParams(searchParams);
+
+      if (nextSearchParams.get('diary') !== 'all') {
+        nextSearchParams.set('diary', 'all');
+        navigate({
+          pathname: getPathForView('journal'),
+          search: toSearchString(nextSearchParams),
+        }, { replace: true });
+      }
+    }
+
+    if (page !== 1) {
+      setPage(1);
+    }
+  }, [
+    currentDiaryId,
+    currentView,
+    filterDateObj,
+    filterFavorites,
+    filterTags,
+    filterVisibility,
+    navigate,
+    needsJournalResetForPermalink,
+    page,
+    searchParams,
     search,
     setCurrentDiaryId,
     setFilterDateObj,
@@ -342,59 +420,151 @@ function App() {
     setSearch,
   ]);
 
-  const navigateToPermalinkEntry = useCallback((entryId: number) => {
+  const clearJournalPermalink = useCallback(() => {
+    if (currentView === 'journal' && searchParams.has(ENTRY_PERMALINK_PARAM)) {
+      const nextSearchParams = new URLSearchParams(searchParams);
+      nextSearchParams.delete(ENTRY_PERMALINK_PARAM);
+      navigate({
+        pathname: getPathForView('journal'),
+        search: toSearchString(nextSearchParams),
+      }, { replace: true });
+      setHandledPermalinkEntryId(null);
+    }
+  }, [currentView, navigate, searchParams]);
+
+  const showEntryNotFoundToast = useCallback(() => {
+    setEntryToastVisible(true);
+    setEntryToastToken((previousToken) => previousToken + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!entryToastVisible) {
+      return;
+    }
+
+    const timeoutId = globalThis.setTimeout(() => {
+      setEntryToastVisible(false);
+    }, 4000);
+
+    return () => {
+      globalThis.clearTimeout(timeoutId);
+    };
+  }, [entryToastToken, entryToastVisible]);
+
+  const executeEntryNavigation = useCallback(async (
+    date: string,
+    index: number,
+    highlight: boolean,
+  ) => {
+    const data = await entriesService.navigateByDate(date, index, getLimit());
+    if (data?.found) {
+      setPage(data.page || 1);
+      if (highlight) {
+        setTargetEntryId(data.entryId || null);
+      }
+      setActiveTargetId(data.entryId || null);
+    } else {
+      showEntryNotFoundToast();
+      setSourceEntry(null);
+      setActiveTargetId(null);
+      setPendingEntryTarget(null);
+    }
+  }, [entriesService, getLimit, setActiveTargetId, setPage, setSourceEntry, setTargetEntryId, showEntryNotFoundToast]);
+
+  const handleNavigateToEntry = useCallback(async (
+    date: string,
+    index: number = 1,
+    sourceEntryInfo: SourceEntryInfo | null = null,
+    highlight: boolean = true
+  ) => {
+    clearJournalPermalink();
+
+    if (sourceEntryInfo) {
+      setSourceEntry({
+        id: sourceEntryInfo.id,
+        date: sourceEntryInfo.date,
+        index: sourceEntryInfo.index
+      });
+    }
+
+    setPendingEntryTarget({ date, index, highlight });
+
+    if (needsJournalResetForPermalink()) {
+      resetJournalFiltersForPermalink();
+    }
+
+    await executeEntryNavigation(date, index, highlight);
+  }, [clearJournalPermalink, executeEntryNavigation, needsJournalResetForPermalink, resetJournalFiltersForPermalink, setSourceEntry]);
+
+  useEffect(() => {
+    if (!pendingEntryTarget || loading || entries.length === 0) {
+      return;
+    }
+
+    const matchedEntry = entries.find((entry) => {
+      const entryDate = entry.date.includes('T') ? entry.date.split('T')[0] : entry.date;
+      return entryDate === pendingEntryTarget.date && (entry.index || 1) === pendingEntryTarget.index;
+    });
+
+    if (!matchedEntry) {
+      return;
+    }
+
+    if (pendingEntryTarget.highlight) {
+      setTargetEntryId(matchedEntry.id);
+    }
+
+    setActiveTargetId(matchedEntry.id);
+    setPendingEntryTarget(null);
+  }, [entries, loading, pendingEntryTarget, setActiveTargetId, setTargetEntryId]);
+
+  useEffect(() => {
+    if (routeEntryId === undefined) {
+      if (handledPermalinkEntryId !== null) {
+        setHandledPermalinkEntryId(null);
+      }
+      return;
+    }
+
+    if (!isAuthenticated) {
+      return;
+    }
+
+    if (needsJournalResetForPermalink()) {
+      resetJournalFiltersForPermalink();
+      return;
+    }
+
+    if (handledPermalinkEntryId === routeEntryId) {
+      return;
+    }
+
     let cancelled = false;
 
     void (async () => {
-      const data = await entriesService.navigateById(entryId, getLimit());
+      const data = await entriesService.navigateById(routeEntryId, getLimit());
       if (cancelled) {
         return;
       }
 
       if (data?.found) {
-        const resolvedEntryId = data.entryId || entryId;
+        const resolvedEntryId = data.entryId || routeEntryId;
         setPage(data.page || 1);
         setTargetEntryId(resolvedEntryId);
         setActiveTargetId(resolvedEntryId);
       } else {
-        alert(t('entryNotFound'));
+        setSourceEntry(null);
+        setActiveTargetId(null);
+        showEntryNotFoundToast();
       }
 
-      setPendingPermalinkEntryId(null);
+      setHandledPermalinkEntryId(routeEntryId);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [entriesService, getLimit, setActiveTargetId, setPage, setTargetEntryId, t]);
-
-  useEffect(() => {
-    const syncPermalinkFromLocation = () => {
-      const entryId = getPermalinkEntryIdFromLocation();
-      setActivePermalinkEntryId(entryId);
-      setPendingPermalinkEntryId(entryId);
-    };
-
-    globalThis.addEventListener('popstate', syncPermalinkFromLocation);
-    return () => globalThis.removeEventListener('popstate', syncPermalinkFromLocation);
-  }, []);
-
-  useEffect(() => {
-    if (!isAuthenticated || pendingPermalinkEntryId === null) {
-      return;
-    }
-
-    if (currentView !== 'journal') {
-      setCurrentView('journal');
-      return;
-    }
-
-    if (resetJournalFiltersForPermalink()) {
-      return;
-    }
-
-    return navigateToPermalinkEntry(pendingPermalinkEntryId);
-  }, [currentView, isAuthenticated, navigateToPermalinkEntry, pendingPermalinkEntryId, resetJournalFiltersForPermalink]);
+  }, [entriesService, getLimit, handledPermalinkEntryId, isAuthenticated, needsJournalResetForPermalink, resetJournalFiltersForPermalink, routeEntryId, setActiveTargetId, setPage, setSourceEntry, setTargetEntryId, showEntryNotFoundToast]);
 
   // Auth success handler
   const handleAuthSuccess = useCallback(() => {
@@ -404,10 +574,84 @@ function App() {
     fetchProfileStats();
   }, [fetchConfig, fetchDiaries, fetchEntryDates, fetchProfileStats]);
 
+  const handleViewChange = useCallback((view: ViewType) => {
+    const nextSearchParams = new URLSearchParams();
+    if (viewSupportsDiarySearch(view)) {
+      nextSearchParams.set('diary', formatDiarySearchParam(currentDiaryId));
+    }
+    navigate({
+      pathname: getPathForView(view),
+      search: toSearchString(nextSearchParams),
+    });
+  }, [currentDiaryId, navigate]);
+
+  const handlePublicViewChange = useCallback((view: PublicViewType) => {
+    navigate(getPublicPathForView(view));
+  }, [navigate]);
+
+  const handleDiaryChange = useCallback((diaryId: number | null) => {
+    setCurrentDiaryId(diaryId);
+
+    if (!currentView || !viewSupportsDiarySearch(currentView)) {
+      return;
+    }
+
+    const nextSearchParams = buildDiaryRouteSearchParams(currentView, diaryId, {
+      importExportSection,
+      importExportFormat,
+      importExportIncludeVisibility,
+    });
+
+    navigate({
+      pathname: getPathForView(currentView),
+      search: toSearchString(nextSearchParams),
+    }, { replace: true });
+  }, [currentView, importExportFormat, importExportIncludeVisibility, importExportSection, navigate, setCurrentDiaryId]);
+
+  const handleManageDiaries = useCallback((fromView: DiaryReturnViewType) => {
+    const nextSearchParams = new URLSearchParams();
+    nextSearchParams.set('from', fromView);
+    nextSearchParams.set('diary', formatDiarySearchParam(currentDiaryId));
+
+    navigate({
+      pathname: getPathForView('diaries'),
+      search: toSearchString(nextSearchParams),
+    });
+  }, [currentDiaryId, navigate]);
+
+  const handleBackFromDiaries = useCallback(() => {
+    const nextSearchParams = new URLSearchParams();
+    nextSearchParams.set('diary', formatDiarySearchParam(currentDiaryId));
+
+    navigate({
+      pathname: getPathForView(diaryReturnView),
+      search: toSearchString(nextSearchParams),
+    });
+  }, [currentDiaryId, diaryReturnView, navigate]);
+
+  const handleImportExportRouteStateChange = useCallback((nextState: {
+    section: ImportExportSection;
+    exportFormat: ImportExportFormat;
+    includeVisibility: boolean;
+  }) => {
+    const nextSearchParams = new URLSearchParams();
+    nextSearchParams.set('diary', formatDiarySearchParam(currentDiaryId));
+    nextSearchParams.set('section', nextState.section);
+    nextSearchParams.set('format', nextState.exportFormat);
+    if (nextState.includeVisibility) {
+      nextSearchParams.set('includeVisibility', 'true');
+    }
+
+    navigate({
+      pathname: getPathForView('importExport'),
+      search: toSearchString(nextSearchParams),
+    }, { replace: true });
+  }, [currentDiaryId, navigate]);
+
   const handleLogout = useCallback(async () => {
     await logout();
-    setAuthView('intro');
-  }, [logout]);
+    navigate(getPublicPathForView('intro'), { replace: true });
+  }, [logout, navigate]);
 
   // AI Chat
   const { aiService } = useApiServices();
@@ -457,8 +701,20 @@ function App() {
     });
   }, [allTags, config, isAuthenticated, serializedTagMetadata, tagMetadata, updateConfig]);
 
+  useEffect(() => {
+    if (!isAuthenticated || routeDiaryId === undefined || routeDiaryId === currentDiaryId) {
+      return;
+    }
+
+    setCurrentDiaryId(routeDiaryId);
+  }, [currentDiaryId, isAuthenticated, routeDiaryId, setCurrentDiaryId]);
+
   // Render view content
   const renderViewContent = () => {
+    if (!currentView) {
+      return null;
+    }
+
     switch (currentView) {
       case 'profile':
         return (
@@ -466,7 +722,7 @@ function App() {
             config={config}
             onUpdateConfig={(newConfig: Config) => updateConfig(newConfig)}
             onDownloadData={downloadUserData}
-            onBack={() => setCurrentView('journal')}
+            onBack={() => handleViewChange('journal')}
             t={t}
             stats={profileStats ?? undefined}
           />
@@ -493,7 +749,7 @@ function App() {
             onDeleteDiary={(id: number) => handleDeleteDiary(id, fetchEntries)}
             onSetDefault={handleSetDefaultDiary}
             onReorderDiaries={handleReorderDiaries}
-            onBack={() => setCurrentView('journal')}
+            onBack={handleBackFromDiaries}
             theme={config.theme}
             t={t}
           />
@@ -504,8 +760,8 @@ function App() {
             <DiaryTabs
               diaries={diaries}
               currentDiaryId={currentDiaryId}
-              onDiaryChange={(id: number | null) => { setCurrentDiaryId(id); }}
-              onManageDiaries={() => setCurrentView('diaries')}
+              onDiaryChange={handleDiaryChange}
+              onManageDiaries={() => handleManageDiaries('stats')}
               theme={config.theme}
               t={t}
             />
@@ -518,8 +774,8 @@ function App() {
             <DiaryTabs
               diaries={diaries}
               currentDiaryId={currentDiaryId}
-              onDiaryChange={(id: number | null) => { setCurrentDiaryId(id); }}
-              onManageDiaries={() => setCurrentView('diaries')}
+              onDiaryChange={handleDiaryChange}
+              onManageDiaries={() => handleManageDiaries('importExport')}
               theme={config.theme}
               t={t}
             />
@@ -528,6 +784,10 @@ function App() {
               t={t}
               diaryId={currentDiaryId}
               diaryName={diaries.find(d => d.id === currentDiaryId)?.name || t('allDiaries')}
+              initialSection={importExportSection}
+              initialExportFormat={importExportFormat}
+              initialIncludeVisibility={importExportIncludeVisibility}
+              onRouteStateChange={handleImportExportRouteStateChange}
             />
           </>
         );
@@ -536,8 +796,8 @@ function App() {
           <JournalView
             diaries={diaries}
             currentDiaryId={currentDiaryId}
-            onDiaryChange={setCurrentDiaryId}
-            onManageDiaries={() => setCurrentView('diaries')}
+            onDiaryChange={handleDiaryChange}
+            onManageDiaries={() => handleManageDiaries('journal')}
             highlightsModalOpen={highlightsModalOpen}
             setHighlightsModalOpen={setHighlightsModalOpen}
             newEntryText={newEntryText}
@@ -603,6 +863,7 @@ function App() {
             onShareEntry={handleShareEntry}
             getEntryPermalink={buildEntryPermalink}
             sourceEntry={sourceEntry}
+            targetEntryId={targetEntryId}
             activeTargetId={activeTargetId}
             onBackToSource={handleBackToSource}
             bulkMode={bulkMode}
@@ -637,13 +898,17 @@ function App() {
 
   // Show auth page if not authenticated
   if (!isAuthenticated) {
-    if (authView === 'intro') {
+    if (!publicView) {
+      return <Navigate to={getPublicPathForView('intro')} replace />;
+    }
+
+    if (publicView === 'intro') {
       return (
         <IntroPage
           theme={config.theme || 'dark'}
           t={t}
-          onSignIn={() => setAuthView('login')}
-          onSignUp={() => setAuthView('register')}
+          onSignIn={() => handlePublicViewChange('login')}
+          onSignUp={() => handlePublicViewChange('register')}
         />
       );
     }
@@ -652,11 +917,20 @@ function App() {
       <AuthPage
         t={t}
         theme={config.theme || 'dark'}
-        initialMode={authView === 'register' ? 'register' : 'login'}
+        mode={publicView}
         onAuthSuccess={handleAuthSuccess}
-        onBack={() => setAuthView('intro')}
+        onModeChange={handlePublicViewChange}
+        onBack={() => handlePublicViewChange('intro')}
       />
     );
+  }
+
+  if (location.pathname === '/') {
+    return <Navigate to={getPathForView('journal')} replace />;
+  }
+
+  if (!currentView) {
+    return <Navigate to={getPathForView('journal')} replace />;
   }
 
   return (
@@ -664,7 +938,7 @@ function App() {
       <div className="max-w-7xl mx-auto">
         <NavMenu
           currentView={currentView}
-          onViewChange={(view: string) => setCurrentView(view as ViewType)}
+          onViewChange={handleViewChange}
           theme={config.theme ?? 'dark'}
           name={config.name || user?.username || 'User'}
           avatarUrl={config.avatarUrl || user?.avatarUrl}
@@ -690,6 +964,19 @@ function App() {
           theme={config.theme}
         />
 
+        {entryToastVisible && (
+          <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 px-4">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className={`pointer-events-auto rounded-xl border px-4 py-3 shadow-xl backdrop-blur ${config.theme === 'light' ? 'border-amber-200 bg-white/95 text-gray-900' : 'border-amber-400/30 bg-gray-800/95 text-gray-100'}`}
+            >
+              <p className="text-sm font-semibold text-amber-500">{t('entryNotFound')}</p>
+              <p className={`mt-1 text-sm ${config.theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>{t('entryNotFoundMessage')}</p>
+            </div>
+          </div>
+        )}
+
         {chatEntry && (
           <AiChatModal
             entry={chatEntry}
@@ -706,6 +993,14 @@ function App() {
         <Footer t={t} theme={config.theme ?? 'dark'} />
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 

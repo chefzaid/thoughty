@@ -20,9 +20,12 @@ if (!globalThis.speechSynthesis) {
 interface DatePickerProps {
   selected: Date | null;
   onChange: (date: Date | null) => void;
+  onChangeRaw?: (event?: ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (event: ChangeEvent<HTMLInputElement>) => void;
   className?: string;
   placeholder?: string;
   placeholderText?: string;
+  value?: string;
 }
 
 // Mock react-datepicker to avoid issues with CSS imports in tests
@@ -30,23 +33,32 @@ vi.mock('react-datepicker', () => ({
   default: function MockDatePicker({
     selected,
     onChange,
+    onChangeRaw,
+    onBlur,
     className,
     placeholder,
     placeholderText,
+    value,
   }: DatePickerProps) {
     return createElement('input', {
       type: 'text',
       'data-testid': 'date-picker',
       className: className,
       placeholder: placeholder || placeholderText,
-      value: selected ? selected.toISOString().split('T')[0] : '',
+      value: value ?? (selected ? selected.toISOString().split('T')[0] : ''),
       onChange: (e: ChangeEvent<HTMLInputElement>) => {
+        if (onChangeRaw) {
+          onChangeRaw(e);
+          return;
+        }
+
         if (e.target.value) {
           onChange(new Date(e.target.value));
         } else {
           onChange(null);
         }
       },
+      onBlur: (e: ChangeEvent<HTMLInputElement>) => onBlur?.(e),
     });
   },
 }));

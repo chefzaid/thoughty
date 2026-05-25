@@ -25,6 +25,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Cross-References** - Link entries together using `[[YYYY-MM-DD]]` or `[[YYYY-MM-DD#index]]` syntax with clickable navigation
 - **Entry Highlighting** - Visual highlighting when navigating to specific entries from references
 - **Entry Permalinks & Sharing** - Copy or open stable `?entry=<id>` links for any journal entry to bookmark or share a specific thought
+- **Route-Aware Navigation** - Main areas use stable routes like `/journal`, `/stats`, `/profile`, and `/tags`, while diary, import/export, and entry permalink context stays in query params for reloadable deep links
 - **Visibility Control** - Toggle entries between public and private with one click
 - **Favorites** - Star/unstar entries as favorites and filter to show only favorites
 - **Modification History** - View previous versions of edited entries with timestamps

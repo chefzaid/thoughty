@@ -3,6 +3,13 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EntriesList from './EntriesList';
 
+const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 interface Entry {
     id: number;
     date: string;
@@ -55,6 +62,7 @@ describe('EntriesList', () => {
         onShareEntry: vi.fn().mockResolvedValue(true),
         getEntryPermalink: (entryId: number) => `https://thoughty.test/?entry=${entryId}`,
         sourceEntry: null,
+        targetEntryId: null,
         activeTargetId: null,
         onBackToSource: vi.fn(),
         t: (key: string, params?: { defaultValue?: string }): string => {
@@ -181,6 +189,13 @@ describe('EntriesList', () => {
             expect(secondCard?.style.borderLeftWidth).toBe('5px');
             expect(secondCard?.style.borderLeftStyle).toBe('solid');
         });
+
+        it('renders the highlight class on the targeted entry card', () => {
+            render(<EntriesList {...defaultProps} targetEntryId={2} />);
+
+            expect(document.getElementById('entry-2')).toHaveClass('highlight-entry');
+            expect(document.getElementById('entry-1')).not.toHaveClass('highlight-entry');
+        });
     });
 
     describe('Theme styling', () => {
@@ -234,6 +249,18 @@ describe('EntriesList', () => {
             await user.click(shareButtons[0]);
 
             expect(onShareEntry).toHaveBeenCalledWith(mockEntries[0]);
+        });
+
+        it('renders the permalink action after the entry number', () => {
+            render(<EntriesList {...defaultProps} />);
+
+            const entryCard = document.getElementById('entry-1');
+            const entryIndex = screen.getAllByText('#1')[0];
+            const permalinkLink = screen.getAllByLabelText('Open entry permalink')[0];
+
+            expect(entryCard).not.toBeNull();
+            expect(entryCard?.compareDocumentPosition(entryIndex) & Node.DOCUMENT_POSITION_CONTAINED_BY).toBeTruthy();
+            expect(entryIndex.compareDocumentPosition(permalinkLink) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
         });
     });
 
@@ -295,6 +322,18 @@ describe('EntriesList', () => {
             await user.type(textarea, ' more');
 
             expect(setEditText).toHaveBeenCalled();
+        });
+
+        it('updates the edit date when a full date is typed', () => {
+            const setEditDate = vi.fn();
+
+            render(<EntriesList {...editModeProps} setEditDate={setEditDate} />);
+
+            fireEvent.change(screen.getByTestId('date-picker'), { target: { value: '2024-03-01' } });
+
+            const updatedDate = setEditDate.mock.calls[0]?.[0];
+            expect(updatedDate).toBeInstanceOf(Date);
+            expect(formatDate(updatedDate)).toBe('2024-03-01');
         });
 
         it('calls onSaveEdit when Save is clicked', async () => {

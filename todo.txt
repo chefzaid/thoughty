@@ -1,15 +1,8 @@
 
-Fixes
-- Colored pastilles for each journal are not correct
-- When changing journals the interface become erratic
-- Entries cross references not working anymore
-- When entry not found toast instead of pop-up 
-
 Features to implement:
 
 *** Personalization & UX
 - Font customization (type, size, color) for better readability and user preference in Profile settings
-- Routes and paths for each view (Journal, Stats, Profile, Tags, etc.)
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
 - Voice personalization for TTS
 - Add other languages support (i18n) for the UI (Spanish, Italian, German, etc.)
@@ -62,6 +55,7 @@ Features to implement:
 *** Infrastructure & Reliability
 - Split README into multiple files under docs directory (ADR, development setup, deployment guide, etc.) for better organization and readability
 - Playwright end-to-end tests for critical user flows (sign up, login, create entry, edit entry, delete entry, view stats)
+- SSL and HTTPS support for secure communication
 - Optimize database for better performance
 - Caching of frequent requests (public entries, feed)
 - Set up monitoring and alerting for server health and performance

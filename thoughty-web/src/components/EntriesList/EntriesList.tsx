@@ -1,5 +1,4 @@
 import { Suspense, lazy, memo, useEffect, useMemo, useState as useLocalState, useCallback, type CSSProperties, type Dispatch, type ReactNode, type SetStateAction } from 'react';
-import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import TagPicker from '../TagPicker/TagPicker';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
@@ -7,6 +6,7 @@ import ListenButton from '../ListenButton/ListenButton';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
 import AttachmentDisplay from '../AttachmentDisplay/AttachmentDisplay';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
+import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
 import type { Attachment, EntryRevision } from '../../types';
 import { resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 import TagBadge from '../TagBadge/TagBadge';
@@ -86,6 +86,7 @@ interface EntriesListProps {
     onShareEntry?: (entry: Entry) => Promise<boolean>;
     getEntryPermalink?: (entryId: number) => string;
     sourceEntry: SourceEntryInfo | null;
+    targetEntryId: number | null;
     activeTargetId: number | null;
     onBackToSource: () => void;
     searchTerm?: string;
@@ -384,7 +385,7 @@ function EditForm({
             </div>
             <div className="flex flex-wrap gap-3">
                 <div className="w-40">
-                    <DatePicker
+                    <TypedDatePicker
                         selected={editDate}
                         onChange={(date: Date | null) => setEditDate(date)}
                         className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${inputClass}`}
@@ -670,6 +671,7 @@ function EntryViewMode({
                             t={t}
                         />
                     )}
+                    <span className="text-xs text-gray-500 font-mono">#{entry.index}</span>
                     {entryPermalink && (
                         <a
                             href={entryPermalink}
@@ -682,7 +684,6 @@ function EntryViewMode({
                             </svg>
                         </a>
                     )}
-                    <span className="text-xs text-gray-500 font-mono">#{entry.index}</span>
                     {onShareEntry && (
                         <button
                             onClick={() => void handleShare()}
@@ -946,6 +947,7 @@ function EntriesList({
     onShareEntry,
     getEntryPermalink,
     sourceEntry,
+    targetEntryId,
     activeTargetId,
     onBackToSource,
     searchTerm,
@@ -1149,7 +1151,7 @@ function EntriesList({
                                     id={`entry-${entry.id}`}
                                     className={`relative rounded-lg p-5 shadow-sm border transition-all flex gap-3 ${
                                         isDark ? 'bg-gray-800 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'
-                                    } ${bulkMode && selectedIds?.has(entry.id) ? getSelectedRingClass(isDark) : ''}${dragHighlightClass}`}
+                                    } ${targetEntryId === entry.id || activeTargetId === entry.id ? 'highlight-entry' : ''} ${bulkMode && selectedIds?.has(entry.id) ? getSelectedRingClass(isDark) : ''}${dragHighlightClass}`}
                                     style={getEntryCardStyle(entry)}
                                 >
                                     <EntryReorderControls

@@ -1,7 +1,7 @@
 import { Suspense, lazy, useRef, useEffect, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
-import DatePicker from 'react-datepicker';
 import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
+import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
 import type { Attachment } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 
@@ -148,7 +148,7 @@ function EntryForm({
                 </div>
                 <div className="flex flex-wrap gap-4 items-end">
                     <div className="w-40 z-10">
-                        <DatePicker
+                        <TypedDatePicker
                             selected={selectedDate}
                             onChange={(date: Date | null) => date && setSelectedDate(date)}
                             className={inputClass}

@@ -78,12 +78,14 @@ vi.mock('../EntriesList/EntriesList', () => ({
     loading: boolean;
     entries: Entry[];
     sourceEntry: object | null;
+    targetEntryId: number | null;
     activeTargetId: number | null;
     onBackToSource: () => void;
   }) => (
     <div data-testid="entries-list">
       <span data-testid="loading">{props.loading.toString()}</span>
       <span data-testid="entries-count">{props.entries.length}</span>
+      <span data-testid="target-entry-id">{props.targetEntryId}</span>
       <span data-testid="active-target-id">{props.activeTargetId}</span>
       <span data-testid="has-source-entry">{(!!props.sourceEntry).toString()}</span>
       <button data-testid="back-to-source-btn" onClick={props.onBackToSource}>Back</button>
@@ -204,6 +206,7 @@ describe('JournalView', () => {
       onCancelEdit: vi.fn(),
       onNavigateToEntry: vi.fn(),
       sourceEntry: null,
+      targetEntryId: null,
       activeTargetId: null,
       onBackToSource: vi.fn(),
       page: 1,
@@ -342,6 +345,12 @@ describe('JournalView', () => {
     render(<JournalView {...defaultProps} activeTargetId={5} />);
     
     expect(screen.getByTestId('active-target-id')).toHaveTextContent('5');
+  });
+
+  it('passes target entry id for highlight rendering', () => {
+    render(<JournalView {...defaultProps} targetEntryId={5} />);
+
+    expect(screen.getByTestId('target-entry-id')).toHaveTextContent('5');
   });
 
   it('renders with light theme', () => {

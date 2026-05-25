@@ -124,6 +124,36 @@ function buildExportBody(entries: MockEntry[], format: string | null): { content
   };
 }
 
+function buildStats(entries: MockEntry[]) {
+  const thoughtsPerYear: Record<string, number> = {};
+  const thoughtsPerMonth: Record<string, number> = {};
+  const thoughtsPerTag: Record<string, number> = {};
+  const tagsPerYear: Record<string, Record<string, number>> = {};
+
+  for (const entry of entries) {
+    const year = entry.date.slice(0, 4);
+    const month = entry.date.slice(0, 7);
+
+    thoughtsPerYear[year] = (thoughtsPerYear[year] || 0) + 1;
+    thoughtsPerMonth[month] = (thoughtsPerMonth[month] || 0) + 1;
+    tagsPerYear[year] ||= {};
+
+    for (const tag of entry.tags) {
+      thoughtsPerTag[tag] = (thoughtsPerTag[tag] || 0) + 1;
+      tagsPerYear[year][tag] = (tagsPerYear[year][tag] || 0) + 1;
+    }
+  }
+
+  return {
+    totalThoughts: entries.length,
+    uniqueTagsCount: Object.keys(thoughtsPerTag).length,
+    thoughtsPerYear,
+    thoughtsPerMonth,
+    thoughtsPerTag,
+    tagsPerYear,
+  };
+}
+
 export async function setupMockApp(page: Page, options: SetupMockAppOptions = {}) {
   const state: MockAppState = {
     authenticated: options.startAuthenticated ?? false,
@@ -149,6 +179,17 @@ export async function setupMockApp(page: Page, options: SetupMockAppOptions = {}
     lastExportRequestUrl: null,
     lastAiSuggestionPayload: null,
   };
+
+  await page.addInitScript((authenticated: boolean) => {
+    if (authenticated) {
+      localStorage.setItem('accessToken', 'test-access-token');
+      localStorage.setItem('refreshToken', 'test-refresh-token');
+      return;
+    }
+
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+  }, state.authenticated);
 
   await page.route('http://localhost:5173/api/**', async (route) => {
     const request = route.request();
@@ -226,13 +267,29 @@ export async function setupMockApp(page: Page, options: SetupMockAppOptions = {}
     }
 
     if (pathname === '/api/config/profile-stats') {
+      const years = state.entries.map((entry) => Number(entry.date.slice(0, 4)));
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           totalEntries: state.entries.length,
-          memberSince: 2024,
+          uniqueTags: unique(state.entries.flatMap((entry) => entry.tags)).length,
+          firstEntryYear: years.length > 0 ? Math.min(...years) : 2024,
         }),
+      });
+      return;
+    }
+
+    if (pathname === '/api/stats') {
+      const diaryId = searchParams.get('diaryId');
+      const filteredEntries = diaryId
+        ? state.entries.filter((entry) => String(entry.diaryId ?? 1) === diaryId)
+        : state.entries;
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(buildStats(filteredEntries)),
       });
       return;
     }
@@ -277,10 +334,31 @@ export async function setupMockApp(page: Page, options: SetupMockAppOptions = {}
     }
 
     if (pathname === '/api/entries/by-date') {
+      const limit = Number(searchParams.get('limit') || '10');
+      const entryId = Number(searchParams.get('id') || '0');
+      const date = searchParams.get('date');
+      const entryIndex = Number(searchParams.get('index') || '0');
+      const sortedEntries = sortEntries(state.entries);
+      const matchedEntry = entryId > 0
+        ? sortedEntries.find((entry) => entry.id === entryId)
+        : sortedEntries.find((entry) => entry.date === date && entry.index === entryIndex);
+
+      if (!matchedEntry) {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ found: false }),
+        });
+        return;
+      }
+
+      const entryPosition = sortedEntries.findIndex((entry) => entry.id === matchedEntry.id);
+      const page = entryPosition >= 0 ? Math.floor(entryPosition / Math.max(limit, 1)) + 1 : 1;
+
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ found: false }),
+        body: JSON.stringify({ found: true, page, entryId: matchedEntry.id }),
       });
       return;
     }

@@ -61,10 +61,52 @@ describe('ImportExport', () => {
 
         await waitFor(() => {
             expect(screen.getByText('importExport')).toBeInTheDocument();
-            expect(screen.getByText('export')).toBeInTheDocument();
-            expect(screen.getByText('import')).toBeInTheDocument();
+            expect(screen.getByRole('heading', { name: 'export' })).toBeInTheDocument();
+            expect(screen.getByRole('heading', { name: 'import' })).toBeInTheDocument();
             expect(screen.getByText('formatSettings')).toBeInTheDocument();
             expect(screen.getByText('dangerZone')).toBeInTheDocument();
+        });
+    });
+
+    it('applies route-driven export presets from props', async () => {
+        (globalThis.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig });
+
+        render(
+            <ImportExport
+                theme="dark"
+                t={mockT}
+                initialSection="import"
+                initialExportFormat="json"
+                initialIncludeVisibility={true}
+            />,
+        );
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: 'import' })).toHaveClass('primary');
+            expect(screen.getByDisplayValue('formatJson')).toBeInTheDocument();
+        });
+
+        expect((screen.getByLabelText('includeVisibilityShort') as HTMLInputElement).checked).toBe(true);
+    });
+
+    it('reports route state changes when presets are updated', async () => {
+        const onRouteStateChange = vi.fn();
+        (globalThis.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig });
+
+        render(<ImportExport theme="dark" t={mockT} onRouteStateChange={onRouteStateChange} />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: 'import' })).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByRole('button', { name: 'import' }));
+
+        await waitFor(() => {
+            expect(onRouteStateChange).toHaveBeenCalledWith({
+                section: 'import',
+                exportFormat: 'txt',
+                includeVisibility: false,
+            });
         });
     });
 
@@ -611,12 +653,10 @@ describe('ImportExport', () => {
                 expect(screen.getByText('journal.txt')).toBeInTheDocument();
             });
 
-            // Click the import button on the file row (not the section heading)
-            const importButtons = screen.getAllByText('import');
-            const fileImportButton = importButtons.find(el => el.tagName === 'BUTTON');
-            expect(fileImportButton).toBeDefined();
+            const fileImportButton = screen.getByText('journal.txt').closest('.cloud-file-row')?.querySelector('button');
+            expect(fileImportButton).not.toBeNull();
             if (!fileImportButton) {
-                throw new Error('Expected a file import button in the cloud file row');
+                throw new Error('Cloud file import button not found');
             }
             fireEvent.click(fileImportButton);
 
@@ -650,11 +690,10 @@ describe('ImportExport', () => {
                 expect(screen.getByText('journal.txt')).toBeInTheDocument();
             });
 
-            const importButtons = screen.getAllByText('import');
-            const fileImportButton = importButtons.find(el => el.tagName === 'BUTTON');
-            expect(fileImportButton).toBeDefined();
+            const fileImportButton = screen.getByText('journal.txt').closest('.cloud-file-row')?.querySelector('button');
+            expect(fileImportButton).not.toBeNull();
             if (!fileImportButton) {
-                throw new Error('Expected a file import button in the cloud file row');
+                throw new Error('Cloud file import button not found');
             }
             fireEvent.click(fileImportButton);
 

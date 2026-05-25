@@ -24,6 +24,7 @@
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
     "db:migrate": "npx ts-node -r tsconfig-paths/register scripts/migrate.ts",
+    "db:validate-seed": "npx ts-node -r tsconfig-paths/register scripts/seed.ts --validate-only",
     "db:seed": "npx ts-node -r tsconfig-paths/register scripts/seed.ts",
     "db:check": "npx ts-node -r tsconfig-paths/register scripts/check-db.ts",
     "db:nuke": "npx ts-node -r tsconfig-paths/register scripts/nuke-db.ts",
@@ -55,6 +56,7 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.25",
+    "uuid": "^11.1.1",
     "xss": "^1.0.15"
   },
   "devDependencies": {
@@ -84,9 +86,6 @@
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.1"
-  },
-  "overrides": {
-    "uuid": "file:vendor/uuid-compat"
   },
   "jest": {
     "moduleFileExtensions": [

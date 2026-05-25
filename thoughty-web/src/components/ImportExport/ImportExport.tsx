@@ -2,10 +2,9 @@ import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'reac
 import './ImportExport.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApiServices } from '../../hooks/useAppState';
+import type { ImportExportFormat, ImportExportSection } from '../../types';
 import type { CloudProviderType, CloudFileInfo, SyncScheduleConfig, SyncFrequency } from '../../services/api/cloudSyncService';
 import { CLOUD_PROVIDER_ICONS, CLOUD_PROVIDER_NAMES } from '../CloudProviderIcons';
-
-type ExportFormatType = 'txt' | 'json' | 'md';
 
 interface FormatConfig {
     entrySeparator: string;
@@ -33,9 +32,26 @@ interface ImportExportProps {
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly diaryId?: number | null;
     readonly diaryName?: string;
+    readonly initialSection?: ImportExportSection;
+    readonly initialExportFormat?: ImportExportFormat;
+    readonly initialIncludeVisibility?: boolean;
+    readonly onRouteStateChange?: (state: {
+        section: ImportExportSection;
+        exportFormat: ImportExportFormat;
+        includeVisibility: boolean;
+    }) => void;
 }
 
-function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
+function ImportExport({
+    theme,
+    t,
+    diaryId,
+    diaryName,
+    initialSection = 'export',
+    initialExportFormat = 'txt',
+    initialIncludeVisibility = false,
+    onRouteStateChange,
+}: ImportExportProps) {
     const { authFetch } = useAuth();
     const { cloudSyncService } = useApiServices();
     const [formatConfig, setFormatConfig] = useState<FormatConfig>({
@@ -54,8 +70,9 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
     const [fileContent, setFileContent] = useState<string>('');
     const [message, setMessage] = useState<MessageState | null>(null);
     const [skipDuplicates, setSkipDuplicates] = useState<boolean>(true);
-    const [includeVisibility, setIncludeVisibility] = useState<boolean>(false);
-    const [exportFormat, setExportFormat] = useState<ExportFormatType>('txt');
+    const [includeVisibility, setIncludeVisibility] = useState<boolean>(initialIncludeVisibility);
+    const [exportFormat, setExportFormat] = useState<ImportExportFormat>(initialExportFormat);
+    const [activeSection, setActiveSection] = useState<ImportExportSection>(initialSection);
     const [confirmDeleteAll, setConfirmDeleteAll] = useState<boolean>(false);
     const [deleting, setDeleting] = useState<boolean>(false);
 
@@ -68,13 +85,13 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
     const [scheduleFrequency, setScheduleFrequency] = useState<Record<string, SyncFrequency>>({
         google_drive: 'daily', onedrive: 'daily', dropbox: 'daily',
     });
-    const [scheduleFormat, setScheduleFormat] = useState<Record<string, ExportFormatType>>({
+    const [scheduleFormat, setScheduleFormat] = useState<Record<string, ImportExportFormat>>({
         google_drive: 'txt', onedrive: 'txt', dropbox: 'txt',
     });
     const [scheduleIncludeVisibility, setScheduleIncludeVisibility] = useState<Record<string, boolean>>({
         google_drive: false, onedrive: false, dropbox: false,
     });
-    const [cloudExportFormat, setCloudExportFormat] = useState<ExportFormatType>('txt');
+    const [cloudExportFormat, setCloudExportFormat] = useState<ImportExportFormat>('txt');
     const [cloudIncludeVisibility, setCloudIncludeVisibility] = useState(false);
     // Cloud import state
     const [cloudImportProvider, setCloudImportProvider] = useState<CloudProviderType | null>(null);
@@ -82,8 +99,41 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
     const [loadingCloudFiles, setLoadingCloudFiles] = useState(false);
     const [importingCloudFile, setImportingCloudFile] = useState<string | null>(null);
     const syncTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const exportSectionRef = useRef<HTMLElement | null>(null);
+    const importSectionRef = useRef<HTMLElement | null>(null);
 
     const isLight = theme === 'light';
+
+    const emitRouteState = useCallback((nextState: Partial<{
+        section: ImportExportSection;
+        exportFormat: ImportExportFormat;
+        includeVisibility: boolean;
+    }> = {}): void => {
+        onRouteStateChange?.({
+            section: nextState.section ?? activeSection,
+            exportFormat: nextState.exportFormat ?? exportFormat,
+            includeVisibility: nextState.includeVisibility ?? includeVisibility,
+        });
+    }, [activeSection, exportFormat, includeVisibility, onRouteStateChange]);
+
+    useEffect(() => {
+        setActiveSection(initialSection);
+    }, [initialSection]);
+
+    useEffect(() => {
+        setExportFormat(initialExportFormat);
+    }, [initialExportFormat]);
+
+    useEffect(() => {
+        setIncludeVisibility(initialIncludeVisibility);
+    }, [initialIncludeVisibility]);
+
+    useEffect(() => {
+        const targetSection = activeSection === 'import' ? importSectionRef.current : exportSectionRef.current;
+        if (targetSection && typeof targetSection.scrollIntoView === 'function') {
+            targetSection.scrollIntoView({ block: 'start', behavior: 'smooth' });
+        }
+    }, [activeSection]);
 
     // Fetch current format settings on mount
     const fetchFormatSettings = useCallback(async (): Promise<void> => {
@@ -425,6 +475,40 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
         <div className={`import-export ${isLight ? 'light' : 'dark'}`}>
             <h2>{t('importExport')}</h2>
 
+            <div className="io-route-actions" role="navigation" aria-label={t('importExport')}>
+                <button
+                    type="button"
+                    className={`io-btn ${activeSection === 'export' ? 'primary' : 'secondary'}`}
+                    onClick={() => {
+                        setActiveSection('export');
+                        emitRouteState({ section: 'export' });
+                    }}
+                >
+                    {t('export')}
+                </button>
+                <button
+                    type="button"
+                    className={`io-btn ${activeSection === 'import' ? 'primary' : 'secondary'}`}
+                    onClick={() => {
+                        setActiveSection('import');
+                        emitRouteState({ section: 'import' });
+                    }}
+                >
+                    {t('import')}
+                </button>
+                <button
+                    type="button"
+                    className="io-btn secondary"
+                    onClick={() => {
+                        setActiveSection('export');
+                        setExportFormat('json');
+                        emitRouteState({ section: 'export', exportFormat: 'json' });
+                    }}
+                >
+                    {t('formatJson')}
+                </button>
+            </div>
+
             {message && (
                 <div className={`message ${message.type}`}>
                     {message.text}
@@ -433,7 +517,11 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
 
             <div className="io-grid">
                 {/* Export Section */}
-                <section className="io-section">
+                <section
+                    ref={exportSectionRef}
+                    className={`io-section ${activeSection === 'export' ? 'is-route-target' : ''}`}
+                    id="export-section"
+                >
                     <h3>{t('export')}</h3>
                     <p className="section-description">{t('exportDescription', { diaryName: diaryName || '' })}</p>
                     <div className="export-controls">
@@ -442,7 +530,11 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
                                 <label>{t('exportFormat')}</label>
                                 <select
                                     value={exportFormat}
-                                    onChange={(e) => setExportFormat(e.target.value as ExportFormatType)}
+                                    onChange={(e) => {
+                                        const nextFormat = e.target.value as ImportExportFormat;
+                                        setExportFormat(nextFormat);
+                                        emitRouteState({ exportFormat: nextFormat });
+                                    }}
                                     className="format-select"
                                 >
                                     <option value="txt">{t('formatTxt')}</option>
@@ -455,7 +547,11 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
                                     <input
                                         type="checkbox"
                                         checked={includeVisibility}
-                                        onChange={() => setIncludeVisibility(!includeVisibility)}
+                                        onChange={() => {
+                                            const nextIncludeVisibility = !includeVisibility;
+                                            setIncludeVisibility(nextIncludeVisibility);
+                                            emitRouteState({ includeVisibility: nextIncludeVisibility });
+                                        }}
                                     />
                                     {t('includeVisibilityShort')}
                                 </label>
@@ -471,7 +567,11 @@ function ImportExport({ theme, t, diaryId, diaryName }: ImportExportProps) {
                 </section>
 
                 {/* Import Section */}
-                <section className="io-section">
+                <section
+                    ref={importSectionRef}
+                    className={`io-section ${activeSection === 'import' ? 'is-route-target' : ''}`}
+                    id="import-section"
+                >
                     <h3>{t('import')}</h3>
                     <p className="section-description">{t('importDescription', { diaryName: diaryName || '' })}</p>
 

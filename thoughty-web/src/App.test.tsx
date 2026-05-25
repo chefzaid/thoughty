@@ -5,9 +5,96 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 
 vi.mock('react-chartjs-2', () => ({
-    Bar: () => <div data-testid="mock-bar-chart" />,
+    Bar: () => <div data-testid="bar-chart" />
 }));
 
+const mockStatsResponse = {
+    totalThoughts: 2,
+    uniqueTagsCount: 2,
+    thoughtsPerYear: { '2024': 2 },
+    thoughtsPerMonth: { '2024-01': 2 },
+    thoughtsPerTag: { work: 1, personal: 1 },
+    tagsPerYear: { '2024': { work: 1, personal: 1 } }
+};
+
+const mockFormatResponse = {
+    entrySeparator: '--------------------------------------------------------------------------------',
+    sameDaySeparator: '********************************************************************************',
+    datePrefix: '---',
+    dateSuffix: '--',
+    dateFormat: 'YYYY-MM-DD',
+    tagOpenBracket: '[',
+    tagCloseBracket: ']',
+    tagSeparator: ','
+};
+
+const mockExportBlob = new Blob(['exported'], { type: 'text/plain' });
+const mockEntries = [
+    { id: 1, date: '2024-01-15', index: 1, content: 'Test entry 1', tags: ['work'] },
+    { id: 2, date: '2024-01-15', index: 2, content: 'Test entry 2', tags: ['personal'] }
+];
+
+const mockEntriesResponse = {
+    entries: mockEntries,
+    total: 2,
+    page: 1,
+    totalPages: 1,
+    allTags: ['work', 'personal']
+};
+
+const mockConfig = {
+    name: 'Test User',
+    theme: 'dark',
+    autoTagMaxTags: '0'
+};
+
+const createJsonResponse = (data: unknown) => Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve(data)
+});
+
+const createDefaultFetchResponse = (url: string) => {
+    if (url === '/api/config') {
+        return createJsonResponse(mockConfig);
+    }
+    if (url.includes('/api/entries/by-date')) {
+        return createJsonResponse({ found: true, page: 1, entryId: 2 });
+    }
+    if (url.includes('/api/entries/first')) {
+        return createJsonResponse({ years: [2024], months: ['2024-01'] });
+    }
+    if (url.includes('/api/entries')) {
+        return createJsonResponse(mockEntriesResponse);
+    }
+    if (url.includes('/api/diaries')) {
+        return createJsonResponse([{ id: 1, name: 'My Diary', is_default: true }]);
+    }
+    if (url.includes('/api/stats')) {
+        return createJsonResponse(mockStatsResponse);
+    }
+    if (url.includes('/api/io/format')) {
+        return createJsonResponse(mockFormatResponse);
+    }
+    if (url.includes('/api/io/export')) {
+        return Promise.resolve({
+            ok: true,
+            blob: () => Promise.resolve(mockExportBlob),
+            headers: new Headers({ 'Content-Disposition': 'attachment; filename="export.txt"' })
+        });
+    }
+    if (url.includes('/api/config/profile-stats')) {
+        return createJsonResponse({ totalEntries: 2, uniqueTags: 2, firstEntryYear: 2024 });
+    }
+    if (url.includes('/api/cloud-sync/status') || url.includes('/api/cloud-sync/schedules')) {
+        return createJsonResponse({});
+    }
+
+    return createJsonResponse({ success: true });
+};
+
+const setDefaultMockFetch = (override?: (url: string) => Promise<unknown> | undefined) => {
+    mockFetch.mockImplementation((url: string) => override?.(url) ?? createDefaultFetchResponse(url));
+};
 // Track the current mock state
 let mockAuthState = {
     user: { id: 'test-user-id', username: 'TestUser', email: 'test@example.com' },
@@ -22,7 +109,7 @@ let mockAuthState = {
     changePassword: vi.fn(),
     resetPassword: vi.fn(),
     deleteAccount: vi.fn(),
-    authFetch: vi.fn((url: string, options?: RequestInit) => mockFetch(url, options)),
+    authFetch: vi.fn((input: string | URL | Request, init?: RequestInit) => mockFetch(input, init)),
     getAccessToken: () => 'mock-token',
     googleClientId: ''
 };
@@ -38,29 +125,14 @@ const mockFetch = vi.fn();
 globalThis.fetch = mockFetch;
 
 describe('App Integration Tests', () => {
-    const mockEntries = [
-        { id: 1, date: '2024-01-15', index: 1, content: 'Test entry 1', tags: ['work'] },
-        { id: 2, date: '2024-01-15', index: 2, content: 'Test entry 2', tags: ['personal'] }
-    ];
-
-    const mockEntriesResponse = {
-        entries: mockEntries,
-        total: 2,
-        page: 1,
-        totalPages: 1,
-        allTags: ['work', 'personal']
-    };
-
-    const mockConfig = {
-        name: 'Test User',
-        theme: 'dark',
-        autoTagMaxTags: '0'
-    };
-
     beforeEach(() => {
         vi.clearAllMocks();
         localStorage.clear();
         globalThis.history.replaceState({}, '', '/');
+        HTMLElement.prototype.scrollIntoView = vi.fn();
+        vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+        globalThis.URL.createObjectURL = vi.fn(() => 'blob:test');
+        globalThis.URL.revokeObjectURL = vi.fn();
 
         // Reset auth state to authenticated
         mockAuthState = {
@@ -76,93 +148,18 @@ describe('App Integration Tests', () => {
             changePassword: vi.fn(),
             resetPassword: vi.fn(),
             deleteAccount: vi.fn(),
-            authFetch: vi.fn((url: string, options?: RequestInit) => mockFetch(url, options)),
+            authFetch: vi.fn((input: string | URL | Request, init?: RequestInit) => mockFetch(input, init)),
             getAccessToken: () => 'mock-token',
             googleClientId: ''
         };
 
-        // Default mock responses
-        mockFetch.mockImplementation((url: string) => {
-            if (url === '/api/config') {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve(mockConfig)
-                });
-            }
-            if (typeof url === 'string' && url.includes('/api/entries/by-date')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({ found: true, page: 1, entryId: 2 })
-                });
-            }
-            if (typeof url === 'string' && url.includes('/api/entries/first')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({ years: [2024], months: ['2024-01'] })
-                });
-            }
-            if (typeof url === 'string' && url.includes('/api/entries')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve(mockEntriesResponse)
-                });
-            }
-            if (typeof url === 'string' && url.includes('/api/diaries')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve([{ id: 1, name: 'My Diary', is_default: true }])
-                });
-            }
-            if (typeof url === 'string' && url.includes('/api/stats')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({
-                        totalThoughts: 100,
-                        uniqueTagsCount: 2,
-                        thoughtsPerYear: { '2024': 100 },
-                        thoughtsPerMonth: { '2024-01': 20 },
-                        thoughtsPerTag: { work: 50, personal: 50 },
-                        tagsPerYear: { '2024': { work: 50, personal: 50 } },
-                    })
-                });
-            }
-            if (typeof url === 'string' && url.includes('/api/io/format')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({
-                        entrySeparator: '--------------------------------------------------------------------------------',
-                        sameDaySeparator: '********************************************************************************',
-                        datePrefix: '---',
-                        dateSuffix: '--',
-                        dateFormat: 'YYYY-MM-DD',
-                        tagOpenBracket: '[',
-                        tagCloseBracket: ']',
-                        tagSeparator: ',',
-                    })
-                });
-            }
-            if (typeof url === 'string' && url.includes('/api/cloud-sync/status')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({})
-                });
-            }
-            if (typeof url === 'string' && url.includes('/api/cloud-sync/schedules')) {
-                return Promise.resolve({
-                    ok: true,
-                    json: () => Promise.resolve({})
-                });
-            }
-            return Promise.resolve({
-                ok: true,
-                json: () => Promise.resolve({ success: true })
-            });
-        });
+        setDefaultMockFetch();
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
         localStorage.clear();
+        globalThis.history.replaceState({}, '', '/');
     });
 
     describe('Public intro flow', () => {
@@ -180,6 +177,38 @@ describe('App Integration Tests', () => {
             expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument();
         });
 
+        it('loads the sign-in screen from /login', async () => {
+            globalThis.history.replaceState({}, '', '/login');
+            mockAuthState = {
+                ...mockAuthState,
+                user: null,
+                isAuthenticated: false
+            };
+
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByText('Welcome back')).toBeInTheDocument();
+                expect(screen.getByLabelText('Email or Username')).toBeInTheDocument();
+            });
+        });
+
+        it('loads the sign-up screen from /register', async () => {
+            globalThis.history.replaceState({}, '', '/register');
+            mockAuthState = {
+                ...mockAuthState,
+                user: null,
+                isAuthenticated: false
+            };
+
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByText('Create your account')).toBeInTheDocument();
+                expect(screen.getByLabelText('Username')).toBeInTheDocument();
+            });
+        });
+
         it('navigates from the intro page to sign in and sign up modes', async () => {
             const user = userEvent.setup();
             mockAuthState = {
@@ -191,11 +220,14 @@ describe('App Integration Tests', () => {
             render(<App />);
 
             await user.click(screen.getByRole('button', { name: 'Sign In' }));
+            expect(globalThis.location.pathname).toBe('/login');
             expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
             expect(screen.getByText('Welcome back')).toBeInTheDocument();
 
             await user.click(screen.getByRole('button', { name: 'Back' }));
+            expect(globalThis.location.pathname).toBe('/');
             await user.click(screen.getByRole('button', { name: 'Sign Up' }));
+            expect(globalThis.location.pathname).toBe('/register');
             expect(screen.getByText('Create your account')).toBeInTheDocument();
         });
     });
@@ -235,17 +267,84 @@ describe('App Integration Tests', () => {
         });
 
         it('navigates to a permalink entry from the URL', async () => {
-            globalThis.history.replaceState({}, '', '/?entry=2');
+            globalThis.history.replaceState({}, '', '/journal?entry=2');
 
             render(<App />);
 
             await waitFor(() => {
-                expect(mockFetch).toHaveBeenCalledWith(
-                    '/api/entries/by-date?id=2&limit=10',
-                    {}
-                );
+                expect(mockFetch.mock.calls.some((call) => call[0] === '/api/entries/by-date?id=2&limit=10')).toBe(true);
             });
         });
+
+        it('shows a toast instead of a browser alert when a permalink target is missing', async () => {
+            const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
+
+            globalThis.history.replaceState({}, '', '/journal?entry=999');
+            setDefaultMockFetch((url) => {
+                if (url.includes('/api/entries/by-date?id=999&limit=10')) {
+                    return createJsonResponse({ found: false });
+                }
+
+                return undefined;
+            });
+
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+                expect(screen.getByText('Entry not found')).toBeInTheDocument();
+                expect(screen.getByText('This entry may have been deleted, or the link is no longer valid.')).toBeInTheDocument();
+            });
+
+            expect(alertSpy).not.toHaveBeenCalled();
+
+            alertSpy.mockRestore();
+        });
+
+        it('clears the active permalink when navigating through a cross-reference link', async () => {
+            const user = userEvent.setup();
+
+            globalThis.history.replaceState({}, '', '/journal?entry=2');
+            setDefaultMockFetch((url) => {
+                if (url.includes('/api/entries/by-date?id=2&limit=10')) {
+                    return createJsonResponse({ found: true, page: 1, entryId: 2 });
+                }
+
+                if (url.includes('/api/entries/by-date?date=2024-01-16&index=1&limit=10')) {
+                    return createJsonResponse({ found: true, page: 1, entryId: 3 });
+                }
+
+                if (url.includes('/api/entries?')) {
+                    return createJsonResponse({
+                        entries: [
+                            { id: 2, date: '2024-01-15', index: 2, content: 'See [[2024-01-16]]', tags: ['personal'] },
+                            { id: 3, date: '2024-01-16', index: 1, content: 'Target entry', tags: ['work'] },
+                        ],
+                        total: 2,
+                        page: 1,
+                        totalPages: 1,
+                        allTags: ['personal', 'work'],
+                    });
+                }
+
+                return undefined;
+            });
+
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: '[[2024-01-16]]' })).toBeInTheDocument();
+            });
+
+            await user.click(screen.getByRole('button', { name: '[[2024-01-16]]' }));
+
+            await waitFor(() => {
+                expect(mockFetch.mock.calls.some((call) => call[0] === '/api/entries/by-date?date=2024-01-16&index=1&limit=10')).toBe(true);
+                expect(globalThis.location.search).not.toContain('entry=2');
+                expect(document.getElementById('entry-3')).toHaveClass('highlight-entry');
+            });
+        });
+
     });
 
     describe('Entry form validation', () => {
@@ -528,6 +627,71 @@ describe('App Integration Tests', () => {
     });
 
     describe('View navigation', () => {
+        it('loads import/export presets from the route query', async () => {
+            const user = userEvent.setup();
+            globalThis.history.replaceState({}, '', '/import-export?diary=all&section=import&format=json&includeVisibility=true');
+
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: 'Import' })).toHaveClass('primary');
+            });
+
+            expect((screen.getByLabelText('Include visibility') as HTMLInputElement).checked).toBe(true);
+
+            await user.click(screen.getByRole('button', { name: /Download/i }));
+
+            await waitFor(() => {
+                const exportCall = mockFetch.mock.calls.find((call: unknown[]) => (call[0] as string).includes('/api/io/export'));
+                expect(exportCall).toBeTruthy();
+                expect((exportCall as [string])[0]).toContain('format=json');
+                expect((exportCall as [string])[0]).toContain('includeVisibility=true');
+                expect((exportCall as [string])[0]).not.toContain('diaryId=');
+            });
+        });
+
+        it('returns to the originating view from diary management', async () => {
+            const user = userEvent.setup();
+            globalThis.history.replaceState({}, '', '/stats?diary=1');
+
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: /Manage Diaries/i })).toBeInTheDocument();
+            });
+
+            await user.click(screen.getByRole('button', { name: /Manage Diaries/i }));
+
+            await waitFor(() => {
+                expect(globalThis.location.pathname).toBe('/diaries');
+                expect(globalThis.location.search).toContain('from=stats');
+            });
+
+            const diaryManagerBackButton = document.querySelector('.diary-manager-header .back-btn') as HTMLButtonElement | null;
+            expect(diaryManagerBackButton).not.toBeNull();
+            if (!diaryManagerBackButton) {
+                throw new Error('Diary manager back button not found');
+            }
+
+            await user.click(diaryManagerBackButton);
+
+            await waitFor(() => {
+                expect(globalThis.location.pathname).toBe('/stats');
+                expect(globalThis.location.search).toContain('diary=1');
+                expect(screen.getByText('My Diary')).toBeInTheDocument();
+            });
+        });
+
+        it('loads the stats view from its direct path', async () => {
+            globalThis.history.replaceState({}, '', '/stats');
+
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByText('My Diary')).toBeInTheDocument();
+            });
+        });
+
         it('navigates to profile view', async () => {
             const user = userEvent.setup();
             render(<App />);
@@ -606,6 +770,24 @@ describe('App Integration Tests', () => {
             await waitFor(() => {
                 // Diary tabs should be visible
                 expect(screen.getByText('My Diary')).toBeInTheDocument();
+            });
+        });
+
+        it('keeps the journal responsive when switching to all diaries', async () => {
+            const user = userEvent.setup();
+            render(<App />);
+
+            await waitFor(() => {
+                expect(screen.getByTitle('All Diaries')).toBeInTheDocument();
+            });
+
+            await user.click(screen.getByTitle('All Diaries'));
+
+            await waitFor(() => {
+                expect(globalThis.location.pathname).toBe('/journal');
+                expect(globalThis.location.search).toContain('diary=all');
+                expect(screen.getByTitle('All Diaries')).toHaveClass('active');
+                expect(screen.getByRole('button', { name: /Stats/i })).toBeInTheDocument();
             });
         });
     });

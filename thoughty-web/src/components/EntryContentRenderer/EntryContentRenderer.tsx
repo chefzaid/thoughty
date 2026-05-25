@@ -1,6 +1,8 @@
 import React, { Suspense, lazy, useMemo } from 'react';
 import type { Components } from 'react-markdown';
 
+const referencePattern = /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]|entry\s*\((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/gi;
+
 interface SourceEntryInfo {
     id: number;
     date: string;
@@ -74,8 +76,10 @@ function createMarkdownHighlightComponents(searchTerm: string): Components {
 /**
  * Parses entry content for cross-reference patterns and renders them as clickable links.
  * Patterns supported:
- * - "entry (yyyy-mm-dd)" - Links to first entry on that date
- * - "entry (yyyy-mm-dd--X)" - Links to entry #X on that date (index inside parenthesis)
+ * - "[[yyyy-mm-dd]]" - Links to the first entry on that date
+ * - "[[yyyy-mm-dd#X]]" - Links to entry #X on that date
+ * - "entry (yyyy-mm-dd)" - Legacy compatibility for links created this week
+ * - "entry (yyyy-mm-dd--X)" - Legacy compatibility for indexed links created this week
  */
 function EntryContentRenderer({ 
     content, 
@@ -85,9 +89,6 @@ function EntryContentRenderer({
     maxLength,
     searchTerm
 }: Readonly<EntryContentRendererProps>) {
-    // Regex to match "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd--X)" with index INSIDE parenthesis
-    const referencePattern = /entry\s*\((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/gi;
-
     const markdownComponents = useMemo(
         () => searchTerm && searchTerm.trim() !== '' ? createMarkdownHighlightComponents(searchTerm) : undefined,
         [searchTerm]
@@ -120,8 +121,9 @@ function EntryContentRenderer({
             }
 
             // Add the reference link
-            const date = match[1];
-            const index = match[2] ? Number.parseInt(match[2], 10) : 1;
+            const date = match[1] ?? match[3];
+            const rawIndex = match[2] ?? match[4];
+            const index = rawIndex ? Number.parseInt(rawIndex, 10) : 1;
             const displayText = match[0];
 
             parts.push({

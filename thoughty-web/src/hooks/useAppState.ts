@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { createAuthFetch, createConfigService, createEntriesService, createDiariesService, createAttachmentsService, createAiService, createCloudSyncService } from '../services/api';
 import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo, Attachment } from '../types';
@@ -112,15 +112,31 @@ export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelecti
   const { diariesService } = useApiServices();
   const [diaries, setDiaries] = useState<Diary[]>([]);
   const [currentDiaryId, setCurrentDiaryId] = useState<number | null>(null);
+  const hasInitializedDiarySelection = useRef(false);
 
   const fetchDiaries = useCallback(async () => {
     const data = await diariesService.fetchDiaries();
     setDiaries(data);
-    if (!suppressDefaultDiarySelection && !currentDiaryId && data.length > 0) {
+
+    if (hasInitializedDiarySelection.current) {
+      return;
+    }
+
+    hasInitializedDiarySelection.current = true;
+
+    if (!suppressDefaultDiarySelection && currentDiaryId === null && data.length > 0) {
       const defaultDiary = data.find(d => d.is_default);
       if (defaultDiary) setCurrentDiaryId(defaultDiary.id);
     }
   }, [diariesService, currentDiaryId, suppressDefaultDiarySelection]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      return;
+    }
+
+    hasInitializedDiarySelection.current = false;
+  }, [isAuthenticated]);
 
   const handleCreateDiary = useCallback(async (diaryData: Partial<Diary>) => {
     const result = await diariesService.createDiary(diaryData);
@@ -346,11 +362,13 @@ export const useEntries = (
         if (typeof entryElement.scrollIntoView === 'function') {
           entryElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        entryElement.classList.add('highlight-entry');
-        setTimeout(() => {
-          entryElement.classList.remove('highlight-entry');
-        }, 2000);
-        setTargetEntryId(null);
+        const clearTargetTimeout = globalThis.setTimeout(() => {
+          setTargetEntryId(null);
+        }, 4000);
+
+        return () => {
+          globalThis.clearTimeout(clearTargetTimeout);
+        };
       }
     }
   }, [targetEntryId, loading, entries]);

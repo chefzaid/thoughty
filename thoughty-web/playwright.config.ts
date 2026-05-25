@@ -7,6 +7,7 @@ export default defineConfig({
     baseURL: 'http://localhost:5173',
     headless: true,
     browserName: 'chromium',
+    channel: 'chrome',
   },
   webServer: {
     command: 'npm run dev',

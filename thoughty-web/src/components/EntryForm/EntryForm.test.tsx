@@ -1,7 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EntryForm from './EntryForm';
+
+const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
 describe('EntryForm', () => {
     const defaultProps = {
@@ -105,6 +112,18 @@ describe('EntryForm', () => {
     });
 
     describe('Form submission', () => {
+        it('updates the selected date when a full date is typed', () => {
+            const setSelectedDate = vi.fn();
+
+            render(<EntryForm {...defaultProps} setSelectedDate={setSelectedDate} />);
+
+            fireEvent.change(screen.getByTestId('date-picker'), { target: { value: '2024-02-20' } });
+
+            const updatedDate = setSelectedDate.mock.calls[0]?.[0];
+            expect(updatedDate).toBeInstanceOf(Date);
+            expect(formatDate(updatedDate)).toBe('2024-02-20');
+        });
+
         it('calls onSubmit when form is submitted', async () => {
             const onSubmit = vi.fn((e) => e.preventDefault());
             const user = userEvent.setup();

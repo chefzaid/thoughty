@@ -1,6 +1,6 @@
 import { type Dispatch, type SetStateAction } from 'react';
-import DatePicker from 'react-datepicker';
 import TagPicker from '../TagPicker/TagPicker';
+import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 
 type VisibilityFilter = 'all' | 'public' | 'private';
@@ -141,7 +141,7 @@ function FilterControls({
             </div>
             <div className="flex shrink-0 items-center gap-[12px]">
                 <div className="w-[11.125rem] relative z-20">
-                    <DatePicker
+                    <TypedDatePicker
                         selected={filterDateObj}
                         onChange={(date: Date | null) => { setFilterDateObj(date); setPage(1); }}
                         className={`w-full border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'

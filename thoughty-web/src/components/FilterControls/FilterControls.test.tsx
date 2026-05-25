@@ -2,24 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import FilterControls from './FilterControls';
 
+const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Mock TagPicker component
 vi.mock('../TagPicker/TagPicker', () => ({
   default: ({ onChange, placeholder }: { onChange: (tags: string[]) => void; placeholder: string }) => (
     <div data-testid="tag-picker">
       <input placeholder={placeholder} onChange={(e) => onChange([e.target.value])} />
     </div>
-  )
-}));
-
-// Mock react-datepicker
-vi.mock('react-datepicker', () => ({
-  default: ({ onChange, placeholderText, selected }: { onChange: (date: Date | null) => void; placeholderText: string; selected: Date | null }) => (
-    <input
-      data-testid="date-picker"
-      placeholder={placeholderText}
-      value={selected?.toISOString() || ''}
-      onChange={(e) => onChange(e.target.value ? new Date(e.target.value) : null)}
-    />
   )
 }));
 
@@ -74,6 +69,17 @@ describe('FilterControls', () => {
     const searchInput = screen.getByPlaceholderText('searchPlaceholder');
     fireEvent.change(searchInput, { target: { value: 'test search' } });
     expect(mockSetSearch).toHaveBeenCalledWith('test search');
+    expect(mockSetPage).toHaveBeenCalledWith(1);
+  });
+
+  it('updates the filter date when a full date is typed', () => {
+    render(<FilterControls {...defaultProps} />);
+
+    fireEvent.change(screen.getByTestId('date-picker'), { target: { value: '2024-04-18' } });
+
+    const updatedDate = mockSetFilterDateObj.mock.calls[0]?.[0];
+    expect(updatedDate).toBeInstanceOf(Date);
+    expect(formatDate(updatedDate)).toBe('2024-04-18');
     expect(mockSetPage).toHaveBeenCalledWith(1);
   });
 

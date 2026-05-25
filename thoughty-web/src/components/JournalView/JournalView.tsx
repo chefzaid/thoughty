@@ -91,6 +91,7 @@ interface JournalViewProps {
   onShareEntry?: (entry: Entry) => Promise<boolean>;
   getEntryPermalink?: (entryId: number) => string;
   sourceEntry: SourceEntryInfo | null;
+  targetEntryId: number | null;
   activeTargetId: number | null;
   onBackToSource: () => void;
   
@@ -199,6 +200,7 @@ function JournalView({
   onShareEntry,
   getEntryPermalink,
   sourceEntry,
+  targetEntryId,
   activeTargetId,
   onBackToSource,
   bulkMode,
@@ -325,6 +327,7 @@ function JournalView({
         onShareEntry={onShareEntry}
         getEntryPermalink={getEntryPermalink}
         sourceEntry={sourceEntry}
+        targetEntryId={targetEntryId}
         activeTargetId={activeTargetId}
         onBackToSource={onBackToSource}
         searchTerm={search}

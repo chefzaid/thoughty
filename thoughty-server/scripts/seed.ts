@@ -11,6 +11,8 @@ import { query, closeDatabase } from './lib/db';
 import { log, banner, section, summaryBox, fmt, table } from './lib/logger';
 
 const TEST_DATA_FILE = path.join(__dirname, '..', 'data', 'test_data.txt');
+const SEED_ENTRY_REFERENCE_PATTERN = /entry \((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/g;
+const validateOnlyFlag = process.argv.includes('--validate-only');
 
 // Default credentials for seeded data
 const DEFAULT_USER_ID = 1;
@@ -23,6 +25,18 @@ interface Entry {
     index: number;
     tags: string[];
     content: string;
+}
+
+interface MissingEntryReference {
+    sourceDate: string;
+    sourceIndex: number;
+    targetDate: string;
+    targetIndex: number;
+    rawReference: string;
+}
+
+function getEntryKey(date: string, index: number): string {
+    return `${date}#${index}`;
 }
 
 /**
@@ -132,6 +146,47 @@ function parseTestData(content: string): Entry[] {
     return entries;
 }
 
+function findMissingEntryReferences(entries: Entry[]): MissingEntryReference[] {
+    const existingEntries = new Set(entries.map((entry) => getEntryKey(entry.date, entry.index)));
+    const missingReferences: MissingEntryReference[] = [];
+
+    for (const entry of entries) {
+        const matches = [...entry.content.matchAll(SEED_ENTRY_REFERENCE_PATTERN)];
+
+        for (const match of matches) {
+            const targetDate = match[1];
+            const targetIndex = Number.parseInt(match[2] || '1', 10);
+
+            if (!existingEntries.has(getEntryKey(targetDate, targetIndex))) {
+                missingReferences.push({
+                    sourceDate: entry.date,
+                    sourceIndex: entry.index,
+                    targetDate,
+                    targetIndex,
+                    rawReference: match[0],
+                });
+            }
+        }
+    }
+
+    return missingReferences;
+}
+
+function validateEntryReferences(entries: Entry[]): void {
+    const missingReferences = findMissingEntryReferences(entries);
+
+    if (missingReferences.length === 0) {
+        log.success('Seed cross-references validated');
+        return;
+    }
+
+    const details = missingReferences
+        .map((reference) => `  - ${reference.sourceDate}#${reference.sourceIndex} -> ${reference.rawReference} -> ${reference.targetDate}#${reference.targetIndex}`)
+        .join('\n');
+
+    throw new Error(`Found ${missingReferences.length} invalid seed cross-reference(s):\n${details}`);
+}
+
 async function ensureDefaultUser(): Promise<void> {
     log.step('Ensuring default user exists...');
     const saltRounds = 12;
@@ -224,6 +279,19 @@ Had a breakthrough idea today. Need to explore it further tomorrow.
         const content = fs.readFileSync(TEST_DATA_FILE, 'utf-8');
         const entries = parseTestData(content);
         log.success(`Found ${fmt.bold(entries.length.toString())} entries to insert`);
+
+        section('Validating Test Data');
+        log.step('Checking seed cross-references...');
+        validateEntryReferences(entries);
+
+        if (validateOnlyFlag) {
+            summaryBox('Seed Validation Complete', [
+                ['Entries', entries.length.toString()],
+                ['Cross-references', 'Valid'],
+                ['File', TEST_DATA_FILE],
+            ]);
+            process.exit(0);
+        }
 
         section('Database Setup');
         await ensureDefaultUser();

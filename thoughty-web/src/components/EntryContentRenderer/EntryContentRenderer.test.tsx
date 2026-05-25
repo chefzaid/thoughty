@@ -42,34 +42,34 @@ describe('EntryContentRenderer', () => {
     });
 
     describe('Cross-reference detection', () => {
-        it('detects entry (yyyy-mm-dd) format', () => {
-            render(<EntryContentRenderer {...defaultProps} content="See entry (2026-01-10) for more" />);
+        it('detects [[yyyy-mm-dd]] format', () => {
+            render(<EntryContentRenderer {...defaultProps} content="See [[2026-01-10]] for more" />);
 
             const link = screen.getByRole('button');
-            expect(link).toHaveTextContent('entry (2026-01-10)');
+            expect(link).toHaveTextContent('[[2026-01-10]]');
             expect(link).toHaveClass('entry-reference-link');
         });
 
-        it('detects entry (yyyy-mm-dd--X) format with index inside parenthesis', () => {
-            render(<EntryContentRenderer {...defaultProps} content="Check entry (2026-01-10--2)" />);
+        it('detects [[yyyy-mm-dd#X]] format', () => {
+            render(<EntryContentRenderer {...defaultProps} content="Check [[2026-01-10#2]]" />);
 
             const link = screen.getByRole('button');
-            expect(link).toHaveTextContent('entry (2026-01-10--2)');
+            expect(link).toHaveTextContent('[[2026-01-10#2]]');
         });
 
         it('detects multiple references in same content', () => {
             render(<EntryContentRenderer
                 {...defaultProps}
-                content="See entry (2026-01-10) and entry (2025-12-25--3) for details"
+                content="See [[2026-01-10]] and [[2025-12-25#3]] for details"
             />);
 
             const links = screen.getAllByRole('button');
             expect(links).toHaveLength(2);
-            expect(links[0]).toHaveTextContent('entry (2026-01-10)');
-            expect(links[1]).toHaveTextContent('entry (2025-12-25--3)');
+            expect(links[0]).toHaveTextContent('[[2026-01-10]]');
+            expect(links[1]).toHaveTextContent('[[2025-12-25#3]]');
         });
 
-        it('handles entry with space before parenthesis', () => {
+        it('keeps compatibility with entry (...) references', () => {
             render(<EntryContentRenderer {...defaultProps} content="See entry  (2026-01-10)" />);
 
             const link = screen.getByRole('button');
@@ -87,7 +87,7 @@ describe('EntryContentRenderer', () => {
     describe('Navigation callback', () => {
         it('calls onNavigateToEntry with date on click', async () => {
             const user = userEvent.setup();
-            render(<EntryContentRenderer {...defaultProps} content="entry (2026-01-10)" />);
+            render(<EntryContentRenderer {...defaultProps} content="[[2026-01-10]]" />);
 
             await user.click(screen.getByRole('button'));
 
@@ -96,7 +96,7 @@ describe('EntryContentRenderer', () => {
 
         it('calls onNavigateToEntry with date and index on click', async () => {
             const user = userEvent.setup();
-            render(<EntryContentRenderer {...defaultProps} content="entry (2026-01-10--5)" />);
+            render(<EntryContentRenderer {...defaultProps} content="[[2026-01-10#5]]" />);
 
             await user.click(screen.getByRole('button'));
 
@@ -105,7 +105,7 @@ describe('EntryContentRenderer', () => {
 
         it('handles Enter key for accessibility', async () => {
             const user = userEvent.setup();
-            render(<EntryContentRenderer {...defaultProps} content="entry (2026-01-10)" />);
+            render(<EntryContentRenderer {...defaultProps} content="[[2026-01-10]]" />);
 
             const link = screen.getByRole('button');
             link.focus();
@@ -116,7 +116,7 @@ describe('EntryContentRenderer', () => {
 
         it('handles Space key for accessibility', async () => {
             const user = userEvent.setup();
-            render(<EntryContentRenderer {...defaultProps} content="entry (2026-01-10)" />);
+            render(<EntryContentRenderer {...defaultProps} content="[[2026-01-10]]" />);
 
             const link = screen.getByRole('button');
             link.focus();
@@ -128,29 +128,29 @@ describe('EntryContentRenderer', () => {
 
     describe('Edge cases', () => {
         it('does not match invalid date formats', () => {
-            render(<EntryContentRenderer {...defaultProps} content="entry (2026-1-10) is invalid" />);
+            render(<EntryContentRenderer {...defaultProps} content="[[2026-1-10]] is invalid" />);
 
             // Should not create a link for invalid format
             expect(screen.queryByRole('button')).not.toBeInTheDocument();
-            expect(screen.getByText(/entry \(2026-1-10\) is invalid/)).toBeInTheDocument();
+            expect(screen.getByText(/\[\[2026-1-10\]\] is invalid/)).toBeInTheDocument();
         });
 
         it('handles reference at start of content', () => {
-            render(<EntryContentRenderer {...defaultProps} content="entry (2026-01-10) starts this" />);
+            render(<EntryContentRenderer {...defaultProps} content="[[2026-01-10]] starts this" />);
 
             const link = screen.getByRole('button');
-            expect(link).toHaveTextContent('entry (2026-01-10)');
+            expect(link).toHaveTextContent('[[2026-01-10]]');
         });
 
         it('handles reference at end of content', () => {
-            render(<EntryContentRenderer {...defaultProps} content="This ends with entry (2026-01-10)" />);
+            render(<EntryContentRenderer {...defaultProps} content="This ends with [[2026-01-10]]" />);
 
             const link = screen.getByRole('button');
-            expect(link).toHaveTextContent('entry (2026-01-10)');
+            expect(link).toHaveTextContent('[[2026-01-10]]');
         });
 
         it('shows tooltip with navigation info', () => {
-            render(<EntryContentRenderer {...defaultProps} content="entry (2026-01-10--2)" />);
+            render(<EntryContentRenderer {...defaultProps} content="[[2026-01-10#2]]" />);
 
             const link = screen.getByRole('button');
             expect(link).toHaveAttribute('title', 'Navigate to entry on 2026-01-10 (#2)');
@@ -278,13 +278,13 @@ describe('EntryContentRenderer', () => {
             render(
                 <EntryContentRenderer
                     {...defaultProps}
-                    content="See entry (2026-01-10) for **details**"
+                    content="See [[2026-01-10]] for **details**"
                     format="markdown"
                 />
             );
 
             const refButton = screen.getByRole('button');
-            expect(refButton).toHaveTextContent('entry (2026-01-10)');
+            expect(refButton).toHaveTextContent('[[2026-01-10]]');
         });
 
         it('renders markdown tables (GFM)', async () => {
@@ -389,7 +389,7 @@ describe('EntryContentRenderer', () => {
                 const { container } = render(
                     <EntryContentRenderer
                         {...defaultProps}
-                        content="Check this world entry (2026-01-10) for world details"
+                        content="Check this world [[2026-01-10]] for world details"
                         searchTerm="world"
                     />
                 );

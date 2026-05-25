@@ -240,6 +240,7 @@ export type TranslationKey =
   | 'passwordRequired'
   | 'backToSource'
   | 'entryNotFound'
+  | 'entryNotFoundMessage'
   | 'entryReferenceHint'
   | 'diaries'
   | 'manageDiaries'
@@ -652,8 +653,9 @@ export const translations: Translations = {
     // Entry Cross-References
     backToSource: 'Back to source entry',
     entryNotFound: 'Entry not found',
+    entryNotFoundMessage: 'This entry may have been deleted, or the link is no longer valid.',
     entryReferenceHint:
-      'Tip: Reference other entries by writing "entry (yyyy-mm-dd)" or "entry (yyyy-mm-dd--X)" where X is the index of the entry for that day',
+      'Tip: Reference other entries by writing "[[yyyy-mm-dd]]" or "[[yyyy-mm-dd#X]]" where X is the index of the entry for that day',
 
     // Diaries
     diaries: 'Diaries',
@@ -1069,8 +1071,9 @@ export const translations: Translations = {
     // Entry Cross-References
     backToSource: "Retour à l'entrée source",
     entryNotFound: 'Entrée non trouvée',
+    entryNotFoundMessage: 'Cette entrée a peut-être été supprimée, ou le lien n\'est plus valide.',
     entryReferenceHint:
-      'Astuce : Référencez d\'autres entrées en écrivant "entry (yyyy-mm-dd)" ou "entry (yyyy-mm-dd--X)" où X est l\'index de l\'entrée pour ce jour',
+      'Astuce : Référencez d\'autres entrées en écrivant "[[yyyy-mm-dd]]" ou "[[yyyy-mm-dd#X]]" où X est l\'index de l\'entrée pour ce jour',
 
     // Diaries
     diaries: 'Journaux',

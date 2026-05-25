@@ -15,9 +15,9 @@ test('suggests tags for the current draft', async ({ page }) => {
   await page.getByPlaceholder("What's on your mind?").fill('I spent the morning writing a reflective note about focus and slowing down.');
   await page.getByRole('button', { name: 'Auto-Tags' }).click();
 
-  await expect(page.locator('span').filter({ hasText: 'focus' })).toBeVisible();
-  await expect(page.locator('span').filter({ hasText: 'reflection' })).toBeVisible();
-  await expect(page.locator('span').filter({ hasText: 'writing' })).toBeVisible();
+  await expect(page.locator('.truncate').filter({ hasText: /^focus$/ })).toBeVisible();
+  await expect(page.locator('.truncate').filter({ hasText: /^reflection$/ })).toBeVisible();
+  await expect(page.locator('.truncate').filter({ hasText: /^writing$/ })).toBeVisible();
   expect(state.lastAiSuggestionPayload).toEqual({
     content: 'I spent the morning writing a reflective note about focus and slowing down.',
     existingTags: [],

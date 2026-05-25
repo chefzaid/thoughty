@@ -11,12 +11,13 @@ interface AuthPageProps {
   readonly t: TranslationFunction;
   readonly theme?: 'light' | 'dark';
   readonly onAuthSuccess?: () => void;
-  readonly initialMode?: 'login' | 'register';
+  readonly mode?: 'login' | 'register';
+  readonly onModeChange?: (mode: 'login' | 'register') => void;
   readonly onBack?: () => void;
 }
 
-function AuthPage({ t, theme, onAuthSuccess, initialMode = 'login', onBack }: AuthPageProps) {
-  const [isLogin, setIsLogin] = useState<boolean>(initialMode !== 'register');
+function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBack }: AuthPageProps) {
+  const [currentMode, setCurrentMode] = useState<'login' | 'register'>(mode);
   const [showForgotPassword, setShowForgotPassword] = useState<boolean>(false);
   const [identifier, setIdentifier] = useState<string>('');
   const [email, setEmail] = useState<string>('');
@@ -31,6 +32,7 @@ function AuthPage({ t, theme, onAuthSuccess, initialMode = 'login', onBack }: Au
   const { login, register, signInWithGoogle, forgotPassword, googleClientId } = useAuth();
 
   const isDark = theme !== 'light';
+  const isLogin = currentMode === 'login';
 
   // Load Google SDK
   useEffect(() => {
@@ -44,8 +46,11 @@ function AuthPage({ t, theme, onAuthSuccess, initialMode = 'login', onBack }: Au
   }, [googleClientId]);
 
   useEffect(() => {
-    setIsLogin(initialMode !== 'register');
-  }, [initialMode]);
+    setCurrentMode(mode);
+    setShowForgotPassword(false);
+    setError('');
+    setSuccessMessage('');
+  }, [mode]);
 
   const validateForm = (): boolean => {
     const validationError = validateAuthForm({
@@ -123,15 +128,27 @@ function AuthPage({ t, theme, onAuthSuccess, initialMode = 'login', onBack }: Au
     }
   };
 
-  const switchMode = (): void => {
-    setIsLogin(!isLogin);
-    setShowForgotPassword(false);
-    setError('');
-    setSuccessMessage('');
+  const resetAuthFields = (): void => {
     setPassword('');
     setConfirmPassword('');
     setIdentifier('');
     setEmail('');
+    setUsername('');
+  };
+
+  const switchMode = (): void => {
+    const nextMode = isLogin ? 'register' : 'login';
+    setShowForgotPassword(false);
+    setError('');
+    setSuccessMessage('');
+    resetAuthFields();
+
+    if (onModeChange) {
+      onModeChange(nextMode);
+      return;
+    }
+
+    setCurrentMode(nextMode);
   };
 
   const handleForgotPassword = (): void => {

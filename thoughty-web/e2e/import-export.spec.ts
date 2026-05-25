@@ -3,22 +3,15 @@ import { setupMockApp } from './support/mockApp';
 
 test.describe('Import/Export Feature', () => {
   test('exports from All Diaries as JSON and imports a JSON file through the UI', async ({ page }) => {
-    const { state } = await setupMockApp(page);
+    const { state } = await setupMockApp(page, { startAuthenticated: true });
 
-    await page.goto('/');
-
-    await page.getByRole('button', { name: 'Sign In' }).click();
-    await page.locator('#identifier').fill('TestUser');
-    await page.locator('#password').fill('password123');
-    await page.getByRole('button', { name: 'Sign In' }).click();
-
-    await page.getByRole('button', { name: 'Import/Export' }).click();
+    await page.goto('/import-export?diary=all&section=export&format=json');
     await page.getByRole('button', { name: 'All Diaries' }).click();
 
     const exportSection = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Export' }) });
-    const formatSelect = exportSection.locator('.format-field select');
-    await formatSelect.selectOption('json');
-    await page.getByRole('button', { name: 'Download Export' }).click();
+    const formatSelect = exportSection.locator('.format-select');
+    await expect(formatSelect).toHaveValue('json');
+    await page.getByRole('button', { name: 'Download' }).click();
 
     await expect.poll(() => state.lastExportRequestUrl?.searchParams.get('format')).toBe('json');
     await expect.poll(() => state.lastExportRequestUrl?.searchParams.get('diaryId') ?? null).toBeNull();

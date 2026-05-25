@@ -41,6 +41,22 @@ describe('AuthPage', () => {
         expect(screen.getByLabelText('password')).toBeInTheDocument();
     });
 
+    it('renders registration mode when controlled by props', () => {
+        render(<AuthPage t={mockT} theme="dark" mode="register" />);
+        expect(screen.getByText('createAccount')).toBeInTheDocument();
+        expect(screen.getByLabelText('email')).toBeInTheDocument();
+        expect(screen.getByLabelText('username')).toBeInTheDocument();
+    });
+
+    it('requests a route-driven mode change when switching forms', () => {
+        const onModeChange = vi.fn();
+        render(<AuthPage t={mockT} theme="dark" onModeChange={onModeChange} />);
+
+        fireEvent.click(screen.getByRole('button', { name: 'signUp' }));
+
+        expect(onModeChange).toHaveBeenCalledWith('register');
+    });
+
     it('switches to registration form when clicking signUp', () => {
         render(<AuthPage t={mockT} theme="dark" />);
         // Find the signUp button in the switch section
