@@ -230,6 +230,7 @@ describe('useAppState Hooks', () => {
       expect(result.current.search).toBe('');
       expect(result.current.filterTags).toEqual([]);
       expect(result.current.filterVisibility).toBe('all');
+      expect(result.current.filterArchiveStatus).toBe('active');
     });
 
     it('provides setPage function', () => {

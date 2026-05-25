@@ -56,7 +56,17 @@ export class EntriesService {
   }
 
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
-    const { search, tags, date, visibility, favorites, diaryId, page = 1, limit = 10 } = query;
+    const {
+      search,
+      tags,
+      date,
+      visibility,
+      favorites,
+      archiveStatus,
+      diaryId,
+      page = 1,
+      limit = 10,
+    } = query;
 
     const qb = this.entryRepository
       .createQueryBuilder('e')
@@ -97,6 +107,12 @@ export class EntriesService {
       qb.andWhere('e.is_favorite = true');
     }
 
+    if (archiveStatus === 'active') {
+      qb.andWhere('e.is_archived = false');
+    } else if (archiveStatus === 'archived') {
+      qb.andWhere('e.is_archived = true');
+    }
+
     const total = await qb.getCount();
 
     qb.orderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
@@ -125,6 +141,7 @@ export class EntriesService {
         format: e.format,
         visibility: e.visibility,
         is_favorite: e.isFavorite,
+        is_archived: e.isArchived,
         diary_name: e.diary?.name,
         diary_icon: e.diary?.icon,
         diary_color: e.diary?.color ?? undefined,
@@ -430,6 +447,25 @@ export class EntriesService {
     return { success: true, entry: updated };
   }
 
+  async toggleArchived(
+    userId: number,
+    id: number,
+    isArchived: boolean,
+  ): Promise<{ success: boolean; entry: Entry }> {
+    const entry = await this.entryRepository.findOne({
+      where: { id, userId },
+    });
+
+    if (!entry) {
+      throw new NotFoundException('Entry not found');
+    }
+
+    entry.isArchived = isArchived;
+    const updated = await this.entryRepository.save(entry);
+
+    return { success: true, entry: updated };
+  }
+
   async getHighlights(
     userId: number,
     query: GetHighlightsQueryDto,
@@ -561,6 +597,8 @@ export class EntriesService {
         return this.bulkAddTags(entries, dto.tags);
       case 'move':
         return this.bulkMove(userId, validIds, dto.diaryId);
+      case 'archive':
+        return this.bulkUpdateArchived(userId, validIds, dto.isArchived);
       default:
         throw new BadRequestException('Invalid action');
     }
@@ -681,6 +719,23 @@ export class EntriesService {
     await this.entryRepository.update(
       { id: In(validIds), userId },
       { diaryId },
+    );
+
+    return { success: true, affectedCount: validIds.length };
+  }
+
+  private async bulkUpdateArchived(
+    userId: number,
+    validIds: number[],
+    isArchived?: boolean,
+  ): Promise<{ success: boolean; affectedCount: number }> {
+    if (typeof isArchived !== 'boolean') {
+      throw new BadRequestException('Archive value is required');
+    }
+
+    await this.entryRepository.update(
+      { id: In(validIds), userId },
+      { isArchived },
     );
 
     return { success: true, affectedCount: validIds.length };

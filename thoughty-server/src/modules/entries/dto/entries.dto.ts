@@ -92,9 +92,9 @@ export class BulkOperationDto {
   @Type(() => Number)
   ids: number[];
 
-  @ApiProperty({ description: 'Bulk action to perform', enum: ['delete', 'visibility', 'tags', 'move'] })
-  @IsEnum(['delete', 'visibility', 'tags', 'move'])
-  action: 'delete' | 'visibility' | 'tags' | 'move';
+  @ApiProperty({ description: 'Bulk action to perform', enum: ['delete', 'visibility', 'tags', 'move', 'archive'] })
+  @IsEnum(['delete', 'visibility', 'tags', 'move', 'archive'])
+  action: 'delete' | 'visibility' | 'tags' | 'move' | 'archive';
 
   @ApiPropertyOptional({ enum: ['public', 'private'] })
   @IsOptional()
@@ -114,6 +114,12 @@ export class BulkOperationDto {
   @IsNumber()
   @Type(() => Number)
   diaryId?: number;
+
+  @ApiPropertyOptional({ description: 'Whether the entries should be archived' })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(({ value }) => value === true || value === 'true')
+  isArchived?: boolean;
 }
 
 export class RenameTagDto {
@@ -133,6 +139,13 @@ export class UpdateFavoriteDto {
   @IsBoolean()
   @Transform(({ value }) => value === true || value === 'true')
   isFavorite: boolean;
+}
+
+export class UpdateArchivedDto {
+  @ApiProperty({ description: 'Whether the entry is archived' })
+  @IsBoolean()
+  @Transform(({ value }) => value === true || value === 'true')
+  isArchived: boolean;
 }
 
 export class GetEntriesQueryDto {
@@ -161,6 +174,12 @@ export class GetEntriesQueryDto {
   @IsOptional()
   @Transform(({ value }) => value === 'true' || value === true)
   favorites?: boolean;
+
+  @ApiPropertyOptional({ description: 'Filter by archive state', enum: ['all', 'active', 'archived'] })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsEnum(['all', 'active', 'archived'])
+  archiveStatus?: 'all' | 'active' | 'archived';
 
   @ApiPropertyOptional({ description: 'Diary ID' })
   @IsOptional()
@@ -296,6 +315,9 @@ export class EntryResponseDto {
 
   @ApiProperty()
   is_favorite: boolean;
+
+  @ApiProperty()
+  is_archived: boolean;
 
   @ApiPropertyOptional()
   diary_name?: string;

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { createAuthFetch, createConfigService, createEntriesService, createDiariesService, createAttachmentsService, createAiService, createCloudSyncService } from '../services/api';
-import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo, Attachment } from '../types';
+import type { Config, Entry, Diary, ProfileStats, GroupedEntries, SourceEntryInfo, Attachment, ArchiveStatusFilter } from '../types';
 import { getTranslation } from '../utils/translations';
 
 const getAutoTagLimit = (value: string | number | undefined): number => {
@@ -220,6 +220,7 @@ export const useEntries = (
   const [filterDateObj, setFilterDateObj] = useState<Date | null>(null);
   const [filterVisibility, setFilterVisibility] = useState<'all' | 'public' | 'private'>('all');
   const [filterFavorites, setFilterFavorites] = useState<boolean>(false);
+  const [filterArchiveStatus, setFilterArchiveStatus] = useState<ArchiveStatusFilter>('active');
   
   // Navigation state
   const [availableYears, setAvailableYears] = useState<number[]>([]);
@@ -255,6 +256,7 @@ export const useEntries = (
       filterDate,
       filterVisibility: filterVisibility === 'all' ? '' : filterVisibility,
       favorites: filterFavorites,
+      archiveStatus: filterArchiveStatus,
       diaryId: currentDiaryId
     });
     
@@ -264,7 +266,7 @@ export const useEntries = (
       setAllTags(result.allTags);
     }
     setLoading(false);
-  }, [isAuthenticated, entriesService, page, search, filterTags, filterDateObj, filterVisibility, filterFavorites, currentDiaryId, getLimit]);
+  }, [isAuthenticated, entriesService, page, search, filterTags, filterDateObj, filterVisibility, filterFavorites, filterArchiveStatus, currentDiaryId, getLimit]);
 
   const fetchYearsMonths = useCallback(async () => {
     if (!isAuthenticated) return;
@@ -284,6 +286,14 @@ export const useEntries = (
   const toggleFavorite = useCallback(async (entry: Entry) => {
     const newFavorite = !entry.is_favorite;
     const success = await entriesService.toggleFavorite(entry.id, newFavorite);
+    if (success) {
+      await fetchEntries();
+    }
+  }, [entriesService, fetchEntries]);
+
+  const toggleArchived = useCallback(async (entry: Entry) => {
+    const newArchived = !entry.is_archived;
+    const success = await entriesService.toggleArchived(entry.id, newArchived);
     if (success) {
       await fetchEntries();
     }
@@ -347,7 +357,7 @@ export const useEntries = (
   // Fetch entries on dependency change
   useEffect(() => {
     void fetchEntries();
-  }, [fetchEntries, page, search, filterTags, filterDateObj, filterVisibility, filterFavorites, config.entriesPerPage, currentDiaryId, isAuthenticated]);
+  }, [fetchEntries, page, search, filterTags, filterDateObj, filterVisibility, filterFavorites, filterArchiveStatus, config.entriesPerPage, currentDiaryId, isAuthenticated]);
 
   // Fetch years/months on mount
   useEffect(() => {
@@ -398,6 +408,8 @@ export const useEntries = (
     setFilterVisibility,
     filterFavorites,
     setFilterFavorites,
+    filterArchiveStatus,
+    setFilterArchiveStatus,
     // Navigation
     availableYears,
     availableMonths,
@@ -414,6 +426,7 @@ export const useEntries = (
     entriesService,
     toggleVisibility,
     toggleFavorite,
+    toggleArchived,
     fetchEntryHistory,
     deleteRevision,
     reorderEntries
@@ -770,8 +783,8 @@ export const useDeleteModal = (onDelete: () => void) => {
 /**
  * Hook to manage bulk selection and operations on entries
  */
-type BulkAction = 'delete' | 'visibility' | 'tags' | 'move';
-type BulkOptions = { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number };
+type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive';
+type BulkOptions = { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean };
 
 export const useBulkSelect = (onComplete: () => void) => {
   const { entriesService } = useApiServices();

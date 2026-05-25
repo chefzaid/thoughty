@@ -1,6 +1,7 @@
 import { type Dispatch, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
+import type { ArchiveStatusFilter } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 
 type VisibilityFilter = 'all' | 'public' | 'private';
@@ -16,6 +17,8 @@ interface FilterControlsProps {
     readonly setFilterVisibility: Dispatch<SetStateAction<VisibilityFilter>>;
     readonly filterFavorites: boolean;
     readonly setFilterFavorites: Dispatch<SetStateAction<boolean>>;
+    readonly filterArchiveStatus: ArchiveStatusFilter;
+    readonly setFilterArchiveStatus: Dispatch<SetStateAction<ArchiveStatusFilter>>;
     readonly allTags: string[];
     readonly tagMetadata?: TagMetadataMap;
     readonly setPage: Dispatch<SetStateAction<number>>;
@@ -35,6 +38,8 @@ function FilterControls({
     setFilterVisibility,
     filterFavorites,
     setFilterFavorites,
+    filterArchiveStatus,
+    setFilterArchiveStatus,
     allTags,
     tagMetadata,
     setPage,
@@ -48,7 +53,7 @@ function FilterControls({
         : 'bg-gray-900 border-gray-700 text-gray-100'
         }`;
 
-    const containerClass = `flex flex-nowrap items-center gap-3 mb-8 p-4 rounded-lg border overflow-x-auto overflow-y-visible ${theme === 'light'
+    const containerClass = `flex flex-wrap items-center gap-3 mb-8 p-4 rounded-lg border overflow-visible ${theme === 'light'
         ? 'bg-white/50 border-gray-200'
         : 'bg-gray-800/50 border-gray-700/50'
         }`;
@@ -59,6 +64,7 @@ function FilterControls({
         setFilterDateObj(null);
         setFilterVisibility('all');
         setFilterFavorites(false);
+        setFilterArchiveStatus('active');
         setPage(1);
     };
 
@@ -97,6 +103,55 @@ function FilterControls({
         return 'bg-gray-900 border-gray-700 text-gray-400 hover:bg-gray-800';
     };
 
+    const cycleArchiveStatus = (): void => {
+        const order: ArchiveStatusFilter[] = ['active', 'archived', 'all'];
+        const currentIndex = order.indexOf(filterArchiveStatus);
+        const nextIndex = (currentIndex + 1) % order.length;
+        setFilterArchiveStatus(order[nextIndex] ?? 'active');
+        setPage(1);
+    };
+
+    const getArchiveButtonClass = (): string => {
+        if (filterArchiveStatus === 'archived') {
+            return 'bg-sky-500/10 border-sky-500/50 text-sky-500 hover:bg-sky-500/20';
+        }
+        if (filterArchiveStatus === 'active') {
+            return 'bg-emerald-500/10 border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/20';
+        }
+
+        if (isLight) {
+            return 'bg-gray-50 border-gray-300 text-gray-600 hover:bg-gray-100';
+        }
+
+        return 'bg-gray-900 border-gray-700 text-gray-400 hover:bg-gray-800';
+    };
+
+    const getArchiveLabel = (): string => {
+        if (filterArchiveStatus === 'active') {
+            return t('activeEntries');
+        }
+        if (filterArchiveStatus === 'archived') {
+            return t('archived');
+        }
+        return t('allEntries');
+    };
+
+    const getArchiveIcon = () => {
+        if (filterArchiveStatus === 'archived') {
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8l1 11h12l1-11M9 12h6" />
+                </svg>
+            );
+        }
+
+        return (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8l1 11h12l1-11M9 12h6m-3-3v6" />
+            </svg>
+        );
+    };
+
     const getVisibilityIcon = () => {
         if (filterVisibility === 'public') {
             return (
@@ -123,11 +178,11 @@ function FilterControls({
             <input
                 type="text"
                 placeholder={t('searchPlaceholder')}
-                className={`${inputClass} w-[20rem] shrink-0`}
+                className={`${inputClass} min-w-0 flex-1 basis-64`}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
-            <div className="w-56 shrink-0 relative z-30">
+            <div className="relative z-30 min-w-[12rem] flex-1 basis-52">
                 <TagPicker
                     availableTags={allTags}
                     selectedTags={filterTags}
@@ -139,8 +194,8 @@ function FilterControls({
                     theme={theme}
                 />
             </div>
-            <div className="flex shrink-0 items-center gap-[12px]">
-                <div className="w-[11.125rem] relative z-20">
+            <div className="flex min-w-0 shrink-0 items-center gap-[12px]">
+                <div className="relative z-20 w-[9.5rem] sm:w-[10.5rem]">
                     <TypedDatePicker
                         selected={filterDateObj}
                         onChange={(date: Date | null) => { setFilterDateObj(date); setPage(1); }}
@@ -165,6 +220,15 @@ function FilterControls({
                     <span>{t(filterVisibility === 'all' ? 'allEntries' : filterVisibility)}</span>
                 </button>
             </div>
+            <button
+                onClick={cycleArchiveStatus}
+                className={`flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getArchiveButtonClass()}`}
+                title={t('filterArchived')}
+                aria-label={t('filterArchived')}
+            >
+                {getArchiveIcon()}
+                <span>{getArchiveLabel()}</span>
+            </button>
             <button
                 onClick={() => { setFilterFavorites(!filterFavorites); setPage(1); }}
                 className={`flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getFavoriteButtonClass()}`}

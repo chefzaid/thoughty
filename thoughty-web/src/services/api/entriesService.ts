@@ -1,5 +1,6 @@
 import { safeJsonParse } from './base';
 import type { Entry, EntriesResponse, EntryRevision } from '../../types';
+import type { ArchiveStatusFilter } from '../../types';
 
 export interface NavigateToFirstResponse {
   found?: boolean;
@@ -32,6 +33,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     filterDate: string;
     filterVisibility: string;
     favorites: boolean;
+    archiveStatus: ArchiveStatusFilter;
     diaryId: number | null;
   }): Promise<EntriesResponse | null> => {
     try {
@@ -48,6 +50,9 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
       }
       if (params.favorites) {
         urlParams.append('favorites', 'true');
+      }
+      if (params.archiveStatus !== 'all') {
+        urlParams.append('archiveStatus', params.archiveStatus);
       }
 
       const response = await authFetch(`/api/entries?${urlParams}`);
@@ -165,8 +170,8 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
 
   const bulkOperation = async (
     ids: number[],
-    action: 'delete' | 'visibility' | 'tags' | 'move',
-    options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number }
+    action: 'delete' | 'visibility' | 'tags' | 'move' | 'archive',
+    options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean }
   ): Promise<{ success: boolean; affectedCount: number } | null> => {
     try {
       const response = await authFetch('/api/entries/bulk', {
@@ -279,6 +284,22 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   };
 
   /**
+   * Toggle entry archive status
+   */
+  const toggleArchived = async (id: number, isArchived: boolean): Promise<boolean> => {
+    try {
+      const response = await authFetch(`/api/entries/${id}/archive`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isArchived })
+      });
+      return response.ok;
+    } catch (error) {
+      console.error('Error toggling archive state:', error);
+      return false;
+    }
+  };
+
+  /**
    * Fetch revision history for an entry
    */
   const fetchEntryHistory = async (id: number): Promise<EntryRevision[]> => {
@@ -346,6 +367,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     updateEntry,
     toggleVisibility,
     toggleFavorite,
+    toggleArchived,
     bulkOperation,
     renameTag,
     navigateToFirst,

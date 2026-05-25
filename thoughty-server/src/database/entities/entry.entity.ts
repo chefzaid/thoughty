@@ -43,6 +43,9 @@ export class Entry {
   @Column({ name: 'is_favorite', type: 'boolean', default: false })
   isFavorite: boolean;
 
+  @Column({ name: 'is_archived', type: 'boolean', default: false })
+  isArchived: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

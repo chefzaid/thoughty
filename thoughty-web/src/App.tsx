@@ -170,6 +170,8 @@ function AppContent() {
     setFilterVisibility,
     filterFavorites,
     setFilterFavorites,
+    filterArchiveStatus,
+    setFilterArchiveStatus,
     availableYears,
     availableMonths,
     targetEntryId,
@@ -184,6 +186,7 @@ function AppContent() {
     entriesService,
     toggleVisibility,
     toggleFavorite,
+    toggleArchived,
     fetchEntryHistory,
     deleteRevision,
     reorderEntries
@@ -334,6 +337,10 @@ function AppContent() {
       return true;
     }
 
+    if (filterArchiveStatus !== 'all') {
+      return true;
+    }
+
     if (currentDiaryId !== null) {
       return true;
     }
@@ -347,6 +354,7 @@ function AppContent() {
     currentDiaryId,
     currentView,
     filterDateObj,
+    filterArchiveStatus,
     filterFavorites,
     filterTags,
     filterVisibility,
@@ -380,6 +388,10 @@ function AppContent() {
       setFilterFavorites(false);
     }
 
+    if (filterArchiveStatus !== 'all') {
+      setFilterArchiveStatus('all');
+    }
+
     if (currentDiaryId !== null) {
       setCurrentDiaryId(null);
     }
@@ -403,6 +415,7 @@ function AppContent() {
     currentDiaryId,
     currentView,
     filterDateObj,
+    filterArchiveStatus,
     filterFavorites,
     filterTags,
     filterVisibility,
@@ -413,6 +426,7 @@ function AppContent() {
     search,
     setCurrentDiaryId,
     setFilterDateObj,
+    setFilterArchiveStatus,
     setFilterFavorites,
     setFilterTags,
     setFilterVisibility,
@@ -833,6 +847,8 @@ function AppContent() {
             setFilterVisibility={setFilterVisibility}
             filterFavorites={filterFavorites}
             setFilterFavorites={setFilterFavorites}
+            filterArchiveStatus={filterArchiveStatus}
+            setFilterArchiveStatus={setFilterArchiveStatus}
             setPage={setPage}
             loading={loading}
             entries={entries}
@@ -841,6 +857,7 @@ function AppContent() {
             onDelete={handleDelete}
             onToggleVisibility={toggleVisibility}
             onToggleFavorite={toggleFavorite}
+            onToggleArchived={toggleArchived}
             editingEntry={editingEntry}
             editText={editText}
             setEditText={setEditText}

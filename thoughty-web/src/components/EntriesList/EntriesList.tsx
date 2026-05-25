@@ -21,6 +21,7 @@ interface Entry {
     date: string;
     visibility: 'public' | 'private';
     is_favorite?: boolean;
+    is_archived?: boolean;
     format?: 'plain' | 'markdown';
     diary_id?: number | null;
     diary_name?: string;
@@ -62,6 +63,7 @@ interface EntriesListProps {
     onDelete: (id: number) => void;
     onToggleVisibility: (entry: Entry) => void;
     onToggleFavorite: (entry: Entry) => void;
+    onToggleArchived: (entry: Entry) => void;
     editingEntry: Entry | null;
     editText: string;
     setEditText: Dispatch<SetStateAction<string>>;
@@ -95,7 +97,7 @@ interface EntriesListProps {
     onToggleSelect?: (id: number) => void;
     onSelectAll?: (ids: number[]) => void;
     onClearSelection?: () => void;
-    onBulkAction?: (action: 'delete' | 'visibility' | 'tags' | 'move', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number }) => void;
+    onBulkAction?: (action: 'delete' | 'visibility' | 'tags' | 'move' | 'archive', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean }) => void;
     onToggleBulkMode?: () => void;
     diaries?: Diary[];
     onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
@@ -565,10 +567,58 @@ function EntryHistorySection({
     );
 }
 
+function ArchiveStatusBadge({
+    isArchived,
+    isDark,
+    t,
+}: Readonly<{
+    isArchived?: boolean;
+    isDark: boolean;
+    t: (key: string) => string;
+}>) {
+    if (!isArchived) {
+        return null;
+    }
+
+    return (
+        <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${isDark ? 'border-sky-400/35 bg-sky-500/10 text-sky-300' : 'border-sky-300 bg-sky-50 text-sky-700'}`}>
+            {t('archived')}
+        </span>
+    );
+}
+
+function ArchiveToggleButton({
+    entry,
+    onToggleArchived,
+    t,
+}: Readonly<{
+    entry: Entry;
+    onToggleArchived: (entry: Entry) => void;
+    t: (key: string) => string;
+}>) {
+    const archiveActionLabel = entry.is_archived ? t('unarchive') : t('archive');
+    const archiveIconPath = entry.is_archived ? 'M9 12h6' : 'M9 12h6m-3-3v6';
+
+    return (
+        <button
+            onClick={() => onToggleArchived(entry)}
+            className={`p-1 rounded transition-colors ${entry.is_archived ? 'text-sky-400 hover:bg-sky-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}
+            title={archiveActionLabel}
+            aria-label={archiveActionLabel}
+        >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M5 8h14" />
+                <path d="M5 8l1 11h12l1-11" />
+                <path d={archiveIconPath} />
+            </svg>
+        </button>
+    );
+}
+
 function EntryViewMode({
     entry, config, speaking, activeEntryId, activeTargetId, sourceEntry,
     flatEntries, speakEntry: speak, speakFromEntry: speakFrom, stop,
-    onToggleVisibility, onToggleFavorite, onEdit, onDelete, onNavigateToEntry, onShareEntry, getEntryPermalink, onBackToSource, onFetchHistory, onDeleteRevision, onDiscuss, searchTerm, showDiaryLabel, tagMetadata, t
+    onToggleVisibility, onToggleFavorite, onToggleArchived, onEdit, onDelete, onNavigateToEntry, onShareEntry, getEntryPermalink, onBackToSource, onFetchHistory, onDeleteRevision, onDiscuss, searchTerm, showDiaryLabel, tagMetadata, t
 }: Readonly<{
     entry: Entry;
     config: Config;
@@ -582,6 +632,7 @@ function EntryViewMode({
     stop: () => void;
     onToggleVisibility: (entry: Entry) => void;
     onToggleFavorite: (entry: Entry) => void;
+    onToggleArchived: (entry: Entry) => void;
     onEdit: (entry: Entry) => void;
     onDelete: (id: number) => void;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
@@ -662,6 +713,7 @@ function EntryViewMode({
                             size="xs"
                         />
                     ))}
+                    <ArchiveStatusBadge isArchived={entry.is_archived} isDark={isDark} t={t} />
                 </div>
                 <div className="flex items-center gap-2">
                     {activeTargetId === entry.id && sourceEntry && (
@@ -712,6 +764,7 @@ function EntryViewMode({
                             <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                         </svg>
                     </button>
+                    <ArchiveToggleButton entry={entry} onToggleArchived={onToggleArchived} t={t} />
                     <ListenButton
                         entryId={entry.id}
                         speaking={speaking}
@@ -811,7 +864,7 @@ function BulkActionBar({
     tagMetadata: TagMetadataMap;
     diaries: Diary[];
     isDark: boolean;
-    onBulkAction: (action: 'delete' | 'visibility' | 'tags' | 'move', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number }) => void;
+    onBulkAction: (action: 'delete' | 'visibility' | 'tags' | 'move' | 'archive', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean }) => void;
     onClearSelection: () => void;
     t: (key: string, params?: Record<string, string | number>) => string;
 }>) {
@@ -844,6 +897,18 @@ function BulkActionBar({
                     className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${isDark ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-400 hover:bg-gray-500 text-white'}`}
                 >
                     {t('bulkMakePrivate')}
+                </button>
+                <button
+                    onClick={() => onBulkAction('archive', { isArchived: true })}
+                    className="px-3 py-1.5 text-xs font-medium bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors"
+                >
+                    {t('bulkArchive')}
+                </button>
+                <button
+                    onClick={() => onBulkAction('archive', { isArchived: false })}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-slate-500 hover:bg-slate-600 text-white'}`}
+                >
+                    {t('bulkUnarchive')}
                 </button>
                 <div className="relative">
                     <button
@@ -923,6 +988,7 @@ function EntriesList({
     onDelete,
     onToggleVisibility,
     onToggleFavorite,
+    onToggleArchived,
     editingEntry,
     editText,
     setEditText,
@@ -1152,6 +1218,7 @@ function EntriesList({
                                     className={`relative rounded-lg p-5 shadow-sm border transition-all flex gap-3 ${
                                         isDark ? 'bg-gray-800 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'
                                     } ${targetEntryId === entry.id || activeTargetId === entry.id ? 'highlight-entry' : ''} ${bulkMode && selectedIds?.has(entry.id) ? getSelectedRingClass(isDark) : ''}${dragHighlightClass}`}
+                                    data-archived={entry.is_archived ? 'true' : 'false'}
                                     style={getEntryCardStyle(entry)}
                                 >
                                     <EntryReorderControls
@@ -1217,6 +1284,7 @@ function EntriesList({
                                                 stop={stop}
                                                 onToggleVisibility={onToggleVisibility}
                                                 onToggleFavorite={onToggleFavorite}
+                                                onToggleArchived={onToggleArchived}
                                                 onEdit={onEdit}
                                                 onDelete={onDelete}
                                                 onNavigateToEntry={onNavigateToEntry}

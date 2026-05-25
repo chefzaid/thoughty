@@ -17,6 +17,7 @@ export interface Entry {
   date: string;
   visibility: 'public' | 'private';
   is_favorite?: boolean;
+  is_archived?: boolean;
   format?: 'plain' | 'markdown';
   diary_id?: number | null;
   diary_name?: string;
@@ -53,6 +54,7 @@ export interface EntryFilters {
   date?: string;
   visibility?: 'all' | 'public' | 'private';
   favorites?: boolean;
+  archiveStatus?: 'all' | 'active' | 'archived';
   diaryId?: number | null;
   page?: number;
   limit?: number;

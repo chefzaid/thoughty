@@ -166,6 +166,10 @@ BEGIN
         ALTER TABLE entries ADD COLUMN is_favorite BOOLEAN DEFAULT false;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name = 'entries' AND column_name = 'is_archived') THEN
+        ALTER TABLE entries ADD COLUMN is_archived BOOLEAN DEFAULT false;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                    WHERE table_name = 'diaries' AND column_name = 'position') THEN
         ALTER TABLE diaries ADD COLUMN position INTEGER DEFAULT 0;
     END IF;
@@ -209,6 +213,7 @@ CREATE INDEX IF NOT EXISTS idx_entries_visibility ON entries(visibility);
 CREATE INDEX IF NOT EXISTS idx_entries_user_id ON entries(user_id);
 CREATE INDEX IF NOT EXISTS idx_entries_diary_id ON entries(diary_id);
 CREATE INDEX IF NOT EXISTS idx_entries_is_favorite ON entries(is_favorite);
+CREATE INDEX IF NOT EXISTS idx_entries_is_archived ON entries(is_archived);
 CREATE INDEX IF NOT EXISTS idx_settings_user_id ON settings(user_id);
 CREATE INDEX IF NOT EXISTS idx_diaries_user_id ON diaries(user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);

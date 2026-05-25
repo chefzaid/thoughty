@@ -28,6 +28,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Route-Aware Navigation** - Main areas use stable routes like `/journal`, `/stats`, `/profile`, and `/tags`, while diary, import/export, and entry permalink context stays in query params for reloadable deep links
 - **Visibility Control** - Toggle entries between public and private with one click
 - **Favorites** - Star/unstar entries as favorites and filter to show only favorites
+- **Archive & Restore** - Archive old thoughts without deleting them, then restore them to the active journal whenever needed
 - **Modification History** - View previous versions of edited entries with timestamps
 - **File Uploads & Previews** - Attach images, audio notes, and documents (JPEG, PNG, GIF, WebP, SVG, PDF, TXT, MP3, WAV, OGG, M4A, WebM) to journal entries with inline previews, audio playback, and expanded in-app preview dialogs for supported files
 - **Read Entries Aloud** - Listen to your journal entries using the many options of the Text-to-Speech feature
@@ -62,6 +63,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - **Tag Filtering** - Filter by multiple tags simultaneously
 - **Date Filtering** - Calendar picker with visual indicators for dates containing entries
 - **Visibility Filtering** - Filter by All / Public / Private entries
+- **Archive Filtering** - Cycle between Active, Archived, and All entries to focus on current writing or revisit older thoughts
 - **Combined Filters** - Stack multiple filters for precise results
 - **One-Click Reset** - Clear all filters instantly
 

@@ -6,8 +6,6 @@ Features to implement:
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
 - Voice personalization for TTS
 - Add other languages support (i18n) for the UI (Spanish, Italian, German, etc.)
-- Enhance the attachment management and display (preview for images, audio player for audio notes, etc.)
-- Archive and unarchive entries to keep the journal organized without deleting old thoughts
 
 *** Social features
 - Feed that shows public entries from other users with infinite scroll and to preview your own public entries

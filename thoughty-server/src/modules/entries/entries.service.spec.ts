@@ -23,6 +23,8 @@ describe('EntriesService', () => {
     tags: ['tag1', 'tag2'],
     content: 'Test entry content',
     visibility: 'private',
+    isFavorite: false,
+    isArchived: false,
     createdAt: new Date(),
     diary: { id: 1, name: 'Test Diary', icon: '📓' },
   };
@@ -599,6 +601,34 @@ describe('EntriesService', () => {
       });
     });
 
+    describe('bulk archive', () => {
+      it('should update archive status for all entries', async () => {
+        entryRepository.find.mockResolvedValue(mockEntries);
+        entryRepository.update.mockResolvedValue({ affected: 3 });
+
+        const result = await service.bulkOperation(1, {
+          ids: [1, 2, 3],
+          action: 'archive',
+          isArchived: true,
+        });
+
+        expect(result.success).toBe(true);
+        expect(result.affectedCount).toBe(3);
+        expect(entryRepository.update).toHaveBeenCalledWith(
+          expect.objectContaining({ userId: 1 }),
+          { isArchived: true },
+        );
+      });
+
+      it('should throw BadRequestException when isArchived not provided', async () => {
+        entryRepository.find.mockResolvedValue(mockEntries);
+
+        await expect(
+          service.bulkOperation(1, { ids: [1], action: 'archive' }),
+        ).rejects.toThrow(BadRequestException);
+      });
+    });
+
     describe('common', () => {
       it('should throw NotFoundException when no entries match', async () => {
         entryRepository.find.mockResolvedValue([]);
@@ -670,9 +700,50 @@ describe('EntriesService', () => {
     });
   });
 
+  describe('toggleArchived', () => {
+    it('should archive an entry', async () => {
+      const entry = { ...mockEntry, isArchived: false };
+      entryRepository.findOne.mockResolvedValue(entry);
+      entryRepository.save.mockResolvedValue({ ...entry, isArchived: true });
+
+      const result = await service.toggleArchived(1, 1, true);
+
+      expect(result.success).toBe(true);
+      expect(result.entry.isArchived).toBe(true);
+      expect(entryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ isArchived: true }),
+      );
+    });
+
+    it('should unarchive an entry', async () => {
+      const entry = { ...mockEntry, isArchived: true };
+      entryRepository.findOne.mockResolvedValue(entry);
+      entryRepository.save.mockResolvedValue({ ...entry, isArchived: false });
+
+      const result = await service.toggleArchived(1, 1, false);
+
+      expect(result.success).toBe(true);
+      expect(result.entry.isArchived).toBe(false);
+    });
+
+    it('should throw NotFoundException when entry not found', async () => {
+      entryRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.toggleArchived(1, 999, true)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe('getEntries with favorites filter', () => {
     it('should filter by favorites when favorites is true', async () => {
       const result = await service.getEntries(1, { favorites: true, page: 1, limit: 10 });
+
+      expect(result.entries).toBeDefined();
+    });
+
+    it('should filter by archive status when archived is requested', async () => {
+      const result = await service.getEntries(1, { archiveStatus: 'archived', page: 1, limit: 10 });
 
       expect(result.entries).toBeDefined();
     });

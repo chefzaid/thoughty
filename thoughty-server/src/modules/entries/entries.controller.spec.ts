@@ -22,6 +22,7 @@ describe('EntriesController', () => {
       delete: jest.fn(),
       bulkOperation: jest.fn(),
       toggleFavorite: jest.fn(),
+      toggleArchived: jest.fn(),
       getRevisions: jest.fn(),
     };
 
@@ -215,6 +216,28 @@ describe('EntriesController', () => {
 
       const result = await controller.toggleFavorite(mockUser as any, 1, dto as any);
       expect(entriesService.toggleFavorite).toHaveBeenCalledWith(1, 1, false);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('toggleArchived', () => {
+    it('delegates to entriesService.toggleArchived', async () => {
+      const dto = { isArchived: true };
+      const expected = { success: true, entry: { id: 1, isArchived: true } };
+      entriesService.toggleArchived!.mockResolvedValue(expected);
+
+      const result = await controller.toggleArchived(mockUser as any, 1, dto as any);
+      expect(entriesService.toggleArchived).toHaveBeenCalledWith(1, 1, true);
+      expect(result).toBe(expected);
+    });
+
+    it('delegates unarchive to entriesService.toggleArchived', async () => {
+      const dto = { isArchived: false };
+      const expected = { success: true, entry: { id: 1, isArchived: false } };
+      entriesService.toggleArchived!.mockResolvedValue(expected);
+
+      const result = await controller.toggleArchived(mockUser as any, 1, dto as any);
+      expect(entriesService.toggleArchived).toHaveBeenCalledWith(1, 1, false);
       expect(result).toBe(expected);
     });
   });

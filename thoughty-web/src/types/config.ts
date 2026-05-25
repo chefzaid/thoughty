@@ -31,3 +31,4 @@ export interface AppConfig {
 export type Theme = 'light' | 'dark';
 export type Visibility = 'public' | 'private';
 export type VisibilityFilter = 'all' | 'public' | 'private';
+export type ArchiveStatusFilter = 'all' | 'active' | 'archived';

@@ -18,6 +18,7 @@ import {
   UpdateEntryDto,
   UpdateVisibilityDto,
   UpdateFavoriteDto,
+  UpdateArchivedDto,
   BulkOperationDto,
   RenameTagDto,
   ReorderEntriesDto,
@@ -159,6 +160,18 @@ export class EntriesController {
     @Body() dto: UpdateFavoriteDto,
   ) {
     return this.entriesService.toggleFavorite(user.userId, id, dto.isFavorite);
+  }
+
+  @Patch(':id/archive')
+  @ApiOperation({ summary: 'Toggle archive status of an entry' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Archive status updated' })
+  async toggleArchived(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateArchivedDto,
+  ) {
+    return this.entriesService.toggleArchived(user.userId, id, dto.isArchived);
   }
 
   @Get(':id/history')

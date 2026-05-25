@@ -38,6 +38,8 @@ describe('FilterControls', () => {
     setFilterVisibility: mockSetFilterVisibility,
     filterFavorites: false,
     setFilterFavorites: vi.fn(),
+    filterArchiveStatus: 'active' as const,
+    setFilterArchiveStatus: vi.fn(),
     allTags: ['tag1', 'tag2', 'tag3'],
     setPage: mockSetPage,
     theme: 'dark' as const,
@@ -113,6 +115,37 @@ describe('FilterControls', () => {
     expect(mockSetFilterTags).toHaveBeenCalledWith([]);
     expect(mockSetFilterDateObj).toHaveBeenCalledWith(null);
     expect(mockSetFilterVisibility).toHaveBeenCalledWith('all');
+    expect(defaultProps.setFilterArchiveStatus).toHaveBeenCalledWith('active');
+    expect(mockSetPage).toHaveBeenCalledWith(1);
+  });
+
+  it('cycles archive filter from active to archived', () => {
+    const setFilterArchiveStatus = vi.fn();
+    render(<FilterControls {...defaultProps} setFilterArchiveStatus={setFilterArchiveStatus} />);
+
+    fireEvent.click(screen.getByTitle('filterArchived'));
+
+    expect(setFilterArchiveStatus).toHaveBeenCalledWith('archived');
+    expect(mockSetPage).toHaveBeenCalledWith(1);
+  });
+
+  it('cycles archive filter from archived to all', () => {
+    const setFilterArchiveStatus = vi.fn();
+    render(<FilterControls {...defaultProps} filterArchiveStatus="archived" setFilterArchiveStatus={setFilterArchiveStatus} />);
+
+    fireEvent.click(screen.getByTitle('filterArchived'));
+
+    expect(setFilterArchiveStatus).toHaveBeenCalledWith('all');
+    expect(mockSetPage).toHaveBeenCalledWith(1);
+  });
+
+  it('cycles archive filter from all to active', () => {
+    const setFilterArchiveStatus = vi.fn();
+    render(<FilterControls {...defaultProps} filterArchiveStatus="all" setFilterArchiveStatus={setFilterArchiveStatus} />);
+
+    fireEvent.click(screen.getByTitle('filterArchived'));
+
+    expect(setFilterArchiveStatus).toHaveBeenCalledWith('active');
     expect(mockSetPage).toHaveBeenCalledWith(1);
   });
 
@@ -137,7 +170,7 @@ describe('FilterControls', () => {
 
   it('shows correct visibility icon and text for all', () => {
     render(<FilterControls {...defaultProps} filterVisibility="all" />);
-    expect(screen.getByText('allEntries')).toBeInTheDocument();
+    expect(screen.getByTitle('Visibility')).toHaveTextContent('allEntries');
   });
 
   it('shows correct visibility icon and text for public', () => {

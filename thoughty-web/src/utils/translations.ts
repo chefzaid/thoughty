@@ -307,6 +307,13 @@ export type TranslationKey =
   | 'unfavorite'
   | 'favorites'
   | 'filterFavorites'
+  | 'archive'
+  | 'unarchive'
+  | 'archived'
+  | 'activeEntries'
+  | 'filterArchived'
+  | 'bulkArchive'
+  | 'bulkUnarchive'
   | 'entryPermalink'
   | 'shareEntry'
   | 'entryLinkCopied'
@@ -728,6 +735,13 @@ export const translations: Translations = {
     unfavorite: 'Remove from favorites',
     favorites: 'Favorites',
     filterFavorites: 'Show favorites only',
+    archive: 'Archive entry',
+    unarchive: 'Restore entry',
+    archived: 'Archived',
+    activeEntries: 'Active',
+    filterArchived: 'Filter archived entries',
+    bulkArchive: 'Archive',
+    bulkUnarchive: 'Unarchive',
     entryPermalink: 'Open entry permalink',
     shareEntry: 'Share entry',
     entryLinkCopied: 'Entry link copied',
@@ -1148,6 +1162,13 @@ export const translations: Translations = {
     unfavorite: 'Retirer des favoris',
     favorites: 'Favoris',
     filterFavorites: 'Afficher les favoris uniquement',
+    archive: 'Archiver l\'entrée',
+    unarchive: 'Restaurer l\'entrée',
+    archived: 'Archivée',
+    activeEntries: 'Actives',
+    filterArchived: 'Filtrer les entrées archivées',
+    bulkArchive: 'Archiver',
+    bulkUnarchive: 'Désarchiver',
     entryPermalink: 'Ouvrir le permalien de l\'entrée',
     shareEntry: 'Partager l\'entrée',
     entryLinkCopied: 'Lien de l\'entrée copié',

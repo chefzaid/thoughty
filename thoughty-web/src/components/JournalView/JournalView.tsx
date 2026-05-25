@@ -7,7 +7,7 @@ import EntriesList from '../EntriesList/EntriesList';
 import Pagination from '../Pagination/Pagination';
 import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
-import type { Entry, Diary, Config, GroupedEntries, SourceEntryInfo, VisibilityFilter, Attachment, EntryRevision } from '../../types';
+import type { Entry, Diary, Config, GroupedEntries, SourceEntryInfo, VisibilityFilter, Attachment, EntryRevision, ArchiveStatusFilter } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 
 interface JournalViewProps {
@@ -59,6 +59,8 @@ interface JournalViewProps {
   setFilterVisibility: Dispatch<SetStateAction<VisibilityFilter>>;
   filterFavorites: boolean;
   setFilterFavorites: Dispatch<SetStateAction<boolean>>;
+  filterArchiveStatus: ArchiveStatusFilter;
+  setFilterArchiveStatus: Dispatch<SetStateAction<ArchiveStatusFilter>>;
   setPage: Dispatch<SetStateAction<number>>;
   
   // Entries list
@@ -69,6 +71,7 @@ interface JournalViewProps {
   onDelete: (id: number) => void;
   onToggleVisibility: (entry: Entry) => void;
   onToggleFavorite: (entry: Entry) => void;
+  onToggleArchived: (entry: Entry) => void;
   editingEntry: Entry | null;
   editText: string;
   setEditText: Dispatch<SetStateAction<string>>;
@@ -101,7 +104,7 @@ interface JournalViewProps {
   onToggleSelect?: (id: number) => void;
   onSelectAll?: (ids: number[]) => void;
   onClearSelection?: () => void;
-  onBulkAction?: (action: 'delete' | 'visibility' | 'tags' | 'move', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number }) => void;
+  onBulkAction?: (action: 'delete' | 'visibility' | 'tags' | 'move' | 'archive', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean }) => void;
   onToggleBulkMode?: () => void;
   
   // Pagination
@@ -170,6 +173,8 @@ function JournalView({
   setFilterVisibility,
   filterFavorites,
   setFilterFavorites,
+  filterArchiveStatus,
+  setFilterArchiveStatus,
   setPage,
   loading,
   entries,
@@ -178,6 +183,7 @@ function JournalView({
   onDelete,
   onToggleVisibility,
   onToggleFavorite,
+  onToggleArchived,
   editingEntry,
   editText,
   setEditText,
@@ -286,6 +292,8 @@ function JournalView({
         setFilterVisibility={setFilterVisibility}
         filterFavorites={filterFavorites}
         setFilterFavorites={setFilterFavorites}
+        filterArchiveStatus={filterArchiveStatus}
+        setFilterArchiveStatus={setFilterArchiveStatus}
         allTags={allTags}
         tagMetadata={tagMetadata}
         setPage={setPage}
@@ -303,6 +311,7 @@ function JournalView({
         onDelete={onDelete}
         onToggleVisibility={onToggleVisibility}
         onToggleFavorite={onToggleFavorite}
+        onToggleArchived={onToggleArchived}
         editingEntry={editingEntry}
         editText={editText}
         setEditText={setEditText}
