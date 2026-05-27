@@ -12,8 +12,10 @@ import { IoModule } from './modules/io';
 import { AttachmentsModule } from './modules/attachments';
 import { AiModule } from './modules/ai';
 import { CloudSyncModule } from './modules/cloud-sync';
+import { HealthController } from './health.controller';
 
 @Module({
+  controllers: [HealthController],
   imports: [
     // Global configuration
     ConfigModule.forRoot({
