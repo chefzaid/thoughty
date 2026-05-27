@@ -81,6 +81,8 @@ flowchart LR
 - `Fix Writing` sends draft content to the configured model to correct grammar, spelling, and punctuation while aiming to preserve the original meaning and tone.
 - AI tag suggestions are available on demand, and automatic AI tagging can also run during create or update flows when the configured per-user tag limit is greater than `0`.
 - Entry-specific AI chat turns an existing journal entry into the context for a conversation, which is useful for reflection, analysis, and follow-up questions rather than generic chatbot use.
+- AI chat history is stored per entry on the server, so reopening the same entry restores the prior conversation instead of starting from an empty modal on each device or browser.
+- The AI chat modal can export the current conversation as a plain-text transcript that includes entry metadata and the full message history.
 - Text-to-speech can read entries aloud through the browser speech synthesis API, with language-aware voice selection and an option to include entry dates in the spoken output.
 
 ## Accounts, Profile, and Preferences

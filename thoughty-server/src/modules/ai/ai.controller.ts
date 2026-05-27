@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { AiService } from './ai.service';
 import { SuggestTagsDto } from './dto/suggest-tags.dto';
 import { FixWritingDto } from './dto/fix-writing.dto';
-import { ChatDto } from './dto/chat.dto';
+import { ChatDto, ChatHistoryResponseDto, ChatResponseDto } from './dto/chat.dto';
 
 @ApiTags('AI')
 @ApiBearerAuth()
@@ -43,11 +43,22 @@ export class AiController {
 
   @Post('chat')
   @ApiOperation({ summary: 'Chat about a journal entry with AI for analysis or discussion' })
-  @ApiResponse({ status: 200, description: 'AI reply returned successfully' })
+  @ApiResponse({ status: 200, description: 'AI reply returned successfully', type: ChatResponseDto })
   async chat(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChatDto,
-  ): Promise<{ reply: string }> {
+  ): Promise<ChatResponseDto> {
     return this.aiService.chat(user.userId, dto);
+  }
+
+  @Get('history/:entryId')
+  @ApiOperation({ summary: 'Get persisted AI chat history for an entry' })
+  @ApiParam({ name: 'entryId', type: Number })
+  @ApiResponse({ status: 200, description: 'Stored AI chat history', type: ChatHistoryResponseDto })
+  async getHistory(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('entryId', ParseIntPipe) entryId: number,
+  ): Promise<ChatHistoryResponseDto> {
+    return this.aiService.getChatHistory(user.userId, entryId);
   }
 }

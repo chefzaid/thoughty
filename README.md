@@ -1,6 +1,7 @@
 # Thoughty 📓
 
-Thoughty is a modern, feature-rich journal application designed to help you capture your thoughts, organize them with tags, manage multiple diaries, and gain meaningful insights through statistics and visualizations. Built with a focus on privacy, flexibility, and a polished user experience.
+Thoughty is a modern, feature-rich journal application designed to help you capture your thoughts, organize them with tags, manage multiple diaries. With big features like cloud-sync, statistics, visualizations, and gain meaningful insights through AI-powered analysis and recommendations. Built with a focus on privacy, flexibility, and a polished user experience, Thoughty aims to be your ultimate journaling companion.
+
 
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
 ![React](https://img.shields.io/badge/react-19-61dafb.svg)

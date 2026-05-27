@@ -1,6 +1,20 @@
 {
   "openapi": "3.0.0",
   "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "HealthController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
     "/api/auth/register": {
       "post": {
         "operationId": "AuthController_register",
@@ -1233,7 +1247,14 @@
         },
         "responses": {
           "200": {
-            "description": "AI reply returned successfully"
+            "description": "AI reply returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponseDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1242,6 +1263,42 @@
           }
         ],
         "summary": "Chat about a journal entry with AI for analysis or discussion",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/api/ai/history/{entryId}": {
+      "get": {
+        "operationId": "AiController_getHistory",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stored AI chat history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatHistoryResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get persisted AI chat history for an entry",
         "tags": [
           "AI"
         ]
@@ -2901,6 +2958,10 @@
       "ChatDto": {
         "type": "object",
         "properties": {
+          "entryId": {
+            "type": "number",
+            "description": "The entry being discussed"
+          },
           "entryContent": {
             "type": "string",
             "description": "The journal entry content to discuss"
@@ -2914,7 +2975,40 @@
           }
         },
         "required": [
+          "entryId",
           "entryContent",
+          "messages"
+        ]
+      },
+      "ChatResponseDto": {
+        "type": "object",
+        "properties": {
+          "reply": {
+            "type": "string",
+            "description": "Assistant reply"
+          }
+        },
+        "required": [
+          "reply"
+        ]
+      },
+      "ChatHistoryResponseDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "description": "The entry being discussed"
+          },
+          "messages": {
+            "description": "Conversation messages",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessageDto"
+            }
+          }
+        },
+        "required": [
+          "entryId",
           "messages"
         ]
       },

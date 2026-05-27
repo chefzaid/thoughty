@@ -44,13 +44,14 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
   };
 
   const chat = async (
+    entryId: number,
     entryContent: string,
     messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   ): Promise<string | null> => {
     try {
       const response = await authFetch('/api/ai/chat', {
         method: 'POST',
-        body: JSON.stringify({ entryContent, messages }),
+        body: JSON.stringify({ entryId, entryContent, messages }),
       });
 
       const data = await safeJsonParse<{ reply?: string }>(response);
@@ -62,6 +63,29 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     } catch (error) {
       console.error('Error in AI chat:', error);
       return null;
+    }
+  };
+
+  const getChatHistory = async (
+    entryId: number,
+  ): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> => {
+    try {
+      const response = await authFetch(`/api/ai/history/${entryId}`);
+      const data = await safeJsonParse<{ messages?: Array<{ role?: string; content?: string }> }>(response);
+
+      if (!response.ok || !data || !Array.isArray(data.messages)) {
+        return [];
+      }
+
+      return data.messages.filter((message): message is { role: 'user' | 'assistant'; content: string } => (
+        typeof message === 'object'
+        && message !== null
+        && (message.role === 'user' || message.role === 'assistant')
+        && typeof message.content === 'string'
+      ));
+    } catch (error) {
+      console.error('Error loading AI chat history:', error);
+      return [];
     }
   };
 
@@ -79,5 +103,5 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     }
   };
 
-  return { suggestTags, fixWriting, chat, fetchModels };
+  return { suggestTags, fixWriting, chat, getChatHistory, fetchModels };
 };

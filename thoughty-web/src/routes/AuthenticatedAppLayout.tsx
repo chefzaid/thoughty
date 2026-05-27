@@ -24,7 +24,8 @@ interface AuthenticatedAppLayoutProps {
   readonly entryToastVisible: boolean;
   readonly chatEntry: Entry | null;
   readonly onCloseChat: () => void;
-  readonly onSendChat: (entryContent: string, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null>;
+  readonly onLoadChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
+  readonly onSendChat: (entryId: number, entryContent: string, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null>;
 }
 
 function AuthenticatedAppLayout({
@@ -46,6 +47,7 @@ function AuthenticatedAppLayout({
   entryToastVisible,
   chatEntry,
   onCloseChat,
+  onLoadChatHistory,
   onSendChat,
 }: Readonly<AuthenticatedAppLayoutProps>) {
   return (
@@ -97,6 +99,7 @@ function AuthenticatedAppLayout({
             entry={chatEntry}
             isOpen={!!chatEntry}
             onClose={onCloseChat}
+            onLoadHistory={onLoadChatHistory}
             onSend={onSendChat}
             theme={config.theme}
             t={t}

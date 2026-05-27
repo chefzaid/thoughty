@@ -1,8 +1,11 @@
-import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AiChatHistory, Entry } from '@/database/entities';
 import { ConfigService } from '@/modules/config';
 import { SuggestTagsDto } from './dto/suggest-tags.dto';
 import { FixWritingDto } from './dto/fix-writing.dto';
-import { ChatDto } from './dto/chat.dto';
+import { ChatDto, ChatHistoryResponseDto, ChatMessageDto } from './dto/chat.dto';
 
 type OpenRouterResponse = {
   choices?: Array<{
@@ -18,7 +21,43 @@ export class AiService {
   private readonly defaultModel = process.env.OPENROUTER_TAG_MODEL || 'openai/gpt-4o-mini';
   private readonly apiKey = process.env.OPENROUTER_API_KEY || '';
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(Entry)
+    private readonly entryRepository: Repository<Entry>,
+    @InjectRepository(AiChatHistory)
+    private readonly chatHistoryRepository: Repository<AiChatHistory>,
+  ) {}
+
+  private async assertEntryOwnership(userId: number, entryId: number): Promise<void> {
+    const entry = await this.entryRepository.findOne({ where: { id: entryId, userId } });
+
+    if (!entry) {
+      throw new NotFoundException('Entry not found');
+    }
+  }
+
+  async getChatHistory(userId: number, entryId: number): Promise<ChatHistoryResponseDto> {
+    await this.assertEntryOwnership(userId, entryId);
+
+    const history = await this.chatHistoryRepository.findOne({ where: { userId, entryId } });
+
+    return {
+      entryId,
+      messages: history?.messages ?? [],
+    };
+  }
+
+  private async saveChatHistory(userId: number, entryId: number, messages: ChatMessageDto[]): Promise<void> {
+    const existingHistory = await this.chatHistoryRepository.findOne({ where: { userId, entryId } });
+
+    await this.chatHistoryRepository.save({
+      ...existingHistory,
+      userId,
+      entryId,
+      messages,
+    });
+  }
 
   private async getModel(userId: number): Promise<string> {
     const model = await this.configService.getDecryptedConfig(userId, 'openRouterModel');
@@ -161,6 +200,8 @@ export class AiService {
   }
 
   async chat(userId: number, dto: ChatDto): Promise<{ reply: string }> {
+    await this.assertEntryOwnership(userId, dto.entryId);
+
     if (!dto.entryContent.trim()) {
       throw new BadRequestException('Entry content is required');
     }
@@ -213,6 +254,8 @@ export class AiService {
     if (!reply) {
       throw new BadGatewayException('No response received from OpenRouter');
     }
+
+    await this.saveChatHistory(userId, dto.entryId, [...dto.messages, { role: 'assistant', content: reply }]);
 
     return { reply };
   }

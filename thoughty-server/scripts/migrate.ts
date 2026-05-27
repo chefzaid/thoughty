@@ -249,6 +249,20 @@ CREATE TABLE IF NOT EXISTS entry_revisions (
 CREATE INDEX IF NOT EXISTS idx_entry_revisions_entry_id ON entry_revisions(entry_id);
 CREATE INDEX IF NOT EXISTS idx_entry_revisions_user_id ON entry_revisions(user_id);
 
+-- Create ai_chat_histories table for persisted AI transcript history per entry
+CREATE TABLE IF NOT EXISTS ai_chat_histories (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    entry_id INTEGER NOT NULL REFERENCES entries(id) ON DELETE CASCADE,
+    messages JSONB NOT NULL DEFAULT '[]'::jsonb,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, entry_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ai_chat_histories_user_id ON ai_chat_histories(user_id);
+CREATE INDEX IF NOT EXISTS idx_ai_chat_histories_entry_id ON ai_chat_histories(entry_id);
+
 -- Create cloud_sync_jobs table for durable scheduled sync execution
 CREATE TABLE IF NOT EXISTS cloud_sync_jobs (
     id SERIAL PRIMARY KEY,
@@ -273,6 +287,20 @@ CREATE INDEX IF NOT EXISTS idx_cloud_sync_jobs_status_run_at ON cloud_sync_jobs(
 CREATE UNIQUE INDEX IF NOT EXISTS idx_cloud_sync_jobs_active_unique
     ON cloud_sync_jobs(user_id, provider)
     WHERE status IN ('queued', 'running');
+
+CREATE OR REPLACE FUNCTION set_ai_chat_histories_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_ai_chat_histories_updated_at ON ai_chat_histories;
+CREATE TRIGGER trg_ai_chat_histories_updated_at
+    BEFORE UPDATE ON ai_chat_histories
+    FOR EACH ROW
+    EXECUTE FUNCTION set_ai_chat_histories_updated_at();
 `;
 
 async function migrate(): Promise<void> {

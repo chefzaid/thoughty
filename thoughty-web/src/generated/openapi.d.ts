@@ -4,6 +4,22 @@
  */
 
 export interface paths {
+    "/api/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["HealthController_getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/register": {
         parameters: {
             query?: never;
@@ -528,6 +544,23 @@ export interface paths {
         put?: never;
         /** Chat about a journal entry with AI for analysis or discussion */
         post: operations["AiController_chat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/history/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get persisted AI chat history for an entry */
+        get: operations["AiController_getHistory"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1186,8 +1219,20 @@ export interface components {
             content: string;
         };
         ChatDto: {
+            /** @description The entry being discussed */
+            entryId: number;
             /** @description The journal entry content to discuss */
             entryContent: string;
+            /** @description Conversation messages */
+            messages: components["schemas"]["ChatMessageDto"][];
+        };
+        ChatResponseDto: {
+            /** @description Assistant reply */
+            reply: string;
+        };
+        ChatHistoryResponseDto: {
+            /** @description The entry being discussed */
+            entryId: number;
             /** @description Conversation messages */
             messages: components["schemas"]["ChatMessageDto"][];
         };
@@ -1379,6 +1424,23 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    HealthController_getHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AuthController_register: {
         parameters: {
             query?: never;
@@ -2219,7 +2281,31 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["ChatResponseDto"];
+                };
+            };
+        };
+    };
+    AiController_getHistory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stored AI chat history */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatHistoryResponseDto"];
+                };
             };
         };
     };

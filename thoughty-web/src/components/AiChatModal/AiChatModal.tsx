@@ -6,38 +6,102 @@ interface ChatMessage {
   content: string;
 }
 
+function buildTranscript(entry: Entry, messages: ChatMessage[]): string {
+  const entryTags = entry.tags.length > 0 ? `Tags: ${entry.tags.join(', ')}` : 'Tags: None';
+  const transcriptLines = messages.flatMap((message) => [
+    `${message.role === 'user' ? 'User' : 'Assistant'}:`,
+    message.content,
+    '',
+  ]);
+
+  return [
+    'Thoughty AI Chat Transcript',
+    '',
+    `Entry ID: ${entry.id}`,
+    `Date: ${entry.date}`,
+    entryTags,
+    '',
+    'Entry:',
+    entry.content,
+    '',
+    'Conversation:',
+    '',
+    ...transcriptLines,
+  ].join('\n').trimEnd();
+}
+
+function downloadTranscript(entry: Entry, messages: ChatMessage[]): void {
+  const transcript = buildTranscript(entry, messages);
+  const blob = new Blob([transcript], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  const safeDate = entry.date.replace(/[^0-9-]/g, '-') || 'entry';
+
+  anchor.href = url;
+  anchor.download = `thoughty_ai_chat_${safeDate}_entry-${entry.id}.txt`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+
+  URL.revokeObjectURL(url);
+}
+
 interface AiChatModalProps {
   readonly entry: Entry;
   readonly isOpen: boolean;
   readonly onClose: () => void;
-  readonly onSend: (entryContent: string, messages: ChatMessage[]) => Promise<string | null>;
+  readonly onSend: (entryId: number, entryContent: string, messages: ChatMessage[]) => Promise<string | null>;
+  readonly onLoadHistory: (entryId: number) => Promise<ChatMessage[]>;
   readonly theme?: 'light' | 'dark';
   readonly t: (key: string) => string;
 }
 
-function AiChatModal({ entry, isOpen, onClose, onSend, theme = 'dark', t }: AiChatModalProps) {
+function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'dark', t }: AiChatModalProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const isLight = theme === 'light';
 
-  // Reset state when entry changes or modal opens
+  // Load persisted history from the API when the modal opens or the active entry changes.
   useEffect(() => {
-    if (isOpen) {
-      setMessages([]);
-      setInput('');
-      setError('');
-      setLoading(false);
+    if (!isOpen) {
+      setHistoryLoading(false);
+      return;
     }
-  }, [isOpen, entry.id]);
+
+    let cancelled = false;
+
+    setMessages([]);
+    setInput('');
+    setError('');
+    setLoading(false);
+    setHistoryLoading(true);
+
+    void onLoadHistory(entry.id)
+      .then((loadedMessages) => {
+        if (!cancelled) {
+          setMessages(loadedMessages);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setHistoryLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [entry.id, isOpen, onLoadHistory]);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
-  }, [messages, loading]);
+  }, [messages, loading, historyLoading]);
 
   // Focus input when modal opens
   useEffect(() => {
@@ -57,7 +121,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, theme = 'dark', t }: AiCh
     setError('');
     setLoading(true);
 
-    const reply = await onSend(entry.content, updatedMessages);
+    const reply = await onSend(entry.id, entry.content, updatedMessages);
 
     setLoading(false);
 
@@ -66,7 +130,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, theme = 'dark', t }: AiCh
     } else {
       setError(t('aiChatError'));
     }
-  }, [input, loading, messages, entry.content, onSend, t]);
+  }, [entry.content, entry.id, input, loading, messages, onSend, t]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -80,6 +144,9 @@ function AiChatModal({ entry, isOpen, onClose, onSend, theme = 'dark', t }: AiCh
   const entryPreview = entry.content.length > 200
     ? entry.content.slice(0, 200) + '...'
     : entry.content;
+  const assistantMessageClassName = isLight
+    ? 'bg-gray-100 text-gray-800 rounded-bl-md'
+    : 'bg-gray-700 text-gray-200 rounded-bl-md';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -106,16 +173,30 @@ function AiChatModal({ entry, isOpen, onClose, onSend, theme = 'dark', t }: AiCh
           <h3 className={`text-lg font-semibold ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
             {t('aiChat')}
           </h3>
-          <button
-            onClick={onClose}
-            className={`p-1.5 rounded-lg transition-colors ${
-              isLight ? 'hover:bg-gray-100 text-gray-500' : 'hover:bg-gray-700 text-gray-400'
-            }`}
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => downloadTranscript(entry, messages)}
+              disabled={historyLoading || messages.length === 0}
+              className={`rounded-lg px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                isLight
+                  ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-gray-700 text-gray-200 hover:bg-gray-600'
+              }`}
+            >
+              {t('exportChatHistory')}
+            </button>
+            <button
+              onClick={onClose}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isLight ? 'hover:bg-gray-100 text-gray-500' : 'hover:bg-gray-700 text-gray-400'
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Entry context */}
@@ -131,29 +212,38 @@ function AiChatModal({ entry, isOpen, onClose, onSend, theme = 'dark', t }: AiCh
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-[200px]">
-          {messages.length === 0 && !loading && (
+          {historyLoading && (
+            <p className={`text-center text-sm italic ${isLight ? 'text-gray-400' : 'text-gray-500'}`}>
+              {t('aiLoadingHistory')}
+            </p>
+          )}
+          {messages.length === 0 && !loading && !historyLoading && (
             <p className={`text-center text-sm italic ${isLight ? 'text-gray-400' : 'text-gray-500'}`}>
               {t('aiChatPlaceholder')}
             </p>
           )}
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+          {messages.map((msg, i) => {
+            const messageKey = `${msg.role}:${msg.content}:${messages.slice(0, i).filter((candidate) => (
+              candidate.role === msg.role && candidate.content === msg.content
+            )).length}`;
+
+            return (
               <div
-                className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap ${
-                  msg.role === 'user'
-                    ? 'bg-blue-500 text-white rounded-br-md'
-                    : isLight
-                      ? 'bg-gray-100 text-gray-800 rounded-bl-md'
-                      : 'bg-gray-700 text-gray-200 rounded-bl-md'
-                }`}
+                key={messageKey}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {msg.content}
+                <div
+                  className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap ${
+                    msg.role === 'user'
+                      ? 'bg-blue-500 text-white rounded-br-md'
+                      : assistantMessageClassName
+                  }`}
+                >
+                  {msg.content}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {loading && (
             <div className="flex justify-start">
               <div className={`px-4 py-2.5 rounded-2xl rounded-bl-md text-sm ${
@@ -181,6 +271,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, theme = 'dark', t }: AiCh
               onKeyDown={handleKeyDown}
               placeholder={t('aiChatPlaceholder')}
               rows={1}
+              disabled={historyLoading}
               className={`flex-1 resize-none rounded-lg px-4 py-2.5 text-sm border focus:ring-2 focus:ring-blue-500 outline-none ${
                 isLight
                   ? 'bg-gray-50 border-gray-300 text-gray-900'
@@ -189,7 +280,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, theme = 'dark', t }: AiCh
             />
             <button
               onClick={handleSend}
-              disabled={!input.trim() || loading}
+              disabled={historyLoading || !input.trim() || loading}
               className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

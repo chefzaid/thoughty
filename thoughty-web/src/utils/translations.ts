@@ -195,8 +195,10 @@ export type TranslationKey =
   | 'discussEntry'
   | 'aiChat'
   | 'aiThinking'
+  | 'aiLoadingHistory'
   | 'aiChatPlaceholder'
   | 'aiChatError'
+  | 'exportChatHistory'
   | 'signIn'
   | 'signUp'
   | 'welcomeBack'
@@ -609,8 +611,10 @@ export const translations: Translations = {
     discussEntry: 'Discuss with AI',
     aiChat: 'AI Chat',
     aiThinking: 'Thinking...',
+    aiLoadingHistory: 'Loading chat history...',
     aiChatPlaceholder: 'Ask something about this entry...',
     aiChatError: 'Unable to get a response. Check your OpenRouter API key and try again.',
+    exportChatHistory: 'Export Chat',
 
     // Authentication
     signIn: 'Sign In',
@@ -1034,8 +1038,10 @@ export const translations: Translations = {
     discussEntry: 'Discuter avec l\'IA',
     aiChat: 'Chat IA',
     aiThinking: 'Réflexion...',
+    aiLoadingHistory: 'Chargement de l\'historique du chat...',
     aiChatPlaceholder: 'Posez une question sur cette entrée...',
     aiChatError: 'Impossible d\'obtenir une réponse. Vérifiez votre clé API OpenRouter et réessayez.',
+    exportChatHistory: 'Exporter le chat',
 
     // Authentication
     signIn: 'Se connecter',

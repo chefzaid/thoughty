@@ -1,11 +1,15 @@
 import { BadGatewayException, BadRequestException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { AiChatHistory, Entry } from '@/database/entities';
 import { ConfigService } from '@/modules/config';
 import { AiService } from './ai.service';
 
 describe('AiService', () => {
   let service: AiService;
   let configService: { getDecryptedConfig: jest.Mock };
+  let entryRepository: { findOne: jest.Mock };
+  let chatHistoryRepository: { findOne: jest.Mock; save: jest.Mock };
   const fetchMock = jest.fn();
 
   const createService = async (apiKey = 'sk-or-test-key') => {
@@ -15,10 +19,21 @@ describe('AiService', () => {
       getDecryptedConfig: jest.fn().mockResolvedValue(''),
     };
 
+    entryRepository = {
+      findOne: jest.fn().mockResolvedValue({ id: 10, userId: 1, content: 'Saved entry' }),
+    };
+
+    chatHistoryRepository = {
+      findOne: jest.fn().mockResolvedValue(null),
+      save: jest.fn().mockImplementation(async (value) => value),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AiService,
         { provide: ConfigService, useValue: configService },
+        { provide: getRepositoryToken(Entry), useValue: entryRepository },
+        { provide: getRepositoryToken(AiChatHistory), useValue: chatHistoryRepository },
       ],
     }).compile();
 
@@ -182,6 +197,7 @@ describe('AiService', () => {
 
   describe('chat', () => {
     const chatDto = {
+      entryId: 10,
       entryContent: 'Today I felt overwhelmed by all the tasks at work.',
       messages: [{ role: 'user' as const, content: 'What do you think about this entry?' }],
     };
@@ -198,6 +214,12 @@ describe('AiService', () => {
       service = await createService('');
 
       await expect(service.chat(1, chatDto)).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws when the entry does not belong to the user', async () => {
+      entryRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.chat(1, chatDto)).rejects.toThrow('Entry not found');
     });
 
     it('returns the AI reply', async () => {
@@ -219,6 +241,36 @@ describe('AiService', () => {
       expect(result).toEqual({
         reply: 'It sounds like you had a tough day. What tasks felt most overwhelming?',
       });
+      expect(chatHistoryRepository.save).toHaveBeenCalledWith({
+        userId: 1,
+        entryId: 10,
+        messages: [
+          { role: 'user', content: 'What do you think about this entry?' },
+          { role: 'assistant', content: 'It sounds like you had a tough day. What tasks felt most overwhelming?' },
+        ],
+      });
+    });
+
+    it('updates an existing persisted history when the chat succeeds', async () => {
+      chatHistoryRepository.findOne.mockResolvedValueOnce({ id: 7, userId: 1, entryId: 10, messages: [] });
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          choices: [{ message: { content: 'Try naming the hardest task first.' } }],
+        }),
+      });
+
+      await service.chat(1, chatDto);
+
+      expect(chatHistoryRepository.save).toHaveBeenCalledWith({
+        id: 7,
+        userId: 1,
+        entryId: 10,
+        messages: [
+          { role: 'user', content: 'What do you think about this entry?' },
+          { role: 'assistant', content: 'Try naming the hardest task first.' },
+        ],
+      });
     });
 
     it('throws when OpenRouter returns an error', async () => {
@@ -236,6 +288,37 @@ describe('AiService', () => {
       });
 
       await expect(service.chat(1, chatDto)).rejects.toThrow(BadGatewayException);
+    });
+  });
+
+  describe('getChatHistory', () => {
+    it('returns an empty history when nothing has been stored yet', async () => {
+      chatHistoryRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.getChatHistory(1, 10)).resolves.toEqual({
+        entryId: 10,
+        messages: [],
+      });
+    });
+
+    it('returns persisted history for the entry', async () => {
+      chatHistoryRepository.findOne.mockResolvedValueOnce({
+        id: 4,
+        userId: 1,
+        entryId: 10,
+        messages: [{ role: 'assistant', content: 'Saved reflection' }],
+      });
+
+      await expect(service.getChatHistory(1, 10)).resolves.toEqual({
+        entryId: 10,
+        messages: [{ role: 'assistant', content: 'Saved reflection' }],
+      });
+    });
+
+    it('throws when the entry does not belong to the user', async () => {
+      entryRepository.findOne.mockResolvedValueOnce(null);
+
+      await expect(service.getChatHistory(1, 999)).rejects.toThrow('Entry not found');
     });
   });
 

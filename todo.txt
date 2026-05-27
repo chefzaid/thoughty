@@ -2,6 +2,7 @@
 Features to implement:
 
 *** Personalization & UX
+- We start to have so many buttons/features next to entries. Optimize that in a UX way
 - Font customization (type, size, color) for better readability and user preference in Profile settings
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats
 - Voice personalization for TTS
@@ -21,9 +22,7 @@ Features to implement:
 - The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
 
 *** AI
-- Keep history of AI chats and allow users to export them as text files
-- Rephrase on existing entries (button next to chat)
-- Give options for rephrasing: Grammar/form, slight writing style enhancements, and a complete rewrite
+- Rephrase on existing entries (button next to chat button) and give options: Grammar/form only, slight writing style enhancements, and a complete rewrite
 - Tone and mood of thoughts stats (analyzed by AI)
 - Subjects discussed stats (analyzed by AI)
 - Personality analysis through the choice of words and subjects
@@ -46,11 +45,9 @@ Features to implement:
 - Spam and bots protection on sign up and login forms
 - Rate limiting and prevent DDOS from too much data sent
 
-*** Future apps
-- Mobile app version for iOS and Android with offline mode for journaling without internet connection and sync once connected
-- Recurring journaling reminders and writing prompts via app notifications at a user-configured time
 
-*** Infrastructure & Reliability
+*** Technical Improvements
+- Dbloat any big files/classes (500+ LOC), increase code coverage to 90%
 - Playwright end-to-end tests for critical user flows (sign up, login, create entry, edit entry, delete entry, view stats) based on README features list
 - SSL and HTTPS support for secure communication
 - Optimize database for better performance
@@ -82,6 +79,10 @@ Features to implement:
 - Full accessibility audit and remediation (aria-labels, screen reader support, skip-to-content links, focus management)
 - High contrast mode and adjustable font sizes
 - Keyboard-only navigation support for all interactive elements
+
+*** Future apps
+- Mobile app version for iOS and Android with offline mode for journaling without internet connection and sync once connected
+- Recurring journaling reminders and writing prompts via app notifications at a user-configured time
 
 *** Life ERP
 - This project could evolve into a Personal ERP
