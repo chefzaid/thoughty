@@ -111,50 +111,55 @@ pipeline {
             }
         }
 
-                // ── Smoke Test Built Server Image ──────────────────────
-                stage('Smoke Test Server Image') {
-                        steps {
-                                sh '''
-                                        set -euo pipefail
+        // ── Smoke Test Built Server Image ──────────────────────
+        stage('Smoke Test Server Image') {
+            steps {
+                sh '''
+                    set -eu
 
-                                        NETWORK="thoughty-ci-${BUILD_NUMBER}"
-                                        POSTGRES_CONTAINER="thoughty-ci-db-${BUILD_NUMBER}"
+                    NETWORK="thoughty-ci-${BUILD_NUMBER}"
+                    POSTGRES_CONTAINER="thoughty-ci-db-${BUILD_NUMBER}"
 
-                                        cleanup() {
-                                            docker rm -f "$POSTGRES_CONTAINER" >/dev/null 2>&1 || true
-                                            docker network rm "$NETWORK" >/dev/null 2>&1 || true
-                                        }
+                    cleanup() {
+                        docker rm -f "$POSTGRES_CONTAINER" >/dev/null 2>&1 || true
+                        docker network rm "$NETWORK" >/dev/null 2>&1 || true
+                    }
 
-                                        trap cleanup EXIT
+                    trap cleanup EXIT
 
-                                        docker network create "$NETWORK" >/dev/null
-                                        docker run -d --name "$POSTGRES_CONTAINER" --network "$NETWORK" \
-                                            -e POSTGRES_USER=postgres \
-                                            -e POSTGRES_PASSWORD=password \
-                                            -e POSTGRES_DB=journal \
-                                            postgres:16-alpine >/dev/null
+                    docker network create "$NETWORK" >/dev/null
+                    docker run -d --name "$POSTGRES_CONTAINER" --network "$NETWORK" \
+                        -e POSTGRES_USER=postgres \
+                        -e POSTGRES_PASSWORD=password \
+                        -e POSTGRES_DB=journal \
+                        postgres:16-alpine >/dev/null
 
-                                        for i in $(seq 1 30); do
-                                            if docker exec "$POSTGRES_CONTAINER" pg_isready -U postgres -d journal >/dev/null 2>&1; then
-                                                break
-                                            fi
+                    ready=false
+                    for i in $(seq 1 30); do
+                        if docker exec "$POSTGRES_CONTAINER" pg_isready -U postgres -d journal >/dev/null 2>&1; then
+                            ready=true
+                            break
+                        fi
 
-                                            sleep 2
-                                        done
+                        sleep 2
+                    done
 
-                                        docker exec "$POSTGRES_CONTAINER" pg_isready -U postgres -d journal >/dev/null
+                    if [ "$ready" != true ]; then
+                        echo "PostgreSQL did not become ready in time"
+                        exit 1
+                    fi
 
-                                        docker run --rm --network "$NETWORK" \
-                                            -e POSTGRES_HOST="$POSTGRES_CONTAINER" \
-                                            -e POSTGRES_PORT=5432 \
-                                            -e POSTGRES_USER=postgres \
-                                            -e POSTGRES_PASSWORD=password \
-                                            -e POSTGRES_DB=journal \
-                                            ${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} \
-                                            npm run db:migrate:dist
-                                '''
-                        }
-                }
+                    docker run --rm --network "$NETWORK" \
+                        -e POSTGRES_HOST="$POSTGRES_CONTAINER" \
+                        -e POSTGRES_PORT=5432 \
+                        -e POSTGRES_USER=postgres \
+                        -e POSTGRES_PASSWORD=password \
+                        -e POSTGRES_DB=journal \
+                        ${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} \
+                        npm run db:migrate:dist
+                '''
+            }
+        }
 
         // ── Push Images ──────────────────────────────────────────
         stage('Push Images') {
