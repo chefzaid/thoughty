@@ -51,7 +51,6 @@ Features to implement:
 - Recurring journaling reminders and writing prompts via app notifications at a user-configured time
 
 *** Infrastructure & Reliability
-- Split README into multiple files under docs directory (ADR, development setup, deployment guide, etc.) for better organization and readability
 - Playwright end-to-end tests for critical user flows (sign up, login, create entry, edit entry, delete entry, view stats) based on README features list
 - SSL and HTTPS support for secure communication
 - Optimize database for better performance
