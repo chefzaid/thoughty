@@ -90,10 +90,10 @@ describe('DiaryManager', () => {
     it('edits and saves diary', async () => {
         render(<DiaryManager {...baseProps} />);
         const editButtons = screen.getAllByTitle('edit');
-        fireEvent.click(editButtons[1]); // Click edit on second diary (Work)
+        fireEvent.click(editButtons[1]!); // Click edit on second diary (Work)
 
         const editInputs = screen.getAllByDisplayValue('Work');
-        fireEvent.change(editInputs[0], { target: { value: 'Work Updated' } });
+        fireEvent.change(editInputs[0]!, { target: { value: 'Work Updated' } });
         fireEvent.click(screen.getByText('save'));
 
         await waitFor(() => {
@@ -107,7 +107,7 @@ describe('DiaryManager', () => {
     it('cancels edit mode', async () => {
         render(<DiaryManager {...baseProps} />);
         const editButtons = screen.getAllByTitle('edit');
-        fireEvent.click(editButtons[0]);
+        fireEvent.click(editButtons[0]!);
         fireEvent.click(screen.getByText('cancel'));
         await waitFor(() => {
             expect(screen.queryByText('save')).not.toBeInTheDocument();

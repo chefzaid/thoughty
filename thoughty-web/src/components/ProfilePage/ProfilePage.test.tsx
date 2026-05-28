@@ -63,7 +63,6 @@ describe('ProfilePage', () => {
             defaultVisibility: 'private',
             autoTagMaxTags: '0'
         },
-        allTags: ['focus', 'reflection'],
         onUpdateConfig: vi.fn(),
         onDownloadData: vi.fn().mockResolvedValue(true),
         onBack: vi.fn(),
@@ -72,8 +71,6 @@ describe('ProfilePage', () => {
             return key;
         },
         stats: {
-            totalEntries: 42,
-            uniqueTags: 15,
             firstEntryYear: 2023
         }
     };

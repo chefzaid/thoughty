@@ -8,6 +8,7 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
+import { safeJsonParse } from '../services/api/base';
 
 // Google API Types
 interface GoogleCredentialResponse {
@@ -114,19 +115,6 @@ interface GoogleCredentialPayload {
   name: string;
   picture: string;
 }
-
-// Safe JSON parsing helper - returns null if parsing fails
-const safeJsonParse = async <T = unknown>(response: Response): Promise<T | null> => {
-  try {
-    if (typeof response.json === 'function') {
-      return await response.json();
-    }
-    const text = await response.text();
-    return text ? JSON.parse(text) : null;
-  } catch {
-    return null;
-  }
-};
 
 function parseGoogleCredentialPayload(credential: string): GoogleCredentialPayload {
   const payloadPart = credential.split('.')[1];

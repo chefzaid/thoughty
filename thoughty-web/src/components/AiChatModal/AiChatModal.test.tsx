@@ -10,10 +10,10 @@ const mockEntry: Entry = {
   date: '2025-01-15',
   tags: ['happy', 'outdoors'],
   visibility: 'private',
-  favorite: false,
-  format: 'text',
+  is_favorite: false,
+  format: 'plain',
   attachments: [],
-  diary: { id: 1, name: 'Default' },
+  diary_name: 'Default',
 };
 
 const t = (key: string) => {

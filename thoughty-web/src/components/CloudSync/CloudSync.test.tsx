@@ -108,7 +108,7 @@ describe('CloudSync', () => {
             expect(screen.getAllByText('cloudConnect')).toHaveLength(3);
         });
 
-        fireEvent.click(screen.getAllByText('cloudConnect')[0]);
+        fireEvent.click(screen.getAllByText('cloudConnect')[0]!);
 
         await waitFor(() => {
             expect(mockCloudSyncService.getAuthUrl).toHaveBeenCalledWith('google_drive', expect.stringContaining('/cloud-callback'));
@@ -169,7 +169,7 @@ describe('CloudSync', () => {
         });
         mockCloudSyncService.uploadExport.mockResolvedValue({ id: '1', name: 'export.json', size: 100, modifiedAt: '2024-01-01' });
 
-        render(<CloudSync theme="dark" t={mockT} diaryId={5} diaryName="Work" />);
+        render(<CloudSync theme="dark" t={mockT} diaryId={5} />);
 
         await waitFor(() => {
             expect(screen.getByText('cloudUpload')).toBeInTheDocument();
@@ -177,11 +177,11 @@ describe('CloudSync', () => {
 
         // Change format to JSON (first format select is for upload options)
         const formatSelects = screen.getAllByDisplayValue('formatTxt');
-        fireEvent.change(formatSelects[0], { target: { value: 'json' } });
+        fireEvent.change(formatSelects[0]!, { target: { value: 'json' } });
 
         // Toggle includeVisibility (first checkbox is for upload options)
         const checkboxes = screen.getAllByText('includeVisibility');
-        fireEvent.click(checkboxes[0]);
+        fireEvent.click(checkboxes[0]!);
 
         fireEvent.click(screen.getByText('cloudUpload'));
 

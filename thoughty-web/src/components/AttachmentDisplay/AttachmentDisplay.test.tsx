@@ -16,7 +16,7 @@ describe('AttachmentDisplay', () => {
 
   it('renders nothing when attachments is undefined', () => {
     const { container } = render(
-      <AttachmentDisplay attachments={undefined} theme="dark" t={mockT} />
+      <AttachmentDisplay attachments={[]} theme="dark" t={mockT} />
     );
     expect(container.innerHTML).toBe('');
   });

@@ -38,7 +38,7 @@ describe('useAppShellEffects', () => {
       expect(updateConfig).toHaveBeenCalledTimes(1);
     });
 
-    const nextConfig = updateConfig.mock.calls[0][0] as { tagMetadata?: string };
+    const nextConfig = updateConfig.mock.calls[0]![0] as { tagMetadata?: string };
     expect(nextConfig.tagMetadata).not.toBe('{}');
     expect(JSON.parse(nextConfig.tagMetadata ?? '{}')).toMatchObject({
       focus: {

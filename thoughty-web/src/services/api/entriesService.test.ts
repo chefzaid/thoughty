@@ -20,6 +20,7 @@ describe('entriesService', () => {
       filterDate: '',
       filterVisibility: 'all',
       favorites: false,
+      archiveStatus: 'all' as const,
       diaryId: null,
     };
 
@@ -209,6 +210,7 @@ describe('entriesService', () => {
       tags: ['tag3'],
       date: '2024-01-20',
       visibility: 'public' as const,
+      format: 'plain' as const,
     };
 
     it('returns true on successful update', async () => {
@@ -533,6 +535,7 @@ describe('entriesService', () => {
       filterDate: '',
       filterVisibility: 'all',
       favorites: false,
+      archiveStatus: 'all' as const,
       diaryId: null,
     };
 

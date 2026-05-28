@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './CloudSync.css';
 import { useApiServices } from '../../hooks/useAppState';
 import type { CloudProviderType, CloudFileInfo, SyncScheduleConfig, SyncFrequency } from '../../services/api/cloudSyncService';
 import { CLOUD_PROVIDER_ICONS, CLOUD_PROVIDER_NAMES } from '../CloudProviderIcons';
+import { downloadBlob } from '../../utils/downloadFile';
 
 type ExportFormat = 'txt' | 'json' | 'md';
 
@@ -21,6 +22,8 @@ interface MessageState {
     type: 'success' | 'error';
     text: string;
 }
+
+const MESSAGE_TIMEOUT_MS = 4000;
 
 const PROVIDER_CONFIG: Record<CloudProviderType, { name: string }> = {
     google_drive: { name: CLOUD_PROVIDER_NAMES.google_drive },
@@ -58,6 +61,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
         dropbox: false,
     });
     const [syncing, setSyncing] = useState<CloudProviderType | null>(null);
+    const messageTimeoutRef = useRef<number | null>(null);
 
     const isLight = theme === 'light';
 
@@ -91,6 +95,25 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
         fetchSchedules();
     }, [fetchStatus, fetchSchedules]);
 
+    useEffect(() => () => {
+        if (messageTimeoutRef.current !== null) {
+            globalThis.clearTimeout(messageTimeoutRef.current);
+        }
+    }, []);
+
+    const showMessage = useCallback((type: MessageState['type'], text: string) => {
+        setMessage({ type, text });
+
+        if (messageTimeoutRef.current !== null) {
+            globalThis.clearTimeout(messageTimeoutRef.current);
+        }
+
+        messageTimeoutRef.current = globalThis.setTimeout(() => {
+            setMessage(null);
+            messageTimeoutRef.current = null;
+        }, MESSAGE_TIMEOUT_MS);
+    }, []);
+
     // Listen for OAuth callback messages
     useEffect(() => {
         const handleMessage = async (event: MessageEvent) => {
@@ -102,19 +125,18 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                 const redirectUri = `${globalThis.location.origin}/cloud-callback`;
                 const success = await cloudSyncService.connect(provider, code, redirectUri);
                 if (success) {
-                    setMessage({ type: 'success', text: t('cloudConnected', { provider: PROVIDER_CONFIG[provider as CloudProviderType]?.name || provider }) });
+                    showMessage('success', t('cloudConnected', { provider: PROVIDER_CONFIG[provider as CloudProviderType]?.name || provider }));
                     await fetchStatus();
                 } else {
-                    setMessage({ type: 'error', text: t('cloudConnectError') });
+                    showMessage('error', t('cloudConnectError'));
                 }
                 setConnecting(null);
-                setTimeout(() => setMessage(null), 4000);
             }
         };
 
         globalThis.addEventListener('message', handleMessage);
         return () => globalThis.removeEventListener('message', handleMessage);
-    }, [cloudSyncService, fetchStatus, t]);
+    }, [cloudSyncService, fetchStatus, showMessage, t]);
 
     const handleSaveSchedule = async (provider: CloudProviderType) => {
         const success = await cloudSyncService.setSchedule(provider, {
@@ -124,23 +146,21 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
             includeVisibility: scheduleIncludeVisibility[provider],
         });
         if (success) {
-            setMessage({ type: 'success', text: t('cloudScheduleSaved') });
+            showMessage('success', t('cloudScheduleSaved'));
             await fetchSchedules();
         } else {
-            setMessage({ type: 'error', text: t('cloudScheduleSaveError') });
+            showMessage('error', t('cloudScheduleSaveError'));
         }
-        setTimeout(() => setMessage(null), 4000);
     };
 
     const handleRemoveSchedule = async (provider: CloudProviderType) => {
         const success = await cloudSyncService.deleteSchedule(provider);
         if (success) {
-            setMessage({ type: 'success', text: t('cloudScheduleRemoved') });
+            showMessage('success', t('cloudScheduleRemoved'));
             await fetchSchedules();
         } else {
-            setMessage({ type: 'error', text: t('cloudScheduleRemoveError') });
+            showMessage('error', t('cloudScheduleRemoveError'));
         }
-        setTimeout(() => setMessage(null), 4000);
     };
 
     const handleSyncNow = async (provider: CloudProviderType) => {
@@ -148,16 +168,15 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
         const result = await cloudSyncService.triggerSync(provider);
         if (result) {
             if (result.synced) {
-                setMessage({ type: 'success', text: t('cloudSyncSuccess', { name: result.file?.name || '' }) });
+                showMessage('success', t('cloudSyncSuccess', { name: result.file?.name || '' }));
             } else {
-                setMessage({ type: 'success', text: t('cloudSyncNoChanges') });
+                showMessage('success', t('cloudSyncNoChanges'));
             }
             await fetchSchedules();
         } else {
-            setMessage({ type: 'error', text: t('cloudSyncError') });
+            showMessage('error', t('cloudSyncError'));
         }
         setSyncing(null);
-        setTimeout(() => setMessage(null), 4000);
     };
 
     const handleConnect = async (provider: CloudProviderType) => {
@@ -172,7 +191,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
             const top = globalThis.screenY + (globalThis.outerHeight - height) / 2;
             globalThis.open(authUrl, 'cloud-oauth', `width=${width},height=${height},left=${left},top=${top}`);
         } else {
-            setMessage({ type: 'error', text: t('cloudConnectError') });
+            showMessage('error', t('cloudConnectError'));
             setConnecting(null);
         }
     };
@@ -180,16 +199,15 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
     const handleDisconnect = async (provider: CloudProviderType) => {
         const success = await cloudSyncService.disconnect(provider);
         if (success) {
-            setMessage({ type: 'success', text: t('cloudDisconnected', { provider: PROVIDER_CONFIG[provider]?.name || provider }) });
+            showMessage('success', t('cloudDisconnected', { provider: PROVIDER_CONFIG[provider]?.name || provider }));
             await fetchStatus();
             if (expandedProvider === provider) {
                 setExpandedProvider(null);
                 setFiles([]);
             }
         } else {
-            setMessage({ type: 'error', text: t('cloudDisconnectError') });
+            showMessage('error', t('cloudDisconnectError'));
         }
-        setTimeout(() => setMessage(null), 4000);
     };
 
     const handleUpload = async (provider: CloudProviderType) => {
@@ -200,16 +218,15 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
             includeVisibility,
         });
         if (result) {
-            setMessage({ type: 'success', text: t('cloudUploadSuccess', { name: result.name }) });
+            showMessage('success', t('cloudUploadSuccess', { name: result.name }));
             // Refresh files if viewing
             if (expandedProvider === provider) {
                 await loadFiles(provider);
             }
         } else {
-            setMessage({ type: 'error', text: t('cloudUploadError') });
+            showMessage('error', t('cloudUploadError'));
         }
         setUploading(null);
-        setTimeout(() => setMessage(null), 4000);
     };
 
     const loadFiles = async (provider: CloudProviderType) => {
@@ -235,20 +252,12 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
         if (content) {
             // Trigger browser download
             const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = file.name;
-            document.body.appendChild(a);
-            a.click();
-            URL.revokeObjectURL(url);
-            a.remove();
-            setMessage({ type: 'success', text: t('cloudDownloadSuccess', { name: file.name }) });
+            downloadBlob(blob, file.name);
+            showMessage('success', t('cloudDownloadSuccess', { name: file.name }));
         } else {
-            setMessage({ type: 'error', text: t('cloudDownloadError') });
+            showMessage('error', t('cloudDownloadError'));
         }
         setDownloading(null);
-        setTimeout(() => setMessage(null), 4000);
     };
 
     const formatFileSize = (bytes: number): string => {

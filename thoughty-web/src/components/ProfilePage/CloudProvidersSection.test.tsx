@@ -97,7 +97,7 @@ describe('CloudProvidersSection', () => {
             expect(screen.getAllByText('cloudConnect')).toHaveLength(3);
         });
 
-        fireEvent.click(screen.getAllByText('cloudConnect')[0]);
+        fireEvent.click(screen.getAllByText('cloudConnect')[0]!);
 
         await waitFor(() => {
             expect(mockCloudSyncService.getAuthUrl).toHaveBeenCalledWith(
@@ -121,7 +121,7 @@ describe('CloudProvidersSection', () => {
             expect(screen.getAllByText('cloudConnect')).toHaveLength(3);
         });
 
-        fireEvent.click(screen.getAllByText('cloudConnect')[0]);
+        fireEvent.click(screen.getAllByText('cloudConnect')[0]!);
 
         await waitFor(() => {
             expect(screen.getByText('cloudConnectError')).toBeInTheDocument();

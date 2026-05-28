@@ -7,7 +7,7 @@ describe('createAttachmentsService', () => {
 
   beforeEach(() => {
     authFetch = vi.fn();
-    service = createAttachmentsService(authFetch);
+    service = createAttachmentsService(authFetch as Parameters<typeof createAttachmentsService>[0]);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 
@@ -49,7 +49,7 @@ describe('createAttachmentsService', () => {
       const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
       await service.uploadAttachment(file, 42);
 
-      const formData = authFetch.mock.calls[0][1].body as FormData;
+      const formData = authFetch.mock.calls[0]![1]?.body as FormData;
       expect(formData.get('entryId')).toBe('42');
     });
 

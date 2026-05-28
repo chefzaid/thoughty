@@ -1,4 +1,4 @@
-const DIARY_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
+import { getColorSeed, normalizeHexColor } from './colorUtils';
 
 export const DEFAULT_DIARY_COLORS = [
   '#E76F51',
@@ -12,30 +12,7 @@ export const DEFAULT_DIARY_COLORS = [
 ];
 
 export function normalizeDiaryColor(color?: string | null): string | null {
-  if (typeof color !== 'string') {
-    return null;
-  }
-
-  const normalized = color.trim().toUpperCase();
-  return DIARY_COLOR_PATTERN.test(normalized) ? normalized : null;
-}
-
-function getColorSeed(value?: string | number | null): number {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return Math.abs(Math.trunc(value));
-  }
-
-  if (typeof value !== 'string') {
-    return 0;
-  }
-
-  let hash = 0;
-  for (const character of value) {
-    const codePoint = character.codePointAt(0) ?? 0;
-    hash = Math.trunc((hash * 31) + codePoint);
-  }
-
-  return Math.abs(hash);
+  return normalizeHexColor(color);
 }
 
 export function getDiaryFallbackColor(seed?: string | number | null): string {

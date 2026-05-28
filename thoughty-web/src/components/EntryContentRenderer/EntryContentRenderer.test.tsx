@@ -316,8 +316,8 @@ describe('EntryContentRenderer', () => {
 
                 const marks = container.querySelectorAll('mark');
                 expect(marks).toHaveLength(2);
-                expect(marks[0].textContent).toBe('world');
-                expect(marks[1].textContent).toBe('world');
+                expect(marks[0]!.textContent).toBe('world');
+                expect(marks[1]!.textContent).toBe('world');
             });
 
             it('highlights are case-insensitive', () => {
@@ -371,7 +371,7 @@ describe('EntryContentRenderer', () => {
 
                 const marks = container.querySelectorAll('mark');
                 expect(marks).toHaveLength(1);
-                expect(marks[0].textContent).toBe('$5.00');
+                expect(marks[0]!.textContent).toBe('$5.00');
             });
 
             it('preserves surrounding text around highlights', () => {
@@ -416,7 +416,7 @@ describe('EntryContentRenderer', () => {
 
                 const marks = container.querySelectorAll('mark');
                 expect(marks).toHaveLength(1);
-                expect(marks[0].textContent).toBe('test');
+                expect(marks[0]!.textContent).toBe('test');
             });
 
             it('highlights text inside bold markdown', async () => {
@@ -435,7 +435,7 @@ describe('EntryContentRenderer', () => {
 
                 const marks = container.querySelectorAll('mark');
                 expect(marks).toHaveLength(1);
-                expect(marks[0].textContent).toBe('test');
+                expect(marks[0]!.textContent).toBe('test');
             });
 
             it('highlights text inside italic markdown', async () => {

@@ -83,7 +83,7 @@ describe('useSpeech', () => {
       result.current.speakEntry({ id: 1, content: 'Test content', date: '2024-01-15' });
     });
 
-    const utterance = speakMock.mock.calls[0][0];
+    const utterance = speakMock.mock.calls[0]![0];
     expect(utterance.text).toBe('Test content');
   });
 
@@ -96,7 +96,7 @@ describe('useSpeech', () => {
       result.current.speakEntry({ id: 1, content: 'Test content', date: '2024-01-15' });
     });
 
-    const utterance = speakMock.mock.calls[0][0];
+    const utterance = speakMock.mock.calls[0]![0];
     expect(utterance.text).toContain('Test content');
     // Date should be prepended with locale formatting
     expect(utterance.text).toContain('.');
@@ -112,7 +112,7 @@ describe('useSpeech', () => {
       result.current.speakEntry({ id: 1, content: 'Bonjour', date: '2024-01-15' });
     });
 
-    const utterance = speakMock.mock.calls[0][0];
+    const utterance = speakMock.mock.calls[0]![0];
     expect(utterance.lang).toBe('fr-FR');
   });
 
@@ -125,7 +125,7 @@ describe('useSpeech', () => {
       result.current.speakEntry({ id: 1, content: 'Hello', date: '2024-01-15' });
     });
 
-    const utterance = speakMock.mock.calls[0][0];
+    const utterance = speakMock.mock.calls[0]![0];
     expect(utterance.lang).toBe('en-US');
   });
 
@@ -165,7 +165,7 @@ describe('useSpeech', () => {
     });
 
     expect(result.current.speaking).toBe(true);
-    const utterance = speakMock.mock.calls[0][0];
+    const utterance = speakMock.mock.calls[0]![0];
     expect(utterance.text).toBe('Second');
   });
 
@@ -207,7 +207,7 @@ describe('useSpeech', () => {
     });
 
     expect(speakMock).toHaveBeenCalledTimes(2);
-    const secondUtterance = speakMock.mock.calls[1][0];
+    const secondUtterance = speakMock.mock.calls[1]![0];
     expect(secondUtterance.text).toBe('Second');
   });
 
@@ -296,7 +296,7 @@ describe('useSpeech', () => {
       result.current.speakEntry({ id: 1, content: 'Bonjour', date: '2024-01-15' });
     });
 
-    const utterance = speakMock.mock.calls[0][0];
+    const utterance = speakMock.mock.calls[0]![0];
     expect(utterance.voice).toBe(frenchVoice);
   });
 
@@ -309,7 +309,7 @@ describe('useSpeech', () => {
       result.current.speakEntry({ id: 1, content: 'Test', date: 'invalid-date' });
     });
 
-    const utterance = speakMock.mock.calls[0][0];
+    const utterance = speakMock.mock.calls[0]![0];
     // Should fall back to the raw date string
     expect(utterance.text).toContain('invalid-date');
   });

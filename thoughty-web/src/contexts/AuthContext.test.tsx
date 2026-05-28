@@ -101,7 +101,7 @@ describe('AuthContext', () => {
         await act(async () => {
             result = await requireContext(ctx).register('new@example.com', 'pass123', 'newuser');
         });
-        expect(result.success).toBe(true);
+        expect(result!.success).toBe(true);
         expect(localStorage.getItem('accessToken')).toBe('access');
         await waitFor(() => {
             expect(requireContext(ctx).user?.email).toBe('new@example.com');
@@ -129,7 +129,7 @@ describe('AuthContext', () => {
         await act(async () => {
             result = await requireContext(ctx).register('bad@example.com', 'pass', 'bad');
         });
-        expect(result.success).toBe(false);
+        expect(result!.success).toBe(false);
         await waitFor(() => {
             expect(requireContext(ctx).error).toBe('Registration failed');
         });
@@ -160,7 +160,7 @@ describe('AuthContext', () => {
         await act(async () => {
             result = await requireContext(ctx).login('login@example.com', 'pass');
         });
-        expect(result.success).toBe(true);
+        expect(result!.success).toBe(true);
         expect(localStorage.getItem('refreshToken')).toBe('refresh');
         await waitFor(() => {
             expect(requireContext(ctx).user?.email).toBe('login@example.com');
@@ -211,7 +211,7 @@ describe('AuthContext', () => {
         await act(async () => {
             response = await requireContext(ctx).authFetch('/api/protected');
         });
-        expect(response.ok).toBe(true);
+        expect(response!.ok).toBe(true);
         expect(callCount).toBe(2);
     });
 
@@ -272,25 +272,25 @@ describe('AuthContext', () => {
         await act(async () => {
             forgot = await requireContext(ctx).forgotPassword('a@b.com');
         });
-        expect(forgot.success).toBe(true);
+        expect(forgot!.success).toBe(true);
 
         let reset: { success: boolean } | undefined;
         await act(async () => {
             reset = await requireContext(ctx).resetPassword('token', 'newpass');
         });
-        expect(reset.success).toBe(true);
+        expect(reset!.success).toBe(true);
 
         let change: { success: boolean } | undefined;
         await act(async () => {
             change = await requireContext(ctx).changePassword('old', 'new');
         });
-        expect(change.success).toBe(true);
+        expect(change!.success).toBe(true);
 
         let del: { success: boolean } | undefined;
         await act(async () => {
             del = await requireContext(ctx).deleteAccount('pass');
         });
-        expect(del.success).toBe(true);
+        expect(del!.success).toBe(true);
     });
 
     it('rejects Google sign-in when not configured', async () => {

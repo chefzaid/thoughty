@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { BrowserRouter } from 'react-router-dom';
@@ -6,6 +6,7 @@ import { vi } from 'vitest';
 
 import App from '../App';
 import AppShell from '../AppShell';
+import { createTestQueryClient } from './queryClient';
 
 vi.mock('react-chartjs-2', () => ({
   Bar: () => <div data-testid="bar-chart" />,
@@ -196,22 +197,9 @@ export function renderApp() {
   return render(<App />);
 }
 
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-      mutations: {
-        retry: false,
-      },
-    },
-  });
-}
-
 export function renderAppShell() {
   return render(
-    <QueryClientProvider client={createQueryClient()}>
+    <QueryClientProvider client={createTestQueryClient()}>
       <BrowserRouter>
         <AppShell />
       </BrowserRouter>

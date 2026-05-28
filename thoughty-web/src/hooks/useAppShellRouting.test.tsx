@@ -62,6 +62,91 @@ describe('useAppShellRouting', () => {
     }, { replace: true });
   });
 
+  it('navigates between authenticated and public views', () => {
+    const navigate = vi.fn();
+    const { result } = renderHook(() => useAppShellRouting(createParams({
+      currentDiaryId: 12,
+      navigate,
+    })));
+
+    act(() => {
+      result.current.handleViewChange('journal');
+      result.current.handleViewChange('profile');
+      result.current.handlePublicViewChange('register');
+    });
+
+    expect(navigate).toHaveBeenNthCalledWith(1, {
+      pathname: '/journal',
+      search: '?diary=12',
+    });
+    expect(navigate).toHaveBeenNthCalledWith(2, {
+      pathname: '/profile',
+      search: '',
+    });
+    expect(navigate).toHaveBeenNthCalledWith(3, '/register');
+  });
+
+  it('updates the diary without navigation when the current view does not support diary search', () => {
+    const navigate = vi.fn();
+    const setCurrentDiaryId = vi.fn();
+    const { result } = renderHook(() => useAppShellRouting(createParams({
+      currentView: 'profile',
+      navigate,
+      setCurrentDiaryId,
+    })));
+
+    act(() => {
+      result.current.handleDiaryChange(4);
+    });
+
+    expect(setCurrentDiaryId).toHaveBeenCalledWith(4);
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates to diary management and back using the stored diary view state', () => {
+    const navigate = vi.fn();
+    const { result } = renderHook(() => useAppShellRouting(createParams({
+      currentDiaryId: null,
+      diaryReturnView: 'importExport',
+      navigate,
+    })));
+
+    act(() => {
+      result.current.handleManageDiaries('stats');
+      result.current.handleBackFromDiaries();
+    });
+
+    expect(navigate).toHaveBeenNthCalledWith(1, {
+      pathname: '/diaries',
+      search: '?from=stats&diary=all',
+    });
+    expect(navigate).toHaveBeenNthCalledWith(2, {
+      pathname: '/import-export',
+      search: '?diary=all',
+    });
+  });
+
+  it('updates import-export route state and omits includeVisibility when false', () => {
+    const navigate = vi.fn();
+    const { result } = renderHook(() => useAppShellRouting(createParams({
+      currentDiaryId: 3,
+      navigate,
+    })));
+
+    act(() => {
+      result.current.handleImportExportRouteStateChange({
+        section: 'export',
+        exportFormat: 'md',
+        includeVisibility: false,
+      });
+    });
+
+    expect(navigate).toHaveBeenCalledWith({
+      pathname: '/import-export',
+      search: '?diary=3&section=export&format=md',
+    }, { replace: true });
+  });
+
   it('returns to intro after logout', async () => {
     const logout = vi.fn().mockResolvedValue(undefined);
     const navigate = vi.fn();

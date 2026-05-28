@@ -8,7 +8,7 @@ Features to implement:
 - Voice personalization for TTS
 - Add other languages support (i18n) for the UI (Spanish, Italian, German, etc.)
 
-*** Social features
+*** Social Features
 - Feed that shows public entries from other users with infinite scroll and to preview your own public entries
 - Allow users to follow other users
 - Comments on public entries
@@ -40,40 +40,49 @@ Features to implement:
 - PDF format
 
 *** Security
+- SSL and HTTPS support for secure communication
+- Complete the email verification flow (User entity has emailVerified field but no verification endpoint or email is implemented)
 - Add 2FA authentication
 - Allow users to see and manage active sessions (logout from other sessions)
 - Spam and bots protection on sign up and login forms
 - Rate limiting and prevent DDOS from too much data sent
+- Tighten code security and fix vulnerabilities (OWASP Top 10: XSS, CSRF, SQL injection, etc.)
+- Content Security Policy hardening (replace unsafe-inline with nonces)
+- Security and performance audits and remediation
 
+*** Tests
+- Playwright end-to-end tests for critical user flows (sign up, login, create entry, edit entry, delete entry, view stats) based on README features list
+- Always keep code coverage above 80% and add tests for uncovered critical paths
+- Load testing and performance benchmarking for API endpoints and database queries
 
 *** Technical Improvements
-- Dbloat any big files/classes (500+ LOC), increase code coverage to 90%
-- Playwright end-to-end tests for critical user flows (sign up, login, create entry, edit entry, delete entry, view stats) based on README features list
-- SSL and HTTPS support for secure communication
-- Optimize database for better performance
 - Caching of frequent requests (public entries, feed)
-- Set up monitoring and alerting for server health and performance
+- Distributed rate limiting with Redis for multi-replica deployments
+- Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
 - Backup and disaster recovery plan for user data
-- Add logging for critical actions and errors for better debugging
-- Usage and stats of the app and features (telemetery)
 - Improve error handling and user feedback for better UX
 - Use WebSockets for real-time updates on public entries and messages
 - Implement lazy loading for components and routes to improve initial load time
-- Implement feature flags to enable/disable features without redeploying
-- Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
-- Documentation for API endpoints and developer guides
+- Implement feature flags to enable/disable features without redeploying using an a third-party service
+- Check that OpenAPI documentation is up to date and complete for all endpoints, and add examples for request and response bodies
 - Health check endpoint (Kubernetes probes reference /api/health but none exists in the codebase)
-- Database migration files instead of relying on TypeORM synchronize (add a migrations/ folder with versioned migration scripts)
-- Complete the email verification flow (User entity has emailVerified field but no verification endpoint or email is implemented)
-- Database connection pooling configuration in TypeORM data source
-- Structured JSON logging for observability and request tracing
-- Content Security Policy hardening (replace unsafe-inline with nonces)
+
+*** Monitoring and observability
+- Add logging for critical actions and errors for better debugging and structured JSON logging for observability and request tracing
+- Set up monitoring and alerting for server health and performance
+- Usage and stats of the app and features (telemetery to understand which features are used the most and how users interact with the app, to prioritize future development and improvements)
+
+*** Deployment and hosting
+- Modify deployments configuration to use existing DS-Cluster infrastrcuture, and document the prequisites and deployment process in docs
 - CI pipeline for automated dependency vulnerability scanning (npm audit, Dependabot/Renovate)
 - Blue-green or canary deployment strategy for zero-downtime releases
+
+*** Database
+- Optimize database for better performance
+- Database migration files instead of relying on TypeORM synchronize (add a migrations/ folder with versioned migration scripts)
+- Database connection pooling configuration in TypeORM data source
 - Database read replicas for scaling read-heavy queries (stats, feed, search)
 - Automated database backups with point-in-time recovery
-- Distributed rate limiting with Redis for multi-replica deployments
-- Security and performance audits and remediation
 
 *** Accessibility
 - Full accessibility audit and remediation (aria-labels, screen reader support, skip-to-content links, focus management)

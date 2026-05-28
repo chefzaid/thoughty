@@ -1,0 +1,124 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import EntryViewMode from './EntryViewMode';
+import {
+    createEntryViewModeProps,
+    getTestEntryPermalink,
+    mockEntries,
+    mockRevisions,
+    mockSourceEntry,
+} from './EntriesList.test-utils';
+
+const renderEntryViewMode = (
+    overrides: Partial<Parameters<typeof createEntryViewModeProps>[0]> = {},
+) => render(<EntryViewMode {...createEntryViewModeProps(overrides)} />);
+
+const clickToolbarAction = async (
+    user: ReturnType<typeof userEvent.setup>,
+    title: string,
+) => {
+    await user.click(screen.getByTitle(title));
+};
+
+const PRIMARY_TOOLBAR_ACTIONS = [
+    'Private - only you can see',
+    'Favorite',
+    'Discuss entry',
+    'Edit',
+    'Delete',
+] as const;
+
+describe('EntryViewMode', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('renders entry content, tags, index, and diary label', () => {
+        renderEntryViewMode();
+
+        expect(screen.getByText('First entry')).toBeInTheDocument();
+        expect(screen.getByText('#work')).toBeInTheDocument();
+        expect(screen.getByText('#important')).toBeInTheDocument();
+        expect(screen.getByText('#1')).toBeInTheDocument();
+        expect(screen.getByText('Work')).toBeInTheDocument();
+    });
+
+    it('renders archived status and toggles archive', async () => {
+        const onToggleArchived = vi.fn();
+        const user = userEvent.setup();
+        renderEntryViewMode({
+            entry: { ...mockEntries[0], is_archived: true },
+            onToggleArchived,
+        });
+
+        expect(screen.getByText('Archived')).toBeInTheDocument();
+        await user.click(screen.getByLabelText('Unarchive'));
+
+        expect(onToggleArchived).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
+    });
+
+    it('calls visibility, favorite, edit, delete, and discuss handlers', async () => {
+        const onToggleVisibility = vi.fn();
+        const onToggleFavorite = vi.fn();
+        const onEdit = vi.fn();
+        const onDelete = vi.fn();
+        const onDiscuss = vi.fn();
+        const user = userEvent.setup();
+        renderEntryViewMode({
+            onToggleVisibility,
+            onToggleFavorite,
+            onEdit,
+            onDelete,
+            onDiscuss,
+        });
+
+        for (const actionTitle of PRIMARY_TOOLBAR_ACTIONS) {
+            await clickToolbarAction(user, actionTitle);
+        }
+
+        expect(onToggleVisibility).toHaveBeenCalledWith(mockEntries[0]);
+        expect(onToggleFavorite).toHaveBeenCalledWith(mockEntries[0]);
+        expect(onDiscuss).toHaveBeenCalledWith(mockEntries[0]);
+        expect(onEdit).toHaveBeenCalledWith(mockEntries[0]);
+        expect(onDelete).toHaveBeenCalledWith(1);
+    });
+
+    it('renders permalink and shares the entry', async () => {
+        const onShareEntry = vi.fn().mockResolvedValue(true);
+        const user = userEvent.setup();
+        renderEntryViewMode({ onShareEntry });
+
+        expect(screen.getByLabelText('Open entry permalink')).toHaveAttribute('href', getTestEntryPermalink(mockEntries[0].id));
+        await user.click(screen.getByLabelText('Share entry'));
+
+        expect(onShareEntry).toHaveBeenCalledWith(mockEntries[0]);
+    });
+
+    it('shows the back-to-source action for active targets', async () => {
+        const onBackToSource = vi.fn();
+        const user = userEvent.setup();
+        renderEntryViewMode({
+            activeTargetId: 1,
+            sourceEntry: mockSourceEntry,
+            onBackToSource,
+        });
+
+        await user.click(screen.getByTitle('Back to source'));
+
+        expect(onBackToSource).toHaveBeenCalledTimes(1);
+        expect(screen.getByText('(2024-01-10--2)')).toBeInTheDocument();
+    });
+
+    it('loads and renders history revisions on demand', async () => {
+        const onFetchHistory = vi.fn().mockResolvedValue(mockRevisions);
+        const user = userEvent.setup();
+        renderEntryViewMode({ onFetchHistory });
+
+        await user.click(screen.getByTitle('View history'));
+
+        expect(onFetchHistory).toHaveBeenCalledWith(1);
+        expect(await screen.findByText('Older revision')).toBeInTheDocument();
+        expect(screen.getByText('History')).toBeInTheDocument();
+    });
+});

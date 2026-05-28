@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Entry } from '../../types';
+import { downloadBlob } from '../../utils/downloadFile';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -33,17 +34,9 @@ function buildTranscript(entry: Entry, messages: ChatMessage[]): string {
 function downloadTranscript(entry: Entry, messages: ChatMessage[]): void {
   const transcript = buildTranscript(entry, messages);
   const blob = new Blob([transcript], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
   const safeDate = entry.date.replace(/[^0-9-]/g, '-') || 'entry';
 
-  anchor.href = url;
-  anchor.download = `thoughty_ai_chat_${safeDate}_entry-${entry.id}.txt`;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `thoughty_ai_chat_${safeDate}_entry-${entry.id}.txt`);
 }
 
 interface AiChatModalProps {

@@ -8,7 +8,6 @@ import {
 
 type BuildAuthenticatedLayoutPropsParams = Parameters<typeof buildAuthenticatedLayoutProps>[0];
 type BuildAuthenticatedRoutesPropsParams = Parameters<typeof buildAuthenticatedRoutesProps>[0];
-type BuildPublicShellPropsParams = Parameters<typeof buildPublicShellProps>[0];
 
 function createRoutingState(overrides: Record<string, unknown> = {}) {
   return {
@@ -210,12 +209,26 @@ describe('appShellProps', () => {
 
   it('builds authenticated layout props with journal fallback and chat close handler', () => {
     const setChatEntry = vi.fn();
+    const handleViewChange = vi.fn();
+    const handleLogout = vi.fn().mockResolvedValue(undefined);
+    const handleAiChat = vi.fn().mockResolvedValue('reply');
+    const handleLoadAiChatHistory = vi.fn().mockResolvedValue([{ role: 'assistant', content: 'history' }]);
 
-    const props = buildAuthenticatedLayoutProps(createLayoutParams({ setChatEntry }));
+    const props = buildAuthenticatedLayoutProps(createLayoutParams({
+      currentView: 'stats',
+      handleAiChat,
+      handleLoadAiChatHistory,
+      routingState: createRoutingState({ handleLogout, handleViewChange }),
+      setChatEntry,
+    }));
 
-    expect(props.currentView).toBe('journal');
+    expect(props.currentView).toBe('stats');
     expect(props.userName).toBe('Zaid');
     expect(props.selectedCount).toBe(2);
+    expect(props.onViewChange).toBe(handleViewChange);
+    expect(props.onLogout).toBe(handleLogout);
+    expect(props.onSendChat).toBe(handleAiChat);
+    expect(props.onLoadChatHistory).toBe(handleLoadAiChatHistory);
     props.onCloseChat();
     expect(setChatEntry).toHaveBeenCalledWith(null);
   });
@@ -330,5 +343,76 @@ describe('appShellProps', () => {
     expect(props.journalRouteProps.tags).toEqual(['focus', 'work']);
     expect(props.journalRouteProps.format).toBe('markdown');
     expect(props.journalRouteProps.onCancelEdit).toBe(handleCancelEdit);
+  });
+
+  it('wires profile, tag manager, diary management, and import-export callbacks', async () => {
+    const updateConfig = vi.fn().mockResolvedValue(undefined);
+    const downloadUserData = vi.fn().mockResolvedValue(true);
+    const handleRenameTag = vi.fn().mockResolvedValue(true);
+    const handleDeleteDiary = vi.fn().mockImplementation(async (_id: number, callback: () => Promise<void>) => {
+      await callback();
+    });
+    const handleManageDiaries = vi.fn();
+    const handleDiaryChange = vi.fn();
+    const handleImportExportRouteStateChange = vi.fn();
+    const fetchEntries = vi.fn().mockResolvedValue(undefined);
+
+    const props = buildAuthenticatedRoutesProps(createRoutesParams({
+      updateConfig,
+      downloadUserData,
+      handleRenameTag,
+      diariesState: {
+        currentDiaryId: 3,
+        diaries: [{ id: 3, name: 'Work', icon: 'W' }],
+        handleCreateDiary: vi.fn().mockResolvedValue(undefined),
+        handleDeleteDiary,
+        handleReorderDiaries: vi.fn().mockResolvedValue(undefined),
+        handleSetDefaultDiary: vi.fn().mockResolvedValue(undefined),
+        handleUpdateDiary: vi.fn().mockResolvedValue(undefined),
+      },
+      entriesState: {
+        ...createRoutesParams().entriesState,
+        fetchEntries,
+      },
+      routingState: createRoutingState({
+        handleDiaryChange,
+        handleImportExportRouteStateChange,
+        handleManageDiaries,
+        handleViewChange: vi.fn(),
+      }),
+    }));
+
+    await props.profileRouteProps.onUpdateConfig({ theme: 'light' } as never);
+    await props.tagManagerRouteProps.onUpdateConfig({ theme: 'light' } as never);
+    await props.profileRouteProps.onDownloadData();
+    await props.tagManagerRouteProps.onRenameTag('old', 'new');
+    await props.diariesRouteProps.onDeleteDiary(3);
+
+    props.statsRouteProps.onManageDiaries();
+    props.statsRouteProps.onDiaryChange(8);
+    props.importExportRouteProps.onManageDiaries();
+    props.importExportRouteProps.onDiaryChange(9);
+    props.importExportRouteProps.onRouteStateChange?.({
+      section: 'import',
+      exportFormat: 'json',
+      includeVisibility: true,
+    });
+    props.journalRouteProps.onManageDiaries();
+
+    expect(updateConfig).toHaveBeenCalledTimes(2);
+    expect(downloadUserData).toHaveBeenCalledTimes(1);
+    expect(handleRenameTag).toHaveBeenCalledWith('old', 'new');
+    expect(handleDeleteDiary).toHaveBeenCalledWith(3, expect.any(Function));
+    expect(fetchEntries).toHaveBeenCalled();
+    expect(handleManageDiaries).toHaveBeenCalledWith('stats');
+    expect(handleManageDiaries).toHaveBeenCalledWith('importExport');
+    expect(handleManageDiaries).toHaveBeenCalledWith('journal');
+    expect(handleDiaryChange).toHaveBeenCalledWith(8);
+    expect(handleDiaryChange).toHaveBeenCalledWith(9);
+    expect(handleImportExportRouteStateChange).toHaveBeenCalledWith({
+      section: 'import',
+      exportFormat: 'json',
+      includeVisibility: true,
+    });
   });
 });

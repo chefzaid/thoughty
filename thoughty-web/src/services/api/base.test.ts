@@ -88,7 +88,7 @@ describe('createAuthFetch', () => {
     const fetcher = createAuthFetch(undefined, getAccessToken);
     await fetcher('/api/test');
 
-    const headers = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].headers;
+    const headers = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0]![1]?.headers;
     expect(headers).not.toHaveProperty('Authorization');
   });
 

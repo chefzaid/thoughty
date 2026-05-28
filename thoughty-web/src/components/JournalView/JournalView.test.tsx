@@ -139,7 +139,7 @@ describe('JournalView', () => {
     { id: 2, name: 'Work', icon: '💼', visibility: 'private', is_default: false },
   ];
 
-  const mockEntries: Entry[] = [
+  const mockEntries: [Entry, Entry] = [
     { id: 1, content: 'Entry 1', date: '2024-01-01', tags: ['tag1'], visibility: 'public', diary_id: 1 },
     { id: 2, content: 'Entry 2', date: '2024-01-02', tags: ['tag2'], visibility: 'private', diary_id: 1 },
   ];
@@ -183,6 +183,8 @@ describe('JournalView', () => {
       setFilterVisibility: vi.fn(),
       filterFavorites: false,
       setFilterFavorites: vi.fn(),
+      filterArchiveStatus: 'active',
+      setFilterArchiveStatus: vi.fn(),
       setPage: vi.fn(),
       loading: false,
       entries: mockEntries,
@@ -191,6 +193,7 @@ describe('JournalView', () => {
       onDelete: vi.fn(),
       onToggleVisibility: vi.fn(),
       onToggleFavorite: vi.fn(),
+      onToggleArchived: vi.fn(),
       editingEntry: null,
       editText: '',
       setEditText: vi.fn(),

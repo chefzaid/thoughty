@@ -70,7 +70,6 @@ describe('tagMetadata', () => {
         focus: { category: 'Deep Work' },
         personal: { color: '#123456', category: 'Life' },
       },
-      () => 0,
     );
 
     expect(metadata.personal).toEqual({ color: '#123456', category: 'Life' });

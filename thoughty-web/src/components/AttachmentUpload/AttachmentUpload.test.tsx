@@ -66,7 +66,7 @@ describe('AttachmentUpload', () => {
     );
 
     const removeButtons = screen.getAllByTitle('removeAttachment');
-    await user.click(removeButtons[0]);
+    await user.click(removeButtons[0]!);
     expect(onRemove).toHaveBeenCalledWith(0);
   });
 
@@ -85,7 +85,7 @@ describe('AttachmentUpload', () => {
     );
 
     const removeButtons = screen.getAllByTitle('removeAttachment');
-    await user.click(removeButtons[0]);
+    await user.click(removeButtons[0]!);
     expect(onRemove).toHaveBeenCalledWith(42);
   });
 

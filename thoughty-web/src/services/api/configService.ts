@@ -1,5 +1,6 @@
 import { safeJsonParse } from './base';
 import type { Config, ProfileStats } from '../../types';
+import { downloadBlob } from '../../utils/downloadFile';
 export interface StatsApiResponse {
   totalThoughts?: number;
   thoughtsPerYear?: Record<string, number>;
@@ -76,18 +77,7 @@ export const createConfigService = (authFetch: (url: string, options?: RequestIn
       const disposition = response.headers.get('Content-Disposition') || '';
       const filenameMatch = /filename="?([^"]+)"?/.exec(disposition);
       const filename = filenameMatch?.[1] || 'thoughty_data.json';
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      if (typeof a.remove === 'function') {
-        a.remove();
-      } else {
-        document.body.removeChild(a);
-      }
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, filename);
       return true;
     } catch (error) {
       console.error('Error downloading user data:', error);

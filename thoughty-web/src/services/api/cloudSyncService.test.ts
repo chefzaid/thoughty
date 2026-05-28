@@ -7,7 +7,7 @@ describe('cloudSyncService', () => {
 
   beforeEach(() => {
     authFetch = vi.fn();
-    service = createCloudSyncService(authFetch);
+    service = createCloudSyncService(authFetch as Parameters<typeof createCloudSyncService>[0]);
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
   });
 

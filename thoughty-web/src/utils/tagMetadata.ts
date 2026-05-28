@@ -1,4 +1,6 @@
-export const TAG_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
+import { getColorSeed, normalizeHexColor } from './colorUtils';
+
+export { HEX_COLOR_PATTERN as TAG_COLOR_PATTERN } from './colorUtils';
 
 export const DEFAULT_TAG_COLOR = '#8B5CF6';
 
@@ -23,24 +25,6 @@ export const DEFAULT_TAG_COLORS = [
 
 const MAX_TAG_CATEGORY_LENGTH = 40;
 
-function getColorSeed(value?: string | number | null): number {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return Math.abs(Math.trunc(value));
-  }
-
-  if (typeof value !== 'string') {
-    return 0;
-  }
-
-  let hash = 0;
-  for (const character of value) {
-    const codePoint = character.codePointAt(0) ?? 0;
-    hash = Math.trunc((hash * 31) + codePoint);
-  }
-
-  return Math.abs(hash);
-}
-
 export interface TagMetadata {
   color?: string | null;
   category?: string;
@@ -57,12 +41,7 @@ export function normalizeTagKey(tag?: string | null): string {
 }
 
 export function normalizeTagColor(color?: string | null): string | null {
-  if (typeof color !== 'string') {
-    return null;
-  }
-
-  const normalized = color.trim().toUpperCase();
-  return TAG_COLOR_PATTERN.test(normalized) ? normalized : null;
+  return normalizeHexColor(color);
 }
 
 export function normalizeTagCategory(category?: string | null): string {

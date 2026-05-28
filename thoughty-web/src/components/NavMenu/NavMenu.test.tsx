@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import NavMenu from './NavMenu';
+import type { ViewType } from '../../types';
 
 describe('NavMenu', () => {
   const mockT = (key: string) => key;
@@ -8,7 +9,7 @@ describe('NavMenu', () => {
   const mockOnLogout = vi.fn();
 
   const defaultProps = {
-    currentView: 'journal',
+    currentView: 'journal' as ViewType,
     onViewChange: mockOnViewChange,
     theme: 'dark' as const,
     name: 'Test User',
