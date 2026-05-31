@@ -11,6 +11,7 @@ export interface ProfileConfig {
   fontFamily?: 'system' | 'serif' | 'modern' | 'mono';
   fontSize?: number | string;
   fontColor?: string;
+  ttsVoiceUri?: string;
   language?: string;
   entriesPerPage?: number | string;
   defaultVisibility?: 'public' | 'private';

@@ -296,6 +296,9 @@ describe('ProfilePage', () => {
 
         it('saves font preferences', async () => {
             const user = userEvent.setup();
+            (globalThis.speechSynthesis.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+                { name: 'English Voice', lang: 'en-US', voiceURI: 'voice-en', default: true },
+            ]);
             render(<ProfilePage {...defaultProps} />);
 
             await user.selectOptions(screen.getByLabelText('fontType'), 'serif');
@@ -304,6 +307,22 @@ describe('ProfilePage', () => {
 
             expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
                 expect.objectContaining({ fontFamily: 'serif', fontSize: '18' })
+            );
+        });
+
+        it('saves TTS voice preferences', async () => {
+            const user = userEvent.setup();
+            (globalThis.speechSynthesis.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+                { name: 'English Voice', lang: 'en-US', voiceURI: 'voice-en', default: true },
+                { name: 'English Voice 2', lang: 'en-GB', voiceURI: 'voice-en-2', default: false },
+            ]);
+            render(<ProfilePage {...defaultProps} />);
+
+            await user.selectOptions(screen.getByLabelText('ttsVoice'), 'voice-en-2');
+            await user.click(screen.getByText('saveSettings'));
+
+            expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
+                expect.objectContaining({ ttsVoiceUri: 'voice-en-2' })
             );
         });
 

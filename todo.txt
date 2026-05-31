@@ -2,8 +2,6 @@
 Features to implement:
 
 *** Personalization & UX
-- Font customization (type, size, color) with example preview for better readability and user preference in Profile settings
-- Voice personalization for TTS
 - Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats page
 - Add other languages support (i18n) for the UI (Spanish, Italian, German, etc.)
 

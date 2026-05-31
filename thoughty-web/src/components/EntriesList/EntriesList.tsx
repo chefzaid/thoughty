@@ -195,6 +195,7 @@ function EntriesList({
     const { speaking, activeEntryId, speakEntry, speakFromEntry, stop } = useSpeech({
         language: config.language || 'en',
         readDates: config.readDates !== false,
+        voiceUri: config.ttsVoiceUri,
     });
 
     const sortedDates = useMemo(

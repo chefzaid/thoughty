@@ -7,6 +7,7 @@ export interface Config {
   fontFamily?: FontFamilyPreference;
   fontSize?: string | number;
   fontColor?: string;
+  ttsVoiceUri?: string;
   name?: string;
   bio?: string;
   email?: string;

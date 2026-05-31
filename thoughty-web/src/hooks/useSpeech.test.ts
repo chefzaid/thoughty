@@ -283,8 +283,8 @@ describe('useSpeech', () => {
   });
 
   it('selects voice matching language prefix when available', () => {
-    const frenchVoice = { lang: 'fr-FR', default: false, name: 'French Voice' };
-    const englishVoice = { lang: 'en-US', default: true, name: 'English Voice' };
+    const frenchVoice = { lang: 'fr-FR', default: false, name: 'French Voice', voiceURI: 'french-voice' };
+    const englishVoice = { lang: 'en-US', default: true, name: 'English Voice', voiceURI: 'english-voice' };
     (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([frenchVoice, englishVoice]);
 
     // Re-render to pick up voices
@@ -298,6 +298,23 @@ describe('useSpeech', () => {
 
     const utterance = speakMock.mock.calls[0]![0];
     expect(utterance.voice).toBe(frenchVoice);
+  });
+
+  it('prefers the saved voice when its URI is available', () => {
+    const defaultEnglishVoice = { lang: 'en-US', default: true, name: 'English Voice', voiceURI: 'english-default' };
+    const preferredEnglishVoice = { lang: 'en-GB', default: false, name: 'English Voice 2', voiceURI: 'english-preferred' };
+    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([defaultEnglishVoice, preferredEnglishVoice]);
+
+    const { result } = renderHook(() =>
+      useSpeech({ language: 'en', readDates: false, voiceUri: 'english-preferred' })
+    );
+
+    act(() => {
+      result.current.speakEntry({ id: 1, content: 'Hello', date: '2024-01-15' });
+    });
+
+    const utterance = speakMock.mock.calls[0]![0];
+    expect(utterance.voice).toBe(preferredEnglishVoice);
   });
 
   it('handles invalid date gracefully in formatDateForSpeech', () => {

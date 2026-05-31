@@ -62,12 +62,30 @@ describe('AppearanceSection', () => {
   });
 
   it('renders font customization controls and preview', () => {
+    (globalThis.speechSynthesis.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      { name: 'English Voice', lang: 'en-US', voiceURI: 'voice-en', default: true },
+    ]);
+
     render(<AppearanceSection {...defaultProps} />);
 
     expect(screen.getByLabelText('fontType')).toBeInTheDocument();
     expect(screen.getByLabelText('fontSize')).toBeInTheDocument();
     expect(screen.getByLabelText('fontColor')).toBeInTheDocument();
+    expect(screen.getByLabelText('ttsVoice')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'previewTtsVoice' })).toBeInTheDocument();
     expect(screen.getByTestId('font-preview')).toBeInTheDocument();
+  });
+
+  it('calls handleChange when TTS voice changes', async () => {
+    (globalThis.speechSynthesis.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      { name: 'English Voice', lang: 'en-US', voiceURI: 'voice-en', default: true },
+      { name: 'English Voice 2', lang: 'en-GB', voiceURI: 'voice-en-2', default: false },
+    ]);
+    const user = userEvent.setup();
+    render(<AppearanceSection {...defaultProps} />);
+
+    await user.selectOptions(screen.getByLabelText('ttsVoice'), 'voice-en-2');
+    expect(defaultProps.handleChange).toHaveBeenCalled();
   });
 
   it('calls handleChange when font family changes', async () => {

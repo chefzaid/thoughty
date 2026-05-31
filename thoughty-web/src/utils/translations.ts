@@ -76,6 +76,13 @@ export type TranslationKey =
   | 'fontPreviewDescription'
   | 'fontPreviewKicker'
   | 'fontPreviewSample'
+  | 'ttsVoice'
+  | 'ttsVoiceDescription'
+  | 'ttsVoiceDefault'
+  | 'ttsVoiceSystemLabel'
+  | 'previewTtsVoice'
+  | 'previewingTtsVoice'
+  | 'ttsVoicePreviewSample'
   | 'entriesPerPage'
   | 'entriesPerPageDescription'
   | 'defaultVisibility'
@@ -485,6 +492,13 @@ export const translations: Translations = {
     fontPreviewDescription: 'Check how your chosen type, size, and color look together before saving.',
     fontPreviewKicker: 'Sample entry',
     fontPreviewSample: 'Quiet details become easier to notice when the page matches how you like to read and write.',
+    ttsVoice: 'Voice for read aloud',
+    ttsVoiceDescription: 'Choose which voice Thoughty uses when reading entries aloud.',
+    ttsVoiceDefault: 'System default voice',
+    ttsVoiceSystemLabel: 'system default',
+    previewTtsVoice: 'Preview voice',
+    previewingTtsVoice: 'Previewing...',
+    ttsVoicePreviewSample: 'This is how your journal will sound when Thoughty reads it aloud.',
     entriesPerPage: 'Entries per page',
     entriesPerPageDescription: 'Number of entries to display per page',
     defaultVisibility: 'Default Visibility',
@@ -926,6 +940,13 @@ export const translations: Translations = {
     fontPreviewDescription: 'Vérifiez l’ensemble police, taille et couleur avant d’enregistrer.',
     fontPreviewKicker: 'Exemple de note',
     fontPreviewSample: 'Les détails calmes deviennent plus faciles à voir quand la page correspond à votre façon de lire et d’écrire.',
+    ttsVoice: 'Voix de lecture',
+    ttsVoiceDescription: 'Choisissez la voix que Thoughty utilise pour lire les entrées à voix haute.',
+    ttsVoiceDefault: 'Voix système par défaut',
+    ttsVoiceSystemLabel: 'par défaut',
+    previewTtsVoice: 'Écouter un aperçu',
+    previewingTtsVoice: 'Lecture...',
+    ttsVoicePreviewSample: 'Voici comment votre journal sonnera lorsque Thoughty le lira à voix haute.',
     entriesPerPage: 'Entrées par page',
     entriesPerPageDescription: "Nombre d'entrées à afficher par page",
     defaultVisibility: 'Visibilité par défaut',

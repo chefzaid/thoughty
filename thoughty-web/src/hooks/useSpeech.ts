@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { getPreferredSpeechVoice, getSpeechLang } from '../utils/speechVoices';
 
 export interface SpeechEntry {
   id: number;
@@ -9,6 +10,7 @@ export interface SpeechEntry {
 interface SpeechOptions {
   language: string;
   readDates: boolean;
+  voiceUri?: string;
 }
 
 interface UseSpeechReturn {
@@ -17,10 +19,6 @@ interface UseSpeechReturn {
   speakEntry: (entry: SpeechEntry) => void;
   speakFromEntry: (entries: SpeechEntry[], startId: number) => void;
   stop: () => void;
-}
-
-function getSpeechLang(lang: string): string {
-  return lang === 'fr' ? 'fr-FR' : 'en-US';
 }
 
 function formatDateForSpeech(dateStr: string, lang: string): string {
@@ -66,15 +64,6 @@ export function useSpeech(options: SpeechOptions): UseSpeechReturn {
     };
   }, []);
 
-  const getVoice = useCallback((lang: string): SpeechSynthesisVoice | null => {
-    const langPrefix = lang === 'fr' ? 'fr' : 'en';
-    return (
-      voicesRef.current.find((v) => v.lang.startsWith(langPrefix) && v.default) ??
-      voicesRef.current.find((v) => v.lang.startsWith(langPrefix)) ??
-      null
-    );
-  }, []);
-
   const speakNext = useCallback(() => {
     if (stoppedRef.current || queueRef.current.length === 0) {
       setSpeaking(false);
@@ -91,7 +80,11 @@ export function useSpeech(options: SpeechOptions): UseSpeechReturn {
       buildUtteranceText(entry, optionsRef.current)
     );
     utterance.lang = getSpeechLang(optionsRef.current.language);
-    const voice = getVoice(optionsRef.current.language);
+    const voice = getPreferredSpeechVoice(
+      voicesRef.current,
+      optionsRef.current.language,
+      optionsRef.current.voiceUri,
+    );
     if (voice) utterance.voice = voice;
 
     utterance.onend = () => speakNext();
@@ -100,7 +93,7 @@ export function useSpeech(options: SpeechOptions): UseSpeechReturn {
     };
 
     globalThis.speechSynthesis.speak(utterance);
-  }, [getVoice]);
+  }, []);
 
   const stop = useCallback(() => {
     stoppedRef.current = true;
