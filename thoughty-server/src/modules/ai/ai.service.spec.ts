@@ -219,6 +219,60 @@ describe('AiService', () => {
     });
   });
 
+  describe('analyzeToneMood', () => {
+    it('returns null when no API key is configured', async () => {
+      service = await createService('');
+
+      await expect(service.analyzeToneMood(1, [{ id: 1, content: 'Entry', date: '2024-01-01', tags: [] }])).resolves.toBeNull();
+    });
+
+    it('returns parsed tone and mood analysis from the AI', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  dominantMood: 'reflective',
+                  dominantTone: 'candid',
+                  moodBreakdown: { reflective: 2, calm: 1 },
+                  toneBreakdown: { candid: 2, analytical: 1 },
+                  summary: 'Recent entries are reflective with a candid tone.',
+                }),
+              },
+            },
+          ],
+        }),
+      });
+
+      const result = await service.analyzeToneMood(1, [
+        { id: 1, content: 'Today I felt thoughtful.', date: '2024-01-01', tags: ['reflection'] },
+        { id: 2, content: 'I am calmer now.', date: '2024-01-02', tags: ['calm'] },
+      ]);
+
+      expect(result).toEqual({
+        dominantMood: 'reflective',
+        dominantTone: 'candid',
+        moodBreakdown: { reflective: 2, calm: 1 },
+        toneBreakdown: { candid: 2, analytical: 1 },
+        analyzedEntries: 2,
+        summary: 'Recent entries are reflective with a candid tone.',
+      });
+    });
+
+    it('returns null when the AI payload is malformed', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          choices: [{ message: { content: 'not-json' } }],
+        }),
+      });
+
+      await expect(service.analyzeToneMood(1, [{ id: 1, content: 'Entry', date: '2024-01-01', tags: [] }])).resolves.toBeNull();
+    });
+  });
+
   describe('chat', () => {
     const chatDto = {
       entryId: 10,

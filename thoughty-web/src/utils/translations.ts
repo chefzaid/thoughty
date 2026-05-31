@@ -141,6 +141,14 @@ export type TranslationKey =
   | 'thoughtsPerMonth'
   | 'topTagsByYear'
   | 'journalActivityByDay'
+  | 'toneMoodInsights'
+  | 'toneMoodInsightsDescription'
+  | 'dominantMood'
+  | 'dominantTone'
+  | 'analyzedEntries'
+  | 'moodMix'
+  | 'toneMix'
+  | 'toneMoodUnavailable'
   | 'lessActivity'
   | 'moreActivity'
   | 'noJournalActivity'
@@ -576,6 +584,14 @@ export const translations: Translations = {
     thoughtsPerMonth: 'Entries per Month',
     topTagsByYear: 'Top Tags by Year',
     journalActivityByDay: 'Journal Activity by Day',
+    toneMoodInsights: 'Tone and Mood',
+    toneMoodInsightsDescription: 'AI analysis of your recent writing patterns.',
+    dominantMood: 'Dominant Mood',
+    dominantTone: 'Dominant Tone',
+    analyzedEntries: 'Analyzed entries',
+    moodMix: 'Mood Mix',
+    toneMix: 'Tone Mix',
+    toneMoodUnavailable: 'AI analysis is unavailable right now. Configure AI settings and try again later.',
     lessActivity: 'Less',
     moreActivity: 'More',
     noJournalActivity: 'No journaling activity yet.',
@@ -1034,6 +1050,14 @@ export const translations: Translations = {
     thoughtsPerMonth: 'Entrées par mois',
     topTagsByYear: 'Top tags par année',
     journalActivityByDay: 'Activité du journal par jour',
+    toneMoodInsights: 'Ton et humeur',
+    toneMoodInsightsDescription: 'Analyse IA de vos tendances d\'écriture récentes.',
+    dominantMood: 'Humeur dominante',
+    dominantTone: 'Ton dominant',
+    analyzedEntries: 'Entrées analysées',
+    moodMix: 'Répartition des humeurs',
+    toneMix: 'Répartition des tons',
+    toneMoodUnavailable: 'L\'analyse IA est indisponible pour le moment. Configurez l\'IA puis réessayez plus tard.',
     lessActivity: 'Moins',
     moreActivity: 'Plus',
     noJournalActivity: 'Aucune activité de journal pour le moment.',

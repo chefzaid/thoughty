@@ -50,6 +50,8 @@ interface HeatmapCell {
     inRange: boolean;
 }
 
+type ToneMoodAnalysis = NonNullable<StatsData['toneMoodAnalysis']>;
+
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const MONTH_FORMATTER = new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' });
 const WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
@@ -136,6 +138,18 @@ function buildHeatmapWeeks(thoughtsPerDay: Record<string, number>): HeatmapCell[
     }
 
     return weeks;
+}
+
+function formatInsightLabel(label: string): string {
+    return label
+        .split(' ')
+        .filter(Boolean)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
+}
+
+function getSortedInsightEntries(breakdown: ToneMoodAnalysis['moodBreakdown'] | ToneMoodAnalysis['toneBreakdown']) {
+    return Object.entries(breakdown).sort(([, left], [, right]) => right - left);
 }
 
 function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps) {
@@ -340,6 +354,9 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
 
         return WEEKDAY_FORMATTER.format(addUtcDays(new Date(Date.UTC(2024, 0, 7)), index));
     });
+    const toneMoodAnalysis = stats.toneMoodAnalysis;
+    const moodBreakdownEntries = toneMoodAnalysis ? getSortedInsightEntries(toneMoodAnalysis.moodBreakdown) : [];
+    const toneBreakdownEntries = toneMoodAnalysis ? getSortedInsightEntries(toneMoodAnalysis.toneBreakdown) : [];
 
     return (
         <div className={`stats-container ${themeClass}`}>
@@ -374,6 +391,86 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
 
             {/* Charts Grid */}
             <div className="charts-grid">
+                {stats.totalThoughts > 0 && (
+                    <div className={`chart-card tone-mood-card ${themeClass}`}>
+                        <div className="chart-header tone-mood-header">
+                            <div>
+                                <h3>{t('toneMoodInsights')}</h3>
+                                <p className="tone-mood-description">{t('toneMoodInsightsDescription')}</p>
+                            </div>
+                            {toneMoodAnalysis && (
+                                <div className={`tone-mood-sample ${themeClass}`}>
+                                    <span>{t('analyzedEntries')}</span>
+                                    <strong>{toneMoodAnalysis.analyzedEntries}</strong>
+                                </div>
+                            )}
+                        </div>
+
+                        {toneMoodAnalysis ? (
+                            <>
+                                <div className="tone-mood-highlights">
+                                    <div className={`tone-mood-highlight ${themeClass}`}>
+                                        <span className="tone-mood-highlight-label">{t('dominantMood')}</span>
+                                        <strong>{formatInsightLabel(toneMoodAnalysis.dominantMood)}</strong>
+                                    </div>
+                                    <div className={`tone-mood-highlight ${themeClass}`}>
+                                        <span className="tone-mood-highlight-label">{t('dominantTone')}</span>
+                                        <strong>{formatInsightLabel(toneMoodAnalysis.dominantTone)}</strong>
+                                    </div>
+                                </div>
+
+                                <p className="tone-mood-summary">{toneMoodAnalysis.summary}</p>
+
+                                <div className="tone-mood-breakdowns">
+                                    <div className="tone-mood-breakdown">
+                                        <h4>{t('moodMix')}</h4>
+                                        <ul className="tone-mood-list">
+                                            {moodBreakdownEntries.map(([label, count]) => {
+                                                const width = Math.max(8, Math.round((count / toneMoodAnalysis.analyzedEntries) * 100));
+
+                                                return (
+                                                    <li key={label} className="tone-mood-list-item">
+                                                        <div className="tone-mood-list-labels">
+                                                            <span>{formatInsightLabel(label)}</span>
+                                                            <span>{count}</span>
+                                                        </div>
+                                                        <div className="tone-mood-bar-track" aria-hidden="true">
+                                                            <span className="tone-mood-bar-fill mood" style={{ width: `${width}%` }} />
+                                                        </div>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
+
+                                    <div className="tone-mood-breakdown">
+                                        <h4>{t('toneMix')}</h4>
+                                        <ul className="tone-mood-list">
+                                            {toneBreakdownEntries.map(([label, count]) => {
+                                                const width = Math.max(8, Math.round((count / toneMoodAnalysis.analyzedEntries) * 100));
+
+                                                return (
+                                                    <li key={label} className="tone-mood-list-item">
+                                                        <div className="tone-mood-list-labels">
+                                                            <span>{formatInsightLabel(label)}</span>
+                                                            <span>{count}</span>
+                                                        </div>
+                                                        <div className="tone-mood-bar-track" aria-hidden="true">
+                                                            <span className="tone-mood-bar-fill tone" style={{ width: `${width}%` }} />
+                                                        </div>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <p className="tone-mood-unavailable">{t('toneMoodUnavailable')}</p>
+                        )}
+                    </div>
+                )}
+
                 <div className={`chart-card heatmap-card ${themeClass}`}>
                     <div className="chart-header heatmap-header">
                         <h3>{t('journalActivityByDay')}</h3>

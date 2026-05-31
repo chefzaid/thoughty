@@ -134,6 +134,32 @@ describe('EntryViewMode', () => {
         expect(onRephrase).toHaveBeenCalledWith(mockEntries[0], 'polish');
     });
 
+    it('routes listen actions through the entry speech handlers', async () => {
+        const speakEntry = vi.fn();
+        const speakFromEntry = vi.fn();
+        const user = userEvent.setup();
+        renderEntryViewMode({ speakEntry, speakFromEntry });
+
+        await user.click(screen.getByTitle('Listen'));
+        await user.click(screen.getByText('Read this entry'));
+
+        expect(speakEntry).toHaveBeenCalledWith({
+            id: 1,
+            content: 'First entry',
+            date: '2024-01-15',
+        });
+
+        await user.click(screen.getByTitle('Listen'));
+        await user.click(screen.getByText('Read from here onwards'));
+
+        expect(speakFromEntry).toHaveBeenCalledWith(
+            expect.arrayContaining([
+                expect.objectContaining({ id: 1, content: 'First entry' }),
+            ]),
+            1,
+        );
+    });
+
     it('renders permalink inside the more actions menu and shares the entry', async () => {
         const onShareEntry = vi.fn().mockResolvedValue(true);
         const user = userEvent.setup();
@@ -173,5 +199,37 @@ describe('EntryViewMode', () => {
         expect(onFetchHistory).toHaveBeenCalledWith(1);
         expect(await screen.findByText('Older revision')).toBeInTheDocument();
         expect(screen.getByText('History')).toBeInTheDocument();
+    });
+
+    it('closes history without refetching when view history is selected again', async () => {
+        const onFetchHistory = vi.fn().mockResolvedValue(mockRevisions);
+        const user = userEvent.setup();
+        renderEntryViewMode({ onFetchHistory });
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('View history'));
+        expect(await screen.findByText('Older revision')).toBeInTheDocument();
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('View history'));
+
+        expect(onFetchHistory).toHaveBeenCalledTimes(1);
+        expect(screen.queryByText('Older revision')).not.toBeInTheDocument();
+    });
+
+    it('deletes a loaded revision and removes it from the history panel', async () => {
+        const onFetchHistory = vi.fn().mockResolvedValue(mockRevisions);
+        const onDeleteRevision = vi.fn().mockResolvedValue(true);
+        const user = userEvent.setup();
+        renderEntryViewMode({ onFetchHistory, onDeleteRevision });
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('View history'));
+        expect(await screen.findByText('Older revision')).toBeInTheDocument();
+
+        await user.click(screen.getAllByTitle('Delete')[0] as HTMLElement);
+
+        expect(onDeleteRevision).toHaveBeenCalledWith(1, mockRevisions[0].id);
+        expect(screen.queryByText('Older revision')).not.toBeInTheDocument();
     });
 });

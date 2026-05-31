@@ -364,7 +364,7 @@ describe('appShellProps', () => {
       handleRenameTag,
       diariesState: {
         currentDiaryId: 3,
-        diaries: [{ id: 3, name: 'Work', icon: 'W' }],
+        diaries: [{ id: 3, name: 'Work', icon: 'W', visibility: 'private' }],
         handleCreateDiary: vi.fn().mockResolvedValue(undefined),
         handleDeleteDiary,
         handleReorderDiaries: vi.fn().mockResolvedValue(undefined),

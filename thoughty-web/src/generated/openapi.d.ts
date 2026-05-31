@@ -1290,6 +1290,36 @@ export interface components {
             /** @description Ordered array of diary IDs */
             orderedIds: number[];
         };
+        ToneMoodAnalysisDto: {
+            /** @example reflective */
+            dominantMood: string;
+            /** @example candid */
+            dominantTone: string;
+            /**
+             * @example {
+             *       "reflective": 14,
+             *       "calm": 9,
+             *       "anxious": 4
+             *     }
+             */
+            moodBreakdown: {
+                [key: string]: number;
+            };
+            /**
+             * @example {
+             *       "candid": 12,
+             *       "analytical": 8,
+             *       "intimate": 7
+             *     }
+             */
+            toneBreakdown: {
+                [key: string]: number;
+            };
+            /** @example 27 */
+            analyzedEntries: number;
+            /** @example Recent thoughts are mostly reflective and calm, with a candid and personal writing tone. */
+            summary: string;
+        };
         StatsResponseDto: {
             /** @example 120 */
             totalThoughts: number;
@@ -1357,6 +1387,7 @@ export interface components {
                     [key: string]: number;
                 };
             };
+            toneMoodAnalysis?: components["schemas"]["ToneMoodAnalysisDto"] | null;
         };
         FormatConfigDto: {
             entrySeparator?: string;

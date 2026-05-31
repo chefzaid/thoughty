@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createElement } from 'react';
 import Stats from './Stats';
@@ -48,6 +48,14 @@ describe('Stats Component', () => {
                 topTags: 'Top Tags',
                 topTagsByYear: 'Top Tags by Year',
                 journalActivityByDay: 'Journal Activity',
+                toneMoodInsights: 'Tone and Mood',
+                toneMoodInsightsDescription: 'AI analysis of your recent writing patterns.',
+                dominantMood: 'Dominant Mood',
+                dominantTone: 'Dominant Tone',
+                analyzedEntries: 'Analyzed entries',
+                moodMix: 'Mood Mix',
+                toneMix: 'Tone Mix',
+                toneMoodUnavailable: 'AI analysis is unavailable right now. Configure AI settings and try again later.',
                 lessActivity: 'Less',
                 moreActivity: 'More',
                 noJournalActivity: 'No activity yet',
@@ -68,7 +76,15 @@ describe('Stats Component', () => {
             '2024': { 'work': 20, 'personal': 10 },
             '2023': { 'work': 10 }
         },
-        tagsPerMonth: {}
+        tagsPerMonth: {},
+        toneMoodAnalysis: {
+            dominantMood: 'reflective',
+            dominantTone: 'candid',
+            moodBreakdown: { reflective: 3, calm: 2 },
+            toneBreakdown: { candid: 4, analytical: 1 },
+            analyzedEntries: 5,
+            summary: 'Recent entries are reflective and calm, with a candid tone.'
+        }
     };
 
     beforeEach(() => {
@@ -116,7 +132,9 @@ describe('Stats Component', () => {
         // Check summary cards
         expect(screen.getByText('100')).toBeInTheDocument(); // Total thoughts
         expect(screen.getByText('15')).toBeInTheDocument(); // Unique tags
-        expect(screen.getByText('2')).toBeInTheDocument(); // Years active (2023, 2024)
+        const yearsActiveCard = screen.getByText('Years Active').closest('.stat-card');
+        expect(yearsActiveCard).not.toBeNull();
+        expect(within(yearsActiveCard as HTMLElement).getByText('2')).toBeInTheDocument(); // Years active (2023, 2024)
 
         // Check charts presence (via mock)
         const charts = screen.getAllByTestId('mock-bar-chart');
@@ -139,6 +157,30 @@ describe('Stats Component', () => {
         expect(screen.getByText('2024')).toBeInTheDocument();
         expect(screen.getByText(/work \(20\)/)).toBeInTheDocument();
         expect(screen.getByText(/personal \(10\)/)).toBeInTheDocument();
+    });
+
+    it('renders AI tone and mood insights when analysis is available', async () => {
+        (globalThis.fetch as Mock).mockResolvedValue({
+            ok: true,
+            json: async () => mockStatsData
+        });
+
+        render(<Stats {...defaultProps} />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('heading', { name: 'Tone and Mood' })).toBeInTheDocument();
+        });
+
+        const dominantMoodCard = screen.getByText('Dominant Mood').closest('.tone-mood-highlight');
+        const dominantToneCard = screen.getByText('Dominant Tone').closest('.tone-mood-highlight');
+
+        expect(dominantMoodCard).not.toBeNull();
+        expect(dominantToneCard).not.toBeNull();
+        expect(within(dominantMoodCard as HTMLElement).getByText('Reflective')).toBeInTheDocument();
+        expect(within(dominantToneCard as HTMLElement).getByText('Candid')).toBeInTheDocument();
+        expect(screen.getByText('Recent entries are reflective and calm, with a candid tone.')).toBeInTheDocument();
+        expect(screen.getByText('Analyzed entries')).toBeInTheDocument();
+        expect(screen.getByText('5')).toBeInTheDocument();
     });
 
     it('renders the journaling heatmap when daily activity is available', async () => {
@@ -186,6 +228,22 @@ describe('Stats Component', () => {
 
         await waitFor(() => {
             expect(container.firstChild).toHaveClass('light');
+        });
+    });
+
+    it('renders an unavailable state when AI analysis is missing', async () => {
+        (globalThis.fetch as Mock).mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                ...mockStatsData,
+                toneMoodAnalysis: null
+            })
+        });
+
+        render(<Stats {...defaultProps} />);
+
+        await waitFor(() => {
+            expect(screen.getByText('AI analysis is unavailable right now. Configure AI settings and try again later.')).toBeInTheDocument();
         });
     });
 });

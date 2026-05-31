@@ -74,6 +74,15 @@ export const mockStatsResponse = {
   thoughtsPerDay: { '2024-01-15': 1, '2024-01-16': 1 },
   thoughtsPerTag: { work: 1, personal: 1 },
   tagsPerYear: { '2024': { work: 1, personal: 1 } },
+  tagsPerMonth: {},
+  toneMoodAnalysis: {
+    dominantMood: 'reflective',
+    dominantTone: 'candid',
+    moodBreakdown: { reflective: 1, calm: 1 },
+    toneBreakdown: { candid: 2 },
+    analyzedEntries: 2,
+    summary: 'Recent entries feel reflective and candid.',
+  },
 };
 
 export const mockFormatResponse = {

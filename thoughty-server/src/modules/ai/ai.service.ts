@@ -15,6 +15,15 @@ type OpenRouterResponse = {
   }>;
 };
 
+export interface ToneMoodAnalysis {
+  dominantMood: string;
+  dominantTone: string;
+  moodBreakdown: Record<string, number>;
+  toneBreakdown: Record<string, number>;
+  analyzedEntries: number;
+  summary: string;
+}
+
 @Injectable()
 export class AiService {
   private readonly openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
@@ -316,5 +325,141 @@ export class AiService {
     } catch {
       return [];
     }
+  }
+
+  async analyzeToneMood(
+    userId: number,
+    entries: Array<Pick<Entry, 'id' | 'content' | 'date' | 'tags'>>,
+  ): Promise<ToneMoodAnalysis | null> {
+    const preparedEntries = entries
+      .filter((entry) => typeof entry.content === 'string' && entry.content.trim().length > 0)
+      .slice(0, 40);
+
+    if (preparedEntries.length === 0 || !this.apiKey) {
+      return null;
+    }
+
+    try {
+      const model = await this.getModel(userId);
+      const response = await fetch(this.openRouterUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          'X-Title': 'Thoughty',
+        },
+        body: JSON.stringify({
+          model,
+          temperature: 0.2,
+          messages: [
+            {
+              role: 'system',
+              content: [
+                'You analyze a batch of journal entries and summarize their mood and writing tone.',
+                'Return only JSON with the keys dominantMood, dominantTone, moodBreakdown, toneBreakdown, and summary.',
+                'moodBreakdown and toneBreakdown must be JSON objects whose values are integer counts.',
+                'Use concise lowercase labels for moods and tones.',
+                'The counts should reflect the entries provided, and summary should be one short sentence with no markdown.',
+              ].join(' '),
+            },
+            {
+              role: 'user',
+              content: preparedEntries.map((entry) => [
+                `Entry ${entry.id}`,
+                `Date: ${entry.date}`,
+                entry.tags.length > 0 ? `Tags: ${entry.tags.join(', ')}` : 'Tags: none',
+                `Content: ${entry.content.slice(0, 1200)}`,
+              ].join('\n')).join('\n\n---\n\n'),
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = (await response.json()) as OpenRouterResponse;
+      const rawContent = data.choices?.[0]?.message?.content?.trim();
+
+      if (!rawContent) {
+        return null;
+      }
+
+      return this.parseToneMoodAnalysis(rawContent, preparedEntries.length);
+    } catch {
+      return null;
+    }
+  }
+
+  private parseToneMoodAnalysis(rawContent: string, analyzedEntries: number): ToneMoodAnalysis | null {
+    const trimmed = rawContent.trim();
+    const objectMatch = /\{[\s\S]*\}/.exec(trimmed);
+    const objectCandidate = trimmed.startsWith('{')
+      ? trimmed
+      : (objectMatch?.[0] ?? '{}');
+
+    try {
+      const parsed = JSON.parse(objectCandidate) as Record<string, unknown>;
+      const moodBreakdown = this.parseAnalysisBreakdown(parsed.moodBreakdown);
+      const toneBreakdown = this.parseAnalysisBreakdown(parsed.toneBreakdown);
+      const summary = typeof parsed.summary === 'string' ? parsed.summary.trim() : '';
+      const dominantMood = this.parseAnalysisLabel(parsed.dominantMood) ?? this.getDominantAnalysisLabel(moodBreakdown);
+      const dominantTone = this.parseAnalysisLabel(parsed.dominantTone) ?? this.getDominantAnalysisLabel(toneBreakdown);
+
+      if (!dominantMood || !dominantTone || (!summary && Object.keys(moodBreakdown).length === 0 && Object.keys(toneBreakdown).length === 0)) {
+        return null;
+      }
+
+      return {
+        dominantMood,
+        dominantTone,
+        moodBreakdown,
+        toneBreakdown,
+        analyzedEntries,
+        summary: summary || 'Recent entries show a mixed emotional and tonal profile.',
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private parseAnalysisBreakdown(value: unknown): Record<string, number> {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return {};
+    }
+
+    const breakdownEntries = Object.entries(value)
+      .map(([label, count]) => {
+        const parsedLabel = this.parseAnalysisLabel(label);
+        const parsedCount = typeof count === 'number'
+          ? Math.round(count)
+          : Number.parseInt(String(count), 10);
+
+        if (!parsedLabel || !Number.isFinite(parsedCount) || parsedCount <= 0) {
+          return null;
+        }
+
+        return [parsedLabel, parsedCount] as const;
+      })
+      .filter((entry): entry is readonly [string, number] => entry !== null)
+      .sort(([, left], [, right]) => right - left)
+      .slice(0, 6);
+
+    return Object.fromEntries(breakdownEntries);
+  }
+
+  private parseAnalysisLabel(value: unknown): string | null {
+    if (typeof value !== 'string') {
+      return null;
+    }
+
+    const normalized = value.trim().toLowerCase().replaceAll(/\s+/g, ' ');
+    return normalized.length > 0 ? normalized : null;
+  }
+
+  private getDominantAnalysisLabel(breakdown: Record<string, number>): string | null {
+    const [first] = Object.entries(breakdown).sort(([, left], [, right]) => right - left);
+    return first?.[0] ?? null;
   }
 }

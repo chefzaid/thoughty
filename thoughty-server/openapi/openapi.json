@@ -3145,6 +3145,57 @@
           "orderedIds"
         ]
       },
+      "ToneMoodAnalysisDto": {
+        "type": "object",
+        "properties": {
+          "dominantMood": {
+            "type": "string",
+            "example": "reflective"
+          },
+          "dominantTone": {
+            "type": "string",
+            "example": "candid"
+          },
+          "moodBreakdown": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "reflective": 14,
+              "calm": 9,
+              "anxious": 4
+            }
+          },
+          "toneBreakdown": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "candid": 12,
+              "analytical": 8,
+              "intimate": 7
+            }
+          },
+          "analyzedEntries": {
+            "type": "number",
+            "example": 27
+          },
+          "summary": {
+            "type": "string",
+            "example": "Recent thoughts are mostly reflective and calm, with a candid and personal writing tone."
+          }
+        },
+        "required": [
+          "dominantMood",
+          "dominantTone",
+          "moodBreakdown",
+          "toneBreakdown",
+          "analyzedEntries",
+          "summary"
+        ]
+      },
       "StatsResponseDto": {
         "type": "object",
         "properties": {
@@ -3225,6 +3276,15 @@
                 "health": 2
               }
             }
+          },
+          "toneMoodAnalysis": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ToneMoodAnalysisDto"
+              }
+            ]
           }
         },
         "required": [

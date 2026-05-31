@@ -1,5 +1,35 @@
 import { ApiProperty } from '@nestjs/swagger';
 
+export class ToneMoodAnalysisDto {
+  @ApiProperty({ example: 'reflective' })
+  dominantMood!: string;
+
+  @ApiProperty({ example: 'candid' })
+  dominantTone!: string;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'number' },
+    example: { reflective: 14, calm: 9, anxious: 4 },
+  })
+  moodBreakdown!: Record<string, number>;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'number' },
+    example: { candid: 12, analytical: 8, intimate: 7 },
+  })
+  toneBreakdown!: Record<string, number>;
+
+  @ApiProperty({ example: 27 })
+  analyzedEntries!: number;
+
+  @ApiProperty({
+    example: 'Recent thoughts are mostly reflective and calm, with a candid and personal writing tone.',
+  })
+  summary!: string;
+}
+
 export class StatsResponseDto {
   @ApiProperty({ example: 120 })
   totalThoughts!: number;
@@ -54,4 +84,11 @@ export class StatsResponseDto {
     example: { '2025-02': { work: 6, health: 2 } },
   })
   tagsPerMonth!: Record<string, Record<string, number>>;
+
+  @ApiProperty({
+    type: ToneMoodAnalysisDto,
+    nullable: true,
+    required: false,
+  })
+  toneMoodAnalysis!: ToneMoodAnalysisDto | null;
 }

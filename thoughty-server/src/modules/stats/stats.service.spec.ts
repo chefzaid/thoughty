@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { AiService } from '@/modules/ai';
 import { StatsService } from './stats.service';
 import { Entry } from '@/database/entities';
 
 describe('StatsService', () => {
   let service: StatsService;
   let entryRepository: any;
+  let aiService: { analyzeToneMood: jest.Mock };
 
   beforeEach(async () => {
     const mockQueryBuilder = {
@@ -17,18 +19,25 @@ describe('StatsService', () => {
       addGroupBy: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       addOrderBy: jest.fn().mockReturnThis(),
+      take: jest.fn().mockReturnThis(),
       getCount: jest.fn().mockResolvedValue(100),
       getRawMany: jest.fn().mockResolvedValue([]),
+      getMany: jest.fn().mockResolvedValue([]),
     };
 
     entryRepository = {
       createQueryBuilder: jest.fn(() => mockQueryBuilder),
     };
 
+    aiService = {
+      analyzeToneMood: jest.fn().mockResolvedValue(null),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StatsService,
         { provide: getRepositoryToken(Entry), useValue: entryRepository },
+        { provide: AiService, useValue: aiService },
       ],
     }).compile();
 
@@ -61,6 +70,7 @@ describe('StatsService', () => {
       expect(result).toHaveProperty('thoughtsPerTag');
       expect(result).toHaveProperty('tagsPerYear');
       expect(result).toHaveProperty('tagsPerMonth');
+      expect(result).toHaveProperty('toneMoodAnalysis');
     });
 
     it('should calculate totalThoughts correctly', async () => {
@@ -199,6 +209,32 @@ describe('StatsService', () => {
       expect(mockQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 1 });
     });
 
+    it('should include AI tone and mood analysis when available', async () => {
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getRawMany.mockResolvedValue([]);
+      mockQb.getMany.mockResolvedValue([{ id: 9, content: 'I feel calm today.', date: '2024-02-20', tags: ['calm'] }]);
+      aiService.analyzeToneMood.mockResolvedValue({
+        dominantMood: 'calm',
+        dominantTone: 'candid',
+        moodBreakdown: { calm: 1 },
+        toneBreakdown: { candid: 1 },
+        analyzedEntries: 1,
+        summary: 'The writing feels calm and candid.',
+      });
+
+      const result = await service.getStats(1);
+
+      expect(aiService.analyzeToneMood).toHaveBeenCalledWith(1, [{ id: 9, content: 'I feel calm today.', date: '2024-02-20', tags: ['calm'] }]);
+      expect(result.toneMoodAnalysis).toEqual({
+        dominantMood: 'calm',
+        dominantTone: 'candid',
+        moodBreakdown: { calm: 1 },
+        toneBreakdown: { candid: 1 },
+        analyzedEntries: 1,
+        summary: 'The writing feels calm and candid.',
+      });
+    });
+
     it('should return empty objects when no data', async () => {
       const mockQb = entryRepository.createQueryBuilder();
       mockQb.getCount.mockResolvedValue(0);
@@ -212,6 +248,7 @@ describe('StatsService', () => {
       expect(Object.keys(result.thoughtsPerMonth)).toHaveLength(0);
       expect(Object.keys(result.thoughtsPerDay)).toHaveLength(0);
       expect(Object.keys(result.thoughtsPerTag)).toHaveLength(0);
+      expect(result.toneMoodAnalysis).toBeNull();
     });
   });
 });

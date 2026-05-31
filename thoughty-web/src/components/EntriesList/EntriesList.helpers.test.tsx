@@ -133,10 +133,17 @@ describe('EntriesList.helpers', () => {
         );
 
         const buttons = screen.getAllByRole('button', { name: 'dragToReorder' });
-        fireEvent.pointerEnter(buttons[0]);
-        fireEvent.pointerUp(buttons[0]);
-        fireEvent.pointerDown(buttons[1]);
-        fireEvent.keyDown(buttons[1], { key: 'Enter' });
+        const dropTargetButton = buttons.at(0);
+        const dragHandleButton = buttons.at(1);
+
+        if (!dropTargetButton || !dragHandleButton) {
+            throw new Error('Expected reorder buttons to render');
+        }
+
+        fireEvent.pointerEnter(dropTargetButton);
+        fireEvent.pointerUp(dropTargetButton);
+        fireEvent.pointerDown(dragHandleButton);
+        fireEvent.keyDown(dragHandleButton, { key: 'Enter' });
 
         expect(onTargetPointerEnter).toHaveBeenCalledTimes(1);
         expect(onTargetPointerUp).toHaveBeenCalledTimes(1);
@@ -184,7 +191,7 @@ describe('EntriesList.helpers', () => {
             />,
         );
 
-        fireEvent.change(screen.getAllByRole('textbox')[0], { target: { value: 'Updated text' } });
+        fireEvent.change(screen.getByDisplayValue('Current text'), { target: { value: 'Updated text' } });
         fireEvent.change(screen.getByTestId('date-picker'), { target: { value: '2024-03-01' } });
         fireEvent.click(screen.getByTestId('tag-picker'));
         fireEvent.click(screen.getByText('MD').closest('button') as HTMLElement);

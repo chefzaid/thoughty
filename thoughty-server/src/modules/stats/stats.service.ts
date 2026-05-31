@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
+import { AiService } from '@/modules/ai';
 import { StatsResponseDto } from './dto';
 
 @Injectable()
@@ -9,6 +10,7 @@ export class StatsService {
   constructor(
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
+    private readonly aiService: AiService,
   ) {}
 
   async getStats(userId: number, diaryId?: number): Promise<StatsResponseDto> {
@@ -122,6 +124,15 @@ export class StatsService {
 
     // Unique tags count - use subquery to avoid aggregate function with set-returning function
     const uniqueTagsCount = Object.keys(thoughtsPerTag).length;
+    const recentEntries = totalThoughts > 0
+      ? await createQb()
+        .select(['e.id', 'e.content', 'e.date', 'e.tags'])
+        .orderBy('e.date', 'DESC')
+        .addOrderBy('e.id', 'DESC')
+        .take(40)
+        .getMany()
+      : [];
+    const toneMoodAnalysis = await this.aiService.analyzeToneMood(userId, recentEntries);
 
     return {
       totalThoughts,
@@ -132,6 +143,7 @@ export class StatsService {
       thoughtsPerTag,
       tagsPerYear,
       tagsPerMonth,
+      toneMoodAnalysis,
     };
   }
 }

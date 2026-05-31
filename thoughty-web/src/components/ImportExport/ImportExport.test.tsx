@@ -341,7 +341,12 @@ describe('ImportExport', () => {
             expect(screen.getAllByRole('button', { name: /Google Drive/ })[0]).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getAllByRole('button', { name: /Google Drive/ })[0]);
+        const openCloudBrowserButton = screen.getAllByRole('button', { name: /Google Drive/ }).at(0);
+        if (!openCloudBrowserButton) {
+            throw new Error('Expected Google Drive button to render');
+        }
+
+        fireEvent.click(openCloudBrowserButton);
 
         await waitFor(() => {
             expect(screen.getByText('cloud-export.txt')).toBeInTheDocument();
@@ -356,7 +361,7 @@ describe('ImportExport', () => {
             expect(screen.getByText('previewSummary')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getAllByRole('button', { name: /Google Drive/ })[0]);
+        fireEvent.click(openCloudBrowserButton);
 
         await waitFor(() => {
             expect(screen.queryByText('cloud-export.txt')).not.toBeInTheDocument();
@@ -378,7 +383,12 @@ describe('ImportExport', () => {
             expect(screen.getAllByRole('button', { name: /Google Drive/ })[0]).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getAllByRole('button', { name: /Google Drive/ })[0]);
+        const cloudBrowserButton = screen.getAllByRole('button', { name: /Google Drive/ }).at(0);
+        if (!cloudBrowserButton) {
+            throw new Error('Expected Google Drive button to render');
+        }
+
+        fireEvent.click(cloudBrowserButton);
         await screen.findByText('cloud-export.txt');
         fireEvent.click(screen.getAllByRole('button', { name: 'import' }).at(-1) as HTMLElement);
 

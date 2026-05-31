@@ -384,4 +384,34 @@ describe('useAppShellModel', () => {
     expect(fetchEntries).not.toHaveBeenCalled();
     expect(fetchProfileStats).not.toHaveBeenCalled();
   });
+
+  it('skips page updates when navigate-to-first does not find an entry', async () => {
+    navigateToFirst.mockResolvedValueOnce({ found: false, page: 9, entryId: 88 });
+    const { result } = renderHook(() => useAppShellModel());
+    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
+
+    await act(async () => {
+      await routesProps.handleNavigateToFirst(2023, null);
+    });
+
+    expect(navigateToFirst).toHaveBeenCalledWith(2023, null, 25);
+    expect(setPage).not.toHaveBeenCalled();
+    expect(setTargetEntryId).not.toHaveBeenCalled();
+  });
+
+  it('alerts and skips edit state updates when rephrasing returns null', async () => {
+    fixWriting.mockResolvedValueOnce(null);
+    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    const { result } = renderHook(() => useAppShellModel());
+    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
+
+    await act(async () => {
+      await routesProps.handleRephrase?.({ id: 44, content: 'Needs help' }, 'rewrite');
+    });
+
+    expect(fixWriting).toHaveBeenCalledWith('Needs help', 'rewrite');
+    expect(alertSpy).toHaveBeenCalledWith('Unable to rephrase entry. Check your OpenRouter API key and try again.');
+    expect(handleEdit).not.toHaveBeenCalled();
+    expect(setEditText).not.toHaveBeenCalled();
+  });
 });
