@@ -5,6 +5,7 @@ import IntroPage from '../components/IntroPage/IntroPage';
 import type { Config, Entry, ImportExportFormat, ImportExportSection, PublicViewType, ViewType } from '../types';
 import AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
+import type { RephraseMode } from '../services/api/aiService';
 import { buildEntryPermalink } from './appRouting';
 import type { TagMetadataMap } from './tagMetadata';
 
@@ -57,6 +58,7 @@ interface BuildAuthenticatedRoutesPropsParams {
   entryFormState: Pick<EntryFormState, 'addPendingFile' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'selectedDate' | 'setFormat' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setVisibility' | 'suggestingTags' | 'tags' | 'uploadedAttachments' | 'visibility'>;
   entryNavigationState: Pick<EntryNavigationState, 'handleBackToSource' | 'handleNavigateToEntry' | 'handleShareEntry'>;
   handleDiscuss: (entry: Entry) => void;
+  handleRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
   handleNavigateToFirst: AuthenticatedRoutesProps['journalRouteProps']['onNavigateToFirst'];
   handleRenameTag: AuthenticatedRoutesProps['tagManagerRouteProps']['onRenameTag'];
   highlightsModalOpen: boolean;
@@ -150,6 +152,7 @@ export function buildAuthenticatedRoutesProps({
   entryFormState,
   entryNavigationState,
   handleDiscuss,
+  handleRephrase,
   handleNavigateToFirst,
   handleRenameTag,
   highlightsModalOpen,
@@ -313,6 +316,7 @@ export function buildAuthenticatedRoutesProps({
       onDeleteRevision: entriesState.deleteRevision,
       onReorderEntries: entriesState.reorderEntries,
       onDiscuss: handleDiscuss,
+      onRephrase: handleRephrase,
       config,
       t,
     },

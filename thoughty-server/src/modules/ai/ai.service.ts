@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { AiChatHistory, Entry } from '@/database/entities';
 import { ConfigService } from '@/modules/config';
 import { SuggestTagsDto } from './dto/suggest-tags.dto';
-import { FixWritingDto } from './dto/fix-writing.dto';
+import { FixWritingDto, type FixWritingMode } from './dto/fix-writing.dto';
 import { ChatDto, ChatHistoryResponseDto, ChatMessageDto } from './dto/chat.dto';
 
 type OpenRouterResponse = {
@@ -62,6 +62,18 @@ export class AiService {
   private async getModel(userId: number): Promise<string> {
     const model = await this.configService.getDecryptedConfig(userId, 'openRouterModel');
     return model || this.defaultModel;
+  }
+
+  private getFixWritingInstruction(mode: FixWritingMode | undefined): string {
+    switch (mode) {
+      case 'polish':
+        return 'You are an editor. Correct grammar, spelling, punctuation, and awkward phrasing. Apply only light style improvements so the writing reads more smoothly while preserving the original meaning, tone, voice, and structure as much as possible. Return only the revised text with no explanations, comments, or markdown formatting.';
+      case 'rewrite':
+        return 'You are a ghostwriter. Rewrite the text completely for clarity, flow, and readability while preserving the original meaning and core details. You may substantially restructure sentences and phrasing, but keep the same intent and avoid adding new facts. Return only the rewritten text with no explanations, comments, or markdown formatting.';
+      case 'grammar':
+      default:
+        return 'You are a proofreader. Fix grammar, spelling, punctuation, and formatting issues only. Keep the wording, structure, tone, and voice as close to the original as possible unless a change is required for correctness. Return only the corrected text with no explanations, comments, or markdown formatting.';
+    }
   }
 
   async suggestTags(userId: number, dto: SuggestTagsDto): Promise<{ tags: string[] }> {
@@ -178,8 +190,7 @@ export class AiService {
         messages: [
           {
             role: 'system',
-            content:
-              'You are a proofreader. Fix grammar, spelling, and punctuation errors in the text. Improve awkward phrasing while preserving the original meaning, tone, and voice. Return only the corrected text with no explanations, comments, or markdown formatting.',
+            content: this.getFixWritingInstruction(dto.mode),
           },
           {
             role: 'user',

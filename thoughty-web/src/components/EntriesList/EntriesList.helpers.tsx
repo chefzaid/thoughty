@@ -3,6 +3,7 @@ import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
+import type { RephraseMode } from '../../services/api/aiService';
 import type { Attachment, Config, Diary, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getEditFormatButtonClass, getVisibilityButtonClass } from './EntriesList.utils';
@@ -10,13 +11,14 @@ import { resolveFontColor } from '../../types/config';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
-export type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive';
+export type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase';
 
 export interface BulkActionOptions {
     visibility?: 'public' | 'private';
     tags?: string[];
     diaryId?: number;
     isArchived?: boolean;
+    mode?: RephraseMode;
 }
 
 function getDragBadgeClass(isDark: boolean): string {
@@ -308,6 +310,7 @@ export function BulkActionBar({
 }: Readonly<BulkActionBarProps>) {
     const [showTagPicker, setShowTagPicker] = useLocalState(false);
     const [showMovePicker, setShowMovePicker] = useLocalState(false);
+    const [showRephrasePicker, setShowRephrasePicker] = useLocalState(false);
     const [bulkTags, setBulkTags] = useLocalState<string[]>([]);
     const bulkButtons = [
         { action: 'delete' as const, label: t('bulkDelete'), className: 'px-3 py-1.5 text-xs font-medium bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors' },
@@ -338,7 +341,32 @@ export function BulkActionBar({
                 ))}
                 <div className="relative">
                     <button
-                        onClick={() => { setShowTagPicker(!showTagPicker); setShowMovePicker(false); }}
+                        onClick={() => { setShowRephrasePicker(!showRephrasePicker); setShowTagPicker(false); setShowMovePicker(false); }}
+                        className="px-3 py-1.5 text-xs font-medium bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg transition-colors"
+                    >
+                        {t('bulkRephrase')}
+                    </button>
+                    {showRephrasePicker && (
+                        <div className={`absolute top-full mt-1 right-0 p-2 rounded-lg border shadow-lg z-20 min-w-[220px] ${isDark ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}`}>
+                            {[
+                                { mode: 'grammar' as const, label: t('rephraseGrammarOnly') },
+                                { mode: 'polish' as const, label: t('rephraseStyleLight') },
+                                { mode: 'rewrite' as const, label: t('rephraseCompleteRewrite') },
+                            ].map(({ mode, label }) => (
+                                <button
+                                    key={mode}
+                                    onClick={() => { onBulkAction('rephrase', { mode }); setShowRephrasePicker(false); }}
+                                    className={`w-full text-left px-3 py-2 text-sm rounded transition-colors ${isDark ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-700'}`}
+                                >
+                                    {label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                <div className="relative">
+                    <button
+                        onClick={() => { setShowTagPicker(!showTagPicker); setShowMovePicker(false); setShowRephrasePicker(false); }}
                         className="px-3 py-1.5 text-xs font-medium bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors"
                     >
                         {t('bulkAddTags')}
@@ -374,7 +402,7 @@ export function BulkActionBar({
                 {diaries.length > 1 && (
                     <div className="relative">
                         <button
-                            onClick={() => { setShowMovePicker(!showMovePicker); setShowTagPicker(false); }}
+                            onClick={() => { setShowMovePicker(!showMovePicker); setShowTagPicker(false); setShowRephrasePicker(false); }}
                             className="px-3 py-1.5 text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
                         >
                             {t('bulkMove')}

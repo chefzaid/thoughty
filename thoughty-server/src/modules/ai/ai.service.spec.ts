@@ -175,6 +175,30 @@ describe('AiService', () => {
       expect(result).toEqual({ content: 'I went to the store and bought some apples.' });
     });
 
+    it('uses the requested rewrite mode in the AI prompt', async () => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({
+          choices: [
+            {
+              message: {
+                content: 'A fully rewritten paragraph.',
+              },
+            },
+          ],
+        }),
+      });
+
+      await service.fixWriting(1, { content: 'Rewrite this.', mode: 'rewrite' });
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://openrouter.ai/api/v1/chat/completions',
+        expect.objectContaining({
+          body: expect.stringContaining('Rewrite the text completely for clarity, flow, and readability'),
+        }),
+      );
+    });
+
     it('returns original content when AI response is empty', async () => {
       fetchMock.mockResolvedValue({
         ok: true,

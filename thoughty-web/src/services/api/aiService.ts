@@ -1,5 +1,9 @@
 import { safeJsonParse } from './base';
 
+export const rephraseModes = ['grammar', 'polish', 'rewrite'] as const;
+
+export type RephraseMode = (typeof rephraseModes)[number];
+
 export const createAiService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
   const suggestTags = async (
     content: string,
@@ -24,11 +28,11 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     }
   };
 
-  const fixWriting = async (content: string): Promise<string | null> => {
+  const fixWriting = async (content: string, mode: RephraseMode = 'grammar'): Promise<string | null> => {
     try {
       const response = await authFetch('/api/ai/fix-writing', {
         method: 'POST',
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, mode }),
       });
 
       const data = await safeJsonParse<{ content?: string }>(response);

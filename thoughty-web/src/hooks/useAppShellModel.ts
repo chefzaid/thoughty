@@ -26,6 +26,7 @@ import {
   type AuthenticatedRoutesProps,
   type IntroPageProps,
 } from '../utils/appShellProps';
+import type { RephraseMode } from '../services/api/aiService';
 import type { Entry, PublicViewType, ViewType } from '../types';
 
 interface AppShellModel {
@@ -83,7 +84,7 @@ export function useAppShellModel(): AppShellModel {
 
   const deleteModalState = useDeleteModal(entriesState.fetchEntries);
 
-  const bulkSelectState = useBulkSelect(entriesState.fetchEntries);
+  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries);
 
   const handleNavigateToFirst = useCallback(async (year: number, month: number | null) => {
     const data = await entriesState.entriesService.navigateToFirst(year, month, entriesState.getLimit());
@@ -150,6 +151,18 @@ export function useAppShellModel(): AppShellModel {
     setChatEntry(entry);
   }, []);
 
+  const handleRephrase = useCallback(async (entry: Entry, mode: RephraseMode) => {
+    const rewritten = await aiService.fixWriting(entry.content, mode);
+
+    if (rewritten === null) {
+      alert('Unable to rephrase entry. Check your OpenRouter API key and try again.');
+      return;
+    }
+
+    entryEditState.handleEdit(entry);
+    entryEditState.setEditText(rewritten);
+  }, [aiService, entryEditState]);
+
   const handleLoadAiChatHistory = useCallback(async (entryId: number) => {
     return aiService.getChatHistory(entryId);
   }, [aiService]);
@@ -210,6 +223,7 @@ export function useAppShellModel(): AppShellModel {
     entryFormState,
     entryNavigationState,
     handleDiscuss,
+    handleRephrase,
     handleNavigateToFirst,
     handleRenameTag,
     highlightsModalOpen,

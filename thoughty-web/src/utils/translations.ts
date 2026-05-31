@@ -218,6 +218,11 @@ export type TranslationKey =
   | 'fixWriting'
   | 'fixingWriting'
   | 'discussEntry'
+  | 'rephraseEntry'
+  | 'rephrasingEntry'
+  | 'rephraseGrammarOnly'
+  | 'rephraseStyleLight'
+  | 'rephraseCompleteRewrite'
   | 'aiChat'
   | 'aiThinking'
   | 'aiLoadingHistory'
@@ -314,6 +319,7 @@ export type TranslationKey =
   | 'bulkDelete'
   | 'bulkMakePublic'
   | 'bulkMakePrivate'
+  | 'bulkRephrase'
   | 'bulkAddTags'
   | 'bulkMove'
   | 'bulkClearSelection'
@@ -660,6 +666,11 @@ export const translations: Translations = {
     fixWriting: 'Rephrase',
     fixingWriting: 'Rephrasing...',
     discussEntry: 'Discuss with AI',
+    rephraseEntry: 'Rephrase entry',
+    rephrasingEntry: 'Rephrasing entry...',
+    rephraseGrammarOnly: 'Grammar/form only',
+    rephraseStyleLight: 'Slight style improvements',
+    rephraseCompleteRewrite: 'Complete rewrite',
     aiChat: 'AI Chat',
     aiThinking: 'Thinking...',
     aiLoadingHistory: 'Loading chat history...',
@@ -770,6 +781,7 @@ export const translations: Translations = {
     bulkDelete: 'Delete',
     bulkMakePublic: 'Make public',
     bulkMakePrivate: 'Make private',
+    bulkRephrase: 'Rephrase',
     bulkAddTags: 'Add tags',
     bulkMove: 'Move to diary',
     bulkClearSelection: 'Clear',
@@ -1113,6 +1125,11 @@ export const translations: Translations = {
     fixWriting: 'Reformuler',
     fixingWriting: 'Reformulation...',
     discussEntry: 'Discuter avec l\'IA',
+    rephraseEntry: 'Reformuler l\'entrée',
+    rephrasingEntry: 'Reformulation en cours...',
+    rephraseGrammarOnly: 'Grammaire et forme seulement',
+    rephraseStyleLight: 'Légères améliorations de style',
+    rephraseCompleteRewrite: 'Réécriture complète',
     aiChat: 'Chat IA',
     aiThinking: 'Réflexion...',
     aiLoadingHistory: 'Chargement de l\'historique du chat...',
@@ -1225,6 +1242,7 @@ export const translations: Translations = {
     bulkDelete: 'Supprimer',
     bulkMakePublic: 'Rendre public',
     bulkMakePrivate: 'Rendre privé',
+    bulkRephrase: 'Reformuler',
     bulkAddTags: 'Ajouter des tags',
     bulkMove: 'Déplacer vers le journal',
     bulkClearSelection: 'Effacer',

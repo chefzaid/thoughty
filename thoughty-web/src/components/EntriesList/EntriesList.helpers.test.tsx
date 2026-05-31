@@ -49,7 +49,7 @@ vi.mock('@uiw/react-md-editor/nohighlight', () => ({
 }));
 
 describe('EntriesList.helpers', () => {
-    const t = (key: string, params?: Record<string, number>) => params?.count ? `${key}:${params.count}` : key;
+    const t = (key: string, params?: Record<string, string | number>) => params?.count ? `${key}:${params.count}` : key;
 
     it('extractDate strips the time portion from ISO datetimes', () => {
         expect(extractDate('2024-01-15T18:30:00.000Z')).toBe('2024-01-15');
@@ -280,6 +280,9 @@ describe('EntriesList.helpers', () => {
         fireEvent.click(screen.getByText('bulkArchive'));
         fireEvent.click(screen.getByText('bulkUnarchive'));
 
+        fireEvent.click(screen.getByText('bulkRephrase'));
+        fireEvent.click(screen.getByText('rephraseStyleLight'));
+
         fireEvent.click(screen.getByText('bulkAddTags'));
         fireEvent.click(screen.getByTestId('tag-picker'));
         fireEvent.click(screen.getByText('apply'));
@@ -295,6 +298,7 @@ describe('EntriesList.helpers', () => {
         expect(onBulkAction).toHaveBeenCalledWith('visibility', { visibility: 'private' });
         expect(onBulkAction).toHaveBeenCalledWith('archive', { isArchived: true });
         expect(onBulkAction).toHaveBeenCalledWith('archive', { isArchived: false });
+        expect(onBulkAction).toHaveBeenCalledWith('rephrase', { mode: 'polish' });
         expect(onBulkAction).toHaveBeenCalledWith('tags', { tags: ['alpha', 'beta'] });
         expect(onBulkAction).toHaveBeenCalledWith('move', { diaryId: 2 });
         expect(onClearSelection).toHaveBeenCalledTimes(1);

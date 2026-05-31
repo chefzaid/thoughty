@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useState as useLocalState, type Dispatch, type KeyboardEvent, type PointerEvent, type SetStateAction } from 'react';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
+import type { RephraseMode } from '../../services/api/aiService';
 import type { Attachment, Config, Diary, Entry, EntryRevision, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import EntryViewMode from './EntryViewMode';
@@ -69,6 +70,7 @@ interface EntriesListProps {
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onReorderEntries?: (date: string, orderedIds: number[]) => void;
     onDiscuss?: (entry: Entry) => void;
+    onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
     t: TranslationFn;
 }
 
@@ -122,6 +124,7 @@ function EntriesList({
     onDeleteRevision,
     onReorderEntries,
     onDiscuss,
+    onRephrase,
     t,
 }: Readonly<EntriesListProps>) {
     const [dragEntryId, setDragEntryId] = useLocalState<number | null>(null);
@@ -390,6 +393,7 @@ function EntriesList({
                                                     onFetchHistory={onFetchHistory}
                                                     onDeleteRevision={onDeleteRevision}
                                                     onDiscuss={onDiscuss}
+                                                    onRephrase={onRephrase}
                                                     searchTerm={searchTerm}
                                                     showDiaryLabel={showDiaryAccent}
                                                     tagMetadata={tagMetadata}

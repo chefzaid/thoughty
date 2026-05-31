@@ -4,6 +4,7 @@ import ListenButton from '../ListenButton/ListenButton';
 import AttachmentDisplay from '../AttachmentDisplay/AttachmentDisplay';
 import TagBadge from '../TagBadge/TagBadge';
 import type { SpeechEntry } from '../../hooks/useSpeech';
+import type { RephraseMode } from '../../services/api/aiService';
 import type { Config, Entry, EntryRevision, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
@@ -68,6 +69,38 @@ function MenuActionButton({
     );
 }
 
+function useDismissibleMenu(
+    menuOpen: boolean,
+    menuRef: React.RefObject<HTMLDivElement | null>,
+    onClose: () => void,
+) {
+    useEffect(() => {
+        if (!menuOpen) {
+            return;
+        }
+
+        const handlePointerDown = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                onClose();
+            }
+        };
+
+        const handleEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                onClose();
+            }
+        };
+
+        document.addEventListener('mousedown', handlePointerDown);
+        document.addEventListener('keydown', handleEscape);
+
+        return () => {
+            document.removeEventListener('mousedown', handlePointerDown);
+            document.removeEventListener('keydown', handleEscape);
+        };
+    }, [menuOpen, menuRef, onClose]);
+}
+
 function EntrySecondaryActionsMenu({
     isDark,
     entryPermalink,
@@ -75,7 +108,6 @@ function EntrySecondaryActionsMenu({
     isArchived,
     showHistory,
     onShareEntry,
-    onDiscuss,
     onToggleHistory,
     onToggleArchived,
     onDelete,
@@ -87,7 +119,6 @@ function EntrySecondaryActionsMenu({
     isArchived: boolean;
     showHistory: boolean;
     onShareEntry?: () => Promise<void>;
-    onDiscuss?: () => void;
     onToggleHistory?: () => Promise<void>;
     onToggleArchived: () => void;
     onDelete: () => void;
@@ -111,35 +142,11 @@ function EntrySecondaryActionsMenu({
         menuButtonClass = 'text-green-400 hover:bg-green-500/10';
     }
 
-    useEffect(() => {
-        if (!menuOpen) {
-            return;
-        }
-
-        const handlePointerDown = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setMenuOpen(false);
-            }
-        };
-
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setMenuOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handlePointerDown);
-        document.addEventListener('keydown', handleEscape);
-
-        return () => {
-            document.removeEventListener('mousedown', handlePointerDown);
-            document.removeEventListener('keydown', handleEscape);
-        };
-    }, [menuOpen]);
-
     const closeMenu = useCallback(() => {
         setMenuOpen(false);
     }, []);
+
+    useDismissibleMenu(menuOpen, menuRef, closeMenu);
 
     const toggleMenu = useCallback(() => {
         setMenuOpen((current) => !current);
@@ -163,15 +170,6 @@ function EntrySecondaryActionsMenu({
         closeMenu();
         await onToggleHistory();
     }, [closeMenu, onToggleHistory]);
-
-    const handleDiscuss = useCallback(() => {
-        if (!onDiscuss) {
-            return;
-        }
-
-        closeMenu();
-        onDiscuss();
-    }, [closeMenu, onDiscuss]);
 
     const handleToggleArchived = useCallback(() => {
         closeMenu();
@@ -228,18 +226,6 @@ function EntrySecondaryActionsMenu({
                             <span>{shareReady ? t('entryLinkCopied') : t('shareEntry')}</span>
                         </MenuActionButton>
                     )}
-                    {onDiscuss && (
-                        <MenuActionButton
-                            onClick={handleDiscuss}
-                            className={secondaryActionClass}
-                            title={t('discussEntry')}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
-                            <span>{t('discussEntry')}</span>
-                        </MenuActionButton>
-                    )}
                     {onToggleHistory && (
                         <MenuActionButton
                             onClick={() => void handleToggleHistory()}
@@ -273,6 +259,94 @@ function EntrySecondaryActionsMenu({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                         <span>{t('delete')}</span>
+                    </MenuActionButton>
+                </div>
+            )}
+        </div>
+    );
+}
+
+function EntryRephraseButton({
+    isDark,
+    disabled,
+    loading,
+    onRephrase,
+    t,
+}: Readonly<{
+    isDark: boolean;
+    disabled: boolean;
+    loading: boolean;
+    onRephrase?: (mode: RephraseMode) => Promise<void>;
+    t: TranslationFn;
+}>) {
+    const [menuOpen, setMenuOpen] = useLocalState(false);
+    const menuRef = useRef<HTMLDivElement>(null);
+    const secondaryActionClass = isDark
+        ? 'text-gray-200 hover:bg-gray-700'
+        : 'text-gray-700 hover:bg-gray-100';
+
+    const closeMenu = useCallback(() => {
+        setMenuOpen(false);
+    }, []);
+
+    useDismissibleMenu(menuOpen, menuRef, closeMenu);
+
+    const handleSelectMode = useCallback(async (mode: RephraseMode) => {
+        if (!onRephrase || disabled) {
+            return;
+        }
+
+        closeMenu();
+        await onRephrase(mode);
+    }, [closeMenu, disabled, onRephrase]);
+
+    if (!onRephrase) {
+        return null;
+    }
+
+    return (
+        <div className="relative" ref={menuRef}>
+            <IconActionButton
+                onClick={() => {
+                    if (disabled) {
+                        return;
+                    }
+                    setMenuOpen((current) => !current);
+                }}
+                className={`p-1.5 ${disabled ? 'cursor-wait text-indigo-300 bg-indigo-500/10' : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10'}`}
+                title={loading ? t('rephrasingEntry') : t('rephraseEntry')}
+                ariaLabel={loading ? t('rephrasingEntry') : t('rephraseEntry')}
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l1.9 4.7L18 9.6l-4.1 1.7L12 16l-1.9-4.7L6 9.6l4.1-1.9L12 3zm6 12l.95 2.05L21 18l-2.05.95L18 21l-.95-2.05L15 18l2.05-.95L18 15zM5 14l.7 1.8L7.5 16.5l-1.8.7L5 19l-.7-1.8L2.5 16.5l1.8-.7L5 14z" />
+                </svg>
+            </IconActionButton>
+            {menuOpen && !disabled && (
+                <div
+                    role="menu"
+                    aria-label={t('rephraseEntry')}
+                    className={`absolute right-0 top-full z-20 mt-2 min-w-[240px] rounded-xl border py-1 shadow-xl ${isDark ? 'border-gray-700 bg-gray-800/95' : 'border-gray-200 bg-white/95'}`}
+                >
+                    <MenuActionButton
+                        onClick={() => void handleSelectMode('grammar')}
+                        className={secondaryActionClass}
+                        title={t('rephraseGrammarOnly')}
+                    >
+                        <span>{t('rephraseGrammarOnly')}</span>
+                    </MenuActionButton>
+                    <MenuActionButton
+                        onClick={() => void handleSelectMode('polish')}
+                        className={secondaryActionClass}
+                        title={t('rephraseStyleLight')}
+                    >
+                        <span>{t('rephraseStyleLight')}</span>
+                    </MenuActionButton>
+                    <MenuActionButton
+                        onClick={() => void handleSelectMode('rewrite')}
+                        className={secondaryActionClass}
+                        title={t('rephraseCompleteRewrite')}
+                    >
+                        <span>{t('rephraseCompleteRewrite')}</span>
                     </MenuActionButton>
                 </div>
             )}
@@ -548,6 +622,7 @@ interface EntryViewModeProps {
     onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onDiscuss?: (entry: Entry) => void;
+    onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
     searchTerm?: string;
     showDiaryLabel: boolean;
     tagMetadata: TagMetadataMap;
@@ -577,6 +652,7 @@ export default function EntryViewMode({
     onFetchHistory,
     onDeleteRevision,
     onDiscuss,
+    onRephrase,
     searchTerm,
     showDiaryLabel,
     tagMetadata,
@@ -587,6 +663,7 @@ export default function EntryViewMode({
     const [showHistory, setShowHistory] = useLocalState(false);
     const [revisions, setRevisions] = useLocalState<EntryRevision[]>([]);
     const [loadingHistory, setLoadingHistory] = useLocalState(false);
+    const [rephrasing, setRephrasing] = useLocalState(false);
     const entryPermalink = getEntryPermalink?.(entry.id);
 
     const handleToggleHistory = useCallback(async () => {
@@ -616,6 +693,19 @@ export default function EntryViewMode({
             setRevisions((current) => current.filter((revision) => revision.id !== revisionId));
         }
     }, [onDeleteRevision, entry.id, setRevisions]);
+
+    const handleRephrase = useCallback(async (mode: RephraseMode) => {
+        if (!onRephrase) {
+            return;
+        }
+
+        setRephrasing(true);
+        try {
+            await onRephrase(entry, mode);
+        } finally {
+            setRephrasing(false);
+        }
+    }, [entry, onRephrase]);
 
     return (
         <>
@@ -667,6 +757,24 @@ export default function EntryViewMode({
                         theme={config.theme}
                         t={t}
                     />
+                    {onDiscuss && (
+                        <IconActionButton
+                            onClick={() => onDiscuss(entry)}
+                            className="p-1.5 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                            title={t('discussEntry')}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                        </IconActionButton>
+                    )}
+                    <EntryRephraseButton
+                        isDark={isDark}
+                        disabled={rephrasing}
+                        loading={rephrasing}
+                        onRephrase={onRephrase ? handleRephrase : undefined}
+                        t={t}
+                    />
                     <IconActionButton
                         onClick={() => onEdit(entry)}
                         className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
@@ -680,12 +788,11 @@ export default function EntryViewMode({
                         isDark={isDark}
                         entryPermalink={entryPermalink}
                         archiveActionLabel={archiveActionLabel}
-                        isArchived={entry.is_archived}
+                        isArchived={entry.is_archived ?? false}
                         showHistory={showHistory}
                         onShareEntry={onShareEntry ? async () => {
                             await onShareEntry(entry);
                         } : undefined}
-                        onDiscuss={onDiscuss ? () => onDiscuss(entry) : undefined}
                         onToggleHistory={onFetchHistory ? handleToggleHistory : undefined}
                         onToggleArchived={() => onToggleArchived(entry)}
                         onDelete={() => onDelete(entry.id)}

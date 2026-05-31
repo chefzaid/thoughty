@@ -103,10 +103,16 @@ describe('useAppShellModel', () => {
   const setSourceEntry = vi.fn();
   const setTags = vi.fn();
   const setEditTags = vi.fn();
+  const handleEdit = vi.fn();
+  const setEditText = vi.fn();
   const aiChat = vi.fn().mockResolvedValue('assistant reply');
+  const fixWriting = vi.fn().mockResolvedValue('Polished text');
   const getChatHistory = vi.fn().mockResolvedValue([{ role: 'assistant', content: 'history' }]);
   const renameTag = vi.fn().mockResolvedValue({ success: true });
   const navigateToFirst = vi.fn().mockResolvedValue({ found: true, page: 4, entryId: 77 });
+
+  type MockedLayoutProps = ReturnType<typeof mocks.buildAuthenticatedLayoutProps>;
+  type MockedRoutesProps = ReturnType<typeof mocks.buildAuthenticatedRoutesProps>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -230,14 +236,14 @@ describe('useAppShellModel', () => {
       editVisibility: 'private',
       editingEntry: null,
       handleCancelEdit: vi.fn(),
-      handleEdit: vi.fn(),
+      handleEdit,
       handleSaveEdit: vi.fn(),
       removeEditAttachment: vi.fn(),
       removeEditPendingFile: vi.fn(),
       setEditDate: vi.fn(),
       setEditFormat: vi.fn(),
       setEditTags,
-      setEditText: vi.fn(),
+      setEditText,
       setEditVisibility: vi.fn(),
     });
     mocks.useDeleteModal.mockReturnValue({
@@ -277,6 +283,7 @@ describe('useAppShellModel', () => {
     mocks.useApiServices.mockReturnValue({
       aiService: {
         chat: aiChat,
+        fixWriting,
         getChatHistory,
       },
     });
@@ -316,30 +323,32 @@ describe('useAppShellModel', () => {
 
   it('handles navigation, tag renaming, and AI chat callbacks', async () => {
     const { result } = renderHook(() => useAppShellModel());
+    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
+    const layoutProps = result.current.authenticatedLayoutProps as MockedLayoutProps;
 
     await act(async () => {
-      await result.current.authenticatedRoutesProps.handleNavigateToFirst(2024, 1);
+      await routesProps.handleNavigateToFirst(2024, 1);
     });
 
     expect(navigateToFirst).toHaveBeenCalledWith(2024, 1, 25);
     expect(setPage).toHaveBeenCalledWith(4);
     expect(setTargetEntryId).toHaveBeenCalledWith(77);
 
-    await expect(result.current.authenticatedLayoutProps.handleLoadAiChatHistory(5)).resolves.toEqual([
+    await expect(layoutProps.handleLoadAiChatHistory(5)).resolves.toEqual([
       { role: 'assistant', content: 'history' },
     ]);
     expect(getChatHistory).toHaveBeenCalledWith(5);
 
-    await expect(result.current.authenticatedLayoutProps.handleAiChat(5, 'entry text', [{ role: 'user', content: 'hello' }]))
+    await expect(layoutProps.handleAiChat(5, 'entry text', [{ role: 'user', content: 'hello' }]))
       .resolves.toBe('assistant reply');
     expect(aiChat).toHaveBeenCalledWith(5, 'entry text', [{ role: 'user', content: 'hello' }]);
 
-    await expect(result.current.authenticatedRoutesProps.handleRenameTag('current', 'renamed')).resolves.toBe(true);
+    await expect(routesProps.handleRenameTag('current', 'renamed')).resolves.toBe(true);
     expect(renameTag).toHaveBeenCalledWith('current', 'renamed');
 
-    const nextFormTags = setTags.mock.calls[0][0](['current', 'other', 'renamed']);
-    const nextEditTags = setEditTags.mock.calls[0][0](['current', 'other']);
-    const nextFilterTags = setFilterTags.mock.calls[0][0](['current', 'other']);
+    const nextFormTags = (setTags.mock.calls[0]?.[0] as (tags: string[]) => string[])(['current', 'other', 'renamed']);
+    const nextEditTags = (setEditTags.mock.calls[0]?.[0] as (tags: string[]) => string[])(['current', 'other']);
+    const nextFilterTags = (setFilterTags.mock.calls[0]?.[0] as (tags: string[]) => string[])(['current', 'other']);
 
     expect(nextFormTags).toEqual(['renamed', 'other']);
     expect(nextEditTags).toEqual(['renamed', 'other']);
@@ -348,17 +357,26 @@ describe('useAppShellModel', () => {
     expect(fetchProfileStats).toHaveBeenCalled();
 
     act(() => {
-      result.current.authenticatedRoutesProps.handleDiscuss({ id: 33, content: 'Discuss me' } as never);
+      routesProps.handleDiscuss({ id: 33, content: 'Discuss me' });
     });
 
     expect(result.current.authenticatedLayoutProps.chatEntry).toEqual({ id: 33, content: 'Discuss me' });
+
+    await act(async () => {
+      await routesProps.handleRephrase?.({ id: 33, content: 'Discuss me' }, 'polish');
+    });
+
+    expect(fixWriting).toHaveBeenCalledWith('Discuss me', 'polish');
+    expect(handleEdit).toHaveBeenCalledWith({ id: 33, content: 'Discuss me' });
+    expect(setEditText).toHaveBeenCalledWith('Polished text');
   });
 
   it('returns false for a failed tag rename and skips follow-up updates', async () => {
     renameTag.mockResolvedValueOnce({ success: false });
     const { result } = renderHook(() => useAppShellModel());
+    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
 
-    await expect(result.current.authenticatedRoutesProps.handleRenameTag('current', 'blocked')).resolves.toBe(false);
+    await expect(routesProps.handleRenameTag('current', 'blocked')).resolves.toBe(false);
 
     expect(setTags).not.toHaveBeenCalled();
     expect(setEditTags).not.toHaveBeenCalled();

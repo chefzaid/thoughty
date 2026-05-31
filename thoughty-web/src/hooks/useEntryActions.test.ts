@@ -49,6 +49,18 @@ const createEntriesServiceMock = async (overrides: Record<string, unknown> = {})
   });
 };
 
+const createAiServiceMock = async (overrides: Record<string, unknown> = {}) => {
+  const { createAiService } = await import('../services/api');
+  vi.mocked(createAiService).mockReturnValue({
+    suggestTags: vi.fn(),
+    fixWriting: vi.fn(),
+    chat: vi.fn(),
+    getChatHistory: vi.fn(),
+    fetchModels: vi.fn(),
+    ...overrides,
+  });
+};
+
 describe('useEntryActions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -803,6 +815,75 @@ describe('useEntryActions', () => {
       });
 
       expect(globalThis.alert).toHaveBeenCalledWith('Bulk operation failed.');
+    });
+
+    it('bulk rephrases selected entries and preserves metadata', async () => {
+      const updateEntry = vi.fn().mockResolvedValue(true);
+      const fixWriting = vi.fn().mockResolvedValue('Improved first entry');
+      await createEntriesServiceMock({ updateEntry });
+      await createAiServiceMock({ fixWriting });
+
+      const entries = [
+        {
+          id: 1,
+          content: 'First entry',
+          tags: ['focus'],
+          date: '2024-01-15T10:00:00.000Z',
+          visibility: 'private' as const,
+          format: 'markdown' as const,
+        },
+      ];
+
+      const onComplete = vi.fn();
+      const { result } = renderHook(() => useBulkSelect(onComplete, entries));
+
+      act(() => {
+        result.current.toggleSelect(1);
+      });
+
+      await act(async () => {
+        await result.current.requestBulkAction('rephrase', { mode: 'polish' });
+      });
+
+      expect(fixWriting).toHaveBeenCalledWith('First entry', 'polish');
+      expect(updateEntry).toHaveBeenCalledWith(1, {
+        text: 'Improved first entry',
+        tags: ['focus'],
+        date: '2024-01-15',
+        visibility: 'private',
+        format: 'markdown',
+      });
+      expect(onComplete).toHaveBeenCalled();
+      expect(result.current.selectedIds.size).toBe(0);
+      expect(result.current.bulkMode).toBe(false);
+    });
+
+    it('shows a no-op message when selected entries do not need rephrasing', async () => {
+      const fixWriting = vi.fn().mockResolvedValue('Same entry');
+      await createEntriesServiceMock({ updateEntry: vi.fn() });
+      await createAiServiceMock({ fixWriting });
+
+      const entries = [
+        {
+          id: 1,
+          content: 'Same entry',
+          tags: ['focus'],
+          date: '2024-01-15',
+          visibility: 'private' as const,
+        },
+      ];
+
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, entries));
+
+      act(() => {
+        result.current.toggleSelect(1);
+      });
+
+      await act(async () => {
+        await result.current.executeBulkAction('rephrase', { mode: 'grammar' });
+      });
+
+      expect(globalThis.alert).toHaveBeenCalledWith('No selected entries needed rephrasing.');
     });
   });
 });

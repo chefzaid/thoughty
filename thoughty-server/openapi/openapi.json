@@ -2935,6 +2935,16 @@
           "content": {
             "type": "string",
             "description": "Entry content to fix for grammar, spelling, and style"
+          },
+          "mode": {
+            "type": "string",
+            "description": "Rephrase mode to apply",
+            "enum": [
+              "grammar",
+              "polish",
+              "rewrite"
+            ],
+            "default": "grammar"
           }
         },
         "required": [

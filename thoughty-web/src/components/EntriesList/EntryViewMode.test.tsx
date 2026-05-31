@@ -24,6 +24,7 @@ const clickToolbarAction = async (
 const PRIMARY_TOOLBAR_ACTIONS = [
     'Private - only you can see',
     'Favorite',
+    'Discuss entry',
     'Edit',
 ] as const;
 
@@ -70,11 +71,13 @@ describe('EntryViewMode', () => {
     it('calls visibility, favorite, and edit handlers from the primary toolbar', async () => {
         const onToggleVisibility = vi.fn();
         const onToggleFavorite = vi.fn();
+        const onDiscuss = vi.fn();
         const onEdit = vi.fn();
         const user = userEvent.setup();
         renderEntryViewMode({
             onToggleVisibility,
             onToggleFavorite,
+            onDiscuss,
             onEdit,
         });
 
@@ -84,6 +87,7 @@ describe('EntryViewMode', () => {
 
         expect(onToggleVisibility).toHaveBeenCalledWith(mockEntries[0]);
         expect(onToggleFavorite).toHaveBeenCalledWith(mockEntries[0]);
+        expect(onDiscuss).toHaveBeenCalledWith(mockEntries[0]);
         expect(onEdit).toHaveBeenCalledWith(mockEntries[0]);
     });
 
@@ -96,7 +100,7 @@ describe('EntryViewMode', () => {
         renderEntryViewMode({ onToggleArchived, onDelete, onDiscuss, onShareEntry });
 
         expect(screen.queryByTitle('Delete')).not.toBeInTheDocument();
-        expect(screen.queryByTitle('Discuss entry')).not.toBeInTheDocument();
+        expect(screen.getByTitle('Discuss entry')).toBeInTheDocument();
 
         await user.click(screen.getByLabelText('More actions'));
 
@@ -117,6 +121,17 @@ describe('EntryViewMode', () => {
         await user.click(screen.getByLabelText('More actions'));
         await user.click(screen.getByTitle('Share entry'));
         expect(onShareEntry).toHaveBeenCalledWith(mockEntries[0]);
+    });
+
+    it('opens the rephrase menu and calls the selected mode', async () => {
+        const onRephrase = vi.fn().mockResolvedValue(undefined);
+        const user = userEvent.setup();
+        renderEntryViewMode({ onRephrase });
+
+        await user.click(screen.getByTitle('Rephrase entry'));
+        await user.click(screen.getByTitle('Slight style improvements'));
+
+        expect(onRephrase).toHaveBeenCalledWith(mockEntries[0], 'polish');
     });
 
     it('renders permalink inside the more actions menu and shares the entry', async () => {

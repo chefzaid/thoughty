@@ -63,12 +63,12 @@ describe('aiService', () => {
       json: () => Promise.resolve({ content: 'Improved text' }),
     });
 
-    const result = await service.fixWriting('raw text');
+    const result = await service.fixWriting('raw text', 'polish');
 
     expect(result).toBe('Improved text');
     expect(mockAuthFetch).toHaveBeenCalledWith('/api/ai/fix-writing', {
       method: 'POST',
-      body: JSON.stringify({ content: 'raw text' }),
+      body: JSON.stringify({ content: 'raw text', mode: 'polish' }),
     });
   });
 

@@ -1208,6 +1208,12 @@ export interface components {
         FixWritingDto: {
             /** @description Entry content to fix for grammar, spelling, and style */
             content: string;
+            /**
+             * @description Rephrase mode to apply
+             * @default grammar
+             * @enum {string}
+             */
+            mode: "grammar" | "polish" | "rewrite";
         };
         ChatMessageDto: {
             /**

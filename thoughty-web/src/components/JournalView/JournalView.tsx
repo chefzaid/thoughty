@@ -7,6 +7,7 @@ import EntriesList from '../EntriesList/EntriesList';
 import Pagination from '../Pagination/Pagination';
 import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
+import type { RephraseMode } from '../../services/api/aiService';
 import type { Entry, Diary, Config, GroupedEntries, SourceEntryInfo, VisibilityFilter, Attachment, EntryRevision, ArchiveStatusFilter } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 
@@ -104,7 +105,7 @@ interface JournalViewProps {
   onToggleSelect?: (id: number) => void;
   onSelectAll?: (ids: number[]) => void;
   onClearSelection?: () => void;
-  onBulkAction?: (action: 'delete' | 'visibility' | 'tags' | 'move' | 'archive', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean }) => void;
+  onBulkAction?: (action: 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase', options?: { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean; mode?: RephraseMode }) => void;
   onToggleBulkMode?: () => void;
   
   // Pagination
@@ -127,6 +128,7 @@ interface JournalViewProps {
   
   // AI Chat
   onDiscuss?: (entry: Entry) => void;
+  onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
   
   // Config
   config: Config;
@@ -227,6 +229,7 @@ function JournalView({
   onDeleteRevision,
   onReorderEntries,
   onDiscuss,
+  onRephrase,
   config,
   t
 }: Readonly<JournalViewProps>) {
@@ -353,6 +356,7 @@ function JournalView({
         onDeleteRevision={onDeleteRevision}
         onReorderEntries={onReorderEntries}
         onDiscuss={onDiscuss}
+        onRephrase={onRephrase}
         t={t}
       />
 
