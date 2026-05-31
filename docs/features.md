@@ -20,6 +20,7 @@ flowchart LR
 - Same-day entries can be drag-reordered, which matters for users who use one date as a container for several shorter notes, check-ins, or event logs.
 - Stable entry permalinks use query-driven navigation such as `?entry=<id>`, so a specific entry can be reopened directly instead of relying on scroll position alone.
 - Entries can also be shared directly from the journal. Thoughty uses the browser share sheet when it is available and falls back to copying the permalink when it is not.
+- Primary entry actions are now cleaner thanks to a dedicated `More actions` menu, which keeps the main toolbar focused on visibility, favorite, and edit while moving secondary or destructive actions out of the way.
 - Cross-reference navigation is not just link parsing. Referenced entries are opened in context, highlighted, and can return the user to the originating entry.
 - Visibility is managed per entry with public and private states, making Thoughty usable for both strictly personal notes and selectively shareable writing.
 - Favorites, archive state, and revision history are all first-class entry behaviors. Edited entries keep a history trail, and individual revisions can be inspected and removed.
@@ -48,6 +49,7 @@ flowchart LR
 ## Highlights and Insight Surfaces
 
 - The stats area is built for journal review, not just raw counts. It exposes totals and averages, entry volume over time, top tags, and tag usage trends across years.
+- A journaling activity heatmap adds a calendar-style view of writing frequency on the stats page, making active and quiet periods easy to spot at a glance.
 - Diary scoping carries into stats, which is important when users want to compare a focused writing stream against the full journal.
 - Tag metadata also feeds the insight layer, so charts and tag breakdowns can stay visually consistent with the colors used elsewhere in the app.
 - Longer time ranges are paged instead of silently truncated, and the tag analysis includes a year-by-year top-tag breakdown alongside the charts.
@@ -78,7 +80,8 @@ flowchart LR
 ## AI Assistance and Accessibility
 
 - AI features are built around OpenRouter and are opt-in at the infrastructure level: the server must be configured with an API key, and each user can choose a preferred model from profile settings.
-- `Fix Writing` sends draft content to the configured model to correct grammar, spelling, and punctuation while aiming to preserve the original meaning and tone.
+- `Fix Writing` sends draft content to the configured model to correct grammar, spelling, and punctuation while aiming to preserve the original meaning and tone, and it now supports grammar, polish, and rewrite modes.
+- Tone and mood analysis adds a higher-level journal insight surface that summarizes dominant mood and tone, includes breakdowns for each, and produces a short written summary across analyzed entries.
 - AI tag suggestions are available on demand, and automatic AI tagging can also run during create or update flows when the configured per-user tag limit is greater than `0`.
 - Entry-specific AI chat turns an existing journal entry into the context for a conversation, which is useful for reflection, analysis, and follow-up questions rather than generic chatbot use.
 - AI chat history is stored per entry on the server, so reopening the same entry restores the prior conversation instead of starting from an empty modal on each device or browser.
@@ -95,6 +98,8 @@ flowchart LR
 - Profile management includes full name, display name, bio, birthday, avatar, and membership metadata.
 - Avatar editing goes beyond simple upload. Users can crop, zoom, and reposition images within a circular editor before saving the final result.
 - Preferences cover theme, language, journal pagination size, text-to-speech date reading, preferred AI model, and the automatic AI tagging limit.
+- Appearance preferences now include font family, font size, and font color controls, which let users tune the journal to their reading comfort.
+- Text-to-speech appearance settings now include voice selection and a preview action, so users can listen to the chosen voice before saving it.
 - English and French are the currently implemented application languages, and language selection is stored as part of the user configuration.
 
 ## Product Experience
