@@ -97,6 +97,14 @@ describe('EntryForm', () => {
             expect(screen.getByPlaceholderText("What's on your mind?").tagName).toBe('TEXTAREA');
         });
 
+        it('applies the saved font color to the plain textarea', () => {
+            render(<EntryForm {...defaultProps} format="plain" fontColor="#123456" />);
+
+            expect(screen.getByPlaceholderText("What's on your mind?")).toHaveStyle({
+                color: 'rgb(18, 52, 86)',
+            });
+        });
+
         it('shows markdown editor when format is markdown', () => {
             render(<EntryForm {...defaultProps} format="markdown" />);
 
@@ -123,6 +131,15 @@ describe('EntryForm', () => {
             fireEvent.change(textarea as HTMLTextAreaElement, { target: { value: 'Markdown draft' } });
 
             expect(setNewEntryText).toHaveBeenCalledWith('Markdown draft');
+        });
+
+        it('applies the saved font color to the markdown editor textarea', async () => {
+            render(<EntryForm {...defaultProps} format="markdown" fontColor="#123456" />);
+
+            const editor = await screen.findByTestId('md-editor');
+            expect(editor.querySelector('textarea')).toHaveStyle({
+                color: 'rgb(18, 52, 86)',
+            });
         });
     });
 

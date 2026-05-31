@@ -279,6 +279,7 @@ function JournalView({
         onAddFile={onAddFile}
         onRemovePendingFile={onRemovePendingFile}
         onRemoveUploadedAttachment={onRemoveUploadedAttachment}
+        fontColor={config.fontColor}
       />
 
       <FilterControls

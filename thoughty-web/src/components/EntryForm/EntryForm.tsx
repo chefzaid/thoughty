@@ -6,6 +6,7 @@ import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
 import type { Attachment } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getVisibilityButtonClass } from '../../utils/entryVisibility';
+import { resolveFontColor } from '../../types/config';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
@@ -35,6 +36,7 @@ interface EntryFormProps {
     readonly onAddFile?: (file: File) => void;
     readonly onRemovePendingFile?: (index: number) => void;
     readonly onRemoveUploadedAttachment?: (id: number) => void;
+    readonly fontColor?: string;
 }
 
 function EntryForm({
@@ -62,9 +64,11 @@ function EntryForm({
     uploadedAttachments,
     onAddFile,
     onRemovePendingFile,
-    onRemoveUploadedAttachment
+    onRemoveUploadedAttachment,
+    fontColor
 }: EntryFormProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const writingTextColor = resolveFontColor(fontColor, theme);
 
     // Auto-resize textarea based on content
     useEffect(() => {
@@ -102,6 +106,7 @@ function EntryForm({
                                         ? 'bg-gray-50 border-gray-300 text-gray-900'
                                         : 'bg-gray-900 border-gray-700 text-gray-100'
                                         }`}
+                                    style={{ color: writingTextColor }}
                                     rows={3}
                                     placeholder={t('whatsOnYourMind')}
                                     title={t('entryReferenceHint')}
@@ -120,6 +125,7 @@ function EntryForm({
                                     textareaProps={{
                                         placeholder: t('whatsOnYourMind'),
                                         title: t('entryReferenceHint'),
+                                        style: { color: writingTextColor },
                                     }}
                                 />
                             </div>
@@ -131,6 +137,7 @@ function EntryForm({
                                 ? 'bg-gray-50 border-gray-300 text-gray-900'
                                 : 'bg-gray-900 border-gray-700 text-gray-100'
                                 }`}
+                            style={{ color: writingTextColor }}
                             rows={3}
                             placeholder={t('whatsOnYourMind')}
                             title={t('entryReferenceHint')}

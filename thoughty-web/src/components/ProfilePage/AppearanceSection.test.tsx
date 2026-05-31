@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AppearanceSection from './AppearanceSection';
@@ -18,6 +18,10 @@ describe('AppearanceSection', () => {
     isLight: false,
     t: (key: string) => key,
   };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it('renders section header', () => {
     render(<AppearanceSection {...defaultProps} />);
@@ -55,6 +59,35 @@ describe('AppearanceSection', () => {
     render(<AppearanceSection {...defaultProps} />);
     expect(screen.getByTitle('English')).toBeInTheDocument();
     expect(screen.getByTitle('Français')).toBeInTheDocument();
+  });
+
+  it('renders font customization controls and preview', () => {
+    render(<AppearanceSection {...defaultProps} />);
+
+    expect(screen.getByLabelText('fontType')).toBeInTheDocument();
+    expect(screen.getByLabelText('fontSize')).toBeInTheDocument();
+    expect(screen.getByLabelText('fontColor')).toBeInTheDocument();
+    expect(screen.getByTestId('font-preview')).toBeInTheDocument();
+  });
+
+  it('calls handleChange when font family changes', async () => {
+    const user = userEvent.setup();
+    render(<AppearanceSection {...defaultProps} />);
+
+    await user.selectOptions(screen.getByLabelText('fontType'), 'serif');
+    expect(defaultProps.handleChange).toHaveBeenCalled();
+  });
+
+  it('shows the current font size value', async () => {
+    render(<AppearanceSection {...defaultProps} />);
+
+    expect(screen.getAllByText('16px')).toHaveLength(2);
+  });
+
+  it('shows the resolved default font color when no custom color is set', async () => {
+    render(<AppearanceSection {...defaultProps} />);
+
+    expect(screen.getByText('#F3F4F6')).toBeInTheDocument();
   });
 
   it('highlights active language button', () => {
@@ -129,5 +162,24 @@ describe('AppearanceSection', () => {
     );
     const select = screen.getByDisplayValue('10');
     expect(select).toBeInTheDocument();
+  });
+
+  it('uses the selected font settings in the preview', () => {
+    render(
+      <AppearanceSection
+        {...defaultProps}
+        localConfig={{
+          ...defaultProps.localConfig,
+          fontFamily: 'serif',
+          fontSize: '18',
+          fontColor: '#123456',
+        }}
+      />
+    );
+
+    expect(screen.getByTestId('font-preview')).toHaveStyle({
+      fontSize: '18px',
+      color: 'rgb(18, 52, 86)',
+    });
   });
 });

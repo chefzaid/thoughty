@@ -42,6 +42,16 @@ describe('EntryViewMode', () => {
         expect(screen.getByText('Work')).toBeInTheDocument();
     });
 
+    it('applies the saved font color only to the entry reading surface', () => {
+        renderEntryViewMode({
+            config: { theme: 'dark', fontColor: '#123456' },
+        });
+
+        expect(screen.getByText('First entry')).toHaveStyle({
+            color: 'rgb(18, 52, 86)',
+        });
+    });
+
     it('renders archived status and toggles archive', async () => {
         const onToggleArchived = vi.fn();
         const user = userEvent.setup();

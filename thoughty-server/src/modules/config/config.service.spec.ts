@@ -52,6 +52,8 @@ describe('ConfigService', () => {
       expect(result).toEqual({
         theme: 'dark',
         name: 'User',
+        fontFamily: 'system',
+        fontSize: '16',
         entriesPerPage: '10',
         defaultVisibility: 'private',
         language: 'en',
@@ -69,6 +71,8 @@ describe('ConfigService', () => {
 
       expect(result.theme).toBe('light');
       expect(result.name).toBe('John Doe');
+      expect(result.fontFamily).toBe('system');
+      expect(result.fontSize).toBe('16');
       expect(result.entriesPerPage).toBe('10'); // default
       expect(result.language).toBe('en'); // default
       expect(result.autoTagMaxTags).toBe('0');
@@ -78,6 +82,8 @@ describe('ConfigService', () => {
       settingRepository.find.mockResolvedValue([
         { key: 'theme', value: 'light' },
         { key: 'name', value: 'Jane Doe' },
+        { key: 'fontFamily', value: 'serif' },
+        { key: 'fontSize', value: '18' },
         { key: 'entriesPerPage', value: '20' },
         { key: 'defaultVisibility', value: 'public' },
         { key: 'language', value: 'es' },
@@ -89,6 +95,8 @@ describe('ConfigService', () => {
       expect(result).toEqual({
         theme: 'light',
         name: 'Jane Doe',
+        fontFamily: 'serif',
+        fontSize: '18',
         entriesPerPage: '20',
         defaultVisibility: 'public',
         language: 'es',

@@ -8,6 +8,9 @@ export interface ProfileConfig {
   gender?: string;
   avatarUrl?: string;
   theme?: 'light' | 'dark';
+  fontFamily?: 'system' | 'serif' | 'modern' | 'mono';
+  fontSize?: number | string;
+  fontColor?: string;
   language?: string;
   entriesPerPage?: number | string;
   defaultVisibility?: 'public' | 'private';

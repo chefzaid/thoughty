@@ -7,6 +7,7 @@ import type { SpeechEntry } from '../../hooks/useSpeech';
 import type { Config, Entry, EntryRevision, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
+import { resolveFontColor } from '../../types/config';
 import {
     extractDate,
     getEntryDiaryBadgeStyle,
@@ -417,6 +418,7 @@ function EntryBodySection({
     entry,
     isDark,
     theme,
+    fontColor,
     onNavigateToEntry,
     searchTerm,
     showHistory,
@@ -430,6 +432,7 @@ function EntryBodySection({
     entry: Entry;
     isDark: boolean;
     theme: Config['theme'];
+    fontColor?: string;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     searchTerm?: string;
     showHistory: boolean;
@@ -440,9 +443,14 @@ function EntryBodySection({
     onHandleDeleteRevision: (revisionId: number) => Promise<void>;
     t: TranslationFn;
 }>) {
+    const readingTextColor = resolveFontColor(fontColor, theme);
+
     return (
         <>
-            <div className={`leading-relaxed text-sm ${entry.format === 'markdown' ? '' : 'whitespace-pre-wrap'} ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+            <div
+                className={`leading-relaxed text-sm ${entry.format === 'markdown' ? '' : 'whitespace-pre-wrap'} ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
+                style={{ color: readingTextColor }}
+            >
                 <EntryContentRenderer
                     content={entry.content}
                     format={entry.format}
@@ -689,6 +697,7 @@ export default function EntryViewMode({
                 entry={entry}
                 isDark={isDark}
                 theme={config.theme}
+                fontColor={config.fontColor}
                 onNavigateToEntry={onNavigateToEntry}
                 searchTerm={searchTerm}
                 showHistory={showHistory}

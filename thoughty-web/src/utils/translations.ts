@@ -62,6 +62,20 @@ export type TranslationKey =
   | 'changeImage'
   | 'theme'
   | 'themeDescription'
+  | 'fontType'
+  | 'fontTypeDescription'
+  | 'fontTypeSystem'
+  | 'fontTypeSerif'
+  | 'fontTypeModern'
+  | 'fontTypeMono'
+  | 'fontSize'
+  | 'fontSizeDescription'
+  | 'fontColor'
+  | 'fontColorDescription'
+  | 'fontPreview'
+  | 'fontPreviewDescription'
+  | 'fontPreviewKicker'
+  | 'fontPreviewSample'
   | 'entriesPerPage'
   | 'entriesPerPageDescription'
   | 'defaultVisibility'
@@ -457,6 +471,20 @@ export const translations: Translations = {
     changeImage: 'Choose different image',
     theme: 'Theme',
     themeDescription: 'Choose your preferred color scheme',
+    fontType: 'Font style',
+    fontTypeDescription: 'Pick the typeface that feels easiest to read',
+    fontTypeSystem: 'System UI',
+    fontTypeSerif: 'Classic serif',
+    fontTypeModern: 'Modern sans',
+    fontTypeMono: 'Monospace',
+    fontSize: 'Font size',
+    fontSizeDescription: 'Adjust the base text size used across the app',
+    fontColor: 'Font color',
+    fontColorDescription: 'Set a preferred text color for your interface',
+    fontPreview: 'Preview',
+    fontPreviewDescription: 'Check how your chosen type, size, and color look together before saving.',
+    fontPreviewKicker: 'Sample entry',
+    fontPreviewSample: 'Quiet details become easier to notice when the page matches how you like to read and write.',
     entriesPerPage: 'Entries per page',
     entriesPerPageDescription: 'Number of entries to display per page',
     defaultVisibility: 'Default Visibility',
@@ -884,6 +912,20 @@ export const translations: Translations = {
     changeImage: 'Choisir une autre image',
     theme: 'Thème',
     themeDescription: 'Choisissez votre palette de couleurs',
+    fontType: 'Style de police',
+    fontTypeDescription: 'Choisissez la police la plus confortable à lire',
+    fontTypeSystem: 'Interface système',
+    fontTypeSerif: 'Serif classique',
+    fontTypeModern: 'Sans moderne',
+    fontTypeMono: 'Monospace',
+    fontSize: 'Taille du texte',
+    fontSizeDescription: 'Ajustez la taille de texte de base utilisée dans l’application',
+    fontColor: 'Couleur du texte',
+    fontColorDescription: 'Définissez une couleur de texte préférée pour votre interface',
+    fontPreview: 'Aperçu',
+    fontPreviewDescription: 'Vérifiez l’ensemble police, taille et couleur avant d’enregistrer.',
+    fontPreviewKicker: 'Exemple de note',
+    fontPreviewSample: 'Les détails calmes deviennent plus faciles à voir quand la page correspond à votre façon de lire et d’écrire.',
     entriesPerPage: 'Entrées par page',
     entriesPerPageDescription: "Nombre d'entrées à afficher par page",
     defaultVisibility: 'Visibilité par défaut',

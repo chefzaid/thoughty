@@ -73,7 +73,11 @@ interface MDEditorMockProps {
   preview?: string;
   height?: number;
   visibleDragbar?: boolean;
-  textareaProps?: Record<string, string>;
+  textareaProps?: {
+    placeholder?: string;
+    title?: string;
+    style?: Record<string, string>;
+  };
 }
 
 function createMDEditorMock() {
@@ -85,6 +89,7 @@ function createMDEditorMock() {
           onChange: (e: ChangeEvent<HTMLTextAreaElement>) => onChange?.(e.target.value),
           placeholder: textareaProps?.placeholder,
           title: textareaProps?.title,
+          style: textareaProps?.style,
         })
       );
     },

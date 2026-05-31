@@ -1,5 +1,21 @@
 import type { ChangeEvent } from 'react';
 import type { TranslationFunction, ProfileConfig } from './types';
+import {
+  DEFAULT_FONT_FAMILY,
+  normalizeFontSize,
+  resolveFontColor,
+  resolveFontFamily,
+  MIN_FONT_SIZE,
+  MAX_FONT_SIZE,
+  type FontFamilyPreference,
+} from '../../types/config';
+
+const FONT_FAMILY_OPTIONS: ReadonlyArray<{ value: FontFamilyPreference; labelKey: string }> = [
+  { value: 'system', labelKey: 'fontTypeSystem' },
+  { value: 'serif', labelKey: 'fontTypeSerif' },
+  { value: 'modern', labelKey: 'fontTypeModern' },
+  { value: 'mono', labelKey: 'fontTypeMono' },
+];
 
 interface AppearanceSectionProps {
   localConfig: ProfileConfig;
@@ -18,6 +34,10 @@ function AppearanceSection({
   isLight,
   t
 }: Readonly<AppearanceSectionProps>) {
+  const selectedFontFamily = localConfig.fontFamily ?? DEFAULT_FONT_FAMILY;
+  const selectedFontSize = normalizeFontSize(localConfig.fontSize);
+  const selectedFontColor = resolveFontColor(localConfig.fontColor, localConfig.theme);
+
   return (
   <div className="profile-section">
     <div className="section-header">
@@ -95,6 +115,88 @@ function AppearanceSection({
             <option value="25">25</option>
             <option value="50">50</option>
           </select>
+        </div>
+      </div>
+
+      <div className="settings-row-pair">
+        <div className="setting-row">
+          <div className="setting-info">
+            <span className="setting-label">{t('fontType')}</span>
+            <span className="setting-description">{t('fontTypeDescription')}</span>
+          </div>
+          <select
+            name="fontFamily"
+            value={selectedFontFamily}
+            onChange={handleChange}
+            aria-label={t('fontType')}
+            className={`setting-select ${isDark ? 'dark' : 'light'}`}
+          >
+            {FONT_FAMILY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {t(option.labelKey)}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="setting-row">
+          <div className="setting-info font-size-heading">
+            <div>
+              <span className="setting-label">{t('fontSize')}</span>
+              <span className="setting-description">{t('fontSizeDescription')}</span>
+            </div>
+            <span className={`font-size-value ${isDark ? 'dark' : 'light'}`}>{selectedFontSize}px</span>
+          </div>
+          <input
+            type="range"
+            name="fontSize"
+            min={MIN_FONT_SIZE}
+            max={MAX_FONT_SIZE}
+            step="1"
+            value={selectedFontSize}
+            onChange={handleChange}
+            aria-label={t('fontSize')}
+            className={`font-size-slider ${isDark ? 'dark' : 'light'}`}
+          />
+        </div>
+      </div>
+
+      <div className="setting-row horizontal">
+        <div className="setting-info">
+          <span className="setting-label">{t('fontColor')}</span>
+          <span className="setting-description">{t('fontColorDescription')}</span>
+        </div>
+        <label className={`font-color-input ${isDark ? 'dark' : 'light'}`}>
+          <input
+            type="color"
+            name="fontColor"
+            value={selectedFontColor}
+            onChange={handleChange}
+            aria-label={t('fontColor')}
+          />
+          <span>{selectedFontColor.toUpperCase()}</span>
+        </label>
+      </div>
+
+      <div className={`font-preview-card ${isDark ? 'dark' : 'light'}`}>
+        <div className="font-preview-header">
+          <div>
+            <span className="setting-label">{t('fontPreview')}</span>
+            <p className="setting-description font-preview-description">{t('fontPreviewDescription')}</p>
+          </div>
+          <span className={`font-preview-chip ${isDark ? 'dark' : 'light'}`}>{selectedFontSize}px</span>
+        </div>
+        <div
+          className="font-preview-surface"
+          data-testid="font-preview"
+          style={{
+            fontFamily: resolveFontFamily(selectedFontFamily),
+            fontSize: `${selectedFontSize}px`,
+            color: selectedFontColor,
+          }}
+        >
+          <p className="font-preview-kicker">{t('fontPreviewKicker')}</p>
+          <p className="font-preview-sample">{t('fontPreviewSample')}</p>
         </div>
       </div>
 

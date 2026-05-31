@@ -6,6 +6,8 @@ import { Setting, User, Diary, Entry, EntryRevision, Attachment } from '@/databa
 const DEFAULT_SETTINGS: Record<string, string> = {
   theme: 'dark',
   name: 'User',
+  fontFamily: 'system',
+  fontSize: '16',
   entriesPerPage: '10',
   defaultVisibility: 'private',
   language: 'en',

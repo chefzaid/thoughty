@@ -4,6 +4,7 @@ import ConfirmModal from '../components/ConfirmModal/ConfirmModal';
 import Footer from '../components/Footer/Footer';
 import AiChatModal from '../components/AiChatModal/AiChatModal';
 import type { ViewType, Config, Entry } from '../types';
+import { normalizeFontSize, resolveFontFamily } from '../types/config';
 
 interface AuthenticatedAppLayoutProps {
   readonly children: ReactNode;
@@ -50,8 +51,16 @@ function AuthenticatedAppLayout({
   onLoadChatHistory,
   onSendChat,
 }: Readonly<AuthenticatedAppLayoutProps>) {
+  const appTypographyStyle = {
+    fontFamily: resolveFontFamily(config.fontFamily),
+    fontSize: `${normalizeFontSize(config.fontSize)}px`,
+  };
+
   return (
-    <div className={`min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}>
+    <div
+      className={`min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}
+      style={appTypographyStyle}
+    >
       <div className="max-w-7xl mx-auto">
         <NavMenu
           currentView={currentView}

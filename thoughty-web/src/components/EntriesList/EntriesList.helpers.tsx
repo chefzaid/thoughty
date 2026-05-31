@@ -6,6 +6,7 @@ import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
 import type { Attachment, Config, Diary, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getEditFormatButtonClass, getVisibilityButtonClass } from './EntriesList.utils';
+import { resolveFontColor } from '../../types/config';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
@@ -177,6 +178,7 @@ export function EditForm({
     t,
 }: Readonly<EditFormProps>) {
     const isDark = config.theme !== 'light';
+    const writingTextColor = resolveFontColor(config.fontColor, config.theme);
     const inputClass = isDark
         ? 'bg-gray-900 border-gray-700 text-gray-100'
         : 'bg-gray-50 border-gray-300 text-gray-900';
@@ -190,6 +192,7 @@ export function EditForm({
                         fallback={(
                             <textarea
                                 className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none ${inputClass}`}
+                                style={{ color: writingTextColor }}
                                 rows={3}
                                 value={editText}
                                 onChange={(e) => setEditText(e.target.value)}
@@ -203,12 +206,14 @@ export function EditForm({
                                 preview="edit"
                                 visibleDragbar={false}
                                 height={200}
+                                textareaProps={{ style: { color: writingTextColor } }}
                             />
                         </div>
                     </Suspense>
                 ) : (
                     <textarea
                         className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none ${inputClass}`}
+                        style={{ color: writingTextColor }}
                         rows={3}
                         value={editText}
                         onChange={(e) => setEditText(e.target.value)}

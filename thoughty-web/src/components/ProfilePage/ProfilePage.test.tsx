@@ -1,6 +1,6 @@
 import { type ComponentProps } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfilePage from './ProfilePage';
 
@@ -291,6 +291,19 @@ describe('ProfilePage', () => {
 
             expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
                 expect.objectContaining({ gender: 'other' })
+            );
+        });
+
+        it('saves font preferences', async () => {
+            const user = userEvent.setup();
+            render(<ProfilePage {...defaultProps} />);
+
+            await user.selectOptions(screen.getByLabelText('fontType'), 'serif');
+            fireEvent.change(screen.getByLabelText('fontSize'), { target: { value: '18' } });
+            await user.click(screen.getByText('saveSettings'));
+
+            expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
+                expect.objectContaining({ fontFamily: 'serif', fontSize: '18' })
             );
         });
 
