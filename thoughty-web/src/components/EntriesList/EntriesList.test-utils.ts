@@ -60,6 +60,7 @@ const translations: Record<string, string> = {
     entryPermalink: 'Open entry permalink',
     shareEntry: 'Share entry',
     entryLinkCopied: 'Entry link copied',
+    moreActions: 'More actions',
     listen: 'Listen',
     stopListening: 'Stop listening',
     listenThisEntry: 'Read this entry',

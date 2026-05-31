@@ -319,6 +319,7 @@ export type TranslationKey =
   | 'entryPermalink'
   | 'shareEntry'
   | 'entryLinkCopied'
+  | 'moreActions'
   | 'dragToReorder'
   | 'aiConfiguration'
   | 'aiConfigDescription'
@@ -749,6 +750,7 @@ export const translations: Translations = {
     entryPermalink: 'Open entry permalink',
     shareEntry: 'Share entry',
     entryLinkCopied: 'Entry link copied',
+    moreActions: 'More actions',
     dragToReorder: 'Drag to reorder',
     history: 'History',
     viewHistory: 'View history',
@@ -1178,6 +1180,7 @@ export const translations: Translations = {
     entryPermalink: 'Ouvrir le permalien de l\'entrée',
     shareEntry: 'Partager l\'entrée',
     entryLinkCopied: 'Lien de l\'entrée copié',
+    moreActions: 'Plus d\'actions',
     dragToReorder: 'Glisser pour réorganiser',
     history: 'Historique',
     viewHistory: 'Voir l\'historique',

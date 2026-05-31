@@ -24,9 +24,7 @@ const clickToolbarAction = async (
 const PRIMARY_TOOLBAR_ACTIONS = [
     'Private - only you can see',
     'Favorite',
-    'Discuss entry',
     'Edit',
-    'Delete',
 ] as const;
 
 describe('EntryViewMode', () => {
@@ -53,24 +51,21 @@ describe('EntryViewMode', () => {
         });
 
         expect(screen.getByText('Archived')).toBeInTheDocument();
-        await user.click(screen.getByLabelText('Unarchive'));
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('Unarchive'));
 
         expect(onToggleArchived).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
     });
 
-    it('calls visibility, favorite, edit, delete, and discuss handlers', async () => {
+    it('calls visibility, favorite, and edit handlers from the primary toolbar', async () => {
         const onToggleVisibility = vi.fn();
         const onToggleFavorite = vi.fn();
         const onEdit = vi.fn();
-        const onDelete = vi.fn();
-        const onDiscuss = vi.fn();
         const user = userEvent.setup();
         renderEntryViewMode({
             onToggleVisibility,
             onToggleFavorite,
             onEdit,
-            onDelete,
-            onDiscuss,
         });
 
         for (const actionTitle of PRIMARY_TOOLBAR_ACTIONS) {
@@ -79,18 +74,50 @@ describe('EntryViewMode', () => {
 
         expect(onToggleVisibility).toHaveBeenCalledWith(mockEntries[0]);
         expect(onToggleFavorite).toHaveBeenCalledWith(mockEntries[0]);
-        expect(onDiscuss).toHaveBeenCalledWith(mockEntries[0]);
         expect(onEdit).toHaveBeenCalledWith(mockEntries[0]);
-        expect(onDelete).toHaveBeenCalledWith(1);
     });
 
-    it('renders permalink and shares the entry', async () => {
+    it('renders secondary actions in the more actions menu', async () => {
+        const onToggleArchived = vi.fn();
+        const onDelete = vi.fn();
+        const onDiscuss = vi.fn();
+        const onShareEntry = vi.fn().mockResolvedValue(true);
+        const user = userEvent.setup();
+        renderEntryViewMode({ onToggleArchived, onDelete, onDiscuss, onShareEntry });
+
+        expect(screen.queryByTitle('Delete')).not.toBeInTheDocument();
+        expect(screen.queryByTitle('Discuss entry')).not.toBeInTheDocument();
+
+        await user.click(screen.getByLabelText('More actions'));
+
+        expect(screen.getByTitle('Open entry permalink')).toHaveAttribute('href', getTestEntryPermalink(mockEntries[0].id));
+        expect(screen.getByTitle('Share entry')).toBeInTheDocument();
+
+        await user.click(screen.getByTitle('Discuss entry'));
+        expect(onDiscuss).toHaveBeenCalledWith(mockEntries[0]);
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('Archive'));
+        expect(onToggleArchived).toHaveBeenCalledWith(mockEntries[0]);
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('Delete'));
+        expect(onDelete).toHaveBeenCalledWith(1);
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('Share entry'));
+        expect(onShareEntry).toHaveBeenCalledWith(mockEntries[0]);
+    });
+
+    it('renders permalink inside the more actions menu and shares the entry', async () => {
         const onShareEntry = vi.fn().mockResolvedValue(true);
         const user = userEvent.setup();
         renderEntryViewMode({ onShareEntry });
 
+        await user.click(screen.getByLabelText('More actions'));
+
         expect(screen.getByLabelText('Open entry permalink')).toHaveAttribute('href', getTestEntryPermalink(mockEntries[0].id));
-        await user.click(screen.getByLabelText('Share entry'));
+        await user.click(screen.getByTitle('Share entry'));
 
         expect(onShareEntry).toHaveBeenCalledWith(mockEntries[0]);
     });
@@ -115,6 +142,7 @@ describe('EntryViewMode', () => {
         const user = userEvent.setup();
         renderEntryViewMode({ onFetchHistory });
 
+        await user.click(screen.getByLabelText('More actions'));
         await user.click(screen.getByTitle('View history'));
 
         expect(onFetchHistory).toHaveBeenCalledWith(1);
