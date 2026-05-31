@@ -2,16 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
-
-export interface StatsResponse {
-  totalThoughts: number;
-  uniqueTagsCount: number;
-  thoughtsPerYear: Record<string, number>;
-  thoughtsPerMonth: Record<string, number>;
-  thoughtsPerTag: Record<string, number>;
-  tagsPerYear: Record<string, Record<string, number>>;
-  tagsPerMonth: Record<string, Record<string, number>>;
-}
+import { StatsResponseDto } from './dto';
 
 @Injectable()
 export class StatsService {
@@ -20,7 +11,7 @@ export class StatsService {
     private readonly entryRepository: Repository<Entry>,
   ) {}
 
-  async getStats(userId: number, diaryId?: number): Promise<StatsResponse> {
+  async getStats(userId: number, diaryId?: number): Promise<StatsResponseDto> {
     // Build base query builder
     const createQb = () => {
       const qb = this.entryRepository
@@ -61,6 +52,19 @@ export class StatsService {
     const thoughtsPerMonth: Record<string, number> = {};
     for (const row of perMonthResult) {
       thoughtsPerMonth[row.month] = Number.parseInt(row.count, 10);
+    }
+
+    // Entries per day
+    const perDayResult = await createQb()
+      .select("TO_CHAR(e.date, 'YYYY-MM-DD')", 'day')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy("TO_CHAR(e.date, 'YYYY-MM-DD')")
+      .orderBy('day', 'DESC')
+      .getRawMany();
+
+    const thoughtsPerDay: Record<string, number> = {};
+    for (const row of perDayResult) {
+      thoughtsPerDay[row.day] = Number.parseInt(row.count, 10);
     }
 
     // Entries per tag
@@ -124,6 +128,7 @@ export class StatsService {
       uniqueTagsCount,
       thoughtsPerYear,
       thoughtsPerMonth,
+      thoughtsPerDay,
       thoughtsPerTag,
       tagsPerYear,
       tagsPerMonth,

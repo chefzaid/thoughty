@@ -140,6 +140,10 @@ export type TranslationKey =
   | 'thoughtsPerYear'
   | 'thoughtsPerMonth'
   | 'topTagsByYear'
+  | 'journalActivityByDay'
+  | 'lessActivity'
+  | 'moreActivity'
+  | 'noJournalActivity'
   | 'importExport'
   | 'import'
   | 'export'
@@ -565,6 +569,10 @@ export const translations: Translations = {
     thoughtsPerYear: 'Entries per Year',
     thoughtsPerMonth: 'Entries per Month',
     topTagsByYear: 'Top Tags by Year',
+    journalActivityByDay: 'Journal Activity by Day',
+    lessActivity: 'Less',
+    moreActivity: 'More',
+    noJournalActivity: 'No journaling activity yet.',
 
     // Import/Export
     importExport: 'Import/Export',
@@ -1013,6 +1021,10 @@ export const translations: Translations = {
     thoughtsPerYear: 'Entrées par an',
     thoughtsPerMonth: 'Entrées par mois',
     topTagsByYear: 'Top tags par année',
+    journalActivityByDay: 'Activité du journal par jour',
+    lessActivity: 'Moins',
+    moreActivity: 'Plus',
+    noJournalActivity: 'Aucune activité de journal pour le moment.',
 
     // Import/Export
     importExport: 'Import/Export',

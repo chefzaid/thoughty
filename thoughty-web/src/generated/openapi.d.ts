@@ -1284,6 +1284,74 @@ export interface components {
             /** @description Ordered array of diary IDs */
             orderedIds: number[];
         };
+        StatsResponseDto: {
+            /** @example 120 */
+            totalThoughts: number;
+            /** @example 18 */
+            uniqueTagsCount: number;
+            /**
+             * @example {
+             *       "2024": 48,
+             *       "2025": 72
+             *     }
+             */
+            thoughtsPerYear: {
+                [key: string]: number;
+            };
+            /**
+             * @example {
+             *       "2025-01": 12,
+             *       "2025-02": 18
+             *     }
+             */
+            thoughtsPerMonth: {
+                [key: string]: number;
+            };
+            /**
+             * @example {
+             *       "2025-02-10": 1,
+             *       "2025-02-11": 3
+             *     }
+             */
+            thoughtsPerDay: {
+                [key: string]: number;
+            };
+            /**
+             * @example {
+             *       "work": 22,
+             *       "health": 9
+             *     }
+             */
+            thoughtsPerTag: {
+                [key: string]: number;
+            };
+            /**
+             * @example {
+             *       "2025": {
+             *         "work": 10,
+             *         "health": 4
+             *       }
+             *     }
+             */
+            tagsPerYear: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            };
+            /**
+             * @example {
+             *       "2025-02": {
+             *         "work": 6,
+             *         "health": 2
+             *       }
+             *     }
+             */
+            tagsPerMonth: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            };
+        };
         FormatConfigDto: {
             entrySeparator?: string;
             sameDaySeparator?: string;
@@ -2494,7 +2562,9 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["StatsResponseDto"];
+                };
             };
         };
     };

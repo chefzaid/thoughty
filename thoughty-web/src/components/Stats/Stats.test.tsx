@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createElement } from 'react';
 import Stats from './Stats';
+
+function MockBar(props: { data: unknown }) {
+    return createElement('div', { 'data-testid': 'mock-bar-chart' }, JSON.stringify(props.data));
+}
 
 vi.mock('../../contexts/AuthContext', () => {
     const authFetch = (...args: Parameters<typeof fetch>) => globalThis.fetch(...args);
@@ -11,13 +17,6 @@ vi.mock('../../contexts/AuthContext', () => {
 
 // Mock Chart.js components to avoid canvas rendering issues
 vi.mock('react-chartjs-2', () => {
-    const MockBar = function MockBar(props: { data: unknown }) {
-        return (
-            <div data-testid="mock-bar-chart">
-                {JSON.stringify(props.data)}
-            </div>
-        );
-    };
     return { Bar: MockBar };
 });
 
@@ -48,6 +47,10 @@ describe('Stats Component', () => {
                 thoughtsPerMonth: 'Thoughts per Month',
                 topTags: 'Top Tags',
                 topTagsByYear: 'Top Tags by Year',
+                journalActivityByDay: 'Journal Activity',
+                lessActivity: 'Less',
+                moreActivity: 'More',
+                noJournalActivity: 'No activity yet',
                 year: 'Year'
             };
             return translations[key] || params?.defaultValue || key;
@@ -59,6 +62,7 @@ describe('Stats Component', () => {
         uniqueTagsCount: 15,
         thoughtsPerYear: { '2023': 40, '2024': 60 },
         thoughtsPerMonth: { '2023-12': 10, '2024-01': 20 },
+        thoughtsPerDay: { '2024-01-15': 2, '2024-01-16': 1, '2024-01-18': 4 },
         thoughtsPerTag: { 'work': 30, 'personal': 20 },
         tagsPerYear: {
             '2024': { 'work': 20, 'personal': 10 },
@@ -135,6 +139,41 @@ describe('Stats Component', () => {
         expect(screen.getByText('2024')).toBeInTheDocument();
         expect(screen.getByText(/work \(20\)/)).toBeInTheDocument();
         expect(screen.getByText(/personal \(10\)/)).toBeInTheDocument();
+    });
+
+    it('renders the journaling heatmap when daily activity is available', async () => {
+        (globalThis.fetch as Mock).mockResolvedValue({
+            ok: true,
+            json: async () => mockStatsData
+        });
+
+        const { container } = render(<Stats {...defaultProps} />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('heading', { name: 'Journal Activity' })).toBeInTheDocument();
+        });
+
+        expect(container.querySelectorAll('.heatmap-week').length).toBeGreaterThan(0);
+        expect(screen.getByLabelText('4 entries on Jan 18, 2024')).toBeInTheDocument();
+    });
+
+    it('opens the journal for the selected day when a heatmap cell is clicked', async () => {
+        const user = userEvent.setup();
+        const onOpenJournalDay = vi.fn();
+        (globalThis.fetch as Mock).mockResolvedValue({
+            ok: true,
+            json: async () => mockStatsData
+        });
+
+        render(<Stats {...defaultProps} onOpenJournalDay={onOpenJournalDay} />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('heading', { name: 'Journal Activity' })).toBeInTheDocument();
+        });
+
+        await user.click(screen.getByRole('button', { name: '4 entries on Jan 18, 2024' }));
+
+        expect(onOpenJournalDay).toHaveBeenCalledWith('2024-01-18');
     });
 
     it('applies theme classes', async () => {

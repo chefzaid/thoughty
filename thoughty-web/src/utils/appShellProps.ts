@@ -198,6 +198,11 @@ export function buildAuthenticatedRoutesProps({
       currentDiaryId: diariesState.currentDiaryId,
       onDiaryChange: routingState.handleDiaryChange,
       onManageDiaries: () => routingState.handleManageDiaries('stats'),
+      onOpenJournalDay: (date: string) => {
+        entriesState.setFilterDateObj(new Date(`${date}T00:00:00.000Z`));
+        entriesState.setPage(1);
+        routingState.handleViewChange('journal');
+      },
       theme: config.theme,
       t,
       tagMetadata,

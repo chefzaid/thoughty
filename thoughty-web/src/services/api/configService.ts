@@ -1,11 +1,9 @@
 import { safeJsonParse } from './base';
 import type { Config, ProfileStats } from '../../types';
+import type { components } from '../../generated/openapi';
 import { downloadBlob } from '../../utils/downloadFile';
-export interface StatsApiResponse {
-  totalThoughts?: number;
-  thoughtsPerYear?: Record<string, number>;
-  thoughtsPerTag?: Record<string, number>;
-}
+
+export type StatsApiResponse = components['schemas']['StatsResponseDto'];
 
 export const createConfigService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
   /**

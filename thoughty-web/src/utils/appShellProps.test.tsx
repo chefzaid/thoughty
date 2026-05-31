@@ -355,6 +355,7 @@ describe('appShellProps', () => {
     const handleManageDiaries = vi.fn();
     const handleDiaryChange = vi.fn();
     const handleImportExportRouteStateChange = vi.fn();
+    const handleViewChange = vi.fn();
     const fetchEntries = vi.fn().mockResolvedValue(undefined);
 
     const props = buildAuthenticatedRoutesProps(createRoutesParams({
@@ -378,7 +379,7 @@ describe('appShellProps', () => {
         handleDiaryChange,
         handleImportExportRouteStateChange,
         handleManageDiaries,
-        handleViewChange: vi.fn(),
+        handleViewChange,
       }),
     }));
 
@@ -390,6 +391,7 @@ describe('appShellProps', () => {
 
     props.statsRouteProps.onManageDiaries();
     props.statsRouteProps.onDiaryChange(8);
+    props.statsRouteProps.onOpenJournalDay?.('2024-01-22');
     props.importExportRouteProps.onManageDiaries();
     props.importExportRouteProps.onDiaryChange(9);
     props.importExportRouteProps.onRouteStateChange?.({
@@ -409,6 +411,10 @@ describe('appShellProps', () => {
     expect(handleManageDiaries).toHaveBeenCalledWith('journal');
     expect(handleDiaryChange).toHaveBeenCalledWith(8);
     expect(handleDiaryChange).toHaveBeenCalledWith(9);
+    expect(props.statsRouteProps.onOpenJournalDay).toBeDefined();
+    expect(props.journalRouteProps.setFilterDateObj).toHaveBeenCalledWith(new Date('2024-01-22T00:00:00.000Z'));
+    expect(props.journalRouteProps.setPage).toHaveBeenCalledWith(1);
+    expect(handleViewChange).toHaveBeenCalledWith('journal');
     expect(handleImportExportRouteStateChange).toHaveBeenCalledWith({
       section: 'import',
       exportFormat: 'json',

@@ -1538,7 +1538,14 @@
         ],
         "responses": {
           "200": {
-            "description": "Statistics object with counts and breakdowns"
+            "description": "Statistics object with counts and breakdowns",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StatsResponseDto"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3126,6 +3133,99 @@
         },
         "required": [
           "orderedIds"
+        ]
+      },
+      "StatsResponseDto": {
+        "type": "object",
+        "properties": {
+          "totalThoughts": {
+            "type": "number",
+            "example": 120
+          },
+          "uniqueTagsCount": {
+            "type": "number",
+            "example": 18
+          },
+          "thoughtsPerYear": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "2024": 48,
+              "2025": 72
+            }
+          },
+          "thoughtsPerMonth": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "2025-01": 12,
+              "2025-02": 18
+            }
+          },
+          "thoughtsPerDay": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "2025-02-10": 1,
+              "2025-02-11": 3
+            }
+          },
+          "thoughtsPerTag": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "work": 22,
+              "health": 9
+            }
+          },
+          "tagsPerYear": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number"
+              }
+            },
+            "example": {
+              "2025": {
+                "work": 10,
+                "health": 4
+              }
+            }
+          },
+          "tagsPerMonth": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "number"
+              }
+            },
+            "example": {
+              "2025-02": {
+                "work": 6,
+                "health": 2
+              }
+            }
+          }
+        },
+        "required": [
+          "totalThoughts",
+          "uniqueTagsCount",
+          "thoughtsPerYear",
+          "thoughtsPerMonth",
+          "thoughtsPerDay",
+          "thoughtsPerTag",
+          "tagsPerYear",
+          "tagsPerMonth"
         ]
       },
       "FormatConfigDto": {

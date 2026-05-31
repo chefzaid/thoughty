@@ -46,6 +46,7 @@ describe('StatsService', () => {
       mockQb.getRawMany
         .mockResolvedValueOnce([{ year: '2024', count: '50' }, { year: '2023', count: '50' }]) // perYear
         .mockResolvedValueOnce([{ month: '2024-01', count: '25' }, { month: '2024-02', count: '25' }]) // perMonth
+        .mockResolvedValueOnce([{ day: '2024-02-20', count: '4' }, { day: '2024-02-19', count: '3' }]) // perDay
         .mockResolvedValueOnce([{ tag: 'happy', count: '30' }, { tag: 'sad', count: '20' }]) // perTag
         .mockResolvedValueOnce([{ year: '2024', tag: 'happy', count: '20' }]) // tagsPerYear
         .mockResolvedValueOnce([{ month: '2024-01', tag: 'happy', count: '10' }]); // tagsPerMonth
@@ -56,6 +57,7 @@ describe('StatsService', () => {
       expect(result).toHaveProperty('uniqueTagsCount');
       expect(result).toHaveProperty('thoughtsPerYear');
       expect(result).toHaveProperty('thoughtsPerMonth');
+      expect(result).toHaveProperty('thoughtsPerDay');
       expect(result).toHaveProperty('thoughtsPerTag');
       expect(result).toHaveProperty('tagsPerYear');
       expect(result).toHaveProperty('tagsPerMonth');
@@ -104,12 +106,31 @@ describe('StatsService', () => {
       expect(result.thoughtsPerMonth['2024-02']).toBe(25);
     });
 
+    it('should process thoughtsPerDay correctly', async () => {
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getCount.mockResolvedValue(100);
+      mockQb.getRawMany
+        .mockResolvedValueOnce([]) // perYear
+        .mockResolvedValueOnce([]) // perMonth
+        .mockResolvedValueOnce([
+          { day: '2024-02-20', count: '4' },
+          { day: '2024-02-19', count: '2' },
+        ])
+        .mockResolvedValue([]);
+
+      const result = await service.getStats(1);
+
+      expect(result.thoughtsPerDay['2024-02-20']).toBe(4);
+      expect(result.thoughtsPerDay['2024-02-19']).toBe(2);
+    });
+
     it('should process thoughtsPerTag correctly', async () => {
       const mockQb = entryRepository.createQueryBuilder();
       mockQb.getCount.mockResolvedValue(100);
       mockQb.getRawMany
         .mockResolvedValueOnce([]) // perYear
         .mockResolvedValueOnce([]) // perMonth
+        .mockResolvedValueOnce([]) // perDay
         .mockResolvedValueOnce([
           { tag: 'happy', count: '30' },
           { tag: 'productive', count: '25' },
@@ -130,6 +151,7 @@ describe('StatsService', () => {
       mockQb.getRawMany
         .mockResolvedValueOnce([]) // perYear
         .mockResolvedValueOnce([]) // perMonth
+        .mockResolvedValueOnce([]) // perDay
         .mockResolvedValueOnce([]) // perTag
         .mockResolvedValueOnce([
           { year: '2024', tag: 'happy', count: '20' },
@@ -151,6 +173,7 @@ describe('StatsService', () => {
       mockQb.getRawMany
         .mockResolvedValueOnce([]) // perYear
         .mockResolvedValueOnce([]) // perMonth
+        .mockResolvedValueOnce([]) // perDay
         .mockResolvedValueOnce([]) // perTag
         .mockResolvedValueOnce([]) // tagsPerYear
         .mockResolvedValueOnce([
@@ -187,6 +210,7 @@ describe('StatsService', () => {
       expect(result.uniqueTagsCount).toBe(0);
       expect(Object.keys(result.thoughtsPerYear)).toHaveLength(0);
       expect(Object.keys(result.thoughtsPerMonth)).toHaveLength(0);
+      expect(Object.keys(result.thoughtsPerDay)).toHaveLength(0);
       expect(Object.keys(result.thoughtsPerTag)).toHaveLength(0);
     });
   });

@@ -71,6 +71,7 @@ export const mockStatsResponse = {
   uniqueTagsCount: 2,
   thoughtsPerYear: { '2024': 2 },
   thoughtsPerMonth: { '2024-01': 2 },
+  thoughtsPerDay: { '2024-01-15': 1, '2024-01-16': 1 },
   thoughtsPerTag: { work: 1, personal: 1 },
   tagsPerYear: { '2024': { work: 1, personal: 1 } },
 };

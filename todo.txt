@@ -2,7 +2,6 @@
 Features to implement:
 
 *** Personalization & UX
-- Calendar heatmap view (GitHub-style contribution grid) showing journaling activity by day in stats page
 - Add other languages support (i18n) for the UI (Spanish, Italian, German, etc.)
 
 *** Social Features
