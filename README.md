@@ -39,20 +39,12 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 ## Documentation
 
 - [Features](./docs/features.md)
+- [Architecture Overview and ADR Index](./docs/adr/README.md)
+- [Data Model Reference](./docs/data-model.md)
 - [Development Guide](./docs/development.md)
 - [Deployment Guide](./docs/deployment.md)
-- [ADR 0001: Split Documentation Out of Root README](./docs/adr/0001-documentation-structure.md)
-- [ADR 0002: Adopt a Modular Monolith with a Route-Driven UI Shell and Feature-Oriented Code Structure](./docs/adr/0002-modular-monolith-and-route-driven-ui.md)
-- [ADR 0003: Standardize on a TypeScript-First Full-Stack Platform](./docs/adr/0003-typescript-first-technology-stack.md)
-- [ADR 0004: Use Backend OpenAPI as the Source of Truth for API Contracts](./docs/adr/0004-openapi-as-contract-source.md)
-- [ADR 0005: Apply Selective CQRS in the Entry Domain](./docs/adr/0005-selective-cqrs-in-entry-domain.md)
-- [ADR 0006: Run Scheduled Cloud Sync Through a Separate Worker and Database-Backed Queue](./docs/adr/0006-database-backed-cloud-sync-worker.md)
-- [ADR 0007: Keep Code Quality Enforcement Lightweight but Continuous](./docs/adr/0007-code-quality-and-verification-gates.md)
-- [ADR 0008: Establish a Secure-by-Default Authentication and OWASP Baseline](./docs/adr/0008-security-authentication-and-owasp-baseline.md)
-- [ADR 0009: Apply Layered Rate Limiting for Baseline Abuse Resistance](./docs/adr/0009-rate-limiting-and-abuse-controls.md)
-- [ADR 0010: Model the Journal Around Diaries, Dated Entries, Revisions, and Attachments](./docs/adr/0010-journal-data-model.md)
-- [ADR 0011: Store Attachments as Metadata in PostgreSQL and Blobs in S3-Compatible Object Storage](./docs/adr/0011-attachments-and-object-storage.md)
-- [ADR 0012: Keep Delivery and Operational Verification Simple, Explicit, and Repository-Owned](./docs/adr/0012-delivery-health-and-operational-model.md)
+- [Operations Runbook](./docs/operations.md)
+- [Security and Privacy Reference](./docs/security.md)
 
 ## Quick Start
 

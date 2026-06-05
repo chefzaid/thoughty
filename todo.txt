@@ -56,7 +56,6 @@ Features to implement:
 - Implement lazy loading for components and routes to improve initial load time
 - Implement feature flags to enable/disable features without redeploying using an a third-party service
 - Check that OpenAPI documentation is up to date and complete for all endpoints, and add examples for request and response bodies
-- Health check endpoint (Kubernetes probes reference /api/health but none exists in the codebase)
 
 *** Monitoring and observability
 - Add logging for critical actions and errors for better debugging and structured JSON logging for observability and request tracing
@@ -70,7 +69,7 @@ Features to implement:
 
 *** Database
 - Optimize database for better performance
-- Database migration files instead of relying on TypeORM synchronize (add a migrations/ folder with versioned migration scripts)
+- Convert the current idempotent SQL migration script into versioned migration files when the schema-change workflow needs stricter ordering/history
 - Database connection pooling configuration in TypeORM data source
 - Database read replicas for scaling read-heavy queries (stats, feed, search)
 - Automated database backups with point-in-time recovery

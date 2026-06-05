@@ -13,28 +13,31 @@ flowchart LR
 
 ## Entry-Centered Journaling
 
-- Entries support both plain text and Markdown formats. Markdown entries get a formatting toolbar and live preview, while plain-text entries stay lightweight for fast capture.
+- Entries support both plain text and Markdown formats. Markdown entries get a formatting toolbar, inline help, and live preview, while plain-text entries stay lightweight for fast capture.
 - The editor grows with the content instead of forcing a small fixed writing box, which keeps longer entries readable during drafting and editing.
 - Multiple entries can exist on the same day. Thoughty keeps them addressable with date-plus-index references such as `[[2024-01-15]]` and `[[2024-01-15#2]]`.
 - Entries can be backdated from the UI, edited inline, and updated without leaving the journal view. Date, tags, visibility, and other metadata are treated as part of the entry workflow rather than a separate settings surface.
 - Same-day entries can be drag-reordered, which matters for users who use one date as a container for several shorter notes, check-ins, or event logs.
+- Larger entry sets can be handled through a bulk-selection mode. Selected entries can be deleted, made public/private, archived/unarchived, tagged, moved to another diary, or rephrased with AI in one workflow.
 - Stable entry permalinks use query-driven navigation such as `?entry=<id>`, so a specific entry can be reopened directly instead of relying on scroll position alone.
 - Entries can also be shared directly from the journal. Thoughty uses the browser share sheet when it is available and falls back to copying the permalink when it is not.
 - Primary entry actions are now cleaner thanks to a dedicated `More actions` menu, which keeps the main toolbar focused on visibility, favorite, and edit while moving secondary or destructive actions out of the way.
 - Cross-reference navigation is not just link parsing. Referenced entries are opened in context, highlighted, and can return the user to the originating entry.
 - Visibility is managed per entry with public and private states, making Thoughty usable for both strictly personal notes and selectively shareable writing.
 - Favorites, archive state, and revision history are all first-class entry behaviors. Edited entries keep a history trail, and individual revisions can be inspected and removed.
-- Attachments are handled inline: files can be attached to entries, image-like assets can be previewed in place, and larger previews open in a dedicated dialog rather than forcing blind downloads.
+- Attachments are handled inline: files can be attached to entries; image, audio, PDF, and text-like assets can be previewed in place; and larger previews open in a dedicated dialog rather than forcing blind downloads.
+- Journal navigation includes paging plus a year/month jump control, so users can move to the first entry in a period without manually paging through long histories.
 
 ## Diaries and Long-Term Structure
 
 - Journals are split into user-defined diaries rather than one undifferentiated timeline. This supports separate spaces for daily notes, work logs, dream journals, or any other writing stream.
-- Diaries can be reordered, renamed, and decorated with emoji icons, which turns the diary switcher into a meaningful navigation layer instead of a plain list.
+- Diaries can be reordered, renamed, decorated with emoji icons, and assigned accent colors, which turns the diary switcher into a meaningful navigation layer instead of a plain list.
 - An `All Diaries` view keeps cross-diary browsing possible without flattening the underlying structure.
 - Each diary carries its own default visibility, so new entries and some imported entries inherit sensible defaults from the context they are created in.
 - A default diary can be configured for faster capture, reducing the amount of per-entry setup needed for recurring workflows.
 - Deleting a non-default diary does not strand its entries. They are moved to the current default diary, and the default diary itself is protected from deletion.
 - Favorites are also exposed as a dedicated journal view, which gives saved entries a persistent home beyond a temporary filter.
+- Diary management supports both drag-based reordering and keyboard arrow reordering from the manager, so the saved order can be adjusted without relying only on pointer input.
 
 ## Tags, Filtering, and Retrieval
 
@@ -59,12 +62,14 @@ flowchart LR
 ## Import, Export, and Portability
 
 - Export is not limited to one archival format. Thoughty supports TXT, JSON, and Markdown output, with optional diary scoping and optional inclusion of visibility metadata.
+- TXT import/export can be customized with saved format settings such as date format, entry separators, and same-day separators.
 - Export filenames are generated for the chosen scope and format, which makes exports usable as real artifacts rather than anonymous downloads.
 - Import accepts TXT, JSON, and Markdown content and performs format detection before commit, so users do not need to pre-classify files correctly by hand.
 - Import is preview-first. Parsed entries are shown before they are written, duplicate candidates are identified up front, and the eventual import result reports how much was imported or skipped.
 - Diary mapping is handled as part of the import/export path. When diary names do not align cleanly, Thoughty falls back safely instead of silently dropping content.
 - Markdown preservation is treated seriously enough to keep formatting semantics across round trips, rather than collapsing everything into plain text.
 - The import/export screen is route-aware, so selected diary, section, format, and visibility options can be encoded in the URL and reopened consistently.
+- The import/export area also includes a guarded danger-zone action for deleting all entries in the current scope, with a confirmation step before the destructive request is sent.
 
 ## Cloud Sync and External Storage
 
@@ -97,7 +102,7 @@ flowchart LR
 - GDPR-style data download is available from the config surface, allowing a user to export their stored account data in one response.
 - Profile management includes full name, display name, bio, birthday, avatar, and membership metadata.
 - Avatar editing goes beyond simple upload. Users can crop, zoom, and reposition images within a circular editor before saving the final result.
-- Preferences cover theme, language, journal pagination size, text-to-speech date reading, preferred AI model, and the automatic AI tagging limit.
+- Preferences cover theme, language, journal pagination size, profile birthday/gender metadata, text-to-speech date reading, preferred AI model, and the automatic AI tagging limit.
 - Appearance preferences now include font family, font size, and font color controls, which let users tune the journal to their reading comfort.
 - Text-to-speech appearance settings now include voice selection and a preview action, so users can listen to the chosen voice before saving it.
 - English and French are the currently implemented application languages, and language selection is stored as part of the user configuration.
@@ -106,6 +111,7 @@ flowchart LR
 
 - Unauthenticated visitors land on a dedicated intro page rather than being dropped straight into a bare login form.
 - The app uses route-based navigation across `/journal`, `/stats`, `/profile`, `/tags`, and `/import-export`, which makes major areas linkable and easier to revisit.
+- Long journal pages include a back-to-top affordance so users can quickly return to the main controls after browsing older entries.
 - Destructive flows use confirmation dialogs, and long-running operations such as loading history, sync, or imports expose explicit loading states.
 - The layout is responsive across desktop and smaller screens, with the same core journaling surfaces preserved instead of maintaining a separate reduced mobile product.
 - Footer links expose privacy, terms, and contact entry points, rounding out the application as a real hosted product rather than only an internal tool.
