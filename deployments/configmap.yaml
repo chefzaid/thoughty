@@ -5,7 +5,19 @@ metadata:
   namespace: thoughty
 data:
   NODE_ENV: "production"
+  PORT: "3001"
   POSTGRES_HOST: "postgres"
   POSTGRES_PORT: "5432"
-  CORS_ORIGIN: "http://thoughty-web"
-  PORT: "3001"
+  # Browser origin(s) allowed to call the API. Replace with your real ingress host.
+  CORS_ORIGIN: "https://thoughty.example.com"
+  # Base URL used to build links in transactional emails. Replace with your ingress host.
+  FRONTEND_URL: "https://thoughty.example.com"
+  # Access token lifetime (consumed by @nestjs/jwt sign options).
+  JWT_EXPIRES_IN: "15m"
+  # Object storage (non-secret parts). Credentials are injected via Vault.
+  # Replace with your real S3-compatible endpoint (there is no in-cluster MinIO).
+  S3_ENDPOINT: "https://s3.us-east-1.amazonaws.com"
+  S3_BUCKET: "thoughty-attachments"
+  S3_REGION: "us-east-1"
+  # Default model used for AI auto-tagging when a user has not overridden it.
+  OPENROUTER_TAG_MODEL: "openai/gpt-4o-mini"

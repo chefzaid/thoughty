@@ -16,13 +16,29 @@
 #
 # vault kv put secret/thoughty/app \
 #   JWT_SECRET="<secure-jwt-secret>" \
-#   JWT_REFRESH_SECRET="<secure-refresh-secret>" \
-#   GOOGLE_CLIENT_ID="" \
-#   GOOGLE_CLIENT_SECRET="" \
+#   REFRESH_SECRET="<secure-refresh-secret>" \
+#   CONFIG_ENCRYPTION_SECRET="<secure-encryption-secret>" \
+#   S3_ACCESS_KEY="<s3-access-key>" \
+#   S3_SECRET_KEY="<s3-secret-key>" \
+#   OPENROUTER_API_KEY="" \
+#   GOOGLE_DRIVE_CLIENT_ID="" \
+#   GOOGLE_DRIVE_CLIENT_SECRET="" \
+#   ONEDRIVE_CLIENT_ID="" \
+#   ONEDRIVE_CLIENT_SECRET="" \
+#   DROPBOX_CLIENT_ID="" \
+#   DROPBOX_CLIENT_SECRET="" \
 #   SMTP_HOST="" \
 #   SMTP_PORT="587" \
 #   SMTP_USER="" \
-#   SMTP_PASS=""
+#   SMTP_PASS="" \
+#   SMTP_FROM=""
+#
+# Notes:
+#   - JWT_SECRET and REFRESH_SECRET are required for auth to work in production.
+#   - CONFIG_ENCRYPTION_SECRET protects encrypted user config and cloud-sync tokens.
+#   - S3_ACCESS_KEY / S3_SECRET_KEY are required for attachments; the non-secret
+#     S3_ENDPOINT / S3_BUCKET / S3_REGION live in the ConfigMap.
+#   - OPENROUTER_API_KEY enables AI features; provider client IDs/secrets enable cloud sync.
 #
 # ─── 3. Create Policies ──────────────────────────────────────
 # vault policy write thoughty-server - <<EOF

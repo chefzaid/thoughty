@@ -103,7 +103,13 @@ pipeline {
                 stage('Build Web Image') {
                     steps {
                         dir('thoughty-web') {
-                            sh "docker build -t ${DOCKER_REGISTRY}/thoughty-web:${IMAGE_TAG} ."
+                            // VITE_GOOGLE_CLIENT_ID is a public client ID, not a secret.
+                            // Set it as a Jenkins env var to enable Google sign-in; defaults to empty.
+                            sh """
+                                docker build \
+                                    --build-arg VITE_GOOGLE_CLIENT_ID="\${VITE_GOOGLE_CLIENT_ID:-}" \
+                                    -t ${DOCKER_REGISTRY}/thoughty-web:${IMAGE_TAG} .
+                            """
                             sh "docker tag ${DOCKER_REGISTRY}/thoughty-web:${IMAGE_TAG} ${DOCKER_REGISTRY}/thoughty-web:latest"
                         }
                     }
@@ -196,14 +202,19 @@ pipeline {
                     sh 'kubectl apply -f deployments/server-deployment.yaml'
                     sh 'kubectl apply -f deployments/ingress.yaml'
 
+                    // Wait for the database before rolling the API so readiness probes pass.
+                    sh "kubectl rollout status deployment/postgres -n ${KUBE_NAMESPACE} --timeout=180s"
+
                     // Update image tags to trigger rollout
                     sh "kubectl set image deployment/thoughty-server thoughty-server=${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} -n ${KUBE_NAMESPACE}"
 
                     // Roll server first so migrations run before the worker starts polling.
                     sh "kubectl rollout status deployment/thoughty-server -n ${KUBE_NAMESPACE} --timeout=120s"
 
-                    // Apply schema changes against the target database.
-                    sh "kubectl exec deployment/thoughty-server -n ${KUBE_NAMESPACE} -- npm run db:migrate:dist"
+                    // Apply schema changes against the target database. The Vault-injected
+                    // secrets must be sourced here because kubectl exec starts a fresh shell
+                    // that does not run the container's startup command.
+                    sh "kubectl exec deployment/thoughty-server -n ${KUBE_NAMESPACE} -- /bin/sh -c 'source /vault/secrets/database && source /vault/secrets/app && npm run db:migrate:dist'"
 
                     // Deploy the dedicated worker after the required schema is present.
                     sh 'kubectl apply -f deployments/cloud-sync-worker-deployment.yaml'

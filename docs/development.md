@@ -114,11 +114,13 @@ The repository also includes a complete `.devcontainer/` setup for VS Code.
 
 ### What the devcontainer gives you
 
-- a dedicated `app` workspace container mounted at `/workspace`
-- companion `db` and `minio` services from the same Compose file
-- automatic dependency installation through `postCreateCommand`
-- forwarded ports for `3001` and `5173`
-- `mask`, `git`, `wget`, and `unzip` preinstalled in the workspace container
+- a dedicated `app` workspace container mounted at `/workspace`, on the same Node `22` baseline as the Dockerfiles and CI
+- companion `db` and `minio` services from the same Compose file, both gated on health checks
+- automatic dependency installation (root, server, and web) through `postCreateCommand`
+- container-to-container env wired automatically (`POSTGRES_HOST=db`, `S3_ENDPOINT=http://minio:9000`, and the matching credentials), so no manual `.env` is required
+- forwarded ports for `3001`, `5173`, `5432`, `9000`, and `9001`
+- `mask`, `git`, `wget`, `unzip`, `postgresql-client`, and the GitHub CLI preinstalled in the workspace container
+- preconfigured VS Code extensions (ESLint, Prettier, Tailwind, Jest, Playwright, YAML, Docker, GitHub PRs) and format-on-save
 
 ### How to start it
 
@@ -133,16 +135,11 @@ Inside the devcontainer, the supporting services are already part of the Compose
 
 Instead, run the application manually from the container terminal.
 
-### Minimal server overrides for container-to-container networking
+### Container-to-container networking is already wired
 
-When the backend runs inside the `app` container, `localhost` points to that container, not to PostgreSQL or MinIO. For the devcontainer path, create `thoughty-server/.env` with at least these overrides:
+When the backend runs inside the `app` container, `localhost` points to that container, not to PostgreSQL or MinIO. The devcontainer Compose file sets the required overrides (`POSTGRES_HOST=db`, `S3_ENDPOINT=http://minio:9000`, and the matching credentials) directly on the `app` service, so the backend connects to the companion services out of the box.
 
-```env
-POSTGRES_HOST=db
-S3_ENDPOINT=http://minio:9000
-```
-
-Keep the rest of the local defaults unless you need optional integrations like SMTP, OpenRouter, or cloud provider OAuth.
+You only need to create `thoughty-server/.env` if you want to enable optional integrations like SMTP, OpenRouter, or cloud provider OAuth. The container-level values above take effect automatically and survive even if you add an `.env` for other settings, as long as you do not override `POSTGRES_HOST` or `S3_ENDPOINT` there.
 
 ### Start the app from inside the container
 

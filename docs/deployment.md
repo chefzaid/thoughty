@@ -71,36 +71,44 @@ Thoughty splits runtime configuration into two buckets:
 
 These are loaded into the server and worker containers through `envFrom`:
 
-| Variable        | Current source | Purpose                                          |
-|-----------------|----------------|--------------------------------------------------|
-| `NODE_ENV`      | ConfigMap      | Enables production behavior in NestJS            |
-| `POSTGRES_HOST` | ConfigMap      | Points backend workloads at the PostgreSQL service |
-| `POSTGRES_PORT` | ConfigMap      | Database port                                    |
-| `CORS_ORIGIN`   | ConfigMap      | Allowed frontend origin list for the API         |
-| `PORT`          | ConfigMap      | API listen port                                  |
+| Variable              | Current source | Purpose                                            |
+|-----------------------|----------------|----------------------------------------------------|
+| `NODE_ENV`            | ConfigMap      | Enables production behavior in NestJS              |
+| `PORT`                | ConfigMap      | API listen port                                    |
+| `POSTGRES_HOST`       | ConfigMap      | Points backend workloads at the PostgreSQL service |
+| `POSTGRES_PORT`       | ConfigMap      | Database port                                       |
+| `CORS_ORIGIN`         | ConfigMap      | Allowed frontend origin list for the API           |
+| `FRONTEND_URL`        | ConfigMap      | Base URL used to build links in transactional email |
+| `JWT_EXPIRES_IN`      | ConfigMap      | Access token lifetime                              |
+| `S3_ENDPOINT`         | ConfigMap      | S3-compatible endpoint for attachments             |
+| `S3_BUCKET`           | ConfigMap      | Attachment bucket name                             |
+| `S3_REGION`           | ConfigMap      | Attachment bucket region                           |
+| `OPENROUTER_TAG_MODEL` | ConfigMap     | Default model for AI auto-tagging                  |
 
 ### Vault Secrets Already Wired
 
-These are injected through the Vault Agent templates in the manifests:
+These are injected through the Vault Agent templates in the manifests. Populate the values in Vault (see `deployments/vault-setup.sh`) before rollout:
 
 | Secret path                    | Used by                 | Variables                                                                 |
 |--------------------------------|-------------------------|---------------------------------------------------------------------------|
 | `secret/data/thoughty/database` | postgres, server, worker | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`                       |
-| `secret/data/thoughty/app`      | server, worker          | `JWT_SECRET`, `JWT_REFRESH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` |
+| `secret/data/thoughty/app`      | server, worker          | `JWT_SECRET`, `REFRESH_SECRET`, `CONFIG_ENCRYPTION_SECRET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `OPENROUTER_API_KEY`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` |
 
-### Production Settings You Still Need To Wire For Optional Features
+The variable names match exactly what the server reads at runtime, including `REFRESH_SECRET` (refresh-token signing) and the `GOOGLE_DRIVE_*` cloud-sync client credentials.
 
-The application code supports more production features than the current Vault templates inject. If you plan to use these features in production, extend your secret injection before rollout:
+### Feature-Specific Variables
 
-| Feature                      | Required variables                                                                    | Why it matters                                                            |
+Every variable below is already wired into the manifests. The remaining work is populating real values in Vault — empty values simply leave the feature disabled or in fallback mode:
+
+| Feature                      | Variables                                                                              | Behavior when unset                                                       |
 |------------------------------|----------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
-| Attachments                  | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_REGION`            | The attachments service falls back to local-dev MinIO defaults if these are missing |
-| Cloud sync token encryption  | `CONFIG_ENCRYPTION_SECRET`                                                            | Without this, encrypted provider tokens fall back to a default secret that is not suitable for production |
-| Cloud sync providers         | `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET` | Provider auth flows require real credentials                              |
-| AI features                  | `OPENROUTER_API_KEY`, optionally `OPENROUTER_TAG_MODEL`                               | AI endpoints return disabled or degraded behavior without a configured OpenRouter key |
-| Email sender override        | `SMTP_FROM`                                                                           | Optional but useful if you do not want to send from `SMTP_USER`           |
+| Attachments                  | `S3_ACCESS_KEY`, `S3_SECRET_KEY` (secret); `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION` (ConfigMap) | The attachments service falls back to local-dev MinIO defaults |
+| Cloud sync token encryption  | `CONFIG_ENCRYPTION_SECRET`                                                            | Encrypted provider tokens fall back to a default secret that is not suitable for production |
+| Cloud sync providers         | `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET` | Provider auth flows are unavailable    |
+| AI features                  | `OPENROUTER_API_KEY` (secret); `OPENROUTER_TAG_MODEL` (ConfigMap)                     | AI endpoints return disabled or degraded behavior                         |
+| Email sender override        | `SMTP_FROM`                                                                           | Falls back to sending from `SMTP_USER`                                    |
 
-The repo already contains the attachment, AI, and cloud sync code paths. The manifests simply need the remaining production secrets wired into Vault templates or another secret source before those features should be considered live in production.
+The frontend Google sign-in client ID is baked into the web image at build time via the `VITE_GOOGLE_CLIENT_ID` Docker build argument, not through Vault. Pass it with `--build-arg VITE_GOOGLE_CLIENT_ID=<id>` (the Jenkins pipeline forwards a `VITE_GOOGLE_CLIENT_ID` environment variable for this).
 
 ## Recommended Manual Deployment Process
 
@@ -128,10 +136,10 @@ sequenceDiagram
 
 Before any rollout, update the manifest values that are intentionally placeholders:
 
-1. Set the real browser origin list in `deployments/configmap.yaml`.
+1. Set the real browser origin list (`CORS_ORIGIN`), `FRONTEND_URL`, and the S3 endpoint/bucket/region in `deployments/configmap.yaml`.
 2. Replace `thoughty.example.com` in `deployments/ingress.yaml` and enable TLS.
 3. Decide whether you will edit image references in the manifests directly or patch them later with `kubectl set image`.
-4. Extend Vault secrets and templates if you need attachments, cloud sync, or AI features in production.
+4. Populate the secret values in Vault. The manifests already inject every secret the application reads; you only need to provide real values for the features you enable.
 
 ### 2. Build and Push Images
 
@@ -143,11 +151,13 @@ docker push <registry>/thoughty-server:<tag>
 
 # Web
 cd ../thoughty-web
-docker build -t <registry>/thoughty-web:<tag> .
+docker build \
+  --build-arg VITE_GOOGLE_CLIENT_ID=<google-client-id> \
+  -t <registry>/thoughty-web:<tag> .
 docker push <registry>/thoughty-web:<tag>
 ```
 
-If you want the deployed frontend to call a full external API URL instead of `/api`, pass `--build-arg VITE_API_URL=<url>` to the web build. The default `/api` is the correct choice when traffic flows through the provided ingress.
+If you want the deployed frontend to call a full external API URL instead of `/api`, also pass `--build-arg VITE_API_URL=<url>` to the web build. The default `/api` is the correct choice when traffic flows through the provided ingress. The `VITE_GOOGLE_CLIENT_ID` build argument is optional and only required if you want Google sign-in in the deployed frontend.
 
 ### 3. Configure Vault Roles and Secrets
 
@@ -159,7 +169,7 @@ The example commands in `deployments/vault-setup.sh` are consistent with the cur
 - `secret/data/thoughty/database`
 - `secret/data/thoughty/app`
 
-If optional features are enabled, add the extra production variables described above and update the Vault templates in the manifests so the containers actually receive them.
+The Vault templates in the manifests already export the full set of application secrets, so once the values exist in Vault the containers receive them automatically. Leave values for optional features empty to keep those features disabled.
 
 ### 4. Apply Base Resources
 
@@ -199,8 +209,11 @@ kubectl rollout status deployment/thoughty-server -n thoughty --timeout=120s
 This ordering matters. The Jenkins pipeline does it this way on purpose so the cloud sync worker does not start polling against an old schema.
 
 ```bash
-kubectl exec deployment/thoughty-server -n thoughty -- npm run db:migrate:dist
+kubectl exec deployment/thoughty-server -n thoughty -- /bin/sh -c \
+  'source /vault/secrets/database && source /vault/secrets/app && npm run db:migrate:dist'
 ```
+
+The Vault secrets must be sourced explicitly because `kubectl exec` starts a fresh shell that does not run the container's startup command.
 
 ### 7. Deploy the Worker and Web Surfaces
 

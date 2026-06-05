@@ -9,10 +9,25 @@ services:
       - ../:/workspace:cached
     command: /bin/sh -c "while sleep 1000; do :; done"
     tty: true
+    environment:
+      # Container-to-container networking: localhost inside the app container is
+      # not the db/minio services, so point the backend at them by service name.
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: journal
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: thoughty-attachments
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      S3_REGION: us-east-1
     networks:
       - thoughty-net
     depends_on:
       db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
 
   db:
