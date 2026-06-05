@@ -340,9 +340,9 @@ describe('appShellProps', () => {
     expect(fetchEntries).toHaveBeenCalled();
 
     expect(props.importExportRouteProps.initialSection).toBe('export');
-    expect(props.journalRouteProps.tags).toEqual(['focus', 'work']);
-    expect(props.journalRouteProps.format).toBe('markdown');
-    expect(props.journalRouteProps.onCancelEdit).toBe(handleCancelEdit);
+    expect(props.journalRouteProps.entryForm.tags).toEqual(['focus', 'work']);
+    expect(props.journalRouteProps.entryForm.format).toBe('markdown');
+    expect(props.journalRouteProps.entriesList.onCancelEdit).toBe(handleCancelEdit);
   });
 
   it('wires profile, tag manager, diary management, and import-export callbacks', async () => {
@@ -399,7 +399,7 @@ describe('appShellProps', () => {
       exportFormat: 'json',
       includeVisibility: true,
     });
-    props.journalRouteProps.onManageDiaries();
+    props.journalRouteProps.diaryTabs.onManageDiaries();
 
     expect(updateConfig).toHaveBeenCalledTimes(2);
     expect(downloadUserData).toHaveBeenCalledTimes(1);
@@ -412,8 +412,8 @@ describe('appShellProps', () => {
     expect(handleDiaryChange).toHaveBeenCalledWith(8);
     expect(handleDiaryChange).toHaveBeenCalledWith(9);
     expect(props.statsRouteProps.onOpenJournalDay).toBeDefined();
-    expect(props.journalRouteProps.setFilterDateObj).toHaveBeenCalledWith(new Date('2024-01-22T00:00:00.000Z'));
-    expect(props.journalRouteProps.setPage).toHaveBeenCalledWith(1);
+    expect(props.journalRouteProps.filters.setFilterDateObj).toHaveBeenCalledWith(new Date('2024-01-22T00:00:00.000Z'));
+    expect(props.journalRouteProps.filters.setPage).toHaveBeenCalledWith(1);
     expect(handleViewChange).toHaveBeenCalledWith('journal');
     expect(handleImportExportRouteStateChange).toHaveBeenCalledWith({
       section: 'import',

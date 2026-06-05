@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { AiService } from '@/modules/ai';
 import { StatsService } from './stats.service';
 import { Entry } from '@/database/entities';
+import { StatsToneAnalysisService } from './stats-tone-analysis.service';
 
 describe('StatsService', () => {
   let service: StatsService;
   let entryRepository: any;
-  let aiService: { analyzeToneMood: jest.Mock };
+  let statsToneAnalysisService: { analyze: jest.Mock };
 
   beforeEach(async () => {
     const mockQueryBuilder = {
@@ -29,15 +29,15 @@ describe('StatsService', () => {
       createQueryBuilder: jest.fn(() => mockQueryBuilder),
     };
 
-    aiService = {
-      analyzeToneMood: jest.fn().mockResolvedValue(null),
+    statsToneAnalysisService = {
+      analyze: jest.fn().mockResolvedValue(null),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StatsService,
         { provide: getRepositoryToken(Entry), useValue: entryRepository },
-        { provide: AiService, useValue: aiService },
+        { provide: StatsToneAnalysisService, useValue: statsToneAnalysisService },
       ],
     }).compile();
 
@@ -213,7 +213,7 @@ describe('StatsService', () => {
       const mockQb = entryRepository.createQueryBuilder();
       mockQb.getRawMany.mockResolvedValue([]);
       mockQb.getMany.mockResolvedValue([{ id: 9, content: 'I feel calm today.', date: '2024-02-20', tags: ['calm'] }]);
-      aiService.analyzeToneMood.mockResolvedValue({
+      statsToneAnalysisService.analyze.mockResolvedValue({
         dominantMood: 'calm',
         dominantTone: 'candid',
         moodBreakdown: { calm: 1 },
@@ -224,7 +224,7 @@ describe('StatsService', () => {
 
       const result = await service.getStats(1);
 
-      expect(aiService.analyzeToneMood).toHaveBeenCalledWith(1, [{ id: 9, content: 'I feel calm today.', date: '2024-02-20', tags: ['calm'] }]);
+      expect(statsToneAnalysisService.analyze).toHaveBeenCalledWith(1, [{ id: 9, content: 'I feel calm today.', date: '2024-02-20', tags: ['calm'] }]);
       expect(result.toneMoodAnalysis).toEqual({
         dominantMood: 'calm',
         dominantTone: 'candid',

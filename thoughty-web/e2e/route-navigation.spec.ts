@@ -32,8 +32,9 @@ test.describe('Route navigation', () => {
 
     await page.goto('/journal?entry=7');
 
-    await expect(page).toHaveURL(/\/journal\?entry=7$/);
+    await expect(page).toHaveURL(/\/journal\?entry=7&diary=all$/);
     await expect(page.getByText('Permalink target entry')).toBeVisible();
+    await page.getByLabel('More actions').first().click();
     await expect(page.getByLabel('Open entry permalink')).toHaveAttribute('href', /\/journal\?entry=7$/);
   });
 

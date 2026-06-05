@@ -3,9 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Entry, EntryRevision, Diary } from '@/database/entities';
 import { sanitizeString } from '@/common/utils';
-import { AiService } from '@/modules/ai';
-import { ConfigService } from '@/modules/config';
 import { CreateEntryDto, UpdateEntryDto, BulkOperationDto } from './dto';
+import { EntryTaggingService } from './entry-tagging.service';
 
 @Injectable()
 export class EntriesCommandService {
@@ -16,38 +15,15 @@ export class EntriesCommandService {
     private readonly revisionRepository: Repository<EntryRevision>,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
-    private readonly configService: ConfigService,
-    private readonly aiService: AiService,
+    private readonly entryTaggingService: EntryTaggingService,
   ) {}
-
-  private async resolveSavedTags(userId: number, text: string, rawTags: string[]): Promise<string[]> {
-    const sanitizedTags = [...new Set(rawTags
-      .map((tag: string) => sanitizeString(tag.trim()).substring(0, 50))
-      .filter(Boolean))];
-
-    const config = await this.configService.getConfig(userId);
-    const autoTagMaxTags = Number.parseInt(String(config.autoTagMaxTags || '0'), 10);
-
-    if (!Number.isFinite(autoTagMaxTags) || autoTagMaxTags <= 0 || sanitizedTags.length >= autoTagMaxTags) {
-      return sanitizedTags;
-    }
-
-    const suggestedTags = await this.aiService.autoTagEntry(
-      userId,
-      text,
-      sanitizedTags,
-      autoTagMaxTags - sanitizedTags.length,
-    );
-
-    return [...sanitizedTags, ...suggestedTags];
-  }
 
   private sanitizeTagName(tag?: string | null): string {
     return sanitizeString(String(tag ?? '').trim()).substring(0, 50);
   }
 
   async create(userId: number, dto: CreateEntryDto): Promise<{ success: boolean; entryId: number }> {
-    const resolvedTags = await this.resolveSavedTags(userId, dto.text, dto.tags);
+    const resolvedTags = await this.entryTaggingService.resolveSavedTags(userId, dto.text, dto.tags);
     const dateStr = dto.date || new Date().toISOString().split('T')[0];
 
     let targetDiaryId = dto.diaryId;
@@ -100,7 +76,7 @@ export class EntriesCommandService {
       visibility: entry.visibility,
     });
 
-    const resolvedTags = await this.resolveSavedTags(userId, dto.text, dto.tags);
+    const resolvedTags = await this.entryTaggingService.resolveSavedTags(userId, dto.text, dto.tags);
     const oldDate = entry.date;
     let newIndex = entry.index;
 

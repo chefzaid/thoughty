@@ -1,13 +1,13 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EntriesCommandService } from './entries-command.service';
+import type { BulkOperationDto } from './dto';
 
 describe('EntriesCommandService', () => {
   let service: EntriesCommandService;
   let entryRepository: Record<string, jest.Mock>;
   let revisionRepository: Record<string, jest.Mock>;
   let diaryRepository: Record<string, jest.Mock>;
-  let configService: Record<string, jest.Mock>;
-  let aiService: Record<string, jest.Mock>;
+  let entryTaggingService: Record<string, jest.Mock>;
 
   beforeEach(() => {
     entryRepository = {
@@ -30,20 +30,15 @@ describe('EntriesCommandService', () => {
       findOne: jest.fn(),
     };
 
-    configService = {
-      getConfig: jest.fn().mockResolvedValue({ autoTagMaxTags: '0' }),
-    };
-
-    aiService = {
-      autoTagEntry: jest.fn().mockResolvedValue([]),
+    entryTaggingService = {
+      resolveSavedTags: jest.fn().mockResolvedValue([]),
     };
 
     service = new EntriesCommandService(
       entryRepository as never,
       revisionRepository as never,
       diaryRepository as never,
-      configService as never,
-      aiService as never,
+      entryTaggingService as never,
     );
   });
 
@@ -51,9 +46,12 @@ describe('EntriesCommandService', () => {
     jest.clearAllMocks();
   });
 
+  const invalidBulkOperation = (action: string): BulkOperationDto => {
+    return { ids: [1], action } as unknown as BulkOperationDto;
+  };
+
   it('creates an entry using the default diary and AI-suggested tags when capacity remains', async () => {
-    configService.getConfig.mockResolvedValue({ autoTagMaxTags: '3' });
-    aiService.autoTagEntry.mockResolvedValue(['ai']);
+    entryTaggingService.resolveSavedTags.mockResolvedValue(['work', 'ai']);
     diaryRepository.findOne.mockResolvedValue({ id: 42 });
     entryRepository.count.mockResolvedValue(2);
     entryRepository.save.mockResolvedValue({ id: 7 });
@@ -62,10 +60,10 @@ describe('EntriesCommandService', () => {
       text: 'Hello world',
       tags: [' work ', 'work'],
       date: '2024-01-15',
-    } as never);
+    });
 
     expect(diaryRepository.findOne).toHaveBeenCalledWith({ where: { userId: 5, isDefault: true } });
-    expect(aiService.autoTagEntry).toHaveBeenCalledWith(5, 'Hello world', ['work'], 2);
+    expect(entryTaggingService.resolveSavedTags).toHaveBeenCalledWith(5, 'Hello world', [' work ', 'work']);
     expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({
       userId: 5,
       date: '2024-01-15',
@@ -80,6 +78,7 @@ describe('EntriesCommandService', () => {
   });
 
   it('creates an entry without requesting AI tags when auto-tagging is disabled', async () => {
+    entryTaggingService.resolveSavedTags.mockResolvedValue(['focus']);
     diaryRepository.findOne.mockResolvedValue(null);
     entryRepository.count.mockResolvedValue(0);
     entryRepository.save.mockResolvedValue({ id: 9 });
@@ -89,9 +88,9 @@ describe('EntriesCommandService', () => {
       tags: ['focus'],
       format: 'markdown',
       visibility: 'public',
-    } as never);
+    });
 
-    expect(aiService.autoTagEntry).not.toHaveBeenCalled();
+    expect(entryTaggingService.resolveSavedTags).toHaveBeenCalledWith(2, 'Manual tags only', ['focus']);
     expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({
       diaryId: undefined,
       format: 'markdown',
@@ -131,7 +130,7 @@ describe('EntriesCommandService', () => {
       date: '2024-01-11',
       visibility: 'public',
       format: 'markdown',
-    } as never);
+    });
 
     expect(revisionRepository.save).toHaveBeenCalledWith(expect.objectContaining({
       entryId: 3,
@@ -158,7 +157,7 @@ describe('EntriesCommandService', () => {
       text: 'Missing',
       tags: [],
       date: '2024-01-11',
-    } as never)).rejects.toThrow(NotFoundException);
+    })).rejects.toThrow(NotFoundException);
   });
 
   it('updates visibility, favorite, and archived flags for existing entries', async () => {
@@ -218,39 +217,39 @@ describe('EntriesCommandService', () => {
     entryRepository.save.mockResolvedValue({});
     diaryRepository.findOne.mockResolvedValue({ id: 77, userId: 9 });
 
-    await expect(service.bulkOperation(9, { ids: [1, 2], action: 'visibility', visibility: 'public' } as never))
+    await expect(service.bulkOperation(9, { ids: [1, 2], action: 'visibility', visibility: 'public' }))
       .resolves.toEqual({ success: true, affectedCount: 2 });
     expect(entryRepository.update).toHaveBeenCalledWith({ id: expect.anything(), userId: 9 }, { visibility: 'public' });
 
-    await expect(service.bulkOperation(9, { ids: [1, 2], action: 'tags', tags: ['gamma', 'gamma'] } as never))
+    await expect(service.bulkOperation(9, { ids: [1, 2], action: 'tags', tags: ['gamma', 'gamma'] }))
       .resolves.toEqual({ success: true, affectedCount: 2 });
     expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ tags: ['alpha', 'gamma'] }));
 
-    await expect(service.bulkOperation(9, { ids: [1, 2], action: 'move', diaryId: 77 } as never))
+    await expect(service.bulkOperation(9, { ids: [1, 2], action: 'move', diaryId: 77 }))
       .resolves.toEqual({ success: true, affectedCount: 2 });
 
-    await expect(service.bulkOperation(9, { ids: [1, 2], action: 'archive', isArchived: true } as never))
+    await expect(service.bulkOperation(9, { ids: [1, 2], action: 'archive', isArchived: true }))
       .resolves.toEqual({ success: true, affectedCount: 2 });
 
-    await expect(service.bulkOperation(9, { ids: [1, 2], action: 'delete' } as never))
+    await expect(service.bulkOperation(9, { ids: [1, 2], action: 'delete' }))
       .resolves.toEqual({ success: true, affectedCount: 2 });
 
-    await expect(service.bulkOperation(9, { ids: [1], action: 'visibility' } as never))
+    await expect(service.bulkOperation(9, { ids: [1], action: 'visibility' }))
       .rejects.toThrow(BadRequestException);
-    await expect(service.bulkOperation(9, { ids: [1], action: 'tags' } as never))
+    await expect(service.bulkOperation(9, { ids: [1], action: 'tags' }))
       .rejects.toThrow(BadRequestException);
-    await expect(service.bulkOperation(9, { ids: [1], action: 'move' } as never))
+    await expect(service.bulkOperation(9, { ids: [1], action: 'move' }))
       .rejects.toThrow(BadRequestException);
-    await expect(service.bulkOperation(9, { ids: [1], action: 'archive' } as never))
+    await expect(service.bulkOperation(9, { ids: [1], action: 'archive' }))
       .rejects.toThrow(BadRequestException);
-    await expect(service.bulkOperation(9, { ids: [1], action: 'unknown' } as never))
+    await expect(service.bulkOperation(9, invalidBulkOperation('unknown')))
       .rejects.toThrow(BadRequestException);
   });
 
   it('throws when bulk operation does not match any entries', async () => {
     entryRepository.find.mockResolvedValue([]);
 
-    await expect(service.bulkOperation(1, { ids: [1], action: 'delete' } as never)).rejects.toThrow(NotFoundException);
+    await expect(service.bulkOperation(1, { ids: [1], action: 'delete' })).rejects.toThrow(NotFoundException);
   });
 
   it('renames tags with validation and deduplication', async () => {

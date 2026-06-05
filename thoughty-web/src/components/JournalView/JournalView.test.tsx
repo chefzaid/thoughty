@@ -149,79 +149,123 @@ describe('JournalView', () => {
     '2024-01-02': [mockEntries[1]],
   };
 
-  let defaultProps: Parameters<typeof JournalView>[0];
+  type JournalViewProps = Parameters<typeof JournalView>[0];
+  type PropsOverrides = {
+    [K in keyof JournalViewProps]?: JournalViewProps[K] extends (...args: never[]) => unknown
+      ? JournalViewProps[K]
+      : JournalViewProps[K] extends object
+        ? Partial<JournalViewProps[K]>
+        : JournalViewProps[K];
+  };
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    defaultProps = {
-      diaries: mockDiaries,
-      currentDiaryId: 1,
-      onDiaryChange: vi.fn(),
-      onManageDiaries: vi.fn(),
-      highlightsModalOpen: false,
-      setHighlightsModalOpen: vi.fn(),
-      newEntryText: '',
-      setNewEntryText: vi.fn(),
-      selectedDate: new Date('2024-01-15'),
-      setSelectedDate: vi.fn(),
-      tags: [],
-      setTags: vi.fn(),
-      visibility: 'private',
-      setVisibility: vi.fn(),
-      format: 'plain',
-      setFormat: vi.fn(),
-      allTags: ['tag1', 'tag2', 'tag3'],
-      formError: '',
-      onSubmit: vi.fn(),
-      search: '',
-      setSearch: vi.fn(),
-      filterTags: [],
-      setFilterTags: vi.fn(),
-      filterDateObj: null,
-      setFilterDateObj: vi.fn(),
-      filterVisibility: 'all',
-      setFilterVisibility: vi.fn(),
-      filterFavorites: false,
-      setFilterFavorites: vi.fn(),
-      filterArchiveStatus: 'active',
-      setFilterArchiveStatus: vi.fn(),
-      setPage: vi.fn(),
-      loading: false,
-      entries: mockEntries,
-      groupedEntries: mockGroupedEntries,
-      onEdit: vi.fn(),
-      onDelete: vi.fn(),
-      onToggleVisibility: vi.fn(),
-      onToggleFavorite: vi.fn(),
-      onToggleArchived: vi.fn(),
-      editingEntry: null,
-      editText: '',
-      setEditText: vi.fn(),
-      editTags: [],
-      setEditTags: vi.fn(),
-      editDate: null,
-      setEditDate: vi.fn(),
-      editVisibility: 'private',
-      setEditVisibility: vi.fn(),
-      editFormat: 'plain',
-      setEditFormat: vi.fn(),
-      onSaveEdit: vi.fn(),
-      onCancelEdit: vi.fn(),
-      onNavigateToEntry: vi.fn(),
-      sourceEntry: null,
-      targetEntryId: null,
-      activeTargetId: null,
-      onBackToSource: vi.fn(),
-      page: 1,
-      totalPages: 5,
-      inputPage: '1',
-      setInputPage: vi.fn(),
-      availableYears: [2023, 2024],
-      availableMonths: ['January', 'February', 'March'],
-      onNavigateToFirst: vi.fn(),
+  const createProps = (overrides: PropsOverrides = {}): JournalViewProps => {
+    const base: JournalViewProps = {
+      diaryTabs: {
+        diaries: mockDiaries,
+        currentDiaryId: 1,
+        onDiaryChange: vi.fn(),
+        onManageDiaries: vi.fn(),
+      },
+      thoughtOfDay: {
+        isOpen: false,
+        setOpen: vi.fn(),
+        diaryId: 1,
+        onNavigateToEntry: vi.fn(),
+      },
+      entryForm: {
+        newEntryText: '',
+        setNewEntryText: vi.fn(),
+        selectedDate: new Date('2024-01-15'),
+        setSelectedDate: vi.fn(),
+        tags: [],
+        setTags: vi.fn(),
+        visibility: 'private',
+        setVisibility: vi.fn(),
+        format: 'plain',
+        setFormat: vi.fn(),
+        allTags: ['tag1', 'tag2', 'tag3'],
+        formError: '',
+        onSubmit: vi.fn(),
+      },
+      filters: {
+        search: '',
+        setSearch: vi.fn(),
+        filterTags: [],
+        setFilterTags: vi.fn(),
+        filterDateObj: null,
+        setFilterDateObj: vi.fn(),
+        filterVisibility: 'all',
+        setFilterVisibility: vi.fn(),
+        filterFavorites: false,
+        setFilterFavorites: vi.fn(),
+        filterArchiveStatus: 'active',
+        setFilterArchiveStatus: vi.fn(),
+        allTags: ['tag1', 'tag2', 'tag3'],
+        setPage: vi.fn(),
+      },
+      entriesList: {
+        loading: false,
+        entries: mockEntries,
+        groupedEntries: mockGroupedEntries,
+        onEdit: vi.fn(),
+        onDelete: vi.fn(),
+        onToggleVisibility: vi.fn(),
+        onToggleFavorite: vi.fn(),
+        onToggleArchived: vi.fn(),
+        editingEntry: null,
+        editText: '',
+        setEditText: vi.fn(),
+        editTags: [],
+        setEditTags: vi.fn(),
+        editDate: null,
+        setEditDate: vi.fn(),
+        editVisibility: 'private',
+        setEditVisibility: vi.fn(),
+        editFormat: 'plain',
+        setEditFormat: vi.fn(),
+        allTags: ['tag1', 'tag2', 'tag3'],
+        onSaveEdit: vi.fn(),
+        onCancelEdit: vi.fn(),
+        onNavigateToEntry: vi.fn(),
+        sourceEntry: null,
+        targetEntryId: null,
+        activeTargetId: null,
+        onBackToSource: vi.fn(),
+      },
+      pagination: {
+        page: 1,
+        totalPages: 5,
+        inputPage: '1',
+        setPage: vi.fn(),
+        setInputPage: vi.fn(),
+      },
+      yearMonthNavigator: {
+        availableYears: [2023, 2024],
+        availableMonths: ['January', 'February', 'March'],
+        onNavigate: vi.fn(),
+      },
       config: mockConfig,
       t: mockT,
     };
+
+    return {
+      ...base,
+      ...overrides,
+      diaryTabs: { ...base.diaryTabs, ...overrides.diaryTabs },
+      thoughtOfDay: { ...base.thoughtOfDay, ...overrides.thoughtOfDay },
+      entryForm: { ...base.entryForm, ...overrides.entryForm },
+      filters: { ...base.filters, ...overrides.filters },
+      entriesList: { ...base.entriesList, ...overrides.entriesList },
+      pagination: { ...base.pagination, ...overrides.pagination },
+      yearMonthNavigator: { ...base.yearMonthNavigator, ...overrides.yearMonthNavigator },
+    };
+  };
+
+  let defaultProps: JournalViewProps;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    defaultProps = createProps();
   });
 
   it('renders all child components', () => {
@@ -250,8 +294,8 @@ describe('JournalView', () => {
     
     fireEvent.click(screen.getByTestId('diary-change-btn'));
     
-    expect(defaultProps.onDiaryChange).toHaveBeenCalledWith(2);
-    expect(defaultProps.setPage).toHaveBeenCalledWith(1);
+    expect(defaultProps.diaryTabs.onDiaryChange).toHaveBeenCalledWith(2);
+    expect(defaultProps.pagination.setPage).toHaveBeenCalledWith(1);
   });
 
   it('handles manage diaries action', () => {
@@ -259,22 +303,23 @@ describe('JournalView', () => {
     
     fireEvent.click(screen.getByTestId('manage-diaries-btn'));
     
-    expect(defaultProps.onManageDiaries).toHaveBeenCalled();
+    expect(defaultProps.diaryTabs.onManageDiaries).toHaveBeenCalled();
   });
 
   it('passes highlights modal state to ThoughtOfTheDay', () => {
-    render(<JournalView {...defaultProps} highlightsModalOpen={true} />);
+    render(<JournalView {...createProps({ thoughtOfDay: { isOpen: true } })} />);
     
     expect(screen.getByTestId('totd-open')).toHaveTextContent('true');
     expect(screen.getByTestId('totd-diary-id')).toHaveTextContent('1');
   });
 
   it('closes highlights modal', () => {
-    render(<JournalView {...defaultProps} highlightsModalOpen={true} />);
+    const props = createProps({ thoughtOfDay: { isOpen: true } });
+    render(<JournalView {...props} />);
     
     fireEvent.click(screen.getByTestId('totd-close-btn'));
     
-    expect(defaultProps.setHighlightsModalOpen).toHaveBeenCalledWith(false);
+    expect(props.thoughtOfDay.setOpen).toHaveBeenCalledWith(false);
   });
 
   it('opens highlights modal from filter controls', () => {
@@ -282,11 +327,11 @@ describe('JournalView', () => {
     
     fireEvent.click(screen.getByTestId('open-highlights-btn'));
     
-    expect(defaultProps.setHighlightsModalOpen).toHaveBeenCalledWith(true);
+    expect(defaultProps.thoughtOfDay.setOpen).toHaveBeenCalledWith(true);
   });
 
   it('shows form error when present', () => {
-    render(<JournalView {...defaultProps} formError="Error message" />);
+    render(<JournalView {...createProps({ entryForm: { formError: 'Error message' } })} />);
     
     expect(screen.getByTestId('form-error')).toHaveTextContent('Error message');
   });
@@ -299,24 +344,25 @@ describe('JournalView', () => {
   });
 
   it('shows loading state in entries list', () => {
-    render(<JournalView {...defaultProps} loading={true} />);
+    render(<JournalView {...createProps({ entriesList: { loading: true } })} />);
     
     expect(screen.getByTestId('loading')).toHaveTextContent('true');
   });
 
   it('passes pagination data correctly', () => {
-    render(<JournalView {...defaultProps} page={3} totalPages={10} />);
+    render(<JournalView {...createProps({ pagination: { page: 3, totalPages: 10 } })} />);
     
     expect(screen.getByTestId('current-page')).toHaveTextContent('3');
     expect(screen.getByTestId('total-pages')).toHaveTextContent('10');
   });
 
   it('handles page navigation', () => {
-    render(<JournalView {...defaultProps} page={2} />);
+    const props = createProps({ pagination: { page: 2 } });
+    render(<JournalView {...props} />);
     
     fireEvent.click(screen.getByTestId('next-page-btn'));
     
-    expect(defaultProps.setPage).toHaveBeenCalledWith(3);
+    expect(props.pagination.setPage).toHaveBeenCalledWith(3);
   });
 
   it('passes available years and months to navigator', () => {
@@ -331,27 +377,28 @@ describe('JournalView', () => {
     
     fireEvent.click(screen.getByTestId('navigate-btn'));
     
-    expect(defaultProps.onNavigateToFirst).toHaveBeenCalledWith(2024, 1);
+    expect(defaultProps.yearMonthNavigator.onNavigate).toHaveBeenCalledWith(2024, 1);
   });
 
   it('handles back to source action', () => {
-    render(<JournalView {...defaultProps} sourceEntry={{ date: '2024-01-01', index: 0, id: 1 }} />);
+    const props = createProps({ entriesList: { sourceEntry: { date: '2024-01-01', index: 0, id: 1 } } });
+    render(<JournalView {...props} />);
     
     expect(screen.getByTestId('has-source-entry')).toHaveTextContent('true');
     
     fireEvent.click(screen.getByTestId('back-to-source-btn'));
     
-    expect(defaultProps.onBackToSource).toHaveBeenCalled();
+    expect(props.entriesList.onBackToSource).toHaveBeenCalled();
   });
 
   it('displays active target id for navigation', () => {
-    render(<JournalView {...defaultProps} activeTargetId={5} />);
+    render(<JournalView {...createProps({ entriesList: { activeTargetId: 5 } })} />);
     
     expect(screen.getByTestId('active-target-id')).toHaveTextContent('5');
   });
 
   it('passes target entry id for highlight rendering', () => {
-    render(<JournalView {...defaultProps} targetEntryId={5} />);
+    render(<JournalView {...createProps({ entriesList: { targetEntryId: 5 } })} />);
 
     expect(screen.getByTestId('target-entry-id')).toHaveTextContent('5');
   });
@@ -364,43 +411,45 @@ describe('JournalView', () => {
   });
 
   it('renders with no current diary', () => {
-    render(<JournalView {...defaultProps} currentDiaryId={null} />);
+    render(<JournalView {...createProps({ diaryTabs: { currentDiaryId: null }, thoughtOfDay: { diaryId: null } })} />);
     
     expect(screen.getByTestId('current-diary-id')).toHaveTextContent('');
     expect(screen.getByTestId('totd-diary-id')).toHaveTextContent('');
   });
 
   it('renders with empty diaries list', () => {
-    render(<JournalView {...defaultProps} diaries={[]} />);
+    render(<JournalView {...createProps({ diaryTabs: { diaries: [] } })} />);
     
     expect(screen.getByTestId('diary-count')).toHaveTextContent('0');
   });
 
   it('renders with empty entries list', () => {
-    render(<JournalView {...defaultProps} entries={[]} groupedEntries={{}} />);
+    render(<JournalView {...createProps({ entriesList: { entries: [], groupedEntries: {} } })} />);
     
     expect(screen.getByTestId('entries-count')).toHaveTextContent('0');
   });
 
   it('handles form submission', () => {
-    render(<JournalView {...defaultProps} newEntryText="New entry content" />);
+    const props = createProps({ entryForm: { newEntryText: 'New entry content' } });
+    render(<JournalView {...props} />);
     
     fireEvent.submit(screen.getByTestId('entry-form'));
     
-    expect(defaultProps.onSubmit).toHaveBeenCalled();
+    expect(props.entryForm.onSubmit).toHaveBeenCalled();
   });
 
   it('displays entry visibility correctly', () => {
-    render(<JournalView {...defaultProps} visibility="public" />);
+    render(<JournalView {...createProps({ entryForm: { visibility: 'public' } })} />);
     
     expect(screen.getByTestId('entry-visibility')).toHaveTextContent('public');
   });
 
   it('handles thought of day navigation', () => {
-    render(<JournalView {...defaultProps} highlightsModalOpen={true} />);
+    const props = createProps({ thoughtOfDay: { isOpen: true } });
+    render(<JournalView {...props} />);
     
     fireEvent.click(screen.getByTestId('totd-navigate-btn'));
     
-    expect(defaultProps.onNavigateToEntry).toHaveBeenCalledWith('2024-01-01', 0);
+    expect(props.thoughtOfDay.onNavigateToEntry).toHaveBeenCalledWith('2024-01-01', 0);
   });
 });

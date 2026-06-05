@@ -2,12 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { DiariesService } from './diaries.service';
-import { Diary, Entry } from '@/database/entities';
+import { Diary } from '@/database/entities';
+import { DiaryEntryTransferService } from './diary-entry-transfer.service';
 
 describe('DiariesService', () => {
   let service: DiariesService;
   let diaryRepository: any;
-  let entryRepository: any;
+  let diaryEntryTransferService: { moveEntriesToDiary: jest.Mock };
 
   const mockDiary = {
     id: 1,
@@ -41,15 +42,15 @@ describe('DiariesService', () => {
       count: jest.fn().mockResolvedValue(0),
     };
 
-    entryRepository = {
-      update: jest.fn(),
+    diaryEntryTransferService = {
+      moveEntriesToDiary: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DiariesService,
         { provide: getRepositoryToken(Diary), useValue: diaryRepository },
-        { provide: getRepositoryToken(Entry), useValue: entryRepository },
+        { provide: DiaryEntryTransferService, useValue: diaryEntryTransferService },
       ],
     }).compile();
 
@@ -261,16 +262,12 @@ describe('DiariesService', () => {
       diaryRepository.findOne
         .mockResolvedValueOnce(mockDiary) // First call - find diary to delete
         .mockResolvedValueOnce(mockDefaultDiary); // Second call - find default diary
-      entryRepository.update.mockResolvedValue({ affected: 5 });
       diaryRepository.delete.mockResolvedValue({ affected: 1 });
 
       const result = await service.delete(1, 1);
 
       expect(result.success).toBe(true);
-      expect(entryRepository.update).toHaveBeenCalledWith(
-        { diaryId: 1, userId: 1 },
-        { diaryId: mockDefaultDiary.id },
-      );
+      expect(diaryEntryTransferService.moveEntriesToDiary).toHaveBeenCalledWith(1, 1, mockDefaultDiary.id);
     });
 
     it('should throw NotFoundException for non-existent diary', async () => {
@@ -294,7 +291,7 @@ describe('DiariesService', () => {
       const result = await service.delete(1, 1);
 
       expect(result.success).toBe(true);
-      expect(entryRepository.update).not.toHaveBeenCalled();
+      expect(diaryEntryTransferService.moveEntriesToDiary).not.toHaveBeenCalled();
     });
   });
 

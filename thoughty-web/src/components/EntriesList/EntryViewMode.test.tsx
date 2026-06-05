@@ -220,6 +220,7 @@ describe('EntryViewMode', () => {
     it('deletes a loaded revision and removes it from the history panel', async () => {
         const onFetchHistory = vi.fn().mockResolvedValue(mockRevisions);
         const onDeleteRevision = vi.fn().mockResolvedValue(true);
+        const loadedRevision = mockRevisions[0]!;
         const user = userEvent.setup();
         renderEntryViewMode({ onFetchHistory, onDeleteRevision });
 
@@ -229,7 +230,7 @@ describe('EntryViewMode', () => {
 
         await user.click(screen.getAllByTitle('Delete')[0] as HTMLElement);
 
-        expect(onDeleteRevision).toHaveBeenCalledWith(1, mockRevisions[0].id);
+        expect(onDeleteRevision).toHaveBeenCalledWith(1, loadedRevision.id);
         expect(screen.queryByText('Older revision')).not.toBeInTheDocument();
     });
 });

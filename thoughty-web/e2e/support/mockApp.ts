@@ -1,8 +1,6 @@
 import type { Page } from '@playwright/test';
 import { registerMockAppRoutes } from './mockApp.routes';
-import { createMockAppState, type MockEntry, type SetupMockAppOptions } from './mockApp.shared';
-
-export type { MockEntry } from './mockApp.shared';
+import { createMockAppState, type SetupMockAppOptions } from './mockApp.shared';
 
 export async function setupMockApp(page: Page, options: SetupMockAppOptions = {}) {
   const state = createMockAppState(options);

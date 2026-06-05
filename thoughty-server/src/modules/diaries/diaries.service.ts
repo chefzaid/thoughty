@@ -1,17 +1,17 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Diary, Entry } from '@/database/entities';
+import { Diary } from '@/database/entities';
 import { getDefaultDiaryColor, normalizeDiaryColor, sanitizeString } from '@/common/utils';
 import { CreateDiaryDto, UpdateDiaryDto } from './dto';
+import { DiaryEntryTransferService } from './diary-entry-transfer.service';
 
 @Injectable()
 export class DiariesService {
   constructor(
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
-    @InjectRepository(Entry)
-    private readonly entryRepository: Repository<Entry>,
+    private readonly diaryEntryTransferService: DiaryEntryTransferService,
   ) {}
 
   async findAll(userId: number): Promise<Diary[]> {
@@ -99,8 +99,7 @@ export class DiariesService {
     });
 
     if (defaultDiary) {
-      // Move entries to default diary
-      await this.entryRepository.update({ diaryId: id, userId }, { diaryId: defaultDiary.id });
+      await this.diaryEntryTransferService.moveEntriesToDiary(userId, id, defaultDiary.id);
     }
 
     await this.diaryRepository.delete({ id, userId });

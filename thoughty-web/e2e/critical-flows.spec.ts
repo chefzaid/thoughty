@@ -47,7 +47,8 @@ test.describe('Critical User Flows', () => {
     await expect(page.getByText('Edited entry body')).toBeVisible();
     await expect(page.getByText('Original entry body')).toHaveCount(0);
 
-    await firstEntry.locator('button[title="Delete"]').click();
+    await firstEntry.getByLabel('More actions').click();
+    await page.getByTitle('Delete').click();
     await page.locator('div.fixed.inset-0.z-50').getByRole('button', { name: 'Delete' }).click();
 
     await expect(page.getByText('Edited entry body')).toHaveCount(0);

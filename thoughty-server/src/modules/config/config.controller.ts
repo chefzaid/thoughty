@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, UseGuards, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
+import { UserDataExportService } from './user-data-export.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { Response } from 'express';
@@ -10,7 +11,10 @@ import { Response } from 'express';
 @UseGuards(JwtAuthGuard)
 @Controller('config')
 export class ConfigController {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly userDataExportService: UserDataExportService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get user configuration' })
@@ -36,7 +40,7 @@ export class ConfigController {
     @CurrentUser() user: AuthenticatedUser,
     @Res() res: Response,
   ) {
-    const data = await this.configService.downloadData(user.userId);
+    const data = await this.userDataExportService.downloadData(user.userId);
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `thoughty_data_${dateStr}.json`;
 

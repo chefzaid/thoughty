@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
+import { UserDataExportService } from './user-data-export.service';
 
 describe('ConfigController', () => {
   let controller: ConfigController;
   let configService: any;
+  let userDataExportService: any;
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -12,12 +14,17 @@ describe('ConfigController', () => {
     configService = {
       getConfig: jest.fn(),
       updateConfig: jest.fn(),
+    };
+    userDataExportService = {
       downloadData: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ConfigController],
-      providers: [{ provide: ConfigService, useValue: configService }],
+      providers: [
+        { provide: ConfigService, useValue: configService },
+        { provide: UserDataExportService, useValue: userDataExportService },
+      ],
     }).compile();
 
     controller = module.get<ConfigController>(ConfigController);
@@ -51,9 +58,9 @@ describe('ConfigController', () => {
   });
 
   describe('downloadData', () => {
-    it('delegates to configService.downloadData and sets response headers', async () => {
+    it('delegates to userDataExportService.downloadData and sets response headers', async () => {
       const mockData = { exportedAt: '2024-01-01', user: { id: 1 }, entries: [] };
-      configService.downloadData!.mockResolvedValue(mockData);
+      userDataExportService.downloadData.mockResolvedValue(mockData);
 
       const res = {
         setHeader: jest.fn(),
@@ -62,7 +69,7 @@ describe('ConfigController', () => {
 
       await controller.downloadData(mockUser as any, res as any);
 
-      expect(configService.downloadData).toHaveBeenCalledWith(1);
+      expect(userDataExportService.downloadData).toHaveBeenCalledWith(1);
       expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json; charset=utf-8');
       expect(res.setHeader).toHaveBeenCalledWith('Content-Disposition', expect.stringContaining('thoughty_data_'));
       expect(res.send).toHaveBeenCalledWith(JSON.stringify(mockData, null, 2));

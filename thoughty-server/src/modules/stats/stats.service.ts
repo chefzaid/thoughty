@@ -2,15 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
-import { AiService } from '@/modules/ai';
 import { StatsResponseDto } from './dto';
+import { StatsToneAnalysisService } from './stats-tone-analysis.service';
 
 @Injectable()
 export class StatsService {
   constructor(
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
-    private readonly aiService: AiService,
+    private readonly statsToneAnalysisService: StatsToneAnalysisService,
   ) {}
 
   async getStats(userId: number, diaryId?: number): Promise<StatsResponseDto> {
@@ -132,7 +132,7 @@ export class StatsService {
         .take(40)
         .getMany()
       : [];
-    const toneMoodAnalysis = await this.aiService.analyzeToneMood(userId, recentEntries);
+    const toneMoodAnalysis = await this.statsToneAnalysisService.analyze(userId, recentEntries);
 
     return {
       totalThoughts,
