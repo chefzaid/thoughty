@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useMemo } from 'react';
+import React, { Suspense, lazy, useCallback, useMemo } from 'react';
 import type { Components } from 'react-markdown';
 
 const BRACKET_REFERENCE_PATTERN = /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]/i;
@@ -50,26 +50,26 @@ function findNextReference(content: string, startIndex: number): ReferenceMatch 
     const bracketMatch = BRACKET_REFERENCE_PATTERN.exec(remainingContent);
     const legacyMatch = LEGACY_REFERENCE_PATTERN.exec(remainingContent);
 
-    const match = [
-        bracketMatch && {
-            matchText: bracketMatch[0],
-            date: bracketMatch[1],
-            index: bracketMatch[2] ? Number.parseInt(bracketMatch[2], 10) : 1,
-            startIndex: startIndex + bracketMatch.index,
-            endIndex: startIndex + bracketMatch.index + bracketMatch[0].length,
-        },
-        legacyMatch && {
-            matchText: legacyMatch[0],
-            date: legacyMatch[1],
-            index: legacyMatch[2] ? Number.parseInt(legacyMatch[2], 10) : 1,
-            startIndex: startIndex + legacyMatch.index,
-            endIndex: startIndex + legacyMatch.index + legacyMatch[0].length,
-        },
-    ]
-        .filter((candidate): candidate is ReferenceMatch => candidate !== null)
-        .sort((left, right) => left.startIndex - right.startIndex)[0];
+    const match = !legacyMatch || (bracketMatch && bracketMatch.index <= legacyMatch.index)
+        ? bracketMatch
+        : legacyMatch;
 
-    return match ?? null;
+    if (!match) {
+        return null;
+    }
+
+    const [, date, rawIndex] = match;
+    if (!date) {
+        return null;
+    }
+
+    return {
+        matchText: match[0],
+        date,
+        index: rawIndex ? Number.parseInt(rawIndex, 10) : 1,
+        startIndex: startIndex + match.index,
+        endIndex: startIndex + match.index + match[0].length,
+    };
 }
 
 function escapeRegExp(str: string): string {
@@ -116,6 +116,49 @@ function createMarkdownHighlightComponents(searchTerm: string): Components {
     };
 }
 
+function parseContentParts(content: string): ContentPart[] | null {
+    if (!content) return null;
+
+    const parts: ContentPart[] = [];
+    let currentIndex = 0;
+    let partIndex = 0;
+
+    while (currentIndex < content.length) {
+        const nextReference = findNextReference(content, currentIndex);
+        if (!nextReference) {
+            break;
+        }
+
+        if (nextReference.startIndex > currentIndex) {
+            parts.push({
+                type: 'text',
+                content: content.slice(currentIndex, nextReference.startIndex),
+                key: `text-${partIndex++}`
+            });
+        }
+
+        parts.push({
+            type: 'reference',
+            date: nextReference.date,
+            index: nextReference.index,
+            displayText: nextReference.matchText,
+            key: `ref-${nextReference.date}-${nextReference.index}-${partIndex++}`
+        });
+
+        currentIndex = nextReference.endIndex;
+    }
+
+    if (currentIndex < content.length) {
+        parts.push({
+            type: 'text',
+            content: content.slice(currentIndex),
+            key: `text-${partIndex++}`
+        });
+    }
+
+    return parts;
+}
+
 /**
  * Parses entry content for cross-reference patterns and renders them as clickable links.
  * Patterns supported:
@@ -137,74 +180,24 @@ function EntryContentRenderer({
         [searchTerm]
     );
 
-    const parseContent = (): ContentPart[] | null => {
-        if (!content) return null;
+    const displayContent = useMemo(() => (
+        maxLength && content && content.length > maxLength
+            ? content.slice(0, maxLength) + '...'
+            : content
+    ), [content, maxLength]);
 
-        // Apply maxLength truncation if specified
-        const displayContent = maxLength && content.length > maxLength 
-            ? content.slice(0, maxLength) + '...' 
-            : content;
+    const parts = useMemo(() => parseContentParts(displayContent), [displayContent]);
 
-        const parts: ContentPart[] = [];
-        let currentIndex = 0;
-        let partIndex = 0;
-
-        while (currentIndex < displayContent.length) {
-            const nextReference = findNextReference(displayContent, currentIndex);
-            if (!nextReference) {
-                break;
-            }
-
-            // Add text before the match
-            if (nextReference.startIndex > currentIndex) {
-                parts.push({
-                    type: 'text',
-                    content: displayContent.slice(currentIndex, nextReference.startIndex),
-                    key: `text-${partIndex++}`
-                });
-            }
-
-            // Add the reference link
-            parts.push({
-                type: 'reference',
-                date: nextReference.date,
-                index: nextReference.index,
-                displayText: nextReference.matchText,
-                key: `ref-${nextReference.date}-${nextReference.index}-${partIndex++}`
-            });
-
-            currentIndex = nextReference.endIndex;
-        }
-
-        // Add remaining text after last match
-        if (currentIndex < displayContent.length) {
-            parts.push({
-                type: 'text',
-                content: displayContent.slice(currentIndex),
-                key: `text-${partIndex++}`
-            });
-        }
-
-        return parts;
-    };
-
-    const handleReferenceClick = (date: string, index: number): void => {
+    const handleReferenceClick = useCallback((date: string, index: number): void => {
         if (onNavigateToEntry) {
             onNavigateToEntry(date, index, sourceEntry);
         }
-    };
+    }, [onNavigateToEntry, sourceEntry]);
 
-    const getTitle = (date: string, index: number): string => {
+    const getTitle = useCallback((date: string, index: number): string => {
         const indexSuffix = index > 1 ? ` (#${index})` : '';
         return `Navigate to entry on ${date}${indexSuffix}`;
-    };
-
-    const parts = parseContent();
-
-    // Apply maxLength truncation for display
-    const displayContent = maxLength && content && content.length > maxLength 
-        ? content.slice(0, maxLength) + '...' 
-        : content;
+    }, []);
 
     // Markdown rendering mode
     if (format === 'markdown') {

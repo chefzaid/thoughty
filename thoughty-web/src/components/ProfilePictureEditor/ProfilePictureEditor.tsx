@@ -22,6 +22,7 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
     const [dragStart, setDragStart] = useState<Position>({ x: 0, y: 0 });
     const containerRef = useRef<HTMLButtonElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const imageLoadTokenRef = useRef(0);
 
     const CANVAS_SIZE = 200;
     const MIN_ZOOM = 1;
@@ -30,11 +31,16 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
     // Reset state when modal opens
     useEffect(() => {
         if (isOpen) {
+            imageLoadTokenRef.current += 1;
             setImage(null);
             setZoom(1);
             setPosition({ x: 0, y: 0 });
         }
     }, [isOpen]);
+
+    useEffect(() => () => {
+        imageLoadTokenRef.current += 1;
+    }, []);
 
     const handleFileSelect = (e: ChangeEvent<HTMLInputElement>): void => {
         const file = e.target.files?.[0];
@@ -48,15 +54,32 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
             return;
         }
 
+        const loadToken = imageLoadTokenRef.current + 1;
+        imageLoadTokenRef.current = loadToken;
         const reader = new FileReader();
         reader.onload = (event) => {
+            if (imageLoadTokenRef.current !== loadToken) return;
+            const result = event.target?.result;
+            if (typeof result !== 'string') return;
+
             const img = new Image();
             img.onload = () => {
+                if (imageLoadTokenRef.current !== loadToken) return;
                 setImage(img);
                 setZoom(1);
                 setPosition({ x: 0, y: 0 });
             };
-            img.src = event.target?.result as string;
+            img.onerror = () => {
+                if (imageLoadTokenRef.current === loadToken) {
+                    setImage(null);
+                }
+            };
+            img.src = result;
+        };
+        reader.onerror = () => {
+            if (imageLoadTokenRef.current === loadToken) {
+                setImage(null);
+            }
         };
         reader.readAsDataURL(file);
     };
@@ -161,6 +184,8 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
 
         // Calculate the display size of the image in the preview
         const containerSize = CANVAS_SIZE;
+        if (image.width <= 0 || image.height <= 0) return;
+
         const imgAspect = image.width / image.height;
         
         let displayWidth: number, displayHeight: number;

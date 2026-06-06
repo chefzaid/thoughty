@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState as useLocalState } from 'react';
+import { useCallback, useEffect, useRef, useState as useLocalState } from 'react';
 import type { TranslationFunction as TranslationFn } from '../../types';
 import {
     IconActionButton,
@@ -34,6 +34,7 @@ export default function EntrySecondaryActionsMenu({
     const [menuOpen, setMenuOpen] = useLocalState(false);
     const [shareReady, setShareReady] = useLocalState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const shareReadyTimeoutRef = useRef<number | null>(null);
     const secondaryActionClass = isDark
         ? 'text-gray-200 hover:bg-gray-700'
         : 'text-gray-700 hover:bg-gray-100';
@@ -55,6 +56,12 @@ export default function EntrySecondaryActionsMenu({
 
     useDismissibleMenu(menuOpen, menuRef, closeMenu);
 
+    useEffect(() => () => {
+        if (shareReadyTimeoutRef.current !== null) {
+            globalThis.clearTimeout(shareReadyTimeoutRef.current);
+        }
+    }, []);
+
     const toggleMenu = useCallback(() => {
         setMenuOpen((current) => !current);
     }, [setMenuOpen]);
@@ -66,7 +73,13 @@ export default function EntrySecondaryActionsMenu({
 
         await onShareEntry();
         setShareReady(true);
-        globalThis.setTimeout(() => setShareReady(false), 2000);
+        if (shareReadyTimeoutRef.current !== null) {
+            globalThis.clearTimeout(shareReadyTimeoutRef.current);
+        }
+        shareReadyTimeoutRef.current = globalThis.setTimeout(() => {
+            setShareReady(false);
+            shareReadyTimeoutRef.current = null;
+        }, 2000);
     }, [onShareEntry, setShareReady]);
 
     const handleToggleHistory = useCallback(async () => {

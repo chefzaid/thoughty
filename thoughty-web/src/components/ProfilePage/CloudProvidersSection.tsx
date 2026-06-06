@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { TranslationFunction } from './types';
 import { useApiServices } from '../../hooks/useAppState';
 import type { CloudProviderType } from '../../services/api/cloudSyncService';
@@ -19,6 +19,10 @@ const PROVIDER_CONFIG: Record<CloudProviderType, { name: string }> = {
   onedrive: { name: CLOUD_PROVIDER_NAMES.onedrive },
   dropbox: { name: CLOUD_PROVIDER_NAMES.dropbox },
 };
+
+const isCloudProvider = (value: unknown): value is CloudProviderType => (
+  typeof value === 'string' && value in PROVIDER_CONFIG
+);
 
 const getMessageStyle = (type: 'success' | 'error', isDark: boolean) => {
   const successBg = isDark ? '#0b2e1a' : '#f0fdf4';
@@ -160,11 +164,51 @@ function CloudProvidersSection({ t, isDark }: Readonly<CloudProvidersSectionProp
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<CloudProviderType | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const mountedRef = useRef(false);
+  const messageTimeoutRef = useRef<number | null>(null);
+  const popupPollTimersRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      if (messageTimeoutRef.current !== null) {
+        globalThis.clearTimeout(messageTimeoutRef.current);
+      }
+      for (const timerId of popupPollTimersRef.current) {
+        globalThis.clearInterval(timerId);
+      }
+      popupPollTimersRef.current = [];
+    };
+  }, []);
+
+  const showTransientMessage = useCallback((nextMessage: { type: 'success' | 'error'; text: string }) => {
+    if (!mountedRef.current) return;
+    setMessage(nextMessage);
+
+    if (messageTimeoutRef.current !== null) {
+      globalThis.clearTimeout(messageTimeoutRef.current);
+    }
+
+    messageTimeoutRef.current = globalThis.setTimeout(() => {
+      if (mountedRef.current) {
+        setMessage(null);
+      }
+      messageTimeoutRef.current = null;
+    }, 4000);
+  }, []);
 
   const fetchStatus = useCallback(async () => {
-    const data = await cloudSyncService.getStatus();
-    if (data) setStatus(data as unknown as Record<string, CloudProviderStatus>);
-    setLoading(false);
+    try {
+      const data = await cloudSyncService.getStatus();
+      if (!mountedRef.current) return;
+      if (data) setStatus(data as unknown as Record<string, CloudProviderStatus>);
+    } finally {
+      if (mountedRef.current) {
+        setLoading(false);
+      }
+    }
   }, [cloudSyncService]);
 
   useEffect(() => { fetchStatus(); }, [fetchStatus]);
@@ -173,29 +217,30 @@ function CloudProvidersSection({ t, isDark }: Readonly<CloudProvidersSectionProp
     const handleMessage = async (event: MessageEvent) => {
       if (event.data?.type !== 'cloud-oauth-callback') return;
       const { provider, code } = event.data;
-      if (!provider || !code) return;
+      if (!isCloudProvider(provider) || typeof code !== 'string' || !code) return;
 
       setConnecting(provider);
       const redirectUri = `${globalThis.location.origin}/cloud-callback`;
       const success = await cloudSyncService.connect(provider, code, redirectUri);
+      if (!mountedRef.current) return;
       if (success) {
-        setMessage({ type: 'success', text: t('cloudConnected', { provider: PROVIDER_CONFIG[provider as CloudProviderType]?.name || provider }) });
+        showTransientMessage({ type: 'success', text: t('cloudConnected', { provider: PROVIDER_CONFIG[provider].name }) });
         await fetchStatus();
       } else {
-        setMessage({ type: 'error', text: t('cloudConnectError') });
+        showTransientMessage({ type: 'error', text: t('cloudConnectError') });
       }
       setConnecting(null);
-      setTimeout(() => setMessage(null), 4000);
     };
 
     globalThis.addEventListener('message', handleMessage);
     return () => globalThis.removeEventListener('message', handleMessage);
-  }, [cloudSyncService, fetchStatus, t]);
+  }, [cloudSyncService, fetchStatus, showTransientMessage, t]);
 
   const handleConnect = async (provider: CloudProviderType) => {
     setConnecting(provider);
     const redirectUri = `${globalThis.location.origin}/cloud-callback`;
     const authUrl = await cloudSyncService.getAuthUrl(provider, redirectUri);
+    if (!mountedRef.current) return;
     if (authUrl) {
       const width = 600;
       const height = 700;
@@ -204,28 +249,30 @@ function CloudProvidersSection({ t, isDark }: Readonly<CloudProvidersSectionProp
       const popup = globalThis.open(authUrl, 'cloud-oauth', `width=${width},height=${height},left=${left},top=${top}`);
       // Poll for popup close to reset connecting state
       if (popup) {
-        const pollTimer = setInterval(() => {
+        const pollTimer = globalThis.setInterval(() => {
           if (popup.closed) {
-            clearInterval(pollTimer);
+            globalThis.clearInterval(pollTimer);
+            popupPollTimersRef.current = popupPollTimersRef.current.filter((timerId) => timerId !== pollTimer);
             setConnecting(current => current === provider ? null : current);
           }
         }, 500);
+        popupPollTimersRef.current.push(pollTimer);
       }
     } else {
-      setMessage({ type: 'error', text: t('cloudConnectError') });
+      showTransientMessage({ type: 'error', text: t('cloudConnectError') });
       setConnecting(null);
     }
   };
 
   const handleDisconnect = async (provider: CloudProviderType) => {
     const success = await cloudSyncService.disconnect(provider);
+    if (!mountedRef.current) return;
     if (success) {
-      setMessage({ type: 'success', text: t('cloudDisconnected', { provider: PROVIDER_CONFIG[provider]?.name || provider }) });
+      showTransientMessage({ type: 'success', text: t('cloudDisconnected', { provider: PROVIDER_CONFIG[provider]?.name || provider }) });
       await fetchStatus();
     } else {
-      setMessage({ type: 'error', text: t('cloudDisconnectError') });
+      showTransientMessage({ type: 'error', text: t('cloudDisconnectError') });
     }
-    setTimeout(() => setMessage(null), 4000);
   };
 
   return (

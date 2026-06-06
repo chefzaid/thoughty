@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -53,6 +53,10 @@ interface HeatmapCell {
 type ToneMoodAnalysis = NonNullable<StatsData['toneMoodAnalysis']>;
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const TAGS_YEARS_PER_PAGE = 5;
+const YEARS_PER_PAGE = 8;
+const MONTHS_PER_PAGE = 12;
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_FORMATTER = new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' });
 const WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
 const FULL_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
@@ -61,6 +65,24 @@ const FULL_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
     year: 'numeric',
     timeZone: 'UTC',
 });
+const WEEKDAY_LABELS = Array.from({ length: 7 }, (_, index) => {
+    if (![1, 3, 5].includes(index)) {
+        return '';
+    }
+
+    return WEEKDAY_FORMATTER.format(addUtcDays(new Date(Date.UTC(2024, 0, 7)), index));
+});
+const EMPTY_STATS: StatsData = {
+    totalThoughts: 0,
+    uniqueTagsCount: 0,
+    thoughtsPerYear: {},
+    thoughtsPerMonth: {},
+    thoughtsPerDay: {},
+    thoughtsPerTag: {},
+    tagsPerYear: {},
+    tagsPerMonth: {},
+    toneMoodAnalysis: null,
+};
 
 function addUtcDays(date: Date, days: number): Date {
     return new Date(date.getTime() + days * DAY_IN_MS);
@@ -160,11 +182,8 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
 
     // Period selection states
     const [tagsYearPage, setTagsYearPage] = useState<number>(0);
-    const tagsYearsPerPage = 5;
     const [yearPage, setYearPage] = useState<number>(0);
-    const yearsPerPage = 8;
     const [monthPage, setMonthPage] = useState<number>(0);
-    const monthsPerPage = 12;
 
     const fetchStats = useCallback(async (): Promise<void> => {
         try {
@@ -191,8 +210,9 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
     const themeClass = theme === 'light' ? 'light' : 'dark';
     const textColor = theme === 'light' ? '#374151' : '#e5e7eb';
     const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
+    const effectiveStats = stats ?? EMPTY_STATS;
 
-    const chartOptions = {
+    const chartOptions = useMemo(() => ({
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -218,7 +238,125 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                 beginAtZero: true,
             },
         },
-    };
+    }), [gridColor, textColor, theme]);
+
+    const allYearLabels = useMemo(
+        () => Object.keys(effectiveStats.thoughtsPerYear).sort((a, b) => a.localeCompare(b)),
+        [effectiveStats.thoughtsPerYear],
+    );
+    const totalYearChartPages = Math.ceil(allYearLabels.length / YEARS_PER_PAGE);
+    const thoughtsPerYearChart = useMemo(() => {
+        const yearLabels = allYearLabels.slice(yearPage * YEARS_PER_PAGE, (yearPage + 1) * YEARS_PER_PAGE);
+
+        return {
+            labels: yearLabels,
+            datasets: [
+                {
+                    data: yearLabels.map(year => effectiveStats.thoughtsPerYear[year]),
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                },
+            ],
+        };
+    }, [allYearLabels, effectiveStats.thoughtsPerYear, yearPage]);
+
+    const allMonthLabels = useMemo(
+        () => Object.keys(effectiveStats.thoughtsPerMonth).sort((a, b) => a.localeCompare(b)),
+        [effectiveStats.thoughtsPerMonth],
+    );
+    const totalMonthPages = Math.ceil(allMonthLabels.length / MONTHS_PER_PAGE);
+    const thoughtsPerMonthChart = useMemo(() => {
+        const monthLabels = allMonthLabels.slice(monthPage * MONTHS_PER_PAGE, (monthPage + 1) * MONTHS_PER_PAGE);
+
+        return {
+            labels: monthLabels.map(m => {
+                const [year, month] = m.split('-');
+                return `${MONTH_NAMES[Number.parseInt(month ?? '1', 10) - 1] ?? ''} ${year ?? ''}`;
+            }),
+            datasets: [
+                {
+                    data: monthLabels.map(month => effectiveStats.thoughtsPerMonth[month]),
+                    backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                    borderColor: 'rgba(139, 92, 246, 1)',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                },
+            ],
+        };
+    }, [allMonthLabels, effectiveStats.thoughtsPerMonth, monthPage]);
+
+    const thoughtsPerTagChart = useMemo(() => {
+        const tagEntries = Object.entries(effectiveStats.thoughtsPerTag).slice(0, 10);
+
+        return {
+            labels: tagEntries.map(([tag]) => tag),
+            datasets: [
+                {
+                    data: tagEntries.map(([, count]) => count),
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.7)',
+                        'rgba(139, 92, 246, 0.7)',
+                        'rgba(236, 72, 153, 0.7)',
+                        'rgba(34, 197, 94, 0.7)',
+                        'rgba(251, 146, 60, 0.7)',
+                        'rgba(14, 165, 233, 0.7)',
+                        'rgba(168, 85, 247, 0.7)',
+                        'rgba(244, 63, 94, 0.7)',
+                        'rgba(20, 184, 166, 0.7)',
+                        'rgba(234, 179, 8, 0.7)',
+                    ],
+                    borderRadius: 6,
+                },
+            ],
+        };
+    }, [effectiveStats.thoughtsPerTag]);
+
+    const allTagsPerYear: YearTagData[] = useMemo(() => Object.entries(effectiveStats.tagsPerYear)
+        .sort(([a], [b]) => Number(b) - Number(a))
+        .map(([year, tags]) => ({
+            year,
+            topTags: Object.entries(tags)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 5),
+        })), [effectiveStats.tagsPerYear]);
+
+    const totalTagsYearPages = Math.ceil(allTagsPerYear.length / TAGS_YEARS_PER_PAGE);
+    const tagsPerYearData = useMemo(() => allTagsPerYear.slice(
+        tagsYearPage * TAGS_YEARS_PER_PAGE,
+        (tagsYearPage + 1) * TAGS_YEARS_PER_PAGE
+    ), [allTagsPerYear, tagsYearPage]);
+    const thoughtsPerDay = effectiveStats.thoughtsPerDay ?? {};
+    const heatmapWeeks = useMemo(() => buildHeatmapWeeks(thoughtsPerDay), [thoughtsPerDay]);
+    const heatmapMonthLabels = useMemo(() => heatmapWeeks.map((week, index) => {
+        const labelDate = week.find((cell) => cell.inRange)?.date ?? week[0]?.date;
+        const previousDate = index > 0
+            ? heatmapWeeks[index - 1]?.find((cell) => cell.inRange)?.date ?? heatmapWeeks[index - 1]?.[0]?.date
+            : undefined;
+
+        if (!labelDate) {
+            return '';
+        }
+
+        if (
+            previousDate?.getUTCMonth() === labelDate.getUTCMonth()
+            && previousDate?.getUTCFullYear() === labelDate.getUTCFullYear()
+        ) {
+            return '';
+        }
+
+        return MONTH_FORMATTER.format(labelDate);
+    }), [heatmapWeeks]);
+    const toneMoodAnalysis = effectiveStats.toneMoodAnalysis;
+    const moodBreakdownEntries = useMemo(
+        () => toneMoodAnalysis ? getSortedInsightEntries(toneMoodAnalysis.moodBreakdown) : [],
+        [toneMoodAnalysis],
+    );
+    const toneBreakdownEntries = useMemo(
+        () => toneMoodAnalysis ? getSortedInsightEntries(toneMoodAnalysis.toneBreakdown) : [],
+        [toneMoodAnalysis],
+    );
 
     if (loading) {
         return (
@@ -241,122 +379,6 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
             </div>
         );
     }
-
-    // Prepare chart data - with pagination for years
-    const allYearLabels = Object.keys(stats.thoughtsPerYear).sort((a, b) => a.localeCompare(b));
-    const totalYearChartPages = Math.ceil(allYearLabels.length / yearsPerPage);
-    const yearLabels = allYearLabels.slice(yearPage * yearsPerPage, (yearPage + 1) * yearsPerPage);
-    const yearData = yearLabels.map(year => stats.thoughtsPerYear[year]);
-
-    const thoughtsPerYearChart = {
-        labels: yearLabels,
-        datasets: [
-            {
-                data: yearData,
-                backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                borderColor: 'rgba(59, 130, 246, 1)',
-                borderWidth: 1,
-                borderRadius: 6,
-            },
-        ],
-    };
-
-    // Monthly data - with pagination
-    const allMonthLabels = Object.keys(stats.thoughtsPerMonth).sort((a, b) => a.localeCompare(b));
-    const totalMonthPages = Math.ceil(allMonthLabels.length / monthsPerPage);
-    const monthLabels = allMonthLabels.slice(monthPage * monthsPerPage, (monthPage + 1) * monthsPerPage);
-    const monthData = monthLabels.map(month => stats.thoughtsPerMonth[month]);
-
-    const thoughtsPerMonthChart = {
-        labels: monthLabels.map(m => {
-            const [year, month] = m.split('-');
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            return `${monthNames[Number.parseInt(month ?? '1', 10) - 1] ?? ''} ${year ?? ''}`;
-        }),
-        datasets: [
-            {
-                data: monthData,
-                backgroundColor: 'rgba(139, 92, 246, 0.7)',
-                borderColor: 'rgba(139, 92, 246, 1)',
-                borderWidth: 1,
-                borderRadius: 6,
-            },
-        ],
-    };
-
-    // Top tags chart
-    const tagEntries = Object.entries(stats.thoughtsPerTag).slice(0, 10);
-    const tagLabels = tagEntries.map(([tag]) => tag);
-    const tagData = tagEntries.map(([, count]) => count);
-
-    const thoughtsPerTagChart = {
-        labels: tagLabels,
-        datasets: [
-            {
-                data: tagData,
-                backgroundColor: [
-                    'rgba(59, 130, 246, 0.7)',
-                    'rgba(139, 92, 246, 0.7)',
-                    'rgba(236, 72, 153, 0.7)',
-                    'rgba(34, 197, 94, 0.7)',
-                    'rgba(251, 146, 60, 0.7)',
-                    'rgba(14, 165, 233, 0.7)',
-                    'rgba(168, 85, 247, 0.7)',
-                    'rgba(244, 63, 94, 0.7)',
-                    'rgba(20, 184, 166, 0.7)',
-                    'rgba(234, 179, 8, 0.7)',
-                ],
-                borderRadius: 6,
-            },
-        ],
-    };
-
-    // Tags per year breakdown - with pagination
-    const allTagsPerYear: YearTagData[] = Object.entries(stats.tagsPerYear)
-        .sort(([a], [b]) => Number(b) - Number(a))
-        .map(([year, tags]) => ({
-            year,
-            topTags: Object.entries(tags)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 5),
-        }));
-
-    const totalTagsYearPages = Math.ceil(allTagsPerYear.length / tagsYearsPerPage);
-    const tagsPerYearData = allTagsPerYear.slice(
-        tagsYearPage * tagsYearsPerPage,
-        (tagsYearPage + 1) * tagsYearsPerPage
-    );
-    const thoughtsPerDay = stats.thoughtsPerDay ?? {};
-    const heatmapWeeks = buildHeatmapWeeks(thoughtsPerDay);
-    const heatmapMonthLabels = heatmapWeeks.map((week, index) => {
-        const labelDate = week.find((cell) => cell.inRange)?.date ?? week[0]?.date;
-        const previousDate = index > 0
-            ? heatmapWeeks[index - 1]?.find((cell) => cell.inRange)?.date ?? heatmapWeeks[index - 1]?.[0]?.date
-            : undefined;
-
-        if (!labelDate) {
-            return '';
-        }
-
-        if (
-            previousDate?.getUTCMonth() === labelDate.getUTCMonth()
-            && previousDate?.getUTCFullYear() === labelDate.getUTCFullYear()
-        ) {
-            return '';
-        }
-
-        return MONTH_FORMATTER.format(labelDate);
-    });
-    const weekdayLabels = Array.from({ length: 7 }, (_, index) => {
-        if (![1, 3, 5].includes(index)) {
-            return '';
-        }
-
-        return WEEKDAY_FORMATTER.format(addUtcDays(new Date(Date.UTC(2024, 0, 7)), index));
-    });
-    const toneMoodAnalysis = stats.toneMoodAnalysis;
-    const moodBreakdownEntries = toneMoodAnalysis ? getSortedInsightEntries(toneMoodAnalysis.moodBreakdown) : [];
-    const toneBreakdownEntries = toneMoodAnalysis ? getSortedInsightEntries(toneMoodAnalysis.toneBreakdown) : [];
 
     return (
         <div className={`stats-container ${themeClass}`}>
@@ -502,7 +524,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                                     ))}
                                 </div>
                                 <div className="heatmap-weekday-column" aria-hidden="true">
-                                    {weekdayLabels.map((label, index) => (
+                                    {WEEKDAY_LABELS.map((label, index) => (
                                         <span key={`${label || 'weekday'}-${index}`} className="heatmap-weekday-label">
                                             {label}
                                         </span>

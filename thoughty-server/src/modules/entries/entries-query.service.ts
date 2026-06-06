@@ -77,18 +77,19 @@ export class EntriesQueryService {
       qb.andWhere('e.is_archived = true');
     }
 
-    const total = await qb.getCount();
+    const totalPromise = qb.getCount();
 
     qb.orderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
     qb.skip((page - 1) * limit).take(limit);
 
-    const entries = await qb.getMany();
-
-    const tagsResult = await this.entryRepository
+    const entriesPromise = qb.getMany();
+    const tagsPromise = this.entryRepository
       .createQueryBuilder('e')
       .select('DISTINCT UNNEST(e.tags)', 'tag')
       .where('e.user_id = :userId', { userId })
       .getRawMany();
+
+    const [total, entries, tagsResult] = await Promise.all([totalPromise, entriesPromise, tagsPromise]);
 
     const allTags = tagsResult.map((result) => result.tag).sort((left, right) => left.localeCompare(right));
 
@@ -251,18 +252,20 @@ export class EntriesQueryService {
       return { found: false, error: 'Entry not found' };
     }
 
-    const countNewer = await this.entryRepository
+    const countNewerPromise = this.entryRepository
       .createQueryBuilder('e')
       .where('e.user_id = :userId', { userId })
       .andWhere('e.date > :date', { date: entry.date })
       .getCount();
 
-    const sameDateCount = await this.entryRepository
+    const sameDateCountPromise = this.entryRepository
       .createQueryBuilder('e')
       .where('e.user_id = :userId', { userId })
       .andWhere('e.date = :date', { date: entry.date })
       .andWhere('e.index < :index', { index: entry.index })
       .getCount();
+
+    const [countNewer, sameDateCount] = await Promise.all([countNewerPromise, sameDateCountPromise]);
 
     const totalBefore = countNewer + sameDateCount;
     const page = Math.floor(totalBefore / limit) + 1;
@@ -295,8 +298,6 @@ export class EntriesQueryService {
       randomQb = randomQb.andWhere('e.diary_id = :diaryId', { diaryId });
     }
 
-    const randomEntry = await randomQb.getOne();
-
     let onThisDayQb = this.entryRepository
       .createQueryBuilder('e')
       .leftJoinAndSelect('e.diary', 'd')
@@ -311,7 +312,10 @@ export class EntriesQueryService {
       onThisDayQb = onThisDayQb.andWhere('e.diary_id = :diaryId', { diaryId });
     }
 
-    const onThisDayEntries = await onThisDayQb.getRawAndEntities();
+    const [randomEntry, onThisDayEntries] = await Promise.all([
+      randomQb.getOne(),
+      onThisDayQb.getRawAndEntities(),
+    ]);
 
     const onThisDay: Record<number, Entry[]> = {};
     for (let index = 0; index < onThisDayEntries.entities.length; index++) {

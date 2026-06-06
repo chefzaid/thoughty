@@ -37,19 +37,13 @@ Features to implement:
 - Allow users to see and manage active sessions (logout from other sessions)
 - Spam and bots protection on sign up and login forms
 - Rate limiting and prevent DDOS from too much data sent
-- Tighten code security and fix vulnerabilities (OWASP Top 10: XSS, CSRF, SQL injection, etc.)
 - Content Security Policy hardening (replace unsafe-inline with nonces)
-- Security and performance audits and remediation
 
 *** Tests
-- Playwright end-to-end tests for critical user flows (sign up, login, create entry, edit entry, delete entry, view stats) based on features docs
-- Tests docs for how to run tests, how they are structured, and how to add new tests in the future
-- Always keep code coverage above 80% and add tests for uncovered critical paths for both backend and frontend
 - Load testing and performance benchmarking for API endpoints and database queries
+- Crash testing and chaos engineering to identify weaknesses and improve resilience
 
 *** Technical Improvements
-- Optimize codebase for better performance
-- Hunt for memory leaks, null references, bugs, and fix them
 - Caching of frequent requests (public entries, feed)
 - Distributed rate limiting with Redis for multi-replica deployments
 - Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
@@ -95,3 +89,14 @@ Features to implement:
 - That does exactly all the functions I do with OneDrive, and the Excel stats file but with an app (health, mood tracker, finances, expenses and subscriptions...)
 - Track happiness, socials, health, finances, subscriptions, productivity, and other life metrics and correlate them with the journaling data to provide insights and suggestions for improving well-being and productivity
 - Needs to details the features once the main subject (journaling) is complete
+
+*** Reccurent Tasks (mixed domains)
+- Optimize codebase for better performance
+- Hunt for memory leaks, null references, bugs, and fix them
+- Code reviews, refactor, and clean up code for better readability and maintainability
+- Keep implemented architecture, design patterns, and best practices up to date with industry standards
+- Update dependencies and fix any breaking changes
+- Update documentation to reflect any changes in features, architecture, or deployment process
+- Always keep code coverage above 85% for both backend and frontend
+- Tighten code security and fix vulnerabilities (OWASP Top 10: XSS, CSRF, SQL injection, etc.)
+- Security and performance audits and remediation
