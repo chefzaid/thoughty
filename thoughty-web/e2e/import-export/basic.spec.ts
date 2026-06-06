@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupMockApp } from './support/mockApp';
+import { setupMockApp } from '../support/mockApp';
 
 test.describe('Import/Export Feature', () => {
   test('exports from All Diaries as JSON and imports a JSON file through the UI', async ({ page }) => {

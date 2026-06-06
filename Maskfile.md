@@ -100,6 +100,9 @@ Write-Host ""
 * frontend
     * flags: -f --frontend
     * desc: Run frontend tests only
+* e2e
+    * flags: -e --e2e
+    * desc: Run frontend Playwright end-to-end tests only
 * coverage
     * flags: -c --coverage
     * desc: Run full coverage report
@@ -126,7 +129,7 @@ if [ "$coverage" == "true" ]; then
 fi
 
 RUN_ALL=true
-if [ "$backend" == "true" ] || [ "$frontend" == "true" ]; then
+if [ "$backend" == "true" ] || [ "$frontend" == "true" ] || [ "$e2e" == "true" ]; then
   RUN_ALL=false
 fi
 
@@ -144,6 +147,15 @@ if [ "$RUN_ALL" == "true" ] || [ "$frontend" == "true" ]; then
   echo -e "${CYAN}────────────────────────────────────────${NC}"
   cd thoughty-web
   npm test
+  cd ..
+  echo ""
+fi
+
+if [ "$e2e" == "true" ]; then
+  echo -e "${CYAN}▸ FRONTEND E2E TESTS${NC}"
+  echo -e "${CYAN}────────────────────────────────────────${NC}"
+  cd thoughty-web
+  npm run test:e2e
   cd ..
   echo ""
 fi
@@ -167,21 +179,28 @@ if ($env:coverage -eq "true") {
 }
 
 $RUN_ALL = $true
-if ($env:backend -eq "true" -or $env:frontend -eq "true") {
+if ($env:backend -eq "true" -or $env:frontend -eq "true" -or $env:e2e -eq "true") {
     $RUN_ALL = $false
 }
 
 if ($RUN_ALL -or $env:backend -eq "true") {
     Write-Section "BACKEND TESTS"
     Set-Location thoughty-server
-  npm.cmd test
+    npm.cmd test
     Set-Location ..
 }
 
 if ($RUN_ALL -or $env:frontend -eq "true") {
     Write-Section "FRONTEND TESTS"
     Set-Location thoughty-web
-  npm.cmd test
+    npm.cmd test
+    Set-Location ..
+}
+
+if ($env:e2e -eq "true") {
+    Write-Section "FRONTEND E2E TESTS"
+    Set-Location thoughty-web
+    npm.cmd run test:e2e
     Set-Location ..
 }
 
@@ -577,6 +596,7 @@ echo -e "\033[1mAvailable commands:\033[0m"
 echo ""
 echo -e "  \033[0;36mbuild\033[0m       📦 Install dependencies"
 echo -e "  \033[0;36mtest\033[0m        🧪 Run tests"
+echo -e "    \033[0;90m-e, --e2e\033[0m Run frontend Playwright E2E tests"
 echo -e "  \033[0;36mrun\033[0m         🚀 Start dev servers"
 echo -e "  \033[0;36mseed\033[0m        🌱 Seed database"
 echo -e "  \033[0;36mmigrate\033[0m     📋 Run migrations"
@@ -601,6 +621,7 @@ Write-Host "Available commands:" -ForegroundColor White
 Write-Host ""
 Write-Host "  build       " -NoNewline -ForegroundColor Cyan; Write-Host "📦 Install dependencies"
 Write-Host "  test        " -NoNewline -ForegroundColor Cyan; Write-Host "🧪 Run tests"
+Write-Host "    -e, --e2e " -NoNewline -ForegroundColor DarkGray; Write-Host "Run frontend Playwright E2E tests"
 Write-Host "  run         " -NoNewline -ForegroundColor Cyan; Write-Host "🚀 Start dev servers"
 Write-Host "  seed        " -NoNewline -ForegroundColor Cyan; Write-Host "🌱 Seed database"
 Write-Host "  migrate     " -NoNewline -ForegroundColor Cyan; Write-Host "📋 Run migrations"
@@ -615,4 +636,17 @@ Write-Host ""
 Write-Host "Run 'mask <command> --help' for more info on a command" -ForegroundColor DarkGray
 Write-Host ""
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
 

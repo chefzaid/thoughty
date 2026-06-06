@@ -42,6 +42,7 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - [Architecture Overview and ADR Index](./docs/adr/README.md)
 - [Data Model Reference](./docs/data-model.md)
 - [Development Guide](./docs/development.md)
+- [Testing Guide](./docs/testing.md)
 - [Deployment Guide](./docs/deployment.md)
 - [Operations Runbook](./docs/operations.md)
 - [Security and Privacy Reference](./docs/security.md)

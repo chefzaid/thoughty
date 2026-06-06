@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupMockApp } from './support/mockApp';
+import { setupMockApp } from '../support/mockApp';
 
 test.describe('Journal navigation', () => {
   test('follows a cross-reference into another diary and keeps the journal interactive', async ({ page }) => {

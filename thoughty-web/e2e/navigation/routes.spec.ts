@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { setupMockApp } from './support/mockApp';
+import { setupMockApp } from '../support/mockApp';
 
 const statsEntries = [
   {

@@ -382,6 +382,54 @@ describe('useAppState Hooks', () => {
       expect(fallback.result.current.getLimit()).toBe(10);
     });
 
+    it('reorders the current day entries in local state before the API round-trip completes', async () => {
+      const reorderEntriesMock = vi.fn().mockResolvedValue(true);
+      const { createEntriesService } = await import('../services/api');
+      vi.mocked(createEntriesService).mockReturnValue({
+        fetchEntries: vi.fn().mockResolvedValue({
+          entries: [
+            { id: 1, date: '2024-01-15', index: 1, content: 'first', tags: [] },
+            { id: 2, date: '2024-01-15', index: 2, content: 'second', tags: [] },
+            { id: 3, date: '2024-01-14', index: 1, content: 'other day', tags: [] },
+          ],
+          totalPages: 1,
+          allTags: [],
+        }),
+        fetchEntryDates: vi.fn().mockResolvedValue([]),
+        fetchYearsMonths: vi.fn().mockResolvedValue({ years: [], months: [] }),
+        createEntry: vi.fn(),
+        updateEntry: vi.fn(),
+        deleteEntry: vi.fn(),
+        toggleVisibility: vi.fn(),
+        toggleFavorite: vi.fn(),
+        toggleArchived: vi.fn(),
+        bulkOperation: vi.fn(),
+        navigateToFirst: vi.fn(),
+        navigateByDate: vi.fn(),
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn(),
+        deleteRevision: vi.fn(),
+        reorderEntries: reorderEntriesMock,
+        renameTag: vi.fn(),
+      });
+
+      const { result } = renderHook(() => useEntries(true, mockConfig, null));
+
+      await waitFor(() => {
+        expect(result.current.entries).toHaveLength(3);
+      });
+
+      await act(async () => {
+        await result.current.reorderEntries('2024-01-15', [2, 1]);
+      });
+
+      expect(reorderEntriesMock).toHaveBeenCalledWith('2024-01-15', [2, 1]);
+      await waitFor(() => {
+        expect(result.current.groupedEntries['2024-01-15']?.map((entry) => entry.id)).toEqual([2, 1]);
+        expect(result.current.entries.map((entry) => entry.id)).toEqual([2, 1, 3]);
+      });
+    });
+
     it('exposes entry actions', () => {
       const { result } = renderHook(() => useEntries(false, mockConfig, null));
 

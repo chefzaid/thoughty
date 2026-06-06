@@ -401,7 +401,7 @@ describe('useAppShellModel', () => {
 
   it('alerts and skips edit state updates when rephrasing returns null', async () => {
     fixWriting.mockResolvedValueOnce(null);
-    const alertSpy = vi.spyOn(window, 'alert').mockImplementation(() => undefined);
+    const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => undefined);
     const { result } = renderHook(() => useAppShellModel());
     const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
 

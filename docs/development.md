@@ -198,10 +198,6 @@ The frontend primarily talks to the backend through relative `/api` paths and th
 | `mask build --clean`   | Remove both `node_modules` trees and reinstall                         |
 | `mask run`             | Start Docker services, wait for DB, migrate, optionally seed, then launch backend and frontend |
 | `mask run --kill`      | Same as `mask run`, but first kills existing Node processes            |
-| `mask test`            | Run backend and frontend tests                                         |
-| `mask test --backend`  | Run backend tests only                                                 |
-| `mask test --frontend` | Run frontend tests only                                                |
-| `mask test --coverage` | Run the combined backend + frontend coverage report                    |
 
 ### Root-level npm commands
 
@@ -212,7 +208,6 @@ The frontend primarily talks to the backend through relative `/api` paths and th
 | `npm run check-db` | Validate database connectivity and schema assumptions         |
 | `npm run nuke-db`  | Reset the database through the backend helper script          |
 | `npm run kill`     | Kill running backend Node processes                          |
-| `npm run coverage` | Run the aggregated backend + frontend coverage summary        |
 | `npm run api:sync` | Export backend OpenAPI and regenerate frontend API types      |
 
 ### Project-level commands worth knowing
@@ -220,12 +215,10 @@ The frontend primarily talks to the backend through relative `/api` paths and th
 | Area     | Command                                         | Use case                                   |
 |----------|-------------------------------------------------|--------------------------------------------|
 | Backend  | `cd thoughty-server && npm run dev`             | Start the NestJS API in watch mode         |
-| Backend  | `cd thoughty-server && npm run test:e2e`        | Run backend e2e tests                      |
 | Backend  | `cd thoughty-server && npm run db:validate-seed` | Check seed data quality without writing    |
 | Backend  | `cd thoughty-server && npm run cloud-sync-worker` | Run the worker directly in TS for debugging |
 | Frontend | `cd thoughty-web && npm run dev`                | Start the Vite dev server                  |
 | Frontend | `cd thoughty-web && npm run typecheck`          | Run TS type checking without a build       |
-| Frontend | `cd thoughty-web && npm run test:e2e`           | Run Playwright browser tests               |
 
 ## OpenAPI and Frontend Type Sync
 
@@ -246,39 +239,6 @@ sequenceDiagram
 ```
 
 The root `api:sync` command already chains the server export and the frontend type generation, so use it instead of running the two steps manually unless you are debugging one side in isolation.
-
-## Testing Strategy
-
-Thoughty has three useful testing layers in local development.
-
-### 1. Fast unit and component checks
-
-- Backend: `cd thoughty-server && npm test`
-- Frontend: `cd thoughty-web && npm test`
-
-These are the cheapest checks for iterative work.
-
-### 2. Coverage runs
-
-- Full aggregated report: `mask test --coverage` or `npm run coverage`
-- Backend only: `cd thoughty-server && npm run test:cov`
-- Frontend only: `cd thoughty-web && npm run test:coverage`
-
-The root coverage script runs both coverage suites and prints a summary for backend coverage, frontend coverage, and the average across both.
-
-### 3. End-to-end tests
-
-- Backend e2e: `cd thoughty-server && npm run test:e2e`
-- Frontend browser e2e: `cd thoughty-web && npm run test:e2e`
-
-Frontend Playwright tests cover the public intro page, sign-up, login, create entry, edit entry, delete entry, and import/export flows using mocked API responses for determinism.
-
-### Practical test guidance
-
-- Run the narrowest relevant suite first.
-- Use backend e2e tests when you change routing, auth guards, DTO validation, or integration points.
-- Use Playwright when you change navigation, auth UX, import/export UX, or multi-step browser flows.
-- Run the full coverage path before larger merges or release prep.
 
 ## Useful Local Workflows
 
@@ -314,4 +274,5 @@ That is useful when you want to exercise sync polling behavior without starting 
 ## Related Guides
 
 - [Features](./features.md)
+- [Testing Guide](./testing.md)
 - [Deployment Guide](./deployment.md)

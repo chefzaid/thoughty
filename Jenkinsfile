@@ -29,6 +29,7 @@ pipeline {
                     steps {
                         dir('thoughty-web') {
                             sh 'npm ci'
+                            sh 'npm run test:e2e:install'
                         }
                     }
                 }
@@ -82,6 +83,20 @@ pipeline {
                         always {
                             dir('thoughty-web') {
                                 junit allowEmptyResults: true, testResults: 'coverage/junit.xml'
+                            }
+                        }
+                    }
+                }
+                stage('Web E2E Tests') {
+                    steps {
+                        dir('thoughty-web') {
+                            sh 'npm run test:e2e'
+                        }
+                    }
+                    post {
+                        always {
+                            dir('thoughty-web') {
+                                archiveArtifacts allowEmptyArchive: true, artifacts: 'playwright-report/**,test-results/**'
                             }
                         }
                     }

@@ -42,11 +42,14 @@ Features to implement:
 - Security and performance audits and remediation
 
 *** Tests
-- Playwright end-to-end tests for critical user flows (sign up, login, create entry, edit entry, delete entry, view stats) based on README features list
-- Always keep code coverage above 80% and add tests for uncovered critical paths
+- Playwright end-to-end tests for critical user flows (sign up, login, create entry, edit entry, delete entry, view stats) based on features docs
+- Tests docs for how to run tests, how they are structured, and how to add new tests in the future
+- Always keep code coverage above 80% and add tests for uncovered critical paths for both backend and frontend
 - Load testing and performance benchmarking for API endpoints and database queries
 
 *** Technical Improvements
+- Optimize codebase for better performance
+- Hunt for memory leaks, null references, bugs, and fix them
 - Caching of frequent requests (public entries, feed)
 - Distributed rate limiting with Redis for multi-replica deployments
 - Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
@@ -62,7 +65,10 @@ Features to implement:
 - Set up monitoring and alerting for server health and performance
 - Usage and stats of the app and features (telemetery to understand which features are used the most and how users interact with the app, to prioritize future development and improvements)
 
-*** Deployment and hosting
+*** Deployment and CI/CD
+- Create Jenkins pipeline for automated testing, building, and deployment to environments (staging, production)
+- Configure jobs in CI pipeline to run tests on every pull request and before merging to main branch
+- Configure job in CI pipeline to run Playwright tests on a schedule (e.g. daily) to catch any regressions
 - Modify deployments configuration to use existing DS-Cluster infrastrcuture, and document the prequisites and deployment process in docs
 - CI pipeline for automated dependency vulnerability scanning (npm audit, Dependabot/Renovate)
 - Blue-green or canary deployment strategy for zero-downtime releases

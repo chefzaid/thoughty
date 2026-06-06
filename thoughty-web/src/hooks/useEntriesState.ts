@@ -10,6 +10,9 @@ const EMPTY_ENTRIES: Entry[] = [];
 const EMPTY_STRINGS: string[] = [];
 const EMPTY_NUMBERS: number[] = [];
 
+const normalizeEntryDate = (date: string): string =>
+  date.includes('T') ? (date.split('T')[0] ?? date) : date;
+
 export const useEntries = (
   isAuthenticated: boolean,
   config: Config,
@@ -173,19 +176,36 @@ export const useEntries = (
 
   const reorderEntries = useCallback(async (date: string, orderedIds: number[]) => {
     setEntries(prev => {
-      const updated = [...prev];
-      const dateEntries = updated.filter(e => {
-        const normalizedDate = e.date.includes('T') ? e.date.split('T')[0] : e.date;
-        return normalizedDate === date;
-      });
       const indexMap = new Map(orderedIds.map((id, index) => [id, index + 1]));
-      for (const entry of dateEntries) {
-        const newIndex = indexMap.get(entry.id);
-        if (newIndex !== undefined) {
-          entry.index = newIndex;
+
+      const reorderedDateEntries = prev
+        .filter((entry) => normalizeEntryDate(entry.date) === date)
+        .map((entry) => ({
+          ...entry,
+          index: indexMap.get(entry.id) ?? entry.index,
+        }))
+        .sort((left, right) => (left.index || 0) - (right.index || 0));
+
+      if (reorderedDateEntries.length === 0) {
+        return prev;
+      }
+
+      const nextEntries: Entry[] = [];
+      let insertedReorderedDay = false;
+
+      for (const entry of prev) {
+        if (normalizeEntryDate(entry.date) !== date) {
+          nextEntries.push(entry);
+          continue;
+        }
+
+        if (!insertedReorderedDay) {
+          nextEntries.push(...reorderedDateEntries);
+          insertedReorderedDay = true;
         }
       }
-      return updated;
+
+      return nextEntries;
     });
 
     const success = await entriesService.reorderEntries(date, orderedIds);
@@ -196,8 +216,7 @@ export const useEntries = (
 
   const groupedEntries: GroupedEntries = useMemo(() => {
     const grouped = entries.reduce((acc: GroupedEntries, entry) => {
-      let dateStr = entry.date;
-      if (dateStr.includes('T')) dateStr = dateStr.split('T')[0] ?? dateStr;
+      const dateStr = normalizeEntryDate(entry.date);
       acc[dateStr] ??= [];
       acc[dateStr]?.push(entry);
       return acc;
