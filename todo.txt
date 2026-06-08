@@ -23,6 +23,7 @@ Features to implement:
 - Graph of all thoughts or at least tags, interconnected between them using AI
 - Transcription from an Audio note
 - Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
+- Use different models for differents tasks, to optimize token consumption
 
 *** Book Converter
 - Based on tags to create chapters
