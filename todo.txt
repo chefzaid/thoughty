@@ -15,6 +15,8 @@ Features to implement:
 - The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
 
 *** AI
+- Deduplicate similar entries talking about the same subject with the same conclusion
+- Search entries by meaning or idea instead of keywords
 - Subjects discussed stats (analyzed by AI)
 - Personality analysis through the choice of words and subjects
 - AI features should be locked behind a paywall with a free trial (except if own API toekn is provided)
@@ -92,6 +94,8 @@ Features to implement:
 - Needs to details the features once the main subject (journaling) is complete
 
 *** Reccurent Tasks (mixed domains)
+- Break huge files and blocks of code (500+ LOC) to smaller more maintanable chunks and refactor them
+- Linting, quality checks, and resolve issues in reported in Problems tab
 - Optimize codebase for better performance
 - Hunt for memory leaks, null references, bugs, and fix them
 - Code reviews, refactor, and clean up code for better readability and maintainability
