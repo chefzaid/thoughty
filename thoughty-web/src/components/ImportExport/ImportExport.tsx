@@ -395,11 +395,6 @@ function ImportExport({
                     setActiveSection(section);
                     emitRouteState({ section });
                 }}
-                onSelectJsonExport={() => {
-                    setActiveSection('export');
-                    setExportFormat('json');
-                    emitRouteState({ section: 'export', exportFormat: 'json' });
-                }}
                 t={t}
             />
 

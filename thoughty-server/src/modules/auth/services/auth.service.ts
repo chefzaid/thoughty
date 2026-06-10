@@ -62,6 +62,9 @@ export class AuthService {
       ? sanitizeString(dto.username.trim()).substring(0, 50)
       : null;
 
+    // Generate username from email if not provided
+    const username = sanitizedUsername || dto.email.split('@')[0].substring(0, 50);
+
     // Check if email exists
     const existingUser = await this.userRepository.findOne({
       where: { email: dto.email.toLowerCase() },
@@ -71,11 +74,17 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
+    // Check if username exists
+    const existingUsername = await this.userRepository.findOne({
+      where: { username },
+    });
+
+    if (existingUsername) {
+      throw new ConflictException('Username already taken');
+    }
+
     // Hash password
     const passwordHash = await bcrypt.hash(dto.password, 12);
-
-    // Generate username from email if not provided
-    const username = sanitizedUsername || dto.email.split('@')[0].substring(0, 50);
 
     // Create user
     const user = await this.userRepository.save({

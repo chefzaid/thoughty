@@ -18,12 +18,10 @@ const COMPACT_FIELDS: ReadonlyArray<{ key: 'datePrefix' | 'dateSuffix' | 'tagOpe
 export function RouteActions({
     activeSection,
     onSelectSection,
-    onSelectJsonExport,
     t,
 }: Readonly<{
     activeSection: ImportExportSection;
     onSelectSection: (section: ImportExportSection) => void;
-    onSelectJsonExport: () => void;
     t: TranslationFunction;
 }>) {
     return (
@@ -38,9 +36,6 @@ export function RouteActions({
                     {t(section)}
                 </button>
             ))}
-            <button type="button" className="io-btn secondary" onClick={onSelectJsonExport}>
-                {t('formatJson')}
-            </button>
         </nav>
     );
 }

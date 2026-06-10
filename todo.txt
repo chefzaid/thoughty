@@ -19,13 +19,13 @@ Features to implement:
 - Search entries by meaning or idea instead of keywords
 - Subjects discussed stats (analyzed by AI)
 - Personality analysis through the choice of words and subjects
-- AI features should be locked behind a paywall with a free trial (except if own API toekn is provided)
+- AI features should be locked behind a paywall with a free trial (except if own API token is provided)
 - AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
 - Local LLM processing for privacy
 - Graph of all thoughts or at least tags, interconnected between them using AI
 - Transcription from an Audio note
 - Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
-- Use different models for differents tasks, to optimize token consumption
+- Use different models for different tasks, to optimize token consumption
 
 *** Book Converter
 - Based on tags to create chapters
@@ -66,7 +66,7 @@ Features to implement:
 - Create Jenkins pipeline for automated testing, building, and deployment to environments (staging, production)
 - Configure jobs in CI pipeline to run tests on every pull request and before merging to main branch
 - Configure job in CI pipeline to run Playwright tests on a schedule (e.g. daily) to catch any regressions
-- Modify deployments configuration to use existing DS-Cluster infrastrcuture, and document the prequisites and deployment process in docs
+- Modify deployments configuration to use existing DS-Cluster infrastructure, and document the perquisites and deployment process in docs
 - CI pipeline for automated dependency vulnerability scanning (npm audit, Dependabot/Renovate)
 - Blue-green or canary deployment strategy for zero-downtime releases
 
@@ -93,8 +93,8 @@ Features to implement:
 - Track happiness, socials, health, finances, subscriptions, productivity, and other life metrics and correlate them with the journaling data to provide insights and suggestions for improving well-being and productivity
 - Needs to details the features once the main subject (journaling) is complete
 
-*** Reccurent Tasks (mixed domains)
-- Break huge files and blocks of code (500+ LOC) to smaller more maintanable chunks and refactor them
+*** Recurrent Tasks (mixed domains)
+- Break huge files and blocks of code (500+ LOC) to smaller more maintainable chunks and refactor them
 - Linting, quality checks, and resolve issues in reported in Problems tab
 - Optimize codebase for better performance
 - Hunt for memory leaks, null references, bugs, and fix them

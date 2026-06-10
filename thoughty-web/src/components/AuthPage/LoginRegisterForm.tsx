@@ -54,6 +54,7 @@ function LoginRegisterForm({
             onChange={(e) => setUsername(e.target.value)}
             placeholder={t('enterUsername')}
             className={isDark ? 'dark' : 'light'}
+            autoComplete="username"
           />
         </div>
       )}

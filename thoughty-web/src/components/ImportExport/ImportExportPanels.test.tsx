@@ -16,23 +16,19 @@ const mockFormatConfig = {
 };
 
 describe('ImportExportPanels', () => {
-    it('RouteActions calls the section and quick export handlers', () => {
+    it('RouteActions calls the section handler', () => {
         const onSelectSection = vi.fn();
-        const onSelectJsonExport = vi.fn();
         render(
             <RouteActions
                 activeSection="export"
                 onSelectSection={onSelectSection}
-                onSelectJsonExport={onSelectJsonExport}
                 t={mockT}
             />,
         );
 
         fireEvent.click(screen.getByRole('button', { name: 'import' }));
-        fireEvent.click(screen.getByRole('button', { name: 'formatJson' }));
 
         expect(onSelectSection).toHaveBeenCalledWith('import');
-        expect(onSelectJsonExport).toHaveBeenCalledTimes(1);
     });
 
     it('ExportSection updates format, toggles visibility, and exports', () => {
