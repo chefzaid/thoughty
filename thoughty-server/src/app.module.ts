@@ -9,6 +9,7 @@ import { DiariesModule } from './modules/diaries';
 import { StatsModule } from './modules/stats';
 import { UserConfigModule } from './modules/config';
 import { IoModule } from './modules/io';
+import { BooksModule } from './modules/books';
 import { AttachmentsModule } from './modules/attachments';
 import { AiModule } from './modules/ai';
 import { CloudSyncModule } from './modules/cloud-sync';
@@ -42,6 +43,7 @@ import { HealthController } from './health.controller';
     StatsModule,
     UserConfigModule,
     IoModule,
+    BooksModule,
     AttachmentsModule,
     AiModule,
     CloudSyncModule,

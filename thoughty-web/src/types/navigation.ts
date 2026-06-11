@@ -4,13 +4,14 @@ export type ViewType = 'journal' | 'tags' | 'profile' | 'diaries' | 'stats' | 'i
 export type PublicViewType = 'intro' | 'login' | 'register';
 export type DiaryScopedViewType = 'journal' | 'diaries' | 'stats' | 'importExport';
 export type DiaryReturnViewType = Exclude<DiaryScopedViewType, 'diaries'>;
-export type ImportExportSection = 'export' | 'import';
-export type ImportExportFormat = 'txt' | 'json' | 'md';
+export type ImportExportSection = 'export' | 'import' | 'book';
+export type CloudExportFormat = 'txt' | 'json' | 'md';
+export type ImportExportFormat = CloudExportFormat | 'pdf' | 'html' | 'epub';
 
 const DIARY_SCOPED_VIEWS = new Set<ViewType>(['journal', 'diaries', 'stats', 'importExport']);
 const DIARY_RETURN_VIEWS = new Set<DiaryReturnViewType>(['journal', 'stats', 'importExport']);
-const IMPORT_EXPORT_SECTIONS = new Set<ImportExportSection>(['export', 'import']);
-const IMPORT_EXPORT_FORMATS = new Set<ImportExportFormat>(['txt', 'json', 'md']);
+const IMPORT_EXPORT_SECTIONS = new Set<ImportExportSection>(['export', 'import', 'book']);
+const IMPORT_EXPORT_FORMATS = new Set<ImportExportFormat>(['txt', 'json', 'md', 'pdf', 'html', 'epub']);
 
 function normalizePath(pathname: string): string {
   return pathname.length > 1 && pathname.endsWith('/')

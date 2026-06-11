@@ -26,7 +26,7 @@ export function RouteActions({
 }>) {
     return (
         <nav className="io-route-actions" aria-label={t('importExport')}>
-            {(['export', 'import'] as const).map((section) => (
+            {(['export', 'import', 'book'] as const).map((section) => (
                 <button
                     key={section}
                     type="button"

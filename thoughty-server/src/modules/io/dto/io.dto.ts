@@ -57,10 +57,10 @@ export class ExportQueryDto {
   @IsBoolean()
   includeVisibility?: boolean;
 
-  @ApiPropertyOptional({ description: 'Export file format', enum: ['txt', 'json', 'md'], default: 'txt' })
+  @ApiPropertyOptional({ description: 'Export file format', enum: ['txt', 'json', 'md', 'pdf', 'html', 'epub'], default: 'txt' })
   @IsOptional()
-  @IsIn(['txt', 'json', 'md'])
-  format?: 'txt' | 'json' | 'md';
+  @IsIn(['txt', 'json', 'md', 'pdf', 'html', 'epub'])
+  format?: 'txt' | 'json' | 'md' | 'pdf' | 'html' | 'epub';
 }
 
 export class PreviewImportDto {

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '@/database/entities';
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from 'node:crypto';
-import { IoService, type ExportFormat } from '@/modules/io/io.service';
+import { IoService, type TextExportFormat } from '@/modules/io/io.service';
 import { GoogleDriveProvider } from './providers/google-drive.provider';
 import { OneDriveProvider } from './providers/onedrive.provider';
 import { DropboxProvider } from './providers/dropbox.provider';
@@ -182,12 +182,12 @@ export class CloudSyncService {
     userId: number,
     provider: CloudProviderType,
     diaryId?: number,
-    format: ExportFormat = 'txt',
+    format: TextExportFormat = 'txt',
     includeVisibility?: boolean,
   ): Promise<CloudFileInfo> {
     const accessToken = await this.getValidAccessToken(userId, provider);
     const { content, filename, contentType } = await this.ioService.export(userId, diaryId, includeVisibility, format);
-    return this.providers[provider].uploadFile(accessToken, filename, content, contentType);
+    return this.providers[provider].uploadFile(accessToken, filename, String(content), contentType);
   }
 
   async downloadFile(userId: number, provider: CloudProviderType, fileId: string): Promise<{ content: string }> {
@@ -262,7 +262,7 @@ export class CloudSyncService {
     userId: number,
     provider: CloudProviderType,
     frequency: SyncFrequency,
-    format: ExportFormat = 'txt',
+    format: TextExportFormat = 'txt',
     diaryId?: number,
     includeVisibility?: boolean,
   ): Promise<{ success: boolean }> {
@@ -321,13 +321,15 @@ export class CloudSyncService {
       this.settingRepository.findOne({ where: { userId, key: this.settingKey(provider, 'last_sync_hash') } }),
     ]);
 
-    const format = (formatSetting?.value as ExportFormat) || 'txt';
+    const format = (formatSetting?.value as TextExportFormat) || 'txt';
     const diaryId = diaryIdSetting?.value ? Number.parseInt(diaryIdSetting.value, 10) : undefined;
     const includeVisibility = includeVisibilitySetting?.value === 'true';
     const lastHash = lastHashSetting?.value || '';
 
-    // Generate export content
-    const { content, filename, contentType } = await this.ioService.export(userId, diaryId, includeVisibility, format);
+    // Generate export content (text formats only, per the schedule DTO)
+    const exported = await this.ioService.export(userId, diaryId, includeVisibility, format);
+    const { filename, contentType } = exported;
+    const content = String(exported.content);
 
     // Compute content hash
     const currentHash = createHash('sha256').update(content).digest('hex');

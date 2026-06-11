@@ -2,15 +2,19 @@ import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'reac
 import './ImportExport.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApiServices } from '../../hooks/useAppState';
-import type { ImportExportFormat, ImportExportSection } from '../../types';
+import type { CloudExportFormat, ImportExportFormat, ImportExportSection } from '../../types';
 import type { CloudFileInfo, CloudProviderType, CloudStatus, SyncFrequency, SyncScheduleConfig } from '../../services/api/cloudSyncService';
 import { CloudImportSection, CloudSyncSection } from './ImportExportCloudSection';
 import { DangerZoneSection, ExportSection, FormatSection, ImportSection, RouteActions } from './ImportExportPanels';
+import { BookSection } from './ImportExportBookSection';
 import { downloadBlob } from '../../utils/downloadFile';
 import {
     CLOUD_PROVIDERS,
+    DEFAULT_BOOK_OPTIONS,
     DEFAULT_FORMAT_CONFIG,
     createProviderRecord,
+    type BookOptions,
+    type BookPreviewData,
     type FormatConfig,
     type ImportExportProps,
     type ImportExportRouteState,
@@ -43,6 +47,9 @@ function ImportExport({
     const [activeSection, setActiveSection] = useState<ImportExportSection>(initialSection);
     const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [bookOptions, setBookOptions] = useState<BookOptions>(DEFAULT_BOOK_OPTIONS);
+    const [bookPreview, setBookPreview] = useState<BookPreviewData | null>(null);
+    const [generatingBook, setGeneratingBook] = useState(false);
 
     const [cloudStatus, setCloudStatus] = useState<Partial<CloudStatus>>({});
     const [cloudLoading, setCloudLoading] = useState(true);
@@ -50,9 +57,9 @@ function ImportExport({
     const [syncing, setSyncing] = useState<CloudProviderType | null>(null);
     const [schedules, setSchedules] = useState<Record<string, SyncScheduleConfig>>({});
     const [scheduleFrequency, setScheduleFrequency] = useState<Record<string, SyncFrequency>>(createProviderRecord('daily'));
-    const [scheduleFormat, setScheduleFormat] = useState<Record<string, ImportExportFormat>>(createProviderRecord('txt'));
+    const [scheduleFormat, setScheduleFormat] = useState<Record<string, CloudExportFormat>>(createProviderRecord('txt'));
     const [scheduleIncludeVisibility, setScheduleIncludeVisibility] = useState<Record<string, boolean>>(createProviderRecord(false));
-    const [cloudExportFormat, setCloudExportFormat] = useState<ImportExportFormat>('txt');
+    const [cloudExportFormat, setCloudExportFormat] = useState<CloudExportFormat>('txt');
     const [cloudIncludeVisibility, setCloudIncludeVisibility] = useState(false);
     const [cloudImportProvider, setCloudImportProvider] = useState<CloudProviderType | null>(null);
     const [cloudFiles, setCloudFiles] = useState<CloudFileInfo[]>([]);
@@ -61,6 +68,7 @@ function ImportExport({
 
     const exportSectionRef = useRef<HTMLElement | null>(null);
     const importSectionRef = useRef<HTMLElement | null>(null);
+    const bookSectionRef = useRef<HTMLElement | null>(null);
     const isLight = theme === 'light';
 
     function showMessage(type: MessageState['type'], text: string, duration = 4000): void {
@@ -89,7 +97,12 @@ function ImportExport({
     }, [initialIncludeVisibility]);
 
     useEffect(() => {
-        const target = activeSection === 'import' ? importSectionRef.current : exportSectionRef.current;
+        const sectionRefs = {
+            export: exportSectionRef,
+            import: importSectionRef,
+            book: bookSectionRef,
+        } as const;
+        const target = sectionRefs[activeSection].current;
         if (target && typeof target.scrollIntoView === 'function') {
             target.scrollIntoView({ block: 'start', behavior: 'smooth' });
         }
@@ -126,7 +139,7 @@ function ImportExport({
 
         setSchedules(data);
         const nextFrequency = createProviderRecord<SyncFrequency>('daily');
-        const nextFormat = createProviderRecord<ImportExportFormat>('txt');
+        const nextFormat = createProviderRecord<CloudExportFormat>('txt');
         const nextIncludeVisibility = createProviderRecord(false);
 
         for (const provider of CLOUD_PROVIDERS) {
@@ -138,7 +151,7 @@ function ImportExport({
                 nextFrequency[provider] = config.frequency;
             }
             if (config.format) {
-                nextFormat[provider] = config.format as ImportExportFormat;
+                nextFormat[provider] = config.format as CloudExportFormat;
             }
             if (config.includeVisibility !== undefined) {
                 nextIncludeVisibility[provider] = config.includeVisibility;
@@ -221,6 +234,82 @@ function ImportExport({
         } catch (error) {
             console.error('Export failed:', error);
             showMessage('error', t('exportError'));
+        }
+    }
+
+    function buildBookParams(): URLSearchParams {
+        const params = new URLSearchParams();
+        if (diaryId) {
+            params.append('diaryId', diaryId.toString());
+        }
+        if (bookOptions.title.trim()) {
+            params.append('title', bookOptions.title.trim());
+        }
+        if (bookOptions.author.trim()) {
+            params.append('author', bookOptions.author.trim());
+        }
+        if (bookOptions.format !== 'pdf') {
+            params.append('format', bookOptions.format);
+        }
+        if (bookOptions.chapterOrder !== 'alpha') {
+            params.append('chapterOrder', bookOptions.chapterOrder);
+        }
+        if (bookOptions.tagScope !== 'all') {
+            params.append('tagScope', bookOptions.tagScope);
+        }
+        if (!bookOptions.includeUntagged) {
+            params.append('includeUntagged', 'false');
+        }
+        if (!bookOptions.includeDates) {
+            params.append('includeDates', 'false');
+        }
+        if (!bookOptions.includeToc) {
+            params.append('includeToc', 'false');
+        }
+        if (!bookOptions.narrative) {
+            params.append('narrative', 'false');
+        }
+        return params;
+    }
+
+    function handleBookOptionChange<K extends keyof BookOptions>(key: K, value: BookOptions[K]): void {
+        setBookOptions((current) => ({ ...current, [key]: value }));
+    }
+
+    async function handleBookPreview(): Promise<void> {
+        try {
+            const response = await authFetch(`/api/books/preview?${buildBookParams()}`);
+            if (!response.ok) {
+                showMessage('error', t('bookPreviewError'));
+                return;
+            }
+            setBookPreview(await response.json());
+        } catch (error) {
+            console.error('Book preview failed:', error);
+            showMessage('error', t('bookPreviewError'));
+        }
+    }
+
+    async function handleBookDownload(): Promise<void> {
+        setGeneratingBook(true);
+        try {
+            const response = await authFetch(`/api/books/export?${buildBookParams()}`);
+            if (!response.ok) {
+                showMessage('error', t('bookExportError'));
+                return;
+            }
+
+            const blob = await response.blob();
+            const filename = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replaceAll('"', '')
+                || `thoughty_book_${new Date().toISOString().split('T')[0]}.${bookOptions.format}`;
+            downloadBlob(blob, filename);
+
+            showMessage('success', t('bookExportSuccess'), 3000);
+        } catch (error) {
+            console.error('Book export failed:', error);
+            showMessage('error', t('bookExportError'));
+        } finally {
+            setGeneratingBook(false);
         }
     }
 
@@ -445,6 +534,19 @@ function ImportExport({
                     t={t}
                 />
             </div>
+
+            <BookSection
+                activeSection={activeSection}
+                sectionRef={bookSectionRef}
+                diaryName={diaryName}
+                options={bookOptions}
+                preview={bookPreview}
+                generating={generatingBook}
+                onOptionChange={handleBookOptionChange}
+                onPreview={handleBookPreview}
+                onDownload={handleBookDownload}
+                t={t}
+            />
 
             <CloudSyncSection
                 connectedProviders={connectedProviders}

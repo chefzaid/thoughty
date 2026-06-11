@@ -176,6 +176,36 @@ export type TranslationKey =
   | 'exportSuccess'
   | 'exportError'
   | 'previewError'
+  | 'book'
+  | 'bookDescription'
+  | 'bookTitleLabel'
+  | 'bookTitlePlaceholder'
+  | 'bookAuthorLabel'
+  | 'bookAuthorPlaceholder'
+  | 'bookFormatPdf'
+  | 'bookFormatEpub'
+  | 'bookFormatHtml'
+  | 'bookChapterOrder'
+  | 'chapterOrderAlpha'
+  | 'chapterOrderEntries'
+  | 'chapterOrderChrono'
+  | 'bookTagScope'
+  | 'tagScopeAll'
+  | 'tagScopeFirst'
+  | 'bookIncludeUntagged'
+  | 'bookIncludeDates'
+  | 'bookIncludeToc'
+  | 'bookNarrative'
+  | 'previewBook'
+  | 'downloadBook'
+  | 'generatingBook'
+  | 'bookOutline'
+  | 'bookChaptersCount'
+  | 'bookEntriesCount'
+  | 'bookNoChapters'
+  | 'bookPreviewError'
+  | 'bookExportSuccess'
+  | 'bookExportError'
   | 'formatSettings'
   | 'formatDescription'
   | 'entrySeparator'
@@ -600,7 +630,7 @@ export const translations: Translations = {
     importExport: 'Import/Export',
     import: 'Import',
     export: 'Export',
-    exportDescription: 'Download all journal entries from {diaryName} as a text file.',
+    exportDescription: 'Download all journal entries from {diaryName} in the format of your choice.',
     importDescription: 'Upload a text file to import entries into {diaryName}.',
     downloadExport: 'Download',
     includeVisibility: 'Include visibility (public/private) in export',
@@ -621,6 +651,39 @@ export const translations: Translations = {
     exportSuccess: 'Export downloaded successfully',
     exportError: 'Failed to export entries',
     previewError: 'Failed to preview file',
+
+    // Book converter
+    book: 'Book',
+    bookDescription:
+      'Turn the entries of {diaryName} into a book: each tag becomes a chapter, and AI weaves its thoughts into flowing prose without adding anything that is not yours.',
+    bookTitleLabel: 'Title',
+    bookTitlePlaceholder: 'Defaults to the diary name',
+    bookAuthorLabel: 'Author',
+    bookAuthorPlaceholder: 'Defaults to your username',
+    bookFormatPdf: 'PDF (.pdf)',
+    bookFormatEpub: 'EPUB (.epub)',
+    bookFormatHtml: 'HTML (.html)',
+    bookChapterOrder: 'Chapter order',
+    chapterOrderAlpha: 'Alphabetical',
+    chapterOrderEntries: 'Most entries first',
+    chapterOrderChrono: 'By first entry date',
+    bookTagScope: 'Entries with several tags',
+    tagScopeAll: 'Appear in every tag chapter',
+    tagScopeFirst: 'Appear in their first tag chapter only',
+    bookIncludeUntagged: 'Add a chapter for untagged entries',
+    bookIncludeDates: 'Show entry dates',
+    bookIncludeToc: 'Include table of contents',
+    bookNarrative: 'Weave thoughts into flowing prose with AI',
+    previewBook: 'Preview Chapters',
+    downloadBook: 'Download Book',
+    generatingBook: 'Generating...',
+    bookOutline: 'Book Outline',
+    bookChaptersCount: 'chapters',
+    bookEntriesCount: 'entries',
+    bookNoChapters: 'No chapters could be built. Add tags to your entries to create chapters.',
+    bookPreviewError: 'Failed to preview book',
+    bookExportSuccess: 'Book downloaded successfully',
+    bookExportError: 'Failed to generate book',
     formatSettings: 'Format Settings',
     formatDescription: 'Customize the text file format for import and export.',
     entrySeparator: 'Entry Separator',
@@ -1067,7 +1130,7 @@ export const translations: Translations = {
     import: 'Importer',
     export: 'Exporter',
     exportDescription:
-      'Téléchargez toutes les entrées de {diaryName} sous forme de fichier texte.',
+      'Téléchargez toutes les entrées de {diaryName} au format de votre choix.',
     importDescription: 'Téléversez un fichier texte pour importer des entrées dans {diaryName}.',
     downloadExport: 'Télécharger',
     includeVisibility: 'Inclure la visibilité (public/privé) dans l\'export',
@@ -1088,6 +1151,39 @@ export const translations: Translations = {
     exportSuccess: 'Export téléchargé avec succès',
     exportError: "Échec de l'exportation des entrées",
     previewError: "Échec de l'aperçu du fichier",
+
+    // Book converter
+    book: 'Livre',
+    bookDescription:
+      "Transformez les entrées de {diaryName} en livre : chaque tag devient un chapitre, et l'IA tisse ses pensées en prose fluide sans rien ajouter qui ne vienne de vous.",
+    bookTitleLabel: 'Titre',
+    bookTitlePlaceholder: 'Par défaut : le nom du journal',
+    bookAuthorLabel: 'Auteur',
+    bookAuthorPlaceholder: "Par défaut : votre nom d'utilisateur",
+    bookFormatPdf: 'PDF (.pdf)',
+    bookFormatEpub: 'EPUB (.epub)',
+    bookFormatHtml: 'HTML (.html)',
+    bookChapterOrder: 'Ordre des chapitres',
+    chapterOrderAlpha: 'Alphabétique',
+    chapterOrderEntries: "Par nombre d'entrées",
+    chapterOrderChrono: 'Par date de première entrée',
+    bookTagScope: 'Entrées avec plusieurs tags',
+    tagScopeAll: 'Apparaissent dans chaque chapitre de tag',
+    tagScopeFirst: 'Apparaissent uniquement dans leur premier chapitre',
+    bookIncludeUntagged: 'Ajouter un chapitre pour les entrées sans tag',
+    bookIncludeDates: 'Afficher les dates des entrées',
+    bookIncludeToc: 'Inclure la table des matières',
+    bookNarrative: "Tisser les pensées en prose fluide avec l'IA",
+    previewBook: 'Aperçu des chapitres',
+    downloadBook: 'Télécharger le livre',
+    generatingBook: 'Génération...',
+    bookOutline: 'Plan du livre',
+    bookChaptersCount: 'chapitres',
+    bookEntriesCount: 'entrées',
+    bookNoChapters: 'Aucun chapitre n\'a pu être créé. Ajoutez des tags à vos entrées pour créer des chapitres.',
+    bookPreviewError: "Échec de l'aperçu du livre",
+    bookExportSuccess: 'Livre téléchargé avec succès',
+    bookExportError: 'Échec de la génération du livre',
     formatSettings: 'Paramètres de format',
     formatDescription: "Personnalisez le format du fichier texte pour l'import et l'export.",
     entrySeparator: "Séparateur d'entrées",

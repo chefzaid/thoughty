@@ -106,7 +106,7 @@ describe('AppShell navigation flows', () => {
 
     expect((screen.getByLabelText('Include visibility') as HTMLInputElement).checked).toBe(true);
 
-    await user.click(screen.getByRole('button', { name: /Download/i }));
+    await user.click(screen.getByRole('button', { name: 'Download' }));
 
     await waitFor(() => {
       const exportCall = mockFetch.mock.calls.find((call: unknown[]) => (call[0] as string).includes('/api/io/export'));

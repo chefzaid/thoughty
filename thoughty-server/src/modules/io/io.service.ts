@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, PayloadTooLargeException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Entry, Setting, Diary } from '@/database/entities';
+import { Entry, Setting, Diary, User } from '@/database/entities';
 import {
   DEFAULT_FORMAT,
   validateFormatConfig,
@@ -12,6 +12,10 @@ import {
   parseJsonFile,
   parseMarkdownFile,
   findDuplicates,
+  buildJournalDocument,
+  renderBookPdf,
+  renderBookHtml,
+  renderBookEpub,
   FormatConfig,
   ParsedEntry,
 } from '@/common/utils';
@@ -20,7 +24,14 @@ import { FormatConfigDto, PreviewImportDto, ImportDto, PreviewResponseDto, Impor
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_ENTRIES_PER_IMPORT = 10000;
 
-export type ExportFormat = 'txt' | 'json' | 'md';
+export type TextExportFormat = 'txt' | 'json' | 'md';
+export type ExportFormat = TextExportFormat | 'pdf' | 'html' | 'epub';
+
+export interface ExportFile {
+  content: string | Buffer;
+  filename: string;
+  contentType: string;
+}
 
 @Injectable()
 export class IoService {
@@ -31,6 +42,8 @@ export class IoService {
     private readonly settingRepository: Repository<Setting>,
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
 
   private async getFormatConfig(userId: number): Promise<FormatConfig> {
@@ -193,8 +206,44 @@ export class IoService {
     return { success: true, config };
   }
 
-  async export(userId: number, diaryId?: number, includeVisibility?: boolean, format: ExportFormat = 'txt'): Promise<{ content: string; filename: string; contentType: string }> {
-    const formatConfig = await this.getFormatConfig(userId);
+  private async renderExportDocument(
+    userId: number,
+    entries: Entry[],
+    format: 'pdf' | 'html' | 'epub',
+    diary: Diary | null,
+  ): Promise<{ content: string | Buffer; extension: string; contentType: string }> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    const document = buildJournalDocument(entries, {
+      title: diary?.name ?? 'My Journal',
+      author: user?.username,
+    });
+
+    switch (format) {
+      case 'html':
+        return {
+          content: renderBookHtml(document),
+          extension: 'html',
+          contentType: 'text/html; charset=utf-8',
+        };
+      case 'epub':
+        return {
+          content: await renderBookEpub(document),
+          extension: 'epub',
+          contentType: 'application/epub+zip',
+        };
+      default:
+        return {
+          content: await renderBookPdf(document),
+          extension: 'pdf',
+          contentType: 'application/pdf',
+        };
+    }
+  }
+
+  async export(userId: number, diaryId?: number, includeVisibility?: boolean, format: ExportFormat = 'txt'): Promise<ExportFile> {
+    const diary = diaryId
+      ? await this.diaryRepository.findOne({ where: { id: diaryId, userId } })
+      : null;
 
     const qb = this.entryRepository
       .createQueryBuilder('e')
@@ -219,7 +268,7 @@ export class IoService {
       }));
     }
 
-    let fileContent: string;
+    let fileContent: string | Buffer;
     let extension: string;
     let contentType: string;
 
@@ -234,19 +283,27 @@ export class IoService {
         extension = 'md';
         contentType = 'text/markdown; charset=utf-8';
         break;
-      default:
+      case 'pdf':
+      case 'html':
+      case 'epub': {
+        const document = await this.renderExportDocument(userId, entries, format, diary);
+        fileContent = document.content;
+        extension = document.extension;
+        contentType = document.contentType;
+        break;
+      }
+      default: {
+        const formatConfig = await this.getFormatConfig(userId);
         fileContent = generateTextFile(entriesWithDiary, formatConfig, includeVisibility);
         extension = 'txt';
         contentType = 'text/plain; charset=utf-8';
         break;
+      }
     }
 
-    let diaryLabel = '';
+    let diaryLabel = 'all_diaries';
     if (diaryId) {
-      const diary = await this.diaryRepository.findOne({ where: { id: diaryId, userId } });
       diaryLabel = diary ? diary.name.replaceAll(/[^a-zA-Z0-9_-]/g, '_') : `diary${diaryId}`;
-    } else {
-      diaryLabel = 'all_diaries';
     }
     const dateStr = new Date().toISOString().split('T')[0];
     const filename = `thoughty_${diaryLabel}_${dateStr}.${extension}`;

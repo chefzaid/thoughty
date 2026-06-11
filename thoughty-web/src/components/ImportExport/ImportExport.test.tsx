@@ -139,7 +139,7 @@ describe('ImportExport', () => {
         render(<ImportExport theme="dark" t={mockT} />);
 
         await waitFor(() => {
-            expect(screen.getByText('exportFormat')).toBeInTheDocument();
+            expect(screen.getAllByText('exportFormat').length).toBeGreaterThan(0);
         });
 
         fireEvent.change(screen.getByDisplayValue('formatTxt'), { target: { value: 'json' } });
@@ -151,6 +151,32 @@ describe('ImportExport', () => {
             expect(exportCall).toBeTruthy();
             expect((exportCall as [string])[0]).toContain('format=json');
             expect((exportCall as [string])[0]).toContain('includeVisibility=true');
+        });
+    });
+
+    it('exports entries as a document format (epub)', async () => {
+        const mockBlob = new Blob(['PK'], { type: 'application/epub+zip' });
+        (globalThis.fetch as Mock)
+            .mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig })
+            .mockResolvedValueOnce({
+                ok: true,
+                blob: async () => mockBlob,
+                headers: new Headers({ 'Content-Disposition': 'attachment; filename="export.epub"' }),
+            });
+
+        render(<ImportExport theme="dark" t={mockT} />);
+
+        await waitFor(() => {
+            expect(screen.getByDisplayValue('formatTxt')).toBeInTheDocument();
+        });
+
+        fireEvent.change(screen.getByDisplayValue('formatTxt'), { target: { value: 'epub' } });
+        fireEvent.click(screen.getByText('downloadExport'));
+
+        await waitFor(() => {
+            const exportCall = (globalThis.fetch as Mock).mock.calls.find((call: unknown[]) => (call[0] as string).includes('/api/io/export'));
+            expect(exportCall).toBeTruthy();
+            expect((exportCall as [string])[0]).toContain('format=epub');
         });
     });
 

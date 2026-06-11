@@ -2,13 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, PayloadTooLargeException } from '@nestjs/common';
 import { IoService } from './io.service';
-import { Entry, Setting, Diary } from '@/database/entities';
+import { Entry, Setting, Diary, User } from '@/database/entities';
 
 describe('IoService', () => {
   let service: IoService;
   let entryRepository: any;
   let settingRepository: any;
   let diaryRepository: any;
+  let userRepository: any;
 
   const mockEntry = {
     id: 1,
@@ -56,12 +57,17 @@ describe('IoService', () => {
       find: jest.fn().mockResolvedValue([]),
     };
 
+    userRepository = {
+      findOne: jest.fn().mockResolvedValue({ id: 1, username: 'jane' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         IoService,
         { provide: getRepositoryToken(Entry), useValue: entryRepository },
         { provide: getRepositoryToken(Setting), useValue: settingRepository },
         { provide: getRepositoryToken(Diary), useValue: diaryRepository },
+        { provide: getRepositoryToken(User), useValue: userRepository },
       ],
     }).compile();
 
@@ -212,7 +218,7 @@ describe('IoService', () => {
 
       expect(result.filename).toContain('.json');
       expect(result.contentType).toBe('application/json; charset=utf-8');
-      const parsed = JSON.parse(result.content);
+      const parsed = JSON.parse(String(result.content));
       expect(parsed.entries).toHaveLength(1);
     });
 
@@ -237,6 +243,54 @@ describe('IoService', () => {
 
       expect(result.filename).toContain('.txt');
       expect(result.contentType).toBe('text/plain; charset=utf-8');
+    });
+
+    it('should export as a PDF document', async () => {
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+
+      const result = await service.export(1, undefined, false, 'pdf');
+
+      expect(result.filename).toContain('.pdf');
+      expect(result.contentType).toBe('application/pdf');
+      expect(Buffer.isBuffer(result.content)).toBe(true);
+      expect((result.content as Buffer).subarray(0, 5).toString()).toBe('%PDF-');
+    });
+
+    it('should export as an HTML document grouped by month', async () => {
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+
+      const result = await service.export(1, undefined, false, 'html');
+
+      expect(result.filename).toContain('.html');
+      expect(result.contentType).toBe('text/html; charset=utf-8');
+      expect(result.content).toContain('<!DOCTYPE html>');
+      expect(result.content).toContain('January 2024');
+      expect(result.content).toContain('Test entry content');
+    });
+
+    it('should export as an EPUB document', async () => {
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+
+      const result = await service.export(1, undefined, false, 'epub');
+
+      expect(result.filename).toContain('.epub');
+      expect(result.contentType).toBe('application/epub+zip');
+      expect(Buffer.isBuffer(result.content)).toBe(true);
+      expect((result.content as Buffer).subarray(0, 2).toString()).toBe('PK');
+    });
+
+    it('should title document exports with the diary name and username author', async () => {
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+      diaryRepository.findOne.mockResolvedValue(mockDiary);
+
+      const result = await service.export(1, 1, false, 'html');
+
+      expect(result.content).toContain('Test Diary');
+      expect(result.content).toContain('by jane');
     });
 
     it('should include diary names when exporting all diaries as JSON', async () => {

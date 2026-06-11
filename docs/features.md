@@ -62,6 +62,7 @@ flowchart LR
 ## Import, Export, and Portability
 
 - Export is not limited to one archival format. Thoughty supports TXT, JSON, and Markdown output, with optional diary scoping and optional inclusion of visibility metadata.
+- Document exports are also available: PDF, EPUB, and HTML render the journal as a linear, dated record with one section per month, a title page, and a table of contents — the plain readable counterpart to the AI-composed book converter.
 - TXT import/export can be customized with saved format settings such as date format, entry separators, and same-day separators.
 - Export filenames are generated for the chosen scope and format, which makes exports usable as real artifacts rather than anonymous downloads.
 - Import accepts TXT, JSON, and Markdown content and performs format detection before commit, so users do not need to pre-classify files correctly by hand.
@@ -70,6 +71,16 @@ flowchart LR
 - Markdown preservation is treated seriously enough to keep formatting semantics across round trips, rather than collapsing everything into plain text.
 - The import/export screen is route-aware, so selected diary, section, format, and visibility options can be encoded in the URL and reopened consistently.
 - The import/export area also includes a guarded danger-zone action for deleting all entries in the current scope, with a confirmation step before the destructive request is sent.
+
+## Book Converter
+
+- The book converter turns a journal (or a single diary) into a real book: each tag becomes a chapter, and AI weaves the entries carrying that tag into flowing first-person prose — connecting the thoughts, adding transitions, and smoothing grammar while staying strictly on script (nothing is invented or dropped).
+- The AI narrative is on by default and uses the configured OpenRouter key and the user's preferred model; long chapters are composed in sequential parts that continue each other. Unchecking the narrative option produces a plain book with the entries listed chronologically per chapter, no AI required.
+- Output formats are PDF (title page, table of contents with chapter page numbers, document outline, and centered page footers), EPUB 3 for e-readers, standalone printable HTML, and Markdown.
+- Books are configurable before generation: custom title and author (defaulting to the diary name and username), chapter ordering (alphabetical, by entry count, or by first entry date), a date range, and an explicit tag list to use as chapters.
+- Entries with several tags can appear in every matching chapter or only in their first tag's chapter, and entries without tags can be collected into a closing untagged chapter.
+- A preview endpoint returns the book outline — chapter titles, entry counts, and the date range each chapter spans — so users can check the structure in the Book section of the import/export screen before downloading (the preview never spends AI tokens).
+- Markdown-formatted entries are stripped to clean prose for the PDF output, while the HTML and Markdown outputs keep the original content. Archived entries are excluded from books.
 
 ## Cloud Sync and External Storage
 

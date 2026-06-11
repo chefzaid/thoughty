@@ -1,8 +1,8 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { ImportExportFormat, TranslationFunction } from '../../types';
+import type { CloudExportFormat, TranslationFunction } from '../../types';
 import type { CloudFileInfo, CloudProviderType, SyncFrequency, SyncScheduleConfig } from '../../services/api/cloudSyncService';
 import { CLOUD_PROVIDER_ICONS, CLOUD_PROVIDER_NAMES } from '../CloudProviderIcons';
-import { EXPORT_FORMAT_OPTIONS } from './ImportExport.types';
+import { CLOUD_FORMAT_OPTIONS } from './ImportExport.types';
 const SCHEDULE_OPTIONS: ReadonlyArray<{ value: SyncFrequency; labelKey: string }> = [
     { value: 'every_6h', labelKey: 'cloudScheduleEvery6h' },
     { value: 'every_12h', labelKey: 'cloudScheduleEvery12h' },
@@ -126,12 +126,12 @@ export function CloudSyncSection({
     syncing: CloudProviderType | null;
     scheduleFrequency: Record<string, SyncFrequency>;
     setScheduleFrequency: Dispatch<SetStateAction<Record<string, SyncFrequency>>>;
-    scheduleFormat: Record<string, ImportExportFormat>;
-    setScheduleFormat: Dispatch<SetStateAction<Record<string, ImportExportFormat>>>;
+    scheduleFormat: Record<string, CloudExportFormat>;
+    setScheduleFormat: Dispatch<SetStateAction<Record<string, CloudExportFormat>>>;
     scheduleIncludeVisibility: Record<string, boolean>;
     setScheduleIncludeVisibility: Dispatch<SetStateAction<Record<string, boolean>>>;
-    cloudExportFormat: ImportExportFormat;
-    setCloudExportFormat: Dispatch<SetStateAction<ImportExportFormat>>;
+    cloudExportFormat: CloudExportFormat;
+    setCloudExportFormat: Dispatch<SetStateAction<CloudExportFormat>>;
     cloudIncludeVisibility: boolean;
     setCloudIncludeVisibility: Dispatch<SetStateAction<boolean>>;
     onUpload: (provider: CloudProviderType) => void;
@@ -165,8 +165,8 @@ export function CloudSyncSection({
                                 <div className="cloud-sync-upload-options">
                                     <div className="cloud-upload-row">
                                         <label>{t('exportFormat')}</label>
-                                        <select value={cloudExportFormat} onChange={(event) => setCloudExportFormat(event.target.value as ImportExportFormat)}>
-                                            {EXPORT_FORMAT_OPTIONS.map((option) => (
+                                        <select value={cloudExportFormat} onChange={(event) => setCloudExportFormat(event.target.value as CloudExportFormat)}>
+                                            {CLOUD_FORMAT_OPTIONS.map((option) => (
                                                 <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
                                             ))}
                                         </select>
@@ -202,8 +202,8 @@ export function CloudSyncSection({
 
                                 <div className="cloud-upload-row">
                                     <label>{t('exportFormat')}</label>
-                                    <select value={scheduleFormat[provider]} onChange={(event) => setScheduleFormat((current) => ({ ...current, [provider]: event.target.value as ImportExportFormat }))}>
-                                        {EXPORT_FORMAT_OPTIONS.map((option) => (
+                                    <select value={scheduleFormat[provider]} onChange={(event) => setScheduleFormat((current) => ({ ...current, [provider]: event.target.value as CloudExportFormat }))}>
+                                        {CLOUD_FORMAT_OPTIONS.map((option) => (
                                             <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
                                         ))}
                                     </select>

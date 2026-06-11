@@ -1,18 +1,17 @@
 
 Features to implement:
 
-*** Social Features
-- Feed that shows public entries from other users with infinite scroll and to preview your own public entries
-- Allow users to follow other users
-- Comments on public entries
-- Likes for entries and comments
-- Make messaging private between users
-- Notifications for messages, comments, likes, new followers
-- Leaderboard for most active users, most liked entries, most commented entries
-- Badges for achievements and karma points
-- Feature requests and voting system for new features
-- Add a way to report a public thought (call for violence) and ban the user if needed
-- The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
+*** Website
+- More detailed landing page with features presentation, screenshots, and sign up call to action
+- Subscription management page for users to manage their subscription, see billing history, and update payment method in Profile page
+- Subscription-based access to premium features, with a free trial period and a freemium tier with limited features to attract new users
+- About page with the story behind Thoughty, the mission, and the team
+- Terms of Service and Privacy Policy pages
+- Contact and support page with a form to submit inquiries and a How To guides / FAQ section
+- Feedback and feature request page for users to submit their ideas and upvote existing ones
+- Blog section for updates, tips, and journaling inspiration
+- Email validation and password reset flows for account security
+- Admin console for app settings and AI model management (define and change AI models for each AI task type, monitor usage, and manage user access to AI features, ban abusive users, etc.)
 
 *** AI
 - Deduplicate similar entries talking about the same subject with the same conclusion
@@ -28,10 +27,31 @@ Features to implement:
 - Use different models for different tasks, to optimize token consumption
 
 *** Book Converter
-- Based on tags to create chapters
-- Connect the entries to form a chapter
-- Do the same for the rest of tags
-- PDF format
+- [DONE] Based on tags to create chapters (with chapter ordering, tag filtering, date range, and untagged chapter options)
+- [DONE] Connect the entries to form a chapter (AI weaves the thoughts into flowing prose with transitions, staying strictly on script; a plain chronological mode is available without AI, and the plain list lives in the normal export)
+- [DONE] Do the same for the rest of tags (multi-tag entries can appear in every tag chapter or only the first)
+- [DONE] PDF and ePub format export (plus HTML and Markdown outputs, title page, table of contents with chapter page numbers, centered page footers, and an outline preview; normal export also gained PDF, EPUB, and HTML formats grouped by month)
+- Versioning of the book, with the possibility to update it with new entries and chapters
+- Custom cover page (image upload, color themes)
+- AI-generated chapter introductions and summaries
+- Yearbook mode: one chapter per year or month instead of per tag
+- Upload the generated book directly to a connected cloud provider
+- Embed entry attachments (images) in the generated book
+- Fix the UI alignment and styling of the book converter page, and add a progress bar for the generation process
+- Modes of AI weaving: strict (only use the content of the entries) vs creative (use the content as a base but add more details and transitions for a more engaging read)
+
+*** Social Features
+- Feed that shows public entries from other users with infinite scroll and to preview your own public entries
+- Allow users to follow other users
+- Comments on public entries
+- Likes for entries and comments
+- Make messaging private between users
+- Notifications for messages, comments, likes, new followers
+- Leaderboard for most active users, most liked entries, most commented entries
+- Badges for achievements and karma points
+- Feature requests and voting system for new features
+- Add a way to report a public thought (call for violence) and ban the user if needed
+- The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
 
 *** Security
 - SSL and HTTPS support for secure communication
@@ -98,6 +118,7 @@ Features to implement:
 - Linting, quality checks, and resolve issues in reported in Problems tab
 - Optimize codebase for better performance
 - Hunt for memory leaks, null references, bugs, and fix them
+- Always consider reusing existing code, and refactor to centralize reusable code instead of new adding new code for a feature if similar code already exists 
 - Code reviews, refactor, and clean up code for better readability and maintainability
 - Keep implemented architecture, design patterns, and best practices up to date with industry standards
 - Update dependencies and fix any breaking changes
