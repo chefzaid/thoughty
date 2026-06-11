@@ -61,7 +61,7 @@ For environment variables, local development setup, and test workflows, start wi
 
 ## Roadmap
 
-The current backlog and planned features live in [todo.txt](./todo.txt).
+The feature backlog — both implemented and planned features — lives in [TODO.md](./TODO.md).
 
 ## License
 
