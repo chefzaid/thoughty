@@ -1,40 +1,12 @@
-# Thoughty 📓
+# Thoughty
 
-Thoughty is a modern, feature-rich journal application designed to help you capture your thoughts, organize them with tags, manage multiple diaries. With big features like cloud-sync, statistics, visualizations, and gain meaningful insights through AI-powered analysis and recommendations. Built with a focus on privacy, flexibility, and a polished user experience, Thoughty aims to be your ultimate journaling companion.
-
+Thoughty is a modern, feature-rich journal application designed to help you capture your thoughts, organize them with tags, manage multiple diaries. With big features like cloud-sync, statistics, visualizations, convert thoughts into a book, and gain meaningful insights through AI-powered analysis and recommendations. Built with a focus on privacy, flexibility, and a polished user experience, Thoughty aims to be your ultimate journaling companion.
 
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
 ![React](https://img.shields.io/badge/react-19-61dafb.svg)
 ![NestJS](https://img.shields.io/badge/nestjs-11.1-e0234e.svg)
 ![TypeScript](https://img.shields.io/badge/typescript-5.8-3178c6.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-
-## 🛠️ Tech Stack
-
-### Frontend
-
-- React 19
-- TypeScript 5
-- Vite 7
-- Tailwind CSS 3
-- Chart.js
-
-### Backend
-
-- NestJS 11
-- TypeScript 5
-- TypeORM
-- PostgreSQL
-- S3-compatible object storage
-
-### DevOps and Tooling
-
-- Docker and Docker Compose
-- Kubernetes
-- Jenkins
-- HashiCorp Vault
-- Nginx
-- mask
 
 ## Documentation
 
@@ -47,6 +19,10 @@ Thoughty is a modern, feature-rich journal application designed to help you capt
 - [Operations Runbook](./docs/operations.md)
 - [Security and Privacy Reference](./docs/security.md)
 
+## Roadmap
+
+The feature backlog — both implemented and planned features — lives in [TODO.md](./TODO.md).
+
 ## Quick Start
 
 ```bash
@@ -58,10 +34,6 @@ mask run
 ```
 
 For environment variables, local development setup, and test workflows, start with [docs/development.md](./docs/development.md).
-
-## Roadmap
-
-The feature backlog — both implemented and planned features — lives in [TODO.md](./TODO.md).
 
 ## License
 

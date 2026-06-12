@@ -23,9 +23,10 @@
 - [x] Delete all entries at once to start a fresh journal
 - [ ] Entry templates (e.g. gratitude journal, daily reflection, meeting notes) that users can create and pick when writing a new entry
 - [ ] Word count and estimated reading time displayed per entry, with averages added to stats
-- [ ] Pinned entries that always show at the top of the list regardless of date sorting
+- [ ] Pinned entries that always show at the top of the list regardless of date sorting limited to a configurable number of pinned entries
 - [ ] Backlinks panel showing which entries reference the current one (bidirectional linking like Obsidian/Roam)
 - [ ] Keyboard shortcuts for common actions (Ctrl+N new entry, Ctrl+/ focus search, Esc close modals, arrow keys for pagination)
+- [ ] Profile and identity verification of accounts with public entries (e.g. verified badge for confirmed email, or even KYC for public figures)
 
 ## Tags & Diaries
 
@@ -97,14 +98,19 @@
 - [ ] Deduplicate similar entries talking about the same subject with the same conclusion
 - [ ] Search entries by meaning or idea instead of keywords (semantic search)
 - [ ] Subjects discussed stats (analyzed by AI)
-- [ ] Personality analysis through the choice of words and subjects
+- [ ] Personality analysis through the choice of words and subjects of all entries or a chosen subset of them
 - [ ] AI features should be locked behind a paywall with a free trial (except if own API token is provided)
 - [ ] AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
+- [ ] Possibility to provide your own API key to use AI features with your own token, and a usage dashboard to monitor your token consumption and costs
 - [ ] Local LLM processing for privacy
-- [ ] Graph of all thoughts or at least tags, interconnected between them using AI
+- [ ] Graph of insights and correlations from all entries, to discover patterns and connections between them, do the same for tags
 - [ ] Transcription from an Audio note
 - [ ] Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
 - [ ] Use different models for different tasks, to optimize token consumption
+- [ ] AI-generated writing prompts based on the user's journaling history and interests, to inspire new entries and reflections
+- [ ] Summaries of long entries, with the option to include or exclude certain details
+
+- [ ] AI-generated tags that are more abstract or thematic, to complement the user-defined tags and provide different ways to organize and explore the journal
 
 ## Book Converter
 
@@ -134,12 +140,6 @@
 - [ ] Feature requests and voting system for new features
 - [ ] Add a way to report a public thought (call for violence) and ban the user if needed
 - [ ] The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
-
-## Public & API Access
-
-- [ ] Public profile pages for viewing another user's public entries without authentication
-- [ ] API keys / personal access tokens for programmatic access (CLI tools, scripts, third-party integrations)
-- [ ] RSS feed for the public entries of a user
 
 ## Security
 
@@ -229,11 +229,11 @@
 - [ ] Break huge files and blocks of code (500+ LOC) into smaller more maintainable chunks and refactor them
 - [ ] Linting, quality checks, and resolving issues reported in the Problems tab
 - [ ] Optimize codebase for better performance
-- [ ] Hunt for memory leaks, null references, bugs, and fix them
-- [ ] Always consider reusing existing code, and refactor to centralize reusable code instead of adding new code for a feature if similar code already exists
+- [ ] Hunt for memory leaks, null references, bugs (UI + backend), and fix them
+- [ ] Always consider reusing existing code, and refactor to centralize similar reusable code instead of adding new one
 - [ ] Code reviews, refactor, and clean up code for better readability and maintainability
-- [ ] Keep implemented architecture, design patterns, and best practices up to date with industry standards
-- [ ] Update dependencies and fix any breaking changes
+- [ ] Keep implemented architecture, design patterns, and best practices up to date with the used tech stack and industry standards
+- [ ] Update dependencies to latest stable version and fix any breaking changes, try to use latest features of the used frameworks and libraries when necessary
 - [ ] Update documentation to reflect any changes in features, architecture, or deployment process
 - [ ] Always keep code coverage above 85% for both backend and frontend
 - [ ] Tighten code security and fix vulnerabilities (OWASP Top 10: XSS, CSRF, SQL injection, etc.)

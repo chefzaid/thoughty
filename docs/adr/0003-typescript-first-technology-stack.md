@@ -22,7 +22,9 @@ Use a TypeScript-first stack end to end.
 ### Frontend
 
 - React 19 for the application shell and component model
+- TypeScript 5.8 as the primary application language
 - Vite 7 for fast local startup and build feedback
+- Tailwind CSS 3 for utility-first styling
 - TanStack Query for cached data access and invalidation
 - React Router for route-based product structure
 - Chart.js, React Markdown, and React Datepicker for domain-specific UI behavior rather than custom primitives
@@ -30,14 +32,25 @@ Use a TypeScript-first stack end to end.
 ### Backend
 
 - NestJS 11 for the API, module structure, guards, DTO validation, and Swagger integration
+- TypeScript 5.8 as the primary application language
 - TypeORM for repository access and query-builder-based read models
 - PostgreSQL as the primary relational database
+- OpenAPI/Swagger for API documentation and generated frontend contract types
 
 ### Storage and integration
 
-- S3-compatible object storage for attachments
-- OpenAPI as the contract surface between backend and frontend
-- Kubernetes, Jenkins, and Vault for deployment, CI/CD, and secret delivery
+- S3-compatible object storage for attachments, with MinIO used in local development
+- OpenRouter for optional AI-backed writing assistance, analysis, and chat features
+- Google, OneDrive, and Dropbox OAuth integrations for sign-in and cloud-sync surfaces
+
+### Delivery and tooling
+
+- Docker and Docker Compose for local service orchestration
+- Dev Containers for an optional containerized development environment
+- Kubernetes and Nginx for production-oriented deployment
+- Jenkins for CI/CD automation
+- HashiCorp Vault for secret delivery
+- `mask` for repository-owned development commands
 
 ## Rationale
 
@@ -46,6 +59,8 @@ Use a TypeScript-first stack end to end.
 - NestJS aligns with the codebase's need for structured modules, guards, decorators, validation, and API documentation from the same source.
 - PostgreSQL is a good fit for the data model because entries are heavily queried by date, tags, visibility, archive state, favorites, and diary scope. The product benefits from relational integrity and expressive query support more than from schemaless flexibility.
 - S3-compatible storage keeps attachment handling portable between local MinIO development and production object-storage backends.
+- OpenAPI keeps frontend/backend contracts explicit while allowing generated client-side types.
+- Docker Compose, Dev Containers, and `mask` keep local setup reproducible without hiding the individual npm and service commands.
 - The deployment stack matches the repository's current operational target rather than an abstract platform-agnostic ideal.
 
 ## Consequences
