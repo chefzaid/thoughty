@@ -123,5 +123,10 @@
       "^@common/(.*)$": "<rootDir>/common/$1",
       "^@database/(.*)$": "<rootDir>/database/$1"
     }
+  },
+  "allowScripts": {
+    "@nestjs/core@11.1.19": true,
+    "@scarf/scarf": false,
+    "fsevents@2.3.3": true
   }
 }
