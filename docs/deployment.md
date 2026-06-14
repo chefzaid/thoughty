@@ -72,28 +72,28 @@ Thoughty splits runtime configuration into two buckets:
 
 These are loaded into the server and worker containers through `envFrom`:
 
-| Variable              | Current source | Purpose                                            |
-|-----------------------|----------------|----------------------------------------------------|
-| `NODE_ENV`            | ConfigMap      | Enables production behavior in NestJS              |
-| `PORT`                | ConfigMap      | API listen port                                    |
-| `POSTGRES_HOST`       | ConfigMap      | Points backend workloads at the PostgreSQL service |
-| `POSTGRES_PORT`       | ConfigMap      | Database port                                       |
-| `CORS_ORIGIN`         | ConfigMap      | Allowed frontend origin list for the API           |
-| `FRONTEND_URL`        | ConfigMap      | Base URL used to build links in transactional email |
-| `JWT_EXPIRES_IN`      | ConfigMap      | Access token lifetime                              |
-| `S3_ENDPOINT`         | ConfigMap      | S3-compatible endpoint for attachments             |
-| `S3_BUCKET`           | ConfigMap      | Attachment bucket name                             |
-| `S3_REGION`           | ConfigMap      | Attachment bucket region                           |
-| `OPENROUTER_TAG_MODEL` | ConfigMap     | Default model for AI auto-tagging                  |
+| Variable               | Current source | Purpose                                             |
+| ---------------------- | -------------- | --------------------------------------------------- |
+| `NODE_ENV`             | ConfigMap      | Enables production behavior in NestJS               |
+| `PORT`                 | ConfigMap      | API listen port                                     |
+| `POSTGRES_HOST`        | ConfigMap      | Points backend workloads at the PostgreSQL service  |
+| `POSTGRES_PORT`        | ConfigMap      | Database port                                       |
+| `CORS_ORIGIN`          | ConfigMap      | Allowed frontend origin list for the API            |
+| `FRONTEND_URL`         | ConfigMap      | Base URL used to build links in transactional email |
+| `JWT_EXPIRES_IN`       | ConfigMap      | Access token lifetime                               |
+| `S3_ENDPOINT`          | ConfigMap      | S3-compatible endpoint for attachments              |
+| `S3_BUCKET`            | ConfigMap      | Attachment bucket name                              |
+| `S3_REGION`            | ConfigMap      | Attachment bucket region                            |
+| `OPENROUTER_TAG_MODEL` | ConfigMap      | Default model for AI auto-tagging                   |
 
 ### Vault Secrets Already Wired
 
 These are injected through the Vault Agent templates in the manifests. Populate the values in Vault (see `deployments/vault-setup.sh`) before rollout:
 
-| Secret path                    | Used by                 | Variables                                                                 |
-|--------------------------------|-------------------------|---------------------------------------------------------------------------|
-| `secret/data/thoughty/database` | postgres, server, worker | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`                       |
-| `secret/data/thoughty/app`      | server, worker          | `JWT_SECRET`, `REFRESH_SECRET`, `CONFIG_ENCRYPTION_SECRET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `OPENROUTER_API_KEY`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` |
+| Secret path                     | Used by                  | Variables                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `secret/data/thoughty/database` | postgres, server, worker | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`                                                                                                                                                                                                                                                                                       |
+| `secret/data/thoughty/app`      | server, worker           | `JWT_SECRET`, `REFRESH_SECRET`, `CONFIG_ENCRYPTION_SECRET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `OPENROUTER_API_KEY`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` |
 
 The variable names match exactly what the server reads at runtime, including `REFRESH_SECRET` (refresh-token signing) and the `GOOGLE_DRIVE_*` cloud-sync client credentials.
 
@@ -101,13 +101,13 @@ The variable names match exactly what the server reads at runtime, including `RE
 
 Every variable below is already wired into the manifests. The remaining work is populating real values in Vault — empty values simply leave the feature disabled or in fallback mode:
 
-| Feature                      | Variables                                                                              | Behavior when unset                                                       |
-|------------------------------|----------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
-| Attachments                  | `S3_ACCESS_KEY`, `S3_SECRET_KEY` (secret); `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION` (ConfigMap) | The attachments service falls back to local-dev MinIO defaults |
-| Cloud sync token encryption  | `CONFIG_ENCRYPTION_SECRET`                                                            | Encrypted provider tokens fall back to a default secret that is not suitable for production |
-| Cloud sync providers         | `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET` | Provider auth flows are unavailable    |
-| AI features                  | `OPENROUTER_API_KEY` (secret); `OPENROUTER_TAG_MODEL` (ConfigMap)                     | AI endpoints return disabled or degraded behavior                         |
-| Email sender override        | `SMTP_FROM`                                                                           | Falls back to sending from `SMTP_USER`                                    |
+| Feature                     | Variables                                                                                                                                            | Behavior when unset                                                                         |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Attachments                 | `S3_ACCESS_KEY`, `S3_SECRET_KEY` (secret); `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION` (ConfigMap)                                                       | The attachments service falls back to local-dev MinIO defaults                              |
+| Cloud sync token encryption | `CONFIG_ENCRYPTION_SECRET`                                                                                                                           | Encrypted provider tokens fall back to a default secret that is not suitable for production |
+| Cloud sync providers        | `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET` | Provider auth flows are unavailable                                                         |
+| AI features                 | `OPENROUTER_API_KEY` (secret); `OPENROUTER_TAG_MODEL` (ConfigMap)                                                                                    | AI endpoints return disabled or degraded behavior                                           |
+| Email sender override       | `SMTP_FROM`                                                                                                                                          | Falls back to sending from `SMTP_USER`                                                      |
 
 The frontend Google sign-in client ID is baked into the web image at build time via the `VITE_GOOGLE_CLIENT_ID` Docker build argument, not through Vault. Pass it with `--build-arg VITE_GOOGLE_CLIENT_ID=<id>` (the Jenkins pipeline forwards a `VITE_GOOGLE_CLIENT_ID` environment variable for this).
 
@@ -301,17 +301,17 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 
 ## Manifest Reference
 
-| File                                          | Responsibility                                              |
-|-----------------------------------------------|-------------------------------------------------------------|
-| `deployments/namespace.yaml`                  | Creates the `thoughty` namespace                            |
-| `deployments/configmap.yaml`                  | Non-secret runtime configuration for backend workloads      |
-| `deployments/vault-service-accounts.yaml`     | Service accounts used by Vault roles                        |
-| `deployments/postgres.yaml`                   | PostgreSQL deployment, service, and persistent volume claim |
-| `deployments/server-deployment.yaml`          | API deployment, service, probes, and Vault injection        |
-| `deployments/cloud-sync-worker-deployment.yaml` | Dedicated background worker using the server image        |
-| `deployments/web-deployment.yaml`             | Web deployment and service                                  |
-| `deployments/ingress.yaml`                    | Host and path routing for `/` and `/api`                    |
-| `deployments/vault-setup.sh`                  | Reference Vault bootstrap commands                          |
+| File                                            | Responsibility                                              |
+| ----------------------------------------------- | ----------------------------------------------------------- |
+| `deployments/namespace.yaml`                    | Creates the `thoughty` namespace                            |
+| `deployments/configmap.yaml`                    | Non-secret runtime configuration for backend workloads      |
+| `deployments/vault-service-accounts.yaml`       | Service accounts used by Vault roles                        |
+| `deployments/postgres.yaml`                     | PostgreSQL deployment, service, and persistent volume claim |
+| `deployments/server-deployment.yaml`            | API deployment, service, probes, and Vault injection        |
+| `deployments/cloud-sync-worker-deployment.yaml` | Dedicated background worker using the server image          |
+| `deployments/web-deployment.yaml`               | Web deployment and service                                  |
+| `deployments/ingress.yaml`                      | Host and path routing for `/` and `/api`                    |
+| `deployments/vault-setup.sh`                    | Reference Vault bootstrap commands                          |
 
 ## Related Guides
 

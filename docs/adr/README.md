@@ -28,17 +28,17 @@ flowchart TD
 
 The backend is one NestJS application assembled from feature modules under `thoughty-server/src/modules`.
 
-| Module | Primary responsibility |
-|--------|------------------------|
-| `auth` | local auth, OAuth sign-in, access/refresh tokens, password recovery, account lifecycle |
-| `entries` | journal entry CRUD, revision history, tags, visibility, favorites, archive state |
-| `diaries` | diary containers, default diary behavior, diary ordering and fallback rules |
-| `attachments` | attachment metadata, upload validation, object-storage retrieval |
-| `ai` | AI writing assistance, tag suggestions, tone/mood analysis, entry chat history |
-| `io` | import, export, portability formats, cloud-sync serialization support |
-| `stats` | journal statistics and insight queries |
-| `config` | user preferences, profile/config export, encrypted integration settings |
-| `cloud-sync` | provider connections, scheduled sync jobs, queueing, worker execution |
+| Module        | Primary responsibility                                                                 |
+| ------------- | -------------------------------------------------------------------------------------- |
+| `auth`        | local auth, OAuth sign-in, access/refresh tokens, password recovery, account lifecycle |
+| `entries`     | journal entry CRUD, revision history, tags, visibility, favorites, archive state       |
+| `diaries`     | diary containers, default diary behavior, diary ordering and fallback rules            |
+| `attachments` | attachment metadata, upload validation, object-storage retrieval                       |
+| `ai`          | AI writing assistance, tag suggestions, tone/mood analysis, entry chat history         |
+| `io`          | import, export, portability formats, cloud-sync serialization support                  |
+| `stats`       | journal statistics and insight queries                                                 |
+| `config`      | user preferences, profile/config export, encrypted integration settings                |
+| `cloud-sync`  | provider connections, scheduled sync jobs, queueing, worker execution                  |
 
 Shared runtime code belongs in `thoughty-server/src/common` only when it is genuinely cross-cutting. Persistence infrastructure and entities belong in `thoughty-server/src/database`. Operational helpers remain in `thoughty-server/scripts` rather than being mixed into runtime modules.
 
@@ -130,31 +130,31 @@ Use `Proposed` for decisions that guide upcoming work but are not implemented ye
 
 ## Accepted ADRs
 
-| ADR | Decision |
-|-----|----------|
-| [0001](./0001-documentation-structure.md) | Split detailed documentation out of the root README |
-| [0002](./0002-modular-monolith-and-route-driven-ui.md) | Adopt a modular monolith with a route-driven UI shell |
-| [0003](./0003-typescript-first-technology-stack.md) | Standardize on a TypeScript-first full-stack platform |
-| [0004](./0004-openapi-as-contract-source.md) | Use backend OpenAPI as the source of truth for API contracts |
-| [0005](./0005-selective-cqrs-in-entry-domain.md) | Apply selective CQRS in the entry domain |
-| [0006](./0006-database-backed-cloud-sync-worker.md) | Run scheduled cloud sync through a separate worker and database-backed queue |
-| [0007](./0007-code-quality-and-verification-gates.md) | Keep code quality enforcement lightweight but continuous |
-| [0008](./0008-security-authentication-and-owasp-baseline.md) | Establish a secure-by-default authentication and OWASP baseline |
-| [0009](./0009-rate-limiting-and-abuse-controls.md) | Apply layered rate limiting for baseline abuse resistance |
-| [0010](./0010-journal-data-model.md) | Model the journal around diaries, dated entries, revisions, and attachments |
-| [0011](./0011-attachments-and-object-storage.md) | Store attachment metadata in PostgreSQL and blobs in S3-compatible object storage |
-| [0012](./0012-delivery-health-and-operational-model.md) | Keep delivery and operational verification simple, explicit, and repository-owned |
+| ADR                                                          | Decision                                                                          |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| [0001](./0001-documentation-structure.md)                    | Split detailed documentation out of the root README                               |
+| [0002](./0002-modular-monolith-and-route-driven-ui.md)       | Adopt a modular monolith with a route-driven UI shell                             |
+| [0003](./0003-typescript-first-technology-stack.md)          | Standardize on a TypeScript-first full-stack platform                             |
+| [0004](./0004-openapi-as-contract-source.md)                 | Use backend OpenAPI as the source of truth for API contracts                      |
+| [0005](./0005-selective-cqrs-in-entry-domain.md)             | Apply selective CQRS in the entry domain                                          |
+| [0006](./0006-database-backed-cloud-sync-worker.md)          | Run scheduled cloud sync through a separate worker and database-backed queue      |
+| [0007](./0007-code-quality-and-verification-gates.md)        | Keep code quality enforcement lightweight but continuous                          |
+| [0008](./0008-security-authentication-and-owasp-baseline.md) | Establish a secure-by-default authentication and OWASP baseline                   |
+| [0009](./0009-rate-limiting-and-abuse-controls.md)           | Apply layered rate limiting for baseline abuse resistance                         |
+| [0010](./0010-journal-data-model.md)                         | Model the journal around diaries, dated entries, revisions, and attachments       |
+| [0011](./0011-attachments-and-object-storage.md)             | Store attachment metadata in PostgreSQL and blobs in S3-compatible object storage |
+| [0012](./0012-delivery-health-and-operational-model.md)      | Keep delivery and operational verification simple, explicit, and repository-owned |
 
 ## Proposed ADRs for Upcoming Roadmap Work
 
-| ADR | Decision area |
-|-----|---------------|
-| [0013](./0013-public-social-content-and-moderation.md) | Public/social content and moderation model |
+| ADR                                                     | Decision area                                       |
+| ------------------------------------------------------- | --------------------------------------------------- |
+| [0013](./0013-public-social-content-and-moderation.md)  | Public/social content and moderation model          |
 | [0014](./0014-real-time-notifications-and-messaging.md) | Real-time notifications and private messaging model |
-| [0015](./0015-observability-baseline.md) | Observability baseline |
-| [0016](./0016-backup-and-disaster-recovery.md) | Backup and disaster recovery model |
-| [0017](./0017-feature-flags-and-entitlements.md) | Feature flags, AI paywall, trials, and entitlements |
-| [0018](./0018-offline-and-mobile-sync.md) | Offline/mobile sync model |
+| [0015](./0015-observability-baseline.md)                | Observability baseline                              |
+| [0016](./0016-backup-and-disaster-recovery.md)          | Backup and disaster recovery model                  |
+| [0017](./0017-feature-flags-and-entitlements.md)        | Feature flags, AI paywall, trials, and entitlements |
+| [0018](./0018-offline-and-mobile-sync.md)               | Offline/mobile sync model                           |
 
 ## ADR Template
 

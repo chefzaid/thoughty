@@ -71,14 +71,14 @@ flowchart TD
 
 ### Local URLs
 
-| Surface       | URL                           |
-|---------------|-------------------------------|
-| Frontend      | `http://localhost:5173`       |
-| Backend API   | `http://localhost:3001`       |
+| Surface       | URL                              |
+| ------------- | -------------------------------- |
+| Frontend      | `http://localhost:5173`          |
+| Backend API   | `http://localhost:3001`          |
 | Swagger UI    | `http://localhost:3001/api-docs` |
-| PostgreSQL    | `localhost:5432`              |
-| MinIO API     | `http://localhost:9000`       |
-| MinIO Console | `http://localhost:9001`       |
+| PostgreSQL    | `localhost:5432`                 |
+| MinIO API     | `http://localhost:9000`          |
+| MinIO Console | `http://localhost:9001`          |
 
 ## Manual Startup Flow
 
@@ -168,22 +168,22 @@ The `.env.example` files are the source of truth for local configuration. The ta
 
 ### Server env highlights
 
-| Variable group             | Typical local value                                   | Notes                                                   |
-|----------------------------|-------------------------------------------------------|---------------------------------------------------------|
-| Database                   | `localhost:5432` / `postgres` / `password` / `journal` | Matches `.devcontainer/docker-compose.yml`              |
-| JWT                        | local placeholders                                    | Required for auth flows; replace for shared environments |
-| `FRONTEND_URL`             | `http://localhost:5173`                               | Used for email links                                    |
-| `CORS_ORIGIN`              | `http://localhost:5173,http://localhost:3000`         | Backend splits this comma-separated list                |
-| S3 / object storage        | local MinIO defaults                                  | No `.env` needed if you keep the defaults               |
-| `CONFIG_ENCRYPTION_SECRET` | local secret string                                   | Used for encrypted user config and cloud-sync tokens    |
-| `OPENROUTER_API_KEY`       | empty by default                                      | Required only for AI features                           |
-| Cloud provider OAuth keys  | empty by default                                      | Required only for cloud sync integrations               |
-| SMTP settings              | example placeholders                                  | Required only for real email sending flows              |
+| Variable group             | Typical local value                                    | Notes                                                    |
+| -------------------------- | ------------------------------------------------------ | -------------------------------------------------------- |
+| Database                   | `localhost:5432` / `postgres` / `password` / `journal` | Matches `.devcontainer/docker-compose.yml`               |
+| JWT                        | local placeholders                                     | Required for auth flows; replace for shared environments |
+| `FRONTEND_URL`             | `http://localhost:5173`                                | Used for email links                                     |
+| `CORS_ORIGIN`              | `http://localhost:5173,http://localhost:3000`          | Backend splits this comma-separated list                 |
+| S3 / object storage        | local MinIO defaults                                   | No `.env` needed if you keep the defaults                |
+| `CONFIG_ENCRYPTION_SECRET` | local secret string                                    | Used for encrypted user config and cloud-sync tokens     |
+| `OPENROUTER_API_KEY`       | empty by default                                       | Required only for AI features                            |
+| Cloud provider OAuth keys  | empty by default                                       | Required only for cloud sync integrations                |
+| SMTP settings              | example placeholders                                   | Required only for real email sending flows               |
 
 ### Frontend env highlights
 
-| Variable                | Purpose                                 |
-|-------------------------|-----------------------------------------|
+| Variable                | Purpose                                  |
+| ----------------------- | ---------------------------------------- |
 | `VITE_GOOGLE_CLIENT_ID` | Enables Google sign-in from the frontend |
 
 The frontend primarily talks to the backend through relative `/api` paths and the Vite dev proxy on port `5173`, so the checked-in frontend env example only exposes `VITE_GOOGLE_CLIENT_ID`. That is accurate for the current codebase and is usually the simplest local setup.
@@ -192,33 +192,33 @@ The frontend primarily talks to the backend through relative `/api` paths and th
 
 ### High-level task runner
 
-| Command                | What it does                                                           |
-|------------------------|------------------------------------------------------------------------|
-| `mask build`           | Install server and frontend dependencies                               |
-| `mask build --clean`   | Remove both `node_modules` trees and reinstall                         |
-| `mask run`             | Start Docker services, wait for DB, migrate, optionally seed, then launch backend and frontend |
-| `mask run --kill`      | Same as `mask run`, but first kills existing Node processes            |
+| Command              | What it does                                                                                   |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| `mask build`         | Install server and frontend dependencies                                                       |
+| `mask build --clean` | Remove both `node_modules` trees and reinstall                                                 |
+| `mask run`           | Start Docker services, wait for DB, migrate, optionally seed, then launch backend and frontend |
+| `mask run --kill`    | Same as `mask run`, but first kills existing Node processes                                    |
 
 ### Root-level npm commands
 
-| Command            | What it does                                                  |
-|--------------------|---------------------------------------------------------------|
-| `npm run migrate`  | Run backend migrations from the repo root                     |
-| `npm run seed`     | Seed backend development data from the repo root              |
-| `npm run check-db` | Validate database connectivity and schema assumptions         |
-| `npm run nuke-db`  | Reset the database through the backend helper script          |
-| `npm run kill`     | Kill running backend Node processes                          |
-| `npm run api:sync` | Export backend OpenAPI and regenerate frontend API types      |
+| Command            | What it does                                             |
+| ------------------ | -------------------------------------------------------- |
+| `npm run migrate`  | Run backend migrations from the repo root                |
+| `npm run seed`     | Seed backend development data from the repo root         |
+| `npm run check-db` | Validate database connectivity and schema assumptions    |
+| `npm run nuke-db`  | Reset the database through the backend helper script     |
+| `npm run kill`     | Kill running backend Node processes                      |
+| `npm run api:sync` | Export backend OpenAPI and regenerate frontend API types |
 
 ### Project-level commands worth knowing
 
-| Area     | Command                                         | Use case                                   |
-|----------|-------------------------------------------------|--------------------------------------------|
-| Backend  | `cd thoughty-server && npm run dev`             | Start the NestJS API in watch mode         |
-| Backend  | `cd thoughty-server && npm run db:validate-seed` | Check seed data quality without writing    |
+| Area     | Command                                           | Use case                                    |
+| -------- | ------------------------------------------------- | ------------------------------------------- |
+| Backend  | `cd thoughty-server && npm run dev`               | Start the NestJS API in watch mode          |
+| Backend  | `cd thoughty-server && npm run db:validate-seed`  | Check seed data quality without writing     |
 | Backend  | `cd thoughty-server && npm run cloud-sync-worker` | Run the worker directly in TS for debugging |
-| Frontend | `cd thoughty-web && npm run dev`                | Start the Vite dev server                  |
-| Frontend | `cd thoughty-web && npm run typecheck`          | Run TS type checking without a build       |
+| Frontend | `cd thoughty-web && npm run dev`                  | Start the Vite dev server                   |
+| Frontend | `cd thoughty-web && npm run typecheck`            | Run TS type checking without a build        |
 
 ## OpenAPI and Frontend Type Sync
 

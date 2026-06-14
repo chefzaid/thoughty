@@ -4,12 +4,12 @@ Thoughty uses a layered test strategy: backend Jest tests for API and domain beh
 
 ## Test Layers
 
-| Layer                       | Location                                  | Runner                    | Purpose                                                              |
-|-----------------------------|-------------------------------------------|---------------------------|----------------------------------------------------------------------|
-| Backend unit/integration    | `thoughty-server/src/**/*.spec.ts`        | Jest                      | Services, controllers, guards, modules, and backend helpers          |
-| Backend e2e                 | `thoughty-server/test/*.e2e-spec.ts`      | Jest + Supertest          | API-level application behavior through the NestJS app                |
-| Frontend unit/component     | `thoughty-web/src/**/*.test.ts(x)`        | Vitest + Testing Library  | React components, hooks, utilities, and service adapters             |
-| Frontend browser e2e        | `thoughty-web/e2e/**/*.spec.ts`           | Playwright                | User-visible browser flows with deterministic mocked API responses   |
+| Layer                    | Location                             | Runner                   | Purpose                                                            |
+| ------------------------ | ------------------------------------ | ------------------------ | ------------------------------------------------------------------ |
+| Backend unit/integration | `thoughty-server/src/**/*.spec.ts`   | Jest                     | Services, controllers, guards, modules, and backend helpers        |
+| Backend e2e              | `thoughty-server/test/*.e2e-spec.ts` | Jest + Supertest         | API-level application behavior through the NestJS app              |
+| Frontend unit/component  | `thoughty-web/src/**/*.test.ts(x)`   | Vitest + Testing Library | React components, hooks, utilities, and service adapters           |
+| Frontend browser e2e     | `thoughty-web/e2e/**/*.spec.ts`      | Playwright               | User-visible browser flows with deterministic mocked API responses |
 
 ## Testing Strategy
 
@@ -108,45 +108,45 @@ Frontend e2e specs are grouped by feature/domain directory under `thoughty-web/e
 
 Current e2e feature groups:
 
-| Directory              | Covers                                                                  |
-|------------------------|-------------------------------------------------------------------------|
-| `e2e/public/`          | Public landing page and intro transitions                               |
-| `e2e/auth/`            | Sign-up and login onboarding into the journal                           |
-| `e2e/navigation/`      | Direct routes, browser history, permalinks, and diary return routes     |
-| `e2e/journal/`         | Journal authoring, lifecycle, filtering, highlights, and entry actions  |
-| `e2e/tags/`            | Tag organization and tag rename flows                                    |
-| `e2e/ai/`              | AI tag suggestions, automatic tagging, writing help, and chat history   |
-| `e2e/stats/`           | Stats totals, activity heatmap, and tag insights                        |
-| `e2e/import-export/`   | JSON import/export, format settings, and delete-all flows               |
-| `e2e/cloud-sync/`      | Cloud uploads, schedules, sync-now flows, and cloud imports             |
-| `e2e/diary/`           | Diary create, edit, reorder, default, and delete fallback               |
+| Directory            | Covers                                                                 |
+| -------------------- | ---------------------------------------------------------------------- |
+| `e2e/public/`        | Public landing page and intro transitions                              |
+| `e2e/auth/`          | Sign-up and login onboarding into the journal                          |
+| `e2e/navigation/`    | Direct routes, browser history, permalinks, and diary return routes    |
+| `e2e/journal/`       | Journal authoring, lifecycle, filtering, highlights, and entry actions |
+| `e2e/tags/`          | Tag organization and tag rename flows                                  |
+| `e2e/ai/`            | AI tag suggestions, automatic tagging, writing help, and chat history  |
+| `e2e/stats/`         | Stats totals, activity heatmap, and tag insights                       |
+| `e2e/import-export/` | JSON import/export, format settings, and delete-all flows              |
+| `e2e/cloud-sync/`    | Cloud uploads, schedules, sync-now flows, and cloud imports            |
+| `e2e/diary/`         | Diary create, edit, reorder, default, and delete fallback              |
 
 Current specs by feature group:
 
-| Directory              | Spec file                         |
-|------------------------|-----------------------------------|
-| `e2e/public/`          | `intro-page.spec.ts`              |
-| `e2e/auth/`            | `onboarding.spec.ts`              |
-| `e2e/navigation/`      | `routes.spec.ts`                  |
-| `e2e/journal/`         | `entry-lifecycle.spec.ts`         |
-| `e2e/journal/`         | `entry-reordering.spec.ts`        |
-| `e2e/journal/`         | `markdown-authoring.spec.ts`      |
-| `e2e/journal/`         | `navigation.spec.ts`              |
-| `e2e/journal/`         | `composable-filtering.spec.ts`    |
-| `e2e/journal/`         | `highlights.spec.ts`              |
-| `e2e/journal/`         | `bulk-archive.spec.ts`            |
-| `e2e/journal/`         | `revision-history.spec.ts`        |
-| `e2e/journal/`         | `visibility-toggle.spec.ts`       |
-| `e2e/journal/`         | `favorites.spec.ts`               |
-| `e2e/tags/`            | `management.spec.ts`              |
-| `e2e/ai/`              | `tag-suggestions.spec.ts`         |
-| `e2e/ai/`              | `auto-tagging.spec.ts`            |
-| `e2e/ai/`              | `writing-and-chat.spec.ts`        |
-| `e2e/stats/`           | `insights.spec.ts`                |
-| `e2e/import-export/`   | `basic.spec.ts`                   |
-| `e2e/import-export/`   | `portability.spec.ts`             |
-| `e2e/cloud-sync/`      | `management.spec.ts`              |
-| `e2e/diary/`           | `management.spec.ts`              |
+| Directory            | Spec file                      |
+| -------------------- | ------------------------------ |
+| `e2e/public/`        | `intro-page.spec.ts`           |
+| `e2e/auth/`          | `onboarding.spec.ts`           |
+| `e2e/navigation/`    | `routes.spec.ts`               |
+| `e2e/journal/`       | `entry-lifecycle.spec.ts`      |
+| `e2e/journal/`       | `entry-reordering.spec.ts`     |
+| `e2e/journal/`       | `markdown-authoring.spec.ts`   |
+| `e2e/journal/`       | `navigation.spec.ts`           |
+| `e2e/journal/`       | `composable-filtering.spec.ts` |
+| `e2e/journal/`       | `highlights.spec.ts`           |
+| `e2e/journal/`       | `bulk-archive.spec.ts`         |
+| `e2e/journal/`       | `revision-history.spec.ts`     |
+| `e2e/journal/`       | `visibility-toggle.spec.ts`    |
+| `e2e/journal/`       | `favorites.spec.ts`            |
+| `e2e/tags/`          | `management.spec.ts`           |
+| `e2e/ai/`            | `tag-suggestions.spec.ts`      |
+| `e2e/ai/`            | `auto-tagging.spec.ts`         |
+| `e2e/ai/`            | `writing-and-chat.spec.ts`     |
+| `e2e/stats/`         | `insights.spec.ts`             |
+| `e2e/import-export/` | `basic.spec.ts`                |
+| `e2e/import-export/` | `portability.spec.ts`          |
+| `e2e/cloud-sync/`    | `management.spec.ts`           |
+| `e2e/diary/`         | `management.spec.ts`           |
 
 When adding a new e2e spec, place it in the closest existing feature directory. Create a new feature directory only when the scenario is not owned by one of the existing domains.
 
@@ -154,15 +154,15 @@ When adding a new e2e spec, place it in the closest existing feature directory. 
 
 The Playwright suite uses in-browser app code with mocked API routes for deterministic tests.
 
-| File                                           | Purpose                                                                          |
-|------------------------------------------------|----------------------------------------------------------------------------------|
-| `thoughty-web/e2e/support/mockApp.ts`          | Creates a per-test mock app state, seeds auth tokens, and registers API routes   |
-| `thoughty-web/e2e/support/mockApp.shared.ts`   | Shared mock state types, default diaries, cloud fixtures, import/export helpers, and stats builders |
-| `thoughty-web/e2e/support/mockApp.route-utils.ts` | Shared route context and JSON response helpers for the mock API              |
-| `thoughty-web/e2e/support/mockApp.routes.ts`   | Top-level route registration and dispatch for the mock API                      |
-| `thoughty-web/e2e/support/mockApp.routes.entries.ts` | Entry collection and mutation handlers for the mock API                    |
-| `thoughty-web/e2e/support/mockApp.routes.reference.ts` | Stats, AI, diary, and entry-reference handlers for the mock API         |
-| `thoughty-web/e2e/support/mockApp.routes.cloud-sync.ts` | Cloud-sync handlers with stateful schedules, files, and sync payload capture |
+| File                                                    | Purpose                                                                                             |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `thoughty-web/e2e/support/mockApp.ts`                   | Creates a per-test mock app state, seeds auth tokens, and registers API routes                      |
+| `thoughty-web/e2e/support/mockApp.shared.ts`            | Shared mock state types, default diaries, cloud fixtures, import/export helpers, and stats builders |
+| `thoughty-web/e2e/support/mockApp.route-utils.ts`       | Shared route context and JSON response helpers for the mock API                                     |
+| `thoughty-web/e2e/support/mockApp.routes.ts`            | Top-level route registration and dispatch for the mock API                                          |
+| `thoughty-web/e2e/support/mockApp.routes.entries.ts`    | Entry collection and mutation handlers for the mock API                                             |
+| `thoughty-web/e2e/support/mockApp.routes.reference.ts`  | Stats, AI, diary, and entry-reference handlers for the mock API                                     |
+| `thoughty-web/e2e/support/mockApp.routes.cloud-sync.ts` | Cloud-sync handlers with stateful schedules, files, and sync payload capture                        |
 
 Prefer extending the mock support when a scenario needs a realistic backend response. Keep mock behavior minimal and purpose-driven: it should support the browser flow under test, not reimplement the whole backend.
 
