@@ -9,9 +9,12 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   fontFamily: 'system',
   fontSize: '16',
   entriesPerPage: '10',
+  maxPinnedEntries: '3',
   defaultVisibility: 'private',
   language: 'en',
   autoTagMaxTags: '0',
+  subscriptionPlan: 'free',
+  paymentMethodLabel: '',
 };
 
 @Injectable()

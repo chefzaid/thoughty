@@ -99,6 +99,11 @@ describe('NavMenu', () => {
     expect(avatar).toHaveAttribute('src', 'https://example.com/avatar.jpg');
   });
 
+  it('displays a verification badge for verified email accounts', () => {
+    render(<NavMenu {...defaultProps} isEmailVerified />);
+    expect(screen.getByLabelText('verifiedAccount')).toBeInTheDocument();
+  });
+
   it('uses fallback initial when name not provided', () => {
     render(<NavMenu {...defaultProps} name={undefined} />);
     expect(screen.getByText('U')).toBeInTheDocument(); // 'user'.charAt(0).toUpperCase()

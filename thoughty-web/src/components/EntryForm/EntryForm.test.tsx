@@ -45,6 +45,11 @@ describe('EntryForm', () => {
                 filterTagsPlaceholder: 'Filter by tags...',
                 suggestTags: 'Auto-Tags',
                 suggestingTags: 'Tagging...',
+                entryTemplate: 'Entry template',
+                noEntryTemplate: 'Choose a template',
+                saveEntryTemplate: 'Save template',
+                deleteEntryTemplate: 'Delete template',
+                templateNamePrompt: 'Template name',
             };
             return translations[key] || key;
         },
@@ -253,6 +258,102 @@ describe('EntryForm', () => {
 
             expect(screen.getByRole('button', { name: 'Tagging...' })).toBeDisabled();
             expect(screen.getByRole('button', { name: 'Polishing...' })).toBeDisabled();
+        });
+    });
+
+    describe('Entry templates', () => {
+        const templates = [
+            {
+                id: 'builtin-daily',
+                name: 'Daily reflection',
+                content: 'What happened today?',
+                tags: ['reflection'],
+                visibility: 'private' as const,
+                format: 'plain' as const,
+                builtIn: true,
+            },
+            {
+                id: 'custom-1',
+                name: 'Meeting notes',
+                content: '## Decisions',
+                tags: ['meeting'],
+                visibility: 'public' as const,
+                format: 'markdown' as const,
+                builtIn: false,
+            },
+        ];
+
+        it('applies a selected template to the draft', async () => {
+            const setNewEntryText = vi.fn();
+            const setTags = vi.fn();
+            const setVisibility = vi.fn();
+            const setFormat = vi.fn();
+            const user = userEvent.setup();
+
+            render(
+                <EntryForm
+                    {...defaultProps}
+                    entryTemplates={templates}
+                    setNewEntryText={setNewEntryText}
+                    setTags={setTags}
+                    setVisibility={setVisibility}
+                    setFormat={setFormat}
+                />,
+            );
+
+            await user.selectOptions(screen.getByLabelText('Entry template'), 'custom-1');
+
+            expect(setNewEntryText).toHaveBeenCalledWith('## Decisions');
+            expect(setTags).toHaveBeenCalledWith(['meeting']);
+            expect(setVisibility).toHaveBeenCalledWith('public');
+            expect(setFormat).toHaveBeenCalledWith('markdown');
+        });
+
+        it('saves the current draft as a template', async () => {
+            const onSaveTemplate = vi.fn();
+            const promptSpy = vi.spyOn(globalThis, 'prompt').mockReturnValue('Weekly review');
+            const user = userEvent.setup();
+
+            render(
+                <EntryForm
+                    {...defaultProps}
+                    newEntryText="What worked this week?"
+                    tags={['review']}
+                    visibility="private"
+                    format="markdown"
+                    onSaveTemplate={onSaveTemplate}
+                />,
+            );
+
+            await user.click(screen.getByRole('button', { name: 'Save template' }));
+
+            expect(promptSpy).toHaveBeenCalledWith('Template name');
+            expect(onSaveTemplate).toHaveBeenCalledWith({
+                name: 'Weekly review',
+                content: 'What worked this week?',
+                tags: ['review'],
+                visibility: 'private',
+                format: 'markdown',
+            });
+            promptSpy.mockRestore();
+        });
+
+        it('deletes a selected custom template', async () => {
+            const onDeleteTemplate = vi.fn();
+            const user = userEvent.setup();
+
+            render(
+                <EntryForm
+                    {...defaultProps}
+                    entryTemplates={templates}
+                    onDeleteTemplate={onDeleteTemplate}
+                />,
+            );
+
+            await user.selectOptions(screen.getByLabelText('Entry template'), 'custom-1');
+            await user.click(screen.getByRole('button', { name: 'Delete template' }));
+
+            expect(onDeleteTemplate).toHaveBeenCalledWith('custom-1');
         });
     });
 

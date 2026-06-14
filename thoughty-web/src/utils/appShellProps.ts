@@ -7,6 +7,7 @@ import AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
 import type { RephraseMode } from '../services/api/aiService';
 import { buildEntryPermalink } from './appRouting';
+import { createEntryTemplate, getEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
 import type { TagMetadataMap } from './tagMetadata';
 
 export type IntroPageProps = ComponentProps<typeof IntroPage>;
@@ -41,6 +42,7 @@ interface BuildAuthenticatedLayoutPropsParams {
   entryToastVisible: boolean;
   handleAiChat: (entryId: number, entryContent: string, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null>;
   handleLoadAiChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
+  isEmailVerified: boolean;
   routingState: Pick<AppShellRoutingState, 'handleLogout' | 'handleViewChange'>;
   setChatEntry: (entry: Entry | null) => void;
   t: TranslationFn;
@@ -53,7 +55,7 @@ interface BuildAuthenticatedRoutesPropsParams {
   deleteModalState: Pick<DeleteModalState, 'handleDelete'>;
   diariesState: Pick<DiariesState, 'currentDiaryId' | 'diaries' | 'handleCreateDiary' | 'handleDeleteDiary' | 'handleReorderDiaries' | 'handleSetDefaultDiary' | 'handleUpdateDiary'>;
   downloadUserData: AuthenticatedRoutesProps['profileRouteProps']['onDownloadData'];
-  entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterFavorites' | 'filterTags' | 'filterVisibility' | 'groupedEntries' | 'inputPage' | 'loading' | 'page' | 'reorderEntries' | 'search' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterFavorites' | 'setFilterTags' | 'setFilterVisibility' | 'setInputPage' | 'setPage' | 'setSearch' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'toggleVisibility' | 'totalPages'>;
+  entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterFavorites' | 'filterTags' | 'filterVisibility' | 'groupedEntries' | 'inputPage' | 'loading' | 'page' | 'reorderEntries' | 'search' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterFavorites' | 'setFilterTags' | 'setFilterVisibility' | 'setInputPage' | 'setPage' | 'setSearch' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'totalPages'>;
   entryEditState: Pick<EntryEditState, 'addEditPendingFile' | 'editDate' | 'editExistingAttachments' | 'editFormat' | 'editPendingFiles' | 'editTags' | 'editText' | 'editVisibility' | 'editingEntry' | 'handleCancelEdit' | 'handleEdit' | 'handleSaveEdit' | 'removeEditAttachment' | 'removeEditPendingFile' | 'setEditDate' | 'setEditFormat' | 'setEditTags' | 'setEditText' | 'setEditVisibility'>;
   entryFormState: Pick<EntryFormState, 'addPendingFile' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'selectedDate' | 'setFormat' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setVisibility' | 'suggestingTags' | 'tags' | 'uploadedAttachments' | 'visibility'>;
   entryNavigationState: Pick<EntryNavigationState, 'handleBackToSource' | 'handleNavigateToEntry' | 'handleShareEntry'>;
@@ -113,6 +115,7 @@ export function buildAuthenticatedLayoutProps({
   entryToastVisible,
   handleAiChat,
   handleLoadAiChatHistory,
+  isEmailVerified,
   routingState,
   setChatEntry,
   t,
@@ -123,6 +126,7 @@ export function buildAuthenticatedLayoutProps({
     currentView: currentView ?? 'journal',
     userName,
     avatarUrl,
+    isEmailVerified,
     onViewChange: routingState.handleViewChange,
     onLogout: routingState.handleLogout,
     t,
@@ -236,6 +240,23 @@ export function buildAuthenticatedRoutesProps({
         onNavigateToEntry: entryNavigationState.handleNavigateToEntry,
       },
       entryForm: {
+        entryTemplates: getEntryTemplates(config.entryTemplates),
+        onSaveTemplate: async (draft: EntryTemplateDraft) => {
+          const currentTemplates = getEntryTemplates(config.entryTemplates);
+          const nextTemplates = [...currentTemplates, createEntryTemplate(draft)];
+          await updateConfig({
+            ...config,
+            entryTemplates: serializeCustomEntryTemplates(nextTemplates),
+          });
+        },
+        onDeleteTemplate: async (templateId: string) => {
+          const nextTemplates = getEntryTemplates(config.entryTemplates)
+            .filter((template) => template.id !== templateId);
+          await updateConfig({
+            ...config,
+            entryTemplates: serializeCustomEntryTemplates(nextTemplates),
+          });
+        },
         newEntryText: entryFormState.newEntryText,
         setNewEntryText: entryFormState.setNewEntryText,
         selectedDate: entryFormState.selectedDate,
@@ -286,6 +307,7 @@ export function buildAuthenticatedRoutesProps({
         onToggleVisibility: entriesState.toggleVisibility,
         onToggleFavorite: entriesState.toggleFavorite,
         onToggleArchived: entriesState.toggleArchived,
+        onTogglePinned: entriesState.togglePinned,
         editingEntry: entryEditState.editingEntry,
         editText: entryEditState.editText,
         setEditText: entryEditState.setEditText,
@@ -322,6 +344,7 @@ export function buildAuthenticatedRoutesProps({
         onToggleBulkMode: bulkSelectState.toggleBulkMode,
         diaries: diariesState.diaries,
         onFetchHistory: entriesState.fetchEntryHistory,
+        onFetchBacklinks: entriesState.fetchEntryBacklinks,
         onDeleteRevision: entriesState.deleteRevision,
         onReorderEntries: entriesState.reorderEntries,
         onDiscuss: handleDiscuss,

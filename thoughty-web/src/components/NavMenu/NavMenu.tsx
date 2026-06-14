@@ -7,11 +7,12 @@ interface NavMenuProps {
     readonly theme?: 'light' | 'dark';
     readonly name?: string;
     readonly avatarUrl?: string;
+    readonly isEmailVerified?: boolean;
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly onLogout?: () => void;
 }
 
-function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, t, onLogout }: NavMenuProps) {
+function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVerified, t, onLogout }: NavMenuProps) {
     const initial = (name || t('user')).charAt(0).toUpperCase();
     const isLight = theme === 'light';
 
@@ -81,6 +82,11 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, t, onLogou
                         )}
                     </div>
                     <span className="profile-name">{name || t('user')}</span>
+                    {isEmailVerified && (
+                        <span className="verified-badge compact" title={t('verifiedAccount')} aria-label={t('verifiedAccount')}>
+                            ✓
+                        </span>
+                    )}
                 </button>
                 {onLogout && (
                     <button

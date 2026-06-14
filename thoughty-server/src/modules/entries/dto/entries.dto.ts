@@ -148,6 +148,13 @@ export class UpdateArchivedDto {
   isArchived: boolean;
 }
 
+export class UpdatePinnedDto {
+  @ApiProperty({ description: 'Whether the entry is pinned' })
+  @IsBoolean()
+  @Transform(({ value }) => value === true || value === 'true')
+  isPinned: boolean;
+}
+
 export class GetEntriesQueryDto {
   @ApiPropertyOptional({ description: 'Search term for content or tags' })
   @IsOptional()
@@ -322,6 +329,9 @@ export class EntryResponseDto {
   @ApiProperty()
   is_archived: boolean;
 
+  @ApiProperty()
+  is_pinned: boolean;
+
   @ApiPropertyOptional()
   diary_name?: string;
 
@@ -353,6 +363,52 @@ export class EntriesListResponseDto {
 
   @ApiProperty({ type: [String] })
   allTags: string[];
+}
+
+export class EntryBacklinkDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  date: string;
+
+  @ApiProperty()
+  index: number;
+
+  @ApiProperty({ type: [String] })
+  tags: string[];
+
+  @ApiProperty()
+  content: string;
+
+  @ApiProperty({ enum: ['plain', 'markdown'] })
+  format: 'plain' | 'markdown';
+
+  @ApiProperty()
+  visibility: 'public' | 'private';
+
+  @ApiProperty()
+  is_favorite: boolean;
+
+  @ApiProperty()
+  is_archived: boolean;
+
+  @ApiProperty()
+  is_pinned: boolean;
+
+  @ApiPropertyOptional()
+  diary_name?: string;
+
+  @ApiPropertyOptional()
+  diary_icon?: string;
+
+  @ApiPropertyOptional()
+  diary_color?: string;
+}
+
+export class EntryBacklinksResponseDto {
+  @ApiProperty({ type: [EntryBacklinkDto] })
+  backlinks: EntryBacklinkDto[];
 }
 
 export class AttachmentResponseDto {

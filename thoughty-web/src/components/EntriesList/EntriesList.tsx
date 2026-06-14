@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useState as useLocalState, type 
 import 'react-datepicker/dist/react-datepicker.css';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
 import type { RephraseMode } from '../../services/api/aiService';
-import type { Attachment, Config, Diary, Entry, EntryRevision, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
+import type { Attachment, Config, Diary, Entry, EntryBacklink, EntryRevision, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import EntryViewMode from './EntryViewMode';
 import {
@@ -30,6 +30,7 @@ interface EntriesListProps {
     onToggleVisibility: (entry: Entry) => void;
     onToggleFavorite: (entry: Entry) => void;
     onToggleArchived: (entry: Entry) => void;
+    onTogglePinned: (entry: Entry) => void;
     editingEntry: Entry | null;
     editText: string;
     setEditText: Dispatch<SetStateAction<string>>;
@@ -67,6 +68,7 @@ interface EntriesListProps {
     onToggleBulkMode?: () => void;
     diaries?: Diary[];
     onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
+    onFetchBacklinks?: (entryId: number) => Promise<EntryBacklink[]>;
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onReorderEntries?: (date: string, orderedIds: number[]) => void;
     onDiscuss?: (entry: Entry) => void;
@@ -84,6 +86,7 @@ function EntriesList({
     onToggleVisibility,
     onToggleFavorite,
     onToggleArchived,
+    onTogglePinned,
     editingEntry,
     editText,
     setEditText,
@@ -121,6 +124,7 @@ function EntriesList({
     onToggleBulkMode,
     diaries,
     onFetchHistory,
+    onFetchBacklinks,
     onDeleteRevision,
     onReorderEntries,
     onDiscuss,
@@ -201,19 +205,53 @@ function EntriesList({
         voiceUri: config.ttsVoiceUri,
     });
 
+    const pinnedEntries = useMemo(
+        () => entries.filter((entry) => entry.is_pinned),
+        [entries],
+    );
+    const unpinnedGroupedEntries = useMemo(() => {
+        const grouped: GroupedEntries = {};
+
+        for (const [date, dateEntries] of Object.entries(groupedEntries)) {
+            const unpinnedEntries = dateEntries.filter((entry) => !entry.is_pinned);
+            if (unpinnedEntries.length > 0) {
+                grouped[date] = unpinnedEntries;
+            }
+        }
+
+        return grouped;
+    }, [groupedEntries]);
     const sortedDates = useMemo(
+        () => Object.keys(unpinnedGroupedEntries).sort((a, b) => b.localeCompare(a)),
+        [unpinnedGroupedEntries],
+    );
+    const displayGroups = useMemo(
+        () => [
+            ...(pinnedEntries.length > 0
+                ? [{ key: 'pinned', label: t('pinnedEntries'), date: null, entries: pinnedEntries }]
+                : []),
+            ...sortedDates.map((date) => ({
+                key: date,
+                label: date,
+                date,
+                entries: unpinnedGroupedEntries[date] ?? [],
+            })),
+        ],
+        [pinnedEntries, sortedDates, t, unpinnedGroupedEntries],
+    );
+    const speechDates = useMemo(
         () => Object.keys(groupedEntries).sort((a, b) => b.localeCompare(a)),
         [groupedEntries],
     );
     const flatEntries = useMemo<SpeechEntry[]>(
-        () => sortedDates.flatMap((date) =>
+        () => speechDates.flatMap((date) =>
             (groupedEntries[date] ?? []).map((entry) => ({
                 id: entry.id,
                 content: entry.content,
                 date: extractDate(entry.date),
             })),
         ),
-        [sortedDates, groupedEntries],
+        [speechDates, groupedEntries],
     );
     const showDiaryAccent = useMemo(() => {
         const diaryKeys = new Set<string>();
@@ -298,14 +336,15 @@ function EntriesList({
             )}
 
             <div className="space-y-8">
-                {sortedDates.map((date) => (
-                    <div key={date} className="space-y-4">
+                {displayGroups.map((group) => (
+                    <div key={group.key} className="space-y-4">
                         <h2 className={`text-xl font-bold border-b pb-2 ${isDark ? 'text-gray-300 border-gray-700' : 'text-gray-800 border-gray-300'}`}>
-                            {date}
+                            {group.label}
                         </h2>
                         <div className="space-y-4">
-                            {(groupedEntries[date] ?? []).map((entry) => {
-                                const isDraggable = !bulkMode && !isEditing(entry) && !!onReorderEntries && (groupedEntries[date] ?? []).length > 1;
+                            {group.entries.map((entry) => {
+                                const date = group.date ?? extractDate(entry.date);
+                                const isDraggable = group.date !== null && !bulkMode && !isEditing(entry) && !!onReorderEntries && group.entries.length > 1;
                                 const isDraggedEntry = dragEntryId === entry.id && dragDate === date;
                                 const isDropTarget = dragOverId === entry.id && dragDate === date && dragEntryId !== entry.id;
                                 const dragHighlightClass = getEntryDragHighlightClass(isDark, isDraggedEntry, isDropTarget);
@@ -384,6 +423,7 @@ function EntriesList({
                                                     onToggleVisibility={onToggleVisibility}
                                                     onToggleFavorite={onToggleFavorite}
                                                     onToggleArchived={onToggleArchived}
+                                                    onTogglePinned={onTogglePinned}
                                                     onEdit={onEdit}
                                                     onDelete={onDelete}
                                                     onNavigateToEntry={onNavigateToEntry}
@@ -391,6 +431,7 @@ function EntriesList({
                                                     getEntryPermalink={getEntryPermalink}
                                                     onBackToSource={onBackToSource}
                                                     onFetchHistory={onFetchHistory}
+                                                    onFetchBacklinks={onFetchBacklinks}
                                                     onDeleteRevision={onDeleteRevision}
                                                     onDiscuss={onDiscuss}
                                                     onRephrase={onRephrase}

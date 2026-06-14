@@ -12,6 +12,7 @@ import AISection from './AISection';
 import CloudProvidersSection from './CloudProvidersSection';
 import ProfileActions from './ProfileActions';
 import DataPrivacySection from './DataPrivacySection';
+import SubscriptionSection from './SubscriptionSection';
 
 // Import types and utilities
 import type { 
@@ -265,6 +266,13 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
       <CloudProvidersSection
         t={t}
         isDark={isDark}
+      />
+
+      <SubscriptionSection
+        localConfig={localConfig}
+        handleChange={handleChange}
+        isDark={isDark}
+        t={t}
       />
 
       <ProfileActions onBack={onBack} handleSave={handleSave} t={t} />

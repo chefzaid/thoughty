@@ -122,6 +122,7 @@ export class AuthService {
         email: user.email,
         username: user.username,
         authProvider: 'local',
+        emailVerified: user.emailVerified,
       },
       accessToken,
       refreshToken,
@@ -175,6 +176,7 @@ export class AuthService {
         email: user.email,
         username: user.username,
         authProvider: user.authProvider,
+        emailVerified: user.emailVerified,
       },
       accessToken,
       refreshToken,
@@ -253,6 +255,7 @@ export class AuthService {
         email: user.email,
         username: user.username,
         authProvider: dto.provider,
+        emailVerified: user.emailVerified,
         isNewUser,
       },
       accessToken,
@@ -306,6 +309,7 @@ export class AuthService {
       email: user.email,
       avatarUrl: user.avatarUrl || undefined,
       authProvider: user.authProvider,
+      emailVerified: user.emailVerified,
       createdAt: user.createdAt,
     };
   }

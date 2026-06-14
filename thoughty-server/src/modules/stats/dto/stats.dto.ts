@@ -34,6 +34,12 @@ export class StatsResponseDto {
   @ApiProperty({ example: 120 })
   totalThoughts!: number;
 
+  @ApiProperty({ example: 184 })
+  averageWordsPerEntry!: number;
+
+  @ApiProperty({ example: 1 })
+  averageReadingTimeMinutes!: number;
+
   @ApiProperty({ example: 18 })
   uniqueTagsCount!: number;
 

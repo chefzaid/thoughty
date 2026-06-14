@@ -62,6 +62,7 @@ describe('EntriesQueryService', () => {
       visibility: 'public',
       isFavorite: true,
       isArchived: false,
+      isPinned: true,
       createdAt: new Date('2024-01-15T10:00:00Z'),
       diary: { name: 'Work', icon: '💼', color: '#123456' },
       attachments: [{
@@ -102,6 +103,9 @@ describe('EntriesQueryService', () => {
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 8 });
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.is_favorite = true');
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.is_archived = false');
+    expect(entriesQb.orderBy).toHaveBeenCalledWith('e.is_pinned', 'DESC');
+    expect(entriesQb.addOrderBy).toHaveBeenCalledWith('e.date', 'DESC');
+    expect(entriesQb.addOrderBy).toHaveBeenCalledWith('e.index', 'ASC');
     expect(entriesQb.skip).toHaveBeenCalledWith(5);
     expect(entriesQb.take).toHaveBeenCalledWith(5);
     expect(result).toEqual({
@@ -117,6 +121,7 @@ describe('EntriesQueryService', () => {
         visibility: 'public',
         is_favorite: true,
         is_archived: false,
+        is_pinned: true,
         diary_name: 'Work',
         diary_icon: '💼',
         diary_color: '#123456',
@@ -192,15 +197,17 @@ describe('EntriesQueryService', () => {
 
   it('navigates to an entry by explicit id and returns the containing page', async () => {
     entryRepository.findOne.mockResolvedValue({ id: 7, userId: 3, date: '2024-01-20', index: 4 });
-    const newerQb = createQueryBuilder({ getCount: jest.fn().mockResolvedValue(14) });
-    const sameDayQb = createQueryBuilder({ getCount: jest.fn().mockResolvedValue(2) });
+    const countBeforeQb = createQueryBuilder({ getCount: jest.fn().mockResolvedValue(16) });
     entryRepository.createQueryBuilder
-      .mockReturnValueOnce(newerQb)
-      .mockReturnValueOnce(sameDayQb);
+      .mockReturnValueOnce(countBeforeQb);
 
     const result = await service.getEntryByDate(3, { id: 7, limit: 10 });
 
     expect(entryRepository.findOne).toHaveBeenCalledWith({ where: { userId: 3, id: 7 } });
+    expect(countBeforeQb.andWhere).toHaveBeenCalledWith(
+      '(e.is_pinned = true OR (e.is_pinned = false AND (e.date > :date OR (e.date = :date AND e.index < :index))))',
+      { date: '2024-01-20', index: 4 },
+    );
     expect(result).toEqual({
       found: true,
       entry: { id: 7, userId: 3, date: '2024-01-20', index: 4 },
@@ -217,6 +224,84 @@ describe('EntriesQueryService', () => {
       found: false,
       error: 'Entry not found',
     });
+  });
+
+  it('returns exact backlinks for the target entry date and index', async () => {
+    entryRepository.findOne.mockResolvedValue({ id: 7, userId: 3, date: '2024-01-20', index: 2 });
+    const matchingEntry = {
+      id: 12,
+      userId: 3,
+      date: '2024-02-01',
+      index: 1,
+      tags: ['research'],
+      content: 'This references [[2024-01-20#2]] directly.',
+      format: 'markdown',
+      visibility: 'private',
+      isFavorite: false,
+      isArchived: false,
+      isPinned: false,
+      diary: { name: 'Work', icon: 'W', color: '#123456' },
+    };
+    const legacyMatch = {
+      ...matchingEntry,
+      id: 13,
+      content: 'Legacy reference entry (2024-01-20--2).',
+    };
+    const wrongIndex = {
+      ...matchingEntry,
+      id: 14,
+      content: 'This references [[2024-01-20]] only.',
+    };
+    const backlinksQb = createQueryBuilder({
+      getMany: jest.fn().mockResolvedValue([matchingEntry, legacyMatch, wrongIndex]),
+    });
+    entryRepository.createQueryBuilder.mockReturnValue(backlinksQb);
+
+    const result = await service.getBacklinks(3, 7);
+
+    expect(entryRepository.findOne).toHaveBeenCalledWith({ where: { id: 7, userId: 3 } });
+    expect(backlinksQb.andWhere).toHaveBeenCalledWith('e.id != :entryId', { entryId: 7 });
+    expect(backlinksQb.andWhere).toHaveBeenCalledWith('e.content ILIKE :targetDate', { targetDate: '%2024-01-20%' });
+    expect(result).toEqual({
+      backlinks: [
+        {
+          id: 12,
+          date: '2024-02-01',
+          index: 1,
+          tags: ['research'],
+          content: 'This references [[2024-01-20#2]] directly.',
+          format: 'markdown',
+          visibility: 'private',
+          is_favorite: false,
+          is_archived: false,
+          is_pinned: false,
+          diary_name: 'Work',
+          diary_icon: 'W',
+          diary_color: '#123456',
+        },
+        {
+          id: 13,
+          date: '2024-02-01',
+          index: 1,
+          tags: ['research'],
+          content: 'Legacy reference entry (2024-01-20--2).',
+          format: 'markdown',
+          visibility: 'private',
+          is_favorite: false,
+          is_archived: false,
+          is_pinned: false,
+          diary_name: 'Work',
+          diary_icon: 'W',
+          diary_color: '#123456',
+        },
+      ],
+    });
+  });
+
+  it('throws when fetching backlinks for a missing entry', async () => {
+    entryRepository.findOne.mockResolvedValue(null);
+
+    await expect(service.getBacklinks(3, 999)).rejects.toThrow(NotFoundException);
   });
 
   it('returns random and on-this-day highlights grouped by years ago', async () => {

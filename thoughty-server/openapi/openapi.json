@@ -654,6 +654,42 @@
         ]
       }
     },
+    "/api/entries/{id}/backlinks": {
+      "get": {
+        "operationId": "EntriesController_getBacklinks",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entries referencing this entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryBacklinksResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get entries that reference this entry",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
     "/api/entries/bulk": {
       "post": {
         "operationId": "EntriesController_bulkOperation",
@@ -978,6 +1014,52 @@
           }
         ],
         "summary": "Toggle archive status of an entry",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/{id}/pinned": {
+      "patch": {
+        "operationId": "EntriesController_togglePinned",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePinnedDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pinned status updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryMutationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Toggle pinned status of an entry",
         "tags": [
           "Entries"
         ]
@@ -1641,7 +1723,11 @@
               "enum": [
                 "txt",
                 "json",
-                "md"
+                "md",
+                "csv",
+                "pdf",
+                "html",
+                "epub"
               ]
             }
           }
@@ -1733,6 +1819,333 @@
         "summary": "Import entries from parsed content",
         "tags": [
           "Import/Export"
+        ]
+      }
+    },
+    "/api/books/preview": {
+      "get": {
+        "operationId": "BooksController_preview",
+        "parameters": [
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID to build the book from",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "Book output format",
+            "schema": {
+              "default": "pdf",
+              "type": "string",
+              "enum": [
+                "pdf",
+                "epub",
+                "html",
+                "md"
+              ]
+            }
+          },
+          {
+            "name": "title",
+            "required": false,
+            "in": "query",
+            "description": "Book title (defaults to the diary name)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "author",
+            "required": false,
+            "in": "query",
+            "description": "Author name shown on the title page (defaults to the username)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Only include entries on or after this date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "Only include entries on or before this date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chapterOrder",
+            "required": false,
+            "in": "query",
+            "description": "Chapter ordering: alphabetical, by entry count, or by first entry date",
+            "schema": {
+              "default": "alpha",
+              "type": "string",
+              "enum": [
+                "alpha",
+                "entries",
+                "chrono"
+              ]
+            }
+          },
+          {
+            "name": "tagScope",
+            "required": false,
+            "in": "query",
+            "description": "Place entries in every matching tag chapter, or only in their first tag chapter",
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "first"
+              ]
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated list of tags to use as chapters (defaults to all tags)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeUntagged",
+            "required": false,
+            "in": "query",
+            "description": "Add a final chapter for entries without tags",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeDates",
+            "required": false,
+            "in": "query",
+            "description": "Show entry dates inside chapters",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeToc",
+            "required": false,
+            "in": "query",
+            "description": "Include a table of contents",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "narrative",
+            "required": false,
+            "in": "query",
+            "description": "Use AI to weave each chapter's entries into flowing prose (requires a configured AI key)",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Book outline with chapter titles and entry counts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookPreviewResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Preview the book outline (chapters built from tags) before exporting",
+        "tags": [
+          "Books"
+        ]
+      }
+    },
+    "/api/books/export": {
+      "get": {
+        "operationId": "BooksController_export",
+        "parameters": [
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID to build the book from",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "Book output format",
+            "schema": {
+              "default": "pdf",
+              "type": "string",
+              "enum": [
+                "pdf",
+                "epub",
+                "html",
+                "md"
+              ]
+            }
+          },
+          {
+            "name": "title",
+            "required": false,
+            "in": "query",
+            "description": "Book title (defaults to the diary name)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "author",
+            "required": false,
+            "in": "query",
+            "description": "Author name shown on the title page (defaults to the username)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Only include entries on or after this date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "Only include entries on or before this date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chapterOrder",
+            "required": false,
+            "in": "query",
+            "description": "Chapter ordering: alphabetical, by entry count, or by first entry date",
+            "schema": {
+              "default": "alpha",
+              "type": "string",
+              "enum": [
+                "alpha",
+                "entries",
+                "chrono"
+              ]
+            }
+          },
+          {
+            "name": "tagScope",
+            "required": false,
+            "in": "query",
+            "description": "Place entries in every matching tag chapter, or only in their first tag chapter",
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "first"
+              ]
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated list of tags to use as chapters (defaults to all tags)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeUntagged",
+            "required": false,
+            "in": "query",
+            "description": "Add a final chapter for entries without tags",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeDates",
+            "required": false,
+            "in": "query",
+            "description": "Show entry dates inside chapters",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeToc",
+            "required": false,
+            "in": "query",
+            "description": "Include a table of contents",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "narrative",
+            "required": false,
+            "in": "query",
+            "description": "Use AI to weave each chapter's entries into flowing prose (requires a configured AI key)",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Book file in the requested format (PDF, HTML, or Markdown)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Convert journal entries into a book (chapters from tags) and download it",
+        "tags": [
+          "Books"
         ]
       }
     },
@@ -2354,6 +2767,9 @@
           "authProvider": {
             "type": "string"
           },
+          "emailVerified": {
+            "type": "boolean"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -2364,6 +2780,7 @@
           "username",
           "email",
           "authProvider",
+          "emailVerified",
           "createdAt"
         ]
       },
@@ -2489,6 +2906,9 @@
           "is_archived": {
             "type": "boolean"
           },
+          "is_pinned": {
+            "type": "boolean"
+          },
           "diary_name": {
             "type": "string"
           },
@@ -2520,6 +2940,7 @@
           "visibility",
           "is_favorite",
           "is_archived",
+          "is_pinned",
           "created_at"
         ]
       },
@@ -2623,6 +3044,83 @@
         },
         "required": [
           "found"
+        ]
+      },
+      "EntryBacklinkDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          },
+          "index": {
+            "type": "number"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ]
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "is_favorite": {
+            "type": "boolean"
+          },
+          "is_archived": {
+            "type": "boolean"
+          },
+          "is_pinned": {
+            "type": "boolean"
+          },
+          "diary_name": {
+            "type": "string"
+          },
+          "diary_icon": {
+            "type": "string"
+          },
+          "diary_color": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "index",
+          "tags",
+          "content",
+          "format",
+          "visibility",
+          "is_favorite",
+          "is_archived",
+          "is_pinned"
+        ]
+      },
+      "EntryBacklinksResponseDto": {
+        "type": "object",
+        "properties": {
+          "backlinks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntryBacklinkDto"
+            }
+          }
+        },
+        "required": [
+          "backlinks"
         ]
       },
       "CreateEntryDto": {
@@ -2888,6 +3386,18 @@
         },
         "required": [
           "isArchived"
+        ]
+      },
+      "UpdatePinnedDto": {
+        "type": "object",
+        "properties": {
+          "isPinned": {
+            "type": "boolean",
+            "description": "Whether the entry is pinned"
+          }
+        },
+        "required": [
+          "isPinned"
         ]
       },
       "DeleteAllResponseDto": {
@@ -3203,6 +3713,14 @@
             "type": "number",
             "example": 120
           },
+          "averageWordsPerEntry": {
+            "type": "number",
+            "example": 184
+          },
+          "averageReadingTimeMinutes": {
+            "type": "number",
+            "example": 1
+          },
           "uniqueTagsCount": {
             "type": "number",
             "example": 18
@@ -3289,6 +3807,8 @@
         },
         "required": [
           "totalThoughts",
+          "averageWordsPerEntry",
+          "averageReadingTimeMinutes",
           "uniqueTagsCount",
           "thoughtsPerYear",
           "thoughtsPerMonth",
@@ -3414,6 +3934,61 @@
           "importedCount",
           "skippedCount",
           "totalProcessed"
+        ]
+      },
+      "BookChapterPreviewDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "entryCount": {
+            "type": "number"
+          },
+          "firstDate": {
+            "type": "string",
+            "description": "Date of the first entry in the chapter"
+          },
+          "lastDate": {
+            "type": "string",
+            "description": "Date of the last entry in the chapter"
+          }
+        },
+        "required": [
+          "title",
+          "entryCount",
+          "firstDate",
+          "lastDate"
+        ]
+      },
+      "BookPreviewResponseDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "author": {
+            "type": "string"
+          },
+          "chapterCount": {
+            "type": "number"
+          },
+          "entryCount": {
+            "type": "number",
+            "description": "Total number of entry placements across chapters"
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookChapterPreviewDto"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "chapterCount",
+          "entryCount",
+          "chapters"
         ]
       },
       "LinkAttachmentDto": {

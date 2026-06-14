@@ -90,6 +90,7 @@ describe('useAppShellModel', () => {
   const fetchEntries = vi.fn();
   const fetchEntryDates = vi.fn();
   const fetchEntryHistory = vi.fn();
+  const fetchEntryBacklinks = vi.fn();
   const setPage = vi.fn();
   const setTargetEntryId = vi.fn();
   const setFilterTags = vi.fn();
@@ -121,7 +122,7 @@ describe('useAppShellModel', () => {
     mocks.useAuth.mockReturnValue({
       isAuthenticated: true,
       loading: false,
-      user: { username: 'auth-user', avatarUrl: 'auth-avatar.png' },
+      user: { username: 'auth-user', avatarUrl: 'auth-avatar.png', emailVerified: true },
       logout,
     });
     mocks.useAppRouteState.mockReturnValue({
@@ -172,6 +173,7 @@ describe('useAppShellModel', () => {
       fetchEntries,
       fetchEntryDates,
       fetchEntryHistory,
+      fetchEntryBacklinks,
       filterArchiveStatus: 'active',
       filterDateObj: null,
       filterFavorites: false,
@@ -199,6 +201,7 @@ describe('useAppShellModel', () => {
       targetEntryId: null,
       toggleArchived: vi.fn(),
       toggleFavorite: vi.fn(),
+      togglePinned: vi.fn(),
       toggleVisibility: vi.fn(),
       totalPages: 8,
     });
@@ -310,6 +313,7 @@ describe('useAppShellModel', () => {
       kind: 'layout',
       userName: 'Config Name',
       avatarUrl: 'config-avatar.png',
+      isEmailVerified: true,
       entryToastVisible: true,
     });
     expect(result.current.authenticatedRoutesProps).toMatchObject({

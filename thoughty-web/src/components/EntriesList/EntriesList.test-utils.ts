@@ -50,6 +50,9 @@ const translations: Record<string, string> = {
     loadingEntries: 'Loading entries...',
     noEntriesFound: 'No entries found.',
     edit: 'Edit',
+    entryWordCount: '{count} words',
+    entryReadingTimeMinutes: '{minutes} min read',
+    entryReadingTimeLessThanMinute: '<1 min read',
     delete: 'Delete',
     save: 'Save',
     cancel: 'Cancel',
@@ -71,6 +74,10 @@ const translations: Record<string, string> = {
     archive: 'Archive',
     unarchive: 'Unarchive',
     backToSource: 'Back to source',
+    backlinks: 'Backlinks',
+    backlinksCount: '{count} links',
+    loadingBacklinks: 'Loading backlinks...',
+    noBacklinks: 'No backlinks yet',
     history: 'History',
     noRevisions: 'No revisions',
     revision: 'Revision',
@@ -83,6 +90,10 @@ const translations: Record<string, string> = {
     rephraseCompleteRewrite: 'Complete rewrite',
     favorite: 'Favorite',
     unfavorite: 'Unfavorite',
+    pinEntry: 'Pin entry',
+    unpinEntry: 'Unpin entry',
+    pinned: 'Pinned',
+    pinnedEntries: 'Pinned entries',
     markdownEnabled: 'Markdown enabled',
     markdownDisabled: 'Markdown disabled',
     selectAll: 'Select all',
@@ -107,7 +118,11 @@ export const t = (key: string, params?: Record<string, string | number>): string
     if (key === 'bulkSelected') {
         return `Selected: ${params?.count ?? 0}`;
     }
-    return translations[key] || key;
+    let value = translations[key] || key;
+    for (const [param, replacement] of Object.entries(params ?? {})) {
+        value = value.replace(`{${param}}`, String(replacement));
+    }
+    return value;
 };
 
 export function createEntriesListProps(
@@ -123,6 +138,7 @@ export function createEntriesListProps(
         onToggleVisibility: vi.fn(),
         onToggleFavorite: vi.fn(),
         onToggleArchived: vi.fn(),
+        onTogglePinned: vi.fn(),
         editingEntry: null,
         editText: '',
         setEditText: vi.fn(),
@@ -166,6 +182,7 @@ export function createEntryViewModeProps(
         onToggleVisibility: vi.fn(),
         onToggleFavorite: vi.fn(),
         onToggleArchived: vi.fn(),
+        onTogglePinned: vi.fn(),
         onEdit: vi.fn(),
         onDelete: vi.fn(),
         onNavigateToEntry: vi.fn(),
@@ -173,6 +190,7 @@ export function createEntryViewModeProps(
         getEntryPermalink: getTestEntryPermalink,
         onBackToSource: vi.fn(),
         onFetchHistory: undefined,
+        onFetchBacklinks: undefined,
         onDeleteRevision: undefined,
         onDiscuss: undefined,
         onRephrase: undefined,

@@ -19,6 +19,7 @@ import {
   UpdateVisibilityDto,
   UpdateFavoriteDto,
   UpdateArchivedDto,
+  UpdatePinnedDto,
   BulkOperationDto,
   RenameTagDto,
   ReorderEntriesDto,
@@ -31,6 +32,7 @@ import {
   EntryDatesResponseDto,
   FirstEntryResponseDto,
   EntryLookupResponseDto,
+  EntryBacklinksResponseDto,
   CreateEntryResponseDto,
   EntryMutationResponseDto,
   CountedMutationResponseDto,
@@ -92,6 +94,17 @@ export class EntriesController {
     @Query() query: GetHighlightsQueryDto,
   ) {
     return this.entriesService.getHighlights(user.userId, query);
+  }
+
+  @Get(':id/backlinks')
+  @ApiOperation({ summary: 'Get entries that reference this entry' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Entries referencing this entry', type: EntryBacklinksResponseDto })
+  async getBacklinks(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<EntryBacklinksResponseDto> {
+    return this.entriesService.getBacklinks(user.userId, id);
   }
 
   @Post()
@@ -180,6 +193,18 @@ export class EntriesController {
     @Body() dto: UpdateArchivedDto,
   ) {
     return this.entriesService.toggleArchived(user.userId, id, dto.isArchived);
+  }
+
+  @Patch(':id/pinned')
+  @ApiOperation({ summary: 'Toggle pinned status of an entry' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Pinned status updated', type: EntryMutationResponseDto })
+  async togglePinned(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdatePinnedDto,
+  ) {
+    return this.entriesService.togglePinned(user.userId, id, dto.isPinned);
   }
 
   @Get(':id/history')

@@ -5,6 +5,8 @@ import { Entry } from '@/database/entities';
 import { StatsResponseDto } from './dto';
 import { StatsToneAnalysisService } from './stats-tone-analysis.service';
 
+const WORDS_PER_MINUTE = 200;
+
 @Injectable()
 export class StatsService {
   constructor(
@@ -35,6 +37,7 @@ export class StatsService {
       perTagResult,
       tagsPerYearResult,
       tagsPerMonthResult,
+      wordCountResult,
     ] = await Promise.all([
       createQb().getCount(),
       createQb()
@@ -79,6 +82,12 @@ export class StatsService {
         .orderBy('month', 'DESC')
         .addOrderBy('count', 'DESC')
         .getRawMany(),
+      createQb()
+        .select(
+          "COALESCE(SUM(CASE WHEN BTRIM(e.content) = '' THEN 0 ELSE CARDINALITY(REGEXP_SPLIT_TO_ARRAY(BTRIM(e.content), '\\s+')) END), 0)",
+          'totalWords',
+        )
+        .getRawOne(),
     ]);
 
     const thoughtsPerYear: Record<string, number> = {};
@@ -121,6 +130,11 @@ export class StatsService {
 
     // Unique tags count - use subquery to avoid aggregate function with set-returning function
     const uniqueTagsCount = Object.keys(thoughtsPerTag).length;
+    const totalWords = Number.parseInt(String(wordCountResult?.totalWords ?? '0'), 10);
+    const averageWordsPerEntry = totalThoughts > 0 ? Math.round(totalWords / totalThoughts) : 0;
+    const averageReadingTimeMinutes = averageWordsPerEntry > 0
+      ? Math.max(1, Math.ceil(averageWordsPerEntry / WORDS_PER_MINUTE))
+      : 0;
     const recentEntries = totalThoughts > 0
       ? await createQb()
         .select(['e.id', 'e.content', 'e.date', 'e.tags'])
@@ -133,6 +147,8 @@ export class StatsService {
 
     return {
       totalThoughts,
+      averageWordsPerEntry,
+      averageReadingTimeMinutes,
       uniqueTagsCount,
       thoughtsPerYear,
       thoughtsPerMonth,

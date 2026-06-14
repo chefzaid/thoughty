@@ -14,11 +14,14 @@ export interface ProfileConfig {
   ttsVoiceUri?: string;
   language?: string;
   entriesPerPage?: number | string;
+  maxPinnedEntries?: number | string;
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;
   openRouterModel?: string;
   autoTagMaxTags?: string | number;
   tagMetadata?: string;
+  subscriptionPlan?: 'free' | 'plus' | 'pro';
+  paymentMethodLabel?: string;
 }
 
 export interface ProfileUser {
@@ -26,6 +29,7 @@ export interface ProfileUser {
   email?: string;
   avatarUrl?: string;
   authProvider?: 'local' | 'google';
+  emailVerified?: boolean;
 }
 
 export interface ProfileStats {

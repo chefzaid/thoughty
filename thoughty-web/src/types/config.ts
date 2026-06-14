@@ -2,6 +2,7 @@
 
 export interface Config {
   entriesPerPage?: string | number;
+  maxPinnedEntries?: string | number;
   language?: string;
   theme?: 'light' | 'dark';
   fontFamily?: FontFamilyPreference;
@@ -19,6 +20,9 @@ export interface Config {
   openRouterModel?: string;
   autoTagMaxTags?: string | number;
   tagMetadata?: string;
+  entryTemplates?: string;
+  subscriptionPlan?: 'free' | 'plus' | 'pro';
+  paymentMethodLabel?: string;
 }
 
 export interface AppConfig {

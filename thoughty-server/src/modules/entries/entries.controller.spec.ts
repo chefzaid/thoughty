@@ -14,6 +14,7 @@ describe('EntriesController', () => {
       getDates: jest.fn(),
       getFirstEntry: jest.fn(),
       getEntryByDate: jest.fn(),
+      getBacklinks: jest.fn(),
       getHighlights: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
@@ -23,6 +24,7 @@ describe('EntriesController', () => {
       bulkOperation: jest.fn(),
       toggleFavorite: jest.fn(),
       toggleArchived: jest.fn(),
+      togglePinned: jest.fn(),
       getRevisions: jest.fn(),
     };
 
@@ -103,6 +105,18 @@ describe('EntriesController', () => {
 
       const result = await controller.getHighlights(mockUser as any, query);
       expect(entriesService.getHighlights).toHaveBeenCalledWith(1, query);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('getBacklinks', () => {
+    it('delegates to entriesService.getBacklinks', async () => {
+      const expected = { backlinks: [{ id: 2, content: 'links back' }] };
+      entriesService.getBacklinks!.mockResolvedValue(expected);
+
+      const result = await controller.getBacklinks(mockUser as any, 7);
+
+      expect(entriesService.getBacklinks).toHaveBeenCalledWith(1, 7);
       expect(result).toBe(expected);
     });
   });
@@ -238,6 +252,18 @@ describe('EntriesController', () => {
 
       const result = await controller.toggleArchived(mockUser as any, 1, dto as any);
       expect(entriesService.toggleArchived).toHaveBeenCalledWith(1, 1, false);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('togglePinned', () => {
+    it('delegates to entriesService.togglePinned', async () => {
+      const dto = { isPinned: true };
+      const expected = { success: true, entry: { id: 1, isPinned: true } };
+      entriesService.togglePinned!.mockResolvedValue(expected);
+
+      const result = await controller.togglePinned(mockUser as any, 1, dto as any);
+      expect(entriesService.togglePinned).toHaveBeenCalledWith(1, 1, true);
       expect(result).toBe(expected);
     });
   });

@@ -6,6 +6,7 @@ export const EXPORT_FORMAT_OPTIONS: ReadonlyArray<{ value: ImportExportFormat; l
     { value: 'txt', labelKey: 'formatTxt' },
     { value: 'json', labelKey: 'formatJson' },
     { value: 'md', labelKey: 'formatMd' },
+    { value: 'csv', labelKey: 'formatCsv' },
     { value: 'pdf', labelKey: 'bookFormatPdf' },
     { value: 'epub', labelKey: 'bookFormatEpub' },
     { value: 'html', labelKey: 'bookFormatHtml' },

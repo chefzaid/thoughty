@@ -15,6 +15,7 @@ flowchart LR
 
 - Entries support both plain text and Markdown formats. Markdown entries get a formatting toolbar, inline help, and live preview, while plain-text entries stay lightweight for fast capture.
 - The editor grows with the content instead of forcing a small fixed writing box, which keeps longer entries readable during drafting and editing.
+- Entry templates make repeatable formats quick to start. Built-in gratitude, daily reflection, and meeting-note templates are available immediately, and users can save or delete their own templates from the current draft.
 - Multiple entries can exist on the same day. Thoughty keeps them addressable with date-plus-index references such as `[[2024-01-15]]` and `[[2024-01-15#2]]`.
 - Entries can be backdated from the UI, edited inline, and updated without leaving the journal view. Date, tags, visibility, and other metadata are treated as part of the entry workflow rather than a separate settings surface.
 - Same-day entries can be drag-reordered, which matters for users who use one date as a container for several shorter notes, check-ins, or event logs.
@@ -23,10 +24,12 @@ flowchart LR
 - Entries can also be shared directly from the journal. Thoughty uses the browser share sheet when it is available and falls back to copying the permalink when it is not.
 - Primary entry actions are now cleaner thanks to a dedicated `More actions` menu, which keeps the main toolbar focused on visibility, favorite, and edit while moving secondary or destructive actions out of the way.
 - Cross-reference navigation is not just link parsing. Referenced entries are opened in context, highlighted, and can return the user to the originating entry.
+- Each entry shows backlinks from other entries that reference it, with one-click navigation back to the referring thought.
 - Visibility is managed per entry with public and private states, making Thoughty usable for both strictly personal notes and selectively shareable writing.
-- Favorites, archive state, and revision history are all first-class entry behaviors. Edited entries keep a history trail, and individual revisions can be inspected and removed.
+- Favorites, pinned state, archive state, and revision history are all first-class entry behaviors. Pinned entries stay at the top of the journal up to the user's configured limit, edited entries keep a history trail, and individual revisions can be inspected and removed.
 - Attachments are handled inline: files can be attached to entries; image, audio, PDF, and text-like assets can be previewed in place; and larger previews open in a dedicated dialog rather than forcing blind downloads.
 - Journal navigation includes paging plus a year/month jump control, so users can move to the first entry in a period without manually paging through long histories.
+- Journal keyboard shortcuts cover fast writing and browsing: `Ctrl+N` focuses the new-entry writer, `Ctrl+/` focuses search, `Escape` closes the highlights modal, and left/right arrow keys page through entries when focus is not inside a text field.
 
 ## Diaries and Long-Term Structure
 
@@ -52,6 +55,7 @@ flowchart LR
 ## Highlights and Insight Surfaces
 
 - The stats area is built for journal review, not just raw counts. It exposes totals and averages, entry volume over time, top tags, and tag usage trends across years.
+- Entry cards show word count and estimated reading time, and the stats overview includes average words and average reading time per entry.
 - A journaling activity heatmap adds a calendar-style view of writing frequency on the stats page, making active and quiet periods easy to spot at a glance.
 - Diary scoping carries into stats, which is important when users want to compare a focused writing stream against the full journal.
 - Tag metadata also feeds the insight layer, so charts and tag breakdowns can stay visually consistent with the colors used elsewhere in the app.
@@ -62,6 +66,7 @@ flowchart LR
 ## Import, Export, and Portability
 
 - Export is not limited to one archival format. Thoughty supports TXT, JSON, and Markdown output, with optional diary scoping and optional inclusion of visibility metadata.
+- CSV export is available for spreadsheet workflows, including entry metadata plus per-entry word count and estimated reading time columns.
 - Document exports are also available: PDF, EPUB, and HTML render the journal as a linear, dated record with one section per month, a title page, and a table of contents — the plain readable counterpart to the AI-composed book converter.
 - TXT import/export can be customized with saved format settings such as date format, entry separators, and same-day separators.
 - Export filenames are generated for the chosen scope and format, which makes exports usable as real artifacts rather than anonymous downloads.
@@ -112,7 +117,9 @@ flowchart LR
 - Account deletion is soft-delete oriented and guarded by confirmation, which is safer than immediate irreversible removal.
 - GDPR-style data download is available from the config surface, allowing a user to export their stored account data in one response.
 - Profile management includes full name, display name, bio, birthday, avatar, and membership metadata.
+- Account identity status is surfaced in the profile and main navigation, so verified accounts show a badge and unverified email accounts are clearly labeled.
 - Avatar editing goes beyond simple upload. Users can crop, zoom, and reposition images within a circular editor before saving the final result.
+- Profile includes subscription management, with saved plan selection, a payment method label, and recent billing history shown alongside account settings.
 - Preferences cover theme, language, journal pagination size, profile birthday/gender metadata, text-to-speech date reading, preferred AI model, and the automatic AI tagging limit.
 - Appearance preferences now include font family, font size, and font color controls, which let users tune the journal to their reading comfort.
 - Text-to-speech appearance settings now include voice selection and a preview action, so users can listen to the chosen voice before saving it.
@@ -120,7 +127,7 @@ flowchart LR
 
 ## Product Experience
 
-- Unauthenticated visitors land on a dedicated intro page rather than being dropped straight into a bare login form.
+- Unauthenticated visitors land on a detailed intro page rather than being dropped straight into a bare login form, with feature highlights, product preview screenshots, and sign-up calls to action.
 - The app uses route-based navigation across `/journal`, `/stats`, `/profile`, `/tags`, and `/import-export`, which makes major areas linkable and easier to revisit.
 - Long journal pages include a back-to-top affordance so users can quickly return to the main controls after browsing older entries.
 - Destructive flows use confirmation dialogs, and long-running operations such as loading history, sync, or imports expose explicit loading states.

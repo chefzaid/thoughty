@@ -46,6 +46,9 @@ export class Entry {
   @Column({ name: 'is_archived', type: 'boolean', default: false })
   isArchived: boolean;
 
+  @Column({ name: 'is_pinned', type: 'boolean', default: false })
+  isPinned: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

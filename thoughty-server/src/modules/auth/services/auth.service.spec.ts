@@ -35,6 +35,7 @@ describe('AuthService', () => {
     passwordHash: 'hashed_password',
     authProvider: 'local',
     deletedAt: null,
+    emailVerified: false,
   };
 
   const mockRefreshToken = {
@@ -111,6 +112,7 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
       expect(result.user.email).toBe('test@example.com');
+      expect(result.user.emailVerified).toBe(false);
       expect(diaryRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Thoughts',
@@ -169,6 +171,7 @@ describe('AuthService', () => {
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
       expect(result.user.email).toBe('test@example.com');
+      expect(result.user.emailVerified).toBe(false);
     });
 
     it('should throw UnauthorizedException for non-existent user', async () => {
@@ -264,10 +267,11 @@ describe('AuthService', () => {
     });
 
     it('should link OAuth to existing email account', async () => {
+      const existingUser = { ...mockUser };
       userRepository.findOne
         .mockResolvedValueOnce(null) // First call for OAuth lookup
-        .mockResolvedValueOnce(mockUser); // Second call for email lookup
-      userRepository.save.mockResolvedValue({ ...mockUser, authProvider: 'google' });
+        .mockResolvedValueOnce(existingUser); // Second call for email lookup
+      userRepository.save.mockResolvedValue({ ...existingUser, authProvider: 'google', emailVerified: true });
       refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
 
       const result = await service.oauthLogin({
@@ -278,11 +282,12 @@ describe('AuthService', () => {
       });
 
       expect(result).toHaveProperty('accessToken');
+      expect(result.user.emailVerified).toBe(true);
     });
 
     it('should create new user for OAuth login', async () => {
       userRepository.findOne.mockResolvedValue(null);
-      userRepository.save.mockResolvedValue({ ...mockUser, id: 1, authProvider: 'google' });
+      userRepository.save.mockResolvedValue({ ...mockUser, id: 1, authProvider: 'google', emailVerified: true });
       diaryRepository.save.mockResolvedValue({ id: 1 });
       refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
 
@@ -294,6 +299,7 @@ describe('AuthService', () => {
       });
 
       expect(result.user.isNewUser).toBe(true);
+      expect(result.user.emailVerified).toBe(true);
       expect(diaryRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           color: '#E76F51',
@@ -364,6 +370,7 @@ describe('AuthService', () => {
 
       expect(result.id).toBe(1);
       expect(result.email).toBe('test@example.com');
+      expect(result.emailVerified).toBe(false);
     });
 
     it('should throw NotFoundException for non-existent user', async () => {

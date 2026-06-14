@@ -40,9 +40,12 @@ describe('ConfigService', () => {
         fontFamily: 'system',
         fontSize: '16',
         entriesPerPage: '10',
+        maxPinnedEntries: '3',
         defaultVisibility: 'private',
         language: 'en',
         autoTagMaxTags: '0',
+        subscriptionPlan: 'free',
+        paymentMethodLabel: '',
       });
     });
 
@@ -83,9 +86,12 @@ describe('ConfigService', () => {
         fontFamily: 'serif',
         fontSize: '18',
         entriesPerPage: '20',
+        maxPinnedEntries: '3',
         defaultVisibility: 'public',
         language: 'es',
         autoTagMaxTags: '4',
+        subscriptionPlan: 'free',
+        paymentMethodLabel: '',
       });
     });
 

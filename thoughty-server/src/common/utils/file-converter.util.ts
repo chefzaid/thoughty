@@ -453,6 +453,55 @@ export function generateJsonFile(entries: EntryData[], includeVisibility = false
   return JSON.stringify({ entries: exportEntries }, null, 2);
 }
 
+function escapeCsvCell(value: string | number | undefined): string {
+  const serialized = value === undefined ? '' : String(value);
+  return /[",\r\n]/.test(serialized)
+    ? `"${serialized.replaceAll('"', '""')}"`
+    : serialized;
+}
+
+function countWords(content: string): number {
+  const trimmed = content.trim();
+  return trimmed ? trimmed.split(/\s+/).length : 0;
+}
+
+/**
+ * Generate CSV export content from entries with per-entry metrics.
+ */
+export function generateCsvFile(entries: EntryData[], includeVisibility = false): string {
+  const sorted = sortEntries(entries);
+  const headers = [
+    'date',
+    'index',
+    'diary',
+    'tags',
+    ...(includeVisibility ? ['visibility'] : []),
+    'format',
+    'word_count',
+    'reading_time_minutes',
+    'content',
+  ];
+
+  const rows = sorted.map((entry) => {
+    const content = entry.content || '';
+    const wordCount = countWords(content);
+    const readingTimeMinutes = wordCount > 0 ? Math.max(1, Math.ceil(wordCount / 200)) : 0;
+    return [
+      normalizeEntryDate(entry.date),
+      entry.index,
+      entry.diaryName,
+      (entry.tags || []).join(';'),
+      ...(includeVisibility ? [entry.visibility || 'private'] : []),
+      entry.format || 'plain',
+      wordCount,
+      readingTimeMinutes,
+      content,
+    ].map(escapeCsvCell).join(',');
+  });
+
+  return [headers.join(','), ...rows].join('\r\n');
+}
+
 /**
  * Parse JSON file content into entry objects
  */

@@ -3,8 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Entry, EntryRevision, Diary } from '@/database/entities';
 import { sanitizeString } from '@/common/utils';
+import { ConfigService } from '@/modules/config';
 import { CreateEntryDto, UpdateEntryDto, BulkOperationDto } from './dto';
 import { EntryTaggingService } from './entry-tagging.service';
+
+const DEFAULT_MAX_PINNED_ENTRIES = 3;
 
 @Injectable()
 export class EntriesCommandService {
@@ -16,6 +19,7 @@ export class EntriesCommandService {
     @InjectRepository(Diary)
     private readonly diaryRepository: Repository<Diary>,
     private readonly entryTaggingService: EntryTaggingService,
+    private readonly configService: ConfigService,
   ) {}
 
   private sanitizeTagName(tag?: string | null): string {
@@ -144,6 +148,28 @@ export class EntriesCommandService {
     }
 
     entry.isArchived = isArchived;
+    const updated = await this.entryRepository.save(entry);
+    return { success: true, entry: updated };
+  }
+
+  async togglePinned(userId: number, id: number, isPinned: boolean): Promise<{ success: boolean; entry: Entry }> {
+    const entry = await this.entryRepository.findOne({ where: { id, userId } });
+    if (!entry) {
+      throw new NotFoundException('Entry not found');
+    }
+
+    if (isPinned && !entry.isPinned) {
+      const maxPinnedEntries = await this.getMaxPinnedEntries(userId);
+      const pinnedCount = await this.entryRepository.count({
+        where: { userId, isPinned: true },
+      });
+
+      if (pinnedCount >= maxPinnedEntries) {
+        throw new BadRequestException(`Pinned entry limit reached (${maxPinnedEntries})`);
+      }
+    }
+
+    entry.isPinned = isPinned;
     const updated = await this.entryRepository.save(entry);
     return { success: true, entry: updated };
   }
@@ -358,5 +384,16 @@ export class EntriesCommandService {
 
     await this.entryRepository.update({ id: In(validIds), userId }, { isArchived });
     return { success: true, affectedCount: validIds.length };
+  }
+
+  private async getMaxPinnedEntries(userId: number): Promise<number> {
+    const config = await this.configService.getConfig(userId);
+    const parsedLimit = Number.parseInt(config.maxPinnedEntries ?? '', 10);
+
+    if (!Number.isFinite(parsedLimit) || parsedLimit < 1) {
+      return DEFAULT_MAX_PINNED_ENTRIES;
+    }
+
+    return Math.min(parsedLimit, 20);
   }
 }

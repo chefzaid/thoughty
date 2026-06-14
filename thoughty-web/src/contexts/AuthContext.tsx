@@ -41,6 +41,7 @@ export interface User {
   avatarUrl?: string;
   isNewUser?: boolean;
   authProvider?: 'local' | 'google';
+  emailVerified?: boolean;
 }
 
 interface AuthResult {

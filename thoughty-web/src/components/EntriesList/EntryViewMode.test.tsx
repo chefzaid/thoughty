@@ -24,6 +24,7 @@ const clickToolbarAction = async (
 const PRIMARY_TOOLBAR_ACTIONS = [
     'Private - only you can see',
     'Favorite',
+    'Pin entry',
     'Discuss entry',
     'Edit',
 ] as const;
@@ -41,6 +42,8 @@ describe('EntryViewMode', () => {
         expect(screen.getByText('#important')).toBeInTheDocument();
         expect(screen.getByText('#1')).toBeInTheDocument();
         expect(screen.getByText('Work')).toBeInTheDocument();
+        expect(screen.getByText('2 words')).toBeInTheDocument();
+        expect(screen.getByText('1 min read')).toBeInTheDocument();
     });
 
     it('applies the saved font color only to the entry reading surface', () => {
@@ -68,15 +71,17 @@ describe('EntryViewMode', () => {
         expect(onToggleArchived).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
     });
 
-    it('calls visibility, favorite, and edit handlers from the primary toolbar', async () => {
+    it('calls visibility, favorite, pin, discuss, and edit handlers from the primary toolbar', async () => {
         const onToggleVisibility = vi.fn();
         const onToggleFavorite = vi.fn();
+        const onTogglePinned = vi.fn();
         const onDiscuss = vi.fn();
         const onEdit = vi.fn();
         const user = userEvent.setup();
         renderEntryViewMode({
             onToggleVisibility,
             onToggleFavorite,
+            onTogglePinned,
             onDiscuss,
             onEdit,
         });
@@ -87,8 +92,53 @@ describe('EntryViewMode', () => {
 
         expect(onToggleVisibility).toHaveBeenCalledWith(mockEntries[0]);
         expect(onToggleFavorite).toHaveBeenCalledWith(mockEntries[0]);
+        expect(onTogglePinned).toHaveBeenCalledWith(mockEntries[0]);
         expect(onDiscuss).toHaveBeenCalledWith(mockEntries[0]);
         expect(onEdit).toHaveBeenCalledWith(mockEntries[0]);
+    });
+
+    it('renders pinned state and unpins from the toolbar', async () => {
+        const onTogglePinned = vi.fn();
+        const user = userEvent.setup();
+        renderEntryViewMode({
+            entry: { ...mockEntries[0], is_pinned: true },
+            onTogglePinned,
+        });
+
+        expect(screen.getByText(/Pinned/)).toBeInTheDocument();
+        expect(screen.getByText(/2024-01-15/)).toBeInTheDocument();
+
+        await user.click(screen.getByTitle('Unpin entry'));
+
+        expect(onTogglePinned).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
+    });
+
+    it('renders backlinks and navigates to the referring entry', async () => {
+        const onFetchBacklinks = vi.fn().mockResolvedValue([
+            {
+                id: 44,
+                date: '2024-01-10',
+                index: 2,
+                content: 'This links back to [[2024-01-15]].',
+                tags: ['notes'],
+                format: 'plain',
+            },
+        ]);
+        const onNavigateToEntry = vi.fn();
+        const user = userEvent.setup();
+        renderEntryViewMode({ onFetchBacklinks, onNavigateToEntry });
+
+        expect(await screen.findByText('Backlinks')).toBeInTheDocument();
+        expect(await screen.findByText('This links back to [[2024-01-15]].')).toBeInTheDocument();
+
+        await user.click(screen.getByText('This links back to [[2024-01-15]].'));
+
+        expect(onFetchBacklinks).toHaveBeenCalledWith(1);
+        expect(onNavigateToEntry).toHaveBeenCalledWith('2024-01-10', 2, {
+            id: 1,
+            date: '2024-01-15',
+            index: 1,
+        });
     });
 
     it('renders secondary actions in the more actions menu', async () => {

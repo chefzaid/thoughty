@@ -21,12 +21,12 @@
 - [x] Text-to-speech reading of entries, with language-aware voice selection, preview, and optional reading of entry dates
 - [x] Write box that adapts to the content on the fly, and a "More actions" menu to declutter the buttons next to entries
 - [x] Delete all entries at once to start a fresh journal
-- [ ] Entry templates (e.g. gratitude journal, daily reflection, meeting notes) that users can create and pick when writing a new entry
-- [ ] Word count and estimated reading time displayed per entry, with averages added to stats
-- [ ] Pinned entries that always show at the top of the list regardless of date sorting limited to a configurable number of pinned entries
-- [ ] Backlinks panel showing which entries reference the current one (bidirectional linking like Obsidian/Roam)
-- [ ] Keyboard shortcuts for common actions (Ctrl+N new entry, Ctrl+/ focus search, Esc close modals, arrow keys for pagination)
-- [ ] Profile and identity verification of accounts with public entries (e.g. verified badge for confirmed email, or even KYC for public figures)
+- [x] Entry templates (e.g. gratitude journal, daily reflection, meeting notes) that users can create and pick when writing a new entry
+- [x] Word count and estimated reading time displayed per entry, with averages added to stats
+- [x] Pinned entries that always show at the top of the list regardless of date sorting limited to a configurable number of pinned entries
+- [x] Backlinks panel showing which entries reference the current one (bidirectional linking like Obsidian/Roam)
+- [x] Keyboard shortcuts for common actions (Ctrl+N new entry, Ctrl+/ focus search, Esc close modals, arrow keys for pagination)
+- [x] Profile and identity verification of accounts with public entries (e.g. verified badge for confirmed email, or even KYC for public figures)
 
 ## Tags & Diaries
 
@@ -70,14 +70,14 @@
 - [x] Scheduled background sync through a queue and worker instead of manual one-off exports
 - [x] Preview-first import with automatic format detection, duplicate detection with optional skipping, and a report of imported/skipped entries
 - [x] Download of all user data (GDPR)
-- [ ] CSV export for entries and stats data
+- [x] CSV export for entries and stats data
 
 ## Website
 
 - [x] Intro page showcasing the app features with links to login / sign up
 - [x] Footer with Privacy, Terms, and Contact entry points, responsive layout, and a back-to-top control
-- [ ] More detailed landing page with features presentation, screenshots, and sign up call to action
-- [ ] Subscription management page for users to manage their subscription, see billing history, and update payment method in Profile page
+- [x] More detailed landing page with features presentation, screenshots, and sign up call to action
+- [x] Subscription management page for users to manage their subscription, see billing history, and update payment method in Profile page
 - [ ] Subscription-based access to premium features, with a free trial period and a freemium tier with limited features to attract new users
 - [ ] About page with the story behind Thoughty, the mission, and the team
 - [ ] Terms of Service and Privacy Policy pages
@@ -233,6 +233,7 @@
 - [ ] Hunt for memory leaks, null references, bugs (UI + backend), and fix them
 - [ ] Always consider reusing existing code, and refactor to centralize similar reusable code instead of adding new one
 - [ ] Code reviews, refactor, and clean up code for better readability and maintainability
+- [ ] Verify that there are no regressions in the app after each new feature or bug fix, and that all existing features still work as expected
 - [ ] Keep implemented architecture, design patterns, and best practices up to date with the used tech stack and industry standards
 - [ ] Update dependencies to latest stable version and fix any breaking changes, try to use latest features of the used frameworks and libraries when necessary
 - [ ] Update documentation to reflect any changes in features, architecture, or deployment process

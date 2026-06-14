@@ -1,4 +1,4 @@
-import { Suspense, lazy, useRef, useEffect, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
+import { Suspense, lazy, useRef, useEffect, useMemo, useState, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
@@ -7,6 +7,7 @@ import type { Attachment } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getVisibilityButtonClass } from '../../utils/entryVisibility';
 import { resolveFontColor } from '../../types/config';
+import type { EntryTemplate, EntryTemplateDraft } from '../../utils/entryTemplates';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
@@ -37,6 +38,9 @@ interface EntryFormProps {
     readonly onRemovePendingFile?: (index: number) => void;
     readonly onRemoveUploadedAttachment?: (id: number) => void;
     readonly fontColor?: string;
+    readonly entryTemplates?: EntryTemplate[];
+    readonly onSaveTemplate?: (template: EntryTemplateDraft) => Promise<void> | void;
+    readonly onDeleteTemplate?: (templateId: string) => Promise<void> | void;
 }
 
 function EntryForm({
@@ -65,10 +69,18 @@ function EntryForm({
     onAddFile,
     onRemovePendingFile,
     onRemoveUploadedAttachment,
-    fontColor
+    fontColor,
+    entryTemplates = [],
+    onSaveTemplate,
+    onDeleteTemplate
 }: EntryFormProps) {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const [selectedTemplateId, setSelectedTemplateId] = useState('');
     const writingTextColor = resolveFontColor(fontColor, theme);
+    const selectedTemplate = useMemo(
+        () => entryTemplates.find((template) => template.id === selectedTemplateId),
+        [entryTemplates, selectedTemplateId],
+    );
 
     // Auto-resize textarea based on content
     useEffect(() => {
@@ -93,9 +105,94 @@ function EntryForm({
         ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
         : getVisibilityButtonClass(visibility ?? 'private', theme);
 
+    const applyTemplate = (templateId: string): void => {
+        setSelectedTemplateId(templateId);
+        const template = entryTemplates.find((candidate) => candidate.id === templateId);
+        if (!template) {
+            return;
+        }
+
+        setNewEntryText(template.content);
+        setTags(template.tags);
+        setVisibility(template.visibility);
+        setFormat(template.format);
+    };
+
+    const saveCurrentDraftAsTemplate = async (): Promise<void> => {
+        if (!onSaveTemplate) {
+            return;
+        }
+
+        const name = globalThis.prompt(t('templateNamePrompt'));
+        if (!name?.trim()) {
+            return;
+        }
+
+        await onSaveTemplate({
+            name,
+            content: newEntryText,
+            tags,
+            visibility: visibility ?? 'private',
+            format,
+        });
+    };
+
+    const deleteSelectedTemplate = async (): Promise<void> => {
+        if (!selectedTemplate || selectedTemplate.builtIn || !onDeleteTemplate) {
+            return;
+        }
+
+        await onDeleteTemplate(selectedTemplate.id);
+        setSelectedTemplateId('');
+    };
+
     return (
         <div className={containerClass}>
             <form onSubmit={onSubmit} className="space-y-4 overflow-visible">
+                {(entryTemplates.length > 0 || onSaveTemplate) && (
+                    <div className="flex flex-wrap items-center gap-2">
+                        {entryTemplates.length > 0 && (
+                            <select
+                                value={selectedTemplateId}
+                                onChange={(event) => applyTemplate(event.target.value)}
+                                className={`min-w-0 flex-1 basis-56 border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
+                                    ? 'bg-gray-50 border-gray-300 text-gray-900'
+                                    : 'bg-gray-900 border-gray-700 text-gray-100'
+                                    }`}
+                                aria-label={t('entryTemplate')}
+                                title={t('entryTemplate')}
+                            >
+                                <option value="">{t('noEntryTemplate')}</option>
+                                {entryTemplates.map((template) => (
+                                    <option key={template.id} value={template.id}>
+                                        {template.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        {onSaveTemplate && (
+                            <button
+                                type="button"
+                                onClick={() => void saveCurrentDraftAsTemplate()}
+                                disabled={newEntryText.trim() === ''}
+                                className="h-10 shrink-0 px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={t('saveEntryTemplate')}
+                            >
+                                {t('saveEntryTemplate')}
+                            </button>
+                        )}
+                        {selectedTemplate && !selectedTemplate.builtIn && onDeleteTemplate && (
+                            <button
+                                type="button"
+                                onClick={() => void deleteSelectedTemplate()}
+                                className="h-10 shrink-0 px-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all"
+                                title={t('deleteEntryTemplate')}
+                            >
+                                {t('deleteEntryTemplate')}
+                            </button>
+                        )}
+                    </div>
+                )}
                 <div>
                     {format === 'markdown' ? (
                         <Suspense

@@ -45,6 +45,7 @@ function createLayoutParams(
     entryToastVisible: false,
     handleAiChat: vi.fn().mockResolvedValue(null),
     handleLoadAiChatHistory: vi.fn().mockResolvedValue([]),
+    isEmailVerified: true,
     routingState: createRoutingState(),
     setChatEntry: vi.fn(),
     t: (key: string) => key,
@@ -89,6 +90,7 @@ function createRoutesParams(
       entries: [],
       fetchEntries: vi.fn().mockResolvedValue(undefined),
       fetchEntryHistory: vi.fn().mockResolvedValue([]),
+      fetchEntryBacklinks: vi.fn().mockResolvedValue([]),
       filterArchiveStatus: 'all',
       filterDateObj: null,
       filterFavorites: false,
@@ -112,6 +114,7 @@ function createRoutesParams(
       targetEntryId: null,
       toggleArchived: vi.fn().mockResolvedValue(undefined),
       toggleFavorite: vi.fn().mockResolvedValue(undefined),
+      togglePinned: vi.fn().mockResolvedValue(undefined),
       toggleVisibility: vi.fn().mockResolvedValue(undefined),
       totalPages: 4,
     },
@@ -224,6 +227,7 @@ describe('appShellProps', () => {
 
     expect(props.currentView).toBe('stats');
     expect(props.userName).toBe('Zaid');
+    expect(props.isEmailVerified).toBe(true);
     expect(props.selectedCount).toBe(2);
     expect(props.onViewChange).toBe(handleViewChange);
     expect(props.onLogout).toBe(handleLogout);
@@ -258,6 +262,7 @@ describe('appShellProps', () => {
         entries: [],
         fetchEntries,
         fetchEntryHistory: vi.fn().mockResolvedValue([]),
+        fetchEntryBacklinks: vi.fn().mockResolvedValue([]),
         filterArchiveStatus: 'all',
         filterDateObj: null,
         filterFavorites: false,
@@ -281,6 +286,7 @@ describe('appShellProps', () => {
         targetEntryId: null,
         toggleArchived: vi.fn().mockResolvedValue(undefined),
         toggleFavorite: vi.fn().mockResolvedValue(undefined),
+        togglePinned: vi.fn().mockResolvedValue(undefined),
         toggleVisibility: vi.fn().mockResolvedValue(undefined),
         totalPages: 4,
       },
@@ -343,6 +349,49 @@ describe('appShellProps', () => {
     expect(props.journalRouteProps.entryForm.tags).toEqual(['focus', 'work']);
     expect(props.journalRouteProps.entryForm.format).toBe('markdown');
     expect(props.journalRouteProps.entriesList.onCancelEdit).toBe(handleCancelEdit);
+  });
+
+  it('wires entry templates through user config', async () => {
+    const updateConfig = vi.fn().mockResolvedValue(undefined);
+    const props = buildAuthenticatedRoutesProps(createRoutesParams({
+      updateConfig,
+      config: {
+        theme: 'dark',
+        name: 'Zaid',
+        tagMetadata: '{}',
+        entryTemplates: JSON.stringify([{
+          id: 'custom-1',
+          name: 'Review',
+          content: 'Wins:',
+          tags: ['review'],
+          visibility: 'private',
+          format: 'plain',
+        }]),
+      },
+    }));
+
+    expect(props.journalRouteProps.entryForm.entryTemplates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'builtin-gratitude' }),
+        expect.objectContaining({ id: 'custom-1', name: 'Review' }),
+      ]),
+    );
+
+    await props.journalRouteProps.entryForm.onSaveTemplate?.({
+      name: 'Meeting',
+      content: 'Notes',
+      tags: ['meeting'],
+      visibility: 'public',
+      format: 'markdown',
+    });
+    expect(updateConfig).toHaveBeenLastCalledWith(expect.objectContaining({
+      entryTemplates: expect.stringContaining('Meeting'),
+    }));
+
+    await props.journalRouteProps.entryForm.onDeleteTemplate?.('custom-1');
+    expect(updateConfig).toHaveBeenLastCalledWith(expect.objectContaining({
+      entryTemplates: expect.not.stringContaining('custom-1'),
+    }));
   });
 
   it('wires profile, tag manager, diary management, and import-export callbacks', async () => {

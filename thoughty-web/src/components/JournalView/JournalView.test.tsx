@@ -212,6 +212,7 @@ describe('JournalView', () => {
         onToggleVisibility: vi.fn(),
         onToggleFavorite: vi.fn(),
         onToggleArchived: vi.fn(),
+        onTogglePinned: vi.fn(),
         editingEntry: null,
         editText: '',
         setEditText: vi.fn(),
@@ -363,6 +364,53 @@ describe('JournalView', () => {
     fireEvent.click(screen.getByTestId('next-page-btn'));
     
     expect(props.pagination.setPage).toHaveBeenCalledWith(3);
+  });
+
+  it('focuses the entry writer with Ctrl+N', () => {
+    render(<JournalView {...defaultProps} />);
+
+    fireEvent.keyDown(document, { key: 'n', ctrlKey: true });
+
+    expect(screen.getByTestId('entry-text')).toHaveFocus();
+  });
+
+  it('focuses journal search with Ctrl+/', () => {
+    render(<JournalView {...defaultProps} />);
+
+    fireEvent.keyDown(document, { key: '/', ctrlKey: true });
+
+    expect(screen.getByTestId('search-input')).toHaveFocus();
+  });
+
+  it('closes highlights with Escape', () => {
+    const props = createProps({ thoughtOfDay: { isOpen: true } });
+    render(<JournalView {...props} />);
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    expect(props.thoughtOfDay.setOpen).toHaveBeenCalledWith(false);
+  });
+
+  it('changes pages with arrow keys outside editable fields', () => {
+    const props = createProps({ pagination: { page: 2, totalPages: 5 } });
+    render(<JournalView {...props} />);
+
+    fireEvent.keyDown(document, { key: 'ArrowRight' });
+    fireEvent.keyDown(document, { key: 'ArrowLeft' });
+
+    expect(props.pagination.setPage).toHaveBeenCalledWith(3);
+    expect(props.pagination.setPage).toHaveBeenCalledWith(1);
+  });
+
+  it('does not change pages with arrow keys while typing', () => {
+    const props = createProps({ pagination: { page: 2, totalPages: 5 } });
+    render(<JournalView {...props} />);
+
+    const entryText = screen.getByTestId('entry-text');
+    entryText.focus();
+    fireEvent.keyDown(entryText, { key: 'ArrowRight' });
+
+    expect(props.pagination.setPage).not.toHaveBeenCalled();
   });
 
   it('passes available years and months to navigator', () => {

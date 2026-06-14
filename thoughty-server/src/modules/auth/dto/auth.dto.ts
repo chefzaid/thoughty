@@ -116,6 +116,7 @@ export class AuthResponseDto {
     email: string;
     username: string;
     authProvider: string;
+    emailVerified: boolean;
     isNewUser?: boolean;
   };
 
@@ -141,6 +142,9 @@ export class UserResponseDto {
 
   @ApiProperty()
   authProvider: string;
+
+  @ApiProperty()
+  emailVerified: boolean;
 
   @ApiProperty()
   createdAt: Date;

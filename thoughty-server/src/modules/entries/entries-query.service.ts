@@ -8,7 +8,9 @@ import {
   GetEntryByDateQueryDto,
   GetHighlightsQueryDto,
   EntriesListResponseDto,
+  EntryBacklinksResponseDto,
 } from './dto';
+import { entryContentReferencesTarget } from './entry-references.util';
 
 @Injectable()
 export class EntriesQueryService {
@@ -79,7 +81,9 @@ export class EntriesQueryService {
 
     const totalPromise = qb.getCount();
 
-    qb.orderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
+    qb.orderBy('e.is_pinned', 'DESC')
+      .addOrderBy('e.date', 'DESC')
+      .addOrderBy('e.index', 'ASC');
     qb.skip((page - 1) * limit).take(limit);
 
     const entriesPromise = qb.getMany();
@@ -106,6 +110,7 @@ export class EntriesQueryService {
         visibility: entry.visibility,
         is_favorite: entry.isFavorite,
         is_archived: entry.isArchived,
+        is_pinned: entry.isPinned,
         diary_name: entry.diary?.name,
         diary_icon: entry.diary?.icon,
         diary_color: entry.diary?.color ?? undefined,
@@ -252,25 +257,53 @@ export class EntriesQueryService {
       return { found: false, error: 'Entry not found' };
     }
 
-    const countNewerPromise = this.entryRepository
-      .createQueryBuilder('e')
-      .where('e.user_id = :userId', { userId })
-      .andWhere('e.date > :date', { date: entry.date })
-      .getCount();
-
-    const sameDateCountPromise = this.entryRepository
-      .createQueryBuilder('e')
-      .where('e.user_id = :userId', { userId })
-      .andWhere('e.date = :date', { date: entry.date })
-      .andWhere('e.index < :index', { index: entry.index })
-      .getCount();
-
-    const [countNewer, sameDateCount] = await Promise.all([countNewerPromise, sameDateCountPromise]);
-
-    const totalBefore = countNewer + sameDateCount;
+    const totalBefore = await this.countEntriesBefore(entry);
     const page = Math.floor(totalBefore / limit) + 1;
 
     return { found: true, entry, page, entryId: entry.id };
+  }
+
+  async getBacklinks(userId: number, entryId: number): Promise<EntryBacklinksResponseDto> {
+    const targetEntry = await this.entryRepository.findOne({
+      where: { id: entryId, userId },
+    });
+
+    if (!targetEntry) {
+      throw new NotFoundException('Entry not found');
+    }
+
+    const targetDate = this.normalizeEntryDate(targetEntry.date);
+    const targetIndex = targetEntry.index || 1;
+
+    const candidates = await this.entryRepository
+      .createQueryBuilder('e')
+      .leftJoinAndSelect('e.diary', 'd')
+      .where('e.user_id = :userId', { userId })
+      .andWhere('e.id != :entryId', { entryId })
+      .andWhere('e.content ILIKE :targetDate', { targetDate: `%${targetDate}%` })
+      .orderBy('e.date', 'DESC')
+      .addOrderBy('e.index', 'ASC')
+      .getMany();
+
+    return {
+      backlinks: candidates
+        .filter((entry) => entryContentReferencesTarget(entry.content, targetDate, targetIndex))
+        .map((entry) => ({
+          id: entry.id,
+          date: entry.date,
+          index: entry.index,
+          tags: entry.tags,
+          content: entry.content,
+          format: entry.format,
+          visibility: entry.visibility,
+          is_favorite: entry.isFavorite,
+          is_archived: entry.isArchived,
+          is_pinned: entry.isPinned,
+          diary_name: entry.diary?.name,
+          diary_icon: entry.diary?.icon,
+          diary_color: entry.diary?.color ?? undefined,
+        })),
+    };
   }
 
   async getHighlights(
@@ -349,5 +382,38 @@ export class EntriesQueryService {
       where: { entryId, userId },
       order: { createdAt: 'DESC' },
     });
+  }
+
+  private countEntriesBefore(entry: Entry): Promise<number> {
+    const qb = this.entryRepository
+      .createQueryBuilder('e')
+      .where('e.user_id = :userId', { userId: entry.userId });
+
+    if (entry.isPinned) {
+      qb.andWhere('e.is_pinned = true')
+        .andWhere('(e.date > :date OR (e.date = :date AND e.index < :index))', {
+          date: entry.date,
+          index: entry.index,
+        });
+    } else {
+      qb.andWhere(
+        '(e.is_pinned = true OR (e.is_pinned = false AND (e.date > :date OR (e.date = :date AND e.index < :index))))',
+        {
+          date: entry.date,
+          index: entry.index,
+        },
+      );
+    }
+
+    return qb.getCount();
+  }
+
+  private normalizeEntryDate(date: string | Date): string {
+    if (date instanceof Date) {
+      return date.toISOString().slice(0, 10);
+    }
+
+    const dateString = String(date);
+    return dateString.includes('T') ? dateString.split('T')[0] : dateString;
   }
 }

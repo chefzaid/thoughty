@@ -9,6 +9,7 @@ import {
   GetHighlightsQueryDto,
   BulkOperationDto,
   EntriesListResponseDto,
+  EntryBacklinksResponseDto,
 } from './dto';
 import { EntriesQueryService } from './entries-query.service';
 import { EntriesCommandService } from './entries-command.service';
@@ -54,6 +55,10 @@ export class EntriesService {
     return this.entriesQueryService.getEntryByDate(userId, query);
   }
 
+  async getBacklinks(userId: number, entryId: number): Promise<EntryBacklinksResponseDto> {
+    return this.entriesQueryService.getBacklinks(userId, entryId);
+  }
+
   async create(userId: number, dto: CreateEntryDto): Promise<{ success: boolean; entryId: number }> {
     return this.entriesCommandService.create(userId, dto);
   }
@@ -88,6 +93,14 @@ export class EntriesService {
     isArchived: boolean,
   ): Promise<{ success: boolean; entry: Entry }> {
     return this.entriesCommandService.toggleArchived(userId, id, isArchived);
+  }
+
+  async togglePinned(
+    userId: number,
+    id: number,
+    isPinned: boolean,
+  ): Promise<{ success: boolean; entry: Entry }> {
+    return this.entriesCommandService.togglePinned(userId, id, isPinned);
   }
 
   async getHighlights(

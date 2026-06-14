@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ArchiveStatusFilter, Config, Entry, GroupedEntries, SourceEntryInfo } from '../types';
+import type { ArchiveStatusFilter, Config, Entry, EntryBacklink, GroupedEntries, SourceEntryInfo } from '../types';
 import { useApiServices } from './useApiServices';
 
 const ENTRY_DATES_QUERY_KEY = ['app', 'entry-dates'] as const;
@@ -166,8 +166,25 @@ export const useEntries = (
     }
   }, [entriesService, refreshEntryQueries]);
 
+  const togglePinned = useCallback(async (entry: Entry) => {
+    const newPinned = !entry.is_pinned;
+    const result = await entriesService.togglePinned(entry.id, newPinned);
+    if (result.success) {
+      await refreshEntryQueries();
+      return;
+    }
+
+    if (result.error) {
+      alert(result.error);
+    }
+  }, [entriesService, refreshEntryQueries]);
+
   const fetchEntryHistory = useCallback(async (entryId: number) => {
     return entriesService.fetchEntryHistory(entryId);
+  }, [entriesService]);
+
+  const fetchEntryBacklinks = useCallback(async (entryId: number): Promise<EntryBacklink[]> => {
+    return entriesService.fetchEntryBacklinks(entryId);
   }, [entriesService]);
 
   const deleteRevision = useCallback(async (entryId: number, revisionId: number) => {
@@ -290,7 +307,9 @@ export const useEntries = (
     toggleVisibility,
     toggleFavorite,
     toggleArchived,
+    togglePinned,
     fetchEntryHistory,
+    fetchEntryBacklinks,
     deleteRevision,
     reorderEntries,
   };

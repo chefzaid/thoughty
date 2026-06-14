@@ -1,4 +1,5 @@
 import {
+  generateCsvFile,
   generateJsonFile,
   generateMarkdownFile,
   parseJsonFile,
@@ -7,6 +8,34 @@ import {
 import { createEntry } from './file-converter.test-helpers';
 
 describe('file-converter.util structured formats', () => {
+  describe('CSV', () => {
+    it('generates headers, diary metadata, and per-entry reading metrics', () => {
+      const exported = generateCsvFile([
+        createEntry({
+          tags: ['journal', 'work'],
+          content: 'First entry with five words',
+          visibility: 'public',
+          diaryName: 'Work',
+        }),
+      ], true);
+
+      expect(exported).toContain('date,index,diary,tags,visibility,format,word_count,reading_time_minutes,content');
+      expect(exported).toContain('2024-01-15,1,Work,journal;work,public,plain,5,1,First entry with five words');
+    });
+
+    it('escapes commas, quotes, and newlines for spreadsheet imports', () => {
+      const exported = generateCsvFile([
+        createEntry({
+          diaryName: 'Personal, Archive',
+          content: 'Line one\n"Line two"',
+        }),
+      ]);
+
+      expect(exported).toContain('"Personal, Archive"');
+      expect(exported).toContain('"Line one\n""Line two"""');
+    });
+  });
+
   describe('JSON', () => {
     it('generates empty payloads for no entries', () => {
       const parsed = JSON.parse(generateJsonFile([]));

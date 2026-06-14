@@ -1,7 +1,7 @@
 import ListenButton from '../ListenButton/ListenButton';
 import type { SpeechEntry } from '../../hooks/useSpeech';
 import type { RephraseMode } from '../../services/api/aiService';
-import type { Config, Entry, EntryRevision, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
+import type { Config, Entry, EntryBacklink, EntryRevision, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
 import { extractDate } from './EntriesList.utils';
@@ -30,6 +30,7 @@ interface EntryViewModeProps {
     onToggleVisibility: (entry: Entry) => void;
     onToggleFavorite: (entry: Entry) => void;
     onToggleArchived: (entry: Entry) => void;
+    onTogglePinned: (entry: Entry) => void;
     onEdit: (entry: Entry) => void;
     onDelete: (id: number) => void;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
@@ -37,6 +38,7 @@ interface EntryViewModeProps {
     getEntryPermalink?: (entryId: number) => string;
     onBackToSource: () => void;
     onFetchHistory?: (entryId: number) => Promise<EntryRevision[]>;
+    onFetchBacklinks?: (entryId: number) => Promise<EntryBacklink[]>;
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onDiscuss?: (entry: Entry) => void;
     onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
@@ -60,6 +62,7 @@ export default function EntryViewMode({
     onToggleVisibility,
     onToggleFavorite,
     onToggleArchived,
+    onTogglePinned,
     onEdit,
     onDelete,
     onNavigateToEntry,
@@ -67,6 +70,7 @@ export default function EntryViewMode({
     getEntryPermalink,
     onBackToSource,
     onFetchHistory,
+    onFetchBacklinks,
     onDeleteRevision,
     onDiscuss,
     onRephrase,
@@ -79,9 +83,11 @@ export default function EntryViewMode({
     const archiveActionLabel = entry.is_archived ? t('unarchive') : t('archive');
     const entryPermalink = getEntryPermalink?.(entry.id);
     const {
+        backlinks,
         handleDeleteRevision,
         handleRephrase,
         handleToggleHistory,
+        loadingBacklinks,
         loadingHistory,
         rephrasing,
         revisions,
@@ -89,6 +95,7 @@ export default function EntryViewMode({
     } = useEntryViewModeState({
         entry,
         onFetchHistory,
+        onFetchBacklinks,
         onDeleteRevision,
         onRephrase,
     });
@@ -127,6 +134,15 @@ export default function EntryViewMode({
                     >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill={entry.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
                             <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                    </IconActionButton>
+                    <IconActionButton
+                        onClick={() => onTogglePinned(entry)}
+                        className={`p-1 ${entry.is_pinned ? 'text-rose-500 hover:bg-rose-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}
+                        title={entry.is_pinned ? t('unpinEntry') : t('pinEntry')}
+                    >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill={entry.is_pinned ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.5 4.5l5 5-3.25 3.25.75 5.25-1 1-4.75-4.75L7 18.5 5.5 17l4.25-4.25L5 8l1-1 5.25.75L14.5 4.5z" />
                         </svg>
                     </IconActionButton>
                     <ListenButton
@@ -194,6 +210,8 @@ export default function EntryViewMode({
                 onNavigateToEntry={onNavigateToEntry}
                 searchTerm={searchTerm}
                 showHistory={showHistory}
+                loadingBacklinks={loadingBacklinks}
+                backlinks={backlinks}
                 loadingHistory={loadingHistory}
                 revisions={revisions}
                 tagMetadata={tagMetadata}

@@ -138,6 +138,7 @@ function LanguageSetting({
 
 function ThemeAndPaginationSettings({
   entriesPerPage,
+  maxPinnedEntries,
   handleChange,
   handleThemeToggle,
   isDark,
@@ -145,6 +146,7 @@ function ThemeAndPaginationSettings({
   t,
 }: Readonly<{
   entriesPerPage: ProfileConfig['entriesPerPage'];
+  maxPinnedEntries: ProfileConfig['maxPinnedEntries'];
   handleChange: HandleAppearanceChange;
   handleThemeToggle: () => void;
   isDark: boolean;
@@ -197,6 +199,25 @@ function ThemeAndPaginationSettings({
           <option value="20">20</option>
           <option value="25">25</option>
           <option value="50">50</option>
+        </select>
+      </div>
+
+      <div className="setting-row horizontal">
+        <div className="setting-info">
+          <span className="setting-label">{t('maxPinnedEntries')}</span>
+          <span className="setting-description">{t('maxPinnedEntriesDescription')}</span>
+        </div>
+        <select
+          name="maxPinnedEntries"
+          value={maxPinnedEntries || '3'}
+          onChange={handleChange}
+          className={`setting-select ${isDark ? 'dark' : 'light'}`}
+        >
+          <option value="1">1</option>
+          <option value="3">3</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="20">20</option>
         </select>
       </div>
     </div>
@@ -422,6 +443,7 @@ function AppearanceSection({
 
       <ThemeAndPaginationSettings
         entriesPerPage={localConfig.entriesPerPage}
+        maxPinnedEntries={localConfig.maxPinnedEntries}
         handleChange={handleChange}
         handleThemeToggle={handleThemeToggle}
         isDark={isDark}

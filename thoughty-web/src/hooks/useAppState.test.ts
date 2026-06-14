@@ -31,11 +31,13 @@ vi.mock('../services/api', () => ({
     toggleVisibility: vi.fn(),
     toggleFavorite: vi.fn(),
     toggleArchived: vi.fn(),
+    togglePinned: vi.fn(),
     bulkOperation: vi.fn(),
     navigateToFirst: vi.fn(),
     navigateByDate: vi.fn(),
     navigateById: vi.fn(),
     fetchEntryHistory: vi.fn(),
+    fetchEntryBacklinks: vi.fn(),
     deleteRevision: vi.fn(),
     reorderEntries: vi.fn(),
   })),
@@ -347,11 +349,13 @@ describe('useAppState Hooks', () => {
         toggleVisibility: vi.fn(),
         toggleFavorite: vi.fn(),
         toggleArchived: vi.fn(),
+        togglePinned: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
         navigateById: vi.fn(),
         fetchEntryHistory: vi.fn(),
+        fetchEntryBacklinks: vi.fn(),
         deleteRevision: vi.fn(),
         reorderEntries: vi.fn(),
         renameTag: vi.fn(),
@@ -403,11 +407,13 @@ describe('useAppState Hooks', () => {
         toggleVisibility: vi.fn(),
         toggleFavorite: vi.fn(),
         toggleArchived: vi.fn(),
+        togglePinned: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
         navigateById: vi.fn(),
         fetchEntryHistory: vi.fn(),
+        fetchEntryBacklinks: vi.fn(),
         deleteRevision: vi.fn(),
         reorderEntries: reorderEntriesMock,
         renameTag: vi.fn(),
@@ -438,7 +444,9 @@ describe('useAppState Hooks', () => {
       expect(typeof result.current.toggleVisibility).toBe('function');
       expect(typeof result.current.toggleFavorite).toBe('function');
       expect(typeof result.current.toggleArchived).toBe('function');
+      expect(typeof result.current.togglePinned).toBe('function');
       expect(typeof result.current.fetchEntryHistory).toBe('function');
+      expect(typeof result.current.fetchEntryBacklinks).toBe('function');
       expect(typeof result.current.deleteRevision).toBe('function');
       expect(typeof result.current.reorderEntries).toBe('function');
     });

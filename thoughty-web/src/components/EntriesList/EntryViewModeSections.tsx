@@ -5,11 +5,13 @@ import TagBadge from '../TagBadge/TagBadge';
 import type {
     Config,
     Entry,
+    EntryBacklink,
     EntryRevision,
     SourceEntryInfo,
     TranslationFunction as TranslationFn,
 } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
+import { getEntryMetrics } from '../../utils/entryMetrics';
 import { resolveFontColor } from '../../types/config';
 import {
     extractDate,
@@ -147,6 +149,11 @@ export function EntryHeaderBadges({
                     {t('archived')}
                 </span>
             )}
+            {entry.is_pinned && (
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${isDark ? 'border-rose-400/35 bg-rose-500/10 text-rose-300' : 'border-rose-300 bg-rose-50 text-rose-700'}`}>
+                    {t('pinned')} · {extractDate(entry.date)}
+                </span>
+            )}
         </div>
     );
 }
@@ -158,6 +165,8 @@ export function EntryBodySection({
     fontColor,
     onNavigateToEntry,
     searchTerm,
+    loadingBacklinks,
+    backlinks,
     showHistory,
     loadingHistory,
     revisions,
@@ -172,6 +181,8 @@ export function EntryBodySection({
     fontColor?: string;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     searchTerm?: string;
+    loadingBacklinks: boolean;
+    backlinks: EntryBacklink[];
     showHistory: boolean;
     loadingHistory: boolean;
     revisions: EntryRevision[];
@@ -181,6 +192,10 @@ export function EntryBodySection({
     t: TranslationFn;
 }>) {
     const readingTextColor = resolveFontColor(fontColor, theme);
+    const { wordCount, readingTimeMinutes } = getEntryMetrics(entry.content);
+    const readingTimeLabel = readingTimeMinutes > 0
+        ? t('entryReadingTimeMinutes', { minutes: readingTimeMinutes })
+        : t('entryReadingTimeLessThanMinute');
 
     return (
         <>
@@ -200,6 +215,20 @@ export function EntryBodySection({
                     searchTerm={searchTerm}
                 />
             </div>
+            <div className={`mt-3 flex flex-wrap gap-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                <span>{t('entryWordCount', { count: wordCount })}</span>
+                <span aria-hidden="true">/</span>
+                <span>{readingTimeLabel}</span>
+            </div>
+            <EntryBacklinksSection
+                entry={entry}
+                backlinks={backlinks}
+                loading={loadingBacklinks}
+                isDark={isDark}
+                onNavigateToEntry={onNavigateToEntry}
+                tagMetadata={tagMetadata}
+                t={t}
+            />
             {entry.attachments && entry.attachments.length > 0 && (
                 <AttachmentDisplay
                     attachments={entry.attachments}
@@ -218,6 +247,89 @@ export function EntryBodySection({
                 t={t}
             />
         </>
+    );
+}
+
+export function EntryBacklinksSection({
+    entry,
+    backlinks,
+    loading,
+    isDark,
+    onNavigateToEntry,
+    tagMetadata,
+    t,
+}: Readonly<{
+    entry: Entry;
+    backlinks: EntryBacklink[];
+    loading: boolean;
+    isDark: boolean;
+    onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
+    tagMetadata: TagMetadataMap;
+    t: TranslationFn;
+}>) {
+    const sourceEntry = {
+        id: entry.id,
+        date: extractDate(entry.date),
+        index: entry.index || 1,
+    };
+
+    return (
+        <div className={`mt-4 rounded-lg border p-3 ${isDark ? 'border-gray-700 bg-gray-900/40' : 'border-gray-200 bg-gray-50'}`}>
+            <div className="mb-2 flex items-center justify-between gap-3">
+                <h4 className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {t('backlinks')}
+                </h4>
+                <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                    {loading ? t('loadingBacklinks') : t('backlinksCount', { count: backlinks.length })}
+                </span>
+            </div>
+            {loading && backlinks.length === 0 ? (
+                <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('loadingBacklinks')}</p>
+            ) : backlinks.length === 0 ? (
+                <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('noBacklinks')}</p>
+            ) : (
+                <div className="space-y-2">
+                    {backlinks.map((backlink) => {
+                        const backlinkDate = extractDate(backlink.date);
+                        const backlinkIndex = backlink.index || 1;
+                        return (
+                            <button
+                                key={backlink.id}
+                                type="button"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    onNavigateToEntry(backlinkDate, backlinkIndex, sourceEntry);
+                                }}
+                                className={`w-full rounded-md border px-3 py-2 text-left transition-colors ${isDark ? 'border-gray-700 bg-gray-950/30 hover:border-blue-500/60 hover:bg-blue-500/10' : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'}`}
+                            >
+                                <div className="mb-1 flex flex-wrap items-center gap-2">
+                                    <span className={`text-xs font-mono font-semibold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+                                        {backlinkDate}{backlinkIndex > 1 ? ` #${backlinkIndex}` : ''}
+                                    </span>
+                                    {backlink.diary_name && (
+                                        <span className={`rounded-full px-2 py-0.5 text-[11px] ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                                            {backlink.diary_icon ? `${backlink.diary_icon} ` : ''}{backlink.diary_name}
+                                        </span>
+                                    )}
+                                    {backlink.tags.slice(0, 3).map((tag) => (
+                                        <TagBadge
+                                            key={tag}
+                                            tag={tag}
+                                            metadata={tagMetadata}
+                                            theme={isDark ? 'dark' : 'light'}
+                                            size="xs"
+                                        />
+                                    ))}
+                                </div>
+                                <p className={`line-clamp-2 text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    {backlink.content.length > 180 ? `${backlink.content.slice(0, 180)}...` : backlink.content}
+                                </p>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
     );
 }
 

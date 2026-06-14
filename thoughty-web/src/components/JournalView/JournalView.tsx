@@ -1,4 +1,4 @@
-import { useState, type ComponentProps } from 'react';
+import { useCallback, useRef, useState, type ComponentProps } from 'react';
 import DiaryTabs from '../DiaryTabs/DiaryTabs';
 import ThoughtOfTheDay from '../ThoughtOfTheDay/ThoughtOfTheDay';
 import EntryForm from '../EntryForm/EntryForm';
@@ -8,6 +8,7 @@ import Pagination from '../Pagination/Pagination';
 import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
 import type { Config } from '../../types';
+import { useJournalKeyboardShortcuts } from './useJournalKeyboardShortcuts';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
 interface ThoughtOfDayProps {
@@ -48,6 +49,21 @@ function JournalView({
 }: Readonly<JournalViewProps>) {
   const [navYear, setNavYear] = useState<string>('');
   const [navMonth, setNavMonth] = useState<string>('');
+  const entryFormRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
+  const closeHighlights = useCallback(() => {
+    thoughtOfDay.setOpen(false);
+  }, [thoughtOfDay]);
+
+  useJournalKeyboardShortcuts({
+    entryFormRef,
+    searchRef,
+    page: pagination.page,
+    totalPages: pagination.totalPages,
+    setPage: pagination.setPage,
+    closeHighlights,
+    highlightsOpen: thoughtOfDay.isOpen,
+  });
 
   return (
     <>
@@ -60,26 +76,30 @@ function JournalView({
 
       <ThoughtOfTheDay
         isOpen={thoughtOfDay.isOpen}
-        onClose={() => thoughtOfDay.setOpen(false)}
+        onClose={closeHighlights}
         diaryId={thoughtOfDay.diaryId}
         onNavigateToEntry={thoughtOfDay.onNavigateToEntry}
         theme={config.theme}
         t={t}
       />
 
-      <EntryForm
-        {...entryForm}
-        theme={config.theme}
-        t={t}
-        fontColor={config.fontColor}
-      />
+      <div ref={entryFormRef}>
+        <EntryForm
+          {...entryForm}
+          theme={config.theme}
+          t={t}
+          fontColor={config.fontColor}
+        />
+      </div>
 
-      <FilterControls
-        {...filters}
-        theme={config.theme}
-        t={t}
-        onOpenHighlights={() => thoughtOfDay.setOpen(true)}
-      />
+      <div ref={searchRef}>
+        <FilterControls
+          {...filters}
+          theme={config.theme}
+          t={t}
+          onOpenHighlights={() => thoughtOfDay.setOpen(true)}
+        />
+      </div>
 
       <EntriesList
         {...entriesList}

@@ -248,6 +248,7 @@ export function useAppShellModel(): AppShellModel {
     entryToastVisible: entryNavigationState.entryToastVisible,
     handleAiChat,
     handleLoadAiChatHistory,
+    isEmailVerified: user?.emailVerified ?? false,
     routingState,
     setChatEntry,
     t,

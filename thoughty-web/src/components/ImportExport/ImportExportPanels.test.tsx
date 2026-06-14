@@ -53,6 +53,7 @@ describe('ImportExportPanels', () => {
         fireEvent.click(screen.getByText('includeVisibilityShort'));
         fireEvent.click(screen.getByText('downloadExport'));
 
+        expect(screen.getByRole('option', { name: 'formatCsv' })).toBeInTheDocument();
         expect(onChangeExportFormat).toHaveBeenCalledWith('md');
         expect(onToggleIncludeVisibility).toHaveBeenCalledTimes(1);
         expect(onExport).toHaveBeenCalledTimes(1);

@@ -6,12 +6,12 @@ export type DiaryScopedViewType = 'journal' | 'diaries' | 'stats' | 'importExpor
 export type DiaryReturnViewType = Exclude<DiaryScopedViewType, 'diaries'>;
 export type ImportExportSection = 'export' | 'import' | 'book';
 export type CloudExportFormat = 'txt' | 'json' | 'md';
-export type ImportExportFormat = CloudExportFormat | 'pdf' | 'html' | 'epub';
+export type ImportExportFormat = CloudExportFormat | 'csv' | 'pdf' | 'html' | 'epub';
 
 const DIARY_SCOPED_VIEWS = new Set<ViewType>(['journal', 'diaries', 'stats', 'importExport']);
 const DIARY_RETURN_VIEWS = new Set<DiaryReturnViewType>(['journal', 'stats', 'importExport']);
 const IMPORT_EXPORT_SECTIONS = new Set<ImportExportSection>(['export', 'import', 'book']);
-const IMPORT_EXPORT_FORMATS = new Set<ImportExportFormat>(['txt', 'json', 'md', 'pdf', 'html', 'epub']);
+const IMPORT_EXPORT_FORMATS = new Set<ImportExportFormat>(['txt', 'json', 'md', 'csv', 'pdf', 'html', 'epub']);
 
 function normalizePath(pathname: string): string {
   return pathname.length > 1 && pathname.endsWith('/')

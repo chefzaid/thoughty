@@ -85,6 +85,8 @@ export type TranslationKey =
   | 'ttsVoicePreviewSample'
   | 'entriesPerPage'
   | 'entriesPerPageDescription'
+  | 'maxPinnedEntries'
+  | 'maxPinnedEntriesDescription'
   | 'defaultVisibility'
   | 'defaultVisibilityDescription'
   | 'language'
@@ -113,6 +115,8 @@ export type TranslationKey =
   | 'cancel'
   | 'saveSettings'
   | 'settingsSaved'
+  | 'verifiedAccount'
+  | 'unverifiedAccount'
   | 'personalInfo'
   | 'appearance'
   | 'preferences'
@@ -127,6 +131,14 @@ export type TranslationKey =
   | 'edit'
   | 'readMore'
   | 'showLess'
+  | 'entryWordCount'
+  | 'entryReadingTimeMinutes'
+  | 'entryReadingTimeLessThanMinute'
+  | 'entryTemplate'
+  | 'noEntryTemplate'
+  | 'saveEntryTemplate'
+  | 'deleteEntryTemplate'
+  | 'templateNamePrompt'
   | 'totalEntries'
   | 'currentStreak'
   | 'topTags'
@@ -137,6 +149,8 @@ export type TranslationKey =
   | 'uniqueTags'
   | 'yearsActive'
   | 'avgPerYear'
+  | 'avgWordsPerEntry'
+  | 'avgReadingTime'
   | 'thoughtsPerYear'
   | 'thoughtsPerMonth'
   | 'topTagsByYear'
@@ -164,6 +178,7 @@ export type TranslationKey =
   | 'formatTxt'
   | 'formatJson'
   | 'formatMd'
+  | 'formatCsv'
   | 'chooseFile'
   | 'previewSummary'
   | 'entriesFound'
@@ -243,6 +258,7 @@ export type TranslationKey =
   | 'landingPulseTitle'
   | 'landingPulseBody'
   | 'landingFeatureSection'
+  | 'landingFeatureHeading'
   | 'landingFeaturePrivateTitle'
   | 'landingFeaturePrivateBody'
   | 'landingFeatureOrganizeTitle'
@@ -251,6 +267,27 @@ export type TranslationKey =
   | 'landingFeatureExportBody'
   | 'landingFeatureInsightTitle'
   | 'landingFeatureInsightBody'
+  | 'landingProofPrivacyMetric'
+  | 'landingProofPrivacyLabel'
+  | 'landingProofExportMetric'
+  | 'landingProofExportLabel'
+  | 'landingProofInsightMetric'
+  | 'landingProofInsightLabel'
+  | 'landingScreenshotsKicker'
+  | 'landingScreenshotsHeading'
+  | 'landingScreenshotAlt'
+  | 'landingSceneEntryTitle'
+  | 'landingSceneEntryBody'
+  | 'landingSceneStatsLabel'
+  | 'landingScreenshotJournalTitle'
+  | 'landingScreenshotJournalBody'
+  | 'landingScreenshotStatsTitle'
+  | 'landingScreenshotStatsBody'
+  | 'landingScreenshotExportTitle'
+  | 'landingScreenshotExportBody'
+  | 'landingCtaKicker'
+  | 'landingCtaTitle'
+  | 'landingCtaBody'
   | 'suggestTags'
   | 'suggestingTags'
   | 'fixWriting'
@@ -309,6 +346,10 @@ export type TranslationKey =
   | 'deleteAccountFailed'
   | 'passwordRequired'
   | 'backToSource'
+  | 'backlinks'
+  | 'backlinksCount'
+  | 'loadingBacklinks'
+  | 'noBacklinks'
   | 'entryNotFound'
   | 'entryNotFoundMessage'
   | 'entryReferenceHint'
@@ -376,6 +417,10 @@ export type TranslationKey =
   | 'closeImage'
   | 'favorite'
   | 'unfavorite'
+  | 'pinEntry'
+  | 'unpinEntry'
+  | 'pinned'
+  | 'pinnedEntries'
   | 'favorites'
   | 'filterFavorites'
   | 'archive'
@@ -450,7 +495,30 @@ export type TranslationKey =
   | 'cloudProviders'
   | 'cloudProvidersDescription'
   | 'cloudImportFromCloud'
-  | 'cloudSelectFileToImport';
+  | 'cloudSelectFileToImport'
+  | 'subscriptionManagement'
+  | 'subscriptionCurrentPlan'
+  | 'subscriptionPlan'
+  | 'subscriptionPlanDescription'
+  | 'subscriptionPlanFree'
+  | 'subscriptionPlanPlus'
+  | 'subscriptionPlanPro'
+  | 'subscriptionPrice'
+  | 'subscriptionRenewal'
+  | 'subscriptionMonthly'
+  | 'subscriptionNoRenewal'
+  | 'subscriptionPaymentMethod'
+  | 'subscriptionPaymentMethodDescription'
+  | 'subscriptionNoPaymentMethod'
+  | 'billingHistory'
+  | 'billingHistoryDescription'
+  | 'billingDate'
+  | 'billingDescription'
+  | 'billingAmount'
+  | 'billingStatus'
+  | 'subscriptionPaid'
+  | 'subscriptionIncluded'
+  | 'subscriptionPreviousCycle';
 
 export type Language = 'en' | 'fr';
 
@@ -549,6 +617,8 @@ export const translations: Translations = {
     ttsVoicePreviewSample: 'This is how your journal will sound when Thoughty reads it aloud.',
     entriesPerPage: 'Entries per page',
     entriesPerPageDescription: 'Number of entries to display per page',
+    maxPinnedEntries: 'Pinned entries limit',
+    maxPinnedEntriesDescription: 'Maximum entries that can stay pinned at the top of the journal',
     defaultVisibility: 'Default Visibility',
     defaultVisibilityDescription: 'Default visibility for new entries',
     language: 'Language',
@@ -579,6 +649,8 @@ export const translations: Translations = {
     cancel: 'Cancel',
     saveSettings: 'Save Changes',
     settingsSaved: 'Settings saved successfully',
+    verifiedAccount: 'Verified',
+    unverifiedAccount: 'Email not verified',
     personalInfo: 'Personal Information',
     appearance: 'Appearance',
     preferences: 'Preferences',
@@ -598,6 +670,14 @@ export const translations: Translations = {
     edit: 'Edit',
     readMore: 'Read more',
     showLess: 'Show less',
+    entryWordCount: '{count} words',
+    entryReadingTimeMinutes: '{minutes} min read',
+    entryReadingTimeLessThanMinute: '<1 min read',
+    entryTemplate: 'Entry template',
+    noEntryTemplate: 'Choose a template',
+    saveEntryTemplate: 'Save template',
+    deleteEntryTemplate: 'Delete template',
+    templateNamePrompt: 'Template name',
 
     // Stats
     totalEntries: 'Total Entries',
@@ -610,6 +690,8 @@ export const translations: Translations = {
     uniqueTags: 'Unique Tags',
     yearsActive: 'Years Active',
     avgPerYear: 'Avg. per Year',
+    avgWordsPerEntry: 'Avg. Words',
+    avgReadingTime: 'Avg. Read Time',
     thoughtsPerYear: 'Entries per Year',
     thoughtsPerMonth: 'Entries per Month',
     topTagsByYear: 'Top Tags by Year',
@@ -639,6 +721,7 @@ export const translations: Translations = {
     formatTxt: 'Text (.txt)',
     formatJson: 'JSON (.json)',
     formatMd: 'Markdown (.md)',
+    formatCsv: 'CSV (.csv)',
     chooseFile: 'Choose File',
     previewSummary: 'Preview Summary',
     entriesFound: 'entries found',
@@ -728,6 +811,7 @@ export const translations: Translations = {
     landingPulseBody:
       'Keep entries portable with TXT, JSON, and Markdown exports, then bring them back with duplicate checks and diary-aware imports.',
     landingFeatureSection: 'Thoughty feature highlights',
+    landingFeatureHeading: 'Capture the day, then keep finding what matters.',
     landingFeaturePrivateTitle: 'Private by default',
     landingFeaturePrivateBody:
       'Write freely, control visibility per entry, and download your personal data whenever you need a full export.',
@@ -740,6 +824,31 @@ export const translations: Translations = {
     landingFeatureInsightTitle: 'Useful after the writing',
     landingFeatureInsightBody:
       'Search quickly, filter by tags and visibility, revisit highlights, and use the stats view to spot patterns over time.',
+    landingProofPrivacyMetric: 'Private first',
+    landingProofPrivacyLabel: 'Every entry starts under your control',
+    landingProofExportMetric: '7 export formats',
+    landingProofExportLabel: 'TXT, JSON, Markdown, CSV, PDF, EPUB, and HTML',
+    landingProofInsightMetric: 'Diary-aware',
+    landingProofInsightLabel: 'Structure, stats, imports, and exports respect each journal',
+    landingScreenshotsKicker: 'Product screenshots',
+    landingScreenshotsHeading: 'The main workflows are visible before you sign up.',
+    landingScreenshotAlt: 'Thoughty journal interface preview',
+    landingSceneEntryTitle: 'Morning planning',
+    landingSceneEntryBody: 'Two decisions to remember, one question to revisit, and a cleaner way to end the week.',
+    landingSceneStatsLabel: 'Average words',
+    landingScreenshotJournalTitle: 'A focused journal surface',
+    landingScreenshotJournalBody:
+      'Entries support tags, visibility, attachments, references, templates, pinned notes, and rich Markdown when you need it.',
+    landingScreenshotStatsTitle: 'Stats that stay close to the writing',
+    landingScreenshotStatsBody:
+      'Activity, tag trends, word counts, reading time, and tone analysis help you review without turning reflection into reporting.',
+    landingScreenshotExportTitle: 'Import/export that respects ownership',
+    landingScreenshotExportBody:
+      'Preview imports, skip duplicates, export by diary, and keep portable formats ready for spreadsheets, books, or backups.',
+    landingCtaKicker: 'Start quietly',
+    landingCtaTitle: 'Open a journal you can keep using years from now.',
+    landingCtaBody:
+      'Create an account, write privately by default, and export your work whenever you want to leave with everything intact.',
     suggestTags: 'Auto-Tags',
     suggestingTags: 'Tagging...',
     fixWriting: 'Rephrase',
@@ -805,6 +914,10 @@ export const translations: Translations = {
 
     // Entry Cross-References
     backToSource: 'Back to source entry',
+    backlinks: 'Backlinks',
+    backlinksCount: '{count} links',
+    loadingBacklinks: 'Loading backlinks...',
+    noBacklinks: 'No backlinks yet',
     entryNotFound: 'Entry not found',
     entryNotFoundMessage: 'This entry may have been deleted, or the link is no longer valid.',
     entryReferenceHint:
@@ -879,6 +992,10 @@ export const translations: Translations = {
     closeImage: 'Close image',
     favorite: 'Add to favorites',
     unfavorite: 'Remove from favorites',
+    pinEntry: 'Pin entry',
+    unpinEntry: 'Unpin entry',
+    pinned: 'Pinned',
+    pinnedEntries: 'Pinned entries',
     favorites: 'Favorites',
     filterFavorites: 'Show favorites only',
     archive: 'Archive entry',
@@ -957,6 +1074,29 @@ export const translations: Translations = {
     cloudProvidersDescription: 'Connect your cloud storage accounts to enable syncing and importing files.',
     cloudImportFromCloud: 'Import from Cloud',
     cloudSelectFileToImport: 'Select a file from your cloud storage to import',
+    subscriptionManagement: 'Subscription',
+    subscriptionCurrentPlan: 'Current plan',
+    subscriptionPlan: 'Plan',
+    subscriptionPlanDescription: 'Choose the subscription tier saved for this account',
+    subscriptionPlanFree: 'Free',
+    subscriptionPlanPlus: 'Plus',
+    subscriptionPlanPro: 'Pro',
+    subscriptionPrice: 'Price',
+    subscriptionRenewal: 'Renewal',
+    subscriptionMonthly: 'Monthly',
+    subscriptionNoRenewal: 'No renewal',
+    subscriptionPaymentMethod: 'Payment method',
+    subscriptionPaymentMethodDescription: 'Store the payment method label shown in billing records',
+    subscriptionNoPaymentMethod: 'No payment method',
+    billingHistory: 'Billing history',
+    billingHistoryDescription: 'Recent account billing records',
+    billingDate: 'Date',
+    billingDescription: 'Description',
+    billingAmount: 'Amount',
+    billingStatus: 'Status',
+    subscriptionPaid: 'Paid',
+    subscriptionIncluded: 'Included',
+    subscriptionPreviousCycle: 'Previous billing cycle',
   },
   fr: {
     // App
@@ -1048,6 +1188,8 @@ export const translations: Translations = {
     ttsVoicePreviewSample: 'Voici comment votre journal sonnera lorsque Thoughty le lira à voix haute.',
     entriesPerPage: 'Entrées par page',
     entriesPerPageDescription: "Nombre d'entrées à afficher par page",
+    maxPinnedEntries: 'Limite des entrées épinglées',
+    maxPinnedEntriesDescription: "Nombre maximum d'entrées qui peuvent rester épinglées en haut du journal",
     defaultVisibility: 'Visibilité par défaut',
     defaultVisibilityDescription: 'Visibilité par défaut pour les nouvelles entrées',
     language: 'Langue',
@@ -1078,6 +1220,8 @@ export const translations: Translations = {
     cancel: 'Annuler',
     saveSettings: 'Enregistrer',
     settingsSaved: 'Paramètres enregistrés avec succès',
+    verifiedAccount: 'Vérifié',
+    unverifiedAccount: 'Email non vérifié',
     personalInfo: 'Informations personnelles',
     appearance: 'Apparence',
     preferences: 'Préférences',
@@ -1097,6 +1241,14 @@ export const translations: Translations = {
     edit: 'Modifier',
     readMore: 'Lire la suite',
     showLess: 'Voir moins',
+    entryWordCount: '{count} mots',
+    entryReadingTimeMinutes: '{minutes} min de lecture',
+    entryReadingTimeLessThanMinute: '<1 min de lecture',
+    entryTemplate: "Modèle d'entrée",
+    noEntryTemplate: 'Choisir un modèle',
+    saveEntryTemplate: 'Enregistrer le modèle',
+    deleteEntryTemplate: 'Supprimer le modèle',
+    templateNamePrompt: 'Nom du modèle',
 
     // Stats
     totalEntries: 'Total des entrées',
@@ -1109,6 +1261,8 @@ export const translations: Translations = {
     uniqueTags: 'Tags uniques',
     yearsActive: 'Années actives',
     avgPerYear: 'Moy. par an',
+    avgWordsPerEntry: 'Moy. mots',
+    avgReadingTime: 'Moy. lecture',
     thoughtsPerYear: 'Entrées par an',
     thoughtsPerMonth: 'Entrées par mois',
     topTagsByYear: 'Top tags par année',
@@ -1139,6 +1293,7 @@ export const translations: Translations = {
     formatTxt: 'Texte (.txt)',
     formatJson: 'JSON (.json)',
     formatMd: 'Markdown (.md)',
+    formatCsv: 'CSV (.csv)',
     chooseFile: 'Choisir un fichier',
     previewSummary: 'Aperçu',
     entriesFound: 'entrées trouvées',
@@ -1228,6 +1383,7 @@ export const translations: Translations = {
     landingPulseBody:
       'Conservez vos entrées en TXT, JSON ou Markdown, puis réimportez-les avec détection des doublons et attribution intelligente aux journaux.',
     landingFeatureSection: 'Points forts de Thoughty',
+    landingFeatureHeading: 'Notez la journée, puis retrouvez ce qui compte.',
     landingFeaturePrivateTitle: 'Privé par défaut',
     landingFeaturePrivateBody:
       'Écrivez librement, contrôlez la visibilité de chaque entrée et téléchargez vos données personnelles quand vous le souhaitez.',
@@ -1240,6 +1396,31 @@ export const translations: Translations = {
     landingFeatureInsightTitle: 'Utile après l\'écriture',
     landingFeatureInsightBody:
       'Recherchez vite, filtrez par tags et visibilité, retrouvez les temps forts et observez vos tendances dans les statistiques.',
+    landingProofPrivacyMetric: 'Privé d\'abord',
+    landingProofPrivacyLabel: 'Chaque entrée reste sous votre contrôle',
+    landingProofExportMetric: '7 formats d\'export',
+    landingProofExportLabel: 'TXT, JSON, Markdown, CSV, PDF, EPUB et HTML',
+    landingProofInsightMetric: 'Par journal',
+    landingProofInsightLabel: 'Structure, stats, imports et exports respectent chaque journal',
+    landingScreenshotsKicker: 'Aperçus du produit',
+    landingScreenshotsHeading: 'Les principaux usages sont visibles avant l\'inscription.',
+    landingScreenshotAlt: 'Aperçu de l\'interface du journal Thoughty',
+    landingSceneEntryTitle: 'Plan du matin',
+    landingSceneEntryBody: 'Deux décisions à garder, une question à reprendre, et une meilleure façon de finir la semaine.',
+    landingSceneStatsLabel: 'Moyenne de mots',
+    landingScreenshotJournalTitle: 'Une surface d\'écriture concentrée',
+    landingScreenshotJournalBody:
+      'Les entrées prennent en charge tags, visibilité, pièces jointes, références, modèles, notes épinglées et Markdown riche.',
+    landingScreenshotStatsTitle: 'Des stats proches de l\'écriture',
+    landingScreenshotStatsBody:
+      'Activité, tendances par tag, mots, temps de lecture et analyse de ton aident à relire sans transformer la réflexion en rapport.',
+    landingScreenshotExportTitle: 'Import/export fidèle à vos données',
+    landingScreenshotExportBody:
+      'Prévisualisez les imports, ignorez les doublons, exportez par journal et gardez des formats prêts pour tableurs, livres ou sauvegardes.',
+    landingCtaKicker: 'Commencer calmement',
+    landingCtaTitle: 'Ouvrez un journal que vous pourrez garder pendant des années.',
+    landingCtaBody:
+      'Créez un compte, écrivez en privé par défaut et exportez votre travail quand vous voulez repartir avec tout intact.',
     suggestTags: 'Auto-Tags',
     suggestingTags: 'Tagging...',
     fixWriting: 'Reformuler',
@@ -1306,6 +1487,10 @@ export const translations: Translations = {
 
     // Entry Cross-References
     backToSource: "Retour à l'entrée source",
+    backlinks: 'Rétroliens',
+    backlinksCount: '{count} liens',
+    loadingBacklinks: 'Chargement des rétroliens...',
+    noBacklinks: 'Aucun rétrolien pour le moment',
     entryNotFound: 'Entrée non trouvée',
     entryNotFoundMessage: 'Cette entrée a peut-être été supprimée, ou le lien n\'est plus valide.',
     entryReferenceHint:
@@ -1381,6 +1566,10 @@ export const translations: Translations = {
     closeImage: "Fermer l'image",
     favorite: 'Ajouter aux favoris',
     unfavorite: 'Retirer des favoris',
+    pinEntry: 'Épingler l\'entrée',
+    unpinEntry: 'Désépingler l\'entrée',
+    pinned: 'Épinglée',
+    pinnedEntries: 'Entrées épinglées',
     favorites: 'Favoris',
     filterFavorites: 'Afficher les favoris uniquement',
     archive: 'Archiver l\'entrée',
@@ -1459,6 +1648,29 @@ export const translations: Translations = {
     cloudProvidersDescription: 'Connectez vos comptes de stockage cloud pour activer la synchronisation et l\'importation de fichiers.',
     cloudImportFromCloud: 'Importer depuis le Cloud',
     cloudSelectFileToImport: 'Sélectionnez un fichier de votre stockage cloud à importer',
+    subscriptionManagement: 'Abonnement',
+    subscriptionCurrentPlan: 'Offre actuelle',
+    subscriptionPlan: 'Offre',
+    subscriptionPlanDescription: 'Choisissez le niveau d\'abonnement enregistré pour ce compte',
+    subscriptionPlanFree: 'Gratuit',
+    subscriptionPlanPlus: 'Plus',
+    subscriptionPlanPro: 'Pro',
+    subscriptionPrice: 'Prix',
+    subscriptionRenewal: 'Renouvellement',
+    subscriptionMonthly: 'Mensuel',
+    subscriptionNoRenewal: 'Aucun renouvellement',
+    subscriptionPaymentMethod: 'Moyen de paiement',
+    subscriptionPaymentMethodDescription: 'Enregistrez le libellé du moyen de paiement affiché dans la facturation',
+    subscriptionNoPaymentMethod: 'Aucun moyen de paiement',
+    billingHistory: 'Historique de facturation',
+    billingHistoryDescription: 'Factures récentes du compte',
+    billingDate: 'Date',
+    billingDescription: 'Description',
+    billingAmount: 'Montant',
+    billingStatus: 'Statut',
+    subscriptionPaid: 'Payé',
+    subscriptionIncluded: 'Inclus',
+    subscriptionPreviousCycle: 'Cycle de facturation précédent',
   },
 };
 

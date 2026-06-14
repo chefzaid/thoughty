@@ -1,5 +1,5 @@
 import { safeJsonParse } from './base';
-import type { ArchiveStatusFilter, Entry, EntriesResponse, EntryRevision } from '../../types';
+import type { ArchiveStatusFilter, Entry, EntryBacklink, EntriesResponse, EntryRevision } from '../../types';
 import type { components, paths } from '../../generated/openapi';
 
 type CreateEntryRequestDto = components['schemas']['CreateEntryDto'];
@@ -299,6 +299,29 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   };
 
   /**
+   * Toggle entry pinned status
+   */
+  const togglePinned = async (id: number, isPinned: boolean): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await authFetch(`/api/entries/${id}/pinned`, {
+        method: 'PATCH',
+        body: JSON.stringify({ isPinned })
+      });
+
+      if (response.ok) {
+        return { success: true };
+      }
+
+      const data = await safeJsonParse<{ message?: string | string[] }>(response);
+      const message = Array.isArray(data?.message) ? data.message.join(', ') : data?.message;
+      return { success: false, error: message };
+    } catch (error) {
+      console.error('Error toggling pinned state:', error);
+      return { success: false };
+    }
+  };
+
+  /**
    * Fetch revision history for an entry
    */
   const fetchEntryHistory = async (id: number): Promise<EntryRevision[]> => {
@@ -310,6 +333,20 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
       return [];
     } catch (error) {
       console.error('Error fetching entry history:', error);
+      return [];
+    }
+  };
+
+  const fetchEntryBacklinks = async (id: number): Promise<EntryBacklink[]> => {
+    try {
+      const response = await authFetch(`/api/entries/${id}/backlinks`);
+      const data = await safeJsonParse<{ backlinks?: EntryBacklink[] }>(response);
+      if (response.ok && data) {
+        return data.backlinks || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('Error fetching entry backlinks:', error);
       return [];
     }
   };
@@ -367,6 +404,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     toggleVisibility,
     toggleFavorite,
     toggleArchived,
+    togglePinned,
     bulkOperation,
     renameTag,
     navigateToFirst,
@@ -374,6 +412,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     navigateById,
     fetchYearsMonths,
     fetchEntryHistory,
+    fetchEntryBacklinks,
     deleteRevision,
     reorderEntries
   };

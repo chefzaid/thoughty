@@ -526,6 +526,34 @@ describe('entriesService', () => {
     });
   });
 
+  describe('togglePinned', () => {
+    it('sends PATCH request to toggle pinned state', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ success: true }),
+      });
+
+      const result = await service.togglePinned(1, true);
+
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries/1/pinned', {
+        method: 'PATCH',
+        body: JSON.stringify({ isPinned: true }),
+      });
+      expect(result).toEqual({ success: true });
+    });
+
+    it('returns the server error message when pinning fails', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: false,
+        text: () => Promise.resolve(JSON.stringify({ message: 'Pinned entry limit reached (3)' })),
+      });
+
+      const result = await service.togglePinned(1, true);
+
+      expect(result).toEqual({ success: false, error: 'Pinned entry limit reached (3)' });
+    });
+  });
+
   describe('fetchEntries with favorites filter', () => {
     const baseParams = {
       page: 1,
@@ -594,6 +622,34 @@ describe('entriesService', () => {
 
       expect(result).toEqual([]);
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('fetchEntryBacklinks', () => {
+    it('returns backlinks on success', async () => {
+      const backlinks = [
+        { id: 2, date: '2024-01-10', index: 1, content: 'References [[2024-01-15]]', tags: [] },
+      ];
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve(JSON.stringify({ backlinks })),
+      });
+
+      const result = await service.fetchEntryBacklinks(5);
+
+      expect(result).toEqual(backlinks);
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries/5/backlinks');
+    });
+
+    it('returns an empty array when backlinks fetch fails', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: false,
+        text: () => Promise.resolve(''),
+      });
+
+      const result = await service.fetchEntryBacklinks(5);
+
+      expect(result).toEqual([]);
     });
   });
 });

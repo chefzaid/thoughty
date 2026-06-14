@@ -59,6 +59,16 @@ function ProfileHeaderCard({
       <div className="profile-name-row">
         <h2 className="profile-display-name">{localConfig.name || t('user')}</h2>
         {user?.username && <span className="profile-username">@{user.username}</span>}
+        {user?.emailVerified ? (
+          <span className="profile-verification-badge verified" title={t('verifiedAccount')}>
+            <span aria-hidden="true">✓</span>
+            {t('verifiedAccount')}
+          </span>
+        ) : user ? (
+          <span className="profile-verification-badge unverified" title={t('unverifiedAccount')}>
+            {t('unverifiedAccount')}
+          </span>
+        ) : null}
       </div>
       <p className="profile-member-since">
         <svg xmlns="http://www.w3.org/2000/svg" className="member-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">

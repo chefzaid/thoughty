@@ -14,6 +14,7 @@ describe('EntriesService', () => {
       getDates: jest.fn(),
       getFirstEntry: jest.fn(),
       getEntryByDate: jest.fn(),
+      getBacklinks: jest.fn(),
       getHighlights: jest.fn(),
       getRevisions: jest.fn(),
     };
@@ -24,6 +25,7 @@ describe('EntriesService', () => {
       updateVisibility: jest.fn(),
       toggleFavorite: jest.fn(),
       toggleArchived: jest.fn(),
+      togglePinned: jest.fn(),
       deleteAll: jest.fn(),
       delete: jest.fn(),
       bulkOperation: jest.fn(),
@@ -84,6 +86,16 @@ describe('EntriesService', () => {
     const result = await service.getEntryByDate(1, { date: '2024-01-15', index: 1, limit: 10 });
 
     expect(entriesQueryService.getEntryByDate).toHaveBeenCalledWith(1, { date: '2024-01-15', index: 1, limit: 10 });
+    expect(result).toBe(expected);
+  });
+
+  it('delegates getBacklinks to EntriesQueryService', async () => {
+    const expected = { backlinks: [{ id: 2 }] };
+    entriesQueryService.getBacklinks.mockResolvedValue(expected);
+
+    const result = await service.getBacklinks(1, 5);
+
+    expect(entriesQueryService.getBacklinks).toHaveBeenCalledWith(1, 5);
     expect(result).toBe(expected);
   });
 
@@ -156,6 +168,16 @@ describe('EntriesService', () => {
     const result = await service.toggleArchived(1, 1, true);
 
     expect(entriesCommandService.toggleArchived).toHaveBeenCalledWith(1, 1, true);
+    expect(result).toBe(expected);
+  });
+
+  it('delegates togglePinned to EntriesCommandService', async () => {
+    const expected = { success: true, entry: { id: 1, isPinned: true } };
+    entriesCommandService.togglePinned.mockResolvedValue(expected);
+
+    const result = await service.togglePinned(1, 1, true);
+
+    expect(entriesCommandService.togglePinned).toHaveBeenCalledWith(1, 1, true);
     expect(result).toBe(expected);
   });
 

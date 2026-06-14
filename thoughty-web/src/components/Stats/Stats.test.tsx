@@ -43,6 +43,8 @@ describe('Stats Component', () => {
                 uniqueTags: 'Unique Tags',
                 yearsActive: 'Years Active',
                 avgPerYear: 'Avg. per Year',
+                avgWordsPerEntry: 'Avg. Words',
+                avgReadingTime: 'Avg. Read Time',
                 thoughtsPerYear: 'Thoughts per Year',
                 thoughtsPerMonth: 'Thoughts per Month',
                 topTags: 'Top Tags',
@@ -67,6 +69,8 @@ describe('Stats Component', () => {
 
     const mockStatsData = {
         totalThoughts: 100,
+        averageWordsPerEntry: 128,
+        averageReadingTimeMinutes: 1,
         uniqueTagsCount: 15,
         thoughtsPerYear: { '2023': 40, '2024': 60 },
         thoughtsPerMonth: { '2023-12': 10, '2024-01': 20 },
@@ -135,6 +139,10 @@ describe('Stats Component', () => {
         const yearsActiveCard = screen.getByText('Years Active').closest('.stat-card');
         expect(yearsActiveCard).not.toBeNull();
         expect(within(yearsActiveCard as HTMLElement).getByText('2')).toBeInTheDocument(); // Years active (2023, 2024)
+        expect(screen.getByText('Avg. Words')).toBeInTheDocument();
+        expect(screen.getByText('128')).toBeInTheDocument();
+        expect(screen.getByText('Avg. Read Time')).toBeInTheDocument();
+        expect(screen.getByText('1 min')).toBeInTheDocument();
 
         // Check charts presence (via mock)
         const charts = screen.getAllByTestId('mock-bar-chart');

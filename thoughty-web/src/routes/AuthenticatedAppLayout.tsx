@@ -12,6 +12,7 @@ interface AuthenticatedAppLayoutProps {
   readonly currentView: ViewType;
   readonly userName: string;
   readonly avatarUrl?: string;
+  readonly isEmailVerified?: boolean;
   readonly onViewChange: (view: ViewType) => void;
   readonly onLogout: () => void;
   readonly t: (key: string, params?: Record<string, string | number>) => string;
@@ -35,6 +36,7 @@ function AuthenticatedAppLayout({
   currentView,
   userName,
   avatarUrl,
+  isEmailVerified,
   onViewChange,
   onLogout,
   t,
@@ -68,6 +70,7 @@ function AuthenticatedAppLayout({
           theme={config.theme ?? 'dark'}
           name={userName}
           avatarUrl={avatarUrl}
+          isEmailVerified={isEmailVerified}
           t={t}
           onLogout={onLogout}
         />

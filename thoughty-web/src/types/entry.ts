@@ -18,6 +18,7 @@ export interface Entry {
   visibility: 'public' | 'private';
   is_favorite?: boolean;
   is_archived?: boolean;
+  is_pinned?: boolean;
   format?: 'plain' | 'markdown';
   diary_id?: number | null;
   diary_name?: string;
@@ -75,4 +76,20 @@ export interface EntryRevision {
   format: string;
   visibility: string;
   createdAt: string;
+}
+
+export interface EntryBacklink {
+  id: number;
+  content: string;
+  tags: string[];
+  date: string;
+  index: number;
+  format?: 'plain' | 'markdown';
+  visibility?: 'public' | 'private';
+  is_favorite?: boolean;
+  is_archived?: boolean;
+  is_pinned?: boolean;
+  diary_name?: string;
+  diary_icon?: string;
+  diary_color?: string | null;
 }

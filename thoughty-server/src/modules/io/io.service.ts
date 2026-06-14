@@ -8,6 +8,7 @@ import {
   generateTextFile,
   generateJsonFile,
   generateMarkdownFile,
+  generateCsvFile,
   parseTextFile,
   parseJsonFile,
   parseMarkdownFile,
@@ -25,7 +26,7 @@ const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5MB
 const MAX_ENTRIES_PER_IMPORT = 10000;
 
 export type TextExportFormat = 'txt' | 'json' | 'md';
-export type ExportFormat = TextExportFormat | 'pdf' | 'html' | 'epub';
+export type ExportFormat = TextExportFormat | 'csv' | 'pdf' | 'html' | 'epub';
 
 export interface ExportFile {
   content: string | Buffer;
@@ -282,6 +283,11 @@ export class IoService {
         fileContent = generateMarkdownFile(entriesWithDiary, includeVisibility);
         extension = 'md';
         contentType = 'text/markdown; charset=utf-8';
+        break;
+      case 'csv':
+        fileContent = generateCsvFile(entriesWithDiary, includeVisibility);
+        extension = 'csv';
+        contentType = 'text/csv; charset=utf-8';
         break;
       case 'pdf':
       case 'html':

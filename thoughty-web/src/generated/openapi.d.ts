@@ -276,6 +276,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/entries/{id}/backlinks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get entries that reference this entry */
+        get: operations["EntriesController_getBacklinks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/entries/bulk": {
         parameters: {
             query?: never;
@@ -394,6 +411,23 @@ export interface paths {
         head?: never;
         /** Toggle archive status of an entry */
         patch: operations["EntriesController_toggleArchived"];
+        trace?: never;
+    };
+    "/api/entries/{id}/pinned": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Toggle pinned status of an entry */
+        patch: operations["EntriesController_togglePinned"];
         trace?: never;
     };
     "/api/entries/{id}/history": {
@@ -723,6 +757,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/books/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Preview the book outline (chapters built from tags) before exporting */
+        get: operations["BooksController_preview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/books/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Convert journal entries into a book (chapters from tags) and download it */
+        get: operations["BooksController_export"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/attachments/upload": {
         parameters: {
             query?: never;
@@ -1029,6 +1097,7 @@ export interface components {
             email: string;
             avatarUrl?: string;
             authProvider: string;
+            emailVerified: boolean;
             /** Format: date-time */
             createdAt: string;
         };
@@ -1068,6 +1137,7 @@ export interface components {
             visibility: string;
             is_favorite: boolean;
             is_archived: boolean;
+            is_pinned: boolean;
             diary_name?: string;
             diary_icon?: string;
             diary_color?: string;
@@ -1098,6 +1168,25 @@ export interface components {
             page?: number;
             entryId?: number;
             error?: string;
+        };
+        EntryBacklinkDto: {
+            id: number;
+            date: string;
+            index: number;
+            tags: string[];
+            content: string;
+            /** @enum {string} */
+            format: "plain" | "markdown";
+            visibility: string;
+            is_favorite: boolean;
+            is_archived: boolean;
+            is_pinned: boolean;
+            diary_name?: string;
+            diary_icon?: string;
+            diary_color?: string;
+        };
+        EntryBacklinksResponseDto: {
+            backlinks: components["schemas"]["EntryBacklinkDto"][];
         };
         CreateEntryDto: {
             /** @description Entry content */
@@ -1189,6 +1278,10 @@ export interface components {
         UpdateArchivedDto: {
             /** @description Whether the entry is archived */
             isArchived: boolean;
+        };
+        UpdatePinnedDto: {
+            /** @description Whether the entry is pinned */
+            isPinned: boolean;
         };
         DeleteAllResponseDto: {
             success: boolean;
@@ -1323,6 +1416,10 @@ export interface components {
         StatsResponseDto: {
             /** @example 120 */
             totalThoughts: number;
+            /** @example 184 */
+            averageWordsPerEntry: number;
+            /** @example 1 */
+            averageReadingTimeMinutes: number;
             /** @example 18 */
             uniqueTagsCount: number;
             /**
@@ -1427,6 +1524,22 @@ export interface components {
             importedCount: number;
             skippedCount: number;
             totalProcessed: number;
+        };
+        BookChapterPreviewDto: {
+            title: string;
+            entryCount: number;
+            /** @description Date of the first entry in the chapter */
+            firstDate: string;
+            /** @description Date of the last entry in the chapter */
+            lastDate: string;
+        };
+        BookPreviewResponseDto: {
+            title: string;
+            author?: string;
+            chapterCount: number;
+            /** @description Total number of entry placements across chapters */
+            entryCount: number;
+            chapters: components["schemas"]["BookChapterPreviewDto"][];
         };
         LinkAttachmentDto: {
             /** @description Entry ID to link attachment to */
@@ -1988,6 +2101,28 @@ export interface operations {
             };
         };
     };
+    EntriesController_getBacklinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entries referencing this entry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryBacklinksResponseDto"];
+                };
+            };
+        };
+    };
     EntriesController_bulkOperation: {
         parameters: {
             query?: never;
@@ -2176,6 +2311,32 @@ export interface operations {
         };
         responses: {
             /** @description Archive status updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryMutationResponseDto"];
+                };
+            };
+        };
+    };
+    EntriesController_togglePinned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePinnedDto"];
+            };
+        };
+        responses: {
+            /** @description Pinned status updated */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2653,7 +2814,7 @@ export interface operations {
                 /** @description Include visibility field in export */
                 includeVisibility?: boolean;
                 /** @description Export file format */
-                format?: "txt" | "json" | "md";
+                format?: "txt" | "json" | "md" | "csv" | "pdf" | "html" | "epub";
             };
             header?: never;
             path?: never;
@@ -2715,6 +2876,98 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ImportResponseDto"];
                 };
+            };
+        };
+    };
+    BooksController_preview: {
+        parameters: {
+            query?: {
+                /** @description Diary ID to build the book from */
+                diaryId?: number;
+                /** @description Book output format */
+                format?: "pdf" | "epub" | "html" | "md";
+                /** @description Book title (defaults to the diary name) */
+                title?: string;
+                /** @description Author name shown on the title page (defaults to the username) */
+                author?: string;
+                /** @description Only include entries on or after this date (YYYY-MM-DD) */
+                dateFrom?: string;
+                /** @description Only include entries on or before this date (YYYY-MM-DD) */
+                dateTo?: string;
+                /** @description Chapter ordering: alphabetical, by entry count, or by first entry date */
+                chapterOrder?: "alpha" | "entries" | "chrono";
+                /** @description Place entries in every matching tag chapter, or only in their first tag chapter */
+                tagScope?: "all" | "first";
+                /** @description Comma-separated list of tags to use as chapters (defaults to all tags) */
+                tags?: string;
+                /** @description Add a final chapter for entries without tags */
+                includeUntagged?: boolean;
+                /** @description Show entry dates inside chapters */
+                includeDates?: boolean;
+                /** @description Include a table of contents */
+                includeToc?: boolean;
+                /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
+                narrative?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Book outline with chapter titles and entry counts */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookPreviewResponseDto"];
+                };
+            };
+        };
+    };
+    BooksController_export: {
+        parameters: {
+            query?: {
+                /** @description Diary ID to build the book from */
+                diaryId?: number;
+                /** @description Book output format */
+                format?: "pdf" | "epub" | "html" | "md";
+                /** @description Book title (defaults to the diary name) */
+                title?: string;
+                /** @description Author name shown on the title page (defaults to the username) */
+                author?: string;
+                /** @description Only include entries on or after this date (YYYY-MM-DD) */
+                dateFrom?: string;
+                /** @description Only include entries on or before this date (YYYY-MM-DD) */
+                dateTo?: string;
+                /** @description Chapter ordering: alphabetical, by entry count, or by first entry date */
+                chapterOrder?: "alpha" | "entries" | "chrono";
+                /** @description Place entries in every matching tag chapter, or only in their first tag chapter */
+                tagScope?: "all" | "first";
+                /** @description Comma-separated list of tags to use as chapters (defaults to all tags) */
+                tags?: string;
+                /** @description Add a final chapter for entries without tags */
+                includeUntagged?: boolean;
+                /** @description Show entry dates inside chapters */
+                includeDates?: boolean;
+                /** @description Include a table of contents */
+                includeToc?: boolean;
+                /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
+                narrative?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Book file in the requested format (PDF, HTML, or Markdown) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

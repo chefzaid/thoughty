@@ -234,6 +234,19 @@ describe('IoService', () => {
       expect(result.content).toContain('# 2024-01-15');
     });
 
+    it('should export as CSV format with entry metrics', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getMany.mockResolvedValue([mockEntry]);
+
+      const result = await service.export(1, undefined, true, 'csv');
+
+      expect(result.filename).toContain('.csv');
+      expect(result.contentType).toBe('text/csv; charset=utf-8');
+      expect(result.content).toContain('word_count,reading_time_minutes');
+      expect(result.content).toContain('private,plain,3,1,Test entry content');
+    });
+
     it('should default to txt format', async () => {
       settingRepository.find.mockResolvedValue([]);
       const mockQb = entryRepository.createQueryBuilder();

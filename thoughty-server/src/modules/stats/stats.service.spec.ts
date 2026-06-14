@@ -22,6 +22,7 @@ describe('StatsService', () => {
       take: jest.fn().mockReturnThis(),
       getCount: jest.fn().mockResolvedValue(100),
       getRawMany: jest.fn().mockResolvedValue([]),
+      getRawOne: jest.fn().mockResolvedValue({ totalWords: '0' }),
       getMany: jest.fn().mockResolvedValue([]),
     };
 
@@ -59,10 +60,13 @@ describe('StatsService', () => {
         .mockResolvedValueOnce([{ tag: 'happy', count: '30' }, { tag: 'sad', count: '20' }]) // perTag
         .mockResolvedValueOnce([{ year: '2024', tag: 'happy', count: '20' }]) // tagsPerYear
         .mockResolvedValueOnce([{ month: '2024-01', tag: 'happy', count: '10' }]); // tagsPerMonth
+      mockQb.getRawOne.mockResolvedValue({ totalWords: '12345' });
 
       const result = await service.getStats(1);
 
       expect(result).toHaveProperty('totalThoughts');
+      expect(result).toHaveProperty('averageWordsPerEntry');
+      expect(result).toHaveProperty('averageReadingTimeMinutes');
       expect(result).toHaveProperty('uniqueTagsCount');
       expect(result).toHaveProperty('thoughtsPerYear');
       expect(result).toHaveProperty('thoughtsPerMonth');
@@ -81,6 +85,18 @@ describe('StatsService', () => {
       const result = await service.getStats(1);
 
       expect(result.totalThoughts).toBe(42);
+    });
+
+    it('should calculate average word count and reading time correctly', async () => {
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getCount.mockResolvedValue(4);
+      mockQb.getRawMany.mockResolvedValue([]);
+      mockQb.getRawOne.mockResolvedValue({ totalWords: '805' });
+
+      const result = await service.getStats(1);
+
+      expect(result.averageWordsPerEntry).toBe(201);
+      expect(result.averageReadingTimeMinutes).toBe(2);
     });
 
     it('should process thoughtsPerYear correctly', async () => {
@@ -243,6 +259,8 @@ describe('StatsService', () => {
       const result = await service.getStats(1);
 
       expect(result.totalThoughts).toBe(0);
+      expect(result.averageWordsPerEntry).toBe(0);
+      expect(result.averageReadingTimeMinutes).toBe(0);
       expect(result.uniqueTagsCount).toBe(0);
       expect(Object.keys(result.thoughtsPerYear)).toHaveLength(0);
       expect(Object.keys(result.thoughtsPerMonth)).toHaveLength(0);

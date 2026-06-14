@@ -19,9 +19,10 @@ describe('AppShell public flows', () => {
 
     renderAppShell();
 
-    expect(screen.getByText('A journal that feels calm when you write and sharp when you search.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sign Up' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Thoughty' })).toBeInTheDocument();
+    expect(screen.getByText('Private writing, built to stay useful')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Sign Up' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Sign In' })).toHaveLength(2);
   });
 
   it('loads the sign-in screen from /login', async () => {
@@ -54,7 +55,9 @@ describe('AppShell public flows', () => {
 
     renderAppShell();
 
-    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    const signInButton = screen.getAllByRole('button', { name: 'Sign In' })[0];
+    expect(signInButton).toBeDefined();
+    await user.click(signInButton as HTMLElement);
     expect(globalThis.location.pathname).toBe('/login');
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
     expect(screen.getByText('Welcome back')).toBeInTheDocument();
@@ -62,7 +65,9 @@ describe('AppShell public flows', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }));
     expect(globalThis.location.pathname).toBe('/');
 
-    await user.click(screen.getByRole('button', { name: 'Sign Up' }));
+    const signUpButton = screen.getAllByRole('button', { name: 'Sign Up' })[0];
+    expect(signUpButton).toBeDefined();
+    await user.click(signUpButton as HTMLElement);
     expect(globalThis.location.pathname).toBe('/register');
     expect(screen.getByText('Create your account')).toBeInTheDocument();
   });
@@ -81,7 +86,7 @@ describe('AppShell public flows', () => {
     renderAppShell();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument();
+      expect(screen.getAllByRole('button', { name: 'Sign In' })[0]).toBeInTheDocument();
     });
   });
 });

@@ -4,6 +4,10 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfilePage from './ProfilePage';
 
+const authContextMock = vi.hoisted(() => ({
+    useAuth: vi.fn(),
+}));
+
 vi.mock('./AISection', () => ({
     default: ({ localConfig, handleChange }: { localConfig: { autoTagMaxTags?: string; theme?: 'light' | 'dark' }; handleChange: (event: { target: { name: string; value: string } }) => void }) => (
         <div>
@@ -25,11 +29,7 @@ vi.mock('./CloudProvidersSection', () => ({
 
 // Mock the AuthContext
 vi.mock('../../contexts/AuthContext', () => ({
-    useAuth: () => ({
-        user: { id: 'test-user', name: 'John Doe', email: 'john@example.com', authProvider: 'local' },
-        changePassword: vi.fn().mockResolvedValue({ success: true }),
-        deleteAccount: vi.fn().mockResolvedValue({ success: true })
-    })
+    useAuth: authContextMock.useAuth
 }));
 
 vi.mock('../../hooks/useAppState', () => ({
@@ -52,6 +52,31 @@ vi.mock('../../hooks/useAppState', () => ({
         },
     }),
 }));
+
+const { useAuth } = await import('../../contexts/AuthContext');
+const mockedUseAuth = vi.mocked(useAuth);
+type MockAuthValue = ReturnType<typeof useAuth>;
+
+function createAuthValue(overrides: Partial<MockAuthValue> = {}): MockAuthValue {
+    return {
+        user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local' },
+        loading: false,
+        error: null,
+        isAuthenticated: true,
+        register: vi.fn().mockResolvedValue({ success: true }),
+        login: vi.fn().mockResolvedValue({ success: true }),
+        logout: vi.fn().mockResolvedValue(undefined),
+        signInWithGoogle: vi.fn().mockResolvedValue({ success: true }),
+        changePassword: vi.fn().mockResolvedValue({ success: true }),
+        forgotPassword: vi.fn().mockResolvedValue({ success: true }),
+        resetPassword: vi.fn().mockResolvedValue({ success: true }),
+        deleteAccount: vi.fn().mockResolvedValue({ success: true }),
+        authFetch: vi.fn().mockResolvedValue(new Response()),
+        getAccessToken: vi.fn().mockReturnValue('token'),
+        googleClientId: '',
+        ...overrides,
+    };
+}
 
 describe('ProfilePage', () => {
     const defaultProps: ComponentProps<typeof ProfilePage> = {
@@ -77,6 +102,7 @@ describe('ProfilePage', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        mockedUseAuth.mockReturnValue(createAuthValue());
     });
 
     describe('Rendering', () => {
@@ -126,12 +152,29 @@ describe('ProfilePage', () => {
             expect(screen.getByText('personalInfo')).toBeInTheDocument();
             expect(screen.getByText('appearance')).toBeInTheDocument();
             expect(screen.getByText('cloudProviders')).toBeInTheDocument();
+            expect(screen.getByText('subscriptionManagement')).toBeInTheDocument();
         });
 
         it('displays member since year', () => {
             render(<ProfilePage {...defaultProps} />);
 
             expect(screen.getByText('Member since 2023')).toBeInTheDocument();
+        });
+
+        it('displays unverified account status by default', () => {
+            render(<ProfilePage {...defaultProps} />);
+
+            expect(screen.getByText('unverifiedAccount')).toBeInTheDocument();
+        });
+
+        it('displays verified account status for verified users', () => {
+            mockedUseAuth.mockReturnValue(createAuthValue({
+                user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local', emailVerified: true },
+            }));
+
+            render(<ProfilePage {...defaultProps} />);
+
+            expect(screen.getByText('verifiedAccount')).toBeInTheDocument();
         });
 
         it('displays email input field', () => {
@@ -326,16 +369,34 @@ describe('ProfilePage', () => {
             );
         });
 
+        it('saves subscription preferences', async () => {
+            const user = userEvent.setup();
+            render(<ProfilePage {...defaultProps} />);
+
+            await user.selectOptions(screen.getByLabelText('subscriptionPlan'), 'pro');
+            await user.type(screen.getByLabelText('subscriptionPaymentMethod'), 'Visa ending 1111');
+            await user.click(screen.getByText('saveSettings'));
+
+            expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    subscriptionPlan: 'pro',
+                    paymentMethodLabel: 'Visa ending 1111',
+                })
+            );
+        });
+
     });
 
     describe('Avatar', () => {
         it('handles missing name with default', () => {
+            mockedUseAuth.mockReturnValue(createAuthValue({ user: null }));
             render(<ProfilePage {...defaultProps} config={{ ...defaultProps.config, name: undefined }} />);
 
             expect(screen.getAllByText('U')[0]).toBeInTheDocument();
         });
 
         it('handles empty string name', () => {
+            mockedUseAuth.mockReturnValue(createAuthValue({ user: null }));
             render(<ProfilePage {...defaultProps} config={{ ...defaultProps.config, name: '' }} />);
 
             expect(screen.getAllByText('U')[0]).toBeInTheDocument();

@@ -8,6 +8,7 @@ describe('EntriesCommandService', () => {
   let revisionRepository: Record<string, jest.Mock>;
   let diaryRepository: Record<string, jest.Mock>;
   let entryTaggingService: Record<string, jest.Mock>;
+  let configService: Record<string, jest.Mock>;
 
   beforeEach(() => {
     entryRepository = {
@@ -34,11 +35,16 @@ describe('EntriesCommandService', () => {
       resolveSavedTags: jest.fn().mockResolvedValue([]),
     };
 
+    configService = {
+      getConfig: jest.fn().mockResolvedValue({ maxPinnedEntries: '3' }),
+    };
+
     service = new EntriesCommandService(
       entryRepository as never,
       revisionRepository as never,
       diaryRepository as never,
       entryTaggingService as never,
+      configService as never,
     );
   });
 
@@ -160,20 +166,35 @@ describe('EntriesCommandService', () => {
     })).rejects.toThrow(NotFoundException);
   });
 
-  it('updates visibility, favorite, and archived flags for existing entries', async () => {
-    const entry = { id: 1, userId: 5, visibility: 'private', isFavorite: false, isArchived: false };
+  it('updates visibility, favorite, archived, and pinned flags for existing entries', async () => {
+    const entry = { id: 1, userId: 5, visibility: 'private', isFavorite: false, isArchived: false, isPinned: false };
     entryRepository.findOne
       .mockResolvedValueOnce({ ...entry })
       .mockResolvedValueOnce({ ...entry })
+      .mockResolvedValueOnce({ ...entry })
       .mockResolvedValueOnce({ ...entry });
+    entryRepository.count.mockResolvedValue(2);
     entryRepository.save
       .mockResolvedValueOnce({ ...entry, visibility: 'public' })
       .mockResolvedValueOnce({ ...entry, isFavorite: true })
-      .mockResolvedValueOnce({ ...entry, isArchived: true });
+      .mockResolvedValueOnce({ ...entry, isArchived: true })
+      .mockResolvedValueOnce({ ...entry, isPinned: true });
 
     await expect(service.updateVisibility(5, 1, 'public')).resolves.toEqual({ success: true, entry: expect.objectContaining({ visibility: 'public' }) });
     await expect(service.toggleFavorite(5, 1, true)).resolves.toEqual({ success: true, entry: expect.objectContaining({ isFavorite: true }) });
     await expect(service.toggleArchived(5, 1, true)).resolves.toEqual({ success: true, entry: expect.objectContaining({ isArchived: true }) });
+    await expect(service.togglePinned(5, 1, true)).resolves.toEqual({ success: true, entry: expect.objectContaining({ isPinned: true }) });
+    expect(configService.getConfig).toHaveBeenCalledWith(5);
+  });
+
+  it('rejects pinning when the configured pinned entry limit is reached', async () => {
+    entryRepository.findOne.mockResolvedValue({ id: 1, userId: 5, isPinned: false });
+    entryRepository.count.mockResolvedValue(3);
+    configService.getConfig.mockResolvedValue({ maxPinnedEntries: '3' });
+
+    await expect(service.togglePinned(5, 1, true)).rejects.toThrow(BadRequestException);
+
+    expect(entryRepository.save).not.toHaveBeenCalled();
   });
 
   it('deletes entries and reindexes remaining entries for the same date', async () => {

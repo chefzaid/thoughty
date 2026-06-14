@@ -22,12 +22,12 @@ async function runTest(name: string, dir: string, script: string = 'test:cov'): 
     log.step(`Running tests in ${fmt.dim(dir)}...`);
 
     return new Promise((resolve) => {
-        // Use npm.cmd on Windows
-        const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+        const npmExecPath = process.env.npm_execpath;
+        const command = npmExecPath ? process.execPath : process.platform === 'win32' ? 'npm.cmd' : 'npm';
+        const args = npmExecPath ? [npmExecPath, 'run', script] : ['run', script];
 
-        const child = spawn(npmCmd, ['run', script], {
+        const child = spawn(command, args, {
             cwd: path.resolve(dir),
-            shell: true,
             env: { ...process.env, FORCE_COLOR: '0' },
         });
 

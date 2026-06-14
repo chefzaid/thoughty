@@ -74,6 +74,8 @@ const WEEKDAY_LABELS = Array.from({ length: 7 }, (_, index) => {
 });
 const EMPTY_STATS: StatsData = {
     totalThoughts: 0,
+    averageWordsPerEntry: 0,
+    averageReadingTimeMinutes: 0,
     uniqueTagsCount: 0,
     thoughtsPerYear: {},
     thoughtsPerMonth: {},
@@ -327,7 +329,10 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
         tagsYearPage * TAGS_YEARS_PER_PAGE,
         (tagsYearPage + 1) * TAGS_YEARS_PER_PAGE
     ), [allTagsPerYear, tagsYearPage]);
-    const thoughtsPerDay = effectiveStats.thoughtsPerDay ?? {};
+    const thoughtsPerDay = useMemo(
+        () => effectiveStats.thoughtsPerDay ?? {},
+        [effectiveStats.thoughtsPerDay],
+    );
     const heatmapWeeks = useMemo(() => buildHeatmapWeeks(thoughtsPerDay), [thoughtsPerDay]);
     const heatmapMonthLabels = useMemo(() => heatmapWeeks.map((week, index) => {
         const labelDate = week.find((cell) => cell.inRange)?.date ?? week[0]?.date;
@@ -408,6 +413,18 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                             : 0}
                     </div>
                     <div className="stat-label">{t('avgPerYear')}</div>
+                </div>
+                <div className={`stat-card ${themeClass}`}>
+                    <div className="stat-value">{stats.averageWordsPerEntry}</div>
+                    <div className="stat-label">{t('avgWordsPerEntry')}</div>
+                </div>
+                <div className={`stat-card ${themeClass}`}>
+                    <div className="stat-value">
+                        {stats.averageReadingTimeMinutes > 0
+                            ? `${stats.averageReadingTimeMinutes} min`
+                            : '<1 min'}
+                    </div>
+                    <div className="stat-label">{t('avgReadingTime')}</div>
                 </div>
             </div>
 

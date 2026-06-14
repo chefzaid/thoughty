@@ -42,6 +42,25 @@ describe('EntriesList', () => {
         expect(document.getElementById('entry-1')).not.toHaveClass('highlight-entry');
     });
 
+    it('shows pinned entries before date-grouped entries', () => {
+        render(<EntriesList {...createEntriesListProps({
+            entries: [
+                { ...mockEntries[2], is_pinned: true },
+                mockEntries[0],
+                mockEntries[1],
+            ],
+            groupedEntries: {
+                '2024-01-15': [mockEntries[0], mockEntries[1]],
+                '2024-01-14': [{ ...mockEntries[2], is_pinned: true }],
+            },
+        })} />);
+
+        const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent);
+
+        expect(headings).toEqual(['Pinned entries', '2024-01-15']);
+        expect(screen.getByText('Third entry')).toBeInTheDocument();
+    });
+
     it('applies the correct theme classes', () => {
         const { rerender } = render(<EntriesList {...createEntriesListProps({ config: { theme: 'dark' } })} />);
 

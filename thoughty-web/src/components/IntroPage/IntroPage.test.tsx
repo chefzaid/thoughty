@@ -8,7 +8,7 @@ describe('IntroPage', () => {
   const t = (key: string, params?: Record<string, string | number>) =>
     getTranslation('en', key as never, params);
 
-  it('renders the landing content and feature cards', () => {
+  it('renders the expanded landing content, screenshots, and feature sections', () => {
     render(
       <IntroPage
         t={t}
@@ -18,8 +18,12 @@ describe('IntroPage', () => {
     );
 
     expect(screen.getByText('Private writing, built to stay useful')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Thoughty' })).toBeInTheDocument();
     expect(screen.getByText('Portable import and export')).toBeInTheDocument();
     expect(screen.getByText('Useful after the writing')).toBeInTheDocument();
+    expect(screen.getByText('The main workflows are visible before you sign up.')).toBeInTheDocument();
+    expect(screen.getByText('A focused journal surface')).toBeInTheDocument();
+    expect(screen.getByText('Open a journal you can keep using years from now.')).toBeInTheDocument();
   });
 
   it('calls the correct CTA handlers', async () => {
@@ -35,8 +39,13 @@ describe('IntroPage', () => {
       />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Sign Up' }));
-    await user.click(screen.getByRole('button', { name: 'Sign In' }));
+    const signUpButton = screen.getAllByRole('button', { name: 'Sign Up' }).at(0);
+    const signInButton = screen.getAllByRole('button', { name: 'Sign In' }).at(0);
+    expect(signUpButton).toBeDefined();
+    expect(signInButton).toBeDefined();
+
+    await user.click(signUpButton as HTMLElement);
+    await user.click(signInButton as HTMLElement);
 
     expect(onSignUp).toHaveBeenCalledTimes(1);
     expect(onSignIn).toHaveBeenCalledTimes(1);
