@@ -172,7 +172,7 @@
 - [ ] Caching of frequent requests (public entries, feed)
 - [ ] Distributed rate limiting with Redis for multi-replica deployments
 - [ ] Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
-- [ ] Backup and disaster recovery plan for user data
+- [x] Backup and disaster recovery plan for user data
 - [ ] Improve error handling and user feedback for better UX
 - [ ] Use WebSockets for real-time updates on public entries and messages
 - [ ] Implement lazy loading for components and routes to improve initial load time

@@ -125,12 +125,6 @@ For integration failures:
 
 ## Backup and Recovery
 
-The repository does not yet define a complete production backup and disaster recovery implementation. Until ADR 0016 is implemented, treat production readiness as incomplete for long-lived user data.
+Thoughty's production backup and restore expectations are defined in `docs/backup-disaster-recovery.md`.
 
-At minimum, a production deployment should define:
-
-- PostgreSQL backup cadence and retention
-- restore testing process
-- object-storage backup/versioning policy
-- secret backup/rotation process
-- recovery time objective (RTO) and recovery point objective (RPO)
+Use that plan before treating a deployment as ready for long-lived user data. At minimum, production operations need PostgreSQL point-in-time recovery, attachment object versioning, secret recovery, quarterly restore drills, and documented RPO/RTO evidence.
