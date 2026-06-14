@@ -192,7 +192,7 @@
 - [x] Configure jobs in CI pipeline to run tests on every pull request and before merging to main branch
 - [x] Configure job in CI pipeline to run Playwright tests on a schedule (e.g. daily) to catch any regressions
 - [ ] Modify deployments configuration to use existing DS-Cluster infrastructure, and document the prerequisites and deployment process in docs
-- [ ] CI pipeline for automated dependency vulnerability scanning (npm audit, Dependabot/Renovate)
+- [x] CI pipeline for automated dependency vulnerability scanning (npm audit, Dependabot/Renovate)
 - [ ] Blue-green or canary deployment strategy for zero-downtime releases
 
 ## Database

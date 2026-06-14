@@ -273,6 +273,7 @@ flowchart LR
 - lint in both projects
 - backend coverage run via `npm run test:cov`
 - frontend coverage run via `npm run test:coverage`
+- dependency vulnerability scans via `npm audit --audit-level=high` in both projects
 - Docker builds for both runtime images
 - a smoke test that boots a disposable PostgreSQL container and runs `npm run db:migrate:dist` inside the built server image
 - a daily scheduled run of the full verification pipeline, including Playwright browser tests

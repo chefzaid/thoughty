@@ -109,6 +109,26 @@ pipeline {
             }
         }
 
+        // ── Dependency Vulnerability Scan ───────────────────────
+        stage('Dependency Audit') {
+            parallel {
+                stage('Server Audit') {
+                    steps {
+                        dir('thoughty-server') {
+                            sh 'npm audit --audit-level=high'
+                        }
+                    }
+                }
+                stage('Web Audit') {
+                    steps {
+                        dir('thoughty-web') {
+                            sh 'npm audit --audit-level=high'
+                        }
+                    }
+                }
+            }
+        }
+
         // ── Build Docker Images ──────────────────────────────────
         stage('Build Images') {
             parallel {
