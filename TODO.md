@@ -201,7 +201,7 @@
 - [x] Optimize hot database queries across services
 - [ ] Optimize database for better performance (ongoing)
 - [ ] Convert the current idempotent SQL migration script into versioned migration files when the schema-change workflow needs stricter ordering/history
-- [ ] Database connection pooling configuration in TypeORM data source
+- [x] Database connection pooling configuration in TypeORM data source
 - [ ] Database read replicas for scaling read-heavy queries (stats, feed, search)
 - [ ] Automated database backups with point-in-time recovery
 

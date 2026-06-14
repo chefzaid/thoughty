@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment, CloudSyncJob, AiChatHistory } from './entities';
+import { buildPostgresPoolOptions } from './postgres-pool-options';
 
 @Module({
   imports: [
@@ -16,6 +17,11 @@ import { User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment, C
         password: configService.get<string>('POSTGRES_PASSWORD', 'password'),
         database: configService.get<string>('POSTGRES_DB', 'journal'),
         entities: [User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment, CloudSyncJob, AiChatHistory],
+        extra: buildPostgresPoolOptions({
+          POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),
+          POSTGRES_POOL_IDLE_TIMEOUT_MS: configService.get<string>('POSTGRES_POOL_IDLE_TIMEOUT_MS'),
+          POSTGRES_POOL_CONNECTION_TIMEOUT_MS: configService.get<string>('POSTGRES_POOL_CONNECTION_TIMEOUT_MS'),
+        }),
         synchronize: false, // Don't auto-sync in production; use migrations
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),

@@ -6,6 +6,7 @@
 import { DataSource } from 'typeorm';
 import { config } from 'dotenv';
 import { join } from 'node:path';
+import { buildPostgresPoolOptions } from '../../src/database/postgres-pool-options';
 
 // Load environment variables from thoughty-server/.env
 config({ path: join(__dirname, '..', '..', '.env') });
@@ -18,6 +19,7 @@ export const dataSource = new DataSource({
     username: process.env.POSTGRES_USER || 'postgres',
     password: process.env.POSTGRES_PASSWORD || 'password',
     database: process.env.POSTGRES_DB || 'journal',
+    extra: buildPostgresPoolOptions(process.env),
     synchronize: false,
     logging: false,
 });
@@ -62,4 +64,3 @@ export async function withDatabase<T>(fn: (ds: DataSource) => Promise<T>): Promi
 }
 
 export default { dataSource, initializeDatabase, query, closeDatabase, withDatabase };
-
