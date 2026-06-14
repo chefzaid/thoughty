@@ -83,7 +83,7 @@
 - [x] Terms of Service and Privacy Policy pages
 - [x] Contact and support page with a form to submit inquiries and a How To guides / FAQ section
 - [x] Feedback and feature request page for users to submit their ideas and upvote existing ones
-- [ ] Blog section for updates, tips, and journaling inspiration
+- [x] Blog section for updates, tips, and journaling inspiration
 - [ ] Email validation flow for account security (password reset via email already works)
 - [ ] Admin console for app settings and AI model management (define and change AI models for each AI task type, monitor usage, and manage user access to AI features, ban abusive users, etc.)
 

@@ -2,6 +2,7 @@ import type { ComponentProps } from 'react';
 
 import AboutPage from '../components/AboutPage/AboutPage';
 import AuthPage from '../components/AuthPage/AuthPage';
+import BlogPage from '../components/BlogPage/BlogPage';
 import ContactPage from '../components/ContactPage/ContactPage';
 import FeedbackPage from '../components/FeedbackPage/FeedbackPage';
 import IntroPage from '../components/IntroPage/IntroPage';
@@ -16,6 +17,7 @@ import type { TagMetadataMap } from './tagMetadata';
 
 export type IntroPageProps = ComponentProps<typeof IntroPage>;
 export type AboutPageProps = ComponentProps<typeof AboutPage>;
+export type BlogPageProps = ComponentProps<typeof BlogPage>;
 export type ContactPageProps = ComponentProps<typeof ContactPage>;
 export type FeedbackPageProps = ComponentProps<typeof FeedbackPage>;
 export type AuthPageProps = ComponentProps<typeof AuthPage>;
@@ -105,6 +107,12 @@ export function buildPublicShellProps({
     onSignUp: () => routingState.handlePublicViewChange('register'),
   };
 
+  const blogPageProps: BlogPageProps = {
+    theme,
+    t,
+    onBackHome: () => routingState.handlePublicViewChange('intro'),
+  };
+
   const contactPageProps: ContactPageProps = {
     theme,
     t,
@@ -135,6 +143,7 @@ export function buildPublicShellProps({
   return {
     introPageProps,
     aboutPageProps,
+    blogPageProps,
     contactPageProps,
     feedbackPageProps,
     legalPageProps,

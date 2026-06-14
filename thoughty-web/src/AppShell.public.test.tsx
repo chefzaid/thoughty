@@ -109,6 +109,18 @@ describe('AppShell public flows', () => {
     });
   });
 
+  it('loads the blog page from /blog', async () => {
+    globalThis.history.replaceState({}, '', '/blog');
+    setMockAuthState({ user: null, isAuthenticated: false });
+
+    renderAppShell();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Updates, tips, and journaling inspiration.' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'From the journal desk' })).toBeInTheDocument();
+    });
+  });
+
   it('navigates from the intro page to sign in and sign up modes', async () => {
     const user = userEvent.setup();
     setMockAuthState({ user: null, isAuthenticated: false });

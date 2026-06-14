@@ -385,6 +385,28 @@ export type TranslationKey =
   | 'feedbackVote'
   | 'feedbackVoted'
   | 'feedbackVoteAria'
+  | 'blogEyebrow'
+  | 'blogTitle'
+  | 'blogSubtitle'
+  | 'blogIndexKicker'
+  | 'blogIndexTitle'
+  | 'blogCategoryUpdate'
+  | 'blogCategoryTips'
+  | 'blogCategoryInspiration'
+  | 'blogUpdateTitle'
+  | 'blogUpdateExcerpt'
+  | 'blogUpdateBody'
+  | 'blogUpdateDate'
+  | 'blogTipsTitle'
+  | 'blogTipsExcerpt'
+  | 'blogTipsBody'
+  | 'blogTipsDate'
+  | 'blogInspirationTitle'
+  | 'blogInspirationExcerpt'
+  | 'blogInspirationBody'
+  | 'blogInspirationDate'
+  | 'blogRead'
+  | 'blogReading'
   | 'suggestTags'
   | 'suggestingTags'
   | 'fixWriting'
@@ -1072,6 +1094,35 @@ export const translations: Translations = {
     feedbackVote: 'Vote',
     feedbackVoted: 'Voted',
     feedbackVoteAria: 'Vote for {title}',
+    blogEyebrow: 'Thoughty blog',
+    blogTitle: 'Updates, tips, and journaling inspiration.',
+    blogSubtitle:
+      'Read product notes, practical writing workflows, and prompts that help Thoughty stay useful after the first week.',
+    blogIndexKicker: 'Latest posts',
+    blogIndexTitle: 'From the journal desk',
+    blogCategoryUpdate: 'Product update',
+    blogCategoryTips: 'Journaling tips',
+    blogCategoryInspiration: 'Inspiration',
+    blogUpdateTitle: 'What changed in Thoughty this month',
+    blogUpdateExcerpt:
+      'A quick look at public pages, cleaner navigation, and the support surfaces that make the app easier to trust.',
+    blogUpdateBody:
+      'This month focuses on the public side of Thoughty: clearer About, Privacy, Terms, Contact, Feedback, and Blog pages so people can understand the product before creating an account.',
+    blogUpdateDate: 'June 2026',
+    blogTipsTitle: 'A simple weekly review that stays light',
+    blogTipsExcerpt:
+      'Use tags, favorites, and stats to review a week of writing without turning your journal into a reporting chore.',
+    blogTipsBody:
+      'Pick three entries from the week: one useful decision, one open question, and one moment worth remembering. Favorite them, tag the theme, then let stats show patterns only after the writing is done.',
+    blogTipsDate: 'Guide',
+    blogInspirationTitle: 'Prompts for writing when the day feels noisy',
+    blogInspirationExcerpt:
+      'Three quiet prompts for getting thoughts out without forcing a perfect entry or a polished conclusion.',
+    blogInspirationBody:
+      'Try starting with what still has your attention, what can wait until tomorrow, and what you want future-you to remember. A useful entry can be short, unfinished, and still worth keeping.',
+    blogInspirationDate: 'Prompt set',
+    blogRead: 'Read',
+    blogReading: 'Reading',
     suggestTags: 'Auto-Tags',
     suggestingTags: 'Tagging...',
     fixWriting: 'Rephrase',
@@ -1770,6 +1821,35 @@ export const translations: Translations = {
     feedbackVote: 'Voter',
     feedbackVoted: 'Voté',
     feedbackVoteAria: 'Voter pour {title}',
+    blogEyebrow: 'Blog Thoughty',
+    blogTitle: 'Actualités, conseils et inspiration pour écrire.',
+    blogSubtitle:
+      'Lisez des notes produit, des méthodes d’écriture pratiques et des prompts pour que Thoughty reste utile après la première semaine.',
+    blogIndexKicker: 'Derniers articles',
+    blogIndexTitle: 'Depuis le bureau du journal',
+    blogCategoryUpdate: 'Actualité produit',
+    blogCategoryTips: 'Conseils de journal',
+    blogCategoryInspiration: 'Inspiration',
+    blogUpdateTitle: 'Ce qui a changé dans Thoughty ce mois-ci',
+    blogUpdateExcerpt:
+      'Un aperçu des pages publiques, de la navigation plus claire et des espaces de support qui rendent l’application plus fiable.',
+    blogUpdateBody:
+      'Ce mois-ci se concentre sur la partie publique de Thoughty : des pages À propos, Confidentialité, Conditions, Contact, Feedback et Blog plus claires pour comprendre le produit avant de créer un compte.',
+    blogUpdateDate: 'Juin 2026',
+    blogTipsTitle: 'Une revue hebdomadaire simple et légère',
+    blogTipsExcerpt:
+      'Utilisez tags, favoris et statistiques pour relire une semaine sans transformer votre journal en rapport.',
+    blogTipsBody:
+      'Choisissez trois entrées de la semaine : une décision utile, une question ouverte et un moment à garder. Ajoutez-les aux favoris, taguez le thème, puis laissez les statistiques montrer les tendances après l’écriture.',
+    blogTipsDate: 'Guide',
+    blogInspirationTitle: 'Prompts pour écrire quand la journée est bruyante',
+    blogInspirationExcerpt:
+      'Trois prompts calmes pour sortir les pensées sans exiger une entrée parfaite ou une conclusion nette.',
+    blogInspirationBody:
+      'Commencez par ce qui occupe encore votre attention, ce qui peut attendre demain et ce que votre futur vous devrait retenir. Une entrée utile peut être courte, inachevée et quand même précieuse.',
+    blogInspirationDate: 'Série de prompts',
+    blogRead: 'Lire',
+    blogReading: 'En lecture',
     suggestTags: 'Auto-Tags',
     suggestingTags: 'Tagging...',
     fixWriting: 'Reformuler',

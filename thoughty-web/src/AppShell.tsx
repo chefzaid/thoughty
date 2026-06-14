@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 
 import AboutPage from './components/AboutPage/AboutPage';
 import AuthPage from './components/AuthPage/AuthPage';
+import BlogPage from './components/BlogPage/BlogPage';
 import ContactPage from './components/ContactPage/ContactPage';
 import FeedbackPage from './components/FeedbackPage/FeedbackPage';
 import LegalPage from './components/LegalPage/LegalPage';
@@ -21,6 +22,7 @@ function AppShell() {
     publicView,
     authPageProps,
     aboutPageProps,
+    blogPageProps,
     contactPageProps,
     feedbackPageProps,
     legalPageProps,
@@ -35,6 +37,10 @@ function AppShell() {
 
   if (publicView === 'about') {
     return <AboutPage {...aboutPageProps} />;
+  }
+
+  if (publicView === 'blog') {
+    return <BlogPage {...blogPageProps} />;
   }
 
   if (publicView === 'contact') {

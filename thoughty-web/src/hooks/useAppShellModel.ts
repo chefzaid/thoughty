@@ -25,6 +25,7 @@ import {
   type AuthPageProps,
   type AuthenticatedLayoutProps,
   type AuthenticatedRoutesProps,
+  type BlogPageProps,
   type ContactPageProps,
   type FeedbackPageProps,
   type IntroPageProps,
@@ -41,6 +42,7 @@ interface AppShellModel {
   publicView: PublicViewType | null;
   authPageProps: AuthPageProps;
   aboutPageProps: AboutPageProps;
+  blogPageProps: BlogPageProps;
   contactPageProps: ContactPageProps;
   feedbackPageProps: FeedbackPageProps;
   legalPageProps: Omit<LegalPageProps, 'page'>;
@@ -216,6 +218,7 @@ export function useAppShellModel(): AppShellModel {
   const {
     introPageProps,
     aboutPageProps,
+    blogPageProps,
     contactPageProps,
     feedbackPageProps,
     legalPageProps,
@@ -278,6 +281,7 @@ export function useAppShellModel(): AppShellModel {
     publicView,
     authPageProps,
     aboutPageProps,
+    blogPageProps,
     contactPageProps,
     feedbackPageProps,
     legalPageProps,
