@@ -58,7 +58,8 @@ flowchart TD
 - The ingress host defaults to `thoughty.example.com` and must be replaced for real deployments
 - `/api` routes to the API service on port `3001`
 - `/` routes to the web service on port `80`
-- The ingress annotations assume an NGINX ingress controller and currently enforce SSL redirect plus a `10m` body size
+- The ingress annotations assume an NGINX ingress controller and enforce SSL redirect plus a `10m` body size
+- TLS is enabled through the `thoughty-tls` secret referenced by `deployments/ingress.yaml`
 
 ## Configuration and Secrets
 
@@ -137,7 +138,7 @@ sequenceDiagram
 Before any rollout, update the manifest values that are intentionally placeholders:
 
 1. Set the real browser origin list (`CORS_ORIGIN`), `FRONTEND_URL`, and the S3 endpoint/bucket/region in `deployments/configmap.yaml`.
-2. Replace `thoughty.example.com` in `deployments/ingress.yaml` and enable TLS.
+2. Replace `thoughty.example.com` in `deployments/ingress.yaml` and create or provision the `thoughty-tls` TLS secret for that host.
 3. Decide whether you will edit image references in the manifests directly or patch them later with `kubectl set image`.
 4. Populate the secret values in Vault. The manifests already inject every secret the application reads; you only need to provide real values for the features you enable.
 
@@ -172,6 +173,15 @@ The example commands in `deployments/vault-setup.sh` are consistent with the cur
 The Vault templates in the manifests already export the full set of application secrets, so once the values exist in Vault the containers receive them automatically. Leave values for optional features empty to keep those features disabled.
 
 ### 4. Apply Base Resources
+
+Create the TLS secret before applying the ingress, unless your cluster uses cert-manager or another controller that creates the same secret automatically:
+
+```bash
+kubectl create secret tls thoughty-tls \
+  --cert=/path/to/tls.crt \
+  --key=/path/to/tls.key \
+  -n thoughty
+```
 
 ```bash
 kubectl apply -f deployments/namespace.yaml
