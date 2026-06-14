@@ -16,12 +16,18 @@ Use layered rate limiting.
 - Tighten sensitive auth routes with endpoint-specific decorators:
   - register: `5` requests per `15` minutes
   - login: `5` requests per `15` minutes
+  - OAuth login: `5` requests per `15` minutes
+  - refresh token: `30` requests per `15` minutes
   - forgot password: `3` requests per hour
   - reset password: `3` requests per hour
+  - change password: `5` requests per hour
+  - delete account: `5` requests per hour
 
 ## Rationale
 
 - Public auth flows need stricter protection than authenticated journal browsing.
+- Token refresh needs enough headroom for normal clients, while still bounding refresh-token replay loops.
+- Password and account deletion routes deserve lower hourly ceilings because failed attempts indicate account takeover pressure.
 - The global limit gives broad baseline protection, while endpoint overrides reflect the actual abuse pressure points.
 - Using framework-native throttling keeps the implementation small and easy to audit.
 - Throttling composes with the separate global JWT guard described in ADR 0008. The application registers both through `APP_GUARD`, so protected routes are both authenticated and rate-limited by default while explicit public routes still inherit throttling unless overridden.

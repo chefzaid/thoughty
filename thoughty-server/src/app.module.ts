@@ -14,6 +14,7 @@ import { AttachmentsModule } from './modules/attachments';
 import { AiModule } from './modules/ai';
 import { CloudSyncModule } from './modules/cloud-sync';
 import { HealthController } from './health.controller';
+import { RATE_LIMITS } from './common';
 
 @Module({
   controllers: [HealthController],
@@ -28,8 +29,7 @@ import { HealthController } from './health.controller';
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 900000, // 15 minutes
-        limit: 100,
+        ...RATE_LIMITS.default,
       },
     ]),
 

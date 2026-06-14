@@ -1,6 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { RATE_LIMITS } from '@/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './services/auth.service';
+
+const getThrottleMetadata = (handler: Function) => ({
+  limit: Reflect.getMetadata('THROTTLER:LIMITdefault', handler),
+  ttl: Reflect.getMetadata('THROTTLER:TTLdefault', handler),
+});
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -32,6 +38,25 @@ describe('AuthController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  describe('rate limiting', () => {
+    const cases = [
+      ['register', RATE_LIMITS.authAttempt],
+      ['login', RATE_LIMITS.authAttempt],
+      ['oauth', RATE_LIMITS.authAttempt],
+      ['refresh', RATE_LIMITS.tokenRefresh],
+      ['changePassword', RATE_LIMITS.accountSecurity],
+      ['forgotPassword', RATE_LIMITS.passwordRecovery],
+      ['resetPassword', RATE_LIMITS.passwordRecovery],
+      ['deleteAccount', RATE_LIMITS.accountSecurity],
+    ] as const;
+
+    it.each(cases)('applies the calibrated %s throttle', (methodName, expected) => {
+      const handler = AuthController.prototype[methodName];
+
+      expect(getThrottleMetadata(handler)).toEqual(expected);
+    });
   });
 
   describe('register', () => {

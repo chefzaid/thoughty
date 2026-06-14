@@ -56,8 +56,12 @@ Current limits are documented in ADR 0009:
 - general default: `100` requests per `15` minutes
 - register: `5` requests per `15` minutes
 - login: `5` requests per `15` minutes
+- OAuth login: `5` requests per `15` minutes
+- refresh token: `30` requests per `15` minutes
 - forgot password: `3` requests per hour
 - reset password: `3` requests per hour
+- change password: `5` requests per hour
+- delete account: `5` requests per hour
 
 The current throttling model is process-local. In multi-replica or higher-risk deployments, shared throttling storage should be introduced instead of weakening endpoint limits.
 

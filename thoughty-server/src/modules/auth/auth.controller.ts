@@ -16,6 +16,7 @@ import {
 } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public, CurrentUser, AuthenticatedUser } from '@/common/decorators';
+import { RATE_LIMITS, throttleDefault } from '@/common';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -24,7 +25,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes
+  @Throttle(throttleDefault(RATE_LIMITS.authAttempt))
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User registered successfully', type: AuthResponseDto })
   @ApiResponse({ status: 400, description: 'Validation error' })
@@ -36,7 +37,7 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes
+  @Throttle(throttleDefault(RATE_LIMITS.authAttempt))
   @ApiOperation({ summary: 'Login with email/username and password' })
   @ApiResponse({ status: 200, description: 'Login successful', type: AuthResponseDto })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
@@ -47,6 +48,7 @@ export class AuthController {
   @Public()
   @Post('oauth')
   @HttpCode(HttpStatus.OK)
+  @Throttle(throttleDefault(RATE_LIMITS.authAttempt))
   @ApiOperation({ summary: 'Authenticate with OAuth provider' })
   @ApiResponse({ status: 200, description: 'OAuth authentication successful', type: AuthResponseDto })
   @ApiResponse({ status: 400, description: 'Missing required fields' })
@@ -57,6 +59,7 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @Throttle(throttleDefault(RATE_LIMITS.tokenRefresh))
   @ApiOperation({ summary: 'Refresh access token' })
   @ApiResponse({ status: 200, description: 'New access token' })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
@@ -86,6 +89,7 @@ export class AuthController {
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change user password' })
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
@@ -100,7 +104,7 @@ export class AuthController {
   @Public()
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per hour
+  @Throttle(throttleDefault(RATE_LIMITS.passwordRecovery))
   @ApiOperation({ summary: 'Request password reset email' })
   @ApiResponse({ status: 200, description: 'Reset email sent if account exists' })
   async forgotPassword(@Body() dto: ForgotPasswordDto): Promise<{ success: boolean; message: string }> {
@@ -110,7 +114,7 @@ export class AuthController {
   @Public()
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 3, ttl: 3600000 } }) // 3 requests per hour
+  @Throttle(throttleDefault(RATE_LIMITS.passwordRecovery))
   @ApiOperation({ summary: 'Reset password with token' })
   @ApiResponse({ status: 200, description: 'Password reset successfully' })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
@@ -121,6 +125,7 @@ export class AuthController {
   @Post('delete-account')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
+  @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete user account' })
   @ApiResponse({ status: 200, description: 'Account deleted' })
