@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import AboutPage from './components/AboutPage/AboutPage';
 import AuthPage from './components/AuthPage/AuthPage';
 import ContactPage from './components/ContactPage/ContactPage';
+import FeedbackPage from './components/FeedbackPage/FeedbackPage';
 import LegalPage from './components/LegalPage/LegalPage';
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
 import IntroPage from './components/IntroPage/IntroPage';
@@ -21,6 +22,7 @@ function AppShell() {
     authPageProps,
     aboutPageProps,
     contactPageProps,
+    feedbackPageProps,
     legalPageProps,
     authenticatedLayoutProps,
     authenticatedRoutesProps,
@@ -37,6 +39,10 @@ function AppShell() {
 
   if (publicView === 'contact') {
     return <ContactPage {...contactPageProps} />;
+  }
+
+  if (publicView === 'feedback') {
+    return <FeedbackPage {...feedbackPageProps} />;
   }
 
   if (publicView === 'privacy' || publicView === 'terms') {

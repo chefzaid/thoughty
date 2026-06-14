@@ -363,6 +363,28 @@ export type TranslationKey =
   | 'contactFaqAiBody'
   | 'contactFaqExportTitle'
   | 'contactFaqExportBody'
+  | 'feedbackEyebrow'
+  | 'feedbackTitle'
+  | 'feedbackSubtitle'
+  | 'feedbackFormTitle'
+  | 'feedbackTitleLabel'
+  | 'feedbackDetailsLabel'
+  | 'feedbackSubmit'
+  | 'feedbackSuccess'
+  | 'feedbackBoardKicker'
+  | 'feedbackBoardTitle'
+  | 'feedbackStatusPlanned'
+  | 'feedbackStatusReviewing'
+  | 'feedbackStatusOpen'
+  | 'feedbackIdeaOfflineTitle'
+  | 'feedbackIdeaOfflineBody'
+  | 'feedbackIdeaPromptsTitle'
+  | 'feedbackIdeaPromptsBody'
+  | 'feedbackIdeaSharingTitle'
+  | 'feedbackIdeaSharingBody'
+  | 'feedbackVote'
+  | 'feedbackVoted'
+  | 'feedbackVoteAria'
   | 'suggestTags'
   | 'suggestingTags'
   | 'fixWriting'
@@ -1024,6 +1046,32 @@ export const translations: Translations = {
     contactFaqExportTitle: 'Which formats are available?',
     contactFaqExportBody:
       'Entries can move through TXT, JSON, Markdown, CSV, PDF, EPUB, and HTML depending on the export workflow.',
+    feedbackEyebrow: 'Feedback',
+    feedbackTitle: 'Shape what Thoughty becomes next.',
+    feedbackSubtitle:
+      'Share feature ideas, describe the problem behind them, and upvote requests that would make your journal more useful.',
+    feedbackFormTitle: 'Submit an idea',
+    feedbackTitleLabel: 'Idea title',
+    feedbackDetailsLabel: 'What would this improve?',
+    feedbackSubmit: 'Post idea',
+    feedbackSuccess: 'Your idea has been added to the board for this session.',
+    feedbackBoardKicker: 'Feature requests',
+    feedbackBoardTitle: 'Ideas from the community',
+    feedbackStatusPlanned: 'Planned',
+    feedbackStatusReviewing: 'Reviewing',
+    feedbackStatusOpen: 'Open',
+    feedbackIdeaOfflineTitle: 'Offline writing mode',
+    feedbackIdeaOfflineBody:
+      'Let the journal stay usable without a connection, then sync safely when the device comes back online.',
+    feedbackIdeaPromptsTitle: 'Personalized writing prompts',
+    feedbackIdeaPromptsBody:
+      'Suggest prompts from diary history, tags, and recurring themes without forcing a rigid habit tracker.',
+    feedbackIdeaSharingTitle: 'Shared public collections',
+    feedbackIdeaSharingBody:
+      'Group selected public thoughts into a curated collection that can be shared with a small audience.',
+    feedbackVote: 'Vote',
+    feedbackVoted: 'Voted',
+    feedbackVoteAria: 'Vote for {title}',
     suggestTags: 'Auto-Tags',
     suggestingTags: 'Tagging...',
     fixWriting: 'Rephrase',
@@ -1696,6 +1744,32 @@ export const translations: Translations = {
     contactFaqExportTitle: 'Quels formats sont disponibles ?',
     contactFaqExportBody:
       'Les entrées peuvent passer par TXT, JSON, Markdown, CSV, PDF, EPUB et HTML selon le parcours d’export.',
+    feedbackEyebrow: 'Feedback',
+    feedbackTitle: 'Aidez Thoughty à évoluer.',
+    feedbackSubtitle:
+      'Partagez vos idées, décrivez le problème à résoudre et votez pour les demandes qui rendraient votre journal plus utile.',
+    feedbackFormTitle: 'Proposer une idée',
+    feedbackTitleLabel: 'Titre de l’idée',
+    feedbackDetailsLabel: 'Qu’est-ce que cela améliorerait ?',
+    feedbackSubmit: 'Publier l’idée',
+    feedbackSuccess: 'Votre idée a été ajoutée au tableau pour cette session.',
+    feedbackBoardKicker: 'Demandes de fonctionnalités',
+    feedbackBoardTitle: 'Idées de la communauté',
+    feedbackStatusPlanned: 'Prévu',
+    feedbackStatusReviewing: 'En revue',
+    feedbackStatusOpen: 'Ouvert',
+    feedbackIdeaOfflineTitle: 'Mode d’écriture hors ligne',
+    feedbackIdeaOfflineBody:
+      'Permettre au journal de rester utilisable sans connexion, puis de se synchroniser proprement au retour en ligne.',
+    feedbackIdeaPromptsTitle: 'Prompts d’écriture personnalisés',
+    feedbackIdeaPromptsBody:
+      'Suggérer des prompts depuis l’historique, les tags et les thèmes récurrents sans imposer un suivi d’habitude rigide.',
+    feedbackIdeaSharingTitle: 'Collections publiques partagées',
+    feedbackIdeaSharingBody:
+      'Regrouper des pensées publiques choisies dans une collection soignée à partager avec une audience limitée.',
+    feedbackVote: 'Voter',
+    feedbackVoted: 'Voté',
+    feedbackVoteAria: 'Voter pour {title}',
     suggestTags: 'Auto-Tags',
     suggestingTags: 'Tagging...',
     fixWriting: 'Reformuler',

@@ -3,6 +3,7 @@ import type { ComponentProps } from 'react';
 import AboutPage from '../components/AboutPage/AboutPage';
 import AuthPage from '../components/AuthPage/AuthPage';
 import ContactPage from '../components/ContactPage/ContactPage';
+import FeedbackPage from '../components/FeedbackPage/FeedbackPage';
 import IntroPage from '../components/IntroPage/IntroPage';
 import LegalPage from '../components/LegalPage/LegalPage';
 import type { Config, Entry, ImportExportFormat, ImportExportSection, PublicViewType, ViewType } from '../types';
@@ -16,6 +17,7 @@ import type { TagMetadataMap } from './tagMetadata';
 export type IntroPageProps = ComponentProps<typeof IntroPage>;
 export type AboutPageProps = ComponentProps<typeof AboutPage>;
 export type ContactPageProps = ComponentProps<typeof ContactPage>;
+export type FeedbackPageProps = ComponentProps<typeof FeedbackPage>;
 export type AuthPageProps = ComponentProps<typeof AuthPage>;
 export type LegalPageProps = ComponentProps<typeof LegalPage>;
 export type AuthenticatedLayoutProps = Omit<ComponentProps<typeof AuthenticatedAppLayout>, 'children'>;
@@ -109,6 +111,12 @@ export function buildPublicShellProps({
     onBackHome: () => routingState.handlePublicViewChange('intro'),
   };
 
+  const feedbackPageProps: FeedbackPageProps = {
+    theme,
+    t,
+    onBackHome: () => routingState.handlePublicViewChange('intro'),
+  };
+
   const legalPageProps: Omit<LegalPageProps, 'page'> = {
     theme,
     t,
@@ -128,6 +136,7 @@ export function buildPublicShellProps({
     introPageProps,
     aboutPageProps,
     contactPageProps,
+    feedbackPageProps,
     legalPageProps,
     authPageProps,
   };

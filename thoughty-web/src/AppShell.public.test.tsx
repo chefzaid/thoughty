@@ -97,6 +97,18 @@ describe('AppShell public flows', () => {
     });
   });
 
+  it('loads the feedback page from /feedback', async () => {
+    globalThis.history.replaceState({}, '', '/feedback');
+    setMockAuthState({ user: null, isAuthenticated: false });
+
+    renderAppShell();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Shape what Thoughty becomes next.' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Ideas from the community' })).toBeInTheDocument();
+    });
+  });
+
   it('navigates from the intro page to sign in and sign up modes', async () => {
     const user = userEvent.setup();
     setMockAuthState({ user: null, isAuthenticated: false });

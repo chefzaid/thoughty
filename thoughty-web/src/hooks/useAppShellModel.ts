@@ -26,6 +26,7 @@ import {
   type AuthenticatedLayoutProps,
   type AuthenticatedRoutesProps,
   type ContactPageProps,
+  type FeedbackPageProps,
   type IntroPageProps,
   type LegalPageProps,
 } from '../utils/appShellProps';
@@ -41,6 +42,7 @@ interface AppShellModel {
   authPageProps: AuthPageProps;
   aboutPageProps: AboutPageProps;
   contactPageProps: ContactPageProps;
+  feedbackPageProps: FeedbackPageProps;
   legalPageProps: Omit<LegalPageProps, 'page'>;
   authenticatedLayoutProps: AuthenticatedLayoutProps;
   authenticatedRoutesProps: AuthenticatedRoutesProps;
@@ -211,7 +213,14 @@ export function useAppShellModel(): AppShellModel {
     updateConfig,
   });
 
-  const { introPageProps, aboutPageProps, contactPageProps, legalPageProps, authPageProps } = buildPublicShellProps({
+  const {
+    introPageProps,
+    aboutPageProps,
+    contactPageProps,
+    feedbackPageProps,
+    legalPageProps,
+    authPageProps,
+  } = buildPublicShellProps({
     configTheme: config.theme,
     publicView,
     routingState,
@@ -270,6 +279,7 @@ export function useAppShellModel(): AppShellModel {
     authPageProps,
     aboutPageProps,
     contactPageProps,
+    feedbackPageProps,
     legalPageProps,
     authenticatedLayoutProps,
     authenticatedRoutesProps,

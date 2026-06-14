@@ -1,7 +1,7 @@
 // Navigation and view types
 
 export type ViewType = 'journal' | 'tags' | 'profile' | 'diaries' | 'stats' | 'importExport';
-export type PublicViewType = 'intro' | 'login' | 'register' | 'about' | 'privacy' | 'terms' | 'contact';
+export type PublicViewType = 'intro' | 'login' | 'register' | 'about' | 'privacy' | 'terms' | 'contact' | 'feedback';
 export type DiaryScopedViewType = 'journal' | 'diaries' | 'stats' | 'importExport';
 export type DiaryReturnViewType = Exclude<DiaryScopedViewType, 'diaries'>;
 export type ImportExportSection = 'export' | 'import' | 'book';
@@ -44,6 +44,7 @@ export const PUBLIC_VIEW_PATHS: Record<PublicViewType, string> = {
   privacy: '/privacy',
   terms: '/terms',
   contact: '/contact',
+  feedback: '/feedback',
 };
 
 export function getPathForView(view: ViewType): string {
