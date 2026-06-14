@@ -13,6 +13,11 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '10'))
     }
 
+    triggers {
+        // Runs the full verification pipeline daily; the Playwright stage catches UI regressions even without a PR.
+        cron('H H * * *')
+    }
+
     stages {
 
         // ── Install ──────────────────────────────────────────────

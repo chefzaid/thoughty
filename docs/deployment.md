@@ -275,6 +275,7 @@ flowchart LR
 - frontend coverage run via `npm run test:coverage`
 - Docker builds for both runtime images
 - a smoke test that boots a disposable PostgreSQL container and runs `npm run db:migrate:dist` inside the built server image
+- a daily scheduled run of the full verification pipeline, including Playwright browser tests
 
 That smoke test is especially useful because it validates the exact server image artifact that will later be deployed.
 

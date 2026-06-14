@@ -190,7 +190,7 @@
 - [x] Dockerfiles for client and server, Kubernetes deployment manifests, and deployment config files
 - [ ] Create Jenkins pipeline for automated testing, building, and deployment to environments (staging, production)
 - [ ] Configure jobs in CI pipeline to run tests on every pull request and before merging to main branch
-- [ ] Configure job in CI pipeline to run Playwright tests on a schedule (e.g. daily) to catch any regressions
+- [x] Configure job in CI pipeline to run Playwright tests on a schedule (e.g. daily) to catch any regressions
 - [ ] Modify deployments configuration to use existing DS-Cluster infrastructure, and document the prerequisites and deployment process in docs
 - [ ] CI pipeline for automated dependency vulnerability scanning (npm audit, Dependabot/Renovate)
 - [ ] Blue-green or canary deployment strategy for zero-downtime releases
