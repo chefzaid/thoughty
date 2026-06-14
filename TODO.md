@@ -150,7 +150,7 @@
 - [ ] Allow users to see and manage active sessions (logout from other sessions)
 - [ ] Spam and bots protection on sign up and login forms
 - [ ] Rate limiting and prevent DDOS from too much data sent
-- [ ] Content Security Policy hardening (replace unsafe-inline with nonces)
+- [x] Content Security Policy hardening (replace unsafe-inline with nonces)
 
 ## Tests
 

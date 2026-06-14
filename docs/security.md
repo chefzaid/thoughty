@@ -7,6 +7,7 @@ Thoughty stores personal journal content, profile data, attachments, refresh tok
 - API routes are protected by default through a global JWT guard.
 - Public routes must be explicitly marked with `@Public()`.
 - A global throttling guard applies baseline abuse protection, with stricter limits on sensitive auth flows.
+- Production responses use a nonce-based Content Security Policy without `unsafe-inline` script or style fallbacks.
 - DTO validation uses whitelisting and rejects unexpected fields.
 - User-controlled text and attachment filenames are sanitized in relevant flows.
 - Passwords are hashed with bcrypt.
@@ -48,6 +49,12 @@ Known public route categories include:
 - any explicitly documented public product surface added in the future
 
 When adding a public endpoint, document why it must be public, what throttling applies, and what information it can reveal to unauthenticated callers.
+
+## Content Security Policy
+
+Production Helmet middleware sets a per-response nonce and uses that nonce in `script-src` and `style-src`. HTML responses, including Swagger UI, have the nonce applied to generated `<script>` and `<style>` tags before they are sent.
+
+Do not reintroduce `unsafe-inline` for scripts or styles. If a future page needs inline assets, route them through the nonce helper or move them to external bundled assets.
 
 ## Rate Limiting
 
@@ -114,7 +121,6 @@ Important remaining work includes:
 - active session management and logout-from-other-devices
 - stronger bot/spam protection on public auth forms
 - distributed rate limiting for multi-replica deployments
-- CSP hardening with nonces instead of unsafe inline behavior
 - dependency vulnerability scanning in CI
 - structured security audit logging for sensitive actions
 - backup and disaster recovery implementation
