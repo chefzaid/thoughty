@@ -133,13 +133,14 @@
 - [ ] Allow users to follow other users
 - [ ] Comments on public entries
 - [ ] Likes for entries and comments
-- [ ] Make messaging private between users
+- [ ] Chatting and messaging between users
 - [ ] Notifications for messages, comments, likes, new followers
 - [ ] Leaderboard for most active users, most liked entries, most commented entries
 - [ ] Badges for achievements and karma points
 - [ ] Feature requests and voting system for new features
 - [ ] Add a way to report a public thought (call for violence) and ban the user if needed
 - [ ] The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
+- [ ] Show thoughts to a selected few users instead of whole public
 
 ## Security
 
