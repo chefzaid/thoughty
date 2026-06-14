@@ -1,17 +1,27 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 
-import AboutPage from './components/AboutPage/AboutPage';
-import AuthPage from './components/AuthPage/AuthPage';
-import BlogPage from './components/BlogPage/BlogPage';
-import ContactPage from './components/ContactPage/ContactPage';
-import FeedbackPage from './components/FeedbackPage/FeedbackPage';
-import LegalPage from './components/LegalPage/LegalPage';
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
 import IntroPage from './components/IntroPage/IntroPage';
 import { useAppShellModel } from './hooks/useAppShellModel';
-import AuthenticatedAppLayout from './routes/AuthenticatedAppLayout';
-import AuthenticatedRoutes from './routes/AuthenticatedRoutes';
 import { getPathForView, getPublicPathForView } from './types';
+
+const AboutPage = lazy(() => import('./components/AboutPage/AboutPage'));
+const AuthPage = lazy(() => import('./components/AuthPage/AuthPage'));
+const BlogPage = lazy(() => import('./components/BlogPage/BlogPage'));
+const ContactPage = lazy(() => import('./components/ContactPage/ContactPage'));
+const FeedbackPage = lazy(() => import('./components/FeedbackPage/FeedbackPage'));
+const LegalPage = lazy(() => import('./components/LegalPage/LegalPage'));
+const AuthenticatedAppLayout = lazy(() => import('./routes/AuthenticatedAppLayout'));
+const AuthenticatedRoutes = lazy(() => import('./routes/AuthenticatedRoutes'));
+
+function renderLazy(children: ReactNode) {
+  return (
+    <Suspense fallback={<LoadingSpinner />}>
+      {children}
+    </Suspense>
+  );
+}
 
 function AppShell() {
   const {
@@ -36,23 +46,23 @@ function AppShell() {
   }
 
   if (publicView === 'about') {
-    return <AboutPage {...aboutPageProps} />;
+    return renderLazy(<AboutPage {...aboutPageProps} />);
   }
 
   if (publicView === 'blog') {
-    return <BlogPage {...blogPageProps} />;
+    return renderLazy(<BlogPage {...blogPageProps} />);
   }
 
   if (publicView === 'contact') {
-    return <ContactPage {...contactPageProps} />;
+    return renderLazy(<ContactPage {...contactPageProps} />);
   }
 
   if (publicView === 'feedback') {
-    return <FeedbackPage {...feedbackPageProps} />;
+    return renderLazy(<FeedbackPage {...feedbackPageProps} />);
   }
 
   if (publicView === 'privacy' || publicView === 'terms') {
-    return <LegalPage {...legalPageProps} page={publicView} />;
+    return renderLazy(<LegalPage {...legalPageProps} page={publicView} />);
   }
 
   if (!isAuthenticated) {
@@ -64,7 +74,7 @@ function AppShell() {
       return <IntroPage {...introPageProps} />;
     }
 
-    return <AuthPage {...authPageProps} />;
+    return renderLazy(<AuthPage {...authPageProps} />);
   }
 
   if (pathname === '/') {
@@ -75,10 +85,10 @@ function AppShell() {
     return <Navigate to={getPathForView('journal')} replace />;
   }
 
-  return (
+  return renderLazy(
     <AuthenticatedAppLayout {...authenticatedLayoutProps}>
       <AuthenticatedRoutes {...authenticatedRoutesProps} />
-    </AuthenticatedAppLayout>
+    </AuthenticatedAppLayout>,
   );
 }
 

@@ -1,15 +1,15 @@
 import type { ComponentProps } from 'react';
 
-import AboutPage from '../components/AboutPage/AboutPage';
-import AuthPage from '../components/AuthPage/AuthPage';
-import BlogPage from '../components/BlogPage/BlogPage';
-import ContactPage from '../components/ContactPage/ContactPage';
-import FeedbackPage from '../components/FeedbackPage/FeedbackPage';
-import IntroPage from '../components/IntroPage/IntroPage';
-import LegalPage from '../components/LegalPage/LegalPage';
+import type AboutPage from '../components/AboutPage/AboutPage';
+import type AuthPage from '../components/AuthPage/AuthPage';
+import type BlogPage from '../components/BlogPage/BlogPage';
+import type ContactPage from '../components/ContactPage/ContactPage';
+import type FeedbackPage from '../components/FeedbackPage/FeedbackPage';
+import type IntroPage from '../components/IntroPage/IntroPage';
+import type LegalPage from '../components/LegalPage/LegalPage';
 import type { Config, Entry, ImportExportFormat, ImportExportSection, PublicViewType, ViewType } from '../types';
-import AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
-import AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
+import type AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
+import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
 import type { RephraseMode } from '../services/api/aiService';
 import { buildEntryPermalink } from './appRouting';
 import { createEntryTemplate, getEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
