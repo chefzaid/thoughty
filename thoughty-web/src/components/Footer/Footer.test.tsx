@@ -8,6 +8,7 @@ describe('Footer', () => {
             const translations: Record<string, string> = {
                 copyright: '© 2024 My Journal',
                 madeWithLove: 'Made with ❤️',
+                about: 'About',
                 privacy: 'Privacy Policy',
                 terms: 'Terms of Service',
                 contact: 'Contact Us'
@@ -25,6 +26,7 @@ describe('Footer', () => {
 
     it('renders all links', () => {
         render(<Footer {...defaultProps} />);
+        expect(screen.getByText('About')).toBeInTheDocument();
         expect(screen.getByText('Privacy Policy')).toBeInTheDocument();
         expect(screen.getByText('Terms of Service')).toBeInTheDocument();
         expect(screen.getByText('Contact Us')).toBeInTheDocument();

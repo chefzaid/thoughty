@@ -21,10 +21,13 @@ import {
   buildAuthenticatedLayoutProps,
   buildAuthenticatedRoutesProps,
   buildPublicShellProps,
+  type AboutPageProps,
   type AuthPageProps,
   type AuthenticatedLayoutProps,
   type AuthenticatedRoutesProps,
+  type ContactPageProps,
   type IntroPageProps,
+  type LegalPageProps,
 } from '../utils/appShellProps';
 import type { RephraseMode } from '../services/api/aiService';
 import type { Entry, PublicViewType, ViewType } from '../types';
@@ -36,6 +39,9 @@ interface AppShellModel {
   pathname: string;
   publicView: PublicViewType | null;
   authPageProps: AuthPageProps;
+  aboutPageProps: AboutPageProps;
+  contactPageProps: ContactPageProps;
+  legalPageProps: Omit<LegalPageProps, 'page'>;
   authenticatedLayoutProps: AuthenticatedLayoutProps;
   authenticatedRoutesProps: AuthenticatedRoutesProps;
   introPageProps: IntroPageProps;
@@ -205,7 +211,7 @@ export function useAppShellModel(): AppShellModel {
     updateConfig,
   });
 
-  const { introPageProps, authPageProps } = buildPublicShellProps({
+  const { introPageProps, aboutPageProps, contactPageProps, legalPageProps, authPageProps } = buildPublicShellProps({
     configTheme: config.theme,
     publicView,
     routingState,
@@ -262,6 +268,9 @@ export function useAppShellModel(): AppShellModel {
     pathname: location.pathname,
     publicView,
     authPageProps,
+    aboutPageProps,
+    contactPageProps,
+    legalPageProps,
     authenticatedLayoutProps,
     authenticatedRoutesProps,
     introPageProps,

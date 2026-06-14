@@ -1,7 +1,10 @@
 import type { ComponentProps } from 'react';
 
+import AboutPage from '../components/AboutPage/AboutPage';
 import AuthPage from '../components/AuthPage/AuthPage';
+import ContactPage from '../components/ContactPage/ContactPage';
 import IntroPage from '../components/IntroPage/IntroPage';
+import LegalPage from '../components/LegalPage/LegalPage';
 import type { Config, Entry, ImportExportFormat, ImportExportSection, PublicViewType, ViewType } from '../types';
 import AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
@@ -11,7 +14,10 @@ import { createEntryTemplate, getEntryTemplates, serializeCustomEntryTemplates, 
 import type { TagMetadataMap } from './tagMetadata';
 
 export type IntroPageProps = ComponentProps<typeof IntroPage>;
+export type AboutPageProps = ComponentProps<typeof AboutPage>;
+export type ContactPageProps = ComponentProps<typeof ContactPage>;
 export type AuthPageProps = ComponentProps<typeof AuthPage>;
+export type LegalPageProps = ComponentProps<typeof LegalPage>;
 export type AuthenticatedLayoutProps = Omit<ComponentProps<typeof AuthenticatedAppLayout>, 'children'>;
 export type AuthenticatedRoutesProps = ComponentProps<typeof AuthenticatedRoutes>;
 
@@ -90,6 +96,25 @@ export function buildPublicShellProps({
     onSignUp: () => routingState.handlePublicViewChange('register'),
   };
 
+  const aboutPageProps: AboutPageProps = {
+    theme,
+    t,
+    onBackHome: () => routingState.handlePublicViewChange('intro'),
+    onSignUp: () => routingState.handlePublicViewChange('register'),
+  };
+
+  const contactPageProps: ContactPageProps = {
+    theme,
+    t,
+    onBackHome: () => routingState.handlePublicViewChange('intro'),
+  };
+
+  const legalPageProps: Omit<LegalPageProps, 'page'> = {
+    theme,
+    t,
+    onBackHome: () => routingState.handlePublicViewChange('intro'),
+  };
+
   const authPageProps: AuthPageProps = {
     t,
     theme,
@@ -101,6 +126,9 @@ export function buildPublicShellProps({
 
   return {
     introPageProps,
+    aboutPageProps,
+    contactPageProps,
+    legalPageProps,
     authPageProps,
   };
 }

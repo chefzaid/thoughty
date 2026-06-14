@@ -1,6 +1,9 @@
 import { Navigate } from 'react-router-dom';
 
+import AboutPage from './components/AboutPage/AboutPage';
 import AuthPage from './components/AuthPage/AuthPage';
+import ContactPage from './components/ContactPage/ContactPage';
+import LegalPage from './components/LegalPage/LegalPage';
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
 import IntroPage from './components/IntroPage/IntroPage';
 import { useAppShellModel } from './hooks/useAppShellModel';
@@ -16,6 +19,9 @@ function AppShell() {
     pathname,
     publicView,
     authPageProps,
+    aboutPageProps,
+    contactPageProps,
+    legalPageProps,
     authenticatedLayoutProps,
     authenticatedRoutesProps,
     introPageProps,
@@ -23,6 +29,18 @@ function AppShell() {
 
   if (authLoading) {
     return <LoadingSpinner />;
+  }
+
+  if (publicView === 'about') {
+    return <AboutPage {...aboutPageProps} />;
+  }
+
+  if (publicView === 'contact') {
+    return <ContactPage {...contactPageProps} />;
+  }
+
+  if (publicView === 'privacy' || publicView === 'terms') {
+    return <LegalPage {...legalPageProps} page={publicView} />;
   }
 
   if (!isAuthenticated) {

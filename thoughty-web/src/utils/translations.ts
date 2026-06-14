@@ -11,6 +11,7 @@ export type TranslationKey =
   | 'privateTooltip'
   | 'copyright'
   | 'madeWithLove'
+  | 'about'
   | 'privacy'
   | 'terms'
   | 'contact'
@@ -288,6 +289,80 @@ export type TranslationKey =
   | 'landingCtaKicker'
   | 'landingCtaTitle'
   | 'landingCtaBody'
+  | 'aboutEyebrow'
+  | 'aboutTitle'
+  | 'aboutSubtitle'
+  | 'aboutNoteLabel'
+  | 'aboutNoteDate'
+  | 'aboutNoteTitle'
+  | 'aboutNoteBody'
+  | 'aboutStoryKicker'
+  | 'aboutStoryTitle'
+  | 'aboutStoryBody'
+  | 'aboutMissionKicker'
+  | 'aboutMissionTitle'
+  | 'aboutValuePrivacyTitle'
+  | 'aboutValuePrivacyBody'
+  | 'aboutValueOwnershipTitle'
+  | 'aboutValueOwnershipBody'
+  | 'aboutValueCalmTitle'
+  | 'aboutValueCalmBody'
+  | 'aboutTeamKicker'
+  | 'aboutTeamTitle'
+  | 'aboutTeamBody'
+  | 'legalUpdatedLabel'
+  | 'privacyTitle'
+  | 'privacySubtitle'
+  | 'privacyIntroTitle'
+  | 'privacyIntroBody'
+  | 'privacyDataTitle'
+  | 'privacyDataBody'
+  | 'privacyControlTitle'
+  | 'privacyControlBody'
+  | 'privacySecurityTitle'
+  | 'privacySecurityBody'
+  | 'termsTitle'
+  | 'termsSubtitle'
+  | 'termsUseTitle'
+  | 'termsUseBody'
+  | 'termsAccountTitle'
+  | 'termsAccountBody'
+  | 'termsContentTitle'
+  | 'termsContentBody'
+  | 'termsLimitsTitle'
+  | 'termsLimitsBody'
+  | 'contactEyebrow'
+  | 'contactTitle'
+  | 'contactSubtitle'
+  | 'contactFormTitle'
+  | 'contactNameLabel'
+  | 'contactEmailLabel'
+  | 'contactTopicLabel'
+  | 'contactTopicSupport'
+  | 'contactTopicAccount'
+  | 'contactTopicBilling'
+  | 'contactTopicPrivacy'
+  | 'contactTopicFeedback'
+  | 'contactMessageLabel'
+  | 'contactSubmit'
+  | 'contactSuccessTitle'
+  | 'contactSuccessBody'
+  | 'contactGuidesKicker'
+  | 'contactGuidesTitle'
+  | 'contactGuideStartTitle'
+  | 'contactGuideStartBody'
+  | 'contactGuideImportTitle'
+  | 'contactGuideImportBody'
+  | 'contactGuidePrivacyTitle'
+  | 'contactGuidePrivacyBody'
+  | 'contactFaqKicker'
+  | 'contactFaqTitle'
+  | 'contactFaqDataTitle'
+  | 'contactFaqDataBody'
+  | 'contactFaqAiTitle'
+  | 'contactFaqAiBody'
+  | 'contactFaqExportTitle'
+  | 'contactFaqExportBody'
   | 'suggestTags'
   | 'suggestingTags'
   | 'fixWriting'
@@ -541,6 +616,7 @@ export const translations: Translations = {
     privateTooltip: 'Private - only you can see',
     copyright: '© {year} Thoughty. All rights reserved.',
     madeWithLove: 'Made with ❤️ in Paris',
+    about: 'About',
     privacy: 'Privacy Policy',
     terms: 'Terms of Service',
     contact: 'Contact Us',
@@ -849,6 +925,105 @@ export const translations: Translations = {
     landingCtaTitle: 'Open a journal you can keep using years from now.',
     landingCtaBody:
       'Create an account, write privately by default, and export your work whenever you want to leave with everything intact.',
+    aboutEyebrow: 'About Thoughty',
+    aboutTitle: 'A quieter home for the thoughts worth keeping.',
+    aboutSubtitle:
+      'Thoughty exists for people who want reflection to stay personal, searchable, and portable without becoming another noisy productivity system.',
+    aboutNoteLabel: 'A sample Thoughty note',
+    aboutNoteDate: 'Mission note',
+    aboutNoteTitle: 'Useful journaling should respect the writer.',
+    aboutNoteBody:
+      'The product is shaped around private defaults, clear ownership, and tools that help after the writing without getting in the way during it.',
+    aboutStoryKicker: 'The story',
+    aboutStoryTitle: 'Built from the need to keep a life searchable.',
+    aboutStoryBody:
+      'Thoughty began as a practical journal: a place to write plainly, split life into diaries, import old notes, export everything, and find ideas again months later. The app keeps that origin close by treating portability and calm organization as core features, not add-ons.',
+    aboutMissionKicker: 'Mission',
+    aboutMissionTitle: 'Make personal writing easier to keep, revisit, and trust.',
+    aboutValuePrivacyTitle: 'Privacy first',
+    aboutValuePrivacyBody:
+      'Entries are private by default, visibility is explicit, and personal data remains downloadable.',
+    aboutValueOwnershipTitle: 'Ownership always',
+    aboutValueOwnershipBody:
+      'Import and export paths keep journals useful outside the app, from backups to books.',
+    aboutValueCalmTitle: 'Calm utility',
+    aboutValueCalmBody:
+      'Thoughty favors focused workflows, reusable organization, and AI only where it helps reflection.',
+    aboutTeamKicker: 'Team',
+    aboutTeamTitle: 'Small, product-led, and close to the writing.',
+    aboutTeamBody:
+      'Thoughty is developed as a focused independent product with a simple standard: every new feature should make the journal more trustworthy, more useful, or easier to leave with your work intact.',
+    legalUpdatedLabel: 'Last updated June 2026',
+    privacyTitle: 'Privacy Policy',
+    privacySubtitle:
+      'Thoughty is built for private journaling. This policy explains what the app needs to run and how your data stays under your control.',
+    privacyIntroTitle: 'Private by design',
+    privacyIntroBody:
+      'Journal entries are private by default. Public visibility is an explicit entry-level choice, and your account settings keep privacy controls close to the writing workflow.',
+    privacyDataTitle: 'Data we use',
+    privacyDataBody:
+      'Thoughty stores account details, profile settings, diaries, entries, tags, attachments, sync preferences, and subscription records needed to provide the service.',
+    privacyControlTitle: 'Your controls',
+    privacyControlBody:
+      'You can edit or delete entries, download your user data, export journals in portable formats, change visibility, and delete your account from the app.',
+    privacySecurityTitle: 'Security and providers',
+    privacySecurityBody:
+      'Authentication, cloud sync, storage, payments, and AI features may rely on configured providers. Thoughty keeps those integrations limited to the feature you choose to use.',
+    termsTitle: 'Terms of Service',
+    termsSubtitle:
+      'These terms set the basic expectations for using Thoughty respectfully, keeping your account secure, and retaining ownership of your writing.',
+    termsUseTitle: 'Using Thoughty',
+    termsUseBody:
+      'Use Thoughty for lawful personal writing, organization, import, export, and reflection. Do not abuse public features, interfere with the service, or try to access another account.',
+    termsAccountTitle: 'Account responsibility',
+    termsAccountBody:
+      'You are responsible for keeping your login credentials secure and for the activity that happens through your account.',
+    termsContentTitle: 'Your content',
+    termsContentBody:
+      'You keep ownership of your entries, attachments, exports, and profile content. Thoughty processes that content only to operate the features you use.',
+    termsLimitsTitle: 'Service changes',
+    termsLimitsBody:
+      'Features, limits, and subscription plans may change as the product evolves. Important user-facing changes should be reflected in the app and supporting documentation.',
+    contactEyebrow: 'Support',
+    contactTitle: 'Contact and support',
+    contactSubtitle:
+      'Send a question, report an account issue, or start with the most common guides for keeping your journal organized and portable.',
+    contactFormTitle: 'Send a message',
+    contactNameLabel: 'Name',
+    contactEmailLabel: 'Email',
+    contactTopicLabel: 'Topic',
+    contactTopicSupport: 'Product support',
+    contactTopicAccount: 'Account access',
+    contactTopicBilling: 'Billing',
+    contactTopicPrivacy: 'Privacy and data',
+    contactTopicFeedback: 'Feedback or feature idea',
+    contactMessageLabel: 'Message',
+    contactSubmit: 'Send message',
+    contactSuccessTitle: 'Message ready',
+    contactSuccessBody:
+      'Thanks for reaching out. Your message has been captured in this session and the support team can wire it to an inbox next.',
+    contactGuidesKicker: 'How to',
+    contactGuidesTitle: 'How to guides',
+    contactGuideStartTitle: 'Start a focused journal',
+    contactGuideStartBody:
+      'Create entries with dates, tags, templates, and privacy settings so each thought stays easy to find later.',
+    contactGuideImportTitle: 'Import existing notes',
+    contactGuideImportBody:
+      'Use the import preview to detect formats, skip duplicates, and place old journals into the right diary before saving.',
+    contactGuidePrivacyTitle: 'Manage privacy',
+    contactGuidePrivacyBody:
+      'Keep entries private by default, make public thoughts explicit, and download or delete your data from Profile.',
+    contactFaqKicker: 'FAQ',
+    contactFaqTitle: 'Frequently asked questions',
+    contactFaqDataTitle: 'Can I export everything?',
+    contactFaqDataBody:
+      'Yes. Thoughty supports journal exports, stats exports, and a full user-data download from Profile.',
+    contactFaqAiTitle: 'Does AI read my whole journal?',
+    contactFaqAiBody:
+      'AI actions are tied to the feature you choose, such as tag suggestions, rephrasing, chat, or tone analysis.',
+    contactFaqExportTitle: 'Which formats are available?',
+    contactFaqExportBody:
+      'Entries can move through TXT, JSON, Markdown, CSV, PDF, EPUB, and HTML depending on the export workflow.',
     suggestTags: 'Auto-Tags',
     suggestingTags: 'Tagging...',
     fixWriting: 'Rephrase',
@@ -1112,6 +1287,7 @@ export const translations: Translations = {
     privateTooltip: 'Privé - visible uniquement par vous',
     copyright: '© {year} Thoughty. Tous droits réservés.',
     madeWithLove: 'Fait avec ❤️ à Paris',
+    about: 'À propos',
     privacy: 'Politique de confidentialité',
     terms: "Conditions d'utilisation",
     contact: 'Nous contacter',
@@ -1421,6 +1597,105 @@ export const translations: Translations = {
     landingCtaTitle: 'Ouvrez un journal que vous pourrez garder pendant des années.',
     landingCtaBody:
       'Créez un compte, écrivez en privé par défaut et exportez votre travail quand vous voulez repartir avec tout intact.',
+    aboutEyebrow: 'À propos de Thoughty',
+    aboutTitle: 'Un lieu plus calme pour les pensées qui méritent de rester.',
+    aboutSubtitle:
+      'Thoughty s’adresse aux personnes qui veulent une réflexion personnelle, retrouvable et portable sans ajouter un système de productivité bruyant.',
+    aboutNoteLabel: 'Exemple de note Thoughty',
+    aboutNoteDate: 'Note de mission',
+    aboutNoteTitle: 'Un bon journal respecte la personne qui écrit.',
+    aboutNoteBody:
+      'Le produit est construit autour du privé par défaut, de la propriété claire des données et d’outils utiles après l’écriture, sans gêner le moment d’écrire.',
+    aboutStoryKicker: 'L’histoire',
+    aboutStoryTitle: 'Né du besoin de garder une vie retrouvable.',
+    aboutStoryBody:
+      'Thoughty a commencé comme un journal pratique : écrire simplement, séparer les sujets par journaux, importer d’anciennes notes, tout exporter et retrouver des idées plusieurs mois plus tard. L’application garde cette origine en traitant la portabilité et l’organisation calme comme des bases, pas comme des options.',
+    aboutMissionKicker: 'Mission',
+    aboutMissionTitle: 'Rendre l’écriture personnelle plus facile à garder, relire et faire confiance.',
+    aboutValuePrivacyTitle: 'Confidentialité d’abord',
+    aboutValuePrivacyBody:
+      'Les entrées sont privées par défaut, la visibilité est explicite et les données personnelles restent téléchargeables.',
+    aboutValueOwnershipTitle: 'Propriété toujours',
+    aboutValueOwnershipBody:
+      'Les imports et exports gardent les journaux utiles hors de l’application, des sauvegardes aux livres.',
+    aboutValueCalmTitle: 'Utilité calme',
+    aboutValueCalmBody:
+      'Thoughty privilégie les usages concentrés, l’organisation réutilisable et l’IA seulement quand elle aide la réflexion.',
+    aboutTeamKicker: 'Équipe',
+    aboutTeamTitle: 'Petite, orientée produit, proche de l’écriture.',
+    aboutTeamBody:
+      'Thoughty est développé comme un produit indépendant et ciblé avec une règle simple : chaque nouveauté doit rendre le journal plus fiable, plus utile ou plus facile à quitter avec votre travail intact.',
+    legalUpdatedLabel: 'Dernière mise à jour juin 2026',
+    privacyTitle: 'Politique de confidentialité',
+    privacySubtitle:
+      'Thoughty est conçu pour un journal privé. Cette politique explique ce dont l’application a besoin pour fonctionner et comment vos données restent sous votre contrôle.',
+    privacyIntroTitle: 'Privé par conception',
+    privacyIntroBody:
+      'Les entrées du journal sont privées par défaut. La visibilité publique est un choix explicite pour chaque entrée, et les réglages de confidentialité restent proches de l’écriture.',
+    privacyDataTitle: 'Données utilisées',
+    privacyDataBody:
+      'Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, préférences de synchronisation et éléments d’abonnement nécessaires au service.',
+    privacyControlTitle: 'Vos contrôles',
+    privacyControlBody:
+      'Vous pouvez modifier ou supprimer des entrées, télécharger vos données, exporter vos journaux dans des formats portables, changer la visibilité et supprimer votre compte.',
+    privacySecurityTitle: 'Sécurité et fournisseurs',
+    privacySecurityBody:
+      'L’authentification, la synchronisation cloud, le stockage, les paiements et les fonctions IA peuvent utiliser des fournisseurs configurés. Thoughty limite ces intégrations à la fonction choisie.',
+    termsTitle: "Conditions d'utilisation",
+    termsSubtitle:
+      'Ces conditions posent les attentes de base pour utiliser Thoughty avec respect, sécuriser votre compte et conserver la propriété de vos écrits.',
+    termsUseTitle: 'Utiliser Thoughty',
+    termsUseBody:
+      'Utilisez Thoughty pour une écriture personnelle licite, l’organisation, l’import, l’export et la réflexion. N’abusez pas des fonctions publiques, ne perturbez pas le service et ne tentez pas d’accéder à un autre compte.',
+    termsAccountTitle: 'Responsabilité du compte',
+    termsAccountBody:
+      'Vous êtes responsable de la sécurité de vos identifiants et de l’activité réalisée depuis votre compte.',
+    termsContentTitle: 'Votre contenu',
+    termsContentBody:
+      'Vous conservez la propriété de vos entrées, pièces jointes, exports et contenus de profil. Thoughty traite ce contenu uniquement pour faire fonctionner les fonctions utilisées.',
+    termsLimitsTitle: 'Évolution du service',
+    termsLimitsBody:
+      'Les fonctionnalités, limites et abonnements peuvent évoluer avec le produit. Les changements importants pour les utilisateurs doivent apparaître dans l’application et la documentation.',
+    contactEyebrow: 'Support',
+    contactTitle: 'Contact et support',
+    contactSubtitle:
+      'Envoyez une question, signalez un problème de compte ou commencez avec les guides les plus courants pour garder votre journal organisé et portable.',
+    contactFormTitle: 'Envoyer un message',
+    contactNameLabel: 'Nom',
+    contactEmailLabel: 'Email',
+    contactTopicLabel: 'Sujet',
+    contactTopicSupport: 'Support produit',
+    contactTopicAccount: 'Accès au compte',
+    contactTopicBilling: 'Facturation',
+    contactTopicPrivacy: 'Confidentialité et données',
+    contactTopicFeedback: 'Avis ou idée de fonctionnalité',
+    contactMessageLabel: 'Message',
+    contactSubmit: 'Envoyer le message',
+    contactSuccessTitle: 'Message prêt',
+    contactSuccessBody:
+      'Merci pour votre message. Il a été capturé dans cette session et l’équipe support pourra ensuite le relier à une boîte de réception.',
+    contactGuidesKicker: 'Guides',
+    contactGuidesTitle: 'Guides pratiques',
+    contactGuideStartTitle: 'Commencer un journal ciblé',
+    contactGuideStartBody:
+      'Créez des entrées avec dates, tags, modèles et confidentialité pour retrouver facilement chaque pensée plus tard.',
+    contactGuideImportTitle: 'Importer des notes existantes',
+    contactGuideImportBody:
+      'Utilisez l’aperçu d’import pour détecter les formats, éviter les doublons et placer les anciens journaux au bon endroit.',
+    contactGuidePrivacyTitle: 'Gérer la confidentialité',
+    contactGuidePrivacyBody:
+      'Gardez les entrées privées par défaut, rendez les pensées publiques explicitement, puis téléchargez ou supprimez vos données depuis le profil.',
+    contactFaqKicker: 'FAQ',
+    contactFaqTitle: 'Questions fréquentes',
+    contactFaqDataTitle: 'Puis-je tout exporter ?',
+    contactFaqDataBody:
+      'Oui. Thoughty prend en charge les exports de journal, les exports de statistiques et le téléchargement complet des données utilisateur depuis le profil.',
+    contactFaqAiTitle: 'L’IA lit-elle tout mon journal ?',
+    contactFaqAiBody:
+      'Les actions IA sont liées à la fonction choisie, comme les suggestions de tags, la reformulation, le chat ou l’analyse de ton.',
+    contactFaqExportTitle: 'Quels formats sont disponibles ?',
+    contactFaqExportBody:
+      'Les entrées peuvent passer par TXT, JSON, Markdown, CSV, PDF, EPUB et HTML selon le parcours d’export.',
     suggestTags: 'Auto-Tags',
     suggestingTags: 'Tagging...',
     fixWriting: 'Reformuler',

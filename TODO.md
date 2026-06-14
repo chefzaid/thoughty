@@ -79,9 +79,9 @@
 - [x] More detailed landing page with features presentation, screenshots, and sign up call to action
 - [x] Subscription management page for users to manage their subscription, see billing history, and update payment method in Profile page
 - [ ] Subscription-based access to premium features, with a free trial period and a freemium tier with limited features to attract new users
-- [ ] About page with the story behind Thoughty, the mission, and the team
-- [ ] Terms of Service and Privacy Policy pages
-- [ ] Contact and support page with a form to submit inquiries and a How To guides / FAQ section
+- [x] About page with the story behind Thoughty, the mission, and the team
+- [x] Terms of Service and Privacy Policy pages
+- [x] Contact and support page with a form to submit inquiries and a How To guides / FAQ section
 - [ ] Feedback and feature request page for users to submit their ideas and upvote existing ones
 - [ ] Blog section for updates, tips, and journaling inspiration
 - [ ] Email validation flow for account security (password reset via email already works)
@@ -224,19 +224,3 @@
 - [ ] That does exactly all the functions I do with OneDrive, and the Excel stats file but with an app (health, mood tracker, finances, expenses and subscriptions...)
 - [ ] Track happiness, socials, health, finances, subscriptions, productivity, and other life metrics and correlate them with the journaling data to provide insights and suggestions for improving well-being and productivity
 - [ ] Needs to detail the features once the main subject (journaling) is complete
-
-## Recurrent Tasks (mixed domains)
-
-- [ ] Break huge files and blocks of code (500+ LOC) into smaller more maintainable chunks and refactor them
-- [ ] Linting, quality checks, and resolving issues reported in the Problems tab
-- [ ] Optimize codebase for better performance
-- [ ] Hunt for memory leaks, null references, bugs (UI + backend), and fix them
-- [ ] Always consider reusing existing code, and refactor to centralize similar reusable code instead of adding new one
-- [ ] Code reviews, refactor, and clean up code for better readability and maintainability
-- [ ] Verify that there are no regressions in the app after each new feature or bug fix, and that all existing features still work as expected
-- [ ] Keep implemented architecture, design patterns, and best practices up to date with the used tech stack and industry standards
-- [ ] Update dependencies to latest stable version and fix any breaking changes, try to use latest features of the used frameworks and libraries when necessary
-- [ ] Update documentation to reflect any changes in features, architecture, or deployment process
-- [ ] Always keep code coverage above 85% for both backend and frontend
-- [ ] Tighten code security and fix vulnerabilities (OWASP Top 10: XSS, CSRF, SQL injection, etc.)
-- [ ] Security and performance audits and remediation

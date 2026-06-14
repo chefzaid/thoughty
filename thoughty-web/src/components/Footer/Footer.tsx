@@ -15,7 +15,10 @@ function Footer({ t, theme }: Readonly<FooterProps>) {
                     <span>{t('madeWithLove')}</span>
                 </div>
 
-                <div className="flex gap-6">
+                <div className="flex flex-wrap justify-center gap-6">
+                    <a href="/about" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
+                        {t('about')}
+                    </a>
                     <a href="/privacy" className={`text-sm hover:underline transition-colors ${isLight ? 'text-gray-500 hover:text-gray-900' : 'text-gray-400 hover:text-gray-100'}`}>
                         {t('privacy')}
                     </a>

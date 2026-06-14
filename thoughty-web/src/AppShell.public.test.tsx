@@ -49,6 +49,54 @@ describe('AppShell public flows', () => {
     });
   });
 
+  it('loads the about page from /about', async () => {
+    globalThis.history.replaceState({}, '', '/about');
+    setMockAuthState({ user: null, isAuthenticated: false });
+
+    renderAppShell();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'A quieter home for the thoughts worth keeping.' })).toBeInTheDocument();
+      expect(screen.getByText('About Thoughty')).toBeInTheDocument();
+    });
+  });
+
+  it('loads the privacy policy from /privacy', async () => {
+    globalThis.history.replaceState({}, '', '/privacy');
+    setMockAuthState({ user: null, isAuthenticated: false });
+
+    renderAppShell();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Privacy Policy' })).toBeInTheDocument();
+      expect(screen.getByText('Private by design')).toBeInTheDocument();
+    });
+  });
+
+  it('loads the terms of service from /terms', async () => {
+    globalThis.history.replaceState({}, '', '/terms');
+    setMockAuthState({ user: null, isAuthenticated: false });
+
+    renderAppShell();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Terms of Service' })).toBeInTheDocument();
+      expect(screen.getByText('Using Thoughty')).toBeInTheDocument();
+    });
+  });
+
+  it('loads the contact and support page from /contact', async () => {
+    globalThis.history.replaceState({}, '', '/contact');
+    setMockAuthState({ user: null, isAuthenticated: false });
+
+    renderAppShell();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Contact and support' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'How to guides' })).toBeInTheDocument();
+    });
+  });
+
   it('navigates from the intro page to sign in and sign up modes', async () => {
     const user = userEvent.setup();
     setMockAuthState({ user: null, isAuthenticated: false });
@@ -70,6 +118,19 @@ describe('AppShell public flows', () => {
     await user.click(signUpButton as HTMLElement);
     expect(globalThis.location.pathname).toBe('/register');
     expect(screen.getByText('Create your account')).toBeInTheDocument();
+  });
+
+  it('navigates back home from the about page', async () => {
+    const user = userEvent.setup();
+    globalThis.history.replaceState({}, '', '/about');
+    setMockAuthState({ user: null, isAuthenticated: false });
+
+    renderAppShell();
+
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+
+    expect(globalThis.location.pathname).toBe('/');
+    expect(screen.getByRole('heading', { name: 'Thoughty' })).toBeInTheDocument();
   });
 
   it('shows loading spinner when auth is loading', () => {
