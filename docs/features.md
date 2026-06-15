@@ -133,3 +133,16 @@ flowchart LR
 - Destructive flows use confirmation dialogs, and long-running operations such as loading history, sync, or imports expose explicit loading states.
 - The layout is responsive across desktop and smaller screens, with the same core journaling surfaces preserved instead of maintaining a separate reduced mobile product.
 - Footer links expose privacy, terms, and contact entry points, rounding out the application as a real hosted product rather than only an internal tool.
+
+## Future Life ERP Direction
+
+Thoughty may eventually grow from a journal into a personal ERP, but that expansion should preserve the existing privacy, portability, and entry-centered design principles. The Life ERP backlog is now split into concrete product areas rather than one broad idea:
+
+- a document vault for private files, OCR/search, folder and tag organization, attachment reuse, and exportable archives
+- life metrics for happiness, mood, health, sleep, energy, social time, productivity, habits, and custom trackers
+- finance tracking for expenses, income, budgets, savings goals, bills, and subscription renewals
+- health and wellness logs for symptoms, medication, appointments, exercise, nutrition, and body metrics
+- social relationship tracking for people, last-contact dates, notes, important dates, reminders, and relationship trends
+- productivity tracking for goals, projects, recurring routines, focus sessions, and weekly reviews
+- correlation dashboards and AI insights that connect journal entries with metrics, finances, health, socials, and productivity
+- import paths for existing spreadsheets and folder exports so current personal systems can move into Thoughty without lock-in
