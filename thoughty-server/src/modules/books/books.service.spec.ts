@@ -112,6 +112,13 @@ describe('BooksService', () => {
 
       expect(book.chapters.map((c) => c.title)).toEqual(['travel']);
     });
+
+    it('should support yearbook chapter grouping', async () => {
+      const book = await service.buildBookForUser(1, { chapterMode: 'year' });
+
+      expect(book.chapters.map((c) => c.title)).toEqual(['2024']);
+      expect(book.chapters[0].entries).toHaveLength(3);
+    });
   });
 
   describe('preview', () => {

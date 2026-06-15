@@ -84,6 +84,7 @@ describe('ImportExport book section', () => {
 
         expect(screen.getByLabelText('bookTitleLabel')).toBeInTheDocument();
         expect(screen.getByLabelText('bookAuthorLabel')).toBeInTheDocument();
+        expect(screen.getByLabelText('bookChapterMode')).toBeInTheDocument();
         expect(screen.getByLabelText('bookChapterOrder')).toBeInTheDocument();
         expect(screen.getByLabelText('bookTagScope')).toBeInTheDocument();
         expect(screen.getByLabelText('bookWeavingMode')).toBeInTheDocument();
@@ -113,6 +114,25 @@ describe('ImportExport book section', () => {
         expect((previewCall as [string])[0]).toContain('diaryId=1');
         expect((previewCall as [string])[0]).toContain('title=My+Year');
         expect((previewCall as [string])[0]).toContain('chapterOrder=entries');
+    });
+
+    it('previews a yearbook outline with calendar chapters', async () => {
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ ...mockBookPreview, chapters: [{ title: '2024', entryCount: 5, firstDate: '2024-01-10', lastDate: '2024-03-01' }] }),
+        });
+
+        await renderBookSection();
+
+        fireEvent.change(screen.getByLabelText('bookChapterMode'), { target: { value: 'year' } });
+        fireEvent.click(screen.getByText('previewBook'));
+
+        await screen.findByText('2024');
+
+        const previewCall = (globalThis.fetch as Mock).mock.calls.find((call: unknown[]) => (call[0] as string).includes('/api/books/preview'));
+        expect((previewCall as [string])[0]).toContain('chapterMode=year');
+        expect(screen.getByLabelText('bookChapterOrder')).toBeDisabled();
+        expect(screen.getByLabelText('bookTagScope')).toBeDisabled();
     });
 
     it('shows a hint when no chapters could be built', async () => {

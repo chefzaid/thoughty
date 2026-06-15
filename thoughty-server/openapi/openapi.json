@@ -1903,6 +1903,21 @@
             }
           },
           {
+            "name": "chapterMode",
+            "required": false,
+            "in": "query",
+            "description": "Chapter grouping mode: tags, calendar years, or calendar months",
+            "schema": {
+              "default": "tags",
+              "type": "string",
+              "enum": [
+                "tags",
+                "year",
+                "month"
+              ]
+            }
+          },
+          {
             "name": "tagScope",
             "required": false,
             "in": "query",
@@ -2080,6 +2095,21 @@
                 "alpha",
                 "entries",
                 "chrono"
+              ]
+            }
+          },
+          {
+            "name": "chapterMode",
+            "required": false,
+            "in": "query",
+            "description": "Chapter grouping mode: tags, calendar years, or calendar months",
+            "schema": {
+              "default": "tags",
+              "type": "string",
+              "enum": [
+                "tags",
+                "year",
+                "month"
               ]
             }
           },

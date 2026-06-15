@@ -97,6 +97,7 @@ export class BooksService {
     return buildBook(entries, {
       title,
       author,
+      chapterMode: query.chapterMode,
       chapterOrder: query.chapterOrder,
       tagScope: query.tagScope,
       includeUntagged: query.includeUntagged,

@@ -111,6 +111,34 @@ describe('book-converter.util', () => {
       expect(book.chapters[0].entries.map((e) => e.date)).toEqual(['2024-05-01', '2024-05-02']);
     });
 
+    it('should build yearbook chapters chronologically by year', () => {
+      const book = buildBook(
+        [
+          ...entries,
+          { date: '2025-01-02', index: 1, tags: ['travel'], content: 'New year note', format: 'plain' as const },
+        ],
+        { title: 'My Book', chapterMode: 'year' },
+      );
+
+      expect(book.chapters.map((c) => c.title)).toEqual(['2024', '2025']);
+      expect(book.chapters[0].entries.map((e) => e.content)).toEqual([
+        'Pasta in Naples',
+        'Trip to Rome',
+        'Cooking at home',
+        'Random thought',
+      ]);
+    });
+
+    it('should build month chapters chronologically for yearbook mode', () => {
+      const book = buildBook(entries, { title: 'My Book', chapterMode: 'month' });
+
+      expect(book.chapters.map((c) => c.title)).toEqual([
+        'January 2024',
+        'February 2024',
+        'March 2024',
+      ]);
+    });
+
     it('should carry title, author, and generation date', () => {
       const book = buildBook(entries, { title: 'My Book', author: 'Jane' });
 

@@ -48,6 +48,15 @@ export class BookQueryDto {
   chapterOrder?: 'alpha' | 'entries' | 'chrono';
 
   @ApiPropertyOptional({
+    description: 'Chapter grouping mode: tags, calendar years, or calendar months',
+    enum: ['tags', 'year', 'month'],
+    default: 'tags',
+  })
+  @IsOptional()
+  @IsIn(['tags', 'year', 'month'])
+  chapterMode?: 'tags' | 'year' | 'month';
+
+  @ApiPropertyOptional({
     description: 'Place entries in every matching tag chapter, or only in their first tag chapter',
     enum: ['all', 'first'],
     default: 'all',

@@ -1,5 +1,6 @@
 export type ChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type TagScope = 'all' | 'first';
+export type ChapterMode = 'tags' | 'year' | 'month';
 
 export const UNTAGGED_CHAPTER_TITLE = 'Untagged Thoughts';
 
@@ -28,6 +29,7 @@ export interface Book {
 export interface BuildBookOptions {
   title: string;
   author?: string;
+  chapterMode?: ChapterMode;
   chapterOrder?: ChapterOrder;
   tagScope?: TagScope;
   includeUntagged?: boolean;
@@ -92,11 +94,65 @@ function compareChapters(a: BookChapter, b: BookChapter, order: ChapterOrder): n
   }
 }
 
+const MONTH_NAMES = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
+function createDateChapterTitle(date: string, mode: Exclude<ChapterMode, 'tags'>): string {
+  const [year, month] = date.split('-');
+  if (mode === 'year') {
+    return year;
+  }
+
+  const monthName = MONTH_NAMES[Number.parseInt(month, 10) - 1] ?? month;
+  return `${monthName} ${year}`;
+}
+
+function buildChronologicalBook(
+  entries: BookEntryInput[],
+  options: BuildBookOptions & { chapterMode: Exclude<ChapterMode, 'tags'> },
+): Book {
+  const normalized = entries.map(normalizeBookEntry).filter((entry) => entry.content.trim());
+  const chapterMap = new Map<string, BookChapter>();
+
+  for (const entry of sortChronologically(normalized)) {
+    const key = options.chapterMode === 'year' ? entry.date.slice(0, 4) : entry.date.slice(0, 7);
+    const chapter = chapterMap.get(key);
+    if (chapter) {
+      chapter.entries.push(entry);
+    } else {
+      chapterMap.set(key, { title: createDateChapterTitle(entry.date, options.chapterMode), entries: [entry] });
+    }
+  }
+
+  return {
+    title: options.title,
+    author: options.author,
+    generatedAt: new Date().toISOString().split('T')[0],
+    chapters: [...chapterMap.values()],
+  };
+}
+
 /**
  * Group journal entries into book chapters, one chapter per tag.
  * Entries inside a chapter are connected chronologically to read as a narrative.
  */
 export function buildBook(entries: BookEntryInput[], options: BuildBookOptions): Book {
+  if (options.chapterMode === 'year' || options.chapterMode === 'month') {
+    return buildChronologicalBook(entries, { ...options, chapterMode: options.chapterMode });
+  }
+
   const chapterOrder = options.chapterOrder || 'alpha';
   const tagScope = options.tagScope || 'all';
   const includeUntagged = options.includeUntagged !== false;
@@ -143,21 +199,6 @@ export function buildBook(entries: BookEntryInput[], options: BuildBookOptions):
     chapters,
   };
 }
-
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
 
 /**
  * Group entries chronologically into one chapter per month ("January 2024").

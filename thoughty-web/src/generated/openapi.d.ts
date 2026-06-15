@@ -2896,6 +2896,8 @@ export interface operations {
                 dateTo?: string;
                 /** @description Chapter ordering: alphabetical, by entry count, or by first entry date */
                 chapterOrder?: "alpha" | "entries" | "chrono";
+                /** @description Chapter grouping mode: tags, calendar years, or calendar months */
+                chapterMode?: "tags" | "year" | "month";
                 /** @description Place entries in every matching tag chapter, or only in their first tag chapter */
                 tagScope?: "all" | "first";
                 /** @description Comma-separated list of tags to use as chapters (defaults to all tags) */
@@ -2945,6 +2947,8 @@ export interface operations {
                 dateTo?: string;
                 /** @description Chapter ordering: alphabetical, by entry count, or by first entry date */
                 chapterOrder?: "alpha" | "entries" | "chrono";
+                /** @description Chapter grouping mode: tags, calendar years, or calendar months */
+                chapterMode?: "tags" | "year" | "month";
                 /** @description Place entries in every matching tag chapter, or only in their first tag chapter */
                 tagScope?: "all" | "first";
                 /** @description Comma-separated list of tags to use as chapters (defaults to all tags) */

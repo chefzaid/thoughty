@@ -2,10 +2,12 @@ import type { RefObject } from 'react';
 import type { ImportExportSection, TranslationFunction } from '../../types';
 import './ImportExportBookSection.css';
 import {
+    BOOK_CHAPTER_MODE_OPTIONS,
     BOOK_CHAPTER_ORDER_OPTIONS,
     BOOK_FORMAT_OPTIONS,
     BOOK_TAG_SCOPE_OPTIONS,
     BOOK_WEAVING_MODE_OPTIONS,
+    type BookChapterMode,
     type BookChapterOrder,
     type BookFormat,
     type BookOptions,
@@ -92,12 +94,26 @@ export function BookSection({
                         </select>
                     </div>
                     <div className="export-option-group book-field">
+                        <label htmlFor="book-chapter-mode">{t('bookChapterMode')}</label>
+                        <select
+                            id="book-chapter-mode"
+                            value={options.chapterMode}
+                            onChange={(event) => onOptionChange('chapterMode', event.target.value as BookChapterMode)}
+                            className="format-select"
+                        >
+                            {BOOK_CHAPTER_MODE_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="export-option-group book-field">
                         <label htmlFor="book-chapter-order">{t('bookChapterOrder')}</label>
                         <select
                             id="book-chapter-order"
                             value={options.chapterOrder}
                             onChange={(event) => onOptionChange('chapterOrder', event.target.value as BookChapterOrder)}
                             className="format-select"
+                            disabled={options.chapterMode !== 'tags'}
                         >
                             {BOOK_CHAPTER_ORDER_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
@@ -111,6 +127,7 @@ export function BookSection({
                             value={options.tagScope}
                             onChange={(event) => onOptionChange('tagScope', event.target.value as BookTagScope)}
                             className="format-select"
+                            disabled={options.chapterMode !== 'tags'}
                         >
                             {BOOK_TAG_SCOPE_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>{t(option.labelKey)}</option>

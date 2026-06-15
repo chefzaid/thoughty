@@ -202,6 +202,10 @@ export type TranslationKey =
   | 'bookFormatEpub'
   | 'bookFormatHtml'
   | 'bookChapterOrder'
+  | 'bookChapterMode'
+  | 'bookChapterModeTags'
+  | 'bookChapterModeYear'
+  | 'bookChapterModeMonth'
   | 'chapterOrderAlpha'
   | 'chapterOrderEntries'
   | 'chapterOrderChrono'
@@ -869,6 +873,10 @@ export const translations: Translations = {
     bookFormatPdf: 'PDF (.pdf)',
     bookFormatEpub: 'EPUB (.epub)',
     bookFormatHtml: 'HTML (.html)',
+    bookChapterMode: 'Chapter type',
+    bookChapterModeTags: 'By tag',
+    bookChapterModeYear: 'By year',
+    bookChapterModeMonth: 'By month',
     bookChapterOrder: 'Chapter order',
     chapterOrderAlpha: 'Alphabetical',
     chapterOrderEntries: 'Most entries first',
@@ -1599,6 +1607,10 @@ export const translations: Translations = {
     bookFormatPdf: 'PDF (.pdf)',
     bookFormatEpub: 'EPUB (.epub)',
     bookFormatHtml: 'HTML (.html)',
+    bookChapterMode: 'Type de chapitre',
+    bookChapterModeTags: 'Par tag',
+    bookChapterModeYear: 'Par année',
+    bookChapterModeMonth: 'Par mois',
     bookChapterOrder: 'Ordre des chapitres',
     chapterOrderAlpha: 'Alphabétique',
     chapterOrderEntries: "Par nombre d'entrées",

@@ -20,6 +20,7 @@ export const CLOUD_FORMAT_OPTIONS: ReadonlyArray<{ value: CloudExportFormat; lab
 ];
 
 export type BookFormat = 'pdf' | 'epub' | 'html' | 'md';
+export type BookChapterMode = 'tags' | 'year' | 'month';
 export type BookChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type BookTagScope = 'all' | 'first';
 export type BookWeavingMode = 'strict' | 'creative';
@@ -29,6 +30,12 @@ export const BOOK_FORMAT_OPTIONS: ReadonlyArray<{ value: BookFormat; labelKey: s
     { value: 'epub', labelKey: 'bookFormatEpub' },
     { value: 'html', labelKey: 'bookFormatHtml' },
     { value: 'md', labelKey: 'formatMd' },
+];
+
+export const BOOK_CHAPTER_MODE_OPTIONS: ReadonlyArray<{ value: BookChapterMode; labelKey: string }> = [
+    { value: 'tags', labelKey: 'bookChapterModeTags' },
+    { value: 'year', labelKey: 'bookChapterModeYear' },
+    { value: 'month', labelKey: 'bookChapterModeMonth' },
 ];
 
 export const BOOK_CHAPTER_ORDER_OPTIONS: ReadonlyArray<{ value: BookChapterOrder; labelKey: string }> = [
@@ -51,6 +58,7 @@ export interface BookOptions {
     title: string;
     author: string;
     format: BookFormat;
+    chapterMode: BookChapterMode;
     chapterOrder: BookChapterOrder;
     tagScope: BookTagScope;
     weavingMode: BookWeavingMode;
@@ -64,6 +72,7 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
     title: '',
     author: '',
     format: 'pdf',
+    chapterMode: 'tags',
     chapterOrder: 'alpha',
     tagScope: 'all',
     weavingMode: 'strict',

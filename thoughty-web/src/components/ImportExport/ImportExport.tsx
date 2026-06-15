@@ -251,6 +251,9 @@ function ImportExport({
         if (bookOptions.format !== 'pdf') {
             params.append('format', bookOptions.format);
         }
+        if (bookOptions.chapterMode !== 'tags') {
+            params.append('chapterMode', bookOptions.chapterMode);
+        }
         if (bookOptions.chapterOrder !== 'alpha') {
             params.append('chapterOrder', bookOptions.chapterOrder);
         }

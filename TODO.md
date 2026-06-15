@@ -121,7 +121,7 @@
 - [ ] Versioning of the book, with the possibility to update it with new entries and chapters
 - [ ] Custom cover page (image upload, color themes)
 - [ ] AI-generated chapter introductions and summaries
-- [ ] Yearbook mode: one chapter per year or month instead of per tag
+- [x] Yearbook mode: one chapter per year or month instead of per tag
 - [ ] Upload the generated book directly to a connected cloud provider
 - [ ] Embed entry attachments (images) in the generated book
 - [x] Fix the UI alignment and styling of the book converter page, and add a progress bar for the generation process
