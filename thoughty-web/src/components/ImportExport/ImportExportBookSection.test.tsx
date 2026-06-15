@@ -47,6 +47,15 @@ const mockBookPreview = {
     ],
 };
 
+function createDeferredResponse() {
+    let resolve!: (value: Response) => void;
+    const promise = new Promise<Response>((promiseResolve) => {
+        resolve = promiseResolve;
+    });
+
+    return { promise, resolve };
+}
+
 async function renderBookSection(): Promise<void> {
     render(<ImportExport theme="dark" t={mockT} diaryId={1} diaryName="Personal" />);
 
@@ -142,6 +151,29 @@ describe('ImportExport book section', () => {
         expect((exportCall as [string])[0]).toContain('includeToc=false');
         // AI narrative is on by default, so no override parameter is sent
         expect((exportCall as [string])[0]).not.toContain('narrative=');
+    });
+
+    it('shows book generation progress while a download is running', async () => {
+        const deferred = createDeferredResponse();
+        const mockBlob = new Blob(['%PDF-'], { type: 'application/pdf' });
+        (globalThis.fetch as Mock).mockReturnValueOnce(deferred.promise);
+
+        await renderBookSection();
+
+        fireEvent.click(screen.getByText('downloadBook'));
+
+        expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'generatingBook');
+        expect(screen.getByRole('button', { name: 'generatingBook' })).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'previewBook' })).toBeDisabled();
+
+        deferred.resolve({
+            ok: true,
+            blob: async () => mockBlob,
+            headers: new Headers(),
+        } as Response);
+
+        await screen.findByText('bookExportSuccess');
+        expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
 
     it('requests a plain book when the AI narrative option is unchecked', async () => {

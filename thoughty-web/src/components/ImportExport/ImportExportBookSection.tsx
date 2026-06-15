@@ -1,5 +1,6 @@
 import type { RefObject } from 'react';
 import type { ImportExportSection, TranslationFunction } from '../../types';
+import './ImportExportBookSection.css';
 import {
     BOOK_CHAPTER_ORDER_OPTIONS,
     BOOK_FORMAT_OPTIONS,
@@ -17,6 +18,8 @@ const BOOK_CHECKBOXES: ReadonlyArray<{ key: 'narrative' | 'includeUntagged' | 'i
     { key: 'includeDates', labelKey: 'bookIncludeDates' },
     { key: 'includeToc', labelKey: 'bookIncludeToc' },
 ];
+
+const BOOK_PROGRESS_STEPS = [35, 68, 92] as const;
 
 export function BookSection({
     activeSection,
@@ -46,9 +49,9 @@ export function BookSection({
             <h3>{t('book')}</h3>
             <p className="section-description">{t('bookDescription', { diaryName: diaryName || '' })}</p>
 
-            <div className="export-controls">
-                <div className="export-option-row export-option-row--split">
-                    <div className="export-option-group">
+            <div className="export-controls book-controls">
+                <div className="book-options-grid book-options-grid--title">
+                    <div className="export-option-group book-field">
                         <label htmlFor="book-title">{t('bookTitleLabel')}</label>
                         <input
                             id="book-title"
@@ -59,7 +62,7 @@ export function BookSection({
                             onChange={(event) => onOptionChange('title', event.target.value)}
                         />
                     </div>
-                    <div className="export-option-group">
+                    <div className="export-option-group book-field">
                         <label htmlFor="book-author">{t('bookAuthorLabel')}</label>
                         <input
                             id="book-author"
@@ -72,8 +75,8 @@ export function BookSection({
                     </div>
                 </div>
 
-                <div className="export-option-row export-option-row--split">
-                    <div className="export-option-group export-option-group--format">
+                <div className="book-options-grid book-options-grid--settings">
+                    <div className="export-option-group export-option-group--format book-field">
                         <label htmlFor="book-format">{t('exportFormat')}</label>
                         <select
                             id="book-format"
@@ -86,7 +89,7 @@ export function BookSection({
                             ))}
                         </select>
                     </div>
-                    <div className="export-option-group">
+                    <div className="export-option-group book-field">
                         <label htmlFor="book-chapter-order">{t('bookChapterOrder')}</label>
                         <select
                             id="book-chapter-order"
@@ -99,7 +102,7 @@ export function BookSection({
                             ))}
                         </select>
                     </div>
-                    <div className="export-option-group">
+                    <div className="export-option-group book-field">
                         <label htmlFor="book-tag-scope">{t('bookTagScope')}</label>
                         <select
                             id="book-tag-scope"
@@ -114,7 +117,7 @@ export function BookSection({
                     </div>
                 </div>
 
-                <div className="export-option-row">
+                <div className="export-option-row book-checkbox-row">
                     {BOOK_CHECKBOXES.map((checkbox) => (
                         <label key={checkbox.key} className="checkbox-label">
                             <input
@@ -127,8 +130,20 @@ export function BookSection({
                     ))}
                 </div>
 
-                <div className="export-option-row">
-                    <button className="io-btn secondary" onClick={onPreview}>
+                {generating && (
+                    <div className="book-progress" role="progressbar" aria-valuetext={t('generatingBook')}>
+                        <div className="book-progress__track">
+                            {BOOK_PROGRESS_STEPS.map((step) => (
+                                <span key={step} className="book-progress__marker" style={{ left: `${step}%` }} />
+                            ))}
+                            <span className="book-progress__bar" />
+                        </div>
+                        <span className="book-progress__label">{t('generatingBook')}</span>
+                    </div>
+                )}
+
+                <div className="export-option-row book-action-row">
+                    <button className="io-btn secondary" onClick={onPreview} disabled={generating}>
                         {t('previewBook')}
                     </button>
                     <button className="io-btn primary" onClick={onDownload} disabled={generating}>
