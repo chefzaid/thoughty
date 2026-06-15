@@ -208,7 +208,7 @@
 ## Accessibility
 
 - [ ] Full accessibility audit and remediation (aria-labels, screen reader support, skip-to-content links, focus management)
-- [ ] High contrast mode and adjustable font sizes
+- [x] High contrast mode and adjustable font sizes
 - [ ] Keyboard-only navigation support for all interactive elements
 - [ ] Add other languages support (i18n) for the UI (Spanish, Italian, German, etc. — English and French are already implemented)
 

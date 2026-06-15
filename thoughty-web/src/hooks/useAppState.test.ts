@@ -80,7 +80,7 @@ globalThis.alert = vi.fn();
 describe('useAppState Hooks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    document.body.classList.remove('light-mode', 'dark-mode');
+    document.body.classList.remove('light-mode', 'dark-mode', 'high-contrast-mode');
   });
 
   afterEach(() => {
@@ -120,6 +120,26 @@ describe('useAppState Hooks', () => {
       await waitFor(() => {
         expect(document.body.classList.contains('light-mode')).toBe(true);
         expect(document.body.classList.contains('dark-mode')).toBe(false);
+      });
+    });
+
+    it('applies high contrast class from config', async () => {
+      const { result } = renderHook(() => useConfig(false));
+
+      act(() => {
+        result.current.setConfig({ theme: 'dark', highContrast: true });
+      });
+
+      await waitFor(() => {
+        expect(document.body.classList.contains('high-contrast-mode')).toBe(true);
+      });
+
+      act(() => {
+        result.current.setConfig({ theme: 'dark', highContrast: false });
+      });
+
+      await waitFor(() => {
+        expect(document.body.classList.contains('high-contrast-mode')).toBe(false);
       });
     });
 

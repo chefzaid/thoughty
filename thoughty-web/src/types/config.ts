@@ -8,6 +8,7 @@ export interface Config {
   fontFamily?: FontFamilyPreference;
   fontSize?: string | number;
   fontColor?: string;
+  highContrast?: boolean | string;
   ttsVoiceUri?: string;
   name?: string;
   bio?: string;

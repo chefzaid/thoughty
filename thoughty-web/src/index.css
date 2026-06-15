@@ -12,6 +12,43 @@ body {
   @apply bg-gray-900 text-gray-100;
 }
 
+body.high-contrast-mode {
+  background: #000 !important;
+  color: #fff !important;
+}
+
+body.high-contrast-mode a,
+body.high-contrast-mode button,
+body.high-contrast-mode input,
+body.high-contrast-mode select,
+body.high-contrast-mode textarea {
+  outline-color: #ffff00;
+}
+
+body.high-contrast-mode a,
+body.high-contrast-mode .entry-reference-link {
+  color: #00e5ff !important;
+  text-decoration-thickness: 2px;
+}
+
+body.high-contrast-mode button:focus-visible,
+body.high-contrast-mode input:focus-visible,
+body.high-contrast-mode select:focus-visible,
+body.high-contrast-mode textarea:focus-visible,
+body.high-contrast-mode [tabindex]:focus-visible {
+  outline: 3px solid #ffff00 !important;
+  outline-offset: 3px !important;
+}
+
+body.high-contrast-mode .profile-page,
+body.high-contrast-mode .stat-card,
+body.high-contrast-mode .chart-card,
+body.high-contrast-mode .entry-card,
+body.high-contrast-mode .modal-content {
+  border-color: #fff !important;
+  box-shadow: none !important;
+}
+
 /* Highlight animation for navigating to entries */
 @keyframes highlight-pulse {
   0% {

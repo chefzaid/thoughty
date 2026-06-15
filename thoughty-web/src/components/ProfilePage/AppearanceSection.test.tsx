@@ -71,6 +71,7 @@ describe('AppearanceSection', () => {
     expect(screen.getByLabelText('fontType')).toBeInTheDocument();
     expect(screen.getByLabelText('fontSize')).toBeInTheDocument();
     expect(screen.getByLabelText('fontColor')).toBeInTheDocument();
+    expect(screen.getByLabelText('highContrast')).toBeInTheDocument();
     expect(screen.getByLabelText('ttsVoice')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'previewTtsVoice' })).toBeInTheDocument();
     expect(screen.getByTestId('font-preview')).toBeInTheDocument();
@@ -154,6 +155,31 @@ describe('AppearanceSection', () => {
     await user.click(toggle);
     expect(defaultProps.handleChange).toHaveBeenCalledWith({
       target: { name: 'readDates', value: 'true' },
+    });
+  });
+
+  it('calls handleChange to toggle high contrast mode', async () => {
+    const user = userEvent.setup();
+    render(<AppearanceSection {...defaultProps} />);
+
+    await user.click(screen.getByLabelText('highContrast'));
+    expect(defaultProps.handleChange).toHaveBeenCalledWith({
+      target: { name: 'highContrast', value: 'true' },
+    });
+  });
+
+  it('calls handleChange to turn high contrast mode off', async () => {
+    const user = userEvent.setup();
+    render(
+      <AppearanceSection
+        {...defaultProps}
+        localConfig={{ ...defaultProps.localConfig, highContrast: true }}
+      />
+    );
+
+    await user.click(screen.getByLabelText('highContrast'));
+    expect(defaultProps.handleChange).toHaveBeenCalledWith({
+      target: { name: 'highContrast', value: 'false' },
     });
   });
 

@@ -10,6 +10,7 @@ import {
   type FontFamilyPreference,
 } from '../../types/config';
 import { getPreferredSpeechVoice, getSpeechLang, getSpeechVoicesForLanguage } from '../../utils/speechVoices';
+import AppearanceAccessibilitySettings from './AppearanceAccessibilitySettings';
 
 const FONT_FAMILY_OPTIONS: ReadonlyArray<{ value: FontFamilyPreference; labelKey: string }> = [
   { value: 'system', labelKey: 'fontTypeSystem' },
@@ -457,6 +458,12 @@ function AppearanceSection({
         selectedFontColor={selectedFontColor}
         selectedFontFamily={selectedFontFamily}
         selectedFontSize={selectedFontSize}
+        t={t}
+      />
+
+      <AppearanceAccessibilitySettings
+        highContrast={localConfig.highContrast}
+        handleChange={handleChange}
         t={t}
       />
 

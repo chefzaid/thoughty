@@ -7,6 +7,9 @@ const isCi = Boolean(
 export default defineConfig({
   testDir: './e2e',
   timeout: 30000,
+  expect: {
+    timeout: 10000,
+  },
   fullyParallel: true,
   forbidOnly: isCi,
   retries: isCi ? 2 : 0,

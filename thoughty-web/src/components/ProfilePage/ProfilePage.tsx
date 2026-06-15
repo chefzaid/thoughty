@@ -159,7 +159,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | { target: { name: string; value: string } }
   ): void => {
     const { name, value } = e.target;
-    if (name === 'readDates') {
+    if (name === 'readDates' || name === 'highContrast') {
       setLocalConfig({ ...localConfig, [name]: value === 'true' });
     } else {
       setLocalConfig({ ...localConfig, [name]: value });

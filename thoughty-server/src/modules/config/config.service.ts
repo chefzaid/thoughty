@@ -8,6 +8,7 @@ const DEFAULT_SETTINGS: Record<string, string> = {
   name: 'User',
   fontFamily: 'system',
   fontSize: '16',
+  highContrast: 'false',
   entriesPerPage: '10',
   maxPinnedEntries: '3',
   defaultVisibility: 'private',

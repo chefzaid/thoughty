@@ -86,6 +86,7 @@ export interface MockAppState {
     fontFamily?: 'system' | 'serif' | 'modern' | 'mono';
     fontSize?: string | number;
     fontColor?: string;
+    highContrast?: boolean | string;
     readDates?: boolean;
     ttsVoiceUri?: string;
     openRouterModel?: string;
@@ -298,6 +299,7 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
       language: 'en',
       entriesPerPage: 10,
       autoTagMaxTags: '0',
+      highContrast: false,
       readDates: true,
       ...options.config,
     },

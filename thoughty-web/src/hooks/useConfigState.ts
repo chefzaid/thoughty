@@ -61,7 +61,9 @@ export const useConfig = (isAuthenticated: boolean) => {
       document.body.classList.add('dark-mode');
       document.body.classList.remove('light-mode');
     }
-  }, [config.theme]);
+
+    document.body.classList.toggle('high-contrast-mode', config.highContrast === true || config.highContrast === 'true');
+  }, [config.highContrast, config.theme]);
 
   const t = useCallback((key: string, params: Record<string, string | number> = {}): string => {
     return getTranslation(config.language || 'en', key, params);

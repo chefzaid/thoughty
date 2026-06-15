@@ -73,6 +73,8 @@ export type TranslationKey =
   | 'fontSizeDescription'
   | 'fontColor'
   | 'fontColorDescription'
+  | 'highContrast'
+  | 'highContrastDescription'
   | 'fontPreview'
   | 'fontPreviewDescription'
   | 'fontPreviewKicker'
@@ -739,6 +741,8 @@ export const translations: Translations = {
     fontSizeDescription: 'Adjust the base text size used across the app',
     fontColor: 'Font color',
     fontColorDescription: 'Set a preferred text color for your interface',
+    highContrast: 'High contrast',
+    highContrastDescription: 'Increase outlines and contrast across the app for easier reading.',
     fontPreview: 'Preview',
     fontPreviewDescription: 'Check how your chosen type, size, and color look together before saving.',
     fontPreviewKicker: 'Sample entry',
@@ -1480,6 +1484,8 @@ export const translations: Translations = {
     fontSizeDescription: 'Ajustez la taille de texte de base utilisée dans l’application',
     fontColor: 'Couleur du texte',
     fontColorDescription: 'Définissez une couleur de texte préférée pour votre interface',
+    highContrast: 'Contraste élevé',
+    highContrastDescription: 'Renforce les contours et le contraste dans l\'application pour faciliter la lecture.',
     fontPreview: 'Aperçu',
     fontPreviewDescription: 'Vérifiez l’ensemble police, taille et couleur avant d’enregistrer.',
     fontPreviewKicker: 'Exemple de note',

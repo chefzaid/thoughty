@@ -39,6 +39,7 @@ describe('ConfigService', () => {
         name: 'User',
         fontFamily: 'system',
         fontSize: '16',
+        highContrast: 'false',
         entriesPerPage: '10',
         maxPinnedEntries: '3',
         defaultVisibility: 'private',
@@ -61,6 +62,7 @@ describe('ConfigService', () => {
       expect(result.name).toBe('John Doe');
       expect(result.fontFamily).toBe('system');
       expect(result.fontSize).toBe('16');
+      expect(result.highContrast).toBe('false');
       expect(result.entriesPerPage).toBe('10'); // default
       expect(result.language).toBe('en'); // default
       expect(result.autoTagMaxTags).toBe('0');
@@ -72,6 +74,7 @@ describe('ConfigService', () => {
         { key: 'name', value: 'Jane Doe' },
         { key: 'fontFamily', value: 'serif' },
         { key: 'fontSize', value: '18' },
+        { key: 'highContrast', value: 'true' },
         { key: 'entriesPerPage', value: '20' },
         { key: 'defaultVisibility', value: 'public' },
         { key: 'language', value: 'es' },
@@ -85,6 +88,7 @@ describe('ConfigService', () => {
         name: 'Jane Doe',
         fontFamily: 'serif',
         fontSize: '18',
+        highContrast: 'true',
         entriesPerPage: '20',
         maxPinnedEntries: '3',
         defaultVisibility: 'public',

@@ -113,6 +113,7 @@ export const mockEntriesResponse = {
 export const mockConfig = {
   name: 'Test User',
   theme: 'dark',
+  highContrast: false,
   autoTagMaxTags: '0',
 };
 
