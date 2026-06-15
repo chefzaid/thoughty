@@ -79,6 +79,22 @@ describe('AiBookComposerService', () => {
     expect(body.messages[1].content).toContain('[2024-01-10]');
   });
 
+  it('uses a book-specific model when configured', async () => {
+    configService.getDecryptedConfig.mockResolvedValueOnce('anthropic/claude-3.5-sonnet');
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: 'A composed book chapter.' } }],
+      }),
+    });
+
+    await service.composeBookChapter(1, 'Travel', chapterEntries);
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.model).toBe('anthropic/claude-3.5-sonnet');
+    expect(configService.getDecryptedConfig).toHaveBeenCalledWith(1, 'openRouterBookModel');
+  });
+
   it('supports a creative weaving mode with looser connective narration', async () => {
     fetchMock.mockResolvedValue({
       ok: true,

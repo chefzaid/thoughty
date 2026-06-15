@@ -66,6 +66,11 @@ export class AiBookComposerService {
   }
 
   private async getModel(userId: number): Promise<string> {
+    const bookModel = await this.configService.getDecryptedConfig(userId, 'openRouterBookModel');
+    if (bookModel) {
+      return bookModel;
+    }
+
     const model = await this.configService.getDecryptedConfig(userId, 'openRouterModel');
     return model || this.defaultModel;
   }

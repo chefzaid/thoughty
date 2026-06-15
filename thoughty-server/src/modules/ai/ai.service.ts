@@ -24,6 +24,15 @@ export interface ToneMoodAnalysis {
   summary: string;
 }
 
+type AiModelTask = 'tag' | 'writing' | 'chat' | 'tone';
+
+const TASK_MODEL_CONFIG_KEYS: Record<AiModelTask, string> = {
+  tag: 'openRouterTagModel',
+  writing: 'openRouterWritingModel',
+  chat: 'openRouterChatModel',
+  tone: 'openRouterToneModel',
+};
+
 @Injectable()
 export class AiService {
   private readonly openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
@@ -68,7 +77,14 @@ export class AiService {
     });
   }
 
-  private async getModel(userId: number): Promise<string> {
+  private async getModel(userId: number, task?: AiModelTask): Promise<string> {
+    if (task) {
+      const taskModel = await this.configService.getDecryptedConfig(userId, TASK_MODEL_CONFIG_KEYS[task]);
+      if (taskModel) {
+        return taskModel;
+      }
+    }
+
     const model = await this.configService.getDecryptedConfig(userId, 'openRouterModel');
     return model || this.defaultModel;
   }
@@ -101,7 +117,7 @@ export class AiService {
     const maxTags = Math.min(Math.max(dto.maxTags ?? 5, 1), 10);
     const existingTags = dto.existingTags?.filter(Boolean) ?? [];
 
-    const model = await this.getModel(userId);
+    const model = await this.getModel(userId, 'tag');
 
     return {
       tags: await this.requestTags(dto.content, existingTags, maxTags, model),
@@ -123,7 +139,7 @@ export class AiService {
     }
 
     try {
-      const model = await this.getModel(userId);
+      const model = await this.getModel(userId, 'tag');
       return await this.requestTags(content, existingTags, Math.min(Math.max(maxTags, 1), 10), model);
     } catch {
       return [];
@@ -188,7 +204,7 @@ export class AiService {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
 
-    const model = await this.getModel(userId);
+    const model = await this.getModel(userId, 'writing');
 
     const response = await fetch(this.openRouterUrl, {
       method: 'POST',
@@ -238,7 +254,7 @@ export class AiService {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
 
-    const model = await this.getModel(userId);
+    const model = await this.getModel(userId, 'chat');
 
     const response = await fetch(this.openRouterUrl, {
       method: 'POST',
@@ -344,7 +360,7 @@ export class AiService {
     }
 
     try {
-      const model = await this.getModel(userId);
+      const model = await this.getModel(userId, 'tone');
       const response = await fetch(this.openRouterUrl, {
         method: 'POST',
         headers: {

@@ -460,37 +460,41 @@ describe('AiService', () => {
   });
 
   describe('getModel (model resolution)', () => {
-    it('uses configured model from user settings', async () => {
-      configService.getDecryptedConfig
-        .mockResolvedValueOnce('anthropic/claude-3.5-sonnet');
+    const mockOpenRouterResponse = (content: string) => fetchMock.mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue({ choices: [{ message: { content } }] }),
+    });
+    const requestedModel = () => JSON.parse(fetchMock.mock.calls[0][1].body).model;
 
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          choices: [{ message: { content: '["focus"]' } }],
-        }),
-      });
+    it('uses task-specific configured model from user settings', async () => {
+      configService.getDecryptedConfig.mockResolvedValueOnce('anthropic/claude-3.5-sonnet');
+      mockOpenRouterResponse('["focus"]');
 
       await service.suggestTags(1, { content: 'Test entry' });
 
-      const fetchCall = fetchMock.mock.calls[0];
-      const body = JSON.parse(fetchCall[1].body);
-      expect(body.model).toBe('anthropic/claude-3.5-sonnet');
+      expect(requestedModel()).toBe('anthropic/claude-3.5-sonnet');
+      expect(configService.getDecryptedConfig).toHaveBeenCalledWith(1, 'openRouterTagModel');
+    });
+
+    it('falls back to the default configured model when task-specific model is empty', async () => {
+      configService.getDecryptedConfig
+        .mockResolvedValueOnce('')
+        .mockResolvedValueOnce('openai/gpt-4o');
+      mockOpenRouterResponse('Corrected text');
+
+      await service.fixWriting(1, { content: 'teh text', mode: 'grammar' });
+
+      expect(requestedModel()).toBe('openai/gpt-4o');
+      expect(configService.getDecryptedConfig).toHaveBeenNthCalledWith(1, 1, 'openRouterWritingModel');
+      expect(configService.getDecryptedConfig).toHaveBeenNthCalledWith(2, 1, 'openRouterModel');
     });
 
     it('falls back to default model when none configured', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          choices: [{ message: { content: '["focus"]' } }],
-        }),
-      });
+      mockOpenRouterResponse('["focus"]');
 
       await service.suggestTags(1, { content: 'Test entry' });
 
-      const fetchCall = fetchMock.mock.calls[0];
-      const body = JSON.parse(fetchCall[1].body);
-      expect(body.model).toBe('openai/gpt-4o-mini');
+      expect(requestedModel()).toBe('openai/gpt-4o-mini');
     });
   });
 });

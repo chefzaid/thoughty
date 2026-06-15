@@ -564,6 +564,14 @@ export type TranslationKey =
   | 'aiConfiguration'
   | 'aiConfigDescription'
   | 'openRouterModel'
+  | 'openRouterTaskModels'
+  | 'openRouterTaskModelsDescription'
+  | 'openRouterTagModel'
+  | 'openRouterWritingModel'
+  | 'openRouterChatModel'
+  | 'openRouterToneModel'
+  | 'openRouterBookModel'
+  | 'inheritDefaultModel'
   | 'searchModels'
   | 'noModelsFound'
   | 'loadingModels'
@@ -1306,6 +1314,14 @@ export const translations: Translations = {
     aiConfiguration: 'AI Configuration',
     aiConfigDescription: 'AI features are powered by OpenRouter. The API key is configured on the server.',
     openRouterModel: 'Model',
+    openRouterTaskModels: 'Task-specific models',
+    openRouterTaskModelsDescription: 'Optional overrides for AI tasks. Leave blank to use the default model above.',
+    openRouterTagModel: 'Tags',
+    openRouterWritingModel: 'Writing fixes',
+    openRouterChatModel: 'Entry chat',
+    openRouterToneModel: 'Tone analysis',
+    openRouterBookModel: 'Book weaving',
+    inheritDefaultModel: 'Use default model',
     searchModels: 'Search models...',
     noModelsFound: 'No models found',
     loadingModels: 'Loading models...',
@@ -2042,6 +2058,14 @@ export const translations: Translations = {
     aiConfiguration: 'Configuration IA',
     aiConfigDescription: 'Les fonctionnalités IA sont alimentées par OpenRouter. La clé API est configurée sur le serveur.',
     openRouterModel: 'Modèle',
+    openRouterTaskModels: 'Modèles par tâche',
+    openRouterTaskModelsDescription: 'Remplacements facultatifs pour les tâches IA. Laissez vide pour utiliser le modèle par défaut ci-dessus.',
+    openRouterTagModel: 'Tags',
+    openRouterWritingModel: "Corrections d'écriture",
+    openRouterChatModel: "Chat d'entrée",
+    openRouterToneModel: 'Analyse du ton',
+    openRouterBookModel: 'Tissage du livre',
+    inheritDefaultModel: 'Utiliser le modèle par défaut',
     searchModels: 'Rechercher des modèles...',
     noModelsFound: 'Aucun modèle trouvé',
     loadingModels: 'Chargement des modèles...',

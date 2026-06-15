@@ -18,6 +18,11 @@ export interface ProfileConfig {
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;
   openRouterModel?: string;
+  openRouterTagModel?: string;
+  openRouterWritingModel?: string;
+  openRouterChatModel?: string;
+  openRouterToneModel?: string;
+  openRouterBookModel?: string;
   autoTagMaxTags?: string | number;
   tagMetadata?: string;
   subscriptionPlan?: 'free' | 'plus' | 'pro';

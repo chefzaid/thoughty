@@ -106,7 +106,7 @@
 - [ ] Graph of insights and correlations from all entries, to discover patterns and connections between them, do the same for tags
 - [ ] Transcription from an Audio note
 - [ ] Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
-- [ ] Use different models for different tasks, to optimize token consumption
+- [x] Use different models for different tasks, to optimize token consumption
 - [ ] AI-generated writing prompts based on the user's journaling history and interests, to inspire new entries and reflections
 - [ ] Summaries of long entries, with the option to include or exclude certain details
 

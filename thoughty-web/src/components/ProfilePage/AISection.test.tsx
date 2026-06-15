@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import AISection from './AISection';
 
 const mockFetchModels = vi.fn();
@@ -41,6 +41,13 @@ describe('AISection', () => {
         expect(screen.getByText('aiConfiguration')).toBeInTheDocument();
         expect(screen.getByText('openRouterModel')).toBeInTheDocument();
         expect(screen.getByText('autoTagMaxTags')).toBeInTheDocument();
+        expect(screen.getByText('openRouterTaskModels')).toBeInTheDocument();
+        expect(screen.getByText('openRouterTaskModelsDescription')).toBeInTheDocument();
+        expect(screen.getByText('openRouterTagModel')).toBeInTheDocument();
+        expect(screen.getByText('openRouterWritingModel')).toBeInTheDocument();
+        expect(screen.getByText('openRouterChatModel')).toBeInTheDocument();
+        expect(screen.getByText('openRouterToneModel')).toBeInTheDocument();
+        expect(screen.getByText('openRouterBookModel')).toBeInTheDocument();
     });
 
     it('shows text input for model when models have not loaded', async () => {
@@ -59,6 +66,7 @@ describe('AISection', () => {
         const modelInput = screen.getByPlaceholderText('openai/gpt-4o-mini');
         expect(modelInput).toBeInTheDocument();
         expect(modelInput.tagName).toBe('INPUT');
+        expect(screen.getAllByPlaceholderText('inheritDefaultModel')).toHaveLength(5);
     });
 
     it('fetches models on mount', async () => {
@@ -111,9 +119,10 @@ describe('AISection', () => {
 
         fireEvent.click(screen.getByText('openai/gpt-4o-mini'));
 
-        expect(screen.getByText('GPT-4o')).toBeInTheDocument();
-        expect(screen.getByText('Claude 3.5 Sonnet')).toBeInTheDocument();
-        expect(screen.getByText('Llama 3')).toBeInTheDocument();
+        const dropdownList = document.querySelector('.model-dropdown-list') as HTMLElement;
+        expect(within(dropdownList).getByText('GPT-4o')).toBeInTheDocument();
+        expect(within(dropdownList).getByText('Claude 3.5 Sonnet')).toBeInTheDocument();
+        expect(within(dropdownList).getByText('Llama 3')).toBeInTheDocument();
     });
 
     it('selects a model when clicked in dropdown', async () => {
@@ -132,10 +141,40 @@ describe('AISection', () => {
         });
 
         fireEvent.click(screen.getByText('openai/gpt-4o-mini'));
-        fireEvent.click(screen.getByText('GPT-4o'));
+        const dropdownList = document.querySelector('.model-dropdown-list') as HTMLElement;
+        fireEvent.click(within(dropdownList).getByRole('button', { name: /GPT-4o/ }));
 
         expect(mockHandleChange).toHaveBeenCalledWith({
             target: { name: 'openRouterModel', value: 'openai/gpt-4o' },
+        });
+    });
+
+    it('selects task-specific models from loaded model options', async () => {
+        mockFetchModels.mockResolvedValue(mockModels);
+        const changes: Array<{ name: string; value: string }> = [];
+        const handleChange = vi.fn((event) => {
+            changes.push({ name: event.target.name, value: event.target.value });
+        });
+
+        render(
+            <AISection
+                localConfig={{ theme: 'dark', openRouterTagModel: '' }}
+                handleChange={handleChange}
+                t={mockT}
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('openai/gpt-4o-mini')).toBeInTheDocument();
+        });
+
+        const tagModelSelect = screen.getByLabelText('openRouterTagModel');
+        fireEvent.change(tagModelSelect, { target: { value: 'meta/llama-3' } });
+
+        expect(handleChange).toHaveBeenCalled();
+        expect(changes.at(-1)).toEqual({
+            name: 'openRouterTagModel',
+            value: 'meta/llama-3',
         });
     });
 
@@ -159,9 +198,10 @@ describe('AISection', () => {
         const searchInput = screen.getByPlaceholderText('searchModels');
         fireEvent.change(searchInput, { target: { value: 'claude' } });
 
-        expect(screen.getByText('Claude 3.5 Sonnet')).toBeInTheDocument();
-        expect(screen.queryByText('GPT-4o')).not.toBeInTheDocument();
-        expect(screen.queryByText('Llama 3')).not.toBeInTheDocument();
+        const dropdownList = document.querySelector('.model-dropdown-list') as HTMLElement;
+        expect(within(dropdownList).getByText('Claude 3.5 Sonnet')).toBeInTheDocument();
+        expect(within(dropdownList).queryByText('GPT-4o')).not.toBeInTheDocument();
+        expect(within(dropdownList).queryByText('Llama 3')).not.toBeInTheDocument();
     });
 
     it('shows no models found when search has no results', async () => {
@@ -199,7 +239,7 @@ describe('AISection', () => {
         );
 
         await waitFor(() => {
-            expect(screen.getByText('Claude 3.5 Sonnet')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /Claude 3.5 Sonnet/ })).toBeInTheDocument();
         });
     });
 

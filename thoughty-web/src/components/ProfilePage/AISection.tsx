@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import type { TranslationFunction, ProfileConfig } from './types';
 import { useApiServices } from '../../hooks/useAppState';
+import './AISection.css';
 
 interface AISectionProps {
   localConfig: ProfileConfig;
@@ -13,6 +14,14 @@ interface OpenRouterModel {
   id: string;
   name: string;
 }
+
+const TASK_MODEL_FIELDS: ReadonlyArray<{ name: keyof ProfileConfig; labelKey: string }> = [
+  { name: 'openRouterTagModel', labelKey: 'openRouterTagModel' },
+  { name: 'openRouterWritingModel', labelKey: 'openRouterWritingModel' },
+  { name: 'openRouterChatModel', labelKey: 'openRouterChatModel' },
+  { name: 'openRouterToneModel', labelKey: 'openRouterToneModel' },
+  { name: 'openRouterBookModel', labelKey: 'openRouterBookModel' },
+];
 
 function AISection({
   localConfig,
@@ -62,10 +71,15 @@ function AISection({
       )
     : models;
 
-  const selectedModelName = models.find(m => m.id === localConfig.openRouterModel)?.name;
+  const getModelDisplayName = (modelId?: string) => {
+    if (!modelId) return 'openai/gpt-4o-mini';
+    return models.find(m => m.id === modelId)?.name || modelId;
+  };
 
-  const handleSelectModel = (modelId: string) => {
-    handleChange({ target: { name: 'openRouterModel', value: modelId } });
+  const selectedModelName = getModelDisplayName(localConfig.openRouterModel);
+
+  const handleSelectModel = (name: string, modelId: string) => {
+    handleChange({ target: { name, value: modelId } });
     setShowDropdown(false);
     setModelSearch('');
   };
@@ -91,7 +105,7 @@ function AISection({
                 >
                   <span className="model-dropdown-text">
                     {localConfig.openRouterModel
-                      ? (selectedModelName || localConfig.openRouterModel)
+                      ? selectedModelName
                       : 'openai/gpt-4o-mini'}
                   </span>
                   <svg xmlns="http://www.w3.org/2000/svg" className="model-dropdown-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="16" height="16">
@@ -117,7 +131,7 @@ function AISection({
                             key={model.id}
                             type="button"
                             className={`model-dropdown-item ${model.id === localConfig.openRouterModel ? 'selected' : ''}`}
-                            onClick={() => handleSelectModel(model.id)}
+                            onClick={() => handleSelectModel('openRouterModel', model.id)}
                           >
                             <span className="model-dropdown-item-name">{model.name}</span>
                             <span className="model-dropdown-item-id">{model.id}</span>
@@ -155,6 +169,41 @@ function AISection({
               onChange={handleChange}
               className={`setting-input ${localConfig.theme === 'light' ? 'light' : 'dark'}`}
             />
+          </div>
+        </div>
+        <div className="ai-task-models">
+          <div>
+            <h4 className="ai-task-models-title">{t('openRouterTaskModels')}</h4>
+            <p className="ai-task-models-description">{t('openRouterTaskModelsDescription')}</p>
+          </div>
+          <div className="ai-task-model-grid">
+            {TASK_MODEL_FIELDS.map((field) => (
+              <label key={field.name} className="ai-task-model-field">
+                <span className="setting-label">{t(field.labelKey)}</span>
+                {models.length > 0 ? (
+                  <select
+                    name={field.name}
+                    value={String(localConfig[field.name] || '')}
+                    onChange={handleChange}
+                    className={`setting-input ${localConfig.theme === 'light' ? 'light' : 'dark'}`}
+                  >
+                    <option value="">{t('inheritDefaultModel')}</option>
+                    {models.map((model) => (
+                      <option key={model.id} value={model.id}>{model.name}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    name={field.name}
+                    value={String(localConfig[field.name] || '')}
+                    onChange={handleChange}
+                    placeholder={t('inheritDefaultModel')}
+                    className={`setting-input ${localConfig.theme === 'light' ? 'light' : 'dark'}`}
+                  />
+                )}
+              </label>
+            ))}
           </div>
         </div>
       </div>
