@@ -15,6 +15,7 @@ export type TranslationKey =
   | 'privacy'
   | 'terms'
   | 'contact'
+  | 'skipToContent'
   | 'searchPlaceholder'
   | 'filterTagsPlaceholder'
   | 'filterDatePlaceholder'
@@ -681,6 +682,7 @@ export const translations: Translations = {
     privacy: 'Privacy Policy',
     terms: 'Terms of Service',
     contact: 'Contact Us',
+    skipToContent: 'Skip to content',
     searchPlaceholder: 'Search content...',
     filterTagsPlaceholder: 'Filter by tags...',
     filterDatePlaceholder: 'Filter by date',
@@ -1424,6 +1426,7 @@ export const translations: Translations = {
     privacy: 'Politique de confidentialité',
     terms: "Conditions d'utilisation",
     contact: 'Nous contacter',
+    skipToContent: 'Aller au contenu',
     searchPlaceholder: 'Rechercher...',
     filterTagsPlaceholder: 'Filtrer par tags...',
     filterDatePlaceholder: 'Filtrer par date',

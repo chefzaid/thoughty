@@ -58,11 +58,18 @@ function AuthenticatedAppLayout({
     fontSize: `${normalizeFontSize(config.fontSize)}px`,
   };
 
+  const focusMainContent = () => {
+    document.getElementById('main-content')?.focus();
+  };
+
   return (
     <div
       className={`min-h-screen p-4 md:p-6 lg:p-8 font-sans transition-colors duration-300 ${config.theme === 'light' ? 'bg-gray-100 text-gray-900' : 'bg-gray-900 text-gray-100'}`}
       style={appTypographyStyle}
     >
+      <a href="#main-content" className="skip-link" onClick={focusMainContent}>
+        {t('skipToContent')}
+      </a>
       <div className="max-w-7xl mx-auto">
         <NavMenu
           currentView={currentView}
@@ -118,7 +125,9 @@ function AuthenticatedAppLayout({
           />
         )}
 
-        {children}
+        <main id="main-content" tabIndex={-1}>
+          {children}
+        </main>
 
         <Footer t={t} theme={config.theme ?? 'dark'} />
       </div>
