@@ -5,11 +5,13 @@ import {
     BOOK_CHAPTER_ORDER_OPTIONS,
     BOOK_FORMAT_OPTIONS,
     BOOK_TAG_SCOPE_OPTIONS,
+    BOOK_WEAVING_MODE_OPTIONS,
     type BookChapterOrder,
     type BookFormat,
     type BookOptions,
     type BookPreviewData,
     type BookTagScope,
+    type BookWeavingMode,
 } from './ImportExport.types';
 
 const BOOK_CHECKBOXES: ReadonlyArray<{ key: 'narrative' | 'includeUntagged' | 'includeDates' | 'includeToc'; labelKey: string }> = [
@@ -111,6 +113,20 @@ export function BookSection({
                             className="format-select"
                         >
                             {BOOK_TAG_SCOPE_OPTIONS.map((option) => (
+                                <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="export-option-group book-field">
+                        <label htmlFor="book-weaving-mode">{t('bookWeavingMode')}</label>
+                        <select
+                            id="book-weaving-mode"
+                            value={options.weavingMode}
+                            onChange={(event) => onOptionChange('weavingMode', event.target.value as BookWeavingMode)}
+                            className="format-select"
+                            disabled={!options.narrative}
+                        >
+                            {BOOK_WEAVING_MODE_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
                             ))}
                         </select>

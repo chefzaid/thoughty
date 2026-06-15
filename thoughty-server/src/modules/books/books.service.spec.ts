@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { BooksService } from './books.service';
-import { AiService } from '@/modules/ai';
+import { AiBookComposerService } from '@/modules/ai';
 import { Entry, Diary, User } from '@/database/entities';
 
 describe('BooksService', () => {
@@ -54,7 +54,7 @@ describe('BooksService', () => {
         { provide: getRepositoryToken(Entry), useValue: entryRepository },
         { provide: getRepositoryToken(Diary), useValue: diaryRepository },
         { provide: getRepositoryToken(User), useValue: userRepository },
-        { provide: AiService, useValue: aiService },
+        { provide: AiBookComposerService, useValue: aiService },
       ],
     }).compile();
 
@@ -183,9 +183,21 @@ describe('BooksService', () => {
         expect.arrayContaining([
           expect.objectContaining({ date: '2024-01-10', content: 'Pasta in Naples' }),
         ]),
+        'strict',
       );
       expect(result.content).toContain('Woven chapter prose.');
       expect(result.content).not.toContain('### 2024-01-10');
+    });
+
+    it('should pass the requested creative weaving mode to the AI composer', async () => {
+      await service.export(1, { format: 'md', weavingMode: 'creative' });
+
+      expect(aiService.composeBookChapter).toHaveBeenCalledWith(
+        expect.any(Number),
+        expect.any(String),
+        expect.any(Array),
+        'creative',
+      );
     });
 
     it('should reject narrative export when AI is not configured', async () => {

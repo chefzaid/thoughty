@@ -70,7 +70,7 @@ test.describe('Route navigation', () => {
 
     await page.getByRole('button', { name: 'Back' }).click();
     await expect(page).toHaveURL(/\/$/);
-    await expect(page.getByText('A journal that feels calm when you write and sharp when you search.')).toBeVisible();
+    await expect(page.getByText('Thoughty gives you structured diaries, fast import and export')).toBeVisible();
   });
 
   test('supports authenticated deep links and browser history across app views', async ({ page }) => {

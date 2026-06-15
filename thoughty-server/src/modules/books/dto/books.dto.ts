@@ -88,6 +88,15 @@ export class BookQueryDto {
   @Transform(({ value }) => value !== 'false' && value !== false)
   @IsBoolean()
   narrative?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'AI weaving mode for narrative chapters',
+    enum: ['strict', 'creative'],
+    default: 'strict',
+  })
+  @IsOptional()
+  @IsIn(['strict', 'creative'])
+  weavingMode?: 'strict' | 'creative';
 }
 
 export class BookChapterPreviewDto {

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, Diary, User } from '@/database/entities';
-import { AiService } from '@/modules/ai';
+import { AiBookComposerService, type BookWeavingMode } from '@/modules/ai';
 import {
   Book,
   buildBook,
@@ -32,7 +32,7 @@ export class BooksService {
     private readonly diaryRepository: Repository<Diary>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    private readonly aiService: AiService,
+    private readonly aiBookComposer: AiBookComposerService,
   ) {}
 
   private async fetchEntries(userId: number, query: BookQueryDto): Promise<Entry[]> {
@@ -121,18 +121,19 @@ export class BooksService {
     };
   }
 
-  private async composeNarratives(userId: number, book: Book): Promise<void> {
-    if (!this.aiService.isConfigured()) {
+  private async composeNarratives(userId: number, book: Book, mode: BookWeavingMode): Promise<void> {
+    if (!this.aiBookComposer.isConfigured()) {
       throw new BadRequestException(
         'AI narrative requires an OpenRouter API key on the server. Disable the AI narrative option to download a plain book.',
       );
     }
 
     for (const chapter of book.chapters) {
-      chapter.narrative = await this.aiService.composeBookChapter(
+      chapter.narrative = await this.aiBookComposer.composeBookChapter(
         userId,
         chapter.title,
         chapter.entries.map((entry) => ({ date: entry.date, content: entry.content })),
+        mode,
       );
     }
   }
@@ -140,7 +141,7 @@ export class BooksService {
   async export(userId: number, query: BookQueryDto): Promise<BookFile> {
     const book = await this.buildBookForUser(userId, query);
     if (query.narrative !== false) {
-      await this.composeNarratives(userId, book);
+      await this.composeNarratives(userId, book, query.weavingMode ?? 'strict');
     }
     const format: BookFormat = query.format || 'pdf';
     const renderOptions = {

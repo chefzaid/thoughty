@@ -7,7 +7,7 @@ test.describe('AI tag suggestions', () => {
 
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
     await page.locator('#identifier').fill('TestUser');
     await page.locator('#password').fill('password123');
     await page.getByRole('button', { name: 'Sign In' }).click();

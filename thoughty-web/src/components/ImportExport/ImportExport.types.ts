@@ -22,6 +22,7 @@ export const CLOUD_FORMAT_OPTIONS: ReadonlyArray<{ value: CloudExportFormat; lab
 export type BookFormat = 'pdf' | 'epub' | 'html' | 'md';
 export type BookChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type BookTagScope = 'all' | 'first';
+export type BookWeavingMode = 'strict' | 'creative';
 
 export const BOOK_FORMAT_OPTIONS: ReadonlyArray<{ value: BookFormat; labelKey: string }> = [
     { value: 'pdf', labelKey: 'bookFormatPdf' },
@@ -41,12 +42,18 @@ export const BOOK_TAG_SCOPE_OPTIONS: ReadonlyArray<{ value: BookTagScope; labelK
     { value: 'first', labelKey: 'tagScopeFirst' },
 ];
 
+export const BOOK_WEAVING_MODE_OPTIONS: ReadonlyArray<{ value: BookWeavingMode; labelKey: string }> = [
+    { value: 'strict', labelKey: 'bookWeavingStrict' },
+    { value: 'creative', labelKey: 'bookWeavingCreative' },
+];
+
 export interface BookOptions {
     title: string;
     author: string;
     format: BookFormat;
     chapterOrder: BookChapterOrder;
     tagScope: BookTagScope;
+    weavingMode: BookWeavingMode;
     includeUntagged: boolean;
     includeDates: boolean;
     includeToc: boolean;
@@ -59,6 +66,7 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
     format: 'pdf',
     chapterOrder: 'alpha',
     tagScope: 'all',
+    weavingMode: 'strict',
     includeUntagged: true,
     includeDates: true,
     includeToc: true,

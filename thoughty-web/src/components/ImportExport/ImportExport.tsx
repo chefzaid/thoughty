@@ -257,6 +257,9 @@ function ImportExport({
         if (bookOptions.tagScope !== 'all') {
             params.append('tagScope', bookOptions.tagScope);
         }
+        if (bookOptions.weavingMode !== 'strict') {
+            params.append('weavingMode', bookOptions.weavingMode);
+        }
         if (!bookOptions.includeUntagged) {
             params.append('includeUntagged', 'false');
         }

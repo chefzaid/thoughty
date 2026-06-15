@@ -11,7 +11,7 @@ test.describe('Import/Export Feature', () => {
     const exportSection = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Export' }) });
     const formatSelect = exportSection.locator('.format-select');
     await expect(formatSelect).toHaveValue('json');
-    await page.getByRole('button', { name: 'Download' }).click();
+    await page.getByRole('button', { name: 'Download', exact: true }).click();
 
     await expect.poll(() => state.lastExportRequestUrl?.searchParams.get('format')).toBe('json');
     await expect.poll(() => state.lastExportRequestUrl?.searchParams.get('diaryId') ?? null).toBeNull();

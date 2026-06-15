@@ -1964,6 +1964,20 @@
               "default": true,
               "type": "boolean"
             }
+          },
+          {
+            "name": "weavingMode",
+            "required": false,
+            "in": "query",
+            "description": "AI weaving mode for narrative chapters",
+            "schema": {
+              "default": "strict",
+              "type": "string",
+              "enum": [
+                "strict",
+                "creative"
+              ]
+            }
           }
         ],
         "responses": {
@@ -2130,6 +2144,20 @@
             "schema": {
               "default": true,
               "type": "boolean"
+            }
+          },
+          {
+            "name": "weavingMode",
+            "required": false,
+            "in": "query",
+            "description": "AI weaving mode for narrative chapters",
+            "schema": {
+              "default": "strict",
+              "type": "string",
+              "enum": [
+                "strict",
+                "creative"
+              ]
             }
           }
         ],

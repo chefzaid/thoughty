@@ -6,7 +6,7 @@ test.describe('Authentication onboarding', () => {
     const { state } = await setupMockApp(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: 'Sign Up' }).click();
+    await page.getByRole('button', { name: 'Sign Up' }).first().click();
 
     await page.locator('#username').fill('NewWriter');
     await page.locator('#email').fill('newwriter@example.com');
@@ -22,7 +22,7 @@ test.describe('Authentication onboarding', () => {
     const { state } = await setupMockApp(page);
 
     await page.goto('/');
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
     await page.locator('#identifier').fill('TestUser');
     await page.locator('#password').fill('password123');
     await page.getByRole('button', { name: 'Sign In' }).click();

@@ -208,6 +208,9 @@ export type TranslationKey =
   | 'bookTagScope'
   | 'tagScopeAll'
   | 'tagScopeFirst'
+  | 'bookWeavingMode'
+  | 'bookWeavingStrict'
+  | 'bookWeavingCreative'
   | 'bookIncludeUntagged'
   | 'bookIncludeDates'
   | 'bookIncludeToc'
@@ -873,6 +876,9 @@ export const translations: Translations = {
     bookTagScope: 'Entries with several tags',
     tagScopeAll: 'Appear in every tag chapter',
     tagScopeFirst: 'Appear in their first tag chapter only',
+    bookWeavingMode: 'AI weaving mode',
+    bookWeavingStrict: 'Strict to entries',
+    bookWeavingCreative: 'Creative transitions',
     bookIncludeUntagged: 'Add a chapter for untagged entries',
     bookIncludeDates: 'Show entry dates',
     bookIncludeToc: 'Include table of contents',
@@ -1600,6 +1606,9 @@ export const translations: Translations = {
     bookTagScope: 'Entrées avec plusieurs tags',
     tagScopeAll: 'Apparaissent dans chaque chapitre de tag',
     tagScopeFirst: 'Apparaissent uniquement dans leur premier chapitre',
+    bookWeavingMode: "Mode de tissage IA",
+    bookWeavingStrict: 'Strictement fidèle aux entrées',
+    bookWeavingCreative: 'Transitions créatives',
     bookIncludeUntagged: 'Ajouter un chapitre pour les entrées sans tag',
     bookIncludeDates: 'Afficher les dates des entrées',
     bookIncludeToc: 'Inclure la table des matières',

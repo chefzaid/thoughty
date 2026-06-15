@@ -86,6 +86,7 @@ describe('ImportExport book section', () => {
         expect(screen.getByLabelText('bookAuthorLabel')).toBeInTheDocument();
         expect(screen.getByLabelText('bookChapterOrder')).toBeInTheDocument();
         expect(screen.getByLabelText('bookTagScope')).toBeInTheDocument();
+        expect(screen.getByLabelText('bookWeavingMode')).toBeInTheDocument();
         expect(screen.getByText('bookIncludeUntagged')).toBeInTheDocument();
         expect(screen.getByText('previewBook')).toBeInTheDocument();
         expect(screen.getByText('downloadBook')).toBeInTheDocument();
@@ -151,6 +152,26 @@ describe('ImportExport book section', () => {
         expect((exportCall as [string])[0]).toContain('includeToc=false');
         // AI narrative is on by default, so no override parameter is sent
         expect((exportCall as [string])[0]).not.toContain('narrative=');
+        expect((exportCall as [string])[0]).not.toContain('weavingMode=');
+    });
+
+    it('downloads the book with the selected AI weaving mode', async () => {
+        const mockBlob = new Blob(['# Book'], { type: 'text/markdown' });
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            blob: async () => mockBlob,
+            headers: new Headers(),
+        });
+
+        await renderBookSection();
+
+        fireEvent.change(screen.getByLabelText('bookWeavingMode'), { target: { value: 'creative' } });
+        fireEvent.click(screen.getByText('downloadBook'));
+
+        await screen.findByText('bookExportSuccess');
+
+        const exportCall = (globalThis.fetch as Mock).mock.calls.find((call: unknown[]) => (call[0] as string).includes('/api/books/export'));
+        expect((exportCall as [string])[0]).toContain('weavingMode=creative');
     });
 
     it('shows book generation progress while a download is running', async () => {

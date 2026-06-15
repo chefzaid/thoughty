@@ -7,7 +7,7 @@ test.describe('AI auto-tagging', () => {
 
     await page.goto('/');
 
-    await page.getByRole('button', { name: 'Sign In' }).click();
+    await page.getByRole('button', { name: 'Sign In' }).first().click();
     await page.locator('#identifier').fill('TestUser');
     await page.locator('#password').fill('password123');
     await page.getByRole('button', { name: 'Sign In' }).click();
@@ -24,7 +24,7 @@ test.describe('AI auto-tagging', () => {
     await expect(page.getByPlaceholder("What's on your mind?")).toBeVisible();
 
     await page.getByPlaceholder("What's on your mind?").fill('This entry relies on automatic AI tags during save.');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
 
     await expect(page.locator('.truncate').filter({ hasText: /^#focus$/ })).toBeVisible();
     await expect(page.locator('.truncate').filter({ hasText: /^#reflection$/ })).toBeVisible();

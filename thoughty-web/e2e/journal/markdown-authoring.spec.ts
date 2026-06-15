@@ -14,7 +14,7 @@ test.describe('Journal Markdown authoring', () => {
     await entryForm.locator('input').first().press('Tab');
     await entryForm.locator('input[placeholder="tags..."]').fill('markdown');
     await entryForm.locator('input[placeholder="tags..."]').press('Enter');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
 
     await expect(page.getByRole('heading', { name: 'Markdown memory' })).toBeVisible();
     await expect(page.locator('[id^="entry-"]').first().getByText('#markdown')).toBeVisible();

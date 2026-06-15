@@ -14,7 +14,7 @@
 }
 
 #book-section .book-options-grid--settings {
-    grid-template-columns: minmax(9rem, 0.8fr) minmax(13rem, 1fr) minmax(12rem, 1fr);
+    grid-template-columns: minmax(9rem, 0.8fr) repeat(3, minmax(12rem, 1fr));
 }
 
 #book-section .book-field {

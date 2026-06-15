@@ -21,7 +21,7 @@ test.describe('Journal entry lifecycle', () => {
     await page.getByPlaceholder("What's on your mind?").fill('Original entry body');
     await entryForm.locator('input[placeholder="tags..."]').fill('work');
     await entryForm.locator('input[placeholder="tags..."]').press('Enter');
-    await page.getByRole('button', { name: 'Save' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
 
     await expect(page.getByText('Original entry body')).toBeVisible();
     await expect(page.locator('[id^="entry-"]').first().getByText('#work')).toBeVisible();
