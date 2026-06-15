@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User, RefreshToken, Diary } from '@/database/entities';
 import { AuthController } from './auth.controller';
-import { AuthService, EmailService } from './services';
+import { AuthService, EmailService, EmailVerificationService } from './services';
 import { JwtStrategy } from './strategies';
 import { JwtAuthGuard } from './guards';
 
@@ -25,7 +25,7 @@ import { JwtAuthGuard } from './guards';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, EmailService, JwtStrategy, JwtAuthGuard],
-  exports: [AuthService, JwtAuthGuard, JwtModule],
+  providers: [AuthService, EmailService, EmailVerificationService, JwtStrategy, JwtAuthGuard],
+  exports: [AuthService, EmailVerificationService, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}

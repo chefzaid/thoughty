@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RATE_LIMITS } from '@/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './services/auth.service';
+import { EmailVerificationService } from './services/email-verification.service';
 
 const getThrottleMetadata = (handler: Function) => ({
   limit: Reflect.getMetadata('THROTTLER:LIMITdefault', handler),
@@ -11,6 +12,7 @@ const getThrottleMetadata = (handler: Function) => ({
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: any;
+  let emailVerificationService: any;
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -27,10 +29,17 @@ describe('AuthController', () => {
       resetPassword: jest.fn(),
       deleteAccount: jest.fn(),
     };
+    emailVerificationService = {
+      sendVerificationEmail: jest.fn(),
+      verifyEmail: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [{ provide: AuthService, useValue: authService }],
+      providers: [
+        { provide: AuthService, useValue: authService },
+        { provide: EmailVerificationService, useValue: emailVerificationService },
+      ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);
@@ -49,6 +58,8 @@ describe('AuthController', () => {
       ['changePassword', RATE_LIMITS.accountSecurity],
       ['forgotPassword', RATE_LIMITS.passwordRecovery],
       ['resetPassword', RATE_LIMITS.passwordRecovery],
+      ['verifyEmail', RATE_LIMITS.passwordRecovery],
+      ['resendVerificationEmail', RATE_LIMITS.accountSecurity],
       ['deleteAccount', RATE_LIMITS.accountSecurity],
     ] as const;
 
@@ -62,11 +73,13 @@ describe('AuthController', () => {
   describe('register', () => {
     it('delegates to authService.register', async () => {
       const dto = { email: 'a@b.com', password: 'Pass123!@' } as any;
-      const expected = { accessToken: 'token', refreshToken: 'rt' };
+      const expected = { user: { id: 1 }, accessToken: 'token', refreshToken: 'rt' };
       authService.register!.mockResolvedValue(expected as any);
+      emailVerificationService.sendVerificationEmail.mockResolvedValue({ success: true });
 
       const result = await controller.register(dto);
       expect(authService.register).toHaveBeenCalledWith(dto);
+      expect(emailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(1);
       expect(result).toBe(expected);
     });
   });
@@ -162,6 +175,28 @@ describe('AuthController', () => {
 
       const result = await controller.resetPassword(dto);
       expect(authService.resetPassword).toHaveBeenCalledWith('reset_token', 'New123!@');
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('verifyEmail', () => {
+    it('delegates to emailVerificationService.verifyEmail', async () => {
+      const expected = { success: true, message: 'Verified' };
+      emailVerificationService.verifyEmail.mockResolvedValue(expected);
+
+      const result = await controller.verifyEmail({ token: 'verification-token' });
+      expect(emailVerificationService.verifyEmail).toHaveBeenCalledWith('verification-token');
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('resendVerificationEmail', () => {
+    it('delegates to emailVerificationService.sendVerificationEmail with userId', async () => {
+      const expected = { success: true, message: 'Sent' };
+      emailVerificationService.sendVerificationEmail.mockResolvedValue(expected);
+
+      const result = await controller.resendVerificationEmail(mockUser as any);
+      expect(emailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(1);
       expect(result).toBe(expected);
     });
   });

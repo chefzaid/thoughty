@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS users (
     provider_id VARCHAR(255),
     avatar_url TEXT,
     email_verified BOOLEAN DEFAULT false,
+    email_verification_token VARCHAR(255),
+    email_verification_token_expires TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -44,6 +46,14 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                    WHERE table_name = 'users' AND column_name = 'email_verified') THEN
         ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT false;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'users' AND column_name = 'email_verification_token') THEN
+        ALTER TABLE users ADD COLUMN email_verification_token VARCHAR(255);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_name = 'users' AND column_name = 'email_verification_token_expires') THEN
+        ALTER TABLE users ADD COLUMN email_verification_token_expires TIMESTAMP;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
                    WHERE table_name = 'users' AND column_name = 'reset_token') THEN

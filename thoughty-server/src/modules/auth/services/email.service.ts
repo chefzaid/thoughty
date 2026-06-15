@@ -81,6 +81,57 @@ export class EmailService {
     });
   }
 
+  async sendEmailVerificationEmail(toEmail: string, verificationUrl: string): Promise<void> {
+    if (!this.transporter) {
+      throw new Error('Email service not configured');
+    }
+
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
+
+    await this.transporter.sendMail({
+      from: fromAddress,
+      to: toEmail,
+      subject: 'Verify your Thoughty email',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">Verify your email</h2>
+          <p style="color: #666; font-size: 16px;">
+            Please verify this email address to finish securing your Thoughty account.
+          </p>
+          <p style="color: #666; font-size: 16px;">
+            This verification link will expire in 24 hours.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationUrl}"
+               style="background-color: #6366f1; color: white; padding: 12px 24px;
+                      text-decoration: none; border-radius: 6px; font-size: 16px;">
+              Verify Email
+            </a>
+          </div>
+          <p style="color: #999; font-size: 14px;">
+            If you did not create a Thoughty account, please ignore this email.
+          </p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${verificationUrl}" style="color: #6366f1;">${verificationUrl}</a>
+          </p>
+        </div>
+      `,
+      text: `
+        Verify your Thoughty email
+
+        Please verify this email address to finish securing your Thoughty account.
+        This verification link will expire in 24 hours.
+
+        ${verificationUrl}
+
+        If you did not create a Thoughty account, please ignore this email.
+      `,
+    });
+  }
+
   async sendAccountDeletionEmail(toEmail: string): Promise<void> {
     if (!this.transporter) {
       throw new Error('Email service not configured');

@@ -207,6 +207,53 @@ describe('EmailService', () => {
     });
   });
 
+  describe('sendEmailVerificationEmail', () => {
+    beforeEach(() => {
+      configService = createConfigService({
+        SMTP_HOST: 'smtp.example.com',
+        SMTP_PORT: 587,
+        SMTP_USER: 'user@example.com',
+        SMTP_PASS: 'password',
+        SMTP_FROM: 'noreply@example.com',
+      });
+      service = new EmailService(configService as ConfigService);
+    });
+
+    it('should send email verification successfully', async () => {
+      await service.sendEmailVerificationEmail('recipient@example.com', 'https://example.com/verify?token=abc');
+
+      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: 'noreply@example.com',
+          to: 'recipient@example.com',
+          subject: 'Verify your Thoughty email',
+        }),
+      );
+    });
+
+    it('should include verification URL in email content', async () => {
+      const verificationUrl = 'https://example.com/verify?token=abc123';
+
+      await service.sendEmailVerificationEmail('recipient@example.com', verificationUrl);
+
+      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          html: expect.stringContaining(verificationUrl),
+          text: expect.stringContaining(verificationUrl),
+        }),
+      );
+    });
+
+    it('should throw error when transporter is not configured', async () => {
+      configService = createConfigService({});
+      service = new EmailService(configService as ConfigService);
+
+      await expect(
+        service.sendEmailVerificationEmail('recipient@example.com', 'https://example.com/verify?token=abc'),
+      ).rejects.toThrow('Email service not configured');
+    });
+  });
+
   describe('sendAccountDeletionEmail', () => {
     beforeEach(() => {
       configService = createConfigService({

@@ -10,10 +10,12 @@ import {
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  VerifyEmailDto,
   DeleteAccountDto,
   AuthResponseDto,
   UserResponseDto,
 } from './dto';
+import { EmailVerificationService } from './services';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public, CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { RATE_LIMITS, throttleDefault } from '@/common';
@@ -21,7 +23,10 @@ import { RATE_LIMITS, throttleDefault } from '@/common';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly emailVerificationService: EmailVerificationService,
+  ) {}
 
   @Public()
   @Post('register')
@@ -31,7 +36,9 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 409, description: 'Email already registered' })
   async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
-    return this.authService.register(dto);
+    const result = await this.authService.register(dto);
+    await this.emailVerificationService.sendVerificationEmail(result.user.id);
+    return result;
   }
 
   @Public()
@@ -120,6 +127,30 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async resetPassword(@Body() dto: ResetPasswordDto): Promise<{ success: boolean; message: string }> {
     return this.authService.resetPassword(dto.token, dto.newPassword);
+  }
+
+  @Public()
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  @Throttle(throttleDefault(RATE_LIMITS.passwordRecovery))
+  @ApiOperation({ summary: 'Verify email with token' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<{ success: boolean; message: string }> {
+    return this.emailVerificationService.verifyEmail(dto.token);
+  }
+
+  @Post('resend-verification-email')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Resend the current user email verification message' })
+  @ApiResponse({ status: 200, description: 'Verification email sent if needed' })
+  async resendVerificationEmail(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.emailVerificationService.sendVerificationEmail(user.userId);
   }
 
   @Post('delete-account')

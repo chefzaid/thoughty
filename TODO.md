@@ -84,7 +84,7 @@
 - [x] Contact and support page with a form to submit inquiries and a How To guides / FAQ section
 - [x] Feedback and feature request page for users to submit their ideas and upvote existing ones
 - [x] Blog section for updates, tips, and journaling inspiration
-- [ ] Email validation flow for account security (password reset via email already works)
+- [x] Email validation flow for account security (password reset via email already works)
 - [ ] Admin console for app settings and AI model management (define and change AI models for each AI task type, monitor usage, and manage user access to AI features, ban abusive users, etc.)
 
 ## AI
@@ -145,7 +145,7 @@
 ## Security
 
 - [x] SSL and HTTPS support for secure communication
-- [ ] Complete the email verification flow (User entity has emailVerified field but no verification endpoint or email is implemented)
+- [x] Complete the email verification flow (User entity has emailVerified field but no verification endpoint or email is implemented)
 - [ ] Add 2FA authentication
 - [ ] Allow users to see and manage active sessions (logout from other sessions)
 - [ ] Spam and bots protection on sign up and login forms

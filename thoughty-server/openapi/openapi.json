@@ -292,6 +292,54 @@
         ]
       }
     },
+    "/api/auth/verify-email": {
+      "post": {
+        "operationId": "AuthController_verifyEmail",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyEmailDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email verified successfully"
+          },
+          "400": {
+            "description": "Invalid or expired token"
+          }
+        },
+        "summary": "Verify email with token",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/resend-verification-email": {
+      "post": {
+        "operationId": "AuthController_resendVerificationEmail",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Verification email sent if needed"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Resend the current user email verification message",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
     "/api/auth/delete-account": {
       "post": {
         "operationId": "AuthController_deleteAccount",
@@ -2882,6 +2930,17 @@
         "required": [
           "token",
           "newPassword"
+        ]
+      },
+      "VerifyEmailDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
         ]
       },
       "DeleteAccountDto": {

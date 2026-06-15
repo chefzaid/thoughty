@@ -102,6 +102,12 @@ export class ResetPasswordDto {
   newPassword: string;
 }
 
+export class VerifyEmailDto {
+  @ApiProperty()
+  @IsString()
+  token: string;
+}
+
 export class DeleteAccountDto {
   @ApiPropertyOptional({ description: 'Password required for local accounts' })
   @IsOptional()
