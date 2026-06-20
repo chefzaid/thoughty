@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -26,6 +27,7 @@ import {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private readonly refreshSecret: string;
 
   constructor(
@@ -366,8 +368,11 @@ export class AuthService {
     try {
       await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
     } catch (error) {
-      console.log('Password reset email not sent:', (error as Error).message);
-      console.log(`Reset URL: ${resetUrl}`);
+      this.logger.warn('Password reset email not sent', {
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+        errorMessage: error instanceof Error ? error.message : 'Unknown email provider error',
+        userId: user.id,
+      });
     }
 
     return { success: true, message: successMessage };
@@ -429,7 +434,11 @@ export class AuthService {
     try {
       await this.emailService.sendAccountDeletionEmail(user.email);
     } catch (error) {
-      console.log('Email notification not sent:', (error as Error).message);
+      this.logger.warn('Account deletion email not sent', {
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+        errorMessage: error instanceof Error ? error.message : 'Unknown email provider error',
+        userId,
+      });
     }
 
     return { success: true, message: 'Account has been deleted' };

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'node:crypto';
@@ -14,6 +14,8 @@ function hashToken(token: string): string {
 
 @Injectable()
 export class EmailVerificationService {
+  private readonly logger = new Logger(EmailVerificationService.name);
+
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
@@ -43,8 +45,11 @@ export class EmailVerificationService {
     try {
       await this.emailService.sendEmailVerificationEmail(user.email, verificationUrl);
     } catch (error) {
-      console.log('Email verification email not sent:', (error as Error).message);
-      console.log(`Verification URL: ${verificationUrl}`);
+      this.logger.warn('Email verification email not sent', {
+        errorName: error instanceof Error ? error.name : 'UnknownError',
+        errorMessage: error instanceof Error ? error.message : 'Unknown email provider error',
+        userId: user.id,
+      });
     }
 
     return { success: true, message: 'Verification email sent' };

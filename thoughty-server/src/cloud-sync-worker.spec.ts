@@ -28,16 +28,16 @@ describe('cloud-sync-worker bootstrap', () => {
     }) as never);
     process.exit = jest.fn() as never;
 
-    jest.doMock('@nestjs/common', () => ({ Logger: jest.fn(() => logger) }));
     jest.doMock('@nestjs/core', () => ({ NestFactory: { createApplicationContext } }));
     jest.doMock('./app.module', () => ({ AppModule: FakeAppModule }));
+    jest.doMock('./common', () => ({ JsonLogger: jest.fn(() => logger) }));
     jest.doMock('./modules/cloud-sync/cloud-sync-worker.service', () => ({ CloudSyncWorkerService: FakeWorkerService }));
 
     await import('./cloud-sync-worker');
     await flushBootstrap();
 
     expect(createApplicationContext).toHaveBeenCalledWith(FakeAppModule, {
-      logger: ['log', 'warn', 'error'],
+      logger,
     });
     expect(app.get).toHaveBeenCalledWith(FakeWorkerService);
     expect(start).toHaveBeenCalled();
@@ -58,9 +58,9 @@ describe('cloud-sync-worker bootstrap', () => {
 
     process.exit = jest.fn() as never;
 
-    jest.doMock('@nestjs/common', () => ({ Logger: jest.fn(() => logger) }));
     jest.doMock('@nestjs/core', () => ({ NestFactory: { createApplicationContext } }));
     jest.doMock('./app.module', () => ({ AppModule: class {} }));
+    jest.doMock('./common', () => ({ JsonLogger: jest.fn(() => logger) }));
     jest.doMock('./modules/cloud-sync/cloud-sync-worker.service', () => ({ CloudSyncWorkerService: class {} }));
 
     await import('./cloud-sync-worker');

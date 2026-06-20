@@ -1,14 +1,14 @@
 import 'reflect-metadata';
-import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { JsonLogger } from './common';
 import { CloudSyncWorkerService } from './modules/cloud-sync/cloud-sync-worker.service';
 
-const logger = new Logger('CloudSyncWorkerBootstrap');
+const logger = new JsonLogger('CloudSyncWorkerBootstrap');
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule, {
-    logger: ['log', 'warn', 'error'],
+    logger,
   });
 
   const shutdown = async (signal: string) => {

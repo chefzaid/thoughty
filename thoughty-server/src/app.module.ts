@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -14,7 +14,7 @@ import { AttachmentsModule } from './modules/attachments';
 import { AiModule } from './modules/ai';
 import { CloudSyncModule } from './modules/cloud-sync';
 import { HealthController } from './health.controller';
-import { RATE_LIMITS } from './common';
+import { JsonLogger, RATE_LIMITS, RequestLoggingMiddleware } from './common';
 
 @Module({
   controllers: [HealthController],
@@ -59,6 +59,11 @@ import { RATE_LIMITS } from './common';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    JsonLogger,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(RequestLoggingMiddleware).forRoutes('*');
+  }
+}

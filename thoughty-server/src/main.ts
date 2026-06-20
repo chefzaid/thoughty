@@ -6,11 +6,12 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
 import { createSwaggerDocument } from './swagger';
-import { attachCspNonce, buildHelmetOptions } from './common';
+import { attachCspNonce, buildHelmetOptions, JsonLogger } from './common';
 
 async function bootstrap() {
+  const logger = new JsonLogger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: ['error', 'warn'],
+    logger,
   });
 
   // Security middleware
@@ -59,8 +60,11 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
 
-  console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(`📚 API Documentation available at http://localhost:${port}/api-docs`);
+  logger.log('Server started', {
+    port,
+    apiUrl: `http://localhost:${port}`,
+    docsUrl: `http://localhost:${port}/api-docs`,
+  });
 }
 
 void bootstrap();
