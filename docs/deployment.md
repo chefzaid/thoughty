@@ -302,7 +302,7 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 - the worker starts only after schema migration completes
 - the web deployment serves the built app through the ingress host
 - the API returns a `200` from `/api/health`
-- `/api/metrics` includes `thoughty_database_up 1`, request counters after traffic, and cloud sync queue gauges
+- `/api/metrics` includes `thoughty_database_up 1`, request counters after traffic, privacy-preserving feature usage counters, and cloud sync queue gauges
 
 ## Manifest Reference
 

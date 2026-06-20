@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, LessThan, Repository } from 'typeorm';
 import { CloudSyncJob, CLOUD_SYNC_JOB_STATUSES, CloudSyncJobStatus } from '@/database/entities';
-import { HttpMetricSnapshot, HttpMetricsService } from '@/common';
+import { FeatureTelemetryService, FeatureTelemetrySnapshot, HttpMetricSnapshot, HttpMetricsService } from '@/common';
 
 const STUCK_JOB_THRESHOLD_MS = 15 * 60 * 1000;
 
@@ -62,10 +62,30 @@ function renderHttpMetrics(snapshot: HttpMetricSnapshot[]): string[] {
   return lines;
 }
 
+function renderFeatureTelemetry(snapshot: FeatureTelemetrySnapshot[]): string[] {
+  const lines = [
+    '# HELP thoughty_feature_usage_total Privacy-preserving aggregate feature usage events.',
+    '# TYPE thoughty_feature_usage_total counter',
+  ];
+
+  for (const sample of snapshot) {
+    lines.push(
+      metricLine('thoughty_feature_usage_total', sample.count, {
+        feature: sample.feature,
+        action: sample.action,
+        status_family: sample.statusFamily,
+      }),
+    );
+  }
+
+  return lines;
+}
+
 @Injectable()
 export class MetricsService {
   constructor(
     private readonly httpMetrics: HttpMetricsService,
+    private readonly featureTelemetry: FeatureTelemetryService,
     private readonly dataSource: DataSource,
     @InjectRepository(CloudSyncJob)
     private readonly cloudSyncJobs: Repository<CloudSyncJob>,
@@ -91,6 +111,7 @@ export class MetricsService {
       '# TYPE thoughty_database_up gauge',
       metricLine('thoughty_database_up', databaseUp),
       ...renderHttpMetrics(this.httpMetrics.getSnapshot()),
+      ...renderFeatureTelemetry(this.featureTelemetry.getSnapshot()),
       '# HELP thoughty_cloud_sync_jobs Jobs grouped by cloud sync status.',
       '# TYPE thoughty_cloud_sync_jobs gauge',
       ...CLOUD_SYNC_JOB_STATUSES.map((status) =>

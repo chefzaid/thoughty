@@ -1,7 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { NextFunction, Request, Response } from 'express';
-import { HttpMetricsService } from '../metrics';
+import { FeatureTelemetryService, HttpMetricsService } from '../metrics';
 import { JsonLogger } from './json-logger.service';
 
 type RequestWithUser = Request & {
@@ -29,6 +29,7 @@ export class RequestLoggingMiddleware implements NestMiddleware {
   constructor(
     private readonly logger: JsonLogger,
     private readonly httpMetrics: HttpMetricsService,
+    private readonly featureTelemetry: FeatureTelemetryService,
   ) {}
 
   use(req: RequestWithUser, res: Response, next: NextFunction): void {
@@ -54,6 +55,11 @@ export class RequestLoggingMiddleware implements NestMiddleware {
         path: metadata.path,
         statusCode: metadata.statusCode,
         latencyMs: metadata.latencyMs,
+      });
+      this.featureTelemetry.record({
+        method: metadata.method,
+        path: metadata.path,
+        statusCode: metadata.statusCode,
       });
 
       if (res.statusCode >= 500) {

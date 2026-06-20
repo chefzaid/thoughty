@@ -48,7 +48,7 @@ Log entries intentionally omit request bodies, response bodies, authorization he
 
 ## Metrics and Alerts
 
-The API exposes Prometheus text metrics at `/api/metrics`. The server deployment includes `prometheus.io/*` scrape annotations for clusters that honor pod annotations. The endpoint reports process uptime and memory, HTTP request counts and latency sums, database connectivity, cloud sync queue counts by status, and stuck cloud sync job count. It does not expose request bodies, journal content, attachment data, AI prompts, provider tokens, or per-user labels.
+The API exposes Prometheus text metrics at `/api/metrics`. The server deployment includes `prometheus.io/*` scrape annotations for clusters that honor pod annotations. The endpoint reports process uptime and memory, HTTP request counts and latency sums, privacy-preserving feature usage counters, database connectivity, cloud sync queue counts by status, and stuck cloud sync job count. It does not expose request bodies, journal content, attachment data, AI prompts, provider tokens, or per-user labels.
 
 Quick checks:
 
@@ -65,6 +65,8 @@ kubectl get prometheusrule thoughty-alerts -n thoughty
 - cloud sync worker unavailable
 - cloud sync job failures
 - stuck cloud sync jobs
+
+Feature telemetry is intentionally limited to aggregate Prometheus counters named `thoughty_feature_usage_total` with `feature`, `action`, and `status_family` labels. The labels are derived from API route groups, not from user input or diary content, so they can show which product areas are used most without tracking individual users.
 
 ## Migration Troubleshooting
 

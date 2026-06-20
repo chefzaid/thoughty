@@ -1,9 +1,10 @@
 import { DataSource } from 'typeorm';
-import { HttpMetricsService } from '@/common';
+import { FeatureTelemetryService, HttpMetricsService } from '@/common';
 import { MetricsService } from './metrics.service';
 
 describe('MetricsService', () => {
   let httpMetrics: HttpMetricsService;
+  let featureTelemetry: FeatureTelemetryService;
   let dataSource: Pick<DataSource, 'query'>;
   let repository: {
     createQueryBuilder: jest.Mock;
@@ -14,6 +15,8 @@ describe('MetricsService', () => {
   beforeEach(() => {
     httpMetrics = new HttpMetricsService();
     httpMetrics.record({ method: 'GET', path: '/api/entries/123', statusCode: 200, latencyMs: 15 });
+    featureTelemetry = new FeatureTelemetryService();
+    featureTelemetry.record({ method: 'GET', path: '/api/entries/123', statusCode: 200 });
     dataSource = { query: jest.fn().mockResolvedValue([{ '?column?': 1 }]) };
     repository = {
       createQueryBuilder: jest.fn(() => ({
@@ -27,7 +30,7 @@ describe('MetricsService', () => {
       })),
       count: jest.fn().mockResolvedValue(2),
     };
-    service = new MetricsService(httpMetrics, dataSource as DataSource, repository as never);
+    service = new MetricsService(httpMetrics, featureTelemetry, dataSource as DataSource, repository as never);
   });
 
   it('renders process, HTTP, database, and cloud sync metrics', async () => {
@@ -37,6 +40,9 @@ describe('MetricsService', () => {
     expect(output).toContain('thoughty_database_up 1');
     expect(output).toContain(
       'thoughty_http_requests_total{method="GET",path="/api/entries/:id",status="200"} 1',
+    );
+    expect(output).toContain(
+      'thoughty_feature_usage_total{feature="journal_entries",action="read",status_family="2xx"} 1',
     );
     expect(output).toContain('thoughty_cloud_sync_jobs{status="queued"} 3');
     expect(output).toContain('thoughty_cloud_sync_jobs{status="running"} 0');

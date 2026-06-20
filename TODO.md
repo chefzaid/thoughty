@@ -184,7 +184,7 @@
 
 - [x] Add logging for critical actions and errors for better debugging and structured JSON logging for observability and request tracing
 - [x] Set up monitoring and alerting for server health and performance
-- [ ] Usage and stats of the app and features (telemetry to understand which features are used the most and how users interact with the app, to prioritize future development and improvements)
+- [x] Usage and stats of the app and features (telemetry to understand which features are used the most and how users interact with the app, to prioritize future development and improvements)
 
 ## Deployment and CI/CD
 
