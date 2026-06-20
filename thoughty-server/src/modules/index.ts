@@ -8,3 +8,4 @@ export * from './books';
 export * from './attachments';
 export * from './ai';
 export * from './cloud-sync';
+export * from './metrics';

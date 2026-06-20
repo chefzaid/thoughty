@@ -44,6 +44,7 @@ flowchart TD
 - `thoughty-cloud-sync-worker` runs `1` replica and also uses rolling updates
 - `postgres` runs `1` replica with `Recreate`, which matches the single attached volume design
 - The API now exposes `/api/health`, which matches the liveness and readiness probes in `deployments/server-deployment.yaml`
+- The API exposes `/api/metrics` in Prometheus text format; the API pod template includes scrape annotations for clusters that honor `prometheus.io/*` annotations
 - The web deployment probes `/` on port `80`
 
 ### Image Model
@@ -189,6 +190,7 @@ kubectl apply -f deployments/configmap.yaml
 kubectl apply -f deployments/vault-service-accounts.yaml
 kubectl apply -f deployments/postgres.yaml
 kubectl apply -f deployments/server-deployment.yaml
+kubectl apply -f deployments/monitoring-alerts.yaml
 kubectl apply -f deployments/ingress.yaml
 ```
 
@@ -290,6 +292,7 @@ kubectl get ingress -n thoughty
 kubectl logs deployment/thoughty-server -n thoughty --tail=100
 kubectl logs deployment/thoughty-cloud-sync-worker -n thoughty --tail=100
 kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhost:3001/api/health
+kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhost:3001/api/metrics | head
 ```
 
 ### What Good Looks Like
@@ -299,6 +302,7 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 - the worker starts only after schema migration completes
 - the web deployment serves the built app through the ingress host
 - the API returns a `200` from `/api/health`
+- `/api/metrics` includes `thoughty_database_up 1`, request counters after traffic, and cloud sync queue gauges
 
 ## Manifest Reference
 
@@ -310,6 +314,7 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 | `deployments/postgres.yaml`                     | PostgreSQL deployment, service, and persistent volume claim |
 | `deployments/server-deployment.yaml`            | API deployment, service, probes, and Vault injection        |
 | `deployments/cloud-sync-worker-deployment.yaml` | Dedicated background worker using the server image          |
+| `deployments/monitoring-alerts.yaml`            | PrometheusRule alerts for API, database, and cloud sync health |
 | `deployments/web-deployment.yaml`               | Web deployment and service                                  |
 | `deployments/ingress.yaml`                      | Host and path routing for `/` and `/api`                    |
 | `deployments/vault-setup.sh`                    | Reference Vault bootstrap commands                          |

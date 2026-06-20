@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { NextFunction, Request, Response } from 'express';
+import { HttpMetricsService } from '../metrics';
 import { JsonLogger } from './json-logger.service';
 
 type RequestWithUser = Request & {
@@ -25,7 +26,10 @@ function getRoutePath(req: Request): string {
 
 @Injectable()
 export class RequestLoggingMiddleware implements NestMiddleware {
-  constructor(private readonly logger: JsonLogger) {}
+  constructor(
+    private readonly logger: JsonLogger,
+    private readonly httpMetrics: HttpMetricsService,
+  ) {}
 
   use(req: RequestWithUser, res: Response, next: NextFunction): void {
     const requestId = getRequestId(req.headers['x-request-id']);
@@ -45,6 +49,13 @@ export class RequestLoggingMiddleware implements NestMiddleware {
         userId: req.user?.userId,
       };
 
+      this.httpMetrics.record({
+        method: metadata.method,
+        path: metadata.path,
+        statusCode: metadata.statusCode,
+        latencyMs: metadata.latencyMs,
+      });
+
       if (res.statusCode >= 500) {
         this.logger.error('HTTP request completed', metadata, RequestLoggingMiddleware.name);
         return;
@@ -61,4 +72,3 @@ export class RequestLoggingMiddleware implements NestMiddleware {
     next();
   }
 }
-

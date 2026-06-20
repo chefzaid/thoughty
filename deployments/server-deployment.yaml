@@ -20,6 +20,9 @@ spec:
       labels:
         app: thoughty-server
       annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/api/metrics"
+        prometheus.io/port: "3001"
         vault.hashicorp.com/agent-inject: "true"
         vault.hashicorp.com/role: "thoughty-server"
         vault.hashicorp.com/agent-inject-secret-database: "secret/data/thoughty/database"

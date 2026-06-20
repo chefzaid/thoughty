@@ -13,6 +13,7 @@ import { BooksModule } from './modules/books';
 import { AttachmentsModule } from './modules/attachments';
 import { AiModule } from './modules/ai';
 import { CloudSyncModule } from './modules/cloud-sync';
+import { MetricsModule } from './modules/metrics';
 import { HealthController } from './health.controller';
 import { JsonLogger, RATE_LIMITS, RequestLoggingMiddleware } from './common';
 
@@ -47,6 +48,7 @@ import { JsonLogger, RATE_LIMITS, RequestLoggingMiddleware } from './common';
     AttachmentsModule,
     AiModule,
     CloudSyncModule,
+    MetricsModule,
   ],
   providers: [
     // Global JWT Auth Guard

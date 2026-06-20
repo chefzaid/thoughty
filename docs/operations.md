@@ -46,6 +46,26 @@ API and worker application logs are emitted as one JSON object per line. Request
 
 Log entries intentionally omit request bodies, response bodies, authorization headers, journal content, attachment contents, AI prompts/responses, and raw reset or verification tokens. The API returns the active request ID in the `x-request-id` response header so a client-visible failure can be correlated with server logs.
 
+## Metrics and Alerts
+
+The API exposes Prometheus text metrics at `/api/metrics`. The server deployment includes `prometheus.io/*` scrape annotations for clusters that honor pod annotations. The endpoint reports process uptime and memory, HTTP request counts and latency sums, database connectivity, cloud sync queue counts by status, and stuck cloud sync job count. It does not expose request bodies, journal content, attachment data, AI prompts, provider tokens, or per-user labels.
+
+Quick checks:
+
+```bash
+kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhost:3001/api/metrics | head
+kubectl get prometheusrule thoughty-alerts -n thoughty
+```
+
+`deployments/monitoring-alerts.yaml` defines the baseline alerts from ADR 0015:
+
+- API unavailable
+- API high 5xx error rate
+- PostgreSQL connectivity down
+- cloud sync worker unavailable
+- cloud sync job failures
+- stuck cloud sync jobs
+
 ## Migration Troubleshooting
 
 The rollout order should be:

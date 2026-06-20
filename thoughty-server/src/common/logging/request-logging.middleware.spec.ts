@@ -16,6 +16,7 @@ function createResponse(statusCode: number): Response & EventEmitter & { headers
 
 describe('RequestLoggingMiddleware', () => {
   let logger: Pick<JsonLogger, 'error' | 'log' | 'warn'>;
+  let httpMetrics: { record: jest.Mock };
   let middleware: RequestLoggingMiddleware;
 
   beforeEach(() => {
@@ -24,7 +25,8 @@ describe('RequestLoggingMiddleware', () => {
       log: jest.fn(),
       warn: jest.fn(),
     };
-    middleware = new RequestLoggingMiddleware(logger as JsonLogger);
+    httpMetrics = { record: jest.fn() };
+    middleware = new RequestLoggingMiddleware(logger as JsonLogger, httpMetrics as never);
   });
 
   it('logs successful requests with request id, route, latency, and user id', () => {
@@ -54,6 +56,12 @@ describe('RequestLoggingMiddleware', () => {
       }),
       RequestLoggingMiddleware.name,
     );
+    expect(httpMetrics.record).toHaveBeenCalledWith({
+      method: 'GET',
+      path: '/api/entries',
+      statusCode: 200,
+      latencyMs: expect.any(Number),
+    });
   });
 
   it('logs client and server errors at warning/error levels', () => {

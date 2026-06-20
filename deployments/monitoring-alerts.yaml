@@ -1,0 +1,64 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: thoughty-alerts
+  namespace: thoughty
+  labels:
+    app.kubernetes.io/part-of: thoughty
+spec:
+  groups:
+    - name: thoughty.operational
+      rules:
+        - alert: ThoughtyApiUnavailable
+          expr: absent(up{namespace="thoughty",pod=~"thoughty-server-.*"} == 1) or sum(up{namespace="thoughty",pod=~"thoughty-server-.*"}) < 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: Thoughty API has no scrapeable healthy pods
+            description: Prometheus cannot scrape any healthy thoughty-server pods for at least two minutes.
+        - alert: ThoughtyApiHighErrorRate
+          expr: |
+            (
+              sum(rate(thoughty_http_requests_total{status=~"5.."}[5m]))
+              /
+              clamp_min(sum(rate(thoughty_http_requests_total[5m])), 1)
+            ) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: Thoughty API 5xx rate is elevated
+            description: More than 5% of API requests have returned 5xx responses for ten minutes.
+        - alert: ThoughtyDatabaseUnavailable
+          expr: thoughty_database_up == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: Thoughty API cannot reach PostgreSQL
+            description: The metrics endpoint reports failed database connectivity checks.
+        - alert: ThoughtyCloudSyncWorkerUnavailable
+          expr: kube_deployment_status_replicas_available{namespace="thoughty",deployment="thoughty-cloud-sync-worker"} < 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Thoughty cloud sync worker is unavailable
+            description: The cloud sync worker deployment has no available replica.
+        - alert: ThoughtyCloudSyncFailures
+          expr: thoughty_cloud_sync_jobs{status="failed"} > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Thoughty cloud sync jobs are failing
+            description: One or more cloud sync jobs remain in failed status.
+        - alert: ThoughtyCloudSyncStuckJobs
+          expr: thoughty_cloud_sync_stuck_jobs > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Thoughty cloud sync jobs appear stuck
+            description: At least one running cloud sync job has been locked past the operational threshold.
