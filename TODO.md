@@ -111,6 +111,7 @@
 - [ ] Summaries of long entries, with the option to include or exclude certain details
 
 - [ ] AI-generated tags that are more abstract or thematic, to complement the user-defined tags and provide different ways to organize and explore the journal
+- [ ] Auto-theme and re-tag the whole journal: scan all entries, generate a list of discussed themes, group them into the smallest set of tags that still accurately tags each entry, then tag or re-tag entries with the appropriate ones
 
 ## Book Converter
 
