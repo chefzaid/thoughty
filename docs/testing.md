@@ -68,7 +68,40 @@ npm run test:cov          # backend coverage
 npm run test:e2e          # backend e2e specs in test/
 npm run test:e2e:cov      # backend e2e coverage
 npm run lint              # backend lint; currently runs eslint --fix
+npm run benchmark         # API and database performance benchmark against a running environment
 ```
+
+### Backend load and performance benchmarks
+
+The backend benchmark script uses only repository dependencies and can run against local development or a deployed API.
+
+```bash
+cd thoughty-server
+BENCHMARK_BASE_URL=http://localhost:3001 npm run benchmark
+```
+
+By default it exercises public API health/metrics endpoints and key PostgreSQL count queries. Useful options:
+
+| Variable                | Default                         | Purpose                                      |
+| ----------------------- | ------------------------------- | -------------------------------------------- |
+| `BENCHMARK_BASE_URL`    | `http://localhost:3001`         | API origin to benchmark                      |
+| `BENCHMARK_ENDPOINTS`   | `/api/health,/api/metrics`      | Comma-separated GET paths                    |
+| `BENCHMARK_REQUESTS`    | `100`                           | Requests per HTTP target                     |
+| `BENCHMARK_CONCURRENCY` | `10`                            | Concurrent HTTP workers                      |
+| `BENCHMARK_AUTH_TOKEN`  | unset                           | Optional bearer token for protected targets  |
+| `BENCHMARK_DB_RUNS`     | `10`                            | Runs per database query                      |
+| `BENCHMARK_SKIP_HTTP`   | unset                           | Set to `true` to skip HTTP benchmarking      |
+| `BENCHMARK_SKIP_DB`     | unset                           | Set to `true` to skip database benchmarking  |
+
+Examples:
+
+```bash
+BENCHMARK_REQUESTS=500 BENCHMARK_CONCURRENCY=25 npm run benchmark
+BENCHMARK_ENDPOINTS=/api/health,/api/metrics BENCHMARK_SKIP_DB=true npm run benchmark
+BENCHMARK_AUTH_TOKEN=<token> BENCHMARK_ENDPOINTS=/api/entries,/api/stats npm run benchmark
+```
+
+The output is CSV-shaped for easy comparison between runs. Keep benchmark runs out of production unless an operator has approved the load profile.
 
 ### Direct frontend commands
 
