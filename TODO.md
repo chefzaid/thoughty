@@ -148,7 +148,7 @@
 - [x] SSL and HTTPS support for secure communication
 - [x] Complete the email verification flow (User entity has emailVerified field but no verification endpoint or email is implemented)
 - [ ] Add 2FA authentication
-- [ ] Allow users to see and manage active sessions (logout from other sessions)
+- [x] Allow users to see and manage active sessions (logout from other sessions)
 - [ ] Spam and bots protection on sign up and login forms
 - [ ] Rate limiting and prevent DDOS from too much data sent
 - [x] Content Security Policy hardening (replace unsafe-inline with nonces)

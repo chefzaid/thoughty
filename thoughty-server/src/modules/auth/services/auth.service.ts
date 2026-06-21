@@ -22,6 +22,7 @@ import {
   OAuthDto,
   ChangePasswordDto,
   AuthResponseDto,
+  SessionResponseDto,
   UserResponseDto,
 } from '../dto';
 
@@ -295,6 +296,56 @@ export class AuthService {
     if (refreshToken) {
       await this.refreshTokenRepository.delete({ token: refreshToken });
     }
+    return { success: true };
+  }
+
+  async listSessions(userId: number, currentRefreshToken?: string): Promise<SessionResponseDto[]> {
+    const sessions = await this.refreshTokenRepository.find({
+      where: { userId, expiresAt: MoreThan(new Date()) },
+      order: { createdAt: 'DESC' },
+    });
+
+    return sessions.map((session) => ({
+      id: session.id,
+      current: Boolean(currentRefreshToken && session.token === currentRefreshToken),
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+    }));
+  }
+
+  async revokeSession(
+    userId: number,
+    sessionId: number,
+    currentRefreshToken?: string,
+  ): Promise<{ success: boolean }> {
+    const session = await this.refreshTokenRepository.findOne({
+      where: { id: sessionId, userId },
+    });
+
+    if (!session) {
+      throw new NotFoundException('Session not found');
+    }
+
+    if (currentRefreshToken && session.token === currentRefreshToken) {
+      throw new BadRequestException('Use logout to end the current session');
+    }
+
+    await this.refreshTokenRepository.delete({ id: sessionId, userId });
+    return { success: true };
+  }
+
+  async revokeOtherSessions(userId: number, currentRefreshToken?: string): Promise<{ success: boolean }> {
+    if (!currentRefreshToken) {
+      throw new BadRequestException('Current refresh token is required');
+    }
+
+    await this.refreshTokenRepository
+      .createQueryBuilder()
+      .delete()
+      .where('user_id = :userId', { userId })
+      .andWhere('token <> :currentRefreshToken', { currentRefreshToken })
+      .execute();
+
     return { success: true };
   }
 

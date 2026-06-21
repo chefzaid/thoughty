@@ -35,7 +35,7 @@ sequenceDiagram
     API-->>User: New access token
 ```
 
-Refresh tokens are revoked when sensitive account lifecycle events occur, including password changes, password resets, and account deletion.
+Refresh tokens are treated as active sessions. Authenticated users can list active sessions without exposing token values, revoke a non-current session by ID, or revoke all other sessions while keeping the current refresh token active. Refresh tokens are also revoked when sensitive account lifecycle events occur, including password changes, password resets, explicit logout, and account deletion.
 
 ## Public Routes
 
@@ -118,7 +118,6 @@ In local or misconfigured email environments, the current email service path can
 Important remaining work includes:
 
 - two-factor authentication
-- active session management and logout-from-other-devices
 - stronger bot/spam protection on public auth forms
 - distributed rate limiting for multi-replica deployments
 - dependency vulnerability scanning in CI

@@ -23,6 +23,9 @@ describe('AuthController', () => {
       oauthLogin: jest.fn(),
       refreshToken: jest.fn(),
       logout: jest.fn(),
+      listSessions: jest.fn(),
+      revokeSession: jest.fn(),
+      revokeOtherSessions: jest.fn(),
       getMe: jest.fn(),
       changePassword: jest.fn(),
       forgotPassword: jest.fn(),
@@ -55,6 +58,8 @@ describe('AuthController', () => {
       ['login', RATE_LIMITS.authAttempt],
       ['oauth', RATE_LIMITS.authAttempt],
       ['refresh', RATE_LIMITS.tokenRefresh],
+      ['revokeOtherSessions', RATE_LIMITS.accountSecurity],
+      ['revokeSession', RATE_LIMITS.accountSecurity],
       ['changePassword', RATE_LIMITS.accountSecurity],
       ['forgotPassword', RATE_LIMITS.passwordRecovery],
       ['resetPassword', RATE_LIMITS.passwordRecovery],
@@ -129,6 +134,38 @@ describe('AuthController', () => {
       const result = await controller.logout(dto);
       expect(authService.logout).toHaveBeenCalledWith('rt');
       expect(result).toEqual(expected);
+    });
+  });
+
+  describe('sessions', () => {
+    it('delegates session listing with the current refresh token header', async () => {
+      const expected = [{ id: 1, current: true }];
+      authService.listSessions.mockResolvedValue(expected);
+
+      const result = await controller.listSessions(mockUser as any, 'rt');
+
+      expect(authService.listSessions).toHaveBeenCalledWith(1, 'rt');
+      expect(result).toBe(expected);
+    });
+
+    it('delegates single-session revocation', async () => {
+      const expected = { success: true };
+      authService.revokeSession.mockResolvedValue(expected);
+
+      const result = await controller.revokeSession(mockUser as any, 2, 'rt');
+
+      expect(authService.revokeSession).toHaveBeenCalledWith(1, 2, 'rt');
+      expect(result).toBe(expected);
+    });
+
+    it('delegates other-session revocation', async () => {
+      const expected = { success: true };
+      authService.revokeOtherSessions.mockResolvedValue(expected);
+
+      const result = await controller.revokeOtherSessions(mockUser as any, 'rt');
+
+      expect(authService.revokeOtherSessions).toHaveBeenCalledWith(1, 'rt');
+      expect(result).toBe(expected);
     });
   });
 

@@ -155,3 +155,17 @@ export class UserResponseDto {
   @ApiProperty()
   createdAt: Date;
 }
+
+export class SessionResponseDto {
+  @ApiProperty({ example: 42 })
+  id: number;
+
+  @ApiProperty({ example: true })
+  current: boolean;
+
+  @ApiProperty({ example: '2026-06-21T10:00:00.000Z' })
+  createdAt: Date;
+
+  @ApiProperty({ example: '2026-06-28T10:00:00.000Z' })
+  expiresAt: Date;
+}

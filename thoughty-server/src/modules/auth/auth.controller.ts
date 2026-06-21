@@ -1,5 +1,17 @@
-import { Controller, Post, Get, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Delete,
+  Headers,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './services/auth.service';
 import {
@@ -13,6 +25,7 @@ import {
   VerifyEmailDto,
   DeleteAccountDto,
   AuthResponseDto,
+  SessionResponseDto,
   UserResponseDto,
 } from './dto';
 import { EmailVerificationService } from './services';
@@ -81,6 +94,53 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
   async logout(@Body() dto: RefreshTokenDto): Promise<{ success: boolean }> {
     return this.authService.logout(dto.refreshToken);
+  }
+
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Refresh-Token', required: false, description: 'Current refresh token for marking this session' })
+  @ApiOperation({ summary: 'List active sessions for the current user' })
+  @ApiResponse({ status: 200, description: 'Active sessions', type: [SessionResponseDto] })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async listSessions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Headers('x-refresh-token') currentRefreshToken?: string,
+  ): Promise<SessionResponseDto[]> {
+    return this.authService.listSessions(user.userId, currentRefreshToken);
+  }
+
+  @Delete('sessions')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Refresh-Token', required: true, description: 'Current refresh token to keep active' })
+  @ApiOperation({ summary: 'Revoke all other active sessions' })
+  @ApiResponse({ status: 200, description: 'Other sessions revoked' })
+  @ApiResponse({ status: 400, description: 'Current refresh token missing' })
+  async revokeOtherSessions(
+    @CurrentUser() user: AuthenticatedUser,
+    @Headers('x-refresh-token') currentRefreshToken?: string,
+  ): Promise<{ success: boolean }> {
+    return this.authService.revokeOtherSessions(user.userId, currentRefreshToken);
+  }
+
+  @Delete('sessions/:id')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
+  @ApiBearerAuth()
+  @ApiHeader({ name: 'X-Refresh-Token', required: false, description: 'Current refresh token to protect it from revocation' })
+  @ApiOperation({ summary: 'Revoke one active session' })
+  @ApiResponse({ status: 200, description: 'Session revoked' })
+  @ApiResponse({ status: 404, description: 'Session not found' })
+  async revokeSession(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) sessionId: number,
+    @Headers('x-refresh-token') currentRefreshToken?: string,
+  ): Promise<{ success: boolean }> {
+    return this.authService.revokeSession(user.userId, sessionId, currentRefreshToken);
   }
 
   @Get('me')

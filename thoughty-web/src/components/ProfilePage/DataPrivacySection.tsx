@@ -1,5 +1,6 @@
 import { useState, type ComponentProps } from 'react';
 import type { TranslationFunction } from './types';
+import ActiveSessionsSection from './ActiveSessionsSection';
 
 type FormSubmitHandler = NonNullable<ComponentProps<'form'>['onSubmit']>;
 
@@ -311,6 +312,10 @@ function DataPrivacySection({ t, isDark, onDownloadData, showDeleteConfirm, setS
           </button>
         </div>
         {downloadError && <div className="password-error">{downloadError}</div>}
+
+        <div className="download-data-divider" />
+
+        <ActiveSessionsSection isDark={isDark} t={t} />
 
         <div className="delete-account-section">
           <div className="setting-row">
