@@ -106,7 +106,7 @@
 - [ ] Graph of insights and correlations from all entries, to discover patterns and connections between them, do the same for tags
 - [ ] Transcription from an Audio note
 - [ ] Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
-- [x] Use different models for different tasks, to optimize token consumption
+- [x] Use different models for different tasks, to optimize token consumption parameterized in the AI settings
 - [ ] AI-generated writing prompts based on the user's journaling history and interests, to inspire new entries and reflections
 - [ ] Summaries of long entries, with the option to include or exclude certain details
 - [ ] AI-generated tags that are more abstract or thematic, to complement the user-defined tags and provide different ways to organize and explore the journal
@@ -178,6 +178,7 @@
 - [x] Implement lazy loading for components and routes to improve initial load time
 - [x] Implement feature flags to enable/disable features without redeploying, using a third-party service
 - [ ] Check that OpenAPI documentation is up to date and complete for all endpoints, and add examples for request and response bodies
+- [ ] Ensure that all API endpoints are effectively used in the UI (either the app or the admin console). Implement the frontend that would use them if necessary, or remove the endpoints.
 
 ## Monitoring and Observability
 
