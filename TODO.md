@@ -109,7 +109,6 @@
 - [x] Use different models for different tasks, to optimize token consumption
 - [ ] AI-generated writing prompts based on the user's journaling history and interests, to inspire new entries and reflections
 - [ ] Summaries of long entries, with the option to include or exclude certain details
-
 - [ ] AI-generated tags that are more abstract or thematic, to complement the user-defined tags and provide different ways to organize and explore the journal
 - [ ] Auto-theme and re-tag the whole journal: scan all entries, generate a list of discussed themes, group them into the smallest set of tags that still accurately tags each entry, then tag or re-tag entries with the appropriate ones
 
@@ -221,8 +220,6 @@
 
 ## Life ERP
 
-- [ ] This project could evolve into a Personal ERP
-- [ ] Personal document vault to replace scattered OneDrive folders, with private files, folder/tag organization, OCR/search, attachment reuse, and exportable archives
 - [ ] Life metrics tracker for happiness, mood, health, sleep, energy, social time, productivity, habits, and custom numeric/text metrics
 - [ ] Finance tracker for expenses, income, budgets, savings goals, recurring bills, and subscription inventory with renewal reminders
 - [ ] Health and wellness journal extensions for symptoms, medication, appointments, exercise, nutrition, and weight or body metrics
@@ -232,4 +229,3 @@
 - [ ] AI insights that surface patterns, correlations, risks, and suggestions across journals and life metrics while respecting privacy controls
 - [ ] Import paths for existing spreadsheets and folder exports, including CSV templates for finances, subscriptions, health logs, and mood tracking
 - [ ] Fine-grained permissions and visibility so Life ERP data can stay private even if selected thoughts become public
-- [x] Needs to detail the features once the main subject (journaling) is complete
