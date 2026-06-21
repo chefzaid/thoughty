@@ -6,17 +6,21 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
 import { createSwaggerDocument } from './swagger';
-import { attachCspNonce, buildHelmetOptions, JsonLogger } from './common';
+import { attachCspNonce, buildHelmetOptions, getRequestPayloadLimits, JsonLogger } from './common';
 
 async function bootstrap() {
   const logger = new JsonLogger('Bootstrap');
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false,
     logger,
   });
+  const payloadLimits = getRequestPayloadLimits();
 
   // Security middleware
   app.use(attachCspNonce);
   app.use(helmet(buildHelmetOptions(process.env.NODE_ENV === 'production')));
+  app.useBodyParser('json', { limit: payloadLimits.json });
+  app.useBodyParser('urlencoded', { extended: true, limit: payloadLimits.urlencoded });
 
   // Compression
   app.use(compression());
@@ -64,6 +68,8 @@ async function bootstrap() {
     port,
     apiUrl: `http://localhost:${port}`,
     docsUrl: `http://localhost:${port}/api-docs`,
+    jsonBodyLimit: payloadLimits.json,
+    formBodyLimit: payloadLimits.urlencoded,
   });
 }
 

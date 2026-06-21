@@ -7,6 +7,7 @@ Thoughty stores personal journal content, profile data, attachments, refresh tok
 - API routes are protected by default through a global JWT guard.
 - Public routes must be explicitly marked with `@Public()`.
 - A global throttling guard applies baseline abuse protection, with stricter limits on sensitive auth flows.
+- JSON and URL-encoded request parsers enforce explicit body size limits before DTO validation.
 - Signup and login forms include a hidden bot-trap field that rejects automated submissions when filled.
 - Production responses use a nonce-based Content Security Policy without `unsafe-inline` script or style fallbacks.
 - DTO validation uses whitelisting and rejects unexpected fields.
@@ -73,6 +74,17 @@ Current limits are documented in ADR 0009:
 
 The current throttling model is process-local. In multi-replica or higher-risk deployments, shared throttling storage should be introduced instead of weakening endpoint limits.
 
+## Request Payload Limits
+
+The API disables Nest's implicit body parser and registers explicit parser limits:
+
+- JSON requests default to `1mb`.
+- URL-encoded form requests default to `256kb`.
+- `REQUEST_BODY_LIMIT` overrides both parser defaults.
+- `REQUEST_JSON_BODY_LIMIT` and `REQUEST_FORM_BODY_LIMIT` can override each parser individually.
+
+Attachment uploads keep their separate Multer file-size limit.
+
 ## Secrets
 
 Never commit real secrets. Production-like deployments should provide these through Vault or equivalent secret injection:
@@ -129,6 +141,7 @@ Important remaining work includes:
 - Does this introduce a new public route?
 - Does it expose user-owned journal data, attachments, settings, or provider tokens?
 - Does it need endpoint-specific rate limiting?
+- Does it need a larger request body limit or a separate upload path?
 - Does it preserve user scoping in database queries?
 - Does it send journal content to a third party?
 - Does it require a new secret or secret-rotation story?

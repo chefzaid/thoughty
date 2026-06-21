@@ -149,7 +149,7 @@
 - [ ] Add 2FA authentication
 - [x] Allow users to see and manage active sessions (logout from other sessions)
 - [x] Spam and bots protection on sign up and login forms
-- [ ] Rate limiting and prevent DDOS from too much data sent
+- [x] Rate limiting and prevent DDOS from too much data sent
 - [x] Content Security Policy hardening (replace unsafe-inline with nonces)
 
 ## Tests

@@ -12,6 +12,7 @@ Thoughty's authentication and recovery endpoints are public by design. That crea
 Use layered rate limiting.
 
 - Apply Nest's `ThrottlerGuard` globally through `APP_GUARD`.
+- Disable implicit body parsing and register explicit parser size limits so oversized JSON/form requests are rejected early.
 - Set a general default limit of `100` requests per `15` minutes.
 - Tighten sensitive auth routes with endpoint-specific decorators:
   - register: `5` requests per `15` minutes
@@ -29,12 +30,14 @@ Use layered rate limiting.
 - Token refresh needs enough headroom for normal clients, while still bounding refresh-token replay loops.
 - Password and account deletion routes deserve lower hourly ceilings because failed attempts indicate account takeover pressure.
 - The global limit gives broad baseline protection, while endpoint overrides reflect the actual abuse pressure points.
+- Parser limits bound request body memory before validation and route handlers run.
 - Using framework-native throttling keeps the implementation small and easy to audit.
 - Throttling composes with the separate global JWT guard described in ADR 0008. The application registers both through `APP_GUARD`, so protected routes are both authenticated and rate-limited by default while explicit public routes still inherit throttling unless overridden.
 
 ## Consequences
 
 - The product now has explicit abuse controls instead of relying only on password strength and token handling.
+- Large imports should use the documented JSON parser limit or a dedicated upload path rather than weakening global parser limits.
 - Rate-limit behavior is part of the external API contract for auth flows and should be considered when changing those endpoints.
 - The current throttling model is process-local unless a shared throttler storage backend is introduced. In multi-replica deployments, the limit is effectively applied per application instance rather than as a single cluster-wide counter.
 - If deployment scale or attack pressure increases, the next step should be shared throttling storage rather than removing the current controls.
