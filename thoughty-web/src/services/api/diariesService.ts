@@ -1,4 +1,4 @@
-import { safeJsonParse } from './base';
+import { readApiErrorMessage, safeJsonParse } from './base';
 import type { Diary } from '../../types';
 
 export const createDiariesService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
@@ -29,8 +29,7 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
         body: JSON.stringify(diaryData)
       });
       if (!response.ok) {
-        const error = await safeJsonParse<{ error?: string }>(response);
-        return { success: false, error: error?.error || 'Failed to create diary' };
+        return { success: false, error: await readApiErrorMessage(response, 'Failed to create diary') };
       }
       return { success: true };
     } catch (error) {
@@ -49,8 +48,7 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
         body: JSON.stringify(diaryData)
       });
       if (!response.ok) {
-        const error = await safeJsonParse<{ error?: string }>(response);
-        return { success: false, error: error?.error || 'Failed to update diary' };
+        return { success: false, error: await readApiErrorMessage(response, 'Failed to update diary') };
       }
       return { success: true };
     } catch (error) {
@@ -66,8 +64,7 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
     try {
       const response = await authFetch(`/api/diaries/${id}`, { method: 'DELETE' });
       if (!response.ok) {
-        const error = await safeJsonParse<{ error?: string }>(response);
-        return { success: false, error: error?.error || 'Failed to delete diary' };
+        return { success: false, error: await readApiErrorMessage(response, 'Failed to delete diary') };
       }
       return { success: true };
     } catch (error) {
@@ -83,8 +80,7 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
     try {
       const response = await authFetch(`/api/diaries/${id}/default`, { method: 'PATCH' });
       if (!response.ok) {
-        const error = await safeJsonParse<{ error?: string }>(response);
-        return { success: false, error: error?.error || 'Failed to set default diary' };
+        return { success: false, error: await readApiErrorMessage(response, 'Failed to set default diary') };
       }
       return { success: true };
     } catch (error) {
@@ -103,8 +99,7 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
         body: JSON.stringify({ orderedIds }),
       });
       if (!response.ok) {
-        const error = await safeJsonParse<{ error?: string }>(response);
-        return { success: false, error: error?.error || 'Failed to reorder diaries' };
+        return { success: false, error: await readApiErrorMessage(response, 'Failed to reorder diaries') };
       }
       return { success: true };
     } catch (error) {

@@ -1,4 +1,4 @@
-import { safeJsonParse } from './base';
+import { readApiErrorMessage, safeJsonParse } from './base';
 import type { ArchiveStatusFilter, Entry, EntryBacklink, EntriesResponse, EntryRevision } from '../../types';
 import type { components, paths } from '../../generated/openapi';
 
@@ -312,9 +312,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
         return { success: true };
       }
 
-      const data = await safeJsonParse<{ message?: string | string[] }>(response);
-      const message = Array.isArray(data?.message) ? data.message.join(', ') : data?.message;
-      return { success: false, error: message };
+      return { success: false, error: await readApiErrorMessage(response, 'Failed to update pinned state') };
     } catch (error) {
       console.error('Error toggling pinned state:', error);
       return { success: false };

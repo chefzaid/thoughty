@@ -8,7 +8,7 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
-import { safeJsonParse } from '../services/api/base';
+import { readApiErrorMessage, safeJsonParse } from '../services/api/base';
 import { loginWithPassword, registerWithPassword } from './authRequests';
 import type { AuthResult, TokenResponse, User } from './authTypes';
 
@@ -268,11 +268,11 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         body: JSON.stringify({ provider, providerId, email, name, avatarUrl }),
       });
 
-      const data = await safeJsonParse<TokenResponse & { error?: string }>(response);
-
       if (!response.ok) {
-        throw new Error(data?.error || 'OAuth login failed');
+        throw new Error(await readApiErrorMessage(response, 'OAuth login failed'));
       }
+
+      const data = await safeJsonParse<TokenResponse>(response);
 
       if (!data) {
         throw new Error('Server unavailable');
@@ -357,10 +357,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
-      const data = await safeJsonParse<{ error?: string }>(response);
-
       if (!response.ok) {
-        throw new Error(data?.error || 'Password change failed');
+        throw new Error(await readApiErrorMessage(response, 'Password change failed'));
       }
 
       return { success: true };
@@ -381,11 +379,11 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         body: JSON.stringify({ email }),
       });
 
-      const data = await safeJsonParse<{ message?: string; error?: string }>(response);
-
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to send reset email');
+        throw new Error(await readApiErrorMessage(response, 'Failed to send reset email'));
       }
+
+      const data = await safeJsonParse<{ message?: string }>(response);
 
       return { success: true, message: data?.message };
     } catch (err) {
@@ -405,11 +403,11 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         body: JSON.stringify({ token, newPassword }),
       });
 
-      const data = await safeJsonParse<{ message?: string; error?: string }>(response);
-
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to reset password');
+        throw new Error(await readApiErrorMessage(response, 'Failed to reset password'));
       }
+
+      const data = await safeJsonParse<{ message?: string }>(response);
 
       return { success: true, message: data?.message };
     } catch (err) {
@@ -428,11 +426,11 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         body: JSON.stringify({ password }),
       });
 
-      const data = await safeJsonParse<{ message?: string; error?: string }>(response);
-
       if (!response.ok) {
-        throw new Error(data?.error || 'Failed to delete account');
+        throw new Error(await readApiErrorMessage(response, 'Failed to delete account'));
       }
+
+      const data = await safeJsonParse<{ message?: string }>(response);
 
       // Log the user out after account deletion
       clearTokens();

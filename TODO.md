@@ -173,7 +173,7 @@
 - [ ] Distributed rate limiting with Redis for multi-replica deployments
 - [x] Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
 - [x] Backup and disaster recovery plan for user data
-- [ ] Improve error handling and user feedback for better UX
+- [x] Improve error handling and user feedback for better UX
 - [ ] Use WebSockets for real-time updates on public entries and messages
 - [x] Implement lazy loading for components and routes to improve initial load time
 - [ ] Implement feature flags to enable/disable features without redeploying, using a third-party service

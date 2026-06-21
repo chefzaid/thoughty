@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { safeJsonParse, createAuthFetch } from './base';
+import { safeJsonParse, readApiErrorMessage, createAuthFetch } from './base';
 
 describe('safeJsonParse', () => {
   it('returns null for null response', async () => {
@@ -45,6 +45,42 @@ describe('safeJsonParse', () => {
     } as unknown as Response;
     const result = await safeJsonParse(response);
     expect(result).toEqual(data);
+  });
+});
+
+describe('readApiErrorMessage', () => {
+  it('reads the error field from structured API failures', async () => {
+    const response = new Response(JSON.stringify({ error: 'Email already registered' }), { status: 409 });
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Email already registered');
+  });
+
+  it('joins validation message arrays into a readable sentence', async () => {
+    const response = new Response(JSON.stringify({ message: ['email must be valid', 'password is too short'] }), {
+      status: 400,
+    });
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe(
+      'email must be valid, password is too short'
+    );
+  });
+
+  it('extracts nested detail messages when available', async () => {
+    const response = new Response(JSON.stringify({ details: { name: 'Name is required' } }), { status: 400 });
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Name is required');
+  });
+
+  it('uses plain text response bodies before the fallback', async () => {
+    const response = new Response('Request entity too large', { status: 413 });
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Request entity too large');
+  });
+
+  it('falls back when the response has no readable error body', async () => {
+    const response = new Response('', { status: 500 });
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Fallback');
   });
 });
 

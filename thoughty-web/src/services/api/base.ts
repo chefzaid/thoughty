@@ -3,6 +3,34 @@
 export type AuthFetchFunction = (url: string, options?: RequestInit) => Promise<Response>;
 export type GetAccessTokenFunction = () => string | null;
 
+interface ApiErrorPayload {
+  error?: unknown;
+  message?: unknown;
+  details?: unknown;
+}
+
+const messageFromUnknown = (value: unknown): string | null => {
+  if (typeof value === 'string' && value.trim()) {
+    return value.trim();
+  }
+
+  if (Array.isArray(value)) {
+    const messages = value
+      .map(messageFromUnknown)
+      .filter((message): message is string => Boolean(message));
+    return messages.length > 0 ? messages.join(', ') : null;
+  }
+
+  if (value && typeof value === 'object') {
+    const messages = Object.values(value)
+      .map(messageFromUnknown)
+      .filter((message): message is string => Boolean(message));
+    return messages.length > 0 ? messages.join(', ') : null;
+  }
+
+  return null;
+};
+
 /**
  * Safe JSON parsing helper that handles various response types
  */
@@ -16,6 +44,33 @@ export const safeJsonParse = async <T = unknown>(response: Response | undefined 
     return text ? JSON.parse(text) as T : null;
   } catch {
     return null;
+  }
+};
+
+export const readApiErrorMessage = async (
+  response: Response | undefined | null,
+  fallback: string
+): Promise<string> => {
+  if (!response) {
+    return fallback;
+  }
+
+  const jsonResponse = typeof response.clone === 'function' ? response.clone() : response;
+  const payload = await safeJsonParse<ApiErrorPayload>(jsonResponse);
+  const structuredMessage = messageFromUnknown(payload?.error)
+    || messageFromUnknown(payload?.message)
+    || messageFromUnknown(payload?.details);
+
+  if (structuredMessage) {
+    return structuredMessage;
+  }
+
+  try {
+    const textResponse = typeof response.clone === 'function' ? response.clone() : response;
+    const text = await textResponse.text();
+    return text.trim() || fallback;
+  } catch {
+    return fallback;
   }
 };
 

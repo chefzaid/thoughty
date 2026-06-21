@@ -1,4 +1,4 @@
-import { safeJsonParse } from '../services/api/base';
+import { readApiErrorMessage, safeJsonParse } from '../services/api/base';
 import type { TokenResponse } from './authTypes';
 
 const API_BASE = '/api/auth';
@@ -23,11 +23,11 @@ async function postAuthRequest(path: string, payload: RegisterRequest | LoginReq
     body: JSON.stringify(payload),
   });
 
-  const data = await safeJsonParse<TokenResponse & { error?: string }>(response);
-
   if (!response.ok) {
-    throw new Error(data?.error || fallbackError);
+    throw new Error(await readApiErrorMessage(response, fallbackError));
   }
+
+  const data = await safeJsonParse<TokenResponse>(response);
 
   if (!data) {
     throw new Error('Server unavailable');
