@@ -99,9 +99,17 @@ describe('AuthContext', () => {
 
         let result: { success: boolean } | undefined;
         await act(async () => {
-            result = await requireContext(ctx).register('new@example.com', 'pass123', 'newuser');
+            result = await requireContext(ctx).register('new@example.com', 'pass123', 'newuser', '');
         });
         expect(result!.success).toBe(true);
+        expect(globalThis.fetch).toHaveBeenCalledWith('/api/auth/register', expect.objectContaining({
+            body: JSON.stringify({
+                email: 'new@example.com',
+                password: 'pass123',
+                username: 'newuser',
+                website: '',
+            }),
+        }));
         expect(localStorage.getItem('accessToken')).toBe('access');
         await waitFor(() => {
             expect(requireContext(ctx).user?.email).toBe('new@example.com');
@@ -158,9 +166,16 @@ describe('AuthContext', () => {
 
         let result: { success: boolean } | undefined;
         await act(async () => {
-            result = await requireContext(ctx).login('login@example.com', 'pass');
+            result = await requireContext(ctx).login('login@example.com', 'pass', 'https://spam.example');
         });
         expect(result!.success).toBe(true);
+        expect(globalThis.fetch).toHaveBeenCalledWith('/api/auth/login', expect.objectContaining({
+            body: JSON.stringify({
+                identifier: 'login@example.com',
+                password: 'pass',
+                website: 'https://spam.example',
+            }),
+        }));
         expect(localStorage.getItem('refreshToken')).toBe('refresh');
         await waitFor(() => {
             expect(requireContext(ctx).user?.email).toBe('login@example.com');

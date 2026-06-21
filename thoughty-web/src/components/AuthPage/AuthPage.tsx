@@ -28,6 +28,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
   const [error, setError] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [website, setWebsite] = useState<string>('');
 
   const { login, register, signInWithGoogle, forgotPassword, googleClientId } = useAuth();
 
@@ -93,9 +94,9 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
 
       let result: AuthResult;
       if (isLogin) {
-        result = await login(identifier, password);
+        result = await login(identifier, password, website);
       } else {
-        result = await register(email, password, username);
+        result = await register(email, password, username, website);
       }
 
       if (result.success) {
@@ -134,6 +135,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     setIdentifier('');
     setEmail('');
     setUsername('');
+    setWebsite('');
   };
 
   const switchMode = (): void => {
@@ -181,6 +183,18 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
 
         <form onSubmit={handleSubmit} className="auth-form">
           <AuthStatusMessages error={error} successMessage={successMessage} />
+          <div className="auth-honeypot" aria-hidden="true">
+            <label htmlFor="website">Website</label>
+            <input
+              id="website"
+              name="website"
+              type="text"
+              value={website}
+              onChange={(event) => setWebsite(event.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
           <AuthFormContent
             showForgotPassword={showForgotPassword}
             isLogin={isLogin}

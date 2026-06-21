@@ -7,6 +7,7 @@ Thoughty stores personal journal content, profile data, attachments, refresh tok
 - API routes are protected by default through a global JWT guard.
 - Public routes must be explicitly marked with `@Public()`.
 - A global throttling guard applies baseline abuse protection, with stricter limits on sensitive auth flows.
+- Signup and login forms include a hidden bot-trap field that rejects automated submissions when filled.
 - Production responses use a nonce-based Content Security Policy without `unsafe-inline` script or style fallbacks.
 - DTO validation uses whitelisting and rejects unexpected fields.
 - User-controlled text and attachment filenames are sanitized in relevant flows.
@@ -118,7 +119,6 @@ In local or misconfigured email environments, the current email service path can
 Important remaining work includes:
 
 - two-factor authentication
-- stronger bot/spam protection on public auth forms
 - distributed rate limiting for multi-replica deployments
 - dependency vulnerability scanning in CI
 - structured security audit logging for sensitive actions

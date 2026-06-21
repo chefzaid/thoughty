@@ -9,6 +9,10 @@ import {
   type ReactNode,
 } from 'react';
 import { safeJsonParse } from '../services/api/base';
+import { loginWithPassword, registerWithPassword } from './authRequests';
+import type { AuthResult, TokenResponse, User } from './authTypes';
+
+export type { User } from './authTypes';
 
 // Google API Types
 interface GoogleCredentialResponse {
@@ -31,33 +35,13 @@ interface GoogleApi {
   accounts: GoogleAccounts;
 }
 
-// Types
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  displayName?: string;
-  fullName?: string;
-  avatarUrl?: string;
-  isNewUser?: boolean;
-  authProvider?: 'local' | 'google';
-  emailVerified?: boolean;
-}
-
-interface AuthResult {
-  success: boolean;
-  error?: string;
-  message?: string;
-  isNewUser?: boolean;
-}
-
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
-  register: (email: string, password: string, username: string) => Promise<AuthResult>;
-  login: (identifier: string, password: string) => Promise<AuthResult>;
+  register: (email: string, password: string, username: string, website?: string) => Promise<AuthResult>;
+  login: (identifier: string, password: string, website?: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<AuthResult>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
@@ -71,12 +55,6 @@ interface AuthContextValue {
 
 interface AuthProviderProps {
   children: ReactNode;
-}
-
-interface TokenResponse {
-  accessToken: string;
-  refreshToken: string;
-  user: User;
 }
 
 // Google Sign-In types
@@ -241,25 +219,12 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
   const register = useCallback(async (
     email: string,
     password: string,
-    username: string
+    username: string,
+    website = ''
   ): Promise<AuthResult> => {
     setError(null);
     try {
-      const response = await fetch(`${API_BASE}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, username }),
-      });
-
-      const data = await safeJsonParse<TokenResponse & { error?: string }>(response);
-
-      if (!response.ok) {
-        throw new Error(data?.error || 'Registration failed');
-      }
-
-      if (!data) {
-        throw new Error('Server unavailable');
-      }
+      const data = await registerWithPassword({ email, password, username, website });
 
       saveTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
@@ -272,24 +237,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
   }, [saveTokens]);
 
   // Login with email or username
-  const login = useCallback(async (identifier: string, password: string): Promise<AuthResult> => {
+  const login = useCallback(async (identifier: string, password: string, website = ''): Promise<AuthResult> => {
     setError(null);
     try {
-      const response = await fetch(`${API_BASE}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identifier, password }),
-      });
-
-      const data = await safeJsonParse<TokenResponse & { error?: string }>(response);
-
-      if (!response.ok) {
-        throw new Error(data?.error || 'Login failed');
-      }
-
-      if (!data) {
-        throw new Error('Server unavailable');
-      }
+      const data = await loginWithPassword({ identifier, password, website });
 
       saveTokens(data.accessToken, data.refreshToken);
       setUser(data.user);

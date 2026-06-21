@@ -83,8 +83,23 @@ describe('AuthPage', () => {
         fireEvent.click(screen.getByRole('button', { name: 'signIn' }));
 
         await waitFor(() => {
-            expect(mockLogin).toHaveBeenCalledWith('user@test.com', 'password123');
+            expect(mockLogin).toHaveBeenCalledWith('user@test.com', 'password123', '');
             expect(onAuthSuccess).toHaveBeenCalled();
+        });
+    });
+
+    it('passes the hidden bot-trap field with login submissions', async () => {
+        mockLogin.mockResolvedValue({ success: false, error: 'Invalid auth request' });
+        const { container } = render(<AuthPage t={mockT} theme="dark" />);
+        const honeypot = container.querySelector('input[name="website"]') as HTMLInputElement;
+
+        fireEvent.change(honeypot, { target: { value: 'https://spam.example' } });
+        fireEvent.change(screen.getByLabelText('emailOrUsername'), { target: { value: 'user@test.com' } });
+        fireEvent.change(screen.getByLabelText('password'), { target: { value: 'password123' } });
+        fireEvent.click(screen.getByRole('button', { name: 'signIn' }));
+
+        await waitFor(() => {
+            expect(mockLogin).toHaveBeenCalledWith('user@test.com', 'password123', 'https://spam.example');
         });
     });
 
@@ -118,7 +133,7 @@ describe('AuthPage', () => {
         fireEvent.click(submitBtn);
 
         await waitFor(() => {
-            expect(mockRegister).toHaveBeenCalledWith('user@test.com', 'password123', 'testuser');
+            expect(mockRegister).toHaveBeenCalledWith('user@test.com', 'password123', 'testuser', '');
             expect(onAuthSuccess).toHaveBeenCalled();
         });
     });

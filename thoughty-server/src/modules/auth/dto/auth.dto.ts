@@ -24,6 +24,12 @@ export class RegisterDto {
     message: 'Username can only contain letters, numbers, underscores, and hyphens',
   })
   username?: string;
+
+  @ApiPropertyOptional({ description: 'Hidden bot-trap field; must be left empty by real users' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  website?: string;
 }
 
 export class LoginDto {
@@ -34,6 +40,12 @@ export class LoginDto {
   @ApiProperty({ example: 'Password123!' })
   @IsString()
   password: string;
+
+  @ApiPropertyOptional({ description: 'Hidden bot-trap field; must be left empty by real users' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  website?: string;
 }
 
 export class OAuthDto {

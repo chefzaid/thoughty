@@ -25,6 +25,7 @@ import {
   SessionResponseDto,
   UserResponseDto,
 } from '../dto';
+import { assertHumanAuthAttempt } from './auth-bot-protection';
 
 @Injectable()
 export class AuthService {
@@ -49,11 +50,7 @@ export class AuthService {
   }
 
   private generateAccessToken(user: { id: number; email: string; username: string }): string {
-    return this.jwtService.sign({
-      userId: user.id,
-      email: user.email,
-      username: user.username,
-    });
+    return this.jwtService.sign({ userId: user.id, email: user.email, username: user.username });
   }
 
   private generateRefreshToken(user: { id: number }): string {
@@ -61,6 +58,8 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
+    assertHumanAuthAttempt(dto.website);
+
     const sanitizedUsername = dto.username
       ? sanitizeString(dto.username.trim()).substring(0, 50)
       : null;
@@ -133,6 +132,8 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<AuthResponseDto> {
+    assertHumanAuthAttempt(dto.website);
+
     const identifier = sanitizeString(dto.identifier.trim()).toLowerCase();
 
     // Find user by email or username
