@@ -158,7 +158,7 @@
 - [x] Playwright end-to-end tests for critical user flows (sign up, login, create/edit/delete entry, view stats), with documentation on how tests are structured and how to add new ones
 - [x] Code coverage kept above 80% with tests added for uncovered critical paths
 - [x] Load testing and performance benchmarking for API endpoints and database queries
-- [ ] Crash testing and chaos engineering to identify weaknesses and improve resilience
+- [x] Crash testing and chaos engineering to identify weaknesses and improve resilience
 
 ## Technical Improvements
 

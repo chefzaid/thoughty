@@ -69,6 +69,7 @@ npm run test:e2e          # backend e2e specs in test/
 npm run test:e2e:cov      # backend e2e coverage
 npm run lint              # backend lint; currently runs eslint --fix
 npm run benchmark         # API and database performance benchmark against a running environment
+npm run chaos:check       # safe resilience probes for malformed requests and database recovery
 ```
 
 ### Backend load and performance benchmarks
@@ -102,6 +103,36 @@ BENCHMARK_AUTH_TOKEN=<token> BENCHMARK_ENDPOINTS=/api/entries,/api/stats npm run
 ```
 
 The output is CSV-shaped for easy comparison between runs. Keep benchmark runs out of production unless an operator has approved the load profile.
+
+### Backend crash and resilience checks
+
+The resilience check script runs a small set of safe fault probes against a running API and the configured PostgreSQL database. It is meant for local, staging, or explicitly approved operational checks, not unscheduled production load.
+
+```bash
+cd thoughty-server
+CHAOS_BASE_URL=http://localhost:3001 npm run chaos:check
+```
+
+HTTP probes verify that malformed JSON, missing routes, and unauthenticated private requests fail with controlled status codes, then confirm `/api/health` still returns `200`. Database probes run a successful query, an intentionally invalid statement, and a recovery query to prove the connection pool remains usable after expected SQL failure.
+
+Useful options:
+
+| Variable              | Default                 | Purpose                                 |
+| --------------------- | ----------------------- | --------------------------------------- |
+| `CHAOS_BASE_URL`      | `http://localhost:3001` | API origin to probe                     |
+| `CHAOS_TIMEOUT_MS`    | `5000`                  | Per-request timeout                     |
+| `CHAOS_SKIP_HTTP`     | unset                   | Set to `true` to skip HTTP probes       |
+| `CHAOS_SKIP_DB`       | unset                   | Set to `true` to skip database probes   |
+
+Examples:
+
+```bash
+CHAOS_SKIP_DB=true npm run chaos:check
+CHAOS_SKIP_HTTP=true npm run chaos:check
+CHAOS_BASE_URL=https://staging.example.com CHAOS_SKIP_DB=true npm run chaos:check
+```
+
+The script exits non-zero when a probe fails or when the service does not recover to a healthy state after a controlled fault.
 
 ### Direct frontend commands
 

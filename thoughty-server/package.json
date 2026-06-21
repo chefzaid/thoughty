@@ -34,7 +34,8 @@
     "kill-node": "npx ts-node scripts/kill-node.ts",
     "coverage-report": "npx ts-node scripts/coverage-report.ts",
     "openapi:export": "npx ts-node -r tsconfig-paths/register scripts/export-openapi.ts",
-    "benchmark": "npx ts-node -r tsconfig-paths/register scripts/benchmark.ts"
+    "benchmark": "npx ts-node -r tsconfig-paths/register scripts/benchmark.ts",
+    "chaos:check": "npx ts-node -r tsconfig-paths/register scripts/resilience-check.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1032.0",

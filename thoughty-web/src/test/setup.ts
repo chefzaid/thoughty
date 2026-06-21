@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom/vitest';
+import { configure } from '@testing-library/react';
 import { vi } from 'vitest';
 import { createElement, type ChangeEvent } from 'react';
+
+configure({ asyncUtilTimeout: 3000 });
 
 // Mock the Web Speech API globally for all tests
 if (!globalThis.speechSynthesis) {
