@@ -194,7 +194,7 @@
 - [x] Configure job in CI pipeline to run Playwright tests on a schedule (e.g. daily) to catch any regressions
 - [ ] Modify deployments configuration to use existing DS-Cluster infrastructure, and document the prerequisites and deployment process in docs
 - [x] CI pipeline for automated dependency vulnerability scanning (npm audit, Dependabot/Renovate)
-- [ ] Blue-green or canary deployment strategy for zero-downtime releases
+- [x] Blue-green or canary deployment strategy for zero-downtime releases
 
 ## Database
 

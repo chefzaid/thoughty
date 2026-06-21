@@ -93,6 +93,46 @@ If migrations fail:
 - do not start or restart the worker until the schema is compatible with the deployed code
 - preserve the failing logs before retrying
 
+## Canary Rollout Checks
+
+Canary releases use `deployments/canary.yaml`, which creates `thoughty-server-canary`, `thoughty-web-canary`, and `thoughty-canary-ingress`. The worker is promoted only after the API and web images are accepted.
+
+Check canary readiness:
+
+```bash
+kubectl rollout status deployment/thoughty-server-canary -n thoughty --timeout=120s
+kubectl rollout status deployment/thoughty-web-canary -n thoughty --timeout=120s
+kubectl get ingress thoughty-canary-ingress -n thoughty
+```
+
+Smoke the canary path without shifting normal traffic:
+
+```bash
+curl -H 'X-Thoughty-Canary: always' https://thoughty.example.com/api/health
+```
+
+Shift or stop weighted traffic:
+
+```bash
+kubectl annotate ingress thoughty-canary-ingress \
+  -n thoughty \
+  nginx.ingress.kubernetes.io/canary-weight="10" \
+  --overwrite
+
+kubectl annotate ingress thoughty-canary-ingress \
+  -n thoughty \
+  nginx.ingress.kubernetes.io/canary-weight="0" \
+  --overwrite
+```
+
+If the canary misbehaves, set the weight to `0`, preserve logs from both canary deployments, and delete the canary resources only after you have captured enough evidence:
+
+```bash
+kubectl logs deployment/thoughty-server-canary -n thoughty --tail=200
+kubectl logs deployment/thoughty-web-canary -n thoughty --tail=200
+kubectl delete -f deployments/canary.yaml
+```
+
 ## Vault Secret Troubleshooting
 
 Symptoms of missing or incorrect Vault secrets include API startup failures, database authentication errors, cloud provider auth failures, disabled AI features, or token encryption/decryption errors.

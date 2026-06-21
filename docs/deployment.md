@@ -43,6 +43,7 @@ flowchart TD
 - `thoughty-web` runs `2` replicas with the same rolling update strategy
 - `thoughty-cloud-sync-worker` runs `1` replica and also uses rolling updates
 - `postgres` runs `1` replica with `Recreate`, which matches the single attached volume design
+- `deployments/canary.yaml` adds optional canary API and web deployments plus an NGINX canary ingress; it starts at `0%` weighted traffic and can be exercised with the `X-Thoughty-Canary: always` request header
 - The API now exposes `/api/health`, which matches the liveness and readiness probes in `deployments/server-deployment.yaml`
 - The API exposes `/api/metrics` in Prometheus text format; the API pod template includes scrape annotations for clusters that honor `prometheus.io/*` annotations
 - The web deployment probes `/` on port `80`
@@ -248,6 +249,66 @@ kubectl rollout status deployment/thoughty-cloud-sync-worker -n thoughty --timeo
 kubectl rollout status deployment/thoughty-web -n thoughty --timeout=120s
 ```
 
+## Optional Canary Rollout
+
+Use `deployments/canary.yaml` when you want a zero-downtime release gate before promoting the main API and web deployments. The canary runs separate API and web pods behind dedicated services and an NGINX canary ingress. The cloud sync worker is intentionally excluded because running stable and canary workers at the same time could double-process queued jobs.
+
+Apply the canary and point it at candidate images:
+
+```bash
+kubectl apply -f deployments/canary.yaml
+kubectl set image deployment/thoughty-server-canary \
+  thoughty-server=<registry>/thoughty-server:<candidate-tag> \
+  -n thoughty
+kubectl set image deployment/thoughty-web-canary \
+  thoughty-web=<registry>/thoughty-web:<candidate-tag> \
+  -n thoughty
+kubectl rollout status deployment/thoughty-server-canary -n thoughty --timeout=120s
+kubectl rollout status deployment/thoughty-web-canary -n thoughty --timeout=120s
+```
+
+The canary ingress starts with `nginx.ingress.kubernetes.io/canary-weight: "0"`, so normal user traffic stays on stable. Send a header-routed smoke request through the public host:
+
+```bash
+curl -H 'X-Thoughty-Canary: always' https://thoughty.example.com/api/health
+```
+
+After smoke checks pass, shift a small percentage of traffic:
+
+```bash
+kubectl annotate ingress thoughty-canary-ingress \
+  -n thoughty \
+  nginx.ingress.kubernetes.io/canary-weight="10" \
+  --overwrite
+```
+
+Promote by updating the stable deployments to the candidate tags, waiting for rollout, running migrations from the promoted server image when needed, then updating the worker:
+
+```bash
+kubectl set image deployment/thoughty-server \
+  thoughty-server=<registry>/thoughty-server:<candidate-tag> \
+  -n thoughty
+kubectl rollout status deployment/thoughty-server -n thoughty --timeout=120s
+kubectl exec deployment/thoughty-server -n thoughty -- /bin/sh -c \
+  'source /vault/secrets/database && source /vault/secrets/app && npm run db:migrate:dist'
+kubectl set image deployment/thoughty-web \
+  thoughty-web=<registry>/thoughty-web:<candidate-tag> \
+  -n thoughty
+kubectl set image deployment/thoughty-cloud-sync-worker \
+  thoughty-cloud-sync-worker=<registry>/thoughty-server:<candidate-tag> \
+  -n thoughty
+```
+
+Rollback canary traffic by setting the canary weight back to `0` or deleting the canary resources:
+
+```bash
+kubectl annotate ingress thoughty-canary-ingress \
+  -n thoughty \
+  nginx.ingress.kubernetes.io/canary-weight="0" \
+  --overwrite
+kubectl delete -f deployments/canary.yaml
+```
+
 ## Jenkins Deployment Flow
 
 The `Jenkinsfile` implements the same deployment model with more guardrails.
@@ -314,6 +375,7 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 | `deployments/postgres.yaml`                     | PostgreSQL deployment, service, and persistent volume claim |
 | `deployments/server-deployment.yaml`            | API deployment, service, probes, and Vault injection        |
 | `deployments/cloud-sync-worker-deployment.yaml` | Dedicated background worker using the server image          |
+| `deployments/canary.yaml`                       | Optional API/web canary deployments and NGINX canary ingress |
 | `deployments/monitoring-alerts.yaml`            | PrometheusRule alerts for API, database, and cloud sync health |
 | `deployments/web-deployment.yaml`               | Web deployment and service                                  |
 | `deployments/ingress.yaml`                      | Host and path routing for `/` and `/api`                    |

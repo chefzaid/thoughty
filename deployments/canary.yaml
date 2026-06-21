@@ -1,0 +1,208 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thoughty-server-canary
+  namespace: thoughty
+  labels:
+    app: thoughty-server-canary
+    track: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thoughty-server-canary
+      track: canary
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: thoughty-server-canary
+        track: canary
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/api/metrics"
+        prometheus.io/port: "3001"
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "thoughty-server"
+        vault.hashicorp.com/agent-inject-secret-database: "secret/data/thoughty/database"
+        vault.hashicorp.com/agent-inject-template-database: |
+          {{- with secret "secret/data/thoughty/database" -}}
+          export POSTGRES_USER="{{ .Data.data.POSTGRES_USER }}"
+          export POSTGRES_PASSWORD="{{ .Data.data.POSTGRES_PASSWORD }}"
+          export POSTGRES_DB="{{ .Data.data.POSTGRES_DB }}"
+          {{- end }}
+        vault.hashicorp.com/agent-inject-secret-app: "secret/data/thoughty/app"
+        vault.hashicorp.com/agent-inject-template-app: |
+          {{- with secret "secret/data/thoughty/app" -}}
+          export JWT_SECRET="{{ .Data.data.JWT_SECRET }}"
+          export REFRESH_SECRET="{{ .Data.data.REFRESH_SECRET }}"
+          export CONFIG_ENCRYPTION_SECRET="{{ .Data.data.CONFIG_ENCRYPTION_SECRET }}"
+          export S3_ACCESS_KEY="{{ .Data.data.S3_ACCESS_KEY }}"
+          export S3_SECRET_KEY="{{ .Data.data.S3_SECRET_KEY }}"
+          export OPENROUTER_API_KEY="{{ .Data.data.OPENROUTER_API_KEY }}"
+          export GOOGLE_DRIVE_CLIENT_ID="{{ .Data.data.GOOGLE_DRIVE_CLIENT_ID }}"
+          export GOOGLE_DRIVE_CLIENT_SECRET="{{ .Data.data.GOOGLE_DRIVE_CLIENT_SECRET }}"
+          export ONEDRIVE_CLIENT_ID="{{ .Data.data.ONEDRIVE_CLIENT_ID }}"
+          export ONEDRIVE_CLIENT_SECRET="{{ .Data.data.ONEDRIVE_CLIENT_SECRET }}"
+          export DROPBOX_CLIENT_ID="{{ .Data.data.DROPBOX_CLIENT_ID }}"
+          export DROPBOX_CLIENT_SECRET="{{ .Data.data.DROPBOX_CLIENT_SECRET }}"
+          export SMTP_HOST="{{ .Data.data.SMTP_HOST }}"
+          export SMTP_PORT="{{ .Data.data.SMTP_PORT }}"
+          export SMTP_USER="{{ .Data.data.SMTP_USER }}"
+          export SMTP_PASS="{{ .Data.data.SMTP_PASS }}"
+          export SMTP_FROM="{{ .Data.data.SMTP_FROM }}"
+          {{- end }}
+    spec:
+      serviceAccountName: thoughty-server
+      containers:
+        - name: thoughty-server
+          image: thoughty-server:canary
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              source /vault/secrets/database &&
+              source /vault/secrets/app &&
+              node dist/src/main.js
+          ports:
+            - containerPort: 3001
+          envFrom:
+            - configMapRef:
+                name: thoughty-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3001
+            initialDelaySeconds: 10
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thoughty-server-canary
+  namespace: thoughty
+spec:
+  selector:
+    app: thoughty-server-canary
+    track: canary
+  ports:
+    - port: 3001
+      targetPort: 3001
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thoughty-web-canary
+  namespace: thoughty
+  labels:
+    app: thoughty-web-canary
+    track: canary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: thoughty-web-canary
+      track: canary
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: thoughty-web-canary
+        track: canary
+    spec:
+      containers:
+        - name: thoughty-web
+          image: thoughty-web:canary
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thoughty-web-canary
+  namespace: thoughty
+spec:
+  selector:
+    app: thoughty-web-canary
+    track: canary
+  ports:
+    - port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: thoughty-canary-ingress
+  namespace: thoughty
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "0"
+    nginx.ingress.kubernetes.io/canary-by-header: "X-Thoughty-Canary"
+    nginx.ingress.kubernetes.io/canary-by-header-value: "always"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - thoughty.example.com
+      secretName: thoughty-tls
+  rules:
+    - host: thoughty.example.com
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: thoughty-server-canary
+                port:
+                  number: 3001
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thoughty-web-canary
+                port:
+                  number: 80
