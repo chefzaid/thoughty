@@ -1,6 +1,6 @@
 # ADR 0017: Separate Feature Flags from User Entitlements
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-05
 
 ## Context
@@ -32,4 +32,4 @@ Treat feature flags and entitlements as separate concepts.
 - New gated features should define both flag behavior and entitlement behavior.
 - The configuration model may need new tables or settings for flags, subscriptions, trials, and user-owned provider keys.
 - Generated API contracts should expose enough state for the frontend to explain available/unavailable features without duplicating enforcement logic.
-- A third-party feature flag service is optional; the initial implementation may be database-backed if that is sufficient.
+- The initial implementation supports a remote feature flag provider through `FEATURE_FLAG_PROVIDER_URL`, with cached reads and inline fallback flags for local development.

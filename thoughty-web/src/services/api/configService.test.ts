@@ -103,6 +103,26 @@ describe('configService', () => {
     });
   });
 
+  describe('fetchFeatureFlags', () => {
+    it('returns feature flags on successful fetch', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ ai: true, betaFeed: false }),
+      });
+
+      const result = await service.fetchFeatureFlags();
+
+      expect(result).toEqual({ ai: true, betaFeed: false });
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/config/feature-flags');
+    });
+
+    it('returns an empty object when feature flag fetch fails', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: false });
+
+      await expect(service.fetchFeatureFlags()).resolves.toEqual({});
+    });
+  });
+
   describe('fetchProfileStats', () => {
     it('returns profile stats on successful fetch', async () => {
       const mockStatsResponse = {

@@ -4,6 +4,7 @@ import type { components } from '../../generated/openapi';
 import { downloadBlob } from '../../utils/downloadFile';
 
 export type StatsApiResponse = components['schemas']['StatsResponseDto'];
+export type FeatureFlags = Record<string, boolean>;
 
 export const createConfigService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
   /**
@@ -37,6 +38,18 @@ export const createConfigService = (authFetch: (url: string, options?: RequestIn
     } catch (error) {
       console.error('Error updating config:', error);
       return false;
+    }
+  };
+
+  const fetchFeatureFlags = async (): Promise<FeatureFlags> => {
+    try {
+      const response = await authFetch('/api/config/feature-flags');
+      if (!response?.ok) return {};
+      const data = await safeJsonParse<FeatureFlags>(response);
+      return data ?? {};
+    } catch (error) {
+      console.error('Error fetching feature flags:', error);
+      return {};
     }
   };
 
@@ -86,6 +99,7 @@ export const createConfigService = (authFetch: (url: string, options?: RequestIn
   return {
     fetchConfig,
     updateConfig,
+    fetchFeatureFlags,
     fetchProfileStats,
     downloadUserData
   };

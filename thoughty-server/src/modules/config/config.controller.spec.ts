@@ -2,10 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
 import { UserDataExportService } from './user-data-export.service';
+import { FeatureFlagsService } from '@/common';
 
 describe('ConfigController', () => {
   let controller: ConfigController;
   let configService: any;
+  let featureFlagsService: any;
   let userDataExportService: any;
 
   const mockUser = { userId: 1, email: 'test@example.com' };
@@ -15,6 +17,9 @@ describe('ConfigController', () => {
       getConfig: jest.fn(),
       updateConfig: jest.fn(),
     };
+    featureFlagsService = {
+      getFeatureFlags: jest.fn(),
+    };
     userDataExportService = {
       downloadData: jest.fn(),
     };
@@ -23,6 +28,7 @@ describe('ConfigController', () => {
       controllers: [ConfigController],
       providers: [
         { provide: ConfigService, useValue: configService },
+        { provide: FeatureFlagsService, useValue: featureFlagsService },
         { provide: UserDataExportService, useValue: userDataExportService },
       ],
     }).compile();
@@ -54,6 +60,15 @@ describe('ConfigController', () => {
       const result = await controller.updateConfig(mockUser as any, newConfig);
       expect(configService.updateConfig).toHaveBeenCalledWith(1, newConfig);
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('getFeatureFlags', () => {
+    it('delegates to featureFlagsService.getFeatureFlags', async () => {
+      const expected = { ai: true, betaFeed: false };
+      featureFlagsService.getFeatureFlags.mockResolvedValue(expected);
+
+      await expect(controller.getFeatureFlags()).resolves.toBe(expected);
     });
   });
 

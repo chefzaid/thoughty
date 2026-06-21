@@ -61,7 +61,10 @@ import { JsonLogger, RATE_LIMITS, RequestLoggingMiddleware } from './common';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    JsonLogger,
+    {
+      provide: JsonLogger,
+      useValue: new JsonLogger('App'),
+    },
   ],
 })
 export class AppModule implements NestModule {

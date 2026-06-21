@@ -123,6 +123,7 @@ flowchart LR
 - Preferences cover theme, language, journal pagination size, profile birthday/gender metadata, text-to-speech date reading, preferred AI model, and the automatic AI tagging limit.
 - Appearance preferences now include font family, font size, and font color controls, which let users tune the journal to their reading comfort.
 - Text-to-speech appearance settings now include voice selection and a preview action, so users can listen to the chosen voice before saving it.
+- Runtime feature flags can be loaded from an external provider and exposed to authenticated clients so feature rollout can change without redeploying the app.
 - English and French are the currently implemented application languages, and language selection is stored as part of the user configuration.
 
 ## Product Experience

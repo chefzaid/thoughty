@@ -5,6 +5,7 @@ import { UserDataExportService } from './user-data-export.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { Response } from 'express';
+import { FeatureFlagsService } from '@/common';
 
 @ApiTags('Config')
 @ApiBearerAuth()
@@ -13,6 +14,7 @@ import { Response } from 'express';
 export class ConfigController {
   constructor(
     private readonly configService: ConfigService,
+    private readonly featureFlagsService: FeatureFlagsService,
     private readonly userDataExportService: UserDataExportService,
   ) {}
 
@@ -31,6 +33,13 @@ export class ConfigController {
     @Body() newConfig: Record<string, string>,
   ): Promise<{ success: boolean }> {
     return this.configService.updateConfig(user.userId, newConfig);
+  }
+
+  @Get('feature-flags')
+  @ApiOperation({ summary: 'Get runtime feature flags for the current environment' })
+  @ApiResponse({ status: 200, description: 'Feature flag key/value map' })
+  async getFeatureFlags(): Promise<Record<string, boolean>> {
+    return this.featureFlagsService.getFeatureFlags();
   }
 
   @Get('download-data')

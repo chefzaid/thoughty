@@ -179,6 +179,7 @@ The `.env.example` files are the source of truth for local configuration. The ta
 | `OPENROUTER_API_KEY`       | empty by default                                       | Required only for AI features                            |
 | Cloud provider OAuth keys  | empty by default                                       | Required only for cloud sync integrations                |
 | SMTP settings              | example placeholders                                   | Required only for real email sending flows               |
+| Feature flags              | optional external endpoint                            | `FEATURE_FLAG_PROVIDER_URL`, optional `FEATURE_FLAG_PROVIDER_TOKEN`, `FEATURE_FLAG_CACHE_TTL_MS`, and fallback `FEATURE_FLAGS=flag=true,other=false` |
 
 ### Frontend env highlights
 

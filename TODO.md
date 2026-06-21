@@ -176,7 +176,7 @@
 - [x] Improve error handling and user feedback for better UX
 - [ ] Use WebSockets for real-time updates on public entries and messages
 - [x] Implement lazy loading for components and routes to improve initial load time
-- [ ] Implement feature flags to enable/disable features without redeploying, using a third-party service
+- [x] Implement feature flags to enable/disable features without redeploying, using a third-party service
 - [ ] Check that OpenAPI documentation is up to date and complete for all endpoints, and add examples for request and response bodies
 
 ## Monitoring and Observability

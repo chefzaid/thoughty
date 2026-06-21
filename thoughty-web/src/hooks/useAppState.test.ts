@@ -17,6 +17,7 @@ vi.mock('../services/api', () => ({
   createAuthFetch: vi.fn((authFetch) => authFetch),
   createConfigService: vi.fn(() => ({
     fetchConfig: vi.fn(),
+    fetchFeatureFlags: vi.fn(),
     fetchProfileStats: vi.fn(),
     updateConfig: vi.fn(),
     downloadUserData: vi.fn(),
@@ -156,6 +157,7 @@ describe('useAppState Hooks', () => {
       const { createConfigService } = await import('../services/api');
       vi.mocked(createConfigService).mockReturnValue({
         fetchConfig: vi.fn().mockResolvedValue({ theme: 'dark', language: 'en' }),
+        fetchFeatureFlags: vi.fn().mockResolvedValue({}),
         fetchProfileStats: vi.fn().mockResolvedValue(null),
         updateConfig: vi.fn().mockResolvedValue(true),
         downloadUserData: vi.fn().mockResolvedValue(true),

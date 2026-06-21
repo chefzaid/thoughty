@@ -7,6 +7,7 @@ import { createSwaggerDocument } from '../src/swagger';
 
 async function exportOpenApi() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    abortOnError: false,
     logger: false,
   });
 
@@ -24,4 +25,7 @@ async function exportOpenApi() {
   console.log(`OpenAPI schema written to ${outputPath}`);
 }
 
-void exportOpenApi();
+exportOpenApi().catch((error: unknown) => {
+  console.error(error);
+  process.exit(1);
+});

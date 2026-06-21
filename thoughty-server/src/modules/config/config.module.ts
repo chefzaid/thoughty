@@ -4,11 +4,12 @@ import { Setting, User, Diary, Entry, EntryRevision, Attachment } from '@/databa
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
 import { UserDataExportService } from './user-data-export.service';
+import { FeatureFlagsService } from '@/common';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Setting, User, Diary, Entry, EntryRevision, Attachment])],
   controllers: [ConfigController],
-  providers: [ConfigService, UserDataExportService],
-  exports: [ConfigService, UserDataExportService],
+  providers: [ConfigService, FeatureFlagsService, UserDataExportService],
+  exports: [ConfigService, FeatureFlagsService, UserDataExportService],
 })
 export class UserConfigModule {}
