@@ -229,6 +229,18 @@ CREATE INDEX IF NOT EXISTS idx_entries_diary_id ON entries(diary_id);
 CREATE INDEX IF NOT EXISTS idx_entries_is_favorite ON entries(is_favorite);
 CREATE INDEX IF NOT EXISTS idx_entries_is_archived ON entries(is_archived);
 CREATE INDEX IF NOT EXISTS idx_entries_is_pinned ON entries(is_pinned);
+CREATE INDEX IF NOT EXISTS idx_entries_user_pinned_date_index
+    ON entries(user_id, is_pinned DESC, date DESC, "index" ASC);
+CREATE INDEX IF NOT EXISTS idx_entries_user_diary_date_index
+    ON entries(user_id, diary_id, date DESC, "index" ASC);
+CREATE INDEX IF NOT EXISTS idx_entries_user_visibility_date
+    ON entries(user_id, visibility, date DESC);
+CREATE INDEX IF NOT EXISTS idx_entries_user_archive_date
+    ON entries(user_id, is_archived, date DESC);
+CREATE INDEX IF NOT EXISTS idx_entries_user_favorite_date
+    ON entries(user_id, is_favorite, date DESC);
+CREATE INDEX IF NOT EXISTS idx_entries_tags_gin
+    ON entries USING GIN(tags);
 CREATE INDEX IF NOT EXISTS idx_settings_user_id ON settings(user_id);
 CREATE INDEX IF NOT EXISTS idx_diaries_user_id ON diaries(user_id);
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);

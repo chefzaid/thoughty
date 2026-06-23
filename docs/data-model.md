@@ -145,6 +145,7 @@ Entries are not only identified by database `id`. The user-facing journal model 
 ## Tags and Metadata
 
 - Entry tags are currently stored directly on `entries.tags` as a PostgreSQL text array.
+- Entry indexes are tuned for the most common journal reads: user/date timelines, diary-scoped timelines, visibility filters, archive/favorite filters, and tag containment through a PostgreSQL GIN index.
 - Tag color/category metadata lives in user configuration rather than in a normalized tag table.
 - Whole-app tag rename operations must update entry arrays and the metadata configuration together.
 - If tags later need ownership, permissions, or rich relationships, this entry-centric model should be revisited with a new ADR.

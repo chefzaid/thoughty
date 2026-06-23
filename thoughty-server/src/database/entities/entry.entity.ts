@@ -6,12 +6,18 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Diary } from './diary.entity';
 import { Attachment } from './attachment.entity';
 
 @Entity('entries')
+@Index('idx_entries_user_pinned_date_index', ['userId', 'isPinned', 'date', 'index'])
+@Index('idx_entries_user_diary_date_index', ['userId', 'diaryId', 'date', 'index'])
+@Index('idx_entries_user_visibility_date', ['userId', 'visibility', 'date'])
+@Index('idx_entries_user_archive_date', ['userId', 'isArchived', 'date'])
+@Index('idx_entries_user_favorite_date', ['userId', 'isFavorite', 'date'])
 export class Entry {
   @PrimaryGeneratedColumn()
   id: number;
