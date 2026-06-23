@@ -177,7 +177,7 @@
 - [ ] Use WebSockets for real-time updates on public entries and messages
 - [x] Implement lazy loading for components and routes to improve initial load time
 - [x] Implement feature flags to enable/disable features without redeploying, using a third-party service
-- [ ] Check that OpenAPI documentation is up to date and complete for all endpoints, and add examples for request and response bodies
+- [x] Check that OpenAPI documentation is up to date and complete for all endpoints, and add examples for request and response bodies
 - [ ] Ensure that all API endpoints are effectively used in the UI (either the app or the admin console). Implement the frontend that would use them if necessary, or remove the endpoints.
 
 ## Monitoring and Observability

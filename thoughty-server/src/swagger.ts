@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { enrichOpenApiExamples } from './swagger.examples';
 
 export function createSwaggerConfig() {
   return new DocumentBuilder()
@@ -20,5 +21,5 @@ export function createSwaggerConfig() {
 }
 
 export function createSwaggerDocument(app: INestApplication) {
-  return SwaggerModule.createDocument(app, createSwaggerConfig());
+  return enrichOpenApiExamples(SwaggerModule.createDocument(app, createSwaggerConfig()));
 }

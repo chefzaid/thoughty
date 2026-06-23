@@ -7,9 +7,24 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "API health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "status": "ok",
+                    "timestamp": "2026-06-24T10:00:00.000Z"
+                  }
+                },
+                "example": {
+                  "status": "ok",
+                  "timestamp": "2026-06-24T10:00:00.000Z"
+                }
+              }
+            }
           }
         },
+        "summary": "Get API health status",
         "tags": [
           "Health"
         ]
@@ -25,6 +40,12 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RegisterDto"
+              },
+              "example": {
+                "email": "user@example.com",
+                "password": "Password123!",
+                "username": "johndoe",
+                "website": "example"
               }
             }
           }
@@ -36,6 +57,13 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthResponseDto"
+                },
+                "example": {
+                  "user": {
+                    "example": "example"
+                  },
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
               }
             }
@@ -63,6 +91,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LoginDto"
+              },
+              "example": {
+                "identifier": "user@example.com",
+                "password": "Password123!",
+                "website": "example"
               }
             }
           }
@@ -74,6 +107,13 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthResponseDto"
+                },
+                "example": {
+                  "user": {
+                    "example": "example"
+                  },
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
               }
             }
@@ -98,6 +138,13 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/OAuthDto"
+              },
+              "example": {
+                "provider": "google",
+                "providerId": "123456789",
+                "email": "user@example.com",
+                "name": "John Doe",
+                "avatarUrl": "https://example.com/avatar.jpg"
               }
             }
           }
@@ -109,6 +156,13 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AuthResponseDto"
+                },
+                "example": {
+                  "user": {
+                    "example": "example"
+                  },
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
               }
             }
@@ -133,6 +187,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RefreshTokenDto"
+              },
+              "example": {
+                "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
               }
             }
           }
@@ -161,6 +218,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RefreshTokenDto"
+              },
+              "example": {
+                "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
               }
             }
           }
@@ -171,6 +231,153 @@
           }
         },
         "summary": "Logout and invalidate refresh token",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/sessions": {
+      "get": {
+        "operationId": "AuthController_listSessions",
+        "parameters": [
+          {
+            "name": "x-refresh-token",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Refresh-Token",
+            "in": "header",
+            "description": "Current refresh token for marking this session",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active sessions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SessionResponseDto"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 42,
+                    "current": true,
+                    "createdAt": "2026-06-21T10:00:00.000Z",
+                    "expiresAt": "2026-06-28T10:00:00.000Z"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List active sessions for the current user",
+        "tags": [
+          "Authentication"
+        ]
+      },
+      "delete": {
+        "operationId": "AuthController_revokeOtherSessions",
+        "parameters": [
+          {
+            "name": "x-refresh-token",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Refresh-Token",
+            "in": "header",
+            "description": "Current refresh token to keep active",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Other sessions revoked"
+          },
+          "400": {
+            "description": "Current refresh token missing"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke all other active sessions",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/sessions/{id}": {
+      "delete": {
+        "operationId": "AuthController_revokeSession",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "x-refresh-token",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Refresh-Token",
+            "in": "header",
+            "description": "Current refresh token to protect it from revocation",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Session revoked"
+          },
+          "404": {
+            "description": "Session not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke one active session",
         "tags": [
           "Authentication"
         ]
@@ -187,6 +394,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserResponseDto"
+                },
+                "example": {
+                  "id": 1,
+                  "username": "Daily Journal",
+                  "email": "user@example.com",
+                  "avatarUrl": "https://thoughty.example.com/callback",
+                  "authProvider": "google_drive",
+                  "emailVerified": true,
+                  "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
             }
@@ -216,6 +432,10 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ChangePasswordDto"
+              },
+              "example": {
+                "currentPassword": "Password123!",
+                "newPassword": "Password123!"
               }
             }
           }
@@ -249,6 +469,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ForgotPasswordDto"
+              },
+              "example": {
+                "email": "user@example.com"
               }
             }
           }
@@ -274,6 +497,10 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ResetPasswordDto"
+              },
+              "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                "newPassword": "Password123!"
               }
             }
           }
@@ -302,6 +529,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/VerifyEmailDto"
+              },
+              "example": {
+                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
               }
             }
           }
@@ -350,6 +580,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DeleteAccountDto"
+              },
+              "example": {
+                "password": "Password123!"
               }
             }
           }
@@ -474,6 +707,45 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntriesListResponseDto"
+                },
+                "example": {
+                  "entries": [
+                    {
+                      "id": 1,
+                      "user_id": 1,
+                      "diary_id": 1,
+                      "date": "2026-06-24",
+                      "index": 1,
+                      "tags": [
+                        "reflection"
+                      ],
+                      "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                      "format": "plain",
+                      "visibility": "private",
+                      "is_favorite": true,
+                      "is_archived": true,
+                      "is_pinned": true,
+                      "diary_name": "Daily Journal",
+                      "diary_icon": "journal",
+                      "diary_color": "#2A9D8F",
+                      "attachments": [
+                        {
+                          "id": 1,
+                          "original_filename": "Daily Journal",
+                          "stored_filename": "Daily Journal",
+                          "mimetype": "example",
+                          "size": 1
+                        }
+                      ],
+                      "created_at": "2026-06-24T10:00:00.000Z"
+                    }
+                  ],
+                  "total": 1,
+                  "page": 1,
+                  "totalPages": 1,
+                  "allTags": [
+                    "reflection"
+                  ]
                 }
               }
             }
@@ -498,6 +770,16 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateEntryDto"
+              },
+              "example": {
+                "text": "example",
+                "tags": [
+                  "reflection"
+                ],
+                "date": "2026-06-24",
+                "visibility": "private",
+                "diaryId": 1,
+                "format": "plain"
               }
             }
           }
@@ -509,6 +791,10 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateEntryResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "entryId": 1
                 }
               }
             }
@@ -536,6 +822,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntryDatesResponseDto"
+                },
+                "example": {
+                  "dates": [
+                    "2026-06-24"
+                  ]
                 }
               }
             }
@@ -591,6 +882,17 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FirstEntryResponseDto"
+                },
+                "example": {
+                  "page": 1,
+                  "found": true,
+                  "entryId": 1,
+                  "years": [
+                    2026
+                  ],
+                  "months": [
+                    "example"
+                  ]
                 }
               }
             }
@@ -656,6 +958,41 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntryLookupResponseDto"
+                },
+                "example": {
+                  "found": true,
+                  "entry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z"
+                  },
+                  "page": 1,
+                  "entryId": 1,
+                  "error": "example"
                 }
               }
             }
@@ -722,6 +1059,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntryBacklinksResponseDto"
+                },
+                "example": {
+                  "backlinks": [
+                    {
+                      "id": 1,
+                      "date": "2026-06-24",
+                      "index": 1,
+                      "tags": [
+                        "reflection"
+                      ],
+                      "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                      "format": "plain",
+                      "visibility": "private",
+                      "is_favorite": true,
+                      "is_archived": true,
+                      "is_pinned": true,
+                      "diary_name": "Daily Journal",
+                      "diary_icon": "journal",
+                      "diary_color": "#2A9D8F"
+                    }
+                  ]
                 }
               }
             }
@@ -748,6 +1106,18 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/BulkOperationDto"
+              },
+              "example": {
+                "ids": [
+                  1
+                ],
+                "action": "delete",
+                "visibility": "public",
+                "tags": [
+                  "reflection"
+                ],
+                "diaryId": 1,
+                "isArchived": true
               }
             }
           }
@@ -759,6 +1129,10 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CountedMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "affectedCount": 3
                 }
               }
             }
@@ -785,6 +1159,10 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/RenameTagDto"
+              },
+              "example": {
+                "oldTag": "reflection",
+                "newTag": "reflection"
               }
             }
           }
@@ -796,6 +1174,10 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CountedMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "affectedCount": 3
                 }
               }
             }
@@ -822,6 +1204,12 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReorderEntriesDto"
+              },
+              "example": {
+                "date": "2026-06-24",
+                "orderedIds": [
+                  1
+                ]
               }
             }
           }
@@ -833,6 +1221,9 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
                 }
               }
             }
@@ -868,6 +1259,15 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateEntryDto"
+              },
+              "example": {
+                "text": "example",
+                "tags": [
+                  "reflection"
+                ],
+                "date": "2026-06-24",
+                "visibility": "public",
+                "format": "plain"
               }
             }
           }
@@ -879,6 +1279,38 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntryMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "entry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z"
+                  }
                 }
               }
             }
@@ -913,6 +1345,9 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
                 }
               }
             }
@@ -948,6 +1383,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateVisibilityDto"
+              },
+              "example": {
+                "visibility": "public"
               }
             }
           }
@@ -959,6 +1397,38 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntryMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "entry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z"
+                  }
                 }
               }
             }
@@ -994,6 +1464,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateFavoriteDto"
+              },
+              "example": {
+                "isFavorite": true
               }
             }
           }
@@ -1005,6 +1478,38 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntryMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "entry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z"
+                  }
                 }
               }
             }
@@ -1040,6 +1545,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateArchivedDto"
+              },
+              "example": {
+                "isArchived": true
               }
             }
           }
@@ -1051,6 +1559,38 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntryMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "entry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z"
+                  }
                 }
               }
             }
@@ -1086,6 +1626,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdatePinnedDto"
+              },
+              "example": {
+                "isPinned": true
               }
             }
           }
@@ -1097,6 +1640,38 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EntryMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "entry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z"
+                  }
                 }
               }
             }
@@ -1170,6 +1745,9 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
                 }
               }
             }
@@ -1207,6 +1785,10 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DeleteAllResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "deletedCount": 3
                 }
               }
             }
@@ -1256,6 +1838,26 @@
           }
         ],
         "summary": "Update user configuration",
+        "tags": [
+          "Config"
+        ]
+      }
+    },
+    "/api/config/feature-flags": {
+      "get": {
+        "operationId": "ConfigController_getFeatureFlags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Feature flag key/value map"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get runtime feature flags for the current environment",
         "tags": [
           "Config"
         ]
@@ -1311,6 +1913,13 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SuggestTagsDto"
+              },
+              "example": {
+                "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                "existingTags": [
+                  "reflection"
+                ],
+                "maxTags": 5
               }
             }
           }
@@ -1341,6 +1950,10 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/FixWritingDto"
+              },
+              "example": {
+                "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                "mode": "grammar"
               }
             }
           }
@@ -1371,6 +1984,16 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ChatDto"
+              },
+              "example": {
+                "entryId": 1,
+                "entryContent": "Today I wrote a thoughtful journal entry about focus and calm.",
+                "messages": [
+                  {
+                    "role": "user",
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                  }
+                ]
               }
             }
           }
@@ -1382,6 +2005,9 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ChatResponseDto"
+                },
+                "example": {
+                  "reply": "example"
                 }
               }
             }
@@ -1418,6 +2044,15 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ChatHistoryResponseDto"
+                },
+                "example": {
+                  "entryId": 1,
+                  "messages": [
+                    {
+                      "role": "user",
+                      "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                    }
+                  ]
                 }
               }
             }
@@ -1448,7 +2083,22 @@
                   "items": {
                     "$ref": "#/components/schemas/DiaryResponseDto"
                   }
-                }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "userId": 1,
+                    "name": "Daily Journal",
+                    "icon": "journal",
+                    "color": {
+                      "example": "#2A9D8F"
+                    },
+                    "visibility": "private",
+                    "isDefault": true,
+                    "position": 1,
+                    "createdAt": "2026-06-24T10:00:00.000Z"
+                  }
+                ]
               }
             }
           }
@@ -1472,6 +2122,12 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CreateDiaryDto"
+              },
+              "example": {
+                "name": "Daily Journal",
+                "icon": "📓",
+                "visibility": "private",
+                "color": "#2A9D8F"
               }
             }
           }
@@ -1483,6 +2139,19 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DiaryResponseDto"
+                },
+                "example": {
+                  "id": 1,
+                  "userId": 1,
+                  "name": "Daily Journal",
+                  "icon": "journal",
+                  "color": {
+                    "example": "#2A9D8F"
+                  },
+                  "visibility": "private",
+                  "isDefault": true,
+                  "position": 1,
+                  "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
             }
@@ -1521,6 +2190,12 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateDiaryDto"
+              },
+              "example": {
+                "name": "Daily Journal",
+                "icon": "journal",
+                "visibility": "public",
+                "color": "#2A9D8F"
               }
             }
           }
@@ -1532,6 +2207,19 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DiaryResponseDto"
+                },
+                "example": {
+                  "id": 1,
+                  "userId": 1,
+                  "name": "Daily Journal",
+                  "icon": "journal",
+                  "color": {
+                    "example": "#2A9D8F"
+                  },
+                  "visibility": "private",
+                  "isDefault": true,
+                  "position": 1,
+                  "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
             }
@@ -1604,6 +2292,19 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/DiaryResponseDto"
+                },
+                "example": {
+                  "id": 1,
+                  "userId": 1,
+                  "name": "Daily Journal",
+                  "icon": "journal",
+                  "color": {
+                    "example": "#2A9D8F"
+                  },
+                  "visibility": "private",
+                  "isDefault": true,
+                  "position": 1,
+                  "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
             }
@@ -1633,6 +2334,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReorderDiariesDto"
+              },
+              "example": {
+                "orderedIds": [
+                  1
+                ]
               }
             }
           }
@@ -1673,6 +2379,56 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/StatsResponseDto"
+                },
+                "example": {
+                  "totalThoughts": 120,
+                  "averageWordsPerEntry": 184,
+                  "averageReadingTimeMinutes": 1,
+                  "uniqueTagsCount": 18,
+                  "thoughtsPerYear": {
+                    "2024": 48,
+                    "2025": 72
+                  },
+                  "thoughtsPerMonth": {
+                    "2025-01": 12,
+                    "2025-02": 18
+                  },
+                  "thoughtsPerDay": {
+                    "2025-02-10": 1,
+                    "2025-02-11": 3
+                  },
+                  "thoughtsPerTag": {
+                    "work": 22,
+                    "health": 9
+                  },
+                  "tagsPerYear": {
+                    "2025": {
+                      "work": 10,
+                      "health": 4
+                    }
+                  },
+                  "tagsPerMonth": {
+                    "2025-02": {
+                      "work": 6,
+                      "health": 2
+                    }
+                  },
+                  "toneMoodAnalysis": {
+                    "dominantMood": "reflective",
+                    "dominantTone": "candid",
+                    "moodBreakdown": {
+                      "reflective": 14,
+                      "calm": 9,
+                      "anxious": 4
+                    },
+                    "toneBreakdown": {
+                      "candid": 12,
+                      "analytical": 8,
+                      "intimate": 7
+                    },
+                    "analyzedEntries": 27,
+                    "summary": "Recent thoughts are mostly reflective and calm, with a candid and personal writing tone."
+                  }
                 }
               }
             }
@@ -1717,6 +2473,16 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/FormatConfigDto"
+              },
+              "example": {
+                "entrySeparator": "example",
+                "sameDaySeparator": "example",
+                "datePrefix": "2026-06-24",
+                "dateSuffix": "2026-06-24",
+                "dateFormat": "2026-06-24",
+                "tagOpenBracket": "reflection",
+                "tagCloseBracket": "reflection",
+                "tagSeparator": "reflection"
               }
             }
           }
@@ -1806,6 +2572,10 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PreviewImportDto"
+              },
+              "example": {
+                "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                "diaryId": 1
               }
             }
           }
@@ -1817,6 +2587,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PreviewResponseDto"
+                },
+                "example": {
+                  "entries": [
+                    "example"
+                  ],
+                  "totalCount": 3,
+                  "duplicates": [
+                    "example"
+                  ],
+                  "duplicateCount": 3
                 }
               }
             }
@@ -1843,6 +2623,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ImportDto"
+              },
+              "example": {
+                "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                "skipDuplicates": true,
+                "diaryId": 1
               }
             }
           }
@@ -1854,6 +2639,12 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ImportResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "importedCount": 3,
+                  "skippedCount": 3,
+                  "totalProcessed": 1
                 }
               }
             }
@@ -2050,6 +2841,20 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BookPreviewResponseDto"
+                },
+                "example": {
+                  "title": "June reflections",
+                  "author": "example",
+                  "chapterCount": 3,
+                  "entryCount": 3,
+                  "chapters": [
+                    {
+                      "title": "June reflections",
+                      "entryCount": 3,
+                      "firstDate": "2026-06-24",
+                      "lastDate": "2026-06-24"
+                    }
+                  ]
                 }
               }
             }
@@ -2333,6 +3138,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LinkAttachmentDto"
+              },
+              "example": {
+                "entryId": 1
               }
             }
           }
@@ -2441,6 +3249,10 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CloudAuthUrlDto"
+              },
+              "example": {
+                "provider": "google_drive",
+                "redirectUri": "https://thoughty.example.com/callback"
               }
             }
           }
@@ -2471,6 +3283,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CloudConnectDto"
+              },
+              "example": {
+                "code": "example",
+                "provider": "google_drive",
+                "redirectUri": "https://thoughty.example.com/callback"
               }
             }
           }
@@ -2501,6 +3318,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CloudDisconnectDto"
+              },
+              "example": {
+                "provider": "google_drive"
               }
             }
           }
@@ -2566,6 +3386,12 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CloudUploadDto"
+              },
+              "example": {
+                "diaryId": 1,
+                "format": "txt",
+                "provider": "google_drive",
+                "includeVisibility": false
               }
             }
           }
@@ -2596,6 +3422,10 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CloudDownloadDto"
+              },
+              "example": {
+                "provider": "google_drive",
+                "fileId": "example"
               }
             }
           }
@@ -2646,6 +3476,13 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SetSyncScheduleDto"
+              },
+              "example": {
+                "provider": "google_drive",
+                "frequency": "every_6h",
+                "format": "txt",
+                "diaryId": 1,
+                "includeVisibility": false
               }
             }
           }
@@ -2709,6 +3546,9 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/TriggerSyncDto"
+              },
+              "example": {
+                "provider": "google_drive"
               }
             }
           }
@@ -2726,6 +3566,26 @@
         "summary": "Trigger a diff-based sync (uploads only if content has changed)",
         "tags": [
           "Cloud Sync"
+        ]
+      }
+    },
+    "/api/metrics": {
+      "get": {
+        "operationId": "MetricsController_getMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Prometheus metrics text exposition",
+            "content": {
+              "text/plain": {
+                "example": "thoughty_database_up 1\nthoughty_cloud_sync_jobs_stuck 0\n"
+              }
+            }
+          }
+        },
+        "summary": "Render Prometheus metrics",
+        "tags": [
+          "Metrics"
         ]
       }
     }
@@ -2766,12 +3626,22 @@
           "username": {
             "type": "string",
             "example": "johndoe"
+          },
+          "website": {
+            "type": "string",
+            "description": "Hidden bot-trap field; must be left empty by real users"
           }
         },
         "required": [
           "email",
           "password"
-        ]
+        ],
+        "example": {
+          "email": "user@example.com",
+          "password": "Password123!",
+          "username": "johndoe",
+          "website": "example"
+        }
       },
       "AuthResponseDto": {
         "type": "object",
@@ -2790,7 +3660,14 @@
           "user",
           "accessToken",
           "refreshToken"
-        ]
+        ],
+        "example": {
+          "user": {
+            "example": "example"
+          },
+          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+          "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        }
       },
       "LoginDto": {
         "type": "object",
@@ -2803,12 +3680,21 @@
           "password": {
             "type": "string",
             "example": "Password123!"
+          },
+          "website": {
+            "type": "string",
+            "description": "Hidden bot-trap field; must be left empty by real users"
           }
         },
         "required": [
           "identifier",
           "password"
-        ]
+        ],
+        "example": {
+          "identifier": "user@example.com",
+          "password": "Password123!",
+          "website": "example"
+        }
       },
       "OAuthDto": {
         "type": "object",
@@ -2842,7 +3728,14 @@
           "provider",
           "providerId",
           "email"
-        ]
+        ],
+        "example": {
+          "provider": "google",
+          "providerId": "123456789",
+          "email": "user@example.com",
+          "name": "John Doe",
+          "avatarUrl": "https://example.com/avatar.jpg"
+        }
       },
       "RefreshTokenDto": {
         "type": "object",
@@ -2853,7 +3746,45 @@
         },
         "required": [
           "refreshToken"
-        ]
+        ],
+        "example": {
+          "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        }
+      },
+      "SessionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 42
+          },
+          "current": {
+            "type": "boolean",
+            "example": true
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-06-21T10:00:00.000Z"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-06-28T10:00:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "current",
+          "createdAt",
+          "expiresAt"
+        ],
+        "example": {
+          "id": 42,
+          "current": true,
+          "createdAt": "2026-06-21T10:00:00.000Z",
+          "expiresAt": "2026-06-28T10:00:00.000Z"
+        }
       },
       "UserResponseDto": {
         "type": "object",
@@ -2888,7 +3819,16 @@
           "authProvider",
           "emailVerified",
           "createdAt"
-        ]
+        ],
+        "example": {
+          "id": 1,
+          "username": "Daily Journal",
+          "email": "user@example.com",
+          "avatarUrl": "https://thoughty.example.com/callback",
+          "authProvider": "google_drive",
+          "emailVerified": true,
+          "createdAt": "2026-06-24T10:00:00.000Z"
+        }
       },
       "ChangePasswordDto": {
         "type": "object",
@@ -2903,7 +3843,11 @@
         "required": [
           "currentPassword",
           "newPassword"
-        ]
+        ],
+        "example": {
+          "currentPassword": "Password123!",
+          "newPassword": "Password123!"
+        }
       },
       "ForgotPasswordDto": {
         "type": "object",
@@ -2915,7 +3859,10 @@
         },
         "required": [
           "email"
-        ]
+        ],
+        "example": {
+          "email": "user@example.com"
+        }
       },
       "ResetPasswordDto": {
         "type": "object",
@@ -2930,7 +3877,11 @@
         "required": [
           "token",
           "newPassword"
-        ]
+        ],
+        "example": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+          "newPassword": "Password123!"
+        }
       },
       "VerifyEmailDto": {
         "type": "object",
@@ -2941,7 +3892,10 @@
         },
         "required": [
           "token"
-        ]
+        ],
+        "example": {
+          "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        }
       },
       "DeleteAccountDto": {
         "type": "object",
@@ -2950,6 +3904,9 @@
             "type": "string",
             "description": "Password required for local accounts"
           }
+        },
+        "example": {
+          "password": "Password123!"
         }
       },
       "AttachmentResponseDto": {
@@ -2977,7 +3934,14 @@
           "stored_filename",
           "mimetype",
           "size"
-        ]
+        ],
+        "example": {
+          "id": 1,
+          "original_filename": "Daily Journal",
+          "stored_filename": "Daily Journal",
+          "mimetype": "example",
+          "size": 1
+        }
       },
       "EntryResponseDto": {
         "type": "object",
@@ -3059,7 +4023,36 @@
           "is_archived",
           "is_pinned",
           "created_at"
-        ]
+        ],
+        "example": {
+          "id": 1,
+          "user_id": 1,
+          "diary_id": 1,
+          "date": "2026-06-24",
+          "index": 1,
+          "tags": [
+            "reflection"
+          ],
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "format": "plain",
+          "visibility": "private",
+          "is_favorite": true,
+          "is_archived": true,
+          "is_pinned": true,
+          "diary_name": "Daily Journal",
+          "diary_icon": "journal",
+          "diary_color": "#2A9D8F",
+          "attachments": [
+            {
+              "id": 1,
+              "original_filename": "Daily Journal",
+              "stored_filename": "Daily Journal",
+              "mimetype": "example",
+              "size": 1
+            }
+          ],
+          "created_at": "2026-06-24T10:00:00.000Z"
+        }
       },
       "EntriesListResponseDto": {
         "type": "object",
@@ -3092,7 +4085,46 @@
           "page",
           "totalPages",
           "allTags"
-        ]
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": 1,
+              "user_id": 1,
+              "diary_id": 1,
+              "date": "2026-06-24",
+              "index": 1,
+              "tags": [
+                "reflection"
+              ],
+              "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+              "format": "plain",
+              "visibility": "private",
+              "is_favorite": true,
+              "is_archived": true,
+              "is_pinned": true,
+              "diary_name": "Daily Journal",
+              "diary_icon": "journal",
+              "diary_color": "#2A9D8F",
+              "attachments": [
+                {
+                  "id": 1,
+                  "original_filename": "Daily Journal",
+                  "stored_filename": "Daily Journal",
+                  "mimetype": "example",
+                  "size": 1
+                }
+              ],
+              "created_at": "2026-06-24T10:00:00.000Z"
+            }
+          ],
+          "total": 1,
+          "page": 1,
+          "totalPages": 1,
+          "allTags": [
+            "reflection"
+          ]
+        }
       },
       "EntryDatesResponseDto": {
         "type": "object",
@@ -3106,7 +4138,12 @@
         },
         "required": [
           "dates"
-        ]
+        ],
+        "example": {
+          "dates": [
+            "2026-06-24"
+          ]
+        }
       },
       "FirstEntryResponseDto": {
         "type": "object",
@@ -3138,7 +4175,18 @@
           "found",
           "years",
           "months"
-        ]
+        ],
+        "example": {
+          "page": 1,
+          "found": true,
+          "entryId": 1,
+          "years": [
+            2026
+          ],
+          "months": [
+            "example"
+          ]
+        }
       },
       "EntryLookupResponseDto": {
         "type": "object",
@@ -3161,7 +4209,42 @@
         },
         "required": [
           "found"
-        ]
+        ],
+        "example": {
+          "found": true,
+          "entry": {
+            "id": 1,
+            "user_id": 1,
+            "diary_id": 1,
+            "date": "2026-06-24",
+            "index": 1,
+            "tags": [
+              "reflection"
+            ],
+            "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+            "format": "plain",
+            "visibility": "private",
+            "is_favorite": true,
+            "is_archived": true,
+            "is_pinned": true,
+            "diary_name": "Daily Journal",
+            "diary_icon": "journal",
+            "diary_color": "#2A9D8F",
+            "attachments": [
+              {
+                "id": 1,
+                "original_filename": "Daily Journal",
+                "stored_filename": "Daily Journal",
+                "mimetype": "example",
+                "size": 1
+              }
+            ],
+            "created_at": "2026-06-24T10:00:00.000Z"
+          },
+          "page": 1,
+          "entryId": 1,
+          "error": "example"
+        }
       },
       "EntryBacklinkDto": {
         "type": "object",
@@ -3224,7 +4307,24 @@
           "is_favorite",
           "is_archived",
           "is_pinned"
-        ]
+        ],
+        "example": {
+          "id": 1,
+          "date": "2026-06-24",
+          "index": 1,
+          "tags": [
+            "reflection"
+          ],
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "format": "plain",
+          "visibility": "private",
+          "is_favorite": true,
+          "is_archived": true,
+          "is_pinned": true,
+          "diary_name": "Daily Journal",
+          "diary_icon": "journal",
+          "diary_color": "#2A9D8F"
+        }
       },
       "EntryBacklinksResponseDto": {
         "type": "object",
@@ -3238,7 +4338,28 @@
         },
         "required": [
           "backlinks"
-        ]
+        ],
+        "example": {
+          "backlinks": [
+            {
+              "id": 1,
+              "date": "2026-06-24",
+              "index": 1,
+              "tags": [
+                "reflection"
+              ],
+              "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+              "format": "plain",
+              "visibility": "private",
+              "is_favorite": true,
+              "is_archived": true,
+              "is_pinned": true,
+              "diary_name": "Daily Journal",
+              "diary_icon": "journal",
+              "diary_color": "#2A9D8F"
+            }
+          ]
+        }
       },
       "CreateEntryDto": {
         "type": "object",
@@ -3282,7 +4403,17 @@
         "required": [
           "text",
           "tags"
-        ]
+        ],
+        "example": {
+          "text": "example",
+          "tags": [
+            "reflection"
+          ],
+          "date": "2026-06-24",
+          "visibility": "private",
+          "diaryId": 1,
+          "format": "plain"
+        }
       },
       "CreateEntryResponseDto": {
         "type": "object",
@@ -3297,7 +4428,11 @@
         "required": [
           "success",
           "entryId"
-        ]
+        ],
+        "example": {
+          "success": true,
+          "entryId": 1
+        }
       },
       "BulkOperationDto": {
         "type": "object",
@@ -3346,7 +4481,19 @@
         "required": [
           "ids",
           "action"
-        ]
+        ],
+        "example": {
+          "ids": [
+            1
+          ],
+          "action": "delete",
+          "visibility": "public",
+          "tags": [
+            "reflection"
+          ],
+          "diaryId": 1,
+          "isArchived": true
+        }
       },
       "CountedMutationResponseDto": {
         "type": "object",
@@ -3361,7 +4508,11 @@
         "required": [
           "success",
           "affectedCount"
-        ]
+        ],
+        "example": {
+          "success": true,
+          "affectedCount": 3
+        }
       },
       "RenameTagDto": {
         "type": "object",
@@ -3378,7 +4529,11 @@
         "required": [
           "oldTag",
           "newTag"
-        ]
+        ],
+        "example": {
+          "oldTag": "reflection",
+          "newTag": "reflection"
+        }
       },
       "ReorderEntriesDto": {
         "type": "object",
@@ -3398,7 +4553,13 @@
         "required": [
           "date",
           "orderedIds"
-        ]
+        ],
+        "example": {
+          "date": "2026-06-24",
+          "orderedIds": [
+            1
+          ]
+        }
       },
       "SuccessResponseDto": {
         "type": "object",
@@ -3409,7 +4570,10 @@
         },
         "required": [
           "success"
-        ]
+        ],
+        "example": {
+          "success": true
+        }
       },
       "UpdateEntryDto": {
         "type": "object",
@@ -3449,7 +4613,16 @@
           "text",
           "tags",
           "date"
-        ]
+        ],
+        "example": {
+          "text": "example",
+          "tags": [
+            "reflection"
+          ],
+          "date": "2026-06-24",
+          "visibility": "public",
+          "format": "plain"
+        }
       },
       "EntryMutationResponseDto": {
         "type": "object",
@@ -3464,7 +4637,39 @@
         "required": [
           "success",
           "entry"
-        ]
+        ],
+        "example": {
+          "success": true,
+          "entry": {
+            "id": 1,
+            "user_id": 1,
+            "diary_id": 1,
+            "date": "2026-06-24",
+            "index": 1,
+            "tags": [
+              "reflection"
+            ],
+            "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+            "format": "plain",
+            "visibility": "private",
+            "is_favorite": true,
+            "is_archived": true,
+            "is_pinned": true,
+            "diary_name": "Daily Journal",
+            "diary_icon": "journal",
+            "diary_color": "#2A9D8F",
+            "attachments": [
+              {
+                "id": 1,
+                "original_filename": "Daily Journal",
+                "stored_filename": "Daily Journal",
+                "mimetype": "example",
+                "size": 1
+              }
+            ],
+            "created_at": "2026-06-24T10:00:00.000Z"
+          }
+        }
       },
       "UpdateVisibilityDto": {
         "type": "object",
@@ -3479,7 +4684,10 @@
         },
         "required": [
           "visibility"
-        ]
+        ],
+        "example": {
+          "visibility": "public"
+        }
       },
       "UpdateFavoriteDto": {
         "type": "object",
@@ -3491,7 +4699,10 @@
         },
         "required": [
           "isFavorite"
-        ]
+        ],
+        "example": {
+          "isFavorite": true
+        }
       },
       "UpdateArchivedDto": {
         "type": "object",
@@ -3503,7 +4714,10 @@
         },
         "required": [
           "isArchived"
-        ]
+        ],
+        "example": {
+          "isArchived": true
+        }
       },
       "UpdatePinnedDto": {
         "type": "object",
@@ -3515,7 +4729,10 @@
         },
         "required": [
           "isPinned"
-        ]
+        ],
+        "example": {
+          "isPinned": true
+        }
       },
       "DeleteAllResponseDto": {
         "type": "object",
@@ -3530,7 +4747,11 @@
         "required": [
           "success",
           "deletedCount"
-        ]
+        ],
+        "example": {
+          "success": true,
+          "deletedCount": 3
+        }
       },
       "SuggestTagsDto": {
         "type": "object",
@@ -3554,7 +4775,14 @@
         },
         "required": [
           "content"
-        ]
+        ],
+        "example": {
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "existingTags": [
+            "reflection"
+          ],
+          "maxTags": 5
+        }
       },
       "FixWritingDto": {
         "type": "object",
@@ -3576,7 +4804,11 @@
         },
         "required": [
           "content"
-        ]
+        ],
+        "example": {
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "mode": "grammar"
+        }
       },
       "ChatMessageDto": {
         "type": "object",
@@ -3597,7 +4829,11 @@
         "required": [
           "role",
           "content"
-        ]
+        ],
+        "example": {
+          "role": "user",
+          "content": "Today I wrote a thoughtful journal entry about focus and calm."
+        }
       },
       "ChatDto": {
         "type": "object",
@@ -3622,7 +4858,17 @@
           "entryId",
           "entryContent",
           "messages"
-        ]
+        ],
+        "example": {
+          "entryId": 1,
+          "entryContent": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "messages": [
+            {
+              "role": "user",
+              "content": "Today I wrote a thoughtful journal entry about focus and calm."
+            }
+          ]
+        }
       },
       "ChatResponseDto": {
         "type": "object",
@@ -3634,7 +4880,10 @@
         },
         "required": [
           "reply"
-        ]
+        ],
+        "example": {
+          "reply": "example"
+        }
       },
       "ChatHistoryResponseDto": {
         "type": "object",
@@ -3654,7 +4903,16 @@
         "required": [
           "entryId",
           "messages"
-        ]
+        ],
+        "example": {
+          "entryId": 1,
+          "messages": [
+            {
+              "role": "user",
+              "content": "Today I wrote a thoughtful journal entry about focus and calm."
+            }
+          ]
+        }
       },
       "DiaryResponseDto": {
         "type": "object",
@@ -3697,7 +4955,20 @@
           "isDefault",
           "position",
           "createdAt"
-        ]
+        ],
+        "example": {
+          "id": 1,
+          "userId": 1,
+          "name": "Daily Journal",
+          "icon": "journal",
+          "color": {
+            "example": "#2A9D8F"
+          },
+          "visibility": "private",
+          "isDefault": true,
+          "position": 1,
+          "createdAt": "2026-06-24T10:00:00.000Z"
+        }
       },
       "CreateDiaryDto": {
         "type": "object",
@@ -3727,7 +4998,13 @@
         },
         "required": [
           "name"
-        ]
+        ],
+        "example": {
+          "name": "Daily Journal",
+          "icon": "📓",
+          "visibility": "private",
+          "color": "#2A9D8F"
+        }
       },
       "UpdateDiaryDto": {
         "type": "object",
@@ -3755,7 +5032,13 @@
         },
         "required": [
           "name"
-        ]
+        ],
+        "example": {
+          "name": "Daily Journal",
+          "icon": "journal",
+          "visibility": "public",
+          "color": "#2A9D8F"
+        }
       },
       "ReorderDiariesDto": {
         "type": "object",
@@ -3770,7 +5053,12 @@
         },
         "required": [
           "orderedIds"
-        ]
+        ],
+        "example": {
+          "orderedIds": [
+            1
+          ]
+        }
       },
       "ToneMoodAnalysisDto": {
         "type": "object",
@@ -3821,7 +5109,23 @@
           "toneBreakdown",
           "analyzedEntries",
           "summary"
-        ]
+        ],
+        "example": {
+          "dominantMood": "reflective",
+          "dominantTone": "candid",
+          "moodBreakdown": {
+            "reflective": 14,
+            "calm": 9,
+            "anxious": 4
+          },
+          "toneBreakdown": {
+            "candid": 12,
+            "analytical": 8,
+            "intimate": 7
+          },
+          "analyzedEntries": 27,
+          "summary": "Recent thoughts are mostly reflective and calm, with a candid and personal writing tone."
+        }
       },
       "StatsResponseDto": {
         "type": "object",
@@ -3933,7 +5237,57 @@
           "thoughtsPerTag",
           "tagsPerYear",
           "tagsPerMonth"
-        ]
+        ],
+        "example": {
+          "totalThoughts": 120,
+          "averageWordsPerEntry": 184,
+          "averageReadingTimeMinutes": 1,
+          "uniqueTagsCount": 18,
+          "thoughtsPerYear": {
+            "2024": 48,
+            "2025": 72
+          },
+          "thoughtsPerMonth": {
+            "2025-01": 12,
+            "2025-02": 18
+          },
+          "thoughtsPerDay": {
+            "2025-02-10": 1,
+            "2025-02-11": 3
+          },
+          "thoughtsPerTag": {
+            "work": 22,
+            "health": 9
+          },
+          "tagsPerYear": {
+            "2025": {
+              "work": 10,
+              "health": 4
+            }
+          },
+          "tagsPerMonth": {
+            "2025-02": {
+              "work": 6,
+              "health": 2
+            }
+          },
+          "toneMoodAnalysis": {
+            "dominantMood": "reflective",
+            "dominantTone": "candid",
+            "moodBreakdown": {
+              "reflective": 14,
+              "calm": 9,
+              "anxious": 4
+            },
+            "toneBreakdown": {
+              "candid": 12,
+              "analytical": 8,
+              "intimate": 7
+            },
+            "analyzedEntries": 27,
+            "summary": "Recent thoughts are mostly reflective and calm, with a candid and personal writing tone."
+          }
+        }
       },
       "FormatConfigDto": {
         "type": "object",
@@ -3962,6 +5316,16 @@
           "tagSeparator": {
             "type": "string"
           }
+        },
+        "example": {
+          "entrySeparator": "example",
+          "sameDaySeparator": "example",
+          "datePrefix": "2026-06-24",
+          "dateSuffix": "2026-06-24",
+          "dateFormat": "2026-06-24",
+          "tagOpenBracket": "reflection",
+          "tagCloseBracket": "reflection",
+          "tagSeparator": "reflection"
         }
       },
       "PreviewImportDto": {
@@ -3978,7 +5342,11 @@
         },
         "required": [
           "content"
-        ]
+        ],
+        "example": {
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "diaryId": 1
+        }
       },
       "PreviewResponseDto": {
         "type": "object",
@@ -4007,7 +5375,17 @@
           "totalCount",
           "duplicates",
           "duplicateCount"
-        ]
+        ],
+        "example": {
+          "entries": [
+            "example"
+          ],
+          "totalCount": 3,
+          "duplicates": [
+            "example"
+          ],
+          "duplicateCount": 3
+        }
       },
       "ImportDto": {
         "type": "object",
@@ -4028,7 +5406,12 @@
         },
         "required": [
           "content"
-        ]
+        ],
+        "example": {
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "skipDuplicates": true,
+          "diaryId": 1
+        }
       },
       "ImportResponseDto": {
         "type": "object",
@@ -4051,7 +5434,13 @@
           "importedCount",
           "skippedCount",
           "totalProcessed"
-        ]
+        ],
+        "example": {
+          "success": true,
+          "importedCount": 3,
+          "skippedCount": 3,
+          "totalProcessed": 1
+        }
       },
       "BookChapterPreviewDto": {
         "type": "object",
@@ -4076,7 +5465,13 @@
           "entryCount",
           "firstDate",
           "lastDate"
-        ]
+        ],
+        "example": {
+          "title": "June reflections",
+          "entryCount": 3,
+          "firstDate": "2026-06-24",
+          "lastDate": "2026-06-24"
+        }
       },
       "BookPreviewResponseDto": {
         "type": "object",
@@ -4106,7 +5501,21 @@
           "chapterCount",
           "entryCount",
           "chapters"
-        ]
+        ],
+        "example": {
+          "title": "June reflections",
+          "author": "example",
+          "chapterCount": 3,
+          "entryCount": 3,
+          "chapters": [
+            {
+              "title": "June reflections",
+              "entryCount": 3,
+              "firstDate": "2026-06-24",
+              "lastDate": "2026-06-24"
+            }
+          ]
+        }
       },
       "LinkAttachmentDto": {
         "type": "object",
@@ -4115,6 +5524,9 @@
             "type": "number",
             "description": "Entry ID to link attachment to"
           }
+        },
+        "example": {
+          "entryId": 1
         }
       },
       "CloudAuthUrlDto": {
@@ -4137,7 +5549,11 @@
         "required": [
           "provider",
           "redirectUri"
-        ]
+        ],
+        "example": {
+          "provider": "google_drive",
+          "redirectUri": "https://thoughty.example.com/callback"
+        }
       },
       "CloudConnectDto": {
         "type": "object",
@@ -4164,7 +5580,12 @@
           "code",
           "provider",
           "redirectUri"
-        ]
+        ],
+        "example": {
+          "code": "example",
+          "provider": "google_drive",
+          "redirectUri": "https://thoughty.example.com/callback"
+        }
       },
       "CloudDisconnectDto": {
         "type": "object",
@@ -4181,7 +5602,10 @@
         },
         "required": [
           "provider"
-        ]
+        ],
+        "example": {
+          "provider": "google_drive"
+        }
       },
       "CloudUploadDto": {
         "type": "object",
@@ -4217,7 +5641,13 @@
         },
         "required": [
           "provider"
-        ]
+        ],
+        "example": {
+          "diaryId": 1,
+          "format": "txt",
+          "provider": "google_drive",
+          "includeVisibility": false
+        }
       },
       "CloudDownloadDto": {
         "type": "object",
@@ -4239,7 +5669,11 @@
         "required": [
           "provider",
           "fileId"
-        ]
+        ],
+        "example": {
+          "provider": "google_drive",
+          "fileId": "example"
+        }
       },
       "SetSyncScheduleDto": {
         "type": "object",
@@ -4286,7 +5720,14 @@
         "required": [
           "provider",
           "frequency"
-        ]
+        ],
+        "example": {
+          "provider": "google_drive",
+          "frequency": "every_6h",
+          "format": "txt",
+          "diaryId": 1,
+          "includeVisibility": false
+        }
       },
       "TriggerSyncDto": {
         "type": "object",
@@ -4303,7 +5744,10 @@
         },
         "required": [
           "provider"
-        ]
+        ],
+        "example": {
+          "provider": "google_drive"
+        }
       }
     }
   }
