@@ -39,5 +39,5 @@ Use layered rate limiting.
 - The product now has explicit abuse controls instead of relying only on password strength and token handling.
 - Large imports should use the documented JSON parser limit or a dedicated upload path rather than weakening global parser limits.
 - Rate-limit behavior is part of the external API contract for auth flows and should be considered when changing those endpoints.
-- The current throttling model is process-local unless a shared throttler storage backend is introduced. In multi-replica deployments, the limit is effectively applied per application instance rather than as a single cluster-wide counter.
-- If deployment scale or attack pressure increases, the next step should be shared throttling storage rather than removing the current controls.
+- Multi-replica deployments use Redis-backed throttler storage when `REDIS_URL` or `REDIS_HOST` is configured, so API replicas share counters for the same tracker keys.
+- If Redis is unavailable, the API falls back to process-local throttling to preserve availability while still keeping a baseline limit.

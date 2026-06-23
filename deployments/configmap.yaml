@@ -26,5 +26,9 @@ data:
   POSTGRES_BACKUP_REGION: "us-east-1"
   POSTGRES_BACKUP_BASE_PREFIX: "base"
   POSTGRES_BACKUP_WAL_PREFIX: "wal"
+  # Shared throttling storage for multi-replica API deployments.
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
   # Default model used for AI auto-tagging when a user has not overridden it.
   OPENROUTER_TAG_MODEL: "openai/gpt-4o-mini"

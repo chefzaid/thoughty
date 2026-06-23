@@ -15,7 +15,7 @@ import { AiModule } from './modules/ai';
 import { CloudSyncModule } from './modules/cloud-sync';
 import { MetricsModule } from './modules/metrics';
 import { HealthController } from './health.controller';
-import { JsonLogger, RATE_LIMITS, RequestLoggingMiddleware } from './common';
+import { createThrottlerModuleOptions, JsonLogger, RequestLoggingMiddleware } from './common';
 
 @Module({
   controllers: [HealthController],
@@ -27,12 +27,7 @@ import { JsonLogger, RATE_LIMITS, RequestLoggingMiddleware } from './common';
     }),
 
     // Rate limiting
-    ThrottlerModule.forRoot([
-      {
-        name: 'default',
-        ...RATE_LIMITS.default,
-      },
-    ]),
+    ThrottlerModule.forRoot(createThrottlerModuleOptions()),
 
     // Database
     DatabaseModule,

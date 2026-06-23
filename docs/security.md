@@ -131,7 +131,7 @@ In local or misconfigured email environments, the current email service path can
 Important remaining work includes:
 
 - two-factor authentication
-- distributed rate limiting for multi-replica deployments
+- Redis-backed distributed rate limiting for multi-replica deployments
 - dependency vulnerability scanning in CI
 - structured security audit logging for sensitive actions
 - backup and disaster recovery implementation

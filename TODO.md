@@ -170,7 +170,7 @@
 - [x] Mask commands to run and test the app easily, including nuking the DB and reseeding test data
 - [x] Documentation restructured into a docs directory (architecture, development setup, deployment, testing, features)
 - [ ] Caching of frequent requests (public entries, feed)
-- [ ] Distributed rate limiting with Redis for multi-replica deployments
+- [x] Distributed rate limiting with Redis for multi-replica deployments
 - [x] Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
 - [x] Backup and disaster recovery plan for user data
 - [x] Improve error handling and user feedback for better UX

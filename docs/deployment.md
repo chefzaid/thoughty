@@ -4,13 +4,14 @@ This guide documents the deployment model that exists in this repository today: 
 
 ## Runtime Topology
 
-Thoughty deploys as four runtime surfaces inside the `thoughty` namespace:
+Thoughty deploys as runtime surfaces inside the `thoughty` namespace:
 
 - `thoughty-web`: Nginx serving the built React application on port `80`
 - `thoughty-server`: NestJS API serving traffic on port `3001`
 - `thoughty-cloud-sync-worker`: a dedicated background worker that runs `dist/src/cloud-sync-worker.js` from the same image as the API
 - `postgres`: PostgreSQL `16-alpine` with a `5Gi` persistent volume claim
 - `postgres-backup`: a daily CronJob that writes encrypted-bucket-ready `pg_dump` snapshots and checksums to object storage
+- `redis`: internal, ephemeral shared storage for API rate-limit counters
 
 ```mermaid
 flowchart TD
@@ -22,6 +23,7 @@ flowchart TD
     ApiSvc --> ApiPods[thoughty-server Deployment x2]
 
     ApiPods --> Pg[(PostgreSQL)]
+    ApiPods --> Redis[(Redis rate-limit counters)]
     Worker[thoughty-cloud-sync-worker Deployment x1] --> Pg
     Backup[postgres-backup CronJob] --> Pg
 
@@ -50,6 +52,7 @@ flowchart TD
 - `postgres` runs `1` replica with `Recreate`, which matches the single attached volume design
 - `postgres` starts with WAL archiving enabled; a sidecar uploads archived WAL segments to object storage for point-in-time recovery windows
 - `deployments/postgres-backup.yaml` creates a daily `postgres-backup` CronJob that uploads custom-format logical snapshots and SHA-256 checksum files
+- `redis` runs `1` ephemeral replica for shared Nest throttler counters; losing it resets counters but does not lose user data
 - `deployments/canary.yaml` adds optional canary API and web deployments plus an NGINX canary ingress; it starts at `0%` weighted traffic and can be exercised with the `X-Thoughty-Canary: always` request header
 - The API now exposes `/api/health`, which matches the liveness and readiness probes in `deployments/server-deployment.yaml`
 - The API exposes `/api/metrics` in Prometheus text format; the API pod template includes scrape annotations for clusters that honor `prometheus.io/*` annotations
@@ -98,6 +101,9 @@ These are loaded into the server and worker containers through `envFrom`:
 | `POSTGRES_BACKUP_REGION`   | ConfigMap  | PostgreSQL backup bucket region                     |
 | `POSTGRES_BACKUP_BASE_PREFIX` | ConfigMap | Prefix for daily logical snapshots                |
 | `POSTGRES_BACKUP_WAL_PREFIX`  | ConfigMap | Prefix for archived WAL segments                  |
+| `REDIS_HOST`            | ConfigMap      | Redis service host for shared API rate limits      |
+| `REDIS_PORT`            | ConfigMap      | Redis service port                                 |
+| `REDIS_DB`              | ConfigMap      | Redis logical database index                       |
 | `OPENROUTER_TAG_MODEL` | ConfigMap      | Default model for AI auto-tagging                   |
 
 ### Vault Secrets Already Wired
@@ -120,6 +126,7 @@ Every variable below is already wired into the manifests. The remaining work is 
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Attachments                 | `S3_ACCESS_KEY`, `S3_SECRET_KEY` (secret); `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION` (ConfigMap)                                                       | The attachments service falls back to local-dev MinIO defaults                              |
 | PostgreSQL backups          | `POSTGRES_BACKUP_ACCESS_KEY`, `POSTGRES_BACKUP_SECRET_KEY` (secret); `POSTGRES_BACKUP_*` endpoint, bucket, region, and prefixes (ConfigMap)          | Backup CronJob and WAL upload sidecar fail until configured                                 |
+| Distributed throttling      | `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB` or `REDIS_URL`; optional `REDIS_PASSWORD`, `REDIS_TLS`                                                         | API falls back to process-local throttling when Redis is not configured or temporarily unavailable |
 | Cloud sync token encryption | `CONFIG_ENCRYPTION_SECRET`                                                                                                                           | Encrypted provider tokens fall back to a default secret that is not suitable for production |
 | Cloud sync providers        | `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET` | Provider auth flows are unavailable                                                         |
 | AI features                 | `OPENROUTER_API_KEY` (secret); `OPENROUTER_TAG_MODEL` (ConfigMap)                                                                                    | AI endpoints return disabled or degraded behavior                                           |
@@ -203,6 +210,7 @@ kubectl create secret tls thoughty-tls \
 kubectl apply -f deployments/namespace.yaml
 kubectl apply -f deployments/configmap.yaml
 kubectl apply -f deployments/vault-service-accounts.yaml
+kubectl apply -f deployments/redis.yaml
 kubectl apply -f deployments/postgres.yaml
 kubectl apply -f deployments/postgres-backup.yaml
 kubectl apply -f deployments/server-deployment.yaml
@@ -387,6 +395,7 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 | `deployments/namespace.yaml`                    | Creates the `thoughty` namespace                            |
 | `deployments/configmap.yaml`                    | Non-secret runtime configuration for backend workloads      |
 | `deployments/vault-service-accounts.yaml`       | Service accounts used by Vault roles                        |
+| `deployments/redis.yaml`                        | Internal Redis deployment and service for rate limiting      |
 | `deployments/postgres.yaml`                     | PostgreSQL deployment, service, and persistent volume claim |
 | `deployments/postgres-backup.yaml`              | Daily PostgreSQL backup CronJob                             |
 | `deployments/server-deployment.yaml`            | API deployment, service, probes, and Vault injection        |
