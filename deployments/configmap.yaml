@@ -19,5 +19,12 @@ data:
   S3_ENDPOINT: "https://s3.us-east-1.amazonaws.com"
   S3_BUCKET: "thoughty-attachments"
   S3_REGION: "us-east-1"
+  # PostgreSQL backup object storage. Use a dedicated bucket or prefix with
+  # lifecycle rules for the retention targets in docs/operations.md.
+  POSTGRES_BACKUP_ENDPOINT: "https://s3.us-east-1.amazonaws.com"
+  POSTGRES_BACKUP_BUCKET: "thoughty-postgres-backups"
+  POSTGRES_BACKUP_REGION: "us-east-1"
+  POSTGRES_BACKUP_BASE_PREFIX: "base"
+  POSTGRES_BACKUP_WAL_PREFIX: "wal"
   # Default model used for AI auto-tagging when a user has not overridden it.
   OPENROUTER_TAG_MODEL: "openai/gpt-4o-mini"

@@ -204,7 +204,7 @@
 - [ ] Convert the current idempotent SQL migration script into versioned migration files when the schema-change workflow needs stricter ordering/history
 - [x] Database connection pooling configuration in TypeORM data source
 - [ ] Database read replicas for scaling read-heavy queries (stats, feed, search)
-- [ ] Automated database backups with point-in-time recovery
+- [x] Automated database backups with point-in-time recovery
 
 ## Accessibility
 

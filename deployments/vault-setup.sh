@@ -33,11 +33,17 @@
 #   SMTP_PASS="" \
 #   SMTP_FROM=""
 #
+# vault kv put secret/thoughty/backup \
+#   POSTGRES_BACKUP_ACCESS_KEY="<backup-bucket-access-key>" \
+#   POSTGRES_BACKUP_SECRET_KEY="<backup-bucket-secret-key>"
+#
 # Notes:
 #   - JWT_SECRET and REFRESH_SECRET are required for auth to work in production.
 #   - CONFIG_ENCRYPTION_SECRET protects encrypted user config and cloud-sync tokens.
 #   - S3_ACCESS_KEY / S3_SECRET_KEY are required for attachments; the non-secret
 #     S3_ENDPOINT / S3_BUCKET / S3_REGION live in the ConfigMap.
+#   - POSTGRES_BACKUP_ACCESS_KEY / POSTGRES_BACKUP_SECRET_KEY should be scoped
+#     to the PostgreSQL backup bucket or prefix only.
 #   - OPENROUTER_API_KEY enables AI features; provider client IDs/secrets enable cloud sync.
 #
 # ─── 3. Create Policies ──────────────────────────────────────
@@ -52,6 +58,9 @@
 #
 # vault policy write thoughty-postgres - <<EOF
 # path "secret/data/thoughty/database" {
+#   capabilities = ["read"]
+# }
+# path "secret/data/thoughty/backup" {
 #   capabilities = ["read"]
 # }
 # EOF

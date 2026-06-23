@@ -1,0 +1,88 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: thoughty
+  labels:
+    app: postgres
+    job: postgres-backup
+spec:
+  schedule: "15 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 7
+  failedJobsHistoryLimit: 7
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels:
+            app: postgres
+            job: postgres-backup
+          annotations:
+            vault.hashicorp.com/agent-inject: "true"
+            vault.hashicorp.com/agent-pre-populate-only: "true"
+            vault.hashicorp.com/role: "thoughty-postgres"
+            vault.hashicorp.com/agent-inject-secret-database: "secret/data/thoughty/database"
+            vault.hashicorp.com/agent-inject-secret-backup: "secret/data/thoughty/backup"
+            vault.hashicorp.com/agent-inject-template-database: |
+              {{- with secret "secret/data/thoughty/database" -}}
+              export POSTGRES_USER="{{ .Data.data.POSTGRES_USER }}"
+              export POSTGRES_PASSWORD="{{ .Data.data.POSTGRES_PASSWORD }}"
+              export POSTGRES_DB="{{ .Data.data.POSTGRES_DB }}"
+              {{- end }}
+            vault.hashicorp.com/agent-inject-template-backup: |
+              {{- with secret "secret/data/thoughty/backup" -}}
+              export AWS_ACCESS_KEY_ID="{{ .Data.data.POSTGRES_BACKUP_ACCESS_KEY }}"
+              export AWS_SECRET_ACCESS_KEY="{{ .Data.data.POSTGRES_BACKUP_SECRET_KEY }}"
+              {{- end }}
+        spec:
+          serviceAccountName: thoughty-postgres
+          restartPolicy: OnFailure
+          containers:
+            - name: postgres-backup
+              image: postgres:16-alpine
+              envFrom:
+                - configMapRef:
+                    name: thoughty-config
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  apk add --no-cache aws-cli
+                  . /vault/secrets/database
+                  . /vault/secrets/backup
+                  export PGPASSWORD="$POSTGRES_PASSWORD"
+
+                  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+                  backup_file="/tmp/thoughty-postgres-${timestamp}.dump"
+                  checksum_file="${backup_file}.sha256"
+
+                  pg_dump \
+                    -h postgres \
+                    -U "$POSTGRES_USER" \
+                    -d "$POSTGRES_DB" \
+                    --format=custom \
+                    --no-owner \
+                    --no-acl \
+                    --file="$backup_file"
+
+                  sha256sum "$backup_file" > "$checksum_file"
+
+                  aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
+                    --region "$POSTGRES_BACKUP_REGION" \
+                    s3 cp "$backup_file" "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/$(basename "$backup_file")" \
+                    --only-show-errors
+
+                  aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
+                    --region "$POSTGRES_BACKUP_REGION" \
+                    s3 cp "$checksum_file" "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/$(basename "$checksum_file")" \
+                    --only-show-errors
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi

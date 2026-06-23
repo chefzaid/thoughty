@@ -10,6 +10,7 @@ Thoughty deploys as four runtime surfaces inside the `thoughty` namespace:
 - `thoughty-server`: NestJS API serving traffic on port `3001`
 - `thoughty-cloud-sync-worker`: a dedicated background worker that runs `dist/src/cloud-sync-worker.js` from the same image as the API
 - `postgres`: PostgreSQL `16-alpine` with a `5Gi` persistent volume claim
+- `postgres-backup`: a daily CronJob that writes encrypted-bucket-ready `pg_dump` snapshots and checksums to object storage
 
 ```mermaid
 flowchart TD
@@ -22,8 +23,12 @@ flowchart TD
 
     ApiPods --> Pg[(PostgreSQL)]
     Worker[thoughty-cloud-sync-worker Deployment x1] --> Pg
+    Backup[postgres-backup CronJob] --> Pg
 
     ApiPods --> S3[S3-compatible object storage]
+    Pg --> Wal[PostgreSQL WAL archive uploader]
+    Backup --> BackupS3[S3-compatible backup bucket]
+    Wal --> BackupS3
     ApiPods --> OpenRouter[OpenRouter API]
     ApiPods --> OAuth[Google / OneDrive / Dropbox OAuth]
     Worker --> OAuth
@@ -43,6 +48,8 @@ flowchart TD
 - `thoughty-web` runs `2` replicas with the same rolling update strategy
 - `thoughty-cloud-sync-worker` runs `1` replica and also uses rolling updates
 - `postgres` runs `1` replica with `Recreate`, which matches the single attached volume design
+- `postgres` starts with WAL archiving enabled; a sidecar uploads archived WAL segments to object storage for point-in-time recovery windows
+- `deployments/postgres-backup.yaml` creates a daily `postgres-backup` CronJob that uploads custom-format logical snapshots and SHA-256 checksum files
 - `deployments/canary.yaml` adds optional canary API and web deployments plus an NGINX canary ingress; it starts at `0%` weighted traffic and can be exercised with the `X-Thoughty-Canary: always` request header
 - The API now exposes `/api/health`, which matches the liveness and readiness probes in `deployments/server-deployment.yaml`
 - The API exposes `/api/metrics` in Prometheus text format; the API pod template includes scrape annotations for clusters that honor `prometheus.io/*` annotations
@@ -86,6 +93,11 @@ These are loaded into the server and worker containers through `envFrom`:
 | `S3_ENDPOINT`          | ConfigMap      | S3-compatible endpoint for attachments              |
 | `S3_BUCKET`            | ConfigMap      | Attachment bucket name                              |
 | `S3_REGION`            | ConfigMap      | Attachment bucket region                            |
+| `POSTGRES_BACKUP_ENDPOINT` | ConfigMap  | S3-compatible endpoint for PostgreSQL backups       |
+| `POSTGRES_BACKUP_BUCKET`   | ConfigMap  | PostgreSQL backup bucket name                       |
+| `POSTGRES_BACKUP_REGION`   | ConfigMap  | PostgreSQL backup bucket region                     |
+| `POSTGRES_BACKUP_BASE_PREFIX` | ConfigMap | Prefix for daily logical snapshots                |
+| `POSTGRES_BACKUP_WAL_PREFIX`  | ConfigMap | Prefix for archived WAL segments                  |
 | `OPENROUTER_TAG_MODEL` | ConfigMap      | Default model for AI auto-tagging                   |
 
 ### Vault Secrets Already Wired
@@ -96,6 +108,7 @@ These are injected through the Vault Agent templates in the manifests. Populate 
 | ------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `secret/data/thoughty/database` | postgres, server, worker | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`                                                                                                                                                                                                                                                                                       |
 | `secret/data/thoughty/app`      | server, worker           | `JWT_SECRET`, `REFRESH_SECRET`, `CONFIG_ENCRYPTION_SECRET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `OPENROUTER_API_KEY`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` |
+| `secret/data/thoughty/backup`   | postgres, backup job     | `POSTGRES_BACKUP_ACCESS_KEY`, `POSTGRES_BACKUP_SECRET_KEY`                                                                                                                                                                                                                                                                                |
 
 The variable names match exactly what the server reads at runtime, including `REFRESH_SECRET` (refresh-token signing) and the `GOOGLE_DRIVE_*` cloud-sync client credentials.
 
@@ -106,6 +119,7 @@ Every variable below is already wired into the manifests. The remaining work is 
 | Feature                     | Variables                                                                                                                                            | Behavior when unset                                                                         |
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | Attachments                 | `S3_ACCESS_KEY`, `S3_SECRET_KEY` (secret); `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION` (ConfigMap)                                                       | The attachments service falls back to local-dev MinIO defaults                              |
+| PostgreSQL backups          | `POSTGRES_BACKUP_ACCESS_KEY`, `POSTGRES_BACKUP_SECRET_KEY` (secret); `POSTGRES_BACKUP_*` endpoint, bucket, region, and prefixes (ConfigMap)          | Backup CronJob and WAL upload sidecar fail until configured                                 |
 | Cloud sync token encryption | `CONFIG_ENCRYPTION_SECRET`                                                                                                                           | Encrypted provider tokens fall back to a default secret that is not suitable for production |
 | Cloud sync providers        | `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET` | Provider auth flows are unavailable                                                         |
 | AI features                 | `OPENROUTER_API_KEY` (secret); `OPENROUTER_TAG_MODEL` (ConfigMap)                                                                                    | AI endpoints return disabled or degraded behavior                                           |
@@ -139,7 +153,7 @@ sequenceDiagram
 
 Before any rollout, update the manifest values that are intentionally placeholders:
 
-1. Set the real browser origin list (`CORS_ORIGIN`), `FRONTEND_URL`, and the S3 endpoint/bucket/region in `deployments/configmap.yaml`.
+1. Set the real browser origin list (`CORS_ORIGIN`), `FRONTEND_URL`, attachment S3 endpoint/bucket/region, and PostgreSQL backup endpoint/bucket/region in `deployments/configmap.yaml`.
 2. Replace `thoughty.example.com` in `deployments/ingress.yaml` and create or provision the `thoughty-tls` TLS secret for that host.
 3. Decide whether you will edit image references in the manifests directly or patch them later with `kubectl set image`.
 4. Populate the secret values in Vault. The manifests already inject every secret the application reads; you only need to provide real values for the features you enable.
@@ -190,6 +204,7 @@ kubectl apply -f deployments/namespace.yaml
 kubectl apply -f deployments/configmap.yaml
 kubectl apply -f deployments/vault-service-accounts.yaml
 kubectl apply -f deployments/postgres.yaml
+kubectl apply -f deployments/postgres-backup.yaml
 kubectl apply -f deployments/server-deployment.yaml
 kubectl apply -f deployments/monitoring-alerts.yaml
 kubectl apply -f deployments/ingress.yaml
@@ -373,6 +388,7 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 | `deployments/configmap.yaml`                    | Non-secret runtime configuration for backend workloads      |
 | `deployments/vault-service-accounts.yaml`       | Service accounts used by Vault roles                        |
 | `deployments/postgres.yaml`                     | PostgreSQL deployment, service, and persistent volume claim |
+| `deployments/postgres-backup.yaml`              | Daily PostgreSQL backup CronJob                             |
 | `deployments/server-deployment.yaml`            | API deployment, service, probes, and Vault injection        |
 | `deployments/cloud-sync-worker-deployment.yaml` | Dedicated background worker using the server image          |
 | `deployments/canary.yaml`                       | Optional API/web canary deployments and NGINX canary ingress |

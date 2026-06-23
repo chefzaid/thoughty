@@ -216,6 +216,13 @@ Required PostgreSQL backup controls:
 - restore access restricted to operators with production data approval
 - restore tests that verify entry counts, user counts, attachment metadata counts, and a sample login-free data integrity query
 
+The included Kubernetes manifests implement the self-managed baseline:
+
+- `deployments/postgres.yaml` starts PostgreSQL with WAL archiving enabled and uploads archived WAL segments through a sidecar.
+- `deployments/postgres-backup.yaml` runs a daily custom-format `pg_dump` backup and uploads a matching SHA-256 checksum.
+- `deployments/configmap.yaml` owns the non-secret backup endpoint, bucket, region, and object prefixes.
+- `secret/data/thoughty/backup` owns the object-store access key and secret key used only by the PostgreSQL backup surfaces.
+
 Attachment blobs live outside PostgreSQL in S3-compatible storage.
 
 Required object-storage backup controls:
@@ -306,6 +313,7 @@ Every sampled `stored_filename` should exist in the restored object store.
 ### Drill Checklist
 
 - Restore a PostgreSQL backup into a non-production namespace.
+- Verify the selected backup object's SHA-256 checksum before restore.
 - Restore or mount a non-production copy of attachment objects.
 - Start API with restored secrets and database settings.
 - Confirm `/api/health` returns `ok`.
@@ -316,7 +324,6 @@ Every sampled `stored_filename` should exist in the restored object store.
 
 ### Open Follow-Ups
 
-- Automate PostgreSQL backup creation in deployment infrastructure.
 - Automate attachment inventory comparison against database metadata.
 - Add alerting for missed backups, failed WAL archiving, and failed restore drills.
 - Decide whether production requires cross-region standby infrastructure or managed database replicas.
