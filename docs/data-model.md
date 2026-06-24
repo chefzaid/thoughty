@@ -169,3 +169,9 @@ Treat settings as user-owned application state, not as a general-purpose dumping
 The current repository uses `thoughty-server/scripts/migrate.ts`, an idempotent SQL migration helper, with TypeORM `synchronize: false`. The TypeORM data source is configured with a migrations path, but versioned TypeORM migration files are not yet the primary migration mechanism.
 
 If the project moves to versioned TypeORM migrations, update this document, `docs/development.md`, `docs/deployment.md`, and ADR 0012 together.
+
+## Read Replicas
+
+The TypeORM PostgreSQL connection supports optional read replicas through `POSTGRES_READ_REPLICA_HOSTS`. When one or more replica hosts are configured, TypeORM keeps writes on the primary `POSTGRES_HOST` connection and may route read queries to replica connections. Replica ports can be supplied with `POSTGRES_READ_REPLICA_PORTS`; replica user, password, and database values inherit the primary credentials unless `POSTGRES_READ_REPLICA_USER`, `POSTGRES_READ_REPLICA_PASSWORD`, or `POSTGRES_READ_REPLICA_DB` are set.
+
+Operators should only enable replicas that are streaming from the primary with acceptable lag for journal, stats, search, and future feed reads. Migrations and write paths still target the primary database.

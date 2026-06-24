@@ -8,6 +8,9 @@ data:
   PORT: "3001"
   POSTGRES_HOST: "postgres"
   POSTGRES_PORT: "5432"
+  # Optional comma-separated PostgreSQL read replicas. Leave empty to route all queries to POSTGRES_HOST.
+  POSTGRES_READ_REPLICA_HOSTS: ""
+  POSTGRES_READ_REPLICA_PORTS: ""
   # Browser origin(s) allowed to call the API. Replace with your real ingress host.
   CORS_ORIGIN: "https://thoughty.example.com"
   # Base URL used to build links in transactional emails. Replace with your ingress host.

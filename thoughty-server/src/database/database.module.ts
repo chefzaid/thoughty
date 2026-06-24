@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment, CloudSyncJob, AiChatHistory } from './entities';
+import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
 
 @Module({
@@ -11,11 +12,18 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get<string>('POSTGRES_HOST', 'localhost'),
-        port: configService.get<number>('POSTGRES_PORT', 5432),
-        username: configService.get<string>('POSTGRES_USER', 'postgres'),
-        password: configService.get<string>('POSTGRES_PASSWORD', 'password'),
-        database: configService.get<string>('POSTGRES_DB', 'journal'),
+        ...buildPostgresConnectionOptions({
+          POSTGRES_HOST: configService.get<string>('POSTGRES_HOST'),
+          POSTGRES_PORT: configService.get<string>('POSTGRES_PORT'),
+          POSTGRES_USER: configService.get<string>('POSTGRES_USER'),
+          POSTGRES_PASSWORD: configService.get<string>('POSTGRES_PASSWORD'),
+          POSTGRES_DB: configService.get<string>('POSTGRES_DB'),
+          POSTGRES_READ_REPLICA_HOSTS: configService.get<string>('POSTGRES_READ_REPLICA_HOSTS'),
+          POSTGRES_READ_REPLICA_PORTS: configService.get<string>('POSTGRES_READ_REPLICA_PORTS'),
+          POSTGRES_READ_REPLICA_USER: configService.get<string>('POSTGRES_READ_REPLICA_USER'),
+          POSTGRES_READ_REPLICA_PASSWORD: configService.get<string>('POSTGRES_READ_REPLICA_PASSWORD'),
+          POSTGRES_READ_REPLICA_DB: configService.get<string>('POSTGRES_READ_REPLICA_DB'),
+        }),
         entities: [User, Diary, Entry, EntryRevision, RefreshToken, Setting, Attachment, CloudSyncJob, AiChatHistory],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),
