@@ -169,7 +169,7 @@
 - [x] Swagger/OpenAPI documentation for the API
 - [x] Mask commands to run and test the app easily, including nuking the DB and reseeding test data
 - [x] Documentation restructured into a docs directory (architecture, development setup, deployment, testing, features)
-- [ ] Caching of frequent requests (public entries, feed)
+- [x] Caching of frequent requests (public entries, feed)
 - [x] Distributed rate limiting with Redis for multi-replica deployments
 - [x] Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
 - [x] Backup and disaster recovery plan for user data

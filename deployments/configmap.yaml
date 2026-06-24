@@ -30,5 +30,8 @@ data:
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"
   REDIS_DB: "0"
+  # Short-lived in-process cache for repeated entry-list reads on each API pod.
+  ENTRIES_CACHE_TTL_SECONDS: "30"
+  ENTRIES_CACHE_MAX_KEYS: "500"
   # Default model used for AI auto-tagging when a user has not overridden it.
   OPENROUTER_TAG_MODEL: "openai/gpt-4o-mini"

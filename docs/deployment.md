@@ -104,6 +104,8 @@ These are loaded into the server and worker containers through `envFrom`:
 | `REDIS_HOST`            | ConfigMap      | Redis service host for shared API rate limits      |
 | `REDIS_PORT`            | ConfigMap      | Redis service port                                 |
 | `REDIS_DB`              | ConfigMap      | Redis logical database index                       |
+| `ENTRIES_CACHE_TTL_SECONDS` | ConfigMap  | Per-pod TTL for repeated entry-list responses      |
+| `ENTRIES_CACHE_MAX_KEYS`    | ConfigMap  | Maximum per-pod entry-list cache keys              |
 | `OPENROUTER_TAG_MODEL` | ConfigMap      | Default model for AI auto-tagging                   |
 
 ### Vault Secrets Already Wired

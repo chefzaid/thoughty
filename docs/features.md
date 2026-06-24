@@ -51,6 +51,7 @@ flowchart LR
 - Filtering is composable. Users can combine full-text search, multi-tag filters, date filtering, visibility state, archive state, and diary scope instead of being limited to one filter at a time.
 - Search results highlight matches in both plain-text and Markdown-backed content, which makes the results useful for scanning instead of just locating candidate entries.
 - The app includes a dedicated Tags view, so tags are not only an input mechanism for entries but also a browsing surface in their own right.
+- Frequently repeated entry-list reads are served from a short-lived per-pod cache and invalidated after entry mutations, which keeps common journal, public-visibility, and filtered views responsive without making writes stale.
 
 ## Highlights and Insight Surfaces
 

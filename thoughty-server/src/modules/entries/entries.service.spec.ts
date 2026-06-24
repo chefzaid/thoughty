@@ -2,11 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { EntriesService } from './entries.service';
 import { EntriesQueryService } from './entries-query.service';
 import { EntriesCommandService } from './entries-command.service';
+import { EntryListCacheService } from './entry-list-cache.service';
 
 describe('EntriesService', () => {
   let service: EntriesService;
   let entriesQueryService: Record<string, jest.Mock>;
   let entriesCommandService: Record<string, jest.Mock>;
+  let entryListCacheService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
     entriesQueryService = {
@@ -34,11 +36,18 @@ describe('EntriesService', () => {
       deleteRevision: jest.fn(),
     };
 
+    entryListCacheService = {
+      get: jest.fn(),
+      set: jest.fn(),
+      invalidateUser: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EntriesService,
         { provide: EntriesQueryService, useValue: entriesQueryService },
         { provide: EntriesCommandService, useValue: entriesCommandService },
+        { provide: EntryListCacheService, useValue: entryListCacheService },
       ],
     }).compile();
 
@@ -49,13 +58,26 @@ describe('EntriesService', () => {
     jest.clearAllMocks();
   });
 
-  it('delegates getEntries to EntriesQueryService', async () => {
+  it('returns cached entries without querying the database', async () => {
     const expected = { entries: [], total: 0, page: 1, totalPages: 1, allTags: [] };
+    entryListCacheService.get.mockReturnValue(expected);
+
+    const result = await service.getEntries(1, { page: 1, limit: 10 });
+
+    expect(entryListCacheService.get).toHaveBeenCalledWith(1, { page: 1, limit: 10 });
+    expect(entriesQueryService.getEntries).not.toHaveBeenCalled();
+    expect(result).toBe(expected);
+  });
+
+  it('delegates getEntries to EntriesQueryService and caches misses', async () => {
+    const expected = { entries: [], total: 0, page: 1, totalPages: 1, allTags: [] };
+    entryListCacheService.get.mockReturnValue(undefined);
     entriesQueryService.getEntries.mockResolvedValue(expected);
 
     const result = await service.getEntries(1, { page: 1, limit: 10 });
 
     expect(entriesQueryService.getEntries).toHaveBeenCalledWith(1, { page: 1, limit: 10 });
+    expect(entryListCacheService.set).toHaveBeenCalledWith(1, { page: 1, limit: 10 }, expected);
     expect(result).toBe(expected);
   });
 
@@ -127,6 +149,7 @@ describe('EntriesService', () => {
     const result = await service.create(1, dto);
 
     expect(entriesCommandService.create).toHaveBeenCalledWith(1, dto);
+    expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
     expect(result).toBe(expected);
   });
 
@@ -138,6 +161,7 @@ describe('EntriesService', () => {
     const result = await service.update(1, 1, dto as never);
 
     expect(entriesCommandService.update).toHaveBeenCalledWith(1, 1, dto);
+    expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
     expect(result).toBe(expected);
   });
 
