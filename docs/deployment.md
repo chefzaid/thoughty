@@ -1,6 +1,6 @@
 # Deployment Guide
 
-Thoughty supports two Kubernetes profiles. The Jenkins pipeline targets the existing DS-Cluster infrastructure through `k8s/ds-cluster`; see the [DS-Cluster Deployment Guide](./ds-cluster-deployment.md) for its shared-service prerequisites and rollout process.
+Thoughty supports two Kubernetes profiles. The Jenkins pipeline targets the existing server infrastructure through `k8s/server`; see the [Server Deployment Guide](./server-deployment.md) for its shared-service prerequisites and rollout process.
 
 The remainder of this guide documents the standalone profile: plain manifests under `deployments/`, a dedicated `thoughty` namespace, in-cluster PostgreSQL and Redis, and Vault Agent secret injection.
 
@@ -403,10 +403,10 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 
 | File                                            | Responsibility                                              |
 | ----------------------------------------------- | ----------------------------------------------------------- |
-| `k8s/ds-cluster/`                               | DS-Cluster core overlay using shared infrastructure and External Secrets |
-| `k8s/ds-cluster-worker/`                        | DS-Cluster worker overlay applied after database migrations |
-| `k8s/ds-cluster-canary/`                        | Optional DS-Cluster canary overlay                          |
-| `deployments/kustomization.yaml`                | Application resource bundle consumed by the DS-Cluster overlay |
+| `k8s/server/`                                   | Server core overlay using shared infrastructure and External Secrets |
+| `k8s/server-worker/`                            | Server worker overlay applied after database migrations |
+| `k8s/server-canary/`                            | Optional server canary overlay                          |
+| `deployments/kustomization.yaml`                | Application resource bundle consumed by the server overlay |
 | `deployments/namespace.yaml`                    | Creates the `thoughty` namespace                            |
 | `deployments/configmap.yaml`                    | Non-secret runtime configuration for backend workloads      |
 | `deployments/vault-service-accounts.yaml`       | Service accounts used by Vault roles                        |
@@ -423,6 +423,6 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 
 ## Related Guides
 
-- [DS-Cluster Deployment](./ds-cluster-deployment.md)
+- [Server Deployment](./server-deployment.md)
 - [Development Guide](./development.md)
 - [Features](./features.md)

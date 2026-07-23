@@ -63,9 +63,9 @@ pipeline {
 
         stage('Validate Deployment Manifests') {
             steps {
-                sh 'kubectl kustomize k8s/ds-cluster > /dev/null'
-                sh 'kubectl kustomize k8s/ds-cluster-worker > /dev/null'
-                sh 'kubectl kustomize k8s/ds-cluster-canary > /dev/null'
+                sh 'kubectl kustomize k8s/server > /dev/null'
+                sh 'kubectl kustomize k8s/server-worker > /dev/null'
+                sh 'kubectl kustomize k8s/server-canary > /dev/null'
             }
         }
 
@@ -242,15 +242,16 @@ pipeline {
             }
             steps {
                 withKubeConfig(credentialsId: 'kubeconfig') {
-                    // DS-Cluster owns the application namespace, PostgreSQL, Redis,
-                    // ingress controller, Vault, and External Secrets Operator.
+                    // The server provides PostgreSQL, Redis, the ingress controller,
+                    // Vault, and External Secrets Operator. Thoughty owns its workloads.
+                    sh "kubectl create namespace ${KUBE_NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -"
                     sh """
                         if kubectl get deployment/thoughty-cloud-sync-worker -n ${KUBE_NAMESPACE} > /dev/null 2>&1; then
                             kubectl scale deployment/thoughty-cloud-sync-worker --replicas=0 -n ${KUBE_NAMESPACE}
                             kubectl rollout status deployment/thoughty-cloud-sync-worker -n ${KUBE_NAMESPACE} --timeout=120s
                         fi
                     """
-                    sh 'kubectl apply -k k8s/ds-cluster'
+                    sh 'kubectl apply -k k8s/server'
                     sh "kubectl wait --for=condition=Ready externalsecret/thoughty-database externalsecret/thoughty-app externalsecret/thoughty-backup -n ${KUBE_NAMESPACE} --timeout=120s"
 
                     // Update image tags to trigger rollout
@@ -265,7 +266,7 @@ pipeline {
 
                     // Deploy the worker only after migrations pass.
                     sh """
-                        kubectl kustomize k8s/ds-cluster-worker |
+                        kubectl kustomize k8s/server-worker |
                             kubectl set image -f - thoughty-cloud-sync-worker=${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} --local -o yaml |
                             kubectl apply -f -
                     """

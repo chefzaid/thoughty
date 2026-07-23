@@ -2,7 +2,7 @@
 
 This runbook complements the deployment guide. The deployment guide explains how to roll Thoughty out; this document explains how to verify and troubleshoot the system after it is running.
 
-The commands below describe the standalone profile in the `thoughty` namespace. On DS-Cluster, use the `application` namespace, inspect shared PostgreSQL in `infra`, and troubleshoot `ExternalSecret` status instead of Vault Agent files. See the [DS-Cluster Deployment Guide](./ds-cluster-deployment.md).
+The commands below describe the standalone profile in the `thoughty` namespace. On the server profile, use the `application` namespace, inspect shared PostgreSQL in `infra`, and troubleshoot `ExternalSecret` status instead of Vault Agent files. See the [Server Deployment Guide](./server-deployment.md).
 
 ## Runtime Surfaces
 
