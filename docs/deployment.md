@@ -1,6 +1,8 @@
 # Deployment Guide
 
-This guide documents the deployment model that exists in this repository today: plain Kubernetes manifests under `deployments/`, Docker images built from the server and web projects, Vault Agent secret injection for backend workloads, and an optional Jenkins pipeline that automates the rollout.
+Thoughty supports two Kubernetes profiles. The Jenkins pipeline targets the existing DS-Cluster infrastructure through `k8s/ds-cluster`; see the [DS-Cluster Deployment Guide](./ds-cluster-deployment.md) for its shared-service prerequisites and rollout process.
+
+The remainder of this guide documents the standalone profile: plain manifests under `deployments/`, a dedicated `thoughty` namespace, in-cluster PostgreSQL and Redis, and Vault Agent secret injection.
 
 ## Runtime Topology
 
@@ -53,7 +55,7 @@ flowchart TD
 - `postgres` starts with WAL archiving enabled; a sidecar uploads archived WAL segments to object storage for point-in-time recovery windows
 - `deployments/postgres-backup.yaml` creates a daily `postgres-backup` CronJob that uploads custom-format logical snapshots and SHA-256 checksum files
 - `redis` runs `1` ephemeral replica for shared Nest throttler counters; losing it resets counters but does not lose user data
-- `deployments/canary.yaml` adds optional canary API and web deployments plus an NGINX canary ingress; it starts at `0%` weighted traffic and can be exercised with the `X-Thoughty-Canary: always` request header
+- `deployments/canary/` adds optional canary API and web deployments plus an NGINX canary ingress; it starts at `0%` weighted traffic and can be exercised with the `X-Thoughty-Canary: always` request header
 - The API now exposes `/api/health`, which matches the liveness and readiness probes in `deployments/server-deployment.yaml`
 - The API exposes `/api/metrics` in Prometheus text format; the API pod template includes scrape annotations for clusters that honor `prometheus.io/*` annotations
 - The web deployment probes `/` on port `80`
@@ -263,7 +265,7 @@ Do not edit an already-deployed migration. Add a later migration, smoke-test bot
 ### 7. Deploy the Worker and Web Surfaces
 
 ```bash
-kubectl apply -f deployments/cloud-sync-worker-deployment.yaml
+kubectl apply -k deployments/worker
 kubectl set image deployment/thoughty-cloud-sync-worker \
   thoughty-cloud-sync-worker=<registry>/thoughty-server:<tag> \
   -n thoughty
@@ -283,12 +285,12 @@ kubectl rollout status deployment/thoughty-web -n thoughty --timeout=120s
 
 ## Optional Canary Rollout
 
-Use `deployments/canary.yaml` when you want a zero-downtime release gate before promoting the main API and web deployments. The canary runs separate API and web pods behind dedicated services and an NGINX canary ingress. The cloud sync worker is intentionally excluded because running stable and canary workers at the same time could double-process queued jobs.
+Use `deployments/canary/` when you want a zero-downtime release gate before promoting the main API and web deployments. The canary runs separate API and web pods behind dedicated services and an NGINX canary ingress. The cloud sync worker is intentionally excluded because running stable and canary workers at the same time could double-process queued jobs.
 
 Apply the canary and point it at candidate images:
 
 ```bash
-kubectl apply -f deployments/canary.yaml
+kubectl apply -k deployments/canary
 kubectl set image deployment/thoughty-server-canary \
   thoughty-server=<registry>/thoughty-server:<candidate-tag> \
   -n thoughty
@@ -338,7 +340,7 @@ kubectl annotate ingress thoughty-canary-ingress \
   -n thoughty \
   nginx.ingress.kubernetes.io/canary-weight="0" \
   --overwrite
-kubectl delete -f deployments/canary.yaml
+kubectl delete -k deployments/canary
 ```
 
 ## Jenkins Deployment Flow
@@ -401,6 +403,10 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 
 | File                                            | Responsibility                                              |
 | ----------------------------------------------- | ----------------------------------------------------------- |
+| `k8s/ds-cluster/`                               | DS-Cluster core overlay using shared infrastructure and External Secrets |
+| `k8s/ds-cluster-worker/`                        | DS-Cluster worker overlay applied after database migrations |
+| `k8s/ds-cluster-canary/`                        | Optional DS-Cluster canary overlay                          |
+| `deployments/kustomization.yaml`                | Application resource bundle consumed by the DS-Cluster overlay |
 | `deployments/namespace.yaml`                    | Creates the `thoughty` namespace                            |
 | `deployments/configmap.yaml`                    | Non-secret runtime configuration for backend workloads      |
 | `deployments/vault-service-accounts.yaml`       | Service accounts used by Vault roles                        |
@@ -408,8 +414,8 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 | `deployments/postgres.yaml`                     | PostgreSQL deployment, service, and persistent volume claim |
 | `deployments/postgres-backup.yaml`              | Daily PostgreSQL backup CronJob                             |
 | `deployments/server-deployment.yaml`            | API deployment, service, probes, and Vault injection        |
-| `deployments/cloud-sync-worker-deployment.yaml` | Dedicated background worker using the server image          |
-| `deployments/canary.yaml`                       | Optional API/web canary deployments and NGINX canary ingress |
+| `deployments/worker/`                           | Dedicated background worker using the server image          |
+| `deployments/canary/`                           | Optional API/web canary deployments and NGINX canary ingress |
 | `deployments/monitoring-alerts.yaml`            | PrometheusRule alerts for API, database, and cloud sync health |
 | `deployments/web-deployment.yaml`               | Web deployment and service                                  |
 | `deployments/ingress.yaml`                      | Host and path routing for `/` and `/api`                    |
@@ -417,5 +423,6 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 
 ## Related Guides
 
+- [DS-Cluster Deployment](./ds-cluster-deployment.md)
 - [Development Guide](./development.md)
 - [Features](./features.md)

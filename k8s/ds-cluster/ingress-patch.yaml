@@ -1,0 +1,9 @@
+- op: replace
+  path: /spec/tls/0/hosts/0
+  value: thoughty.swirlit.dev
+- op: replace
+  path: /spec/tls/0/secretName
+  value: swirlit-dev-tls
+- op: replace
+  path: /spec/rules/0/host
+  value: thoughty.swirlit.dev

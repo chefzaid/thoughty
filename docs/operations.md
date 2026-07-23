@@ -2,6 +2,8 @@
 
 This runbook complements the deployment guide. The deployment guide explains how to roll Thoughty out; this document explains how to verify and troubleshoot the system after it is running.
 
+The commands below describe the standalone profile in the `thoughty` namespace. On DS-Cluster, use the `application` namespace, inspect shared PostgreSQL in `infra`, and troubleshoot `ExternalSecret` status instead of Vault Agent files. See the [DS-Cluster Deployment Guide](./ds-cluster-deployment.md).
+
 ## Runtime Surfaces
 
 | Surface  | Kubernetes workload                     | Notes                                            |
@@ -96,7 +98,7 @@ If migrations fail:
 
 ## Canary Rollout Checks
 
-Canary releases use `deployments/canary.yaml`, which creates `thoughty-server-canary`, `thoughty-web-canary`, and `thoughty-canary-ingress`. The worker is promoted only after the API and web images are accepted.
+Canary releases use `deployments/canary/`, which creates `thoughty-server-canary`, `thoughty-web-canary`, and `thoughty-canary-ingress`. The worker is promoted only after the API and web images are accepted.
 
 Check canary readiness:
 
@@ -131,7 +133,7 @@ If the canary misbehaves, set the weight to `0`, preserve logs from both canary 
 ```bash
 kubectl logs deployment/thoughty-server-canary -n thoughty --tail=200
 kubectl logs deployment/thoughty-web-canary -n thoughty --tail=200
-kubectl delete -f deployments/canary.yaml
+kubectl delete -k deployments/canary
 ```
 
 ## Vault Secret Troubleshooting

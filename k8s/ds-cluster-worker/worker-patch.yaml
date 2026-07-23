@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thoughty-cloud-sync-worker
+  namespace: thoughty
+spec:
+  template:
+    metadata:
+      annotations:
+        vault.hashicorp.com/agent-inject: null
+        vault.hashicorp.com/role: null
+        vault.hashicorp.com/agent-inject-secret-database: null
+        vault.hashicorp.com/agent-inject-template-database: null
+        vault.hashicorp.com/agent-inject-secret-app: null
+        vault.hashicorp.com/agent-inject-template-app: null
+    spec:
+      serviceAccountName: default
+      containers:
+        - name: thoughty-cloud-sync-worker
+          command:
+            - node
+            - dist/src/cloud-sync-worker.js
+          args: null
+          envFrom:
+            - configMapRef:
+                name: thoughty-config
+            - secretRef:
+                name: thoughty-database
+            - secretRef:
+                name: thoughty-app

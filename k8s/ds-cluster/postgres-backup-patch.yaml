@@ -1,0 +1,59 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: thoughty
+spec:
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          annotations:
+            vault.hashicorp.com/agent-inject: null
+            vault.hashicorp.com/agent-pre-populate-only: null
+            vault.hashicorp.com/role: null
+            vault.hashicorp.com/agent-inject-secret-database: null
+            vault.hashicorp.com/agent-inject-secret-backup: null
+            vault.hashicorp.com/agent-inject-template-database: null
+            vault.hashicorp.com/agent-inject-template-backup: null
+        spec:
+          serviceAccountName: default
+          containers:
+            - name: postgres-backup
+              envFrom:
+                - configMapRef:
+                    name: thoughty-config
+                - secretRef:
+                    name: thoughty-database
+                - secretRef:
+                    name: thoughty-backup
+              args:
+                - |
+                  set -eu
+                  apk add --no-cache aws-cli
+                  export PGPASSWORD="$POSTGRES_PASSWORD"
+
+                  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+                  backup_file="/tmp/thoughty-postgres-${timestamp}.dump"
+                  checksum_file="${backup_file}.sha256"
+
+                  pg_dump \
+                    -h "$POSTGRES_HOST" \
+                    -U "$POSTGRES_USER" \
+                    -d "$POSTGRES_DB" \
+                    --format=custom \
+                    --no-owner \
+                    --no-acl \
+                    --file="$backup_file"
+
+                  sha256sum "$backup_file" > "$checksum_file"
+
+                  aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
+                    --region "$POSTGRES_BACKUP_REGION" \
+                    s3 cp "$backup_file" "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/$(basename "$backup_file")" \
+                    --only-show-errors
+
+                  aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
+                    --region "$POSTGRES_BACKUP_REGION" \
+                    s3 cp "$checksum_file" "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/$(basename "$checksum_file")" \
+                    --only-show-errors
