@@ -7,6 +7,7 @@ import { SuggestTagsDto } from './dto/suggest-tags.dto';
 import { FixWritingDto } from './dto/fix-writing.dto';
 import { ChatDto, ChatHistoryResponseDto, ChatResponseDto } from './dto/chat.dto';
 import { EntrySummaryResponseDto, SummarizeEntryDto } from './dto/summarize-entry.dto';
+import { GenerateWritingPromptsDto, WritingPromptsResponseDto } from './dto/writing-prompts.dto';
 
 @ApiTags('AI')
 @ApiBearerAuth()
@@ -54,6 +55,20 @@ export class AiController {
     @Body() dto: SummarizeEntryDto,
   ): Promise<EntrySummaryResponseDto> {
     return this.aiService.summarizeEntry(user.userId, dto);
+  }
+
+  @Post('writing-prompts')
+  @ApiOperation({ summary: 'Generate writing prompts from recent journal history' })
+  @ApiResponse({
+    status: 200,
+    description: 'Personalized writing prompts returned successfully',
+    type: WritingPromptsResponseDto,
+  })
+  async generateWritingPrompts(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: GenerateWritingPromptsDto,
+  ): Promise<WritingPromptsResponseDto> {
+    return this.aiService.generateWritingPrompts(user.userId, dto);
   }
 
   @Post('chat')

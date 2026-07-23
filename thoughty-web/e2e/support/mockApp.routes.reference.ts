@@ -48,6 +48,18 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
     return true;
   }
 
+  if (pathname === '/api/ai/writing-prompts') {
+    state.lastAiWritingPromptsPayload = request.postDataJSON();
+    await fulfillJson(route, {
+      prompts: [
+        'What helps you protect time for the work that matters?',
+        'Which recent lesson deserves a second look?',
+        'What would meaningful progress feel like this week?',
+      ],
+    });
+    return true;
+  }
+
   if (pathname === '/api/ai/chat') {
     state.lastAiChatPayload = request.postDataJSON();
     await fulfillJson(route, { reply: 'This entry reflects a thoughtful focus on the day.' });

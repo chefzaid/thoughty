@@ -109,6 +109,7 @@ describe('useAppShellModel', () => {
   const aiChat = vi.fn().mockResolvedValue('assistant reply');
   const fixWriting = vi.fn().mockResolvedValue('Polished text');
   const summarizeEntry = vi.fn().mockResolvedValue('Entry summary');
+  const generateWritingPrompts = vi.fn().mockResolvedValue(['Fresh prompt']);
   const getChatHistory = vi.fn().mockResolvedValue([{ role: 'assistant', content: 'history' }]);
   const renameTag = vi.fn().mockResolvedValue({ success: true });
   const navigateToFirst = vi.fn().mockResolvedValue({ found: true, page: 4, entryId: 77 });
@@ -289,6 +290,7 @@ describe('useAppShellModel', () => {
         chat: aiChat,
         fixWriting,
         summarizeEntry,
+        generateWritingPrompts,
         getChatHistory,
       },
     });
@@ -384,6 +386,9 @@ describe('useAppShellModel', () => {
       includeDetails: 'decision',
       excludeDetails: 'names',
     });
+
+    await expect(routesProps.handleGenerateWritingPrompts?.()).resolves.toEqual(['Fresh prompt']);
+    expect(generateWritingPrompts).toHaveBeenCalledWith(9);
   });
 
   it('returns false for a failed tag rename and skips follow-up updates', async () => {

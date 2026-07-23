@@ -119,6 +119,37 @@ describe('aiService', () => {
     await expect(service.summarizeEntry(12)).resolves.toBeNull();
   });
 
+  it('generateWritingPrompts returns normalized prompts for a diary', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        prompts: [' First prompt? ', 12, 'Second prompt?', 'Third prompt?', 'Ignored prompt?'],
+      }),
+    });
+
+    const result = await service.generateWritingPrompts(4);
+
+    expect(result).toEqual(['First prompt?', 'Second prompt?', 'Third prompt?']);
+    expect(mockAuthFetch).toHaveBeenCalledWith('/api/ai/writing-prompts', {
+      method: 'POST',
+      body: JSON.stringify({ diaryId: 4 }),
+    });
+  });
+
+  it('generateWritingPrompts returns null for malformed or failed responses', async () => {
+    mockAuthFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ prompts: 'not-an-array' }),
+    });
+    mockAuthFetch.mockResolvedValueOnce({
+      ok: false,
+      json: () => Promise.resolve({ error: 'Unavailable' }),
+    });
+
+    await expect(service.generateWritingPrompts()).resolves.toBeNull();
+    await expect(service.generateWritingPrompts()).resolves.toBeNull();
+  });
+
   it('chat returns assistant reply on success', async () => {
     const messages = [{ role: 'user' as const, content: 'Hello' }];
     mockAuthFetch.mockResolvedValue({
@@ -196,18 +227,21 @@ describe('aiService', () => {
 
     mockAuthFetch.mockRejectedValueOnce(new Error('fix writing network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('summary network'));
+    mockAuthFetch.mockRejectedValueOnce(new Error('prompt network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('chat network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('history network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('models network'));
 
     await expect(service.fixWriting('raw')).resolves.toBeNull();
     await expect(service.summarizeEntry(1)).resolves.toBeNull();
+    await expect(service.generateWritingPrompts()).resolves.toBeNull();
     await expect(service.chat(1, 'entry', [])).resolves.toBeNull();
     await expect(service.getChatHistory(1)).resolves.toEqual([]);
     await expect(service.fetchModels()).resolves.toEqual([]);
 
     expect(consoleSpy).toHaveBeenCalledWith('Error fixing writing:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error summarizing entry:', expect.any(Error));
+    expect(consoleSpy).toHaveBeenCalledWith('Error generating writing prompts:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error in AI chat:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error loading AI chat history:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error fetching models:', expect.any(Error));

@@ -20,6 +20,7 @@ export interface Config {
   readDates?: boolean;
   openRouterModel?: string;
   openRouterSummaryModel?: string;
+  openRouterPromptModel?: string;
   autoTagMaxTags?: string | number;
   tagMetadata?: string;
   entryTemplates?: string;

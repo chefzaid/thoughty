@@ -82,4 +82,40 @@ test.describe('AI writing assistance and entry chat', () => {
       excludeDetails: 'names',
     });
   });
+
+  test('uses a history-based writing prompt in the active diary', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const { state } = await setupMockApp(page, {
+      startAuthenticated: true,
+      initialEntries: [
+        {
+          id: 103,
+          date: '2024-04-20',
+          index: 1,
+          content: 'A reflection about protecting focus for meaningful work.',
+          tags: ['focus', 'work'],
+          visibility: 'private',
+          diaryId: 1,
+        },
+      ],
+    });
+
+    await page.goto('/journal?diary=1');
+    await page.getByRole('button', { name: 'Writing prompts' }).click();
+
+    const promptMenu = page.getByRole('menu', { name: 'Writing prompts' });
+    await expect(promptMenu).toBeVisible();
+    const menuBounds = await promptMenu.boundingBox();
+    expect(menuBounds).not.toBeNull();
+    expect(menuBounds!.x).toBeGreaterThanOrEqual(0);
+    expect(menuBounds!.x + menuBounds!.width).toBeLessThanOrEqual(390);
+
+    await promptMenu.getByRole('menuitem', {
+      name: 'What helps you protect time for the work that matters?',
+    }).click();
+
+    await expect(page.getByPlaceholder("What's on your mind?"))
+      .toHaveValue('What helps you protect time for the work that matters?');
+    await expect.poll(() => state.lastAiWritingPromptsPayload).toEqual({ diaryId: 1 });
+  });
 });

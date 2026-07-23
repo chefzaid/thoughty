@@ -8,6 +8,7 @@ import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getVisibilityButtonClass } from '../../utils/entryVisibility';
 import { resolveFontColor } from '../../types/config';
 import type { EntryTemplate, EntryTemplateDraft } from '../../utils/entryTemplates';
+import WritingPromptsMenu from './WritingPromptsMenu';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
@@ -29,6 +30,7 @@ interface EntryFormProps {
     readonly onSuggestTags?: () => Promise<boolean> | boolean;
     readonly fixingWriting?: boolean;
     readonly onFixWriting?: () => Promise<boolean> | boolean;
+    readonly onGenerateWritingPrompts?: () => Promise<string[] | null>;
     readonly onSubmit: NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
@@ -61,6 +63,7 @@ function EntryForm({
     onSuggestTags,
     fixingWriting = false,
     onFixWriting,
+    onGenerateWritingPrompts,
     onSubmit,
     theme,
     t,
@@ -262,6 +265,16 @@ function EntryForm({
                             theme={theme}
                         />
                     </div>
+                    {onGenerateWritingPrompts && (
+                        <WritingPromptsMenu
+                            onGenerate={onGenerateWritingPrompts}
+                            onSelect={(prompt) => setNewEntryText((current) => (
+                                current.trim() ? `${current}\n\n${prompt}` : prompt
+                            ))}
+                            theme={theme}
+                            t={t}
+                        />
+                    )}
                     {onSuggestTags && (
                         <button
                             type="button"

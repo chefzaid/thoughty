@@ -115,6 +115,7 @@ export interface MockAppState {
   lastAiSuggestionPayload: unknown;
   lastAiFixPayload: unknown;
   lastAiSummaryPayload: unknown;
+  lastAiWritingPromptsPayload: unknown;
   lastAiChatPayload: unknown;
   lastBulkPayload: unknown;
   lastReorderPayload: unknown;
@@ -323,6 +324,7 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
     lastAiSuggestionPayload: null,
     lastAiFixPayload: null,
     lastAiSummaryPayload: null,
+    lastAiWritingPromptsPayload: null,
     lastAiChatPayload: null,
     lastBulkPayload: null,
     lastReorderPayload: null,

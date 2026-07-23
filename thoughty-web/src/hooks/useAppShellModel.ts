@@ -177,6 +177,10 @@ export function useAppShellModel(): AppShellModel {
     return aiService.summarizeEntry(entryId, guidance);
   }, [aiService]);
 
+  const handleGenerateWritingPrompts = useCallback(async () => {
+    return aiService.generateWritingPrompts(currentDiaryId ?? undefined);
+  }, [aiService, currentDiaryId]);
+
   const handleLoadAiChatHistory = useCallback(async (entryId: number) => {
     return aiService.getChatHistory(entryId);
   }, [aiService]);
@@ -247,6 +251,7 @@ export function useAppShellModel(): AppShellModel {
     handleDiscuss,
     handleRephrase,
     handleSummarize,
+    handleGenerateWritingPrompts,
     handleNavigateToFirst,
     handleRenameTag,
     highlightsModalOpen,

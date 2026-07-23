@@ -2019,6 +2019,51 @@
         ]
       }
     },
+    "/api/ai/writing-prompts": {
+      "post": {
+        "operationId": "AiController_generateWritingPrompts",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateWritingPromptsDto"
+              },
+              "example": {
+                "diaryId": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Personalized writing prompts returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WritingPromptsResponseDto"
+                },
+                "example": {
+                  "prompts": [
+                    "example"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Generate writing prompts from recent journal history",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
     "/api/ai/chat": {
       "post": {
         "operationId": "AiController_chat",
@@ -4896,6 +4941,39 @@
         ],
         "example": {
           "summary": "example"
+        }
+      },
+      "GenerateWritingPromptsDto": {
+        "type": "object",
+        "properties": {
+          "diaryId": {
+            "type": "number",
+            "description": "Diary whose recent entries should inform the prompts",
+            "minimum": 1
+          }
+        },
+        "example": {
+          "diaryId": 1
+        }
+      },
+      "WritingPromptsResponseDto": {
+        "type": "object",
+        "properties": {
+          "prompts": {
+            "description": "Personalized journal writing prompts",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "prompts"
+        ],
+        "example": {
+          "prompts": [
+            "example"
+          ]
         }
       },
       "ChatMessageDto": {

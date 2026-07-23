@@ -45,6 +45,12 @@ describe('EntryForm', () => {
                 filterTagsPlaceholder: 'Filter by tags...',
                 suggestTags: 'Auto-Tags',
                 suggestingTags: 'Tagging...',
+                writingPrompts: 'Writing prompts',
+                chooseWritingPrompt: 'Choose a prompt',
+                generatingWritingPrompts: 'Finding a fresh direction...',
+                regenerateWritingPrompts: 'Regenerate prompts',
+                writingPromptsError: 'Unable to generate prompts',
+                retry: 'Retry',
                 entryTemplate: 'Entry template',
                 noEntryTemplate: 'Choose a template',
                 saveEntryTemplate: 'Save template',
@@ -258,6 +264,33 @@ describe('EntryForm', () => {
 
             expect(screen.getByRole('button', { name: 'Tagging...' })).toBeDisabled();
             expect(screen.getByRole('button', { name: 'Polishing...' })).toBeDisabled();
+        });
+
+        it('adds a selected writing prompt without replacing the current draft', async () => {
+            const setNewEntryText = vi.fn();
+            const user = userEvent.setup();
+            render(
+                <EntryForm
+                    {...defaultProps}
+                    newEntryText="Existing draft"
+                    setNewEntryText={setNewEntryText}
+                    onGenerateWritingPrompts={vi.fn().mockResolvedValue([
+                        'What deserves a fresh perspective?',
+                    ])}
+                />,
+            );
+
+            await user.click(screen.getByRole('button', { name: 'Writing prompts' }));
+            await user.click(await screen.findByRole('menuitem', {
+                name: 'What deserves a fresh perspective?',
+            }));
+
+            const updateDraft = setNewEntryText.mock.calls[0]?.[0] as
+                | ((current: string) => string)
+                | undefined;
+            expect(updateDraft?.('Existing draft')).toBe(
+                'Existing draft\n\nWhat deserves a fresh perspective?',
+            );
         });
     });
 

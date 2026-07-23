@@ -97,6 +97,29 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     }
   };
 
+  const generateWritingPrompts = async (diaryId?: number): Promise<string[] | null> => {
+    try {
+      const response = await authFetch('/api/ai/writing-prompts', {
+        method: 'POST',
+        body: JSON.stringify(diaryId == null ? {} : { diaryId }),
+      });
+
+      const data = await safeJsonParse<{ prompts?: unknown }>(response);
+      if (!response.ok || !data || !Array.isArray(data.prompts)) {
+        return null;
+      }
+
+      return data.prompts
+        .filter((prompt): prompt is string => typeof prompt === 'string')
+        .map((prompt) => prompt.trim())
+        .filter(Boolean)
+        .slice(0, 3);
+    } catch (error) {
+      console.error('Error generating writing prompts:', error);
+      return null;
+    }
+  };
+
   const getChatHistory = async (
     entryId: number,
   ): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> => {
@@ -134,5 +157,13 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     }
   };
 
-  return { suggestTags, fixWriting, summarizeEntry, chat, getChatHistory, fetchModels };
+  return {
+    suggestTags,
+    fixWriting,
+    summarizeEntry,
+    generateWritingPrompts,
+    chat,
+    getChatHistory,
+    fetchModels,
+  };
 };

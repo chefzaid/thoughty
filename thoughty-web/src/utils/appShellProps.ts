@@ -72,6 +72,7 @@ interface BuildAuthenticatedRoutesPropsParams {
   handleDiscuss: (entry: Entry) => void;
   handleRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
   handleSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
+  handleGenerateWritingPrompts?: () => Promise<string[] | null>;
   handleNavigateToFirst: AuthenticatedRoutesProps['journalRouteProps']['yearMonthNavigator']['onNavigate'];
   handleRenameTag: AuthenticatedRoutesProps['tagManagerRouteProps']['onRenameTag'];
   highlightsModalOpen: boolean;
@@ -205,6 +206,7 @@ export function buildAuthenticatedRoutesProps({
   handleDiscuss,
   handleRephrase,
   handleSummarize,
+  handleGenerateWritingPrompts,
   handleNavigateToFirst,
   handleRenameTag,
   highlightsModalOpen,
@@ -322,6 +324,7 @@ export function buildAuthenticatedRoutesProps({
         onSuggestTags: entryFormState.handleSuggestTags,
         fixingWriting: entryFormState.fixingWriting,
         onFixWriting: entryFormState.handleFixWriting,
+        onGenerateWritingPrompts: handleGenerateWritingPrompts,
         onSubmit: entryFormState.handleSubmit,
         pendingFiles: entryFormState.pendingFiles,
         uploadedAttachments: entryFormState.uploadedAttachments,

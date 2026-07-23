@@ -12,8 +12,10 @@ import { SuggestTagsDto } from './dto/suggest-tags.dto';
 import { FixWritingDto, type FixWritingMode } from './dto/fix-writing.dto';
 import { ChatDto, ChatHistoryResponseDto, ChatMessageDto } from './dto/chat.dto';
 import { SummarizeEntryDto } from './dto/summarize-entry.dto';
+import { GenerateWritingPromptsDto } from './dto/writing-prompts.dto';
 import { requestEntrySummary } from './entry-summary';
 import { parseToneMoodAnalysis, type ToneMoodAnalysis } from './tone-mood-analysis';
+import { requestWritingPrompts } from './writing-prompts';
 
 export type { ToneMoodAnalysis } from './tone-mood-analysis';
 
@@ -25,7 +27,7 @@ type OpenRouterResponse = {
   }>;
 };
 
-type AiModelTask = 'tag' | 'writing' | 'chat' | 'tone' | 'summary';
+type AiModelTask = 'tag' | 'writing' | 'chat' | 'tone' | 'summary' | 'prompt';
 
 const TASK_MODEL_CONFIG_KEYS: Record<AiModelTask, string> = {
   tag: 'openRouterTagModel',
@@ -33,6 +35,7 @@ const TASK_MODEL_CONFIG_KEYS: Record<AiModelTask, string> = {
   chat: 'openRouterChatModel',
   tone: 'openRouterToneModel',
   summary: 'openRouterSummaryModel',
+  prompt: 'openRouterPromptModel',
 };
 
 @Injectable()
@@ -272,6 +275,32 @@ export class AiService {
       model,
     });
     return { summary };
+  }
+
+  async generateWritingPrompts(
+    userId: number,
+    dto: GenerateWritingPromptsDto,
+  ): Promise<{ prompts: string[] }> {
+    const entries = await this.entryRepository.find({
+      where: dto.diaryId == null ? { userId } : { userId, diaryId: dto.diaryId },
+      select: { date: true, tags: true, content: true },
+      order: { date: 'DESC', index: 'DESC' },
+      take: 12,
+    });
+    if (entries.length === 0) {
+      throw new BadRequestException('Journal history is required for writing prompts');
+    }
+    if (!this.apiKey) {
+      throw new BadRequestException('OpenRouter API key is not configured');
+    }
+
+    const model = await this.getModel(userId, 'prompt');
+    const history = entries.map(({ date, tags, content }) => ({
+      date,
+      tags,
+      content: content.slice(0, 800),
+    }));
+    return { prompts: await requestWritingPrompts({ apiKey: this.apiKey, model, history }) };
   }
 
   async chat(userId: number, dto: ChatDto): Promise<{ reply: string }> {

@@ -439,6 +439,12 @@ export type TranslationKey =
   | 'summaryError'
   | 'copySummary'
   | 'summaryCopied'
+  | 'writingPrompts'
+  | 'chooseWritingPrompt'
+  | 'generatingWritingPrompts'
+  | 'regenerateWritingPrompts'
+  | 'writingPromptsError'
+  | 'retry'
   | 'aiChat'
   | 'aiThinking'
   | 'aiLoadingHistory'
@@ -586,6 +592,7 @@ export type TranslationKey =
   | 'openRouterChatModel'
   | 'openRouterToneModel'
   | 'openRouterSummaryModel'
+  | 'openRouterPromptModel'
   | 'openRouterBookModel'
   | 'inheritDefaultModel'
   | 'searchModels'
@@ -1186,6 +1193,12 @@ export const translations: Translations = {
     summaryError: 'Unable to summarize this entry. Check your OpenRouter API key and try again.',
     copySummary: 'Copy summary',
     summaryCopied: 'Summary copied',
+    writingPrompts: 'Writing prompts',
+    chooseWritingPrompt: 'Choose a prompt',
+    generatingWritingPrompts: 'Finding a fresh direction...',
+    regenerateWritingPrompts: 'Regenerate prompts',
+    writingPromptsError: 'Prompts need journal history and a configured OpenRouter API key.',
+    retry: 'Retry',
     aiChat: 'AI Chat',
     aiThinking: 'Thinking...',
     aiLoadingHistory: 'Loading chat history...',
@@ -1352,6 +1365,7 @@ export const translations: Translations = {
     openRouterChatModel: 'Entry chat',
     openRouterToneModel: 'Tone analysis',
     openRouterSummaryModel: 'Entry summaries',
+    openRouterPromptModel: 'Writing prompts',
     openRouterBookModel: 'Book weaving',
     inheritDefaultModel: 'Use default model',
     searchModels: 'Search models...',
@@ -1944,6 +1958,12 @@ export const translations: Translations = {
     summaryError: 'Impossible de résumer cette entrée. Vérifiez votre clé API OpenRouter et réessayez.',
     copySummary: 'Copier le résumé',
     summaryCopied: 'Résumé copié',
+    writingPrompts: 'Prompts d\'écriture',
+    chooseWritingPrompt: 'Choisir un prompt',
+    generatingWritingPrompts: 'Recherche d\'une nouvelle piste...',
+    regenerateWritingPrompts: 'Regénérer les prompts',
+    writingPromptsError: 'Les prompts nécessitent un historique et une clé API OpenRouter configurée.',
+    retry: 'Réessayer',
     aiChat: 'Chat IA',
     aiThinking: 'Réflexion...',
     aiLoadingHistory: 'Chargement de l\'historique du chat...',
@@ -2112,6 +2132,7 @@ export const translations: Translations = {
     openRouterChatModel: "Chat d'entrée",
     openRouterToneModel: 'Analyse du ton',
     openRouterSummaryModel: 'Résumés d\'entrées',
+    openRouterPromptModel: 'Prompts d\'écriture',
     openRouterBookModel: 'Tissage du livre',
     inheritDefaultModel: 'Utiliser le modèle par défaut',
     searchModels: 'Rechercher des modèles...',

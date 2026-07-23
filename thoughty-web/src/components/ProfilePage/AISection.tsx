@@ -21,6 +21,7 @@ const TASK_MODEL_FIELDS: ReadonlyArray<{ name: keyof ProfileConfig; labelKey: st
   { name: 'openRouterChatModel', labelKey: 'openRouterChatModel' },
   { name: 'openRouterToneModel', labelKey: 'openRouterToneModel' },
   { name: 'openRouterSummaryModel', labelKey: 'openRouterSummaryModel' },
+  { name: 'openRouterPromptModel', labelKey: 'openRouterPromptModel' },
   { name: 'openRouterBookModel', labelKey: 'openRouterBookModel' },
 ];
 

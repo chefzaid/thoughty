@@ -107,7 +107,7 @@
 - [ ] Transcription from an Audio note
 - [ ] Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
 - [x] Use different models for different tasks, to optimize token consumption parameterized in the AI settings
-- [ ] AI-generated writing prompts based on the user's journaling history and interests, to inspire new entries and reflections
+- [x] AI-generated writing prompts based on the user's journaling history and interests, to inspire new entries and reflections
 - [x] Summaries of long entries, with the option to include or exclude certain details
 - [ ] AI-generated tags that are more abstract or thematic, to complement the user-defined tags and provide different ways to organize and explore the journal
 - [ ] Auto-theme and re-tag the whole journal: scan all entries, generate a list of discussed themes, group them into the smallest set of tags that still accurately tags each entry, then tag or re-tag entries with the appropriate ones

@@ -7,6 +7,7 @@ describe('AiController', () => {
   let aiService: {
     suggestTags: jest.Mock;
     summarizeEntry: jest.Mock;
+    generateWritingPrompts: jest.Mock;
     chat: jest.Mock;
     getChatHistory: jest.Mock;
     listModels: jest.Mock;
@@ -16,6 +17,7 @@ describe('AiController', () => {
     aiService = {
       suggestTags: jest.fn(),
       summarizeEntry: jest.fn(),
+      generateWritingPrompts: jest.fn(),
       chat: jest.fn(),
       getChatHistory: jest.fn(),
       listModels: jest.fn(),
@@ -78,6 +80,20 @@ describe('AiController', () => {
 
     expect(aiService.summarizeEntry).toHaveBeenCalledWith(1, dto);
     expect(result).toEqual({ summary: 'A concise summary.' });
+  });
+
+  it('delegates writing prompt generation to the service', async () => {
+    aiService.generateWritingPrompts.mockResolvedValue({
+      prompts: ['What deserves more attention?'],
+    });
+
+    const result = await controller.generateWritingPrompts(
+      { userId: 1, email: 'test@example.com' } as any,
+      { diaryId: 4 },
+    );
+
+    expect(aiService.generateWritingPrompts).toHaveBeenCalledWith(1, { diaryId: 4 });
+    expect(result).toEqual({ prompts: ['What deserves more attention?'] });
   });
 
   it('delegates chat history lookup to the service', async () => {

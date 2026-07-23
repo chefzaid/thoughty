@@ -671,6 +671,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ai/writing-prompts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate writing prompts from recent journal history */
+        post: operations["AiController_generateWritingPrompts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/chat": {
         parameters: {
             query?: never;
@@ -1882,6 +1899,26 @@ export interface components {
         EntrySummaryResponseDto: {
             /** @description Generated summary of the journal entry */
             summary: string;
+        };
+        /**
+         * @example {
+         *       "diaryId": 1
+         *     }
+         */
+        GenerateWritingPromptsDto: {
+            /** @description Diary whose recent entries should inform the prompts */
+            diaryId?: number;
+        };
+        /**
+         * @example {
+         *       "prompts": [
+         *         "example"
+         *       ]
+         *     }
+         */
+        WritingPromptsResponseDto: {
+            /** @description Personalized journal writing prompts */
+            prompts: string[];
         };
         /**
          * @example {
@@ -4088,6 +4125,42 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["EntrySummaryResponseDto"];
+                };
+            };
+        };
+    };
+    AiController_generateWritingPrompts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "diaryId": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["GenerateWritingPromptsDto"];
+            };
+        };
+        responses: {
+            /** @description Personalized writing prompts returned successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "prompts": [
+                     *         "example"
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WritingPromptsResponseDto"];
                 };
             };
         };
