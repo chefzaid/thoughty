@@ -161,6 +161,7 @@ async function handleIoRoutes({ route, request, url, pathname, searchParams, sta
 async function handleBookRoutes({ route, request, url, pathname, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/books/upload' && request.method() === 'POST') {
     state.lastBookUploadRequestUrl = url;
+    state.lastBookUploadRequestBody = request.postData();
     await fulfillJson(route, {
       id: 'cloud-book-1',
       name: `thoughty_book_${url.searchParams.get('title') || 'book'}.${url.searchParams.get('format') || 'pdf'}`,

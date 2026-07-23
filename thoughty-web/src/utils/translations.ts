@@ -223,6 +223,17 @@ export type TranslationKey =
   | 'bookIncludeToc'
   | 'bookNarrative'
   | 'bookChapterFraming'
+  | 'bookCover'
+  | 'bookCoverTheme'
+  | 'bookCoverThemeClassic'
+  | 'bookCoverThemeOcean'
+  | 'bookCoverThemeForest'
+  | 'bookCoverThemeRose'
+  | 'bookCoverChooseImage'
+  | 'bookCoverReplaceImage'
+  | 'bookCoverRemoveImage'
+  | 'bookCoverPreview'
+  | 'bookCoverImageInvalid'
   | 'previewBook'
   | 'downloadBook'
   | 'generatingBook'
@@ -936,6 +947,17 @@ export const translations: Translations = {
     bookIncludeToc: 'Include table of contents',
     bookNarrative: 'Weave thoughts into flowing prose with AI',
     bookChapterFraming: 'Add AI chapter introductions and summaries',
+    bookCover: 'Cover',
+    bookCoverTheme: 'Cover color theme',
+    bookCoverThemeClassic: 'Classic',
+    bookCoverThemeOcean: 'Ocean',
+    bookCoverThemeForest: 'Forest',
+    bookCoverThemeRose: 'Rose',
+    bookCoverChooseImage: 'Choose cover image',
+    bookCoverReplaceImage: 'Replace cover image',
+    bookCoverRemoveImage: 'Remove cover image',
+    bookCoverPreview: 'Cover image preview',
+    bookCoverImageInvalid: 'Choose a PNG or JPEG image no larger than 2 MB.',
     previewBook: 'Preview Chapters',
     downloadBook: 'Download Book',
     generatingBook: 'Generating...',
@@ -1711,6 +1733,17 @@ export const translations: Translations = {
     bookIncludeToc: 'Inclure la table des matières',
     bookNarrative: "Tisser les pensées en prose fluide avec l'IA",
     bookChapterFraming: 'Ajouter des introductions et résumés de chapitre par IA',
+    bookCover: 'Couverture',
+    bookCoverTheme: 'Thème coloré de la couverture',
+    bookCoverThemeClassic: 'Classique',
+    bookCoverThemeOcean: 'Océan',
+    bookCoverThemeForest: 'Forêt',
+    bookCoverThemeRose: 'Rose',
+    bookCoverChooseImage: 'Choisir une image de couverture',
+    bookCoverReplaceImage: "Remplacer l'image de couverture",
+    bookCoverRemoveImage: "Supprimer l'image de couverture",
+    bookCoverPreview: "Aperçu de l'image de couverture",
+    bookCoverImageInvalid: 'Choisissez une image PNG ou JPEG de 2 Mo maximum.',
     previewBook: 'Aperçu des chapitres',
     downloadBook: 'Télécharger le livre',
     generatingBook: 'Génération...',

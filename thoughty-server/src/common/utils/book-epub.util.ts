@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { randomUUID } from 'node:crypto';
-import { Book, RenderBookOptions } from './book-converter.util';
+import { BOOK_COVER_PALETTES, Book, RenderBookOptions } from './book-converter.util';
 
 function escapeXml(text: string): string {
   return text
@@ -30,6 +30,8 @@ const EPUB_STYLES = [
   'h1,h2{text-align:center}',
   '.author{text-align:center;font-style:italic}',
   '.date{text-align:center;color:#666}',
+  '.title-page{min-height:90vh;padding:3em 2em;text-align:center;box-sizing:border-box}',
+  '.cover-image{display:block;max-width:100%;max-height:55vh;margin:0 auto 2em;object-fit:contain}',
   '.entry{margin-bottom:1.5em}',
   '.entry-date{color:#888;font-size:0.85em}',
   '.entry-content{white-space:pre-wrap}',
@@ -38,11 +40,18 @@ const EPUB_STYLES = [
 ].join('\n');
 
 function buildTitlePage(book: Book): string {
-  const parts = [`<h1>${escapeXml(book.title)}</h1>`];
+  const palette = BOOK_COVER_PALETTES[book.cover?.theme ?? 'classic'];
+  const parts = [
+    `<main class="title-page" style="background:${palette.background};color:${palette.foreground};border-top:0.75em solid ${palette.accent}">`,
+  ];
+  if (book.cover?.image) {
+    parts.push(`<img class="cover-image" src="cover.${book.cover.image.mimeType === 'image/png' ? 'png' : 'jpg'}" alt="${escapeXml(book.title)} cover"/>`);
+  }
+  parts.push(`<h1>${escapeXml(book.title)}</h1>`);
   if (book.author) {
     parts.push(`<p class="author">by ${escapeXml(book.author)}</p>`);
   }
-  parts.push(`<p class="date">${escapeXml(book.generatedAt)}</p>`);
+  parts.push(`<p class="date">${escapeXml(book.generatedAt)}</p>`, '</main>');
   return xhtmlDocument(book.title, parts.join('\n'));
 }
 
@@ -119,6 +128,9 @@ function buildOpf(book: Book, identifier: string): string {
     .map((_, index) => `<itemref idref="chapter-${index + 1}"/>`)
     .join('\n');
   const author = book.author ? `<dc:creator>${escapeXml(book.author)}</dc:creator>` : '';
+  const coverManifest = book.cover?.image
+    ? `<item id="cover-image" href="cover.${book.cover.image.mimeType === 'image/png' ? 'png' : 'jpg'}" media-type="${book.cover.image.mimeType}" properties="cover-image"/>`
+    : '';
 
   return [
     '<?xml version="1.0" encoding="utf-8"?>',
@@ -134,6 +146,7 @@ function buildOpf(book: Book, identifier: string): string {
     '<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>',
     '<item id="title" href="title.xhtml" media-type="application/xhtml+xml"/>',
     '<item id="styles" href="styles.css" media-type="text/css"/>',
+    coverManifest,
     chapterManifest,
     '</manifest>',
     '<spine>',
@@ -171,6 +184,10 @@ export async function renderBookEpub(book: Book, options: RenderBookOptions = {}
   zip.file('OEBPS/nav.xhtml', buildNav(book, includeToc));
   zip.file('OEBPS/title.xhtml', buildTitlePage(book));
   zip.file('OEBPS/styles.css', EPUB_STYLES);
+  if (book.cover?.image) {
+    const extension = book.cover.image.mimeType === 'image/png' ? 'png' : 'jpg';
+    zip.file(`OEBPS/cover.${extension}`, book.cover.image.data);
+  }
 
   for (let index = 0; index < book.chapters.length; index++) {
     zip.file(`OEBPS/chapter-${index + 1}.xhtml`, buildChapterPage(book, index, includeDates));

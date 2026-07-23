@@ -90,6 +90,8 @@ describe('ImportExport book section', () => {
         expect(screen.getByLabelText('bookWeavingMode')).toBeInTheDocument();
         expect(screen.getByText('bookIncludeUntagged')).toBeInTheDocument();
         expect(screen.getByText('bookChapterFraming')).toBeInTheDocument();
+        expect(screen.getByRole('radiogroup', { name: 'bookCoverTheme' })).toBeInTheDocument();
+        expect(screen.getByLabelText('bookCoverChooseImage')).toBeInTheDocument();
         expect(screen.getByText('previewBook')).toBeInTheDocument();
         expect(screen.getByText('downloadBook')).toBeInTheDocument();
         expect(screen.getByLabelText('bookCloudProvider')).toBeDisabled();
@@ -196,6 +198,52 @@ describe('ImportExport book section', () => {
 
         const exportCall = (globalThis.fetch as Mock).mock.calls.find((call: unknown[]) => (call[0] as string).includes('/api/books/export'));
         expect((exportCall as [string])[0]).toContain('weavingMode=creative');
+    });
+
+    it('posts a validated custom cover image with the selected theme', async () => {
+        const mockBlob = new Blob(['<html>'], { type: 'text/html' });
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            blob: async () => mockBlob,
+            headers: new Headers(),
+        });
+        const cover = new File(['image bytes'], 'cover.png', { type: 'image/png' });
+
+        await renderBookSection();
+
+        fireEvent.click(screen.getByText('bookCoverThemeOcean'));
+        fireEvent.change(screen.getByLabelText('bookCoverChooseImage'), {
+            target: { files: [cover] },
+        });
+        await screen.findByAltText('bookCoverPreview');
+        fireEvent.click(screen.getByText('downloadBook'));
+
+        await screen.findByText('bookExportSuccess');
+        const exportCall = (globalThis.fetch as Mock).mock.calls.find(
+            (call: unknown[]) => (call[0] as string).includes('/api/books/export'),
+        ) as [string, RequestInit];
+        expect(exportCall[0]).toContain('coverTheme=ocean');
+        expect(exportCall[1].method).toBe('POST');
+        expect(exportCall[1].body).toBeInstanceOf(FormData);
+        expect((exportCall[1].body as FormData).get('coverImage')).toBe(cover);
+    });
+
+    it('rejects an invalid cover image and allows removing a selected image', async () => {
+        await renderBookSection();
+
+        const input = screen.getByLabelText('bookCoverChooseImage');
+        fireEvent.change(input, {
+            target: { files: [new File(['text'], 'cover.txt', { type: 'text/plain' })] },
+        });
+        expect(screen.getByRole('alert')).toHaveTextContent('bookCoverImageInvalid');
+        expect(screen.queryByAltText('bookCoverPreview')).not.toBeInTheDocument();
+
+        fireEvent.change(input, {
+            target: { files: [new File(['image'], 'cover.jpg', { type: 'image/jpeg' })] },
+        });
+        await screen.findByAltText('bookCoverPreview');
+        fireEvent.click(screen.getByRole('button', { name: 'bookCoverRemoveImage' }));
+        expect(screen.queryByAltText('bookCoverPreview')).not.toBeInTheDocument();
     });
 
     it('uploads the generated book to a connected cloud provider', async () => {

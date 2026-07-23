@@ -12,6 +12,16 @@ test.describe('Book cloud upload', () => {
     await bookSection.getByLabel('Title').fill('Summer Notes');
     await bookSection.getByLabel('Format').selectOption('epub');
     await bookSection.getByText('Add AI chapter introductions and summaries').click();
+    await bookSection.getByText('Ocean').click();
+    await bookSection.getByLabel('Choose cover image').setInputFiles({
+      name: 'summer-cover.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        'base64',
+      ),
+    });
+    await expect(bookSection.getByAltText('Cover image preview')).toBeVisible();
     await expect(bookSection.getByLabel('Cloud destination')).toHaveValue('google_drive');
     await bookSection.getByRole('button', { name: 'Upload Book' }).click();
 
@@ -20,7 +30,8 @@ test.describe('Book cloud upload', () => {
     await expect.poll(() => state.lastBookUploadRequestUrl?.searchParams.get('format')).toBe('epub');
     await expect.poll(() => state.lastBookUploadRequestUrl?.searchParams.get('title')).toBe('Summer Notes');
     await expect.poll(() => state.lastBookUploadRequestUrl?.searchParams.get('chapterFraming')).toBe('true');
-
+    await expect.poll(() => state.lastBookUploadRequestUrl?.searchParams.get('coverTheme')).toBe('ocean');
+    await expect.poll(() => state.lastBookUploadRequestBody).toContain('summer-cover.png');
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(bookSection.getByLabel('Cloud destination')).toBeVisible();
     const cloudRow = await bookSection.locator('.book-cloud-row').boundingBox();

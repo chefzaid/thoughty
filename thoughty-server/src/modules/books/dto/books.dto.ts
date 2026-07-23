@@ -115,6 +115,15 @@ export class BookQueryDto {
   @IsOptional()
   @IsIn(['strict', 'creative'])
   weavingMode?: 'strict' | 'creative';
+
+  @ApiPropertyOptional({
+    description: 'Color palette for the generated book cover',
+    enum: ['classic', 'ocean', 'forest', 'rose'],
+    default: 'classic',
+  })
+  @IsOptional()
+  @IsIn(['classic', 'ocean', 'forest', 'rose'])
+  coverTheme?: 'classic' | 'ocean' | 'forest' | 'rose';
 }
 
 export class BookUploadQueryDto extends BookQueryDto {

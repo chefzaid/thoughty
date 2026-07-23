@@ -113,6 +113,7 @@ export interface MockAppState {
   lastDeleteAllRequestUrl: URL | null;
   lastExportRequestUrl: URL | null;
   lastBookUploadRequestUrl: URL | null;
+  lastBookUploadRequestBody: string | null;
   lastAiSuggestionPayload: unknown;
   lastAiFixPayload: unknown;
   lastAiSummaryPayload: unknown;
@@ -323,6 +324,7 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
     lastDeleteAllRequestUrl: null,
     lastExportRequestUrl: null,
     lastBookUploadRequestUrl: null,
+    lastBookUploadRequestBody: null,
     lastAiSuggestionPayload: null,
     lastAiFixPayload: null,
     lastAiSummaryPayload: null,

@@ -6,6 +6,10 @@ import { AiBookComposerService } from '@/modules/ai';
 import { Entry, Diary, User } from '@/database/entities';
 
 describe('BooksService', () => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    'base64',
+  );
   let service: BooksService;
   let entryRepository: any;
   let diaryRepository: any;
@@ -248,6 +252,67 @@ describe('BooksService', () => {
 
       await expect(service.export(1, {})).rejects.toThrow(BadRequestException);
       expect(aiService.composeBookChapter).not.toHaveBeenCalled();
+    });
+
+    it('should apply the selected cover theme and validated image', async () => {
+      const coverImage = {
+        buffer: png,
+        mimetype: 'image/png',
+        size: png.length,
+        originalname: 'cover.png',
+      } as Express.Multer.File;
+
+      const result = await service.export(
+        1,
+        { format: 'html', narrative: false, coverTheme: 'ocean' },
+        coverImage,
+      );
+
+      expect(result.content).toContain('background:#e0f2fe');
+      expect(result.content).toContain(`data:image/png;base64,${png.toString('base64')}`);
+    });
+
+    it('should reject a cover image with unsupported or spoofed content', async () => {
+      const spoofedImage = {
+        buffer: Buffer.from('not a png'),
+        mimetype: 'image/png',
+        size: 9,
+        originalname: 'cover.png',
+      } as Express.Multer.File;
+
+      await expect(
+        service.export(1, { format: 'html', narrative: false }, spoofedImage),
+      ).rejects.toThrow('invalid');
+    });
+
+    it('should reject oversized cover images', async () => {
+      const oversizedImage = {
+        buffer: Buffer.alloc(2 * 1024 * 1024 + 1),
+        mimetype: 'image/jpeg',
+        size: 2 * 1024 * 1024 + 1,
+        originalname: 'cover.jpg',
+      } as Express.Multer.File;
+
+      await expect(
+        service.export(1, { format: 'html', narrative: false }, oversizedImage),
+      ).rejects.toThrow('no larger than 2 MB');
+    });
+
+    it('should report a cover image that passes metadata checks but cannot be decoded', async () => {
+      const corruptPng = Buffer.alloc(24);
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(corruptPng);
+      corruptPng.writeUInt32BE(1, 16);
+      corruptPng.writeUInt32BE(1, 20);
+      const coverImage = {
+        buffer: corruptPng,
+        mimetype: 'image/png',
+        size: corruptPng.length,
+        originalname: 'cover.png',
+      } as Express.Multer.File;
+
+      await expect(
+        service.export(1, { narrative: false }, coverImage),
+      ).rejects.toThrow('could not be decoded');
     });
   });
 });

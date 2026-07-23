@@ -74,6 +74,25 @@ describe('BooksController', () => {
     });
   });
 
+  describe('exportWithCover', () => {
+    it('forwards the uploaded cover image and sends the generated file', async () => {
+      const query = { format: 'html', coverTheme: 'ocean' } as any;
+      const coverImage = { buffer: Buffer.from('image'), mimetype: 'image/png' } as any;
+      const bookFile = {
+        content: '<html></html>',
+        filename: 'thoughty_book.html',
+        contentType: 'text/html; charset=utf-8',
+      };
+      booksService.export.mockResolvedValue(bookFile);
+      const mockRes = { setHeader: jest.fn(), send: jest.fn() } as any;
+
+      await controller.exportWithCover(mockUser as any, query, coverImage, mockRes);
+
+      expect(booksService.export).toHaveBeenCalledWith(1, query, coverImage);
+      expect(mockRes.send).toHaveBeenCalledWith(bookFile.content);
+    });
+  });
+
   describe('upload', () => {
     it('generates and uploads the book for the authenticated user', async () => {
       const query = { provider: 'google_drive', diaryId: 2, format: 'epub' } as any;
@@ -86,9 +105,14 @@ describe('BooksController', () => {
       booksService.export.mockResolvedValue(bookFile);
       cloudSyncService.uploadFile.mockResolvedValue(cloudFile);
 
-      const result = await controller.upload(mockUser as any, query);
+      const coverImage = { buffer: Buffer.from('image'), mimetype: 'image/png' } as any;
+      const result = await controller.upload(mockUser as any, query, coverImage);
 
-      expect(booksService.export).toHaveBeenCalledWith(1, { diaryId: 2, format: 'epub' });
+      expect(booksService.export).toHaveBeenCalledWith(
+        1,
+        { diaryId: 2, format: 'epub' },
+        coverImage,
+      );
       expect(cloudSyncService.uploadFile).toHaveBeenCalledWith(1, 'google_drive', bookFile);
       expect(result).toBe(cloudFile);
     });

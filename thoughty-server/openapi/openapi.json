@@ -2933,6 +2933,22 @@
                 "creative"
               ]
             }
+          },
+          {
+            "name": "coverTheme",
+            "required": false,
+            "in": "query",
+            "description": "Color palette for the generated book cover",
+            "schema": {
+              "default": "classic",
+              "type": "string",
+              "enum": [
+                "classic",
+                "ocean",
+                "forest",
+                "rose"
+              ]
+            }
           }
         ],
         "responses": {
@@ -3153,6 +3169,22 @@
                 "creative"
               ]
             }
+          },
+          {
+            "name": "coverTheme",
+            "required": false,
+            "in": "query",
+            "description": "Color palette for the generated book cover",
+            "schema": {
+              "default": "classic",
+              "type": "string",
+              "enum": [
+                "classic",
+                "ocean",
+                "forest",
+                "rose"
+              ]
+            }
           }
         ],
         "responses": {
@@ -3166,6 +3198,235 @@
           }
         ],
         "summary": "Convert journal entries into a book (chapters from tags) and download it",
+        "tags": [
+          "Books"
+        ]
+      },
+      "post": {
+        "operationId": "BooksController_exportWithCover",
+        "parameters": [
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID to build the book from",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "Book output format",
+            "schema": {
+              "default": "pdf",
+              "type": "string",
+              "enum": [
+                "pdf",
+                "epub",
+                "html",
+                "md"
+              ]
+            }
+          },
+          {
+            "name": "title",
+            "required": false,
+            "in": "query",
+            "description": "Book title (defaults to the diary name)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "author",
+            "required": false,
+            "in": "query",
+            "description": "Author name shown on the title page (defaults to the username)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Only include entries on or after this date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "Only include entries on or before this date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chapterOrder",
+            "required": false,
+            "in": "query",
+            "description": "Chapter ordering: alphabetical, by entry count, or by first entry date",
+            "schema": {
+              "default": "alpha",
+              "type": "string",
+              "enum": [
+                "alpha",
+                "entries",
+                "chrono"
+              ]
+            }
+          },
+          {
+            "name": "chapterMode",
+            "required": false,
+            "in": "query",
+            "description": "Chapter grouping mode: tags, calendar years, or calendar months",
+            "schema": {
+              "default": "tags",
+              "type": "string",
+              "enum": [
+                "tags",
+                "year",
+                "month"
+              ]
+            }
+          },
+          {
+            "name": "tagScope",
+            "required": false,
+            "in": "query",
+            "description": "Place entries in every matching tag chapter, or only in their first tag chapter",
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "first"
+              ]
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated list of tags to use as chapters (defaults to all tags)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeUntagged",
+            "required": false,
+            "in": "query",
+            "description": "Add a final chapter for entries without tags",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeDates",
+            "required": false,
+            "in": "query",
+            "description": "Show entry dates inside chapters",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeToc",
+            "required": false,
+            "in": "query",
+            "description": "Include a table of contents",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "narrative",
+            "required": false,
+            "in": "query",
+            "description": "Use AI to weave each chapter's entries into flowing prose (requires a configured AI key)",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "chapterFraming",
+            "required": false,
+            "in": "query",
+            "description": "Add AI-generated introductions and summaries around each chapter",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "weavingMode",
+            "required": false,
+            "in": "query",
+            "description": "AI weaving mode for narrative chapters",
+            "schema": {
+              "default": "strict",
+              "type": "string",
+              "enum": [
+                "strict",
+                "creative"
+              ]
+            }
+          },
+          {
+            "name": "coverTheme",
+            "required": false,
+            "in": "query",
+            "description": "Color palette for the generated book cover",
+            "schema": {
+              "default": "classic",
+              "type": "string",
+              "enum": [
+                "classic",
+                "ocean",
+                "forest",
+                "rose"
+              ]
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "coverImage": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Book file with the requested custom cover"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Generate and download a book with an optional custom cover image",
         "tags": [
           "Books"
         ]
@@ -3354,6 +3615,22 @@
             }
           },
           {
+            "name": "coverTheme",
+            "required": false,
+            "in": "query",
+            "description": "Color palette for the generated book cover",
+            "schema": {
+              "default": "classic",
+              "type": "string",
+              "enum": [
+                "classic",
+                "ocean",
+                "forest",
+                "rose"
+              ]
+            }
+          },
+          {
             "name": "provider",
             "required": true,
             "in": "query",
@@ -3368,6 +3645,22 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "coverImage": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": "Cloud file metadata for the uploaded book",

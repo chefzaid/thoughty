@@ -47,7 +47,17 @@ export function useImportExportBook({
         if (!options.includeToc) params.append('includeToc', 'false');
         if (!options.narrative) params.append('narrative', 'false');
         if (options.chapterFraming) params.append('chapterFraming', 'true');
+        if (options.coverTheme !== 'classic') params.append('coverTheme', options.coverTheme);
         return params;
+    }
+
+    function buildCoverBody(): FormData | undefined {
+        if (!options.coverImage) {
+            return undefined;
+        }
+        const body = new FormData();
+        body.append('coverImage', options.coverImage);
+        return body;
     }
 
     function changeOption<K extends keyof BookOptions>(key: K, value: BookOptions[K]): void {
@@ -71,7 +81,10 @@ export function useImportExportBook({
     async function handleDownload(): Promise<void> {
         setAction('download');
         try {
-            const response = await authFetch(`/api/books/export?${buildParams()}`);
+            const coverBody = buildCoverBody();
+            const response = await authFetch(`/api/books/export?${buildParams()}`, coverBody
+                ? { method: 'POST', body: coverBody }
+                : undefined);
             if (!response.ok) {
                 showMessage('error', t('bookExportError'));
                 return;
@@ -97,7 +110,10 @@ export function useImportExportBook({
         try {
             const params = buildParams();
             params.set('provider', selectedCloudProvider);
-            const response = await authFetch(`/api/books/upload?${params}`, { method: 'POST' });
+            const response = await authFetch(`/api/books/upload?${params}`, {
+                method: 'POST',
+                body: buildCoverBody(),
+            });
             if (!response.ok) {
                 showMessage('error', t('bookCloudUploadError'));
                 return;

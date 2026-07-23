@@ -24,6 +24,7 @@ export type BookChapterMode = 'tags' | 'year' | 'month';
 export type BookChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type BookTagScope = 'all' | 'first';
 export type BookWeavingMode = 'strict' | 'creative';
+export type BookCoverTheme = 'classic' | 'ocean' | 'forest' | 'rose';
 
 export const BOOK_FORMAT_OPTIONS: ReadonlyArray<{ value: BookFormat; labelKey: string }> = [
     { value: 'pdf', labelKey: 'bookFormatPdf' },
@@ -67,6 +68,8 @@ export interface BookOptions {
     includeToc: boolean;
     narrative: boolean;
     chapterFraming: boolean;
+    coverTheme: BookCoverTheme;
+    coverImage: File | null;
 }
 
 export const DEFAULT_BOOK_OPTIONS: BookOptions = {
@@ -82,6 +85,8 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
     includeToc: true,
     narrative: true,
     chapterFraming: false,
+    coverTheme: 'classic',
+    coverImage: null,
 };
 
 export interface BookChapterPreview {

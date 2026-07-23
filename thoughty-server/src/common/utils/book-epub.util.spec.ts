@@ -109,4 +109,23 @@ describe('renderBookEpub', () => {
     expect(chapterWith).toContain('2024-01-10');
     expect(chapterWithout).not.toContain('2024-01-10');
   });
+
+  it('should package the custom cover image and selected palette', async () => {
+    const coveredBook: Book = {
+      ...book,
+      cover: {
+        theme: 'rose',
+        image: { data: Buffer.from('cover bytes'), mimeType: 'image/png' },
+      },
+    };
+    const zip = await JSZip.loadAsync(await renderBookEpub(coveredBook));
+    const titlePage = await readZipEntry(zip, 'OEBPS/title.xhtml');
+    const opf = await readZipEntry(zip, 'OEBPS/content.opf');
+
+    expect(zip.file('OEBPS/cover.png')).toBeTruthy();
+    expect(await zip.file('OEBPS/cover.png')!.async('nodebuffer')).toEqual(Buffer.from('cover bytes'));
+    expect(titlePage).toContain('background:#fdf2f8');
+    expect(titlePage).toContain('src="cover.png"');
+    expect(opf).toContain('properties="cover-image"');
+  });
 });

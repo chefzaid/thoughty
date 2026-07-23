@@ -1,5 +1,10 @@
 import PDFDocument from 'pdfkit';
-import { Book, RenderBookOptions, stripMarkdown } from './book-converter.util';
+import {
+  BOOK_COVER_PALETTES,
+  Book,
+  RenderBookOptions,
+  stripMarkdown,
+} from './book-converter.util';
 
 const PAGE_MARGIN = 72;
 const TITLE_FONT_SIZE = 28;
@@ -17,14 +22,28 @@ interface TocLinePosition {
 }
 
 function renderTitlePage(doc: PDFKit.PDFDocument, book: Book): void {
-  doc.moveDown(8);
-  doc.font('Helvetica-Bold').fontSize(TITLE_FONT_SIZE).text(book.title, { align: 'center' });
+  const palette = BOOK_COVER_PALETTES[book.cover?.theme ?? 'classic'];
+  doc.rect(0, 0, doc.page.width, doc.page.height).fill(palette.background);
+  doc.rect(0, 0, doc.page.width, 12).fill(palette.accent);
+
+  if (book.cover?.image) {
+    doc.image(book.cover.image.data, PAGE_MARGIN, 72, {
+      fit: [doc.page.width - PAGE_MARGIN * 2, 300],
+      align: 'center',
+      valign: 'center',
+    });
+    doc.y = 410;
+  } else {
+    doc.moveDown(8);
+  }
+
+  doc.fillColor(palette.foreground).font('Helvetica-Bold').fontSize(TITLE_FONT_SIZE).text(book.title, { align: 'center' });
   doc.moveDown(1);
   if (book.author) {
     doc.font('Helvetica-Oblique').fontSize(14).text(`by ${book.author}`, { align: 'center' });
     doc.moveDown(1);
   }
-  doc.font('Helvetica').fontSize(11).fillColor('#666666').text(book.generatedAt, { align: 'center' });
+  doc.font('Helvetica').fontSize(11).fillColor(palette.accent).text(book.generatedAt, { align: 'center' });
   doc.fillColor('#000000');
 }
 

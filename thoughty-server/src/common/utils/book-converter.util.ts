@@ -1,6 +1,30 @@
 export type ChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type TagScope = 'all' | 'first';
 export type ChapterMode = 'tags' | 'year' | 'month';
+export type BookCoverTheme = 'classic' | 'ocean' | 'forest' | 'rose';
+
+export interface BookCoverImage {
+  data: Buffer;
+  mimeType: 'image/jpeg' | 'image/png';
+}
+
+export interface BookCover {
+  theme: BookCoverTheme;
+  image?: BookCoverImage;
+}
+
+export interface BookCoverPalette {
+  background: string;
+  foreground: string;
+  accent: string;
+}
+
+export const BOOK_COVER_PALETTES: Record<BookCoverTheme, BookCoverPalette> = {
+  classic: { background: '#fffaf0', foreground: '#292524', accent: '#b45309' },
+  ocean: { background: '#e0f2fe', foreground: '#0c4a6e', accent: '#0284c7' },
+  forest: { background: '#ecfdf5', foreground: '#14532d', accent: '#16a34a' },
+  rose: { background: '#fdf2f8', foreground: '#831843', accent: '#db2777' },
+};
 
 export const UNTAGGED_CHAPTER_TITLE = 'Untagged Thoughts';
 
@@ -28,6 +52,7 @@ export interface Book {
   author?: string;
   generatedAt: string;
   chapters: BookChapter[];
+  cover?: BookCover;
 }
 
 export interface BuildBookOptions {
@@ -274,12 +299,29 @@ export interface RenderBookOptions {
 export function renderBookMarkdown(book: Book, options: RenderBookOptions = {}): string {
   const includeDates = options.includeDates !== false;
   const includeToc = options.includeToc !== false;
-  const lines: string[] = [`# ${book.title}`, ''];
+  const lines: string[] = [];
 
-  if (book.author) {
-    lines.push(`*by ${book.author}*`, '');
+  if (book.cover) {
+    const palette = BOOK_COVER_PALETTES[book.cover.theme];
+    lines.push(
+      `<div style="padding:4em 2em;text-align:center;background:${palette.background};color:${palette.foreground};border-top:12px solid ${palette.accent}">`,
+    );
+    if (book.cover.image) {
+      const source = `data:${book.cover.image.mimeType};base64,${book.cover.image.data.toString('base64')}`;
+      lines.push(`<img src="${source}" alt="${escapeHtml(book.title)} cover" style="max-width:100%;max-height:24em" />`);
+    }
+    lines.push(`<h1>${escapeHtml(book.title)}</h1>`);
+    if (book.author) {
+      lines.push(`<p><em>by ${escapeHtml(book.author)}</em></p>`);
+    }
+    lines.push(`<p>${escapeHtml(book.generatedAt)}</p>`, '</div>', '');
+  } else {
+    lines.push(`# ${book.title}`, '');
+    if (book.author) {
+      lines.push(`*by ${book.author}*`, '');
+    }
+    lines.push(`*${book.generatedAt}*`, '');
   }
-  lines.push(`*${book.generatedAt}*`, '');
 
   if (includeToc && book.chapters.length > 0) {
     lines.push('## Table of Contents', '');
@@ -318,6 +360,10 @@ export function renderBookMarkdown(book: Book, options: RenderBookOptions = {}):
 export function renderBookHtml(book: Book, options: RenderBookOptions = {}): string {
   const includeDates = options.includeDates !== false;
   const includeToc = options.includeToc !== false;
+  const coverPalette = BOOK_COVER_PALETTES[book.cover?.theme ?? 'classic'];
+  const coverImage = book.cover?.image
+    ? `data:${book.cover.image.mimeType};base64,${book.cover.image.data.toString('base64')}`
+    : undefined;
   const parts: string[] = [
     '<!DOCTYPE html>',
     '<html lang="en">',
@@ -326,7 +372,8 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     `<title>${escapeHtml(book.title)}</title>`,
     '<style>',
     'body{font-family:Georgia,serif;max-width:42em;margin:0 auto;padding:2em;line-height:1.6;color:#222}',
-    '.title-page{text-align:center;padding:6em 0;page-break-after:always}',
+    '.title-page{text-align:center;min-height:46em;padding:5em 2em;box-sizing:border-box;page-break-after:always}',
+    '.cover-image{display:block;max-width:100%;max-height:24em;margin:0 auto 2.5em;object-fit:contain}',
     '.title-page h1{font-size:2.4em;margin-bottom:0.4em}',
     '.title-page .author{font-style:italic;font-size:1.2em}',
     '.title-page .date{color:#666;margin-top:2em}',
@@ -342,9 +389,15 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     '</style>',
     '</head>',
     '<body>',
-    '<div class="title-page">',
-    `<h1>${escapeHtml(book.title)}</h1>`,
+    `<div class="title-page" style="background:${coverPalette.background};color:${coverPalette.foreground};border-top:12px solid ${coverPalette.accent}">`,
   ];
+
+  if (coverImage) {
+    parts.push(`<img class="cover-image" src="${coverImage}" alt="${escapeHtml(book.title)} cover">`);
+  }
+  parts.push(
+    `<h1>${escapeHtml(book.title)}</h1>`,
+  );
 
   if (book.author) {
     parts.push(`<p class="author">by ${escapeHtml(book.author)}</p>`);

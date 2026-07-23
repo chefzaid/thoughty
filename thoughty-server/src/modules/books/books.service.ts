@@ -12,6 +12,7 @@ import {
   renderBookEpub,
 } from '@/common/utils';
 import { BookQueryDto, BookPreviewResponseDto } from './dto';
+import { createBookCover } from './book-cover.util';
 
 export type BookFormat = 'pdf' | 'epub' | 'html' | 'md';
 
@@ -157,8 +158,13 @@ export class BooksService {
     }
   }
 
-  async export(userId: number, query: BookQueryDto): Promise<BookFile> {
+  async export(
+    userId: number,
+    query: BookQueryDto,
+    coverImage?: Express.Multer.File,
+  ): Promise<BookFile> {
     const book = await this.buildBookForUser(userId, query);
+    book.cover = createBookCover(query.coverTheme, coverImage);
     if (query.narrative !== false) {
       await this.composeNarratives(userId, book, query.weavingMode ?? 'strict');
     }
@@ -195,7 +201,14 @@ export class BooksService {
         contentType = 'application/epub+zip';
         break;
       default:
-        content = await renderBookPdf(book, renderOptions);
+        try {
+          content = await renderBookPdf(book, renderOptions);
+        } catch (error) {
+          if (coverImage) {
+            throw new BadRequestException('Cover image could not be decoded.');
+          }
+          throw error;
+        }
         extension = 'pdf';
         contentType = 'application/pdf';
         break;

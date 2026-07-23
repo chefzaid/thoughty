@@ -905,7 +905,8 @@ export interface paths {
         /** Convert journal entries into a book (chapters from tags) and download it */
         get: operations["BooksController_export"];
         put?: never;
-        post?: never;
+        /** Generate and download a book with an optional custom cover image */
+        post: operations["BooksController_exportWithCover"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4800,6 +4801,8 @@ export interface operations {
                 chapterFraming?: boolean;
                 /** @description AI weaving mode for narrative chapters */
                 weavingMode?: "strict" | "creative";
+                /** @description Color palette for the generated book cover */
+                coverTheme?: "classic" | "ocean" | "forest" | "rose";
             };
             header?: never;
             path?: never;
@@ -4869,6 +4872,8 @@ export interface operations {
                 chapterFraming?: boolean;
                 /** @description AI weaving mode for narrative chapters */
                 weavingMode?: "strict" | "creative";
+                /** @description Color palette for the generated book cover */
+                coverTheme?: "classic" | "ocean" | "forest" | "rose";
             };
             header?: never;
             path?: never;
@@ -4877,6 +4882,66 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Book file in the requested format (PDF, HTML, or Markdown) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    BooksController_exportWithCover: {
+        parameters: {
+            query?: {
+                /** @description Diary ID to build the book from */
+                diaryId?: number;
+                /** @description Book output format */
+                format?: "pdf" | "epub" | "html" | "md";
+                /** @description Book title (defaults to the diary name) */
+                title?: string;
+                /** @description Author name shown on the title page (defaults to the username) */
+                author?: string;
+                /** @description Only include entries on or after this date (YYYY-MM-DD) */
+                dateFrom?: string;
+                /** @description Only include entries on or before this date (YYYY-MM-DD) */
+                dateTo?: string;
+                /** @description Chapter ordering: alphabetical, by entry count, or by first entry date */
+                chapterOrder?: "alpha" | "entries" | "chrono";
+                /** @description Chapter grouping mode: tags, calendar years, or calendar months */
+                chapterMode?: "tags" | "year" | "month";
+                /** @description Place entries in every matching tag chapter, or only in their first tag chapter */
+                tagScope?: "all" | "first";
+                /** @description Comma-separated list of tags to use as chapters (defaults to all tags) */
+                tags?: string;
+                /** @description Add a final chapter for entries without tags */
+                includeUntagged?: boolean;
+                /** @description Show entry dates inside chapters */
+                includeDates?: boolean;
+                /** @description Include a table of contents */
+                includeToc?: boolean;
+                /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
+                narrative?: boolean;
+                /** @description Add AI-generated introductions and summaries around each chapter */
+                chapterFraming?: boolean;
+                /** @description AI weaving mode for narrative chapters */
+                weavingMode?: "strict" | "creative";
+                /** @description Color palette for the generated book cover */
+                coverTheme?: "classic" | "ocean" | "forest" | "rose";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    coverImage?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Book file with the requested custom cover */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -4920,6 +4985,8 @@ export interface operations {
                 chapterFraming?: boolean;
                 /** @description AI weaving mode for narrative chapters */
                 weavingMode?: "strict" | "creative";
+                /** @description Color palette for the generated book cover */
+                coverTheme?: "classic" | "ocean" | "forest" | "rose";
                 /** @description Connected cloud provider */
                 provider: "google_drive" | "onedrive" | "dropbox";
             };
@@ -4927,7 +4994,14 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    coverImage?: string;
+                };
+            };
+        };
         responses: {
             /** @description Cloud file metadata for the uploaded book */
             201: {

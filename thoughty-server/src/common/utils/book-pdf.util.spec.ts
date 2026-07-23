@@ -2,6 +2,10 @@ import { renderBookPdf } from './book-pdf.util';
 import { Book } from './book-converter.util';
 
 describe('renderBookPdf', () => {
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+    'base64',
+  );
   const book: Book = {
     title: 'My Book',
     author: 'Jane',
@@ -67,5 +71,18 @@ describe('renderBookPdf', () => {
     const buffer = await renderBookPdf(empty);
 
     expect(buffer.subarray(0, 5).toString()).toBe('%PDF-');
+  });
+
+  it('should render a themed cover image without error', async () => {
+    const buffer = await renderBookPdf({
+      ...book,
+      cover: {
+        theme: 'ocean',
+        image: { data: png, mimeType: 'image/png' },
+      },
+    });
+
+    expect(buffer.subarray(0, 5).toString()).toBe('%PDF-');
+    expect(buffer.length).toBeGreaterThan(500);
   });
 });

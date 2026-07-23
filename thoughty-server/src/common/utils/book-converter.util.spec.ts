@@ -261,6 +261,20 @@ describe('book-converter.util', () => {
       expect(output).not.toContain('## Table of Contents');
       expect(output).not.toContain('### 2024-01-10');
     });
+
+    it('should embed an uploaded cover image', () => {
+      const book = buildBook(entries, { title: 'My <Book>' });
+      book.cover = {
+        theme: 'ocean',
+        image: { data: Buffer.from('cover'), mimeType: 'image/png' },
+      };
+
+      const output = renderBookMarkdown(book);
+
+      expect(output).toContain('data:image/png;base64,Y292ZXI=');
+      expect(output).toContain('alt="My &lt;Book&gt; cover"');
+      expect(output).toContain('background:#e0f2fe');
+    });
   });
 
   describe('renderBookHtml', () => {
@@ -294,6 +308,20 @@ describe('book-converter.util', () => {
       const output = renderBookHtml(book, { includeToc: false });
 
       expect(output).not.toContain('Table of Contents');
+    });
+
+    it('should render the selected cover palette and image', () => {
+      const book = buildBook(entries, { title: 'My Book' });
+      book.cover = {
+        theme: 'forest',
+        image: { data: Buffer.from('cover'), mimeType: 'image/jpeg' },
+      };
+
+      const output = renderBookHtml(book);
+
+      expect(output).toContain('background:#ecfdf5');
+      expect(output).toContain('border-top:12px solid #16a34a');
+      expect(output).toContain('data:image/jpeg;base64,Y292ZXI=');
     });
   });
 });

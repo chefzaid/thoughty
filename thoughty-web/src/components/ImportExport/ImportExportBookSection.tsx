@@ -17,6 +17,7 @@ import {
     type BookTagScope,
     type BookWeavingMode,
 } from './ImportExport.types';
+import { BookCoverControls } from './ImportExportBookCover';
 
 const BOOK_CHECKBOXES: ReadonlyArray<{
     key: 'narrative' | 'chapterFraming' | 'includeUntagged' | 'includeDates' | 'includeToc';
@@ -94,6 +95,8 @@ export function BookSection({
                         />
                     </div>
                 </div>
+
+                <BookCoverControls options={options} onOptionChange={onOptionChange} t={t} />
 
                 <div className="book-options-grid book-options-grid--settings">
                     <div className="export-option-group export-option-group--format book-field">
