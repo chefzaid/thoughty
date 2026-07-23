@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { AttachmentsService } from './attachments.service';
 import { Attachment, Entry } from '@/database/entities';
+import { Readable } from 'node:stream';
 
 const mockSend = jest.fn();
 
@@ -237,6 +238,30 @@ describe('AttachmentsService', () => {
 
       const result = await service.getFileStream('abc-uuid.jpg');
       expect(result.contentType).toBe('application/octet-stream');
+    });
+  });
+
+  describe('getFileBuffer', () => {
+    it('collects a storage stream into a bounded buffer', async () => {
+      mockSend.mockResolvedValue({
+        Body: Readable.from([Buffer.from('hello '), Buffer.from('world')]),
+        ContentType: 'image/png',
+      });
+
+      await expect(service.getFileBuffer('image.png', 20)).resolves.toEqual(
+        Buffer.from('hello world'),
+      );
+    });
+
+    it('rejects and destroys a stream that exceeds the requested limit', async () => {
+      const stream = Readable.from([Buffer.from('too large')]);
+      const destroySpy = jest.spyOn(stream, 'destroy');
+      mockSend.mockResolvedValue({ Body: stream, ContentType: 'image/png' });
+
+      await expect(service.getFileBuffer('image.png', 3)).rejects.toThrow(
+        'export size limit',
+      );
+      expect(destroySpy).toHaveBeenCalled();
     });
   });
 

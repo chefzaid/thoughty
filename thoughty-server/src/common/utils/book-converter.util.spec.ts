@@ -275,6 +275,38 @@ describe('book-converter.util', () => {
       expect(output).toContain('alt="My &lt;Book&gt; cover"');
       expect(output).toContain('background:#e0f2fe');
     });
+
+    it('should embed hydrated entry images and captions', () => {
+      const book = buildBook([{
+        date: '2024-01-01',
+        index: 1,
+        tags: ['photos'],
+        content: 'A day out',
+        attachments: [
+          {
+            id: 1,
+            originalFilename: 'day.png',
+            storedFilename: 'day.png',
+            mimetype: 'image/png',
+            size: 3,
+          },
+          {
+            id: 2,
+            originalFilename: 'unsafe.svg',
+            storedFilename: 'unsafe.svg',
+            mimetype: 'image/svg+xml',
+            size: 3,
+          },
+        ],
+      }], { title: 'Images' });
+      book.chapters[0].entries[0].images![0].data = Buffer.from('png');
+
+      const output = renderBookMarkdown(book);
+
+      expect(output).toContain('![day\\.png](data:image/png;base64,cG5n)');
+      expect(output).toContain('*2024-01-01 \\- day\\.png*');
+      expect(output).not.toContain('unsafe.svg');
+    });
   });
 
   describe('renderBookHtml', () => {
@@ -322,6 +354,28 @@ describe('book-converter.util', () => {
       expect(output).toContain('background:#ecfdf5');
       expect(output).toContain('border-top:12px solid #16a34a');
       expect(output).toContain('data:image/jpeg;base64,Y292ZXI=');
+    });
+
+    it('should render escaped entry image markup in plain and narrative chapters', () => {
+      const image = {
+        id: 1,
+        name: '<day>.png',
+        storedFilename: 'day.png',
+        mimeType: 'image/png' as const,
+        size: 3,
+        data: Buffer.from('png'),
+      };
+      const book = buildBook(entries, { title: 'Images' });
+      book.chapters[0].entries[0].images = [image];
+      book.chapters[1].narrative = 'Woven prose';
+      book.chapters[1].entries[0].images = [image];
+
+      const output = renderBookHtml(book);
+
+      expect(output).toContain('data:image/png;base64,cG5n');
+      expect(output).toContain('alt="&lt;day&gt;.png"');
+      expect(output).toContain('2024-01-10 - &lt;day&gt;.png');
+      expect(output).toContain('Woven prose');
     });
   });
 });

@@ -20,11 +20,12 @@ import {
 import { BookCoverControls } from './ImportExportBookCover';
 
 const BOOK_CHECKBOXES: ReadonlyArray<{
-    key: 'narrative' | 'chapterFraming' | 'includeUntagged' | 'includeDates' | 'includeToc';
+    key: 'narrative' | 'chapterFraming' | 'embedImages' | 'includeUntagged' | 'includeDates' | 'includeToc';
     labelKey: string;
 }> = [
     { key: 'narrative', labelKey: 'bookNarrative' },
     { key: 'chapterFraming', labelKey: 'bookChapterFraming' },
+    { key: 'embedImages', labelKey: 'bookEmbedImages' },
     { key: 'includeUntagged', labelKey: 'bookIncludeUntagged' },
     { key: 'includeDates', labelKey: 'bookIncludeDates' },
     { key: 'includeToc', labelKey: 'bookIncludeToc' },

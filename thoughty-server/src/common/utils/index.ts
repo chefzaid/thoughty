@@ -3,4 +3,7 @@ export * from './file-converter.util';
 export * from './book-converter.util';
 export * from './book-pdf.util';
 export * from './book-epub.util';
+export * from './book-image.util';
+export * from './book-cover-style.util';
+export * from './image-validation.util';
 export * from './diary-color.util';

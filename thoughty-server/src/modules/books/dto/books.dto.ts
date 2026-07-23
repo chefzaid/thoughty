@@ -124,6 +124,15 @@ export class BookQueryDto {
   @IsOptional()
   @IsIn(['classic', 'ocean', 'forest', 'rose'])
   coverTheme?: 'classic' | 'ocean' | 'forest' | 'rose';
+
+  @ApiPropertyOptional({
+    description: 'Embed eligible image attachments from entries in the generated book',
+    default: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  embedImages?: boolean;
 }
 
 export class BookUploadQueryDto extends BookQueryDto {

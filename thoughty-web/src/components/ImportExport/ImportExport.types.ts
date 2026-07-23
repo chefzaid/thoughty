@@ -68,6 +68,7 @@ export interface BookOptions {
     includeToc: boolean;
     narrative: boolean;
     chapterFraming: boolean;
+    embedImages: boolean;
     coverTheme: BookCoverTheme;
     coverImage: File | null;
 }
@@ -85,6 +86,7 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
     includeToc: true,
     narrative: true,
     chapterFraming: false,
+    embedImages: false,
     coverTheme: 'classic',
     coverImage: null,
 };

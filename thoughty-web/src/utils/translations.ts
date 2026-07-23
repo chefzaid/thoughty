@@ -223,6 +223,7 @@ export type TranslationKey =
   | 'bookIncludeToc'
   | 'bookNarrative'
   | 'bookChapterFraming'
+  | 'bookEmbedImages'
   | 'bookCover'
   | 'bookCoverTheme'
   | 'bookCoverThemeClassic'
@@ -947,6 +948,7 @@ export const translations: Translations = {
     bookIncludeToc: 'Include table of contents',
     bookNarrative: 'Weave thoughts into flowing prose with AI',
     bookChapterFraming: 'Add AI chapter introductions and summaries',
+    bookEmbedImages: 'Include image attachments',
     bookCover: 'Cover',
     bookCoverTheme: 'Cover color theme',
     bookCoverThemeClassic: 'Classic',
@@ -1733,6 +1735,7 @@ export const translations: Translations = {
     bookIncludeToc: 'Inclure la table des matières',
     bookNarrative: "Tisser les pensées en prose fluide avec l'IA",
     bookChapterFraming: 'Ajouter des introductions et résumés de chapitre par IA',
+    bookEmbedImages: 'Inclure les images jointes',
     bookCover: 'Couverture',
     bookCoverTheme: 'Thème coloré de la couverture',
     bookCoverThemeClassic: 'Classique',

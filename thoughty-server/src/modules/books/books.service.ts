@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, Diary, User } from '@/database/entities';
@@ -10,9 +15,13 @@ import {
   renderBookHtml,
   renderBookPdf,
   renderBookEpub,
+  EMBEDDED_BOOK_IMAGE_TYPES,
+  type EmbeddedBookImage,
+  isSafeEmbeddedBookImage,
 } from '@/common/utils';
 import { BookQueryDto, BookPreviewResponseDto } from './dto';
 import { createBookCover } from './book-cover.util';
+import { AttachmentsService } from '@/modules/attachments';
 
 export type BookFormat = 'pdf' | 'epub' | 'html' | 'md';
 
@@ -23,9 +32,14 @@ export interface BookFile {
 }
 
 const DEFAULT_BOOK_TITLE = 'My Book of Thoughts';
+const MAX_EMBEDDED_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_EMBEDDED_IMAGES_TOTAL = 25 * 1024 * 1024;
+const IMAGE_FETCH_BATCH_SIZE = 4;
 
 @Injectable()
 export class BooksService {
+  private readonly logger = new Logger(BooksService.name);
+
   constructor(
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
@@ -34,6 +48,7 @@ export class BooksService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly aiBookComposer: AiBookComposerService,
+    private readonly attachmentsService: AttachmentsService,
   ) {}
 
   private async fetchEntries(userId: number, query: BookQueryDto): Promise<Entry[]> {
@@ -52,6 +67,14 @@ export class BooksService {
     }
     if (query.dateTo) {
       qb.andWhere('e.date <= :dateTo', { dateTo: query.dateTo });
+    }
+    if (query.embedImages === true) {
+      qb.leftJoinAndSelect(
+        'e.attachments',
+        'bookAttachment',
+        'bookAttachment.mimetype IN (:...imageTypes)',
+        { imageTypes: EMBEDDED_BOOK_IMAGE_TYPES },
+      ).addOrderBy('bookAttachment.created_at', 'ASC');
     }
 
     return qb.getMany();
@@ -107,7 +130,10 @@ export class BooksService {
   }
 
   async preview(userId: number, query: BookQueryDto): Promise<BookPreviewResponseDto> {
-    const book = await this.buildBookForUser(userId, query);
+    const book = await this.buildBookForUser(userId, {
+      ...query,
+      embedImages: false,
+    });
 
     return {
       title: book.title,
@@ -158,6 +184,66 @@ export class BooksService {
     }
   }
 
+  private async hydrateBookImages(book: Book): Promise<void> {
+    const uniqueImages = new Map<number, EmbeddedBookImage>();
+    for (const chapter of book.chapters) {
+      for (const entry of chapter.entries) {
+        for (const image of entry.images ?? []) {
+          uniqueImages.set(image.id, image);
+        }
+      }
+    }
+
+    const candidates: EmbeddedBookImage[] = [];
+    let reservedBytes = 0;
+    for (const image of uniqueImages.values()) {
+      if (
+        image.size <= 0 ||
+        image.size > MAX_EMBEDDED_IMAGE_SIZE ||
+        reservedBytes + image.size > MAX_EMBEDDED_IMAGES_TOTAL
+      ) {
+        continue;
+      }
+      candidates.push(image);
+      reservedBytes += image.size;
+    }
+
+    const dataById = new Map<number, Buffer>();
+    let embeddedBytes = 0;
+    for (let index = 0; index < candidates.length; index += IMAGE_FETCH_BATCH_SIZE) {
+      const batch = candidates.slice(index, index + IMAGE_FETCH_BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map((image) =>
+          this.attachmentsService.getFileBuffer(
+            image.storedFilename,
+            MAX_EMBEDDED_IMAGE_SIZE,
+          ),
+        ),
+      );
+      results.forEach((result, resultIndex) => {
+        const image = batch[resultIndex];
+        if (
+          result.status === 'fulfilled' &&
+          isSafeEmbeddedBookImage(image, result.value) &&
+          embeddedBytes + result.value.length <= MAX_EMBEDDED_IMAGES_TOTAL
+        ) {
+          dataById.set(image.id, result.value);
+          embeddedBytes += result.value.length;
+        } else if (result.status === 'rejected') {
+          this.logger.warn(`Skipping unavailable book image attachment ${image.id}`);
+        }
+      });
+    }
+
+    for (const chapter of book.chapters) {
+      for (const entry of chapter.entries) {
+        for (const image of entry.images ?? []) {
+          image.data = dataById.get(image.id);
+        }
+      }
+    }
+  }
+
   async export(
     userId: number,
     query: BookQueryDto,
@@ -170,6 +256,9 @@ export class BooksService {
     }
     if (query.chapterFraming === true) {
       await this.composeChapterFraming(userId, book);
+    }
+    if (query.embedImages === true) {
+      await this.hydrateBookImages(book);
     }
     const format: BookFormat = query.format || 'pdf';
     const renderOptions = {

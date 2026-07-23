@@ -47,6 +47,7 @@ export function useImportExportBook({
         if (!options.includeToc) params.append('includeToc', 'false');
         if (!options.narrative) params.append('narrative', 'false');
         if (options.chapterFraming) params.append('chapterFraming', 'true');
+        if (options.embedImages) params.append('embedImages', 'true');
         if (options.coverTheme !== 'classic') params.append('coverTheme', options.coverTheme);
         return params;
     }

@@ -1,39 +1,28 @@
+import {
+  BOOK_COVER_PALETTES,
+  type BookCover,
+} from './book-cover-style.util';
+import {
+  bookImageDataUri,
+  escapeBookImageMarkdownText,
+  type EmbeddedBookImage,
+  normalizeEmbeddedBookImages,
+} from './book-image.util';
+
 export type ChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type TagScope = 'all' | 'first';
 export type ChapterMode = 'tags' | 'year' | 'month';
-export type BookCoverTheme = 'classic' | 'ocean' | 'forest' | 'rose';
-
-export interface BookCoverImage {
-  data: Buffer;
-  mimeType: 'image/jpeg' | 'image/png';
-}
-
-export interface BookCover {
-  theme: BookCoverTheme;
-  image?: BookCoverImage;
-}
-
-export interface BookCoverPalette {
-  background: string;
-  foreground: string;
-  accent: string;
-}
-
-export const BOOK_COVER_PALETTES: Record<BookCoverTheme, BookCoverPalette> = {
-  classic: { background: '#fffaf0', foreground: '#292524', accent: '#b45309' },
-  ocean: { background: '#e0f2fe', foreground: '#0c4a6e', accent: '#0284c7' },
-  forest: { background: '#ecfdf5', foreground: '#14532d', accent: '#16a34a' },
-  rose: { background: '#fdf2f8', foreground: '#831843', accent: '#db2777' },
-};
 
 export const UNTAGGED_CHAPTER_TITLE = 'Untagged Thoughts';
 
 export interface BookEntry {
+  id?: number;
   date: string;
   index: number;
   tags: string[];
   content: string;
   format: 'plain' | 'markdown';
+  images?: EmbeddedBookImage[];
 }
 
 export interface BookChapter {
@@ -66,11 +55,19 @@ export interface BuildBookOptions {
 }
 
 interface BookEntryInput {
+  id?: number;
   date: string | Date;
   index: number;
   tags: string[];
   content: string;
   format?: 'plain' | 'markdown';
+  attachments?: Array<{
+    id: number;
+    originalFilename: string;
+    storedFilename: string;
+    mimetype: string;
+    size: number;
+  }>;
 }
 
 function normalizeDate(date: string | Date): string {
@@ -86,11 +83,13 @@ function sortChronologically(entries: BookEntry[]): BookEntry[] {
 
 function normalizeBookEntry(input: BookEntryInput): BookEntry {
   return {
+    id: input.id,
     date: normalizeDate(input.date),
     index: input.index,
     tags: input.tags || [],
     content: input.content || '',
     format: input.format === 'markdown' ? 'markdown' : 'plain',
+    images: normalizeEmbeddedBookImages(input.attachments),
   };
 }
 
@@ -338,12 +337,16 @@ export function renderBookMarkdown(book: Book, options: RenderBookOptions = {}):
     }
     if (chapter.narrative) {
       lines.push(chapter.narrative, '');
+      for (const entry of chapter.entries) {
+        renderMarkdownEntryImages(lines, entry);
+      }
     } else {
       for (const entry of chapter.entries) {
         if (includeDates) {
           lines.push(`### ${entry.date}`, '');
         }
         lines.push(entry.content, '');
+        renderMarkdownEntryImages(lines, entry);
       }
     }
     if (chapter.summary) {
@@ -352,6 +355,16 @@ export function renderBookMarkdown(book: Book, options: RenderBookOptions = {}):
   }
 
   return lines.join('\n');
+}
+
+function renderMarkdownEntryImages(lines: string[], entry: BookEntry): void {
+  for (const image of entry.images ?? []) {
+    const source = bookImageDataUri(image);
+    if (source) {
+      const name = escapeBookImageMarkdownText(image.name);
+      lines.push(`![${name}](${source})`, `*${entry.date} \\- ${name}*`, '');
+    }
+  }
 }
 
 /**
@@ -386,6 +399,9 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     '.entry{margin-bottom:1.6em}',
     '.entry-date{color:#888;font-size:0.85em;margin-bottom:0.3em}',
     '.entry-content{white-space:pre-wrap}',
+    '.entry-image{margin:1.2em 0;text-align:center}',
+    '.entry-image img{display:block;max-width:100%;max-height:34em;margin:0 auto;object-fit:contain}',
+    '.entry-image figcaption{color:#666;font-size:0.8em;margin-top:0.4em}',
     '</style>',
     '</head>',
     '<body>',
@@ -427,6 +443,9 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     }
     if (chapter.narrative) {
       parts.push(`<div class="entry-content">${escapeHtml(chapter.narrative)}</div>`);
+      for (const entry of chapter.entries) {
+        renderHtmlEntryImages(parts, entry);
+      }
     } else {
       for (const entry of chapter.entries) {
         parts.push('<article class="entry">');
@@ -434,6 +453,7 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
           parts.push(`<div class="entry-date">${escapeHtml(entry.date)}</div>`);
         }
         parts.push(`<div class="entry-content">${escapeHtml(entry.content)}</div>`, '</article>');
+        renderHtmlEntryImages(parts, entry);
       }
     }
     if (chapter.summary) {
@@ -449,4 +469,18 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
 
   parts.push('</body>', '</html>');
   return parts.join('\n');
+}
+
+function renderHtmlEntryImages(parts: string[], entry: BookEntry): void {
+  for (const image of entry.images ?? []) {
+    const source = bookImageDataUri(image);
+    if (source) {
+      parts.push(
+        '<figure class="entry-image">',
+        `<img src="${source}" alt="${escapeHtml(image.name)}">`,
+        `<figcaption>${escapeHtml(entry.date)} - ${escapeHtml(image.name)}</figcaption>`,
+        '</figure>',
+      );
+    }
+  }
 }

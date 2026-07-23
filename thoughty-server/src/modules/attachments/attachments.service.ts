@@ -182,6 +182,24 @@ export class AttachmentsService implements OnModuleInit {
     };
   }
 
+  async getFileBuffer(storedFilename: string, maxBytes: number): Promise<Buffer> {
+    const { stream } = await this.getFileStream(storedFilename);
+    const chunks: Buffer[] = [];
+    let totalBytes = 0;
+
+    for await (const chunk of stream) {
+      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      totalBytes += buffer.length;
+      if (totalBytes > maxBytes) {
+        stream.destroy();
+        throw new BadRequestException('Attachment exceeds the export size limit');
+      }
+      chunks.push(buffer);
+    }
+
+    return Buffer.concat(chunks, totalBytes);
+  }
+
   async delete(userId: number, attachmentId: number): Promise<{ success: boolean }> {
     const attachment = await this.attachmentRepository.findOne({
       where: { id: attachmentId, userId },

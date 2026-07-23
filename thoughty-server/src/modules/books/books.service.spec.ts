@@ -3,6 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { BooksService } from './books.service';
 import { AiBookComposerService } from '@/modules/ai';
+import { AttachmentsService } from '@/modules/attachments';
 import { Entry, Diary, User } from '@/database/entities';
 
 describe('BooksService', () => {
@@ -15,10 +16,25 @@ describe('BooksService', () => {
   let diaryRepository: any;
   let userRepository: any;
   let aiService: any;
+  let attachmentsService: any;
   let mockQueryBuilder: any;
 
   const mockEntries = [
-    { date: '2024-01-10', index: 1, tags: ['travel', 'food'], content: 'Pasta in Naples', format: 'plain' },
+    {
+      id: 1,
+      date: '2024-01-10',
+      index: 1,
+      tags: ['travel', 'food'],
+      content: 'Pasta in Naples',
+      format: 'plain',
+      attachments: [{
+        id: 10,
+        originalFilename: 'naples.png',
+        storedFilename: 'stored-naples.png',
+        mimetype: 'image/png',
+        size: png.length,
+      }],
+    },
     { date: '2024-01-15', index: 1, tags: ['travel'], content: 'Trip to Rome', format: 'plain' },
     { date: '2024-03-05', index: 1, tags: [], content: 'Random thought', format: 'plain' },
   ];
@@ -32,6 +48,7 @@ describe('BooksService', () => {
       andWhere: jest.fn().mockReturnThis(),
       orderBy: jest.fn().mockReturnThis(),
       addOrderBy: jest.fn().mockReturnThis(),
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockResolvedValue(mockEntries),
     };
 
@@ -55,6 +72,9 @@ describe('BooksService', () => {
         summary: 'A chapter recap.',
       }),
     };
+    attachmentsService = {
+      getFileBuffer: jest.fn().mockResolvedValue(png),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -63,6 +83,7 @@ describe('BooksService', () => {
         { provide: getRepositoryToken(Diary), useValue: diaryRepository },
         { provide: getRepositoryToken(User), useValue: userRepository },
         { provide: AiBookComposerService, useValue: aiService },
+        { provide: AttachmentsService, useValue: attachmentsService },
       ],
     }).compile();
 
@@ -126,6 +147,21 @@ describe('BooksService', () => {
 
       expect(book.chapters.map((c) => c.title)).toEqual(['2024']);
       expect(book.chapters[0].entries).toHaveLength(3);
+    });
+
+    it('should join eligible image metadata only when image embedding is requested', async () => {
+      await service.buildBookForUser(1, { embedImages: true });
+
+      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+        'e.attachments',
+        'bookAttachment',
+        'bookAttachment.mimetype IN (:...imageTypes)',
+        { imageTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] },
+      );
+      expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith(
+        'bookAttachment.created_at',
+        'ASC',
+      );
     });
   });
 
@@ -313,6 +349,87 @@ describe('BooksService', () => {
       await expect(
         service.export(1, { narrative: false }, coverImage),
       ).rejects.toThrow('could not be decoded');
+    });
+
+    it('should fetch each image once and embed it in every matching chapter', async () => {
+      const result = await service.export(1, {
+        format: 'md',
+        narrative: false,
+        embedImages: true,
+      });
+      const dataUri = `data:image/png;base64,${png.toString('base64')}`;
+
+      expect(attachmentsService.getFileBuffer).toHaveBeenCalledTimes(1);
+      expect(attachmentsService.getFileBuffer).toHaveBeenCalledWith(
+        'stored-naples.png',
+        5 * 1024 * 1024,
+      );
+      expect((result.content as string).split(dataUri)).toHaveLength(3);
+    });
+
+    it('should retain chapter images in AI-woven output', async () => {
+      const result = await service.export(1, {
+        format: 'html',
+        embedImages: true,
+      });
+
+      expect(result.content).toContain('Woven chapter prose.');
+      expect(result.content).toContain('naples.png');
+      expect(result.content).toContain('data:image/png;base64,');
+    });
+
+    it('should skip unavailable and oversized image attachments without failing export', async () => {
+      attachmentsService.getFileBuffer.mockRejectedValue(new Error('storage unavailable'));
+      const missingResult = await service.export(1, {
+        format: 'md',
+        narrative: false,
+        embedImages: true,
+      });
+      expect(missingResult.content).not.toContain('data:image/png');
+
+      attachmentsService.getFileBuffer.mockResolvedValue(Buffer.from('spoofed'));
+      const spoofedResult = await service.export(1, {
+        format: 'html',
+        narrative: false,
+        embedImages: true,
+      });
+      expect(spoofedResult.content).not.toContain('data:image/png');
+
+      mockQueryBuilder.getMany.mockResolvedValueOnce([{
+        ...mockEntries[0],
+        attachments: [{
+          ...mockEntries[0].attachments![0],
+          size: 6 * 1024 * 1024,
+        }],
+      }]);
+      attachmentsService.getFileBuffer.mockClear();
+      await service.export(1, {
+        format: 'md',
+        narrative: false,
+        embedImages: true,
+      });
+      expect(attachmentsService.getFileBuffer).not.toHaveBeenCalled();
+    });
+
+    it('should enforce the aggregate image budget before storage reads', async () => {
+      mockQueryBuilder.getMany.mockResolvedValueOnce([{
+        ...mockEntries[0],
+        attachments: Array.from({ length: 6 }, (_, index) => ({
+          id: 100 + index,
+          originalFilename: `image-${index}.png`,
+          storedFilename: `stored-${index}.png`,
+          mimetype: 'image/png',
+          size: 5 * 1024 * 1024,
+        })),
+      }]);
+
+      await service.export(1, {
+        format: 'md',
+        narrative: false,
+        embedImages: true,
+      });
+
+      expect(attachmentsService.getFileBuffer).toHaveBeenCalledTimes(5);
     });
   });
 });

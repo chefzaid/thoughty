@@ -1,6 +1,11 @@
 import JSZip from 'jszip';
 import { randomUUID } from 'node:crypto';
-import { BOOK_COVER_PALETTES, Book, RenderBookOptions } from './book-converter.util';
+import { Book, RenderBookOptions } from './book-converter.util';
+import { BOOK_COVER_PALETTES } from './book-cover-style.util';
+import {
+  bookImageExtension,
+  type EmbeddedBookImage,
+} from './book-image.util';
 
 function escapeXml(text: string): string {
   return text
@@ -35,6 +40,9 @@ const EPUB_STYLES = [
   '.entry{margin-bottom:1.5em}',
   '.entry-date{color:#888;font-size:0.85em}',
   '.entry-content{white-space:pre-wrap}',
+  '.entry-image{margin:1.2em 0;text-align:center}',
+  '.entry-image img{display:block;max-width:100%;max-height:70vh;margin:0 auto;object-fit:contain}',
+  '.entry-image figcaption{color:#666;font-size:0.8em;margin-top:0.4em}',
   '.chapter-framing{font-style:italic;color:#444;margin:1.4em 0}',
   '.chapter-summary{border-top:1px solid #ccc;padding-top:1em}',
 ].join('\n');
@@ -73,13 +81,18 @@ function buildChapterPage(
   }
   if (chapter.narrative) {
     parts.push(`<div class="entry-content">${escapeXml(chapter.narrative)}</div>`);
+    for (const entry of chapter.entries) {
+      renderEntryImages(parts, entry);
+    }
   } else {
     for (const entry of chapter.entries) {
       parts.push('<div class="entry">');
       if (includeDates) {
         parts.push(`<p class="entry-date">${escapeXml(entry.date)}</p>`);
       }
-      parts.push(`<div class="entry-content">${escapeXml(entry.content)}</div>`, '</div>');
+      parts.push(`<div class="entry-content">${escapeXml(entry.content)}</div>`);
+      renderEntryImages(parts, entry);
+      parts.push('</div>');
     }
   }
   if (chapter.summary) {
@@ -92,6 +105,37 @@ function buildChapterPage(
   }
 
   return xhtmlDocument(chapter.title, parts.join('\n'));
+}
+
+function renderEntryImages(
+  parts: string[],
+  entry: Book['chapters'][number]['entries'][number],
+): void {
+  for (const image of entry.images ?? []) {
+    if (!image.data) {
+      continue;
+    }
+    parts.push(
+      '<figure class="entry-image">',
+      `<img src="images/attachment-${image.id}.${bookImageExtension(image)}" alt="${escapeXml(image.name)}"/>`,
+      `<figcaption>${escapeXml(entry.date)} - ${escapeXml(image.name)}</figcaption>`,
+      '</figure>',
+    );
+  }
+}
+
+function collectBookImages(book: Book): EmbeddedBookImage[] {
+  const images = new Map<number, EmbeddedBookImage>();
+  for (const chapter of book.chapters) {
+    for (const entry of chapter.entries) {
+      for (const image of entry.images ?? []) {
+        if (image.data && !images.has(image.id)) {
+          images.set(image.id, image);
+        }
+      }
+    }
+  }
+  return [...images.values()];
 }
 
 function buildNav(book: Book, includeToc: boolean): string {
@@ -131,6 +175,12 @@ function buildOpf(book: Book, identifier: string): string {
   const coverManifest = book.cover?.image
     ? `<item id="cover-image" href="cover.${book.cover.image.mimeType === 'image/png' ? 'png' : 'jpg'}" media-type="${book.cover.image.mimeType}" properties="cover-image"/>`
     : '';
+  const imageManifest = collectBookImages(book)
+    .map(
+      (image) =>
+        `<item id="entry-image-${image.id}" href="images/attachment-${image.id}.${bookImageExtension(image)}" media-type="${image.mimeType}"/>`,
+    )
+    .join('\n');
 
   return [
     '<?xml version="1.0" encoding="utf-8"?>',
@@ -147,6 +197,7 @@ function buildOpf(book: Book, identifier: string): string {
     '<item id="title" href="title.xhtml" media-type="application/xhtml+xml"/>',
     '<item id="styles" href="styles.css" media-type="text/css"/>',
     coverManifest,
+    imageManifest,
     chapterManifest,
     '</manifest>',
     '<spine>',
@@ -187,6 +238,12 @@ export async function renderBookEpub(book: Book, options: RenderBookOptions = {}
   if (book.cover?.image) {
     const extension = book.cover.image.mimeType === 'image/png' ? 'png' : 'jpg';
     zip.file(`OEBPS/cover.${extension}`, book.cover.image.data);
+  }
+  for (const image of collectBookImages(book)) {
+    zip.file(
+      `OEBPS/images/attachment-${image.id}.${bookImageExtension(image)}`,
+      image.data!,
+    );
   }
 
   for (let index = 0; index < book.chapters.length; index++) {

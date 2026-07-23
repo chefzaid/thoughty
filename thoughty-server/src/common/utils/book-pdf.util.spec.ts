@@ -85,4 +85,47 @@ describe('renderBookPdf', () => {
     expect(buffer.subarray(0, 5).toString()).toBe('%PDF-');
     expect(buffer.length).toBeGreaterThan(500);
   });
+
+  it('should render supported entry images and skip unsupported or corrupt ones', async () => {
+    const imageBook: Book = {
+      ...book,
+      chapters: [{
+        ...book.chapters[0],
+        narrative: 'Woven chapter',
+        entries: [{
+          ...book.chapters[0].entries[0],
+          images: [
+            {
+              id: 1,
+              name: 'photo.png',
+              storedFilename: 'photo.png',
+              mimeType: 'image/png',
+              size: png.length,
+              data: png,
+            },
+            {
+              id: 2,
+              name: 'animation.gif',
+              storedFilename: 'animation.gif',
+              mimeType: 'image/gif',
+              size: 3,
+              data: Buffer.from('gif'),
+            },
+            {
+              id: 3,
+              name: 'broken.png',
+              storedFilename: 'broken.png',
+              mimeType: 'image/png',
+              size: 3,
+              data: Buffer.from('bad'),
+            },
+          ],
+        }],
+      }],
+    };
+
+    const buffer = await renderBookPdf(imageBook);
+
+    expect(buffer.subarray(0, 5).toString()).toBe('%PDF-');
+  });
 });

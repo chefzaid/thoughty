@@ -1,10 +1,10 @@
 import PDFDocument from 'pdfkit';
 import {
-  BOOK_COVER_PALETTES,
   Book,
   RenderBookOptions,
   stripMarkdown,
 } from './book-converter.util';
+import { BOOK_COVER_PALETTES } from './book-cover-style.util';
 
 const PAGE_MARGIN = 72;
 const TITLE_FONT_SIZE = 28;
@@ -15,6 +15,7 @@ const FOOTER_OFFSET = 40;
 const TOC_LINE_GAP = 6;
 const TOC_PAGE_NUM_WIDTH = 40;
 const FRAMING_FONT_SIZE = 10;
+const ENTRY_IMAGE_HEIGHT = 220;
 
 interface TocLinePosition {
   pageIndex: number;
@@ -104,6 +105,9 @@ function renderChapterBody(
       lineGap: 2,
       paragraphGap: 8,
     });
+    for (const entry of chapter.entries) {
+      renderEntryImages(doc, entry);
+    }
     return;
   }
 
@@ -118,6 +122,38 @@ function renderChapterBody(
       lineGap: 2,
     });
     doc.moveDown(1.2);
+    renderEntryImages(doc, entry);
+  }
+}
+
+function renderEntryImages(doc: PDFKit.PDFDocument, entry: Book['chapters'][number]['entries'][number]): void {
+  for (const image of entry.images ?? []) {
+    if (!image.data || (image.mimeType !== 'image/jpeg' && image.mimeType !== 'image/png')) {
+      continue;
+    }
+
+    if (doc.y + ENTRY_IMAGE_HEIGHT > doc.page.height - doc.page.margins.bottom) {
+      doc.addPage();
+    }
+    const imageY = doc.y;
+    try {
+      doc.image(image.data, doc.page.margins.left, imageY, {
+        fit: [
+          doc.page.width - doc.page.margins.left - doc.page.margins.right,
+          ENTRY_IMAGE_HEIGHT - 30,
+        ],
+        align: 'center',
+        valign: 'center',
+      });
+    } catch {
+      continue;
+    }
+    doc.y = imageY + ENTRY_IMAGE_HEIGHT - 22;
+    doc.font('Helvetica-Oblique').fontSize(DATE_FONT_SIZE).fillColor('#666666').text(
+      `${entry.date} - ${image.name}`,
+      { align: 'center' },
+    );
+    doc.fillColor('#000000').moveDown(1);
   }
 }
 

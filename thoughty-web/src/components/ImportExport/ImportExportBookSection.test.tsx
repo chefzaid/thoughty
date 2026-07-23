@@ -90,6 +90,7 @@ describe('ImportExport book section', () => {
         expect(screen.getByLabelText('bookWeavingMode')).toBeInTheDocument();
         expect(screen.getByText('bookIncludeUntagged')).toBeInTheDocument();
         expect(screen.getByText('bookChapterFraming')).toBeInTheDocument();
+        expect(screen.getByText('bookEmbedImages')).toBeInTheDocument();
         expect(screen.getByRole('radiogroup', { name: 'bookCoverTheme' })).toBeInTheDocument();
         expect(screen.getByLabelText('bookCoverChooseImage')).toBeInTheDocument();
         expect(screen.getByText('previewBook')).toBeInTheDocument();
@@ -345,6 +346,26 @@ describe('ImportExport book section', () => {
         );
         expect((exportCall as [string])[0]).toContain('narrative=false');
         expect((exportCall as [string])[0]).toContain('chapterFraming=true');
+    });
+
+    it('requests embedded entry images when enabled', async () => {
+        const mockBlob = new Blob(['# Book'], { type: 'text/markdown' });
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            blob: async () => mockBlob,
+            headers: new Headers(),
+        });
+
+        await renderBookSection();
+
+        fireEvent.click(screen.getByText('bookEmbedImages'));
+        fireEvent.click(screen.getByText('downloadBook'));
+
+        await screen.findByText('bookExportSuccess');
+        const exportCall = (globalThis.fetch as Mock).mock.calls.find(
+            (call: unknown[]) => (call[0] as string).includes('/api/books/export'),
+        );
+        expect((exportCall as [string])[0]).toContain('embedImages=true');
     });
 
     it('shows errors when preview and download fail', async () => {

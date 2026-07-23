@@ -2949,6 +2949,16 @@
                 "rose"
               ]
             }
+          },
+          {
+            "name": "embedImages",
+            "required": false,
+            "in": "query",
+            "description": "Embed eligible image attachments from entries in the generated book",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -3185,6 +3195,16 @@
                 "rose"
               ]
             }
+          },
+          {
+            "name": "embedImages",
+            "required": false,
+            "in": "query",
+            "description": "Embed eligible image attachments from entries in the generated book",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -3397,6 +3417,16 @@
                 "forest",
                 "rose"
               ]
+            }
+          },
+          {
+            "name": "embedImages",
+            "required": false,
+            "in": "query",
+            "description": "Embed eligible image attachments from entries in the generated book",
+            "schema": {
+              "default": false,
+              "type": "boolean"
             }
           }
         ],
@@ -3631,6 +3661,16 @@
             }
           },
           {
+            "name": "embedImages",
+            "required": false,
+            "in": "query",
+            "description": "Embed eligible image attachments from entries in the generated book",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
             "name": "provider",
             "required": true,
             "in": "query",
@@ -3687,6 +3727,165 @@
         "summary": "Generate a book and upload it to a connected cloud provider",
         "tags": [
           "Books"
+        ]
+      }
+    },
+    "/api/attachments/upload": {
+      "post": {
+        "operationId": "AttachmentsController_upload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload a file attachment",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/entry/{entryId}": {
+      "get": {
+        "operationId": "AttachmentsController_getByEntry",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of attachments"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all attachments for an entry",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/{id}/link": {
+      "post": {
+        "operationId": "AttachmentsController_linkToEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkAttachmentDto"
+              },
+              "example": {
+                "entryId": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attachment linked to entry"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link an attachment to an entry",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/{id}": {
+      "delete": {
+        "operationId": "AttachmentsController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment deleted"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an attachment",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/file/{filename}": {
+      "get": {
+        "operationId": "AttachmentsController_serveFile",
+        "parameters": [
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Serve an attachment file",
+        "tags": [
+          "Attachments"
         ]
       }
     },
@@ -4037,165 +4236,6 @@
         "summary": "Trigger a diff-based sync (uploads only if content has changed)",
         "tags": [
           "Cloud Sync"
-        ]
-      }
-    },
-    "/api/attachments/upload": {
-      "post": {
-        "operationId": "AttachmentsController_upload",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/LinkAttachmentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "File uploaded successfully"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Upload a file attachment",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/entry/{entryId}": {
-      "get": {
-        "operationId": "AttachmentsController_getByEntry",
-        "parameters": [
-          {
-            "name": "entryId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of attachments"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all attachments for an entry",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/{id}/link": {
-      "post": {
-        "operationId": "AttachmentsController_linkToEntry",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LinkAttachmentDto"
-              },
-              "example": {
-                "entryId": 1
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Attachment linked to entry"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Link an attachment to an entry",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/{id}": {
-      "delete": {
-        "operationId": "AttachmentsController_delete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Attachment deleted"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Delete an attachment",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/file/{filename}": {
-      "get": {
-        "operationId": "AttachmentsController_serveFile",
-        "parameters": [
-          {
-            "name": "filename",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "File content"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Serve an attachment file",
-        "tags": [
-          "Attachments"
         ]
       }
     },
@@ -6263,6 +6303,18 @@
           "modifiedAt": "2026-06-24T10:00:00.000Z"
         }
       },
+      "LinkAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "description": "Entry ID to link attachment to"
+          }
+        },
+        "example": {
+          "entryId": 1
+        }
+      },
       "CloudAuthUrlDto": {
         "type": "object",
         "properties": {
@@ -6481,18 +6533,6 @@
         ],
         "example": {
           "provider": "google_drive"
-        }
-      },
-      "LinkAttachmentDto": {
-        "type": "object",
-        "properties": {
-          "entryId": {
-            "type": "number",
-            "description": "Entry ID to link attachment to"
-          }
-        },
-        "example": {
-          "entryId": 1
         }
       }
     }

@@ -128,4 +128,36 @@ describe('renderBookEpub', () => {
     expect(titlePage).toContain('src="cover.png"');
     expect(opf).toContain('properties="cover-image"');
   });
+
+  it('should package each entry image once and reference it from chapters', async () => {
+    const image = {
+      id: 42,
+      name: 'Trip & photo.gif',
+      storedFilename: 'trip.gif',
+      mimeType: 'image/gif' as const,
+      size: 5,
+      data: Buffer.from('gif89'),
+    };
+    const imageBook: Book = {
+      ...book,
+      chapters: book.chapters.map((chapter) => ({
+        ...chapter,
+        entries: chapter.entries.map((entry) => ({ ...entry, images: [image] })),
+      })),
+    };
+    imageBook.chapters[0].narrative = 'Woven chapter';
+
+    const zip = await JSZip.loadAsync(await renderBookEpub(imageBook));
+    const opf = await readZipEntry(zip, 'OEBPS/content.opf');
+    const firstChapter = await readZipEntry(zip, 'OEBPS/chapter-1.xhtml');
+
+    expect(zip.file('OEBPS/images/attachment-42.gif')).toBeTruthy();
+    expect(
+      Object.keys(zip.files).filter((path) => path.endsWith('attachment-42.gif')),
+    ).toHaveLength(1);
+    expect(opf).toContain('media-type="image/gif"');
+    expect(firstChapter).toContain('src="images/attachment-42.gif"');
+    expect(firstChapter).toContain('Trip &amp; photo.gif');
+    expect(firstChapter).toContain('Woven chapter');
+  });
 });

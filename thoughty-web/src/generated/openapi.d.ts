@@ -930,6 +930,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/attachments/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a file attachment */
+        post: operations["AttachmentsController_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/entry/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all attachments for an entry */
+        get: operations["AttachmentsController_getByEntry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link an attachment to an entry */
+        post: operations["AttachmentsController_linkToEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an attachment */
+        delete: operations["AttachmentsController_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/file/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serve an attachment file */
+        get: operations["AttachmentsController_serveFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/cloud-sync/status": {
         parameters: {
             query?: never;
@@ -1095,91 +1180,6 @@ export interface paths {
         put?: never;
         /** Trigger a diff-based sync (uploads only if content has changed) */
         post: operations["CloudSyncController_triggerSync"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload a file attachment */
-        post: operations["AttachmentsController_upload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/entry/{entryId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all attachments for an entry */
-        get: operations["AttachmentsController_getByEntry"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/{id}/link": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Link an attachment to an entry */
-        post: operations["AttachmentsController_linkToEntry"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete an attachment */
-        delete: operations["AttachmentsController_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/file/{filename}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Serve an attachment file */
-        get: operations["AttachmentsController_serveFile"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2406,6 +2406,15 @@ export interface components {
         };
         /**
          * @example {
+         *       "entryId": 1
+         *     }
+         */
+        LinkAttachmentDto: {
+            /** @description Entry ID to link attachment to */
+            entryId?: number;
+        };
+        /**
+         * @example {
          *       "provider": "google_drive",
          *       "redirectUri": "https://thoughty.example.com/callback"
          *     }
@@ -2537,15 +2546,6 @@ export interface components {
              * @enum {string}
              */
             provider: "google_drive" | "onedrive" | "dropbox";
-        };
-        /**
-         * @example {
-         *       "entryId": 1
-         *     }
-         */
-        LinkAttachmentDto: {
-            /** @description Entry ID to link attachment to */
-            entryId?: number;
         };
     };
     responses: never;
@@ -4803,6 +4803,8 @@ export interface operations {
                 weavingMode?: "strict" | "creative";
                 /** @description Color palette for the generated book cover */
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
+                /** @description Embed eligible image attachments from entries in the generated book */
+                embedImages?: boolean;
             };
             header?: never;
             path?: never;
@@ -4874,6 +4876,8 @@ export interface operations {
                 weavingMode?: "strict" | "creative";
                 /** @description Color palette for the generated book cover */
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
+                /** @description Embed eligible image attachments from entries in the generated book */
+                embedImages?: boolean;
             };
             header?: never;
             path?: never;
@@ -4927,6 +4931,8 @@ export interface operations {
                 weavingMode?: "strict" | "creative";
                 /** @description Color palette for the generated book cover */
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
+                /** @description Embed eligible image attachments from entries in the generated book */
+                embedImages?: boolean;
             };
             header?: never;
             path?: never;
@@ -4987,6 +4993,8 @@ export interface operations {
                 weavingMode?: "strict" | "creative";
                 /** @description Color palette for the generated book cover */
                 coverTheme?: "classic" | "ocean" | "forest" | "rose";
+                /** @description Embed eligible image attachments from entries in the generated book */
+                embedImages?: boolean;
                 /** @description Connected cloud provider */
                 provider: "google_drive" | "onedrive" | "dropbox";
             };
@@ -5019,6 +5027,117 @@ export interface operations {
                      */
                     "application/json": components["schemas"]["CloudFileInfoDto"];
                 };
+            };
+        };
+    };
+    AttachmentsController_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["LinkAttachmentDto"];
+            };
+        };
+        responses: {
+            /** @description File uploaded successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_getByEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of attachments */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_linkToEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "entryId": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["LinkAttachmentDto"];
+            };
+        };
+        responses: {
+            /** @description Attachment linked to entry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Attachment deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_serveFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5292,117 +5411,6 @@ export interface operations {
         };
         responses: {
             /** @description Sync result */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_upload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["LinkAttachmentDto"];
-            };
-        };
-        responses: {
-            /** @description File uploaded successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_getByEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entryId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of attachments */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_linkToEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                /**
-                 * @example {
-                 *       "entryId": 1
-                 *     }
-                 */
-                "application/json": components["schemas"]["LinkAttachmentDto"];
-            };
-        };
-        responses: {
-            /** @description Attachment linked to entry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Attachment deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_serveFile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                filename: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description File content */
             200: {
                 headers: {
                     [name: string]: unknown;
