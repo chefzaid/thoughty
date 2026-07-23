@@ -4,6 +4,11 @@ export const rephraseModes = ['grammar', 'polish', 'rewrite'] as const;
 
 export type RephraseMode = (typeof rephraseModes)[number];
 
+export interface SummaryGuidance {
+  includeDetails?: string;
+  excludeDetails?: string;
+}
+
 export const createAiService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
   const suggestTags = async (
     content: string,
@@ -70,6 +75,28 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     }
   };
 
+  const summarizeEntry = async (
+    entryId: number,
+    guidance: SummaryGuidance = {},
+  ): Promise<string | null> => {
+    try {
+      const response = await authFetch('/api/ai/summarize', {
+        method: 'POST',
+        body: JSON.stringify({ entryId, ...guidance }),
+      });
+
+      const data = await safeJsonParse<{ summary?: string }>(response);
+      if (!response.ok || !data) {
+        return null;
+      }
+
+      return typeof data.summary === 'string' && data.summary.trim() ? data.summary : null;
+    } catch (error) {
+      console.error('Error summarizing entry:', error);
+      return null;
+    }
+  };
+
   const getChatHistory = async (
     entryId: number,
   ): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> => {
@@ -107,5 +134,5 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     }
   };
 
-  return { suggestTags, fixWriting, chat, getChatHistory, fetchModels };
+  return { suggestTags, fixWriting, summarizeEntry, chat, getChatHistory, fetchModels };
 };

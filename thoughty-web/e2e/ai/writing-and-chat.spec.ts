@@ -41,4 +41,45 @@ test.describe('AI writing assistance and entry chat', () => {
       entryContent: 'Private focus reflection for filtering',
     });
   });
+
+  test('summarizes an entry with include and exclude guidance', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const { state } = await setupMockApp(page, {
+      startAuthenticated: true,
+      initialEntries: [
+        {
+          id: 102,
+          date: '2024-04-19',
+          index: 1,
+          content: 'A long reflection about a project decision and the people involved.',
+          tags: ['decision'],
+          visibility: 'private',
+          diaryId: 1,
+        },
+      ],
+    });
+
+    await page.goto('/journal');
+    const entry = page.locator('#entry-102');
+    await entry.getByLabel('More actions').click();
+    await entry.getByRole('menuitem', { name: 'Summarize entry' }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Entry summary' });
+    await expect(dialog).toBeVisible();
+    const dialogBounds = await dialog.boundingBox();
+    expect(dialogBounds).not.toBeNull();
+    expect(dialogBounds!.x).toBeGreaterThanOrEqual(0);
+    expect(dialogBounds!.x + dialogBounds!.width).toBeLessThanOrEqual(390);
+    expect(dialogBounds!.y + dialogBounds!.height).toBeLessThanOrEqual(844);
+    await dialog.getByLabel('Emphasize').fill('the project decision');
+    await dialog.getByLabel('Leave out').fill('names');
+    await dialog.getByRole('button', { name: 'Generate summary' }).click();
+
+    await expect(dialog.getByText('A focused reflection led to a clear decision while leaving names private.')).toBeVisible();
+    await expect.poll(() => state.lastAiSummaryPayload).toEqual({
+      entryId: 102,
+      includeDetails: 'the project decision',
+      excludeDetails: 'names',
+    });
+  });
 });

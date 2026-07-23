@@ -1,6 +1,7 @@
+import { useState as useLocalState } from 'react';
 import ListenButton from '../ListenButton/ListenButton';
 import type { SpeechEntry } from '../../hooks/useSpeech';
-import type { RephraseMode } from '../../services/api/aiService';
+import type { RephraseMode, SummaryGuidance } from '../../services/api/aiService';
 import type { Config, Entry, EntryBacklink, EntryRevision, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
@@ -8,6 +9,7 @@ import { extractDate } from './EntriesList.utils';
 import { IconActionButton } from './EntryActionPrimitives';
 import EntryRephraseButton from './EntryRephraseButton';
 import EntrySecondaryActionsMenu from './EntrySecondaryActionsMenu';
+import EntrySummaryDialog from './EntrySummaryDialog';
 import {
     BackToSourceButton,
     EntryBodySection,
@@ -42,6 +44,7 @@ interface EntryViewModeProps {
     onDeleteRevision?: (entryId: number, revisionId: number) => Promise<boolean>;
     onDiscuss?: (entry: Entry) => void;
     onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
+    onSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
     searchTerm?: string;
     showDiaryLabel: boolean;
     tagMetadata: TagMetadataMap;
@@ -74,11 +77,13 @@ export default function EntryViewMode({
     onDeleteRevision,
     onDiscuss,
     onRephrase,
+    onSummarize,
     searchTerm,
     showDiaryLabel,
     tagMetadata,
     t,
 }: Readonly<EntryViewModeProps>) {
+    const [summaryOpen, setSummaryOpen] = useLocalState(false);
     const isDark = config.theme !== 'light';
     const archiveActionLabel = entry.is_archived ? t('unarchive') : t('archive');
     const entryPermalink = getEntryPermalink?.(entry.id);
@@ -196,6 +201,7 @@ export default function EntryViewMode({
                             await onShareEntry(entry);
                         } : undefined}
                         onToggleHistory={onFetchHistory ? handleToggleHistory : undefined}
+                        onSummarize={onSummarize ? () => setSummaryOpen(true) : undefined}
                         onToggleArchived={() => onToggleArchived(entry)}
                         onDelete={() => onDelete(entry.id)}
                         t={t}
@@ -219,6 +225,16 @@ export default function EntryViewMode({
                 onHandleDeleteRevision={handleDeleteRevision}
                 t={t}
             />
+            {onSummarize && (
+                <EntrySummaryDialog
+                    entryId={entry.id}
+                    isOpen={summaryOpen}
+                    isDark={isDark}
+                    onClose={() => setSummaryOpen(false)}
+                    onSummarize={onSummarize}
+                    t={t}
+                />
+            )}
         </>
     );
 }

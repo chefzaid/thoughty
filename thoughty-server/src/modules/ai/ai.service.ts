@@ -1,4 +1,9 @@
-import { BadGatewayException, BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AiChatHistory, Entry } from '@/database/entities';
@@ -6,6 +11,11 @@ import { ConfigService } from '@/modules/config';
 import { SuggestTagsDto } from './dto/suggest-tags.dto';
 import { FixWritingDto, type FixWritingMode } from './dto/fix-writing.dto';
 import { ChatDto, ChatHistoryResponseDto, ChatMessageDto } from './dto/chat.dto';
+import { SummarizeEntryDto } from './dto/summarize-entry.dto';
+import { requestEntrySummary } from './entry-summary';
+import { parseToneMoodAnalysis, type ToneMoodAnalysis } from './tone-mood-analysis';
+
+export type { ToneMoodAnalysis } from './tone-mood-analysis';
 
 type OpenRouterResponse = {
   choices?: Array<{
@@ -15,22 +25,14 @@ type OpenRouterResponse = {
   }>;
 };
 
-export interface ToneMoodAnalysis {
-  dominantMood: string;
-  dominantTone: string;
-  moodBreakdown: Record<string, number>;
-  toneBreakdown: Record<string, number>;
-  analyzedEntries: number;
-  summary: string;
-}
-
-type AiModelTask = 'tag' | 'writing' | 'chat' | 'tone';
+type AiModelTask = 'tag' | 'writing' | 'chat' | 'tone' | 'summary';
 
 const TASK_MODEL_CONFIG_KEYS: Record<AiModelTask, string> = {
   tag: 'openRouterTagModel',
   writing: 'openRouterWritingModel',
   chat: 'openRouterChatModel',
   tone: 'openRouterToneModel',
+  summary: 'openRouterSummaryModel',
 };
 
 @Injectable()
@@ -47,12 +49,12 @@ export class AiService {
     private readonly chatHistoryRepository: Repository<AiChatHistory>,
   ) {}
 
-  private async assertEntryOwnership(userId: number, entryId: number): Promise<void> {
+  private async assertEntryOwnership(userId: number, entryId: number): Promise<Entry> {
     const entry = await this.entryRepository.findOne({ where: { id: entryId, userId } });
-
     if (!entry) {
       throw new NotFoundException('Entry not found');
     }
+    return entry;
   }
 
   async getChatHistory(userId: number, entryId: number): Promise<ChatHistoryResponseDto> {
@@ -66,8 +68,14 @@ export class AiService {
     };
   }
 
-  private async saveChatHistory(userId: number, entryId: number, messages: ChatMessageDto[]): Promise<void> {
-    const existingHistory = await this.chatHistoryRepository.findOne({ where: { userId, entryId } });
+  private async saveChatHistory(
+    userId: number,
+    entryId: number,
+    messages: ChatMessageDto[],
+  ): Promise<void> {
+    const existingHistory = await this.chatHistoryRepository.findOne({
+      where: { userId, entryId },
+    });
 
     await this.chatHistoryRepository.save({
       ...existingHistory,
@@ -79,7 +87,10 @@ export class AiService {
 
   private async getModel(userId: number, task?: AiModelTask): Promise<string> {
     if (task) {
-      const taskModel = await this.configService.getDecryptedConfig(userId, TASK_MODEL_CONFIG_KEYS[task]);
+      const taskModel = await this.configService.getDecryptedConfig(
+        userId,
+        TASK_MODEL_CONFIG_KEYS[task],
+      );
       if (taskModel) {
         return taskModel;
       }
@@ -140,7 +151,12 @@ export class AiService {
 
     try {
       const model = await this.getModel(userId, 'tag');
-      return await this.requestTags(content, existingTags, Math.min(Math.max(maxTags, 1), 10), model);
+      return await this.requestTags(
+        content,
+        existingTags,
+        Math.min(Math.max(maxTags, 1), 10),
+        model,
+      );
     } catch {
       return [];
     }
@@ -152,7 +168,6 @@ export class AiService {
     maxTags: number,
     model: string,
   ): Promise<string[]> {
-
     const response = await fetch(this.openRouterUrl, {
       method: 'POST',
       headers: {
@@ -173,7 +188,9 @@ export class AiService {
             role: 'user',
             content: [
               `Suggest up to ${maxTags} tags for this journal entry.`,
-              existingTags.length > 0 ? `Existing tags already chosen: ${existingTags.join(', ')}.` : 'There are no existing tags yet.',
+              existingTags.length > 0
+                ? `Existing tags already chosen: ${existingTags.join(', ')}.`
+                : 'There are no existing tags yet.',
               'Avoid duplicates, keep tags short, and prefer reusable concepts.',
               `Entry:\n${content}`,
             ].join('\n\n'),
@@ -203,7 +220,6 @@ export class AiService {
     if (!this.apiKey) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
-
     const model = await this.getModel(userId, 'writing');
 
     const response = await fetch(this.openRouterUrl, {
@@ -237,6 +253,25 @@ export class AiService {
     const corrected = data.choices?.[0]?.message?.content?.trim();
 
     return { content: corrected || dto.content };
+  }
+
+  async summarizeEntry(userId: number, dto: SummarizeEntryDto): Promise<{ summary: string }> {
+    const entry = await this.assertEntryOwnership(userId, dto.entryId);
+    if (!entry.content.trim()) {
+      throw new BadRequestException('Entry content is required');
+    }
+    if (!this.apiKey) {
+      throw new BadRequestException('OpenRouter API key is not configured');
+    }
+
+    const model = await this.getModel(userId, 'summary');
+    const summary = await requestEntrySummary({
+      ...dto,
+      content: entry.content,
+      apiKey: this.apiKey,
+      model,
+    });
+    return { summary };
   }
 
   async chat(userId: number, dto: ChatDto): Promise<{ reply: string }> {
@@ -295,7 +330,10 @@ export class AiService {
       throw new BadGatewayException('No response received from OpenRouter');
     }
 
-    await this.saveChatHistory(userId, dto.entryId, [...dto.messages, { role: 'assistant', content: reply }]);
+    await this.saveChatHistory(userId, dto.entryId, [
+      ...dto.messages,
+      { role: 'assistant', content: reply },
+    ]);
 
     return { reply };
   }
@@ -320,7 +358,10 @@ export class AiService {
     const models = data.data ?? [];
 
     return models
-      .filter((m): m is { id: string; name: string } => typeof m.id === 'string' && typeof m.name === 'string')
+      .filter(
+        (m): m is { id: string; name: string } =>
+          typeof m.id === 'string' && typeof m.name === 'string',
+      )
       .map(({ id, name }) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
@@ -328,9 +369,7 @@ export class AiService {
   private parseTags(rawContent: string): string[] {
     const trimmed = rawContent.trim();
     const arrayMatch = /\[[\s\S]*\]/.exec(trimmed);
-    const arrayCandidate = trimmed.startsWith('[')
-      ? trimmed
-      : (arrayMatch?.[0] ?? '[]');
+    const arrayCandidate = trimmed.startsWith('[') ? trimmed : (arrayMatch?.[0] ?? '[]');
 
     try {
       const parsed = JSON.parse(arrayCandidate) as unknown;
@@ -338,10 +377,14 @@ export class AiService {
         return [];
       }
 
-      return [...new Set(parsed
-        .filter((value): value is string => typeof value === 'string')
-        .map((value) => value.trim().replace(/^#+/, '').toLowerCase().replaceAll(/\s+/g, '-'))
-        .filter(Boolean))];
+      return [
+        ...new Set(
+          parsed
+            .filter((value): value is string => typeof value === 'string')
+            .map((value) => value.trim().replace(/^#+/, '').toLowerCase().replaceAll(/\s+/g, '-'))
+            .filter(Boolean),
+        ),
+      ];
     } catch {
       return [];
     }
@@ -384,12 +427,16 @@ export class AiService {
             },
             {
               role: 'user',
-              content: preparedEntries.map((entry) => [
-                `Entry ${entry.id}`,
-                `Date: ${entry.date}`,
-                entry.tags.length > 0 ? `Tags: ${entry.tags.join(', ')}` : 'Tags: none',
-                `Content: ${entry.content.slice(0, 1200)}`,
-              ].join('\n')).join('\n\n---\n\n'),
+              content: preparedEntries
+                .map((entry) =>
+                  [
+                    `Entry ${entry.id}`,
+                    `Date: ${entry.date}`,
+                    entry.tags.length > 0 ? `Tags: ${entry.tags.join(', ')}` : 'Tags: none',
+                    `Content: ${entry.content.slice(0, 1200)}`,
+                  ].join('\n'),
+                )
+                .join('\n\n---\n\n'),
             },
           ],
         }),
@@ -406,80 +453,9 @@ export class AiService {
         return null;
       }
 
-      return this.parseToneMoodAnalysis(rawContent, preparedEntries.length);
+      return parseToneMoodAnalysis(rawContent, preparedEntries.length);
     } catch {
       return null;
     }
-  }
-
-  private parseToneMoodAnalysis(rawContent: string, analyzedEntries: number): ToneMoodAnalysis | null {
-    const trimmed = rawContent.trim();
-    const objectMatch = /\{[\s\S]*\}/.exec(trimmed);
-    const objectCandidate = trimmed.startsWith('{')
-      ? trimmed
-      : (objectMatch?.[0] ?? '{}');
-
-    try {
-      const parsed = JSON.parse(objectCandidate) as Record<string, unknown>;
-      const moodBreakdown = this.parseAnalysisBreakdown(parsed.moodBreakdown);
-      const toneBreakdown = this.parseAnalysisBreakdown(parsed.toneBreakdown);
-      const summary = typeof parsed.summary === 'string' ? parsed.summary.trim() : '';
-      const dominantMood = this.parseAnalysisLabel(parsed.dominantMood) ?? this.getDominantAnalysisLabel(moodBreakdown);
-      const dominantTone = this.parseAnalysisLabel(parsed.dominantTone) ?? this.getDominantAnalysisLabel(toneBreakdown);
-
-      if (!dominantMood || !dominantTone || (!summary && Object.keys(moodBreakdown).length === 0 && Object.keys(toneBreakdown).length === 0)) {
-        return null;
-      }
-
-      return {
-        dominantMood,
-        dominantTone,
-        moodBreakdown,
-        toneBreakdown,
-        analyzedEntries,
-        summary: summary || 'Recent entries show a mixed emotional and tonal profile.',
-      };
-    } catch {
-      return null;
-    }
-  }
-
-  private parseAnalysisBreakdown(value: unknown): Record<string, number> {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      return {};
-    }
-
-    const breakdownEntries = Object.entries(value)
-      .map(([label, count]) => {
-        const parsedLabel = this.parseAnalysisLabel(label);
-        const parsedCount = typeof count === 'number'
-          ? Math.round(count)
-          : Number.parseInt(String(count), 10);
-
-        if (!parsedLabel || !Number.isFinite(parsedCount) || parsedCount <= 0) {
-          return null;
-        }
-
-        return [parsedLabel, parsedCount] as const;
-      })
-      .filter((entry): entry is readonly [string, number] => entry !== null)
-      .sort(([, left], [, right]) => right - left)
-      .slice(0, 6);
-
-    return Object.fromEntries(breakdownEntries);
-  }
-
-  private parseAnalysisLabel(value: unknown): string | null {
-    if (typeof value !== 'string') {
-      return null;
-    }
-
-    const normalized = value.trim().toLowerCase().replaceAll(/\s+/g, ' ');
-    return normalized.length > 0 ? normalized : null;
-  }
-
-  private getDominantAnalysisLabel(breakdown: Record<string, number>): string | null {
-    const [first] = Object.entries(breakdown).sort(([, left], [, right]) => right - left);
-    return first?.[0] ?? null;
   }
 }

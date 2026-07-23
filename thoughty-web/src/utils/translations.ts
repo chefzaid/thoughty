@@ -427,6 +427,18 @@ export type TranslationKey =
   | 'rephraseGrammarOnly'
   | 'rephraseStyleLight'
   | 'rephraseCompleteRewrite'
+  | 'summarizeEntry'
+  | 'entrySummary'
+  | 'summaryIncludeDetails'
+  | 'summaryIncludeDetailsPlaceholder'
+  | 'summaryExcludeDetails'
+  | 'summaryExcludeDetailsPlaceholder'
+  | 'generateSummary'
+  | 'regenerateSummary'
+  | 'generatingSummary'
+  | 'summaryError'
+  | 'copySummary'
+  | 'summaryCopied'
   | 'aiChat'
   | 'aiThinking'
   | 'aiLoadingHistory'
@@ -573,6 +585,7 @@ export type TranslationKey =
   | 'openRouterWritingModel'
   | 'openRouterChatModel'
   | 'openRouterToneModel'
+  | 'openRouterSummaryModel'
   | 'openRouterBookModel'
   | 'inheritDefaultModel'
   | 'searchModels'
@@ -1161,6 +1174,18 @@ export const translations: Translations = {
     rephraseGrammarOnly: 'Grammar/form only',
     rephraseStyleLight: 'Slight style improvements',
     rephraseCompleteRewrite: 'Complete rewrite',
+    summarizeEntry: 'Summarize entry',
+    entrySummary: 'Entry summary',
+    summaryIncludeDetails: 'Emphasize',
+    summaryIncludeDetailsPlaceholder: 'Optional details or topics to highlight',
+    summaryExcludeDetails: 'Leave out',
+    summaryExcludeDetailsPlaceholder: 'Optional details or topics to omit',
+    generateSummary: 'Generate summary',
+    regenerateSummary: 'Regenerate',
+    generatingSummary: 'Generating...',
+    summaryError: 'Unable to summarize this entry. Check your OpenRouter API key and try again.',
+    copySummary: 'Copy summary',
+    summaryCopied: 'Summary copied',
     aiChat: 'AI Chat',
     aiThinking: 'Thinking...',
     aiLoadingHistory: 'Loading chat history...',
@@ -1326,6 +1351,7 @@ export const translations: Translations = {
     openRouterWritingModel: 'Writing fixes',
     openRouterChatModel: 'Entry chat',
     openRouterToneModel: 'Tone analysis',
+    openRouterSummaryModel: 'Entry summaries',
     openRouterBookModel: 'Book weaving',
     inheritDefaultModel: 'Use default model',
     searchModels: 'Search models...',
@@ -1906,6 +1932,18 @@ export const translations: Translations = {
     rephraseGrammarOnly: 'Grammaire et forme seulement',
     rephraseStyleLight: 'Légères améliorations de style',
     rephraseCompleteRewrite: 'Réécriture complète',
+    summarizeEntry: 'Résumer l\'entrée',
+    entrySummary: 'Résumé de l\'entrée',
+    summaryIncludeDetails: 'Mettre en avant',
+    summaryIncludeDetailsPlaceholder: 'Détails ou sujets facultatifs à souligner',
+    summaryExcludeDetails: 'Exclure',
+    summaryExcludeDetailsPlaceholder: 'Détails ou sujets facultatifs à omettre',
+    generateSummary: 'Générer le résumé',
+    regenerateSummary: 'Regénérer',
+    generatingSummary: 'Génération...',
+    summaryError: 'Impossible de résumer cette entrée. Vérifiez votre clé API OpenRouter et réessayez.',
+    copySummary: 'Copier le résumé',
+    summaryCopied: 'Résumé copié',
     aiChat: 'Chat IA',
     aiThinking: 'Réflexion...',
     aiLoadingHistory: 'Chargement de l\'historique du chat...',
@@ -2073,6 +2111,7 @@ export const translations: Translations = {
     openRouterWritingModel: "Corrections d'écriture",
     openRouterChatModel: "Chat d'entrée",
     openRouterToneModel: 'Analyse du ton',
+    openRouterSummaryModel: 'Résumés d\'entrées',
     openRouterBookModel: 'Tissage du livre',
     inheritDefaultModel: 'Utiliser le modèle par défaut',
     searchModels: 'Rechercher des modèles...',

@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useState as useLocalState, type Dispatch, type KeyboardEvent, type PointerEvent, type SetStateAction } from 'react';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useSpeech, type SpeechEntry } from '../../hooks/useSpeech';
-import type { RephraseMode } from '../../services/api/aiService';
+import type { RephraseMode, SummaryGuidance } from '../../services/api/aiService';
 import type { Attachment, Config, Diary, Entry, EntryBacklink, EntryRevision, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import EntryViewMode from './EntryViewMode';
@@ -73,6 +73,7 @@ interface EntriesListProps {
     onReorderEntries?: (date: string, orderedIds: number[]) => void;
     onDiscuss?: (entry: Entry) => void;
     onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
+    onSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
     t: TranslationFn;
 }
 
@@ -129,6 +130,7 @@ function EntriesList({
     onReorderEntries,
     onDiscuss,
     onRephrase,
+    onSummarize,
     t,
 }: Readonly<EntriesListProps>) {
     const [dragEntryId, setDragEntryId] = useLocalState<number | null>(null);
@@ -435,6 +437,7 @@ function EntriesList({
                                                     onDeleteRevision={onDeleteRevision}
                                                     onDiscuss={onDiscuss}
                                                     onRephrase={onRephrase}
+                                                    onSummarize={onSummarize}
                                                     searchTerm={searchTerm}
                                                     showDiaryLabel={showDiaryAccent}
                                                     tagMetadata={tagMetadata}

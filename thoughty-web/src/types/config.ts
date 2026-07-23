@@ -19,6 +19,7 @@ export interface Config {
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;
   openRouterModel?: string;
+  openRouterSummaryModel?: string;
   autoTagMaxTags?: string | number;
   tagMetadata?: string;
   entryTemplates?: string;

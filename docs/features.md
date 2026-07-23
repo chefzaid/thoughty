@@ -106,6 +106,8 @@ flowchart LR
 - Tone and mood analysis adds a higher-level journal insight surface that summarizes dominant mood and tone, includes breakdowns for each, and produces a short written summary across analyzed entries.
 - AI tag suggestions are available on demand, and automatic AI tagging can also run during create or update flows when the configured per-user tag limit is greater than `0`.
 - Entry-specific AI chat turns an existing journal entry into the context for a conversation, which is useful for reflection, analysis, and follow-up questions rather than generic chatbot use.
+- Long entries can be summarized from their secondary actions menu. Optional `Emphasize` and `Leave out` guidance lets the user control which source details receive attention or are omitted, and the generated result can be regenerated or copied.
+- Summary requests send only the authenticated user's server-loaded entry to OpenRouter, and profile settings include a task-specific summary model override with fallback to the default AI model.
 - AI chat history is stored per entry on the server, so reopening the same entry restores the prior conversation instead of starting from an empty modal on each device or browser.
 - The AI chat modal can export the current conversation as a plain-text transcript that includes entry metadata and the full message history.
 - Text-to-speech can read entries aloud through the browser speech synthesis API, with language-aware voice selection and an option to include entry dates in the spoken output.

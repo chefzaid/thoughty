@@ -184,6 +184,24 @@ describe('EntryViewMode', () => {
         expect(onRephrase).toHaveBeenCalledWith(mockEntries[0], 'polish');
     });
 
+    it('opens the guided summary dialog from the secondary actions menu', async () => {
+        const onSummarize = vi.fn().mockResolvedValue('Short summary');
+        const user = userEvent.setup();
+        renderEntryViewMode({ onSummarize });
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('Summarize entry'));
+
+        expect(screen.getByRole('dialog', { name: 'Entry summary' })).toBeInTheDocument();
+        await user.click(screen.getByRole('button', { name: 'Generate summary' }));
+
+        expect(await screen.findByText('Short summary')).toBeInTheDocument();
+        expect(onSummarize).toHaveBeenCalledWith(1, {
+            includeDetails: undefined,
+            excludeDetails: undefined,
+        });
+    });
+
     it('routes listen actions through the entry speech handlers', async () => {
         const speakEntry = vi.fn();
         const speakFromEntry = vi.fn();

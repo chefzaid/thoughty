@@ -31,7 +31,7 @@ import {
   type IntroPageProps,
   type LegalPageProps,
 } from '../utils/appShellProps';
-import type { RephraseMode } from '../services/api/aiService';
+import type { RephraseMode, SummaryGuidance } from '../services/api/aiService';
 import type { Entry, PublicViewType, ViewType } from '../types';
 
 interface AppShellModel {
@@ -173,6 +173,10 @@ export function useAppShellModel(): AppShellModel {
     entryEditState.setEditText(rewritten);
   }, [aiService, entryEditState]);
 
+  const handleSummarize = useCallback(async (entryId: number, guidance: SummaryGuidance) => {
+    return aiService.summarizeEntry(entryId, guidance);
+  }, [aiService]);
+
   const handleLoadAiChatHistory = useCallback(async (entryId: number) => {
     return aiService.getChatHistory(entryId);
   }, [aiService]);
@@ -242,6 +246,7 @@ export function useAppShellModel(): AppShellModel {
     entryNavigationState,
     handleDiscuss,
     handleRephrase,
+    handleSummarize,
     handleNavigateToFirst,
     handleRenameTag,
     highlightsModalOpen,

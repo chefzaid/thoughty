@@ -108,6 +108,7 @@ describe('useAppShellModel', () => {
   const setEditText = vi.fn();
   const aiChat = vi.fn().mockResolvedValue('assistant reply');
   const fixWriting = vi.fn().mockResolvedValue('Polished text');
+  const summarizeEntry = vi.fn().mockResolvedValue('Entry summary');
   const getChatHistory = vi.fn().mockResolvedValue([{ role: 'assistant', content: 'history' }]);
   const renameTag = vi.fn().mockResolvedValue({ success: true });
   const navigateToFirst = vi.fn().mockResolvedValue({ found: true, page: 4, entryId: 77 });
@@ -287,6 +288,7 @@ describe('useAppShellModel', () => {
       aiService: {
         chat: aiChat,
         fixWriting,
+        summarizeEntry,
         getChatHistory,
       },
     });
@@ -373,6 +375,15 @@ describe('useAppShellModel', () => {
     expect(fixWriting).toHaveBeenCalledWith('Discuss me', 'polish');
     expect(handleEdit).toHaveBeenCalledWith({ id: 33, content: 'Discuss me' });
     expect(setEditText).toHaveBeenCalledWith('Polished text');
+
+    await expect(routesProps.handleSummarize?.(33, {
+      includeDetails: 'decision',
+      excludeDetails: 'names',
+    })).resolves.toBe('Entry summary');
+    expect(summarizeEntry).toHaveBeenCalledWith(33, {
+      includeDetails: 'decision',
+      excludeDetails: 'names',
+    });
   });
 
   it('returns false for a failed tag rename and skips follow-up updates', async () => {

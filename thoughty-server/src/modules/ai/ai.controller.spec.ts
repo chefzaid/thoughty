@@ -6,6 +6,7 @@ describe('AiController', () => {
   let controller: AiController;
   let aiService: {
     suggestTags: jest.Mock;
+    summarizeEntry: jest.Mock;
     chat: jest.Mock;
     getChatHistory: jest.Mock;
     listModels: jest.Mock;
@@ -14,6 +15,7 @@ describe('AiController', () => {
   beforeEach(async () => {
     aiService = {
       suggestTags: jest.fn(),
+      summarizeEntry: jest.fn(),
       chat: jest.fn(),
       getChatHistory: jest.fn(),
       listModels: jest.fn(),
@@ -30,10 +32,11 @@ describe('AiController', () => {
   it('delegates tag suggestions to the service', async () => {
     aiService.suggestTags.mockResolvedValue({ tags: ['focus', 'work'] });
 
-    const result = await controller.suggestTags(
-      { userId: 1, email: 'test@example.com' } as any,
-      { content: 'Ship the sprint planning notes', existingTags: ['planning'], maxTags: 5 },
-    );
+    const result = await controller.suggestTags({ userId: 1, email: 'test@example.com' } as any, {
+      content: 'Ship the sprint planning notes',
+      existingTags: ['planning'],
+      maxTags: 5,
+    });
 
     expect(aiService.suggestTags).toHaveBeenCalledWith(1, {
       content: 'Ship the sprint planning notes',
@@ -46,14 +49,11 @@ describe('AiController', () => {
   it('delegates chat to the service', async () => {
     aiService.chat.mockResolvedValue({ reply: 'It sounds like you need rest.' });
 
-    const result = await controller.chat(
-      { userId: 1, email: 'test@example.com' } as any,
-      {
-        entryId: 42,
-        entryContent: 'Today was exhausting.',
-        messages: [{ role: 'user', content: 'What stands out?' }],
-      },
-    );
+    const result = await controller.chat({ userId: 1, email: 'test@example.com' } as any, {
+      entryId: 42,
+      entryContent: 'Today was exhausting.',
+      messages: [{ role: 'user', content: 'What stands out?' }],
+    });
 
     expect(aiService.chat).toHaveBeenCalledWith(1, {
       entryId: 42,
@@ -63,16 +63,30 @@ describe('AiController', () => {
     expect(result).toEqual({ reply: 'It sounds like you need rest.' });
   });
 
+  it('delegates entry summaries to the service', async () => {
+    aiService.summarizeEntry.mockResolvedValue({ summary: 'A concise summary.' });
+    const dto = {
+      entryId: 42,
+      includeDetails: 'the decision',
+      excludeDetails: 'names',
+    };
+
+    const result = await controller.summarizeEntry(
+      { userId: 1, email: 'test@example.com' } as any,
+      dto,
+    );
+
+    expect(aiService.summarizeEntry).toHaveBeenCalledWith(1, dto);
+    expect(result).toEqual({ summary: 'A concise summary.' });
+  });
+
   it('delegates chat history lookup to the service', async () => {
     aiService.getChatHistory.mockResolvedValue({
       entryId: 42,
       messages: [{ role: 'assistant', content: 'Saved response' }],
     });
 
-    const result = await controller.getHistory(
-      { userId: 1, email: 'test@example.com' } as any,
-      42,
-    );
+    const result = await controller.getHistory({ userId: 1, email: 'test@example.com' } as any, 42);
 
     expect(aiService.getChatHistory).toHaveBeenCalledWith(1, 42);
     expect(result).toEqual({

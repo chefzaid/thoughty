@@ -83,6 +83,42 @@ describe('aiService', () => {
     expect(result).toBeNull();
   });
 
+  it('summarizeEntry returns a summary and sends optional guidance', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ summary: 'A concise summary.' }),
+    });
+
+    const result = await service.summarizeEntry(12, {
+      includeDetails: 'decisions',
+      excludeDetails: 'names',
+    });
+
+    expect(result).toBe('A concise summary.');
+    expect(mockAuthFetch).toHaveBeenCalledWith('/api/ai/summarize', {
+      method: 'POST',
+      body: JSON.stringify({
+        entryId: 12,
+        includeDetails: 'decisions',
+        excludeDetails: 'names',
+      }),
+    });
+  });
+
+  it('summarizeEntry returns null for malformed and failed responses', async () => {
+    mockAuthFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ summary: 12 }),
+    });
+    mockAuthFetch.mockResolvedValueOnce({
+      ok: false,
+      json: () => Promise.resolve({ error: 'Unavailable' }),
+    });
+
+    await expect(service.summarizeEntry(12)).resolves.toBeNull();
+    await expect(service.summarizeEntry(12)).resolves.toBeNull();
+  });
+
   it('chat returns assistant reply on success', async () => {
     const messages = [{ role: 'user' as const, content: 'Hello' }];
     mockAuthFetch.mockResolvedValue({
@@ -155,20 +191,23 @@ describe('aiService', () => {
     await expect(service.fetchModels()).resolves.toEqual([]);
   });
 
-  it('returns fallback values when fixWriting, chat, or fetchModels throws', async () => {
+  it('returns fallback values when AI requests throw', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     mockAuthFetch.mockRejectedValueOnce(new Error('fix writing network'));
+    mockAuthFetch.mockRejectedValueOnce(new Error('summary network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('chat network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('history network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('models network'));
 
     await expect(service.fixWriting('raw')).resolves.toBeNull();
+    await expect(service.summarizeEntry(1)).resolves.toBeNull();
     await expect(service.chat(1, 'entry', [])).resolves.toBeNull();
     await expect(service.getChatHistory(1)).resolves.toEqual([]);
     await expect(service.fetchModels()).resolves.toEqual([]);
 
     expect(consoleSpy).toHaveBeenCalledWith('Error fixing writing:', expect.any(Error));
+    expect(consoleSpy).toHaveBeenCalledWith('Error summarizing entry:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error in AI chat:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error loading AI chat history:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error fetching models:', expect.any(Error));

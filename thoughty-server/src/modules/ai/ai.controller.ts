@@ -6,6 +6,7 @@ import { AiService } from './ai.service';
 import { SuggestTagsDto } from './dto/suggest-tags.dto';
 import { FixWritingDto } from './dto/fix-writing.dto';
 import { ChatDto, ChatHistoryResponseDto, ChatResponseDto } from './dto/chat.dto';
+import { EntrySummaryResponseDto, SummarizeEntryDto } from './dto/summarize-entry.dto';
 
 @ApiTags('AI')
 @ApiBearerAuth()
@@ -41,9 +42,27 @@ export class AiController {
     return this.aiService.fixWriting(user.userId, dto);
   }
 
+  @Post('summarize')
+  @ApiOperation({ summary: 'Summarize a journal entry with optional detail guidance' })
+  @ApiResponse({
+    status: 200,
+    description: 'Entry summary returned successfully',
+    type: EntrySummaryResponseDto,
+  })
+  async summarizeEntry(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SummarizeEntryDto,
+  ): Promise<EntrySummaryResponseDto> {
+    return this.aiService.summarizeEntry(user.userId, dto);
+  }
+
   @Post('chat')
   @ApiOperation({ summary: 'Chat about a journal entry with AI for analysis or discussion' })
-  @ApiResponse({ status: 200, description: 'AI reply returned successfully', type: ChatResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'AI reply returned successfully',
+    type: ChatResponseDto,
+  })
   async chat(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChatDto,

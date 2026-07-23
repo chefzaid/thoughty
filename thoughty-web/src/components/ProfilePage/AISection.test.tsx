@@ -47,6 +47,7 @@ describe('AISection', () => {
         expect(screen.getByText('openRouterWritingModel')).toBeInTheDocument();
         expect(screen.getByText('openRouterChatModel')).toBeInTheDocument();
         expect(screen.getByText('openRouterToneModel')).toBeInTheDocument();
+        expect(screen.getByText('openRouterSummaryModel')).toBeInTheDocument();
         expect(screen.getByText('openRouterBookModel')).toBeInTheDocument();
     });
 
@@ -66,7 +67,7 @@ describe('AISection', () => {
         const modelInput = screen.getByPlaceholderText('openai/gpt-4o-mini');
         expect(modelInput).toBeInTheDocument();
         expect(modelInput.tagName).toBe('INPUT');
-        expect(screen.getAllByPlaceholderText('inheritDefaultModel')).toHaveLength(5);
+        expect(screen.getAllByPlaceholderText('inheritDefaultModel')).toHaveLength(6);
     });
 
     it('fetches models on mount', async () => {

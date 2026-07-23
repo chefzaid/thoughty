@@ -40,6 +40,14 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
     return true;
   }
 
+  if (pathname === '/api/ai/summarize') {
+    state.lastAiSummaryPayload = request.postDataJSON();
+    await fulfillJson(route, {
+      summary: 'A focused reflection led to a clear decision while leaving names private.',
+    });
+    return true;
+  }
+
   if (pathname === '/api/ai/chat') {
     state.lastAiChatPayload = request.postDataJSON();
     await fulfillJson(route, { reply: 'This entry reflects a thoughtful focus on the day.' });

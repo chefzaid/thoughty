@@ -10,7 +10,7 @@ import type LegalPage from '../components/LegalPage/LegalPage';
 import type { Config, Entry, ImportExportFormat, ImportExportSection, PublicViewType, ViewType } from '../types';
 import type AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
-import type { RephraseMode } from '../services/api/aiService';
+import type { RephraseMode, SummaryGuidance } from '../services/api/aiService';
 import { buildEntryPermalink } from './appRouting';
 import { createEntryTemplate, getEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
 import type { TagMetadataMap } from './tagMetadata';
@@ -71,6 +71,7 @@ interface BuildAuthenticatedRoutesPropsParams {
   entryNavigationState: Pick<EntryNavigationState, 'handleBackToSource' | 'handleNavigateToEntry' | 'handleShareEntry'>;
   handleDiscuss: (entry: Entry) => void;
   handleRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
+  handleSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
   handleNavigateToFirst: AuthenticatedRoutesProps['journalRouteProps']['yearMonthNavigator']['onNavigate'];
   handleRenameTag: AuthenticatedRoutesProps['tagManagerRouteProps']['onRenameTag'];
   highlightsModalOpen: boolean;
@@ -203,6 +204,7 @@ export function buildAuthenticatedRoutesProps({
   entryNavigationState,
   handleDiscuss,
   handleRephrase,
+  handleSummarize,
   handleNavigateToFirst,
   handleRenameTag,
   highlightsModalOpen,
@@ -395,6 +397,7 @@ export function buildAuthenticatedRoutesProps({
         onReorderEntries: entriesState.reorderEntries,
         onDiscuss: handleDiscuss,
         onRephrase: handleRephrase,
+        onSummarize: handleSummarize,
       },
       pagination: {
         page: entriesState.page,

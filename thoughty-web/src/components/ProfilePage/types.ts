@@ -23,6 +23,7 @@ export interface ProfileConfig {
   openRouterWritingModel?: string;
   openRouterChatModel?: string;
   openRouterToneModel?: string;
+  openRouterSummaryModel?: string;
   openRouterBookModel?: string;
   autoTagMaxTags?: string | number;
   tagMetadata?: string;

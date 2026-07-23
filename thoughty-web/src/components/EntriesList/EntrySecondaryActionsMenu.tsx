@@ -14,6 +14,7 @@ interface EntrySecondaryActionsMenuProps {
     showHistory: boolean;
     onShareEntry?: () => Promise<void>;
     onToggleHistory?: () => Promise<void>;
+    onSummarize?: () => void;
     onToggleArchived: () => void;
     onDelete: () => void;
     t: TranslationFn;
@@ -27,6 +28,7 @@ export default function EntrySecondaryActionsMenu({
     showHistory,
     onShareEntry,
     onToggleHistory,
+    onSummarize,
     onToggleArchived,
     onDelete,
     t,
@@ -96,6 +98,11 @@ export default function EntrySecondaryActionsMenu({
         onToggleArchived();
     }, [closeMenu, onToggleArchived]);
 
+    const handleSummarize = useCallback(() => {
+        closeMenu();
+        onSummarize?.();
+    }, [closeMenu, onSummarize]);
+
     const handleDelete = useCallback(() => {
         closeMenu();
         onDelete();
@@ -117,7 +124,7 @@ export default function EntrySecondaryActionsMenu({
                 <div
                     role="menu"
                     aria-label={t('moreActions')}
-                    className={`absolute right-0 top-full z-20 mt-2 min-w-[220px] rounded-xl border py-1 shadow-xl ${isDark ? 'border-gray-700 bg-gray-800/95' : 'border-gray-200 bg-white/95'}`}
+                    className={`absolute right-0 top-full z-20 mt-2 min-w-[220px] rounded-lg border py-1 shadow-xl ${isDark ? 'border-gray-700 bg-gray-800/95' : 'border-gray-200 bg-white/95'}`}
                 >
                     {entryPermalink && (
                         <a
@@ -156,6 +163,19 @@ export default function EntrySecondaryActionsMenu({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <span>{t('viewHistory')}</span>
+                        </MenuActionButton>
+                    )}
+                    {onSummarize && (
+                        <MenuActionButton
+                            onClick={handleSummarize}
+                            className={secondaryActionClass}
+                            title={t('summarizeEntry')}
+                        >
+                            <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 4h10l3 3v13H7z" />
+                                <path strokeLinecap="round" d="M10 11h7M10 15h7" />
+                            </svg>
+                            <span>{t('summarizeEntry')}</span>
                         </MenuActionButton>
                     )}
                     <MenuActionButton

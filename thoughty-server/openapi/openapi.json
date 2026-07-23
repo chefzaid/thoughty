@@ -1974,6 +1974,51 @@
         ]
       }
     },
+    "/api/ai/summarize": {
+      "post": {
+        "operationId": "AiController_summarizeEntry",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SummarizeEntryDto"
+              },
+              "example": {
+                "entryId": 1,
+                "includeDetails": "example",
+                "excludeDetails": "example"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entry summary returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntrySummaryResponseDto"
+                },
+                "example": {
+                  "summary": "example"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Summarize a journal entry with optional detail guidance",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
     "/api/ai/chat": {
       "post": {
         "operationId": "AiController_chat",
@@ -4808,6 +4853,49 @@
         "example": {
           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
           "mode": "grammar"
+        }
+      },
+      "SummarizeEntryDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "description": "ID of the journal entry to summarize",
+            "minimum": 1
+          },
+          "includeDetails": {
+            "type": "string",
+            "description": "Details or topics the summary should emphasize",
+            "maxLength": 500
+          },
+          "excludeDetails": {
+            "type": "string",
+            "description": "Details or topics the summary should omit",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "entryId"
+        ],
+        "example": {
+          "entryId": 1,
+          "includeDetails": "example",
+          "excludeDetails": "example"
+        }
+      },
+      "EntrySummaryResponseDto": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string",
+            "description": "Generated summary of the journal entry"
+          }
+        },
+        "required": [
+          "summary"
+        ],
+        "example": {
+          "summary": "example"
         }
       },
       "ChatMessageDto": {

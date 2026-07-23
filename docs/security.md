@@ -112,7 +112,7 @@ Attachment security relies on both application checks and object-storage configu
 
 ## AI Privacy
 
-AI features are optional at the infrastructure level. When enabled, relevant journal content may be sent to OpenRouter or the configured model provider for operations such as writing fixes, tag suggestions, mood/tone analysis, and entry-specific chat.
+AI features are optional at the infrastructure level. When enabled, relevant journal content may be sent to OpenRouter or the configured model provider for operations such as writing fixes, tag suggestions, entry summaries, mood/tone analysis, and entry-specific chat. Entry summary requests resolve the entry from the authenticated user ID on the server and treat the journal text as untrusted source material rather than model instructions.
 
 Product and deployment documentation should make this clear to users and operators. Future local-LLM support should be covered by a dedicated ADR because it changes privacy, hosting, and performance assumptions.
 
