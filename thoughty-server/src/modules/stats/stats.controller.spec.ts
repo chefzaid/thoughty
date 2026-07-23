@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StatsController } from './stats.controller';
 import { StatsService } from './stats.service';
+import { StatsPersonalityAnalysisService } from './stats-personality-analysis.service';
 
 describe('StatsController', () => {
   let controller: StatsController;
   let statsService: any;
+  let statsPersonalityAnalysisService: any;
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -12,10 +14,16 @@ describe('StatsController', () => {
     statsService = {
       getStats: jest.fn(),
     };
+    statsPersonalityAnalysisService = {
+      analyze: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [StatsController],
-      providers: [{ provide: StatsService, useValue: statsService }],
+      providers: [
+        { provide: StatsService, useValue: statsService },
+        { provide: StatsPersonalityAnalysisService, useValue: statsPersonalityAnalysisService },
+      ],
     }).compile();
 
     controller = module.get<StatsController>(StatsController);
@@ -52,6 +60,19 @@ describe('StatsController', () => {
       // parseInt('', 10) returns NaN but since '' is falsy, it goes to undefined
       expect(statsService.getStats).toHaveBeenCalledWith(1, undefined);
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('analyzePersonality', () => {
+    it('delegates the authenticated scope and wraps the result', async () => {
+      const analysis = { traits: [{ label: 'Reflective' }] };
+      const dto = { diaryId: 2, fromDate: '2024-01-01', toDate: '2024-12-31' };
+      statsPersonalityAnalysisService.analyze.mockResolvedValue(analysis);
+
+      await expect(controller.analyzePersonality(mockUser as never, dto)).resolves.toEqual({
+        analysis,
+      });
+      expect(statsPersonalityAnalysisService.analyze).toHaveBeenCalledWith(1, dto);
     });
   });
 });

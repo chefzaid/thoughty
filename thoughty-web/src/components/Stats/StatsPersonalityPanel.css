@@ -1,0 +1,208 @@
+.personality-panel {
+  grid-column: 1 / -1;
+  overflow: hidden;
+}
+
+.personality-panel-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.personality-panel-header h3 {
+  margin: 0;
+}
+
+.personality-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.personality-controls label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  opacity: 0.9;
+}
+
+.personality-controls input {
+  min-width: 9rem;
+  height: 2.4rem;
+  padding: 0 0.65rem;
+  border: 1px solid rgba(107, 114, 128, 0.45);
+  border-radius: 0.4rem;
+  color: inherit;
+  background: transparent;
+  color-scheme: dark;
+}
+
+.personality-panel.light .personality-controls input {
+  background: #fff;
+  color-scheme: light;
+}
+
+.personality-controls input:focus-visible,
+.personality-analyze-button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.personality-analyze-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  padding: 0 0.9rem;
+  border: 1px solid #2563eb;
+  border-radius: 0.4rem;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.personality-analyze-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.personality-analyze-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.personality-results {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.personality-summary {
+  max-width: 60rem;
+  margin: 0;
+  line-height: 1.65;
+}
+
+.personality-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  margin: 0;
+}
+
+.personality-metrics div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.personality-metrics dt {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.personality-metrics dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.personality-traits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: 1rem 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.personality-traits li {
+  min-width: 0;
+}
+
+.personality-trait-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.personality-trait-heading strong {
+  overflow-wrap: anywhere;
+}
+
+.personality-trait-heading span {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.personality-score-track {
+  height: 0.45rem;
+  margin-top: 0.55rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(107, 114, 128, 0.18);
+}
+
+.personality-score-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0d9488, #2563eb);
+}
+
+.personality-traits p {
+  margin: 0.6rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  opacity: 0.78;
+}
+
+.personality-message {
+  margin: 0.5rem 0 1rem;
+  font-size: 0.9rem;
+}
+
+.personality-message.error {
+  color: #ef4444;
+}
+
+.personality-notes {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1.25rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(107, 114, 128, 0.22);
+}
+
+.personality-notes p {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  opacity: 0.68;
+}
+
+.personality-notes .codicon {
+  margin-top: 0.1rem;
+}
+
+@media (max-width: 768px) {
+  .personality-panel-header,
+  .personality-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .personality-controls,
+  .personality-controls input {
+    width: 100%;
+  }
+
+  .personality-analyze-button {
+    min-height: 2.75rem;
+  }
+}

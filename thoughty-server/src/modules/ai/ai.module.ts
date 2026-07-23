@@ -5,11 +5,12 @@ import { UserConfigModule } from '@/modules/config';
 import { AiController } from './ai.controller';
 import { AiBookComposerService } from './ai-book-composer.service';
 import { AiService } from './ai.service';
+import { AiPersonalityService } from './ai-personality.service';
 
 @Module({
   imports: [UserConfigModule, TypeOrmModule.forFeature([Entry, AiChatHistory])],
   controllers: [AiController],
-  providers: [AiService, AiBookComposerService],
-  exports: [AiService, AiBookComposerService],
+  providers: [AiService, AiBookComposerService, AiPersonalityService],
+  exports: [AiService, AiBookComposerService, AiPersonalityService],
 })
 export class AiModule {}

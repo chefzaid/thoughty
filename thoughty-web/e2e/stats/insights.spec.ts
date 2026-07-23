@@ -3,7 +3,7 @@ import { setupMockApp } from '../support/mockApp';
 
 test.describe('Stats insight surfaces', () => {
   test('shows totals, activity heatmap, top tags, and year-by-year tag breakdowns', async ({ page }) => {
-    await setupMockApp(page, {
+    const { state } = await setupMockApp(page, {
       startAuthenticated: true,
       initialEntries: [
         {
@@ -43,6 +43,19 @@ test.describe('Stats insight surfaces', () => {
     await expect(page.getByText('focus (2)')).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
+    const personalityPanel = page.getByRole('region', { name: 'Writing Tendencies' });
+    await personalityPanel.getByLabel('From').fill('2024-04-18');
+    await personalityPanel.getByLabel('To').fill('2024-04-19');
+    await personalityPanel.getByRole('button', { name: 'Analyze' }).click();
+    await expect(
+      personalityPanel.getByText('The selected writing suggests a reflective and practical approach to decisions.'),
+    ).toBeVisible();
+    await expect(personalityPanel.getByText('Reflective planning')).toBeVisible();
+    await expect.poll(() => state.lastPersonalityAnalysisPayload).toEqual({
+      diaryId: 1,
+      fromDate: '2024-04-18',
+      toDate: '2024-04-19',
+    });
     expect(await page.evaluate(
       () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
     )).toBe(true);

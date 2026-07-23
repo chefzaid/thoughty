@@ -1,4 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsDateString, IsInt, IsOptional, Matches, Min } from 'class-validator';
 
 export class ToneMoodAnalysisDto {
   @ApiProperty({ example: 'reflective' })
@@ -46,6 +47,66 @@ export class SubjectAnalysisDto {
     example: 'Recent entries focus mostly on work, relationships, and personal wellbeing.',
   })
   summary!: string;
+}
+
+export class PersonalityAnalysisRequestDto {
+  @ApiPropertyOptional({ example: 3, minimum: 1 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  diaryId?: number;
+
+  @ApiPropertyOptional({ example: '2025-01-01', format: 'date' })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsDateString({ strict: true })
+  fromDate?: string;
+
+  @ApiPropertyOptional({ example: '2025-12-31', format: 'date' })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  @IsDateString({ strict: true })
+  toDate?: string;
+}
+
+export class PersonalityTraitDto {
+  @ApiProperty({ example: 'Reflective decision-making' })
+  label!: string;
+
+  @ApiProperty({ example: 78, minimum: 0, maximum: 100 })
+  score!: number;
+
+  @ApiProperty({
+    example: 'Planning and reflection vocabulary appears consistently across the selected entries.',
+  })
+  evidence!: string;
+}
+
+export class PersonalityAnalysisDto {
+  @ApiProperty({ type: [PersonalityTraitDto] })
+  traits!: PersonalityTraitDto[];
+
+  @ApiProperty({
+    example: 'The selected writing suggests a reflective, structured approach to daily decisions.',
+  })
+  summary!: string;
+
+  @ApiProperty({ example: 184 })
+  analyzedEntries!: number;
+
+  @ApiProperty({ example: 28412 })
+  analyzedWords!: number;
+
+  @ApiProperty({ example: '2024-01-03', format: 'date' })
+  fromDate!: string;
+
+  @ApiProperty({ example: '2025-12-19', format: 'date' })
+  toDate!: string;
+}
+
+export class PersonalityAnalysisResponseDto {
+  @ApiProperty({ type: PersonalityAnalysisDto, nullable: true })
+  analysis!: PersonalityAnalysisDto | null;
 }
 
 export class StatsResponseDto {

@@ -1,26 +1,53 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { StatsService } from './stats.service';
-import { StatsResponseDto } from './dto';
+import {
+  PersonalityAnalysisRequestDto,
+  PersonalityAnalysisResponseDto,
+  StatsResponseDto,
+} from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
+import { StatsPersonalityAnalysisService } from './stats-personality-analysis.service';
 
 @ApiTags('Stats')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('stats')
 export class StatsController {
-  constructor(private readonly statsService: StatsService) {}
+  constructor(
+    private readonly statsService: StatsService,
+    private readonly statsPersonalityAnalysisService: StatsPersonalityAnalysisService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get aggregated statistics about journal entries' })
   @ApiQuery({ name: 'diaryId', required: false, type: Number })
-  @ApiResponse({ status: 200, description: 'Statistics object with counts and breakdowns', type: StatsResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics object with counts and breakdowns',
+    type: StatsResponseDto,
+  })
   async getStats(
     @CurrentUser() user: AuthenticatedUser,
     @Query('diaryId') diaryId?: string,
   ): Promise<StatsResponseDto> {
     const parsedDiaryId = diaryId ? Number.parseInt(diaryId, 10) : undefined;
     return this.statsService.getStats(user.userId, parsedDiaryId);
+  }
+
+  @Post('personality-analysis')
+  @ApiOperation({ summary: 'Analyze writing tendencies for all entries in a selected scope' })
+  @ApiResponse({
+    status: 201,
+    description: 'Non-clinical personality tendencies derived from aggregate writing statistics',
+    type: PersonalityAnalysisResponseDto,
+  })
+  async analyzePersonality(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: PersonalityAnalysisRequestDto,
+  ): Promise<PersonalityAnalysisResponseDto> {
+    const analysis = await this.statsPersonalityAnalysisService.analyze(user.userId, dto);
+    return { analysis };
   }
 }

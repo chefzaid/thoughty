@@ -29,10 +29,7 @@ describe('AppController (e2e)', () => {
 
   describe('Auth', () => {
     it('/api/auth/register (POST) - should require email and password', () => {
-      return request(app.getHttpServer())
-        .post('/api/auth/register')
-        .send({})
-        .expect(400);
+      return request(app.getHttpServer()).post('/api/auth/register').send({}).expect(400);
     });
 
     it('/api/auth/login (POST) - should reject invalid credentials', () => {
@@ -54,6 +51,13 @@ describe('AppController (e2e)', () => {
 
     it('/api/stats (GET) - should require authentication', () => {
       return request(app.getHttpServer()).get('/api/stats').expect(401);
+    });
+
+    it('/api/stats/personality-analysis (POST) - should require authentication', () => {
+      return request(app.getHttpServer())
+        .post('/api/stats/personality-analysis')
+        .send({})
+        .expect(401);
     });
 
     it('/api/config (GET) - should require authentication', () => {

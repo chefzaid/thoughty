@@ -27,6 +27,37 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
     return true;
   }
 
+  if (pathname === '/api/stats/personality-analysis') {
+    const payload = request.postDataJSON() as {
+      diaryId?: number;
+      fromDate?: string;
+      toDate?: string;
+    };
+    state.lastPersonalityAnalysisPayload = payload;
+    await fulfillJson(route, {
+      analysis: {
+        traits: [
+          {
+            label: 'Reflective planning',
+            score: 82,
+            evidence: 'Planning and reflection vocabulary recur across the selected entries.',
+          },
+          {
+            label: 'Practical focus',
+            score: 74,
+            evidence: 'Action-oriented words appear alongside recurring work subjects.',
+          },
+        ],
+        summary: 'The selected writing suggests a reflective and practical approach to decisions.',
+        analyzedEntries: 2,
+        analyzedWords: 14,
+        fromDate: payload.fromDate || '2024-04-18',
+        toDate: payload.toDate || '2024-04-19',
+      },
+    });
+    return true;
+  }
+
   if (pathname === '/api/ai/suggest-tags') {
     const payload = request.postDataJSON() as { style?: string };
     state.lastAiSuggestionPayload = payload;

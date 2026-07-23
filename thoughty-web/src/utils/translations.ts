@@ -170,6 +170,18 @@ export type TranslationKey =
   | 'subjectsDiscussed'
   | 'subjectsDiscussedDescription'
   | 'subjectsDiscussedUnavailable'
+  | 'personalityInsights'
+  | 'personalityFromDate'
+  | 'personalityToDate'
+  | 'analyzePersonality'
+  | 'analyzingPersonality'
+  | 'personalityWordsAnalyzed'
+  | 'personalityDateRange'
+  | 'personalityInvalidDateRange'
+  | 'personalityAnalysisError'
+  | 'personalityUnavailable'
+  | 'personalityPrivacy'
+  | 'personalityDisclaimer'
   | 'lessActivity'
   | 'moreActivity'
   | 'noJournalActivity'
@@ -893,6 +905,18 @@ export const translations: Translations = {
     subjectsDiscussed: 'Subjects Discussed',
     subjectsDiscussedDescription: 'AI grouping of the recurring subjects in your recent entries.',
     subjectsDiscussedUnavailable: 'Subject analysis is unavailable right now. Configure AI settings and try again later.',
+    personalityInsights: 'Writing Tendencies',
+    personalityFromDate: 'From',
+    personalityToDate: 'To',
+    analyzePersonality: 'Analyze',
+    analyzingPersonality: 'Analyzing',
+    personalityWordsAnalyzed: 'Words analyzed',
+    personalityDateRange: 'Date range',
+    personalityInvalidDateRange: 'The start date must be before the end date.',
+    personalityAnalysisError: 'Writing analysis could not be completed. Please try again.',
+    personalityUnavailable: 'Writing analysis is unavailable for this selection.',
+    personalityPrivacy: 'Your raw entries stay on this server. AI receives aggregate word and subject statistics only.',
+    personalityDisclaimer: 'These non-clinical tendencies reflect writing patterns, not your identity or a diagnosis.',
     lessActivity: 'Less',
     moreActivity: 'More',
     noJournalActivity: 'No journaling activity yet.',
@@ -1682,6 +1706,18 @@ export const translations: Translations = {
     subjectsDiscussed: 'Sujets abordés',
     subjectsDiscussedDescription: 'Regroupement par IA des sujets récurrents dans vos entrées récentes.',
     subjectsDiscussedUnavailable: 'L\'analyse des sujets est indisponible pour le moment. Configurez l\'IA puis réessayez plus tard.',
+    personalityInsights: 'Tendances d\'écriture',
+    personalityFromDate: 'Du',
+    personalityToDate: 'Au',
+    analyzePersonality: 'Analyser',
+    analyzingPersonality: 'Analyse en cours',
+    personalityWordsAnalyzed: 'Mots analysés',
+    personalityDateRange: 'Période',
+    personalityInvalidDateRange: 'La date de début doit précéder la date de fin.',
+    personalityAnalysisError: 'L\'analyse de l\'écriture n\'a pas pu aboutir. Veuillez réessayer.',
+    personalityUnavailable: 'L\'analyse de l\'écriture est indisponible pour cette sélection.',
+    personalityPrivacy: 'Vos entrées brutes restent sur ce serveur. L\'IA ne reçoit que des statistiques agrégées sur les mots et les sujets.',
+    personalityDisclaimer: 'Ces tendances non cliniques reflètent des habitudes d\'écriture, et non votre identité ou un diagnostic.',
     lessActivity: 'Moins',
     moreActivity: 'Plus',
     noJournalActivity: 'Aucune activité de journal pour le moment.',

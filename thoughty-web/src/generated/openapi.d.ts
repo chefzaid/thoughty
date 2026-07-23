@@ -809,6 +809,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stats/personality-analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Analyze writing tendencies for all entries in a selected scope */
+        post: operations["StatsController_analyzePersonality"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/io/format": {
         parameters: {
             query?: never;
@@ -2301,6 +2318,98 @@ export interface components {
             };
             toneMoodAnalysis?: components["schemas"]["ToneMoodAnalysisDto"] | null;
             subjectAnalysis?: components["schemas"]["SubjectAnalysisDto"] | null;
+        };
+        /**
+         * @example {
+         *       "diaryId": 3,
+         *       "fromDate": "2025-01-01",
+         *       "toDate": "2025-12-31"
+         *     }
+         */
+        PersonalityAnalysisRequestDto: {
+            /** @example 3 */
+            diaryId?: number;
+            /**
+             * Format: date
+             * @example 2025-01-01
+             */
+            fromDate?: string;
+            /**
+             * Format: date
+             * @example 2025-12-31
+             */
+            toDate?: string;
+        };
+        /**
+         * @example {
+         *       "label": "Reflective decision-making",
+         *       "score": 78,
+         *       "evidence": "Planning and reflection vocabulary appears consistently across the selected entries."
+         *     }
+         */
+        PersonalityTraitDto: {
+            /** @example Reflective decision-making */
+            label: string;
+            /** @example 78 */
+            score: number;
+            /** @example Planning and reflection vocabulary appears consistently across the selected entries. */
+            evidence: string;
+        };
+        /**
+         * @example {
+         *       "traits": [
+         *         {
+         *           "label": "Reflective decision-making",
+         *           "score": 78,
+         *           "evidence": "Planning and reflection vocabulary appears consistently across the selected entries."
+         *         }
+         *       ],
+         *       "summary": "The selected writing suggests a reflective, structured approach to daily decisions.",
+         *       "analyzedEntries": 184,
+         *       "analyzedWords": 28412,
+         *       "fromDate": "2024-01-03",
+         *       "toDate": "2025-12-19"
+         *     }
+         */
+        PersonalityAnalysisDto: {
+            traits: components["schemas"]["PersonalityTraitDto"][];
+            /** @example The selected writing suggests a reflective, structured approach to daily decisions. */
+            summary: string;
+            /** @example 184 */
+            analyzedEntries: number;
+            /** @example 28412 */
+            analyzedWords: number;
+            /**
+             * Format: date
+             * @example 2024-01-03
+             */
+            fromDate: string;
+            /**
+             * Format: date
+             * @example 2025-12-19
+             */
+            toDate: string;
+        };
+        /**
+         * @example {
+         *       "analysis": {
+         *         "traits": [
+         *           {
+         *             "label": "Reflective decision-making",
+         *             "score": 78,
+         *             "evidence": "Planning and reflection vocabulary appears consistently across the selected entries."
+         *           }
+         *         ],
+         *         "summary": "The selected writing suggests a reflective, structured approach to daily decisions.",
+         *         "analyzedEntries": 184,
+         *         "analyzedWords": 28412,
+         *         "fromDate": "2024-01-03",
+         *         "toDate": "2025-12-19"
+         *       }
+         *     }
+         */
+        PersonalityAnalysisResponseDto: {
+            analysis: components["schemas"]["PersonalityAnalysisDto"] | null;
         };
         /**
          * @example {
@@ -4650,6 +4759,55 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["StatsResponseDto"];
+                };
+            };
+        };
+    };
+    StatsController_analyzePersonality: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "diaryId": 3,
+                 *       "fromDate": "2025-01-01",
+                 *       "toDate": "2025-12-31"
+                 *     }
+                 */
+                "application/json": components["schemas"]["PersonalityAnalysisRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Non-clinical personality tendencies derived from aggregate writing statistics */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "analysis": {
+                     *         "traits": [
+                     *           {
+                     *             "label": "Reflective decision-making",
+                     *             "score": 78,
+                     *             "evidence": "Planning and reflection vocabulary appears consistently across the selected entries."
+                     *           }
+                     *         ],
+                     *         "summary": "The selected writing suggests a reflective, structured approach to daily decisions.",
+                     *         "analyzedEntries": 184,
+                     *         "analyzedWords": 28412,
+                     *         "fromDate": "2024-01-03",
+                     *         "toDate": "2025-12-19"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PersonalityAnalysisResponseDto"];
                 };
             };
         };

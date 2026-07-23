@@ -2545,6 +2545,64 @@
         ]
       }
     },
+    "/api/stats/personality-analysis": {
+      "post": {
+        "operationId": "StatsController_analyzePersonality",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PersonalityAnalysisRequestDto"
+              },
+              "example": {
+                "diaryId": 3,
+                "fromDate": "2025-01-01",
+                "toDate": "2025-12-31"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Non-clinical personality tendencies derived from aggregate writing statistics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalityAnalysisResponseDto"
+                },
+                "example": {
+                  "analysis": {
+                    "traits": [
+                      {
+                        "label": "Reflective decision-making",
+                        "score": 78,
+                        "evidence": "Planning and reflection vocabulary appears consistently across the selected entries."
+                      }
+                    ],
+                    "summary": "The selected writing suggests a reflective, structured approach to daily decisions.",
+                    "analyzedEntries": 184,
+                    "analyzedWords": 28412,
+                    "fromDate": "2024-01-03",
+                    "toDate": "2025-12-19"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Analyze writing tendencies for all entries in a selected scope",
+        "tags": [
+          "Stats"
+        ]
+      }
+    },
     "/api/io/format": {
       "get": {
         "operationId": "IoController_getFormat",
@@ -6107,6 +6165,148 @@
             },
             "analyzedEntries": 27,
             "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
+          }
+        }
+      },
+      "PersonalityAnalysisRequestDto": {
+        "type": "object",
+        "properties": {
+          "diaryId": {
+            "type": "number",
+            "example": 3,
+            "minimum": 1
+          },
+          "fromDate": {
+            "type": "string",
+            "example": "2025-01-01",
+            "format": "date"
+          },
+          "toDate": {
+            "type": "string",
+            "example": "2025-12-31",
+            "format": "date"
+          }
+        },
+        "example": {
+          "diaryId": 3,
+          "fromDate": "2025-01-01",
+          "toDate": "2025-12-31"
+        }
+      },
+      "PersonalityTraitDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "example": "Reflective decision-making"
+          },
+          "score": {
+            "type": "number",
+            "example": 78,
+            "minimum": 0,
+            "maximum": 100
+          },
+          "evidence": {
+            "type": "string",
+            "example": "Planning and reflection vocabulary appears consistently across the selected entries."
+          }
+        },
+        "required": [
+          "label",
+          "score",
+          "evidence"
+        ],
+        "example": {
+          "label": "Reflective decision-making",
+          "score": 78,
+          "evidence": "Planning and reflection vocabulary appears consistently across the selected entries."
+        }
+      },
+      "PersonalityAnalysisDto": {
+        "type": "object",
+        "properties": {
+          "traits": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonalityTraitDto"
+            }
+          },
+          "summary": {
+            "type": "string",
+            "example": "The selected writing suggests a reflective, structured approach to daily decisions."
+          },
+          "analyzedEntries": {
+            "type": "number",
+            "example": 184
+          },
+          "analyzedWords": {
+            "type": "number",
+            "example": 28412
+          },
+          "fromDate": {
+            "type": "string",
+            "example": "2024-01-03",
+            "format": "date"
+          },
+          "toDate": {
+            "type": "string",
+            "example": "2025-12-19",
+            "format": "date"
+          }
+        },
+        "required": [
+          "traits",
+          "summary",
+          "analyzedEntries",
+          "analyzedWords",
+          "fromDate",
+          "toDate"
+        ],
+        "example": {
+          "traits": [
+            {
+              "label": "Reflective decision-making",
+              "score": 78,
+              "evidence": "Planning and reflection vocabulary appears consistently across the selected entries."
+            }
+          ],
+          "summary": "The selected writing suggests a reflective, structured approach to daily decisions.",
+          "analyzedEntries": 184,
+          "analyzedWords": 28412,
+          "fromDate": "2024-01-03",
+          "toDate": "2025-12-19"
+        }
+      },
+      "PersonalityAnalysisResponseDto": {
+        "type": "object",
+        "properties": {
+          "analysis": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PersonalityAnalysisDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "analysis"
+        ],
+        "example": {
+          "analysis": {
+            "traits": [
+              {
+                "label": "Reflective decision-making",
+                "score": 78,
+                "evidence": "Planning and reflection vocabulary appears consistently across the selected entries."
+              }
+            ],
+            "summary": "The selected writing suggests a reflective, structured approach to daily decisions.",
+            "analyzedEntries": 184,
+            "analyzedWords": 28412,
+            "fromDate": "2024-01-03",
+            "toDate": "2025-12-19"
           }
         }
       },

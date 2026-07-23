@@ -17,6 +17,7 @@ import { requestEntrySummary } from './entry-summary';
 import { requestTagSuggestions } from './tag-suggestions';
 import { parseJournalAnalysis, type JournalAnalysis } from './journal-analysis';
 import { requestWritingPrompts } from './writing-prompts';
+import { resolveAiModel } from './ai-model.util';
 
 export type { JournalAnalysis, SubjectAnalysis, ToneMoodAnalysis } from './journal-analysis';
 
@@ -90,18 +91,12 @@ export class AiService {
   }
 
   private async getModel(userId: number, task?: AiModelTask): Promise<string> {
-    if (task) {
-      const taskModel = await this.configService.getDecryptedConfig(
-        userId,
-        TASK_MODEL_CONFIG_KEYS[task],
-      );
-      if (taskModel) {
-        return taskModel;
-      }
-    }
-
-    const model = await this.configService.getDecryptedConfig(userId, 'openRouterModel');
-    return model || this.defaultModel;
+    return resolveAiModel(
+      this.configService,
+      userId,
+      this.defaultModel,
+      task ? TASK_MODEL_CONFIG_KEYS[task] : undefined,
+    );
   }
 
   isConfigured(): boolean {

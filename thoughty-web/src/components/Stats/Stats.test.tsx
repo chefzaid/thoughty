@@ -61,6 +61,18 @@ describe('Stats Component', () => {
                 subjectsDiscussed: 'Subjects Discussed',
                 subjectsDiscussedDescription: 'AI grouping of recurring subjects.',
                 subjectsDiscussedUnavailable: 'Subject analysis is unavailable right now.',
+                personalityInsights: 'Writing Tendencies',
+                personalityFromDate: 'From',
+                personalityToDate: 'To',
+                analyzePersonality: 'Analyze',
+                analyzingPersonality: 'Analyzing',
+                personalityWordsAnalyzed: 'Words analyzed',
+                personalityDateRange: 'Date range',
+                personalityInvalidDateRange: 'Invalid date range',
+                personalityAnalysisError: 'Analysis failed',
+                personalityUnavailable: 'Analysis unavailable',
+                personalityPrivacy: 'Aggregate data only',
+                personalityDisclaimer: 'Non-clinical writing patterns',
                 lessActivity: 'Less',
                 moreActivity: 'More',
                 noJournalActivity: 'No activity yet',
@@ -151,6 +163,8 @@ describe('Stats Component', () => {
         expect(screen.getByText('128')).toBeInTheDocument();
         expect(screen.getByText('Avg. Read Time')).toBeInTheDocument();
         expect(screen.getByText('1 min')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Writing Tendencies' })).toBeInTheDocument();
+        expect(globalThis.fetch).toHaveBeenCalledTimes(1);
 
         // Check charts presence (via mock)
         const charts = screen.getAllByTestId('mock-bar-chart');

@@ -17,6 +17,7 @@ import TagBadge from '../TagBadge/TagBadge';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import StatsActivityHeatmap from './StatsActivityHeatmap';
 import StatsInsights from './StatsInsights';
+import StatsPersonalityPanel from './StatsPersonalityPanel';
 
 // Register Chart.js components
 ChartJS.register(
@@ -289,12 +290,19 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
             {/* Charts Grid */}
             <div className="charts-grid">
                 {stats.totalThoughts > 0 && (
-                    <StatsInsights
-                        themeClass={themeClass}
-                        toneMoodAnalysis={stats.toneMoodAnalysis}
-                        subjectAnalysis={stats.subjectAnalysis}
-                        t={t}
-                    />
+                    <>
+                        <StatsInsights
+                            themeClass={themeClass}
+                            toneMoodAnalysis={stats.toneMoodAnalysis}
+                            subjectAnalysis={stats.subjectAnalysis}
+                            t={t}
+                        />
+                        <StatsPersonalityPanel
+                            themeClass={themeClass}
+                            diaryId={diaryId}
+                            t={t}
+                        />
+                    </>
                 )}
 
                 <StatsActivityHeatmap
