@@ -201,7 +201,7 @@
 - [x] Migrate journal storage from a flat text file to a relational database accessed through an ORM
 - [x] Optimize hot database queries across services
 - [x] Optimize database for better performance (ongoing)
-- [ ] Convert the current idempotent SQL migration script into versioned migration files when the schema-change workflow needs stricter ordering/history
+- [x] Convert the current idempotent SQL migration script into versioned migration files when the schema-change workflow needs stricter ordering/history
 - [x] Database connection pooling configuration in TypeORM data source
 - [x] Database read replicas for scaling read-heavy queries (stats, feed, search)
 - [x] Automated database backups with point-in-time recovery

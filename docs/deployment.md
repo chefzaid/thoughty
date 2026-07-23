@@ -256,6 +256,10 @@ kubectl exec deployment/thoughty-server -n thoughty -- /bin/sh -c \
 
 The Vault secrets must be sourced explicitly because `kubectl exec` starts a fresh shell that does not run the container's startup command.
 
+The command applies timestamped TypeORM migrations in order and records each completed migration in PostgreSQL's `migrations` table. It is safe to retry after a successful run; no completed migration is applied twice. The initial versioned migration is idempotent so databases created before migration history can adopt the baseline in place.
+
+Do not edit an already-deployed migration. Add a later migration, smoke-test both a fresh database and an upgraded copy, and take a database backup before production rollout. Production rollbacks should use a forward corrective migration unless the latest migration's reviewed `down` operation is known to preserve the environment's data.
+
 ### 7. Deploy the Worker and Web Surfaces
 
 ```bash

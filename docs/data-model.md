@@ -164,11 +164,13 @@ Entries are not only identified by database `id`. The user-facing journal model 
 
 Treat settings as user-owned application state, not as a general-purpose dumping ground. New setting groups should document their keys, value shape, and privacy impact.
 
-## Migration Reality
+## Schema Migrations
 
-The current repository uses `thoughty-server/scripts/migrate.ts`, an idempotent SQL migration helper, with TypeORM `synchronize: false`. The TypeORM data source is configured with a migrations path, but versioned TypeORM migration files are not yet the primary migration mechanism.
+The database schema is managed by ordered TypeORM migrations in `thoughty-server/src/database/migrations`; TypeORM `synchronize` remains disabled. `npm run db:migrate` initializes the application data source and applies every pending migration in one transaction.
 
-If the project moves to versioned TypeORM migrations, update this document, `docs/development.md`, `docs/deployment.md`, and ADR 0012 together.
+`InitialSchema1784764800000` is an idempotent baseline of the schema that preceded migration history. On an existing Thoughty database, it verifies and fills any missing baseline objects before TypeORM records it in the `migrations` table. On a fresh database, it creates the complete baseline. Subsequent schema changes must be added as new timestamped migrations and must not edit a migration that has already shipped.
+
+Generate a candidate migration with `npm run migration:generate -- src/database/migrations/<name>`, review both directions carefully, then test it against fresh and representative upgraded databases before deployment.
 
 ## Read Replicas
 

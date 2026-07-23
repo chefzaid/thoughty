@@ -60,7 +60,7 @@ That single command is more than a process launcher.
 flowchart TD
     A[mask run] --> B[Start Postgres and MinIO via docker-compose]
     B --> C[Wait until Postgres accepts connections]
-    C --> D[Run idempotent database migrations]
+    C --> D[Apply pending versioned migrations]
     D --> E{users table empty?}
     E -->|Yes| F[Seed test data]
     E -->|No| G[Skip seed]
@@ -218,8 +218,16 @@ The frontend primarily talks to the backend through relative `/api` paths and th
 | Backend  | `cd thoughty-server && npm run dev`               | Start the NestJS API in watch mode          |
 | Backend  | `cd thoughty-server && npm run db:validate-seed`  | Check seed data quality without writing     |
 | Backend  | `cd thoughty-server && npm run cloud-sync-worker` | Run the worker directly in TS for debugging |
+| Backend  | `cd thoughty-server && npm run migration:generate -- src/database/migrations/<name>` | Generate a schema migration for review      |
+| Backend  | `cd thoughty-server && npm run migration:revert`  | Revert the latest migration in development  |
 | Frontend | `cd thoughty-web && npm run dev`                  | Start the Vite dev server                   |
 | Frontend | `cd thoughty-web && npm run typecheck`            | Run TS type checking without a build        |
+
+### Database migration workflow
+
+Entity changes that alter PostgreSQL schema require a new timestamped file in `thoughty-server/src/database/migrations`. Generate the candidate against an up-to-date local database, inspect the SQL in both `up` and `down`, and run `npm run db:migrate` to verify it. Never amend a migration that may already have run in another environment.
+
+The initial migration is also the compatibility baseline for databases created by the former idempotent script. Reverting that initial migration drops the application schema, so `migration:revert` is only a development tool and requires a backup whenever data matters.
 
 ## OpenAPI and Frontend Type Sync
 

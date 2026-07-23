@@ -89,7 +89,8 @@ If migrations fail:
 
 - check PostgreSQL pod readiness and logs
 - verify Vault-injected database secrets exist in the API pod
-- verify the server image includes the compiled migration script
+- verify the server image includes the compiled migration runner and timestamped migration files
+- inspect the PostgreSQL `migrations` table to identify the last completed version
 - do not start or restart the worker until the schema is compatible with the deployed code
 - preserve the failing logs before retrying
 

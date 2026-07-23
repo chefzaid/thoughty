@@ -21,6 +21,7 @@ Treat delivery and operational verification as repository-owned concerns with a 
 - Keep the Jenkins pipeline as the primary automated delivery workflow.
 - Require lint and test stages before image publication.
 - Require a server-image smoke test that runs database migrations against a disposable PostgreSQL container before deployment.
+- Manage schema evolution with immutable, timestamped TypeORM migrations and a database-owned migration history.
 - Roll out the API before migrations, run migrations against the target environment, then start the worker and web deployments.
 - Keep `/api/health` as the canonical public health endpoint for probes.
 - Use application logging and worker/job status fields for basic runtime troubleshooting instead of claiming a richer observability stack than currently exists.
@@ -28,6 +29,7 @@ Treat delivery and operational verification as repository-owned concerns with a 
 ## Rationale
 
 - The pipeline already encodes important operational safety rules, especially around migration ordering and worker startup timing.
+- Ordered migration history makes applied schema state explicit and prevents previously completed changes from running again.
 - Explicit health checks and rollout waits are more valuable at the current scale than a more abstract platform story.
 - Smoke-testing migrations before deployment reduces one of the most expensive failure classes for this system.
 - The current operational posture favors explicit rollout safety and low operational indirection over a larger platform surface area.
@@ -35,6 +37,7 @@ Treat delivery and operational verification as repository-owned concerns with a 
 ## Consequences
 
 - Delivery behavior is part of the architecture and should be updated when deployment ordering or runtime surfaces change.
+- Shipped migration files are immutable; corrections are represented by later migrations and production rollback favors forward fixes.
 - `/api/health` is a stable operational contract, not an incidental endpoint.
 - The system currently has basic operational visibility, not full observability. That is acceptable as long as it is stated honestly.
 - Future investment in metrics, tracing, alerting, or centralized log aggregation can extend this model, but should not rewrite its current assumptions accidentally.
