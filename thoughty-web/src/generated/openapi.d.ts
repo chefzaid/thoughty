@@ -2142,6 +2142,33 @@ export interface components {
         };
         /**
          * @example {
+         *       "subjectBreakdown": {
+         *         "work": 12,
+         *         "relationships": 8,
+         *         "health": 5
+         *       },
+         *       "analyzedEntries": 27,
+         *       "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
+         *     }
+         */
+        SubjectAnalysisDto: {
+            /**
+             * @example {
+             *       "work": 12,
+             *       "relationships": 8,
+             *       "health": 5
+             *     }
+             */
+            subjectBreakdown: {
+                [key: string]: number;
+            };
+            /** @example 27 */
+            analyzedEntries: number;
+            /** @example Recent entries focus mostly on work, relationships, and personal wellbeing. */
+            summary: string;
+        };
+        /**
+         * @example {
          *       "totalThoughts": 120,
          *       "averageWordsPerEntry": 184,
          *       "averageReadingTimeMinutes": 1,
@@ -2189,6 +2216,15 @@ export interface components {
          *         },
          *         "analyzedEntries": 27,
          *         "summary": "Recent thoughts are mostly reflective and calm, with a candid and personal writing tone."
+         *       },
+         *       "subjectAnalysis": {
+         *         "subjectBreakdown": {
+         *           "work": 12,
+         *           "relationships": 8,
+         *           "health": 5
+         *         },
+         *         "analyzedEntries": 27,
+         *         "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
          *       }
          *     }
          */
@@ -2264,6 +2300,7 @@ export interface components {
                 };
             };
             toneMoodAnalysis?: components["schemas"]["ToneMoodAnalysisDto"] | null;
+            subjectAnalysis?: components["schemas"]["SubjectAnalysisDto"] | null;
         };
         /**
          * @example {
@@ -4600,6 +4637,15 @@ export interface operations {
                      *         },
                      *         "analyzedEntries": 27,
                      *         "summary": "Recent thoughts are mostly reflective and calm, with a candid and personal writing tone."
+                     *       },
+                     *       "subjectAnalysis": {
+                     *         "subjectBreakdown": {
+                     *           "work": 12,
+                     *           "relationships": 8,
+                     *           "health": 5
+                     *         },
+                     *         "analyzedEntries": 27,
+                     *         "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
                      *       }
                      *     }
                      */

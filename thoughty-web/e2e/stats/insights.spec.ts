@@ -35,8 +35,16 @@ test.describe('Stats insight surfaces', () => {
     await expect(page.locator('.stat-card', { hasText: 'Total Entries' }).getByText('2')).toBeVisible();
     await expect(page.locator('.stat-card', { hasText: 'Unique Tags' }).getByText('3')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Journal Activity' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Subjects Discussed' })).toBeVisible();
+    await expect(page.getByText('Recent entries focus on reflection, focus, and work.')).toBeVisible();
+    await expect(page.getByText('Reflection', { exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Top Tags', exact: true })).toBeVisible();
     await expect(page.getByRole('cell', { name: '2024' })).toBeVisible();
     await expect(page.getByText('focus (2)')).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(
+      () => document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+    )).toBe(true);
   });
 });

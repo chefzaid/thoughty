@@ -167,6 +167,9 @@ export type TranslationKey =
   | 'moodMix'
   | 'toneMix'
   | 'toneMoodUnavailable'
+  | 'subjectsDiscussed'
+  | 'subjectsDiscussedDescription'
+  | 'subjectsDiscussedUnavailable'
   | 'lessActivity'
   | 'moreActivity'
   | 'noJournalActivity'
@@ -887,6 +890,9 @@ export const translations: Translations = {
     moodMix: 'Mood Mix',
     toneMix: 'Tone Mix',
     toneMoodUnavailable: 'AI analysis is unavailable right now. Configure AI settings and try again later.',
+    subjectsDiscussed: 'Subjects Discussed',
+    subjectsDiscussedDescription: 'AI grouping of the recurring subjects in your recent entries.',
+    subjectsDiscussedUnavailable: 'Subject analysis is unavailable right now. Configure AI settings and try again later.',
     lessActivity: 'Less',
     moreActivity: 'More',
     noJournalActivity: 'No journaling activity yet.',
@@ -1673,6 +1679,9 @@ export const translations: Translations = {
     moodMix: 'Répartition des humeurs',
     toneMix: 'Répartition des tons',
     toneMoodUnavailable: 'L\'analyse IA est indisponible pour le moment. Configurez l\'IA puis réessayez plus tard.',
+    subjectsDiscussed: 'Sujets abordés',
+    subjectsDiscussedDescription: 'Regroupement par IA des sujets récurrents dans vos entrées récentes.',
+    subjectsDiscussedUnavailable: 'L\'analyse des sujets est indisponible pour le moment. Configurez l\'IA puis réessayez plus tard.',
     lessActivity: 'Moins',
     moreActivity: 'Plus',
     noJournalActivity: 'Aucune activité de journal pour le moment.',

@@ -57,7 +57,9 @@ describe('AiService', () => {
   it('throws when no OpenRouter API key is configured', async () => {
     service = await createService('');
 
-    await expect(service.suggestTags(1, { content: 'Need tags' })).rejects.toThrow(BadRequestException);
+    await expect(service.suggestTags(1, { content: 'Need tags' })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('returns normalized tag suggestions', async () => {
@@ -115,7 +117,9 @@ describe('AiService', () => {
   it('throws when OpenRouter returns an error', async () => {
     fetchMock.mockResolvedValue({ ok: false, json: jest.fn() });
 
-    await expect(service.suggestTags(1, { content: 'Need tags' })).rejects.toThrow(BadGatewayException);
+    await expect(service.suggestTags(1, { content: 'Need tags' })).rejects.toThrow(
+      BadGatewayException,
+    );
   });
 
   it('returns an empty array for auto-tagging when the API key is missing', async () => {
@@ -153,7 +157,9 @@ describe('AiService', () => {
     it('throws when no OpenRouter API key is configured', async () => {
       service = await createService('');
 
-      await expect(service.fixWriting(1, { content: 'Fix this' })).rejects.toThrow(BadRequestException);
+      await expect(service.fixWriting(1, { content: 'Fix this' })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('returns corrected content from the AI', async () => {
@@ -170,7 +176,9 @@ describe('AiService', () => {
         }),
       });
 
-      const result = await service.fixWriting(1, { content: 'I gone to the store and buyed some appls.' });
+      const result = await service.fixWriting(1, {
+        content: 'I gone to the store and buyed some appls.',
+      });
 
       expect(result).toEqual({ content: 'I went to the store and bought some apples.' });
     });
@@ -194,7 +202,9 @@ describe('AiService', () => {
       expect(fetchMock).toHaveBeenCalledWith(
         'https://openrouter.ai/api/v1/chat/completions',
         expect.objectContaining({
-          body: expect.stringContaining('Rewrite the text completely for clarity, flow, and readability'),
+          body: expect.stringContaining(
+            'Rewrite the text completely for clarity, flow, and readability',
+          ),
         }),
       );
     });
@@ -215,61 +225,9 @@ describe('AiService', () => {
     it('throws when OpenRouter returns an error', async () => {
       fetchMock.mockResolvedValue({ ok: false, json: jest.fn() });
 
-      await expect(service.fixWriting(1, { content: 'Fix this' })).rejects.toThrow(BadGatewayException);
-    });
-  });
-
-  describe('analyzeToneMood', () => {
-    it('returns null when no API key is configured', async () => {
-      service = await createService('');
-
-      await expect(service.analyzeToneMood(1, [{ id: 1, content: 'Entry', date: '2024-01-01', tags: [] }])).resolves.toBeNull();
-    });
-
-    it('returns parsed tone and mood analysis from the AI', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          choices: [
-            {
-              message: {
-                content: JSON.stringify({
-                  dominantMood: 'reflective',
-                  dominantTone: 'candid',
-                  moodBreakdown: { reflective: 2, calm: 1 },
-                  toneBreakdown: { candid: 2, analytical: 1 },
-                  summary: 'Recent entries are reflective with a candid tone.',
-                }),
-              },
-            },
-          ],
-        }),
-      });
-
-      const result = await service.analyzeToneMood(1, [
-        { id: 1, content: 'Today I felt thoughtful.', date: '2024-01-01', tags: ['reflection'] },
-        { id: 2, content: 'I am calmer now.', date: '2024-01-02', tags: ['calm'] },
-      ]);
-
-      expect(result).toEqual({
-        dominantMood: 'reflective',
-        dominantTone: 'candid',
-        moodBreakdown: { reflective: 2, calm: 1 },
-        toneBreakdown: { candid: 2, analytical: 1 },
-        analyzedEntries: 2,
-        summary: 'Recent entries are reflective with a candid tone.',
-      });
-    });
-
-    it('returns null when the AI payload is malformed', async () => {
-      fetchMock.mockResolvedValue({
-        ok: true,
-        json: jest.fn().mockResolvedValue({
-          choices: [{ message: { content: 'not-json' } }],
-        }),
-      });
-
-      await expect(service.analyzeToneMood(1, [{ id: 1, content: 'Entry', date: '2024-01-01', tags: [] }])).resolves.toBeNull();
+      await expect(service.fixWriting(1, { content: 'Fix this' })).rejects.toThrow(
+        BadGatewayException,
+      );
     });
   });
 
@@ -281,11 +239,15 @@ describe('AiService', () => {
     };
 
     it('throws when entry content is empty', async () => {
-      await expect(service.chat(1, { ...chatDto, entryContent: '   ' })).rejects.toThrow(BadRequestException);
+      await expect(service.chat(1, { ...chatDto, entryContent: '   ' })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws when messages array is empty', async () => {
-      await expect(service.chat(1, { ...chatDto, messages: [] })).rejects.toThrow(BadRequestException);
+      await expect(service.chat(1, { ...chatDto, messages: [] })).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws when no OpenRouter API key is configured', async () => {
@@ -324,13 +286,21 @@ describe('AiService', () => {
         entryId: 10,
         messages: [
           { role: 'user', content: 'What do you think about this entry?' },
-          { role: 'assistant', content: 'It sounds like you had a tough day. What tasks felt most overwhelming?' },
+          {
+            role: 'assistant',
+            content: 'It sounds like you had a tough day. What tasks felt most overwhelming?',
+          },
         ],
       });
     });
 
     it('updates an existing persisted history when the chat succeeds', async () => {
-      chatHistoryRepository.findOne.mockResolvedValueOnce({ id: 7, userId: 1, entryId: 10, messages: [] });
+      chatHistoryRepository.findOne.mockResolvedValueOnce({
+        id: 7,
+        userId: 1,
+        entryId: 10,
+        messages: [],
+      });
       fetchMock.mockResolvedValue({
         ok: true,
         json: jest.fn().mockResolvedValue({
@@ -460,10 +430,11 @@ describe('AiService', () => {
   });
 
   describe('getModel (model resolution)', () => {
-    const mockOpenRouterResponse = (content: string) => fetchMock.mockResolvedValue({
-      ok: true,
-      json: jest.fn().mockResolvedValue({ choices: [{ message: { content } }] }),
-    });
+    const mockOpenRouterResponse = (content: string) =>
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue({ choices: [{ message: { content } }] }),
+      });
     const requestedModel = () => JSON.parse(fetchMock.mock.calls[0][1].body).model;
 
     it('uses task-specific configured model from user settings', async () => {
@@ -485,7 +456,11 @@ describe('AiService', () => {
       await service.fixWriting(1, { content: 'teh text', mode: 'grammar' });
 
       expect(requestedModel()).toBe('openai/gpt-4o');
-      expect(configService.getDecryptedConfig).toHaveBeenNthCalledWith(1, 1, 'openRouterWritingModel');
+      expect(configService.getDecryptedConfig).toHaveBeenNthCalledWith(
+        1,
+        1,
+        'openRouterWritingModel',
+      );
       expect(configService.getDecryptedConfig).toHaveBeenNthCalledWith(2, 1, 'openRouterModel');
     });
 

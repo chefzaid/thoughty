@@ -25,7 +25,25 @@ export class ToneMoodAnalysisDto {
   analyzedEntries!: number;
 
   @ApiProperty({
-    example: 'Recent thoughts are mostly reflective and calm, with a candid and personal writing tone.',
+    example:
+      'Recent thoughts are mostly reflective and calm, with a candid and personal writing tone.',
+  })
+  summary!: string;
+}
+
+export class SubjectAnalysisDto {
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'number' },
+    example: { work: 12, relationships: 8, health: 5 },
+  })
+  subjectBreakdown!: Record<string, number>;
+
+  @ApiProperty({ example: 27 })
+  analyzedEntries!: number;
+
+  @ApiProperty({
+    example: 'Recent entries focus mostly on work, relationships, and personal wellbeing.',
   })
   summary!: string;
 }
@@ -97,4 +115,11 @@ export class StatsResponseDto {
     required: false,
   })
   toneMoodAnalysis!: ToneMoodAnalysisDto | null;
+
+  @ApiProperty({
+    type: SubjectAnalysisDto,
+    nullable: true,
+    required: false,
+  })
+  subjectAnalysis!: SubjectAnalysisDto | null;
 }

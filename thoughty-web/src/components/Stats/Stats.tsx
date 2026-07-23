@@ -15,6 +15,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import type { components } from '../../generated/openapi';
 import TagBadge from '../TagBadge/TagBadge';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
+import StatsActivityHeatmap from './StatsActivityHeatmap';
+import StatsInsights from './StatsInsights';
 
 // Register Chart.js components
 ChartJS.register(
@@ -42,36 +44,10 @@ interface YearTagData {
     topTags: [string, number][];
 }
 
-interface HeatmapCell {
-    date: Date;
-    dateKey: string;
-    count: number;
-    level: number;
-    inRange: boolean;
-}
-
-type ToneMoodAnalysis = NonNullable<StatsData['toneMoodAnalysis']>;
-
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const TAGS_YEARS_PER_PAGE = 5;
 const YEARS_PER_PAGE = 8;
 const MONTHS_PER_PAGE = 12;
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const MONTH_FORMATTER = new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' });
-const WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
-const FULL_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-});
-const WEEKDAY_LABELS = Array.from({ length: 7 }, (_, index) => {
-    if (![1, 3, 5].includes(index)) {
-        return '';
-    }
-
-    return WEEKDAY_FORMATTER.format(addUtcDays(new Date(Date.UTC(2024, 0, 7)), index));
-});
 const EMPTY_STATS: StatsData = {
     totalThoughts: 0,
     averageWordsPerEntry: 0,
@@ -84,97 +60,8 @@ const EMPTY_STATS: StatsData = {
     tagsPerYear: {},
     tagsPerMonth: {},
     toneMoodAnalysis: null,
+    subjectAnalysis: null,
 };
-
-function addUtcDays(date: Date, days: number): Date {
-    return new Date(date.getTime() + days * DAY_IN_MS);
-}
-
-function toUtcDateOnly(date: Date): Date {
-    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-}
-
-function parseDayKey(dayKey: string): Date {
-    return new Date(`${dayKey}T00:00:00.000Z`);
-}
-
-function toDayKey(date: Date): string {
-    return date.toISOString().slice(0, 10);
-}
-
-function startOfUtcWeek(date: Date): Date {
-    return addUtcDays(date, -date.getUTCDay());
-}
-
-function endOfUtcWeek(date: Date): Date {
-    return addUtcDays(startOfUtcWeek(date), 6);
-}
-
-function getActivityLevel(count: number, maxCount: number): number {
-    if (count <= 0 || maxCount <= 0) {
-        return 0;
-    }
-
-    const ratio = count / maxCount;
-    if (ratio >= 0.75) {
-        return 4;
-    }
-
-    if (ratio >= 0.5) {
-        return 3;
-    }
-
-    if (ratio >= 0.25) {
-        return 2;
-    }
-
-    return 1;
-}
-
-function buildHeatmapWeeks(thoughtsPerDay: Record<string, number>): HeatmapCell[][] {
-    const allDays = Object.keys(thoughtsPerDay).sort((a, b) => a.localeCompare(b));
-    const latestActivityDate = allDays.length > 0 ? parseDayKey(allDays.at(-1) ?? '') : new Date();
-    const rangeEndDate = toUtcDateOnly(latestActivityDate);
-    const rangeStartDate = startOfUtcWeek(addUtcDays(rangeEndDate, -364));
-    const displayEndDate = endOfUtcWeek(rangeEndDate);
-    const maxCount = Math.max(0, ...Object.values(thoughtsPerDay));
-    const weeks: HeatmapCell[][] = [];
-
-    for (let cursor = rangeStartDate; cursor.getTime() <= displayEndDate.getTime(); cursor = addUtcDays(cursor, 7)) {
-        const week: HeatmapCell[] = [];
-
-        for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
-            const day = addUtcDays(cursor, dayIndex);
-            const dateKey = toDayKey(day);
-            const count = thoughtsPerDay[dateKey] ?? 0;
-            const inRange = day.getTime() <= rangeEndDate.getTime();
-
-            week.push({
-                date: day,
-                dateKey,
-                count,
-                level: inRange ? getActivityLevel(count, maxCount) : 0,
-                inRange,
-            });
-        }
-
-        weeks.push(week);
-    }
-
-    return weeks;
-}
-
-function formatInsightLabel(label: string): string {
-    return label
-        .split(' ')
-        .filter(Boolean)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-}
-
-function getSortedInsightEntries(breakdown: ToneMoodAnalysis['moodBreakdown'] | ToneMoodAnalysis['toneBreakdown']) {
-    return Object.entries(breakdown).sort(([, left], [, right]) => right - left);
-}
 
 function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps) {
     const { authFetch } = useAuth();
@@ -333,35 +220,6 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
         () => effectiveStats.thoughtsPerDay ?? {},
         [effectiveStats.thoughtsPerDay],
     );
-    const heatmapWeeks = useMemo(() => buildHeatmapWeeks(thoughtsPerDay), [thoughtsPerDay]);
-    const heatmapMonthLabels = useMemo(() => heatmapWeeks.map((week, index) => {
-        const labelDate = week.find((cell) => cell.inRange)?.date ?? week[0]?.date;
-        const previousDate = index > 0
-            ? heatmapWeeks[index - 1]?.find((cell) => cell.inRange)?.date ?? heatmapWeeks[index - 1]?.[0]?.date
-            : undefined;
-
-        if (!labelDate) {
-            return '';
-        }
-
-        if (
-            previousDate?.getUTCMonth() === labelDate.getUTCMonth()
-            && previousDate?.getUTCFullYear() === labelDate.getUTCFullYear()
-        ) {
-            return '';
-        }
-
-        return MONTH_FORMATTER.format(labelDate);
-    }), [heatmapWeeks]);
-    const toneMoodAnalysis = effectiveStats.toneMoodAnalysis;
-    const moodBreakdownEntries = useMemo(
-        () => toneMoodAnalysis ? getSortedInsightEntries(toneMoodAnalysis.moodBreakdown) : [],
-        [toneMoodAnalysis],
-    );
-    const toneBreakdownEntries = useMemo(
-        () => toneMoodAnalysis ? getSortedInsightEntries(toneMoodAnalysis.toneBreakdown) : [],
-        [toneMoodAnalysis],
-    );
 
     if (loading) {
         return (
@@ -431,160 +289,20 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
             {/* Charts Grid */}
             <div className="charts-grid">
                 {stats.totalThoughts > 0 && (
-                    <div className={`chart-card tone-mood-card ${themeClass}`}>
-                        <div className="chart-header tone-mood-header">
-                            <div>
-                                <h3>{t('toneMoodInsights')}</h3>
-                                <p className="tone-mood-description">{t('toneMoodInsightsDescription')}</p>
-                            </div>
-                            {toneMoodAnalysis && (
-                                <div className={`tone-mood-sample ${themeClass}`}>
-                                    <span>{t('analyzedEntries')}</span>
-                                    <strong>{toneMoodAnalysis.analyzedEntries}</strong>
-                                </div>
-                            )}
-                        </div>
-
-                        {toneMoodAnalysis ? (
-                            <>
-                                <div className="tone-mood-highlights">
-                                    <div className={`tone-mood-highlight ${themeClass}`}>
-                                        <span className="tone-mood-highlight-label">{t('dominantMood')}</span>
-                                        <strong>{formatInsightLabel(toneMoodAnalysis.dominantMood)}</strong>
-                                    </div>
-                                    <div className={`tone-mood-highlight ${themeClass}`}>
-                                        <span className="tone-mood-highlight-label">{t('dominantTone')}</span>
-                                        <strong>{formatInsightLabel(toneMoodAnalysis.dominantTone)}</strong>
-                                    </div>
-                                </div>
-
-                                <p className="tone-mood-summary">{toneMoodAnalysis.summary}</p>
-
-                                <div className="tone-mood-breakdowns">
-                                    <div className="tone-mood-breakdown">
-                                        <h4>{t('moodMix')}</h4>
-                                        <ul className="tone-mood-list">
-                                            {moodBreakdownEntries.map(([label, count]) => {
-                                                const width = Math.max(8, Math.round((count / toneMoodAnalysis.analyzedEntries) * 100));
-
-                                                return (
-                                                    <li key={label} className="tone-mood-list-item">
-                                                        <div className="tone-mood-list-labels">
-                                                            <span>{formatInsightLabel(label)}</span>
-                                                            <span>{count}</span>
-                                                        </div>
-                                                        <div className="tone-mood-bar-track" aria-hidden="true">
-                                                            <span className="tone-mood-bar-fill mood" style={{ width: `${width}%` }} />
-                                                        </div>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-                                    </div>
-
-                                    <div className="tone-mood-breakdown">
-                                        <h4>{t('toneMix')}</h4>
-                                        <ul className="tone-mood-list">
-                                            {toneBreakdownEntries.map(([label, count]) => {
-                                                const width = Math.max(8, Math.round((count / toneMoodAnalysis.analyzedEntries) * 100));
-
-                                                return (
-                                                    <li key={label} className="tone-mood-list-item">
-                                                        <div className="tone-mood-list-labels">
-                                                            <span>{formatInsightLabel(label)}</span>
-                                                            <span>{count}</span>
-                                                        </div>
-                                                        <div className="tone-mood-bar-track" aria-hidden="true">
-                                                            <span className="tone-mood-bar-fill tone" style={{ width: `${width}%` }} />
-                                                        </div>
-                                                    </li>
-                                                );
-                                            })}
-                                        </ul>
-                                    </div>
-                                </div>
-                            </>
-                        ) : (
-                            <p className="tone-mood-unavailable">{t('toneMoodUnavailable')}</p>
-                        )}
-                    </div>
+                    <StatsInsights
+                        themeClass={themeClass}
+                        toneMoodAnalysis={stats.toneMoodAnalysis}
+                        subjectAnalysis={stats.subjectAnalysis}
+                        t={t}
+                    />
                 )}
 
-                <div className={`chart-card heatmap-card ${themeClass}`}>
-                    <div className="chart-header heatmap-header">
-                        <h3>{t('journalActivityByDay')}</h3>
-                        <div className="heatmap-legend" aria-label={`${t('lessActivity')} ${t('moreActivity')}`}>
-                            <span>{t('lessActivity')}</span>
-                            <div className="heatmap-legend-scale" aria-hidden="true">
-                                {[0, 1, 2, 3, 4].map((level) => (
-                                    <span
-                                        key={level}
-                                        className={`heatmap-cell ${themeClass} level-${level}`}
-                                    />
-                                ))}
-                            </div>
-                            <span>{t('moreActivity')}</span>
-                        </div>
-                    </div>
-
-                    {Object.keys(thoughtsPerDay).length === 0 ? (
-                        <p className="heatmap-empty">{t('noJournalActivity')}</p>
-                    ) : (
-                        <div className="heatmap-shell">
-                            <div className="heatmap-grid" role="img" aria-label={t('journalActivityByDay')}>
-                                <div className="heatmap-corner" aria-hidden="true" />
-                                <div className="heatmap-month-row" aria-hidden="true">
-                                    {heatmapMonthLabels.map((label, index) => (
-                                        <span key={`${label || 'blank'}-${index}`} className="heatmap-month-label">
-                                            {label}
-                                        </span>
-                                    ))}
-                                </div>
-                                <div className="heatmap-weekday-column" aria-hidden="true">
-                                    {WEEKDAY_LABELS.map((label, index) => (
-                                        <span key={`${label || 'weekday'}-${index}`} className="heatmap-weekday-label">
-                                            {label}
-                                        </span>
-                                    ))}
-                                </div>
-                                <div className="heatmap-weeks">
-                                    {heatmapWeeks.map((week) => (
-                                        <div key={week[0]?.dateKey ?? 'week'} className="heatmap-week">
-                                            {week.map((cell) => {
-                                                if (!cell.inRange) {
-                                                    return (
-                                                        <span
-                                                            key={cell.dateKey}
-                                                            className="heatmap-cell outside-range"
-                                                            aria-hidden="true"
-                                                        />
-                                                    );
-                                                }
-
-                                                const entryCountLabel = cell.count === 1 ? '1 entry' : `${cell.count} entries`;
-                                                const fullDateLabel = FULL_DATE_FORMATTER.format(cell.date);
-
-                                                return (
-                                                    <button
-                                                        type="button"
-                                                        key={cell.dateKey}
-                                                        onClick={() => {
-                                                            void onOpenJournalDay?.(cell.dateKey);
-                                                        }}
-                                                        className={`heatmap-cell ${themeClass} level-${cell.level}`}
-                                                        aria-label={`${entryCountLabel} on ${fullDateLabel}`}
-                                                        title={`${entryCountLabel} on ${fullDateLabel}`}
-                                                        disabled={!onOpenJournalDay}
-                                                    />
-                                                );
-                                            })}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                <StatsActivityHeatmap
+                    thoughtsPerDay={thoughtsPerDay}
+                    themeClass={themeClass}
+                    t={t}
+                    onOpenJournalDay={onOpenJournalDay}
+                />
 
                 <div className="charts-row">
                     {/* Thoughts per Year */}

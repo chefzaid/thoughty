@@ -58,6 +58,9 @@ describe('Stats Component', () => {
                 moodMix: 'Mood Mix',
                 toneMix: 'Tone Mix',
                 toneMoodUnavailable: 'AI analysis is unavailable right now. Configure AI settings and try again later.',
+                subjectsDiscussed: 'Subjects Discussed',
+                subjectsDiscussedDescription: 'AI grouping of recurring subjects.',
+                subjectsDiscussedUnavailable: 'Subject analysis is unavailable right now.',
                 lessActivity: 'Less',
                 moreActivity: 'More',
                 noJournalActivity: 'No activity yet',
@@ -88,6 +91,11 @@ describe('Stats Component', () => {
             toneBreakdown: { candid: 4, analytical: 1 },
             analyzedEntries: 5,
             summary: 'Recent entries are reflective and calm, with a candid tone.'
+        },
+        subjectAnalysis: {
+            subjectBreakdown: { work: 4, relationships: 2, wellbeing: 1 },
+            analyzedEntries: 5,
+            summary: 'Recent entries focus on work, relationships, and wellbeing.'
         }
     };
 
@@ -186,9 +194,28 @@ describe('Stats Component', () => {
         expect(dominantToneCard).not.toBeNull();
         expect(within(dominantMoodCard as HTMLElement).getByText('Reflective')).toBeInTheDocument();
         expect(within(dominantToneCard as HTMLElement).getByText('Candid')).toBeInTheDocument();
-        expect(screen.getByText('Recent entries are reflective and calm, with a candid tone.')).toBeInTheDocument();
-        expect(screen.getByText('Analyzed entries')).toBeInTheDocument();
-        expect(screen.getByText('5')).toBeInTheDocument();
+        const toneCard = screen.getByRole('heading', { name: 'Tone and Mood' }).closest('section');
+        expect(toneCard).not.toBeNull();
+        expect(within(toneCard as HTMLElement).getByText('Recent entries are reflective and calm, with a candid tone.')).toBeInTheDocument();
+        expect(within(toneCard as HTMLElement).getByText('Analyzed entries')).toBeInTheDocument();
+        expect(within(toneCard as HTMLElement).getByText('5')).toBeInTheDocument();
+    });
+
+    it('renders AI subject insights when analysis is available', async () => {
+        (globalThis.fetch as Mock).mockResolvedValue({
+            ok: true,
+            json: async () => mockStatsData
+        });
+
+        render(<Stats {...defaultProps} />);
+
+        await waitFor(() => {
+            expect(screen.getByRole('heading', { name: 'Subjects Discussed' })).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('Recent entries focus on work, relationships, and wellbeing.')).toBeInTheDocument();
+        expect(screen.getByText('Relationships')).toBeInTheDocument();
+        expect(screen.getByText('Wellbeing')).toBeInTheDocument();
     });
 
     it('renders the journaling heatmap when daily activity is available', async () => {
@@ -244,7 +271,8 @@ describe('Stats Component', () => {
             ok: true,
             json: async () => ({
                 ...mockStatsData,
-                toneMoodAnalysis: null
+                toneMoodAnalysis: null,
+                subjectAnalysis: null
             })
         });
 
@@ -253,5 +281,6 @@ describe('Stats Component', () => {
         await waitFor(() => {
             expect(screen.getByText('AI analysis is unavailable right now. Configure AI settings and try again later.')).toBeInTheDocument();
         });
+        expect(screen.getByText('Subject analysis is unavailable right now.')).toBeInTheDocument();
     });
 });

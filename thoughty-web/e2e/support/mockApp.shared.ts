@@ -280,12 +280,25 @@ export function buildStats(entries: MockEntry[]) {
 
   return {
     totalThoughts: entries.length,
+    averageWordsPerEntry: entries.length > 0
+      ? Math.round(entries.reduce((total, entry) => total + entry.content.split(/\s+/).length, 0) / entries.length)
+      : 0,
+    averageReadingTimeMinutes: entries.length > 0 ? 1 : 0,
     uniqueTagsCount: Object.keys(thoughtsPerTag).length,
     thoughtsPerYear,
     thoughtsPerMonth,
     thoughtsPerDay,
     thoughtsPerTag,
     tagsPerYear,
+    tagsPerMonth: {},
+    toneMoodAnalysis: null,
+    subjectAnalysis: entries.length > 0
+      ? {
+          subjectBreakdown: thoughtsPerTag,
+          analyzedEntries: entries.length,
+          summary: 'Recent entries focus on reflection, focus, and work.',
+        }
+      : null,
   };
 }
 

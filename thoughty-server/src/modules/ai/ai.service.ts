@@ -15,10 +15,10 @@ import { SummarizeEntryDto } from './dto/summarize-entry.dto';
 import { GenerateWritingPromptsDto } from './dto/writing-prompts.dto';
 import { requestEntrySummary } from './entry-summary';
 import { requestTagSuggestions } from './tag-suggestions';
-import { parseToneMoodAnalysis, type ToneMoodAnalysis } from './tone-mood-analysis';
+import { parseJournalAnalysis, type JournalAnalysis } from './journal-analysis';
 import { requestWritingPrompts } from './writing-prompts';
 
-export type { ToneMoodAnalysis } from './tone-mood-analysis';
+export type { JournalAnalysis, SubjectAnalysis, ToneMoodAnalysis } from './journal-analysis';
 
 type OpenRouterResponse = {
   choices?: Array<{
@@ -355,10 +355,10 @@ export class AiService {
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
-  async analyzeToneMood(
+  async analyzeJournal(
     userId: number,
     entries: Array<Pick<Entry, 'id' | 'content' | 'date' | 'tags'>>,
-  ): Promise<ToneMoodAnalysis | null> {
+  ): Promise<JournalAnalysis | null> {
     const preparedEntries = entries
       .filter((entry) => typeof entry.content === 'string' && entry.content.trim().length > 0)
       .slice(0, 40);
@@ -383,11 +383,12 @@ export class AiService {
             {
               role: 'system',
               content: [
-                'You analyze a batch of journal entries and summarize their mood and writing tone.',
-                'Return only JSON with the keys dominantMood, dominantTone, moodBreakdown, toneBreakdown, and summary.',
-                'moodBreakdown and toneBreakdown must be JSON objects whose values are integer counts.',
-                'Use concise lowercase labels for moods and tones.',
-                'The counts should reflect the entries provided, and summary should be one short sentence with no markdown.',
+                'You analyze a batch of journal entries and summarize their mood, writing tone, and discussed subjects.',
+                'Return only JSON with the keys dominantMood, dominantTone, moodBreakdown, toneBreakdown, summary, subjectBreakdown, and subjectSummary.',
+                'All breakdowns must be JSON objects whose values are integer counts of entries.',
+                'Use concise lowercase labels and merge closely related subjects instead of repeating synonyms.',
+                'Use the predominant language of the entries for labels and summaries.',
+                'Each summary must be one short sentence with no markdown.',
               ].join(' '),
             },
             {
@@ -418,7 +419,7 @@ export class AiService {
         return null;
       }
 
-      return parseToneMoodAnalysis(rawContent, preparedEntries.length);
+      return parseJournalAnalysis(rawContent, preparedEntries.length);
     } catch {
       return null;
     }

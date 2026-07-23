@@ -2519,6 +2519,15 @@
                     },
                     "analyzedEntries": 27,
                     "summary": "Recent thoughts are mostly reflective and calm, with a candid and personal writing tone."
+                  },
+                  "subjectAnalysis": {
+                    "subjectBreakdown": {
+                      "work": 12,
+                      "relationships": 8,
+                      "health": 5
+                    },
+                    "analyzedEntries": 27,
+                    "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
                   }
                 }
               }
@@ -5883,6 +5892,44 @@
           "summary": "Recent thoughts are mostly reflective and calm, with a candid and personal writing tone."
         }
       },
+      "SubjectAnalysisDto": {
+        "type": "object",
+        "properties": {
+          "subjectBreakdown": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number"
+            },
+            "example": {
+              "work": 12,
+              "relationships": 8,
+              "health": 5
+            }
+          },
+          "analyzedEntries": {
+            "type": "number",
+            "example": 27
+          },
+          "summary": {
+            "type": "string",
+            "example": "Recent entries focus mostly on work, relationships, and personal wellbeing."
+          }
+        },
+        "required": [
+          "subjectBreakdown",
+          "analyzedEntries",
+          "summary"
+        ],
+        "example": {
+          "subjectBreakdown": {
+            "work": 12,
+            "relationships": 8,
+            "health": 5
+          },
+          "analyzedEntries": 27,
+          "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
+        }
+      },
       "StatsResponseDto": {
         "type": "object",
         "properties": {
@@ -5980,6 +6027,15 @@
                 "$ref": "#/components/schemas/ToneMoodAnalysisDto"
               }
             ]
+          },
+          "subjectAnalysis": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SubjectAnalysisDto"
+              }
+            ]
           }
         },
         "required": [
@@ -6042,6 +6098,15 @@
             },
             "analyzedEntries": 27,
             "summary": "Recent thoughts are mostly reflective and calm, with a candid and personal writing tone."
+          },
+          "subjectAnalysis": {
+            "subjectBreakdown": {
+              "work": 12,
+              "relationships": 8,
+              "health": 5
+            },
+            "analyzedEntries": 27,
+            "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
           }
         }
       },

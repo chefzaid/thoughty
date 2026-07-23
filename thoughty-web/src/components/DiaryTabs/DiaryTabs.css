@@ -16,6 +16,8 @@
 
 .diary-tabs-scroll {
     display: flex;
+    width: 100%;
+    min-width: 0;
     gap: 0.5rem;
     overflow-x: auto;
     padding: 0.25rem 0;

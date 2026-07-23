@@ -2,12 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { StatsService } from './stats.service';
 import { Entry } from '@/database/entities';
-import { StatsToneAnalysisService } from './stats-tone-analysis.service';
+import { StatsJournalAnalysisService } from './stats-journal-analysis.service';
 
 describe('StatsService', () => {
   let service: StatsService;
   let entryRepository: any;
-  let statsToneAnalysisService: { analyze: jest.Mock };
+  let statsJournalAnalysisService: { analyze: jest.Mock };
 
   beforeEach(async () => {
     const mockQueryBuilder = {
@@ -30,7 +30,7 @@ describe('StatsService', () => {
       createQueryBuilder: jest.fn(() => mockQueryBuilder),
     };
 
-    statsToneAnalysisService = {
+    statsJournalAnalysisService = {
       analyze: jest.fn().mockResolvedValue(null),
     };
 
@@ -38,7 +38,7 @@ describe('StatsService', () => {
       providers: [
         StatsService,
         { provide: getRepositoryToken(Entry), useValue: entryRepository },
-        { provide: StatsToneAnalysisService, useValue: statsToneAnalysisService },
+        { provide: StatsJournalAnalysisService, useValue: statsJournalAnalysisService },
       ],
     }).compile();
 
@@ -54,10 +54,22 @@ describe('StatsService', () => {
       const mockQb = entryRepository.createQueryBuilder();
       mockQb.getCount.mockResolvedValue(100);
       mockQb.getRawMany
-        .mockResolvedValueOnce([{ year: '2024', count: '50' }, { year: '2023', count: '50' }]) // perYear
-        .mockResolvedValueOnce([{ month: '2024-01', count: '25' }, { month: '2024-02', count: '25' }]) // perMonth
-        .mockResolvedValueOnce([{ day: '2024-02-20', count: '4' }, { day: '2024-02-19', count: '3' }]) // perDay
-        .mockResolvedValueOnce([{ tag: 'happy', count: '30' }, { tag: 'sad', count: '20' }]) // perTag
+        .mockResolvedValueOnce([
+          { year: '2024', count: '50' },
+          { year: '2023', count: '50' },
+        ]) // perYear
+        .mockResolvedValueOnce([
+          { month: '2024-01', count: '25' },
+          { month: '2024-02', count: '25' },
+        ]) // perMonth
+        .mockResolvedValueOnce([
+          { day: '2024-02-20', count: '4' },
+          { day: '2024-02-19', count: '3' },
+        ]) // perDay
+        .mockResolvedValueOnce([
+          { tag: 'happy', count: '30' },
+          { tag: 'sad', count: '20' },
+        ]) // perTag
         .mockResolvedValueOnce([{ year: '2024', tag: 'happy', count: '20' }]) // tagsPerYear
         .mockResolvedValueOnce([{ month: '2024-01', tag: 'happy', count: '10' }]); // tagsPerMonth
       mockQb.getRawOne.mockResolvedValue({ totalWords: '12345' });
@@ -75,6 +87,7 @@ describe('StatsService', () => {
       expect(result).toHaveProperty('tagsPerYear');
       expect(result).toHaveProperty('tagsPerMonth');
       expect(result).toHaveProperty('toneMoodAnalysis');
+      expect(result).toHaveProperty('subjectAnalysis');
     });
 
     it('should calculate totalThoughts correctly', async () => {
@@ -225,22 +238,33 @@ describe('StatsService', () => {
       expect(mockQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 1 });
     });
 
-    it('should include AI tone and mood analysis when available', async () => {
+    it('should include AI tone, mood, and subject analysis when available', async () => {
       const mockQb = entryRepository.createQueryBuilder();
       mockQb.getRawMany.mockResolvedValue([]);
-      mockQb.getMany.mockResolvedValue([{ id: 9, content: 'I feel calm today.', date: '2024-02-20', tags: ['calm'] }]);
-      statsToneAnalysisService.analyze.mockResolvedValue({
-        dominantMood: 'calm',
-        dominantTone: 'candid',
-        moodBreakdown: { calm: 1 },
-        toneBreakdown: { candid: 1 },
-        analyzedEntries: 1,
-        summary: 'The writing feels calm and candid.',
+      mockQb.getMany.mockResolvedValue([
+        { id: 9, content: 'I feel calm today.', date: '2024-02-20', tags: ['calm'] },
+      ]);
+      statsJournalAnalysisService.analyze.mockResolvedValue({
+        toneMoodAnalysis: {
+          dominantMood: 'calm',
+          dominantTone: 'candid',
+          moodBreakdown: { calm: 1 },
+          toneBreakdown: { candid: 1 },
+          analyzedEntries: 1,
+          summary: 'The writing feels calm and candid.',
+        },
+        subjectAnalysis: {
+          subjectBreakdown: { wellbeing: 1 },
+          analyzedEntries: 1,
+          summary: 'The entry focuses on wellbeing.',
+        },
       });
 
       const result = await service.getStats(1);
 
-      expect(statsToneAnalysisService.analyze).toHaveBeenCalledWith(1, [{ id: 9, content: 'I feel calm today.', date: '2024-02-20', tags: ['calm'] }]);
+      expect(statsJournalAnalysisService.analyze).toHaveBeenCalledWith(1, [
+        { id: 9, content: 'I feel calm today.', date: '2024-02-20', tags: ['calm'] },
+      ]);
       expect(result.toneMoodAnalysis).toEqual({
         dominantMood: 'calm',
         dominantTone: 'candid',
@@ -248,6 +272,11 @@ describe('StatsService', () => {
         toneBreakdown: { candid: 1 },
         analyzedEntries: 1,
         summary: 'The writing feels calm and candid.',
+      });
+      expect(result.subjectAnalysis).toEqual({
+        subjectBreakdown: { wellbeing: 1 },
+        analyzedEntries: 1,
+        summary: 'The entry focuses on wellbeing.',
       });
     });
 
@@ -267,6 +296,7 @@ describe('StatsService', () => {
       expect(Object.keys(result.thoughtsPerDay)).toHaveLength(0);
       expect(Object.keys(result.thoughtsPerTag)).toHaveLength(0);
       expect(result.toneMoodAnalysis).toBeNull();
+      expect(result.subjectAnalysis).toBeNull();
     });
   });
 });

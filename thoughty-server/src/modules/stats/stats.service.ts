@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import { StatsResponseDto } from './dto';
-import { StatsToneAnalysisService } from './stats-tone-analysis.service';
+import { StatsJournalAnalysisService } from './stats-journal-analysis.service';
 
 const WORDS_PER_MINUTE = 200;
 
@@ -12,7 +12,7 @@ export class StatsService {
   constructor(
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
-    private readonly statsToneAnalysisService: StatsToneAnalysisService,
+    private readonly statsJournalAnalysisService: StatsJournalAnalysisService,
   ) {}
 
   async getStats(userId: number, diaryId?: number): Promise<StatsResponseDto> {
@@ -132,18 +132,20 @@ export class StatsService {
     const uniqueTagsCount = Object.keys(thoughtsPerTag).length;
     const totalWords = Number.parseInt(String(wordCountResult?.totalWords ?? '0'), 10);
     const averageWordsPerEntry = totalThoughts > 0 ? Math.round(totalWords / totalThoughts) : 0;
-    const averageReadingTimeMinutes = averageWordsPerEntry > 0
-      ? Math.max(1, Math.ceil(averageWordsPerEntry / WORDS_PER_MINUTE))
-      : 0;
-    const recentEntries = totalThoughts > 0
-      ? await createQb()
-        .select(['e.id', 'e.content', 'e.date', 'e.tags'])
-        .orderBy('e.date', 'DESC')
-        .addOrderBy('e.id', 'DESC')
-        .take(40)
-        .getMany()
-      : [];
-    const toneMoodAnalysis = await this.statsToneAnalysisService.analyze(userId, recentEntries);
+    const averageReadingTimeMinutes =
+      averageWordsPerEntry > 0
+        ? Math.max(1, Math.ceil(averageWordsPerEntry / WORDS_PER_MINUTE))
+        : 0;
+    const recentEntries =
+      totalThoughts > 0
+        ? await createQb()
+            .select(['e.id', 'e.content', 'e.date', 'e.tags'])
+            .orderBy('e.date', 'DESC')
+            .addOrderBy('e.id', 'DESC')
+            .take(40)
+            .getMany()
+        : [];
+    const journalAnalysis = await this.statsJournalAnalysisService.analyze(userId, recentEntries);
 
     return {
       totalThoughts,
@@ -156,7 +158,8 @@ export class StatsService {
       thoughtsPerTag,
       tagsPerYear,
       tagsPerMonth,
-      toneMoodAnalysis,
+      toneMoodAnalysis: journalAnalysis?.toneMoodAnalysis ?? null,
+      subjectAnalysis: journalAnalysis?.subjectAnalysis ?? null,
     };
   }
 }

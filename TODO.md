@@ -97,7 +97,7 @@
 - [x] Guess the file format automatically when importing a journal file (solved with heuristic detection in the import preview, no AI needed)
 - [ ] Deduplicate similar entries talking about the same subject with the same conclusion
 - [ ] Search entries by meaning or idea instead of keywords (semantic search)
-- [ ] Subjects discussed stats (analyzed by AI)
+- [x] Subjects discussed stats (analyzed by AI)
 - [ ] Personality analysis through the choice of words and subjects of all entries or a chosen subset of them
 - [ ] AI features should be locked behind a paywall with a free trial (except if own API token is provided)
 - [ ] AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
