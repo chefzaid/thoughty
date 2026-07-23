@@ -67,7 +67,7 @@ interface BuildAuthenticatedRoutesPropsParams {
   downloadUserData: AuthenticatedRoutesProps['profileRouteProps']['onDownloadData'];
   entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterFavorites' | 'filterTags' | 'filterVisibility' | 'groupedEntries' | 'inputPage' | 'loading' | 'page' | 'reorderEntries' | 'search' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterFavorites' | 'setFilterTags' | 'setFilterVisibility' | 'setInputPage' | 'setPage' | 'setSearch' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'totalPages'>;
   entryEditState: Pick<EntryEditState, 'addEditPendingFile' | 'editDate' | 'editExistingAttachments' | 'editFormat' | 'editPendingFiles' | 'editTags' | 'editText' | 'editVisibility' | 'editingEntry' | 'handleCancelEdit' | 'handleEdit' | 'handleSaveEdit' | 'removeEditAttachment' | 'removeEditPendingFile' | 'setEditDate' | 'setEditFormat' | 'setEditTags' | 'setEditText' | 'setEditVisibility'>;
-  entryFormState: Pick<EntryFormState, 'addPendingFile' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'selectedDate' | 'setFormat' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setVisibility' | 'suggestingTags' | 'tags' | 'uploadedAttachments' | 'visibility'>;
+  entryFormState: Pick<EntryFormState, 'addPendingFile' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'selectedDate' | 'setFormat' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setVisibility' | 'suggestingTags' | 'suggestingTagStyle' | 'tags' | 'uploadedAttachments' | 'visibility'>;
   entryNavigationState: Pick<EntryNavigationState, 'handleBackToSource' | 'handleNavigateToEntry' | 'handleShareEntry'>;
   handleDiscuss: (entry: Entry) => void;
   handleRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
@@ -321,6 +321,7 @@ export function buildAuthenticatedRoutesProps({
         tagMetadata,
         formError: entryFormState.formError,
         suggestingTags: entryFormState.suggestingTags,
+        suggestingTagStyle: entryFormState.suggestingTagStyle,
         onSuggestTags: entryFormState.handleSuggestTags,
         fixingWriting: entryFormState.fixingWriting,
         onFixWriting: entryFormState.handleFixWriting,

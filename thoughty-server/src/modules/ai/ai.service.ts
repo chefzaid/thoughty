@@ -14,6 +14,7 @@ import { ChatDto, ChatHistoryResponseDto, ChatMessageDto } from './dto/chat.dto'
 import { SummarizeEntryDto } from './dto/summarize-entry.dto';
 import { GenerateWritingPromptsDto } from './dto/writing-prompts.dto';
 import { requestEntrySummary } from './entry-summary';
+import { requestTagSuggestions } from './tag-suggestions';
 import { parseToneMoodAnalysis, type ToneMoodAnalysis } from './tone-mood-analysis';
 import { requestWritingPrompts } from './writing-prompts';
 
@@ -134,7 +135,14 @@ export class AiService {
     const model = await this.getModel(userId, 'tag');
 
     return {
-      tags: await this.requestTags(dto.content, existingTags, maxTags, model),
+      tags: await requestTagSuggestions({
+        apiKey: this.apiKey,
+        model,
+        content: dto.content,
+        existingTags,
+        maxTags,
+        style: dto.style ?? 'specific',
+      }),
     };
   }
 
@@ -154,65 +162,17 @@ export class AiService {
 
     try {
       const model = await this.getModel(userId, 'tag');
-      return await this.requestTags(
+      return await requestTagSuggestions({
+        apiKey: this.apiKey,
+        model,
         content,
         existingTags,
-        Math.min(Math.max(maxTags, 1), 10),
-        model,
-      );
+        maxTags: Math.min(Math.max(maxTags, 1), 10),
+        style: 'specific',
+      });
     } catch {
       return [];
     }
-  }
-
-  private async requestTags(
-    content: string,
-    existingTags: string[],
-    maxTags: number,
-    model: string,
-  ): Promise<string[]> {
-    const response = await fetch(this.openRouterUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-        'X-Title': 'Thoughty',
-      },
-      body: JSON.stringify({
-        model,
-        temperature: 0.2,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You suggest concise journal tags. Return only a JSON array of lowercase tag strings. Do not include explanations, numbering, or markdown.',
-          },
-          {
-            role: 'user',
-            content: [
-              `Suggest up to ${maxTags} tags for this journal entry.`,
-              existingTags.length > 0
-                ? `Existing tags already chosen: ${existingTags.join(', ')}.`
-                : 'There are no existing tags yet.',
-              'Avoid duplicates, keep tags short, and prefer reusable concepts.',
-              `Entry:\n${content}`,
-            ].join('\n\n'),
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      throw new BadGatewayException('OpenRouter request failed');
-    }
-
-    const data = (await response.json()) as OpenRouterResponse;
-    const rawContent = data.choices?.[0]?.message?.content ?? '[]';
-    const parsed = this.parseTags(rawContent);
-
-    return parsed
-      .filter((tag) => !existingTags.some((existing) => existing.toLowerCase() === tag))
-      .slice(0, maxTags);
   }
 
   async fixWriting(userId: number, dto: FixWritingDto): Promise<{ content: string }> {
@@ -393,30 +353,6 @@ export class AiService {
       )
       .map(({ id, name }) => ({ id, name }))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }
-
-  private parseTags(rawContent: string): string[] {
-    const trimmed = rawContent.trim();
-    const arrayMatch = /\[[\s\S]*\]/.exec(trimmed);
-    const arrayCandidate = trimmed.startsWith('[') ? trimmed : (arrayMatch?.[0] ?? '[]');
-
-    try {
-      const parsed = JSON.parse(arrayCandidate) as unknown;
-      if (!Array.isArray(parsed)) {
-        return [];
-      }
-
-      return [
-        ...new Set(
-          parsed
-            .filter((value): value is string => typeof value === 'string')
-            .map((value) => value.trim().replace(/^#+/, '').toLowerCase().replaceAll(/\s+/g, '-'))
-            .filter(Boolean),
-        ),
-      ];
-    } catch {
-      return [];
-    }
   }
 
   async analyzeToneMood(

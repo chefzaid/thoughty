@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Attachment, Config, Entry } from '../types';
 import type { RephraseMode } from '../services/api/aiService';
+import { formatEntryDate } from '../utils/entryDate';
 import { useApiServices } from './useApiServices';
+import { useEntryTagSuggestions } from './useEntryTagSuggestions';
 
 const getAutoTagLimit = (value: string | number | undefined): number => {
   const parsed = Number.parseInt(String(value ?? '0'), 10);
@@ -9,13 +11,6 @@ const getAutoTagLimit = (value: string | number | undefined): number => {
     return 0;
   }
   return Math.min(parsed, 10);
-};
-
-const formatEntryDate = (date: Date): string => {
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
 };
 
 type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase';
@@ -70,11 +65,11 @@ export const useEntryForm = (
   const [visibility, setVisibility] = useState<'public' | 'private' | null>(null);
   const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
   const [formError, setFormError] = useState<string>('');
-  const [suggestingTags, setSuggestingTags] = useState<boolean>(false);
   const [fixingWriting, setFixingWriting] = useState<boolean>(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedAttachments, setUploadedAttachments] = useState<Attachment[]>([]);
   const autoTagLimit = getAutoTagLimit(config.autoTagMaxTags);
+  const tagSuggestions = useEntryTagSuggestions(aiService, newEntryText, tags, setTags, autoTagLimit, setFormError);
 
   const resetEntryForm = useCallback(() => {
     setNewEntryText('');
@@ -156,30 +151,6 @@ export const useEntryForm = (
     setUploadedAttachments((prev) => prev.filter((attachment) => attachment.id !== attachmentId));
   }, [attachmentsService]);
 
-  const handleSuggestTags = useCallback(async () => {
-    if (!newEntryText.trim()) {
-      setFormError('Write a thought before asking for tag suggestions');
-      return false;
-    }
-
-    setFormError('');
-    setSuggestingTags(true);
-    const suggestedTags = await aiService.suggestTags(newEntryText, tags, autoTagLimit || 5);
-    setSuggestingTags(false);
-
-    if (suggestedTags === null) {
-      setFormError('Unable to suggest tags. Check your OpenRouter API key and try again.');
-      return false;
-    }
-    if (suggestedTags.length === 0) {
-      setFormError('No tag suggestions were returned. Try adding more detail.');
-      return false;
-    }
-
-    setTags((prev) => [...new Set([...prev, ...suggestedTags])]);
-    return true;
-  }, [aiService, autoTagLimit, newEntryText, tags]);
-
   const handleFixWriting = useCallback(async () => {
     if (!newEntryText.trim()) {
       setFormError('Write a thought before asking for writing fixes');
@@ -217,8 +188,7 @@ export const useEntryForm = (
     setFormat,
     formError,
     setFormError,
-    suggestingTags,
-    handleSuggestTags,
+    ...tagSuggestions,
     fixingWriting,
     handleFixWriting,
     handleSubmit,

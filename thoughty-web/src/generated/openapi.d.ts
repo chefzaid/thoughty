@@ -1846,7 +1846,8 @@ export interface components {
          *       "existingTags": [
          *         "reflection"
          *       ],
-         *       "maxTags": 5
+         *       "maxTags": 5,
+         *       "style": "specific"
          *     }
          */
         SuggestTagsDto: {
@@ -1859,6 +1860,12 @@ export interface components {
              * @default 5
              */
             maxTags: number;
+            /**
+             * @description Whether to suggest concrete subject tags or broader thematic tags
+             * @default specific
+             * @enum {string}
+             */
+            style: "specific" | "thematic";
         };
         /**
          * @example {
@@ -4049,7 +4056,8 @@ export interface operations {
                  *       "existingTags": [
                  *         "reflection"
                  *       ],
-                 *       "maxTags": 5
+                 *       "maxTags": 5,
+                 *       "style": "specific"
                  *     }
                  */
                 "application/json": components["schemas"]["SuggestTagsDto"];

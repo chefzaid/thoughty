@@ -24,6 +24,25 @@ describe('aiService', () => {
     });
   });
 
+  it('includes the thematic style only when explicitly requested', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ tags: ['belonging'] }),
+    });
+
+    await service.suggestTags('A reflection about finding my place.', ['journal'], 4, 'thematic');
+
+    expect(mockAuthFetch).toHaveBeenCalledWith('/api/ai/suggest-tags', {
+      method: 'POST',
+      body: JSON.stringify({
+        content: 'A reflection about finding my place.',
+        existingTags: ['journal'],
+        maxTags: 4,
+        style: 'thematic',
+      }),
+    });
+  });
+
   it('returns null when the response is not ok', async () => {
     mockAuthFetch.mockResolvedValue({
       ok: false,

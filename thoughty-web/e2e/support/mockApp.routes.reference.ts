@@ -28,8 +28,14 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
   }
 
   if (pathname === '/api/ai/suggest-tags') {
-    state.lastAiSuggestionPayload = request.postDataJSON();
-    await fulfillJson(route, { tags: ['focus', 'reflection', 'writing'] });
+    const payload = request.postDataJSON() as { style?: string };
+    state.lastAiSuggestionPayload = payload;
+    await fulfillJson(route, {
+      tags:
+        payload.style === 'thematic'
+          ? ['belonging', 'self-awareness', 'balance']
+          : ['focus', 'reflection', 'writing'],
+    });
     return true;
   }
 

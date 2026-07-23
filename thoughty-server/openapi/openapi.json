@@ -1919,7 +1919,8 @@
                 "existingTags": [
                   "reflection"
                 ],
-                "maxTags": 5
+                "maxTags": 5,
+                "style": "specific"
               }
             }
           }
@@ -4861,6 +4862,15 @@
             "type": "number",
             "description": "Maximum number of tags to return",
             "default": 5
+          },
+          "style": {
+            "type": "string",
+            "description": "Whether to suggest concrete subject tags or broader thematic tags",
+            "enum": [
+              "specific",
+              "thematic"
+            ],
+            "default": "specific"
           }
         },
         "required": [
@@ -4871,7 +4881,8 @@
           "existingTags": [
             "reflection"
           ],
-          "maxTags": 5
+          "maxTags": 5,
+          "style": "specific"
         }
       },
       "FixWritingDto": {

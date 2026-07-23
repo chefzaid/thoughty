@@ -226,6 +226,7 @@ describe('useAppShellModel', () => {
       setTags,
       setVisibility: vi.fn(),
       suggestingTags: false,
+      suggestingTagStyle: null,
       tags: ['current'],
       uploadedAttachments: [],
       visibility: 'private',

@@ -112,7 +112,7 @@ Attachment security relies on both application checks and object-storage configu
 
 ## AI Privacy
 
-AI features are optional at the infrastructure level. When enabled, relevant journal content may be sent to OpenRouter or the configured model provider for operations such as writing fixes, tag suggestions, writing prompts, entry summaries, mood/tone analysis, and entry-specific chat. Entry summaries and writing prompts resolve journal history from the authenticated user ID on the server and treat journal text as untrusted source material rather than model instructions. Writing prompts use at most 12 recent entries from the selected diary or the user's full journal scope, with each excerpt capped at 800 characters.
+AI features are optional at the infrastructure level. When enabled, relevant journal content may be sent to OpenRouter or the configured model provider for operations such as writing fixes, tag suggestions, writing prompts, entry summaries, mood/tone analysis, and entry-specific chat. Entry summaries and writing prompts resolve journal history from the authenticated user ID on the server and treat journal text as untrusted source material rather than model instructions. Concrete and thematic tag suggestions also send the draft as structured, untrusted source material and instruct the provider not to follow directions embedded in journal text. Writing prompts use at most 12 recent entries from the selected diary or the user's full journal scope, with each excerpt capped at 800 characters.
 
 Product and deployment documentation should make this clear to users and operators. Future local-LLM support should be covered by a dedicated ADR because it changes privacy, hosting, and performance assumptions.
 

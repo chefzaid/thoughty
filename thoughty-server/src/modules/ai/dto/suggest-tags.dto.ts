@@ -1,5 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+
+export const tagSuggestionStyles = ['specific', 'thematic'] as const;
+export type TagSuggestionStyle = (typeof tagSuggestionStyles)[number];
 
 export class SuggestTagsDto {
   @ApiProperty({ description: 'Entry content to analyze for tag suggestions' })
@@ -7,7 +10,10 @@ export class SuggestTagsDto {
   @MaxLength(10000)
   content!: string;
 
-  @ApiPropertyOptional({ description: 'Existing tags already attached to the draft', type: [String] })
+  @ApiPropertyOptional({
+    description: 'Existing tags already attached to the draft',
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -19,4 +25,14 @@ export class SuggestTagsDto {
   @Min(1)
   @Max(10)
   maxTags?: number;
+
+  @ApiPropertyOptional({
+    description: 'Whether to suggest concrete subject tags or broader thematic tags',
+    enum: tagSuggestionStyles,
+    default: 'specific',
+  })
+  @IsOptional()
+  @IsString()
+  @IsIn(tagSuggestionStyles)
+  style?: TagSuggestionStyle;
 }

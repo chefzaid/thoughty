@@ -1,8 +1,10 @@
 import { safeJsonParse } from './base';
 
 export const rephraseModes = ['grammar', 'polish', 'rewrite'] as const;
+export const tagSuggestionStyles = ['specific', 'thematic'] as const;
 
 export type RephraseMode = (typeof rephraseModes)[number];
+export type TagSuggestionStyle = (typeof tagSuggestionStyles)[number];
 
 export interface SummaryGuidance {
   includeDetails?: string;
@@ -14,11 +16,17 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     content: string,
     existingTags: string[] = [],
     maxTags = 5,
+    style?: TagSuggestionStyle,
   ): Promise<string[] | null> => {
     try {
       const response = await authFetch('/api/ai/suggest-tags', {
         method: 'POST',
-        body: JSON.stringify({ content, existingTags, maxTags }),
+        body: JSON.stringify({
+          content,
+          existingTags,
+          maxTags,
+          ...(style ? { style } : {}),
+        }),
       });
 
       const data = await safeJsonParse<{ tags?: string[] }>(response);

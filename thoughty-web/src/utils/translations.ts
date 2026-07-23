@@ -419,6 +419,8 @@ export type TranslationKey =
   | 'blogReading'
   | 'suggestTags'
   | 'suggestingTags'
+  | 'suggestThemes'
+  | 'suggestingThemes'
   | 'fixWriting'
   | 'fixingWriting'
   | 'discussEntry'
@@ -1173,6 +1175,8 @@ export const translations: Translations = {
     blogReading: 'Reading',
     suggestTags: 'Auto-Tags',
     suggestingTags: 'Tagging...',
+    suggestThemes: 'Theme Tags',
+    suggestingThemes: 'Finding themes...',
     fixWriting: 'Rephrase',
     fixingWriting: 'Rephrasing...',
     discussEntry: 'Discuss with AI',
@@ -1938,6 +1942,8 @@ export const translations: Translations = {
     blogReading: 'En lecture',
     suggestTags: 'Auto-Tags',
     suggestingTags: 'Tagging...',
+    suggestThemes: 'Tags thématiques',
+    suggestingThemes: 'Recherche de thèmes...',
     fixWriting: 'Reformuler',
     fixingWriting: 'Reformulation...',
     discussEntry: 'Discuter avec l\'IA',

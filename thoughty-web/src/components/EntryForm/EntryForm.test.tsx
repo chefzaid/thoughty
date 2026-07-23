@@ -45,6 +45,8 @@ describe('EntryForm', () => {
                 filterTagsPlaceholder: 'Filter by tags...',
                 suggestTags: 'Auto-Tags',
                 suggestingTags: 'Tagging...',
+                suggestThemes: 'Theme Tags',
+                suggestingThemes: 'Finding themes...',
                 writingPrompts: 'Writing prompts',
                 chooseWritingPrompt: 'Choose a prompt',
                 generatingWritingPrompts: 'Finding a fresh direction...',
@@ -200,6 +202,17 @@ describe('EntryForm', () => {
             expect(onSuggestTags).toHaveBeenCalled();
         });
 
+        it('requests thematic tags from a separate action', async () => {
+            const onSuggestTags = vi.fn();
+            const user = userEvent.setup();
+
+            render(<EntryForm {...defaultProps} onSuggestTags={onSuggestTags} />);
+
+            await user.click(screen.getByRole('button', { name: 'Theme Tags' }));
+
+            expect(onSuggestTags).toHaveBeenCalledWith('thematic');
+        });
+
         it('renders the fix writing action and invokes it', async () => {
             const onFixWriting = vi.fn();
             const user = userEvent.setup();
@@ -222,6 +235,8 @@ describe('EntryForm', () => {
                             filterTagsPlaceholder: 'Filter by tags...',
                             suggestTags: 'Auto-Tags',
                             suggestingTags: 'Tagging...',
+                            suggestThemes: 'Theme Tags',
+                            suggestingThemes: 'Finding themes...',
                             fixWriting: 'Polish Writing',
                             fixingWriting: 'Polishing...',
                         })),
@@ -255,6 +270,8 @@ describe('EntryForm', () => {
                             filterTagsPlaceholder: 'Filter by tags...',
                             suggestTags: 'Auto-Tags',
                             suggestingTags: 'Tagging...',
+                            suggestThemes: 'Theme Tags',
+                            suggestingThemes: 'Finding themes...',
                             fixWriting: 'Polish Writing',
                             fixingWriting: 'Polishing...',
                         })),
@@ -263,7 +280,21 @@ describe('EntryForm', () => {
             );
 
             expect(screen.getByRole('button', { name: 'Tagging...' })).toBeDisabled();
+            expect(screen.getByRole('button', { name: 'Theme Tags' })).toBeDisabled();
             expect(screen.getByRole('button', { name: 'Polishing...' })).toBeDisabled();
+        });
+
+        it('shows progress on the thematic action', () => {
+            render(
+                <EntryForm
+                    {...defaultProps}
+                    suggestingTags={true}
+                    suggestingTagStyle="thematic"
+                />,
+            );
+
+            expect(screen.getByRole('button', { name: 'Finding themes...' })).toBeDisabled();
+            expect(screen.getByRole('button', { name: 'Auto-Tags' })).toBeDisabled();
         });
 
         it('adds a selected writing prompt without replacing the current draft', async () => {
