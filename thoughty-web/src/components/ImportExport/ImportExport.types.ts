@@ -66,6 +66,7 @@ export interface BookOptions {
     includeDates: boolean;
     includeToc: boolean;
     narrative: boolean;
+    chapterFraming: boolean;
 }
 
 export const DEFAULT_BOOK_OPTIONS: BookOptions = {
@@ -80,6 +81,7 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
     includeDates: true,
     includeToc: true,
     narrative: true,
+    chapterFraming: false,
 };
 
 export interface BookChapterPreview {

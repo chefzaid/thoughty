@@ -46,6 +46,7 @@ export function useImportExportBook({
         if (!options.includeDates) params.append('includeDates', 'false');
         if (!options.includeToc) params.append('includeToc', 'false');
         if (!options.narrative) params.append('narrative', 'false');
+        if (options.chapterFraming) params.append('chapterFraming', 'true');
         return params;
     }
 

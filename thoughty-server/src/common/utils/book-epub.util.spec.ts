@@ -80,7 +80,12 @@ describe('renderBookEpub', () => {
     const narrativeBook: Book = {
       ...book,
       chapters: [
-        { ...book.chapters[0], narrative: 'A woven story about travel.' },
+        {
+          ...book.chapters[0],
+          introduction: 'An opening with <context>.',
+          narrative: 'A woven story about travel.',
+          summary: 'A closing recap.',
+        },
       ],
     };
     const buffer = await renderBookEpub(narrativeBook);
@@ -88,6 +93,10 @@ describe('renderBookEpub', () => {
     const chapter = await readZipEntry(zip, 'OEBPS/chapter-1.xhtml');
 
     expect(chapter).toContain('A woven story about travel.');
+    expect(chapter).toContain('<h3>Introduction</h3>');
+    expect(chapter).toContain('An opening with &lt;context&gt;.');
+    expect(chapter).toContain('<h3>Chapter Summary</h3>');
+    expect(chapter).toContain('A closing recap.');
     expect(chapter).not.toContain('Pasta in Naples');
   });
 

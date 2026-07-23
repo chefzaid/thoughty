@@ -15,8 +15,12 @@ export interface BookEntry {
 export interface BookChapter {
   title: string;
   entries: BookEntry[];
+  /** AI-generated opening that introduces the chapter's themes */
+  introduction?: string;
   /** AI-composed flowing prose for the chapter; when set, renderers use it instead of listing entries */
   narrative?: string;
+  /** AI-generated closing recap of the chapter's ideas and conclusions */
+  summary?: string;
 }
 
 export interface Book {
@@ -287,15 +291,21 @@ export function renderBookMarkdown(book: Book, options: RenderBookOptions = {}):
 
   for (const [index, chapter] of book.chapters.entries()) {
     lines.push(`## Chapter ${index + 1}: ${chapter.title}`, '');
+    if (chapter.introduction) {
+      lines.push('### Introduction', '', chapter.introduction, '');
+    }
     if (chapter.narrative) {
       lines.push(chapter.narrative, '');
-      continue;
-    }
-    for (const entry of chapter.entries) {
-      if (includeDates) {
-        lines.push(`### ${entry.date}`, '');
+    } else {
+      for (const entry of chapter.entries) {
+        if (includeDates) {
+          lines.push(`### ${entry.date}`, '');
+        }
+        lines.push(entry.content, '');
       }
-      lines.push(entry.content, '');
+    }
+    if (chapter.summary) {
+      lines.push('### Chapter Summary', '', chapter.summary, '');
     }
   }
 
@@ -324,6 +334,8 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     '.toc ol{line-height:2}',
     '.chapter{page-break-before:always}',
     '.chapter h2{border-bottom:1px solid #ccc;padding-bottom:0.3em}',
+    '.chapter-framing{font-style:italic;color:#444;margin:1.4em 0}',
+    '.chapter-summary{border-top:1px solid #ccc;padding-top:1em}',
     '.entry{margin-bottom:1.6em}',
     '.entry-date{color:#888;font-size:0.85em;margin-bottom:0.3em}',
     '.entry-content{white-space:pre-wrap}',
@@ -352,6 +364,14 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
       `<section class="chapter" id="chapter-${index + 1}">`,
       `<h2>Chapter ${index + 1}: ${escapeHtml(chapter.title)}</h2>`,
     );
+    if (chapter.introduction) {
+      parts.push(
+        '<aside class="chapter-framing chapter-introduction">',
+        '<h3>Introduction</h3>',
+        `<p>${escapeHtml(chapter.introduction)}</p>`,
+        '</aside>',
+      );
+    }
     if (chapter.narrative) {
       parts.push(`<div class="entry-content">${escapeHtml(chapter.narrative)}</div>`);
     } else {
@@ -362,6 +382,14 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
         }
         parts.push(`<div class="entry-content">${escapeHtml(entry.content)}</div>`, '</article>');
       }
+    }
+    if (chapter.summary) {
+      parts.push(
+        '<aside class="chapter-framing chapter-summary">',
+        '<h3>Chapter Summary</h3>',
+        `<p>${escapeHtml(chapter.summary)}</p>`,
+        '</aside>',
+      );
     }
     parts.push('</section>');
   }

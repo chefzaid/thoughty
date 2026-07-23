@@ -18,8 +18,12 @@ import {
     type BookWeavingMode,
 } from './ImportExport.types';
 
-const BOOK_CHECKBOXES: ReadonlyArray<{ key: 'narrative' | 'includeUntagged' | 'includeDates' | 'includeToc'; labelKey: string }> = [
+const BOOK_CHECKBOXES: ReadonlyArray<{
+    key: 'narrative' | 'chapterFraming' | 'includeUntagged' | 'includeDates' | 'includeToc';
+    labelKey: string;
+}> = [
     { key: 'narrative', labelKey: 'bookNarrative' },
+    { key: 'chapterFraming', labelKey: 'bookChapterFraming' },
     { key: 'includeUntagged', labelKey: 'bookIncludeUntagged' },
     { key: 'includeDates', labelKey: 'bookIncludeDates' },
     { key: 'includeToc', labelKey: 'bookIncludeToc' },

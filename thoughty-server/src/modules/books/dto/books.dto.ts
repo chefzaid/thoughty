@@ -99,6 +99,15 @@ export class BookQueryDto {
   narrative?: boolean;
 
   @ApiPropertyOptional({
+    description: 'Add AI-generated introductions and summaries around each chapter',
+    default: false,
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  chapterFraming?: boolean;
+
+  @ApiPropertyOptional({
     description: 'AI weaving mode for narrative chapters',
     enum: ['strict', 'creative'],
     default: 'strict',

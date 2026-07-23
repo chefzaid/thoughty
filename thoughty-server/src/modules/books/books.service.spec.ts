@@ -46,6 +46,10 @@ describe('BooksService', () => {
     aiService = {
       isConfigured: jest.fn().mockReturnValue(true),
       composeBookChapter: jest.fn().mockResolvedValue('Woven chapter prose.'),
+      composeChapterFraming: jest.fn().mockResolvedValue({
+        introduction: 'A chapter opening.',
+        summary: 'A chapter recap.',
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -205,6 +209,38 @@ describe('BooksService', () => {
         expect.any(Array),
         'creative',
       );
+    });
+
+    it('should add AI introductions and summaries to plain chapters when requested', async () => {
+      const result = await service.export(1, {
+        format: 'md',
+        narrative: false,
+        chapterFraming: true,
+      });
+
+      expect(aiService.composeBookChapter).not.toHaveBeenCalled();
+      expect(aiService.composeChapterFraming).toHaveBeenCalledTimes(3);
+      expect(aiService.composeChapterFraming).toHaveBeenCalledWith(
+        1,
+        'travel',
+        expect.arrayContaining([
+          expect.objectContaining({ date: '2024-01-10', content: 'Pasta in Naples' }),
+        ]),
+      );
+      expect(result.content).toContain('### Introduction');
+      expect(result.content).toContain('A chapter opening.');
+      expect(result.content).toContain('### Chapter Summary');
+      expect(result.content).toContain('A chapter recap.');
+      expect(result.content).toContain('Pasta in Naples');
+    });
+
+    it('should reject chapter framing when AI is not configured', async () => {
+      aiService.isConfigured.mockReturnValue(false);
+
+      await expect(
+        service.export(1, { narrative: false, chapterFraming: true }),
+      ).rejects.toThrow(BadRequestException);
+      expect(aiService.composeChapterFraming).not.toHaveBeenCalled();
     });
 
     it('should reject narrative export when AI is not configured', async () => {

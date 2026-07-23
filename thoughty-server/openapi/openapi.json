@@ -2911,6 +2911,16 @@
             }
           },
           {
+            "name": "chapterFraming",
+            "required": false,
+            "in": "query",
+            "description": "Add AI-generated introductions and summaries around each chapter",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
             "name": "weavingMode",
             "required": false,
             "in": "query",
@@ -3121,6 +3131,16 @@
             }
           },
           {
+            "name": "chapterFraming",
+            "required": false,
+            "in": "query",
+            "description": "Add AI-generated introductions and summaries around each chapter",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          },
+          {
             "name": "weavingMode",
             "required": false,
             "in": "query",
@@ -3306,6 +3326,16 @@
             "description": "Use AI to weave each chapter's entries into flowing prose (requires a configured AI key)",
             "schema": {
               "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "chapterFraming",
+            "required": false,
+            "in": "query",
+            "description": "Add AI-generated introductions and summaries around each chapter",
+            "schema": {
+              "default": false,
               "type": "boolean"
             }
           },

@@ -4796,6 +4796,8 @@ export interface operations {
                 includeToc?: boolean;
                 /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
                 narrative?: boolean;
+                /** @description Add AI-generated introductions and summaries around each chapter */
+                chapterFraming?: boolean;
                 /** @description AI weaving mode for narrative chapters */
                 weavingMode?: "strict" | "creative";
             };
@@ -4863,6 +4865,8 @@ export interface operations {
                 includeToc?: boolean;
                 /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
                 narrative?: boolean;
+                /** @description Add AI-generated introductions and summaries around each chapter */
+                chapterFraming?: boolean;
                 /** @description AI weaving mode for narrative chapters */
                 weavingMode?: "strict" | "creative";
             };
@@ -4912,6 +4916,8 @@ export interface operations {
                 includeToc?: boolean;
                 /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
                 narrative?: boolean;
+                /** @description Add AI-generated introductions and summaries around each chapter */
+                chapterFraming?: boolean;
                 /** @description AI weaving mode for narrative chapters */
                 weavingMode?: "strict" | "creative";
                 /** @description Connected cloud provider */

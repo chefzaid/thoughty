@@ -82,6 +82,7 @@ flowchart LR
 
 - The book converter turns a journal (or a single diary) into a real book: each tag becomes a chapter, and AI weaves the entries carrying that tag into flowing first-person prose — connecting the thoughts, adding transitions, and smoothing grammar while staying strictly on script (nothing is invented or dropped).
 - The AI narrative is on by default and uses the configured OpenRouter key and the user's preferred model; long chapters are composed in sequential parts that continue each other. Unchecking the narrative option produces a plain book with the entries listed chronologically per chapter, no AI required.
+- Optional AI chapter framing adds a short introduction and closing summary to every chapter. It works with either woven narrative or chronological entries and requests both pieces together while staying grounded in the source entries.
 - Output formats are PDF (title page, table of contents with chapter page numbers, document outline, and centered page footers), EPUB 3 for e-readers, standalone printable HTML, and Markdown.
 - Books are configurable before generation: custom title and author (defaulting to the diary name and username), chapter ordering (alphabetical, by entry count, or by first entry date), a date range, and an explicit tag list to use as chapters.
 - Entries with several tags can appear in every matching chapter or only in their first tag's chapter, and entries without tags can be collected into a closing untagged chapter.

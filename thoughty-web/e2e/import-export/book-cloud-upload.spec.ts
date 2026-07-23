@@ -11,6 +11,7 @@ test.describe('Book cloud upload', () => {
     const bookSection = page.locator('#book-section');
     await bookSection.getByLabel('Title').fill('Summer Notes');
     await bookSection.getByLabel('Format').selectOption('epub');
+    await bookSection.getByText('Add AI chapter introductions and summaries').click();
     await expect(bookSection.getByLabel('Cloud destination')).toHaveValue('google_drive');
     await bookSection.getByRole('button', { name: 'Upload Book' }).click();
 
@@ -18,6 +19,7 @@ test.describe('Book cloud upload', () => {
     await expect.poll(() => state.lastBookUploadRequestUrl?.searchParams.get('provider')).toBe('google_drive');
     await expect.poll(() => state.lastBookUploadRequestUrl?.searchParams.get('format')).toBe('epub');
     await expect.poll(() => state.lastBookUploadRequestUrl?.searchParams.get('title')).toBe('Summer Notes');
+    await expect.poll(() => state.lastBookUploadRequestUrl?.searchParams.get('chapterFraming')).toBe('true');
 
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(bookSection.getByLabel('Cloud destination')).toBeVisible();

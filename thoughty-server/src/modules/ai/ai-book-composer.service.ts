@@ -10,6 +10,10 @@ type OpenRouterResponse = {
 };
 
 export type BookWeavingMode = 'strict' | 'creative';
+export interface BookChapterFraming {
+  introduction: string;
+  summary: string;
+}
 
 const MODE_INSTRUCTIONS: Record<BookWeavingMode, { temperature: number; instruction: string }> = {
   strict: {
@@ -27,6 +31,7 @@ const MODE_INSTRUCTIONS: Record<BookWeavingMode, { temperature: number; instruct
 @Injectable()
 export class AiBookComposerService {
   private static readonly CHAPTER_INPUT_BUDGET = 20000;
+  private static readonly FRAMING_INPUT_BUDGET = 20000;
 
   private readonly openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
   private readonly defaultModel = process.env.OPENROUTER_TAG_MODEL || 'openai/gpt-4o-mini';
@@ -65,6 +70,44 @@ export class AiBookComposerService {
     return parts.join('\n\n');
   }
 
+  async composeChapterFraming(
+    userId: number,
+    chapterTitle: string,
+    entries: Array<{ date: string; content: string }>,
+  ): Promise<BookChapterFraming> {
+    if (!this.apiKey) {
+      throw new BadRequestException('OpenRouter API key is not configured');
+    }
+
+    const usableEntries = entries.filter((entry) => entry.content.trim());
+    if (usableEntries.length === 0) {
+      return { introduction: '', summary: '' };
+    }
+
+    const model = await this.getModel(userId);
+    const source = this.buildFramingSource(usableEntries);
+    const content = await this.requestCompletion(
+      model,
+      0.3,
+      [
+        {
+          role: 'system',
+          content: [
+            "You are a book editor framing a chapter built from a person's journal entries.",
+            `The chapter is titled "${chapterTitle}".`,
+            'Write a concise introduction of 2-3 sentences that invites the reader into the chapter themes.',
+            'Write a concise summary of 3-5 sentences that recaps the key ideas, changes, and conclusions.',
+            'Stay strictly grounded in the supplied entries. Never invent facts, events, feelings, or conclusions.',
+            'Return only a JSON object with string fields "introduction" and "summary". Do not use markdown.',
+          ].join(' '),
+        },
+        { role: 'user', content: source },
+      ],
+    );
+
+    return this.parseChapterFraming(content);
+  }
+
   private async getModel(userId: number): Promise<string> {
     const bookModel = await this.configService.getDecryptedConfig(userId, 'openRouterBookModel');
     if (bookModel) {
@@ -101,6 +144,67 @@ export class AiBookComposerService {
     return batches;
   }
 
+  private buildFramingSource(entries: Array<{ date: string; content: string }>): string {
+    const source = entries.map((entry) => `[${entry.date}]\n${entry.content}`).join('\n\n---\n\n');
+    if (source.length <= AiBookComposerService.FRAMING_INPUT_BUDGET) {
+      return source;
+    }
+
+    const omission = '\n\n[Middle of chapter omitted for length]\n\n';
+    const excerptLength = Math.floor((AiBookComposerService.FRAMING_INPUT_BUDGET - omission.length) / 2);
+    return `${source.slice(0, excerptLength)}${omission}${source.slice(-excerptLength)}`;
+  }
+
+  private parseChapterFraming(content: string): BookChapterFraming {
+    const normalized = content
+      .replace(/^```(?:json)?\s*/i, '')
+      .replace(/\s*```$/, '')
+      .trim();
+
+    try {
+      const parsed = JSON.parse(normalized) as Record<string, unknown>;
+      const introduction = typeof parsed.introduction === 'string' ? parsed.introduction.trim() : '';
+      const summary = typeof parsed.summary === 'string' ? parsed.summary.trim() : '';
+      if (!introduction || !summary) {
+        throw new Error('Missing chapter framing fields');
+      }
+      return { introduction, summary };
+    } catch {
+      throw new BadGatewayException('Invalid chapter framing response from OpenRouter');
+    }
+  }
+
+  private async requestCompletion(
+    model: string,
+    temperature: number,
+    messages: Array<{ role: 'system' | 'user'; content: string }>,
+  ): Promise<string> {
+    const response = await fetch(this.openRouterUrl, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${this.apiKey}`,
+        'Content-Type': 'application/json',
+        'X-Title': 'Thoughty',
+      },
+      body: JSON.stringify({
+        model,
+        temperature,
+        messages,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new BadGatewayException('OpenRouter request failed');
+    }
+
+    const data = (await response.json()) as OpenRouterResponse;
+    const content = data.choices?.[0]?.message?.content?.trim();
+    if (!content) {
+      throw new BadGatewayException('No response received from OpenRouter');
+    }
+    return content;
+  }
+
   private async requestChapterComposition(
     model: string,
     chapterTitle: string,
@@ -123,47 +227,22 @@ export class AiBookComposerService {
       : entriesText;
 
     const modeInstruction = MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.strict;
-    const response = await fetch(this.openRouterUrl, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        'Content-Type': 'application/json',
-        'X-Title': 'Thoughty',
+    return this.requestCompletion(model, modeInstruction.temperature, [
+      {
+        role: 'system',
+        content: [
+          "You are a book editor turning a person's dated journal entries into a chapter of their book.",
+          `The entries share the theme "${chapterTitle}".`,
+          'Weave them into flowing, readable prose: connect related thoughts, smooth the grammar, and order ideas naturally.',
+          modeInstruction.instruction,
+          "Write in the author's first-person voice and keep their tone.",
+          'Return only the chapter text as plain paragraphs separated by blank lines, with no markdown, headings, bullet points, titles, or commentary.',
+        ].join(' '),
       },
-      body: JSON.stringify({
-        model,
-        temperature: modeInstruction.temperature,
-        messages: [
-          {
-            role: 'system',
-            content: [
-              "You are a book editor turning a person's dated journal entries into a chapter of their book.",
-              `The entries share the theme "${chapterTitle}".`,
-              'Weave them into flowing, readable prose: connect related thoughts, smooth the grammar, and order ideas naturally.',
-              modeInstruction.instruction,
-              "Write in the author's first-person voice and keep their tone.",
-              'Return only the chapter text as plain paragraphs separated by blank lines, with no markdown, headings, bullet points, titles, or commentary.',
-            ].join(' '),
-          },
-          {
-            role: 'user',
-            content: userContent,
-          },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      throw new BadGatewayException('OpenRouter request failed');
-    }
-
-    const data = (await response.json()) as OpenRouterResponse;
-    const content = data.choices?.[0]?.message?.content?.trim();
-
-    if (!content) {
-      throw new BadGatewayException('No response received from OpenRouter');
-    }
-
-    return content;
+      {
+        role: 'user',
+        content: userContent,
+      },
+    ]);
   }
 }

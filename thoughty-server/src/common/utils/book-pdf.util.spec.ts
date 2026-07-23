@@ -50,7 +50,12 @@ describe('renderBookPdf', () => {
   it('should render narrative chapters without error', async () => {
     const narrativeBook: Book = {
       ...book,
-      chapters: [{ ...book.chapters[0], narrative: 'A woven story.\n\nMore prose.' }],
+      chapters: [{
+        ...book.chapters[0],
+        introduction: 'An opening.',
+        narrative: 'A woven story.\n\nMore prose.',
+        summary: 'A closing recap.',
+      }],
     };
     const buffer = await renderBookPdf(narrativeBook);
 

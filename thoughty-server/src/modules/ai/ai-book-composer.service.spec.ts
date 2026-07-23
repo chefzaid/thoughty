@@ -148,4 +148,68 @@ describe('AiBookComposerService', () => {
 
     await expect(service.composeBookChapter(1, 'Travel', chapterEntries)).rejects.toThrow(BadGatewayException);
   });
+
+  it('generates a chapter introduction and summary in one structured request', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        choices: [{
+          message: {
+            content: '```json\n{"introduction":"An opening.","summary":"A closing recap."}\n```',
+          },
+        }],
+      }),
+    });
+
+    await expect(service.composeChapterFraming(1, 'Travel', chapterEntries)).resolves.toEqual({
+      introduction: 'An opening.',
+      summary: 'A closing recap.',
+    });
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.temperature).toBe(0.3);
+    expect(body.messages[0].content).toContain('Never invent');
+    expect(body.messages[1].content).toContain('First thought about travel.');
+  });
+
+  it('skips chapter framing when there are no usable entries', async () => {
+    await expect(
+      service.composeChapterFraming(1, 'Travel', [{ date: '2024-01-01', content: '  ' }]),
+    ).resolves.toEqual({ introduction: '', summary: '' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uses bounded beginning and ending excerpts for oversized chapter framing input', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: '{"introduction":"Opening","summary":"Closing"}' } }],
+      }),
+    });
+    const longEntries = [
+      { date: '2024-01-01', content: `beginning-${'a'.repeat(15000)}` },
+      { date: '2024-01-02', content: `${'b'.repeat(15000)}-ending` },
+    ];
+
+    await service.composeChapterFraming(1, 'Long Chapter', longEntries);
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.messages[1].content).toContain('beginning-');
+    expect(body.messages[1].content).toContain('-ending');
+    expect(body.messages[1].content).toContain('Middle of chapter omitted for length');
+    expect(body.messages[1].content.length).toBeLessThanOrEqual(20000);
+  });
+
+  it('rejects malformed chapter framing responses', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: jest.fn().mockResolvedValue({
+        choices: [{ message: { content: '{"introduction":"Only an opening"}' } }],
+      }),
+    });
+
+    await expect(service.composeChapterFraming(1, 'Travel', chapterEntries)).rejects.toThrow(
+      'Invalid chapter framing response from OpenRouter',
+    );
+  });
 });

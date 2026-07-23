@@ -9,6 +9,7 @@ const BODY_FONT_SIZE = 11;
 const FOOTER_OFFSET = 40;
 const TOC_LINE_GAP = 6;
 const TOC_PAGE_NUM_WIDTH = 40;
+const FRAMING_FONT_SIZE = 10;
 
 interface TocLinePosition {
   pageIndex: number;
@@ -101,6 +102,16 @@ function renderChapterBody(
   }
 }
 
+function renderChapterFraming(doc: PDFKit.PDFDocument, heading: string, content: string): void {
+  doc.font('Helvetica-Bold').fontSize(BODY_FONT_SIZE).fillColor('#333333').text(heading);
+  doc.moveDown(0.35);
+  doc.font('Helvetica-Oblique').fontSize(FRAMING_FONT_SIZE).fillColor('#444444').text(content, {
+    align: 'justify',
+    lineGap: 2,
+  });
+  doc.fillColor('#000000').moveDown(1.2);
+}
+
 function renderChapter(
   doc: PDFKit.PDFDocument,
   chapter: Book['chapters'][number],
@@ -115,7 +126,14 @@ function renderChapter(
   doc.fontSize(CHAPTER_FONT_SIZE - 4).text(chapter.title);
   doc.moveDown(1.5);
 
+  if (chapter.introduction) {
+    renderChapterFraming(doc, 'Introduction', chapter.introduction);
+  }
   renderChapterBody(doc, chapter, includeDates);
+  if (chapter.summary) {
+    doc.moveDown(0.8);
+    renderChapterFraming(doc, 'Chapter Summary', chapter.summary);
+  }
 
   return startPageNumber;
 }

@@ -89,6 +89,7 @@ describe('ImportExport book section', () => {
         expect(screen.getByLabelText('bookTagScope')).toBeInTheDocument();
         expect(screen.getByLabelText('bookWeavingMode')).toBeInTheDocument();
         expect(screen.getByText('bookIncludeUntagged')).toBeInTheDocument();
+        expect(screen.getByText('bookChapterFraming')).toBeInTheDocument();
         expect(screen.getByText('previewBook')).toBeInTheDocument();
         expect(screen.getByText('downloadBook')).toBeInTheDocument();
         expect(screen.getByLabelText('bookCloudProvider')).toBeDisabled();
@@ -273,6 +274,29 @@ describe('ImportExport book section', () => {
 
         const exportCall = (globalThis.fetch as Mock).mock.calls.find((call: unknown[]) => (call[0] as string).includes('/api/books/export'));
         expect((exportCall as [string])[0]).toContain('narrative=false');
+    });
+
+    it('requests AI chapter introductions and summaries independently of narrative weaving', async () => {
+        const mockBlob = new Blob(['# Book'], { type: 'text/markdown' });
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            blob: async () => mockBlob,
+            headers: new Headers(),
+        });
+
+        await renderBookSection();
+
+        fireEvent.click(screen.getByText('bookNarrative'));
+        fireEvent.click(screen.getByText('bookChapterFraming'));
+        fireEvent.click(screen.getByText('downloadBook'));
+
+        await screen.findByText('bookExportSuccess');
+
+        const exportCall = (globalThis.fetch as Mock).mock.calls.find(
+            (call: unknown[]) => (call[0] as string).includes('/api/books/export'),
+        );
+        expect((exportCall as [string])[0]).toContain('narrative=false');
+        expect((exportCall as [string])[0]).toContain('chapterFraming=true');
     });
 
     it('shows errors when preview and download fail', async () => {

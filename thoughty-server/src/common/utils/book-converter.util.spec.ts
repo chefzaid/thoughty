@@ -188,7 +188,9 @@ describe('book-converter.util', () => {
       chapters: [
         {
           title: 'Travel',
+          introduction: 'An opening with <context>.',
           narrative: 'A woven story about travel.\n\nIt flows across paragraphs.',
+          summary: 'A concise chapter recap.',
           entries: [
             { date: '2024-01-10', index: 1, tags: ['travel'], content: 'Raw entry', format: 'plain' as const },
           ],
@@ -200,6 +202,10 @@ describe('book-converter.util', () => {
       const output = renderBookMarkdown(narrativeBook);
 
       expect(output).toContain('A woven story about travel.');
+      expect(output).toContain('### Introduction');
+      expect(output).toContain('An opening with <context>.');
+      expect(output).toContain('### Chapter Summary');
+      expect(output).toContain('A concise chapter recap.');
       expect(output).not.toContain('Raw entry');
       expect(output).not.toContain('### 2024-01-10');
     });
@@ -208,6 +214,10 @@ describe('book-converter.util', () => {
       const output = renderBookHtml(narrativeBook);
 
       expect(output).toContain('A woven story about travel.');
+      expect(output).toContain('<h3>Introduction</h3>');
+      expect(output).toContain('An opening with &lt;context&gt;.');
+      expect(output).toContain('<h3>Chapter Summary</h3>');
+      expect(output).toContain('A concise chapter recap.');
       expect(output).not.toContain('Raw entry');
       expect(output).not.toContain('2024-01-10');
     });

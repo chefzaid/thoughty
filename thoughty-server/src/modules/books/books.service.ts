@@ -139,10 +139,31 @@ export class BooksService {
     }
   }
 
+  private async composeChapterFraming(userId: number, book: Book): Promise<void> {
+    if (!this.aiBookComposer.isConfigured()) {
+      throw new BadRequestException(
+        'AI chapter framing requires an OpenRouter API key on the server. Disable chapter introductions and summaries to generate the book without them.',
+      );
+    }
+
+    for (const chapter of book.chapters) {
+      const framing = await this.aiBookComposer.composeChapterFraming(
+        userId,
+        chapter.title,
+        chapter.entries.map((entry) => ({ date: entry.date, content: entry.content })),
+      );
+      chapter.introduction = framing.introduction;
+      chapter.summary = framing.summary;
+    }
+  }
+
   async export(userId: number, query: BookQueryDto): Promise<BookFile> {
     const book = await this.buildBookForUser(userId, query);
     if (query.narrative !== false) {
       await this.composeNarratives(userId, book, query.weavingMode ?? 'strict');
+    }
+    if (query.chapterFraming === true) {
+      await this.composeChapterFraming(userId, book);
     }
     const format: BookFormat = query.format || 'pdf';
     const renderOptions = {

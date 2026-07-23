@@ -222,6 +222,7 @@ export type TranslationKey =
   | 'bookIncludeDates'
   | 'bookIncludeToc'
   | 'bookNarrative'
+  | 'bookChapterFraming'
   | 'previewBook'
   | 'downloadBook'
   | 'generatingBook'
@@ -934,6 +935,7 @@ export const translations: Translations = {
     bookIncludeDates: 'Show entry dates',
     bookIncludeToc: 'Include table of contents',
     bookNarrative: 'Weave thoughts into flowing prose with AI',
+    bookChapterFraming: 'Add AI chapter introductions and summaries',
     previewBook: 'Preview Chapters',
     downloadBook: 'Download Book',
     generatingBook: 'Generating...',
@@ -1708,6 +1710,7 @@ export const translations: Translations = {
     bookIncludeDates: 'Afficher les dates des entrées',
     bookIncludeToc: 'Inclure la table des matières',
     bookNarrative: "Tisser les pensées en prose fluide avec l'IA",
+    bookChapterFraming: 'Ajouter des introductions et résumés de chapitre par IA',
     previewBook: 'Aperçu des chapitres',
     downloadBook: 'Télécharger le livre',
     generatingBook: 'Génération...',

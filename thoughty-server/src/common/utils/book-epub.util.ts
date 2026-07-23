@@ -33,6 +33,8 @@ const EPUB_STYLES = [
   '.entry{margin-bottom:1.5em}',
   '.entry-date{color:#888;font-size:0.85em}',
   '.entry-content{white-space:pre-wrap}',
+  '.chapter-framing{font-style:italic;color:#444;margin:1.4em 0}',
+  '.chapter-summary{border-top:1px solid #ccc;padding-top:1em}',
 ].join('\n');
 
 function buildTitlePage(book: Book): string {
@@ -52,6 +54,14 @@ function buildChapterPage(
   const chapter = book.chapters[chapterIndex];
   const parts = [`<h2>Chapter ${chapterIndex + 1}: ${escapeXml(chapter.title)}</h2>`];
 
+  if (chapter.introduction) {
+    parts.push(
+      '<aside class="chapter-framing chapter-introduction">',
+      '<h3>Introduction</h3>',
+      `<p>${escapeXml(chapter.introduction)}</p>`,
+      '</aside>',
+    );
+  }
   if (chapter.narrative) {
     parts.push(`<div class="entry-content">${escapeXml(chapter.narrative)}</div>`);
   } else {
@@ -62,6 +72,14 @@ function buildChapterPage(
       }
       parts.push(`<div class="entry-content">${escapeXml(entry.content)}</div>`, '</div>');
     }
+  }
+  if (chapter.summary) {
+    parts.push(
+      '<aside class="chapter-framing chapter-summary">',
+      '<h3>Chapter Summary</h3>',
+      `<p>${escapeXml(chapter.summary)}</p>`,
+      '</aside>',
+    );
   }
 
   return xhtmlDocument(chapter.title, parts.join('\n'));

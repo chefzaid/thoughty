@@ -120,7 +120,7 @@
 - [x] PDF and ePub format export (plus HTML and Markdown outputs, title page, table of contents with chapter page numbers, centered page footers, and an outline preview; normal export also gained PDF, EPUB, and HTML formats grouped by month)
 - [ ] Versioning of the book, with the possibility to update it with new entries and chapters
 - [ ] Custom cover page (image upload, color themes)
-- [ ] AI-generated chapter introductions and summaries
+- [x] AI-generated chapter introductions and summaries
 - [x] Yearbook mode: one chapter per year or month instead of per tag
 - [x] Upload the generated book directly to a connected cloud provider
 - [ ] Embed entry attachments (images) in the generated book
