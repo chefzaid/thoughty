@@ -421,15 +421,16 @@ export type TranslationKey =
   | 'feedbackStatusPlanned'
   | 'feedbackStatusReviewing'
   | 'feedbackStatusOpen'
-  | 'feedbackIdeaOfflineTitle'
-  | 'feedbackIdeaOfflineBody'
-  | 'feedbackIdeaPromptsTitle'
-  | 'feedbackIdeaPromptsBody'
-  | 'feedbackIdeaSharingTitle'
-  | 'feedbackIdeaSharingBody'
   | 'feedbackVote'
   | 'feedbackVoted'
   | 'feedbackVoteAria'
+  | 'feedbackLoading'
+  | 'feedbackLoadError'
+  | 'feedbackEmpty'
+  | 'feedbackSubmitError'
+  | 'feedbackVoteError'
+  | 'feedbackSignInToSubmit'
+  | 'feedbackSignInToVote'
   | 'blogEyebrow'
   | 'blogTitle'
   | 'blogSubtitle'
@@ -1196,24 +1197,22 @@ export const translations: Translations = {
     feedbackTitleLabel: 'Idea title',
     feedbackDetailsLabel: 'What would this improve?',
     feedbackSubmit: 'Post idea',
-    feedbackSuccess: 'Your idea has been added to the board for this session.',
+    feedbackSuccess: 'Your idea has been added to the community board.',
     feedbackBoardKicker: 'Feature requests',
     feedbackBoardTitle: 'Ideas from the community',
     feedbackStatusPlanned: 'Planned',
     feedbackStatusReviewing: 'Reviewing',
     feedbackStatusOpen: 'Open',
-    feedbackIdeaOfflineTitle: 'Offline writing mode',
-    feedbackIdeaOfflineBody:
-      'Let the journal stay usable without a connection, then sync safely when the device comes back online.',
-    feedbackIdeaPromptsTitle: 'Personalized writing prompts',
-    feedbackIdeaPromptsBody:
-      'Suggest prompts from diary history, tags, and recurring themes without forcing a rigid habit tracker.',
-    feedbackIdeaSharingTitle: 'Shared public collections',
-    feedbackIdeaSharingBody:
-      'Group selected public thoughts into a curated collection that can be shared with a small audience.',
     feedbackVote: 'Vote',
     feedbackVoted: 'Voted',
     feedbackVoteAria: 'Vote for {title}',
+    feedbackLoading: 'Loading community ideas...',
+    feedbackLoadError: 'The community board could not be loaded.',
+    feedbackEmpty: 'No ideas yet. Be the first to submit one.',
+    feedbackSubmitError: 'Your idea could not be submitted. Please try again.',
+    feedbackVoteError: 'Your vote could not be recorded. Please try again.',
+    feedbackSignInToSubmit: 'Sign in to post',
+    feedbackSignInToVote: 'Sign in to vote for {title}',
     blogEyebrow: 'Thoughty blog',
     blogTitle: 'Updates, tips, and journaling inspiration.',
     blogSubtitle:
@@ -1998,24 +1997,22 @@ export const translations: Translations = {
     feedbackTitleLabel: 'Titre de l’idée',
     feedbackDetailsLabel: 'Qu’est-ce que cela améliorerait ?',
     feedbackSubmit: 'Publier l’idée',
-    feedbackSuccess: 'Votre idée a été ajoutée au tableau pour cette session.',
+    feedbackSuccess: 'Votre idée a été ajoutée au tableau de la communauté.',
     feedbackBoardKicker: 'Demandes de fonctionnalités',
     feedbackBoardTitle: 'Idées de la communauté',
     feedbackStatusPlanned: 'Prévu',
     feedbackStatusReviewing: 'En revue',
     feedbackStatusOpen: 'Ouvert',
-    feedbackIdeaOfflineTitle: 'Mode d’écriture hors ligne',
-    feedbackIdeaOfflineBody:
-      'Permettre au journal de rester utilisable sans connexion, puis de se synchroniser proprement au retour en ligne.',
-    feedbackIdeaPromptsTitle: 'Prompts d’écriture personnalisés',
-    feedbackIdeaPromptsBody:
-      'Suggérer des prompts depuis l’historique, les tags et les thèmes récurrents sans imposer un suivi d’habitude rigide.',
-    feedbackIdeaSharingTitle: 'Collections publiques partagées',
-    feedbackIdeaSharingBody:
-      'Regrouper des pensées publiques choisies dans une collection soignée à partager avec une audience limitée.',
     feedbackVote: 'Voter',
     feedbackVoted: 'Voté',
     feedbackVoteAria: 'Voter pour {title}',
+    feedbackLoading: 'Chargement des idées de la communauté...',
+    feedbackLoadError: 'Le tableau de la communauté n\'a pas pu être chargé.',
+    feedbackEmpty: 'Aucune idée pour le moment. Soyez la première personne à en proposer une.',
+    feedbackSubmitError: 'Votre idée n\'a pas pu être envoyée. Veuillez réessayer.',
+    feedbackVoteError: 'Votre vote n\'a pas pu être enregistré. Veuillez réessayer.',
+    feedbackSignInToSubmit: 'Se connecter pour publier',
+    feedbackSignInToVote: 'Se connecter pour voter pour {title}',
     blogEyebrow: 'Blog Thoughty',
     blogTitle: 'Actualités, conseils et inspiration pour écrire.',
     blogSubtitle:

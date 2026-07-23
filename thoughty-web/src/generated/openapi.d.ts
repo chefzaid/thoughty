@@ -1220,6 +1220,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/feature-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the highest-voted feature requests */
+        get: operations["FeatureRequestsController_list"];
+        put?: never;
+        /** Submit a feature request and vote for it */
+        post: operations["FeatureRequestsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/feature-requests/votes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List feature requests voted for by the current user */
+        get: operations["FeatureRequestsController_getVotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/feature-requests/{id}/vote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Vote once for a feature request */
+        post: operations["FeatureRequestsController_vote"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2692,6 +2744,94 @@ export interface components {
              * @enum {string}
              */
             provider: "google_drive" | "onedrive" | "dropbox";
+        };
+        /**
+         * @example {
+         *       "id": 14,
+         *       "title": "Calendar view for journal themes",
+         *       "details": "Show how recurring themes change across weeks and months.",
+         *       "status": "open",
+         *       "votes": 27,
+         *       "createdAt": "2026-07-23T18:30:00.000Z"
+         *     }
+         */
+        FeatureRequestDto: {
+            /** @example 14 */
+            id: number;
+            /** @example Calendar view for journal themes */
+            title: string;
+            /** @example Show how recurring themes change across weeks and months. */
+            details: string;
+            /**
+             * @example open
+             * @enum {string}
+             */
+            status: "open" | "reviewing" | "planned";
+            /** @example 27 */
+            votes: number;
+            /** @example 2026-07-23T18:30:00.000Z */
+            createdAt: string;
+        };
+        /**
+         * @example {
+         *       "requests": [
+         *         {
+         *           "id": 14,
+         *           "title": "Calendar view for journal themes",
+         *           "details": "Show how recurring themes change across weeks and months.",
+         *           "status": "open",
+         *           "votes": 27,
+         *           "createdAt": "2026-07-23T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        FeatureRequestListResponseDto: {
+            requests: components["schemas"]["FeatureRequestDto"][];
+        };
+        /**
+         * @example {
+         *       "requestIds": [
+         *         3,
+         *         14
+         *       ]
+         *     }
+         */
+        FeatureRequestVotesResponseDto: {
+            /**
+             * @example [
+             *       3,
+             *       14
+             *     ]
+             */
+            requestIds: number[];
+        };
+        /**
+         * @example {
+         *       "title": "Calendar view for journal themes",
+         *       "details": "Show how recurring themes change across weeks and months."
+         *     }
+         */
+        CreateFeatureRequestDto: {
+            /** @example Calendar view for journal themes */
+            title: string;
+            /** @example Show how recurring themes change across weeks and months. */
+            details: string;
+        };
+        /**
+         * @example {
+         *       "requestId": 14,
+         *       "votes": 28,
+         *       "voted": true
+         *     }
+         */
+        FeatureRequestVoteResponseDto: {
+            /** @example 14 */
+            requestId: number;
+            /** @example 28 */
+            votes: number;
+            /** @example true */
+            voted: boolean;
         };
     };
     responses: never;
@@ -5643,6 +5783,137 @@ export interface operations {
                      *     thoughty_cloud_sync_jobs_stuck 0
                      */
                     "text/plain": unknown;
+                };
+            };
+        };
+    };
+    FeatureRequestsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ranked public feature-request board */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "requests": [
+                     *         {
+                     *           "id": 14,
+                     *           "title": "Calendar view for journal themes",
+                     *           "details": "Show how recurring themes change across weeks and months.",
+                     *           "status": "open",
+                     *           "votes": 27,
+                     *           "createdAt": "2026-07-23T18:30:00.000Z"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FeatureRequestListResponseDto"];
+                };
+            };
+        };
+    };
+    FeatureRequestsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "title": "Calendar view for journal themes",
+                 *       "details": "Show how recurring themes change across weeks and months."
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateFeatureRequestDto"];
+            };
+        };
+        responses: {
+            /** @description Newly persisted feature request with its first vote */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 14,
+                     *       "title": "Calendar view for journal themes",
+                     *       "details": "Show how recurring themes change across weeks and months.",
+                     *       "status": "open",
+                     *       "votes": 27,
+                     *       "createdAt": "2026-07-23T18:30:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FeatureRequestDto"];
+                };
+            };
+        };
+    };
+    FeatureRequestsController_getVotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Feature-request identifiers voted for by the authenticated user */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "requestIds": [
+                     *         3,
+                     *         14
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FeatureRequestVotesResponseDto"];
+                };
+            };
+        };
+    };
+    FeatureRequestsController_vote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Authoritative vote state and count for the feature request */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "requestId": 14,
+                     *       "votes": 28,
+                     *       "voted": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FeatureRequestVoteResponseDto"];
                 };
             };
         };

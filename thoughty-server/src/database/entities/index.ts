@@ -7,3 +7,5 @@ export * from './attachment.entity';
 export * from './refresh-token.entity';
 export * from './setting.entity';
 export * from './cloud-sync-job.entity';
+export * from './feature-request.entity';
+export * from './feature-request-vote.entity';

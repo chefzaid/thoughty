@@ -60,6 +60,13 @@ describe('AppController (e2e)', () => {
         .expect(401);
     });
 
+    it('/api/feature-requests (POST) - should require authentication', () => {
+      return request(app.getHttpServer())
+        .post('/api/feature-requests')
+        .send({ title: 'Feature', details: 'A sufficiently long description.' })
+        .expect(401);
+    });
+
     it('/api/config (GET) - should require authentication', () => {
       return request(app.getHttpServer()).get('/api/config').expect(401);
     });

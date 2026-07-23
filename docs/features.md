@@ -144,6 +144,7 @@ flowchart LR
 - Long journal pages include a back-to-top affordance so users can quickly return to the main controls after browsing older entries.
 - Destructive flows use confirmation dialogs, and long-running operations such as loading history, sync, or imports expose explicit loading states.
 - API failures are normalized before they reach forms and action handlers, so validation lists, structured server messages, and plain-text failures surface as readable feedback instead of generic errors.
+- The public feedback page is backed by a persisted community feature-request board ranked by votes. Anyone can browse ideas, while authenticated users can submit bounded requests and cast one idempotent vote per idea; new requests automatically include their author's first vote.
 - The layout is responsive across desktop and smaller screens, with the same core journaling surfaces preserved instead of maintaining a separate reduced mobile product.
 - Footer links expose privacy, terms, and contact entry points, rounding out the application as a real hosted product rather than only an internal tool.
 

@@ -125,6 +125,7 @@ export function buildPublicShellProps({
     theme,
     t,
     onBackHome: () => routingState.handlePublicViewChange('intro'),
+    onSignIn: () => routingState.handlePublicViewChange('login'),
   };
 
   const legalPageProps: Omit<LegalPageProps, 'page'> = {

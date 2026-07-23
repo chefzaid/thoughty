@@ -4325,6 +4325,166 @@
           "Metrics"
         ]
       }
+    },
+    "/api/feature-requests": {
+      "get": {
+        "operationId": "FeatureRequestsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Ranked public feature-request board",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureRequestListResponseDto"
+                },
+                "example": {
+                  "requests": [
+                    {
+                      "id": 14,
+                      "title": "Calendar view for journal themes",
+                      "details": "Show how recurring themes change across weeks and months.",
+                      "status": "open",
+                      "votes": 27,
+                      "createdAt": "2026-07-23T18:30:00.000Z"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the highest-voted feature requests",
+        "tags": [
+          "Feature Requests"
+        ]
+      },
+      "post": {
+        "operationId": "FeatureRequestsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFeatureRequestDto"
+              },
+              "example": {
+                "title": "Calendar view for journal themes",
+                "details": "Show how recurring themes change across weeks and months."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Newly persisted feature request with its first vote",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureRequestDto"
+                },
+                "example": {
+                  "id": 14,
+                  "title": "Calendar view for journal themes",
+                  "details": "Show how recurring themes change across weeks and months.",
+                  "status": "open",
+                  "votes": 27,
+                  "createdAt": "2026-07-23T18:30:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit a feature request and vote for it",
+        "tags": [
+          "Feature Requests"
+        ]
+      }
+    },
+    "/api/feature-requests/votes": {
+      "get": {
+        "operationId": "FeatureRequestsController_getVotes",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Feature-request identifiers voted for by the authenticated user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureRequestVotesResponseDto"
+                },
+                "example": {
+                  "requestIds": [
+                    3,
+                    14
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List feature requests voted for by the current user",
+        "tags": [
+          "Feature Requests"
+        ]
+      }
+    },
+    "/api/feature-requests/{id}/vote": {
+      "post": {
+        "operationId": "FeatureRequestsController_vote",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Authoritative vote state and count for the feature request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureRequestVoteResponseDto"
+                },
+                "example": {
+                  "requestId": 14,
+                  "votes": 28,
+                  "voted": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Vote once for a feature request",
+        "tags": [
+          "Feature Requests"
+        ]
+      }
     }
   },
   "info": {
@@ -6798,6 +6958,158 @@
         ],
         "example": {
           "provider": "google_drive"
+        }
+      },
+      "FeatureRequestDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 14
+          },
+          "title": {
+            "type": "string",
+            "example": "Calendar view for journal themes"
+          },
+          "details": {
+            "type": "string",
+            "example": "Show how recurring themes change across weeks and months."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "reviewing",
+              "planned"
+            ],
+            "example": "open"
+          },
+          "votes": {
+            "type": "number",
+            "example": 27
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-07-23T18:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "details",
+          "status",
+          "votes",
+          "createdAt"
+        ],
+        "example": {
+          "id": 14,
+          "title": "Calendar view for journal themes",
+          "details": "Show how recurring themes change across weeks and months.",
+          "status": "open",
+          "votes": 27,
+          "createdAt": "2026-07-23T18:30:00.000Z"
+        }
+      },
+      "FeatureRequestListResponseDto": {
+        "type": "object",
+        "properties": {
+          "requests": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeatureRequestDto"
+            }
+          }
+        },
+        "required": [
+          "requests"
+        ],
+        "example": {
+          "requests": [
+            {
+              "id": 14,
+              "title": "Calendar view for journal themes",
+              "details": "Show how recurring themes change across weeks and months.",
+              "status": "open",
+              "votes": 27,
+              "createdAt": "2026-07-23T18:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "FeatureRequestVotesResponseDto": {
+        "type": "object",
+        "properties": {
+          "requestIds": {
+            "example": [
+              3,
+              14
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "requestIds"
+        ],
+        "example": {
+          "requestIds": [
+            3,
+            14
+          ]
+        }
+      },
+      "CreateFeatureRequestDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Calendar view for journal themes",
+            "minLength": 3,
+            "maxLength": 120
+          },
+          "details": {
+            "type": "string",
+            "example": "Show how recurring themes change across weeks and months.",
+            "minLength": 10,
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "title",
+          "details"
+        ],
+        "example": {
+          "title": "Calendar view for journal themes",
+          "details": "Show how recurring themes change across weeks and months."
+        }
+      },
+      "FeatureRequestVoteResponseDto": {
+        "type": "object",
+        "properties": {
+          "requestId": {
+            "type": "number",
+            "example": 14
+          },
+          "votes": {
+            "type": "number",
+            "example": 28
+          },
+          "voted": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "requestId",
+          "votes",
+          "voted"
+        ],
+        "example": {
+          "requestId": 14,
+          "votes": 28,
+          "voted": true
         }
       }
     }

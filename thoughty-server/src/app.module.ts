@@ -14,6 +14,7 @@ import { AttachmentsModule } from './modules/attachments';
 import { AiModule } from './modules/ai';
 import { CloudSyncModule } from './modules/cloud-sync';
 import { MetricsModule } from './modules/metrics';
+import { FeatureRequestsModule } from './modules/feature-requests';
 import { HealthController } from './health.controller';
 import { createThrottlerModuleOptions, JsonLogger, RequestLoggingMiddleware } from './common';
 
@@ -44,6 +45,7 @@ import { createThrottlerModuleOptions, JsonLogger, RequestLoggingMiddleware } fr
     AiModule,
     CloudSyncModule,
     MetricsModule,
+    FeatureRequestsModule,
   ],
   providers: [
     // Global JWT Auth Guard

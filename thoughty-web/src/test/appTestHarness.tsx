@@ -143,6 +143,9 @@ export function createDefaultFetchResponse(url: string) {
   if (url.includes('/api/stats')) {
     return createJsonResponse(mockStatsResponse);
   }
+  if (url.includes('/api/feature-requests')) {
+    return createJsonResponse({ requests: [] });
+  }
   if (url.includes('/api/io/format')) {
     return createJsonResponse(mockFormatResponse);
   }

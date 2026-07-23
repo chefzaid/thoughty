@@ -105,6 +105,21 @@
     font-weight: 800;
 }
 
+.feedback-error {
+    margin: 0;
+    border-radius: 8px;
+    background: #fee2e2;
+    color: #991b1b;
+    padding: 0.85rem;
+    line-height: 1.45;
+    font-weight: 800;
+}
+
+.intro-page.dark .feedback-error {
+    background: rgba(185, 28, 28, 0.22);
+    color: #fecaca;
+}
+
 .intro-page.dark .feedback-success {
     background: rgba(45, 125, 101, 0.22);
     color: #d9f7e8;
@@ -171,6 +186,21 @@
     color: #f7f5ed;
 }
 
+.feedback-board-message {
+    margin: 0;
+    padding: 1.25rem 0;
+    color: #475569;
+}
+
+.intro-page.dark .feedback-board-message {
+    color: #d9d3c2;
+}
+
+.feedback-board-message.error {
+    color: #b91c1c;
+}
+
+.feedback-form button:disabled,
 .feedback-vote:disabled {
     cursor: default;
     opacity: 0.75;

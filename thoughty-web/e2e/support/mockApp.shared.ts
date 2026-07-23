@@ -56,6 +56,15 @@ export interface MockEntryRevision {
   createdAt: string;
 }
 
+export interface MockFeatureRequest {
+  id: number;
+  title: string;
+  details: string;
+  status: 'open' | 'reviewing' | 'planned';
+  votes: number;
+  createdAt: string;
+}
+
 export interface SetupMockAppOptions {
   startAuthenticated?: boolean;
   initialEntries?: MockEntry[];
@@ -104,6 +113,8 @@ export interface MockAppState {
   cloudStatus: Record<MockCloudProvider, MockCloudProviderStatus>;
   cloudSchedules: Partial<Record<MockCloudProvider, MockCloudSchedule>>;
   cloudFiles: MockCloudFile[];
+  featureRequests: MockFeatureRequest[];
+  featureRequestVotes: number[];
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
   lastRegisterPayload: AuthPayload | null;
@@ -118,6 +129,7 @@ export interface MockAppState {
   lastAiFixPayload: unknown;
   lastAiSummaryPayload: unknown;
   lastPersonalityAnalysisPayload: unknown;
+  lastFeatureRequestPayload: unknown;
   lastAiWritingPromptsPayload: unknown;
   lastAiChatPayload: unknown;
   lastBulkPayload: unknown;
@@ -180,6 +192,25 @@ const DEFAULT_CLOUD_FILES: MockCloudFile[] = [
         },
       ],
     }),
+  },
+];
+
+const DEFAULT_FEATURE_REQUESTS: MockFeatureRequest[] = [
+  {
+    id: 1,
+    title: 'Offline writing mode',
+    details: 'Write and review journal entries without a network connection.',
+    status: 'planned',
+    votes: 42,
+    createdAt: '2026-07-20T12:00:00.000Z',
+  },
+  {
+    id: 2,
+    title: 'Mood calendar',
+    details: 'Show recurring mood patterns across weeks and months.',
+    status: 'open',
+    votes: 12,
+    createdAt: '2026-07-22T12:00:00.000Z',
   },
 ];
 
@@ -327,6 +358,8 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
     cloudStatus: options.cloudStatus || DEFAULT_CLOUD_STATUS,
     cloudSchedules: options.cloudSchedules || DEFAULT_CLOUD_SCHEDULES,
     cloudFiles: options.cloudFiles || DEFAULT_CLOUD_FILES,
+    featureRequests: DEFAULT_FEATURE_REQUESTS.map((request) => ({ ...request })),
+    featureRequestVotes: [],
     nextEntryId:
       (options.initialEntries?.reduce((maxId, entry) => Math.max(maxId, entry.id), 0) || 0) +
       1,
@@ -343,6 +376,7 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
     lastAiFixPayload: null,
     lastAiSummaryPayload: null,
     lastPersonalityAnalysisPayload: null,
+    lastFeatureRequestPayload: null,
     lastAiWritingPromptsPayload: null,
     lastAiChatPayload: null,
     lastBulkPayload: null,

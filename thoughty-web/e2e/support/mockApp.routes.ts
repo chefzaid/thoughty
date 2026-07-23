@@ -86,6 +86,66 @@ async function handleConfigRoutes({ route, request, pathname, state }: RouteCont
   return false;
 }
 
+async function handleFeatureRequestRoutes({
+  route,
+  request,
+  pathname,
+  state,
+}: RouteContext): Promise<boolean> {
+  if (pathname === '/api/feature-requests/votes') {
+    await fulfillJson(route, { requestIds: state.featureRequestVotes });
+    return true;
+  }
+
+  if (pathname === '/api/feature-requests') {
+    if (request.method() === 'POST') {
+      const payload = request.postDataJSON() as { title: string; details: string };
+      state.lastFeatureRequestPayload = payload;
+      const featureRequest = {
+        id: Math.max(0, ...state.featureRequests.map((idea) => idea.id)) + 1,
+        title: payload.title,
+        details: payload.details,
+        status: 'open' as const,
+        votes: 1,
+        createdAt: '2026-07-23T19:30:00.000Z',
+      };
+      state.featureRequests.push(featureRequest);
+      state.featureRequestVotes.push(featureRequest.id);
+      await fulfillJson(route, featureRequest, { status: 201 });
+      return true;
+    }
+
+    await fulfillJson(route, {
+      requests: [...state.featureRequests].sort(
+        (left, right) => right.votes - left.votes,
+      ),
+    });
+    return true;
+  }
+
+  const voteMatch = /^\/api\/feature-requests\/(\d+)\/vote$/.exec(pathname);
+  if (voteMatch && request.method() === 'POST') {
+    const requestId = Number(voteMatch[1]);
+    const featureRequest = state.featureRequests.find((idea) => idea.id === requestId);
+    if (!featureRequest) {
+      await fulfillJson(route, { message: 'Feature request not found' }, { status: 404 });
+      return true;
+    }
+    if (!state.featureRequestVotes.includes(requestId)) {
+      state.featureRequestVotes.push(requestId);
+      featureRequest.votes += 1;
+    }
+    await fulfillJson(
+      route,
+      { requestId, votes: featureRequest.votes, voted: true },
+      { status: 201 },
+    );
+    return true;
+  }
+
+  return false;
+}
+
 async function handleIoRoutes({ route, request, url, pathname, searchParams, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/io/format') {
     if (request.method() === 'POST') {
@@ -191,6 +251,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     if (await handleConfigRoutes(context)) {
+      return;
+    }
+    if (await handleFeatureRequestRoutes(context)) {
       return;
     }
     if (await handleReferenceRoutes(context)) {
