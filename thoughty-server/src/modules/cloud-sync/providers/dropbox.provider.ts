@@ -146,9 +146,10 @@ export class DropboxProvider implements CloudProvider {
       }));
   }
 
-  async uploadFile(accessToken: string, filename: string, content: string, _mimeType: string): Promise<CloudFileInfo> {
+  async uploadFile(accessToken: string, filename: string, content: string | Buffer, _mimeType: string): Promise<CloudFileInfo> {
     await this.ensureAppFolder(accessToken);
     const filePath = `${APP_FOLDER_PATH}/${filename}`;
+    const requestBody = typeof content === 'string' ? content : Uint8Array.from(content).buffer;
 
     const response = await fetch(`${DROPBOX_CONTENT_API}/files/upload`, {
       method: 'POST',
@@ -162,7 +163,7 @@ export class DropboxProvider implements CloudProvider {
           mute: true,
         }),
       },
-      body: content,
+      body: requestBody,
     });
 
     if (!response.ok) {

@@ -190,6 +190,15 @@ export class CloudSyncService {
     return this.providers[provider].uploadFile(accessToken, filename, String(content), contentType);
   }
 
+  async uploadFile(
+    userId: number,
+    provider: CloudProviderType,
+    file: { content: string | Buffer; filename: string; contentType: string },
+  ): Promise<CloudFileInfo> {
+    const accessToken = await this.getValidAccessToken(userId, provider);
+    return this.providers[provider].uploadFile(accessToken, file.filename, file.content, file.contentType);
+  }
+
   async downloadFile(userId: number, provider: CloudProviderType, fileId: string): Promise<{ content: string }> {
     const accessToken = await this.getValidAccessToken(userId, provider);
     const content = await this.providers[provider].downloadFile(accessToken, fileId);

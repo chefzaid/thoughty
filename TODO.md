@@ -122,7 +122,7 @@
 - [ ] Custom cover page (image upload, color themes)
 - [ ] AI-generated chapter introductions and summaries
 - [x] Yearbook mode: one chapter per year or month instead of per tag
-- [ ] Upload the generated book directly to a connected cloud provider
+- [x] Upload the generated book directly to a connected cloud provider
 - [ ] Embed entry attachments (images) in the generated book
 - [x] Fix the UI alignment and styling of the book converter page, and add a progress bar for the generation process
 - [x] Modes of AI weaving: strict (only use the content of the entries) vs creative (use the content as a base but add more details and transitions for a more engaging read)

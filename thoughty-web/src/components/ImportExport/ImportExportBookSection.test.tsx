@@ -91,6 +91,9 @@ describe('ImportExport book section', () => {
         expect(screen.getByText('bookIncludeUntagged')).toBeInTheDocument();
         expect(screen.getByText('previewBook')).toBeInTheDocument();
         expect(screen.getByText('downloadBook')).toBeInTheDocument();
+        expect(screen.getByLabelText('bookCloudProvider')).toBeDisabled();
+        expect(screen.getByRole('button', { name: 'uploadBook' })).toBeDisabled();
+        expect(screen.getByText('bookCloudConnectHint')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'book' })).toBeInTheDocument();
     });
 
@@ -192,6 +195,42 @@ describe('ImportExport book section', () => {
 
         const exportCall = (globalThis.fetch as Mock).mock.calls.find((call: unknown[]) => (call[0] as string).includes('/api/books/export'));
         expect((exportCall as [string])[0]).toContain('weavingMode=creative');
+    });
+
+    it('uploads the generated book to a connected cloud provider', async () => {
+        mockCloudSyncService.getStatus.mockResolvedValue({
+            google_drive: { connected: true },
+            dropbox: { connected: true },
+            onedrive: { connected: false },
+        });
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                id: 'cloud-book-1',
+                name: 'thoughty_book_My_Year.epub',
+                size: 2048,
+                modifiedAt: '2026-07-23',
+            }),
+        });
+
+        await renderBookSection();
+
+        await waitFor(() => expect(screen.getByLabelText('bookCloudProvider')).toHaveValue('google_drive'));
+        fireEvent.change(screen.getByLabelText('bookTitleLabel'), { target: { value: 'My Year' } });
+        fireEvent.change(screen.getByLabelText('exportFormat'), { target: { value: 'epub' } });
+        fireEvent.change(screen.getByLabelText('bookCloudProvider'), { target: { value: 'dropbox' } });
+        fireEvent.click(screen.getByRole('button', { name: 'uploadBook' }));
+
+        await screen.findByText('bookCloudUploadSuccess');
+
+        const uploadCall = (globalThis.fetch as Mock).mock.calls.find(
+            (call: unknown[]) => (call[0] as string).includes('/api/books/upload'),
+        );
+        expect(uploadCall).toBeTruthy();
+        expect((uploadCall as [string, RequestInit])[0]).toContain('provider=dropbox');
+        expect((uploadCall as [string, RequestInit])[0]).toContain('format=epub');
+        expect((uploadCall as [string, RequestInit])[0]).toContain('title=My+Year');
+        expect((uploadCall as [string, RequestInit])[1]).toMatchObject({ method: 'POST' });
     });
 
     it('shows book generation progress while a download is running', async () => {

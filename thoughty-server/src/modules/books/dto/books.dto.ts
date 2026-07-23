@@ -108,6 +108,12 @@ export class BookQueryDto {
   weavingMode?: 'strict' | 'creative';
 }
 
+export class BookUploadQueryDto extends BookQueryDto {
+  @ApiProperty({ description: 'Connected cloud provider', enum: ['google_drive', 'onedrive', 'dropbox'] })
+  @IsIn(['google_drive', 'onedrive', 'dropbox'])
+  provider: 'google_drive' | 'onedrive' | 'dropbox';
+}
+
 export class BookChapterPreviewDto {
   @ApiProperty()
   title: string;

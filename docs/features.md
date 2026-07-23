@@ -86,6 +86,7 @@ flowchart LR
 - Books are configurable before generation: custom title and author (defaulting to the diary name and username), chapter ordering (alphabetical, by entry count, or by first entry date), a date range, and an explicit tag list to use as chapters.
 - Entries with several tags can appear in every matching chapter or only in their first tag's chapter, and entries without tags can be collected into a closing untagged chapter.
 - A preview endpoint returns the book outline — chapter titles, entry counts, and the date range each chapter spans — so users can check the structure in the Book section of the import/export screen before downloading (the preview never spends AI tokens).
+- Generated books can be uploaded directly to any connected Google Drive, OneDrive, or Dropbox account. PDF and EPUB files remain binary-safe through the provider upload path.
 - Markdown-formatted entries are stripped to clean prose for the PDF output, while the HTML and Markdown outputs keep the original content. Archived entries are excluded from books.
 
 ## Cloud Sync and External Storage
@@ -94,6 +95,7 @@ flowchart LR
 - Provider connection uses OAuth popup flows, keeping the journal session inside the app while delegating credentials to the provider.
 - Cloud sync builds on the export system instead of inventing a second serialization format. That means diary scope, export format, and visibility options can be reused when pushing journal data to cloud storage.
 - Users can browse provider files, import journal data back from the cloud, and download synced files to the local device when needed.
+- The Book section reuses connected provider accounts for one-click uploads without first downloading the generated file to the device.
 - Scheduled sync is configurable per provider with `every_6h`, `every_12h`, `daily`, and `weekly` frequencies.
 - Scheduled sync is designed to avoid redundant uploads by detecting whether content has changed since the last successful run.
 - Manual `Sync Now` remains available, which is important for people who want explicit control before travel, backup, or device changes.

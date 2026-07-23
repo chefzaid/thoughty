@@ -170,10 +170,14 @@ describe('GoogleDriveProvider', () => {
           }),
         });
 
-      const result = await provider.uploadFile('access-token', 'export.txt', 'content', 'text/plain');
+      const binaryContent = Buffer.from([0, 255, 1, 2]);
+      const result = await provider.uploadFile('access-token', 'export.pdf', binaryContent, 'application/pdf');
 
       expect(result.id).toBe('new-file-id');
       expect(result.name).toBe('export.txt');
+      const uploadBody = mockFetch.mock.calls[2][1]?.body as Buffer;
+      expect(Buffer.isBuffer(uploadBody)).toBe(true);
+      expect(uploadBody.includes(binaryContent)).toBe(true);
     });
   });
 

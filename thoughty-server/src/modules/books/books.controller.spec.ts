@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
+import { CloudSyncService } from '@/modules/cloud-sync';
 
 describe('BooksController', () => {
   let controller: BooksController;
   let booksService: any;
+  let cloudSyncService: any;
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -13,10 +15,16 @@ describe('BooksController', () => {
       preview: jest.fn(),
       export: jest.fn(),
     };
+    cloudSyncService = {
+      uploadFile: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BooksController],
-      providers: [{ provide: BooksService, useValue: booksService }],
+      providers: [
+        { provide: BooksService, useValue: booksService },
+        { provide: CloudSyncService, useValue: cloudSyncService },
+      ],
     }).compile();
 
     controller = module.get<BooksController>(BooksController);
@@ -63,6 +71,26 @@ describe('BooksController', () => {
         'attachment; filename="thoughty_book_My_Book_2024-06-01.pdf"',
       );
       expect(mockRes.send).toHaveBeenCalledWith(pdfBuffer);
+    });
+  });
+
+  describe('upload', () => {
+    it('generates and uploads the book for the authenticated user', async () => {
+      const query = { provider: 'google_drive', diaryId: 2, format: 'epub' } as any;
+      const bookFile = {
+        content: Buffer.from('epub bytes'),
+        filename: 'thoughty_book.epub',
+        contentType: 'application/epub+zip',
+      };
+      const cloudFile = { id: 'file-1', name: 'thoughty_book.epub', size: 10, modifiedAt: '2026-07-23' };
+      booksService.export.mockResolvedValue(bookFile);
+      cloudSyncService.uploadFile.mockResolvedValue(cloudFile);
+
+      const result = await controller.upload(mockUser as any, query);
+
+      expect(booksService.export).toHaveBeenCalledWith(1, { diaryId: 2, format: 'epub' });
+      expect(cloudSyncService.uploadFile).toHaveBeenCalledWith(1, 'google_drive', bookFile);
+      expect(result).toBe(cloudFile);
     });
   });
 });

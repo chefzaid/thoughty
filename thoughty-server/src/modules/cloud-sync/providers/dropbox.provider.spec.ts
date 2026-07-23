@@ -163,10 +163,12 @@ describe('DropboxProvider', () => {
           }),
         });
 
-      const result = await provider.uploadFile('access-token', 'export.txt', 'content', 'text/plain');
+      const binaryContent = Buffer.from([0, 255, 1, 2]);
+      const result = await provider.uploadFile('access-token', 'export.pdf', binaryContent, 'application/pdf');
 
       expect(result.id).toBe('id:new-file');
       expect(result.name).toBe('export.txt');
+      expect(Buffer.from(mockFetch.mock.calls[1][1]?.body as ArrayBuffer)).toEqual(binaryContent);
       expect(mockFetch).toHaveBeenCalledWith(
         'https://content.dropboxapi.com/2/files/upload',
         expect.objectContaining({

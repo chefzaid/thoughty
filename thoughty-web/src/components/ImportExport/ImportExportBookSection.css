@@ -38,6 +38,39 @@
     flex-wrap: wrap;
 }
 
+.book-cloud-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border-color, rgba(148, 163, 184, 0.22));
+}
+
+.book-cloud-provider {
+    flex: 0 1 15rem;
+    min-width: 12rem;
+}
+
+.book-cloud-upload {
+    min-height: 2.65rem;
+}
+
+.book-cloud-upload .codicon {
+    font-size: 1.05rem;
+}
+
+.book-cloud-hint {
+    flex: 1 1 15rem;
+    align-self: center;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.72));
+    font-size: 0.85rem;
+}
+
+.import-export.light .book-cloud-hint {
+    color: #4b5563;
+}
+
 #book-section .book-checkbox-row {
     align-items: flex-start;
     gap: 0.75rem 1.25rem;
@@ -133,5 +166,10 @@
     .book-progress {
         align-items: stretch;
         flex-direction: column;
+    }
+
+    .book-cloud-provider,
+    .book-cloud-upload {
+        width: 100%;
     }
 }

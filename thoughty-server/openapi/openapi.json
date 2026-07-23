@@ -3151,152 +3151,209 @@
         ]
       }
     },
-    "/api/attachments/upload": {
+    "/api/books/upload": {
       "post": {
-        "operationId": "AttachmentsController_upload",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/LinkAttachmentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "File uploaded successfully"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Upload a file attachment",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/entry/{entryId}": {
-      "get": {
-        "operationId": "AttachmentsController_getByEntry",
+        "operationId": "BooksController_upload",
         "parameters": [
           {
-            "name": "entryId",
-            "required": true,
-            "in": "path",
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID to build the book from",
             "schema": {
               "type": "number"
             }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of attachments"
-          }
-        },
-        "security": [
+          },
           {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all attachments for an entry",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/{id}/link": {
-      "post": {
-        "operationId": "AttachmentsController_linkToEntry",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
+            "name": "format",
+            "required": false,
+            "in": "query",
+            "description": "Book output format",
             "schema": {
-              "type": "number"
+              "default": "pdf",
+              "type": "string",
+              "enum": [
+                "pdf",
+                "epub",
+                "html",
+                "md"
+              ]
             }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LinkAttachmentDto"
-              },
-              "example": {
-                "entryId": 1
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Attachment linked to entry"
-          }
-        },
-        "security": [
+          },
           {
-            "bearer": []
-          }
-        ],
-        "summary": "Link an attachment to an entry",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/{id}": {
-      "delete": {
-        "operationId": "AttachmentsController_delete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Attachment deleted"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Delete an attachment",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/file/{filename}": {
-      "get": {
-        "operationId": "AttachmentsController_serveFile",
-        "parameters": [
-          {
-            "name": "filename",
-            "required": true,
-            "in": "path",
+            "name": "title",
+            "required": false,
+            "in": "query",
+            "description": "Book title (defaults to the diary name)",
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "author",
+            "required": false,
+            "in": "query",
+            "description": "Author name shown on the title page (defaults to the username)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "description": "Only include entries on or after this date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "description": "Only include entries on or before this date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "chapterOrder",
+            "required": false,
+            "in": "query",
+            "description": "Chapter ordering: alphabetical, by entry count, or by first entry date",
+            "schema": {
+              "default": "alpha",
+              "type": "string",
+              "enum": [
+                "alpha",
+                "entries",
+                "chrono"
+              ]
+            }
+          },
+          {
+            "name": "chapterMode",
+            "required": false,
+            "in": "query",
+            "description": "Chapter grouping mode: tags, calendar years, or calendar months",
+            "schema": {
+              "default": "tags",
+              "type": "string",
+              "enum": [
+                "tags",
+                "year",
+                "month"
+              ]
+            }
+          },
+          {
+            "name": "tagScope",
+            "required": false,
+            "in": "query",
+            "description": "Place entries in every matching tag chapter, or only in their first tag chapter",
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "first"
+              ]
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated list of tags to use as chapters (defaults to all tags)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeUntagged",
+            "required": false,
+            "in": "query",
+            "description": "Add a final chapter for entries without tags",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeDates",
+            "required": false,
+            "in": "query",
+            "description": "Show entry dates inside chapters",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "includeToc",
+            "required": false,
+            "in": "query",
+            "description": "Include a table of contents",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "narrative",
+            "required": false,
+            "in": "query",
+            "description": "Use AI to weave each chapter's entries into flowing prose (requires a configured AI key)",
+            "schema": {
+              "default": true,
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "weavingMode",
+            "required": false,
+            "in": "query",
+            "description": "AI weaving mode for narrative chapters",
+            "schema": {
+              "default": "strict",
+              "type": "string",
+              "enum": [
+                "strict",
+                "creative"
+              ]
+            }
+          },
+          {
+            "name": "provider",
+            "required": true,
+            "in": "query",
+            "description": "Connected cloud provider",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "google_drive",
+                "onedrive",
+                "dropbox"
+              ]
+            }
           }
         ],
         "responses": {
-          "200": {
-            "description": "File content"
+          "201": {
+            "description": "Cloud file metadata for the uploaded book",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudFileInfoDto"
+                },
+                "example": {
+                  "id": "example",
+                  "name": "Daily Journal",
+                  "size": 1,
+                  "modifiedAt": "2026-06-24T10:00:00.000Z"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3304,9 +3361,9 @@
             "bearer": []
           }
         ],
-        "summary": "Serve an attachment file",
+        "summary": "Generate a book and upload it to a connected cloud provider",
         "tags": [
-          "Attachments"
+          "Books"
         ]
       }
     },
@@ -3657,6 +3714,165 @@
         "summary": "Trigger a diff-based sync (uploads only if content has changed)",
         "tags": [
           "Cloud Sync"
+        ]
+      }
+    },
+    "/api/attachments/upload": {
+      "post": {
+        "operationId": "AttachmentsController_upload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload a file attachment",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/entry/{entryId}": {
+      "get": {
+        "operationId": "AttachmentsController_getByEntry",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of attachments"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get all attachments for an entry",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/{id}/link": {
+      "post": {
+        "operationId": "AttachmentsController_linkToEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkAttachmentDto"
+              },
+              "example": {
+                "entryId": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attachment linked to entry"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link an attachment to an entry",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/{id}": {
+      "delete": {
+        "operationId": "AttachmentsController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment deleted"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an attachment",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/file/{filename}": {
+      "get": {
+        "operationId": "AttachmentsController_serveFile",
+        "parameters": [
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Serve an attachment file",
+        "tags": [
+          "Attachments"
         ]
       }
     },
@@ -5694,16 +5910,34 @@
           ]
         }
       },
-      "LinkAttachmentDto": {
+      "CloudFileInfoDto": {
         "type": "object",
         "properties": {
-          "entryId": {
-            "type": "number",
-            "description": "Entry ID to link attachment to"
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "modifiedAt": {
+            "type": "string",
+            "description": "Provider modification timestamp"
           }
         },
+        "required": [
+          "id",
+          "name",
+          "size",
+          "modifiedAt"
+        ],
         "example": {
-          "entryId": 1
+          "id": "example",
+          "name": "Daily Journal",
+          "size": 1,
+          "modifiedAt": "2026-06-24T10:00:00.000Z"
         }
       },
       "CloudAuthUrlDto": {
@@ -5924,6 +6158,18 @@
         ],
         "example": {
           "provider": "google_drive"
+        }
+      },
+      "LinkAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "description": "Entry ID to link attachment to"
+          }
+        },
+        "example": {
+          "entryId": 1
         }
       }
     }

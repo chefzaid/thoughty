@@ -153,7 +153,7 @@ export class GoogleDriveProvider implements CloudProvider {
     }));
   }
 
-  async uploadFile(accessToken: string, filename: string, content: string, mimeType: string): Promise<CloudFileInfo> {
+  async uploadFile(accessToken: string, filename: string, content: string | Buffer, mimeType: string): Promise<CloudFileInfo> {
     const folderId = await this.getOrCreateAppFolder(accessToken);
 
     // Check if file already exists to update it
@@ -179,14 +179,17 @@ export class GoogleDriveProvider implements CloudProvider {
       ? { name: filename }
       : { name: filename, parents: [folderId] };
 
-    const multipartBody =
+    const multipartPrefix =
       `--${boundary}\r\n` +
       `Content-Type: application/json; charset=UTF-8\r\n\r\n` +
       `${JSON.stringify(metadata)}\r\n` +
       `--${boundary}\r\n` +
-      `Content-Type: ${mimeType}\r\n\r\n` +
-      `${content}\r\n` +
-      `--${boundary}--`;
+      `Content-Type: ${mimeType}\r\n\r\n`;
+    const multipartBody = Buffer.concat([
+      Buffer.from(multipartPrefix),
+      Buffer.isBuffer(content) ? content : Buffer.from(content),
+      Buffer.from(`\r\n--${boundary}--`),
+    ]);
 
     const url = existingFileId
       ? `${GOOGLE_UPLOAD_API}/files/${existingFileId}?uploadType=multipart&fields=id,name,size,modifiedTime`

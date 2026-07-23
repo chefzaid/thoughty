@@ -172,10 +172,12 @@ describe('OneDriveProvider', () => {
           }),
         });
 
-      const result = await provider.uploadFile('access-token', 'export.txt', 'content', 'text/plain');
+      const binaryContent = Buffer.from([0, 255, 1, 2]);
+      const result = await provider.uploadFile('access-token', 'export.pdf', binaryContent, 'application/pdf');
 
       expect(result.id).toBe('new-file-id');
       expect(result.name).toBe('export.txt');
+      expect(Buffer.from(mockFetch.mock.calls[1][1]?.body as ArrayBuffer)).toEqual(binaryContent);
     });
 
     it('should throw when upload fails', async () => {

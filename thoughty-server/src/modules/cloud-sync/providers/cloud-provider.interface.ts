@@ -30,7 +30,7 @@ export interface CloudProvider {
   /**
    * Upload a file to the Thoughty app folder
    */
-  uploadFile(accessToken: string, filename: string, content: string, mimeType: string): Promise<CloudFileInfo>;
+  uploadFile(accessToken: string, filename: string, content: string | Buffer, mimeType: string): Promise<CloudFileInfo>;
 
   /**
    * Download a file by its ID

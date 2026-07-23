@@ -140,8 +140,9 @@ export class OneDriveProvider implements CloudProvider {
     }));
   }
 
-  async uploadFile(accessToken: string, filename: string, content: string, mimeType: string): Promise<CloudFileInfo> {
+  async uploadFile(accessToken: string, filename: string, content: string | Buffer, mimeType: string): Promise<CloudFileInfo> {
     const folderId = await this.getOrCreateAppFolder(accessToken);
+    const requestBody = typeof content === 'string' ? content : Uint8Array.from(content).buffer;
 
     // Upload (creates or replaces)
     const response = await fetch(
@@ -152,7 +153,7 @@ export class OneDriveProvider implements CloudProvider {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': mimeType,
         },
-        body: content,
+        body: requestBody,
       },
     );
 

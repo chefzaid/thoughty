@@ -4,6 +4,20 @@ import { Transform } from 'class-transformer';
 
 export type CloudProviderType = 'google_drive' | 'onedrive' | 'dropbox';
 
+export class CloudFileInfoDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  size: number;
+
+  @ApiProperty({ description: 'Provider modification timestamp' })
+  modifiedAt: string;
+}
+
 export class CloudConnectDto {
   @ApiProperty({ description: 'OAuth authorization code' })
   @IsString()

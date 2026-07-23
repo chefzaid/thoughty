@@ -8,13 +8,11 @@ import { CloudImportSection, CloudSyncSection } from './ImportExportCloudSection
 import { DangerZoneSection, ExportSection, FormatSection, ImportSection, RouteActions } from './ImportExportPanels';
 import { BookSection } from './ImportExportBookSection';
 import { downloadBlob } from '../../utils/downloadFile';
+import { useImportExportBook } from './useImportExportBook';
 import {
     CLOUD_PROVIDERS,
-    DEFAULT_BOOK_OPTIONS,
     DEFAULT_FORMAT_CONFIG,
     createProviderRecord,
-    type BookOptions,
-    type BookPreviewData,
     type FormatConfig,
     type ImportExportProps,
     type ImportExportRouteState,
@@ -47,10 +45,6 @@ function ImportExport({
     const [activeSection, setActiveSection] = useState<ImportExportSection>(initialSection);
     const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const [bookOptions, setBookOptions] = useState<BookOptions>(DEFAULT_BOOK_OPTIONS);
-    const [bookPreview, setBookPreview] = useState<BookPreviewData | null>(null);
-    const [generatingBook, setGeneratingBook] = useState(false);
-
     const [cloudStatus, setCloudStatus] = useState<Partial<CloudStatus>>({});
     const [cloudLoading, setCloudLoading] = useState(true);
     const [uploading, setUploading] = useState<CloudProviderType | null>(null);
@@ -65,6 +59,14 @@ function ImportExport({
     const [cloudFiles, setCloudFiles] = useState<CloudFileInfo[]>([]);
     const [loadingCloudFiles, setLoadingCloudFiles] = useState(false);
     const [importingCloudFile, setImportingCloudFile] = useState<string | null>(null);
+    const connectedProviders = CLOUD_PROVIDERS.filter((provider) => cloudStatus[provider]?.connected);
+    const book = useImportExportBook({
+        authFetch,
+        connectedProviders,
+        diaryId,
+        showMessage,
+        t,
+    });
 
     const exportSectionRef = useRef<HTMLElement | null>(null);
     const importSectionRef = useRef<HTMLElement | null>(null);
@@ -237,88 +239,6 @@ function ImportExport({
         }
     }
 
-    function buildBookParams(): URLSearchParams {
-        const params = new URLSearchParams();
-        if (diaryId) {
-            params.append('diaryId', diaryId.toString());
-        }
-        if (bookOptions.title.trim()) {
-            params.append('title', bookOptions.title.trim());
-        }
-        if (bookOptions.author.trim()) {
-            params.append('author', bookOptions.author.trim());
-        }
-        if (bookOptions.format !== 'pdf') {
-            params.append('format', bookOptions.format);
-        }
-        if (bookOptions.chapterMode !== 'tags') {
-            params.append('chapterMode', bookOptions.chapterMode);
-        }
-        if (bookOptions.chapterOrder !== 'alpha') {
-            params.append('chapterOrder', bookOptions.chapterOrder);
-        }
-        if (bookOptions.tagScope !== 'all') {
-            params.append('tagScope', bookOptions.tagScope);
-        }
-        if (bookOptions.weavingMode !== 'strict') {
-            params.append('weavingMode', bookOptions.weavingMode);
-        }
-        if (!bookOptions.includeUntagged) {
-            params.append('includeUntagged', 'false');
-        }
-        if (!bookOptions.includeDates) {
-            params.append('includeDates', 'false');
-        }
-        if (!bookOptions.includeToc) {
-            params.append('includeToc', 'false');
-        }
-        if (!bookOptions.narrative) {
-            params.append('narrative', 'false');
-        }
-        return params;
-    }
-
-    function handleBookOptionChange<K extends keyof BookOptions>(key: K, value: BookOptions[K]): void {
-        setBookOptions((current) => ({ ...current, [key]: value }));
-    }
-
-    async function handleBookPreview(): Promise<void> {
-        try {
-            const response = await authFetch(`/api/books/preview?${buildBookParams()}`);
-            if (!response.ok) {
-                showMessage('error', t('bookPreviewError'));
-                return;
-            }
-            setBookPreview(await response.json());
-        } catch (error) {
-            console.error('Book preview failed:', error);
-            showMessage('error', t('bookPreviewError'));
-        }
-    }
-
-    async function handleBookDownload(): Promise<void> {
-        setGeneratingBook(true);
-        try {
-            const response = await authFetch(`/api/books/export?${buildBookParams()}`);
-            if (!response.ok) {
-                showMessage('error', t('bookExportError'));
-                return;
-            }
-
-            const blob = await response.blob();
-            const filename = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replaceAll('"', '')
-                || `thoughty_book_${new Date().toISOString().split('T')[0]}.${bookOptions.format}`;
-            downloadBlob(blob, filename);
-
-            showMessage('success', t('bookExportSuccess'), 3000);
-        } catch (error) {
-            console.error('Book export failed:', error);
-            showMessage('error', t('bookExportError'));
-        } finally {
-            setGeneratingBook(false);
-        }
-    }
-
     async function handleFileSelect(event: ChangeEvent<HTMLInputElement>): Promise<void> {
         const file = event.target.files?.[0];
         if (!file) {
@@ -440,8 +360,6 @@ function ImportExport({
         setImportingCloudFile(null);
     }
 
-    const connectedProviders = CLOUD_PROVIDERS.filter((provider) => cloudStatus[provider]?.connected);
-
     async function handleDeleteAll(): Promise<void> {
         if (!confirmDeleteAll) {
             setConfirmDeleteAll(true);
@@ -545,12 +463,17 @@ function ImportExport({
                 activeSection={activeSection}
                 sectionRef={bookSectionRef}
                 diaryName={diaryName}
-                options={bookOptions}
-                preview={bookPreview}
-                generating={generatingBook}
-                onOptionChange={handleBookOptionChange}
-                onPreview={handleBookPreview}
-                onDownload={handleBookDownload}
+                options={book.options}
+                preview={book.preview}
+                generating={book.action !== null}
+                uploading={book.action === 'upload'}
+                connectedProviders={connectedProviders}
+                cloudProvider={book.cloudProvider}
+                onCloudProviderChange={book.setCloudProvider}
+                onOptionChange={book.changeOption}
+                onPreview={book.handlePreview}
+                onDownload={book.handleDownload}
+                onUpload={book.handleUpload}
                 t={t}
             />
 

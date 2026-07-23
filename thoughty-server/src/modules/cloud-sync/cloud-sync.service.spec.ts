@@ -222,6 +222,30 @@ describe('CloudSyncService', () => {
     });
   });
 
+  describe('uploadFile', () => {
+    it('uploads generated binary content without converting it to text', async () => {
+      const futureExpiry = String(Date.now() + 3600000);
+      settingRepository.findOne.mockImplementation(({ where }: any) => {
+        if (where.key === 'cloud_google_drive_access_token') return { value: service['encrypt']('access-token') };
+        if (where.key === 'cloud_google_drive_refresh_token') return { value: service['encrypt']('refresh-token') };
+        if (where.key === 'cloud_google_drive_expires_at') return { value: futureExpiry };
+        return null;
+      });
+      const content = Buffer.from([0, 255, 1, 2]);
+      const file = { content, filename: 'book.pdf', contentType: 'application/pdf' };
+      const uploaded = { id: 'book-1', name: 'book.pdf', size: 4, modifiedAt: '2026-07-23' };
+      googleDriveProvider.uploadFile.mockResolvedValue(uploaded);
+
+      await expect(service.uploadFile(1, 'google_drive', file)).resolves.toBe(uploaded);
+      expect(googleDriveProvider.uploadFile).toHaveBeenCalledWith(
+        'access-token',
+        'book.pdf',
+        content,
+        'application/pdf',
+      );
+    });
+  });
+
   describe('downloadFile', () => {
     it('should download file content from cloud', async () => {
       const futureExpiry = String(Date.now() + 3600000);

@@ -232,6 +232,13 @@ export type TranslationKey =
   | 'bookPreviewError'
   | 'bookExportSuccess'
   | 'bookExportError'
+  | 'bookCloudProvider'
+  | 'bookCloudProviderPlaceholder'
+  | 'bookCloudConnectHint'
+  | 'uploadBook'
+  | 'uploadingBook'
+  | 'bookCloudUploadSuccess'
+  | 'bookCloudUploadError'
   | 'formatSettings'
   | 'formatDescription'
   | 'entrySeparator'
@@ -937,6 +944,13 @@ export const translations: Translations = {
     bookPreviewError: 'Failed to preview book',
     bookExportSuccess: 'Book downloaded successfully',
     bookExportError: 'Failed to generate book',
+    bookCloudProvider: 'Cloud destination',
+    bookCloudProviderPlaceholder: 'No connected provider',
+    bookCloudConnectHint: 'Connect a cloud provider in your profile to upload books.',
+    uploadBook: 'Upload Book',
+    uploadingBook: 'Uploading book...',
+    bookCloudUploadSuccess: 'Uploaded {name} successfully',
+    bookCloudUploadError: 'Failed to upload book',
     formatSettings: 'Format Settings',
     formatDescription: 'Customize the text file format for import and export.',
     entrySeparator: 'Entry Separator',
@@ -1704,6 +1718,13 @@ export const translations: Translations = {
     bookPreviewError: "Échec de l'aperçu du livre",
     bookExportSuccess: 'Livre téléchargé avec succès',
     bookExportError: 'Échec de la génération du livre',
+    bookCloudProvider: 'Destination cloud',
+    bookCloudProviderPlaceholder: 'Aucun fournisseur connecté',
+    bookCloudConnectHint: 'Connectez un fournisseur cloud dans votre profil pour téléverser des livres.',
+    uploadBook: 'Téléverser le livre',
+    uploadingBook: 'Téléversement du livre...',
+    bookCloudUploadSuccess: '{name} téléversé avec succès',
+    bookCloudUploadError: 'Échec du téléversement du livre',
     formatSettings: 'Paramètres de format',
     formatDescription: "Personnalisez le format du fichier texte pour l'import et l'export.",
     entrySeparator: "Séparateur d'entrées",

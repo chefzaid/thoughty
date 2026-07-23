@@ -912,7 +912,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/attachments/upload": {
+    "/api/books/upload": {
         parameters: {
             query?: never;
             header?: never;
@@ -921,76 +921,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Upload a file attachment */
-        post: operations["AttachmentsController_upload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/entry/{entryId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all attachments for an entry */
-        get: operations["AttachmentsController_getByEntry"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/{id}/link": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Link an attachment to an entry */
-        post: operations["AttachmentsController_linkToEntry"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete an attachment */
-        delete: operations["AttachmentsController_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/file/{filename}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Serve an attachment file */
-        get: operations["AttachmentsController_serveFile"];
-        put?: never;
-        post?: never;
+        /** Generate a book and upload it to a connected cloud provider */
+        post: operations["BooksController_upload"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1162,6 +1094,91 @@ export interface paths {
         put?: never;
         /** Trigger a diff-based sync (uploads only if content has changed) */
         post: operations["CloudSyncController_triggerSync"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a file attachment */
+        post: operations["AttachmentsController_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/entry/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get all attachments for an entry */
+        get: operations["AttachmentsController_getByEntry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link an attachment to an entry */
+        post: operations["AttachmentsController_linkToEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an attachment */
+        delete: operations["AttachmentsController_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/file/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serve an attachment file */
+        get: operations["AttachmentsController_serveFile"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2373,12 +2390,18 @@ export interface components {
         };
         /**
          * @example {
-         *       "entryId": 1
+         *       "id": "example",
+         *       "name": "Daily Journal",
+         *       "size": 1,
+         *       "modifiedAt": "2026-06-24T10:00:00.000Z"
          *     }
          */
-        LinkAttachmentDto: {
-            /** @description Entry ID to link attachment to */
-            entryId?: number;
+        CloudFileInfoDto: {
+            id: string;
+            name: string;
+            size: number;
+            /** @description Provider modification timestamp */
+            modifiedAt: string;
         };
         /**
          * @example {
@@ -2513,6 +2536,15 @@ export interface components {
              * @enum {string}
              */
             provider: "google_drive" | "onedrive" | "dropbox";
+        };
+        /**
+         * @example {
+         *       "entryId": 1
+         *     }
+         */
+        LinkAttachmentDto: {
+            /** @description Entry ID to link attachment to */
+            entryId?: number;
         };
     };
     responses: never;
@@ -4849,114 +4881,64 @@ export interface operations {
             };
         };
     };
-    AttachmentsController_upload: {
+    BooksController_upload: {
         parameters: {
-            query?: never;
+            query: {
+                /** @description Diary ID to build the book from */
+                diaryId?: number;
+                /** @description Book output format */
+                format?: "pdf" | "epub" | "html" | "md";
+                /** @description Book title (defaults to the diary name) */
+                title?: string;
+                /** @description Author name shown on the title page (defaults to the username) */
+                author?: string;
+                /** @description Only include entries on or after this date (YYYY-MM-DD) */
+                dateFrom?: string;
+                /** @description Only include entries on or before this date (YYYY-MM-DD) */
+                dateTo?: string;
+                /** @description Chapter ordering: alphabetical, by entry count, or by first entry date */
+                chapterOrder?: "alpha" | "entries" | "chrono";
+                /** @description Chapter grouping mode: tags, calendar years, or calendar months */
+                chapterMode?: "tags" | "year" | "month";
+                /** @description Place entries in every matching tag chapter, or only in their first tag chapter */
+                tagScope?: "all" | "first";
+                /** @description Comma-separated list of tags to use as chapters (defaults to all tags) */
+                tags?: string;
+                /** @description Add a final chapter for entries without tags */
+                includeUntagged?: boolean;
+                /** @description Show entry dates inside chapters */
+                includeDates?: boolean;
+                /** @description Include a table of contents */
+                includeToc?: boolean;
+                /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
+                narrative?: boolean;
+                /** @description AI weaving mode for narrative chapters */
+                weavingMode?: "strict" | "creative";
+                /** @description Connected cloud provider */
+                provider: "google_drive" | "onedrive" | "dropbox";
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["LinkAttachmentDto"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description File uploaded successfully */
+            /** @description Cloud file metadata for the uploaded book */
             201: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_getByEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entryId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of attachments */
-            200: {
-                headers: {
-                    [name: string]: unknown;
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "example",
+                     *       "name": "Daily Journal",
+                     *       "size": 1,
+                     *       "modifiedAt": "2026-06-24T10:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CloudFileInfoDto"];
                 };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_linkToEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                /**
-                 * @example {
-                 *       "entryId": 1
-                 *     }
-                 */
-                "application/json": components["schemas"]["LinkAttachmentDto"];
-            };
-        };
-        responses: {
-            /** @description Attachment linked to entry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Attachment deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_serveFile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                filename: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description File content */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };
@@ -5230,6 +5212,117 @@ export interface operations {
         };
         responses: {
             /** @description Sync result */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["LinkAttachmentDto"];
+            };
+        };
+        responses: {
+            /** @description File uploaded successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_getByEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description List of attachments */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_linkToEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "entryId": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["LinkAttachmentDto"];
+            };
+        };
+        responses: {
+            /** @description Attachment linked to entry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Attachment deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_serveFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File content */
             200: {
                 headers: {
                     [name: string]: unknown;

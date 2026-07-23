@@ -1,5 +1,7 @@
 import type { RefObject } from 'react';
 import type { ImportExportSection, TranslationFunction } from '../../types';
+import type { CloudProviderType } from '../../services/api/cloudSyncService';
+import { CLOUD_PROVIDER_NAMES } from '../CloudProviderIcons';
 import './ImportExportBookSection.css';
 import {
     BOOK_CHAPTER_MODE_OPTIONS,
@@ -32,9 +34,14 @@ export function BookSection({
     options,
     preview,
     generating,
+    uploading,
+    connectedProviders,
+    cloudProvider,
     onOptionChange,
+    onCloudProviderChange,
     onPreview,
     onDownload,
+    onUpload,
     t,
 }: Readonly<{
     activeSection: ImportExportSection;
@@ -43,9 +50,14 @@ export function BookSection({
     options: BookOptions;
     preview: BookPreviewData | null;
     generating: boolean;
+    uploading: boolean;
+    connectedProviders: CloudProviderType[];
+    cloudProvider: CloudProviderType | '';
     onOptionChange: <K extends keyof BookOptions>(key: K, value: BookOptions[K]) => void;
+    onCloudProviderChange: (provider: CloudProviderType | '') => void;
     onPreview: () => void;
     onDownload: () => void;
+    onUpload: () => void;
     t: TranslationFunction;
 }>) {
     return (
@@ -164,14 +176,14 @@ export function BookSection({
                 </div>
 
                 {generating && (
-                    <div className="book-progress" role="progressbar" aria-valuetext={t('generatingBook')}>
+                    <div className="book-progress" role="progressbar" aria-valuetext={t(uploading ? 'uploadingBook' : 'generatingBook')}>
                         <div className="book-progress__track">
                             {BOOK_PROGRESS_STEPS.map((step) => (
                                 <span key={step} className="book-progress__marker" style={{ left: `${step}%` }} />
                             ))}
                             <span className="book-progress__bar" />
                         </div>
-                        <span className="book-progress__label">{t('generatingBook')}</span>
+                        <span className="book-progress__label">{t(uploading ? 'uploadingBook' : 'generatingBook')}</span>
                     </div>
                 )}
 
@@ -183,8 +195,39 @@ export function BookSection({
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        {generating ? t('generatingBook') : t('downloadBook')}
+                        {generating && !uploading ? t('generatingBook') : t('downloadBook')}
                     </button>
+                </div>
+
+                <div className="book-cloud-row">
+                    <div className="export-option-group book-field book-cloud-provider">
+                        <label htmlFor="book-cloud-provider">{t('bookCloudProvider')}</label>
+                        <select
+                            id="book-cloud-provider"
+                            className="format-select"
+                            value={cloudProvider}
+                            disabled={connectedProviders.length === 0 || generating}
+                            onChange={(event) => onCloudProviderChange(event.target.value as CloudProviderType)}
+                        >
+                            {connectedProviders.length === 0 && (
+                                <option value="">{t('bookCloudProviderPlaceholder')}</option>
+                            )}
+                            {connectedProviders.map((provider) => (
+                                <option key={provider} value={provider}>{CLOUD_PROVIDER_NAMES[provider]}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <button
+                        className="io-btn secondary book-cloud-upload"
+                        onClick={onUpload}
+                        disabled={!cloudProvider || generating}
+                    >
+                        <span className="codicon codicon-cloud-upload" aria-hidden="true" />
+                        {uploading ? t('uploadingBook') : t('uploadBook')}
+                    </button>
+                    {connectedProviders.length === 0 && (
+                        <span className="book-cloud-hint">{t('bookCloudConnectHint')}</span>
+                    )}
                 </div>
             </div>
 

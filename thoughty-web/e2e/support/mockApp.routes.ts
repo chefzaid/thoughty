@@ -158,6 +158,21 @@ async function handleIoRoutes({ route, request, url, pathname, searchParams, sta
   return false;
 }
 
+async function handleBookRoutes({ route, request, url, pathname, state }: RouteContext): Promise<boolean> {
+  if (pathname === '/api/books/upload' && request.method() === 'POST') {
+    state.lastBookUploadRequestUrl = url;
+    await fulfillJson(route, {
+      id: 'cloud-book-1',
+      name: `thoughty_book_${url.searchParams.get('title') || 'book'}.${url.searchParams.get('format') || 'pdf'}`,
+      size: 4096,
+      modifiedAt: '2026-07-23T12:00:00.000Z',
+    }, { status: 201 });
+    return true;
+  }
+
+  return false;
+}
+
 export async function registerMockAppRoutes(page: Page, state: MockAppState) {
   await page.route('http://localhost:5173/api/**', async (route) => {
     const request = route.request();
@@ -181,6 +196,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     if (await handleIoRoutes(context)) {
+      return;
+    }
+    if (await handleBookRoutes(context)) {
       return;
     }
     if (await handleCloudSyncRoutes(context)) {
