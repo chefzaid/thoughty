@@ -156,6 +156,10 @@
     text-transform: uppercase;
 }
 
+.intro-page.dark .feedback-status {
+    color: #5fba9d;
+}
+
 .feedback-idea h3 {
     margin: 0;
     font-size: 1.2rem;

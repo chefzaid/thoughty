@@ -168,7 +168,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
   const getAuthSubtitle = (): string => getAuthSubtitleText({ showForgotPassword, isLogin, t });
 
   return (
-    <div className={`auth-page ${isDark ? 'dark' : 'light'}`}>
+    <main className={`auth-page ${isDark ? 'dark' : 'light'}`}>
       <div className="auth-container">
         {onBack && (
           <button type="button" className="auth-back-btn" onClick={onBack}>
@@ -230,7 +230,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
 
         <div id="google-signin-btn" style={{ display: 'none' }}></div>
       </div>
-    </div>
+    </main>
   );
 }
 

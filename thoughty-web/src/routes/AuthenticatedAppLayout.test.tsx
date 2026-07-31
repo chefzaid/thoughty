@@ -53,4 +53,23 @@ describe('AuthenticatedAppLayout', () => {
 
     expect(screen.getByRole('main')).toContainElement(screen.getByRole('button', { name: 'Child action' }));
   });
+
+  it('focuses the main landmark when the authenticated view changes', () => {
+    const { rerender } = render(
+      <AuthenticatedAppLayout {...defaultProps}>
+        <div>Journal content</div>
+      </AuthenticatedAppLayout>,
+    );
+
+    const main = screen.getByRole('main');
+    expect(main).not.toHaveFocus();
+
+    rerender(
+      <AuthenticatedAppLayout {...defaultProps} currentView="tags">
+        <div>Tag content</div>
+      </AuthenticatedAppLayout>,
+    );
+
+    expect(main).toHaveFocus();
+  });
 });

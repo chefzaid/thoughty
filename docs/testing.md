@@ -153,6 +153,7 @@ npm run test:e2e:install  # install Chromium for Playwright when needed
 cd thoughty-web
 npx playwright test e2e/journal/entry-lifecycle.spec.ts
 npx playwright test e2e/import-export/portability.spec.ts e2e/diary/management.spec.ts
+npx playwright test e2e/accessibility/routes.spec.ts
 npx playwright test e2e/journal
 npx playwright test --grep "Journal Markdown authoring"
 ```
@@ -174,6 +175,7 @@ Current e2e feature groups:
 
 | Directory            | Covers                                                                 |
 | -------------------- | ---------------------------------------------------------------------- |
+| `e2e/accessibility/` | WCAG A/AA route scans, skip navigation, and route focus behavior       |
 | `e2e/public/`        | Public landing page and intro transitions                              |
 | `e2e/auth/`          | Sign-up and login onboarding into the journal                          |
 | `e2e/navigation/`    | Direct routes, browser history, permalinks, and diary return routes    |

@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import LoadingSpinner from './components/LoadingSpinner/LoadingSpinner';
 import IntroPage from './components/IntroPage/IntroPage';
 import { useAppShellModel } from './hooks/useAppShellModel';
+import PublicAppLayout from './routes/PublicAppLayout';
 import { getPathForView, getPublicPathForView } from './types';
 
 const AboutPage = lazy(() => import('./components/AboutPage/AboutPage'));
@@ -22,6 +23,10 @@ function renderLazy(children: ReactNode) {
       {children}
     </Suspense>
   );
+}
+
+function renderPublic(children: ReactNode, t: (key: string) => string) {
+  return <PublicAppLayout t={t}>{children}</PublicAppLayout>;
 }
 
 function AppShell() {
@@ -48,27 +53,27 @@ function AppShell() {
   }
 
   if (publicView === 'about') {
-    return renderLazy(<AboutPage {...aboutPageProps} />);
+    return renderPublic(renderLazy(<AboutPage {...aboutPageProps} />), aboutPageProps.t);
   }
 
   if (publicView === 'blog') {
-    return renderLazy(<BlogPage {...blogPageProps} />);
+    return renderPublic(renderLazy(<BlogPage {...blogPageProps} />), blogPageProps.t);
   }
 
   if (publicView === 'contact') {
-    return renderLazy(<ContactPage {...contactPageProps} />);
+    return renderPublic(renderLazy(<ContactPage {...contactPageProps} />), contactPageProps.t);
   }
 
   if (publicView === 'feedback') {
-    return renderLazy(<FeedbackPage {...feedbackPageProps} />);
+    return renderPublic(renderLazy(<FeedbackPage {...feedbackPageProps} />), feedbackPageProps.t);
   }
 
   if (publicView === 'privacy' || publicView === 'terms') {
-    return renderLazy(<LegalPage {...legalPageProps} page={publicView} />);
+    return renderPublic(renderLazy(<LegalPage {...legalPageProps} page={publicView} />), legalPageProps.t);
   }
 
   if (publicView === 'verifyEmail') {
-    return renderLazy(<VerifyEmailPage {...verifyEmailPageProps} />);
+    return renderPublic(renderLazy(<VerifyEmailPage {...verifyEmailPageProps} />), verifyEmailPageProps.t);
   }
 
   if (!isAuthenticated) {
@@ -77,10 +82,10 @@ function AppShell() {
     }
 
     if (publicView === 'intro') {
-      return <IntroPage {...introPageProps} />;
+      return renderPublic(<IntroPage {...introPageProps} />, introPageProps.t);
     }
 
-    return renderLazy(<AuthPage {...authPageProps} />);
+    return renderPublic(renderLazy(<AuthPage {...authPageProps} />), authPageProps.t);
   }
 
   if (pathname === '/') {

@@ -105,6 +105,10 @@
     font-weight: 900;
 }
 
+.intro-page.dark .blog-featured time {
+    color: #5fba9d;
+}
+
 .blog-posts {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));

@@ -1,10 +1,11 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import NavMenu from '../components/NavMenu/NavMenu';
 import ConfirmModal from '../components/ConfirmModal/ConfirmModal';
 import Footer from '../components/Footer/Footer';
 import AiChatModal from '../components/AiChatModal/AiChatModal';
 import type { ViewType, Config, Entry } from '../types';
 import { normalizeFontSize, resolveFontFamily } from '../types/config';
+import { useRouteChangeFocus } from '../hooks/useRouteChangeFocus';
 
 interface AuthenticatedAppLayoutProps {
   readonly children: ReactNode;
@@ -53,10 +54,13 @@ function AuthenticatedAppLayout({
   onLoadChatHistory,
   onSendChat,
 }: Readonly<AuthenticatedAppLayoutProps>) {
+  const mainContentRef = useRef<HTMLElement>(null);
   const appTypographyStyle = {
     fontFamily: resolveFontFamily(config.fontFamily),
     fontSize: `${normalizeFontSize(config.fontSize)}px`,
   };
+
+  useRouteChangeFocus(currentView, mainContentRef);
 
   const focusMainContent = () => {
     document.getElementById('main-content')?.focus();
@@ -125,7 +129,7 @@ function AuthenticatedAppLayout({
           />
         )}
 
-        <main id="main-content" tabIndex={-1}>
+        <main id="main-content" ref={mainContentRef} tabIndex={-1}>
           {children}
         </main>
 

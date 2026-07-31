@@ -106,6 +106,8 @@ flowchart LR
 
 ## AI Assistance and Accessibility
 
+- Public pages and authenticated views provide localized skip navigation, a single main content destination, and automatic content focus after client-side route changes so keyboard and screen-reader users receive clear navigation context.
+- Automated Axe scans cover every public route and all six authenticated views in both light and dark themes against WCAG 2.0, 2.1, and 2.2 A/AA rules. The audit runs as part of the Playwright suite and guards semantic structure, accessible names, and color contrast.
 - AI features are built around OpenRouter and are opt-in at the infrastructure level: the server must be configured with an API key, and each user can choose a preferred model from profile settings.
 - `Fix Writing` sends draft content to the configured model to correct grammar, spelling, and punctuation while aiming to preserve the original meaning and tone, and it now supports grammar, polish, and rewrite modes.
 - Journal AI analysis adds higher-level insight surfaces for dominant mood, writing tone, and recurring subjects. It analyzes at most the 40 most recent entries in the selected diary in one request, returns bounded frequency breakdowns and short summaries, and leaves either surface independently unavailable when its AI output is malformed.

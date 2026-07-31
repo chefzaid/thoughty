@@ -1,4 +1,5 @@
 import './IntroPage.css';
+import './IntroPageAccessibility.css';
 
 interface IntroPageProps {
   readonly theme?: 'light' | 'dark';
