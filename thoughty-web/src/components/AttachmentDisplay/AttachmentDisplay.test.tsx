@@ -1,8 +1,12 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AttachmentDisplay from './AttachmentDisplay';
 import type { Attachment } from '../../types';
+
+vi.mock('../AttachmentPreview/useAuthenticatedAttachmentUrl', () => ({
+  useAuthenticatedAttachmentUrl: (storedFilename: string) => `blob:${storedFilename}`,
+}));
 
 const mockT = (key: string) => key;
 
@@ -33,7 +37,7 @@ describe('AttachmentDisplay', () => {
 
     const img = screen.getByAltText('sunset.jpg');
     expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute('src', '/api/attachments/file/uuid-sunset.jpg');
+    expect(img).toHaveAttribute('src', 'blob:uuid-sunset.jpg');
   });
 
   it('renders PDF attachments with an inline preview', () => {
@@ -48,8 +52,8 @@ describe('AttachmentDisplay', () => {
 
     const preview = screen.getByTitle('document.pdf');
     expect(preview.tagName).toBe('IFRAME');
-    expect(preview).toHaveAttribute('src', '/api/attachments/file/uuid-doc.pdf');
-    expect(screen.getByRole('link', { name: 'downloadAttachment' })).toHaveAttribute('href', '/api/attachments/file/uuid-doc.pdf');
+    expect(preview).toHaveAttribute('src', 'blob:uuid-doc.pdf');
+    expect(screen.getByRole('link', { name: 'downloadAttachment' })).toHaveAttribute('href', 'blob:uuid-doc.pdf');
     expect(screen.getByRole('button', { name: 'previewAttachment document.pdf' })).toBeInTheDocument();
   });
 
@@ -66,7 +70,7 @@ describe('AttachmentDisplay', () => {
 
     const player = screen.getByLabelText('voice-note.mp3');
     expect(player.tagName).toBe('AUDIO');
-    expect(screen.getByText('downloadAttachment').closest('a')).toHaveAttribute('href', '/api/attachments/file/uuid-voice.mp3');
+    expect(screen.getByText('downloadAttachment').closest('a')).toHaveAttribute('href', 'blob:uuid-voice.mp3');
   });
 
   it('shows file size for non-image attachments', () => {
@@ -94,7 +98,7 @@ describe('AttachmentDisplay', () => {
     render(<AttachmentDisplay attachments={attachments} theme="dark" t={mockT} />);
 
     const link = screen.getByText('archive.bin');
-    expect(link.closest('a')).toHaveAttribute('href', '/api/attachments/file/uuid-archive.bin');
+    expect(link.closest('a')).toHaveAttribute('href', 'blob:uuid-archive.bin');
   });
 
   it('opens lightbox when clicking on an image', async () => {
@@ -154,7 +158,7 @@ describe('AttachmentDisplay', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     const modalPreview = screen.getAllByTitle('document.pdf').at(-1);
-    expect(modalPreview).toHaveAttribute('src', '/api/attachments/file/uuid-doc.pdf');
+    expect(modalPreview).toHaveAttribute('src', 'blob:uuid-doc.pdf');
   });
 
   it('opens a large preview dialog for text attachments', async () => {
@@ -172,7 +176,7 @@ describe('AttachmentDisplay', () => {
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     const modalPreview = screen.getAllByTitle('notes.txt').at(-1);
-    expect(modalPreview).toHaveAttribute('src', '/api/attachments/file/uuid-notes.txt');
+    expect(modalPreview).toHaveAttribute('src', 'blob:uuid-notes.txt');
   });
 
   it('closes lightbox when the dialog receives a cancel event', async () => {

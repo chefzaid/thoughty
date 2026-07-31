@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event';
 import AttachmentUpload from './AttachmentUpload';
 import type { Attachment } from '../../types';
 
+vi.mock('../AttachmentPreview/useAuthenticatedAttachmentUrl', () => ({
+  useAuthenticatedAttachmentUrl: (storedFilename: string) => `blob:stored-${storedFilename}`,
+}));
+
 const mockT = (key: string) => key;
 
 describe('AttachmentUpload', () => {
@@ -100,7 +104,7 @@ describe('AttachmentUpload', () => {
     render(<AttachmentUpload {...defaultProps} uploadedAttachments={[attachment]} />);
     const img = screen.getByAltText('cat.png');
     expect(img).toBeInTheDocument();
-    expect(img).toHaveAttribute('src', '/api/attachments/file/uuid.png');
+    expect(img).toHaveAttribute('src', 'blob:stored-uuid.png');
   });
 
   it('displays inline audio players for uploaded audio files', () => {
@@ -116,7 +120,7 @@ describe('AttachmentUpload', () => {
 
     const player = screen.getByLabelText('voice-note.mp3');
     expect(player.tagName).toBe('AUDIO');
-    expect(screen.getByText('downloadAttachment').closest('a')).toHaveAttribute('href', '/api/attachments/file/uuid-voice.mp3');
+    expect(screen.getByText('downloadAttachment').closest('a')).toHaveAttribute('href', 'blob:stored-uuid-voice.mp3');
   });
 
   it('displays inline PDF previews for uploaded documents', () => {
@@ -132,7 +136,7 @@ describe('AttachmentUpload', () => {
 
     const preview = screen.getByTitle('guide.pdf');
     expect(preview.tagName).toBe('IFRAME');
-    expect(preview).toHaveAttribute('src', '/api/attachments/file/uuid-guide.pdf');
+    expect(preview).toHaveAttribute('src', 'blob:stored-uuid-guide.pdf');
     expect(screen.getByRole('button', { name: 'previewAttachment guide.pdf' })).toBeInTheDocument();
   });
 
@@ -178,7 +182,7 @@ describe('AttachmentUpload', () => {
     const dialog = screen.getByRole('dialog', { name: 'previewAttachment guide.pdf' });
     expect(dialog).toBeInTheDocument();
     const modalPreview = screen.getAllByTitle('guide.pdf').at(-1);
-    expect(modalPreview).toHaveAttribute('src', '/api/attachments/file/uuid-guide.pdf');
+    expect(modalPreview).toHaveAttribute('src', 'blob:stored-uuid-guide.pdf');
   });
 
   it('closes the preview dialog from the uploader', async () => {
@@ -213,7 +217,7 @@ describe('AttachmentUpload', () => {
     render(<AttachmentUpload {...defaultProps} uploadedAttachments={[attachment]} />);
 
     expect(screen.queryByRole('button', { name: 'previewAttachment archive.bin' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'downloadAttachment' })).toHaveAttribute('href', '/api/attachments/file/uuid-archive.bin');
+    expect(screen.getByRole('link', { name: 'downloadAttachment' })).toHaveAttribute('href', 'blob:stored-uuid-archive.bin');
   });
 
   it('renders in light theme', () => {

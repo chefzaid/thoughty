@@ -121,6 +121,16 @@ export type TranslationKey =
   | 'settingsSaved'
   | 'verifiedAccount'
   | 'unverifiedAccount'
+  | 'verifyEmailTitle'
+  | 'verifyingEmail'
+  | 'emailVerificationSuccess'
+  | 'emailVerificationInvalid'
+  | 'emailVerificationMissingToken'
+  | 'resendVerification'
+  | 'resendingVerification'
+  | 'verificationEmailSent'
+  | 'verificationEmailFailed'
+  | 'continueToThoughty'
   | 'personalInfo'
   | 'appearance'
   | 'preferences'
@@ -850,6 +860,16 @@ export const translations: Translations = {
     settingsSaved: 'Settings saved successfully',
     verifiedAccount: 'Verified',
     unverifiedAccount: 'Email not verified',
+    verifyEmailTitle: 'Verify your email',
+    verifyingEmail: 'Verifying your email...',
+    emailVerificationSuccess: 'Your email is verified.',
+    emailVerificationInvalid: 'This verification link is invalid or has expired.',
+    emailVerificationMissingToken: 'This verification link is incomplete.',
+    resendVerification: 'Resend verification email',
+    resendingVerification: 'Sending...',
+    verificationEmailSent: 'Verification email sent.',
+    verificationEmailFailed: 'Could not send the verification email. Please try again.',
+    continueToThoughty: 'Continue to Thoughty',
     personalInfo: 'Personal Information',
     appearance: 'Appearance',
     preferences: 'Preferences',
@@ -1649,6 +1669,16 @@ export const translations: Translations = {
     settingsSaved: 'Paramètres enregistrés avec succès',
     verifiedAccount: 'Vérifié',
     unverifiedAccount: 'Email non vérifié',
+    verifyEmailTitle: 'Vérifiez votre email',
+    verifyingEmail: 'Vérification de votre email...',
+    emailVerificationSuccess: 'Votre email est vérifié.',
+    emailVerificationInvalid: "Ce lien de vérification n'est pas valide ou a expiré.",
+    emailVerificationMissingToken: 'Ce lien de vérification est incomplet.',
+    resendVerification: "Renvoyer l'email de vérification",
+    resendingVerification: 'Envoi...',
+    verificationEmailSent: 'Email de vérification envoyé.',
+    verificationEmailFailed: "Impossible d'envoyer l'email de vérification. Veuillez réessayer.",
+    continueToThoughty: 'Continuer vers Thoughty',
     personalInfo: 'Informations personnelles',
     appearance: 'Apparence',
     preferences: 'Préférences',

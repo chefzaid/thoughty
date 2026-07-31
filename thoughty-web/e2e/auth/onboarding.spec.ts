@@ -31,4 +31,24 @@ test.describe('Authentication onboarding', () => {
     await expect(page.getByPlaceholder("What's on your mind?")).toBeVisible();
     await expect(page).toHaveURL(/\/journal$/);
   });
+
+  test('verifies an email from the public link', async ({ page }) => {
+    const { state } = await setupMockApp(page);
+
+    await page.goto('/verify-email?token=email-token');
+
+    await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
+    await expect(page.getByText('Your email is verified.')).toBeVisible();
+    await expect.poll(() => state.lastVerificationToken).toBe('email-token');
+  });
+
+  test('resends verification from an unverified local profile', async ({ page }) => {
+    const { state } = await setupMockApp(page, { startAuthenticated: true });
+
+    await page.goto('/profile');
+    await page.getByRole('button', { name: 'Resend verification email' }).click();
+
+    await expect(page.getByText('Verification email sent.')).toBeVisible();
+    await expect.poll(() => state.verificationResendCount).toBe(1);
+  });
 });

@@ -52,10 +52,8 @@ vi.mock('../services/api', () => ({
   })),
   createAttachmentsService: vi.fn(() => ({
     uploadAttachment: vi.fn(),
-    getAttachmentsByEntry: vi.fn(),
     linkAttachment: vi.fn(),
     deleteAttachment: vi.fn(),
-    getAttachmentUrl: vi.fn(),
   })),
   createAiService: vi.fn(() => ({
     suggestTags: vi.fn(),

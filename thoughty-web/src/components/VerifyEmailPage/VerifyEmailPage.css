@@ -1,0 +1,22 @@
+.verify-email-container {
+  text-align: center;
+}
+
+.verify-email-status {
+  min-height: 3rem;
+  margin: 0 0 1.5rem;
+  color: #d1fae5;
+  line-height: 1.5;
+}
+
+.verify-email-status.error {
+  color: #fecaca;
+}
+
+.verify-email-page.light .verify-email-status {
+  color: #166534;
+}
+
+.verify-email-page.light .verify-email-status.error {
+  color: #991b1b;
+}

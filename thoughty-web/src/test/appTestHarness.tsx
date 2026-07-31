@@ -24,6 +24,8 @@ export interface MockAuthState {
   forgotPassword: ReturnType<typeof vi.fn>;
   changePassword: ReturnType<typeof vi.fn>;
   resetPassword: ReturnType<typeof vi.fn>;
+  verifyEmail: ReturnType<typeof vi.fn>;
+  resendVerificationEmail: ReturnType<typeof vi.fn>;
   deleteAccount: ReturnType<typeof vi.fn>;
   authFetch: ReturnType<typeof vi.fn>;
   getAccessToken: () => string;
@@ -46,6 +48,8 @@ function createMockAuthState(overrides: Partial<MockAuthState> = {}): MockAuthSt
     forgotPassword: vi.fn(),
     changePassword: vi.fn(),
     resetPassword: vi.fn(),
+    verifyEmail: vi.fn().mockResolvedValue({ success: true }),
+    resendVerificationEmail: vi.fn().mockResolvedValue({ success: true }),
     deleteAccount: vi.fn(),
     authFetch: vi.fn((input: string | URL | Request, init?: RequestInit) => mockFetch(input, init)),
     getAccessToken: () => 'mock-token',

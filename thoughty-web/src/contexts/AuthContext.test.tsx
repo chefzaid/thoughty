@@ -308,6 +308,68 @@ describe('AuthContext', () => {
         expect(del!.success).toBe(true);
     });
 
+    it('verifies an email and updates the authenticated user', async () => {
+        localStorage.setItem('accessToken', 'token');
+        (globalThis.fetch as Mock)
+            .mockResolvedValueOnce({
+                status: 200,
+                ok: true,
+                json: async () => ({ id: 1, email: 'user@example.com', emailVerified: false }),
+            })
+            .mockResolvedValueOnce({
+                status: 200,
+                ok: true,
+                json: async () => ({ message: 'verified' }),
+            });
+
+        let ctx: AuthContextValue | undefined;
+        render(
+            <AuthProvider>
+                <ContextSpy onReady={(value) => { ctx = value; }} />
+            </AuthProvider>
+        );
+
+        await waitFor(() => expect(requireContext(ctx).user).not.toBeNull());
+
+        let result: { success: boolean } | undefined;
+        await act(async () => {
+            result = await requireContext(ctx).verifyEmail('verification-token');
+        });
+
+        expect(result?.success).toBe(true);
+        expect(globalThis.fetch).toHaveBeenLastCalledWith('/api/auth/verify-email', expect.objectContaining({
+            method: 'POST',
+            body: JSON.stringify({ token: 'verification-token' }),
+        }));
+        expect(requireContext(ctx).user?.emailVerified).toBe(true);
+    });
+
+    it('resends verification through the authenticated request path', async () => {
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            status: 200,
+            ok: true,
+            json: async () => ({ message: 'sent' }),
+        });
+
+        let ctx: AuthContextValue | undefined;
+        render(
+            <AuthProvider>
+                <ContextSpy onReady={(value) => { ctx = value; }} />
+            </AuthProvider>
+        );
+        await waitFor(() => requireContext(ctx));
+
+        let result: { success: boolean } | undefined;
+        await act(async () => {
+            result = await requireContext(ctx).resendVerificationEmail();
+        });
+
+        expect(result?.success).toBe(true);
+        expect(globalThis.fetch).toHaveBeenCalledWith('/api/auth/resend-verification-email', expect.objectContaining({
+            method: 'POST',
+        }));
+    });
+
     it('rejects Google sign-in when not configured', async () => {
         let ctx: AuthContextValue | undefined;
         render(

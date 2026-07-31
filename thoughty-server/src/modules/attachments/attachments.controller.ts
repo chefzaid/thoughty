@@ -62,26 +62,6 @@ export class AttachmentsController {
     };
   }
 
-  @Get('entry/:entryId')
-  @ApiOperation({ summary: 'Get all attachments for an entry' })
-  @ApiParam({ name: 'entryId', type: Number })
-  @ApiResponse({ status: 200, description: 'List of attachments' })
-  async getByEntry(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('entryId', ParseIntPipe) entryId: number,
-  ) {
-    const attachments = await this.attachmentsService.getByEntry(user.userId, entryId);
-    return attachments.map((a) => ({
-      id: a.id,
-      original_filename: a.originalFilename,
-      stored_filename: a.storedFilename,
-      mimetype: a.mimetype,
-      size: a.size,
-      entry_id: a.entryId,
-      created_at: a.createdAt,
-    }));
-  }
-
   @Post(':id/link')
   @ApiOperation({ summary: 'Link an attachment to an entry' })
   @ApiParam({ name: 'id', type: Number })

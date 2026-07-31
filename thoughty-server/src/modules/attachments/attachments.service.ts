@@ -129,13 +129,6 @@ export class AttachmentsService implements OnModuleInit {
     return this.attachmentRepository.save(attachment);
   }
 
-  async getByEntry(userId: number, entryId: number): Promise<Attachment[]> {
-    return this.attachmentRepository.find({
-      where: { userId, entryId },
-      order: { createdAt: 'ASC' },
-    });
-  }
-
   async linkToEntry(
     userId: number,
     attachmentId: number,

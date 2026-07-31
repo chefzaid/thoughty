@@ -72,36 +72,6 @@ describe('createAttachmentsService', () => {
     });
   });
 
-  describe('getAttachmentsByEntry', () => {
-    it('returns attachments for an entry', async () => {
-      const mockAttachments = [
-        { id: 1, original_filename: 'a.jpg' },
-        { id: 2, original_filename: 'b.pdf' },
-      ];
-      authFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockAttachments),
-      });
-
-      const result = await service.getAttachmentsByEntry(10);
-
-      expect(authFetch).toHaveBeenCalledWith('/api/attachments/entry/10');
-      expect(result).toEqual(mockAttachments);
-    });
-
-    it('returns empty array on failure', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-      const result = await service.getAttachmentsByEntry(10);
-      expect(result).toEqual([]);
-    });
-
-    it('returns empty array on error', async () => {
-      authFetch.mockRejectedValue(new Error('fail'));
-      const result = await service.getAttachmentsByEntry(10);
-      expect(result).toEqual([]);
-    });
-  });
-
   describe('linkAttachment', () => {
     it('links an attachment to an entry', async () => {
       authFetch.mockResolvedValue({ ok: true });
@@ -147,10 +117,4 @@ describe('createAttachmentsService', () => {
     });
   });
 
-  describe('getAttachmentUrl', () => {
-    it('returns the correct URL', () => {
-      const url = service.getAttachmentUrl('uuid-file.jpg');
-      expect(url).toBe('/api/attachments/file/uuid-file.jpg');
-    });
-  });
 });

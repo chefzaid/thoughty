@@ -964,23 +964,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/attachments/entry/{entryId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get all attachments for an entry */
-        get: operations["AttachmentsController_getByEntry"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/attachments/{id}/link": {
         parameters: {
             query?: never;
@@ -5389,26 +5372,6 @@ export interface operations {
         responses: {
             /** @description File uploaded successfully */
             201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_getByEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                entryId: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description List of attachments */
-            200: {
                 headers: {
                     [name: string]: unknown;
                 };

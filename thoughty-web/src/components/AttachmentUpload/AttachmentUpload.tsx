@@ -4,12 +4,12 @@ import {
     ALLOWED_ATTACHMENT_TYPES,
     formatAttachmentSize,
     getAttachmentKindLabel,
-    getAttachmentUrl,
     hasInlineAttachmentPreview,
 } from '../../utils/attachments';
 import AttachmentPreviewContent from '../AttachmentPreview/AttachmentPreviewContent';
 import AttachmentPreviewDialog from '../AttachmentPreview/AttachmentPreviewDialog';
 import { usePendingAttachmentPreviewUrl } from '../AttachmentPreview/usePendingAttachmentPreviewUrl';
+import { useAuthenticatedAttachmentUrl } from '../AttachmentPreview/useAuthenticatedAttachmentUrl';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -29,16 +29,6 @@ interface ActiveUploadPreview {
     readonly sourceUrl: string;
     readonly size: number;
     readonly downloadUrl?: string;
-}
-
-function StoredAttachmentPreview({ attachment }: Readonly<{ attachment: Attachment }>) {
-    return (
-        <AttachmentPreviewContent
-            name={attachment.original_filename}
-            mimetype={attachment.mimetype}
-            sourceUrl={getAttachmentUrl(attachment.stored_filename)}
-        />
-    );
 }
 
 function AttachmentCard({
@@ -155,7 +145,7 @@ function UploadedAttachmentCard({
     onPreview: (preview: ActiveUploadPreview) => void;
     t: (key: string) => string;
 }>) {
-    const fileUrl = getAttachmentUrl(attachment.stored_filename);
+    const fileUrl = useAuthenticatedAttachmentUrl(attachment.stored_filename);
     const canPreview = hasInlineAttachmentPreview(attachment.mimetype);
 
     return (
@@ -164,12 +154,18 @@ function UploadedAttachmentCard({
             name={attachment.original_filename}
             size={attachment.size}
             kind={getAttachmentKindLabel(attachment.mimetype)}
-            preview={<StoredAttachmentPreview attachment={attachment} />}
+            preview={(
+                <AttachmentPreviewContent
+                    name={attachment.original_filename}
+                    mimetype={attachment.mimetype}
+                    sourceUrl={fileUrl}
+                />
+            )}
             isDark={isDark}
             accentClass={isDark ? 'bg-gray-700/50 border-green-600/30' : 'bg-green-50 border-green-300'}
             action={(
                 <div className="flex items-center gap-3">
-                    {canPreview && (
+                    {canPreview && fileUrl && (
                         <button
                             type="button"
                             onClick={() => onPreview({
@@ -186,9 +182,9 @@ function UploadedAttachmentCard({
                         </button>
                     )}
                     <a
-                        href={fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={fileUrl ?? undefined}
+                        download={attachment.original_filename}
+                        aria-disabled={!fileUrl}
                         className={`text-xs font-medium ${isDark ? 'text-green-300 hover:text-green-200' : 'text-green-700 hover:text-green-800'}`}
                     >
                         {t('downloadAttachment')}

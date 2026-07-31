@@ -26,19 +26,6 @@ export const createAttachmentsService = (authFetch: (url: string, options?: Requ
     }
   };
 
-  const getAttachmentsByEntry = async (entryId: number): Promise<Attachment[]> => {
-    try {
-      const response = await authFetch(`/api/attachments/entry/${entryId}`);
-      if (response.ok) {
-        return await response.json() as Attachment[];
-      }
-      return [];
-    } catch (error) {
-      console.error('Error fetching attachments:', error);
-      return [];
-    }
-  };
-
   const linkAttachment = async (attachmentId: number, entryId: number): Promise<boolean> => {
     try {
       const response = await authFetch(`/api/attachments/${attachmentId}/link`, {
@@ -64,16 +51,10 @@ export const createAttachmentsService = (authFetch: (url: string, options?: Requ
     }
   };
 
-  const getAttachmentUrl = (storedFilename: string): string => {
-    return `/api/attachments/file/${storedFilename}`;
-  };
-
   return {
     uploadAttachment,
-    getAttachmentsByEntry,
     linkAttachment,
     deleteAttachment,
-    getAttachmentUrl,
   };
 };
 

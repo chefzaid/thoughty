@@ -189,7 +189,7 @@ describe('appShellProps', () => {
   it('builds public shell props for intro and register views', () => {
     const routingState = createRoutingState();
 
-    const { introPageProps, authPageProps } = buildPublicShellProps({
+    const { introPageProps, authPageProps, verifyEmailPageProps } = buildPublicShellProps({
       configTheme: 'light',
       publicView: 'register',
       routingState,
@@ -209,6 +209,9 @@ describe('appShellProps', () => {
     expect(authPageProps.onAuthSuccess).toBeDefined();
     authPageProps.onAuthSuccess?.();
     expect(routingState.handleAuthSuccess).toHaveBeenCalled();
+
+    verifyEmailPageProps.onContinue();
+    expect(routingState.handlePublicViewChange).toHaveBeenCalledWith('login');
   });
 
   it('builds authenticated layout props with journal fallback and chat close handler', () => {

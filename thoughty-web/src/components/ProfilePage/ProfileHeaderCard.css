@@ -1,0 +1,24 @@
+.profile-verification-badge.unverified {
+  cursor: pointer;
+}
+
+.profile-verification-badge.unverified:hover:not(:disabled),
+.profile-verification-badge.unverified:focus-visible {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.18);
+}
+
+.profile-verification-badge.unverified:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.profile-verification-message {
+  margin: 0.25rem 0;
+  color: #34d399;
+  font-size: 0.8rem;
+}
+
+.profile-verification-message.error {
+  color: #f87171;
+}

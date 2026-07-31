@@ -12,6 +12,7 @@ const BlogPage = lazy(() => import('./components/BlogPage/BlogPage'));
 const ContactPage = lazy(() => import('./components/ContactPage/ContactPage'));
 const FeedbackPage = lazy(() => import('./components/FeedbackPage/FeedbackPage'));
 const LegalPage = lazy(() => import('./components/LegalPage/LegalPage'));
+const VerifyEmailPage = lazy(() => import('./components/VerifyEmailPage/VerifyEmailPage'));
 const AuthenticatedAppLayout = lazy(() => import('./routes/AuthenticatedAppLayout'));
 const AuthenticatedRoutes = lazy(() => import('./routes/AuthenticatedRoutes'));
 
@@ -36,6 +37,7 @@ function AppShell() {
     contactPageProps,
     feedbackPageProps,
     legalPageProps,
+    verifyEmailPageProps,
     authenticatedLayoutProps,
     authenticatedRoutesProps,
     introPageProps,
@@ -63,6 +65,10 @@ function AppShell() {
 
   if (publicView === 'privacy' || publicView === 'terms') {
     return renderLazy(<LegalPage {...legalPageProps} page={publicView} />);
+  }
+
+  if (publicView === 'verifyEmail') {
+    return renderLazy(<VerifyEmailPage {...verifyEmailPageProps} />);
   }
 
   if (!isAuthenticated) {

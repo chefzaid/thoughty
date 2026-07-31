@@ -23,7 +23,6 @@ describe('AttachmentsController', () => {
   beforeEach(async () => {
     attachmentsService = {
       upload: jest.fn(),
-      getByEntry: jest.fn(),
       linkToEntry: jest.fn(),
       delete: jest.fn(),
       getFileStream: jest.fn(),
@@ -77,31 +76,6 @@ describe('AttachmentsController', () => {
 
       expect(attachmentsService.upload).toHaveBeenCalledWith(1, mockFile, undefined);
       expect(result.entry_id).toBeNull();
-    });
-  });
-
-  describe('getByEntry', () => {
-    it('returns mapped attachments for an entry', async () => {
-      attachmentsService.getByEntry.mockResolvedValue([mockAttachment]);
-
-      const result = await controller.getByEntry(mockUser as any, 10);
-
-      expect(attachmentsService.getByEntry).toHaveBeenCalledWith(1, 10);
-      expect(result).toEqual([{
-        id: 1,
-        original_filename: 'photo.jpg',
-        stored_filename: 'abc-uuid.jpg',
-        mimetype: 'image/jpeg',
-        size: 1024,
-        entry_id: 10,
-        created_at: mockAttachment.createdAt,
-      }]);
-    });
-
-    it('returns empty array when no attachments', async () => {
-      attachmentsService.getByEntry.mockResolvedValue([]);
-      const result = await controller.getByEntry(mockUser as any, 10);
-      expect(result).toEqual([]);
     });
   });
 

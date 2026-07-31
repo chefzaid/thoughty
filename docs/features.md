@@ -128,7 +128,7 @@ flowchart LR
 - Account deletion is soft-delete oriented and guarded by confirmation, which is safer than immediate irreversible removal.
 - GDPR-style data download is available from the config surface, allowing a user to export their stored account data in one response.
 - Profile management includes full name, display name, bio, birthday, avatar, and membership metadata.
-- Account identity status is surfaced in the profile and main navigation, so verified accounts show a badge and unverified email accounts are clearly labeled.
+- Account identity status is surfaced in the profile and main navigation. Email verification links open a public status route, successful verification updates the active session immediately, and unverified local accounts can resend the message from their profile.
 - Avatar editing goes beyond simple upload. Users can crop, zoom, and reposition images within a circular editor before saving the final result.
 - Profile includes subscription management, with saved plan selection, a payment method label, and recent billing history shown alongside account settings.
 - Preferences cover theme, language, journal pagination size, profile birthday/gender metadata, text-to-speech date reading, preferred AI model, and the automatic AI tagging limit.
@@ -144,6 +144,7 @@ flowchart LR
 - Long journal pages include a back-to-top affordance so users can quickly return to the main controls after browsing older entries.
 - Destructive flows use confirmation dialogs, and long-running operations such as loading history, sync, or imports expose explicit loading states.
 - API failures are normalized before they reach forms and action handlers, so validation lists, structured server messages, and plain-text failures surface as readable feedback instead of generic errors.
+- Product API operations are checked against production frontend callers during tests; health and metrics remain explicit infrastructure-only exceptions. Protected attachment previews and downloads are loaded with authenticated requests and short-lived browser object URLs.
 - The public feedback page is backed by a persisted community feature-request board ranked by votes. Anyone can browse ideas, while authenticated users can submit bounded requests and cast one idempotent vote per idea; new requests automatically include their author's first vote.
 - The layout is responsive across desktop and smaller screens, with the same core journaling surfaces preserved instead of maintaining a separate reduced mobile product.
 - Footer links expose privacy, terms, and contact entry points, rounding out the application as a real hosted product rather than only an internal tool.

@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "api:types": "node ./scripts/generate-api-types.mjs"
+    "api:types": "node ./scripts/generate-api-types.mjs",
+    "api:usage": "node ./scripts/check-api-usage.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.14",

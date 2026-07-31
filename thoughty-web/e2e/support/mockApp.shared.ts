@@ -83,6 +83,8 @@ export interface MockAppState {
     username: string;
     email: string;
     fullName?: string;
+    authProvider?: 'local' | 'google';
+    emailVerified?: boolean;
   };
   config: {
     theme: 'light' | 'dark';
@@ -118,6 +120,8 @@ export interface MockAppState {
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
   lastRegisterPayload: AuthPayload | null;
+  lastVerificationToken: string | null;
+  verificationResendCount: number;
   lastPreviewPayload: unknown;
   lastImportPayload: unknown;
   lastFormatPayload: unknown;
@@ -342,6 +346,8 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
       username: 'TestUser',
       email: 'test@example.com',
       fullName: 'Test User',
+      authProvider: 'local',
+      emailVerified: false,
     },
     config: {
       theme: 'dark',
@@ -365,6 +371,8 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
       1,
     lastLoginPayload: null,
     lastRegisterPayload: null,
+    lastVerificationToken: null,
+    verificationResendCount: 0,
     lastPreviewPayload: null,
     lastImportPayload: null,
     lastFormatPayload: null,

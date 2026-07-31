@@ -12,6 +12,25 @@ import { handleEntriesRoutes } from './mockApp.routes.entries';
 import { handleReferenceRoutes } from './mockApp.routes.reference';
 
 async function handleAuthRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
+  if (pathname === '/api/auth/verify-email') {
+    const payload = request.postDataJSON() as { token?: string };
+    state.lastVerificationToken = payload.token ?? null;
+    if (!payload.token || payload.token === 'expired-token') {
+      await fulfillJson(route, { message: 'Invalid or expired verification token' }, { status: 400 });
+      return true;
+    }
+
+    state.user.emailVerified = true;
+    await fulfillJson(route, { success: true, message: 'Email verified successfully' });
+    return true;
+  }
+
+  if (pathname === '/api/auth/resend-verification-email') {
+    state.verificationResendCount += 1;
+    await fulfillJson(route, { success: true, message: 'Verification email sent' });
+    return true;
+  }
+
   if (pathname === '/api/auth/register') {
     const payload = request.postDataJSON() as {
       email?: string;
@@ -24,6 +43,8 @@ async function handleAuthRoutes({ route, request, pathname, state }: RouteContex
       username: payload.username || 'NewUser',
       email: payload.email || 'new@example.com',
       fullName: payload.username || 'NewUser',
+      authProvider: 'local',
+      emailVerified: false,
     };
 
     await fulfillJson(route, {

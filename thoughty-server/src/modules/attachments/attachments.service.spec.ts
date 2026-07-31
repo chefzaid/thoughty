@@ -147,26 +147,6 @@ describe('AttachmentsService', () => {
     });
   });
 
-  describe('getByEntry', () => {
-    it('returns attachments for a given entry', async () => {
-      attachmentRepository.find.mockResolvedValue([mockAttachment]);
-
-      const result = await service.getByEntry(1, 10);
-
-      expect(attachmentRepository.find).toHaveBeenCalledWith({
-        where: { userId: 1, entryId: 10 },
-        order: { createdAt: 'ASC' },
-      });
-      expect(result).toEqual([mockAttachment]);
-    });
-
-    it('returns empty array when no attachments found', async () => {
-      attachmentRepository.find.mockResolvedValue([]);
-      const result = await service.getByEntry(1, 10);
-      expect(result).toEqual([]);
-    });
-  });
-
   describe('linkToEntry', () => {
     it('links an attachment to an entry', async () => {
       const unlinked = { ...mockAttachment, entryId: null };

@@ -1,5 +1,7 @@
-import type { ChangeEvent, RefObject } from 'react';
+import { useEffect, useRef, useState, type ChangeEvent, type RefObject } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import type { TranslationFunction, ProfileConfig, ProfileUser } from './types';
+import './ProfileHeaderCard.css';
 
 interface ProfileHeaderCardProps {
   localConfig: ProfileConfig;
@@ -24,6 +26,30 @@ function ProfileHeaderCard({
   handlePictureUpload,
   uploadingPicture
 }: Readonly<ProfileHeaderCardProps>) {
+  const { resendVerificationEmail } = useAuth();
+  const [resending, setResending] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState('');
+  const [verificationError, setVerificationError] = useState(false);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const handleResend = async () => {
+    setResending(true);
+    setVerificationMessage('');
+    setVerificationError(false);
+    const result = await resendVerificationEmail();
+    if (!mountedRef.current) return;
+    setResending(false);
+    setVerificationError(!result.success);
+    setVerificationMessage(result.success ? t('verificationEmailSent') : t('verificationEmailFailed'));
+  };
+
   return (
   <div className="profile-header-card">
     <div className="profile-avatar-container">
@@ -64,12 +90,26 @@ function ProfileHeaderCard({
             <span aria-hidden="true">✓</span>
             {t('verifiedAccount')}
           </span>
-        ) : user ? (
-          <span className="profile-verification-badge unverified" title={t('unverifiedAccount')}>
-            {t('unverifiedAccount')}
-          </span>
+        ) : user?.authProvider === 'local' ? (
+          <button
+            type="button"
+            className="profile-verification-badge unverified"
+            title={t('resendVerification')}
+            disabled={resending}
+            onClick={() => void handleResend()}
+          >
+            {resending ? t('resendingVerification') : t('resendVerification')}
+          </button>
         ) : null}
       </div>
+      {verificationMessage && (
+        <p
+          className={`profile-verification-message ${verificationError ? 'error' : ''}`}
+          role={verificationError ? 'alert' : 'status'}
+        >
+          {verificationMessage}
+        </p>
+      )}
       <p className="profile-member-since">
         <svg xmlns="http://www.w3.org/2000/svg" className="member-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

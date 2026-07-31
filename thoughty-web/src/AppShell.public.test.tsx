@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -119,6 +119,20 @@ describe('AppShell public flows', () => {
       expect(screen.getByRole('heading', { name: 'Updates, tips, and journaling inspiration.' })).toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'From the journal desk' })).toBeInTheDocument();
     });
+  });
+
+  it('loads the public email verification route', async () => {
+    const verifyEmail = vi.fn().mockResolvedValue({ success: true });
+    globalThis.history.replaceState({}, '', '/verify-email?token=route-token');
+    setMockAuthState({ user: null, isAuthenticated: false, verifyEmail });
+
+    renderAppShell();
+
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: 'Verify your email' })).toBeInTheDocument();
+      expect(screen.getByText('Your email is verified.')).toBeInTheDocument();
+    });
+    expect(verifyEmail).toHaveBeenCalledWith('route-token');
   });
 
   it('navigates from the intro page to sign in and sign up modes', async () => {

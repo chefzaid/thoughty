@@ -70,6 +70,8 @@ function createAuthValue(overrides: Partial<MockAuthValue> = {}): MockAuthValue 
         changePassword: vi.fn().mockResolvedValue({ success: true }),
         forgotPassword: vi.fn().mockResolvedValue({ success: true }),
         resetPassword: vi.fn().mockResolvedValue({ success: true }),
+        verifyEmail: vi.fn().mockResolvedValue({ success: true }),
+        resendVerificationEmail: vi.fn().mockResolvedValue({ success: true }),
         deleteAccount: vi.fn().mockResolvedValue({ success: true }),
         authFetch: vi.fn().mockResolvedValue(new Response()),
         getAccessToken: vi.fn().mockReturnValue('token'),
@@ -161,10 +163,26 @@ describe('ProfilePage', () => {
             expect(screen.getByText('Member since 2023')).toBeInTheDocument();
         });
 
-        it('displays unverified account status by default', () => {
+        it('offers to resend verification for an unverified local account', async () => {
+            const resendVerificationEmail = vi.fn().mockResolvedValue({ success: true });
+            mockedUseAuth.mockReturnValue(createAuthValue({ resendVerificationEmail }));
             render(<ProfilePage {...defaultProps} />);
 
-            expect(screen.getByText('unverifiedAccount')).toBeInTheDocument();
+            await userEvent.click(screen.getByRole('button', { name: 'resendVerification' }));
+
+            expect(resendVerificationEmail).toHaveBeenCalledTimes(1);
+            expect(await screen.findByRole('status')).toHaveTextContent('verificationEmailSent');
+        });
+
+        it('reports a verification resend failure', async () => {
+            mockedUseAuth.mockReturnValue(createAuthValue({
+                resendVerificationEmail: vi.fn().mockResolvedValue({ success: false }),
+            }));
+            render(<ProfilePage {...defaultProps} />);
+
+            await userEvent.click(screen.getByRole('button', { name: 'resendVerification' }));
+
+            expect(await screen.findByRole('alert')).toHaveTextContent('verificationEmailFailed');
         });
 
         it('displays verified account status for verified users', () => {

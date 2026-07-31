@@ -3827,35 +3827,6 @@
         ]
       }
     },
-    "/api/attachments/entry/{entryId}": {
-      "get": {
-        "operationId": "AttachmentsController_getByEntry",
-        "parameters": [
-          {
-            "name": "entryId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of attachments"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get all attachments for an entry",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
     "/api/attachments/{id}/link": {
       "post": {
         "operationId": "AttachmentsController_linkToEntry",

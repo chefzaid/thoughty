@@ -47,6 +47,8 @@ interface AuthContextValue {
   changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
   forgotPassword: (email: string) => Promise<AuthResult>;
   resetPassword: (token: string, newPassword: string) => Promise<AuthResult>;
+  verifyEmail: (token: string) => Promise<AuthResult>;
+  resendVerificationEmail: () => Promise<AuthResult>;
   deleteAccount: (password: string) => Promise<AuthResult>;
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
   getAccessToken: () => string | null;
@@ -417,6 +419,49 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     }
   }, []);
 
+  const verifyEmail = useCallback(async (token: string): Promise<AuthResult> => {
+    setError(null);
+    try {
+      const response = await fetch(`${API_BASE}/verify-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiErrorMessage(response, 'Email verification failed'));
+      }
+
+      const data = await safeJsonParse<{ message?: string }>(response);
+      setUser((currentUser) => currentUser ? { ...currentUser, emailVerified: true } : null);
+      return { success: true, message: data?.message };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Email verification failed';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
+
+  const resendVerificationEmail = useCallback(async (): Promise<AuthResult> => {
+    setError(null);
+    try {
+      const response = await authFetch(`${API_BASE}/resend-verification-email`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiErrorMessage(response, 'Failed to resend verification email'));
+      }
+
+      const data = await safeJsonParse<{ message?: string }>(response);
+      return { success: true, message: data?.message };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to resend verification email';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, [authFetch]);
+
   // Delete account (flags for deletion)
   const deleteAccount = useCallback(async (password: string): Promise<AuthResult> => {
     setError(null);
@@ -455,6 +500,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     changePassword,
     forgotPassword,
     resetPassword,
+    verifyEmail,
+    resendVerificationEmail,
     deleteAccount,
     authFetch,
     getAccessToken,
@@ -470,6 +517,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     changePassword,
     forgotPassword,
     resetPassword,
+    verifyEmail,
+    resendVerificationEmail,
     deleteAccount,
     authFetch,
     getAccessToken,

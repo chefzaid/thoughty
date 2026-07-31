@@ -7,6 +7,7 @@ import type ContactPage from '../components/ContactPage/ContactPage';
 import type FeedbackPage from '../components/FeedbackPage/FeedbackPage';
 import type IntroPage from '../components/IntroPage/IntroPage';
 import type LegalPage from '../components/LegalPage/LegalPage';
+import type VerifyEmailPage from '../components/VerifyEmailPage/VerifyEmailPage';
 import type { Config, Entry, ImportExportFormat, ImportExportSection, PublicViewType, ViewType } from '../types';
 import type AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
@@ -22,6 +23,7 @@ export type ContactPageProps = ComponentProps<typeof ContactPage>;
 export type FeedbackPageProps = ComponentProps<typeof FeedbackPage>;
 export type AuthPageProps = ComponentProps<typeof AuthPage>;
 export type LegalPageProps = ComponentProps<typeof LegalPage>;
+export type VerifyEmailPageProps = ComponentProps<typeof VerifyEmailPage>;
 export type AuthenticatedLayoutProps = Omit<ComponentProps<typeof AuthenticatedAppLayout>, 'children'>;
 export type AuthenticatedRoutesProps = ComponentProps<typeof AuthenticatedRoutes>;
 
@@ -143,6 +145,12 @@ export function buildPublicShellProps({
     onBack: () => routingState.handlePublicViewChange('intro'),
   };
 
+  const verifyEmailPageProps: VerifyEmailPageProps = {
+    t,
+    theme,
+    onContinue: () => routingState.handlePublicViewChange('login'),
+  };
+
   return {
     introPageProps,
     aboutPageProps,
@@ -151,6 +159,7 @@ export function buildPublicShellProps({
     feedbackPageProps,
     legalPageProps,
     authPageProps,
+    verifyEmailPageProps,
   };
 }
 
