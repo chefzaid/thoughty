@@ -11,6 +11,28 @@ export interface SummaryGuidance {
   excludeDetails?: string;
 }
 
+export interface DuplicateEntryPreview {
+  id: number;
+  date: string;
+  index: number;
+  diaryId: number | null;
+  content: string;
+  tags: string[];
+}
+
+export interface DuplicateEntryGroup {
+  confidence: number;
+  reason: string;
+  entries: DuplicateEntryPreview[];
+}
+
+export interface DuplicateEntryScan {
+  analyzedEntries: number;
+  totalEntries: number;
+  truncated: boolean;
+  groups: DuplicateEntryGroup[];
+}
+
 export const createAiService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
   const suggestTags = async (
     content: string,
@@ -128,6 +150,29 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     }
   };
 
+  const findDuplicateEntries = async (diaryId?: number): Promise<DuplicateEntryScan | null> => {
+    try {
+      const response = await authFetch('/api/ai/duplicates', {
+        method: 'POST',
+        body: JSON.stringify(diaryId == null ? {} : { diaryId }),
+      });
+      const data = await safeJsonParse<DuplicateEntryScan>(response);
+      if (
+        !response.ok
+        || !data
+        || !Number.isInteger(data.analyzedEntries)
+        || !Number.isInteger(data.totalEntries)
+        || typeof data.truncated !== 'boolean'
+        || !Array.isArray(data.groups)
+      ) return null;
+
+      return data;
+    } catch (error) {
+      console.error('Error finding duplicate entries:', error);
+      return null;
+    }
+  };
+
   const getChatHistory = async (
     entryId: number,
   ): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> => {
@@ -170,6 +215,7 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     fixWriting,
     summarizeEntry,
     generateWritingPrompts,
+    findDuplicateEntries,
     chat,
     getChatHistory,
     fetchModels,

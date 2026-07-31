@@ -1,0 +1,221 @@
+.duplicate-review {
+  display: flex;
+  justify-content: flex-end;
+  margin: 0.75rem 0 1rem;
+}
+
+.duplicate-review-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 0.55rem 0.8rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.duplicate-review-trigger.dark {
+  border-color: #4b5563;
+  background: #1f2937;
+  color: #e5e7eb;
+}
+
+.duplicate-review-trigger.light {
+  border-color: #d1d5db;
+  background: #ffffff;
+  color: #1f2937;
+}
+
+.duplicate-review-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.duplicate-review-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.duplicate-review-dialog {
+  position: relative;
+  width: min(46rem, 100%);
+  max-height: min(80vh, 48rem);
+  overflow: hidden;
+  border: 1px solid;
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.4);
+}
+
+.duplicate-review-dialog.dark {
+  border-color: #4b5563;
+  background: #111827;
+  color: #f3f4f6;
+}
+
+.duplicate-review-dialog.light {
+  border-color: #d1d5db;
+  background: #ffffff;
+  color: #111827;
+}
+
+.duplicate-review-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid rgba(107, 114, 128, 0.35);
+  padding: 1.25rem;
+}
+
+.duplicate-review-header h2,
+.duplicate-review-header p,
+.duplicate-group-summary p,
+.duplicate-entry-copy p {
+  margin: 0;
+}
+
+.duplicate-review-header h2 {
+  font-size: 1.25rem;
+}
+
+.duplicate-review-header p {
+  margin-top: 0.35rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.duplicate-review-dialog.light .duplicate-review-header p,
+.duplicate-review-dialog.light .duplicate-scan-count,
+.duplicate-review-dialog.light .duplicate-entry-copy time,
+.duplicate-review-dialog.light .duplicate-entry-copy small {
+  color: #4b5563;
+}
+
+.duplicate-icon-button,
+.duplicate-entry-actions button {
+  display: inline-grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 6px;
+  color: inherit;
+}
+
+.duplicate-review-content {
+  max-height: calc(min(80vh, 48rem) - 6rem);
+  overflow-y: auto;
+  padding: 0 1.25rem 1.25rem;
+}
+
+.duplicate-review-state,
+.duplicate-scan-count,
+.duplicate-scan-limit {
+  margin: 1.25rem 0 0;
+}
+
+.duplicate-review-state {
+  text-align: center;
+}
+
+.duplicate-review-state.error,
+.duplicate-scan-limit {
+  color: #fca5a5;
+}
+
+.duplicate-review-dialog.light .duplicate-review-state.error,
+.duplicate-review-dialog.light .duplicate-scan-limit {
+  color: #b91c1c;
+}
+
+.duplicate-review-state button {
+  margin-top: 0.75rem;
+  text-decoration: underline;
+}
+
+.duplicate-scan-count,
+.duplicate-scan-limit {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.duplicate-group {
+  border-top: 1px solid rgba(107, 114, 128, 0.35);
+  padding: 1.25rem 0 0;
+  margin-top: 1.25rem;
+}
+
+.duplicate-group-summary strong {
+  color: #5eead4;
+  font-size: 0.85rem;
+}
+
+.duplicate-review-dialog.light .duplicate-group-summary strong {
+  color: #0f766e;
+}
+
+.duplicate-group-summary p {
+  margin-top: 0.4rem;
+  line-height: 1.5;
+}
+
+.duplicate-entry-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: start;
+  margin-top: 1rem;
+  padding-left: 0.9rem;
+  border-left: 3px solid #14b8a6;
+}
+
+.duplicate-entry-copy time,
+.duplicate-entry-copy small {
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.duplicate-entry-copy p {
+  margin-top: 0.35rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.duplicate-entry-copy small {
+  display: block;
+  margin-top: 0.45rem;
+}
+
+.duplicate-entry-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.duplicate-entry-actions button:hover,
+.duplicate-icon-button:hover {
+  background: rgba(107, 114, 128, 0.2);
+}
+
+.duplicate-entry-actions button.danger {
+  color: #fca5a5;
+}
+
+@media (max-width: 560px) {
+  .duplicate-review-dialog {
+    max-height: 90vh;
+  }
+
+  .duplicate-entry-row {
+    grid-template-columns: 1fr;
+  }
+
+  .duplicate-entry-actions {
+    justify-content: flex-end;
+  }
+}

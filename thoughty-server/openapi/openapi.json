@@ -2065,6 +2065,71 @@
         ]
       }
     },
+    "/api/ai/duplicates": {
+      "post": {
+        "operationId": "AiController_findDuplicates",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FindDuplicateEntriesDto"
+              },
+              "example": {
+                "diaryId": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Reviewable duplicate entry groups returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateEntryScanResponseDto"
+                },
+                "example": {
+                  "analyzedEntries": 1,
+                  "totalEntries": 1,
+                  "truncated": true,
+                  "groups": [
+                    {
+                      "confidence": 1,
+                      "reason": "example",
+                      "entries": [
+                        {
+                          "id": 1,
+                          "date": "2026-07-31",
+                          "index": 1,
+                          "diaryId": {
+                            "example": "example"
+                          },
+                          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                          "tags": [
+                            "reflection"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Find high-confidence semantic duplicate journal entries",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
     "/api/ai/chat": {
       "post": {
         "operationId": "AiController_chat",
@@ -5761,6 +5826,167 @@
         "example": {
           "prompts": [
             "example"
+          ]
+        }
+      },
+      "FindDuplicateEntriesDto": {
+        "type": "object",
+        "properties": {
+          "diaryId": {
+            "type": "number",
+            "description": "Diary to scan; omit to scan across all diaries",
+            "minimum": 1
+          }
+        },
+        "example": {
+          "diaryId": 1
+        }
+      },
+      "DuplicateEntryPreviewDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "minimum": 1
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-07-31"
+          },
+          "index": {
+            "type": "number",
+            "minimum": 1
+          },
+          "diaryId": {
+            "type": "object",
+            "minimum": 1,
+            "nullable": true
+          },
+          "content": {
+            "type": "string",
+            "description": "Bounded entry preview"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "index",
+          "content",
+          "tags"
+        ],
+        "example": {
+          "id": 1,
+          "date": "2026-07-31",
+          "index": 1,
+          "diaryId": {
+            "example": "example"
+          },
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "tags": [
+            "reflection"
+          ]
+        }
+      },
+      "DuplicateEntryGroupDto": {
+        "type": "object",
+        "properties": {
+          "confidence": {
+            "type": "number",
+            "minimum": 70,
+            "maximum": 100
+          },
+          "reason": {
+            "type": "string",
+            "description": "Short explanation of the shared subject and conclusion"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DuplicateEntryPreviewDto"
+            }
+          }
+        },
+        "required": [
+          "confidence",
+          "reason",
+          "entries"
+        ],
+        "example": {
+          "confidence": 1,
+          "reason": "example",
+          "entries": [
+            {
+              "id": 1,
+              "date": "2026-07-31",
+              "index": 1,
+              "diaryId": {
+                "example": "example"
+              },
+              "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+              "tags": [
+                "reflection"
+              ]
+            }
+          ]
+        }
+      },
+      "DuplicateEntryScanResponseDto": {
+        "type": "object",
+        "properties": {
+          "analyzedEntries": {
+            "type": "number",
+            "minimum": 0
+          },
+          "totalEntries": {
+            "type": "number",
+            "minimum": 0
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Whether more entries existed than the bounded scan could analyze"
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DuplicateEntryGroupDto"
+            }
+          }
+        },
+        "required": [
+          "analyzedEntries",
+          "totalEntries",
+          "truncated",
+          "groups"
+        ],
+        "example": {
+          "analyzedEntries": 1,
+          "totalEntries": 1,
+          "truncated": true,
+          "groups": [
+            {
+              "confidence": 1,
+              "reason": "example",
+              "entries": [
+                {
+                  "id": 1,
+                  "date": "2026-07-31",
+                  "index": 1,
+                  "diaryId": {
+                    "example": "example"
+                  },
+                  "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                  "tags": [
+                    "reflection"
+                  ]
+                }
+              ]
+            }
           ]
         }
       },

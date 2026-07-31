@@ -125,6 +125,12 @@ vi.mock('../BackToTopButton/BackToTopButton', () => ({
   )
 }));
 
+vi.mock('../DuplicateReview/DuplicateReview', () => ({
+  default: ({ diaryId }: { diaryId: number | null }) => (
+    <div data-testid="duplicate-review">{diaryId}</div>
+  ),
+}));
+
 describe('JournalView', () => {
   const mockT = vi.fn((key: string) => key);
   const mockConfig: Config = {
@@ -170,6 +176,12 @@ describe('JournalView', () => {
         isOpen: false,
         setOpen: vi.fn(),
         diaryId: 1,
+        onNavigateToEntry: vi.fn(),
+      },
+      duplicateReview: {
+        diaryId: 1,
+        onFindDuplicates: vi.fn(),
+        onDelete: vi.fn(),
         onNavigateToEntry: vi.fn(),
       },
       entryForm: {
@@ -254,6 +266,7 @@ describe('JournalView', () => {
       ...overrides,
       diaryTabs: { ...base.diaryTabs, ...overrides.diaryTabs },
       thoughtOfDay: { ...base.thoughtOfDay, ...overrides.thoughtOfDay },
+      duplicateReview: { ...base.duplicateReview, ...overrides.duplicateReview },
       entryForm: { ...base.entryForm, ...overrides.entryForm },
       filters: { ...base.filters, ...overrides.filters },
       entriesList: { ...base.entriesList, ...overrides.entriesList },

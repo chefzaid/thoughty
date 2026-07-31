@@ -169,6 +169,41 @@ describe('aiService', () => {
     await expect(service.generateWritingPrompts()).resolves.toBeNull();
   });
 
+  it('findDuplicateEntries returns a valid diary-scoped scan', async () => {
+    const scan = {
+      analyzedEntries: 2,
+      totalEntries: 2,
+      truncated: false,
+      groups: [{ confidence: 90, reason: 'Same conclusion', entries: [] }],
+    };
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(scan),
+    });
+
+    await expect(service.findDuplicateEntries(4)).resolves.toEqual(scan);
+    expect(mockAuthFetch).toHaveBeenCalledWith('/api/ai/duplicates', {
+      method: 'POST',
+      body: JSON.stringify({ diaryId: 4 }),
+    });
+  });
+
+  it('findDuplicateEntries rejects malformed, failed, and thrown responses', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    mockAuthFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ analyzedEntries: 'two', totalEntries: 2, truncated: false, groups: [] }),
+    });
+    mockAuthFetch.mockResolvedValueOnce({ ok: false, json: () => Promise.resolve({}) });
+    mockAuthFetch.mockRejectedValueOnce(new Error('duplicate scan network'));
+
+    await expect(service.findDuplicateEntries()).resolves.toBeNull();
+    await expect(service.findDuplicateEntries()).resolves.toBeNull();
+    await expect(service.findDuplicateEntries()).resolves.toBeNull();
+    expect(consoleSpy).toHaveBeenCalledWith('Error finding duplicate entries:', expect.any(Error));
+    consoleSpy.mockRestore();
+  });
+
   it('chat returns assistant reply on success', async () => {
     const messages = [{ role: 'user' as const, content: 'Hello' }];
     mockAuthFetch.mockResolvedValue({

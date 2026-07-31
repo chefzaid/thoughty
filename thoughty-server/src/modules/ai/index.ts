@@ -2,6 +2,7 @@ export * from './ai.module';
 export * from './ai.controller';
 export * from './ai-book-composer.service';
 export * from './ai-personality.service';
+export * from './ai-duplicate.service';
 export * from './ai.service';
 export * from './personality-analysis';
 export * from './dto/suggest-tags.dto';

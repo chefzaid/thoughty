@@ -8,13 +8,18 @@ import { FixWritingDto } from './dto/fix-writing.dto';
 import { ChatDto, ChatHistoryResponseDto, ChatResponseDto } from './dto/chat.dto';
 import { EntrySummaryResponseDto, SummarizeEntryDto } from './dto/summarize-entry.dto';
 import { GenerateWritingPromptsDto, WritingPromptsResponseDto } from './dto/writing-prompts.dto';
+import { AiDuplicateService } from './ai-duplicate.service';
+import { DuplicateEntryScanResponseDto, FindDuplicateEntriesDto } from './dto/duplicate-entries.dto';
 
 @ApiTags('AI')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @Controller('ai')
 export class AiController {
-  constructor(private readonly aiService: AiService) {}
+  constructor(
+    private readonly aiService: AiService,
+    private readonly aiDuplicateService: AiDuplicateService,
+  ) {}
 
   @Get('models')
   @ApiOperation({ summary: 'List available OpenRouter models' })
@@ -69,6 +74,20 @@ export class AiController {
     @Body() dto: GenerateWritingPromptsDto,
   ): Promise<WritingPromptsResponseDto> {
     return this.aiService.generateWritingPrompts(user.userId, dto);
+  }
+
+  @Post('duplicates')
+  @ApiOperation({ summary: 'Find high-confidence semantic duplicate journal entries' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reviewable duplicate entry groups returned successfully',
+    type: DuplicateEntryScanResponseDto,
+  })
+  async findDuplicates(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: FindDuplicateEntriesDto,
+  ): Promise<DuplicateEntryScanResponseDto> {
+    return this.aiDuplicateService.findDuplicates(user.userId, dto);
   }
 
   @Post('chat')

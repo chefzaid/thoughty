@@ -97,6 +97,34 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
     return true;
   }
 
+  if (pathname === '/api/ai/duplicates') {
+    const payload = request.postDataJSON() as { diaryId?: number };
+    state.lastAiDuplicatePayload = payload;
+    const entries = payload.diaryId == null
+      ? state.entries
+      : state.entries.filter((entry) => (entry.diaryId ?? 1) === payload.diaryId);
+    const matches = entries.slice(0, 2);
+
+    await fulfillJson(route, {
+      analyzedEntries: entries.length,
+      totalEntries: entries.length,
+      truncated: false,
+      groups: matches.length < 2 ? [] : [{
+        confidence: 94,
+        reason: 'Both entries reach the same decision about protecting focus time.',
+        entries: matches.map((entry) => ({
+          id: entry.id,
+          date: entry.date,
+          index: entry.index,
+          diaryId: entry.diaryId ?? 1,
+          content: entry.content,
+          tags: entry.tags,
+        })),
+      }],
+    });
+    return true;
+  }
+
   if (pathname === '/api/ai/chat') {
     state.lastAiChatPayload = request.postDataJSON();
     await fulfillJson(route, { reply: 'This entry reflects a thoughtful focus on the day.' });

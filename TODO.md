@@ -95,7 +95,7 @@
 - [x] AI chat history, with the option to export chats as text files
 - [x] Tone and mood analysis of entries
 - [x] Guess the file format automatically when importing a journal file (solved with heuristic detection in the import preview, no AI needed)
-- [ ] Deduplicate similar entries talking about the same subject with the same conclusion
+- [x] Deduplicate similar entries talking about the same subject with the same conclusion
 - [ ] Search entries by meaning or idea instead of keywords (semantic search)
 - [x] Subjects discussed stats (analyzed by AI)
 - [x] Personality analysis through the choice of words and subjects of all entries or a chosen subset of them

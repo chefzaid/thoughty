@@ -81,6 +81,7 @@ function createRoutesParams(
       handleUpdateDiary: vi.fn().mockResolvedValue(undefined),
     },
     downloadUserData: vi.fn().mockResolvedValue(true),
+    handleFindDuplicateEntries: vi.fn().mockResolvedValue(null),
     entriesState: {
       activeTargetId: null,
       allTags: ['focus', 'work'],

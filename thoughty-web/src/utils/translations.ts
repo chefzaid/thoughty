@@ -492,6 +492,17 @@ export type TranslationKey =
   | 'generatingWritingPrompts'
   | 'regenerateWritingPrompts'
   | 'writingPromptsError'
+  | 'findDuplicates'
+  | 'duplicateScanTitle'
+  | 'duplicateScanDescription'
+  | 'scanningDuplicates'
+  | 'duplicateScanError'
+  | 'noDuplicatesFound'
+  | 'duplicateScanCount'
+  | 'duplicateScanLimited'
+  | 'duplicateConfidence'
+  | 'openDuplicateEntry'
+  | 'deleteDuplicateEntry'
   | 'retry'
   | 'aiChat'
   | 'aiThinking'
@@ -1291,6 +1302,17 @@ export const translations: Translations = {
     generatingWritingPrompts: 'Finding a fresh direction...',
     regenerateWritingPrompts: 'Regenerate prompts',
     writingPromptsError: 'Prompts need journal history and a configured OpenRouter API key.',
+    findDuplicates: 'Find duplicates',
+    duplicateScanTitle: 'Similar entries',
+    duplicateScanDescription: 'Review high-confidence matches before deciding whether to remove an entry.',
+    scanningDuplicates: 'Comparing recent entries...',
+    duplicateScanError: 'Unable to compare entries. Check your OpenRouter API key and try again.',
+    noDuplicatesFound: 'No high-confidence duplicates were found.',
+    duplicateScanCount: 'Analyzed {analyzed} of {total} entries.',
+    duplicateScanLimited: 'Only the 40 newest entries were analyzed. Select a diary to narrow the scan.',
+    duplicateConfidence: '{confidence}% confidence',
+    openDuplicateEntry: 'Open entry',
+    deleteDuplicateEntry: 'Delete duplicate entry',
     retry: 'Retry',
     aiChat: 'AI Chat',
     aiThinking: 'Thinking...',
@@ -2101,6 +2123,17 @@ export const translations: Translations = {
     generatingWritingPrompts: 'Recherche d\'une nouvelle piste...',
     regenerateWritingPrompts: 'Regénérer les prompts',
     writingPromptsError: 'Les prompts nécessitent un historique et une clé API OpenRouter configurée.',
+    findDuplicates: 'Rechercher les doublons',
+    duplicateScanTitle: 'Entrées similaires',
+    duplicateScanDescription: 'Examinez les correspondances fiables avant de supprimer une entrée.',
+    scanningDuplicates: 'Comparaison des entrées récentes...',
+    duplicateScanError: 'Impossible de comparer les entrées. Vérifiez votre clé API OpenRouter et réessayez.',
+    noDuplicatesFound: 'Aucun doublon suffisamment fiable n’a été trouvé.',
+    duplicateScanCount: '{analyzed} entrées analysées sur {total}.',
+    duplicateScanLimited: 'Seules les 40 entrées les plus récentes ont été analysées. Sélectionnez un journal pour affiner la recherche.',
+    duplicateConfidence: 'Confiance : {confidence} %',
+    openDuplicateEntry: 'Ouvrir l’entrée',
+    deleteDuplicateEntry: 'Supprimer l’entrée en double',
     retry: 'Réessayer',
     aiChat: 'Chat IA',
     aiThinking: 'Réflexion...',

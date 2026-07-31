@@ -11,7 +11,7 @@ import type VerifyEmailPage from '../components/VerifyEmailPage/VerifyEmailPage'
 import type { Config, Entry, ImportExportFormat, ImportExportSection, PublicViewType, ViewType } from '../types';
 import type AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
-import type { RephraseMode, SummaryGuidance } from '../services/api/aiService';
+import type { DuplicateEntryScan, RephraseMode, SummaryGuidance } from '../services/api/aiService';
 import { buildEntryPermalink } from './appRouting';
 import { createEntryTemplate, getEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
 import type { TagMetadataMap } from './tagMetadata';
@@ -75,6 +75,7 @@ interface BuildAuthenticatedRoutesPropsParams {
   handleRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
   handleSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
   handleGenerateWritingPrompts?: () => Promise<string[] | null>;
+  handleFindDuplicateEntries: (diaryId?: number) => Promise<DuplicateEntryScan | null>;
   handleNavigateToFirst: AuthenticatedRoutesProps['journalRouteProps']['yearMonthNavigator']['onNavigate'];
   handleRenameTag: AuthenticatedRoutesProps['tagManagerRouteProps']['onRenameTag'];
   highlightsModalOpen: boolean;
@@ -217,6 +218,7 @@ export function buildAuthenticatedRoutesProps({
   handleRephrase,
   handleSummarize,
   handleGenerateWritingPrompts,
+  handleFindDuplicateEntries,
   handleNavigateToFirst,
   handleRenameTag,
   highlightsModalOpen,
@@ -297,6 +299,12 @@ export function buildAuthenticatedRoutesProps({
         isOpen: highlightsModalOpen,
         setOpen: setHighlightsModalOpen,
         diaryId: diariesState.currentDiaryId,
+        onNavigateToEntry: entryNavigationState.handleNavigateToEntry,
+      },
+      duplicateReview: {
+        diaryId: diariesState.currentDiaryId,
+        onFindDuplicates: handleFindDuplicateEntries,
+        onDelete: deleteModalState.handleDelete,
         onNavigateToEntry: entryNavigationState.handleNavigateToEntry,
       },
       entryForm: {

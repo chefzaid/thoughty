@@ -27,11 +27,12 @@ const AUTHENTICATED_ROUTES = [
 
 const THEMES = ['dark', 'light'] as const;
 
-async function expectNoAccessibilityViolations(page: Page) {
+async function expectNoAccessibilityViolations(page: Page, include?: string) {
   await expect(page.locator('body')).toBeVisible();
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-    .analyze();
+  let axe = new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']);
+  if (include) axe = axe.include(include);
+  const results = await axe.analyze();
   const violations = results.violations.map(({ help, id, impact, nodes }) => ({
     help,
     id,
@@ -86,4 +87,35 @@ test.describe('route accessibility', () => {
     await page.getByRole('button', { name: 'Tags', exact: true }).click();
     await expect(page.locator('#main-content')).toBeFocused();
   });
+
+  for (const theme of THEMES) {
+    test(`${theme} duplicate review dialog`, async ({ page }) => {
+      await setupMockApp(page, {
+        startAuthenticated: true,
+        config: { theme },
+        initialEntries: [{
+          id: 301,
+          date: '2026-05-02',
+          index: 1,
+          content: 'I chose to protect mornings for focused work.',
+          tags: ['focus'],
+          visibility: 'private',
+          diaryId: 1,
+        }, {
+          id: 302,
+          date: '2026-05-01',
+          index: 1,
+          content: 'Keeping mornings free for focus is the right decision.',
+          tags: ['focus', 'decision'],
+          visibility: 'private',
+          diaryId: 1,
+        }],
+      });
+      await page.goto('/journal?diary=1');
+      await page.getByRole('button', { name: 'Find duplicates' }).click();
+      await expect(page.getByRole('dialog', { name: 'Similar entries' })).toBeVisible();
+
+      await expectNoAccessibilityViolations(page, '.duplicate-review-dialog');
+    });
+  }
 });

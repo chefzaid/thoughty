@@ -183,6 +183,10 @@ export function useAppShellModel(): AppShellModel {
     return aiService.generateWritingPrompts(currentDiaryId ?? undefined);
   }, [aiService, currentDiaryId]);
 
+  const handleFindDuplicateEntries = useCallback(async (diaryId?: number) => {
+    return aiService.findDuplicateEntries(diaryId);
+  }, [aiService]);
+
   const handleLoadAiChatHistory = useCallback(async (entryId: number) => {
     return aiService.getChatHistory(entryId);
   }, [aiService]);
@@ -255,6 +259,7 @@ export function useAppShellModel(): AppShellModel {
     handleRephrase,
     handleSummarize,
     handleGenerateWritingPrompts,
+    handleFindDuplicateEntries,
     handleNavigateToFirst,
     handleRenameTag,
     highlightsModalOpen,

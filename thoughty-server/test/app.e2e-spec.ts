@@ -60,6 +60,10 @@ describe('AppController (e2e)', () => {
         .expect(401);
     });
 
+    it('/api/ai/duplicates (POST) - should require authentication', () => {
+      return request(app.getHttpServer()).post('/api/ai/duplicates').send({}).expect(401);
+    });
+
     it('/api/feature-requests (POST) - should require authentication', () => {
       return request(app.getHttpServer())
         .post('/api/feature-requests')

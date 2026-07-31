@@ -7,6 +7,7 @@ import EntriesList from '../EntriesList/EntriesList';
 import Pagination from '../Pagination/Pagination';
 import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
+import DuplicateReview from '../DuplicateReview/DuplicateReview';
 import type { Config } from '../../types';
 import { useJournalKeyboardShortcuts } from './useJournalKeyboardShortcuts';
 
@@ -22,6 +23,7 @@ type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' |
 type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' | 'searchTerm'>;
 type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage'>;
 type YearMonthNavigatorProps = Pick<ComponentProps<typeof YearMonthNavigator>, 'availableYears' | 'availableMonths' | 'onNavigate'>;
+type DuplicateReviewProps = Omit<ComponentProps<typeof DuplicateReview>, 'theme' | 't'>;
 type TranslationFn = (key: string, params?: Record<string, string | number>) => string;
 
 interface JournalViewProps {
@@ -32,6 +34,7 @@ interface JournalViewProps {
   entriesList: EntriesListProps;
   pagination: PaginationProps;
   yearMonthNavigator: YearMonthNavigatorProps;
+  duplicateReview: DuplicateReviewProps;
   config: Config;
   t: TranslationFn;
 }
@@ -44,6 +47,7 @@ function JournalView({
   entriesList,
   pagination,
   yearMonthNavigator,
+  duplicateReview,
   config,
   t
 }: Readonly<JournalViewProps>) {
@@ -79,6 +83,12 @@ function JournalView({
         onClose={closeHighlights}
         diaryId={thoughtOfDay.diaryId}
         onNavigateToEntry={thoughtOfDay.onNavigateToEntry}
+        theme={config.theme}
+        t={t}
+      />
+
+      <DuplicateReview
+        {...duplicateReview}
         theme={config.theme}
         t={t}
       />

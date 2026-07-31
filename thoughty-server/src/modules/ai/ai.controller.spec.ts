@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
+import { AiDuplicateService } from './ai-duplicate.service';
 
 describe('AiController', () => {
   let controller: AiController;
@@ -12,6 +13,7 @@ describe('AiController', () => {
     getChatHistory: jest.Mock;
     listModels: jest.Mock;
   };
+  let aiDuplicateService: { findDuplicates: jest.Mock };
 
   beforeEach(async () => {
     aiService = {
@@ -22,10 +24,14 @@ describe('AiController', () => {
       getChatHistory: jest.fn(),
       listModels: jest.fn(),
     };
+    aiDuplicateService = { findDuplicates: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AiController],
-      providers: [{ provide: AiService, useValue: aiService }],
+      providers: [
+        { provide: AiService, useValue: aiService },
+        { provide: AiDuplicateService, useValue: aiDuplicateService },
+      ],
     }).compile();
 
     controller = module.get<AiController>(AiController);
@@ -94,6 +100,23 @@ describe('AiController', () => {
 
     expect(aiService.generateWritingPrompts).toHaveBeenCalledWith(1, { diaryId: 4 });
     expect(result).toEqual({ prompts: ['What deserves more attention?'] });
+  });
+
+  it('delegates duplicate scans to the user-scoped service', async () => {
+    aiDuplicateService.findDuplicates.mockResolvedValue({
+      analyzedEntries: 2,
+      totalEntries: 2,
+      truncated: false,
+      groups: [],
+    });
+
+    const result = await controller.findDuplicates(
+      { userId: 1, email: 'test@example.com' } as any,
+      { diaryId: 4 },
+    );
+
+    expect(aiDuplicateService.findDuplicates).toHaveBeenCalledWith(1, { diaryId: 4 });
+    expect(result.groups).toEqual([]);
   });
 
   it('delegates chat history lookup to the service', async () => {

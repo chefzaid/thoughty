@@ -19,7 +19,7 @@ vi.mock('../services/api', () => ({
   createEntriesService: vi.fn(() => ({ fetchEntries: vi.fn(), fetchEntryDates: vi.fn(), fetchYearsMonths: vi.fn(), createEntry: vi.fn(), updateEntry: vi.fn(), deleteEntry: vi.fn(), toggleVisibility: vi.fn(), bulkOperation: vi.fn(), navigateToFirst: vi.fn(), navigateByDate: vi.fn(), navigateById: vi.fn(), toggleFavorite: vi.fn(), toggleArchived: vi.fn(), togglePinned: vi.fn(), fetchEntryHistory: vi.fn(), fetchEntryBacklinks: vi.fn(), deleteRevision: vi.fn(), reorderEntries: vi.fn(), renameTag: vi.fn() })),
   createDiariesService: vi.fn(() => ({ fetchDiaries: vi.fn(), createDiary: vi.fn(), updateDiary: vi.fn(), deleteDiary: vi.fn(), setDefaultDiary: vi.fn(), reorderDiaries: vi.fn() })),
   createAttachmentsService: vi.fn(() => ({ uploadAttachment: vi.fn(), linkAttachment: vi.fn(), deleteAttachment: vi.fn() })),
-  createAiService: vi.fn(() => ({ suggestTags: vi.fn(), fixWriting: vi.fn(), summarizeEntry: vi.fn(), generateWritingPrompts: vi.fn(), chat: vi.fn(), getChatHistory: vi.fn(), fetchModels: vi.fn() })),
+  createAiService: vi.fn(() => ({ suggestTags: vi.fn(), fixWriting: vi.fn(), summarizeEntry: vi.fn(), generateWritingPrompts: vi.fn(), findDuplicateEntries: vi.fn(), chat: vi.fn(), getChatHistory: vi.fn(), fetchModels: vi.fn() })),
   createCloudSyncService: vi.fn(() => ({ getStatus: vi.fn(), getAuthUrl: vi.fn(), connect: vi.fn(), disconnect: vi.fn(), listFiles: vi.fn(), uploadExport: vi.fn(), downloadFile: vi.fn(), getSchedules: vi.fn(), setSchedule: vi.fn(), deleteSchedule: vi.fn(), triggerSync: vi.fn() })),
 }));
 
@@ -58,6 +58,7 @@ const createAiServiceMock = async (overrides: Record<string, unknown> = {}) => {
     fixWriting: vi.fn(),
     summarizeEntry: vi.fn(),
     generateWritingPrompts: vi.fn(),
+    findDuplicateEntries: vi.fn(),
     chat: vi.fn(),
     getChatHistory: vi.fn(),
     fetchModels: vi.fn(),
@@ -225,7 +226,7 @@ describe('useEntryActions', () => {
 
     it('handleSuggestTags merges AI suggestions into the existing tags', async () => {
       const { createAiService } = await import('../services/api');
-      vi.mocked(createAiService).mockReturnValue({ suggestTags: vi.fn().mockResolvedValue(['focus', 'writing']), fixWriting: vi.fn(), summarizeEntry: vi.fn(), generateWritingPrompts: vi.fn(), chat: vi.fn(), getChatHistory: vi.fn(), fetchModels: vi.fn() });
+      vi.mocked(createAiService).mockReturnValue({ suggestTags: vi.fn().mockResolvedValue(['focus', 'writing']), fixWriting: vi.fn(), summarizeEntry: vi.fn(), generateWritingPrompts: vi.fn(), findDuplicateEntries: vi.fn(), chat: vi.fn(), getChatHistory: vi.fn(), fetchModels: vi.fn() });
 
       const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', entriesPerPage: 10 }, 1, mockOnSuccess));
 
@@ -244,7 +245,7 @@ describe('useEntryActions', () => {
 
     it('handleSuggestTags surfaces a configuration error when the AI request fails', async () => {
       const { createAiService } = await import('../services/api');
-      vi.mocked(createAiService).mockReturnValue({ suggestTags: vi.fn().mockResolvedValue(null), fixWriting: vi.fn(), summarizeEntry: vi.fn(), generateWritingPrompts: vi.fn(), chat: vi.fn(), getChatHistory: vi.fn(), fetchModels: vi.fn() });
+      vi.mocked(createAiService).mockReturnValue({ suggestTags: vi.fn().mockResolvedValue(null), fixWriting: vi.fn(), summarizeEntry: vi.fn(), generateWritingPrompts: vi.fn(), findDuplicateEntries: vi.fn(), chat: vi.fn(), getChatHistory: vi.fn(), fetchModels: vi.fn() });
 
       const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', entriesPerPage: 10 }, 1, mockOnSuccess));
 
@@ -266,6 +267,7 @@ describe('useEntryActions', () => {
         fixWriting: vi.fn(),
         summarizeEntry: vi.fn(),
         generateWritingPrompts: vi.fn(),
+        findDuplicateEntries: vi.fn(),
         chat: vi.fn(),
         getChatHistory: vi.fn(),
         fetchModels: vi.fn(),
@@ -299,6 +301,7 @@ describe('useEntryActions', () => {
         fixWriting,
         summarizeEntry: vi.fn(),
         generateWritingPrompts: vi.fn(),
+        findDuplicateEntries: vi.fn(),
         chat: vi.fn(),
         getChatHistory: vi.fn(),
         fetchModels: vi.fn(),

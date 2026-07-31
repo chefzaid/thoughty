@@ -688,6 +688,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ai/duplicates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Find high-confidence semantic duplicate journal entries */
+        post: operations["AiController_findDuplicates"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/chat": {
         parameters: {
             query?: never;
@@ -1996,6 +2013,99 @@ export interface components {
         WritingPromptsResponseDto: {
             /** @description Personalized journal writing prompts */
             prompts: string[];
+        };
+        /**
+         * @example {
+         *       "diaryId": 1
+         *     }
+         */
+        FindDuplicateEntriesDto: {
+            /** @description Diary to scan; omit to scan across all diaries */
+            diaryId?: number;
+        };
+        /**
+         * @example {
+         *       "id": 1,
+         *       "date": "2026-07-31",
+         *       "index": 1,
+         *       "diaryId": {
+         *         "example": "example"
+         *       },
+         *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *       "tags": [
+         *         "reflection"
+         *       ]
+         *     }
+         */
+        DuplicateEntryPreviewDto: {
+            id: number;
+            /** @example 2026-07-31 */
+            date: string;
+            index: number;
+            diaryId?: Record<string, never> | null;
+            /** @description Bounded entry preview */
+            content: string;
+            tags: string[];
+        };
+        /**
+         * @example {
+         *       "confidence": 1,
+         *       "reason": "example",
+         *       "entries": [
+         *         {
+         *           "id": 1,
+         *           "date": "2026-07-31",
+         *           "index": 1,
+         *           "diaryId": {
+         *             "example": "example"
+         *           },
+         *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *           "tags": [
+         *             "reflection"
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        DuplicateEntryGroupDto: {
+            confidence: number;
+            /** @description Short explanation of the shared subject and conclusion */
+            reason: string;
+            entries: components["schemas"]["DuplicateEntryPreviewDto"][];
+        };
+        /**
+         * @example {
+         *       "analyzedEntries": 1,
+         *       "totalEntries": 1,
+         *       "truncated": true,
+         *       "groups": [
+         *         {
+         *           "confidence": 1,
+         *           "reason": "example",
+         *           "entries": [
+         *             {
+         *               "id": 1,
+         *               "date": "2026-07-31",
+         *               "index": 1,
+         *               "diaryId": {
+         *                 "example": "example"
+         *               },
+         *               "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *               "tags": [
+         *                 "reflection"
+         *               ]
+         *             }
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        DuplicateEntryScanResponseDto: {
+            analyzedEntries: number;
+            totalEntries: number;
+            /** @description Whether more entries existed than the bounded scan could analyze */
+            truncated: boolean;
+            groups: components["schemas"]["DuplicateEntryGroupDto"][];
         };
         /**
          * @example {
@@ -4471,6 +4581,62 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["WritingPromptsResponseDto"];
+                };
+            };
+        };
+    };
+    AiController_findDuplicates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "diaryId": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["FindDuplicateEntriesDto"];
+            };
+        };
+        responses: {
+            /** @description Reviewable duplicate entry groups returned successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "analyzedEntries": 1,
+                     *       "totalEntries": 1,
+                     *       "truncated": true,
+                     *       "groups": [
+                     *         {
+                     *           "confidence": 1,
+                     *           "reason": "example",
+                     *           "entries": [
+                     *             {
+                     *               "id": 1,
+                     *               "date": "2026-07-31",
+                     *               "index": 1,
+                     *               "diaryId": {
+                     *                 "example": "example"
+                     *               },
+                     *               "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                     *               "tags": [
+                     *                 "reflection"
+                     *               ]
+                     *             }
+                     *           ]
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DuplicateEntryScanResponseDto"];
                 };
             };
         };
