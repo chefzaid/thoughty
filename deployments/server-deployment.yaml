@@ -37,6 +37,7 @@ spec:
           {{- with secret "secret/data/thoughty/app" -}}
           export JWT_SECRET="{{ .Data.data.JWT_SECRET }}"
           export REFRESH_SECRET="{{ .Data.data.REFRESH_SECRET }}"
+          export TWO_FACTOR_SECRET="{{ .Data.data.TWO_FACTOR_SECRET }}"
           export CONFIG_ENCRYPTION_SECRET="{{ .Data.data.CONFIG_ENCRYPTION_SECRET }}"
           export S3_ACCESS_KEY="{{ .Data.data.S3_ACCESS_KEY }}"
           export S3_SECRET_KEY="{{ .Data.data.S3_SECRET_KEY }}"

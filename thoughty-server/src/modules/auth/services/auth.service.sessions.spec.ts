@@ -6,6 +6,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Diary, RefreshToken, User } from '@/database/entities';
 import { AuthService } from './auth.service';
 import { EmailService } from './email.service';
+import { TwoFactorService } from './two-factor.service';
 
 describe('AuthService sessions', () => {
   let service: AuthService;
@@ -34,6 +35,10 @@ describe('AuthService sessions', () => {
             sendPasswordResetEmail: jest.fn(),
             sendAccountDeletionEmail: jest.fn(),
           },
+        },
+        {
+          provide: TwoFactorService,
+          useValue: { startChallenge: jest.fn(), consumeLogin: jest.fn() },
         },
       ],
     }).compile();
@@ -82,7 +87,9 @@ describe('AuthService sessions', () => {
         expiresAt: olderSession.expiresAt,
       },
     ]);
-    expect(result).not.toEqual(expect.arrayContaining([expect.objectContaining({ token: expect.any(String) })]));
+    expect(result).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ token: expect.any(String) })]),
+    );
   });
 
   it('revokes a non-current session owned by the user', async () => {
@@ -107,14 +114,18 @@ describe('AuthService sessions', () => {
       token: 'current_refresh_token',
     });
 
-    await expect(service.revokeSession(1, 2, 'current_refresh_token')).rejects.toThrow(BadRequestException);
+    await expect(service.revokeSession(1, 2, 'current_refresh_token')).rejects.toThrow(
+      BadRequestException,
+    );
     expect(refreshTokenRepository.delete).not.toHaveBeenCalled();
   });
 
   it('throws when revoking a session that does not belong to the user', async () => {
     refreshTokenRepository.findOne.mockResolvedValue(null);
 
-    await expect(service.revokeSession(1, 99, 'current_refresh_token')).rejects.toThrow(NotFoundException);
+    await expect(service.revokeSession(1, 99, 'current_refresh_token')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('revokes all other sessions while keeping the current refresh token', async () => {

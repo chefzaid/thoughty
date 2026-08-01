@@ -5,6 +5,8 @@ export type TranslationFunction = (key: string, params?: Record<string, string |
 export interface AuthResult {
   success: boolean;
   error?: string;
+  twoFactorRequired?: boolean;
+  challengeToken?: string;
 }
 
 export const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

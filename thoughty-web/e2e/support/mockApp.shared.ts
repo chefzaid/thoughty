@@ -98,6 +98,7 @@ export interface MockAppState {
     fullName?: string;
     authProvider?: 'local' | 'google';
     emailVerified?: boolean;
+    twoFactorEnabled?: boolean;
   };
   config: {
     theme: 'light' | 'dark';
@@ -136,6 +137,9 @@ export interface MockAppState {
   lastRegisterPayload: AuthPayload | null;
   lastVerificationToken: string | null;
   verificationResendCount: number;
+  twoFactorSetupCount: number;
+  twoFactorChallengeToken: string | null;
+  lastTwoFactorCode: string | null;
   lastPreviewPayload: unknown;
   lastImportPayload: unknown;
   lastFormatPayload: unknown;
@@ -366,6 +370,7 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
       fullName: 'Test User',
       authProvider: 'local',
       emailVerified: false,
+      twoFactorEnabled: false,
     },
     config: {
       theme: 'dark',
@@ -392,6 +397,9 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
     lastRegisterPayload: null,
     lastVerificationToken: null,
     verificationResendCount: 0,
+    twoFactorSetupCount: 0,
+    twoFactorChallengeToken: null,
+    lastTwoFactorCode: null,
     lastPreviewPayload: null,
     lastImportPayload: null,
     lastFormatPayload: null,

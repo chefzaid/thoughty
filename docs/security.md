@@ -91,6 +91,7 @@ Never commit real secrets. Production-like deployments should provide these thro
 
 - `JWT_SECRET`
 - `REFRESH_SECRET`
+- `TWO_FACTOR_SECRET`
 - `CONFIG_ENCRYPTION_SECRET`
 - PostgreSQL credentials
 - S3/object-storage access keys
@@ -116,9 +117,11 @@ AI features are optional at the infrastructure level. When enabled, relevant jou
 
 Product and deployment documentation should make this clear to users and operators. Future local-LLM support should be covered by a dedicated ADR because it changes privacy, hosting, and performance assumptions.
 
-## Email Verification Status
+## Email Verification and Two-Factor Authentication
 
-The `User` entity includes `emailVerified`, but the backlog still tracks completion of the email verification flow. Do not treat `emailVerified` as a complete production-grade verification system until the verification endpoint, email delivery behavior, and account restrictions are implemented and documented.
+Email verification uses hashed, expiring tokens and is required before a password account can enable email two-factor authentication. Enabling 2FA sends a six-digit code to the verified address; password login then returns an opaque challenge instead of session tokens until that code is confirmed.
+
+Two-factor challenge tokens are stored as SHA-256 hashes, codes are stored as HMAC-SHA-256 values, and both expire after ten minutes. Successful verification atomically clears the challenge so it cannot be replayed. Public verify and resend routes use the stricter authentication-attempt throttle, while setup, enable, disable, and status operations are authenticated. Set one strong `TWO_FACTOR_SECRET` value across all server replicas; when omitted, development falls back to a key derived from `JWT_SECRET`.
 
 ## Password Reset Email Behavior
 
@@ -130,7 +133,6 @@ In local or misconfigured email environments, the current email service path can
 
 Important remaining work includes:
 
-- two-factor authentication
 - Redis-backed distributed rate limiting for multi-replica deployments
 - dependency vulnerability scanning in CI
 - structured security audit logging for sensitive actions

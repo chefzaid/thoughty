@@ -5,6 +5,7 @@ import type { TranslationFunction, AuthResult } from './types';
 import AuthFormContent from './AuthFormContent';
 import AuthStatusMessages from './AuthStatusMessages';
 import AuthAuxiliary from './AuthAuxiliary';
+import TwoFactorLoginForm from './TwoFactorLoginForm';
 import './AuthPage.css';
 
 interface AuthPageProps {
@@ -29,8 +30,18 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [website, setWebsite] = useState<string>('');
+  const [twoFactorChallenge, setTwoFactorChallenge] = useState<string>('');
+  const [twoFactorCode, setTwoFactorCode] = useState<string>('');
 
-  const { login, register, signInWithGoogle, forgotPassword, googleClientId } = useAuth();
+  const {
+    login,
+    register,
+    signInWithGoogle,
+    forgotPassword,
+    verifyTwoFactor,
+    resendTwoFactor,
+    googleClientId,
+  } = useAuth();
 
   const isDark = theme !== 'light';
   const isLogin = currentMode === 'login';
@@ -51,6 +62,8 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     setShowForgotPassword(false);
     setError('');
     setSuccessMessage('');
+    setTwoFactorChallenge('');
+    setTwoFactorCode('');
   }, [mode]);
 
   const validateForm = (): boolean => {
@@ -76,6 +89,22 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     setError('');
     setSuccessMessage('');
 
+    if (twoFactorChallenge) {
+      if (twoFactorCode.length !== 6) {
+        setError(t('enterSixDigitCode'));
+        return;
+      }
+      setLoading(true);
+      const result = await verifyTwoFactor(twoFactorChallenge, twoFactorCode);
+      setLoading(false);
+      if (result.success) {
+        onAuthSuccess?.();
+      } else {
+        setError(result.error || t('twoFactorVerificationFailed'));
+      }
+      return;
+    }
+
     if (!validateForm()) return;
 
     setLoading(true);
@@ -99,7 +128,12 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
         result = await register(email, password, username, website);
       }
 
-      if (result.success) {
+      if (result.twoFactorRequired && result.challengeToken) {
+        setTwoFactorChallenge(result.challengeToken);
+        setTwoFactorCode('');
+        setPassword('');
+        setSuccessMessage(t('twoFactorCodeSent'));
+      } else if (result.success) {
         onAuthSuccess?.();
       } else {
         setError(result.error || t('authFailed'));
@@ -138,6 +172,28 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     setWebsite('');
   };
 
+  const handleResendTwoFactor = async (): Promise<void> => {
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+    const result = await resendTwoFactor(twoFactorChallenge);
+    setLoading(false);
+    if (result.success && result.challengeToken) {
+      setTwoFactorChallenge(result.challengeToken);
+      setTwoFactorCode('');
+      setSuccessMessage(t('twoFactorCodeResent'));
+    } else {
+      setError(result.error || t('twoFactorResendFailed'));
+    }
+  };
+
+  const handleTwoFactorBack = (): void => {
+    setTwoFactorChallenge('');
+    setTwoFactorCode('');
+    setError('');
+    setSuccessMessage('');
+  };
+
   const switchMode = (): void => {
     const nextMode = isLogin ? 'register' : 'login';
     setShowForgotPassword(false);
@@ -165,7 +221,9 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     setSuccessMessage('');
   };
 
-  const getAuthSubtitle = (): string => getAuthSubtitleText({ showForgotPassword, isLogin, t });
+  const getAuthSubtitle = (): string => twoFactorChallenge
+    ? t('twoFactorLoginSubtitle')
+    : getAuthSubtitleText({ showForgotPassword, isLogin, t });
 
   return (
     <main className={`auth-page ${isDark ? 'dark' : 'light'}`}>
@@ -195,7 +253,17 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
               autoComplete="off"
             />
           </div>
-          <AuthFormContent
+          {twoFactorChallenge ? (
+            <TwoFactorLoginForm
+              code={twoFactorCode}
+              setCode={setTwoFactorCode}
+              loading={loading}
+              isDark={isDark}
+              t={t}
+              onResend={() => void handleResendTwoFactor()}
+              onBack={handleTwoFactorBack}
+            />
+          ) : <AuthFormContent
             showForgotPassword={showForgotPassword}
             isLogin={isLogin}
             isDark={isDark}
@@ -215,10 +283,10 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
             setShowPassword={setShowPassword}
             handleForgotPassword={handleForgotPassword}
             handleBackToLogin={handleBackToLogin}
-          />
+          />}
         </form>
 
-        <AuthAuxiliary
+        {!twoFactorChallenge && <AuthAuxiliary
           showForgotPassword={showForgotPassword}
           googleClientId={googleClientId}
           loading={loading}
@@ -226,7 +294,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
           isLogin={isLogin}
           switchMode={switchMode}
           t={t}
-        />
+        />}
 
         <div id="google-signin-btn" style={{ display: 'none' }}></div>
       </div>

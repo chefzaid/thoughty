@@ -38,6 +38,14 @@ describe('AppController (e2e)', () => {
         .send({ identifier: 'nonexistent@example.com', password: 'wrongpassword' })
         .expect(401);
     });
+
+    it('/api/auth/two-factor/verify (POST) - validates the challenge payload', () => {
+      return request(app.getHttpServer()).post('/api/auth/two-factor/verify').send({}).expect(400);
+    });
+
+    it('/api/auth/two-factor/resend (POST) - validates the challenge token', () => {
+      return request(app.getHttpServer()).post('/api/auth/two-factor/resend').send({}).expect(400);
+    });
   });
 
   describe('Protected Routes', () => {
@@ -85,6 +93,15 @@ describe('AppController (e2e)', () => {
 
     it('/api/config (GET) - should require authentication', () => {
       return request(app.getHttpServer()).get('/api/config').expect(401);
+    });
+
+    it.each([
+      ['get', '/api/auth/two-factor/status'],
+      ['post', '/api/auth/two-factor/setup'],
+      ['post', '/api/auth/two-factor/enable'],
+      ['post', '/api/auth/two-factor/disable'],
+    ] as const)('%s %s - should require authentication', (method, path) => {
+      return request(app.getHttpServer())[method](path).send({}).expect(401);
     });
   });
 });

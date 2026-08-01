@@ -17,6 +17,8 @@ describe('AuthPage', () => {
     let mockRegister: ReturnType<typeof vi.fn>;
     let mockSignInWithGoogle: ReturnType<typeof vi.fn>;
     let mockForgotPassword: ReturnType<typeof vi.fn>;
+    let mockVerifyTwoFactor: ReturnType<typeof vi.fn>;
+    let mockResendTwoFactor: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -24,12 +26,16 @@ describe('AuthPage', () => {
         mockRegister = vi.fn();
         mockSignInWithGoogle = vi.fn();
         mockForgotPassword = vi.fn();
+        mockVerifyTwoFactor = vi.fn();
+        mockResendTwoFactor = vi.fn();
 
         (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
             login: mockLogin,
             register: mockRegister,
             signInWithGoogle: mockSignInWithGoogle,
             forgotPassword: mockForgotPassword,
+            verifyTwoFactor: mockVerifyTwoFactor,
+            resendTwoFactor: mockResendTwoFactor,
             googleClientId: null
         });
     });
@@ -135,6 +141,32 @@ describe('AuthPage', () => {
         await waitFor(() => {
             expect(mockRegister).toHaveBeenCalledWith('user@test.com', 'password123', 'testuser', '');
             expect(onAuthSuccess).toHaveBeenCalled();
+        });
+    });
+
+    it('finishes a challenged login with the emailed code', async () => {
+        mockLogin.mockResolvedValue({
+            success: true,
+            twoFactorRequired: true,
+            challengeToken: 'challenge-token',
+        });
+        mockVerifyTwoFactor.mockResolvedValue({ success: true });
+        const onAuthSuccess = vi.fn();
+        render(<AuthPage t={mockT} theme="dark" onAuthSuccess={onAuthSuccess} />);
+
+        fireEvent.change(screen.getByLabelText('emailOrUsername'), { target: { value: 'user@test.com' } });
+        fireEvent.change(screen.getByLabelText('password'), { target: { value: 'password123' } });
+        fireEvent.click(screen.getByRole('button', { name: 'signIn' }));
+
+        const codeInput = await screen.findByLabelText('twoFactorCode');
+        expect(screen.getByText('twoFactorLoginSubtitle')).toBeInTheDocument();
+        fireEvent.change(codeInput, { target: { value: '12a3456' } });
+        expect(codeInput).toHaveValue('123456');
+        fireEvent.click(screen.getByRole('button', { name: 'verifyAndSignIn' }));
+
+        await waitFor(() => {
+            expect(mockVerifyTwoFactor).toHaveBeenCalledWith('challenge-token', '123456');
+            expect(onAuthSuccess).toHaveBeenCalledTimes(1);
         });
     });
 

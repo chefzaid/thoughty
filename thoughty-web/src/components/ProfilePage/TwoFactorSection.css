@@ -1,0 +1,54 @@
+.two-factor-section,
+.two-factor-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.two-factor-status {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    justify-self: end;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid rgba(156, 163, 175, 0.45);
+    border-radius: 0.5rem;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.two-factor-status.enabled {
+    border-color: #22c55e;
+    color: #22c55e;
+}
+
+.two-factor-note {
+    margin: 0;
+}
+
+.two-factor-form {
+    max-width: 22rem;
+}
+
+.two-factor-form-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.btn-two-factor-disable {
+    align-self: flex-start;
+    padding: 0.625rem 1rem;
+    border: 1px solid #ef4444;
+    border-radius: 0.5rem;
+    background: transparent;
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.btn-two-factor-disable:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}

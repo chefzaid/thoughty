@@ -22,10 +22,13 @@ import {
   OAuthDto,
   ChangePasswordDto,
   AuthResponseDto,
+  TwoFactorChallengeResponseDto,
+  TwoFactorCodeDto,
   SessionResponseDto,
   UserResponseDto,
 } from '../dto';
 import { assertHumanAuthAttempt } from './auth-bot-protection';
+import { TwoFactorService } from './two-factor.service';
 
 @Injectable()
 export class AuthService {
@@ -42,6 +45,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
+    private readonly twoFactorService: TwoFactorService,
   ) {
     this.refreshSecret = this.configService.get<string>(
       'REFRESH_SECRET',
@@ -54,7 +58,34 @@ export class AuthService {
   }
 
   private generateRefreshToken(user: { id: number }): string {
-    return this.jwtService.sign({ userId: user.id }, { secret: this.refreshSecret, expiresIn: '7d' });
+    return this.jwtService.sign(
+      { userId: user.id },
+      { secret: this.refreshSecret, expiresIn: '7d' },
+    );
+  }
+
+  private async createSession(user: User, isNewUser?: boolean): Promise<AuthResponseDto> {
+    const accessToken = this.generateAccessToken(user);
+    const refreshToken = this.generateRefreshToken(user);
+    await this.refreshTokenRepository.save({
+      userId: user.id,
+      token: refreshToken,
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    });
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        authProvider: user.authProvider,
+        emailVerified: user.emailVerified,
+        twoFactorEnabled: Boolean(user.twoFactorEnabled),
+        ...(isNewUser === undefined ? {} : { isNewUser }),
+      },
+      accessToken,
+      refreshToken,
+    };
   }
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
@@ -107,31 +138,10 @@ export class AuthService {
       visibility: 'private',
     });
 
-    // Generate tokens
-    const accessToken = this.generateAccessToken(user);
-    const refreshToken = this.generateRefreshToken(user);
-
-    // Store refresh token
-    await this.refreshTokenRepository.save({
-      userId: user.id,
-      token: refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        authProvider: 'local',
-        emailVerified: user.emailVerified,
-      },
-      accessToken,
-      refreshToken,
-    };
+    return this.createSession(user);
   }
 
-  async login(dto: LoginDto): Promise<AuthResponseDto> {
+  async login(dto: LoginDto): Promise<AuthResponseDto | TwoFactorChallengeResponseDto> {
     assertHumanAuthAttempt(dto.website);
 
     const identifier = sanitizeString(dto.identifier.trim()).toLowerCase();
@@ -165,26 +175,15 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const accessToken = this.generateAccessToken(user);
-    const refreshToken = this.generateRefreshToken(user);
+    if (user.twoFactorEnabled) {
+      return this.twoFactorService.startChallenge(user, 'login');
+    }
 
-    await this.refreshTokenRepository.save({
-      userId: user.id,
-      token: refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
+    return this.createSession(user);
+  }
 
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        authProvider: user.authProvider,
-        emailVerified: user.emailVerified,
-      },
-      accessToken,
-      refreshToken,
-    };
+  async verifyTwoFactorLogin(dto: TwoFactorCodeDto): Promise<AuthResponseDto> {
+    return this.createSession(await this.twoFactorService.consumeLogin(dto));
   }
 
   async oauthLogin(dto: OAuthDto): Promise<AuthResponseDto> {
@@ -244,27 +243,7 @@ export class AuthService {
       }
     }
 
-    const accessToken = this.generateAccessToken(user);
-    const refreshToken = this.generateRefreshToken(user);
-
-    await this.refreshTokenRepository.save({
-      userId: user.id,
-      token: refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        authProvider: dto.provider,
-        emailVerified: user.emailVerified,
-        isNewUser,
-      },
-      accessToken,
-      refreshToken,
-    };
+    return this.createSession(user, isNewUser);
   }
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
@@ -335,7 +314,10 @@ export class AuthService {
     return { success: true };
   }
 
-  async revokeOtherSessions(userId: number, currentRefreshToken?: string): Promise<{ success: boolean }> {
+  async revokeOtherSessions(
+    userId: number,
+    currentRefreshToken?: string,
+  ): Promise<{ success: boolean }> {
     if (!currentRefreshToken) {
       throw new BadRequestException('Current refresh token is required');
     }
@@ -364,11 +346,15 @@ export class AuthService {
       avatarUrl: user.avatarUrl || undefined,
       authProvider: user.authProvider,
       emailVerified: user.emailVerified,
+      twoFactorEnabled: Boolean(user.twoFactorEnabled),
       createdAt: user.createdAt,
     };
   }
 
-  async changePassword(userId: number, dto: ChangePasswordDto): Promise<{ success: boolean; message: string }> {
+  async changePassword(
+    userId: number,
+    dto: ChangePasswordDto,
+  ): Promise<{ success: boolean; message: string }> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
@@ -376,7 +362,9 @@ export class AuthService {
     }
 
     if (!user.passwordHash) {
-      throw new BadRequestException('Cannot change password for OAuth accounts without existing password');
+      throw new BadRequestException(
+        'Cannot change password for OAuth accounts without existing password',
+      );
     }
 
     const validPassword = await bcrypt.compare(dto.currentPassword, user.passwordHash);
@@ -430,7 +418,10 @@ export class AuthService {
     return { success: true, message: successMessage };
   }
 
-  async resetPassword(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ success: boolean; message: string }> {
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await this.userRepository.findOne({
@@ -455,7 +446,10 @@ export class AuthService {
     return { success: true, message: 'Password reset successfully' };
   }
 
-  async deleteAccount(userId: number, password?: string): Promise<{ success: boolean; message: string }> {
+  async deleteAccount(
+    userId: number,
+    password?: string,
+  ): Promise<{ success: boolean; message: string }> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {

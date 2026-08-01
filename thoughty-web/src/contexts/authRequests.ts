@@ -1,5 +1,5 @@
 import { readApiErrorMessage, safeJsonParse } from '../services/api/base';
-import type { TokenResponse } from './authTypes';
+import type { LoginResponse, TokenResponse, TwoFactorChallengeResponse } from './authTypes';
 
 const API_BASE = '/api/auth';
 
@@ -16,7 +16,7 @@ interface LoginRequest {
   website: string;
 }
 
-async function postAuthRequest(path: string, payload: RegisterRequest | LoginRequest, fallbackError: string) {
+async function postAuthRequest<T>(path: string, payload: object, fallbackError: string): Promise<T> {
   const response = await fetch(`${API_BASE}/${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -27,7 +27,7 @@ async function postAuthRequest(path: string, payload: RegisterRequest | LoginReq
     throw new Error(await readApiErrorMessage(response, fallbackError));
   }
 
-  const data = await safeJsonParse<TokenResponse>(response);
+  const data = await safeJsonParse<T>(response);
 
   if (!data) {
     throw new Error('Server unavailable');
@@ -37,9 +37,25 @@ async function postAuthRequest(path: string, payload: RegisterRequest | LoginReq
 }
 
 export function registerWithPassword(payload: RegisterRequest): Promise<TokenResponse> {
-  return postAuthRequest('register', payload, 'Registration failed');
+  return postAuthRequest('register', payload, 'Registration failed') as Promise<TokenResponse>;
 }
 
-export function loginWithPassword(payload: LoginRequest): Promise<TokenResponse> {
-  return postAuthRequest('login', payload, 'Login failed');
+export function loginWithPassword(payload: LoginRequest): Promise<LoginResponse> {
+  return postAuthRequest('login', payload, 'Login failed') as Promise<LoginResponse>;
+}
+
+export function verifyTwoFactorLogin(challengeToken: string, code: string): Promise<TokenResponse> {
+  return postAuthRequest(
+    'two-factor/verify',
+    { challengeToken, code },
+    'Two-factor verification failed',
+  ) as Promise<TokenResponse>;
+}
+
+export function resendTwoFactorChallenge(challengeToken: string): Promise<TwoFactorChallengeResponse> {
+  return postAuthRequest(
+    'two-factor/resend',
+    { challengeToken },
+    'Failed to resend verification code',
+  ) as Promise<TwoFactorChallengeResponse>;
 }

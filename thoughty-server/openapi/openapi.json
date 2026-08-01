@@ -102,7 +102,63 @@
         },
         "responses": {
           "200": {
-            "description": "Login successful",
+            "description": "Login tokens, or an email-code challenge when two-factor authentication is enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthResponseDto"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TwoFactorChallengeResponseDto"
+                    }
+                  ]
+                },
+                "example": {
+                  "user": {
+                    "example": "example"
+                  },
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                  "twoFactorRequired": true,
+                  "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                  "expiresInSeconds": 600
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "Login with email/username and password",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/two-factor/verify": {
+      "post": {
+        "operationId": "AuthController_verifyTwoFactor",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorCodeDto"
+              },
+              "example": {
+                "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                "code": "123456"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login completed",
             "content": {
               "application/json": {
                 "schema": {
@@ -119,10 +175,184 @@
             }
           },
           "401": {
-            "description": "Invalid credentials"
+            "description": "Invalid, expired, or already-used challenge"
           }
         },
-        "summary": "Login with email/username and password",
+        "summary": "Verify an email code and finish password login",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/two-factor/resend": {
+      "post": {
+        "operationId": "AuthController_resendTwoFactor",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorResendDto"
+              },
+              "example": {
+                "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Replacement single-use challenge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorChallengeResponseDto"
+                },
+                "example": {
+                  "twoFactorRequired": true,
+                  "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                  "expiresInSeconds": 600
+                }
+              }
+            }
+          }
+        },
+        "summary": "Replace an active challenge and send a new email code",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/two-factor/status": {
+      "get": {
+        "operationId": "AuthController_twoFactorStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Current two-factor status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorStatusResponseDto"
+                },
+                "example": {
+                  "enabled": true,
+                  "available": true,
+                  "emailVerified": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get two-factor availability and current status",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/two-factor/setup": {
+      "post": {
+        "operationId": "AuthController_setupTwoFactor",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Single-use setup challenge",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TwoFactorChallengeResponseDto"
+                },
+                "example": {
+                  "twoFactorRequired": true,
+                  "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                  "expiresInSeconds": 600
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Email a code to start enabling two-factor authentication",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/two-factor/enable": {
+      "post": {
+        "operationId": "AuthController_enableTwoFactor",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorCodeDto"
+              },
+              "example": {
+                "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                "code": "123456"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Two-factor authentication enabled"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Confirm the setup code and enable two-factor authentication",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
+    "/api/auth/two-factor/disable": {
+      "post": {
+        "operationId": "AuthController_disableTwoFactor",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DisableTwoFactorDto"
+              },
+              "example": {
+                "password": "Password123!"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Two-factor authentication disabled"
+          },
+          "401": {
+            "description": "Invalid password"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disable two-factor authentication after password confirmation",
         "tags": [
           "Authentication"
         ]
@@ -402,6 +632,7 @@
                   "avatarUrl": "https://thoughty.example.com/callback",
                   "authProvider": "google_drive",
                   "emailVerified": true,
+                  "twoFactorEnabled": true,
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -4953,6 +5184,59 @@
       }
     },
     "schemas": {
+      "AuthResponseDto": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "object"
+          },
+          "accessToken": {
+            "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "user",
+          "accessToken",
+          "refreshToken"
+        ],
+        "example": {
+          "user": {
+            "example": "example"
+          },
+          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+          "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        }
+      },
+      "TwoFactorChallengeResponseDto": {
+        "type": "object",
+        "properties": {
+          "twoFactorRequired": {
+            "type": "boolean",
+            "example": true
+          },
+          "challengeToken": {
+            "type": "string",
+            "description": "Opaque single-use challenge token"
+          },
+          "expiresInSeconds": {
+            "type": "number",
+            "example": 600
+          }
+        },
+        "required": [
+          "twoFactorRequired",
+          "challengeToken",
+          "expiresInSeconds"
+        ],
+        "example": {
+          "twoFactorRequired": true,
+          "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+          "expiresInSeconds": 600
+        }
+      },
       "RegisterDto": {
         "type": "object",
         "properties": {
@@ -4984,32 +5268,6 @@
           "website": "example"
         }
       },
-      "AuthResponseDto": {
-        "type": "object",
-        "properties": {
-          "user": {
-            "type": "object"
-          },
-          "accessToken": {
-            "type": "string"
-          },
-          "refreshToken": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "user",
-          "accessToken",
-          "refreshToken"
-        ],
-        "example": {
-          "user": {
-            "example": "example"
-          },
-          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-          "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-        }
-      },
       "LoginDto": {
         "type": "object",
         "properties": {
@@ -5035,6 +5293,81 @@
           "identifier": "user@example.com",
           "password": "Password123!",
           "website": "example"
+        }
+      },
+      "TwoFactorCodeDto": {
+        "type": "object",
+        "properties": {
+          "challengeToken": {
+            "type": "string",
+            "description": "Opaque challenge token returned when the code was requested"
+          },
+          "code": {
+            "type": "string",
+            "example": "123456"
+          }
+        },
+        "required": [
+          "challengeToken",
+          "code"
+        ],
+        "example": {
+          "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+          "code": "123456"
+        }
+      },
+      "TwoFactorResendDto": {
+        "type": "object",
+        "properties": {
+          "challengeToken": {
+            "type": "string",
+            "description": "Current opaque challenge token"
+          }
+        },
+        "required": [
+          "challengeToken"
+        ],
+        "example": {
+          "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        }
+      },
+      "TwoFactorStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "available": {
+            "type": "boolean",
+            "description": "Whether email delivery is configured on this server"
+          },
+          "emailVerified": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "available",
+          "emailVerified"
+        ],
+        "example": {
+          "enabled": true,
+          "available": true,
+          "emailVerified": true
+        }
+      },
+      "DisableTwoFactorDto": {
+        "type": "object",
+        "properties": {
+          "password": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "password"
+        ],
+        "example": {
+          "password": "Password123!"
         }
       },
       "OAuthDto": {
@@ -5148,6 +5481,9 @@
           "emailVerified": {
             "type": "boolean"
           },
+          "twoFactorEnabled": {
+            "type": "boolean"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -5159,6 +5495,7 @@
           "email",
           "authProvider",
           "emailVerified",
+          "twoFactorEnabled",
           "createdAt"
         ],
         "example": {
@@ -5168,6 +5505,7 @@
           "avatarUrl": "https://thoughty.example.com/callback",
           "authProvider": "google_drive",
           "emailVerified": true,
+          "twoFactorEnabled": true,
           "createdAt": "2026-06-24T10:00:00.000Z"
         }
       },

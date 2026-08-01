@@ -9,31 +9,18 @@ import {
   type ReactNode,
 } from 'react';
 import { readApiErrorMessage, safeJsonParse } from '../services/api/base';
-import { loginWithPassword, registerWithPassword } from './authRequests';
+import {
+  loginWithPassword,
+  registerWithPassword,
+  resendTwoFactorChallenge,
+  verifyTwoFactorLogin,
+} from './authRequests';
 import type { AuthResult, TokenResponse, User } from './authTypes';
+import {
+  signInWithGoogleAccount,
+} from './googleAuth';
 
 export type { User } from './authTypes';
-
-// Google API Types
-interface GoogleCredentialResponse {
-  credential: string;
-  select_by?: string;
-  clientId?: string;
-}
-
-interface GoogleAccountsId {
-  initialize: (config: { client_id: string; callback: (response: GoogleCredentialResponse) => void }) => void;
-  prompt: (callback: (notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => void) => void;
-  renderButton: (element: HTMLElement | null, config: { theme: string; size: string; width: string }) => void;
-}
-
-interface GoogleAccounts {
-  id: GoogleAccountsId;
-}
-
-interface GoogleApi {
-  accounts: GoogleAccounts;
-}
 
 interface AuthContextValue {
   user: User | null;
@@ -42,6 +29,8 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   register: (email: string, password: string, username: string, website?: string) => Promise<AuthResult>;
   login: (identifier: string, password: string, website?: string) => Promise<AuthResult>;
+  verifyTwoFactor: (challengeToken: string, code: string) => Promise<AuthResult>;
+  resendTwoFactor: (challengeToken: string) => Promise<AuthResult>;
   logout: () => Promise<void>;
   signInWithGoogle: () => Promise<AuthResult>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<AuthResult>;
@@ -59,52 +48,12 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Google Sign-In types
-declare global {
-  interface Window {
-    google?: {
-      accounts: {
-        id: {
-          initialize: (config: {
-            client_id: string;
-            callback: (response: { credential: string }) => void;
-          }) => void;
-          prompt: (callback?: (notification: {
-            isNotDisplayed: () => boolean;
-            isSkippedMoment: () => boolean;
-          }) => void) => void;
-          renderButton: (
-            element: HTMLElement | null,
-            config: { theme: string; size: string; width: string }
-          ) => void;
-        };
-      };
-    };
-  }
-}
-
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const API_BASE = '/api/auth';
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-
-interface GoogleCredentialPayload {
-  sub: string;
-  email: string;
-  name: string;
-  picture: string;
-}
-
-function parseGoogleCredentialPayload(credential: string): GoogleCredentialPayload {
-  const payloadPart = credential.split('.')[1];
-  if (!payloadPart) {
-    throw new Error('Invalid JWT format');
-  }
-
-  return JSON.parse(atob(payloadPart)) as GoogleCredentialPayload;
-}
 
 export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
   const [user, setUser] = useState<User | null>(null);
@@ -244,6 +193,15 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     try {
       const data = await loginWithPassword({ identifier, password, website });
 
+      if ('twoFactorRequired' in data) {
+        return {
+          success: true,
+          twoFactorRequired: true,
+          challengeToken: data.challengeToken,
+          expiresInSeconds: data.expiresInSeconds,
+        };
+      }
+
       saveTokens(data.accessToken, data.refreshToken);
       setUser(data.user);
       return { success: true };
@@ -253,6 +211,40 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       return { success: false, error: message };
     }
   }, [saveTokens]);
+
+  const verifyTwoFactor = useCallback(async (
+    challengeToken: string,
+    code: string,
+  ): Promise<AuthResult> => {
+    setError(null);
+    try {
+      const data = await verifyTwoFactorLogin(challengeToken, code);
+      saveTokens(data.accessToken, data.refreshToken);
+      setUser(data.user);
+      return { success: true };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Two-factor verification failed';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, [saveTokens]);
+
+  const resendTwoFactor = useCallback(async (challengeToken: string): Promise<AuthResult> => {
+    setError(null);
+    try {
+      const data = await resendTwoFactorChallenge(challengeToken);
+      return {
+        success: true,
+        twoFactorRequired: true,
+        challengeToken: data.challengeToken,
+        expiresInSeconds: data.expiresInSeconds,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to resend verification code';
+      setError(message);
+      return { success: false, error: message };
+    }
+  }, []);
 
   // OAuth login (Google/Facebook)
   const oauthLogin = useCallback(async (
@@ -292,43 +284,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
 
   // Google Sign In
   const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
-    return new Promise((resolve, reject) => {
-      const google = (globalThis as unknown as { google?: GoogleApi }).google;
-      if (!google || !GOOGLE_CLIENT_ID) {
-        reject(new Error('Google Sign-In not configured'));
-        return;
-      }
-
-      const handleGoogleCallback = (response: GoogleCredentialResponse): void => {
-        let payload: GoogleCredentialPayload;
-
-        try {
-          payload = parseGoogleCredentialPayload(response.credential);
-        } catch (error) {
-          reject(error);
-          return;
-        }
-
-        void oauthLogin('google', payload.sub, payload.email, payload.name, payload.picture)
-          .then(resolve)
-          .catch(reject);
-      };
-
-      google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCallback,
-      });
-
-      google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          // Fallback to popup
-          google.accounts.id.renderButton(
-            document.getElementById('google-signin-btn'),
-            { theme: 'outline', size: 'large', width: '100%' }
-          );
-        }
-      });
-    });
+    return signInWithGoogleAccount(GOOGLE_CLIENT_ID, oauthLogin);
   }, [oauthLogin]);
 
   // Logout
@@ -495,6 +451,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     isAuthenticated: !!user,
     register,
     login,
+    verifyTwoFactor,
+    resendTwoFactor,
     logout,
     signInWithGoogle,
     changePassword,
@@ -512,6 +470,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     error,
     register,
     login,
+    verifyTwoFactor,
+    resendTwoFactor,
     logout,
     signInWithGoogle,
     changePassword,

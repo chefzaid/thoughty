@@ -12,6 +12,73 @@ import { handleEntriesRoutes } from './mockApp.routes.entries';
 import { handleReferenceRoutes } from './mockApp.routes.reference';
 
 async function handleAuthRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
+  if (pathname === '/api/auth/two-factor/status') {
+    await fulfillJson(route, {
+      enabled: Boolean(state.user.twoFactorEnabled),
+      available: state.user.authProvider === 'local',
+      emailVerified: Boolean(state.user.emailVerified),
+    });
+    return true;
+  }
+
+  if (pathname === '/api/auth/two-factor/setup') {
+    state.twoFactorSetupCount += 1;
+    state.twoFactorChallengeToken = `setup-challenge-${state.twoFactorSetupCount}`;
+    await fulfillJson(route, {
+      twoFactorRequired: true,
+      challengeToken: state.twoFactorChallengeToken,
+      expiresInSeconds: 600,
+    });
+    return true;
+  }
+
+  if (pathname === '/api/auth/two-factor/enable') {
+    const payload = request.postDataJSON() as { challengeToken?: string; code?: string };
+    state.lastTwoFactorCode = payload.code ?? null;
+    if (payload.challengeToken !== state.twoFactorChallengeToken || payload.code !== '123456') {
+      await fulfillJson(route, { message: 'Invalid verification code' }, { status: 401 });
+      return true;
+    }
+    state.user.twoFactorEnabled = true;
+    state.twoFactorChallengeToken = null;
+    await fulfillJson(route, { success: true });
+    return true;
+  }
+
+  if (pathname === '/api/auth/two-factor/disable') {
+    state.user.twoFactorEnabled = false;
+    await fulfillJson(route, { success: true });
+    return true;
+  }
+
+  if (pathname === '/api/auth/two-factor/verify') {
+    const payload = request.postDataJSON() as { challengeToken?: string; code?: string };
+    state.lastTwoFactorCode = payload.code ?? null;
+    if (payload.challengeToken !== state.twoFactorChallengeToken || payload.code !== '123456') {
+      await fulfillJson(route, { message: 'Invalid verification code' }, { status: 401 });
+      return true;
+    }
+    state.authenticated = true;
+    state.twoFactorChallengeToken = null;
+    await fulfillJson(route, {
+      accessToken: 'test-access-token',
+      refreshToken: 'test-refresh-token',
+      user: state.user,
+    });
+    return true;
+  }
+
+  if (pathname === '/api/auth/two-factor/resend') {
+    state.twoFactorSetupCount += 1;
+    state.twoFactorChallengeToken = `challenge-${state.twoFactorSetupCount}`;
+    await fulfillJson(route, {
+      twoFactorRequired: true,
+      challengeToken: state.twoFactorChallengeToken,
+      expiresInSeconds: 600,
+    });
+    return true;
+  }
+
   if (pathname === '/api/auth/verify-email') {
     const payload = request.postDataJSON() as { token?: string };
     state.lastVerificationToken = payload.token ?? null;
@@ -57,6 +124,15 @@ async function handleAuthRoutes({ route, request, pathname, state }: RouteContex
 
   if (pathname === '/api/auth/login') {
     state.lastLoginPayload = request.postDataJSON();
+    if (state.user.twoFactorEnabled) {
+      state.twoFactorChallengeToken = 'login-challenge';
+      await fulfillJson(route, {
+        twoFactorRequired: true,
+        challengeToken: state.twoFactorChallengeToken,
+        expiresInSeconds: 600,
+      });
+      return true;
+    }
     state.authenticated = true;
 
     await fulfillJson(route, {

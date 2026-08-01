@@ -6,6 +6,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Diary, RefreshToken, User } from '@/database/entities';
 import { AuthService } from './auth.service';
 import { EmailService } from './email.service';
+import { TwoFactorService } from './two-factor.service';
 
 describe('AuthService bot protection', () => {
   let service: AuthService;
@@ -22,7 +23,10 @@ describe('AuthService bot protection', () => {
       providers: [
         AuthService,
         { provide: getRepositoryToken(User), useValue: userRepository },
-        { provide: getRepositoryToken(RefreshToken), useValue: { save: jest.fn(), findOne: jest.fn() } },
+        {
+          provide: getRepositoryToken(RefreshToken),
+          useValue: { save: jest.fn(), findOne: jest.fn() },
+        },
         { provide: getRepositoryToken(Diary), useValue: { save: jest.fn() } },
         { provide: JwtService, useValue: { sign: jest.fn(), verify: jest.fn() } },
         { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test-secret') } },
@@ -32,6 +36,10 @@ describe('AuthService bot protection', () => {
             sendPasswordResetEmail: jest.fn(),
             sendAccountDeletionEmail: jest.fn(),
           },
+        },
+        {
+          provide: TwoFactorService,
+          useValue: { startChallenge: jest.fn(), consumeLogin: jest.fn() },
         },
       ],
     }).compile();

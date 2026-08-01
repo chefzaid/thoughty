@@ -26,6 +26,11 @@ erDiagram
         string authProvider
         string providerId
         boolean emailVerified
+        boolean twoFactorEnabled
+        string twoFactorChallengeTokenHash
+        string twoFactorChallengeCodeHash
+        string twoFactorChallengePurpose
+        datetime twoFactorChallengeExpires
         datetime deletedAt
     }
 

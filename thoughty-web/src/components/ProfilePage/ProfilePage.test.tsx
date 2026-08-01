@@ -65,6 +65,8 @@ function createAuthValue(overrides: Partial<MockAuthValue> = {}): MockAuthValue 
         isAuthenticated: true,
         register: vi.fn().mockResolvedValue({ success: true }),
         login: vi.fn().mockResolvedValue({ success: true }),
+        verifyTwoFactor: vi.fn().mockResolvedValue({ success: true }),
+        resendTwoFactor: vi.fn().mockResolvedValue({ success: true }),
         logout: vi.fn().mockResolvedValue(undefined),
         signInWithGoogle: vi.fn().mockResolvedValue({ success: true }),
         changePassword: vi.fn().mockResolvedValue({ success: true }),

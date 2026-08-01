@@ -115,6 +115,33 @@ export type TranslationKey =
   | 'changingPassword'
   | 'passwordChangeSuccess'
   | 'passwordChangeFailed'
+  | 'twoFactorAuthentication'
+  | 'twoFactorEnabledDescription'
+  | 'twoFactorDisabledDescription'
+  | 'twoFactorPasswordAccountsOnly'
+  | 'twoFactorVerifyEmailFirst'
+  | 'twoFactorCode'
+  | 'twoFactorCodePlaceholder'
+  | 'twoFactorLoginSubtitle'
+  | 'twoFactorCodeSent'
+  | 'twoFactorCodeResent'
+  | 'twoFactorSetupCodeSent'
+  | 'twoFactorEnabledSuccess'
+  | 'twoFactorDisabledSuccess'
+  | 'twoFactorVerificationFailed'
+  | 'twoFactorResendFailed'
+  | 'twoFactorRequestFailed'
+  | 'enterSixDigitCode'
+  | 'verifyAndSignIn'
+  | 'resendCode'
+  | 'enableTwoFactor'
+  | 'confirmTwoFactor'
+  | 'disableTwoFactor'
+  | 'enabled'
+  | 'disabled'
+  | 'sending'
+  | 'verifying'
+  | 'disabling'
   | 'currentAndNewPasswordRequired'
   | 'cancel'
   | 'saveSettings'
@@ -895,6 +922,33 @@ export const translations: Translations = {
     changingPassword: 'Changing...',
     passwordChangeSuccess: 'Password changed successfully',
     passwordChangeFailed: 'Failed to change password',
+    twoFactorAuthentication: 'Two-factor authentication',
+    twoFactorEnabledDescription: 'A code sent to your verified email is required when you sign in.',
+    twoFactorDisabledDescription: 'Add an email verification code after your password for stronger account security.',
+    twoFactorPasswordAccountsOnly: 'Email codes are available for password accounts only.',
+    twoFactorVerifyEmailFirst: 'Verify your email before enabling two-factor authentication.',
+    twoFactorCode: 'Verification code',
+    twoFactorCodePlaceholder: '6-digit code',
+    twoFactorLoginSubtitle: 'Enter the code sent to your email',
+    twoFactorCodeSent: 'We sent a sign-in code to your email.',
+    twoFactorCodeResent: 'A new sign-in code was sent.',
+    twoFactorSetupCodeSent: 'Enter the code sent to your verified email.',
+    twoFactorEnabledSuccess: 'Two-factor authentication is enabled.',
+    twoFactorDisabledSuccess: 'Two-factor authentication is disabled.',
+    twoFactorVerificationFailed: 'The verification code could not be confirmed.',
+    twoFactorResendFailed: 'A new code could not be sent.',
+    twoFactorRequestFailed: 'The two-factor request failed.',
+    enterSixDigitCode: 'Enter the 6-digit code.',
+    verifyAndSignIn: 'Verify and sign in',
+    resendCode: 'Resend code',
+    enableTwoFactor: 'Enable two-factor authentication',
+    confirmTwoFactor: 'Confirm and enable',
+    disableTwoFactor: 'Disable two-factor authentication',
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+    sending: 'Sending...',
+    verifying: 'Verifying...',
+    disabling: 'Disabling...',
     currentAndNewPasswordRequired: 'Current and new password are required',
     cancel: 'Cancel',
     saveSettings: 'Save Changes',
@@ -1736,6 +1790,33 @@ export const translations: Translations = {
     changingPassword: 'Modification...',
     passwordChangeSuccess: 'Mot de passe modifié avec succès',
     passwordChangeFailed: 'Échec de la modification du mot de passe',
+    twoFactorAuthentication: 'Authentification à deux facteurs',
+    twoFactorEnabledDescription: 'Un code envoyé à votre email vérifié est requis lors de la connexion.',
+    twoFactorDisabledDescription: 'Ajoutez un code de vérification par email après votre mot de passe.',
+    twoFactorPasswordAccountsOnly: 'Les codes par email sont réservés aux comptes avec mot de passe.',
+    twoFactorVerifyEmailFirst: "Vérifiez votre email avant d'activer l'authentification à deux facteurs.",
+    twoFactorCode: 'Code de vérification',
+    twoFactorCodePlaceholder: 'Code à 6 chiffres',
+    twoFactorLoginSubtitle: 'Entrez le code envoyé à votre email',
+    twoFactorCodeSent: 'Un code de connexion a été envoyé à votre email.',
+    twoFactorCodeResent: 'Un nouveau code de connexion a été envoyé.',
+    twoFactorSetupCodeSent: 'Entrez le code envoyé à votre email vérifié.',
+    twoFactorEnabledSuccess: "L'authentification à deux facteurs est activée.",
+    twoFactorDisabledSuccess: "L'authentification à deux facteurs est désactivée.",
+    twoFactorVerificationFailed: "Le code de vérification n'a pas pu être confirmé.",
+    twoFactorResendFailed: "Le nouveau code n'a pas pu être envoyé.",
+    twoFactorRequestFailed: "La demande d'authentification à deux facteurs a échoué.",
+    enterSixDigitCode: 'Entrez le code à 6 chiffres.',
+    verifyAndSignIn: 'Vérifier et se connecter',
+    resendCode: 'Renvoyer le code',
+    enableTwoFactor: "Activer l'authentification à deux facteurs",
+    confirmTwoFactor: 'Confirmer et activer',
+    disableTwoFactor: "Désactiver l'authentification à deux facteurs",
+    enabled: 'Activée',
+    disabled: 'Désactivée',
+    sending: 'Envoi...',
+    verifying: 'Vérification...',
+    disabling: 'Désactivation...',
     currentAndNewPasswordRequired: 'Le mot de passe actuel et le nouveau sont requis',
     cancel: 'Annuler',
     saveSettings: 'Enregistrer',

@@ -55,6 +55,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/two-factor/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify an email code and finish password login */
+        post: operations["AuthController_verifyTwoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/two-factor/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace an active challenge and send a new email code */
+        post: operations["AuthController_resendTwoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/two-factor/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get two-factor availability and current status */
+        get: operations["AuthController_twoFactorStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/two-factor/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Email a code to start enabling two-factor authentication */
+        post: operations["AuthController_setupTwoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/two-factor/enable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm the setup code and enable two-factor authentication */
+        post: operations["AuthController_enableTwoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/two-factor/disable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable two-factor authentication after password confirmation */
+        post: operations["AuthController_disableTwoFactor"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/oauth": {
         parameters: {
             query?: never;
@@ -1330,6 +1432,35 @@ export interface components {
     schemas: {
         /**
          * @example {
+         *       "user": {
+         *         "example": "example"
+         *       },
+         *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+         *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+         *     }
+         */
+        AuthResponseDto: {
+            user: Record<string, never>;
+            accessToken: string;
+            refreshToken: string;
+        };
+        /**
+         * @example {
+         *       "twoFactorRequired": true,
+         *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+         *       "expiresInSeconds": 600
+         *     }
+         */
+        TwoFactorChallengeResponseDto: {
+            /** @example true */
+            twoFactorRequired: boolean;
+            /** @description Opaque single-use challenge token */
+            challengeToken: string;
+            /** @example 600 */
+            expiresInSeconds: number;
+        };
+        /**
+         * @example {
          *       "email": "user@example.com",
          *       "password": "Password123!",
          *       "username": "johndoe",
@@ -1348,20 +1479,6 @@ export interface components {
         };
         /**
          * @example {
-         *       "user": {
-         *         "example": "example"
-         *       },
-         *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-         *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-         *     }
-         */
-        AuthResponseDto: {
-            user: Record<string, never>;
-            accessToken: string;
-            refreshToken: string;
-        };
-        /**
-         * @example {
          *       "identifier": "user@example.com",
          *       "password": "Password123!",
          *       "website": "example"
@@ -1377,6 +1494,48 @@ export interface components {
             password: string;
             /** @description Hidden bot-trap field; must be left empty by real users */
             website?: string;
+        };
+        /**
+         * @example {
+         *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+         *       "code": "123456"
+         *     }
+         */
+        TwoFactorCodeDto: {
+            /** @description Opaque challenge token returned when the code was requested */
+            challengeToken: string;
+            /** @example 123456 */
+            code: string;
+        };
+        /**
+         * @example {
+         *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+         *     }
+         */
+        TwoFactorResendDto: {
+            /** @description Current opaque challenge token */
+            challengeToken: string;
+        };
+        /**
+         * @example {
+         *       "enabled": true,
+         *       "available": true,
+         *       "emailVerified": true
+         *     }
+         */
+        TwoFactorStatusResponseDto: {
+            enabled: boolean;
+            /** @description Whether email delivery is configured on this server */
+            available: boolean;
+            emailVerified: boolean;
+        };
+        /**
+         * @example {
+         *       "password": "Password123!"
+         *     }
+         */
+        DisableTwoFactorDto: {
+            password: string;
         };
         /**
          * @example {
@@ -1442,6 +1601,7 @@ export interface components {
          *       "avatarUrl": "https://thoughty.example.com/callback",
          *       "authProvider": "google_drive",
          *       "emailVerified": true,
+         *       "twoFactorEnabled": true,
          *       "createdAt": "2026-06-24T10:00:00.000Z"
          *     }
          */
@@ -1452,6 +1612,7 @@ export interface components {
             avatarUrl?: string;
             authProvider: string;
             emailVerified: boolean;
+            twoFactorEnabled: boolean;
             /** Format: date-time */
             createdAt: string;
         };
@@ -3160,7 +3321,56 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Login successful */
+            /** @description Login tokens, or an email-code challenge when two-factor authentication is enabled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "user": {
+                     *         "example": "example"
+                     *       },
+                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                     *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                     *       "twoFactorRequired": true,
+                     *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                     *       "expiresInSeconds": 600
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AuthResponseDto"] | components["schemas"]["TwoFactorChallengeResponseDto"];
+                };
+            };
+            /** @description Invalid credentials */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_verifyTwoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                 *       "code": "123456"
+                 *     }
+                 */
+                "application/json": components["schemas"]["TwoFactorCodeDto"];
+            };
+        };
+        responses: {
+            /** @description Login completed */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3178,7 +3388,159 @@ export interface operations {
                     "application/json": components["schemas"]["AuthResponseDto"];
                 };
             };
-            /** @description Invalid credentials */
+            /** @description Invalid, expired, or already-used challenge */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_resendTwoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                 *     }
+                 */
+                "application/json": components["schemas"]["TwoFactorResendDto"];
+            };
+        };
+        responses: {
+            /** @description Replacement single-use challenge */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "twoFactorRequired": true,
+                     *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                     *       "expiresInSeconds": 600
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TwoFactorChallengeResponseDto"];
+                };
+            };
+        };
+    };
+    AuthController_twoFactorStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current two-factor status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "enabled": true,
+                     *       "available": true,
+                     *       "emailVerified": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TwoFactorStatusResponseDto"];
+                };
+            };
+        };
+    };
+    AuthController_setupTwoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Single-use setup challenge */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "twoFactorRequired": true,
+                     *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                     *       "expiresInSeconds": 600
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TwoFactorChallengeResponseDto"];
+                };
+            };
+        };
+    };
+    AuthController_enableTwoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                 *       "code": "123456"
+                 *     }
+                 */
+                "application/json": components["schemas"]["TwoFactorCodeDto"];
+            };
+        };
+        responses: {
+            /** @description Two-factor authentication enabled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AuthController_disableTwoFactor: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "password": "Password123!"
+                 *     }
+                 */
+                "application/json": components["schemas"]["DisableTwoFactorDto"];
+            };
+        };
+        responses: {
+            /** @description Two-factor authentication disabled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid password */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -3421,6 +3783,7 @@ export interface operations {
                      *       "avatarUrl": "https://thoughty.example.com/callback",
                      *       "authProvider": "google_drive",
                      *       "emailVerified": true,
+                     *       "twoFactorEnabled": true,
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
                      */

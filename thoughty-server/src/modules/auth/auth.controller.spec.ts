@@ -3,6 +3,7 @@ import { RATE_LIMITS } from '@/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './services/auth.service';
 import { EmailVerificationService } from './services/email-verification.service';
+import { TwoFactorService } from './services/two-factor.service';
 
 const getThrottleMetadata = (handler: Function) => ({
   limit: Reflect.getMetadata('THROTTLER:LIMITdefault', handler),
@@ -13,6 +14,7 @@ describe('AuthController', () => {
   let controller: AuthController;
   let authService: any;
   let emailVerificationService: any;
+  let twoFactorService: any;
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -36,12 +38,20 @@ describe('AuthController', () => {
       sendVerificationEmail: jest.fn(),
       verifyEmail: jest.fn(),
     };
+    twoFactorService = {
+      resend: jest.fn(),
+      status: jest.fn(),
+      startSetup: jest.fn(),
+      enable: jest.fn(),
+      disable: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         { provide: AuthService, useValue: authService },
         { provide: EmailVerificationService, useValue: emailVerificationService },
+        { provide: TwoFactorService, useValue: twoFactorService },
       ],
     }).compile();
 
@@ -56,9 +66,14 @@ describe('AuthController', () => {
     const cases = [
       ['register', RATE_LIMITS.authAttempt],
       ['login', RATE_LIMITS.authAttempt],
+      ['verifyTwoFactor', RATE_LIMITS.authAttempt],
+      ['resendTwoFactor', RATE_LIMITS.authAttempt],
       ['oauth', RATE_LIMITS.authAttempt],
       ['refresh', RATE_LIMITS.tokenRefresh],
       ['revokeOtherSessions', RATE_LIMITS.accountSecurity],
+      ['setupTwoFactor', RATE_LIMITS.accountSecurity],
+      ['enableTwoFactor', RATE_LIMITS.accountSecurity],
+      ['disableTwoFactor', RATE_LIMITS.accountSecurity],
       ['revokeSession', RATE_LIMITS.accountSecurity],
       ['changePassword', RATE_LIMITS.accountSecurity],
       ['forgotPassword', RATE_LIMITS.passwordRecovery],
@@ -98,6 +113,62 @@ describe('AuthController', () => {
       const result = await controller.login(dto);
       expect(authService.login).toHaveBeenCalledWith(dto);
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('two-factor authentication', () => {
+    const challenge = {
+      twoFactorRequired: true,
+      challengeToken: 'challenge-token',
+      expiresInSeconds: 600,
+    };
+
+    it('verifies a login challenge through authService', async () => {
+      const dto = { challengeToken: 'challenge-token', code: '123456' };
+      const expected = { accessToken: 'token', refreshToken: 'refresh', user: { id: 1 } };
+      authService.verifyTwoFactorLogin = jest.fn().mockResolvedValue(expected);
+
+      await expect(controller.verifyTwoFactor(dto)).resolves.toBe(expected);
+      expect(authService.verifyTwoFactorLogin).toHaveBeenCalledWith(dto);
+    });
+
+    it('resends a public challenge', async () => {
+      twoFactorService.resend.mockResolvedValue(challenge);
+
+      await expect(controller.resendTwoFactor({ challengeToken: 'challenge-token' })).resolves.toBe(
+        challenge,
+      );
+      expect(twoFactorService.resend).toHaveBeenCalledWith('challenge-token');
+    });
+
+    it('returns status for the authenticated user', async () => {
+      const status = { enabled: false, available: true, emailVerified: true };
+      twoFactorService.status.mockResolvedValue(status);
+
+      await expect(controller.twoFactorStatus(mockUser as any)).resolves.toBe(status);
+      expect(twoFactorService.status).toHaveBeenCalledWith(1);
+    });
+
+    it('starts and confirms setup for the authenticated user', async () => {
+      const dto = { challengeToken: 'challenge-token', code: '123456' };
+      twoFactorService.startSetup.mockResolvedValue(challenge);
+      twoFactorService.enable.mockResolvedValue({ success: true });
+
+      await expect(controller.setupTwoFactor(mockUser as any)).resolves.toBe(challenge);
+      await expect(controller.enableTwoFactor(mockUser as any, dto)).resolves.toEqual({
+        success: true,
+      });
+      expect(twoFactorService.startSetup).toHaveBeenCalledWith(1);
+      expect(twoFactorService.enable).toHaveBeenCalledWith(1, dto);
+    });
+
+    it('disables two-factor authentication with password confirmation', async () => {
+      twoFactorService.disable.mockResolvedValue({ success: true });
+
+      await expect(
+        controller.disableTwoFactor(mockUser as any, { password: 'Password123!' }),
+      ).resolves.toEqual({ success: true });
+      expect(twoFactorService.disable).toHaveBeenCalledWith(1, 'Password123!');
     });
   });
 

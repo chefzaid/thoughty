@@ -135,6 +135,7 @@ export class AuthResponseDto {
     username: string;
     authProvider: string;
     emailVerified: boolean;
+    twoFactorEnabled: boolean;
     isNewUser?: boolean;
   };
 
@@ -143,6 +144,56 @@ export class AuthResponseDto {
 
   @ApiProperty()
   refreshToken: string;
+}
+
+export class TwoFactorChallengeResponseDto {
+  @ApiProperty({ example: true })
+  twoFactorRequired: true;
+
+  @ApiProperty({ description: 'Opaque single-use challenge token' })
+  challengeToken: string;
+
+  @ApiProperty({ example: 600 })
+  expiresInSeconds: number;
+}
+
+export class TwoFactorCodeDto {
+  @ApiProperty({ description: 'Opaque challenge token returned when the code was requested' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(128)
+  challengeToken: string;
+
+  @ApiProperty({ example: '123456' })
+  @IsString()
+  @Matches(/^\d{6}$/, { message: 'Code must contain exactly 6 digits' })
+  code: string;
+}
+
+export class TwoFactorResendDto {
+  @ApiProperty({ description: 'Current opaque challenge token' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(128)
+  challengeToken: string;
+}
+
+export class DisableTwoFactorDto {
+  @ApiProperty()
+  @IsString()
+  @MinLength(1)
+  password: string;
+}
+
+export class TwoFactorStatusResponseDto {
+  @ApiProperty()
+  enabled: boolean;
+
+  @ApiProperty({ description: 'Whether email delivery is configured on this server' })
+  available: boolean;
+
+  @ApiProperty()
+  emailVerified: boolean;
 }
 
 export class UserResponseDto {
@@ -163,6 +214,9 @@ export class UserResponseDto {
 
   @ApiProperty()
   emailVerified: boolean;
+
+  @ApiProperty()
+  twoFactorEnabled: boolean;
 
   @ApiProperty()
   createdAt: Date;

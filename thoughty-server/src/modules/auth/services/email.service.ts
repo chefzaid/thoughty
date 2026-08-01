@@ -132,6 +132,35 @@ export class EmailService {
     });
   }
 
+  async sendTwoFactorCodeEmail(
+    toEmail: string,
+    code: string,
+    expiresInMinutes: number,
+  ): Promise<void> {
+    if (!this.transporter) {
+      throw new Error('Email service not configured');
+    }
+
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
+
+    await this.transporter.sendMail({
+      from: fromAddress,
+      to: toEmail,
+      subject: 'Your Thoughty security code',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">Your security code</h2>
+          <p style="color: #666; font-size: 16px;">Use this code to finish signing in to Thoughty:</p>
+          <p style="color: #111; font-size: 32px; font-weight: 700; letter-spacing: 8px;">${code}</p>
+          <p style="color: #666; font-size: 14px;">This code expires in ${expiresInMinutes} minutes and can be used once.</p>
+          <p style="color: #999; font-size: 14px;">If you did not request this code, change your password.</p>
+        </div>
+      `,
+      text: `Your Thoughty security code is ${code}. It expires in ${expiresInMinutes} minutes and can be used once.`,
+    });
+  }
+
   async sendAccountDeletionEmail(toEmail: string): Promise<void> {
     if (!this.transporter) {
       throw new Error('Email service not configured');

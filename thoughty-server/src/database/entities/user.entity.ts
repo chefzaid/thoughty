@@ -49,6 +49,21 @@ export class User {
   @Column({ name: 'reset_token_expires', type: 'timestamp', nullable: true })
   resetTokenExpires: Date | null;
 
+  @Column({ name: 'two_factor_enabled', type: 'boolean', default: false })
+  twoFactorEnabled: boolean;
+
+  @Column({ name: 'two_factor_challenge_token_hash', type: 'varchar', length: 64, nullable: true })
+  twoFactorChallengeTokenHash: string | null;
+
+  @Column({ name: 'two_factor_challenge_code_hash', type: 'varchar', length: 64, nullable: true })
+  twoFactorChallengeCodeHash: string | null;
+
+  @Column({ name: 'two_factor_challenge_purpose', type: 'varchar', length: 16, nullable: true })
+  twoFactorChallengePurpose: string | null;
+
+  @Column({ name: 'two_factor_challenge_expires', type: 'timestamp', nullable: true })
+  twoFactorChallengeExpires: Date | null;
+
   @Column({ name: 'deleted_at', type: 'timestamp', nullable: true })
   deletedAt: Date | null;
 

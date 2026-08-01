@@ -308,6 +308,69 @@ describe('AuthContext', () => {
         expect(del!.success).toBe(true);
     });
 
+    it('completes a two-factor login without storing a partial session', async () => {
+        (globalThis.fetch as Mock)
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    twoFactorRequired: true,
+                    challengeToken: 'challenge-one',
+                    expiresInSeconds: 600,
+                }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    twoFactorRequired: true,
+                    challengeToken: 'challenge-two',
+                    expiresInSeconds: 600,
+                }),
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    accessToken: 'access',
+                    refreshToken: 'refresh',
+                    user: { id: 2, email: 'protected@example.com', twoFactorEnabled: true },
+                }),
+            });
+
+        let ctx: AuthContextValue | undefined;
+        render(
+            <AuthProvider>
+                <ContextSpy onReady={(value) => { ctx = value; }} />
+            </AuthProvider>
+        );
+        await waitFor(() => requireContext(ctx));
+
+        let loginResult;
+        await act(async () => {
+            loginResult = await requireContext(ctx).login('protected@example.com', 'password');
+        });
+        expect(loginResult).toEqual(expect.objectContaining({
+            success: true,
+            twoFactorRequired: true,
+            challengeToken: 'challenge-one',
+        }));
+        expect(localStorage.getItem('accessToken')).toBeNull();
+
+        let resendResult;
+        await act(async () => {
+            resendResult = await requireContext(ctx).resendTwoFactor('challenge-one');
+        });
+        expect(resendResult).toEqual(expect.objectContaining({ challengeToken: 'challenge-two' }));
+
+        await act(async () => {
+            await requireContext(ctx).verifyTwoFactor('challenge-two', '123456');
+        });
+        expect(globalThis.fetch).toHaveBeenLastCalledWith(
+            '/api/auth/two-factor/verify',
+            expect.objectContaining({ body: JSON.stringify({ challengeToken: 'challenge-two', code: '123456' }) }),
+        );
+        expect(localStorage.getItem('accessToken')).toBe('access');
+        expect(requireContext(ctx).user?.twoFactorEnabled).toBe(true);
+    });
+
     it('verifies an email and updates the authenticated user', async () => {
         localStorage.setItem('accessToken', 'token');
         (globalThis.fetch as Mock)

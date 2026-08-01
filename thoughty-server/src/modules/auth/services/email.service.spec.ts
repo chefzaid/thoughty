@@ -155,7 +155,10 @@ describe('EmailService', () => {
     });
 
     it('should send password reset email successfully', async () => {
-      await service.sendPasswordResetEmail('recipient@example.com', 'https://example.com/reset?token=abc');
+      await service.sendPasswordResetEmail(
+        'recipient@example.com',
+        'https://example.com/reset?token=abc',
+      );
 
       expect(mockTransporter.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -175,7 +178,10 @@ describe('EmailService', () => {
       });
       service = new EmailService(configService as ConfigService);
 
-      await service.sendPasswordResetEmail('recipient@example.com', 'https://example.com/reset?token=abc');
+      await service.sendPasswordResetEmail(
+        'recipient@example.com',
+        'https://example.com/reset?token=abc',
+      );
 
       expect(mockTransporter.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -189,7 +195,10 @@ describe('EmailService', () => {
       service = new EmailService(configService as ConfigService);
 
       await expect(
-        service.sendPasswordResetEmail('recipient@example.com', 'https://example.com/reset?token=abc'),
+        service.sendPasswordResetEmail(
+          'recipient@example.com',
+          'https://example.com/reset?token=abc',
+        ),
       ).rejects.toThrow('Email service not configured');
     });
 
@@ -220,7 +229,10 @@ describe('EmailService', () => {
     });
 
     it('should send email verification successfully', async () => {
-      await service.sendEmailVerificationEmail('recipient@example.com', 'https://example.com/verify?token=abc');
+      await service.sendEmailVerificationEmail(
+        'recipient@example.com',
+        'https://example.com/verify?token=abc',
+      );
 
       expect(mockTransporter.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -249,7 +261,45 @@ describe('EmailService', () => {
       service = new EmailService(configService as ConfigService);
 
       await expect(
-        service.sendEmailVerificationEmail('recipient@example.com', 'https://example.com/verify?token=abc'),
+        service.sendEmailVerificationEmail(
+          'recipient@example.com',
+          'https://example.com/verify?token=abc',
+        ),
+      ).rejects.toThrow('Email service not configured');
+    });
+  });
+
+  describe('sendTwoFactorCodeEmail', () => {
+    beforeEach(() => {
+      configService = createConfigService({
+        SMTP_HOST: 'smtp.example.com',
+        SMTP_PORT: 587,
+        SMTP_USER: 'user@example.com',
+        SMTP_PASS: 'password',
+        SMTP_FROM: 'noreply@example.com',
+      });
+      service = new EmailService(configService as ConfigService);
+    });
+
+    it('sends the short-lived code in HTML and plain text', async () => {
+      await service.sendTwoFactorCodeEmail('recipient@example.com', '123456', 10);
+
+      expect(mockTransporter.sendMail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: 'noreply@example.com',
+          to: 'recipient@example.com',
+          subject: 'Your Thoughty security code',
+          html: expect.stringContaining('123456'),
+          text: expect.stringContaining('123456'),
+        }),
+      );
+    });
+
+    it('requires configured email delivery', async () => {
+      service = new EmailService(createConfigService({}) as ConfigService);
+
+      await expect(
+        service.sendTwoFactorCodeEmail('recipient@example.com', '123456', 10),
       ).rejects.toThrow('Email service not configured');
     });
   });

@@ -12,6 +12,7 @@ import {
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { EmailService } from './email.service';
+import { TwoFactorService } from './two-factor.service';
 import { User, RefreshToken, Diary } from '@/database/entities';
 
 // Mock bcrypt
@@ -27,6 +28,7 @@ describe('AuthService', () => {
   let diaryRepository: any;
   let jwtService: any;
   let emailService: any;
+  let twoFactorService: any;
 
   const mockUser = {
     id: 1,
@@ -36,6 +38,7 @@ describe('AuthService', () => {
     authProvider: 'local',
     deletedAt: null,
     emailVerified: false,
+    twoFactorEnabled: false,
   };
 
   const mockRefreshToken = {
@@ -75,6 +78,10 @@ describe('AuthService', () => {
       sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
       sendAccountDeletionEmail: jest.fn().mockResolvedValue(undefined),
     };
+    twoFactorService = {
+      startChallenge: jest.fn(),
+      consumeLogin: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -85,6 +92,7 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: jwtService },
         { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test-secret') } },
         { provide: EmailService, useValue: emailService },
+        { provide: TwoFactorService, useValue: twoFactorService },
       ],
     }).compile();
 
@@ -111,8 +119,11 @@ describe('AuthService', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
-      expect(result.user.email).toBe('test@example.com');
-      expect(result.user.emailVerified).toBe(false);
+      expect('user' in result).toBe(true);
+      if ('user' in result) {
+        expect(result.user.email).toBe('test@example.com');
+        expect(result.user.emailVerified).toBe(false);
+      }
       expect(diaryRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           name: 'Thoughts',
@@ -170,8 +181,57 @@ describe('AuthService', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
+      if (!('user' in result)) {
+        throw new Error('Expected a completed login response');
+      }
       expect(result.user.email).toBe('test@example.com');
       expect(result.user.emailVerified).toBe(false);
+    });
+
+    it('should require a two-factor challenge before creating a session', async () => {
+      const protectedUser = { ...mockUser, twoFactorEnabled: true };
+      userRepository.createQueryBuilder.mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(protectedUser),
+      });
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      twoFactorService.startChallenge.mockResolvedValue({
+        twoFactorRequired: true,
+        challengeToken: 'challenge-token',
+        expiresInSeconds: 600,
+      });
+
+      const result = await service.login({
+        identifier: 'test@example.com',
+        password: 'password123',
+      });
+
+      expect(result).toEqual({
+        twoFactorRequired: true,
+        challengeToken: 'challenge-token',
+        expiresInSeconds: 600,
+      });
+      expect(twoFactorService.startChallenge).toHaveBeenCalledWith(protectedUser, 'login');
+      expect(refreshTokenRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('should create a session after a valid two-factor login code', async () => {
+      const protectedUser = { ...mockUser, twoFactorEnabled: true };
+      twoFactorService.consumeLogin.mockResolvedValue(protectedUser);
+      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
+
+      const result = await service.verifyTwoFactorLogin({
+        challengeToken: 'challenge-token',
+        code: '123456',
+      });
+
+      expect(twoFactorService.consumeLogin).toHaveBeenCalledWith({
+        challengeToken: 'challenge-token',
+        code: '123456',
+      });
+      expect(result.user.twoFactorEnabled).toBe(true);
+      expect(result.accessToken).toBe('mock_token');
+      expect(refreshTokenRepository.save).toHaveBeenCalledTimes(1);
     });
 
     it('should throw UnauthorizedException for non-existent user', async () => {
@@ -240,7 +300,7 @@ describe('AuthService', () => {
 
   describe('oauthLogin', () => {
     it('should login existing OAuth user', async () => {
-      userRepository.findOne.mockResolvedValue(mockUser);
+      userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'google' });
       refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
 
       const result = await service.oauthLogin({
@@ -271,7 +331,11 @@ describe('AuthService', () => {
       userRepository.findOne
         .mockResolvedValueOnce(null) // First call for OAuth lookup
         .mockResolvedValueOnce(existingUser); // Second call for email lookup
-      userRepository.save.mockResolvedValue({ ...existingUser, authProvider: 'google', emailVerified: true });
+      userRepository.save.mockResolvedValue({
+        ...existingUser,
+        authProvider: 'google',
+        emailVerified: true,
+      });
       refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
 
       const result = await service.oauthLogin({
@@ -287,7 +351,12 @@ describe('AuthService', () => {
 
     it('should create new user for OAuth login', async () => {
       userRepository.findOne.mockResolvedValue(null);
-      userRepository.save.mockResolvedValue({ ...mockUser, id: 1, authProvider: 'google', emailVerified: true });
+      userRepository.save.mockResolvedValue({
+        ...mockUser,
+        id: 1,
+        authProvider: 'google',
+        emailVerified: true,
+      });
       diaryRepository.save.mockResolvedValue({ id: 1 });
       refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
 
@@ -532,7 +601,9 @@ describe('AuthService', () => {
       userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'local' });
       (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
 
-      await expect(service.deleteAccount(1, 'wrongpassword')).rejects.toThrow(UnauthorizedException);
+      await expect(service.deleteAccount(1, 'wrongpassword')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('should delete OAuth account without password', async () => {

@@ -8,6 +8,7 @@ export interface User {
   isNewUser?: boolean;
   authProvider?: 'local' | 'google';
   emailVerified?: boolean;
+  twoFactorEnabled?: boolean;
 }
 
 export interface AuthResult {
@@ -15,6 +16,9 @@ export interface AuthResult {
   error?: string;
   message?: string;
   isNewUser?: boolean;
+  twoFactorRequired?: boolean;
+  challengeToken?: string;
+  expiresInSeconds?: number;
 }
 
 export interface TokenResponse {
@@ -22,3 +26,11 @@ export interface TokenResponse {
   refreshToken: string;
   user: User;
 }
+
+export interface TwoFactorChallengeResponse {
+  twoFactorRequired: true;
+  challengeToken: string;
+  expiresInSeconds: number;
+}
+
+export type LoginResponse = TokenResponse | TwoFactorChallengeResponse;

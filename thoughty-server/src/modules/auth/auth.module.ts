@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User, RefreshToken, Diary } from '@/database/entities';
 import { AuthController } from './auth.controller';
-import { AuthService, EmailService, EmailVerificationService } from './services';
+import { AuthService, EmailService, EmailVerificationService, TwoFactorService } from './services';
 import { JwtStrategy } from './strategies';
 import { JwtAuthGuard } from './guards';
 
@@ -19,13 +19,23 @@ import { JwtAuthGuard } from './guards';
       useFactory: (configService: ConfigService): JwtModuleOptions => ({
         secret: configService.get<string>('JWT_SECRET', 'your-secret-key-change-in-production'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '15m') as `${number}${'s' | 'm' | 'h' | 'd'}`,
+          expiresIn: configService.get<string>(
+            'JWT_EXPIRES_IN',
+            '15m',
+          ) as `${number}${'s' | 'm' | 'h' | 'd'}`,
         },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, EmailService, EmailVerificationService, JwtStrategy, JwtAuthGuard],
+  providers: [
+    AuthService,
+    EmailService,
+    EmailVerificationService,
+    TwoFactorService,
+    JwtStrategy,
+    JwtAuthGuard,
+  ],
   exports: [AuthService, EmailVerificationService, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}

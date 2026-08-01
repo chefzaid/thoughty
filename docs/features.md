@@ -129,6 +129,7 @@ flowchart LR
 
 - Authentication supports email/password sign-up plus Google OAuth sign-in. Existing accounts can be linked when the same email is used, which reduces account fragmentation.
 - Login accepts either email or username, while access and refresh tokens handle authenticated sessions and silent token renewal.
+- Verified password accounts can enable email two-factor authentication from Profile. Password login then issues a short-lived, single-use six-digit email challenge before any access or refresh token is created; disabling the protection requires the current password.
 - Account recovery and security flows include forgot-password email delivery, password change with current-password verification, and refresh-token invalidation when credentials change.
 - Account deletion is soft-delete oriented and guarded by confirmation, which is safer than immediate irreversible removal.
 - GDPR-style data download is available from the config surface, allowing a user to export their stored account data in one response.

@@ -75,7 +75,7 @@ Create these KV v2 records:
 | Vault path | Required keys |
 | --- | --- |
 | `secret/application/thoughty/database` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` |
-| `secret/application/thoughty/app` | `JWT_SECRET`, `REFRESH_SECRET`, `CONFIG_ENCRYPTION_SECRET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` |
+| `secret/application/thoughty/app` | `JWT_SECRET`, `REFRESH_SECRET`, `TWO_FACTOR_SECRET`, `CONFIG_ENCRYPTION_SECRET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` |
 | `secret/application/thoughty/backup` | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` |
 
 The app record can also contain `OPENROUTER_API_KEY`, OAuth provider credentials, and SMTP settings described in the main deployment guide. External Secrets copies each record into a namespace-scoped Secret with the same environment variable names.

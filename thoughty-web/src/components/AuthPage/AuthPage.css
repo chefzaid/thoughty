@@ -260,6 +260,18 @@
     color: #e2e8f0;
 }
 
+.two-factor-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.two-factor-actions .back-to-login-btn,
+.two-factor-actions .forgot-password-link {
+    margin: 0;
+}
+
 .auth-page.light .back-to-login-btn {
     color: #64748b;
 }

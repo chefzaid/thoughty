@@ -172,6 +172,7 @@ The `.env.example` files are the source of truth for local configuration. The ta
 | -------------------------- | ------------------------------------------------------ | -------------------------------------------------------- |
 | Database                   | `localhost:5432` / `postgres` / `password` / `journal` | Matches `.devcontainer/docker-compose.yml`               |
 | JWT                        | local placeholders                                     | Required for auth flows; replace for shared environments |
+| `TWO_FACTOR_SECRET`        | local secret string                                    | HMAC key for email 2FA codes; use one shared value across replicas |
 | `FRONTEND_URL`             | `http://localhost:5173`                                | Used for email links                                     |
 | `CORS_ORIGIN`              | `http://localhost:5173,http://localhost:3000`          | Backend splits this comma-separated list                 |
 | S3 / object storage        | local MinIO defaults                                   | No `.env` needed if you keep the defaults                |
