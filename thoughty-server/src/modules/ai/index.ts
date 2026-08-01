@@ -4,6 +4,8 @@ export * from './ai-book-composer.service';
 export * from './ai-personality.service';
 export * from './ai-duplicate.service';
 export * from './ai-semantic-search.service';
+export * from './ai-credentials.service';
+export * from './ai-usage.service';
 export * from './ai.service';
 export * from './personality-analysis';
 export * from './dto/suggest-tags.dto';

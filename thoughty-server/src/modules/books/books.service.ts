@@ -153,7 +153,7 @@ export class BooksService {
     book: Book,
     mode: BookWeavingMode,
   ): Promise<void> {
-    if (!this.aiBookComposer.isConfigured()) {
+    if (!(await this.aiBookComposer.isConfigured(userId))) {
       throw new BadRequestException(
         'AI narrative requires an OpenRouter API key on the server. Disable the AI narrative option to download a plain book.',
       );
@@ -170,7 +170,7 @@ export class BooksService {
   }
 
   private async composeChapterFraming(userId: number, book: Book): Promise<void> {
-    if (!this.aiBookComposer.isConfigured()) {
+    if (!(await this.aiBookComposer.isConfigured(userId))) {
       throw new BadRequestException(
         'AI chapter framing requires an OpenRouter API key on the server. Disable chapter introductions and summaries to generate the book without them.',
       );

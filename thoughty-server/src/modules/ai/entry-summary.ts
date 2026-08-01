@@ -1,4 +1,5 @@
 import { BadGatewayException } from '@nestjs/common';
+import type { OpenRouterUsageReporter } from './ai-usage.service';
 
 interface RequestEntrySummaryOptions {
   apiKey: string;
@@ -6,6 +7,7 @@ interface RequestEntrySummaryOptions {
   content: string;
   includeDetails?: string;
   excludeDetails?: string;
+  onUsage?: OpenRouterUsageReporter;
 }
 
 interface OpenRouterSummaryResponse {
@@ -22,6 +24,7 @@ export async function requestEntrySummary({
   content,
   includeDetails,
   excludeDetails,
+  onUsage,
 }: RequestEntrySummaryOptions): Promise<string> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -62,6 +65,7 @@ export async function requestEntrySummary({
   }
 
   const data = (await response.json()) as OpenRouterSummaryResponse;
+  await onUsage?.(data, model);
   const summary = data.choices?.[0]?.message?.content?.trim();
 
   if (!summary) {

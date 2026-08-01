@@ -129,6 +129,7 @@ erDiagram
 | `RefreshToken`  | Session continuation token for one user                | Deleted with the user; revoked by deleting stored rows during sensitive account events                                                    |
 | `CloudSyncJob`  | Durable sync work item for one user/provider           | Deleted with the user in the SQL migration model                                                                                          |
 | `AiChatHistory` | One chat transcript per user/entry pair                | Deleted with the parent entry                                                                                                             |
+| `AiUsageEvent`  | Numerical OpenRouter usage metadata for one user       | Deleted with the user; contains no prompt or completion content                                                                            |
 | `BookVersion`   | Immutable generated book artifact in a user/diary scope | Deleted with the user or selected diary; all-diaries versions are deleted with the user                                                   |
 
 ## Journal Coordinates
@@ -166,9 +167,11 @@ Entries are not only identified by database `id`. The user-facing journal model 
 
 ## Settings and Integration State
 
-`settings` stores user-scoped key/value configuration. Some values are ordinary preferences, while cloud provider tokens and related integration secrets are encrypted before storage by the application using `CONFIG_ENCRYPTION_SECRET`.
+`settings` stores user-scoped key/value configuration. Some values are ordinary preferences, while cloud provider tokens, personal OpenRouter keys, and related integration secrets are encrypted before storage by the application using `CONFIG_ENCRYPTION_SECRET`. Personal OpenRouter keys are excluded from general configuration responses and user-data exports.
 
 Treat settings as user-owned application state, not as a general-purpose dumping ground. New setting groups should document their keys, value shape, and privacy impact.
+
+`ai_usage_events` stores request-level numerical accounting returned by OpenRouter. It records the user, whether the personal or server credential was used, model, token counts, cost, and timestamp. The table deliberately excludes prompts, completions, and credentials; the dashboard aggregates only personal-key events from the last 30 days.
 
 ## Book Versions
 

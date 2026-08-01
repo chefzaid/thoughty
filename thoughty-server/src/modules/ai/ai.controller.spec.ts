@@ -3,6 +3,7 @@ import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { AiDuplicateService } from './ai-duplicate.service';
 import { AiSemanticSearchService } from './ai-semantic-search.service';
+import { AiCredentialsService } from './ai-credentials.service';
 
 describe('AiController', () => {
   let controller: AiController;
@@ -16,6 +17,12 @@ describe('AiController', () => {
   };
   let aiDuplicateService: { findDuplicates: jest.Mock };
   let aiSemanticSearchService: { search: jest.Mock };
+  let aiCredentialsService: {
+    getStatus: jest.Mock;
+    save: jest.Mock;
+    remove: jest.Mock;
+    getUsage: jest.Mock;
+  };
 
   beforeEach(async () => {
     aiService = {
@@ -28,6 +35,12 @@ describe('AiController', () => {
     };
     aiDuplicateService = { findDuplicates: jest.fn() };
     aiSemanticSearchService = { search: jest.fn() };
+    aiCredentialsService = {
+      getStatus: jest.fn(),
+      save: jest.fn(),
+      remove: jest.fn(),
+      getUsage: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AiController],
@@ -35,6 +48,7 @@ describe('AiController', () => {
         { provide: AiService, useValue: aiService },
         { provide: AiDuplicateService, useValue: aiDuplicateService },
         { provide: AiSemanticSearchService, useValue: aiSemanticSearchService },
+        { provide: AiCredentialsService, useValue: aiCredentialsService },
       ],
     }).compile();
 
@@ -56,6 +70,41 @@ describe('AiController', () => {
       maxTags: 5,
     });
     expect(result).toEqual({ tags: ['focus', 'work'] });
+  });
+
+  it('uses the current user credential for model listing', async () => {
+    aiService.listModels.mockResolvedValue([{ id: 'openai/model', name: 'Model' }]);
+
+    await expect(
+      controller.listModels({ userId: 8, email: 'test@example.com' } as any),
+    ).resolves.toEqual([{ id: 'openai/model', name: 'Model' }]);
+    expect(aiService.listModels).toHaveBeenCalledWith(8);
+  });
+
+  it('manages the current user personal credential and usage', async () => {
+    const user = { userId: 8, email: 'test@example.com' } as any;
+    const status = {
+      hasPersonalKey: true,
+      keyHint: '...value',
+      source: 'personal' as const,
+      aiAvailable: true,
+    };
+    aiCredentialsService.getStatus.mockResolvedValue(status);
+    aiCredentialsService.save.mockResolvedValue(status);
+    aiCredentialsService.remove.mockResolvedValue({ ...status, hasPersonalKey: false });
+    aiCredentialsService.getUsage.mockResolvedValue({ provider: {}, thoughty: {} });
+
+    await expect(controller.getCredentialStatus(user)).resolves.toEqual(status);
+    await expect(
+      controller.saveCredential(user, { apiKey: 'sk-or-v1-example-key-value' }),
+    ).resolves.toEqual(status);
+    await controller.removeCredential(user);
+    await controller.getUsage(user);
+
+    expect(aiCredentialsService.getStatus).toHaveBeenCalledWith(8);
+    expect(aiCredentialsService.save).toHaveBeenCalledWith(8, 'sk-or-v1-example-key-value');
+    expect(aiCredentialsService.remove).toHaveBeenCalledWith(8);
+    expect(aiCredentialsService.getUsage).toHaveBeenCalledWith(8);
   });
 
   it('delegates chat to the service', async () => {

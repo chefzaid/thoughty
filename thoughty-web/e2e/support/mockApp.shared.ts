@@ -5,7 +5,7 @@ type AuthPayload = {
   identifier?: string;
 };
 
-export type MockCloudProvider = 'google_drive' | 'onedrive' | 'dropbox';
+export type MockCloudProvider = "google_drive" | "onedrive" | "dropbox";
 
 export interface MockCloudProviderStatus {
   connected: boolean;
@@ -14,8 +14,8 @@ export interface MockCloudProviderStatus {
 
 export interface MockCloudSchedule {
   enabled: boolean;
-  frequency?: 'every_6h' | 'every_12h' | 'daily' | 'weekly';
-  format?: 'txt' | 'json' | 'md';
+  frequency?: "every_6h" | "every_12h" | "daily" | "weekly";
+  format?: "txt" | "json" | "md";
   diaryId?: number;
   includeVisibility?: boolean;
   lastSyncAt?: string;
@@ -38,10 +38,10 @@ export interface MockEntry {
   index: number;
   content: string;
   tags: string[];
-  visibility: 'public' | 'private';
+  visibility: "public" | "private";
   is_favorite?: boolean;
   is_archived?: boolean;
-  format?: 'plain' | 'markdown';
+  format?: "plain" | "markdown";
   diaryId?: number | null;
 }
 
@@ -51,8 +51,8 @@ export interface MockEntryRevision {
   content: string;
   tags: string[];
   date: string;
-  format: 'plain' | 'markdown';
-  visibility: 'public' | 'private';
+  format: "plain" | "markdown";
+  visibility: "public" | "private";
   createdAt: string;
 }
 
@@ -60,7 +60,7 @@ export interface MockFeatureRequest {
   id: number;
   title: string;
   details: string;
-  status: 'open' | 'reviewing' | 'planned';
+  status: "open" | "reviewing" | "planned";
   votes: number;
   createdAt: string;
 }
@@ -69,7 +69,7 @@ export interface MockBookVersion {
   id: number;
   versionNumber: number;
   title: string;
-  format: 'pdf' | 'epub' | 'html' | 'md';
+  format: "pdf" | "epub" | "html" | "md";
   filename: string;
   chapterCount: number;
   entryCount: number;
@@ -82,10 +82,10 @@ export interface SetupMockAppOptions {
   startAuthenticated?: boolean;
   initialEntries?: MockEntry[];
   initialRevisions?: Record<number, MockEntryRevision[]>;
-  config?: Partial<MockAppState['config']>;
-  diaries?: MockAppState['diaries'];
-  cloudStatus?: MockAppState['cloudStatus'];
-  cloudSchedules?: MockAppState['cloudSchedules'];
+  config?: Partial<MockAppState["config"]>;
+  diaries?: MockAppState["diaries"];
+  cloudStatus?: MockAppState["cloudStatus"];
+  cloudSchedules?: MockAppState["cloudSchedules"];
   cloudFiles?: MockCloudFile[];
 }
 
@@ -96,19 +96,19 @@ export interface MockAppState {
     username: string;
     email: string;
     fullName?: string;
-    authProvider?: 'local' | 'google';
+    authProvider?: "local" | "google";
     emailVerified?: boolean;
     twoFactorEnabled?: boolean;
   };
   config: {
-    theme: 'light' | 'dark';
-    language: 'en' | 'fr';
+    theme: "light" | "dark";
+    language: "en" | "fr";
     entriesPerPage: number;
     autoTagMaxTags?: string | number;
     name?: string;
     bio?: string;
     email?: string;
-    fontFamily?: 'system' | 'serif' | 'modern' | 'mono';
+    fontFamily?: "system" | "serif" | "modern" | "mono";
     fontSize?: string | number;
     fontColor?: string;
     highContrast?: boolean | string;
@@ -121,7 +121,7 @@ export interface MockAppState {
     name: string;
     icon: string;
     is_default: boolean;
-    visibility: 'public' | 'private';
+    visibility: "public" | "private";
     color?: string | null;
   }>;
   entries: MockEntry[];
@@ -158,6 +158,8 @@ export interface MockAppState {
   lastAiDuplicatePayload: unknown;
   lastAiSemanticSearchPayload: unknown;
   lastAiChatPayload: unknown;
+  personalOpenRouterKey: string | null;
+  lastOpenRouterKeyPayload: unknown;
   lastBulkPayload: unknown;
   lastReorderPayload: unknown;
   lastCloudFilesRequestUrl: URL | null;
@@ -169,52 +171,71 @@ export interface MockAppState {
 }
 
 export const DEFAULT_FORMAT_CONFIG = {
-  entrySeparator: '--------------------------------------------------------------------------------',
-  sameDaySeparator: '********************************************************************************',
-  datePrefix: '---',
-  dateSuffix: '--',
-  dateFormat: 'YYYY-MM-DD',
-  tagOpenBracket: '[',
-  tagCloseBracket: ']',
-  tagSeparator: ',',
+  entrySeparator:
+    "--------------------------------------------------------------------------------",
+  sameDaySeparator:
+    "********************************************************************************",
+  datePrefix: "---",
+  dateSuffix: "--",
+  dateFormat: "YYYY-MM-DD",
+  tagOpenBracket: "[",
+  tagCloseBracket: "]",
+  tagSeparator: ",",
 };
 
 const DEFAULT_DIARIES = [
-  { id: 1, name: 'Work', icon: '💼', is_default: true, visibility: 'private' as const, color: '#3B82F6' },
-  { id: 2, name: 'Personal', icon: '🏠', is_default: false, visibility: 'private' as const, color: '#A855F7' },
+  {
+    id: 1,
+    name: "Work",
+    icon: "💼",
+    is_default: true,
+    visibility: "private" as const,
+    color: "#3B82F6",
+  },
+  {
+    id: 2,
+    name: "Personal",
+    icon: "🏠",
+    is_default: false,
+    visibility: "private" as const,
+    color: "#A855F7",
+  },
 ];
 
-const DEFAULT_CLOUD_STATUS: Record<MockCloudProvider, MockCloudProviderStatus> = {
-  google_drive: { connected: true, connectedAt: '2026-04-18T10:00:00.000Z' },
-  onedrive: { connected: false },
-  dropbox: { connected: false },
-};
+const DEFAULT_CLOUD_STATUS: Record<MockCloudProvider, MockCloudProviderStatus> =
+  {
+    google_drive: { connected: true, connectedAt: "2026-04-18T10:00:00.000Z" },
+    onedrive: { connected: false },
+    dropbox: { connected: false },
+  };
 
-const DEFAULT_CLOUD_SCHEDULES: Partial<Record<MockCloudProvider, MockCloudSchedule>> = {
+const DEFAULT_CLOUD_SCHEDULES: Partial<
+  Record<MockCloudProvider, MockCloudSchedule>
+> = {
   google_drive: {
     enabled: true,
-    frequency: 'daily',
-    format: 'json',
+    frequency: "daily",
+    format: "json",
     includeVisibility: true,
-    lastSyncAt: '2026-04-18T10:00:00.000Z',
-    nextSyncAt: '2026-04-19T10:00:00.000Z',
+    lastSyncAt: "2026-04-18T10:00:00.000Z",
+    nextSyncAt: "2026-04-19T10:00:00.000Z",
   },
 };
 
 const DEFAULT_CLOUD_FILES: MockCloudFile[] = [
   {
-    id: 'cloud-file-1',
-    provider: 'google_drive',
-    name: 'thoughty-cloud.json',
+    id: "cloud-file-1",
+    provider: "google_drive",
+    name: "thoughty-cloud.json",
     size: 512,
-    modifiedAt: '2026-04-18T10:00:00.000Z',
+    modifiedAt: "2026-04-18T10:00:00.000Z",
     content: JSON.stringify({
       entries: [
         {
-          date: '2024-04-22',
-          content: 'Cloud restored entry',
-          tags: ['cloud'],
-          visibility: 'private',
+          date: "2024-04-22",
+          content: "Cloud restored entry",
+          tags: ["cloud"],
+          visibility: "private",
         },
       ],
     }),
@@ -224,19 +245,19 @@ const DEFAULT_CLOUD_FILES: MockCloudFile[] = [
 const DEFAULT_FEATURE_REQUESTS: MockFeatureRequest[] = [
   {
     id: 1,
-    title: 'Offline writing mode',
-    details: 'Write and review journal entries without a network connection.',
-    status: 'planned',
+    title: "Offline writing mode",
+    details: "Write and review journal entries without a network connection.",
+    status: "planned",
     votes: 42,
-    createdAt: '2026-07-20T12:00:00.000Z',
+    createdAt: "2026-07-20T12:00:00.000Z",
   },
   {
     id: 2,
-    title: 'Mood calendar',
-    details: 'Show recurring mood patterns across weeks and months.',
-    status: 'open',
+    title: "Mood calendar",
+    details: "Show recurring mood patterns across weeks and months.",
+    status: "open",
     votes: 12,
-    createdAt: '2026-07-22T12:00:00.000Z',
+    createdAt: "2026-07-22T12:00:00.000Z",
   },
 ];
 
@@ -255,7 +276,9 @@ export function unique<T>(values: T[]): T[] {
 
 export function parseImportedEntries(
   content: string,
-): Array<Partial<MockEntry> & { date: string; content: string; tags: string[] }> {
+): Array<
+  Partial<MockEntry> & { date: string; content: string; tags: string[] }
+> {
   try {
     const parsed = JSON.parse(content) as
       | { entries?: Array<Record<string, unknown>> }
@@ -264,17 +287,22 @@ export function parseImportedEntries(
 
     return entries
       .filter(
-        (entry): entry is Record<string, unknown> & { date: string; content: string } =>
-          typeof entry.date === 'string' && typeof entry.content === 'string',
+        (
+          entry,
+        ): entry is Record<string, unknown> & {
+          date: string;
+          content: string;
+        } =>
+          typeof entry.date === "string" && typeof entry.content === "string",
       )
       .map((entry) => ({
         date: entry.date,
         content: entry.content,
         tags: Array.isArray(entry.tags)
-          ? entry.tags.filter((tag): tag is string => typeof tag === 'string')
+          ? entry.tags.filter((tag): tag is string => typeof tag === "string")
           : [],
-        visibility: entry.visibility === 'public' ? 'public' : 'private',
-        format: entry.format === 'markdown' ? 'markdown' : 'plain',
+        visibility: entry.visibility === "public" ? "public" : "private",
+        format: entry.format === "markdown" ? "markdown" : "plain",
       }));
   } catch {
     return [];
@@ -285,10 +313,10 @@ export function buildExportBody(
   entries: MockEntry[],
   format: string | null,
 ): { contentType: string; body: string; extension: string } {
-  if (format === 'json') {
+  if (format === "json") {
     return {
-      contentType: 'application/json',
-      extension: 'json',
+      contentType: "application/json",
+      extension: "json",
       body: JSON.stringify({
         entries: entries.map((entry) => ({
           date: entry.date,
@@ -296,21 +324,21 @@ export function buildExportBody(
           tags: entry.tags,
           content: entry.content,
           visibility: entry.visibility,
-          format: entry.format || 'plain',
+          format: entry.format || "plain",
         })),
       }),
     };
   }
 
   return {
-    contentType: 'text/plain; charset=utf-8',
-    extension: 'txt',
+    contentType: "text/plain; charset=utf-8",
+    extension: "txt",
     body: entries
       .map(
         (entry) =>
-          `---${entry.date}--[${entry.tags.join(',')}]\n${entry.content}\n\n--------------------------------------------------------------------------------\n`,
+          `---${entry.date}--[${entry.tags.join(",")}]\n${entry.content}\n\n--------------------------------------------------------------------------------\n`,
       )
-      .join('\n'),
+      .join("\n"),
   };
 }
 
@@ -338,9 +366,15 @@ export function buildStats(entries: MockEntry[]) {
 
   return {
     totalThoughts: entries.length,
-    averageWordsPerEntry: entries.length > 0
-      ? Math.round(entries.reduce((total, entry) => total + entry.content.split(/\s+/).length, 0) / entries.length)
-      : 0,
+    averageWordsPerEntry:
+      entries.length > 0
+        ? Math.round(
+            entries.reduce(
+              (total, entry) => total + entry.content.split(/\s+/).length,
+              0,
+            ) / entries.length,
+          )
+        : 0,
     averageReadingTimeMinutes: entries.length > 0 ? 1 : 0,
     uniqueTagsCount: Object.keys(thoughtsPerTag).length,
     thoughtsPerYear,
@@ -350,33 +384,36 @@ export function buildStats(entries: MockEntry[]) {
     tagsPerYear,
     tagsPerMonth: {},
     toneMoodAnalysis: null,
-    subjectAnalysis: entries.length > 0
-      ? {
-          subjectBreakdown: thoughtsPerTag,
-          analyzedEntries: entries.length,
-          summary: 'Recent entries focus on reflection, focus, and work.',
-        }
-      : null,
+    subjectAnalysis:
+      entries.length > 0
+        ? {
+            subjectBreakdown: thoughtsPerTag,
+            analyzedEntries: entries.length,
+            summary: "Recent entries focus on reflection, focus, and work.",
+          }
+        : null,
   };
 }
 
-export function createMockAppState(options: SetupMockAppOptions = {}): MockAppState {
+export function createMockAppState(
+  options: SetupMockAppOptions = {},
+): MockAppState {
   return {
     authenticated: options.startAuthenticated ?? false,
     user: {
       id: 1,
-      username: 'TestUser',
-      email: 'test@example.com',
-      fullName: 'Test User',
-      authProvider: 'local',
+      username: "TestUser",
+      email: "test@example.com",
+      fullName: "Test User",
+      authProvider: "local",
       emailVerified: false,
       twoFactorEnabled: false,
     },
     config: {
-      theme: 'dark',
-      language: 'en',
+      theme: "dark",
+      language: "en",
       entriesPerPage: 10,
-      autoTagMaxTags: '0',
+      autoTagMaxTags: "0",
       highContrast: false,
       readDates: true,
       ...options.config,
@@ -387,12 +424,16 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
     cloudStatus: options.cloudStatus || DEFAULT_CLOUD_STATUS,
     cloudSchedules: options.cloudSchedules || DEFAULT_CLOUD_SCHEDULES,
     cloudFiles: options.cloudFiles || DEFAULT_CLOUD_FILES,
-    featureRequests: DEFAULT_FEATURE_REQUESTS.map((request) => ({ ...request })),
+    featureRequests: DEFAULT_FEATURE_REQUESTS.map((request) => ({
+      ...request,
+    })),
     featureRequestVotes: [],
     bookVersions: [],
     nextEntryId:
-      (options.initialEntries?.reduce((maxId, entry) => Math.max(maxId, entry.id), 0) || 0) +
-      1,
+      (options.initialEntries?.reduce(
+        (maxId, entry) => Math.max(maxId, entry.id),
+        0,
+      ) || 0) + 1,
     lastLoginPayload: null,
     lastRegisterPayload: null,
     lastVerificationToken: null,
@@ -418,6 +459,8 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
     lastAiDuplicatePayload: null,
     lastAiSemanticSearchPayload: null,
     lastAiChatPayload: null,
+    personalOpenRouterKey: null,
+    lastOpenRouterKeyPayload: null,
     lastBulkPayload: null,
     lastReorderPayload: null,
     lastCloudFilesRequestUrl: null,

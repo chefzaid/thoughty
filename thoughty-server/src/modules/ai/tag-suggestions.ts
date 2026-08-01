@@ -1,5 +1,6 @@
 import { BadGatewayException } from '@nestjs/common';
 import type { TagSuggestionStyle } from './dto/suggest-tags.dto';
+import type { OpenRouterUsageReporter } from './ai-usage.service';
 
 interface RequestTagSuggestionsOptions {
   apiKey: string;
@@ -8,6 +9,7 @@ interface RequestTagSuggestionsOptions {
   existingTags: string[];
   maxTags: number;
   style: TagSuggestionStyle;
+  onUsage?: OpenRouterUsageReporter;
 }
 
 interface OpenRouterTagResponse {
@@ -61,6 +63,7 @@ export async function requestTagSuggestions({
   existingTags,
   maxTags,
   style,
+  onUsage,
 }: RequestTagSuggestionsOptions): Promise<string[]> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -99,6 +102,7 @@ export async function requestTagSuggestions({
   }
 
   const data = (await response.json()) as OpenRouterTagResponse;
+  await onUsage?.(data, model);
   return parseTags(data.choices?.[0]?.message?.content ?? '[]')
     .filter((tag) => !existingTags.some((existing) => existing.toLowerCase() === tag))
     .slice(0, maxTags);

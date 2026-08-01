@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@/modules/config';
 import { resolveAiModel } from './ai-model.util';
 import {
@@ -6,6 +6,8 @@ import {
   type PersonalityAssessment,
   type WritingProfile,
 } from './personality-analysis';
+import { AiUsageService } from './ai-usage.service';
+import { resolveOpenRouterCredential } from './openrouter-credential.util';
 
 interface OpenRouterResponse {
   choices?: Array<{ message?: { content?: string } }>;
@@ -13,18 +15,22 @@ interface OpenRouterResponse {
 
 @Injectable()
 export class AiPersonalityService {
-  private readonly apiKey = process.env.OPENROUTER_API_KEY || '';
   private readonly defaultModel = process.env.OPENROUTER_TAG_MODEL || 'openai/gpt-4o-mini';
   private readonly openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    @Optional() private readonly usageService?: AiUsageService,
+  ) {}
 
   async analyze(userId: number, profile: WritingProfile): Promise<PersonalityAssessment | null> {
-    if (!this.apiKey || profile.analyzedEntries === 0) {
+    if (profile.analyzedEntries === 0) {
       return null;
     }
 
     try {
+      const credential = await resolveOpenRouterCredential(this.configService, userId);
+      if (!credential) return null;
       const model = await resolveAiModel(
         this.configService,
         userId,
@@ -34,7 +40,7 @@ export class AiPersonalityService {
       const response = await fetch(this.openRouterUrl, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${credential.apiKey}`,
           'Content-Type': 'application/json',
           'X-Title': 'Thoughty',
         },
@@ -66,6 +72,7 @@ export class AiPersonalityService {
       }
 
       const data = (await response.json()) as OpenRouterResponse;
+      await this.usageService?.recordResponse(userId, credential.source, model, data);
       const rawContent = data.choices?.[0]?.message?.content?.trim();
       return rawContent ? parsePersonalityAssessment(rawContent) : null;
     } catch {

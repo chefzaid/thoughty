@@ -1,10 +1,12 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import { ConfigService } from '@/modules/config';
 import { resolveAiModel } from './ai-model.util';
 import { requestDuplicateGroups } from './duplicate-analysis';
+import { AiUsageService } from './ai-usage.service';
+import { resolveOpenRouterCredential } from './openrouter-credential.util';
 import {
   DuplicateEntryScanResponseDto,
   FindDuplicateEntriesDto,
@@ -16,12 +18,11 @@ const MAX_PREVIEW_LENGTH = 400;
 @Injectable()
 export class AiDuplicateService {
   private readonly defaultModel = process.env.OPENROUTER_TAG_MODEL || 'openai/gpt-4o-mini';
-  private readonly apiKey = process.env.OPENROUTER_API_KEY || '';
-
   constructor(
     private readonly configService: ConfigService,
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
+    @Optional() private readonly usageService?: AiUsageService,
   ) {}
 
   async findDuplicates(
@@ -44,7 +45,8 @@ export class AiDuplicateService {
     if (entries.length < 2) {
       return { ...baseResponse, groups: [] };
     }
-    if (!this.apiKey) {
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
 
@@ -54,7 +56,12 @@ export class AiDuplicateService {
       this.defaultModel,
       'openRouterToneModel',
     );
-    const groups = await requestDuplicateGroups({ apiKey: this.apiKey, model, entries });
+    const groups = await requestDuplicateGroups({
+      apiKey: credential.apiKey,
+      model,
+      entries,
+      onUsage: this.usageService?.reporter(userId, credential.source),
+    });
     const entriesById = new Map(entries.map((entry) => [entry.id, entry]));
 
     return {
@@ -65,14 +72,16 @@ export class AiDuplicateService {
         entries: group.entryIds.flatMap((entryId) => {
           const entry = entriesById.get(entryId);
           return entry
-            ? [{
-                id: entry.id,
-                date: entry.date,
-                index: entry.index,
-                diaryId: entry.diaryId,
-                content: entry.content.slice(0, MAX_PREVIEW_LENGTH),
-                tags: entry.tags,
-              }]
+            ? [
+                {
+                  id: entry.id,
+                  date: entry.date,
+                  index: entry.index,
+                  diaryId: entry.diaryId,
+                  content: entry.content.slice(0, MAX_PREVIEW_LENGTH),
+                  tags: entry.tags,
+                },
+              ]
             : [];
         }),
       })),

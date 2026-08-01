@@ -1,4 +1,5 @@
 import { BadGatewayException } from '@nestjs/common';
+import type { OpenRouterUsageReporter } from './ai-usage.service';
 
 interface DuplicateAnalysisEntry {
   id: number;
@@ -40,33 +41,34 @@ export function parseDuplicateGroups(
       if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
       const record = value as Record<string, unknown>;
       const entryIds = Array.isArray(record.entryIds)
-        ? [...new Set(record.entryIds.filter(
-            (id): id is number => Number.isInteger(id) && allowedEntryIds.has(id as number),
-          ))].slice(0, 3)
+        ? [
+            ...new Set(
+              record.entryIds.filter(
+                (id): id is number => Number.isInteger(id) && allowedEntryIds.has(id as number),
+              ),
+            ),
+          ].slice(0, 3)
         : [];
-      const confidence = typeof record.confidence === 'number'
-        ? Math.round(record.confidence)
-        : Number.NaN;
-      const reason = typeof record.reason === 'string'
-        ? record.reason.trim().slice(0, MAX_REASON_LENGTH)
-        : '';
+      const confidence =
+        typeof record.confidence === 'number' ? Math.round(record.confidence) : Number.NaN;
+      const reason =
+        typeof record.reason === 'string' ? record.reason.trim().slice(0, MAX_REASON_LENGTH) : '';
       const groupKey = [...entryIds].sort((left, right) => left - right).join(':');
 
       if (
-        entryIds.length < 2
-        || confidence < MIN_CONFIDENCE
-        || confidence > 100
-        || !reason
-        || seenGroups.has(groupKey)
-      ) continue;
+        entryIds.length < 2 ||
+        confidence < MIN_CONFIDENCE ||
+        confidence > 100 ||
+        !reason ||
+        seenGroups.has(groupKey)
+      )
+        continue;
 
       seenGroups.add(groupKey);
       groups.push({ entryIds, confidence, reason });
     }
 
-    return groups
-      .sort((left, right) => right.confidence - left.confidence)
-      .slice(0, MAX_GROUPS);
+    return groups.sort((left, right) => right.confidence - left.confidence).slice(0, MAX_GROUPS);
   } catch {
     return [];
   }
@@ -76,10 +78,12 @@ export async function requestDuplicateGroups({
   apiKey,
   model,
   entries,
+  onUsage,
 }: {
   apiKey: string;
   model: string;
   entries: DuplicateAnalysisEntry[];
+  onUsage?: OpenRouterUsageReporter;
 }): Promise<ParsedDuplicateGroup[]> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -119,6 +123,7 @@ export async function requestDuplicateGroups({
   }
 
   const data = (await response.json()) as OpenRouterResponse;
+  await onUsage?.(data, model);
   const rawContent = data.choices?.[0]?.message?.content ?? '';
   return parseDuplicateGroups(rawContent, new Set(entries.map((entry) => entry.id)));
 }

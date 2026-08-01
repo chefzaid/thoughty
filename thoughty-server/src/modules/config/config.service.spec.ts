@@ -12,6 +12,7 @@ describe('ConfigService', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       upsert: jest.fn(),
+      delete: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -100,14 +101,24 @@ describe('ConfigService', () => {
     });
 
     it('should handle custom settings not in defaults', async () => {
-      settingRepository.find.mockResolvedValue([
-        { key: 'customSetting', value: 'customValue' },
-      ]);
+      settingRepository.find.mockResolvedValue([{ key: 'customSetting', value: 'customValue' }]);
 
       const result = await service.getConfig(1);
 
       expect(result.customSetting).toBe('customValue');
       expect(result.theme).toBe('dark'); // default still present
+    });
+
+    it('never exposes encrypted credentials in general configuration', async () => {
+      settingRepository.find.mockResolvedValue([
+        { key: 'theme', value: 'light' },
+        { key: 'openRouterApiKey', value: 'encrypted-secret' },
+      ]);
+
+      const result = await service.getConfig(1);
+
+      expect(result.theme).toBe('light');
+      expect(result.openRouterApiKey).toBeUndefined();
     });
   });
 
@@ -156,6 +167,19 @@ describe('ConfigService', () => {
       expect(result.success).toBe(true);
       expect(settingRepository.upsert).not.toHaveBeenCalled();
     });
+
+    it('ignores attempts to write credentials through the general config endpoint', async () => {
+      await service.updateConfig(1, {
+        theme: 'light',
+        openRouterApiKey: 'plaintext-secret',
+      });
+
+      expect(settingRepository.upsert).toHaveBeenCalledTimes(1);
+      expect(settingRepository.upsert).toHaveBeenCalledWith(
+        { userId: 1, key: 'theme', value: 'light' },
+        ['userId', 'key'],
+      );
+    });
   });
 
   describe('getDecryptedConfig', () => {
@@ -164,6 +188,27 @@ describe('ConfigService', () => {
 
       const result = await service.getDecryptedConfig(1, 'openRouterModel');
       expect(result).toBe('');
+    });
+
+    it('encrypts sensitive values at rest and decrypts them on dedicated reads', async () => {
+      let storedValue = '';
+      settingRepository.upsert.mockImplementation(async (value: { value: string }) => {
+        storedValue = value.value;
+      });
+      settingRepository.findOne.mockImplementation(async () => ({ value: storedValue }));
+
+      await service.setEncryptedConfig(1, 'openRouterApiKey', 'sk-or-v1-personal-secret');
+
+      expect(storedValue).not.toContain('sk-or-v1-personal-secret');
+      await expect(service.getDecryptedConfig(1, 'openRouterApiKey')).resolves.toBe(
+        'sk-or-v1-personal-secret',
+      );
+    });
+
+    it('returns an empty value when encrypted data is corrupted', async () => {
+      settingRepository.findOne.mockResolvedValue({ value: 'not-valid-ciphertext' });
+
+      await expect(service.getDecryptedConfig(1, 'openRouterApiKey')).resolves.toBe('');
     });
   });
 });

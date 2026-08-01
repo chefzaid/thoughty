@@ -722,6 +722,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ai/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get personal OpenRouter credential status */
+        get: operations["AiController_getCredentialStatus"];
+        /** Validate and store a personal OpenRouter API key */
+        put: operations["AiController_saveCredential"];
+        post?: never;
+        /** Remove the personal OpenRouter API key */
+        delete: operations["AiController_removeCredential"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get personal OpenRouter token and cost usage */
+        get: operations["AiController_getUsage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/suggest-tags": {
         parameters: {
             query?: never;
@@ -2139,6 +2175,123 @@ export interface components {
         DeleteAllResponseDto: {
             success: boolean;
             deletedCount: number;
+        };
+        /**
+         * @example {
+         *       "hasPersonalKey": true,
+         *       "keyHint": "...0b855d",
+         *       "source": "personal",
+         *       "aiAvailable": true
+         *     }
+         */
+        OpenRouterCredentialStatusDto: {
+            hasPersonalKey: boolean;
+            /** @example ...0b855d */
+            keyHint?: Record<string, never> | null;
+            /** @enum {string} */
+            source: "personal" | "server" | "none";
+            aiAvailable: boolean;
+        };
+        /**
+         * @example {
+         *       "apiKey": "sk-or-v1-example-key-value"
+         *     }
+         */
+        SaveOpenRouterCredentialDto: {
+            /**
+             * @description Write-only OpenRouter API key
+             * @example sk-or-v1-example-key-value
+             */
+            apiKey: string;
+        };
+        /**
+         * @example {
+         *       "label": {
+         *         "example": "example"
+         *       },
+         *       "usage": 1,
+         *       "usageDaily": 1,
+         *       "usageWeekly": 1,
+         *       "usageMonthly": 6,
+         *       "limit": {
+         *         "example": "example"
+         *       },
+         *       "limitRemaining": {
+         *         "example": "example"
+         *       },
+         *       "limitReset": "daily",
+         *       "expiresAt": {
+         *         "example": "2026-06-24T10:00:00.000Z"
+         *       }
+         *     }
+         */
+        OpenRouterProviderUsageDto: {
+            label?: Record<string, never> | null;
+            usage: number;
+            usageDaily: number;
+            usageWeekly: number;
+            usageMonthly: number;
+            limit?: Record<string, never> | null;
+            limitRemaining?: Record<string, never> | null;
+            /** @enum {string|null} */
+            limitReset?: "daily" | "weekly" | "monthly" | null;
+            expiresAt?: Record<string, never> | null;
+        };
+        /**
+         * @example {
+         *       "promptTokens": 1,
+         *       "completionTokens": 1,
+         *       "reasoningTokens": 1,
+         *       "totalTokens": 1,
+         *       "cost": 1,
+         *       "requests": 1,
+         *       "periodDays": 1
+         *     }
+         */
+        ThoughtyAiUsageDto: {
+            promptTokens: number;
+            completionTokens: number;
+            reasoningTokens: number;
+            totalTokens: number;
+            cost: number;
+            requests: number;
+            periodDays: number;
+        };
+        /**
+         * @example {
+         *       "provider": {
+         *         "label": {
+         *           "example": "example"
+         *         },
+         *         "usage": 1,
+         *         "usageDaily": 1,
+         *         "usageWeekly": 1,
+         *         "usageMonthly": 6,
+         *         "limit": {
+         *           "example": "example"
+         *         },
+         *         "limitRemaining": {
+         *           "example": "example"
+         *         },
+         *         "limitReset": "daily",
+         *         "expiresAt": {
+         *           "example": "2026-06-24T10:00:00.000Z"
+         *         }
+         *       },
+         *       "thoughty": {
+         *         "promptTokens": 1,
+         *         "completionTokens": 1,
+         *         "reasoningTokens": 1,
+         *         "totalTokens": 1,
+         *         "cost": 1,
+         *         "requests": 1,
+         *         "periodDays": 1
+         *       }
+         *     }
+         */
+        OpenRouterUsageDashboardDto: {
+            provider: components["schemas"]["OpenRouterProviderUsageDto"];
+            thoughty: components["schemas"]["ThoughtyAiUsageDto"];
         };
         /**
          * @example {
@@ -4939,6 +5092,151 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    AiController_getCredentialStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personal OpenRouter credential status */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "hasPersonalKey": true,
+                     *       "keyHint": "...0b855d",
+                     *       "source": "personal",
+                     *       "aiAvailable": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OpenRouterCredentialStatusDto"];
+                };
+            };
+        };
+    };
+    AiController_saveCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "apiKey": "sk-or-v1-example-key-value"
+                 *     }
+                 */
+                "application/json": components["schemas"]["SaveOpenRouterCredentialDto"];
+            };
+        };
+        responses: {
+            /** @description Personal OpenRouter credential validated and stored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "hasPersonalKey": true,
+                     *       "keyHint": "...0b855d",
+                     *       "source": "personal",
+                     *       "aiAvailable": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OpenRouterCredentialStatusDto"];
+                };
+            };
+        };
+    };
+    AiController_removeCredential: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personal OpenRouter credential removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "hasPersonalKey": true,
+                     *       "keyHint": "...0b855d",
+                     *       "source": "personal",
+                     *       "aiAvailable": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OpenRouterCredentialStatusDto"];
+                };
+            };
+        };
+    };
+    AiController_getUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Personal token and cost usage */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "provider": {
+                     *         "label": {
+                     *           "example": "example"
+                     *         },
+                     *         "usage": 1,
+                     *         "usageDaily": 1,
+                     *         "usageWeekly": 1,
+                     *         "usageMonthly": 6,
+                     *         "limit": {
+                     *           "example": "example"
+                     *         },
+                     *         "limitRemaining": {
+                     *           "example": "example"
+                     *         },
+                     *         "limitReset": "daily",
+                     *         "expiresAt": {
+                     *           "example": "2026-06-24T10:00:00.000Z"
+                     *         }
+                     *       },
+                     *       "thoughty": {
+                     *         "promptTokens": 1,
+                     *         "completionTokens": 1,
+                     *         "reasoningTokens": 1,
+                     *         "totalTokens": 1,
+                     *         "cost": 1,
+                     *         "requests": 1,
+                     *         "periodDays": 1
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["OpenRouterUsageDashboardDto"];
+                };
             };
         };
     };

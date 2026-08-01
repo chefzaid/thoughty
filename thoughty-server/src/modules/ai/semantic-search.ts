@@ -1,4 +1,5 @@
 import { BadGatewayException } from '@nestjs/common';
+import type { OpenRouterUsageReporter } from './ai-usage.service';
 
 interface EmbeddingResponseItem {
   index?: number;
@@ -32,10 +33,10 @@ export function parseEmbeddingResponse(
       throw new BadGatewayException('OpenRouter returned an invalid embedding index');
     }
     if (
-      !Array.isArray(item.embedding)
-      || item.embedding.length === 0
-      || item.embedding.length > MAX_VECTOR_DIMENSIONS
-      || item.embedding.some((value) => typeof value !== 'number' || !Number.isFinite(value))
+      !Array.isArray(item.embedding) ||
+      item.embedding.length === 0 ||
+      item.embedding.length > MAX_VECTOR_DIMENSIONS ||
+      item.embedding.some((value) => typeof value !== 'number' || !Number.isFinite(value))
     ) {
       throw new BadGatewayException('OpenRouter returned an invalid embedding vector');
     }
@@ -89,10 +90,12 @@ export async function requestEmbeddings({
   apiKey,
   model,
   input,
+  onUsage,
 }: {
   apiKey: string;
   model: string;
   input: string[];
+  onUsage?: OpenRouterUsageReporter;
 }): Promise<number[][]> {
   const response = await fetch('https://openrouter.ai/api/v1/embeddings', {
     method: 'POST',
@@ -108,5 +111,7 @@ export async function requestEmbeddings({
     throw new BadGatewayException('OpenRouter embedding request failed');
   }
 
-  return parseEmbeddingResponse(await response.json() as EmbeddingResponse, input.length);
+  const data = (await response.json()) as EmbeddingResponse;
+  await onUsage?.(data, model);
+  return parseEmbeddingResponse(data, input.length);
 }

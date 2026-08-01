@@ -1,27 +1,33 @@
-import type { Page } from '@playwright/test';
+import type { Page } from "@playwright/test";
 import {
   buildExportBody,
   DEFAULT_FORMAT_CONFIG,
   parseImportedEntries,
   sortEntries,
   type MockAppState,
-} from './mockApp.shared';
-import { fulfillJson, type RouteContext } from './mockApp.route-utils';
-import { handleCloudSyncRoutes } from './mockApp.routes.cloud-sync';
-import { handleEntriesRoutes } from './mockApp.routes.entries';
-import { handleReferenceRoutes } from './mockApp.routes.reference';
+} from "./mockApp.shared";
+import { fulfillJson, type RouteContext } from "./mockApp.route-utils";
+import { handleCloudSyncRoutes } from "./mockApp.routes.cloud-sync";
+import { handleAiCredentialRoutes } from "./mockApp.routes.ai-credentials";
+import { handleEntriesRoutes } from "./mockApp.routes.entries";
+import { handleReferenceRoutes } from "./mockApp.routes.reference";
 
-async function handleAuthRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
-  if (pathname === '/api/auth/two-factor/status') {
+async function handleAuthRoutes({
+  route,
+  request,
+  pathname,
+  state,
+}: RouteContext): Promise<boolean> {
+  if (pathname === "/api/auth/two-factor/status") {
     await fulfillJson(route, {
       enabled: Boolean(state.user.twoFactorEnabled),
-      available: state.user.authProvider === 'local',
+      available: state.user.authProvider === "local",
       emailVerified: Boolean(state.user.emailVerified),
     });
     return true;
   }
 
-  if (pathname === '/api/auth/two-factor/setup') {
+  if (pathname === "/api/auth/two-factor/setup") {
     state.twoFactorSetupCount += 1;
     state.twoFactorChallengeToken = `setup-challenge-${state.twoFactorSetupCount}`;
     await fulfillJson(route, {
@@ -32,11 +38,21 @@ async function handleAuthRoutes({ route, request, pathname, state }: RouteContex
     return true;
   }
 
-  if (pathname === '/api/auth/two-factor/enable') {
-    const payload = request.postDataJSON() as { challengeToken?: string; code?: string };
+  if (pathname === "/api/auth/two-factor/enable") {
+    const payload = request.postDataJSON() as {
+      challengeToken?: string;
+      code?: string;
+    };
     state.lastTwoFactorCode = payload.code ?? null;
-    if (payload.challengeToken !== state.twoFactorChallengeToken || payload.code !== '123456') {
-      await fulfillJson(route, { message: 'Invalid verification code' }, { status: 401 });
+    if (
+      payload.challengeToken !== state.twoFactorChallengeToken ||
+      payload.code !== "123456"
+    ) {
+      await fulfillJson(
+        route,
+        { message: "Invalid verification code" },
+        { status: 401 },
+      );
       return true;
     }
     state.user.twoFactorEnabled = true;
@@ -45,30 +61,40 @@ async function handleAuthRoutes({ route, request, pathname, state }: RouteContex
     return true;
   }
 
-  if (pathname === '/api/auth/two-factor/disable') {
+  if (pathname === "/api/auth/two-factor/disable") {
     state.user.twoFactorEnabled = false;
     await fulfillJson(route, { success: true });
     return true;
   }
 
-  if (pathname === '/api/auth/two-factor/verify') {
-    const payload = request.postDataJSON() as { challengeToken?: string; code?: string };
+  if (pathname === "/api/auth/two-factor/verify") {
+    const payload = request.postDataJSON() as {
+      challengeToken?: string;
+      code?: string;
+    };
     state.lastTwoFactorCode = payload.code ?? null;
-    if (payload.challengeToken !== state.twoFactorChallengeToken || payload.code !== '123456') {
-      await fulfillJson(route, { message: 'Invalid verification code' }, { status: 401 });
+    if (
+      payload.challengeToken !== state.twoFactorChallengeToken ||
+      payload.code !== "123456"
+    ) {
+      await fulfillJson(
+        route,
+        { message: "Invalid verification code" },
+        { status: 401 },
+      );
       return true;
     }
     state.authenticated = true;
     state.twoFactorChallengeToken = null;
     await fulfillJson(route, {
-      accessToken: 'test-access-token',
-      refreshToken: 'test-refresh-token',
+      accessToken: "test-access-token",
+      refreshToken: "test-refresh-token",
       user: state.user,
     });
     return true;
   }
 
-  if (pathname === '/api/auth/two-factor/resend') {
+  if (pathname === "/api/auth/two-factor/resend") {
     state.twoFactorSetupCount += 1;
     state.twoFactorChallengeToken = `challenge-${state.twoFactorSetupCount}`;
     await fulfillJson(route, {
@@ -79,26 +105,36 @@ async function handleAuthRoutes({ route, request, pathname, state }: RouteContex
     return true;
   }
 
-  if (pathname === '/api/auth/verify-email') {
+  if (pathname === "/api/auth/verify-email") {
     const payload = request.postDataJSON() as { token?: string };
     state.lastVerificationToken = payload.token ?? null;
-    if (!payload.token || payload.token === 'expired-token') {
-      await fulfillJson(route, { message: 'Invalid or expired verification token' }, { status: 400 });
+    if (!payload.token || payload.token === "expired-token") {
+      await fulfillJson(
+        route,
+        { message: "Invalid or expired verification token" },
+        { status: 400 },
+      );
       return true;
     }
 
     state.user.emailVerified = true;
-    await fulfillJson(route, { success: true, message: 'Email verified successfully' });
+    await fulfillJson(route, {
+      success: true,
+      message: "Email verified successfully",
+    });
     return true;
   }
 
-  if (pathname === '/api/auth/resend-verification-email') {
+  if (pathname === "/api/auth/resend-verification-email") {
     state.verificationResendCount += 1;
-    await fulfillJson(route, { success: true, message: 'Verification email sent' });
+    await fulfillJson(route, {
+      success: true,
+      message: "Verification email sent",
+    });
     return true;
   }
 
-  if (pathname === '/api/auth/register') {
+  if (pathname === "/api/auth/register") {
     const payload = request.postDataJSON() as {
       email?: string;
       username?: string;
@@ -107,25 +143,25 @@ async function handleAuthRoutes({ route, request, pathname, state }: RouteContex
     state.authenticated = true;
     state.user = {
       id: 1,
-      username: payload.username || 'NewUser',
-      email: payload.email || 'new@example.com',
-      fullName: payload.username || 'NewUser',
-      authProvider: 'local',
+      username: payload.username || "NewUser",
+      email: payload.email || "new@example.com",
+      fullName: payload.username || "NewUser",
+      authProvider: "local",
       emailVerified: false,
     };
 
     await fulfillJson(route, {
-      accessToken: 'test-access-token',
-      refreshToken: 'test-refresh-token',
+      accessToken: "test-access-token",
+      refreshToken: "test-refresh-token",
       user: state.user,
     });
     return true;
   }
 
-  if (pathname === '/api/auth/login') {
+  if (pathname === "/api/auth/login") {
     state.lastLoginPayload = request.postDataJSON();
     if (state.user.twoFactorEnabled) {
-      state.twoFactorChallengeToken = 'login-challenge';
+      state.twoFactorChallengeToken = "login-challenge";
       await fulfillJson(route, {
         twoFactorRequired: true,
         challengeToken: state.twoFactorChallengeToken,
@@ -136,16 +172,16 @@ async function handleAuthRoutes({ route, request, pathname, state }: RouteContex
     state.authenticated = true;
 
     await fulfillJson(route, {
-      accessToken: 'test-access-token',
-      refreshToken: 'test-refresh-token',
+      accessToken: "test-access-token",
+      refreshToken: "test-refresh-token",
       user: state.user,
     });
     return true;
   }
 
-  if (pathname === '/api/auth/me') {
+  if (pathname === "/api/auth/me") {
     if (!state.authenticated) {
-      await fulfillJson(route, { error: 'Unauthorized' }, { status: 401 });
+      await fulfillJson(route, { error: "Unauthorized" }, { status: 401 });
       return true;
     }
 
@@ -156,9 +192,14 @@ async function handleAuthRoutes({ route, request, pathname, state }: RouteContex
   return false;
 }
 
-async function handleConfigRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
-  if (pathname === '/api/config') {
-    if (request.method() === 'POST') {
+async function handleConfigRoutes({
+  route,
+  request,
+  pathname,
+  state,
+}: RouteContext): Promise<boolean> {
+  if (pathname === "/api/config") {
+    if (request.method() === "POST") {
       state.config = {
         ...state.config,
         ...(request.postDataJSON() as Record<string, unknown>),
@@ -169,7 +210,7 @@ async function handleConfigRoutes({ route, request, pathname, state }: RouteCont
     return true;
   }
 
-  if (pathname === '/api/config/profile-stats') {
+  if (pathname === "/api/config/profile-stats") {
     const years = state.entries.map((entry) => Number(entry.date.slice(0, 4)));
 
     await fulfillJson(route, {
@@ -189,22 +230,25 @@ async function handleFeatureRequestRoutes({
   pathname,
   state,
 }: RouteContext): Promise<boolean> {
-  if (pathname === '/api/feature-requests/votes') {
+  if (pathname === "/api/feature-requests/votes") {
     await fulfillJson(route, { requestIds: state.featureRequestVotes });
     return true;
   }
 
-  if (pathname === '/api/feature-requests') {
-    if (request.method() === 'POST') {
-      const payload = request.postDataJSON() as { title: string; details: string };
+  if (pathname === "/api/feature-requests") {
+    if (request.method() === "POST") {
+      const payload = request.postDataJSON() as {
+        title: string;
+        details: string;
+      };
       state.lastFeatureRequestPayload = payload;
       const featureRequest = {
         id: Math.max(0, ...state.featureRequests.map((idea) => idea.id)) + 1,
         title: payload.title,
         details: payload.details,
-        status: 'open' as const,
+        status: "open" as const,
         votes: 1,
-        createdAt: '2026-07-23T19:30:00.000Z',
+        createdAt: "2026-07-23T19:30:00.000Z",
       };
       state.featureRequests.push(featureRequest);
       state.featureRequestVotes.push(featureRequest.id);
@@ -221,11 +265,17 @@ async function handleFeatureRequestRoutes({
   }
 
   const voteMatch = /^\/api\/feature-requests\/(\d+)\/vote$/.exec(pathname);
-  if (voteMatch && request.method() === 'POST') {
+  if (voteMatch && request.method() === "POST") {
     const requestId = Number(voteMatch[1]);
-    const featureRequest = state.featureRequests.find((idea) => idea.id === requestId);
+    const featureRequest = state.featureRequests.find(
+      (idea) => idea.id === requestId,
+    );
     if (!featureRequest) {
-      await fulfillJson(route, { message: 'Feature request not found' }, { status: 404 });
+      await fulfillJson(
+        route,
+        { message: "Feature request not found" },
+        { status: 404 },
+      );
       return true;
     }
     if (!state.featureRequestVotes.includes(requestId)) {
@@ -243,9 +293,16 @@ async function handleFeatureRequestRoutes({
   return false;
 }
 
-async function handleIoRoutes({ route, request, url, pathname, searchParams, state }: RouteContext): Promise<boolean> {
-  if (pathname === '/api/io/format') {
-    if (request.method() === 'POST') {
+async function handleIoRoutes({
+  route,
+  request,
+  url,
+  pathname,
+  searchParams,
+  state,
+}: RouteContext): Promise<boolean> {
+  if (pathname === "/api/io/format") {
+    if (request.method() === "POST") {
       state.lastFormatPayload = request.postDataJSON();
     }
 
@@ -253,7 +310,7 @@ async function handleIoRoutes({ route, request, url, pathname, searchParams, sta
     return true;
   }
 
-  if (pathname === '/api/io/preview') {
+  if (pathname === "/api/io/preview") {
     const payload = request.postDataJSON() as { content: string };
     state.lastPreviewPayload = payload;
     const importedEntries = parseImportedEntries(payload.content);
@@ -265,21 +322,26 @@ async function handleIoRoutes({ route, request, url, pathname, searchParams, sta
     return true;
   }
 
-  if (pathname === '/api/io/import') {
-    const payload = request.postDataJSON() as { content: string; diaryId?: number | null };
+  if (pathname === "/api/io/import") {
+    const payload = request.postDataJSON() as {
+      content: string;
+      diaryId?: number | null;
+    };
     state.lastImportPayload = payload;
     const importedEntries = parseImportedEntries(payload.content);
 
     for (const imported of importedEntries) {
-      const sameDayEntries = state.entries.filter((entry) => entry.date === imported.date);
+      const sameDayEntries = state.entries.filter(
+        (entry) => entry.date === imported.date,
+      );
       state.entries.push({
         id: state.nextEntryId++,
         date: imported.date,
         index: sameDayEntries.length + 1,
         content: imported.content,
         tags: imported.tags,
-        visibility: imported.visibility || 'private',
-        format: imported.format || 'plain',
+        visibility: imported.visibility || "private",
+        format: imported.format || "plain",
         diaryId: payload.diaryId ?? 1,
       });
     }
@@ -294,18 +356,18 @@ async function handleIoRoutes({ route, request, url, pathname, searchParams, sta
     return true;
   }
 
-  if (pathname === '/api/io/export') {
+  if (pathname === "/api/io/export") {
     state.lastExportRequestUrl = url;
     const { body, contentType, extension } = buildExportBody(
       state.entries,
-      searchParams.get('format'),
+      searchParams.get("format"),
     );
 
     await route.fulfill({
       status: 200,
       contentType,
       headers: {
-        'Content-Disposition': `attachment; filename="thoughty_export_2026-04-18.${extension}"`,
+        "Content-Disposition": `attachment; filename="thoughty_export_2026-04-18.${extension}"`,
       },
       body,
     });
@@ -315,17 +377,24 @@ async function handleIoRoutes({ route, request, url, pathname, searchParams, sta
   return false;
 }
 
-async function handleBookRoutes({ route, request, url, pathname, state }: RouteContext): Promise<boolean> {
-  if (pathname === '/api/books/versions' && request.method() === 'GET') {
+async function handleBookRoutes({
+  route,
+  request,
+  url,
+  pathname,
+  state,
+}: RouteContext): Promise<boolean> {
+  if (pathname === "/api/books/versions" && request.method() === "GET") {
     await fulfillJson(route, state.bookVersions);
     return true;
   }
 
-  if (pathname === '/api/books/versions' && request.method() === 'POST') {
+  if (pathname === "/api/books/versions" && request.method() === "POST") {
     state.lastBookVersionRequestUrl = url;
     const versionNumber = state.bookVersions.length + 1;
-    const format = (url.searchParams.get('format') || 'pdf') as 'pdf' | 'epub' | 'html' | 'md';
-    const title = url.searchParams.get('title') || 'Personal';
+    const format = (url.searchParams.get("format") || "pdf") as
+      "pdf" | "epub" | "html" | "md";
+    const title = url.searchParams.get("title") || "Personal";
     const version = {
       id: 100 + versionNumber,
       versionNumber,
@@ -335,35 +404,43 @@ async function handleBookRoutes({ route, request, url, pathname, state }: RouteC
       chapterCount: 2,
       entryCount: 3,
       addedEntryCount: versionNumber === 1 ? 3 : 1,
-      addedChapterTitles: versionNumber === 1 ? ['ideas', 'work'] : ['work'],
-      createdAt: '2026-08-01T12:00:00.000Z',
+      addedChapterTitles: versionNumber === 1 ? ["ideas", "work"] : ["work"],
+      createdAt: "2026-08-01T12:00:00.000Z",
     };
     state.bookVersions.unshift(version);
     await fulfillJson(route, version, { status: 201 });
     return true;
   }
 
-  const versionDownload = pathname.match(/^\/api\/books\/versions\/(\d+)\/download$/);
-  if (versionDownload && request.method() === 'GET') {
+  const versionDownload = pathname.match(
+    /^\/api\/books\/versions\/(\d+)\/download$/,
+  );
+  if (versionDownload && request.method() === "GET") {
     state.lastBookVersionDownloadId = Number(versionDownload[1]);
     await route.fulfill({
       status: 200,
-      contentType: 'application/pdf',
-      headers: { 'Content-Disposition': 'attachment; filename="saved-book-v1.pdf"' },
-      body: '%PDF- saved version',
+      contentType: "application/pdf",
+      headers: {
+        "Content-Disposition": 'attachment; filename="saved-book-v1.pdf"',
+      },
+      body: "%PDF- saved version",
     });
     return true;
   }
 
-  if (pathname === '/api/books/upload' && request.method() === 'POST') {
+  if (pathname === "/api/books/upload" && request.method() === "POST") {
     state.lastBookUploadRequestUrl = url;
     state.lastBookUploadRequestBody = request.postData();
-    await fulfillJson(route, {
-      id: 'cloud-book-1',
-      name: `thoughty_book_${url.searchParams.get('title') || 'book'}.${url.searchParams.get('format') || 'pdf'}`,
-      size: 4096,
-      modifiedAt: '2026-07-23T12:00:00.000Z',
-    }, { status: 201 });
+    await fulfillJson(
+      route,
+      {
+        id: "cloud-book-1",
+        name: `thoughty_book_${url.searchParams.get("title") || "book"}.${url.searchParams.get("format") || "pdf"}`,
+        size: 4096,
+        modifiedAt: "2026-07-23T12:00:00.000Z",
+      },
+      { status: 201 },
+    );
     return true;
   }
 
@@ -371,7 +448,7 @@ async function handleBookRoutes({ route, request, url, pathname, state }: RouteC
 }
 
 export async function registerMockAppRoutes(page: Page, state: MockAppState) {
-  await page.route('http://localhost:5173/api/**', async (route) => {
+  await page.route("http://localhost:5173/api/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     const context: RouteContext = {
@@ -387,6 +464,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     if (await handleConfigRoutes(context)) {
+      return;
+    }
+    if (await handleAiCredentialRoutes(context)) {
       return;
     }
     if (await handleFeatureRequestRoutes(context)) {

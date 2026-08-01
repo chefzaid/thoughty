@@ -1,4 +1,5 @@
 import { BadGatewayException } from '@nestjs/common';
+import type { OpenRouterUsageReporter } from './ai-usage.service';
 
 interface WritingPromptHistoryItem {
   date: string;
@@ -10,6 +11,7 @@ interface RequestWritingPromptsOptions {
   apiKey: string;
   model: string;
   history: WritingPromptHistoryItem[];
+  onUsage?: OpenRouterUsageReporter;
 }
 
 interface OpenRouterWritingPromptsResponse {
@@ -48,6 +50,7 @@ export async function requestWritingPrompts({
   apiKey,
   model,
   history,
+  onUsage,
 }: RequestWritingPromptsOptions): Promise<string[]> {
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
@@ -84,6 +87,7 @@ export async function requestWritingPrompts({
   }
 
   const data = (await response.json()) as OpenRouterWritingPromptsResponse;
+  await onUsage?.(data, model);
   const prompts = parseWritingPrompts(data.choices?.[0]?.message?.content ?? '');
 
   if (prompts.length === 0) {

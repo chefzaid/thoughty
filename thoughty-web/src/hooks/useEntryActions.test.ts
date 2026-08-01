@@ -1,32 +1,101 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { act, waitFor } from '@testing-library/react';
-import { renderHook } from './hookTestUtils';
-import { useBulkSelect, useDeleteModal, useEntryEdit, useEntryForm } from './useEntryActions';
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { act, waitFor } from "@testing-library/react";
+import { renderHook } from "./hookTestUtils";
+import {
+  useBulkSelect,
+  useDeleteModal,
+  useEntryEdit,
+  useEntryForm,
+} from "./useEntryActions";
 
 const mockAuthFetch = vi.fn();
-const mockGetAccessToken = vi.fn(() => 'test-token');
+const mockGetAccessToken = vi.fn(() => "test-token");
 
-vi.mock('../contexts/AuthContext', () => ({
+vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({
     authFetch: mockAuthFetch,
     getAccessToken: mockGetAccessToken,
   }),
 }));
 
-vi.mock('../services/api', () => ({
+vi.mock("../services/api", () => ({
   createAuthFetch: vi.fn((authFetch) => authFetch),
-  createConfigService: vi.fn(() => ({ fetchConfig: vi.fn(), fetchProfileStats: vi.fn(), updateConfig: vi.fn(), downloadUserData: vi.fn() })),
-  createEntriesService: vi.fn(() => ({ fetchEntries: vi.fn(), fetchEntryDates: vi.fn(), fetchYearsMonths: vi.fn(), createEntry: vi.fn(), updateEntry: vi.fn(), deleteEntry: vi.fn(), toggleVisibility: vi.fn(), bulkOperation: vi.fn(), navigateToFirst: vi.fn(), navigateByDate: vi.fn(), navigateById: vi.fn(), toggleFavorite: vi.fn(), toggleArchived: vi.fn(), togglePinned: vi.fn(), fetchEntryHistory: vi.fn(), fetchEntryBacklinks: vi.fn(), deleteRevision: vi.fn(), reorderEntries: vi.fn(), renameTag: vi.fn() })),
-  createDiariesService: vi.fn(() => ({ fetchDiaries: vi.fn(), createDiary: vi.fn(), updateDiary: vi.fn(), deleteDiary: vi.fn(), setDefaultDiary: vi.fn(), reorderDiaries: vi.fn() })),
-  createAttachmentsService: vi.fn(() => ({ uploadAttachment: vi.fn(), linkAttachment: vi.fn(), deleteAttachment: vi.fn() })),
-  createAiService: vi.fn(() => ({ suggestTags: vi.fn(), fixWriting: vi.fn(), summarizeEntry: vi.fn(), generateWritingPrompts: vi.fn(), findDuplicateEntries: vi.fn(), semanticSearch: vi.fn(), chat: vi.fn(), getChatHistory: vi.fn(), fetchModels: vi.fn() })),
-  createCloudSyncService: vi.fn(() => ({ getStatus: vi.fn(), getAuthUrl: vi.fn(), connect: vi.fn(), disconnect: vi.fn(), listFiles: vi.fn(), uploadExport: vi.fn(), downloadFile: vi.fn(), getSchedules: vi.fn(), setSchedule: vi.fn(), deleteSchedule: vi.fn(), triggerSync: vi.fn() })),
+  createConfigService: vi.fn(() => ({
+    fetchConfig: vi.fn(),
+    fetchProfileStats: vi.fn(),
+    updateConfig: vi.fn(),
+    downloadUserData: vi.fn(),
+  })),
+  createEntriesService: vi.fn(() => ({
+    fetchEntries: vi.fn(),
+    fetchEntryDates: vi.fn(),
+    fetchYearsMonths: vi.fn(),
+    createEntry: vi.fn(),
+    updateEntry: vi.fn(),
+    deleteEntry: vi.fn(),
+    toggleVisibility: vi.fn(),
+    bulkOperation: vi.fn(),
+    navigateToFirst: vi.fn(),
+    navigateByDate: vi.fn(),
+    navigateById: vi.fn(),
+    toggleFavorite: vi.fn(),
+    toggleArchived: vi.fn(),
+    togglePinned: vi.fn(),
+    fetchEntryHistory: vi.fn(),
+    fetchEntryBacklinks: vi.fn(),
+    deleteRevision: vi.fn(),
+    reorderEntries: vi.fn(),
+    renameTag: vi.fn(),
+  })),
+  createDiariesService: vi.fn(() => ({
+    fetchDiaries: vi.fn(),
+    createDiary: vi.fn(),
+    updateDiary: vi.fn(),
+    deleteDiary: vi.fn(),
+    setDefaultDiary: vi.fn(),
+    reorderDiaries: vi.fn(),
+  })),
+  createAttachmentsService: vi.fn(() => ({
+    uploadAttachment: vi.fn(),
+    linkAttachment: vi.fn(),
+    deleteAttachment: vi.fn(),
+  })),
+  createAiService: vi.fn(() => ({
+    suggestTags: vi.fn(),
+    fixWriting: vi.fn(),
+    summarizeEntry: vi.fn(),
+    generateWritingPrompts: vi.fn(),
+    findDuplicateEntries: vi.fn(),
+    semanticSearch: vi.fn(),
+    chat: vi.fn(),
+    getChatHistory: vi.fn(),
+    fetchModels: vi.fn(),
+    getCredentialStatus: vi.fn(),
+    updateCredential: vi.fn(),
+    removeCredential: vi.fn(),
+    getUsageDashboard: vi.fn(),
+  })),
+  createCloudSyncService: vi.fn(() => ({
+    getStatus: vi.fn(),
+    getAuthUrl: vi.fn(),
+    connect: vi.fn(),
+    disconnect: vi.fn(),
+    listFiles: vi.fn(),
+    uploadExport: vi.fn(),
+    downloadFile: vi.fn(),
+    getSchedules: vi.fn(),
+    setSchedule: vi.fn(),
+    deleteSchedule: vi.fn(),
+    triggerSync: vi.fn(),
+  })),
 }));
 
 globalThis.alert = vi.fn();
 
-const createEntriesServiceMock = async (overrides: Record<string, unknown> = {}) => {
-  const { createEntriesService } = await import('../services/api');
+const createEntriesServiceMock = async (
+  overrides: Record<string, unknown> = {},
+) => {
+  const { createEntriesService } = await import("../services/api");
   vi.mocked(createEntriesService).mockReturnValue({
     fetchEntries: vi.fn(),
     fetchEntryDates: vi.fn(),
@@ -52,7 +121,7 @@ const createEntriesServiceMock = async (overrides: Record<string, unknown> = {})
 };
 
 const createAiServiceMock = async (overrides: Record<string, unknown> = {}) => {
-  const { createAiService } = await import('../services/api');
+  const { createAiService } = await import("../services/api");
   vi.mocked(createAiService).mockReturnValue({
     suggestTags: vi.fn(),
     fixWriting: vi.fn(),
@@ -63,11 +132,15 @@ const createAiServiceMock = async (overrides: Record<string, unknown> = {}) => {
     chat: vi.fn(),
     getChatHistory: vi.fn(),
     fetchModels: vi.fn(),
+    getCredentialStatus: vi.fn(),
+    updateCredential: vi.fn(),
+    removeCredential: vi.fn(),
+    getUsageDashboard: vi.fn(),
     ...overrides,
   });
 };
 
-describe('useEntryActions', () => {
+describe("useEntryActions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -76,104 +149,136 @@ describe('useEntryActions', () => {
     vi.restoreAllMocks();
   });
 
-  describe('useEntryForm', () => {
-    const mockConfig = { defaultVisibility: 'private' as const, autoTagMaxTags: '0' };
+  describe("useEntryForm", () => {
+    const mockConfig = {
+      defaultVisibility: "private" as const,
+      autoTagMaxTags: "0",
+    };
     const mockOnSuccess = vi.fn();
     const mockEvent = { preventDefault: vi.fn() };
 
-    it('initializes with default state', () => {
-      const { result } = renderHook(() => useEntryForm(mockConfig, 1, mockOnSuccess));
+    it("initializes with default state", () => {
+      const { result } = renderHook(() =>
+        useEntryForm(mockConfig, 1, mockOnSuccess),
+      );
 
-      expect(result.current.newEntryText).toBe('');
+      expect(result.current.newEntryText).toBe("");
       expect(result.current.tags).toEqual([]);
-      expect(result.current.formError).toBe('');
+      expect(result.current.formError).toBe("");
     });
 
-    it('sets default visibility from config', async () => {
-      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'public' }, 1, mockOnSuccess));
+    it("sets default visibility from config", async () => {
+      const { result } = renderHook(() =>
+        useEntryForm({ defaultVisibility: "public" }, 1, mockOnSuccess),
+      );
 
       await waitFor(() => {
-        expect(result.current.visibility).toBe('public');
+        expect(result.current.visibility).toBe("public");
       });
     });
 
-    it('provides setters for text, tags, date, and visibility', () => {
-      const { result } = renderHook(() => useEntryForm(mockConfig, 1, mockOnSuccess));
-      const newDate = new Date('2024-06-15');
+    it("provides setters for text, tags, date, and visibility", () => {
+      const { result } = renderHook(() =>
+        useEntryForm(mockConfig, 1, mockOnSuccess),
+      );
+      const newDate = new Date("2024-06-15");
 
       act(() => {
-        result.current.setNewEntryText('Test entry');
-        result.current.setTags(['tag1', 'tag2']);
+        result.current.setNewEntryText("Test entry");
+        result.current.setTags(["tag1", "tag2"]);
         result.current.setSelectedDate(newDate);
-        result.current.setVisibility('public');
+        result.current.setVisibility("public");
       });
 
-      expect(result.current.newEntryText).toBe('Test entry');
-      expect(result.current.tags).toEqual(['tag1', 'tag2']);
+      expect(result.current.newEntryText).toBe("Test entry");
+      expect(result.current.tags).toEqual(["tag1", "tag2"]);
       expect(result.current.selectedDate).toEqual(newDate);
-      expect(result.current.visibility).toBe('public');
+      expect(result.current.visibility).toBe("public");
     });
 
-    it('handleSubmit sets error when text is empty', async () => {
-      const { result } = renderHook(() => useEntryForm(mockConfig, 1, mockOnSuccess));
+    it("handleSubmit sets error when text is empty", async () => {
+      const { result } = renderHook(() =>
+        useEntryForm(mockConfig, 1, mockOnSuccess),
+      );
 
       await act(async () => {
         await result.current.handleSubmit(mockEvent);
       });
 
-      expect(result.current.formError).toBe('Please enter some text');
+      expect(result.current.formError).toBe("Please enter some text");
     });
 
-    it('handleSubmit sets error when no tags', async () => {
-      const { result } = renderHook(() => useEntryForm(mockConfig, 1, mockOnSuccess));
+    it("handleSubmit sets error when no tags", async () => {
+      const { result } = renderHook(() =>
+        useEntryForm(mockConfig, 1, mockOnSuccess),
+      );
 
       act(() => {
-        result.current.setNewEntryText('Test content');
+        result.current.setNewEntryText("Test content");
       });
 
       await act(async () => {
         await result.current.handleSubmit(mockEvent);
       });
 
-      expect(result.current.formError).toBe('Please add at least one tag');
+      expect(result.current.formError).toBe("Please add at least one tag");
     });
 
-    it('handleSubmit allows empty tags when automatic tagging is enabled', async () => {
-      await createEntriesServiceMock({ createEntry: vi.fn().mockResolvedValue({ success: true, entryId: 42 }) });
-      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', autoTagMaxTags: '3' }, 1, mockOnSuccess));
+    it("handleSubmit allows empty tags when automatic tagging is enabled", async () => {
+      await createEntriesServiceMock({
+        createEntry: vi.fn().mockResolvedValue({ success: true, entryId: 42 }),
+      });
+      const { result } = renderHook(() =>
+        useEntryForm(
+          { defaultVisibility: "private", autoTagMaxTags: "3" },
+          1,
+          mockOnSuccess,
+        ),
+      );
 
       act(() => {
-        result.current.setNewEntryText('Auto-tag this draft');
+        result.current.setNewEntryText("Auto-tag this draft");
       });
 
       await act(async () => {
         await result.current.handleSubmit(mockEvent);
       });
 
-      expect(result.current.formError).toBe('');
+      expect(result.current.formError).toBe("");
     });
 
-    it('handleSubmit clears form on success', async () => {
-      await createEntriesServiceMock({ createEntry: vi.fn().mockResolvedValue({ success: true, entryId: 42 }) });
-      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', entriesPerPage: 10 }, 1, mockOnSuccess));
+    it("handleSubmit clears form on success", async () => {
+      await createEntriesServiceMock({
+        createEntry: vi.fn().mockResolvedValue({ success: true, entryId: 42 }),
+      });
+      const { result } = renderHook(() =>
+        useEntryForm(
+          { defaultVisibility: "private", entriesPerPage: 10 },
+          1,
+          mockOnSuccess,
+        ),
+      );
 
       act(() => {
-        result.current.setNewEntryText('Test entry');
-        result.current.setTags(['tag1', 'tag2']);
+        result.current.setNewEntryText("Test entry");
+        result.current.setTags(["tag1", "tag2"]);
       });
 
       await act(async () => {
         await result.current.handleSubmit(mockEvent);
       });
 
-      expect(result.current.newEntryText).toBe('');
+      expect(result.current.newEntryText).toBe("");
       expect(result.current.tags).toEqual([]);
     });
 
-    it('handleSubmit uploads pending files and links unattached uploads after save', async () => {
-      await createEntriesServiceMock({ createEntry: vi.fn().mockResolvedValue({ success: true, entryId: 42 }) });
-      const { createAttachmentsService } = await import('../services/api');
-      const uploadAttachment = vi.fn()
+    it("handleSubmit uploads pending files and links unattached uploads after save", async () => {
+      await createEntriesServiceMock({
+        createEntry: vi.fn().mockResolvedValue({ success: true, entryId: 42 }),
+      });
+      const { createAttachmentsService } = await import("../services/api");
+      const uploadAttachment = vi
+        .fn()
         .mockResolvedValueOnce({ id: 201 })
         .mockResolvedValueOnce({ id: 202 });
       const linkAttachment = vi.fn().mockResolvedValue(true);
@@ -184,13 +289,19 @@ describe('useEntryActions', () => {
         deleteAttachment,
       });
 
-      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', entriesPerPage: 10 }, 1, mockOnSuccess));
-      const pendingFileA = new File(['a'], 'first.txt');
-      const pendingFileB = new File(['b'], 'second.txt');
+      const { result } = renderHook(() =>
+        useEntryForm(
+          { defaultVisibility: "private", entriesPerPage: 10 },
+          1,
+          mockOnSuccess,
+        ),
+      );
+      const pendingFileA = new File(["a"], "first.txt");
+      const pendingFileB = new File(["b"], "second.txt");
 
       act(() => {
-        result.current.setNewEntryText('Test entry');
-        result.current.setTags(['tag1']);
+        result.current.setNewEntryText("Test entry");
+        result.current.setTags(["tag1"]);
         result.current.addPendingFile(pendingFileA);
         result.current.addPendingFile(pendingFileB);
         result.current.removePendingFile(0);
@@ -198,7 +309,10 @@ describe('useEntryActions', () => {
       });
 
       act(() => {
-        result.current.uploadedAttachments.push({ id: 99, entry_id: null } as never);
+        result.current.uploadedAttachments.push({
+          id: 99,
+          entry_id: null,
+        } as never);
       });
 
       await act(async () => {
@@ -209,60 +323,116 @@ describe('useEntryActions', () => {
       expect(linkAttachment).toHaveBeenCalledWith(99, 42);
     });
 
-    it('handleSubmit sets error on failure', async () => {
-      await createEntriesServiceMock({ createEntry: vi.fn().mockResolvedValue({ success: false }) });
-      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', entriesPerPage: 10 }, 1, mockOnSuccess));
+    it("handleSubmit sets error on failure", async () => {
+      await createEntriesServiceMock({
+        createEntry: vi.fn().mockResolvedValue({ success: false }),
+      });
+      const { result } = renderHook(() =>
+        useEntryForm(
+          { defaultVisibility: "private", entriesPerPage: 10 },
+          1,
+          mockOnSuccess,
+        ),
+      );
 
       act(() => {
-        result.current.setNewEntryText('Test entry');
-        result.current.setTags(['tag1']);
+        result.current.setNewEntryText("Test entry");
+        result.current.setTags(["tag1"]);
       });
 
       await act(async () => {
         await result.current.handleSubmit(mockEvent);
       });
 
-      expect(result.current.formError).toBe('Failed to save entry. Please try again.');
+      expect(result.current.formError).toBe(
+        "Failed to save entry. Please try again.",
+      );
     });
 
-    it('handleSuggestTags merges AI suggestions into the existing tags', async () => {
-      const { createAiService } = await import('../services/api');
-      vi.mocked(createAiService).mockReturnValue({ suggestTags: vi.fn().mockResolvedValue(['focus', 'writing']), fixWriting: vi.fn(), summarizeEntry: vi.fn(), generateWritingPrompts: vi.fn(), findDuplicateEntries: vi.fn(), semanticSearch: vi.fn(), chat: vi.fn(), getChatHistory: vi.fn(), fetchModels: vi.fn() });
+    it("handleSuggestTags merges AI suggestions into the existing tags", async () => {
+      const { createAiService } = await import("../services/api");
+      vi.mocked(createAiService).mockReturnValue({
+        suggestTags: vi.fn().mockResolvedValue(["focus", "writing"]),
+        fixWriting: vi.fn(),
+        summarizeEntry: vi.fn(),
+        generateWritingPrompts: vi.fn(),
+        findDuplicateEntries: vi.fn(),
+        semanticSearch: vi.fn(),
+        chat: vi.fn(),
+        getChatHistory: vi.fn(),
+        fetchModels: vi.fn(),
+        getCredentialStatus: vi.fn(),
+        updateCredential: vi.fn(),
+        removeCredential: vi.fn(),
+        getUsageDashboard: vi.fn(),
+      });
 
-      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', entriesPerPage: 10 }, 1, mockOnSuccess));
+      const { result } = renderHook(() =>
+        useEntryForm(
+          { defaultVisibility: "private", entriesPerPage: 10 },
+          1,
+          mockOnSuccess,
+        ),
+      );
 
       act(() => {
-        result.current.setNewEntryText('I wrote about focus and deep work all morning.');
-        result.current.setTags(['journal']);
+        result.current.setNewEntryText(
+          "I wrote about focus and deep work all morning.",
+        );
+        result.current.setTags(["journal"]);
       });
 
       await act(async () => {
         await result.current.handleSuggestTags();
       });
 
-      expect(result.current.tags).toEqual(['journal', 'focus', 'writing']);
-      expect(result.current.formError).toBe('');
+      expect(result.current.tags).toEqual(["journal", "focus", "writing"]);
+      expect(result.current.formError).toBe("");
     });
 
-    it('handleSuggestTags surfaces a configuration error when the AI request fails', async () => {
-      const { createAiService } = await import('../services/api');
-      vi.mocked(createAiService).mockReturnValue({ suggestTags: vi.fn().mockResolvedValue(null), fixWriting: vi.fn(), summarizeEntry: vi.fn(), generateWritingPrompts: vi.fn(), findDuplicateEntries: vi.fn(), semanticSearch: vi.fn(), chat: vi.fn(), getChatHistory: vi.fn(), fetchModels: vi.fn() });
+    it("handleSuggestTags surfaces a configuration error when the AI request fails", async () => {
+      const { createAiService } = await import("../services/api");
+      vi.mocked(createAiService).mockReturnValue({
+        suggestTags: vi.fn().mockResolvedValue(null),
+        fixWriting: vi.fn(),
+        summarizeEntry: vi.fn(),
+        generateWritingPrompts: vi.fn(),
+        findDuplicateEntries: vi.fn(),
+        semanticSearch: vi.fn(),
+        chat: vi.fn(),
+        getChatHistory: vi.fn(),
+        fetchModels: vi.fn(),
+        getCredentialStatus: vi.fn(),
+        updateCredential: vi.fn(),
+        removeCredential: vi.fn(),
+        getUsageDashboard: vi.fn(),
+      });
 
-      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', entriesPerPage: 10 }, 1, mockOnSuccess));
+      const { result } = renderHook(() =>
+        useEntryForm(
+          { defaultVisibility: "private", entriesPerPage: 10 },
+          1,
+          mockOnSuccess,
+        ),
+      );
 
       act(() => {
-        result.current.setNewEntryText('This draft should trigger the AI error path.');
+        result.current.setNewEntryText(
+          "This draft should trigger the AI error path.",
+        );
       });
 
       await act(async () => {
         await result.current.handleSuggestTags();
       });
 
-      expect(result.current.formError).toBe('Unable to suggest tags. Check your OpenRouter API key and try again.');
+      expect(result.current.formError).toBe(
+        "Unable to suggest tags. Check your OpenRouter API key and try again.",
+      );
     });
 
-    it('handleSuggestTags validates empty input and empty AI responses', async () => {
-      const { createAiService } = await import('../services/api');
+    it("handleSuggestTags validates empty input and empty AI responses", async () => {
+      const { createAiService } = await import("../services/api");
       vi.mocked(createAiService).mockReturnValue({
         suggestTags: vi.fn().mockResolvedValue([]),
         fixWriting: vi.fn(),
@@ -273,31 +443,46 @@ describe('useEntryActions', () => {
         chat: vi.fn(),
         getChatHistory: vi.fn(),
         fetchModels: vi.fn(),
+        getCredentialStatus: vi.fn(),
+        updateCredential: vi.fn(),
+        removeCredential: vi.fn(),
+        getUsageDashboard: vi.fn(),
       });
 
-      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', entriesPerPage: 10 }, 1, mockOnSuccess));
+      const { result } = renderHook(() =>
+        useEntryForm(
+          { defaultVisibility: "private", entriesPerPage: 10 },
+          1,
+          mockOnSuccess,
+        ),
+      );
 
       await act(async () => {
         await result.current.handleSuggestTags();
       });
-      expect(result.current.formError).toBe('Write a thought before asking for tag suggestions');
+      expect(result.current.formError).toBe(
+        "Write a thought before asking for tag suggestions",
+      );
 
       act(() => {
-        result.current.setNewEntryText('This still has no AI suggestions');
+        result.current.setNewEntryText("This still has no AI suggestions");
       });
 
       await act(async () => {
         await result.current.handleSuggestTags();
       });
-      expect(result.current.formError).toBe('No tag suggestions were returned. Try adding more detail.');
+      expect(result.current.formError).toBe(
+        "No tag suggestions were returned. Try adding more detail.",
+      );
     });
 
-    it('handleFixWriting validates input and updates corrected text', async () => {
-      const { createAiService } = await import('../services/api');
-      const fixWriting = vi.fn()
+    it("handleFixWriting validates input and updates corrected text", async () => {
+      const { createAiService } = await import("../services/api");
+      const fixWriting = vi
+        .fn()
         .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce('Original draft')
-        .mockResolvedValueOnce('Corrected draft');
+        .mockResolvedValueOnce("Original draft")
+        .mockResolvedValueOnce("Corrected draft");
       vi.mocked(createAiService).mockReturnValue({
         suggestTags: vi.fn(),
         fixWriting,
@@ -308,37 +493,51 @@ describe('useEntryActions', () => {
         chat: vi.fn(),
         getChatHistory: vi.fn(),
         fetchModels: vi.fn(),
+        getCredentialStatus: vi.fn(),
+        updateCredential: vi.fn(),
+        removeCredential: vi.fn(),
+        getUsageDashboard: vi.fn(),
       });
 
-      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', entriesPerPage: 10 }, 1, mockOnSuccess));
+      const { result } = renderHook(() =>
+        useEntryForm(
+          { defaultVisibility: "private", entriesPerPage: 10 },
+          1,
+          mockOnSuccess,
+        ),
+      );
 
       await act(async () => {
         await result.current.handleFixWriting();
       });
-      expect(result.current.formError).toBe('Write a thought before asking for writing fixes');
+      expect(result.current.formError).toBe(
+        "Write a thought before asking for writing fixes",
+      );
 
       act(() => {
-        result.current.setNewEntryText('Original draft');
+        result.current.setNewEntryText("Original draft");
       });
 
       await act(async () => {
         await result.current.handleFixWriting();
       });
-      expect(result.current.formError).toBe('Unable to fix writing. Check your OpenRouter API key and try again.');
+      expect(result.current.formError).toBe(
+        "Unable to fix writing. Check your OpenRouter API key and try again.",
+      );
 
       await act(async () => {
         await result.current.handleFixWriting();
       });
-      expect(result.current.formError).toBe('No corrections were needed.');
+      expect(result.current.formError).toBe("No corrections were needed.");
 
       await act(async () => {
         await result.current.handleFixWriting();
       });
-      expect(result.current.newEntryText).toBe('Corrected draft');
+      expect(result.current.newEntryText).toBe("Corrected draft");
     });
 
-    it('removes uploaded attachments through the attachments service', async () => {
-      const { createAttachmentsService } = await import('../services/api');
+    it("removes uploaded attachments through the attachments service", async () => {
+      const { createAttachmentsService } = await import("../services/api");
       const deleteAttachment = vi.fn().mockResolvedValue(true);
       vi.mocked(createAttachmentsService).mockReturnValue({
         uploadAttachment: vi.fn(),
@@ -346,7 +545,13 @@ describe('useEntryActions', () => {
         deleteAttachment,
       });
 
-      const { result } = renderHook(() => useEntryForm({ defaultVisibility: 'private', entriesPerPage: 10 }, 1, mockOnSuccess));
+      const { result } = renderHook(() =>
+        useEntryForm(
+          { defaultVisibility: "private", entriesPerPage: 10 },
+          1,
+          mockOnSuccess,
+        ),
+      );
       act(() => {
         result.current.uploadedAttachments.push({ id: 7 } as never);
       });
@@ -360,35 +565,55 @@ describe('useEntryActions', () => {
     });
   });
 
-  describe('useEntryEdit', () => {
+  describe("useEntryEdit", () => {
     const mockOnSave = vi.fn();
 
-    it('initializes with null editingEntry', () => {
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
+    it("initializes with null editingEntry", () => {
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
 
       expect(result.current.editingEntry).toBeNull();
-      expect(result.current.editText).toBe('');
+      expect(result.current.editText).toBe("");
       expect(result.current.editTags).toEqual([]);
       expect(result.current.editDate).toBeNull();
     });
 
-    it('handleEdit sets editing state', () => {
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
-      const mockEntry = { id: 1, content: 'Test content', tags: ['tag1'], date: '2024-01-15', visibility: 'public' as const, index: 1 };
+    it("handleEdit sets editing state", () => {
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+      const mockEntry = {
+        id: 1,
+        content: "Test content",
+        tags: ["tag1"],
+        date: "2024-01-15",
+        visibility: "public" as const,
+        index: 1,
+      };
 
       act(() => {
         result.current.handleEdit(mockEntry);
       });
 
       expect(result.current.editingEntry).toEqual(mockEntry);
-      expect(result.current.editText).toBe('Test content');
-      expect(result.current.editTags).toEqual(['tag1']);
-      expect(result.current.editVisibility).toBe('public');
+      expect(result.current.editText).toBe("Test content");
+      expect(result.current.editTags).toEqual(["tag1"]);
+      expect(result.current.editVisibility).toBe("public");
     });
 
-    it('handleEdit handles date with T separator', () => {
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
-      const mockEntry = { id: 1, content: 'Test', tags: ['tag1'], date: '2024-01-15T10:30:00Z', visibility: 'private' as const, index: 1 };
+    it("handleEdit handles date with T separator", () => {
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+      const mockEntry = {
+        id: 1,
+        content: "Test",
+        tags: ["tag1"],
+        date: "2024-01-15T10:30:00Z",
+        visibility: "private" as const,
+        index: 1,
+      };
 
       act(() => {
         result.current.handleEdit(mockEntry);
@@ -397,9 +622,18 @@ describe('useEntryActions', () => {
       expect(result.current.editDate?.getFullYear()).toBe(2024);
     });
 
-    it('handleCancelEdit clears editing state', () => {
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
-      const mockEntry = { id: 1, content: 'Test', tags: ['tag1'], date: '2024-01-15', visibility: 'public' as const, index: 1 };
+    it("handleCancelEdit clears editing state", () => {
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+      const mockEntry = {
+        id: 1,
+        content: "Test",
+        tags: ["tag1"],
+        date: "2024-01-15",
+        visibility: "public" as const,
+        index: 1,
+      };
 
       act(() => {
         result.current.handleEdit(mockEntry);
@@ -409,29 +643,49 @@ describe('useEntryActions', () => {
       });
 
       expect(result.current.editingEntry).toBeNull();
-      expect(result.current.editText).toBe('');
+      expect(result.current.editText).toBe("");
       expect(result.current.editTags).toEqual([]);
     });
 
-    it('handleSaveEdit shows alert when text empty', async () => {
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
-      const mockEntry = { id: 1, content: 'Test', tags: ['tag1'], date: '2024-01-15', visibility: 'public' as const, index: 1 };
+    it("handleSaveEdit shows alert when text empty", async () => {
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+      const mockEntry = {
+        id: 1,
+        content: "Test",
+        tags: ["tag1"],
+        date: "2024-01-15",
+        visibility: "public" as const,
+        index: 1,
+      };
 
       act(() => {
         result.current.handleEdit(mockEntry);
-        result.current.setEditText('');
+        result.current.setEditText("");
       });
 
       await act(async () => {
         await result.current.handleSaveEdit();
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith('Text and at least one tag are required');
+      expect(globalThis.alert).toHaveBeenCalledWith(
+        "Text and at least one tag are required",
+      );
     });
 
-    it('handleSaveEdit shows alert when no tags', async () => {
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
-      const mockEntry = { id: 1, content: 'Test', tags: ['tag1'], date: '2024-01-15', visibility: 'public' as const, index: 1 };
+    it("handleSaveEdit shows alert when no tags", async () => {
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+      const mockEntry = {
+        id: 1,
+        content: "Test",
+        tags: ["tag1"],
+        date: "2024-01-15",
+        visibility: "public" as const,
+        index: 1,
+      };
 
       act(() => {
         result.current.handleEdit(mockEntry);
@@ -442,34 +696,48 @@ describe('useEntryActions', () => {
         await result.current.handleSaveEdit();
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith('Text and at least one tag are required');
+      expect(globalThis.alert).toHaveBeenCalledWith(
+        "Text and at least one tag are required",
+      );
     });
 
-    it('provides setters for edit state', () => {
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
-      const newDate = new Date('2024-06-15');
+    it("provides setters for edit state", () => {
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+      const newDate = new Date("2024-06-15");
 
       act(() => {
-        result.current.setEditText('New text');
-        result.current.setEditTags(['new-tag']);
+        result.current.setEditText("New text");
+        result.current.setEditTags(["new-tag"]);
         result.current.setEditDate(newDate);
-        result.current.setEditVisibility('private');
+        result.current.setEditVisibility("private");
       });
 
-      expect(result.current.editText).toBe('New text');
-      expect(result.current.editTags).toEqual(['new-tag']);
+      expect(result.current.editText).toBe("New text");
+      expect(result.current.editTags).toEqual(["new-tag"]);
       expect(result.current.editDate).toEqual(newDate);
-      expect(result.current.editVisibility).toBe('private');
+      expect(result.current.editVisibility).toBe("private");
     });
 
-    it('saves entry changes successfully', async () => {
-      await createEntriesServiceMock({ updateEntry: vi.fn().mockResolvedValue(true) });
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
-      const entry = { id: 1, content: 'Original', tags: ['tag1'], date: '2024-01-01', visibility: 'private' as const };
+    it("saves entry changes successfully", async () => {
+      await createEntriesServiceMock({
+        updateEntry: vi.fn().mockResolvedValue(true),
+      });
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+      const entry = {
+        id: 1,
+        content: "Original",
+        tags: ["tag1"],
+        date: "2024-01-01",
+        visibility: "private" as const,
+      };
 
       act(() => {
         result.current.handleEdit(entry);
-        result.current.setEditText('Modified text');
+        result.current.setEditText("Modified text");
       });
 
       await act(async () => {
@@ -479,12 +747,14 @@ describe('useEntryActions', () => {
       expect(result.current.editingEntry).toBeNull();
     });
 
-    it('returns early when there is no edit date or entry to save', async () => {
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '1' }, mockOnSave));
+    it("returns early when there is no edit date or entry to save", async () => {
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "1" }, mockOnSave),
+      );
 
       act(() => {
-        result.current.setEditText('Draft');
-        result.current.setEditTags(['tag']);
+        result.current.setEditText("Draft");
+        result.current.setEditTags(["tag"]);
       });
 
       await act(async () => {
@@ -494,26 +764,38 @@ describe('useEntryActions', () => {
       expect(globalThis.alert).not.toHaveBeenCalled();
     });
 
-    it('alerts when saving entry changes fails', async () => {
-      await createEntriesServiceMock({ updateEntry: vi.fn().mockResolvedValue(false) });
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
-      const entry = { id: 1, content: 'Original', tags: ['tag1'], date: '2024-01-01', visibility: 'private' as const };
+    it("alerts when saving entry changes fails", async () => {
+      await createEntriesServiceMock({
+        updateEntry: vi.fn().mockResolvedValue(false),
+      });
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+      const entry = {
+        id: 1,
+        content: "Original",
+        tags: ["tag1"],
+        date: "2024-01-01",
+        visibility: "private" as const,
+      };
 
       act(() => {
         result.current.handleEdit(entry);
-        result.current.setEditText('Modified text');
+        result.current.setEditText("Modified text");
       });
 
       await act(async () => {
         await result.current.handleSaveEdit();
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith('Failed to update entry.');
+      expect(globalThis.alert).toHaveBeenCalledWith("Failed to update entry.");
     });
 
-    it('uploads new edit files and deletes removed attachments after a successful save', async () => {
-      await createEntriesServiceMock({ updateEntry: vi.fn().mockResolvedValue(true) });
-      const { createAttachmentsService } = await import('../services/api');
+    it("uploads new edit files and deletes removed attachments after a successful save", async () => {
+      await createEntriesServiceMock({
+        updateEntry: vi.fn().mockResolvedValue(true),
+      });
+      const { createAttachmentsService } = await import("../services/api");
       const uploadAttachment = vi.fn().mockResolvedValue({ id: 88 });
       const deleteAttachment = vi.fn().mockResolvedValue(true);
       vi.mocked(createAttachmentsService).mockReturnValue({
@@ -522,16 +804,18 @@ describe('useEntryActions', () => {
         deleteAttachment,
       });
 
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '1' }, mockOnSave));
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "1" }, mockOnSave),
+      );
       const entry = {
         id: 1,
-        content: 'Original',
-        tags: ['tag1'],
-        date: '2024-01-01',
-        visibility: 'private' as const,
+        content: "Original",
+        tags: ["tag1"],
+        date: "2024-01-01",
+        visibility: "private" as const,
         attachments: [{ id: 10 }, { id: 11 }],
       };
-      const pendingFile = new File(['draft'], 'draft.txt');
+      const pendingFile = new File(["draft"], "draft.txt");
 
       act(() => {
         result.current.handleEdit(entry as never);
@@ -548,10 +832,12 @@ describe('useEntryActions', () => {
       expect(mockOnSave).toHaveBeenCalled();
     });
 
-    it('manages edit pending files and attachments locally', () => {
-      const { result } = renderHook(() => useEntryEdit({ autoTagMaxTags: '0' }, mockOnSave));
-      const firstFile = new File(['a'], 'a.txt');
-      const secondFile = new File(['b'], 'b.txt');
+    it("manages edit pending files and attachments locally", () => {
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+      const firstFile = new File(["a"], "a.txt");
+      const secondFile = new File(["b"], "b.txt");
 
       act(() => {
         result.current.addEditPendingFile(firstFile);
@@ -563,17 +849,17 @@ describe('useEntryActions', () => {
     });
   });
 
-  describe('useDeleteModal', () => {
+  describe("useDeleteModal", () => {
     const mockOnDelete = vi.fn();
 
-    it('initializes with modal closed', () => {
+    it("initializes with modal closed", () => {
       const { result } = renderHook(() => useDeleteModal(mockOnDelete));
 
       expect(result.current.deleteModalOpen).toBe(false);
       expect(result.current.entryToDelete).toBeNull();
     });
 
-    it('handleDelete opens modal and sets entry', () => {
+    it("handleDelete opens modal and sets entry", () => {
       const { result } = renderHook(() => useDeleteModal(mockOnDelete));
 
       act(() => {
@@ -584,7 +870,7 @@ describe('useEntryActions', () => {
       expect(result.current.entryToDelete).toBe(123);
     });
 
-    it('cancelDelete closes modal and clears entry', () => {
+    it("cancelDelete closes modal and clears entry", () => {
       const { result } = renderHook(() => useDeleteModal(mockOnDelete));
 
       act(() => {
@@ -598,7 +884,7 @@ describe('useEntryActions', () => {
       expect(result.current.entryToDelete).toBeNull();
     });
 
-    it('confirmDelete returns early if no entry to delete', async () => {
+    it("confirmDelete returns early if no entry to delete", async () => {
       const { result } = renderHook(() => useDeleteModal(mockOnDelete));
 
       await act(async () => {
@@ -608,8 +894,10 @@ describe('useEntryActions', () => {
       expect(mockOnDelete).not.toHaveBeenCalled();
     });
 
-    it('confirmDelete calls onDelete on success', async () => {
-      await createEntriesServiceMock({ deleteEntry: vi.fn().mockResolvedValue(true) });
+    it("confirmDelete calls onDelete on success", async () => {
+      await createEntriesServiceMock({
+        deleteEntry: vi.fn().mockResolvedValue(true),
+      });
       const onDeleteMock = vi.fn();
       const { result } = renderHook(() => useDeleteModal(onDeleteMock));
 
@@ -626,8 +914,10 @@ describe('useEntryActions', () => {
       expect(result.current.entryToDelete).toBeNull();
     });
 
-    it('confirmDelete shows alert on failure', async () => {
-      await createEntriesServiceMock({ deleteEntry: vi.fn().mockResolvedValue(false) });
+    it("confirmDelete shows alert on failure", async () => {
+      await createEntriesServiceMock({
+        deleteEntry: vi.fn().mockResolvedValue(false),
+      });
       const { result } = renderHook(() => useDeleteModal(vi.fn()));
 
       act(() => {
@@ -638,14 +928,14 @@ describe('useEntryActions', () => {
         await result.current.confirmDelete();
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith('Failed to delete entry.');
+      expect(globalThis.alert).toHaveBeenCalledWith("Failed to delete entry.");
     });
   });
 
-  describe('useBulkSelect', () => {
+  describe("useBulkSelect", () => {
     const mockOnComplete = vi.fn();
 
-    it('initializes with default state', () => {
+    it("initializes with default state", () => {
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));
 
       expect(result.current.bulkMode).toBe(false);
@@ -654,7 +944,7 @@ describe('useEntryActions', () => {
       expect(result.current.pendingAction).toBeNull();
     });
 
-    it('toggleBulkMode enables and disables bulk mode', () => {
+    it("toggleBulkMode enables and disables bulk mode", () => {
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));
 
       act(() => {
@@ -668,7 +958,7 @@ describe('useEntryActions', () => {
       expect(result.current.bulkMode).toBe(false);
     });
 
-    it('clears selection when exiting bulk mode', () => {
+    it("clears selection when exiting bulk mode", () => {
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));
 
       act(() => {
@@ -684,7 +974,7 @@ describe('useEntryActions', () => {
       expect(result.current.selectedIds.size).toBe(0);
     });
 
-    it('toggleSelect adds and removes entries', () => {
+    it("toggleSelect adds and removes entries", () => {
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));
 
       act(() => {
@@ -698,7 +988,7 @@ describe('useEntryActions', () => {
       expect(result.current.selectedIds.has(1)).toBe(false);
     });
 
-    it('selectAll sets all provided ids', () => {
+    it("selectAll sets all provided ids", () => {
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));
 
       act(() => {
@@ -711,7 +1001,7 @@ describe('useEntryActions', () => {
       expect(result.current.selectedIds.has(3)).toBe(true);
     });
 
-    it('clearSelection empties the selection set', () => {
+    it("clearSelection empties the selection set", () => {
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));
 
       act(() => {
@@ -722,7 +1012,7 @@ describe('useEntryActions', () => {
       expect(result.current.selectedIds.size).toBe(0);
     });
 
-    it('requestBulkAction with delete opens confirm modal', () => {
+    it("requestBulkAction with delete opens confirm modal", () => {
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));
 
       act(() => {
@@ -730,25 +1020,27 @@ describe('useEntryActions', () => {
       });
 
       act(() => {
-        result.current.requestBulkAction('delete');
+        result.current.requestBulkAction("delete");
       });
 
       expect(result.current.bulkModalOpen).toBe(true);
-      expect(result.current.pendingAction).toEqual({ action: 'delete' });
+      expect(result.current.pendingAction).toEqual({ action: "delete" });
     });
 
-    it('requestBulkAction does nothing when no entries selected', async () => {
+    it("requestBulkAction does nothing when no entries selected", async () => {
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));
 
       await act(async () => {
-        result.current.requestBulkAction('delete');
+        result.current.requestBulkAction("delete");
       });
 
       expect(result.current.bulkModalOpen).toBe(false);
     });
 
-    it('requestBulkAction with non-delete executes immediately', async () => {
-      const mockBulkOperation = vi.fn().mockResolvedValue({ success: true, affectedCount: 1 });
+    it("requestBulkAction with non-delete executes immediately", async () => {
+      const mockBulkOperation = vi
+        .fn()
+        .mockResolvedValue({ success: true, affectedCount: 1 });
       await createEntriesServiceMock({ bulkOperation: mockBulkOperation });
 
       const onComplete = vi.fn();
@@ -759,14 +1051,18 @@ describe('useEntryActions', () => {
       });
 
       await act(async () => {
-        result.current.requestBulkAction('visibility', { visibility: 'public' });
+        result.current.requestBulkAction("visibility", {
+          visibility: "public",
+        });
       });
 
-      expect(mockBulkOperation).toHaveBeenCalledWith([1], 'visibility', { visibility: 'public' });
+      expect(mockBulkOperation).toHaveBeenCalledWith([1], "visibility", {
+        visibility: "public",
+      });
       expect(onComplete).toHaveBeenCalled();
     });
 
-    it('cancelBulkModal closes modal and clears pending action', () => {
+    it("cancelBulkModal closes modal and clears pending action", () => {
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));
 
       act(() => {
@@ -774,7 +1070,7 @@ describe('useEntryActions', () => {
       });
 
       act(() => {
-        result.current.requestBulkAction('delete');
+        result.current.requestBulkAction("delete");
       });
       expect(result.current.bulkModalOpen).toBe(true);
 
@@ -786,8 +1082,10 @@ describe('useEntryActions', () => {
       expect(result.current.pendingAction).toBeNull();
     });
 
-    it('confirmBulkDelete executes delete and clears state', async () => {
-      const mockBulkOperation = vi.fn().mockResolvedValue({ success: true, affectedCount: 2 });
+    it("confirmBulkDelete executes delete and clears state", async () => {
+      const mockBulkOperation = vi
+        .fn()
+        .mockResolvedValue({ success: true, affectedCount: 2 });
       await createEntriesServiceMock({ bulkOperation: mockBulkOperation });
 
       const onComplete = vi.fn();
@@ -796,22 +1094,28 @@ describe('useEntryActions', () => {
       act(() => {
         result.current.toggleSelect(1);
         result.current.toggleSelect(2);
-        result.current.requestBulkAction('delete');
+        result.current.requestBulkAction("delete");
       });
 
       await act(async () => {
         await result.current.confirmBulkDelete();
       });
 
-      expect(mockBulkOperation).toHaveBeenCalledWith([1, 2], 'delete', undefined);
+      expect(mockBulkOperation).toHaveBeenCalledWith(
+        [1, 2],
+        "delete",
+        undefined,
+      );
       expect(result.current.bulkModalOpen).toBe(false);
       expect(result.current.selectedIds.size).toBe(0);
       expect(result.current.bulkMode).toBe(false);
       expect(onComplete).toHaveBeenCalled();
     });
 
-    it('executeBulkAction shows alert on failure', async () => {
-      await createEntriesServiceMock({ bulkOperation: vi.fn().mockResolvedValue(null) });
+    it("executeBulkAction shows alert on failure", async () => {
+      await createEntriesServiceMock({
+        bulkOperation: vi.fn().mockResolvedValue(null),
+      });
       const { result } = renderHook(() => useBulkSelect(mockOnComplete));
 
       act(() => {
@@ -819,26 +1123,26 @@ describe('useEntryActions', () => {
       });
 
       await act(async () => {
-        await result.current.executeBulkAction('delete');
+        await result.current.executeBulkAction("delete");
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith('Bulk operation failed.');
+      expect(globalThis.alert).toHaveBeenCalledWith("Bulk operation failed.");
     });
 
-    it('bulk rephrases selected entries and preserves metadata', async () => {
+    it("bulk rephrases selected entries and preserves metadata", async () => {
       const updateEntry = vi.fn().mockResolvedValue(true);
-      const fixWriting = vi.fn().mockResolvedValue('Improved first entry');
+      const fixWriting = vi.fn().mockResolvedValue("Improved first entry");
       await createEntriesServiceMock({ updateEntry });
       await createAiServiceMock({ fixWriting });
 
       const entries = [
         {
           id: 1,
-          content: 'First entry',
-          tags: ['focus'],
-          date: '2024-01-15T10:00:00.000Z',
-          visibility: 'private' as const,
-          format: 'markdown' as const,
+          content: "First entry",
+          tags: ["focus"],
+          date: "2024-01-15T10:00:00.000Z",
+          visibility: "private" as const,
+          format: "markdown" as const,
         },
       ];
 
@@ -850,48 +1154,52 @@ describe('useEntryActions', () => {
       });
 
       await act(async () => {
-        await result.current.requestBulkAction('rephrase', { mode: 'polish' });
+        await result.current.requestBulkAction("rephrase", { mode: "polish" });
       });
 
-      expect(fixWriting).toHaveBeenCalledWith('First entry', 'polish');
+      expect(fixWriting).toHaveBeenCalledWith("First entry", "polish");
       expect(updateEntry).toHaveBeenCalledWith(1, {
-        text: 'Improved first entry',
-        tags: ['focus'],
-        date: '2024-01-15',
-        visibility: 'private',
-        format: 'markdown',
+        text: "Improved first entry",
+        tags: ["focus"],
+        date: "2024-01-15",
+        visibility: "private",
+        format: "markdown",
       });
       expect(onComplete).toHaveBeenCalled();
       expect(result.current.selectedIds.size).toBe(0);
       expect(result.current.bulkMode).toBe(false);
     });
 
-    it('shows a no-op message when selected entries do not need rephrasing', async () => {
-      const fixWriting = vi.fn().mockResolvedValue('Same entry');
+    it("shows a no-op message when selected entries do not need rephrasing", async () => {
+      const fixWriting = vi.fn().mockResolvedValue("Same entry");
       await createEntriesServiceMock({ updateEntry: vi.fn() });
       await createAiServiceMock({ fixWriting });
 
       const entries = [
         {
           id: 1,
-          content: 'Same entry',
-          tags: ['focus'],
-          date: '2024-01-15',
-          visibility: 'private' as const,
+          content: "Same entry",
+          tags: ["focus"],
+          date: "2024-01-15",
+          visibility: "private" as const,
         },
       ];
 
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete, entries));
+      const { result } = renderHook(() =>
+        useBulkSelect(mockOnComplete, entries),
+      );
 
       act(() => {
         result.current.toggleSelect(1);
       });
 
       await act(async () => {
-        await result.current.executeBulkAction('rephrase', { mode: 'grammar' });
+        await result.current.executeBulkAction("rephrase", { mode: "grammar" });
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith('No selected entries needed rephrasing.');
+      expect(globalThis.alert).toHaveBeenCalledWith(
+        "No selected entries needed rephrasing.",
+      );
     });
   });
 });

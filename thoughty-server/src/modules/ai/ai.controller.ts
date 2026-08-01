@@ -1,4 +1,14 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { JwtAuthGuard } from '@/modules/auth/guards';
@@ -9,9 +19,18 @@ import { ChatDto, ChatHistoryResponseDto, ChatResponseDto } from './dto/chat.dto
 import { EntrySummaryResponseDto, SummarizeEntryDto } from './dto/summarize-entry.dto';
 import { GenerateWritingPromptsDto, WritingPromptsResponseDto } from './dto/writing-prompts.dto';
 import { AiDuplicateService } from './ai-duplicate.service';
-import { DuplicateEntryScanResponseDto, FindDuplicateEntriesDto } from './dto/duplicate-entries.dto';
+import {
+  DuplicateEntryScanResponseDto,
+  FindDuplicateEntriesDto,
+} from './dto/duplicate-entries.dto';
 import { AiSemanticSearchService } from './ai-semantic-search.service';
 import { SemanticSearchDto, SemanticSearchResponseDto } from './dto/semantic-search.dto';
+import { AiCredentialsService } from './ai-credentials.service';
+import {
+  OpenRouterCredentialStatusDto,
+  OpenRouterUsageDashboardDto,
+  SaveOpenRouterCredentialDto,
+} from './dto/openrouter-credentials.dto';
 
 @ApiTags('AI')
 @ApiBearerAuth()
@@ -22,13 +41,65 @@ export class AiController {
     private readonly aiService: AiService,
     private readonly aiDuplicateService: AiDuplicateService,
     private readonly aiSemanticSearchService: AiSemanticSearchService,
+    private readonly aiCredentialsService: AiCredentialsService,
   ) {}
 
   @Get('models')
   @ApiOperation({ summary: 'List available OpenRouter models' })
   @ApiResponse({ status: 200, description: 'List of available models' })
-  async listModels(): Promise<{ id: string; name: string }[]> {
-    return this.aiService.listModels();
+  async listModels(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<{ id: string; name: string }[]> {
+    return this.aiService.listModels(user.userId);
+  }
+
+  @Get('credentials')
+  @ApiOperation({ summary: 'Get personal OpenRouter credential status' })
+  @ApiResponse({
+    status: 200,
+    description: 'Personal OpenRouter credential status',
+    type: OpenRouterCredentialStatusDto,
+  })
+  getCredentialStatus(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<OpenRouterCredentialStatusDto> {
+    return this.aiCredentialsService.getStatus(user.userId);
+  }
+
+  @Put('credentials')
+  @ApiOperation({ summary: 'Validate and store a personal OpenRouter API key' })
+  @ApiResponse({
+    status: 200,
+    description: 'Personal OpenRouter credential validated and stored',
+    type: OpenRouterCredentialStatusDto,
+  })
+  saveCredential(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SaveOpenRouterCredentialDto,
+  ): Promise<OpenRouterCredentialStatusDto> {
+    return this.aiCredentialsService.save(user.userId, dto.apiKey);
+  }
+
+  @Delete('credentials')
+  @ApiOperation({ summary: 'Remove the personal OpenRouter API key' })
+  @ApiResponse({
+    status: 200,
+    description: 'Personal OpenRouter credential removed',
+    type: OpenRouterCredentialStatusDto,
+  })
+  removeCredential(@CurrentUser() user: AuthenticatedUser): Promise<OpenRouterCredentialStatusDto> {
+    return this.aiCredentialsService.remove(user.userId);
+  }
+
+  @Get('usage')
+  @ApiOperation({ summary: 'Get personal OpenRouter token and cost usage' })
+  @ApiResponse({
+    status: 200,
+    description: 'Personal token and cost usage',
+    type: OpenRouterUsageDashboardDto,
+  })
+  getUsage(@CurrentUser() user: AuthenticatedUser): Promise<OpenRouterUsageDashboardDto> {
+    return this.aiCredentialsService.getUsage(user.userId);
   }
 
   @Post('suggest-tags')

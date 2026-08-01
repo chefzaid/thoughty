@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Attachment, Diary, Entry, EntryRevision, Setting, User } from '@/database/entities';
+import { SENSITIVE_CONFIG_KEYS } from './config.service';
 
 @Injectable()
 export class UserDataExportService {
@@ -43,11 +44,13 @@ export class UserDataExportService {
         }
       : null;
 
-    const safeSettings = settings.map((setting) => ({
-      key: setting.key,
-      value: setting.value,
-      updatedAt: setting.updatedAt,
-    }));
+    const safeSettings = settings
+      .filter((setting) => !SENSITIVE_CONFIG_KEYS.has(setting.key))
+      .map((setting) => ({
+        key: setting.key,
+        value: setting.value,
+        updatedAt: setting.updatedAt,
+      }));
 
     return {
       exportedAt: new Date().toISOString(),

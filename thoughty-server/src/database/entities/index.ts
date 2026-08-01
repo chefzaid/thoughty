@@ -3,6 +3,7 @@ export * from './diary.entity';
 export * from './entry.entity';
 export * from './entry-revision.entity';
 export * from './ai-chat-history.entity';
+export * from './ai-usage-event.entity';
 export * from './attachment.entity';
 export * from './refresh-token.entity';
 export * from './setting.entity';

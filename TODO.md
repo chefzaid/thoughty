@@ -101,7 +101,7 @@
 - [x] Personality analysis through the choice of words and subjects of all entries or a chosen subset of them
 - [ ] AI features should be locked behind a paywall with a free trial (except if own API token is provided)
 - [ ] AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
-- [ ] Possibility to provide your own API key to use AI features with your own token, and a usage dashboard to monitor your token consumption and costs
+- [x] Possibility to provide your own API key to use AI features with your own token, and a usage dashboard to monitor your token consumption and costs
 - [ ] Local LLM processing for privacy
 - [ ] Graph of insights and correlations from all entries, to discover patterns and connections between them, do the same for tags
 - [ ] Transcription from an Audio note

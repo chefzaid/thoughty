@@ -3,6 +3,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -18,6 +19,8 @@ import { requestTagSuggestions } from './tag-suggestions';
 import { parseJournalAnalysis, type JournalAnalysis } from './journal-analysis';
 import { requestWritingPrompts } from './writing-prompts';
 import { resolveAiModel } from './ai-model.util';
+import { AiUsageService } from './ai-usage.service';
+import { resolveOpenRouterCredential } from './openrouter-credential.util';
 
 export type { JournalAnalysis, SubjectAnalysis, ToneMoodAnalysis } from './journal-analysis';
 
@@ -44,14 +47,13 @@ const TASK_MODEL_CONFIG_KEYS: Record<AiModelTask, string> = {
 export class AiService {
   private readonly openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
   private readonly defaultModel = process.env.OPENROUTER_TAG_MODEL || 'openai/gpt-4o-mini';
-  private readonly apiKey = process.env.OPENROUTER_API_KEY || '';
-
   constructor(
     private readonly configService: ConfigService,
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
     @InjectRepository(AiChatHistory)
     private readonly chatHistoryRepository: Repository<AiChatHistory>,
+    @Optional() private readonly usageService?: AiUsageService,
   ) {}
 
   private async assertEntryOwnership(userId: number, entryId: number): Promise<Entry> {
@@ -99,8 +101,11 @@ export class AiService {
     );
   }
 
-  isConfigured(): boolean {
-    return Boolean(this.apiKey);
+  isConfigured(): boolean;
+  isConfigured(userId: number): Promise<boolean>;
+  isConfigured(userId?: number): boolean | Promise<boolean> {
+    if (userId === undefined) return Boolean(process.env.OPENROUTER_API_KEY?.trim());
+    return resolveOpenRouterCredential(this.configService, userId).then(Boolean);
   }
 
   private getFixWritingInstruction(mode: FixWritingMode | undefined): string {
@@ -120,23 +125,24 @@ export class AiService {
       throw new BadRequestException('Content is required for tag suggestions');
     }
 
-    if (!this.apiKey) {
+    const model = await this.getModel(userId, 'tag');
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
 
     const maxTags = Math.min(Math.max(dto.maxTags ?? 5, 1), 10);
     const existingTags = dto.existingTags?.filter(Boolean) ?? [];
 
-    const model = await this.getModel(userId, 'tag');
-
     return {
       tags: await requestTagSuggestions({
-        apiKey: this.apiKey,
+        apiKey: credential.apiKey,
         model,
         content: dto.content,
         existingTags,
         maxTags,
         style: dto.style ?? 'specific',
+        onUsage: this.usageService?.reporter(userId, credential.source),
       }),
     };
   }
@@ -151,19 +157,21 @@ export class AiService {
       return [];
     }
 
-    if (!this.apiKey) {
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) {
       return [];
     }
 
     try {
       const model = await this.getModel(userId, 'tag');
       return await requestTagSuggestions({
-        apiKey: this.apiKey,
+        apiKey: credential.apiKey,
         model,
         content,
         existingTags,
         maxTags: Math.min(Math.max(maxTags, 1), 10),
         style: 'specific',
+        onUsage: this.usageService?.reporter(userId, credential.source),
       });
     } catch {
       return [];
@@ -175,15 +183,15 @@ export class AiService {
       throw new BadRequestException('Content is required for writing fixes');
     }
 
-    if (!this.apiKey) {
+    const model = await this.getModel(userId, 'writing');
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
-    const model = await this.getModel(userId, 'writing');
-
     const response = await fetch(this.openRouterUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${credential.apiKey}`,
         'Content-Type': 'application/json',
         'X-Title': 'Thoughty',
       },
@@ -208,6 +216,7 @@ export class AiService {
     }
 
     const data = (await response.json()) as OpenRouterResponse;
+    await this.usageService?.recordResponse(userId, credential.source, model, data);
     const corrected = data.choices?.[0]?.message?.content?.trim();
 
     return { content: corrected || dto.content };
@@ -218,7 +227,8 @@ export class AiService {
     if (!entry.content.trim()) {
       throw new BadRequestException('Entry content is required');
     }
-    if (!this.apiKey) {
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
 
@@ -226,8 +236,9 @@ export class AiService {
     const summary = await requestEntrySummary({
       ...dto,
       content: entry.content,
-      apiKey: this.apiKey,
+      apiKey: credential.apiKey,
       model,
+      onUsage: this.usageService?.reporter(userId, credential.source),
     });
     return { summary };
   }
@@ -245,7 +256,8 @@ export class AiService {
     if (entries.length === 0) {
       throw new BadRequestException('Journal history is required for writing prompts');
     }
-    if (!this.apiKey) {
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
 
@@ -255,7 +267,14 @@ export class AiService {
       tags,
       content: content.slice(0, 800),
     }));
-    return { prompts: await requestWritingPrompts({ apiKey: this.apiKey, model, history }) };
+    return {
+      prompts: await requestWritingPrompts({
+        apiKey: credential.apiKey,
+        model,
+        history,
+        onUsage: this.usageService?.reporter(userId, credential.source),
+      }),
+    };
   }
 
   async chat(userId: number, dto: ChatDto): Promise<{ reply: string }> {
@@ -269,7 +288,8 @@ export class AiService {
       throw new BadRequestException('At least one message is required');
     }
 
-    if (!this.apiKey) {
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
 
@@ -278,7 +298,7 @@ export class AiService {
     const response = await fetch(this.openRouterUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${credential.apiKey}`,
         'Content-Type': 'application/json',
         'X-Title': 'Thoughty',
       },
@@ -308,6 +328,7 @@ export class AiService {
     }
 
     const data = (await response.json()) as OpenRouterResponse;
+    await this.usageService?.recordResponse(userId, credential.source, model, data);
     const reply = data.choices?.[0]?.message?.content?.trim();
 
     if (!reply) {
@@ -322,14 +343,15 @@ export class AiService {
     return { reply };
   }
 
-  async listModels(): Promise<{ id: string; name: string }[]> {
-    if (!this.apiKey) {
-      throw new BadRequestException('OpenRouter API key is not configured on the server');
+  async listModels(userId = 0): Promise<{ id: string; name: string }[]> {
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) {
+      throw new BadRequestException('OpenRouter API key is not configured');
     }
 
     const response = await fetch('https://openrouter.ai/api/v1/models', {
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${credential.apiKey}`,
         'X-Title': 'Thoughty',
       },
     });
@@ -358,16 +380,19 @@ export class AiService {
       .filter((entry) => typeof entry.content === 'string' && entry.content.trim().length > 0)
       .slice(0, 40);
 
-    if (preparedEntries.length === 0 || !this.apiKey) {
+    if (preparedEntries.length === 0) {
       return null;
     }
+
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) return null;
 
     try {
       const model = await this.getModel(userId, 'tone');
       const response = await fetch(this.openRouterUrl, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${credential.apiKey}`,
           'Content-Type': 'application/json',
           'X-Title': 'Thoughty',
         },
@@ -408,6 +433,7 @@ export class AiService {
       }
 
       const data = (await response.json()) as OpenRouterResponse;
+      await this.usageService?.recordResponse(userId, credential.source, model, data);
       const rawContent = data.choices?.[0]?.message?.content?.trim();
 
       if (!rawContent) {

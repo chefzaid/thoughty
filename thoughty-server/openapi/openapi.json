@@ -2143,6 +2143,171 @@
         ]
       }
     },
+    "/api/ai/credentials": {
+      "get": {
+        "operationId": "AiController_getCredentialStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Personal OpenRouter credential status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenRouterCredentialStatusDto"
+                },
+                "example": {
+                  "hasPersonalKey": true,
+                  "keyHint": "...0b855d",
+                  "source": "personal",
+                  "aiAvailable": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get personal OpenRouter credential status",
+        "tags": [
+          "AI"
+        ]
+      },
+      "put": {
+        "operationId": "AiController_saveCredential",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveOpenRouterCredentialDto"
+              },
+              "example": {
+                "apiKey": "sk-or-v1-example-key-value"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Personal OpenRouter credential validated and stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenRouterCredentialStatusDto"
+                },
+                "example": {
+                  "hasPersonalKey": true,
+                  "keyHint": "...0b855d",
+                  "source": "personal",
+                  "aiAvailable": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Validate and store a personal OpenRouter API key",
+        "tags": [
+          "AI"
+        ]
+      },
+      "delete": {
+        "operationId": "AiController_removeCredential",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Personal OpenRouter credential removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenRouterCredentialStatusDto"
+                },
+                "example": {
+                  "hasPersonalKey": true,
+                  "keyHint": "...0b855d",
+                  "source": "personal",
+                  "aiAvailable": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove the personal OpenRouter API key",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/api/ai/usage": {
+      "get": {
+        "operationId": "AiController_getUsage",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Personal token and cost usage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenRouterUsageDashboardDto"
+                },
+                "example": {
+                  "provider": {
+                    "label": {
+                      "example": "example"
+                    },
+                    "usage": 1,
+                    "usageDaily": 1,
+                    "usageWeekly": 1,
+                    "usageMonthly": 6,
+                    "limit": {
+                      "example": "example"
+                    },
+                    "limitRemaining": {
+                      "example": "example"
+                    },
+                    "limitReset": "daily",
+                    "expiresAt": {
+                      "example": "2026-06-24T10:00:00.000Z"
+                    }
+                  },
+                  "thoughty": {
+                    "promptTokens": 1,
+                    "completionTokens": 1,
+                    "reasoningTokens": 1,
+                    "totalTokens": 1,
+                    "cost": 1,
+                    "requests": 1,
+                    "periodDays": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get personal OpenRouter token and cost usage",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
     "/api/ai/suggest-tags": {
       "post": {
         "operationId": "AiController_suggestTags",
@@ -6430,6 +6595,216 @@
         "example": {
           "success": true,
           "deletedCount": 3
+        }
+      },
+      "OpenRouterCredentialStatusDto": {
+        "type": "object",
+        "properties": {
+          "hasPersonalKey": {
+            "type": "boolean"
+          },
+          "keyHint": {
+            "type": "object",
+            "nullable": true,
+            "example": "...0b855d"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "personal",
+              "server",
+              "none"
+            ]
+          },
+          "aiAvailable": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hasPersonalKey",
+          "source",
+          "aiAvailable"
+        ],
+        "example": {
+          "hasPersonalKey": true,
+          "keyHint": "...0b855d",
+          "source": "personal",
+          "aiAvailable": true
+        }
+      },
+      "SaveOpenRouterCredentialDto": {
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "type": "string",
+            "description": "Write-only OpenRouter API key",
+            "example": "sk-or-v1-example-key-value",
+            "minLength": 20,
+            "maxLength": 256,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "apiKey"
+        ],
+        "example": {
+          "apiKey": "sk-or-v1-example-key-value"
+        }
+      },
+      "OpenRouterProviderUsageDto": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "object",
+            "nullable": true
+          },
+          "usage": {
+            "type": "number"
+          },
+          "usageDaily": {
+            "type": "number"
+          },
+          "usageWeekly": {
+            "type": "number"
+          },
+          "usageMonthly": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "object",
+            "nullable": true
+          },
+          "limitRemaining": {
+            "type": "object",
+            "nullable": true
+          },
+          "limitReset": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "daily",
+              "weekly",
+              "monthly"
+            ]
+          },
+          "expiresAt": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "usage",
+          "usageDaily",
+          "usageWeekly",
+          "usageMonthly"
+        ],
+        "example": {
+          "label": {
+            "example": "example"
+          },
+          "usage": 1,
+          "usageDaily": 1,
+          "usageWeekly": 1,
+          "usageMonthly": 6,
+          "limit": {
+            "example": "example"
+          },
+          "limitRemaining": {
+            "example": "example"
+          },
+          "limitReset": "daily",
+          "expiresAt": {
+            "example": "2026-06-24T10:00:00.000Z"
+          }
+        }
+      },
+      "ThoughtyAiUsageDto": {
+        "type": "object",
+        "properties": {
+          "promptTokens": {
+            "type": "number"
+          },
+          "completionTokens": {
+            "type": "number"
+          },
+          "reasoningTokens": {
+            "type": "number"
+          },
+          "totalTokens": {
+            "type": "number"
+          },
+          "cost": {
+            "type": "number"
+          },
+          "requests": {
+            "type": "number"
+          },
+          "periodDays": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "promptTokens",
+          "completionTokens",
+          "reasoningTokens",
+          "totalTokens",
+          "cost",
+          "requests",
+          "periodDays"
+        ],
+        "example": {
+          "promptTokens": 1,
+          "completionTokens": 1,
+          "reasoningTokens": 1,
+          "totalTokens": 1,
+          "cost": 1,
+          "requests": 1,
+          "periodDays": 1
+        }
+      },
+      "OpenRouterUsageDashboardDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "$ref": "#/components/schemas/OpenRouterProviderUsageDto"
+          },
+          "thoughty": {
+            "$ref": "#/components/schemas/ThoughtyAiUsageDto"
+          }
+        },
+        "required": [
+          "provider",
+          "thoughty"
+        ],
+        "example": {
+          "provider": {
+            "label": {
+              "example": "example"
+            },
+            "usage": 1,
+            "usageDaily": 1,
+            "usageWeekly": 1,
+            "usageMonthly": 6,
+            "limit": {
+              "example": "example"
+            },
+            "limitRemaining": {
+              "example": "example"
+            },
+            "limitReset": "daily",
+            "expiresAt": {
+              "example": "2026-06-24T10:00:00.000Z"
+            }
+          },
+          "thoughty": {
+            "promptTokens": 1,
+            "completionTokens": 1,
+            "reasoningTokens": 1,
+            "totalTokens": 1,
+            "cost": 1,
+            "requests": 1,
+            "periodDays": 1
+          }
         }
       },
       "SuggestTagsDto": {

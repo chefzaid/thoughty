@@ -1,5 +1,10 @@
-import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@/modules/config';
+import { AiUsageService } from './ai-usage.service';
+import {
+  resolveOpenRouterCredential,
+  type ResolvedOpenRouterCredential,
+} from './openrouter-credential.util';
 
 type OpenRouterResponse = {
   choices?: Array<{
@@ -35,12 +40,16 @@ export class AiBookComposerService {
 
   private readonly openRouterUrl = 'https://openrouter.ai/api/v1/chat/completions';
   private readonly defaultModel = process.env.OPENROUTER_TAG_MODEL || 'openai/gpt-4o-mini';
-  private readonly apiKey = process.env.OPENROUTER_API_KEY || '';
+  constructor(
+    private readonly configService: ConfigService,
+    @Optional() private readonly usageService?: AiUsageService,
+  ) {}
 
-  constructor(private readonly configService: ConfigService) {}
-
-  isConfigured(): boolean {
-    return Boolean(this.apiKey);
+  isConfigured(): boolean;
+  isConfigured(userId: number): Promise<boolean>;
+  isConfigured(userId?: number): boolean | Promise<boolean> {
+    if (userId === undefined) return Boolean(process.env.OPENROUTER_API_KEY?.trim());
+    return resolveOpenRouterCredential(this.configService, userId).then(Boolean);
   }
 
   async composeBookChapter(
@@ -49,22 +58,35 @@ export class AiBookComposerService {
     entries: Array<{ date: string; content: string }>,
     mode: BookWeavingMode = 'strict',
   ): Promise<string> {
-    if (!this.apiKey) {
-      throw new BadRequestException('OpenRouter API key is not configured');
-    }
-
     const usableEntries = entries.filter((entry) => entry.content.trim());
     if (usableEntries.length === 0) {
       return '';
     }
 
     const model = await this.getModel(userId);
-    const batches = this.batchEntriesByBudget(usableEntries, AiBookComposerService.CHAPTER_INPUT_BUDGET);
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) {
+      throw new BadRequestException('OpenRouter API key is not configured');
+    }
+    const batches = this.batchEntriesByBudget(
+      usableEntries,
+      AiBookComposerService.CHAPTER_INPUT_BUDGET,
+    );
     const parts: string[] = [];
 
     for (const batch of batches) {
       const previousEnding = parts.at(-1)?.slice(-400);
-      parts.push(await this.requestChapterComposition(model, chapterTitle, batch, mode, previousEnding));
+      parts.push(
+        await this.requestChapterComposition(
+          userId,
+          credential,
+          model,
+          chapterTitle,
+          batch,
+          mode,
+          previousEnding,
+        ),
+      );
     }
 
     return parts.join('\n\n');
@@ -75,35 +97,31 @@ export class AiBookComposerService {
     chapterTitle: string,
     entries: Array<{ date: string; content: string }>,
   ): Promise<BookChapterFraming> {
-    if (!this.apiKey) {
-      throw new BadRequestException('OpenRouter API key is not configured');
-    }
-
     const usableEntries = entries.filter((entry) => entry.content.trim());
     if (usableEntries.length === 0) {
       return { introduction: '', summary: '' };
     }
 
     const model = await this.getModel(userId);
+    const credential = await resolveOpenRouterCredential(this.configService, userId);
+    if (!credential) {
+      throw new BadRequestException('OpenRouter API key is not configured');
+    }
     const source = this.buildFramingSource(usableEntries);
-    const content = await this.requestCompletion(
-      model,
-      0.3,
-      [
-        {
-          role: 'system',
-          content: [
-            "You are a book editor framing a chapter built from a person's journal entries.",
-            `The chapter is titled "${chapterTitle}".`,
-            'Write a concise introduction of 2-3 sentences that invites the reader into the chapter themes.',
-            'Write a concise summary of 3-5 sentences that recaps the key ideas, changes, and conclusions.',
-            'Stay strictly grounded in the supplied entries. Never invent facts, events, feelings, or conclusions.',
-            'Return only a JSON object with string fields "introduction" and "summary". Do not use markdown.',
-          ].join(' '),
-        },
-        { role: 'user', content: source },
-      ],
-    );
+    const content = await this.requestCompletion(userId, credential, model, 0.3, [
+      {
+        role: 'system',
+        content: [
+          "You are a book editor framing a chapter built from a person's journal entries.",
+          `The chapter is titled "${chapterTitle}".`,
+          'Write a concise introduction of 2-3 sentences that invites the reader into the chapter themes.',
+          'Write a concise summary of 3-5 sentences that recaps the key ideas, changes, and conclusions.',
+          'Stay strictly grounded in the supplied entries. Never invent facts, events, feelings, or conclusions.',
+          'Return only a JSON object with string fields "introduction" and "summary". Do not use markdown.',
+        ].join(' '),
+      },
+      { role: 'user', content: source },
+    ]);
 
     return this.parseChapterFraming(content);
   }
@@ -151,7 +169,9 @@ export class AiBookComposerService {
     }
 
     const omission = '\n\n[Middle of chapter omitted for length]\n\n';
-    const excerptLength = Math.floor((AiBookComposerService.FRAMING_INPUT_BUDGET - omission.length) / 2);
+    const excerptLength = Math.floor(
+      (AiBookComposerService.FRAMING_INPUT_BUDGET - omission.length) / 2,
+    );
     return `${source.slice(0, excerptLength)}${omission}${source.slice(-excerptLength)}`;
   }
 
@@ -163,7 +183,8 @@ export class AiBookComposerService {
 
     try {
       const parsed = JSON.parse(normalized) as Record<string, unknown>;
-      const introduction = typeof parsed.introduction === 'string' ? parsed.introduction.trim() : '';
+      const introduction =
+        typeof parsed.introduction === 'string' ? parsed.introduction.trim() : '';
       const summary = typeof parsed.summary === 'string' ? parsed.summary.trim() : '';
       if (!introduction || !summary) {
         throw new Error('Missing chapter framing fields');
@@ -175,6 +196,8 @@ export class AiBookComposerService {
   }
 
   private async requestCompletion(
+    userId: number,
+    credential: ResolvedOpenRouterCredential,
     model: string,
     temperature: number,
     messages: Array<{ role: 'system' | 'user'; content: string }>,
@@ -182,7 +205,7 @@ export class AiBookComposerService {
     const response = await fetch(this.openRouterUrl, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${credential.apiKey}`,
         'Content-Type': 'application/json',
         'X-Title': 'Thoughty',
       },
@@ -198,6 +221,7 @@ export class AiBookComposerService {
     }
 
     const data = (await response.json()) as OpenRouterResponse;
+    await this.usageService?.recordResponse(userId, credential.source, model, data);
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
       throw new BadGatewayException('No response received from OpenRouter');
@@ -206,6 +230,8 @@ export class AiBookComposerService {
   }
 
   private async requestChapterComposition(
+    userId: number,
+    credential: ResolvedOpenRouterCredential,
     model: string,
     chapterTitle: string,
     entries: Array<{ date: string; content: string }>,
@@ -227,7 +253,7 @@ export class AiBookComposerService {
       : entriesText;
 
     const modeInstruction = MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.strict;
-    return this.requestCompletion(model, modeInstruction.temperature, [
+    return this.requestCompletion(userId, credential, model, modeInstruction.temperature, [
       {
         role: 'system',
         content: [
