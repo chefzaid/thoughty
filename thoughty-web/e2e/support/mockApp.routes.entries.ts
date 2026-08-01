@@ -30,6 +30,9 @@ function getFilteredEntries(
   const favorites = searchParams.get('favorites') === 'true';
   const archiveStatus = searchParams.get('archiveStatus') || 'active';
   const diaryId = searchParams.get('diaryId');
+  const semanticIds = searchParams.get('ids')
+    ?.split(',')
+    .map((id) => Number(id)) ?? null;
   const pageNumber = Number(searchParams.get('page') || '1');
   const limit = Number(searchParams.get('limit') || '10');
 
@@ -56,6 +59,12 @@ function getFilteredEntries(
   }
   if (diaryId) {
     filtered = filtered.filter((entry) => String(entry.diaryId ?? 1) === diaryId);
+  }
+  if (semanticIds) {
+    const semanticRank = new Map(semanticIds.map((id, index) => [id, index]));
+    filtered = filtered
+      .filter((entry) => semanticRank.has(entry.id))
+      .sort((left, right) => semanticRank.get(left.id)! - semanticRank.get(right.id)!);
   }
 
   return { filtered, pageNumber, limit };

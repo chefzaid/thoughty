@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ArchiveStatusFilter, Config, Entry, EntryBacklink, GroupedEntries, SourceEntryInfo } from '../types';
 import { useApiServices } from './useApiServices';
+import type { SemanticSearchResponse } from '../services/api/aiService';
+
+export type EntrySearchMode = 'keyword' | 'semantic';
+export type SemanticSearchStatus = 'idle' | 'loading' | 'complete' | 'error';
 
 const ENTRY_DATES_QUERY_KEY = ['app', 'entry-dates'] as const;
 const ENTRY_YEARS_MONTHS_QUERY_KEY = ['app', 'entry-years-months'] as const;
@@ -18,13 +22,17 @@ export const useEntries = (
   config: Config,
   currentDiaryId: number | null,
 ) => {
-  const { entriesService } = useApiServices();
+  const { entriesService, aiService } = useApiServices();
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState<number>(1);
   const [inputPage, setInputPage] = useState<string>('1');
 
   const [search, setSearch] = useState<string>('');
+  const [searchMode, setSearchModeState] = useState<EntrySearchMode>('keyword');
+  const [semanticSearchStatus, setSemanticSearchStatus] = useState<SemanticSearchStatus>('idle');
+  const [semanticSearchResult, setSemanticSearchResult] = useState<SemanticSearchResponse | null>(null);
+  const semanticRequestIdRef = useRef(0);
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [filterDateObj, setFilterDateObj] = useState<Date | null>(null);
   const [filterVisibility, setFilterVisibility] = useState<'all' | 'public' | 'private'>('all');
@@ -41,13 +49,21 @@ export const useEntries = (
       : Number.parseInt(config.entriesPerPage || '10', 10) || 10;
   }, [config.entriesPerPage]);
 
+  const semanticEntryIds = useMemo(() => (
+    searchMode === 'semantic'
+      ? semanticSearchResult?.matches.map((match) => match.entryId) ?? null
+      : null
+  ), [searchMode, semanticSearchResult]);
+  const effectiveKeywordSearch = searchMode === 'keyword' ? search : '';
+
   const entriesQueryKey = useMemo(() => [
     'app',
     ENTRIES_QUERY_KEY,
     {
       page,
       limit: getLimit(),
-      search,
+      search: effectiveKeywordSearch,
+      semanticEntryIds,
       filterTags,
       filterDate: filterDateObj
         ? `${filterDateObj.getFullYear()}-${String(filterDateObj.getMonth() + 1).padStart(2, '0')}-${String(filterDateObj.getDate()).padStart(2, '0')}`
@@ -57,7 +73,7 @@ export const useEntries = (
       filterArchiveStatus,
       currentDiaryId,
     },
-  ] as const, [currentDiaryId, filterArchiveStatus, filterDateObj, filterFavorites, filterTags, filterVisibility, getLimit, page, search]);
+  ] as const, [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterFavorites, filterTags, filterVisibility, getLimit, page, semanticEntryIds]);
 
   const entriesQuery = useQuery({
     queryKey: entriesQueryKey,
@@ -69,13 +85,14 @@ export const useEntries = (
       const result = await entriesService.fetchEntries({
         page,
         limit: getLimit(),
-        search,
+        search: effectiveKeywordSearch,
         filterTags,
         filterDate,
         filterVisibility: filterVisibility === 'all' ? '' : filterVisibility,
         favorites: filterFavorites,
         archiveStatus: filterArchiveStatus,
         diaryId: currentDiaryId,
+        entryIds: semanticEntryIds,
       });
 
       return result ?? { entries: [], totalPages: 1, allTags: [] };
@@ -105,7 +122,10 @@ export const useEntries = (
   const totalPages = entriesQuery.data?.totalPages ?? 1;
   const allTags = entriesQuery.data?.allTags ?? EMPTY_STRINGS;
   const entryDates = entryDatesQuery.data ?? EMPTY_STRINGS;
-  const loading = !isAuthenticated || entriesQuery.isLoading || entriesQuery.isFetching;
+  const loading = !isAuthenticated
+    || entriesQuery.isLoading
+    || entriesQuery.isFetching
+    || semanticSearchStatus === 'loading';
   const availableYears = yearsMonthsQuery.data?.years ?? EMPTY_NUMBERS;
   const availableMonths = yearsMonthsQuery.data?.months ?? EMPTY_STRINGS;
 
@@ -133,6 +153,33 @@ export const useEntries = (
   const fetchEntries = useCallback(async () => {
     return entriesQuery.refetch();
   }, [entriesQuery]);
+
+  const setSearchMode = useCallback((mode: EntrySearchMode) => {
+    semanticRequestIdRef.current += 1;
+    setSearchModeState(mode);
+    setSemanticSearchResult(null);
+    setSemanticSearchStatus('idle');
+    setPage(1);
+  }, []);
+
+  const runSemanticSearch = useCallback(async () => {
+    const query = search.trim();
+    if (query.length < 2) {
+      setSemanticSearchResult(null);
+      setSemanticSearchStatus('idle');
+      setPage(1);
+      return;
+    }
+
+    const requestId = ++semanticRequestIdRef.current;
+    setSemanticSearchStatus('loading');
+    const result = await aiService.semanticSearch(query, currentDiaryId ?? undefined);
+    if (requestId !== semanticRequestIdRef.current) return;
+
+    setSemanticSearchResult(result);
+    setSemanticSearchStatus(result ? 'complete' : 'error');
+    setPage(1);
+  }, [aiService, currentDiaryId, search]);
 
   const refreshEntryQueries = useCallback(async () => {
     await Promise.all([
@@ -251,6 +298,12 @@ export const useEntries = (
   }, [page]);
 
   useEffect(() => {
+    semanticRequestIdRef.current += 1;
+    setSemanticSearchResult(null);
+    setSemanticSearchStatus('idle');
+  }, [currentDiaryId, search]);
+
+  useEffect(() => {
     if (targetEntryId && !loading && entries.length > 0) {
       const entryElement = document.getElementById(`entry-${targetEntryId}`);
       if (entryElement) {
@@ -282,6 +335,11 @@ export const useEntries = (
     setInputPage,
     search,
     setSearch,
+    searchMode,
+    setSearchMode,
+    semanticSearchStatus,
+    semanticSearchResult,
+    runSemanticSearch,
     filterTags,
     setFilterTags,
     filterDateObj,

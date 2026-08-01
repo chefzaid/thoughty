@@ -16,6 +16,7 @@ function createQueryBuilder(overrides: Record<string, unknown> = {}) {
     limit: jest.fn(() => qb),
     orderBy: jest.fn(() => qb),
     select: jest.fn(() => qb),
+    setParameter: jest.fn(() => qb),
     skip: jest.fn(() => qb),
     take: jest.fn(() => qb),
     where: jest.fn(() => qb),
@@ -224,6 +225,30 @@ describe('EntriesQueryService', () => {
       found: false,
       error: 'Entry not found',
     });
+  });
+
+  it('limits results to owned semantic IDs and preserves relevance order', async () => {
+    const entriesQb = createQueryBuilder({
+      getCount: jest.fn().mockResolvedValue(2),
+      getMany: jest.fn().mockResolvedValue([]),
+    });
+    const tagsQb = createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([]) });
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(entriesQb)
+      .mockReturnValueOnce(tagsQb);
+
+    await service.getEntries(4, { ids: '8,3,8', page: 1, limit: 10 });
+
+    expect(entriesQb.where).toHaveBeenCalledWith('e.user_id = :userId', { userId: 4 });
+    expect(entriesQb.andWhere).toHaveBeenCalledWith('e.id IN (:...entryIds)', {
+      entryIds: [8, 3],
+    });
+    expect(entriesQb.addSelect).toHaveBeenCalledWith(
+      'array_position(CAST(:semanticOrder AS integer[]), e.id)',
+      'semantic_rank',
+    );
+    expect(entriesQb.setParameter).toHaveBeenCalledWith('semanticOrder', [8, 3]);
+    expect(entriesQb.orderBy).toHaveBeenCalledWith('semantic_rank', 'ASC');
   });
 
   it('returns exact backlinks for the target entry date and index', async () => {

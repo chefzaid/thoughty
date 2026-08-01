@@ -125,6 +125,30 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
     return true;
   }
 
+  if (pathname === '/api/ai/semantic-search') {
+    const payload = request.postDataJSON() as { query: string; diaryId?: number };
+    state.lastAiSemanticSearchPayload = payload;
+    const entries = (payload.diaryId == null
+      ? state.entries
+      : state.entries.filter((entry) => (entry.diaryId ?? 1) === payload.diaryId))
+      .filter((entry) => entry.tags.includes('semantic-match'));
+
+    await fulfillJson(route, {
+      analyzedEntries: payload.diaryId == null
+        ? state.entries.length
+        : state.entries.filter((entry) => (entry.diaryId ?? 1) === payload.diaryId).length,
+      totalEntries: payload.diaryId == null
+        ? state.entries.length
+        : state.entries.filter((entry) => (entry.diaryId ?? 1) === payload.diaryId).length,
+      truncated: false,
+      matches: entries.map((entry, index) => ({
+        entryId: entry.id,
+        score: Math.max(0.5, 0.95 - index * 0.1),
+      })),
+    });
+    return true;
+  }
+
   if (pathname === '/api/ai/chat') {
     state.lastAiChatPayload = request.postDataJSON();
     await fulfillJson(route, { reply: 'This entry reflects a thoughtful focus on the day.' });

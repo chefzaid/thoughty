@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AiController } from './ai.controller';
 import { AiService } from './ai.service';
 import { AiDuplicateService } from './ai-duplicate.service';
+import { AiSemanticSearchService } from './ai-semantic-search.service';
 
 describe('AiController', () => {
   let controller: AiController;
@@ -14,6 +15,7 @@ describe('AiController', () => {
     listModels: jest.Mock;
   };
   let aiDuplicateService: { findDuplicates: jest.Mock };
+  let aiSemanticSearchService: { search: jest.Mock };
 
   beforeEach(async () => {
     aiService = {
@@ -25,12 +27,14 @@ describe('AiController', () => {
       listModels: jest.fn(),
     };
     aiDuplicateService = { findDuplicates: jest.fn() };
+    aiSemanticSearchService = { search: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AiController],
       providers: [
         { provide: AiService, useValue: aiService },
         { provide: AiDuplicateService, useValue: aiDuplicateService },
+        { provide: AiSemanticSearchService, useValue: aiSemanticSearchService },
       ],
     }).compile();
 
@@ -117,6 +121,26 @@ describe('AiController', () => {
 
     expect(aiDuplicateService.findDuplicates).toHaveBeenCalledWith(1, { diaryId: 4 });
     expect(result.groups).toEqual([]);
+  });
+
+  it('delegates semantic search to the user-scoped service', async () => {
+    aiSemanticSearchService.search.mockResolvedValue({
+      analyzedEntries: 2,
+      totalEntries: 2,
+      truncated: false,
+      matches: [{ entryId: 12, score: 0.9 }],
+    });
+
+    const result = await controller.semanticSearch(
+      { userId: 1, email: 'test@example.com' } as any,
+      { query: 'a career decision', diaryId: 4 },
+    );
+
+    expect(aiSemanticSearchService.search).toHaveBeenCalledWith(1, {
+      query: 'a career decision',
+      diaryId: 4,
+    });
+    expect(result.matches).toEqual([{ entryId: 12, score: 0.9 }]);
   });
 
   it('delegates chat history lookup to the service', async () => {

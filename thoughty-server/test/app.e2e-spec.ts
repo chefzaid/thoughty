@@ -64,6 +64,10 @@ describe('AppController (e2e)', () => {
       return request(app.getHttpServer()).post('/api/ai/duplicates').send({}).expect(401);
     });
 
+    it('/api/ai/semantic-search (POST) - should require authentication', () => {
+      return request(app.getHttpServer()).post('/api/ai/semantic-search').send({}).expect(401);
+    });
+
     it('/api/feature-requests (POST) - should require authentication', () => {
       return request(app.getHttpServer())
         .post('/api/feature-requests')

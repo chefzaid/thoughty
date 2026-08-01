@@ -11,6 +11,7 @@ import {
   IsInt,
   ArrayMinSize,
   IsBoolean,
+  Matches,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
@@ -160,6 +161,13 @@ export class GetEntriesQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({ description: 'Comma-separated entry IDs to include, in relevance order' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(550)
+  @Matches(/^\d+(,\d+)*$/)
+  ids?: string;
 
   @ApiPropertyOptional({ description: 'Comma-separated list of tags to filter by' })
   @IsOptional()

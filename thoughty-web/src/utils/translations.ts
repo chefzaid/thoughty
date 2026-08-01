@@ -503,6 +503,15 @@ export type TranslationKey =
   | 'duplicateConfidence'
   | 'openDuplicateEntry'
   | 'deleteDuplicateEntry'
+  | 'searchMode'
+  | 'keywordSearchMode'
+  | 'semanticSearchMode'
+  | 'semanticSearchPlaceholder'
+  | 'runSemanticSearch'
+  | 'searchingSemantic'
+  | 'semanticSearchError'
+  | 'semanticSearchCount'
+  | 'semanticSearchLimited'
   | 'retry'
   | 'aiChat'
   | 'aiThinking'
@@ -763,6 +772,15 @@ export const translations: Translations = {
     contact: 'Contact Us',
     skipToContent: 'Skip to content',
     searchPlaceholder: 'Search content...',
+    searchMode: 'Search mode',
+    keywordSearchMode: 'Keywords',
+    semanticSearchMode: 'Meaning',
+    semanticSearchPlaceholder: 'Search by meaning or idea...',
+    runSemanticSearch: 'Search by meaning',
+    searchingSemantic: 'Searching entries by meaning...',
+    semanticSearchError: 'Meaning search is unavailable right now. Try again.',
+    semanticSearchCount: 'Closest matches: {matches}. Entries analyzed: {analyzed}.',
+    semanticSearchLimited: 'Only the 100 newest entries were analyzed.',
     filterTagsPlaceholder: 'Filter by tags...',
     filterDatePlaceholder: 'Filter by date',
     filterVisibility: 'Filter by visibility',
@@ -1583,6 +1601,15 @@ export const translations: Translations = {
     contact: 'Nous contacter',
     skipToContent: 'Aller au contenu',
     searchPlaceholder: 'Rechercher...',
+    searchMode: 'Mode de recherche',
+    keywordSearchMode: 'Mots-clés',
+    semanticSearchMode: 'Sens',
+    semanticSearchPlaceholder: 'Rechercher par sens ou par idée...',
+    runSemanticSearch: 'Rechercher par sens',
+    searchingSemantic: 'Recherche des entrées par sens...',
+    semanticSearchError: 'La recherche par sens est indisponible. Réessayez.',
+    semanticSearchCount: 'Résultats proches : {matches}. Entrées analysées : {analyzed}.',
+    semanticSearchLimited: 'Seules les 100 entrées les plus récentes ont été analysées.',
     filterTagsPlaceholder: 'Filtrer par tags...',
     filterDatePlaceholder: 'Filtrer par date',
     filterVisibility: 'Filtrer par visibilité',

@@ -114,7 +114,7 @@ function JournalView({
       <EntriesList
         {...entriesList}
         config={config}
-        searchTerm={filters.search}
+        searchTerm={filters.searchMode === 'keyword' ? filters.search : undefined}
         t={t}
       />
 

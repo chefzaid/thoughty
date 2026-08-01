@@ -30,6 +30,11 @@ describe('FilterControls', () => {
   const defaultProps = {
     search: '',
     setSearch: mockSetSearch,
+    searchMode: 'keyword' as const,
+    setSearchMode: vi.fn(),
+    semanticSearchStatus: 'idle' as const,
+    semanticSearchResult: null,
+    onSemanticSearch: vi.fn().mockResolvedValue(undefined),
     filterTags: [],
     setFilterTags: mockSetFilterTags,
     filterDateObj: null,
@@ -112,6 +117,7 @@ describe('FilterControls', () => {
     const resetButton = screen.getByTitle('resetFilters');
     fireEvent.click(resetButton);
     expect(mockSetSearch).toHaveBeenCalledWith('');
+    expect(defaultProps.setSearchMode).toHaveBeenCalledWith('keyword');
     expect(mockSetFilterTags).toHaveBeenCalledWith([]);
     expect(mockSetFilterDateObj).toHaveBeenCalledWith(null);
     expect(mockSetFilterVisibility).toHaveBeenCalledWith('all');
@@ -193,5 +199,47 @@ describe('FilterControls', () => {
     render(<FilterControls {...defaultProps} filterVisibility="private" />);
     const visibilityButton = screen.getByTitle('Visibility');
     expect(visibilityButton).toHaveClass('text-gray-500');
+  });
+
+  it('runs meaning search from Enter and reports bounded results', () => {
+    const onSemanticSearch = vi.fn().mockResolvedValue(undefined);
+    render(
+      <FilterControls
+        {...defaultProps}
+        search="a difficult career choice"
+        searchMode="semantic"
+        semanticSearchStatus="complete"
+        semanticSearchResult={{
+          analyzedEntries: 100,
+          totalEntries: 140,
+          truncated: true,
+          matches: [{ entryId: 4, score: 0.9 }],
+        }}
+        onSemanticSearch={onSemanticSearch}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByPlaceholderText('semanticSearchPlaceholder'), { key: 'Enter' });
+
+    expect(onSemanticSearch).toHaveBeenCalled();
+    expect(screen.getByText(/semanticSearchCount/)).toHaveTextContent('semanticSearchLimited');
+    expect(screen.queryByPlaceholderText('searchPlaceholder')).not.toBeInTheDocument();
+  });
+
+  it('switches search modes and exposes semantic errors', () => {
+    const setSearchMode = vi.fn();
+    render(
+      <FilterControls
+        {...defaultProps}
+        searchMode="semantic"
+        setSearchMode={setSearchMode}
+        semanticSearchStatus="error"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'keywordSearchMode' }));
+
+    expect(setSearchMode).toHaveBeenCalledWith('keyword');
+    expect(screen.getByRole('alert')).toHaveTextContent('semanticSearchError');
   });
 });

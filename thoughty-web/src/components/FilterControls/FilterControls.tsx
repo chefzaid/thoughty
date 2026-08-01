@@ -4,12 +4,19 @@ import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
 import type { ArchiveStatusFilter } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
+import type { SemanticSearchResponse } from '../../services/api/aiService';
+import type { EntrySearchMode, SemanticSearchStatus } from '../../hooks/useEntriesState';
 
 type VisibilityFilter = 'all' | 'public' | 'private';
 
 interface FilterControlsProps {
     readonly search: string;
     readonly setSearch: Dispatch<SetStateAction<string>>;
+    readonly searchMode: EntrySearchMode;
+    readonly setSearchMode: (mode: EntrySearchMode) => void;
+    readonly semanticSearchStatus: SemanticSearchStatus;
+    readonly semanticSearchResult: SemanticSearchResponse | null;
+    readonly onSemanticSearch: () => Promise<void>;
     readonly filterTags: string[];
     readonly setFilterTags: Dispatch<SetStateAction<string[]>>;
     readonly filterDateObj: Date | null;
@@ -31,6 +38,11 @@ interface FilterControlsProps {
 function FilterControls({
     search,
     setSearch,
+    searchMode,
+    setSearchMode,
+    semanticSearchStatus,
+    semanticSearchResult,
+    onSemanticSearch,
     filterTags,
     setFilterTags,
     filterDateObj,
@@ -54,13 +66,14 @@ function FilterControls({
         : 'bg-gray-900 border-gray-700 text-gray-100'
         }`;
 
-    const containerClass = `flex flex-wrap items-center gap-3 mb-8 p-4 rounded-lg border overflow-visible ${theme === 'light'
+    const containerClass = `journal-filter-controls flex flex-wrap items-center gap-3 mb-8 p-4 rounded-lg border overflow-visible ${theme === 'light'
         ? 'bg-white/50 border-gray-200'
         : 'bg-gray-800/50 border-gray-700/50'
         }`;
 
     const handleReset = (): void => {
         setSearch('');
+        setSearchMode('keyword');
         setFilterTags([]);
         setFilterDateObj(null);
         setFilterVisibility('all');
@@ -168,13 +181,54 @@ function FilterControls({
 
     return (
         <div className={containerClass}>
+            <div
+                className={`semantic-search-control flex h-10 shrink-0 overflow-hidden rounded-md border ${isLight ? 'border-gray-300' : 'border-gray-700'}`}
+                role="group"
+                aria-label={t('searchMode')}
+            >
+                {(['keyword', 'semantic'] as const).map((mode) => (
+                    <button
+                        key={mode}
+                        type="button"
+                        className={`h-full px-3 text-sm font-medium ${searchMode === mode
+                            ? 'bg-blue-600 text-white'
+                            : isLight ? 'bg-gray-50 text-gray-700' : 'bg-gray-900 text-gray-300'
+                            }`}
+                        aria-pressed={searchMode === mode}
+                        onClick={() => setSearchMode(mode)}
+                    >
+                        {t(mode === 'keyword' ? 'keywordSearchMode' : 'semanticSearchMode')}
+                    </button>
+                ))}
+            </div>
             <input
                 type="text"
-                placeholder={t('searchPlaceholder')}
-                className={`${inputClass} min-w-0 flex-1 basis-64`}
+                placeholder={t(searchMode === 'keyword' ? 'searchPlaceholder' : 'semanticSearchPlaceholder')}
+                className={`semantic-search-control ${inputClass} min-w-0 flex-1 basis-64`}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                onKeyDown={(event) => {
+                    if (searchMode === 'semantic' && event.key === 'Enter') {
+                        event.preventDefault();
+                        void onSemanticSearch();
+                    }
+                }}
             />
+            {searchMode === 'semantic' && (
+                <button
+                    type="button"
+                    className="semantic-search-control grid h-10 w-10 shrink-0 place-items-center rounded-md border border-blue-500 bg-blue-600 text-white disabled:cursor-not-allowed disabled:opacity-50"
+                    title={t('runSemanticSearch')}
+                    aria-label={t('runSemanticSearch')}
+                    disabled={semanticSearchStatus === 'loading' || search.trim().length < 2}
+                    onClick={() => void onSemanticSearch()}
+                >
+                    <span
+                        className={`codicon ${semanticSearchStatus === 'loading' ? 'codicon-loading codicon-modifier-spin' : 'codicon-search'}`}
+                        aria-hidden="true"
+                    />
+                </button>
+            )}
             <div className="relative z-30 min-w-[12rem] flex-1 basis-52">
                 <TagPicker
                     availableTags={allTags}
@@ -249,6 +303,25 @@ function FilterControls({
                 </svg>
                 {t('highlights')}
             </button>
+            {searchMode === 'semantic' && (
+                <div className="semantic-search-control basis-full text-sm" aria-live="polite">
+                    {semanticSearchStatus === 'loading' && <p>{t('searchingSemantic')}</p>}
+                    {semanticSearchStatus === 'error' && (
+                        <p className={isLight ? 'text-red-700' : 'text-red-300'} role="alert">
+                            {t('semanticSearchError')}
+                        </p>
+                    )}
+                    {semanticSearchStatus === 'complete' && semanticSearchResult && (
+                        <p className={isLight ? 'text-gray-700' : 'text-gray-300'}>
+                            {t('semanticSearchCount', {
+                                matches: semanticSearchResult.matches.length,
+                                analyzed: semanticSearchResult.analyzedEntries,
+                            })}
+                            {semanticSearchResult.truncated ? ` ${t('semanticSearchLimited')}` : ''}
+                        </p>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

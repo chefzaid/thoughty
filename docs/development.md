@@ -177,6 +177,7 @@ The `.env.example` files are the source of truth for local configuration. The ta
 | S3 / object storage        | local MinIO defaults                                   | No `.env` needed if you keep the defaults                |
 | `CONFIG_ENCRYPTION_SECRET` | local secret string                                    | Used for encrypted user config and cloud-sync tokens     |
 | `OPENROUTER_API_KEY`       | empty by default                                       | Required only for AI features                            |
+| `OPENROUTER_EMBEDDING_MODEL` | `openai/text-embedding-3-small`                      | Optional semantic-search embedding model override        |
 | Cloud provider OAuth keys  | empty by default                                       | Required only for cloud sync integrations                |
 | SMTP settings              | example placeholders                                   | Required only for real email sending flows               |
 | Feature flags              | optional external endpoint                            | `FEATURE_FLAG_PROVIDER_URL`, optional `FEATURE_FLAG_PROVIDER_TOKEN`, `FEATURE_FLAG_CACHE_TTL_MS`, and fallback `FEATURE_FLAGS=flag=true,other=false` |

@@ -111,6 +111,7 @@ These are loaded into the server and worker containers through `envFrom`:
 | `ENTRIES_CACHE_TTL_SECONDS` | ConfigMap  | Per-pod TTL for repeated entry-list responses      |
 | `ENTRIES_CACHE_MAX_KEYS`    | ConfigMap  | Maximum per-pod entry-list cache keys              |
 | `OPENROUTER_TAG_MODEL` | ConfigMap      | Default model for AI auto-tagging                   |
+| `OPENROUTER_EMBEDDING_MODEL` | ConfigMap | Embedding model for semantic journal search         |
 
 ### Vault Secrets Already Wired
 
@@ -135,7 +136,7 @@ Every variable below is already wired into the manifests. The remaining work is 
 | Distributed throttling      | `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB` or `REDIS_URL`; optional `REDIS_PASSWORD`, `REDIS_TLS`                                                         | API falls back to process-local throttling when Redis is not configured or temporarily unavailable |
 | Cloud sync token encryption | `CONFIG_ENCRYPTION_SECRET`                                                                                                                           | Encrypted provider tokens fall back to a default secret that is not suitable for production |
 | Cloud sync providers        | `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET` | Provider auth flows are unavailable                                                         |
-| AI features                 | `OPENROUTER_API_KEY` (secret); `OPENROUTER_TAG_MODEL` (ConfigMap)                                                                                    | AI endpoints return disabled or degraded behavior                                           |
+| AI features                 | `OPENROUTER_API_KEY` (secret); `OPENROUTER_TAG_MODEL`, `OPENROUTER_EMBEDDING_MODEL` (ConfigMap)                                                       | AI endpoints return disabled or degraded behavior                                           |
 | Email sender override       | `SMTP_FROM`                                                                                                                                          | Falls back to sending from `SMTP_USER`                                                      |
 | PostgreSQL read replicas    | `POSTGRES_READ_REPLICA_HOSTS`, optional `POSTGRES_READ_REPLICA_PORTS`, optional `POSTGRES_READ_REPLICA_USER`, `POSTGRES_READ_REPLICA_PASSWORD`, `POSTGRES_READ_REPLICA_DB` | TypeORM routes reads to the primary database when replica hosts are empty |
 

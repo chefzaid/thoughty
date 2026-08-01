@@ -58,6 +58,7 @@ vi.mock('../services/api', () => ({
   createAiService: vi.fn(() => ({
     suggestTags: vi.fn(),
     fixWriting: vi.fn(),
+    semanticSearch: vi.fn(),
   })),
   createCloudSyncService: vi.fn(() => ({
     getStatus: vi.fn(),
@@ -404,6 +405,68 @@ describe('useAppState Hooks', () => {
       expect(numeric.result.current.getLimit()).toBe(25);
       expect(stringValue.result.current.getLimit()).toBe(7);
       expect(fallback.result.current.getLimit()).toBe(10);
+    });
+
+    it('runs diary-scoped meaning search and filters entries by ranked IDs', async () => {
+      const fetchEntries = vi.fn().mockResolvedValue({ entries: [], totalPages: 1, allTags: [] });
+      const semanticSearch = vi.fn().mockResolvedValue({
+        analyzedEntries: 3,
+        totalEntries: 3,
+        truncated: false,
+        matches: [{ entryId: 9, score: 0.9 }, { entryId: 3, score: 0.7 }],
+      });
+      const { createAiService, createEntriesService } = await import('../services/api');
+      vi.mocked(createEntriesService).mockReturnValue({
+        fetchEntries,
+        fetchEntryDates: vi.fn().mockResolvedValue([]),
+        fetchYearsMonths: vi.fn().mockResolvedValue({ years: [], months: [] }),
+        createEntry: vi.fn(),
+        updateEntry: vi.fn(),
+        deleteEntry: vi.fn(),
+        toggleVisibility: vi.fn(),
+        toggleFavorite: vi.fn(),
+        toggleArchived: vi.fn(),
+        togglePinned: vi.fn(),
+        bulkOperation: vi.fn(),
+        navigateToFirst: vi.fn(),
+        navigateByDate: vi.fn(),
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn(),
+        fetchEntryBacklinks: vi.fn(),
+        deleteRevision: vi.fn(),
+        reorderEntries: vi.fn(),
+        renameTag: vi.fn(),
+      });
+      vi.mocked(createAiService).mockReturnValue({
+        suggestTags: vi.fn(),
+        fixWriting: vi.fn(),
+        summarizeEntry: vi.fn(),
+        generateWritingPrompts: vi.fn(),
+        findDuplicateEntries: vi.fn(),
+        semanticSearch,
+        chat: vi.fn(),
+        getChatHistory: vi.fn(),
+        fetchModels: vi.fn(),
+      });
+      const { result } = renderHook(() => useEntries(true, mockConfig, 4));
+
+      act(() => {
+        result.current.setSearchMode('semantic');
+        result.current.setSearch('a difficult career choice');
+      });
+      await act(async () => {
+        await result.current.runSemanticSearch();
+      });
+
+      expect(semanticSearch).toHaveBeenCalledWith('a difficult career choice', 4);
+      await waitFor(() => {
+        expect(fetchEntries).toHaveBeenCalledWith(expect.objectContaining({
+          search: '',
+          entryIds: [9, 3],
+          diaryId: 4,
+        }));
+      });
+      expect(result.current.semanticSearchStatus).toBe('complete');
     });
 
     it('reorders the current day entries in local state before the API round-trip completes', async () => {

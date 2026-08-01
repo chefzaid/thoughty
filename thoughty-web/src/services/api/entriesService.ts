@@ -36,6 +36,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     favorites: boolean;
     archiveStatus: ArchiveStatusFilter;
     diaryId: number | null;
+    entryIds?: number[] | null;
   }): Promise<EntriesResponse | null> => {
     try {
       const urlParams = new URLSearchParams({
@@ -54,6 +55,9 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
       }
       if (params.archiveStatus !== 'all') {
         urlParams.append('archiveStatus', params.archiveStatus);
+      }
+      if (params.entryIds) {
+        urlParams.append('ids', params.entryIds.length > 0 ? params.entryIds.join(',') : '0');
       }
 
       const response = await authFetch(`/api/entries?${urlParams}`);

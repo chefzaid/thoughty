@@ -220,6 +220,39 @@ describe('aiService', () => {
     });
   });
 
+  it('semanticSearch returns ranked matches and sends diary scope', async () => {
+    const payload = {
+      analyzedEntries: 2,
+      totalEntries: 5,
+      truncated: true,
+      matches: [{ entryId: 7, score: 0.91 }],
+    };
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(payload),
+    });
+
+    await expect(service.semanticSearch('career decisions', 4)).resolves.toEqual(payload);
+    expect(mockAuthFetch).toHaveBeenCalledWith('/api/ai/semantic-search', {
+      method: 'POST',
+      body: JSON.stringify({ query: 'career decisions', diaryId: 4 }),
+    });
+  });
+
+  it('semanticSearch rejects malformed match payloads', async () => {
+    mockAuthFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        analyzedEntries: 2,
+        totalEntries: 2,
+        truncated: false,
+        matches: [{ entryId: 7, score: 2 }],
+      }),
+    });
+
+    await expect(service.semanticSearch('career decisions')).resolves.toBeNull();
+  });
+
   it('chat returns null for malformed reply payload', async () => {
     mockAuthFetch.mockResolvedValue({
       ok: true,
@@ -282,6 +315,7 @@ describe('aiService', () => {
     mockAuthFetch.mockRejectedValueOnce(new Error('fix writing network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('summary network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('prompt network'));
+    mockAuthFetch.mockRejectedValueOnce(new Error('semantic search network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('chat network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('history network'));
     mockAuthFetch.mockRejectedValueOnce(new Error('models network'));
@@ -289,6 +323,7 @@ describe('aiService', () => {
     await expect(service.fixWriting('raw')).resolves.toBeNull();
     await expect(service.summarizeEntry(1)).resolves.toBeNull();
     await expect(service.generateWritingPrompts()).resolves.toBeNull();
+    await expect(service.semanticSearch('query')).resolves.toBeNull();
     await expect(service.chat(1, 'entry', [])).resolves.toBeNull();
     await expect(service.getChatHistory(1)).resolves.toEqual([]);
     await expect(service.fetchModels()).resolves.toEqual([]);
@@ -296,6 +331,7 @@ describe('aiService', () => {
     expect(consoleSpy).toHaveBeenCalledWith('Error fixing writing:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error summarizing entry:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error generating writing prompts:', expect.any(Error));
+    expect(consoleSpy).toHaveBeenCalledWith('Error searching entries by meaning:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error in AI chat:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error loading AI chat history:', expect.any(Error));
     expect(consoleSpy).toHaveBeenCalledWith('Error fetching models:', expect.any(Error));

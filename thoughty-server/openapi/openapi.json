@@ -620,6 +620,15 @@
             }
           },
           {
+            "name": "ids",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated entry IDs to include, in relevance order",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "tags",
             "required": false,
             "in": "query",
@@ -2125,6 +2134,58 @@
           }
         ],
         "summary": "Find high-confidence semantic duplicate journal entries",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/api/ai/semantic-search": {
+      "post": {
+        "operationId": "AiController_semanticSearch",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SemanticSearchDto"
+              },
+              "example": {
+                "query": "example",
+                "diaryId": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ranked semantic entry matches returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SemanticSearchResponseDto"
+                },
+                "example": {
+                  "analyzedEntries": 1,
+                  "totalEntries": 1,
+                  "truncated": true,
+                  "matches": [
+                    {
+                      "entryId": 1,
+                      "score": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Search owned journal entries by semantic similarity",
         "tags": [
           "AI"
         ]
@@ -5986,6 +6047,90 @@
                   ]
                 }
               ]
+            }
+          ]
+        }
+      },
+      "SemanticSearchDto": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Diary to search; omit to search across all diaries",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "example": {
+          "query": "example",
+          "diaryId": 1
+        }
+      },
+      "SemanticSearchMatchDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "minimum": 1
+          },
+          "score": {
+            "type": "number",
+            "minimum": -1,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "entryId",
+          "score"
+        ],
+        "example": {
+          "entryId": 1,
+          "score": 1
+        }
+      },
+      "SemanticSearchResponseDto": {
+        "type": "object",
+        "properties": {
+          "analyzedEntries": {
+            "type": "number",
+            "minimum": 0
+          },
+          "totalEntries": {
+            "type": "number",
+            "minimum": 0
+          },
+          "truncated": {
+            "type": "boolean",
+            "description": "Whether older entries existed outside the bounded search window"
+          },
+          "matches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SemanticSearchMatchDto"
+            }
+          }
+        },
+        "required": [
+          "analyzedEntries",
+          "totalEntries",
+          "truncated",
+          "matches"
+        ],
+        "example": {
+          "analyzedEntries": 1,
+          "totalEntries": 1,
+          "truncated": true,
+          "matches": [
+            {
+              "entryId": 1,
+              "score": 1
             }
           ]
         }

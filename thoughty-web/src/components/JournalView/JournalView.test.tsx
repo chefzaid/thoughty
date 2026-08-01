@@ -202,6 +202,11 @@ describe('JournalView', () => {
       filters: {
         search: '',
         setSearch: vi.fn(),
+        searchMode: 'keyword',
+        setSearchMode: vi.fn(),
+        semanticSearchStatus: 'idle',
+        semanticSearchResult: null,
+        onSemanticSearch: vi.fn().mockResolvedValue(undefined),
         filterTags: [],
         setFilterTags: vi.fn(),
         filterDateObj: null,

@@ -10,6 +10,8 @@ import { EntrySummaryResponseDto, SummarizeEntryDto } from './dto/summarize-entr
 import { GenerateWritingPromptsDto, WritingPromptsResponseDto } from './dto/writing-prompts.dto';
 import { AiDuplicateService } from './ai-duplicate.service';
 import { DuplicateEntryScanResponseDto, FindDuplicateEntriesDto } from './dto/duplicate-entries.dto';
+import { AiSemanticSearchService } from './ai-semantic-search.service';
+import { SemanticSearchDto, SemanticSearchResponseDto } from './dto/semantic-search.dto';
 
 @ApiTags('AI')
 @ApiBearerAuth()
@@ -19,6 +21,7 @@ export class AiController {
   constructor(
     private readonly aiService: AiService,
     private readonly aiDuplicateService: AiDuplicateService,
+    private readonly aiSemanticSearchService: AiSemanticSearchService,
   ) {}
 
   @Get('models')
@@ -88,6 +91,20 @@ export class AiController {
     @Body() dto: FindDuplicateEntriesDto,
   ): Promise<DuplicateEntryScanResponseDto> {
     return this.aiDuplicateService.findDuplicates(user.userId, dto);
+  }
+
+  @Post('semantic-search')
+  @ApiOperation({ summary: 'Search owned journal entries by semantic similarity' })
+  @ApiResponse({
+    status: 200,
+    description: 'Ranked semantic entry matches returned successfully',
+    type: SemanticSearchResponseDto,
+  })
+  async semanticSearch(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SemanticSearchDto,
+  ): Promise<SemanticSearchResponseDto> {
+    return this.aiSemanticSearchService.search(user.userId, dto);
   }
 
   @Post('chat')

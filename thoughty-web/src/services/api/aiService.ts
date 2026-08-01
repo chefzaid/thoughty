@@ -33,6 +33,18 @@ export interface DuplicateEntryScan {
   groups: DuplicateEntryGroup[];
 }
 
+export interface SemanticSearchMatch {
+  entryId: number;
+  score: number;
+}
+
+export interface SemanticSearchResponse {
+  analyzedEntries: number;
+  totalEntries: number;
+  truncated: boolean;
+  matches: SemanticSearchMatch[];
+}
+
 export const createAiService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
   const suggestTags = async (
     content: string,
@@ -173,6 +185,39 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     }
   };
 
+  const semanticSearch = async (
+    query: string,
+    diaryId?: number,
+  ): Promise<SemanticSearchResponse | null> => {
+    try {
+      const response = await authFetch('/api/ai/semantic-search', {
+        method: 'POST',
+        body: JSON.stringify({ query, ...(diaryId == null ? {} : { diaryId }) }),
+      });
+      const data = await safeJsonParse<SemanticSearchResponse>(response);
+      if (
+        !response.ok
+        || !data
+        || !Number.isInteger(data.analyzedEntries)
+        || !Number.isInteger(data.totalEntries)
+        || typeof data.truncated !== 'boolean'
+        || !Array.isArray(data.matches)
+        || data.matches.some((match) => (
+          !Number.isInteger(match.entryId)
+          || match.entryId < 1
+          || !Number.isFinite(match.score)
+          || match.score < -1
+          || match.score > 1
+        ))
+      ) return null;
+
+      return data;
+    } catch (error) {
+      console.error('Error searching entries by meaning:', error);
+      return null;
+    }
+  };
+
   const getChatHistory = async (
     entryId: number,
   ): Promise<Array<{ role: 'user' | 'assistant'; content: string }>> => {
@@ -216,6 +261,7 @@ export const createAiService = (authFetch: (url: string, options?: RequestInit) 
     summarizeEntry,
     generateWritingPrompts,
     findDuplicateEntries,
+    semanticSearch,
     chat,
     getChatHistory,
     fetchModels,

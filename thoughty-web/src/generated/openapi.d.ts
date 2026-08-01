@@ -705,6 +705,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ai/semantic-search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search owned journal entries by semantic similarity */
+        post: operations["AiController_semanticSearch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/chat": {
         parameters: {
             query?: never;
@@ -2109,6 +2126,47 @@ export interface components {
         };
         /**
          * @example {
+         *       "query": "example",
+         *       "diaryId": 1
+         *     }
+         */
+        SemanticSearchDto: {
+            query: string;
+            /** @description Diary to search; omit to search across all diaries */
+            diaryId?: number;
+        };
+        /**
+         * @example {
+         *       "entryId": 1,
+         *       "score": 1
+         *     }
+         */
+        SemanticSearchMatchDto: {
+            entryId: number;
+            score: number;
+        };
+        /**
+         * @example {
+         *       "analyzedEntries": 1,
+         *       "totalEntries": 1,
+         *       "truncated": true,
+         *       "matches": [
+         *         {
+         *           "entryId": 1,
+         *           "score": 1
+         *         }
+         *       ]
+         *     }
+         */
+        SemanticSearchResponseDto: {
+            analyzedEntries: number;
+            totalEntries: number;
+            /** @description Whether older entries existed outside the bounded search window */
+            truncated: boolean;
+            matches: components["schemas"]["SemanticSearchMatchDto"][];
+        };
+        /**
+         * @example {
          *       "role": "user",
          *       "content": "Today I wrote a thoughtful journal entry about focus and calm."
          *     }
@@ -3500,6 +3558,8 @@ export interface operations {
             query?: {
                 /** @description Search term for content or tags */
                 search?: string;
+                /** @description Comma-separated entry IDs to include, in relevance order */
+                ids?: string;
                 /** @description Comma-separated list of tags to filter by */
                 tags?: string;
                 /** @description Filter by date (YYYY-MM-DD) */
@@ -4637,6 +4697,49 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["DuplicateEntryScanResponseDto"];
+                };
+            };
+        };
+    };
+    AiController_semanticSearch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "query": "example",
+                 *       "diaryId": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["SemanticSearchDto"];
+            };
+        };
+        responses: {
+            /** @description Ranked semantic entry matches returned successfully */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "analyzedEntries": 1,
+                     *       "totalEntries": 1,
+                     *       "truncated": true,
+                     *       "matches": [
+                     *         {
+                     *           "entryId": 1,
+                     *           "score": 1
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SemanticSearchResponseDto"];
                 };
             };
         };

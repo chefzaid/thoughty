@@ -117,5 +117,28 @@ test.describe('route accessibility', () => {
 
       await expectNoAccessibilityViolations(page, '.duplicate-review-dialog');
     });
+
+    test(`${theme} semantic search controls`, async ({ page }) => {
+      await setupMockApp(page, {
+        startAuthenticated: true,
+        config: { theme },
+        initialEntries: [{
+          id: 303,
+          date: '2026-05-03',
+          index: 1,
+          content: 'I made room for a calmer season of work.',
+          tags: ['semantic-match'],
+          visibility: 'private',
+          diaryId: 1,
+        }],
+      });
+      await page.goto('/journal?diary=1');
+      await page.getByRole('button', { name: 'Meaning' }).click();
+      await page.getByPlaceholder('Search by meaning or idea...').fill('healthier work choices');
+      await page.keyboard.press('Enter');
+      await expect(page.getByText('Closest matches: 1. Entries analyzed: 1.')).toBeVisible();
+
+      await expectNoAccessibilityViolations(page, '.semantic-search-control');
+    });
   }
 });

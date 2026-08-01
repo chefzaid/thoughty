@@ -24,6 +24,7 @@ export class EntriesQueryService {
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
     const {
       search,
+      ids,
       tags,
       date,
       visibility,
@@ -39,6 +40,15 @@ export class EntriesQueryService {
       .leftJoinAndSelect('e.diary', 'd')
       .leftJoinAndSelect('e.attachments', 'a')
       .where('e.user_id = :userId', { userId });
+
+    const entryIds = ids
+      ? [...new Set(ids.split(',').map((id) => Number.parseInt(id, 10)))].slice(0, 50)
+      : [];
+    if (entryIds.length > 0) {
+      qb.andWhere('e.id IN (:...entryIds)', { entryIds });
+      qb.addSelect('array_position(CAST(:semanticOrder AS integer[]), e.id)', 'semantic_rank');
+      qb.setParameter('semanticOrder', entryIds);
+    }
 
     if (search) {
       qb.andWhere('(e.content ILIKE :search OR :searchTerm = ANY(e.tags))', {
@@ -81,9 +91,13 @@ export class EntriesQueryService {
 
     const totalPromise = qb.getCount();
 
-    qb.orderBy('e.is_pinned', 'DESC')
-      .addOrderBy('e.date', 'DESC')
-      .addOrderBy('e.index', 'ASC');
+    if (entryIds.length > 0) {
+      qb.orderBy('semantic_rank', 'ASC');
+    } else {
+      qb.orderBy('e.is_pinned', 'DESC')
+        .addOrderBy('e.date', 'DESC')
+        .addOrderBy('e.index', 'ASC');
+    }
     qb.skip((page - 1) * limit).take(limit);
 
     const entriesPromise = qb.getMany();
