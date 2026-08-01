@@ -6,9 +6,8 @@ import type { CloudExportFormat, ImportExportFormat, ImportExportSection } from 
 import type { CloudFileInfo, CloudProviderType, CloudStatus, SyncFrequency, SyncScheduleConfig } from '../../services/api/cloudSyncService';
 import { CloudImportSection, CloudSyncSection } from './ImportExportCloudSection';
 import { DangerZoneSection, ExportSection, FormatSection, ImportSection, RouteActions } from './ImportExportPanels';
-import { BookSection } from './ImportExportBookSection';
+import { ImportExportBookPanel } from './ImportExportBookPanel';
 import { downloadBlob } from '../../utils/downloadFile';
-import { useImportExportBook } from './useImportExportBook';
 import {
     CLOUD_PROVIDERS,
     DEFAULT_FORMAT_CONFIG,
@@ -32,7 +31,6 @@ function ImportExport({
 }: Readonly<ImportExportProps>) {
     const { authFetch } = useAuth();
     const { cloudSyncService } = useApiServices();
-
     const [formatConfig, setFormatConfig] = useState<FormatConfig>(DEFAULT_FORMAT_CONFIG);
     const [loading, setLoading] = useState(true);
     const [importing, setImporting] = useState(false);
@@ -60,14 +58,6 @@ function ImportExport({
     const [loadingCloudFiles, setLoadingCloudFiles] = useState(false);
     const [importingCloudFile, setImportingCloudFile] = useState<string | null>(null);
     const connectedProviders = CLOUD_PROVIDERS.filter((provider) => cloudStatus[provider]?.connected);
-    const book = useImportExportBook({
-        authFetch,
-        connectedProviders,
-        diaryId,
-        showMessage,
-        t,
-    });
-
     const exportSectionRef = useRef<HTMLElement | null>(null);
     const importSectionRef = useRef<HTMLElement | null>(null);
     const bookSectionRef = useRef<HTMLElement | null>(null);
@@ -459,21 +449,14 @@ function ImportExport({
                 />
             </div>
 
-            <BookSection
+            <ImportExportBookPanel
                 activeSection={activeSection}
                 sectionRef={bookSectionRef}
                 diaryName={diaryName}
-                options={book.options}
-                preview={book.preview}
-                generating={book.action !== null}
-                uploading={book.action === 'upload'}
+                diaryId={diaryId}
+                authFetch={authFetch}
                 connectedProviders={connectedProviders}
-                cloudProvider={book.cloudProvider}
-                onCloudProviderChange={book.setCloudProvider}
-                onOptionChange={book.changeOption}
-                onPreview={book.handlePreview}
-                onDownload={book.handleDownload}
-                onUpload={book.handleUpload}
+                showMessage={showMessage}
                 t={t}
             />
 

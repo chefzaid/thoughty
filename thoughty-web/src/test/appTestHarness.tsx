@@ -166,6 +166,9 @@ export function createDefaultFetchResponse(url: string) {
   if (url.includes('/api/cloud-sync/status') || url.includes('/api/cloud-sync/schedules')) {
     return createJsonResponse({});
   }
+  if (url.includes('/api/books/versions')) {
+    return createJsonResponse([]);
+  }
 
   return createJsonResponse({ success: true });
 }

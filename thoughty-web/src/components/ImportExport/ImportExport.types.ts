@@ -106,6 +106,20 @@ export interface BookPreviewData {
     chapters: BookChapterPreview[];
 }
 
+export interface BookVersionData {
+    id: number;
+    versionNumber: number;
+    title: string;
+    author?: string;
+    format: BookFormat;
+    filename: string;
+    chapterCount: number;
+    entryCount: number;
+    addedEntryCount: number;
+    addedChapterTitles: string[];
+    createdAt: string;
+}
+
 export function createProviderRecord<T>(value: T): Record<CloudProviderType, T> {
     return Object.fromEntries(CLOUD_PROVIDERS.map((provider) => [provider, value])) as Record<CloudProviderType, T>;
 }

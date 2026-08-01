@@ -240,6 +240,45 @@ async function handleIoRoutes({ route, request, url, pathname, searchParams, sta
 }
 
 async function handleBookRoutes({ route, request, url, pathname, state }: RouteContext): Promise<boolean> {
+  if (pathname === '/api/books/versions' && request.method() === 'GET') {
+    await fulfillJson(route, state.bookVersions);
+    return true;
+  }
+
+  if (pathname === '/api/books/versions' && request.method() === 'POST') {
+    state.lastBookVersionRequestUrl = url;
+    const versionNumber = state.bookVersions.length + 1;
+    const format = (url.searchParams.get('format') || 'pdf') as 'pdf' | 'epub' | 'html' | 'md';
+    const title = url.searchParams.get('title') || 'Personal';
+    const version = {
+      id: 100 + versionNumber,
+      versionNumber,
+      title,
+      format,
+      filename: `thoughty_book_${title}_2026-08-01_v${versionNumber}.${format}`,
+      chapterCount: 2,
+      entryCount: 3,
+      addedEntryCount: versionNumber === 1 ? 3 : 1,
+      addedChapterTitles: versionNumber === 1 ? ['ideas', 'work'] : ['work'],
+      createdAt: '2026-08-01T12:00:00.000Z',
+    };
+    state.bookVersions.unshift(version);
+    await fulfillJson(route, version, { status: 201 });
+    return true;
+  }
+
+  const versionDownload = pathname.match(/^\/api\/books\/versions\/(\d+)\/download$/);
+  if (versionDownload && request.method() === 'GET') {
+    state.lastBookVersionDownloadId = Number(versionDownload[1]);
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/pdf',
+      headers: { 'Content-Disposition': 'attachment; filename="saved-book-v1.pdf"' },
+      body: '%PDF- saved version',
+    });
+    return true;
+  }
+
   if (pathname === '/api/books/upload' && request.method() === 'POST') {
     state.lastBookUploadRequestUrl = url;
     state.lastBookUploadRequestBody = request.postData();

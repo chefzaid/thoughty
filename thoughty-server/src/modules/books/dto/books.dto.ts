@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsIn, Matches, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsNumber,
+  IsIn,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
@@ -11,7 +19,11 @@ export class BookQueryDto {
   @IsNumber()
   diaryId?: number;
 
-  @ApiPropertyOptional({ description: 'Book output format', enum: ['pdf', 'epub', 'html', 'md'], default: 'pdf' })
+  @ApiPropertyOptional({
+    description: 'Book output format',
+    enum: ['pdf', 'epub', 'html', 'md'],
+    default: 'pdf',
+  })
   @IsOptional()
   @IsIn(['pdf', 'epub', 'html', 'md'])
   format?: 'pdf' | 'epub' | 'html' | 'md';
@@ -22,7 +34,9 @@ export class BookQueryDto {
   @MaxLength(200)
   title?: string;
 
-  @ApiPropertyOptional({ description: 'Author name shown on the title page (defaults to the username)' })
+  @ApiPropertyOptional({
+    description: 'Author name shown on the title page (defaults to the username)',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(200)
@@ -65,13 +79,18 @@ export class BookQueryDto {
   @IsIn(['all', 'first'])
   tagScope?: 'all' | 'first';
 
-  @ApiPropertyOptional({ description: 'Comma-separated list of tags to use as chapters (defaults to all tags)' })
+  @ApiPropertyOptional({
+    description: 'Comma-separated list of tags to use as chapters (defaults to all tags)',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(2000)
   tags?: string;
 
-  @ApiPropertyOptional({ description: 'Add a final chapter for entries without tags', default: true })
+  @ApiPropertyOptional({
+    description: 'Add a final chapter for entries without tags',
+    default: true,
+  })
   @IsOptional()
   @Transform(({ value }) => value !== 'false' && value !== false)
   @IsBoolean()
@@ -90,7 +109,8 @@ export class BookQueryDto {
   includeToc?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Use AI to weave each chapter\'s entries into flowing prose (requires a configured AI key)',
+    description:
+      "Use AI to weave each chapter's entries into flowing prose (requires a configured AI key)",
     default: true,
   })
   @IsOptional()
@@ -136,7 +156,10 @@ export class BookQueryDto {
 }
 
 export class BookUploadQueryDto extends BookQueryDto {
-  @ApiProperty({ description: 'Connected cloud provider', enum: ['google_drive', 'onedrive', 'dropbox'] })
+  @ApiProperty({
+    description: 'Connected cloud provider',
+    enum: ['google_drive', 'onedrive', 'dropbox'],
+  })
   @IsIn(['google_drive', 'onedrive', 'dropbox'])
   provider: 'google_drive' | 'onedrive' | 'dropbox';
 }
@@ -170,4 +193,47 @@ export class BookPreviewResponseDto {
 
   @ApiProperty({ type: [BookChapterPreviewDto] })
   chapters: BookChapterPreviewDto[];
+}
+
+export class BookVersionsQueryDto {
+  @ApiPropertyOptional({ description: 'Diary ID whose book history should be listed' })
+  @IsOptional()
+  @Transform(({ value }) => Number.parseInt(value, 10))
+  @IsNumber()
+  diaryId?: number;
+}
+
+export class BookVersionResponseDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty()
+  versionNumber: number;
+
+  @ApiProperty()
+  title: string;
+
+  @ApiProperty({ required: false })
+  author?: string;
+
+  @ApiProperty({ enum: ['pdf', 'epub', 'html', 'md'] })
+  format: 'pdf' | 'epub' | 'html' | 'md';
+
+  @ApiProperty()
+  filename: string;
+
+  @ApiProperty()
+  chapterCount: number;
+
+  @ApiProperty()
+  entryCount: number;
+
+  @ApiProperty()
+  addedEntryCount: number;
+
+  @ApiProperty({ type: [String] })
+  addedChapterTitles: string[];
+
+  @ApiProperty()
+  createdAt: string;
 }

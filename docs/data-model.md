@@ -124,6 +124,7 @@ erDiagram
 | `RefreshToken`  | Session continuation token for one user                | Deleted with the user; revoked by deleting stored rows during sensitive account events                                                    |
 | `CloudSyncJob`  | Durable sync work item for one user/provider           | Deleted with the user in the SQL migration model                                                                                          |
 | `AiChatHistory` | One chat transcript per user/entry pair                | Deleted with the parent entry                                                                                                             |
+| `BookVersion`   | Immutable generated book artifact in a user/diary scope | Deleted with the user or selected diary; all-diaries versions are deleted with the user                                                   |
 
 ## Journal Coordinates
 
@@ -163,6 +164,12 @@ Entries are not only identified by database `id`. The user-facing journal model 
 `settings` stores user-scoped key/value configuration. Some values are ordinary preferences, while cloud provider tokens and related integration secrets are encrypted before storage by the application using `CONFIG_ENCRYPTION_SECRET`.
 
 Treat settings as user-owned application state, not as a general-purpose dumping ground. New setting groups should document their keys, value shape, and privacy impact.
+
+## Book Versions
+
+`book_versions` stores each saved generated book as an immutable binary artifact. A `scope_key` separates each diary's sequence from the all-diaries sequence, and `(user_id, scope_key, version_number)` is unique. Creation takes a PostgreSQL transaction-scoped advisory lock for that user and scope before assigning the next version number.
+
+The JSON source manifest contains chapter titles and source entry IDs only. It supports added-entry and added-chapter comparisons without exposing journal content through history responses. The generated `BYTEA` artifact preserves the exact PDF, EPUB, HTML, or Markdown output and is excluded from ordinary TypeORM selects; download queries select it explicitly and always filter by the authenticated owner.
 
 ## Schema Migrations
 

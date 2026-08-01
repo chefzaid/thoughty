@@ -3,7 +3,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImportExport from './ImportExport';
 
 vi.mock('../../contexts/AuthContext', () => {
-    const authFetch = (...args: Parameters<typeof fetch>) => globalThis.fetch(...args);
+    const authFetch = (...args: Parameters<typeof fetch>) => {
+        const [url, options] = args;
+        if (String(url).startsWith('/api/books/versions?') && options?.method !== 'POST') {
+            return Promise.resolve({ ok: true, json: async () => [] } as Response);
+        }
+        return globalThis.fetch(...args);
+    };
     return {
         useAuth: () => ({ authFetch }),
     };
@@ -45,6 +51,20 @@ const mockBookPreview = {
         { title: 'travel', entryCount: 3, firstDate: '2024-01-10', lastDate: '2024-03-01' },
         { title: 'food', entryCount: 2, firstDate: '2024-01-15', lastDate: '2024-02-20' },
     ],
+};
+
+const mockBookVersion = {
+    id: 11,
+    versionNumber: 1,
+    title: 'Personal',
+    author: 'jane',
+    format: 'pdf',
+    filename: 'thoughty_book_Personal_2026-08-01_v1.pdf',
+    chapterCount: 2,
+    entryCount: 5,
+    addedEntryCount: 4,
+    addedChapterTitles: ['travel', 'food'],
+    createdAt: '2026-08-01T12:00:00.000Z',
 };
 
 function createDeferredResponse() {
@@ -95,10 +115,40 @@ describe('ImportExport book section', () => {
         expect(screen.getByLabelText('bookCoverChooseImage')).toBeInTheDocument();
         expect(screen.getByText('previewBook')).toBeInTheDocument();
         expect(screen.getByText('downloadBook')).toBeInTheDocument();
+        expect(screen.getByText('createBookVersion')).toBeInTheDocument();
+        expect(screen.getByText('bookVersionHistory')).toBeInTheDocument();
         expect(screen.getByLabelText('bookCloudProvider')).toBeDisabled();
         expect(screen.getByRole('button', { name: 'uploadBook' })).toBeDisabled();
         expect(screen.getByText('bookCloudConnectHint')).toBeInTheDocument();
         expect(screen.getByRole('button', { name: 'book' })).toBeInTheDocument();
+    });
+
+    it('creates and downloads an immutable book version', async () => {
+        (globalThis.fetch as Mock)
+            .mockResolvedValueOnce({ ok: true, json: async () => mockBookVersion })
+            .mockResolvedValueOnce({
+                ok: true,
+                blob: async () => new Blob(['saved book'], { type: 'application/pdf' }),
+            });
+
+        await renderBookSection();
+
+        fireEvent.click(screen.getByRole('button', { name: 'createBookVersion' }));
+
+        await screen.findByText('bookVersionSaved');
+        const versionItem = screen.getByText('bookVersionNumber').closest('li');
+        expect(versionItem).toHaveTextContent('bookVersionCounts');
+        expect(versionItem).toHaveTextContent('bookVersionChanges');
+        expect(screen.getByRole('button', { name: 'updateBookVersion' })).toBeInTheDocument();
+
+        const createCall = (globalThis.fetch as Mock).mock.calls.find(
+            (call: unknown[]) => (call[0] as string).includes('/api/books/versions?') && (call[1] as RequestInit)?.method === 'POST',
+        ) as [string, RequestInit];
+        expect(createCall[0]).toContain('diaryId=1');
+
+        fireEvent.click(screen.getByRole('button', { name: 'downloadBookVersion' }));
+        await waitFor(() => expect(globalThis.URL.createObjectURL).toHaveBeenCalled());
+        expect(globalThis.fetch).toHaveBeenCalledWith('/api/books/versions/11/download');
     });
 
     it('previews the book outline with the selected options', async () => {

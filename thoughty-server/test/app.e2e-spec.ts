@@ -75,6 +75,14 @@ describe('AppController (e2e)', () => {
         .expect(401);
     });
 
+    it('/api/books/versions (GET) - should require authentication', () => {
+      return request(app.getHttpServer()).get('/api/books/versions').expect(401);
+    });
+
+    it('/api/books/versions/:id/download (GET) - should require authentication', () => {
+      return request(app.getHttpServer()).get('/api/books/versions/1/download').expect(401);
+    });
+
     it('/api/config (GET) - should require authentication', () => {
       return request(app.getHttpServer()).get('/api/config').expect(401);
     });

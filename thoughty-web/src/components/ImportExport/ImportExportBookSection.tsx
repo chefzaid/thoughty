@@ -15,6 +15,7 @@ import {
     type BookOptions,
     type BookPreviewData,
     type BookTagScope,
+    type BookVersionData,
     type BookWeavingMode,
 } from './ImportExport.types';
 import { BookCoverControls } from './ImportExportBookCover';
@@ -41,6 +42,9 @@ export function BookSection({
     preview,
     generating,
     uploading,
+    savingVersion,
+    versions,
+    downloadingVersionId,
     connectedProviders,
     cloudProvider,
     onOptionChange,
@@ -48,6 +52,8 @@ export function BookSection({
     onPreview,
     onDownload,
     onUpload,
+    onCreateVersion,
+    onVersionDownload,
     t,
 }: Readonly<{
     activeSection: ImportExportSection;
@@ -57,6 +63,9 @@ export function BookSection({
     preview: BookPreviewData | null;
     generating: boolean;
     uploading: boolean;
+    savingVersion: boolean;
+    versions: BookVersionData[];
+    downloadingVersionId: number | null;
     connectedProviders: CloudProviderType[];
     cloudProvider: CloudProviderType | '';
     onOptionChange: <K extends keyof BookOptions>(key: K, value: BookOptions[K]) => void;
@@ -64,8 +73,14 @@ export function BookSection({
     onPreview: () => void;
     onDownload: () => void;
     onUpload: () => void;
+    onCreateVersion: () => void;
+    onVersionDownload: (version: BookVersionData) => void;
     t: TranslationFunction;
 }>) {
+    const progressLabel = savingVersion
+        ? t('savingBookVersion')
+        : t(uploading ? 'uploadingBook' : 'generatingBook');
+
     return (
         <section ref={sectionRef} className={`io-section ${activeSection === 'book' ? 'is-route-target' : ''}`} id="book-section">
             <h3>{t('book')}</h3>
@@ -184,14 +199,14 @@ export function BookSection({
                 </div>
 
                 {generating && (
-                    <div className="book-progress" role="progressbar" aria-valuetext={t(uploading ? 'uploadingBook' : 'generatingBook')}>
+                    <div className="book-progress" role="progressbar" aria-valuetext={progressLabel}>
                         <div className="book-progress__track">
                             {BOOK_PROGRESS_STEPS.map((step) => (
                                 <span key={step} className="book-progress__marker" style={{ left: `${step}%` }} />
                             ))}
                             <span className="book-progress__bar" />
                         </div>
-                        <span className="book-progress__label">{t(uploading ? 'uploadingBook' : 'generatingBook')}</span>
+                        <span className="book-progress__label">{progressLabel}</span>
                     </div>
                 )}
 
@@ -200,10 +215,12 @@ export function BookSection({
                         {t('previewBook')}
                     </button>
                     <button className="io-btn primary" onClick={onDownload} disabled={generating}>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg>
-                        {generating && !uploading ? t('generatingBook') : t('downloadBook')}
+                        <span className="codicon codicon-cloud-download" aria-hidden="true" />
+                        {generating && !uploading && !savingVersion ? t('generatingBook') : t('downloadBook')}
+                    </button>
+                    <button className="io-btn secondary" onClick={onCreateVersion} disabled={generating}>
+                        <span className="codicon codicon-history" aria-hidden="true" />
+                        {versions.length > 0 ? t('updateBookVersion') : t('createBookVersion')}
                     </button>
                 </div>
 
@@ -237,6 +254,48 @@ export function BookSection({
                         <span className="book-cloud-hint">{t('bookCloudConnectHint')}</span>
                     )}
                 </div>
+            </div>
+
+            <div className="book-version-history">
+                <h4>{t('bookVersionHistory')}</h4>
+                {versions.length === 0 ? (
+                    <p className="section-description">{t('bookVersionEmpty')}</p>
+                ) : (
+                    <ol className="book-version-list">
+                        {versions.map((version) => (
+                            <li key={version.id} className="book-version-item">
+                                <div className="book-version-item__main">
+                                    <strong>{t('bookVersionNumber', { version: version.versionNumber })}</strong>
+                                    <span>{version.title}</span>
+                                    <span className="book-version-item__meta">
+                                        {version.format.toUpperCase()} · {version.createdAt.slice(0, 10)} · {' '}
+                                        {t('bookVersionCounts', {
+                                            chapters: version.chapterCount,
+                                            entries: version.entryCount,
+                                        })}
+                                    </span>
+                                    <span className="book-version-item__changes">
+                                        {t('bookVersionChanges', {
+                                            entries: version.addedEntryCount,
+                                            chapters: version.addedChapterTitles.length,
+                                        })}
+                                        {version.addedChapterTitles.length > 0 && `: ${version.addedChapterTitles.join(', ')}`}
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    className="io-icon-btn"
+                                    aria-label={t('downloadBookVersion', { version: version.versionNumber })}
+                                    title={t('downloadBookVersion', { version: version.versionNumber })}
+                                    disabled={downloadingVersionId !== null}
+                                    onClick={() => onVersionDownload(version)}
+                                >
+                                    <span className={`codicon codicon-${downloadingVersionId === version.id ? 'loading codicon-modifier-spin' : 'cloud-download'}`} aria-hidden="true" />
+                                </button>
+                            </li>
+                        ))}
+                    </ol>
+                )}
             </div>
 
             {preview && (

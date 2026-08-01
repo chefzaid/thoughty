@@ -65,6 +65,19 @@ export interface MockFeatureRequest {
   createdAt: string;
 }
 
+export interface MockBookVersion {
+  id: number;
+  versionNumber: number;
+  title: string;
+  format: 'pdf' | 'epub' | 'html' | 'md';
+  filename: string;
+  chapterCount: number;
+  entryCount: number;
+  addedEntryCount: number;
+  addedChapterTitles: string[];
+  createdAt: string;
+}
+
 export interface SetupMockAppOptions {
   startAuthenticated?: boolean;
   initialEntries?: MockEntry[];
@@ -117,6 +130,7 @@ export interface MockAppState {
   cloudFiles: MockCloudFile[];
   featureRequests: MockFeatureRequest[];
   featureRequestVotes: number[];
+  bookVersions: MockBookVersion[];
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
   lastRegisterPayload: AuthPayload | null;
@@ -129,6 +143,8 @@ export interface MockAppState {
   lastExportRequestUrl: URL | null;
   lastBookUploadRequestUrl: URL | null;
   lastBookUploadRequestBody: string | null;
+  lastBookVersionRequestUrl: URL | null;
+  lastBookVersionDownloadId: number | null;
   lastAiSuggestionPayload: unknown;
   lastAiFixPayload: unknown;
   lastAiSummaryPayload: unknown;
@@ -368,6 +384,7 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
     cloudFiles: options.cloudFiles || DEFAULT_CLOUD_FILES,
     featureRequests: DEFAULT_FEATURE_REQUESTS.map((request) => ({ ...request })),
     featureRequestVotes: [],
+    bookVersions: [],
     nextEntryId:
       (options.initialEntries?.reduce((maxId, entry) => Math.max(maxId, entry.id), 0) || 0) +
       1,
@@ -382,6 +399,8 @@ export function createMockAppState(options: SetupMockAppOptions = {}): MockAppSt
     lastExportRequestUrl: null,
     lastBookUploadRequestUrl: null,
     lastBookUploadRequestBody: null,
+    lastBookVersionRequestUrl: null,
+    lastBookVersionDownloadId: null,
     lastAiSuggestionPayload: null,
     lastAiFixPayload: null,
     lastAiSummaryPayload: null,

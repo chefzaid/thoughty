@@ -277,6 +277,18 @@ export type TranslationKey =
   | 'uploadingBook'
   | 'bookCloudUploadSuccess'
   | 'bookCloudUploadError'
+  | 'createBookVersion'
+  | 'updateBookVersion'
+  | 'savingBookVersion'
+  | 'bookVersionHistory'
+  | 'bookVersionEmpty'
+  | 'bookVersionNumber'
+  | 'bookVersionCounts'
+  | 'bookVersionChanges'
+  | 'bookVersionSaved'
+  | 'bookVersionSaveError'
+  | 'downloadBookVersion'
+  | 'bookVersionDownloadError'
   | 'formatSettings'
   | 'formatDescription'
   | 'entrySeparator'
@@ -1057,6 +1069,18 @@ export const translations: Translations = {
     uploadingBook: 'Uploading book...',
     bookCloudUploadSuccess: 'Uploaded {name} successfully',
     bookCloudUploadError: 'Failed to upload book',
+    createBookVersion: 'Save First Version',
+    updateBookVersion: 'Create New Version',
+    savingBookVersion: 'Saving book version...',
+    bookVersionHistory: 'Version History',
+    bookVersionEmpty: 'Save a version to preserve this book and track future updates.',
+    bookVersionNumber: 'Version {version}',
+    bookVersionCounts: '{chapters} chapters · {entries} entries',
+    bookVersionChanges: '{entries} new entries · {chapters} new chapters',
+    bookVersionSaved: 'Book version {version} saved',
+    bookVersionSaveError: 'Failed to save book version',
+    downloadBookVersion: 'Download version {version}',
+    bookVersionDownloadError: 'Failed to download book version',
     formatSettings: 'Format Settings',
     formatDescription: 'Customize the text file format for import and export.',
     entrySeparator: 'Entry Separator',
@@ -1887,6 +1911,18 @@ export const translations: Translations = {
     uploadingBook: 'Téléversement du livre...',
     bookCloudUploadSuccess: '{name} téléversé avec succès',
     bookCloudUploadError: 'Échec du téléversement du livre',
+    createBookVersion: 'Enregistrer la première version',
+    updateBookVersion: 'Créer une nouvelle version',
+    savingBookVersion: 'Enregistrement de la version...',
+    bookVersionHistory: 'Historique des versions',
+    bookVersionEmpty: 'Enregistrez une version pour conserver ce livre et suivre ses futures mises à jour.',
+    bookVersionNumber: 'Version {version}',
+    bookVersionCounts: '{chapters} chapitres · {entries} entrées',
+    bookVersionChanges: '{entries} nouvelles entrées · {chapters} nouveaux chapitres',
+    bookVersionSaved: 'Version {version} du livre enregistrée',
+    bookVersionSaveError: "Échec de l'enregistrement de la version du livre",
+    downloadBookVersion: 'Télécharger la version {version}',
+    bookVersionDownloadError: 'Échec du téléchargement de la version du livre',
     formatSettings: 'Paramètres de format',
     formatDescription: "Personnalisez le format du fichier texte pour l'import et l'export.",
     entrySeparator: "Séparateur d'entrées",

@@ -3,7 +3,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImportExport from './ImportExport';
 
 vi.mock('../../contexts/AuthContext', () => {
-    const authFetch = (...args: Parameters<typeof fetch>) => globalThis.fetch(...args);
+    const authFetch = (...args: Parameters<typeof fetch>) => {
+        const [url, options] = args;
+        if (String(url).startsWith('/api/books/versions?') && options?.method !== 'POST') {
+            return Promise.resolve({ ok: true, json: async () => [] } as Response);
+        }
+        return globalThis.fetch(...args);
+    };
     return {
         useAuth: () => ({ authFetch }),
     };

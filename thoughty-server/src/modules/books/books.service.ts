@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, Diary, User } from '@/database/entities';
@@ -20,6 +15,7 @@ import {
   isSafeEmbeddedBookImage,
 } from '@/common/utils';
 import { BookQueryDto, BookPreviewResponseDto } from './dto';
+import type { BookVersionManifest } from '@/database/entities';
 import { createBookCover } from './book-cover.util';
 import { AttachmentsService } from '@/modules/attachments';
 
@@ -29,6 +25,9 @@ export interface BookFile {
   content: Buffer | string;
   filename: string;
   contentType: string;
+  title: string;
+  author?: string;
+  sourceManifest: BookVersionManifest;
 }
 
 const DEFAULT_BOOK_TITLE = 'My Book of Thoughts';
@@ -149,7 +148,11 @@ export class BooksService {
     };
   }
 
-  private async composeNarratives(userId: number, book: Book, mode: BookWeavingMode): Promise<void> {
+  private async composeNarratives(
+    userId: number,
+    book: Book,
+    mode: BookWeavingMode,
+  ): Promise<void> {
     if (!this.aiBookComposer.isConfigured()) {
       throw new BadRequestException(
         'AI narrative requires an OpenRouter API key on the server. Disable the AI narrative option to download a plain book.',
@@ -214,10 +217,7 @@ export class BooksService {
       const batch = candidates.slice(index, index + IMAGE_FETCH_BATCH_SIZE);
       const results = await Promise.allSettled(
         batch.map((image) =>
-          this.attachmentsService.getFileBuffer(
-            image.storedFilename,
-            MAX_EMBEDDED_IMAGE_SIZE,
-          ),
+          this.attachmentsService.getFileBuffer(image.storedFilename, MAX_EMBEDDED_IMAGE_SIZE),
         ),
       );
       results.forEach((result, resultIndex) => {
@@ -307,6 +307,16 @@ export class BooksService {
       content,
       filename: `thoughty_book_${titleLabel}_${dateStr}.${extension}`,
       contentType,
+      title: book.title,
+      author: book.author,
+      sourceManifest: {
+        chapters: book.chapters.map((chapter) => ({
+          title: chapter.title,
+          entryIds: chapter.entries
+            .map((entry) => entry.id)
+            .filter((id): id is number => typeof id === 'number'),
+        })),
+      },
     };
   }
 }

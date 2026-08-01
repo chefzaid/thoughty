@@ -929,6 +929,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/books/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List saved versions for the selected journal book */
+        get: operations["BooksController_listVersions"];
+        put?: never;
+        /** Generate and save the next immutable version of a journal book */
+        post: operations["BooksController_createVersion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/books/versions/{versionId}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download an immutable saved book version */
+        get: operations["BooksController_downloadVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/books/preview": {
         parameters: {
             query?: never;
@@ -2697,6 +2732,37 @@ export interface components {
             importedCount: number;
             skippedCount: number;
             totalProcessed: number;
+        };
+        /**
+         * @example {
+         *       "id": 1,
+         *       "versionNumber": 1,
+         *       "title": "June reflections",
+         *       "author": "example",
+         *       "format": "pdf",
+         *       "filename": "Daily Journal",
+         *       "chapterCount": 3,
+         *       "entryCount": 3,
+         *       "addedEntryCount": 3,
+         *       "addedChapterTitles": [
+         *         "June reflections"
+         *       ],
+         *       "createdAt": "2026-06-24T10:00:00.000Z"
+         *     }
+         */
+        BookVersionResponseDto: {
+            id: number;
+            versionNumber: number;
+            title: string;
+            author?: string;
+            /** @enum {string} */
+            format: "pdf" | "epub" | "html" | "md";
+            filename: string;
+            chapterCount: number;
+            entryCount: number;
+            addedEntryCount: number;
+            addedChapterTitles: string[];
+            createdAt: string;
         };
         /**
          * @example {
@@ -5359,6 +5425,149 @@ export interface operations {
                      */
                     "application/json": components["schemas"]["ImportResponseDto"];
                 };
+            };
+        };
+    };
+    BooksController_listVersions: {
+        parameters: {
+            query?: {
+                /** @description Diary ID whose book history should be listed */
+                diaryId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Saved book version metadata in descending version order */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example [
+                     *       {
+                     *         "id": 1,
+                     *         "versionNumber": 1,
+                     *         "title": "June reflections",
+                     *         "author": "example",
+                     *         "format": "pdf",
+                     *         "filename": "Daily Journal",
+                     *         "chapterCount": 3,
+                     *         "entryCount": 3,
+                     *         "addedEntryCount": 3,
+                     *         "addedChapterTitles": [
+                     *           "June reflections"
+                     *         ],
+                     *         "createdAt": "2026-06-24T10:00:00.000Z"
+                     *       }
+                     *     ]
+                     */
+                    "application/json": components["schemas"]["BookVersionResponseDto"][];
+                };
+            };
+        };
+    };
+    BooksController_createVersion: {
+        parameters: {
+            query?: {
+                /** @description Diary ID to build the book from */
+                diaryId?: number;
+                /** @description Book output format */
+                format?: "pdf" | "epub" | "html" | "md";
+                /** @description Book title (defaults to the diary name) */
+                title?: string;
+                /** @description Author name shown on the title page (defaults to the username) */
+                author?: string;
+                /** @description Only include entries on or after this date (YYYY-MM-DD) */
+                dateFrom?: string;
+                /** @description Only include entries on or before this date (YYYY-MM-DD) */
+                dateTo?: string;
+                /** @description Chapter ordering: alphabetical, by entry count, or by first entry date */
+                chapterOrder?: "alpha" | "entries" | "chrono";
+                /** @description Chapter grouping mode: tags, calendar years, or calendar months */
+                chapterMode?: "tags" | "year" | "month";
+                /** @description Place entries in every matching tag chapter, or only in their first tag chapter */
+                tagScope?: "all" | "first";
+                /** @description Comma-separated list of tags to use as chapters (defaults to all tags) */
+                tags?: string;
+                /** @description Add a final chapter for entries without tags */
+                includeUntagged?: boolean;
+                /** @description Show entry dates inside chapters */
+                includeDates?: boolean;
+                /** @description Include a table of contents */
+                includeToc?: boolean;
+                /** @description Use AI to weave each chapter's entries into flowing prose (requires a configured AI key) */
+                narrative?: boolean;
+                /** @description Add AI-generated introductions and summaries around each chapter */
+                chapterFraming?: boolean;
+                /** @description AI weaving mode for narrative chapters */
+                weavingMode?: "strict" | "creative";
+                /** @description Color palette for the generated book cover */
+                coverTheme?: "classic" | "ocean" | "forest" | "rose";
+                /** @description Embed eligible image attachments from entries in the generated book */
+                embedImages?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    coverImage?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Metadata for the newly generated immutable book version */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 1,
+                     *       "versionNumber": 1,
+                     *       "title": "June reflections",
+                     *       "author": "example",
+                     *       "format": "pdf",
+                     *       "filename": "Daily Journal",
+                     *       "chapterCount": 3,
+                     *       "entryCount": 3,
+                     *       "addedEntryCount": 3,
+                     *       "addedChapterTitles": [
+                     *         "June reflections"
+                     *       ],
+                     *       "createdAt": "2026-06-24T10:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BookVersionResponseDto"];
+                };
+            };
+        };
+    };
+    BooksController_downloadVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                versionId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The exact file stored for this version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

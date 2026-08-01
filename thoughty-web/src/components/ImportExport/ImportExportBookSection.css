@@ -268,6 +268,65 @@
     color: #4b5563;
 }
 
+.book-version-history {
+    margin-top: 1.25rem;
+}
+
+.book-version-history h4 {
+    margin: 0 0 0.7rem;
+    font-size: 1rem;
+}
+
+.book-version-list {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    gap: 0.55rem;
+    list-style: none;
+}
+
+.book-version-item {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.28));
+    border-radius: 6px;
+}
+
+.book-version-item__main {
+    display: grid;
+    min-width: 0;
+    gap: 0.2rem;
+}
+
+.book-version-item__main > span:not(.book-version-item__meta, .book-version-item__changes) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.book-version-item__meta,
+.book-version-item__changes {
+    color: var(--text-secondary, rgba(255, 255, 255, 0.72));
+    font-size: 0.8rem;
+    overflow-wrap: anywhere;
+}
+
+.book-version-item__changes {
+    color: #38bdf8;
+}
+
+.import-export.light .book-version-item__meta {
+    color: #4b5563;
+}
+
+.import-export.light .book-version-item__changes {
+    color: #0369a1;
+}
+
 @keyframes book-progress-slide {
     0% {
         transform: translateX(-75%);

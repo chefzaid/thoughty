@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { TranslationFunction } from '../../types';
 import type { CloudFileInfo, CloudProviderType } from '../../services/api/cloudSyncService';
 import { downloadBlob } from '../../utils/downloadFile';
@@ -6,6 +6,7 @@ import {
     DEFAULT_BOOK_OPTIONS,
     type BookOptions,
     type BookPreviewData,
+    type BookVersionData,
     type MessageState,
 } from './ImportExport.types';
 
@@ -26,11 +27,38 @@ export function useImportExportBook({
 }: UseImportExportBookProps) {
     const [options, setOptions] = useState<BookOptions>(DEFAULT_BOOK_OPTIONS);
     const [preview, setPreview] = useState<BookPreviewData | null>(null);
-    const [action, setAction] = useState<'download' | 'upload' | null>(null);
+    const [action, setAction] = useState<'download' | 'upload' | 'version' | null>(null);
+    const [versions, setVersions] = useState<BookVersionData[]>([]);
+    const [downloadingVersionId, setDownloadingVersionId] = useState<number | null>(null);
+    const versionRequestRef = useRef(0);
     const [cloudProvider, setCloudProvider] = useState<CloudProviderType | ''>('');
     const selectedCloudProvider: CloudProviderType | '' = cloudProvider && connectedProviders.includes(cloudProvider)
         ? cloudProvider
         : connectedProviders[0] ?? '';
+
+    useEffect(() => {
+        let active = true;
+        const requestId = ++versionRequestRef.current;
+        const params = new URLSearchParams();
+        if (diaryId) params.set('diaryId', diaryId.toString());
+        setVersions([]);
+
+        authFetch(`/api/books/versions?${params}`)
+            .then(async (response) => {
+                if (!response.ok) {
+                    return;
+                }
+                const loadedVersions = await response.json() as BookVersionData[];
+                if (active && requestId === versionRequestRef.current) {
+                    setVersions(loadedVersions);
+                }
+            })
+            .catch((error: unknown) => console.error('Book version history failed:', error));
+
+        return () => {
+            active = false;
+        };
+    }, [authFetch, diaryId]);
 
     function buildParams(): URLSearchParams {
         const params = new URLSearchParams();
@@ -130,15 +158,59 @@ export function useImportExportBook({
         }
     }
 
+    async function handleCreateVersion(): Promise<void> {
+        setAction('version');
+        try {
+            const response = await authFetch(`/api/books/versions?${buildParams()}`, {
+                method: 'POST',
+                body: buildCoverBody(),
+            });
+            if (!response.ok) {
+                showMessage('error', t('bookVersionSaveError'));
+                return;
+            }
+            const version = await response.json() as BookVersionData;
+            versionRequestRef.current += 1;
+            setVersions((current) => [version, ...current]);
+            showMessage('success', t('bookVersionSaved', { version: version.versionNumber }), 3000);
+        } catch (error) {
+            console.error('Book version save failed:', error);
+            showMessage('error', t('bookVersionSaveError'));
+        } finally {
+            setAction(null);
+        }
+    }
+
+    async function handleVersionDownload(version: BookVersionData): Promise<void> {
+        setDownloadingVersionId(version.id);
+        try {
+            const response = await authFetch(`/api/books/versions/${version.id}/download`);
+            if (!response.ok) {
+                showMessage('error', t('bookVersionDownloadError'));
+                return;
+            }
+            downloadBlob(await response.blob(), version.filename);
+        } catch (error) {
+            console.error('Book version download failed:', error);
+            showMessage('error', t('bookVersionDownloadError'));
+        } finally {
+            setDownloadingVersionId(null);
+        }
+    }
+
     return {
         action,
         changeOption,
         cloudProvider: selectedCloudProvider,
+        downloadingVersionId,
+        handleCreateVersion,
         handleDownload,
         handlePreview,
         handleUpload,
+        handleVersionDownload,
         options,
         preview,
         setCloudProvider,
+        versions,
     };
 }

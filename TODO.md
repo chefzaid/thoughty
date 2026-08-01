@@ -118,7 +118,7 @@
 - [x] Connect the entries to form a chapter (AI weaves the thoughts into flowing prose with transitions, staying strictly on script; a plain chronological mode is available without AI, and the plain list lives in the normal export)
 - [x] Do the same for the rest of tags (multi-tag entries can appear in every tag chapter or only the first)
 - [x] PDF and ePub format export (plus HTML and Markdown outputs, title page, table of contents with chapter page numbers, centered page footers, and an outline preview; normal export also gained PDF, EPUB, and HTML formats grouped by month)
-- [ ] Versioning of the book, with the possibility to update it with new entries and chapters
+- [x] Versioning of the book, with the possibility to update it with new entries and chapters
 - [x] Custom cover page (image upload and color themes)
 - [x] AI-generated chapter introductions and summaries
 - [x] Yearbook mode: one chapter per year or month instead of per tag
