@@ -180,7 +180,7 @@ Current e2e feature groups:
 | `e2e/auth/`          | Sign-up and login onboarding into the journal                          |
 | `e2e/navigation/`    | Direct routes, browser history, permalinks, and diary return routes    |
 | `e2e/journal/`       | Journal authoring, lifecycle, filtering, highlights, and entry actions |
-| `e2e/tags/`          | Tag organization and tag rename flows                                  |
+| `e2e/tags/`          | Tag organization, journal retag review, and tag rename flows           |
 | `e2e/ai/`            | AI tag suggestions, automatic tagging, writing help, and chat history  |
 | `e2e/stats/`         | Stats totals, activity heatmap, and tag insights                       |
 | `e2e/import-export/` | JSON import/export, format settings, and delete-all flows              |
@@ -205,6 +205,7 @@ Current specs by feature group:
 | `e2e/journal/`       | `visibility-toggle.spec.ts`    |
 | `e2e/journal/`       | `favorites.spec.ts`            |
 | `e2e/tags/`          | `management.spec.ts`           |
+| `e2e/tags/`          | `journal-retagging.spec.ts`    |
 | `e2e/ai/`            | `tag-suggestions.spec.ts`      |
 | `e2e/ai/`            | `auto-tagging.spec.ts`         |
 | `e2e/ai/`            | `writing-and-chat.spec.ts`     |

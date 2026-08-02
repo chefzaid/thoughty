@@ -4,6 +4,7 @@ import { AiService } from './ai.service';
 import { AiDuplicateService } from './ai-duplicate.service';
 import { AiSemanticSearchService } from './ai-semantic-search.service';
 import { AiCredentialsService } from './ai-credentials.service';
+import { AiJournalRetagService } from './ai-journal-retag.service';
 
 describe('AiController', () => {
   let controller: AiController;
@@ -23,6 +24,10 @@ describe('AiController', () => {
     remove: jest.Mock;
     getUsage: jest.Mock;
   };
+  let aiJournalRetagService: {
+    createPlan: jest.Mock;
+    applyPlan: jest.Mock;
+  };
 
   beforeEach(async () => {
     aiService = {
@@ -41,6 +46,10 @@ describe('AiController', () => {
       remove: jest.fn(),
       getUsage: jest.fn(),
     };
+    aiJournalRetagService = {
+      createPlan: jest.fn(),
+      applyPlan: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AiController],
@@ -49,6 +58,7 @@ describe('AiController', () => {
         { provide: AiDuplicateService, useValue: aiDuplicateService },
         { provide: AiSemanticSearchService, useValue: aiSemanticSearchService },
         { provide: AiCredentialsService, useValue: aiCredentialsService },
+        { provide: AiJournalRetagService, useValue: aiJournalRetagService },
       ],
     }).compile();
 
@@ -70,6 +80,31 @@ describe('AiController', () => {
       maxTags: 5,
     });
     expect(result).toEqual({ tags: ['focus', 'work'] });
+  });
+
+  it('previews and applies journal retag plans for the current user', async () => {
+    const user = { userId: 8, email: 'test@example.com' } as any;
+    const plan = {
+      analyzedEntries: 1,
+      totalEntries: 1,
+      truncated: false,
+      themes: ['growth'],
+      entries: [],
+    };
+    const applyDto = {
+      mode: 'replace' as const,
+      assignments: [{ entryId: 1, tags: ['growth'] }],
+    };
+    aiJournalRetagService.createPlan.mockResolvedValue(plan);
+    aiJournalRetagService.applyPlan.mockResolvedValue({ success: true, affectedEntries: 1 });
+
+    await expect(controller.previewJournalRetag(user)).resolves.toBe(plan);
+    await expect(controller.applyJournalRetag(user, applyDto)).resolves.toEqual({
+      success: true,
+      affectedEntries: 1,
+    });
+    expect(aiJournalRetagService.createPlan).toHaveBeenCalledWith(8);
+    expect(aiJournalRetagService.applyPlan).toHaveBeenCalledWith(8, applyDto);
   });
 
   it('uses the current user credential for model listing', async () => {

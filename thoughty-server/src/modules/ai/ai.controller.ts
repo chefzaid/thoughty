@@ -31,6 +31,12 @@ import {
   OpenRouterUsageDashboardDto,
   SaveOpenRouterCredentialDto,
 } from './dto/openrouter-credentials.dto';
+import { AiJournalRetagService } from './ai-journal-retag.service';
+import {
+  ApplyJournalRetagDto,
+  ApplyJournalRetagResponseDto,
+  JournalRetagPlanResponseDto,
+} from './dto/journal-retag.dto';
 
 @ApiTags('AI')
 @ApiBearerAuth()
@@ -42,6 +48,7 @@ export class AiController {
     private readonly aiDuplicateService: AiDuplicateService,
     private readonly aiSemanticSearchService: AiSemanticSearchService,
     private readonly aiCredentialsService: AiCredentialsService,
+    private readonly aiJournalRetagService: AiJournalRetagService,
   ) {}
 
   @Get('models')
@@ -176,6 +183,33 @@ export class AiController {
     @Body() dto: SemanticSearchDto,
   ): Promise<SemanticSearchResponseDto> {
     return this.aiSemanticSearchService.search(user.userId, dto);
+  }
+
+  @Post('journal-retag/preview')
+  @ApiOperation({ summary: 'Preview an AI-generated whole-journal theme and retag plan' })
+  @ApiResponse({
+    status: 201,
+    description: 'Reviewable journal retag plan generated successfully',
+    type: JournalRetagPlanResponseDto,
+  })
+  previewJournalRetag(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<JournalRetagPlanResponseDto> {
+    return this.aiJournalRetagService.createPlan(user.userId);
+  }
+
+  @Post('journal-retag/apply')
+  @ApiOperation({ summary: 'Apply a reviewed journal retag plan to owned entries' })
+  @ApiResponse({
+    status: 201,
+    description: 'Reviewed journal retag plan applied successfully',
+    type: ApplyJournalRetagResponseDto,
+  })
+  applyJournalRetag(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ApplyJournalRetagDto,
+  ): Promise<ApplyJournalRetagResponseDto> {
+    return this.aiJournalRetagService.applyPlan(user.userId, dto);
   }
 
   @Post('chat')

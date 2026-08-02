@@ -60,6 +60,8 @@ vi.mock("../services/api", () => ({
     suggestTags: vi.fn(),
     fixWriting: vi.fn(),
     semanticSearch: vi.fn(),
+    previewJournalRetag: vi.fn(),
+    applyJournalRetag: vi.fn(),
   })),
   createCloudSyncService: vi.fn(() => ({
     getStatus: vi.fn(),
@@ -508,6 +510,8 @@ describe("useAppState Hooks", () => {
         updateCredential: vi.fn(),
         removeCredential: vi.fn(),
         getUsageDashboard: vi.fn(),
+        previewJournalRetag: vi.fn(),
+        applyJournalRetag: vi.fn(),
       });
       const { result } = renderHook(() => useEntries(true, mockConfig, 4));
 

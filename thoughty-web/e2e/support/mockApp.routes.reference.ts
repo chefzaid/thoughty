@@ -155,6 +155,45 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
     return true;
   }
 
+  if (pathname === '/api/ai/journal-retag/preview') {
+    await fulfillJson(route, {
+      analyzedEntries: state.entries.length,
+      totalEntries: state.entries.length,
+      truncated: false,
+      themes: ['growth', 'work'],
+      entries: state.entries.map((entry, index) => ({
+        id: entry.id,
+        date: entry.date,
+        index: entry.index,
+        currentTags: entry.tags,
+        suggestedTags: index === 0 ? ['growth'] : ['work'],
+      })),
+    });
+    return true;
+  }
+
+  if (pathname === '/api/ai/journal-retag/apply') {
+    const payload = request.postDataJSON() as {
+      mode: 'add' | 'replace';
+      assignments: Array<{ entryId: number; tags: string[] }>;
+    };
+    state.lastAiJournalRetagPayload = payload;
+    const assignments = new Map(payload.assignments.map((item) => [item.entryId, item.tags]));
+    state.entries = state.entries.map((entry) => {
+      const tags = assignments.get(entry.id);
+      if (!tags) return entry;
+      return {
+        ...entry,
+        tags: payload.mode === 'add' ? unique([...entry.tags, ...tags]) : tags,
+      };
+    });
+    await fulfillJson(route, {
+      success: true,
+      affectedEntries: payload.assignments.length,
+    });
+    return true;
+  }
+
   const aiHistoryMatch = /^\/api\/ai\/history\/(\d+)$/.exec(pathname);
   if (aiHistoryMatch) {
     await fulfillJson(route, {

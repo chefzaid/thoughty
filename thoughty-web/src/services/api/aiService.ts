@@ -45,6 +45,24 @@ export interface SemanticSearchResponse {
   matches: SemanticSearchMatch[];
 }
 
+export type JournalRetagMode = "replace" | "add";
+
+export interface JournalRetagEntry {
+  id: number;
+  date: string;
+  index: number;
+  currentTags: string[];
+  suggestedTags: string[];
+}
+
+export interface JournalRetagPlan {
+  analyzedEntries: number;
+  totalEntries: number;
+  truncated: boolean;
+  themes: string[];
+  entries: JournalRetagEntry[];
+}
+
 export interface OpenRouterCredentialStatus {
   hasPersonalKey: boolean;
   keyHint: string | null;
@@ -78,6 +96,39 @@ export interface OpenRouterUsageDashboard {
 export interface AiApiResult<T> {
   data: T | null;
   error: string | null;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === "string")
+  );
+}
+
+function isJournalRetagPlan(value: unknown): value is JournalRetagPlan {
+  if (!value || typeof value !== "object") return false;
+  const plan = value as Partial<JournalRetagPlan>;
+  return (
+    Number.isInteger(plan.analyzedEntries) &&
+    (plan.analyzedEntries ?? -1) >= 0 &&
+    Number.isInteger(plan.totalEntries) &&
+    (plan.totalEntries ?? -1) >= 0 &&
+    typeof plan.truncated === "boolean" &&
+    isStringArray(plan.themes) &&
+    plan.themes.length <= 12 &&
+    Array.isArray(plan.entries) &&
+    plan.entries.length <= 300 &&
+    plan.entries.every(
+      (entry) =>
+        Number.isInteger(entry.id) &&
+        entry.id > 0 &&
+        typeof entry.date === "string" &&
+        Number.isInteger(entry.index) &&
+        entry.index > 0 &&
+        isStringArray(entry.currentTags) &&
+        isStringArray(entry.suggestedTags) &&
+        entry.suggestedTags.length <= 3,
+    )
+  );
 }
 
 export const createAiService = (
@@ -393,6 +444,71 @@ export const createAiService = (
     }
   };
 
+  const previewJournalRetag = async (): Promise<
+    AiApiResult<JournalRetagPlan>
+  > => {
+    try {
+      const response = await authFetch("/api/ai/journal-retag/preview", {
+        method: "POST",
+      });
+      if (!response.ok) {
+        return {
+          data: null,
+          error: await readApiErrorMessage(
+            response,
+            "Could not create retag plan",
+          ),
+        };
+      }
+      const data = await safeJsonParse<unknown>(response);
+      return isJournalRetagPlan(data)
+        ? { data, error: null }
+        : { data: null, error: "Could not create retag plan" };
+    } catch (error) {
+      console.error("Error creating journal retag plan:", error);
+      return { data: null, error: "Could not create retag plan" };
+    }
+  };
+
+  const applyJournalRetag = async (
+    mode: JournalRetagMode,
+    assignments: Array<{ entryId: number; tags: string[] }>,
+  ): Promise<AiApiResult<{ success: boolean; affectedEntries: number }>> => {
+    try {
+      const response = await authFetch("/api/ai/journal-retag/apply", {
+        method: "POST",
+        body: JSON.stringify({ mode, assignments }),
+      });
+      if (!response.ok) {
+        return {
+          data: null,
+          error: await readApiErrorMessage(
+            response,
+            "Could not apply retag plan",
+          ),
+        };
+      }
+      const data = await safeJsonParse<unknown>(response);
+      if (
+        !data ||
+        typeof data !== "object" ||
+        (data as { success?: unknown }).success !== true ||
+        !Number.isInteger(
+          (data as { affectedEntries?: unknown }).affectedEntries,
+        )
+      ) {
+        return { data: null, error: "Could not apply retag plan" };
+      }
+      return {
+        data: data as { success: boolean; affectedEntries: number },
+        error: null,
+      };
+    } catch (error) {
+      console.error("Error applying journal retag plan:", error);
+      return { data: null, error: "Could not apply retag plan" };
+    }
+  };
+
   return {
     suggestTags,
     fixWriting,
@@ -407,5 +523,7 @@ export const createAiService = (
     updateCredential,
     removeCredential,
     getUsageDashboard,
+    previewJournalRetag,
+    applyJournalRetag,
   };
 };

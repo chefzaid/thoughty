@@ -860,6 +860,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ai/journal-retag/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview an AI-generated whole-journal theme and retag plan */
+        post: operations["AiController_previewJournalRetag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ai/journal-retag/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply a reviewed journal retag plan to owned entries */
+        post: operations["AiController_applyJournalRetag"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/ai/chat": {
         parameters: {
             query?: never;
@@ -2543,6 +2577,96 @@ export interface components {
             /** @description Whether older entries existed outside the bounded search window */
             truncated: boolean;
             matches: components["schemas"]["SemanticSearchMatchDto"][];
+        };
+        /**
+         * @example {
+         *       "id": 1,
+         *       "date": "2026-06-24",
+         *       "index": 1,
+         *       "currentTags": [
+         *         "reflection"
+         *       ],
+         *       "suggestedTags": [
+         *         "reflection"
+         *       ]
+         *     }
+         */
+        JournalRetagEntryDto: {
+            id: number;
+            date: string;
+            index: number;
+            currentTags: string[];
+            suggestedTags: string[];
+        };
+        /**
+         * @example {
+         *       "analyzedEntries": 1,
+         *       "totalEntries": 1,
+         *       "truncated": true,
+         *       "themes": [
+         *         "example"
+         *       ],
+         *       "entries": [
+         *         {
+         *           "id": 1,
+         *           "date": "2026-06-24",
+         *           "index": 1,
+         *           "currentTags": [
+         *             "reflection"
+         *           ],
+         *           "suggestedTags": [
+         *             "reflection"
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        JournalRetagPlanResponseDto: {
+            analyzedEntries: number;
+            totalEntries: number;
+            truncated: boolean;
+            themes: string[];
+            entries: components["schemas"]["JournalRetagEntryDto"][];
+        };
+        /**
+         * @example {
+         *       "entryId": 1,
+         *       "tags": [
+         *         "reflection"
+         *       ]
+         *     }
+         */
+        JournalRetagAssignmentDto: {
+            entryId: number;
+            tags: string[];
+        };
+        /**
+         * @example {
+         *       "mode": "replace",
+         *       "assignments": [
+         *         {
+         *           "entryId": 1,
+         *           "tags": [
+         *             "reflection"
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        ApplyJournalRetagDto: {
+            /** @enum {string} */
+            mode: "replace" | "add";
+            assignments: components["schemas"]["JournalRetagAssignmentDto"][];
+        };
+        /**
+         * @example {
+         *       "success": true,
+         *       "affectedEntries": 1
+         *     }
+         */
+        ApplyJournalRetagResponseDto: {
+            success: boolean;
+            affectedEntries: number;
         };
         /**
          * @example {
@@ -5652,6 +5776,92 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["SemanticSearchResponseDto"];
+                };
+            };
+        };
+    };
+    AiController_previewJournalRetag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Reviewable journal retag plan generated successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "analyzedEntries": 1,
+                     *       "totalEntries": 1,
+                     *       "truncated": true,
+                     *       "themes": [
+                     *         "example"
+                     *       ],
+                     *       "entries": [
+                     *         {
+                     *           "id": 1,
+                     *           "date": "2026-06-24",
+                     *           "index": 1,
+                     *           "currentTags": [
+                     *             "reflection"
+                     *           ],
+                     *           "suggestedTags": [
+                     *             "reflection"
+                     *           ]
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["JournalRetagPlanResponseDto"];
+                };
+            };
+        };
+    };
+    AiController_applyJournalRetag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "mode": "replace",
+                 *       "assignments": [
+                 *         {
+                 *           "entryId": 1,
+                 *           "tags": [
+                 *             "reflection"
+                 *           ]
+                 *         }
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["ApplyJournalRetagDto"];
+            };
+        };
+        responses: {
+            /** @description Reviewed journal retag plan applied successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "affectedEntries": 1
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApplyJournalRetagResponseDto"];
                 };
             };
         };

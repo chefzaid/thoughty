@@ -53,7 +53,12 @@ vi.mock("../services/api", () => ({
     deleteAttachment: vi.fn(),
     transcribeAttachment: vi.fn(),
   })),
-  createAiService: vi.fn(() => ({ suggestTags: vi.fn(), fixWriting: vi.fn() })),
+  createAiService: vi.fn(() => ({
+    suggestTags: vi.fn(),
+    fixWriting: vi.fn(),
+    previewJournalRetag: vi.fn(),
+    applyJournalRetag: vi.fn(),
+  })),
   createCloudSyncService: vi.fn(() => ({
     getStatus: vi.fn(),
     getAuthUrl: vi.fn(),

@@ -167,6 +167,7 @@ export interface MockAppState {
   lastAiDuplicatePayload: unknown;
   lastAiSemanticSearchPayload: unknown;
   lastAiChatPayload: unknown;
+  lastAiJournalRetagPayload: unknown;
   personalOpenRouterKey: string | null;
   lastOpenRouterKeyPayload: unknown;
   lastBulkPayload: unknown;
@@ -417,6 +418,7 @@ export function createMockAppState(
     lastAiDuplicatePayload: null,
     lastAiSemanticSearchPayload: null,
     lastAiChatPayload: null,
+    lastAiJournalRetagPayload: null,
     personalOpenRouterKey: null,
     lastOpenRouterKeyPayload: null,
     lastBulkPayload: null,

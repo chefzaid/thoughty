@@ -1,0 +1,268 @@
+.journal-retag-trigger,
+.journal-retag-apply {
+  display: inline-flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.journal-retag-trigger {
+  border: 1px solid #0d9488;
+  padding: 0.55rem 0.8rem;
+  color: #5eead4;
+}
+
+.profile-page.light .journal-retag-trigger {
+  color: #0f766e;
+}
+
+.journal-retag-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.journal-retag-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.68);
+}
+
+.journal-retag-dialog {
+  position: relative;
+  display: grid;
+  width: min(60rem, 100%);
+  max-height: min(88vh, 56rem);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  overflow: hidden;
+  border: 1px solid;
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.journal-retag-dialog.dark {
+  border-color: #4b5563;
+  background: #111827;
+  color: #f3f4f6;
+}
+
+.journal-retag-dialog.light {
+  border-color: #d1d5db;
+  background: #fff;
+  color: #111827;
+}
+
+.journal-retag-header,
+.journal-retag-footer,
+.journal-retag-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.journal-retag-header {
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(107, 114, 128, 0.35);
+  padding: 1.25rem;
+}
+
+.journal-retag-header h2,
+.journal-retag-header p,
+.journal-retag-state p,
+.journal-retag-summary p,
+.journal-retag-entry p {
+  margin: 0;
+}
+
+.journal-retag-header h2 {
+  font-size: 1.25rem;
+}
+
+.journal-retag-header p {
+  margin-top: 0.35rem;
+  color: #9ca3af;
+  font-size: 0.875rem;
+}
+
+.journal-retag-dialog.light .journal-retag-header p,
+.journal-retag-dialog.light .journal-retag-summary,
+.journal-retag-dialog.light .journal-retag-entry time,
+.journal-retag-dialog.light .journal-retag-entry small,
+.journal-retag-dialog.light .journal-retag-footer {
+  color: #4b5563;
+}
+
+.journal-retag-icon-button {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 6px;
+}
+
+.journal-retag-content {
+  overflow-y: auto;
+  padding: 1.25rem;
+}
+
+.journal-retag-state {
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.journal-retag-state.error,
+.journal-retag-summary .warning {
+  color: #fca5a5;
+}
+
+.journal-retag-dialog.light .journal-retag-state.error,
+.journal-retag-dialog.light .journal-retag-summary .warning {
+  color: #b91c1c;
+}
+
+.journal-retag-state.success .codicon {
+  color: #2dd4bf;
+  font-size: 1.5rem;
+}
+
+.journal-retag-state button,
+.journal-retag-selection {
+  text-decoration: underline;
+}
+
+.journal-retag-summary {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.journal-retag-themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.8rem;
+}
+
+.journal-retag-themes span {
+  border: 1px solid #0f766e;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  color: #5eead4;
+}
+
+.journal-retag-dialog.light .journal-retag-themes span {
+  color: #0f766e;
+}
+
+.journal-retag-toolbar {
+  margin-top: 1.25rem;
+}
+
+.journal-retag-mode {
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid #6b7280;
+  border-radius: 6px;
+}
+
+.journal-retag-mode button {
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+  font-size: 0.8rem;
+}
+
+.journal-retag-mode button[aria-pressed="true"] {
+  background: #0f766e;
+  color: #fff;
+}
+
+.journal-retag-entries {
+  margin-top: 0.5rem;
+}
+
+.journal-retag-entry {
+  display: grid;
+  grid-template-columns: auto 7rem minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  border-top: 1px solid rgba(107, 114, 128, 0.3);
+  padding: 0.85rem 0;
+  cursor: pointer;
+}
+
+.journal-retag-entry input {
+  width: 1rem;
+  height: 1rem;
+}
+
+.journal-retag-entry time,
+.journal-retag-entry small {
+  color: #9ca3af;
+  font-size: 0.75rem;
+}
+
+.journal-retag-entry p {
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+.journal-retag-footer {
+  border-top: 1px solid rgba(107, 114, 128, 0.35);
+  padding: 1rem 1.25rem;
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.journal-retag-apply {
+  border: 0;
+  padding: 0.55rem 1rem;
+  background: #0f766e;
+  color: #fff;
+}
+
+.journal-retag-apply:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 640px) {
+  .journal-retag-overlay {
+    padding: 0.5rem;
+  }
+
+  .journal-retag-dialog {
+    max-height: 94vh;
+  }
+
+  .journal-retag-toolbar,
+  .journal-retag-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .journal-retag-entry {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .journal-retag-entry time {
+    grid-column: 2;
+  }
+
+  .journal-retag-entry > div {
+    grid-column: 2;
+  }
+
+  .journal-retag-entry > .codicon {
+    display: none;
+  }
+}

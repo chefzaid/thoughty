@@ -76,6 +76,14 @@ describe('AppController (e2e)', () => {
       return request(app.getHttpServer()).post('/api/ai/semantic-search').send({}).expect(401);
     });
 
+    it('/api/ai/journal-retag/preview (POST) - should require authentication', () => {
+      return request(app.getHttpServer()).post('/api/ai/journal-retag/preview').expect(401);
+    });
+
+    it('/api/ai/journal-retag/apply (POST) - should require authentication', () => {
+      return request(app.getHttpServer()).post('/api/ai/journal-retag/apply').send({}).expect(401);
+    });
+
     it('/api/attachments/:id/transcribe (POST) - should require authentication', () => {
       return request(app.getHttpServer()).post('/api/attachments/1/transcribe').expect(401);
     });

@@ -246,6 +246,9 @@ export function buildAuthenticatedRoutesProps({
       allTags: entriesState.allTags,
       onUpdateConfig: (newConfig: Config) => updateConfig(newConfig),
       onRenameTag: handleRenameTag,
+      onRetagApplied: async () => {
+        await entriesState.fetchEntries();
+      },
       t,
     },
     diariesRouteProps: {

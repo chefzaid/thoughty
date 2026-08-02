@@ -2601,6 +2601,106 @@
         ]
       }
     },
+    "/api/ai/journal-retag/preview": {
+      "post": {
+        "operationId": "AiController_previewJournalRetag",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Reviewable journal retag plan generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JournalRetagPlanResponseDto"
+                },
+                "example": {
+                  "analyzedEntries": 1,
+                  "totalEntries": 1,
+                  "truncated": true,
+                  "themes": [
+                    "example"
+                  ],
+                  "entries": [
+                    {
+                      "id": 1,
+                      "date": "2026-06-24",
+                      "index": 1,
+                      "currentTags": [
+                        "reflection"
+                      ],
+                      "suggestedTags": [
+                        "reflection"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Preview an AI-generated whole-journal theme and retag plan",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
+    "/api/ai/journal-retag/apply": {
+      "post": {
+        "operationId": "AiController_applyJournalRetag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyJournalRetagDto"
+              },
+              "example": {
+                "mode": "replace",
+                "assignments": [
+                  {
+                    "entryId": 1,
+                    "tags": [
+                      "reflection"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reviewed journal retag plan applied successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyJournalRetagResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "affectedEntries": 1
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Apply a reviewed journal retag plan to owned entries",
+        "tags": [
+          "AI"
+        ]
+      }
+    },
     "/api/ai/chat": {
       "post": {
         "operationId": "AiController_chat",
@@ -7293,6 +7393,182 @@
               "score": 1
             }
           ]
+        }
+      },
+      "JournalRetagEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          },
+          "index": {
+            "type": "number"
+          },
+          "currentTags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "suggestedTags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "index",
+          "currentTags",
+          "suggestedTags"
+        ],
+        "example": {
+          "id": 1,
+          "date": "2026-06-24",
+          "index": 1,
+          "currentTags": [
+            "reflection"
+          ],
+          "suggestedTags": [
+            "reflection"
+          ]
+        }
+      },
+      "JournalRetagPlanResponseDto": {
+        "type": "object",
+        "properties": {
+          "analyzedEntries": {
+            "type": "number"
+          },
+          "totalEntries": {
+            "type": "number"
+          },
+          "truncated": {
+            "type": "boolean"
+          },
+          "themes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JournalRetagEntryDto"
+            }
+          }
+        },
+        "required": [
+          "analyzedEntries",
+          "totalEntries",
+          "truncated",
+          "themes",
+          "entries"
+        ],
+        "example": {
+          "analyzedEntries": 1,
+          "totalEntries": 1,
+          "truncated": true,
+          "themes": [
+            "example"
+          ],
+          "entries": [
+            {
+              "id": 1,
+              "date": "2026-06-24",
+              "index": 1,
+              "currentTags": [
+                "reflection"
+              ],
+              "suggestedTags": [
+                "reflection"
+              ]
+            }
+          ]
+        }
+      },
+      "JournalRetagAssignmentDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number"
+          },
+          "tags": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "entryId",
+          "tags"
+        ],
+        "example": {
+          "entryId": 1,
+          "tags": [
+            "reflection"
+          ]
+        }
+      },
+      "ApplyJournalRetagDto": {
+        "type": "object",
+        "properties": {
+          "mode": {
+            "type": "string",
+            "enum": [
+              "replace",
+              "add"
+            ]
+          },
+          "assignments": {
+            "maxItems": 300,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/JournalRetagAssignmentDto"
+            }
+          }
+        },
+        "required": [
+          "mode",
+          "assignments"
+        ],
+        "example": {
+          "mode": "replace",
+          "assignments": [
+            {
+              "entryId": 1,
+              "tags": [
+                "reflection"
+              ]
+            }
+          ]
+        }
+      },
+      "ApplyJournalRetagResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "affectedEntries": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "success",
+          "affectedEntries"
+        ],
+        "example": {
+          "success": true,
+          "affectedEntries": 1
         }
       },
       "ChatMessageDto": {

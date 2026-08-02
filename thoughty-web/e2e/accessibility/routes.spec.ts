@@ -89,6 +89,27 @@ test.describe('route accessibility', () => {
   });
 
   for (const theme of THEMES) {
+    test(`${theme} journal theme review dialog`, async ({ page }) => {
+      await setupMockApp(page, {
+        startAuthenticated: true,
+        config: { theme },
+        initialEntries: [{
+          id: 300,
+          date: '2026-05-03',
+          index: 1,
+          content: 'I am learning to make steady progress.',
+          tags: ['reflection'],
+          visibility: 'private',
+          diaryId: 1,
+        }],
+      });
+      await page.goto('/tags');
+      await page.getByRole('button', { name: 'Organize journal themes' }).click();
+      await expect(page.getByRole('dialog', { name: 'Review journal themes' })).toBeVisible();
+
+      await expectNoAccessibilityViolations(page, '.journal-retag-dialog');
+    });
+
     test(`${theme} duplicate review dialog`, async ({ page }) => {
       await setupMockApp(page, {
         startAuthenticated: true,

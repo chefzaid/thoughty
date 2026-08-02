@@ -96,6 +96,28 @@ export type TranslationKey =
   | "language"
   | "tagOrganization"
   | "tagOrganizationDescription"
+  | "organizeJournalThemes"
+  | "journalRetagTitle"
+  | "journalRetagDescription"
+  | "scanningJournalThemes"
+  | "journalRetagError"
+  | "journalRetagApplyError"
+  | "journalRetagApplied"
+  | "journalRetagScanCount"
+  | "journalRetagLimited"
+  | "journalThemesFound"
+  | "journalRetagEmpty"
+  | "journalRetagMode"
+  | "journalRetagReplace"
+  | "journalRetagAdd"
+  | "clearSelection"
+  | "currentTags"
+  | "suggestedThemes"
+  | "noTags"
+  | "noThemes"
+  | "journalRetagSelected"
+  | "applyingJournalRetag"
+  | "applyJournalRetag"
   | "tagName"
   | "tagCategory"
   | "tagCategoryPlaceholder"
@@ -956,6 +978,29 @@ export const translations: Translations = {
     tagOrganization: "Tag Organization",
     tagOrganizationDescription:
       "Assign categories and colors to your existing tags so related ideas are easier to scan.",
+    organizeJournalThemes: "Organize journal themes",
+    journalRetagTitle: "Review journal themes",
+    journalRetagDescription:
+      "AI proposes a compact theme set. Review every change before applying it.",
+    scanningJournalThemes: "Analyzing journal themes...",
+    journalRetagError: "Could not analyze journal themes.",
+    journalRetagApplyError: "Could not apply the selected theme changes.",
+    journalRetagApplied: "Updated {count} entries.",
+    journalRetagScanCount: "Analyzed {analyzed} of {total} entries.",
+    journalRetagLimited: "Only the 300 most recent entries were analyzed.",
+    journalThemesFound: "Themes found",
+    journalRetagEmpty: "Write an entry before organizing journal themes.",
+    journalRetagMode: "Theme update mode",
+    journalRetagReplace: "Replace tags",
+    journalRetagAdd: "Add themes",
+    clearSelection: "Clear selection",
+    currentTags: "Current tags",
+    suggestedThemes: "Suggested themes",
+    noTags: "No tags",
+    noThemes: "No matching theme",
+    journalRetagSelected: "{count} entries selected",
+    applyingJournalRetag: "Applying changes...",
+    applyJournalRetag: "Apply selected changes",
     tagName: "Tag name",
     tagCategory: "Category",
     tagCategoryPlaceholder: "Examples: Work, Health, Ideas",
@@ -1933,6 +1978,32 @@ export const translations: Translations = {
     tagOrganization: "Organisation des tags",
     tagOrganizationDescription:
       "Attribuez des catégories et des couleurs à vos tags existants pour repérer plus vite les idées liées.",
+    organizeJournalThemes: "Organiser les thèmes du journal",
+    journalRetagTitle: "Vérifier les thèmes du journal",
+    journalRetagDescription:
+      "L'IA propose un ensemble réduit de thèmes. Vérifiez chaque changement avant de l'appliquer.",
+    scanningJournalThemes: "Analyse des thèmes du journal...",
+    journalRetagError: "Impossible d'analyser les thèmes du journal.",
+    journalRetagApplyError:
+      "Impossible d'appliquer les changements sélectionnés.",
+    journalRetagApplied: "{count} entrées mises à jour.",
+    journalRetagScanCount: "{analyzed} entrées analysées sur {total}.",
+    journalRetagLimited:
+      "Seules les 300 entrées les plus récentes ont été analysées.",
+    journalThemesFound: "Thèmes trouvés",
+    journalRetagEmpty:
+      "Écrivez une entrée avant d'organiser les thèmes du journal.",
+    journalRetagMode: "Mode de mise à jour des thèmes",
+    journalRetagReplace: "Remplacer les tags",
+    journalRetagAdd: "Ajouter les thèmes",
+    clearSelection: "Effacer la sélection",
+    currentTags: "Tags actuels",
+    suggestedThemes: "Thèmes suggérés",
+    noTags: "Aucun tag",
+    noThemes: "Aucun thème correspondant",
+    journalRetagSelected: "{count} entrées sélectionnées",
+    applyingJournalRetag: "Application des changements...",
+    applyJournalRetag: "Appliquer les changements sélectionnés",
     tagName: "Nom du tag",
     tagCategory: "Catégorie",
     tagCategoryPlaceholder: "Exemples : Travail, Santé, Idées",

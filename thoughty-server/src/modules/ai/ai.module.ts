@@ -10,6 +10,7 @@ import { AiDuplicateService } from './ai-duplicate.service';
 import { AiSemanticSearchService } from './ai-semantic-search.service';
 import { AiCredentialsService } from './ai-credentials.service';
 import { AiUsageService } from './ai-usage.service';
+import { AiJournalRetagService } from './ai-journal-retag.service';
 
 @Module({
   imports: [UserConfigModule, TypeOrmModule.forFeature([Entry, AiChatHistory, AiUsageEvent])],
@@ -22,6 +23,7 @@ import { AiUsageService } from './ai-usage.service';
     AiSemanticSearchService,
     AiCredentialsService,
     AiUsageService,
+    AiJournalRetagService,
   ],
   exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService],
 })

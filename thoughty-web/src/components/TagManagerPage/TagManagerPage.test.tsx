@@ -24,6 +24,10 @@ vi.mock('../ProfilePage/TagOrganizationSection', () => ({
   ),
 }));
 
+vi.mock('./JournalRetagReview', () => ({
+  default: () => <button type="button">organizeJournalThemes</button>,
+}));
+
 describe('TagManagerPage', () => {
   const baseConfig = {
     name: 'User',
@@ -42,6 +46,7 @@ describe('TagManagerPage', () => {
         allTags={['focus']}
         onUpdateConfig={onUpdateConfig}
         onRenameTag={onRenameTag}
+        onRetagApplied={vi.fn().mockResolvedValue(undefined)}
         t={(key: string) => key}
       />,
     );
@@ -76,6 +81,7 @@ describe('TagManagerPage', () => {
         allTags={['focus']}
         onUpdateConfig={onUpdateConfig}
         onRenameTag={onRenameTag}
+        onRetagApplied={vi.fn().mockResolvedValue(undefined)}
         t={(key: string) => key}
       />,
     );
@@ -102,6 +108,7 @@ describe('TagManagerPage', () => {
         allTags={['focus']}
         onUpdateConfig={onUpdateConfig}
         onRenameTag={onRenameTag}
+        onRetagApplied={vi.fn().mockResolvedValue(undefined)}
         t={(key: string) => key}
       />,
     );

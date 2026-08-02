@@ -471,4 +471,78 @@ describe("aiService", () => {
 
     consoleSpy.mockRestore();
   });
+
+  it("previews and applies a journal retag plan", async () => {
+    const plan = {
+      analyzedEntries: 1,
+      totalEntries: 1,
+      truncated: false,
+      themes: ["growth"],
+      entries: [
+        {
+          id: 1,
+          date: "2026-01-01",
+          index: 1,
+          currentTags: ["old"],
+          suggestedTags: ["growth"],
+        },
+      ],
+    };
+    mockAuthFetch
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(plan) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: true, affectedEntries: 1 }),
+      });
+
+    await expect(service.previewJournalRetag()).resolves.toEqual({
+      data: plan,
+      error: null,
+    });
+    await expect(
+      service.applyJournalRetag("replace", [{ entryId: 1, tags: ["growth"] }]),
+    ).resolves.toEqual({
+      data: { success: true, affectedEntries: 1 },
+      error: null,
+    });
+    expect(mockAuthFetch).toHaveBeenNthCalledWith(
+      1,
+      "/api/ai/journal-retag/preview",
+      {
+        method: "POST",
+      },
+    );
+    expect(mockAuthFetch).toHaveBeenNthCalledWith(
+      2,
+      "/api/ai/journal-retag/apply",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          mode: "replace",
+          assignments: [{ entryId: 1, tags: ["growth"] }],
+        }),
+      },
+    );
+  });
+
+  it("rejects malformed journal retag responses", async () => {
+    mockAuthFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ themes: "growth", entries: [] }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: "yes", affectedEntries: 1 }),
+      });
+
+    await expect(service.previewJournalRetag()).resolves.toEqual({
+      data: null,
+      error: "Could not create retag plan",
+    });
+    await expect(service.applyJournalRetag("replace", [])).resolves.toEqual({
+      data: null,
+      error: "Could not apply retag plan",
+    });
+  });
 });

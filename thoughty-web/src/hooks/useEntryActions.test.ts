@@ -75,6 +75,8 @@ vi.mock("../services/api", () => ({
     updateCredential: vi.fn(),
     removeCredential: vi.fn(),
     getUsageDashboard: vi.fn(),
+    previewJournalRetag: vi.fn(),
+    applyJournalRetag: vi.fn(),
   })),
   createCloudSyncService: vi.fn(() => ({
     getStatus: vi.fn(),
@@ -137,6 +139,8 @@ const createAiServiceMock = async (overrides: Record<string, unknown> = {}) => {
     updateCredential: vi.fn(),
     removeCredential: vi.fn(),
     getUsageDashboard: vi.fn(),
+    previewJournalRetag: vi.fn(),
+    applyJournalRetag: vi.fn(),
     ...overrides,
   });
 };
@@ -367,6 +371,8 @@ describe("useEntryActions", () => {
         updateCredential: vi.fn(),
         removeCredential: vi.fn(),
         getUsageDashboard: vi.fn(),
+        previewJournalRetag: vi.fn(),
+        applyJournalRetag: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -408,6 +414,8 @@ describe("useEntryActions", () => {
         updateCredential: vi.fn(),
         removeCredential: vi.fn(),
         getUsageDashboard: vi.fn(),
+        previewJournalRetag: vi.fn(),
+        applyJournalRetag: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -449,6 +457,8 @@ describe("useEntryActions", () => {
         updateCredential: vi.fn(),
         removeCredential: vi.fn(),
         getUsageDashboard: vi.fn(),
+        previewJournalRetag: vi.fn(),
+        applyJournalRetag: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -499,6 +509,8 @@ describe("useEntryActions", () => {
         updateCredential: vi.fn(),
         removeCredential: vi.fn(),
         getUsageDashboard: vi.fn(),
+        previewJournalRetag: vi.fn(),
+        applyJournalRetag: vi.fn(),
       });
 
       const { result } = renderHook(() =>

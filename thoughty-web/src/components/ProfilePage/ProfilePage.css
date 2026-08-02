@@ -255,6 +255,12 @@ button.profile-avatar-large {
     opacity: 0.7;
 }
 
+.tag-manager-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
 .profile-verification-badge {
     display: inline-flex;
     align-items: center;
@@ -1425,6 +1431,11 @@ button.profile-avatar-large {
 
     .tag-manager-header {
         top: 0.5rem;
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .tag-manager-header-actions {
         align-items: stretch;
         flex-direction: column;
     }

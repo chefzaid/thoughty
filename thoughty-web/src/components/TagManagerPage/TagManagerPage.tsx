@@ -2,16 +2,18 @@ import { useEffect, useState } from 'react';
 import TagOrganizationSection from '../ProfilePage/TagOrganizationSection';
 import type { ProfileConfig, TranslationFunction } from '../ProfilePage/types';
 import { normalizeTagKey, parseTagMetadata, renameTagMetadata, serializeTagMetadata } from '../../utils/tagMetadata';
+import JournalRetagReview from './JournalRetagReview';
 
 interface TagManagerPageProps {
   readonly config: ProfileConfig;
   readonly allTags: string[];
   readonly onUpdateConfig: (config: ProfileConfig) => Promise<void>;
   readonly onRenameTag: (currentTag: string, nextTag: string) => Promise<boolean>;
+  readonly onRetagApplied: () => Promise<void>;
   readonly t: TranslationFunction;
 }
 
-function TagManagerPage({ config, allTags, onUpdateConfig, onRenameTag, t }: Readonly<TagManagerPageProps>) {
+function TagManagerPage({ config, allTags, onUpdateConfig, onRenameTag, onRetagApplied, t }: Readonly<TagManagerPageProps>) {
   const [localConfig, setLocalConfig] = useState<ProfileConfig>(config);
   const [renameDrafts, setRenameDrafts] = useState<Record<string, string>>({});
   const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
@@ -59,13 +61,12 @@ function TagManagerPage({ config, allTags, onUpdateConfig, onRenameTag, t }: Rea
           <h1 className="profile-page-title">{t('tags')}</h1>
           <p className="profile-page-subtitle">{t('tagOrganizationDescription')}</p>
         </div>
-        <button
-          type="button"
-          onClick={handleSave}
-          className="btn-save"
-        >
-          {t('saveSettings')}
-        </button>
+        <div className="tag-manager-header-actions">
+          <JournalRetagReview isDark={isDark} onApplied={onRetagApplied} t={t} />
+          <button type="button" onClick={handleSave} className="btn-save">
+            {t('saveSettings')}
+          </button>
+        </div>
       </div>
 
       <TagOrganizationSection
