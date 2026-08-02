@@ -156,6 +156,7 @@ Entries are not only identified by database `id`. The user-facing journal model 
 - Tag color/category metadata lives in user configuration rather than in a normalized tag table.
 - Whole-app tag rename operations must update entry arrays and the metadata configuration together.
 - If tags later need ownership, permissions, or rich relationships, this entry-centric model should be revisited with a new ADR.
+- Entry and tag correlations are derived on demand from `entries.tags`; no relationship rows or journal-content copies are persisted. The API returns a bounded set of entry identifiers/dates/indexes, shared tag names, and normalized scores.
 
 ## Attachments
 

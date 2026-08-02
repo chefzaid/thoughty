@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import { StatsResponseDto } from './dto';
 import { StatsJournalAnalysisService } from './stats-journal-analysis.service';
+import { StatsCorrelationService } from './stats-correlation.service';
 
 const WORDS_PER_MINUTE = 200;
 
@@ -13,6 +14,7 @@ export class StatsService {
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
     private readonly statsJournalAnalysisService: StatsJournalAnalysisService,
+    private readonly statsCorrelationService: StatsCorrelationService,
   ) {}
 
   async getStats(userId: number, diaryId?: number): Promise<StatsResponseDto> {
@@ -38,6 +40,7 @@ export class StatsService {
       tagsPerYearResult,
       tagsPerMonthResult,
       wordCountResult,
+      correlations,
     ] = await Promise.all([
       createQb().getCount(),
       createQb()
@@ -88,6 +91,7 @@ export class StatsService {
           'totalWords',
         )
         .getRawOne(),
+      this.statsCorrelationService.analyze(userId, diaryId),
     ]);
 
     const thoughtsPerYear: Record<string, number> = {};
@@ -160,6 +164,7 @@ export class StatsService {
       tagsPerMonth,
       toneMoodAnalysis: journalAnalysis?.toneMoodAnalysis ?? null,
       subjectAnalysis: journalAnalysis?.subjectAnalysis ?? null,
+      correlations,
     };
   }
 }

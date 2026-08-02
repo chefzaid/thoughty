@@ -18,6 +18,7 @@ import type { TagMetadataMap } from '../../utils/tagMetadata';
 import StatsActivityHeatmap from './StatsActivityHeatmap';
 import StatsInsights from './StatsInsights';
 import StatsPersonalityPanel from './StatsPersonalityPanel';
+import StatsCorrelationGraph from './StatsCorrelationGraph';
 
 // Register Chart.js components
 ChartJS.register(
@@ -62,6 +63,11 @@ const EMPTY_STATS: StatsData = {
     tagsPerMonth: {},
     toneMoodAnalysis: null,
     subjectAnalysis: null,
+    correlations: {
+        analyzedEntries: 0,
+        entryConnections: [],
+        tagConnections: [],
+    },
 };
 
 function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps) {
@@ -301,6 +307,12 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                             themeClass={themeClass}
                             diaryId={diaryId}
                             t={t}
+                        />
+                        <StatsCorrelationGraph
+                            correlations={stats.correlations ?? EMPTY_STATS.correlations}
+                            themeClass={themeClass}
+                            t={t}
+                            onOpenJournalDay={onOpenJournalDay}
                         />
                     </>
                 )}

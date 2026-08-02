@@ -108,6 +108,11 @@ describe('Stats Component', () => {
             subjectBreakdown: { work: 4, relationships: 2, wellbeing: 1 },
             analyzedEntries: 5,
             summary: 'Recent entries focus on work, relationships, and wellbeing.'
+        },
+        correlations: {
+            analyzedEntries: 100,
+            entryConnections: [],
+            tagConnections: []
         }
     };
 

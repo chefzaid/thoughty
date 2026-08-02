@@ -61,6 +61,7 @@ flowchart LR
 - Diary scoping carries into stats, which is important when users want to compare a focused writing stream against the full journal.
 - Tag metadata also feeds the insight layer, so charts and tag breakdowns can stay visually consistent with the colors used elsewhere in the app.
 - Longer time ranges are paged instead of silently truncated, and the tag analysis includes a year-by-year top-tag breakdown alongside the charts.
+- The Connections graph scans every entry in the selected diary scope and surfaces the 12 strongest related-entry links and tag co-occurrences. Entry links are scored from shared-tag overlap, tag links use normalized co-occurrence strength, and selecting an entry node returns to that journal date.
 - Highlights provide two different memory cues: a random entry for rediscovery and an `On This Day` view that groups matching entries by how many years ago they were written.
 - Highlight results are actionable. They link back into the full journal flow rather than trapping the user in a read-only summary screen.
 

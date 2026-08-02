@@ -3050,6 +3050,32 @@
                     },
                     "analyzedEntries": 27,
                     "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
+                  },
+                  "correlations": {
+                    "analyzedEntries": 120,
+                    "entryConnections": [
+                      {
+                        "sourceEntryId": 42,
+                        "sourceDate": "2025-06-18",
+                        "sourceIndex": 1,
+                        "targetEntryId": 17,
+                        "targetDate": "2025-05-02",
+                        "targetIndex": 2,
+                        "sharedTags": [
+                          "work",
+                          "focus"
+                        ],
+                        "score": 82
+                      }
+                    ],
+                    "tagConnections": [
+                      {
+                        "firstTag": "work",
+                        "secondTag": "focus",
+                        "sharedEntries": 14,
+                        "strength": 76
+                      }
+                    ]
                   }
                 }
               }
@@ -7550,6 +7576,163 @@
           "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
         }
       },
+      "EntryCorrelationDto": {
+        "type": "object",
+        "properties": {
+          "sourceEntryId": {
+            "type": "number",
+            "example": 42
+          },
+          "sourceDate": {
+            "type": "string",
+            "example": "2025-06-18",
+            "format": "date"
+          },
+          "sourceIndex": {
+            "type": "number",
+            "example": 1
+          },
+          "targetEntryId": {
+            "type": "number",
+            "example": 17
+          },
+          "targetDate": {
+            "type": "string",
+            "example": "2025-05-02",
+            "format": "date"
+          },
+          "targetIndex": {
+            "type": "number",
+            "example": 2
+          },
+          "sharedTags": {
+            "example": [
+              "work",
+              "focus"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "score": {
+            "type": "number",
+            "example": 82,
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "sourceEntryId",
+          "sourceDate",
+          "sourceIndex",
+          "targetEntryId",
+          "targetDate",
+          "targetIndex",
+          "sharedTags",
+          "score"
+        ],
+        "example": {
+          "sourceEntryId": 42,
+          "sourceDate": "2025-06-18",
+          "sourceIndex": 1,
+          "targetEntryId": 17,
+          "targetDate": "2025-05-02",
+          "targetIndex": 2,
+          "sharedTags": [
+            "work",
+            "focus"
+          ],
+          "score": 82
+        }
+      },
+      "TagCorrelationDto": {
+        "type": "object",
+        "properties": {
+          "firstTag": {
+            "type": "string",
+            "example": "work"
+          },
+          "secondTag": {
+            "type": "string",
+            "example": "focus"
+          },
+          "sharedEntries": {
+            "type": "number",
+            "example": 14
+          },
+          "strength": {
+            "type": "number",
+            "example": 76,
+            "minimum": 0,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "firstTag",
+          "secondTag",
+          "sharedEntries",
+          "strength"
+        ],
+        "example": {
+          "firstTag": "work",
+          "secondTag": "focus",
+          "sharedEntries": 14,
+          "strength": 76
+        }
+      },
+      "StatsCorrelationsDto": {
+        "type": "object",
+        "properties": {
+          "analyzedEntries": {
+            "type": "number",
+            "example": 120
+          },
+          "entryConnections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntryCorrelationDto"
+            }
+          },
+          "tagConnections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagCorrelationDto"
+            }
+          }
+        },
+        "required": [
+          "analyzedEntries",
+          "entryConnections",
+          "tagConnections"
+        ],
+        "example": {
+          "analyzedEntries": 120,
+          "entryConnections": [
+            {
+              "sourceEntryId": 42,
+              "sourceDate": "2025-06-18",
+              "sourceIndex": 1,
+              "targetEntryId": 17,
+              "targetDate": "2025-05-02",
+              "targetIndex": 2,
+              "sharedTags": [
+                "work",
+                "focus"
+              ],
+              "score": 82
+            }
+          ],
+          "tagConnections": [
+            {
+              "firstTag": "work",
+              "secondTag": "focus",
+              "sharedEntries": 14,
+              "strength": 76
+            }
+          ]
+        }
+      },
       "StatsResponseDto": {
         "type": "object",
         "properties": {
@@ -7656,6 +7839,9 @@
                 "$ref": "#/components/schemas/SubjectAnalysisDto"
               }
             ]
+          },
+          "correlations": {
+            "$ref": "#/components/schemas/StatsCorrelationsDto"
           }
         },
         "required": [
@@ -7668,7 +7854,8 @@
           "thoughtsPerDay",
           "thoughtsPerTag",
           "tagsPerYear",
-          "tagsPerMonth"
+          "tagsPerMonth",
+          "correlations"
         ],
         "example": {
           "totalThoughts": 120,
@@ -7727,6 +7914,32 @@
             },
             "analyzedEntries": 27,
             "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
+          },
+          "correlations": {
+            "analyzedEntries": 120,
+            "entryConnections": [
+              {
+                "sourceEntryId": 42,
+                "sourceDate": "2025-06-18",
+                "sourceIndex": 1,
+                "targetEntryId": 17,
+                "targetDate": "2025-05-02",
+                "targetIndex": 2,
+                "sharedTags": [
+                  "work",
+                  "focus"
+                ],
+                "score": 82
+              }
+            ],
+            "tagConnections": [
+              {
+                "firstTag": "work",
+                "secondTag": "focus",
+                "sharedEntries": 14,
+                "strength": 76
+              }
+            ]
           }
         }
       },

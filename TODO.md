@@ -103,7 +103,7 @@
 - [ ] AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
 - [x] Possibility to provide your own API key to use AI features with your own token, and a usage dashboard to monitor your token consumption and costs
 - [ ] Local LLM processing for privacy
-- [ ] Graph of insights and correlations from all entries, to discover patterns and connections between them, do the same for tags
+- [x] Graph of insights and correlations from all entries, to discover patterns and connections between them, do the same for tags
 - [ ] Transcription from an Audio note
 - [ ] Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
 - [x] Use different models for different tasks, to optimize token consumption parameterized in the AI settings

@@ -109,6 +109,57 @@ export class PersonalityAnalysisResponseDto {
   analysis!: PersonalityAnalysisDto | null;
 }
 
+export class EntryCorrelationDto {
+  @ApiProperty({ example: 42 })
+  sourceEntryId!: number;
+
+  @ApiProperty({ example: '2025-06-18', format: 'date' })
+  sourceDate!: string;
+
+  @ApiProperty({ example: 1 })
+  sourceIndex!: number;
+
+  @ApiProperty({ example: 17 })
+  targetEntryId!: number;
+
+  @ApiProperty({ example: '2025-05-02', format: 'date' })
+  targetDate!: string;
+
+  @ApiProperty({ example: 2 })
+  targetIndex!: number;
+
+  @ApiProperty({ type: [String], example: ['work', 'focus'] })
+  sharedTags!: string[];
+
+  @ApiProperty({ example: 82, minimum: 0, maximum: 100 })
+  score!: number;
+}
+
+export class TagCorrelationDto {
+  @ApiProperty({ example: 'work' })
+  firstTag!: string;
+
+  @ApiProperty({ example: 'focus' })
+  secondTag!: string;
+
+  @ApiProperty({ example: 14 })
+  sharedEntries!: number;
+
+  @ApiProperty({ example: 76, minimum: 0, maximum: 100 })
+  strength!: number;
+}
+
+export class StatsCorrelationsDto {
+  @ApiProperty({ example: 120 })
+  analyzedEntries!: number;
+
+  @ApiProperty({ type: [EntryCorrelationDto] })
+  entryConnections!: EntryCorrelationDto[];
+
+  @ApiProperty({ type: [TagCorrelationDto] })
+  tagConnections!: TagCorrelationDto[];
+}
+
 export class StatsResponseDto {
   @ApiProperty({ example: 120 })
   totalThoughts!: number;
@@ -183,4 +234,7 @@ export class StatsResponseDto {
     required: false,
   })
   subjectAnalysis!: SubjectAnalysisDto | null;
+
+  @ApiProperty({ type: StatsCorrelationsDto })
+  correlations!: StatsCorrelationsDto;
 }

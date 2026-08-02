@@ -2738,6 +2738,102 @@ export interface components {
         };
         /**
          * @example {
+         *       "sourceEntryId": 42,
+         *       "sourceDate": "2025-06-18",
+         *       "sourceIndex": 1,
+         *       "targetEntryId": 17,
+         *       "targetDate": "2025-05-02",
+         *       "targetIndex": 2,
+         *       "sharedTags": [
+         *         "work",
+         *         "focus"
+         *       ],
+         *       "score": 82
+         *     }
+         */
+        EntryCorrelationDto: {
+            /** @example 42 */
+            sourceEntryId: number;
+            /**
+             * Format: date
+             * @example 2025-06-18
+             */
+            sourceDate: string;
+            /** @example 1 */
+            sourceIndex: number;
+            /** @example 17 */
+            targetEntryId: number;
+            /**
+             * Format: date
+             * @example 2025-05-02
+             */
+            targetDate: string;
+            /** @example 2 */
+            targetIndex: number;
+            /**
+             * @example [
+             *       "work",
+             *       "focus"
+             *     ]
+             */
+            sharedTags: string[];
+            /** @example 82 */
+            score: number;
+        };
+        /**
+         * @example {
+         *       "firstTag": "work",
+         *       "secondTag": "focus",
+         *       "sharedEntries": 14,
+         *       "strength": 76
+         *     }
+         */
+        TagCorrelationDto: {
+            /** @example work */
+            firstTag: string;
+            /** @example focus */
+            secondTag: string;
+            /** @example 14 */
+            sharedEntries: number;
+            /** @example 76 */
+            strength: number;
+        };
+        /**
+         * @example {
+         *       "analyzedEntries": 120,
+         *       "entryConnections": [
+         *         {
+         *           "sourceEntryId": 42,
+         *           "sourceDate": "2025-06-18",
+         *           "sourceIndex": 1,
+         *           "targetEntryId": 17,
+         *           "targetDate": "2025-05-02",
+         *           "targetIndex": 2,
+         *           "sharedTags": [
+         *             "work",
+         *             "focus"
+         *           ],
+         *           "score": 82
+         *         }
+         *       ],
+         *       "tagConnections": [
+         *         {
+         *           "firstTag": "work",
+         *           "secondTag": "focus",
+         *           "sharedEntries": 14,
+         *           "strength": 76
+         *         }
+         *       ]
+         *     }
+         */
+        StatsCorrelationsDto: {
+            /** @example 120 */
+            analyzedEntries: number;
+            entryConnections: components["schemas"]["EntryCorrelationDto"][];
+            tagConnections: components["schemas"]["TagCorrelationDto"][];
+        };
+        /**
+         * @example {
          *       "totalThoughts": 120,
          *       "averageWordsPerEntry": 184,
          *       "averageReadingTimeMinutes": 1,
@@ -2794,6 +2890,32 @@ export interface components {
          *         },
          *         "analyzedEntries": 27,
          *         "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
+         *       },
+         *       "correlations": {
+         *         "analyzedEntries": 120,
+         *         "entryConnections": [
+         *           {
+         *             "sourceEntryId": 42,
+         *             "sourceDate": "2025-06-18",
+         *             "sourceIndex": 1,
+         *             "targetEntryId": 17,
+         *             "targetDate": "2025-05-02",
+         *             "targetIndex": 2,
+         *             "sharedTags": [
+         *               "work",
+         *               "focus"
+         *             ],
+         *             "score": 82
+         *           }
+         *         ],
+         *         "tagConnections": [
+         *           {
+         *             "firstTag": "work",
+         *             "secondTag": "focus",
+         *             "sharedEntries": 14,
+         *             "strength": 76
+         *           }
+         *         ]
          *       }
          *     }
          */
@@ -2870,6 +2992,7 @@ export interface components {
             };
             toneMoodAnalysis?: components["schemas"]["ToneMoodAnalysisDto"] | null;
             subjectAnalysis?: components["schemas"]["SubjectAnalysisDto"] | null;
+            correlations: components["schemas"]["StatsCorrelationsDto"];
         };
         /**
          * @example {
@@ -5874,6 +5997,32 @@ export interface operations {
                      *         },
                      *         "analyzedEntries": 27,
                      *         "summary": "Recent entries focus mostly on work, relationships, and personal wellbeing."
+                     *       },
+                     *       "correlations": {
+                     *         "analyzedEntries": 120,
+                     *         "entryConnections": [
+                     *           {
+                     *             "sourceEntryId": 42,
+                     *             "sourceDate": "2025-06-18",
+                     *             "sourceIndex": 1,
+                     *             "targetEntryId": 17,
+                     *             "targetDate": "2025-05-02",
+                     *             "targetIndex": 2,
+                     *             "sharedTags": [
+                     *               "work",
+                     *               "focus"
+                     *             ],
+                     *             "score": 82
+                     *           }
+                     *         ],
+                     *         "tagConnections": [
+                     *           {
+                     *             "firstTag": "work",
+                     *             "secondTag": "focus",
+                     *             "sharedEntries": 14,
+                     *             "strength": 76
+                     *           }
+                     *         ]
                      *       }
                      *     }
                      */

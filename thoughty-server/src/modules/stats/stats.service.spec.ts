@@ -3,11 +3,13 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { StatsService } from './stats.service';
 import { Entry } from '@/database/entities';
 import { StatsJournalAnalysisService } from './stats-journal-analysis.service';
+import { StatsCorrelationService } from './stats-correlation.service';
 
 describe('StatsService', () => {
   let service: StatsService;
   let entryRepository: any;
   let statsJournalAnalysisService: { analyze: jest.Mock };
+  let statsCorrelationService: { analyze: jest.Mock };
 
   beforeEach(async () => {
     const mockQueryBuilder = {
@@ -33,12 +35,20 @@ describe('StatsService', () => {
     statsJournalAnalysisService = {
       analyze: jest.fn().mockResolvedValue(null),
     };
+    statsCorrelationService = {
+      analyze: jest.fn().mockResolvedValue({
+        analyzedEntries: 0,
+        entryConnections: [],
+        tagConnections: [],
+      }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StatsService,
         { provide: getRepositoryToken(Entry), useValue: entryRepository },
         { provide: StatsJournalAnalysisService, useValue: statsJournalAnalysisService },
+        { provide: StatsCorrelationService, useValue: statsCorrelationService },
       ],
     }).compile();
 
@@ -88,6 +98,7 @@ describe('StatsService', () => {
       expect(result).toHaveProperty('tagsPerMonth');
       expect(result).toHaveProperty('toneMoodAnalysis');
       expect(result).toHaveProperty('subjectAnalysis');
+      expect(result).toHaveProperty('correlations');
     });
 
     it('should calculate totalThoughts correctly', async () => {
@@ -236,6 +247,7 @@ describe('StatsService', () => {
       await service.getStats(1, 1);
 
       expect(mockQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 1 });
+      expect(statsCorrelationService.analyze).toHaveBeenCalledWith(1, 1);
     });
 
     it('should include AI tone, mood, and subject analysis when available', async () => {

@@ -342,58 +342,7 @@ export function buildExportBody(
   };
 }
 
-export function buildStats(entries: MockEntry[]) {
-  const thoughtsPerYear: Record<string, number> = {};
-  const thoughtsPerMonth: Record<string, number> = {};
-  const thoughtsPerDay: Record<string, number> = {};
-  const thoughtsPerTag: Record<string, number> = {};
-  const tagsPerYear: Record<string, Record<string, number>> = {};
-
-  for (const entry of entries) {
-    const year = entry.date.slice(0, 4);
-    const month = entry.date.slice(0, 7);
-
-    thoughtsPerYear[year] = (thoughtsPerYear[year] || 0) + 1;
-    thoughtsPerMonth[month] = (thoughtsPerMonth[month] || 0) + 1;
-    thoughtsPerDay[entry.date] = (thoughtsPerDay[entry.date] || 0) + 1;
-    tagsPerYear[year] ||= {};
-
-    for (const tag of entry.tags) {
-      thoughtsPerTag[tag] = (thoughtsPerTag[tag] || 0) + 1;
-      tagsPerYear[year][tag] = (tagsPerYear[year][tag] || 0) + 1;
-    }
-  }
-
-  return {
-    totalThoughts: entries.length,
-    averageWordsPerEntry:
-      entries.length > 0
-        ? Math.round(
-            entries.reduce(
-              (total, entry) => total + entry.content.split(/\s+/).length,
-              0,
-            ) / entries.length,
-          )
-        : 0,
-    averageReadingTimeMinutes: entries.length > 0 ? 1 : 0,
-    uniqueTagsCount: Object.keys(thoughtsPerTag).length,
-    thoughtsPerYear,
-    thoughtsPerMonth,
-    thoughtsPerDay,
-    thoughtsPerTag,
-    tagsPerYear,
-    tagsPerMonth: {},
-    toneMoodAnalysis: null,
-    subjectAnalysis:
-      entries.length > 0
-        ? {
-            subjectBreakdown: thoughtsPerTag,
-            analyzedEntries: entries.length,
-            summary: "Recent entries focus on reflection, focus, and work.",
-          }
-        : null,
-  };
-}
+export { buildStats } from "./mockApp.stats";
 
 export function createMockAppState(
   options: SetupMockAppOptions = {},

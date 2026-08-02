@@ -119,6 +119,8 @@ When enabled, relevant journal content may be sent to OpenRouter or the configur
 
 Usage accounting stores one metadata-only event per successful OpenRouter response: user ID, credential source, model, token counts, cost, and timestamp. It never stores prompts or completions. The profile dashboard aggregates personal-key events over 30 days and separately reads the current key's spend and limit from OpenRouter; provider totals can include requests made outside Thoughty with the same key.
 
+The Stats Connections graph is computed locally from the authenticated user's entry IDs, dates, indexes, and tags. It does not send journal data to an AI provider, include entry content in its response, or persist derived relationships. Diary filtering remains combined with user ownership in the database query, and each relationship list is capped at 12 results.
+
 Product and deployment documentation should make this clear to users and operators. Future local-LLM support should be covered by a dedicated ADR because it changes privacy, hosting, and performance assumptions.
 
 ## Email Verification and Two-Factor Authentication

@@ -196,6 +196,16 @@ export type TranslationKey =
   | "thoughtsPerMonth"
   | "topTagsByYear"
   | "journalActivityByDay"
+  | "correlationGraph"
+  | "correlationGraphDescription"
+  | "correlationEntriesAnalyzed"
+  | "entryConnections"
+  | "tagConnections"
+  | "connectionStrength"
+  | "sharedEntryCount"
+  | "noEntryConnections"
+  | "noTagConnections"
+  | "openConnectedEntry"
   | "toneMoodInsights"
   | "toneMoodInsightsDescription"
   | "dominantMood"
@@ -1057,6 +1067,17 @@ export const translations: Translations = {
     thoughtsPerMonth: "Entries per Month",
     topTagsByYear: "Top Tags by Year",
     journalActivityByDay: "Journal Activity by Day",
+    correlationGraph: "Connections",
+    correlationGraphDescription:
+      "Explore the strongest links between entries and tags across this journal scope.",
+    correlationEntriesAnalyzed: "{count} entries analyzed",
+    entryConnections: "Related entries",
+    tagConnections: "Tag network",
+    connectionStrength: "Connection strength: {score}%",
+    sharedEntryCount: "{count} shared entries",
+    noEntryConnections: "Add shared tags to more entries to reveal connections.",
+    noTagConnections: "Use tags together on entries to reveal a tag network.",
+    openConnectedEntry: "Open entry {index} from {date}",
     toneMoodInsights: "Tone and Mood",
     toneMoodInsightsDescription: "AI analysis of your recent writing patterns.",
     dominantMood: "Dominant Mood",
@@ -2018,6 +2039,19 @@ export const translations: Translations = {
     thoughtsPerMonth: "Entrées par mois",
     topTagsByYear: "Top tags par année",
     journalActivityByDay: "Activité du journal par jour",
+    correlationGraph: "Connexions",
+    correlationGraphDescription:
+      "Explorez les liens les plus forts entre les entrées et les tags de ce journal.",
+    correlationEntriesAnalyzed: "{count} entrées analysées",
+    entryConnections: "Entrées liées",
+    tagConnections: "Réseau de tags",
+    connectionStrength: "Force de la connexion : {score} %",
+    sharedEntryCount: "{count} entrées partagées",
+    noEntryConnections:
+      "Ajoutez des tags communs à plusieurs entrées pour révéler leurs liens.",
+    noTagConnections:
+      "Utilisez plusieurs tags ensemble pour révéler leur réseau.",
+    openConnectedEntry: "Ouvrir l'entrée {index} du {date}",
     toneMoodInsights: "Ton et humeur",
     toneMoodInsightsDescription:
       "Analyse IA de vos tendances d'écriture récentes.",

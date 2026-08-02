@@ -6,11 +6,17 @@ import { StatsController } from './stats.controller';
 import { StatsService } from './stats.service';
 import { StatsJournalAnalysisService } from './stats-journal-analysis.service';
 import { StatsPersonalityAnalysisService } from './stats-personality-analysis.service';
+import { StatsCorrelationService } from './stats-correlation.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Entry]), AiModule],
   controllers: [StatsController],
-  providers: [StatsService, StatsJournalAnalysisService, StatsPersonalityAnalysisService],
+  providers: [
+    StatsService,
+    StatsJournalAnalysisService,
+    StatsPersonalityAnalysisService,
+    StatsCorrelationService,
+  ],
   exports: [StatsService],
 })
 export class StatsModule {}
