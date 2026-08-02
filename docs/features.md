@@ -27,7 +27,7 @@ flowchart LR
 - Each entry shows backlinks from other entries that reference it, with one-click navigation back to the referring thought.
 - Visibility is managed per entry with public and private states, making Thoughty usable for both strictly personal notes and selectively shareable writing.
 - Favorites, pinned state, archive state, and revision history are all first-class entry behaviors. Pinned entries stay at the top of the journal up to the user's configured limit, edited entries keep a history trail, and individual revisions can be inspected and removed.
-- Attachments are handled inline: files can be attached to entries; image, audio, PDF, and text-like assets can be previewed in place; and larger previews open in a dedicated dialog rather than forcing blind downloads.
+- Attachments are handled inline: files can be attached to entries; image, audio, PDF, and text-like assets can be previewed in place; and larger previews open in a dedicated dialog rather than forcing blind downloads. Saved audio notes can be transcribed on demand with OpenRouter; transcripts are cached on the attachment, remain visible after reload, and can be copied from the entry card.
 - Journal navigation includes paging plus a year/month jump control, so users can move to the first entry in a period without manually paging through long histories.
 - Journal keyboard shortcuts cover fast writing and browsing: `Ctrl+N` focuses the new-entry writer, `Ctrl+/` focuses search, `Escape` closes the highlights modal, and left/right arrow keys page through entries when focus is not inside a text field.
 

@@ -13,11 +13,20 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiParam } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiParam,
+} from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
 import { Response } from 'express';
 import { AttachmentsService } from './attachments.service';
 import { LinkAttachmentDto } from './dto';
+import { AudioTranscriptionResponseDto } from './dto';
+import { AudioTranscriptionService } from './audio-transcription.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 
@@ -26,7 +35,10 @@ import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 @UseGuards(JwtAuthGuard)
 @Controller('attachments')
 export class AttachmentsController {
-  constructor(private readonly attachmentsService: AttachmentsService) {}
+  constructor(
+    private readonly attachmentsService: AttachmentsService,
+    private readonly audioTranscriptionService: AudioTranscriptionService,
+  ) {}
 
   @Post('upload')
   @ApiOperation({ summary: 'Upload a file attachment' })
@@ -45,11 +57,7 @@ export class AttachmentsController {
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: LinkAttachmentDto,
   ) {
-    const attachment = await this.attachmentsService.upload(
-      user.userId,
-      file,
-      dto.entryId,
-    );
+    const attachment = await this.attachmentsService.upload(user.userId, file, dto.entryId);
 
     return {
       id: attachment.id,
@@ -59,6 +67,8 @@ export class AttachmentsController {
       size: attachment.size,
       entry_id: attachment.entryId,
       created_at: attachment.createdAt,
+      transcript: attachment.transcript,
+      transcribed_at: attachment.transcribedAt,
     };
   }
 
@@ -74,11 +84,7 @@ export class AttachmentsController {
     if (!dto.entryId) {
       throw new NotFoundException('entryId is required');
     }
-    const attachment = await this.attachmentsService.linkToEntry(
-      user.userId,
-      id,
-      dto.entryId,
-    );
+    const attachment = await this.attachmentsService.linkToEntry(user.userId, id, dto.entryId);
     return {
       id: attachment.id,
       original_filename: attachment.originalFilename,
@@ -87,7 +93,24 @@ export class AttachmentsController {
       size: attachment.size,
       entry_id: attachment.entryId,
       created_at: attachment.createdAt,
+      transcript: attachment.transcript,
+      transcribed_at: attachment.transcribedAt,
     };
+  }
+
+  @Post(':id/transcribe')
+  @ApiOperation({ summary: 'Transcribe an audio attachment' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({
+    status: 201,
+    description: 'Audio attachment transcribed or cached transcript returned',
+    type: AudioTranscriptionResponseDto,
+  })
+  async transcribe(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AudioTranscriptionResponseDto> {
+    return this.audioTranscriptionService.transcribe(user.userId, id);
   }
 
   @Delete(':id')
@@ -105,10 +128,7 @@ export class AttachmentsController {
   @ApiOperation({ summary: 'Serve an attachment file' })
   @ApiParam({ name: 'filename', type: String })
   @ApiResponse({ status: 200, description: 'File content' })
-  async serveFile(
-    @Param('filename') filename: string,
-    @Res() res: Response,
-  ) {
+  async serveFile(@Param('filename') filename: string, @Res() res: Response) {
     // Sanitize filename to prevent path traversal
     const sanitized = filename.replace(/[^a-zA-Z0-9._-]/g, '');
 

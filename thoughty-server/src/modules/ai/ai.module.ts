@@ -23,6 +23,6 @@ import { AiUsageService } from './ai-usage.service';
     AiCredentialsService,
     AiUsageService,
   ],
-  exports: [AiService, AiBookComposerService, AiPersonalityService],
+  exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService],
 })
 export class AiModule {}

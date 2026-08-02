@@ -66,21 +66,23 @@ describe('EntriesQueryService', () => {
       isPinned: true,
       createdAt: new Date('2024-01-15T10:00:00Z'),
       diary: { name: 'Work', icon: '💼', color: '#123456' },
-      attachments: [{
-        id: 12,
-        originalFilename: 'a.txt',
-        storedFilename: 'file-1',
-        mimetype: 'text/plain',
-        size: 50,
-      }],
+      attachments: [
+        {
+          id: 12,
+          originalFilename: 'a.txt',
+          storedFilename: 'file-1',
+          mimetype: 'text/plain',
+          size: 50,
+          transcript: 'Stored words',
+          transcribedAt: new Date('2024-01-15T10:05:00Z'),
+        },
+      ],
     };
 
     entriesQb.getCount.mockResolvedValue(12);
     entriesQb.getMany.mockResolvedValue([entry]);
     tagsQb.getRawMany.mockResolvedValue([{ tag: 'work' }, { tag: 'alpha' }]);
-    entryRepository.createQueryBuilder
-      .mockReturnValueOnce(entriesQb)
-      .mockReturnValueOnce(tagsQb);
+    entryRepository.createQueryBuilder.mockReturnValueOnce(entriesQb).mockReturnValueOnce(tagsQb);
 
     const result = await service.getEntries(4, {
       search: 'work',
@@ -94,13 +96,20 @@ describe('EntriesQueryService', () => {
       limit: 5,
     });
 
-    expect(entriesQb.andWhere).toHaveBeenCalledWith('(e.content ILIKE :search OR :searchTerm = ANY(e.tags))', {
-      search: '%work%',
-      searchTerm: 'work',
+    expect(entriesQb.andWhere).toHaveBeenCalledWith(
+      '(e.content ILIKE :search OR :searchTerm = ANY(e.tags))',
+      {
+        search: '%work%',
+        searchTerm: 'work',
+      },
+    );
+    expect(entriesQb.andWhere).toHaveBeenCalledWith('e.tags @> :tagList', {
+      tagList: ['work', 'focus'],
     });
-    expect(entriesQb.andWhere).toHaveBeenCalledWith('e.tags @> :tagList', { tagList: ['work', 'focus'] });
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.date = :date', { date: '2024-01-15' });
-    expect(entriesQb.andWhere).toHaveBeenCalledWith('e.visibility = :visibility', { visibility: 'public' });
+    expect(entriesQb.andWhere).toHaveBeenCalledWith('e.visibility = :visibility', {
+      visibility: 'public',
+    });
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 8 });
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.is_favorite = true');
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.is_archived = false');
@@ -110,31 +119,37 @@ describe('EntriesQueryService', () => {
     expect(entriesQb.skip).toHaveBeenCalledWith(5);
     expect(entriesQb.take).toHaveBeenCalledWith(5);
     expect(result).toEqual({
-      entries: [{
-        id: 1,
-        user_id: 4,
-        diary_id: 8,
-        date: '2024-01-15',
-        index: 1,
-        tags: ['work'],
-        content: 'First entry',
-        format: 'markdown',
-        visibility: 'public',
-        is_favorite: true,
-        is_archived: false,
-        is_pinned: true,
-        diary_name: 'Work',
-        diary_icon: '💼',
-        diary_color: '#123456',
-        created_at: entry.createdAt,
-        attachments: [{
-          id: 12,
-          original_filename: 'a.txt',
-          stored_filename: 'file-1',
-          mimetype: 'text/plain',
-          size: 50,
-        }],
-      }],
+      entries: [
+        {
+          id: 1,
+          user_id: 4,
+          diary_id: 8,
+          date: '2024-01-15',
+          index: 1,
+          tags: ['work'],
+          content: 'First entry',
+          format: 'markdown',
+          visibility: 'public',
+          is_favorite: true,
+          is_archived: false,
+          is_pinned: true,
+          diary_name: 'Work',
+          diary_icon: '💼',
+          diary_color: '#123456',
+          created_at: entry.createdAt,
+          attachments: [
+            {
+              id: 12,
+              original_filename: 'a.txt',
+              stored_filename: 'file-1',
+              mimetype: 'text/plain',
+              size: 50,
+              transcript: 'Stored words',
+              transcribed_at: new Date('2024-01-15T10:05:00Z'),
+            },
+          ],
+        },
+      ],
       total: 12,
       page: 2,
       totalPages: 3,
@@ -143,7 +158,9 @@ describe('EntriesQueryService', () => {
   });
 
   it('returns available dates ordered descending', async () => {
-    const qb = createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([{ date: '2024-01-15' }, { date: '2024-01-10' }]) });
+    const qb = createQueryBuilder({
+      getRawMany: jest.fn().mockResolvedValue([{ date: '2024-01-15' }, { date: '2024-01-10' }]),
+    });
     entryRepository.createQueryBuilder.mockReturnValue(qb);
 
     await expect(service.getDates(2)).resolves.toEqual({ dates: ['2024-01-15', '2024-01-10'] });
@@ -151,11 +168,13 @@ describe('EntriesQueryService', () => {
   });
 
   it('returns available years and months without selecting an entry when year is missing', async () => {
-    const yearsQb = createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([{ year: '2024' }, { year: '2023' }]) });
-    const monthsQb = createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([{ month: '2024-01' }]) });
-    entryRepository.createQueryBuilder
-      .mockReturnValueOnce(yearsQb)
-      .mockReturnValueOnce(monthsQb);
+    const yearsQb = createQueryBuilder({
+      getRawMany: jest.fn().mockResolvedValue([{ year: '2024' }, { year: '2023' }]),
+    });
+    const monthsQb = createQueryBuilder({
+      getRawMany: jest.fn().mockResolvedValue([{ month: '2024-01' }]),
+    });
+    entryRepository.createQueryBuilder.mockReturnValueOnce(yearsQb).mockReturnValueOnce(monthsQb);
 
     await expect(service.getFirstEntry(1, { limit: 10 })).resolves.toEqual({
       page: 1,
@@ -166,9 +185,15 @@ describe('EntriesQueryService', () => {
   });
 
   it('finds the first entry for a year-month selection and returns the containing page', async () => {
-    const yearsQb = createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([{ year: '2024' }]) });
-    const monthsQb = createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([{ month: '2024-01' }, { month: '2024-02' }]) });
-    const firstDateQb = createQueryBuilder({ getRawOne: jest.fn().mockResolvedValue({ first_date: '2024-02-03' }) });
+    const yearsQb = createQueryBuilder({
+      getRawMany: jest.fn().mockResolvedValue([{ year: '2024' }]),
+    });
+    const monthsQb = createQueryBuilder({
+      getRawMany: jest.fn().mockResolvedValue([{ month: '2024-01' }, { month: '2024-02' }]),
+    });
+    const firstDateQb = createQueryBuilder({
+      getRawOne: jest.fn().mockResolvedValue({ first_date: '2024-02-03' }),
+    });
     const firstIdQb = createQueryBuilder({ getRawOne: jest.fn().mockResolvedValue({ e_id: 44 }) });
     const countQb = createQueryBuilder({ getCount: jest.fn().mockResolvedValue(13) });
 
@@ -199,8 +224,7 @@ describe('EntriesQueryService', () => {
   it('navigates to an entry by explicit id and returns the containing page', async () => {
     entryRepository.findOne.mockResolvedValue({ id: 7, userId: 3, date: '2024-01-20', index: 4 });
     const countBeforeQb = createQueryBuilder({ getCount: jest.fn().mockResolvedValue(16) });
-    entryRepository.createQueryBuilder
-      .mockReturnValueOnce(countBeforeQb);
+    entryRepository.createQueryBuilder.mockReturnValueOnce(countBeforeQb);
 
     const result = await service.getEntryByDate(3, { id: 7, limit: 10 });
 
@@ -218,7 +242,10 @@ describe('EntriesQueryService', () => {
   });
 
   it('returns validation and not-found errors when navigating by date without a match', async () => {
-    await expect(service.getEntryByDate(1, { index: 1 })).resolves.toEqual({ found: false, error: 'Date is required' });
+    await expect(service.getEntryByDate(1, { index: 1 })).resolves.toEqual({
+      found: false,
+      error: 'Date is required',
+    });
 
     entryRepository.findOne.mockResolvedValue(null);
     await expect(service.getEntryByDate(1, { date: '2024-01-10', index: 2 })).resolves.toEqual({
@@ -233,9 +260,7 @@ describe('EntriesQueryService', () => {
       getMany: jest.fn().mockResolvedValue([]),
     });
     const tagsQb = createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([]) });
-    entryRepository.createQueryBuilder
-      .mockReturnValueOnce(entriesQb)
-      .mockReturnValueOnce(tagsQb);
+    entryRepository.createQueryBuilder.mockReturnValueOnce(entriesQb).mockReturnValueOnce(tagsQb);
 
     await service.getEntries(4, { ids: '8,3,8', page: 1, limit: 10 });
 
@@ -286,7 +311,9 @@ describe('EntriesQueryService', () => {
 
     expect(entryRepository.findOne).toHaveBeenCalledWith({ where: { id: 7, userId: 3 } });
     expect(backlinksQb.andWhere).toHaveBeenCalledWith('e.id != :entryId', { entryId: 7 });
-    expect(backlinksQb.andWhere).toHaveBeenCalledWith('e.content ILIKE :targetDate', { targetDate: '%2024-01-20%' });
+    expect(backlinksQb.andWhere).toHaveBeenCalledWith('e.content ILIKE :targetDate', {
+      targetDate: '%2024-01-20%',
+    });
     expect(result).toEqual({
       backlinks: [
         {

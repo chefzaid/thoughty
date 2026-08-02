@@ -79,7 +79,18 @@ describe('UserDataExportService', () => {
       },
     ]);
     revisionRepository.find.mockResolvedValue([]);
-    attachmentRepository.find.mockResolvedValue([]);
+    attachmentRepository.find.mockResolvedValue([
+      {
+        id: 3,
+        entryId: 1,
+        originalFilename: 'voice.mp3',
+        mimetype: 'audio/mpeg',
+        size: 2048,
+        transcript: 'Portable transcript',
+        transcribedAt: new Date('2024-01-15T10:05:00Z'),
+        createdAt: new Date('2024-01-15T10:00:00Z'),
+      },
+    ]);
     settingRepository.find.mockResolvedValue([
       { key: 'theme', value: 'dark', updatedAt: new Date('2024-01-01') },
     ]);
@@ -96,7 +107,13 @@ describe('UserDataExportService', () => {
     );
     expect(result.entries).toHaveLength(1);
     expect(result.revisions).toHaveLength(0);
-    expect(result.attachments).toHaveLength(0);
+    expect(result.attachments).toEqual([
+      expect.objectContaining({
+        id: 3,
+        transcript: 'Portable transcript',
+        transcribedAt: new Date('2024-01-15T10:05:00Z'),
+      }),
+    ]);
     expect(result.settings).toHaveLength(1);
   });
 

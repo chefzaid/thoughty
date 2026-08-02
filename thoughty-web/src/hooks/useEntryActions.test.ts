@@ -59,6 +59,7 @@ vi.mock("../services/api", () => ({
     uploadAttachment: vi.fn(),
     linkAttachment: vi.fn(),
     deleteAttachment: vi.fn(),
+    transcribeAttachment: vi.fn(),
   })),
   createAiService: vi.fn(() => ({
     suggestTags: vi.fn(),
@@ -287,6 +288,7 @@ describe("useEntryActions", () => {
         uploadAttachment,
         linkAttachment,
         deleteAttachment,
+        transcribeAttachment: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -543,6 +545,7 @@ describe("useEntryActions", () => {
         uploadAttachment: vi.fn(),
         linkAttachment: vi.fn(),
         deleteAttachment,
+        transcribeAttachment: vi.fn(),
       });
 
       const { result } = renderHook(() =>
@@ -802,6 +805,7 @@ describe("useEntryActions", () => {
         uploadAttachment,
         linkAttachment: vi.fn(),
         deleteAttachment,
+        transcribeAttachment: vi.fn(),
       });
 
       const { result } = renderHook(() =>

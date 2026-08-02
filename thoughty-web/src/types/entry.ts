@@ -8,6 +8,8 @@ export interface Attachment {
   size: number;
   entry_id?: number | null;
   created_at?: string;
+  transcript?: string | null;
+  transcribed_at?: string | null;
 }
 
 export interface Entry {
@@ -15,11 +17,11 @@ export interface Entry {
   content: string;
   tags: string[];
   date: string;
-  visibility: 'public' | 'private';
+  visibility: "public" | "private";
   is_favorite?: boolean;
   is_archived?: boolean;
   is_pinned?: boolean;
-  format?: 'plain' | 'markdown';
+  format?: "plain" | "markdown";
   diary_id?: number | null;
   diary_name?: string;
   diary_icon?: string;
@@ -35,7 +37,7 @@ export interface EntryFormData {
   text: string;
   tags: string[];
   date: Date;
-  visibility: 'public' | 'private';
+  visibility: "public" | "private";
   diaryId?: number | null;
 }
 
@@ -53,9 +55,9 @@ export interface EntryFilters {
   search?: string;
   tags?: string[];
   date?: string;
-  visibility?: 'all' | 'public' | 'private';
+  visibility?: "all" | "public" | "private";
   favorites?: boolean;
-  archiveStatus?: 'all' | 'active' | 'archived';
+  archiveStatus?: "all" | "active" | "archived";
   diaryId?: number | null;
   page?: number;
   limit?: number;
@@ -84,8 +86,8 @@ export interface EntryBacklink {
   tags: string[];
   date: string;
   index: number;
-  format?: 'plain' | 'markdown';
-  visibility?: 'public' | 'private';
+  format?: "plain" | "markdown";
+  visibility?: "public" | "private";
   is_favorite?: boolean;
   is_archived?: boolean;
   is_pinned?: boolean;

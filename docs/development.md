@@ -179,6 +179,7 @@ The `.env.example` files are the source of truth for local configuration. The ta
 | `CONFIG_ENCRYPTION_SECRET` | local secret string                                    | Used for encrypted personal AI keys, user config, and cloud-sync tokens; required in production |
 | `OPENROUTER_API_KEY`       | empty by default                                       | Optional shared AI key; users can instead provide a personal OpenRouter key from Profile |
 | `OPENROUTER_EMBEDDING_MODEL` | `openai/text-embedding-3-small`                      | Optional semantic-search embedding model override        |
+| `OPENROUTER_TRANSCRIPTION_MODEL` | `openai/whisper-large-v3`                        | Optional audio-note transcription model override         |
 | Cloud provider OAuth keys  | empty by default                                       | Required only for cloud sync integrations                |
 | SMTP settings              | example placeholders                                   | Required only for real email sending flows               |
 | Feature flags              | optional external endpoint                            | `FEATURE_FLAG_PROVIDER_URL`, optional `FEATURE_FLAG_PROVIDER_TOKEN`, `FEATURE_FLAG_CACHE_TTL_MS`, and fallback `FEATURE_FLAGS=flag=true,other=false` |

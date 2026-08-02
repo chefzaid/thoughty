@@ -6,6 +6,8 @@ import { AiUsageEvent, type AiCredentialSource } from '@/database/entities';
 interface OpenRouterUsagePayload {
   prompt_tokens?: unknown;
   completion_tokens?: unknown;
+  input_tokens?: unknown;
+  output_tokens?: unknown;
   total_tokens?: unknown;
   cost?: unknown;
   completion_tokens_details?: { reasoning_tokens?: unknown };
@@ -108,8 +110,8 @@ export class AiUsageService {
     ) as OpenRouterUsagePayload | null;
     if (!usage) return null;
 
-    const promptTokens = this.readCount(usage.prompt_tokens);
-    const completionTokens = this.readCount(usage.completion_tokens);
+    const promptTokens = this.readCount(usage.prompt_tokens ?? usage.input_tokens);
+    const completionTokens = this.readCount(usage.completion_tokens ?? usage.output_tokens);
     const reasoningTokens = this.readCount(usage.completion_tokens_details?.reasoning_tokens);
     const totalTokens = this.readCount(usage.total_tokens) || promptTokens + completionTokens;
     const cost = this.readCost(usage.cost);

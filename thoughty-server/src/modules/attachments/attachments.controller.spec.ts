@@ -2,10 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { AttachmentsController } from './attachments.controller';
 import { AttachmentsService } from './attachments.service';
+import { AudioTranscriptionService } from './audio-transcription.service';
 
 describe('AttachmentsController', () => {
   let controller: AttachmentsController;
   let attachmentsService: any;
+  let audioTranscriptionService: any;
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -27,11 +29,13 @@ describe('AttachmentsController', () => {
       delete: jest.fn(),
       getFileStream: jest.fn(),
     };
+    audioTranscriptionService = { transcribe: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AttachmentsController],
       providers: [
         { provide: AttachmentsService, useValue: attachmentsService },
+        { provide: AudioTranscriptionService, useValue: audioTranscriptionService },
       ],
     }).compile();
 
@@ -91,9 +95,9 @@ describe('AttachmentsController', () => {
     });
 
     it('throws NotFoundException when entryId is missing', async () => {
-      await expect(
-        controller.linkToEntry(mockUser as any, 1, {}),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.linkToEntry(mockUser as any, 1, {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -105,6 +109,24 @@ describe('AttachmentsController', () => {
 
       expect(attachmentsService.delete).toHaveBeenCalledWith(1, 1);
       expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe('transcribe', () => {
+    it('transcribes an attachment for the authenticated user', async () => {
+      const transcribedAt = new Date('2026-08-01T12:00:00Z');
+      audioTranscriptionService.transcribe.mockResolvedValue({
+        transcript: 'Voice note',
+        transcribed_at: transcribedAt,
+        cached: false,
+      });
+
+      await expect(controller.transcribe(mockUser as any, 4)).resolves.toEqual({
+        transcript: 'Voice note',
+        transcribed_at: transcribedAt,
+        cached: false,
+      });
+      expect(audioTranscriptionService.transcribe).toHaveBeenCalledWith(1, 4);
     });
   });
 
@@ -132,9 +154,9 @@ describe('AttachmentsController', () => {
 
       const mockRes = { setHeader: jest.fn() };
 
-      await expect(
-        controller.serveFile('nonexistent.jpg', mockRes as any),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.serveFile('nonexistent.jpg', mockRes as any)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('sanitizes filename to prevent path traversal', async () => {

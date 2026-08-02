@@ -43,6 +43,15 @@ export interface MockEntry {
   is_archived?: boolean;
   format?: "plain" | "markdown";
   diaryId?: number | null;
+  attachments?: Array<{
+    id: number;
+    original_filename: string;
+    stored_filename: string;
+    mimetype: string;
+    size: number;
+    transcript?: string | null;
+    transcribed_at?: string | null;
+  }>;
 }
 
 export interface MockEntryRevision {

@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Attachment, Entry } from '@/database/entities';
@@ -77,11 +83,7 @@ export class AttachmentsService implements OnModuleInit {
     }
   }
 
-  async upload(
-    userId: number,
-    file: Express.Multer.File,
-    entryId?: number,
-  ): Promise<Attachment> {
+  async upload(userId: number, file: Express.Multer.File, entryId?: number): Promise<Attachment> {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
@@ -93,7 +95,9 @@ export class AttachmentsService implements OnModuleInit {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      throw new BadRequestException(`File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+      throw new BadRequestException(
+        `File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+      );
     }
 
     if (entryId) {
@@ -129,11 +133,7 @@ export class AttachmentsService implements OnModuleInit {
     return this.attachmentRepository.save(attachment);
   }
 
-  async linkToEntry(
-    userId: number,
-    attachmentId: number,
-    entryId: number,
-  ): Promise<Attachment> {
+  async linkToEntry(userId: number, attachmentId: number, entryId: number): Promise<Attachment> {
     const attachment = await this.attachmentRepository.findOne({
       where: { id: attachmentId, userId },
     });
@@ -175,6 +175,20 @@ export class AttachmentsService implements OnModuleInit {
     };
   }
 
+  async getOwnedAttachment(userId: number, attachmentId: number): Promise<Attachment> {
+    const attachment = await this.attachmentRepository.findOne({
+      where: { id: attachmentId, userId },
+    });
+    if (!attachment) {
+      throw new NotFoundException('Attachment not found');
+    }
+    return attachment;
+  }
+
+  save(attachment: Attachment): Promise<Attachment> {
+    return this.attachmentRepository.save(attachment);
+  }
+
   async getFileBuffer(storedFilename: string, maxBytes: number): Promise<Buffer> {
     const { stream } = await this.getFileStream(storedFilename);
     const chunks: Buffer[] = [];
@@ -209,7 +223,9 @@ export class AttachmentsService implements OnModuleInit {
         }),
       );
     } catch (err) {
-      this.logger.warn(`Could not delete S3 object ${attachment.storedFilename}: ${(err as Error).message}`);
+      this.logger.warn(
+        `Could not delete S3 object ${attachment.storedFilename}: ${(err as Error).message}`,
+      );
     }
 
     await this.attachmentRepository.remove(attachment);
@@ -230,7 +246,9 @@ export class AttachmentsService implements OnModuleInit {
           }),
         );
       } catch (err) {
-        this.logger.warn(`Could not delete S3 object ${attachment.storedFilename}: ${(err as Error).message}`);
+        this.logger.warn(
+          `Could not delete S3 object ${attachment.storedFilename}: ${(err as Error).message}`,
+        );
       }
     }
 

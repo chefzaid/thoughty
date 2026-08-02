@@ -11,8 +11,12 @@ jest.mock('@aws-sdk/client-s3', () => ({
   S3Client: jest.fn().mockImplementation(() => ({ send: mockSend })),
   PutObjectCommand: jest.fn().mockImplementation((input) => ({ ...input, _type: 'PutObject' })),
   GetObjectCommand: jest.fn().mockImplementation((input) => ({ ...input, _type: 'GetObject' })),
-  DeleteObjectCommand: jest.fn().mockImplementation((input) => ({ ...input, _type: 'DeleteObject' })),
-  CreateBucketCommand: jest.fn().mockImplementation((input) => ({ ...input, _type: 'CreateBucket' })),
+  DeleteObjectCommand: jest
+    .fn()
+    .mockImplementation((input) => ({ ...input, _type: 'DeleteObject' })),
+  CreateBucketCommand: jest
+    .fn()
+    .mockImplementation((input) => ({ ...input, _type: 'CreateBucket' })),
   HeadBucketCommand: jest.fn().mockImplementation((input) => ({ ...input, _type: 'HeadBucket' })),
 }));
 
@@ -65,9 +69,7 @@ describe('AttachmentsService', () => {
 
   describe('onModuleInit', () => {
     it('creates bucket if it does not exist', async () => {
-      mockSend
-        .mockRejectedValueOnce(new Error('Not Found'))
-        .mockResolvedValueOnce({});
+      mockSend.mockRejectedValueOnce(new Error('Not Found')).mockResolvedValueOnce({});
 
       await service.onModuleInit();
 
@@ -98,9 +100,7 @@ describe('AttachmentsService', () => {
 
       const result = await service.upload(1, mockFile);
 
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({ _type: 'PutObject' }),
-      );
+      expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({ _type: 'PutObject' }));
       expect(attachmentRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: 1,
@@ -147,6 +147,23 @@ describe('AttachmentsService', () => {
     });
   });
 
+  describe('getOwnedAttachment', () => {
+    it('returns only an attachment matched to the user', async () => {
+      attachmentRepository.findOne.mockResolvedValue(mockAttachment);
+
+      await expect(service.getOwnedAttachment(1, 1)).resolves.toBe(mockAttachment);
+      expect(attachmentRepository.findOne).toHaveBeenCalledWith({
+        where: { id: 1, userId: 1 },
+      });
+    });
+
+    it('does not disclose attachments outside the user scope', async () => {
+      attachmentRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.getOwnedAttachment(2, 1)).rejects.toThrow(NotFoundException);
+    });
+  });
+
   describe('linkToEntry', () => {
     it('links an attachment to an entry', async () => {
       const unlinked = { ...mockAttachment, entryId: null };
@@ -179,9 +196,7 @@ describe('AttachmentsService', () => {
       const att1 = { ...mockAttachment, id: 1, entryId: null };
       const att2 = { ...mockAttachment, id: 2, entryId: null };
 
-      attachmentRepository.findOne
-        .mockResolvedValueOnce(att1)
-        .mockResolvedValueOnce(att2);
+      attachmentRepository.findOne.mockResolvedValueOnce(att1).mockResolvedValueOnce(att2);
       entryRepository.findOne.mockResolvedValue({ id: 10, userId: 1 });
       attachmentRepository.save.mockResolvedValue(mockAttachment);
 
@@ -202,9 +217,7 @@ describe('AttachmentsService', () => {
 
       const result = await service.getFileStream('abc-uuid.jpg');
 
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({ _type: 'GetObject' }),
-      );
+      expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({ _type: 'GetObject' }));
       expect(result.stream).toBe(mockStream);
       expect(result.contentType).toBe('image/jpeg');
     });
@@ -238,9 +251,7 @@ describe('AttachmentsService', () => {
       const destroySpy = jest.spyOn(stream, 'destroy');
       mockSend.mockResolvedValue({ Body: stream, ContentType: 'image/png' });
 
-      await expect(service.getFileBuffer('image.png', 3)).rejects.toThrow(
-        'export size limit',
-      );
+      await expect(service.getFileBuffer('image.png', 3)).rejects.toThrow('export size limit');
       expect(destroySpy).toHaveBeenCalled();
     });
   });
@@ -252,9 +263,7 @@ describe('AttachmentsService', () => {
 
       const result = await service.delete(1, 1);
 
-      expect(mockSend).toHaveBeenCalledWith(
-        expect.objectContaining({ _type: 'DeleteObject' }),
-      );
+      expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({ _type: 'DeleteObject' }));
       expect(attachmentRepository.remove).toHaveBeenCalledWith(mockAttachment);
       expect(result).toEqual({ success: true });
     });

@@ -93,6 +93,8 @@ export class UserDataExportService {
         originalFilename: attachment.originalFilename,
         mimetype: attachment.mimetype,
         size: attachment.size,
+        transcript: attachment.transcript,
+        transcribedAt: attachment.transcribedAt,
         createdAt: attachment.createdAt,
       })),
       settings: safeSettings,

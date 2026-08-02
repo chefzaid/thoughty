@@ -974,7 +974,9 @@
                           "original_filename": "Daily Journal",
                           "stored_filename": "Daily Journal",
                           "mimetype": "example",
-                          "size": 1
+                          "size": 1,
+                          "transcript": "example",
+                          "transcribed_at": "2026-06-24T10:00:00.000Z"
                         }
                       ],
                       "created_at": "2026-06-24T10:00:00.000Z"
@@ -1225,7 +1227,9 @@
                         "original_filename": "Daily Journal",
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
-                        "size": 1
+                        "size": 1,
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z"
@@ -1546,7 +1550,9 @@
                         "original_filename": "Daily Journal",
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
-                        "size": 1
+                        "size": 1,
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z"
@@ -1664,7 +1670,9 @@
                         "original_filename": "Daily Journal",
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
-                        "size": 1
+                        "size": 1,
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z"
@@ -1745,7 +1753,9 @@
                         "original_filename": "Daily Journal",
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
-                        "size": 1
+                        "size": 1,
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z"
@@ -1826,7 +1836,9 @@
                         "original_filename": "Daily Journal",
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
-                        "size": 1
+                        "size": 1,
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z"
@@ -1907,7 +1919,9 @@
                         "original_filename": "Daily Journal",
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
-                        "size": 1
+                        "size": 1,
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
                     "created_at": "2026-06-24T10:00:00.000Z"
@@ -4764,6 +4778,47 @@
         ]
       }
     },
+    "/api/attachments/{id}/transcribe": {
+      "post": {
+        "operationId": "AttachmentsController_transcribe",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Audio attachment transcribed or cached transcript returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioTranscriptionResponseDto"
+                },
+                "example": {
+                  "transcript": "example",
+                  "transcribed_at": "2026-06-24T10:00:00.000Z",
+                  "cached": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transcribe an audio attachment",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
     "/api/attachments/{id}": {
       "delete": {
         "operationId": "AttachmentsController_delete",
@@ -5796,6 +5851,15 @@
           },
           "size": {
             "type": "number"
+          },
+          "transcript": {
+            "type": "string",
+            "nullable": true
+          },
+          "transcribed_at": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
           }
         },
         "required": [
@@ -5810,7 +5874,9 @@
           "original_filename": "Daily Journal",
           "stored_filename": "Daily Journal",
           "mimetype": "example",
-          "size": 1
+          "size": 1,
+          "transcript": "example",
+          "transcribed_at": "2026-06-24T10:00:00.000Z"
         }
       },
       "EntryResponseDto": {
@@ -5918,7 +5984,9 @@
               "original_filename": "Daily Journal",
               "stored_filename": "Daily Journal",
               "mimetype": "example",
-              "size": 1
+              "size": 1,
+              "transcript": "example",
+              "transcribed_at": "2026-06-24T10:00:00.000Z"
             }
           ],
           "created_at": "2026-06-24T10:00:00.000Z"
@@ -5982,7 +6050,9 @@
                   "original_filename": "Daily Journal",
                   "stored_filename": "Daily Journal",
                   "mimetype": "example",
-                  "size": 1
+                  "size": 1,
+                  "transcript": "example",
+                  "transcribed_at": "2026-06-24T10:00:00.000Z"
                 }
               ],
               "created_at": "2026-06-24T10:00:00.000Z"
@@ -6106,7 +6176,9 @@
                 "original_filename": "Daily Journal",
                 "stored_filename": "Daily Journal",
                 "mimetype": "example",
-                "size": 1
+                "size": 1,
+                "transcript": "example",
+                "transcribed_at": "2026-06-24T10:00:00.000Z"
               }
             ],
             "created_at": "2026-06-24T10:00:00.000Z"
@@ -6534,7 +6606,9 @@
                 "original_filename": "Daily Journal",
                 "stored_filename": "Daily Journal",
                 "mimetype": "example",
-                "size": 1
+                "size": 1,
+                "transcript": "example",
+                "transcribed_at": "2026-06-24T10:00:00.000Z"
               }
             ],
             "created_at": "2026-06-24T10:00:00.000Z"
@@ -8427,6 +8501,34 @@
         },
         "example": {
           "entryId": 1
+        }
+      },
+      "AudioTranscriptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "transcript": {
+            "type": "string",
+            "description": "Transcribed audio text"
+          },
+          "transcribed_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the transcript was generated"
+          },
+          "cached": {
+            "type": "boolean",
+            "description": "Whether the stored transcript was returned without a provider call"
+          }
+        },
+        "required": [
+          "transcript",
+          "transcribed_at",
+          "cached"
+        ],
+        "example": {
+          "transcript": "example",
+          "transcribed_at": "2026-06-24T10:00:00.000Z",
+          "cached": true
         }
       },
       "CloudAuthUrlDto": {

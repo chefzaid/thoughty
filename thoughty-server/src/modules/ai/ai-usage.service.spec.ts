@@ -95,4 +95,18 @@ describe('AiUsageService', () => {
     ).resolves.toBeUndefined();
     expect(loggerSpy).toHaveBeenCalled();
   });
+
+  it('records speech-to-text input and output token aliases', async () => {
+    await service.recordResponse(7, 'personal', 'openai/whisper-large-v3', {
+      usage: { input_tokens: 30, output_tokens: 8, total_tokens: 38, cost: 0.002 },
+    });
+
+    expect(repository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        promptTokens: 30,
+        completionTokens: 8,
+        totalTokens: 38,
+      }),
+    );
+  });
 });

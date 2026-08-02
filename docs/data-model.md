@@ -79,6 +79,8 @@ erDiagram
         string storedFilename
         string mimetype
         int size
+        text transcript
+        datetime transcribedAt
     }
 
     Setting {
@@ -124,7 +126,7 @@ erDiagram
 | `Diary`         | Owned by one user                                      | Hard deletion cascades from user; deleting a diary should move entries to the default diary when handled through the application workflow |
 | `Entry`         | Owned by one user and optionally assigned to one diary | Hard deletion cascades attachments, revisions, and AI chat history                                                                        |
 | `EntryRevision` | Snapshot for one entry and user                        | Deleted with the parent entry                                                                                                             |
-| `Attachment`    | Owned by one user and optionally linked to one entry   | Database row is deleted with user/entry; object-store cleanup must be considered separately                                               |
+| `Attachment`    | Owned by one user and optionally linked to one entry   | Database row, including any cached audio transcript, is deleted with user/entry; object-store cleanup must be considered separately       |
 | `Setting`       | Key/value setting for one user                         | Deleted with the user                                                                                                                     |
 | `RefreshToken`  | Session continuation token for one user                | Deleted with the user; revoked by deleting stored rows during sensitive account events                                                    |
 | `CloudSyncJob`  | Durable sync work item for one user/provider           | Deleted with the user in the SQL migration model                                                                                          |

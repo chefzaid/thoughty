@@ -94,9 +94,7 @@ export class EntriesQueryService {
     if (entryIds.length > 0) {
       qb.orderBy('semantic_rank', 'ASC');
     } else {
-      qb.orderBy('e.is_pinned', 'DESC')
-        .addOrderBy('e.date', 'DESC')
-        .addOrderBy('e.index', 'ASC');
+      qb.orderBy('e.is_pinned', 'DESC').addOrderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
     }
     qb.skip((page - 1) * limit).take(limit);
 
@@ -107,9 +105,15 @@ export class EntriesQueryService {
       .where('e.user_id = :userId', { userId })
       .getRawMany();
 
-    const [total, entries, tagsResult] = await Promise.all([totalPromise, entriesPromise, tagsPromise]);
+    const [total, entries, tagsResult] = await Promise.all([
+      totalPromise,
+      entriesPromise,
+      tagsPromise,
+    ]);
 
-    const allTags = tagsResult.map((result) => result.tag).sort((left, right) => left.localeCompare(right));
+    const allTags = tagsResult
+      .map((result) => result.tag)
+      .sort((left, right) => left.localeCompare(right));
 
     return {
       entries: entries.map((entry) => ({
@@ -135,6 +139,8 @@ export class EntriesQueryService {
           stored_filename: attachment.storedFilename,
           mimetype: attachment.mimetype,
           size: attachment.size,
+          transcript: attachment.transcript ?? undefined,
+          transcribed_at: attachment.transcribedAt ?? undefined,
         })),
       })),
       total,
@@ -404,11 +410,13 @@ export class EntriesQueryService {
       .where('e.user_id = :userId', { userId: entry.userId });
 
     if (entry.isPinned) {
-      qb.andWhere('e.is_pinned = true')
-        .andWhere('(e.date > :date OR (e.date = :date AND e.index < :index))', {
+      qb.andWhere('e.is_pinned = true').andWhere(
+        '(e.date > :date OR (e.date = :date AND e.index < :index))',
+        {
           date: entry.date,
           index: entry.index,
-        });
+        },
+      );
     } else {
       qb.andWhere(
         '(e.is_pinned = true OR (e.is_pinned = false AND (e.date > :date OR (e.date = :date AND e.index < :index))))',

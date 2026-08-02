@@ -678,6 +678,12 @@ export type TranslationKey =
   | "attachmentTooLarge"
   | "previewAttachment"
   | "downloadAttachment"
+  | "transcribeAudio"
+  | "transcribingAudio"
+  | "audioTranscript"
+  | "copyTranscript"
+  | "transcriptCopied"
+  | "audioTranscriptionFailed"
   | "closeImage"
   | "favorite"
   | "unfavorite"
@@ -1075,7 +1081,8 @@ export const translations: Translations = {
     tagConnections: "Tag network",
     connectionStrength: "Connection strength: {score}%",
     sharedEntryCount: "{count} shared entries",
-    noEntryConnections: "Add shared tags to more entries to reveal connections.",
+    noEntryConnections:
+      "Add shared tags to more entries to reveal connections.",
     noTagConnections: "Use tags together on entries to reveal a tag network.",
     openConnectedEntry: "Open entry {index} from {date}",
     toneMoodInsights: "Tone and Mood",
@@ -1637,6 +1644,13 @@ export const translations: Translations = {
     attachmentTooLarge: "File is too large. Maximum size is 5 MB.",
     previewAttachment: "Preview",
     downloadAttachment: "Download attachment",
+    transcribeAudio: "Transcribe audio",
+    transcribingAudio: "Transcribing...",
+    audioTranscript: "Transcript",
+    copyTranscript: "Copy transcript",
+    transcriptCopied: "Transcript copied",
+    audioTranscriptionFailed:
+      "Could not transcribe this audio. Check your AI key and try again.",
     closeImage: "Close image",
     favorite: "Add to favorites",
     unfavorite: "Remove from favorites",
@@ -2628,6 +2642,13 @@ export const translations: Translations = {
       "Le fichier est trop volumineux. Taille maximale : 5 Mo.",
     previewAttachment: "Apercu",
     downloadAttachment: "Télécharger la pièce jointe",
+    transcribeAudio: "Transcrire l'audio",
+    transcribingAudio: "Transcription...",
+    audioTranscript: "Transcription",
+    copyTranscript: "Copier la transcription",
+    transcriptCopied: "Transcription copiée",
+    audioTranscriptionFailed:
+      "Impossible de transcrire cet audio. Vérifiez votre clé IA et réessayez.",
     closeImage: "Fermer l'image",
     favorite: "Ajouter aux favoris",
     unfavorite: "Retirer des favoris",

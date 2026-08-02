@@ -1,40 +1,56 @@
-import type { Attachment } from '../../types';
+import type { Attachment } from "../../types";
 
-export const createAttachmentsService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
+export interface AudioTranscription {
+  transcript: string;
+  transcribed_at: string;
+  cached: boolean;
+}
 
-  const uploadAttachment = async (file: File, entryId?: number): Promise<Attachment | null> => {
+export const createAttachmentsService = (
+  authFetch: (url: string, options?: RequestInit) => Promise<Response>,
+) => {
+  const uploadAttachment = async (
+    file: File,
+    entryId?: number,
+  ): Promise<Attachment | null> => {
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
       if (entryId) {
-        formData.append('entryId', entryId.toString());
+        formData.append("entryId", entryId.toString());
       }
 
-      const response = await authFetch('/api/attachments/upload', {
-        method: 'POST',
+      const response = await authFetch("/api/attachments/upload", {
+        method: "POST",
         body: formData,
         headers: {}, // Let browser set Content-Type with boundary for multipart
       });
 
       if (response.ok) {
-        return await response.json() as Attachment;
+        return (await response.json()) as Attachment;
       }
       return null;
     } catch (error) {
-      console.error('Error uploading attachment:', error);
+      console.error("Error uploading attachment:", error);
       return null;
     }
   };
 
-  const linkAttachment = async (attachmentId: number, entryId: number): Promise<boolean> => {
+  const linkAttachment = async (
+    attachmentId: number,
+    entryId: number,
+  ): Promise<boolean> => {
     try {
-      const response = await authFetch(`/api/attachments/${attachmentId}/link`, {
-        method: 'POST',
-        body: JSON.stringify({ entryId }),
-      });
+      const response = await authFetch(
+        `/api/attachments/${attachmentId}/link`,
+        {
+          method: "POST",
+          body: JSON.stringify({ entryId }),
+        },
+      );
       return response.ok;
     } catch (error) {
-      console.error('Error linking attachment:', error);
+      console.error("Error linking attachment:", error);
       return false;
     }
   };
@@ -42,12 +58,28 @@ export const createAttachmentsService = (authFetch: (url: string, options?: Requ
   const deleteAttachment = async (id: number): Promise<boolean> => {
     try {
       const response = await authFetch(`/api/attachments/${id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
       return response.ok;
     } catch (error) {
-      console.error('Error deleting attachment:', error);
+      console.error("Error deleting attachment:", error);
       return false;
+    }
+  };
+
+  const transcribeAttachment = async (
+    id: number,
+  ): Promise<AudioTranscription | null> => {
+    try {
+      const response = await authFetch(`/api/attachments/${id}/transcribe`, {
+        method: "POST",
+      });
+      return response.ok
+        ? ((await response.json()) as AudioTranscription)
+        : null;
+    } catch (error) {
+      console.error("Error transcribing attachment:", error);
+      return null;
     }
   };
 
@@ -55,6 +87,7 @@ export const createAttachmentsService = (authFetch: (url: string, options?: Requ
     uploadAttachment,
     linkAttachment,
     deleteAttachment,
+    transcribeAttachment,
   };
 };
 

@@ -32,6 +32,12 @@ export class Attachment {
   @Column({ type: 'integer' })
   size: number;
 
+  @Column({ type: 'text', nullable: true })
+  transcript: string | null;
+
+  @Column({ name: 'transcribed_at', type: 'timestamp', nullable: true })
+  transcribedAt: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

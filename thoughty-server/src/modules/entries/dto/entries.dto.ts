@@ -93,7 +93,10 @@ export class BulkOperationDto {
   @Type(() => Number)
   ids: number[];
 
-  @ApiProperty({ description: 'Bulk action to perform', enum: ['delete', 'visibility', 'tags', 'move', 'archive'] })
+  @ApiProperty({
+    description: 'Bulk action to perform',
+    enum: ['delete', 'visibility', 'tags', 'move', 'archive'],
+  })
   @IsEnum(['delete', 'visibility', 'tags', 'move', 'archive'])
   action: 'delete' | 'visibility' | 'tags' | 'move' | 'archive';
 
@@ -190,7 +193,10 @@ export class GetEntriesQueryDto {
   @Transform(({ value }) => value === 'true' || value === true)
   favorites?: boolean;
 
-  @ApiPropertyOptional({ description: 'Filter by archive state', enum: ['all', 'active', 'archived'] })
+  @ApiPropertyOptional({
+    description: 'Filter by archive state',
+    enum: ['all', 'active', 'archived'],
+  })
   @IsOptional()
   @Transform(({ value }) => (value === '' ? undefined : value))
   @IsEnum(['all', 'active', 'archived'])
@@ -434,6 +440,12 @@ export class AttachmentResponseDto {
 
   @ApiProperty()
   size: number;
+
+  @ApiPropertyOptional({ nullable: true })
+  transcript?: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  transcribed_at?: Date;
 }
 
 export class EntryDatesResponseDto {

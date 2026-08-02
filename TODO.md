@@ -104,7 +104,7 @@
 - [x] Possibility to provide your own API key to use AI features with your own token, and a usage dashboard to monitor your token consumption and costs
 - [ ] Local LLM processing for privacy
 - [x] Graph of insights and correlations from all entries, to discover patterns and connections between them, do the same for tags
-- [ ] Transcription from an Audio note
+- [x] Transcription from an Audio note
 - [ ] Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
 - [x] Use different models for different tasks, to optimize token consumption parameterized in the AI settings
 - [x] AI-generated writing prompts based on the user's journaling history and interests, to inspire new entries and reflections

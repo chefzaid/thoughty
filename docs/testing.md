@@ -245,6 +245,7 @@ Prefer extending the mock support when a scenario needs a realistic backend resp
 Good e2e names:
 
 - `journal/attachments-preview.spec.ts`
+- `journal/audio-transcription.spec.ts`
 - `profile/appearance-preferences.spec.ts`
 - `cloud-sync/scheduling.spec.ts`
 
