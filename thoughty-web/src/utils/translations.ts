@@ -1,5 +1,15 @@
 export type TranslationKey =
   | "journal"
+  | "feed"
+  | "feedScope"
+  | "feedCommunity"
+  | "feedMine"
+  | "feedEmptyCommunity"
+  | "feedEmptyMine"
+  | "feedLoadError"
+  | "feedCount"
+  | "feedEnd"
+  | "loadMoreEntries"
   | "stats"
   | "settings"
   | "myJournal"
@@ -863,6 +873,16 @@ export const translations: Translations = {
   en: {
     // App
     journal: "Journal",
+    feed: "Feed",
+    feedScope: "Feed view",
+    feedCommunity: "Community",
+    feedMine: "My public entries",
+    feedEmptyCommunity: "No public entries from the community yet.",
+    feedEmptyMine: "You do not have any public entries yet.",
+    feedLoadError: "The public feed could not be loaded.",
+    feedCount: "Showing {count} of {total}",
+    feedEnd: "You are all caught up.",
+    loadMoreEntries: "Load more entries",
     stats: "Stats",
     settings: "Settings",
     myJournal: "My Journal",
@@ -1382,13 +1402,13 @@ export const translations: Translations = {
     aboutTeamTitle: "Small, product-led, and close to the writing.",
     aboutTeamBody:
       "Thoughty is developed as a focused independent product with a simple standard: every new feature should make the journal more trustworthy, more useful, or easier to leave with your work intact.",
-    legalUpdatedLabel: "Last updated June 2026",
+    legalUpdatedLabel: "Last updated August 2026",
     privacyTitle: "Privacy Policy",
     privacySubtitle:
       "Thoughty is built for private journaling. This policy explains what the app needs to run and how your data stays under your control.",
     privacyIntroTitle: "Private by design",
     privacyIntroBody:
-      "Journal entries are private by default. Public visibility is an explicit entry-level choice, and your account settings keep privacy controls close to the writing workflow.",
+      "Journal entries are private by default. Public visibility is an explicit entry-level choice. Eligible public entries can appear to signed-in users in the community feed, while platform moderation can hide public content without changing your ownership.",
     privacyDataTitle: "Data we use",
     privacyDataBody:
       "Thoughty stores account details, profile settings, diaries, entries, tags, attachments, sync preferences, and subscription records needed to provide the service.",
@@ -1403,7 +1423,7 @@ export const translations: Translations = {
       "These terms set the basic expectations for using Thoughty respectfully, keeping your account secure, and retaining ownership of your writing.",
     termsUseTitle: "Using Thoughty",
     termsUseBody:
-      "Use Thoughty for lawful personal writing, organization, import, export, and reflection. Do not abuse public features, interfere with the service, or try to access another account.",
+      "Use Thoughty for lawful personal writing, organization, import, export, and reflection. Public entries may appear in the signed-in community feed and may be hidden or removed when they violate service rules. Do not abuse public features, interfere with the service, or try to access another account.",
     termsAccountTitle: "Account responsibility",
     termsAccountBody:
       "You are responsible for keeping your login credentials secure and for the activity that happens through your account.",
@@ -1857,6 +1877,16 @@ export const translations: Translations = {
   fr: {
     // App
     journal: "Journal",
+    feed: "Fil public",
+    feedScope: "Vue du fil public",
+    feedCommunity: "Communauté",
+    feedMine: "Mes entrées publiques",
+    feedEmptyCommunity: "Aucune entrée publique de la communauté pour le moment.",
+    feedEmptyMine: "Vous n'avez pas encore d'entrée publique.",
+    feedLoadError: "Le fil public n'a pas pu être chargé.",
+    feedCount: "{count} entrées affichées sur {total}",
+    feedEnd: "Vous êtes à jour.",
+    loadMoreEntries: "Charger plus d'entrées",
     stats: "Statistiques",
     settings: "Paramètres",
     myJournal: "Mon Journal",
@@ -2397,13 +2427,13 @@ export const translations: Translations = {
     aboutTeamTitle: "Petite, orientée produit, proche de l’écriture.",
     aboutTeamBody:
       "Thoughty est développé comme un produit indépendant et ciblé avec une règle simple : chaque nouveauté doit rendre le journal plus fiable, plus utile ou plus facile à quitter avec votre travail intact.",
-    legalUpdatedLabel: "Dernière mise à jour juin 2026",
+    legalUpdatedLabel: "Dernière mise à jour août 2026",
     privacyTitle: "Politique de confidentialité",
     privacySubtitle:
       "Thoughty est conçu pour un journal privé. Cette politique explique ce dont l’application a besoin pour fonctionner et comment vos données restent sous votre contrôle.",
     privacyIntroTitle: "Privé par conception",
     privacyIntroBody:
-      "Les entrées du journal sont privées par défaut. La visibilité publique est un choix explicite pour chaque entrée, et les réglages de confidentialité restent proches de l’écriture.",
+      "Les entrées du journal sont privées par défaut. La visibilité publique est un choix explicite pour chaque entrée. Les entrées publiques éligibles peuvent apparaître aux utilisateurs connectés dans le fil de la communauté, tandis que la modération peut masquer un contenu public sans changer votre propriété.",
     privacyDataTitle: "Données utilisées",
     privacyDataBody:
       "Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, préférences de synchronisation et éléments d’abonnement nécessaires au service.",
@@ -2418,7 +2448,7 @@ export const translations: Translations = {
       "Ces conditions posent les attentes de base pour utiliser Thoughty avec respect, sécuriser votre compte et conserver la propriété de vos écrits.",
     termsUseTitle: "Utiliser Thoughty",
     termsUseBody:
-      "Utilisez Thoughty pour une écriture personnelle licite, l’organisation, l’import, l’export et la réflexion. N’abusez pas des fonctions publiques, ne perturbez pas le service et ne tentez pas d’accéder à un autre compte.",
+      "Utilisez Thoughty pour une écriture personnelle licite, l’organisation, l’import, l’export et la réflexion. Les entrées publiques peuvent apparaître dans le fil de la communauté connecté et être masquées ou supprimées en cas de violation des règles du service. N’abusez pas des fonctions publiques, ne perturbez pas le service et ne tentez pas d’accéder à un autre compte.",
     termsAccountTitle: "Responsabilité du compte",
     termsAccountBody:
       "Vous êtes responsable de la sécurité de vos identifiants et de l’activité réalisée depuis votre compte.",

@@ -99,6 +99,12 @@ describe('NavMenu', () => {
     expect(avatar).toHaveAttribute('src', 'https://example.com/avatar.jpg');
   });
 
+  it('navigates to the public feed', () => {
+    render(<NavMenu {...defaultProps} />);
+    fireEvent.click(screen.getByText('feed'));
+    expect(mockOnViewChange).toHaveBeenCalledWith('feed');
+  });
+
   it('displays a verification badge for verified email accounts', () => {
     render(<NavMenu {...defaultProps} isEmailVerified />);
     expect(screen.getByLabelText('verifiedAccount')).toBeInTheDocument();

@@ -380,6 +380,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/entries/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get moderation-visible public entries for the social feed */
+        get: operations["EntriesController_getPublicFeed"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/entries/dates": {
         parameters: {
             query?: never;
@@ -1873,6 +1890,81 @@ export interface components {
             page: number;
             totalPages: number;
             allTags: string[];
+        };
+        /**
+         * @example {
+         *       "id": 1,
+         *       "username": "Daily Journal",
+         *       "avatarUrl": "https://thoughty.example.com/callback"
+         *     }
+         */
+        PublicFeedAuthorDto: {
+            id: number;
+            username: string;
+            avatarUrl?: string | null;
+        };
+        /**
+         * @example {
+         *       "id": 1,
+         *       "date": "2026-06-24",
+         *       "index": 1,
+         *       "tags": [
+         *         "reflection"
+         *       ],
+         *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *       "format": "plain",
+         *       "createdAt": "2026-06-24T10:00:00.000Z",
+         *       "author": {
+         *         "id": 1,
+         *         "username": "Daily Journal",
+         *         "avatarUrl": "https://thoughty.example.com/callback"
+         *       }
+         *     }
+         */
+        PublicFeedEntryDto: {
+            id: number;
+            date: string;
+            index: number;
+            tags: string[];
+            content: string;
+            /** @enum {string} */
+            format: "plain" | "markdown";
+            /** Format: date-time */
+            createdAt: string;
+            author: components["schemas"]["PublicFeedAuthorDto"];
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "id": 1,
+         *           "date": "2026-06-24",
+         *           "index": 1,
+         *           "tags": [
+         *             "reflection"
+         *           ],
+         *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *           "format": "plain",
+         *           "createdAt": "2026-06-24T10:00:00.000Z",
+         *           "author": {
+         *             "id": 1,
+         *             "username": "Daily Journal",
+         *             "avatarUrl": "https://thoughty.example.com/callback"
+         *           }
+         *         }
+         *       ],
+         *       "total": 1,
+         *       "page": 1,
+         *       "totalPages": 1,
+         *       "hasMore": true
+         *     }
+         */
+        PublicFeedResponseDto: {
+            entries: components["schemas"]["PublicFeedEntryDto"][];
+            total: number;
+            page: number;
+            totalPages: number;
+            hasMore: boolean;
         };
         /**
          * @example {
@@ -4549,6 +4641,56 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["CreateEntryResponseDto"];
+                };
+            };
+        };
+    };
+    EntriesController_getPublicFeed: {
+        parameters: {
+            query?: {
+                scope?: "community" | "mine";
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Paginated public feed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "entries": [
+                     *         {
+                     *           "id": 1,
+                     *           "date": "2026-06-24",
+                     *           "index": 1,
+                     *           "tags": [
+                     *             "reflection"
+                     *           ],
+                     *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                     *           "format": "plain",
+                     *           "createdAt": "2026-06-24T10:00:00.000Z",
+                     *           "author": {
+                     *             "id": 1,
+                     *             "username": "Daily Journal",
+                     *             "avatarUrl": "https://thoughty.example.com/callback"
+                     *           }
+                     *         }
+                     *       ],
+                     *       "total": 1,
+                     *       "page": 1,
+                     *       "totalPages": 1,
+                     *       "hasMore": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["PublicFeedResponseDto"];
                 };
             };
         };

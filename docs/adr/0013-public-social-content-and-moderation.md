@@ -1,6 +1,6 @@
 # ADR 0013: Define Public Social Content and Moderation Before Building Feed Features
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-05
 
 ## Context
@@ -20,6 +20,8 @@ Before implementing feed or social interaction features, define a public-content
 - Add ban or restriction records separately from the user profile so temporary and permanent enforcement can be audited.
 - Define social write surfaces, such as comments and likes, with their own ownership, deletion, and abuse controls.
 - Decide whether feed reads use direct relational queries initially or a dedicated projection once scale requires it.
+
+The first implementation uses authenticated, direct relational reads. The community scope returns only visible, public, non-archived entries from active users other than the requester; the personal preview applies the same eligibility rules to the requester's entries. Feed responses expose only the author's ID, username, and avatar URL alongside bounded entry fields.
 
 ## Rationale
 

@@ -53,6 +53,10 @@ describe('AppController (e2e)', () => {
       return request(app.getHttpServer()).get('/api/entries').expect(401);
     });
 
+    it('/api/entries/feed (GET) - should require authentication', () => {
+      return request(app.getHttpServer()).get('/api/entries/feed').expect(401);
+    });
+
     it('/api/diaries (GET) - should require authentication', () => {
       return request(app.getHttpServer()).get('/api/diaries').expect(401);
     });

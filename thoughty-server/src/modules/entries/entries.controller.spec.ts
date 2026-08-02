@@ -1,10 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EntriesController } from './entries.controller';
 import { EntriesService } from './entries.service';
+import { PublicFeedService } from './public-feed.service';
 
 describe('EntriesController', () => {
   let controller: EntriesController;
   let entriesService: any;
+  let publicFeedService: { getFeed: jest.Mock };
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -27,10 +29,14 @@ describe('EntriesController', () => {
       togglePinned: jest.fn(),
       getRevisions: jest.fn(),
     };
+    publicFeedService = { getFeed: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EntriesController],
-      providers: [{ provide: EntriesService, useValue: entriesService }],
+      providers: [
+        { provide: EntriesService, useValue: entriesService },
+        { provide: PublicFeedService, useValue: publicFeedService },
+      ],
     }).compile();
 
     controller = module.get<EntriesController>(EntriesController);
@@ -60,6 +66,17 @@ describe('EntriesController', () => {
       const result = await controller.getDates(mockUser as any);
       expect(entriesService.getDates).toHaveBeenCalledWith(1);
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('getPublicFeed', () => {
+    it('delegates the authenticated feed scope to PublicFeedService', async () => {
+      const query = { scope: 'mine' as const, page: 2, limit: 5 };
+      const expected = { entries: [], total: 0, page: 2, totalPages: 0, hasMore: false };
+      publicFeedService.getFeed.mockResolvedValue(expected);
+
+      await expect(controller.getPublicFeed(mockUser as never, query)).resolves.toBe(expected);
+      expect(publicFeedService.getFeed).toHaveBeenCalledWith(1, query);
     });
   });
 

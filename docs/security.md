@@ -52,6 +52,10 @@ Known public route categories include:
 
 When adding a public endpoint, document why it must be public, what throttling applies, and what information it can reveal to unauthenticated callers.
 
+The social feed is not an unauthenticated public endpoint. `GET /api/entries/feed` requires a valid account session, validates `scope`, `page`, and `limit`, caps pages at 20 entries, and returns only a narrow author projection (`id`, `username`, and `avatarUrl`). Community reads exclude the requester; personal previews include only the requester's own eligible public entries. Both scopes require public visibility, visible moderation state, an active entry, and a non-deleted author.
+
+Entry visibility records the author's sharing intent. The independent `moderation_status` records platform enforcement and must never be writable through ordinary entry create or update DTOs. Current values are `visible`, `hidden`, `under_review`, and `removed`; only `visible` content is feed eligible.
+
 ## Content Security Policy
 
 Production Helmet middleware sets a per-response nonce and uses that nonce in `script-src` and `style-src`. HTML responses, including Swagger UI, have the nonce applied to generated `<script>` and `<style>` tags before they are sent.

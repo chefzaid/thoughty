@@ -36,6 +36,13 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                     {t('journal')}
                 </button>
                 <button
+                    className={`nav-item ${currentView === 'feed' ? 'active' : ''}`}
+                    onClick={() => onViewChange('feed')}
+                >
+                    <span className="codicon codicon-rss" aria-hidden="true" />
+                    {t('feed')}
+                </button>
+                <button
                     className={`nav-item ${currentView === 'tags' ? 'active' : ''}`}
                     onClick={() => onViewChange('tags')}
                 >

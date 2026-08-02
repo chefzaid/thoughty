@@ -35,7 +35,7 @@ The root coverage script runs both coverage suites and prints a summary for back
 - Backend e2e: `cd thoughty-server && npm run test:e2e`
 - Frontend browser e2e: `cd thoughty-web && npm run test:e2e`
 
-Frontend Playwright tests cover public pages, auth onboarding, journal authoring and lifecycle flows, AI-assisted writing/tagging, stats, diary management, import/export, and navigation using mocked API responses for determinism.
+Frontend Playwright tests cover public pages, auth onboarding, journal authoring and lifecycle flows, the public-entry feed, AI-assisted writing/tagging, stats, diary management, import/export, and navigation using mocked API responses for determinism.
 
 ### Practical test guidance
 
@@ -186,6 +186,7 @@ Current e2e feature groups:
 | `e2e/import-export/` | JSON import/export, format settings, and delete-all flows              |
 | `e2e/cloud-sync/`    | Cloud uploads, schedules, sync-now flows, and cloud imports            |
 | `e2e/diary/`         | Diary create, edit, reorder, default, and delete fallback              |
+| `e2e/social/`        | Public-feed eligibility, pagination, owner preview, and mobile layout  |
 
 Current specs by feature group:
 
@@ -214,6 +215,7 @@ Current specs by feature group:
 | `e2e/import-export/` | `portability.spec.ts`          |
 | `e2e/cloud-sync/`    | `management.spec.ts`           |
 | `e2e/diary/`         | `management.spec.ts`           |
+| `e2e/social/`        | `public-feed.spec.ts`          |
 
 When adding a new e2e spec, place it in the closest existing feature directory. Create a new feature directory only when the scenario is not owned by one of the existing domains.
 

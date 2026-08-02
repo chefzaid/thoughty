@@ -55,6 +55,7 @@ erDiagram
         text content
         string format
         string visibility
+        string moderationStatus
         boolean isFavorite
         boolean isArchived
     }
@@ -115,8 +116,14 @@ erDiagram
         int userId
         int entryId
         json messages
-    }
+}
 ```
+
+## Public Feed Eligibility
+
+`Entry.visibility` and `Entry.moderationStatus` are independent. Visibility is the owner's explicit sharing choice; moderation status is a platform-controlled state with `visible`, `hidden`, `under_review`, and `removed` values. The public feed reads only entries where visibility and moderation are both `public`/`visible`, the entry is not archived, and its author is not deleted. The composite `idx_entries_public_feed` index supports these bounded, newest-first reads.
+
+The initial feed queries the relational entry/user model directly and projects only feed-safe author fields. Follow, report, comment, like, and enforcement records remain separate future entities rather than being encoded into entry ownership or visibility.
 
 ## Ownership and Deletion Rules
 

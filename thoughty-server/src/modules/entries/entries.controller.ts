@@ -29,6 +29,8 @@ import {
   GetHighlightsQueryDto,
   DeleteAllQueryDto,
   EntriesListResponseDto,
+  GetPublicFeedQueryDto,
+  PublicFeedResponseDto,
   EntryDatesResponseDto,
   FirstEntryResponseDto,
   EntryLookupResponseDto,
@@ -39,6 +41,7 @@ import {
   DeleteAllResponseDto,
   SuccessResponseDto,
 } from './dto';
+import { PublicFeedService } from './public-feed.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 
@@ -47,7 +50,10 @@ import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 @UseGuards(JwtAuthGuard)
 @Controller('entries')
 export class EntriesController {
-  constructor(private readonly entriesService: EntriesService) {}
+  constructor(
+    private readonly entriesService: EntriesService,
+    private readonly publicFeedService: PublicFeedService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all entries with optional filters and pagination' })
@@ -59,9 +65,23 @@ export class EntriesController {
     return this.entriesService.getEntries(user.userId, query);
   }
 
+  @Get('feed')
+  @ApiOperation({ summary: 'Get moderation-visible public entries for the social feed' })
+  @ApiResponse({ status: 200, description: 'Paginated public feed', type: PublicFeedResponseDto })
+  getPublicFeed(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetPublicFeedQueryDto,
+  ): Promise<PublicFeedResponseDto> {
+    return this.publicFeedService.getFeed(user.userId, query);
+  }
+
   @Get('dates')
   @ApiOperation({ summary: 'Get all distinct dates that have entries' })
-  @ApiResponse({ status: 200, description: 'Array of dates with entries', type: EntryDatesResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Array of dates with entries',
+    type: EntryDatesResponseDto,
+  })
   async getDates(@CurrentUser() user: AuthenticatedUser): Promise<{ dates: string[] }> {
     return this.entriesService.getDates(user.userId);
   }
@@ -99,7 +119,11 @@ export class EntriesController {
   @Get(':id/backlinks')
   @ApiOperation({ summary: 'Get entries that reference this entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Entries referencing this entry', type: EntryBacklinksResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Entries referencing this entry',
+    type: EntryBacklinksResponseDto,
+  })
   async getBacklinks(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -119,7 +143,11 @@ export class EntriesController {
 
   @Post('bulk')
   @ApiOperation({ summary: 'Perform bulk operations on entries' })
-  @ApiResponse({ status: 200, description: 'Bulk operation completed', type: CountedMutationResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Bulk operation completed',
+    type: CountedMutationResponseDto,
+  })
   async bulkOperation(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: BulkOperationDto,
@@ -128,8 +156,12 @@ export class EntriesController {
   }
 
   @Patch('tags/rename')
-  @ApiOperation({ summary: 'Rename a tag across all of the current user\'s entries' })
-  @ApiResponse({ status: 200, description: 'Tag renamed across entries', type: CountedMutationResponseDto })
+  @ApiOperation({ summary: "Rename a tag across all of the current user's entries" })
+  @ApiResponse({
+    status: 200,
+    description: 'Tag renamed across entries',
+    type: CountedMutationResponseDto,
+  })
   async renameTag(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: RenameTagDto,
@@ -174,7 +206,11 @@ export class EntriesController {
   @Patch(':id/favorite')
   @ApiOperation({ summary: 'Toggle favorite status of an entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Favorite status updated', type: EntryMutationResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Favorite status updated',
+    type: EntryMutationResponseDto,
+  })
   async toggleFavorite(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -186,7 +222,11 @@ export class EntriesController {
   @Patch(':id/archive')
   @ApiOperation({ summary: 'Toggle archive status of an entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Archive status updated', type: EntryMutationResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Archive status updated',
+    type: EntryMutationResponseDto,
+  })
   async toggleArchived(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -198,7 +238,11 @@ export class EntriesController {
   @Patch(':id/pinned')
   @ApiOperation({ summary: 'Toggle pinned status of an entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Pinned status updated', type: EntryMutationResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Pinned status updated',
+    type: EntryMutationResponseDto,
+  })
   async togglePinned(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -211,10 +255,7 @@ export class EntriesController {
   @ApiOperation({ summary: 'Get revision history for an entry' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Entry revision history' })
-  async getHistory(
-    @CurrentUser() user: AuthenticatedUser,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  async getHistory(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number) {
     return this.entriesService.getRevisions(user.userId, id);
   }
 

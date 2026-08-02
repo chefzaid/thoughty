@@ -233,6 +233,10 @@ export function buildAuthenticatedRoutesProps({
   updateConfig,
 }: Readonly<BuildAuthenticatedRoutesPropsParams>): AuthenticatedRoutesProps {
   return {
+    feedRouteProps: {
+      theme: config.theme,
+      t,
+    },
     profileRouteProps: {
       config,
       onUpdateConfig: (newConfig: Config) => updateConfig(newConfig),

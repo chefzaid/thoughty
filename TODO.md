@@ -129,7 +129,7 @@
 
 ## Social Features
 
-- [ ] Feed that shows public entries from other users with infinite scroll and to preview your own public entries
+- [x] Feed that shows public entries from other users with infinite scroll and to preview your own public entries
 - [ ] Allow users to follow other users
 - [ ] Comments on public entries
 - [ ] Likes for entries and comments

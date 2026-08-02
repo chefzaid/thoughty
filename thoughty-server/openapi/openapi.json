@@ -1053,6 +1053,92 @@
         ]
       }
     },
+    "/api/entries/feed": {
+      "get": {
+        "operationId": "EntriesController_getPublicFeed",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "community",
+              "type": "string",
+              "enum": [
+                "community",
+                "mine"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 20,
+              "default": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated public feed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicFeedResponseDto"
+                },
+                "example": {
+                  "entries": [
+                    {
+                      "id": 1,
+                      "date": "2026-06-24",
+                      "index": 1,
+                      "tags": [
+                        "reflection"
+                      ],
+                      "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                      "format": "plain",
+                      "createdAt": "2026-06-24T10:00:00.000Z",
+                      "author": {
+                        "id": 1,
+                        "username": "Daily Journal",
+                        "avatarUrl": "https://thoughty.example.com/callback"
+                      }
+                    }
+                  ],
+                  "total": 1,
+                  "page": 1,
+                  "totalPages": 1,
+                  "hasMore": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get moderation-visible public entries for the social feed",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
     "/api/entries/dates": {
       "get": {
         "operationId": "EntriesController_getDates",
@@ -6164,6 +6250,147 @@
           "allTags": [
             "reflection"
           ]
+        }
+      },
+      "PublicFeedAuthorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "username"
+        ],
+        "example": {
+          "id": 1,
+          "username": "Daily Journal",
+          "avatarUrl": "https://thoughty.example.com/callback"
+        }
+      },
+      "PublicFeedEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          },
+          "index": {
+            "type": "number"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "author": {
+            "$ref": "#/components/schemas/PublicFeedAuthorDto"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "index",
+          "tags",
+          "content",
+          "format",
+          "createdAt",
+          "author"
+        ],
+        "example": {
+          "id": 1,
+          "date": "2026-06-24",
+          "index": 1,
+          "tags": [
+            "reflection"
+          ],
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "format": "plain",
+          "createdAt": "2026-06-24T10:00:00.000Z",
+          "author": {
+            "id": 1,
+            "username": "Daily Journal",
+            "avatarUrl": "https://thoughty.example.com/callback"
+          }
+        }
+      },
+      "PublicFeedResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicFeedEntryDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "totalPages": {
+            "type": "number"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entries",
+          "total",
+          "page",
+          "totalPages",
+          "hasMore"
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": 1,
+              "date": "2026-06-24",
+              "index": 1,
+              "tags": [
+                "reflection"
+              ],
+              "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+              "format": "plain",
+              "createdAt": "2026-06-24T10:00:00.000Z",
+              "author": {
+                "id": 1,
+                "username": "Daily Journal",
+                "avatarUrl": "https://thoughty.example.com/callback"
+              }
+            }
+          ],
+          "total": 1,
+          "page": 1,
+          "totalPages": 1,
+          "hasMore": true
         }
       },
       "EntryDatesResponseDto": {

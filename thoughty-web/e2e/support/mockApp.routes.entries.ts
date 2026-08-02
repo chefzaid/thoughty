@@ -70,6 +70,52 @@ function getFilteredEntries(
   return { filtered, pageNumber, limit };
 }
 
+async function handlePublicFeedRoute({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
+  if (pathname !== '/api/entries/feed' || request.method() !== 'GET') {
+    return false;
+  }
+
+  const scope = searchParams.get('scope') === 'mine' ? 'mine' : 'community';
+  const page = Math.max(1, Number(searchParams.get('page') || '1'));
+  const limit = Math.min(20, Math.max(1, Number(searchParams.get('limit') || '10')));
+  const eligibleEntries = state.entries
+    .filter((entry) => entry.visibility === 'public')
+    .filter((entry) => !entry.is_archived)
+    .filter((entry) => (entry.moderationStatus || 'visible') === 'visible')
+    .filter((entry) => scope === 'mine'
+      ? (entry.userId ?? state.user.id) === state.user.id
+      : (entry.userId ?? state.user.id) !== state.user.id)
+    .sort((left, right) => {
+      const dateComparison = (right.createdAt || right.date).localeCompare(left.createdAt || left.date);
+      return dateComparison || right.id - left.id;
+    });
+  const startIndex = (page - 1) * limit;
+  const entries = eligibleEntries.slice(startIndex, startIndex + limit);
+  const totalPages = Math.ceil(eligibleEntries.length / limit);
+
+  await fulfillJson(route, {
+    entries: entries.map((entry) => ({
+      id: entry.id,
+      date: entry.date,
+      index: entry.index,
+      tags: entry.tags,
+      content: entry.content,
+      format: entry.format || 'plain',
+      createdAt: entry.createdAt || `${entry.date}T12:00:00.000Z`,
+      author: {
+        id: entry.userId ?? state.user.id,
+        username: entry.authorUsername || state.user.username,
+        avatarUrl: entry.authorAvatarUrl ?? null,
+      },
+    })),
+    total: eligibleEntries.length,
+    page,
+    totalPages,
+    hasMore: page < totalPages,
+  });
+  return true;
+}
+
 async function handleEntriesCollectionRoute({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/entries' && request.method() === 'GET') {
     const { filtered, pageNumber, limit } = getFilteredEntries(state, searchParams);
@@ -308,6 +354,10 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
 }
 
 export async function handleEntriesRoutes(context: RouteContext): Promise<boolean> {
+  if (await handlePublicFeedRoute(context)) {
+    return true;
+  }
+
   if (await handleEntriesCollectionRoute(context)) {
     return true;
   }

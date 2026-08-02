@@ -3,6 +3,7 @@
 export * from './base';
 export * from './configService';
 export * from './entriesService';
+export * from './feedService';
 export * from './diariesService';
 export * from './attachmentsService';
 export * from './aiService';

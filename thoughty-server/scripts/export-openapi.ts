@@ -9,6 +9,7 @@ async function exportOpenApi() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     abortOnError: false,
     logger: false,
+    preview: true,
   });
 
   app.setGlobalPrefix('api');

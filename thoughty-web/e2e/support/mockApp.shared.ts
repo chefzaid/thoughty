@@ -34,6 +34,9 @@ export interface MockCloudFile {
 
 export interface MockEntry {
   id: number;
+  userId?: number;
+  authorUsername?: string;
+  authorAvatarUrl?: string | null;
   date: string;
   index: number;
   content: string;
@@ -41,6 +44,8 @@ export interface MockEntry {
   visibility: "public" | "private";
   is_favorite?: boolean;
   is_archived?: boolean;
+  moderationStatus?: "visible" | "hidden" | "under_review" | "removed";
+  createdAt?: string;
   format?: "plain" | "markdown";
   diaryId?: number | null;
   attachments?: Array<{

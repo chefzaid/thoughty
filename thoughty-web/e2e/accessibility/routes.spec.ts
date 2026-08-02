@@ -18,6 +18,7 @@ const PUBLIC_ROUTES = [
 
 const AUTHENTICATED_ROUTES = [
   '/journal',
+  '/feed',
   '/tags',
   '/profile',
   '/diaries',

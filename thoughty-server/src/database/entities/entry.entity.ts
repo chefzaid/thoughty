@@ -18,6 +18,7 @@ import { Attachment } from './attachment.entity';
 @Index('idx_entries_user_visibility_date', ['userId', 'visibility', 'date'])
 @Index('idx_entries_user_archive_date', ['userId', 'isArchived', 'date'])
 @Index('idx_entries_user_favorite_date', ['userId', 'isFavorite', 'date'])
+@Index('idx_entries_public_feed', ['visibility', 'moderationStatus', 'isArchived', 'createdAt'])
 export class Entry {
   @PrimaryGeneratedColumn()
   id: number;
@@ -45,6 +46,9 @@ export class Entry {
 
   @Column({ type: 'varchar', length: 20, default: 'private' })
   visibility: 'public' | 'private';
+
+  @Column({ name: 'moderation_status', type: 'varchar', length: 20, default: 'visible' })
+  moderationStatus: 'visible' | 'hidden' | 'under_review' | 'removed';
 
   @Column({ name: 'is_favorite', type: 'boolean', default: false })
   isFavorite: boolean;

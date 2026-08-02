@@ -26,6 +26,7 @@ flowchart LR
 - Cross-reference navigation is not just link parsing. Referenced entries are opened in context, highlighted, and can return the user to the originating entry.
 - Each entry shows backlinks from other entries that reference it, with one-click navigation back to the referring thought.
 - Visibility is managed per entry with public and private states, making Thoughty usable for both strictly personal notes and selectively shareable writing.
+- The authenticated Feed view presents moderation-eligible public entries from other users in a paginated infinite-scroll timeline. A separate `My public entries` scope previews exactly what the same feed rules expose from the current journal; private, archived, moderated, and deleted-user content stays out of both views.
 - Favorites, pinned state, archive state, and revision history are all first-class entry behaviors. Pinned entries stay at the top of the journal up to the user's configured limit, edited entries keep a history trail, and individual revisions can be inspected and removed.
 - Attachments are handled inline: files can be attached to entries; image, audio, PDF, and text-like assets can be previewed in place; and larger previews open in a dedicated dialog rather than forcing blind downloads. Saved audio notes can be transcribed on demand with OpenRouter; transcripts are cached on the attachment, remain visible after reload, and can be copied from the entry card.
 - Journal navigation includes paging plus a year/month jump control, so users can move to the first entry in a period without manually paging through long histories.
@@ -109,7 +110,7 @@ flowchart LR
 ## AI Assistance and Accessibility
 
 - Public pages and authenticated views provide localized skip navigation, a single main content destination, and automatic content focus after client-side route changes so keyboard and screen-reader users receive clear navigation context.
-- Automated Axe scans cover every public route and all six authenticated views in both light and dark themes against WCAG 2.0, 2.1, and 2.2 A/AA rules. The audit runs as part of the Playwright suite and guards semantic structure, accessible names, and color contrast.
+- Automated Axe scans cover every public route and all seven authenticated views in both light and dark themes against WCAG 2.0, 2.1, and 2.2 A/AA rules. The audit runs as part of the Playwright suite and guards semantic structure, accessible names, and color contrast.
 - AI features are built around OpenRouter. A deployment can provide a shared server key, while each user can add a personal key from Profile; the personal key takes precedence for every AI task and removing it restores the server-key fallback. Users can also choose a default model and task-specific overrides.
 - Personal OpenRouter keys are write-only after submission. Profile shows only a short suffix and a usage dashboard with Thoughty's last 30 days of prompt, completion, reasoning, total tokens, requests, and costs plus OpenRouter's authoritative key spend, limit, and remaining balance.
 - `Fix Writing` sends draft content to the configured model to correct grammar, spelling, and punctuation while aiming to preserve the original meaning and tone, and it now supports grammar, polish, and rewrite modes.

@@ -14,6 +14,7 @@ describe('Entry entity indexes', () => {
         'idx_entries_user_visibility_date',
         'idx_entries_user_archive_date',
         'idx_entries_user_favorite_date',
+        'idx_entries_public_feed',
       ]),
     );
   });

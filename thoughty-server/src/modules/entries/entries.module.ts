@@ -9,11 +9,19 @@ import { EntriesQueryService } from './entries-query.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaggingService } from './entry-tagging.service';
+import { PublicFeedService } from './public-feed.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary]), UserConfigModule, AiModule],
   controllers: [EntriesController],
-  providers: [EntriesService, EntriesQueryService, EntriesCommandService, EntryListCacheService, EntryTaggingService],
+  providers: [
+    EntriesService,
+    EntriesQueryService,
+    EntriesCommandService,
+    EntryListCacheService,
+    EntryTaggingService,
+    PublicFeedService,
+  ],
   exports: [EntriesService],
 })
 export class EntriesModule {}
