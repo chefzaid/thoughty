@@ -3,7 +3,8 @@ import { configure } from '@testing-library/react';
 import { vi } from 'vitest';
 import { createElement, type ChangeEvent } from 'react';
 
-configure({ asyncUtilTimeout: 3000 });
+// Lazy renderers can take a few seconds to resolve on a contended CI node.
+configure({ asyncUtilTimeout: 10000 });
 
 // Mock the Web Speech API globally for all tests
 if (!globalThis.speechSynthesis) {

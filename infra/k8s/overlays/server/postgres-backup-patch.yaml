@@ -4,6 +4,9 @@ metadata:
   name: postgres-backup
   namespace: thoughty
 spec:
+  # Populate apps/thoughty/backup and the POSTGRES_BACKUP_* configuration
+  # before enabling scheduled production backups.
+  suspend: true
   jobTemplate:
     spec:
       template:

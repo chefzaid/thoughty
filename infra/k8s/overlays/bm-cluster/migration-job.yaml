@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: thoughty-db-migrate
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation,HookSucceeded
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: thoughty-registry-auth
+      containers:
+        - name: migrate
+          image: thoughty-server:latest
+          command: ["npm", "run", "db:migrate:dist"]
+          envFrom:
+            - configMapRef:
+                name: thoughty-config
+            - secretRef:
+                name: thoughty-database
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi

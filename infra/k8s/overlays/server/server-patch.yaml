@@ -3,6 +3,8 @@ kind: Deployment
 metadata:
   name: thoughty-server
   namespace: thoughty
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   template:
     metadata:
@@ -15,6 +17,8 @@ spec:
         vault.hashicorp.com/agent-inject-template-app: null
     spec:
       serviceAccountName: default
+      imagePullSecrets:
+        - name: thoughty-registry-auth
       containers:
         - name: thoughty-server
           command: null

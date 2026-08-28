@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: apps
+resources:
+  - ../server
+  - ../server-worker
+  - database-setup-job.yaml
+  - migration-job.yaml
+  - registry-secret.yaml
+patches:
+  - path: web-patch.yaml
+  - path: worker-sync-wave-patch.yaml
+images:
+  - name: thoughty-server
+    newName: registry.swirlit.dev/root/thoughty/thoughty-server
+    newTag: initial
+  - name: thoughty-web
+    newName: registry.swirlit.dev/root/thoughty/thoughty-web
+    newTag: initial

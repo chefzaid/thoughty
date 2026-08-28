@@ -18,7 +18,7 @@ flowchart LR
 
 ## Recommended Baseline
 
-- Node.js `22` is the safest local baseline because the Dockerfiles and Jenkins pipeline both use Node `22-alpine`
+- Node.js `22` is the safest local baseline because the Dockerfiles and GitLab CI pipeline both use Node `22-alpine`
 - Docker and Docker Compose are required for PostgreSQL and local MinIO
 - [`mask`](https://github.com/jacobdeichert/mask) is optional, but it is the intended entry point for the common workflows
 

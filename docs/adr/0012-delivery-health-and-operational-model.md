@@ -7,7 +7,7 @@
 
 Thoughty already has an implemented operational model:
 
-- Jenkins installs dependencies, lints, tests, builds images, smoke-tests migrations, pushes images, and deploys Kubernetes manifests
+- GitLab CI installs dependencies, lints, tests, builds images, smoke-tests migrations, pushes images, and deploys Kubernetes manifests
 - Kubernetes rollouts depend on `/api/health` for API liveness and readiness
 - the cloud-sync worker is rolled out separately after schema migration
 - runtime logs are intentionally modest rather than highly instrumented
@@ -18,7 +18,7 @@ The repository's operational model prioritizes explicit, repository-owned safety
 
 Treat delivery and operational verification as repository-owned concerns with a minimal but explicit runtime health model.
 
-- Keep the Jenkins pipeline as the primary automated delivery workflow.
+- Keep the GitLab CI pipeline as the primary automated delivery workflow.
 - Require lint and test stages before image publication.
 - Require a server-image smoke test that runs database migrations against a disposable PostgreSQL container before deployment.
 - Manage schema evolution with immutable, timestamped TypeORM migrations and a database-owned migration history.

@@ -3,8 +3,10 @@ kind: ConfigMap
 metadata:
   name: thoughty-config
   namespace: thoughty
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
 data:
-  POSTGRES_HOST: postgres.infra.svc.cluster.local
-  REDIS_HOST: redis.infra.svc.cluster.local
+  POSTGRES_HOST: postgres.swirlit.internal
+  REDIS_HOST: redis.swirlit.internal
   CORS_ORIGIN: https://thoughty.swirlit.dev
   FRONTEND_URL: https://thoughty.swirlit.dev
