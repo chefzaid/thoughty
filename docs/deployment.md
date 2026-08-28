@@ -1,8 +1,8 @@
 # Deployment Guide
 
-Thoughty supports two Kubernetes profiles. The Jenkins pipeline targets the existing server infrastructure through `k8s/server`; see the [Server Deployment Guide](./server-deployment.md) for its shared-service prerequisites and rollout process.
+Thoughty supports two Kubernetes profiles. The Jenkins pipeline targets the existing server infrastructure through `infra/k8s/overlays/server`; see the [Server Deployment Guide](./server-deployment.md) for its shared-service prerequisites and rollout process.
 
-The remainder of this guide documents the standalone profile: plain manifests under `deployments/`, a dedicated `thoughty` namespace, in-cluster PostgreSQL and Redis, and Vault Agent secret injection.
+The remainder of this guide documents the standalone profile: base manifests under `infra/k8s/base/`, a dedicated `thoughty` namespace, in-cluster PostgreSQL and Redis, and Vault Agent secret injection.
 
 ## Runtime Topology
 
@@ -53,10 +53,10 @@ flowchart TD
 - `thoughty-cloud-sync-worker` runs `1` replica and also uses rolling updates
 - `postgres` runs `1` replica with `Recreate`, which matches the single attached volume design
 - `postgres` starts with WAL archiving enabled; a sidecar uploads archived WAL segments to object storage for point-in-time recovery windows
-- `deployments/postgres-backup.yaml` creates a daily `postgres-backup` CronJob that uploads custom-format logical snapshots and SHA-256 checksum files
+- `infra/k8s/base/postgres-backup.yaml` creates a daily `postgres-backup` CronJob that uploads custom-format logical snapshots and SHA-256 checksum files
 - `redis` runs `1` ephemeral replica for shared Nest throttler counters; losing it resets counters but does not lose user data
-- `deployments/canary/` adds optional canary API and web deployments plus an NGINX canary ingress; it starts at `0%` weighted traffic and can be exercised with the `X-Thoughty-Canary: always` request header
-- The API now exposes `/api/health`, which matches the liveness and readiness probes in `deployments/server-deployment.yaml`
+- `infra/k8s/base/canary/` adds optional canary API and web deployments plus an NGINX canary ingress; it starts at `0%` weighted traffic and can be exercised with the `X-Thoughty-Canary: always` request header
+- The API now exposes `/api/health`, which matches the liveness and readiness probes in `infra/k8s/base/server-deployment.yaml`
 - The API exposes `/api/metrics` in Prometheus text format; the API pod template includes scrape annotations for clusters that honor `prometheus.io/*` annotations
 - The web deployment probes `/` on port `80`
 
@@ -73,13 +73,13 @@ flowchart TD
 - `/api` routes to the API service on port `3001`
 - `/` routes to the web service on port `80`
 - The ingress annotations assume an NGINX ingress controller and enforce SSL redirect plus a `10m` body size
-- TLS is enabled through the `thoughty-tls` secret referenced by `deployments/ingress.yaml`
+- TLS is enabled through the `thoughty-tls` secret referenced by `infra/k8s/base/ingress.yaml`
 
 ## Configuration and Secrets
 
 Thoughty splits runtime configuration into two buckets:
 
-- non-secret values in `deployments/configmap.yaml`
+- non-secret values in `infra/k8s/base/configmap.yaml`
 - secrets injected by Vault into backend and database pods
 
 ### ConfigMap Values Already Wired
@@ -115,7 +115,7 @@ These are loaded into the server and worker containers through `envFrom`:
 
 ### Vault Secrets Already Wired
 
-These are injected through the Vault Agent templates in the manifests. Populate the values in Vault (see `deployments/vault-setup.sh`) before rollout:
+These are injected through the Vault Agent templates in the manifests. Populate the values in Vault (see `infra/scripts/vault-setup.sh`) before rollout:
 
 | Secret path                     | Used by                  | Variables                                                                                                                                                                                                                                                                                                                                 |
 | ------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -168,8 +168,8 @@ sequenceDiagram
 
 Before any rollout, update the manifest values that are intentionally placeholders:
 
-1. Set the real browser origin list (`CORS_ORIGIN`), `FRONTEND_URL`, attachment S3 endpoint/bucket/region, and PostgreSQL backup endpoint/bucket/region in `deployments/configmap.yaml`.
-2. Replace `thoughty.example.com` in `deployments/ingress.yaml` and create or provision the `thoughty-tls` TLS secret for that host.
+1. Set the real browser origin list (`CORS_ORIGIN`), `FRONTEND_URL`, attachment S3 endpoint/bucket/region, and PostgreSQL backup endpoint/bucket/region in `infra/k8s/base/configmap.yaml`.
+2. Replace `thoughty.example.com` in `infra/k8s/base/ingress.yaml` and create or provision the `thoughty-tls` TLS secret for that host.
 3. Decide whether you will edit image references in the manifests directly or patch them later with `kubectl set image`.
 4. Populate the secret values in Vault. The manifests already inject every secret the application reads; you only need to provide real values for the features you enable.
 
@@ -193,7 +193,7 @@ If you want the deployed frontend to call a full external API URL instead of `/a
 
 ### 3. Configure Vault Roles and Secrets
 
-The example commands in `deployments/vault-setup.sh` are consistent with the current manifests and service accounts. At minimum, configure:
+The example commands in `infra/scripts/vault-setup.sh` are consistent with the current manifests and service accounts. At minimum, configure:
 
 - the Kubernetes auth method
 - the `thoughty-server` role bound to the `thoughty-server` service account
@@ -215,15 +215,15 @@ kubectl create secret tls thoughty-tls \
 ```
 
 ```bash
-kubectl apply -f deployments/namespace.yaml
-kubectl apply -f deployments/configmap.yaml
-kubectl apply -f deployments/vault-service-accounts.yaml
-kubectl apply -f deployments/redis.yaml
-kubectl apply -f deployments/postgres.yaml
-kubectl apply -f deployments/postgres-backup.yaml
-kubectl apply -f deployments/server-deployment.yaml
-kubectl apply -f deployments/monitoring-alerts.yaml
-kubectl apply -f deployments/ingress.yaml
+kubectl apply -f infra/k8s/base/namespace.yaml
+kubectl apply -f infra/k8s/base/configmap.yaml
+kubectl apply -f infra/k8s/base/vault-service-accounts.yaml
+kubectl apply -f infra/k8s/base/redis.yaml
+kubectl apply -f infra/k8s/base/postgres.yaml
+kubectl apply -f infra/k8s/base/postgres-backup.yaml
+kubectl apply -f infra/k8s/base/server-deployment.yaml
+kubectl apply -f infra/k8s/base/monitoring-alerts.yaml
+kubectl apply -f infra/k8s/base/ingress.yaml
 ```
 
 Wait for PostgreSQL before expecting the API to come up cleanly:
@@ -266,12 +266,12 @@ Do not edit an already-deployed migration. Add a later migration, smoke-test bot
 ### 7. Deploy the Worker and Web Surfaces
 
 ```bash
-kubectl apply -k deployments/worker
+kubectl apply -k infra/k8s/base/worker
 kubectl set image deployment/thoughty-cloud-sync-worker \
   thoughty-cloud-sync-worker=<registry>/thoughty-server:<tag> \
   -n thoughty
 
-kubectl apply -f deployments/web-deployment.yaml
+kubectl apply -f infra/k8s/base/web-deployment.yaml
 kubectl set image deployment/thoughty-web \
   thoughty-web=<registry>/thoughty-web:<tag> \
   -n thoughty
@@ -286,12 +286,12 @@ kubectl rollout status deployment/thoughty-web -n thoughty --timeout=120s
 
 ## Optional Canary Rollout
 
-Use `deployments/canary/` when you want a zero-downtime release gate before promoting the main API and web deployments. The canary runs separate API and web pods behind dedicated services and an NGINX canary ingress. The cloud sync worker is intentionally excluded because running stable and canary workers at the same time could double-process queued jobs.
+Use `infra/k8s/base/canary/` when you want a zero-downtime release gate before promoting the main API and web deployments. The canary runs separate API and web pods behind dedicated services and an NGINX canary ingress. The cloud sync worker is intentionally excluded because running stable and canary workers at the same time could double-process queued jobs.
 
 Apply the canary and point it at candidate images:
 
 ```bash
-kubectl apply -k deployments/canary
+kubectl apply -k infra/k8s/base/canary
 kubectl set image deployment/thoughty-server-canary \
   thoughty-server=<registry>/thoughty-server:<candidate-tag> \
   -n thoughty
@@ -341,7 +341,7 @@ kubectl annotate ingress thoughty-canary-ingress \
   -n thoughty \
   nginx.ingress.kubernetes.io/canary-weight="0" \
   --overwrite
-kubectl delete -k deployments/canary
+kubectl delete -k infra/k8s/base/canary
 ```
 
 ## Jenkins Deployment Flow
@@ -404,23 +404,23 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 
 | File                                            | Responsibility                                              |
 | ----------------------------------------------- | ----------------------------------------------------------- |
-| `k8s/server/`                                   | Server core overlay using shared infrastructure and External Secrets |
-| `k8s/server-worker/`                            | Server worker overlay applied after database migrations |
-| `k8s/server-canary/`                            | Optional server canary overlay                          |
-| `deployments/kustomization.yaml`                | Application resource bundle consumed by the server overlay |
-| `deployments/namespace.yaml`                    | Creates the `thoughty` namespace                            |
-| `deployments/configmap.yaml`                    | Non-secret runtime configuration for backend workloads      |
-| `deployments/vault-service-accounts.yaml`       | Service accounts used by Vault roles                        |
-| `deployments/redis.yaml`                        | Internal Redis deployment and service for rate limiting      |
-| `deployments/postgres.yaml`                     | PostgreSQL deployment, service, and persistent volume claim |
-| `deployments/postgres-backup.yaml`              | Daily PostgreSQL backup CronJob                             |
-| `deployments/server-deployment.yaml`            | API deployment, service, probes, and Vault injection        |
-| `deployments/worker/`                           | Dedicated background worker using the server image          |
-| `deployments/canary/`                           | Optional API/web canary deployments and NGINX canary ingress |
-| `deployments/monitoring-alerts.yaml`            | PrometheusRule alerts for API, database, and cloud sync health |
-| `deployments/web-deployment.yaml`               | Web deployment and service                                  |
-| `deployments/ingress.yaml`                      | Host and path routing for `/` and `/api`                    |
-| `deployments/vault-setup.sh`                    | Reference Vault bootstrap commands                          |
+| `infra/k8s/overlays/server/`                    | Server core overlay using shared infrastructure and External Secrets |
+| `infra/k8s/overlays/server-worker/`             | Server worker overlay applied after database migrations |
+| `infra/k8s/overlays/server-canary/`             | Optional server canary overlay                          |
+| `infra/k8s/base/kustomization.yaml`             | Application resource bundle consumed by the server overlay |
+| `infra/k8s/base/namespace.yaml`                 | Creates the `thoughty` namespace                            |
+| `infra/k8s/base/configmap.yaml`                 | Non-secret runtime configuration for backend workloads      |
+| `infra/k8s/base/vault-service-accounts.yaml`    | Service accounts used by Vault roles                        |
+| `infra/k8s/base/redis.yaml`                     | Internal Redis deployment and service for rate limiting      |
+| `infra/k8s/base/postgres.yaml`                  | PostgreSQL deployment, service, and persistent volume claim |
+| `infra/k8s/base/postgres-backup.yaml`           | Daily PostgreSQL backup CronJob                             |
+| `infra/k8s/base/server-deployment.yaml`         | API deployment, service, probes, and Vault injection        |
+| `infra/k8s/base/worker/`                        | Dedicated background worker using the server image          |
+| `infra/k8s/base/canary/`                        | Optional API/web canary deployments and NGINX canary ingress |
+| `infra/k8s/base/monitoring-alerts.yaml`         | PrometheusRule alerts for API, database, and cloud sync health |
+| `infra/k8s/base/web-deployment.yaml`            | Web deployment and service                                  |
+| `infra/k8s/base/ingress.yaml`                   | Host and path routing for `/` and `/api`                    |
+| `infra/scripts/vault-setup.sh`                  | Reference Vault bootstrap commands                          |
 
 ## Related Guides
 

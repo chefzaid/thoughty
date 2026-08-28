@@ -27,7 +27,7 @@ The feature backlog — both implemented and planned features — lives in [TODO
 
 ```bash
 mask build
-docker-compose -f .devcontainer/docker-compose.yml up -d db minio
+docker compose -f infra/compose/compose.yaml up -d db minio
 npm run migrate
 npm run seed
 mask run

@@ -59,7 +59,7 @@ kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhos
 kubectl get prometheusrule thoughty-alerts -n thoughty
 ```
 
-`deployments/monitoring-alerts.yaml` defines the baseline alerts from ADR 0015:
+`infra/k8s/base/monitoring-alerts.yaml` defines the baseline alerts from ADR 0015:
 
 - API unavailable
 - API high 5xx error rate
@@ -98,7 +98,7 @@ If migrations fail:
 
 ## Canary Rollout Checks
 
-Canary releases use `deployments/canary/`, which creates `thoughty-server-canary`, `thoughty-web-canary`, and `thoughty-canary-ingress`. The worker is promoted only after the API and web images are accepted.
+Canary releases use `infra/k8s/base/canary/`, which creates `thoughty-server-canary`, `thoughty-web-canary`, and `thoughty-canary-ingress`. The worker is promoted only after the API and web images are accepted.
 
 Check canary readiness:
 
@@ -133,7 +133,7 @@ If the canary misbehaves, set the weight to `0`, preserve logs from both canary 
 ```bash
 kubectl logs deployment/thoughty-server-canary -n thoughty --tail=200
 kubectl logs deployment/thoughty-web-canary -n thoughty --tail=200
-kubectl delete -k deployments/canary
+kubectl delete -k infra/k8s/base/canary
 ```
 
 ## Vault Secret Troubleshooting
@@ -221,9 +221,9 @@ Required PostgreSQL backup controls:
 
 The included Kubernetes manifests implement the self-managed baseline:
 
-- `deployments/postgres.yaml` starts PostgreSQL with WAL archiving enabled and uploads archived WAL segments through a sidecar.
-- `deployments/postgres-backup.yaml` runs a daily custom-format `pg_dump` backup and uploads a matching SHA-256 checksum.
-- `deployments/configmap.yaml` owns the non-secret backup endpoint, bucket, region, and object prefixes.
+- `infra/k8s/base/postgres.yaml` starts PostgreSQL with WAL archiving enabled and uploads archived WAL segments through a sidecar.
+- `infra/k8s/base/postgres-backup.yaml` runs a daily custom-format `pg_dump` backup and uploads a matching SHA-256 checksum.
+- `infra/k8s/base/configmap.yaml` owns the non-secret backup endpoint, bucket, region, and object prefixes.
 - `secret/data/thoughty/backup` owns the object-store access key and secret key used only by the PostgreSQL backup surfaces.
 
 Attachment blobs live outside PostgreSQL in S3-compatible storage.

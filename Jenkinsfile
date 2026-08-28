@@ -63,9 +63,9 @@ pipeline {
 
         stage('Validate Deployment Manifests') {
             steps {
-                sh 'kubectl kustomize k8s/server > /dev/null'
-                sh 'kubectl kustomize k8s/server-worker > /dev/null'
-                sh 'kubectl kustomize k8s/server-canary > /dev/null'
+                sh 'kubectl kustomize infra/k8s/overlays/server > /dev/null'
+                sh 'kubectl kustomize infra/k8s/overlays/server-worker > /dev/null'
+                sh 'kubectl kustomize infra/k8s/overlays/server-canary > /dev/null'
             }
         }
 
@@ -251,7 +251,7 @@ pipeline {
                             kubectl rollout status deployment/thoughty-cloud-sync-worker -n ${KUBE_NAMESPACE} --timeout=120s
                         fi
                     """
-                    sh 'kubectl apply -k k8s/server'
+                    sh 'kubectl apply -k infra/k8s/overlays/server'
                     sh "kubectl wait --for=condition=Ready externalsecret/thoughty-database externalsecret/thoughty-app externalsecret/thoughty-backup -n ${KUBE_NAMESPACE} --timeout=120s"
 
                     // Update image tags to trigger rollout
@@ -266,7 +266,7 @@ pipeline {
 
                     // Deploy the worker only after migrations pass.
                     sh """
-                        kubectl kustomize k8s/server-worker |
+                        kubectl kustomize infra/k8s/overlays/server-worker |
                             kubectl set image -f - thoughty-cloud-sync-worker=${DOCKER_REGISTRY}/thoughty-server:${IMAGE_TAG} --local -o yaml |
                             kubectl apply -f -
                     """

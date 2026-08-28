@@ -1,6 +1,6 @@
 # Server Deployment
 
-Thoughty's server profile targets the current `main` branch of the [BM Cluster (Bare Metal Cluster) repository](https://github.com/chefzaid/bm-cluster). The `k8s/server` overlay follows that server's ownership model:
+Thoughty's server profile targets the current `main` branch of the [BM Cluster (Bare Metal Cluster) repository](https://github.com/chefzaid/bm-cluster). The `infra/k8s/overlays/server` overlay follows that server's ownership model:
 
 - applications run in the `application` namespace
 - PostgreSQL and Redis are shared services in `infra`
@@ -109,23 +109,23 @@ Use the server's Cloudflare Origin or publicly trusted certificate workflow. Do 
 
 ## Runtime Configuration
 
-Review `k8s/server/configmap-patch.yaml` before deployment. The overlay sets:
+Review `infra/k8s/overlays/server/configmap-patch.yaml` before deployment. The overlay sets:
 
 - `POSTGRES_HOST=postgres.infra.svc.cluster.local`
 - `REDIS_HOST=redis.infra.svc.cluster.local`
 - `FRONTEND_URL=https://thoughty.swirlit.dev`
 - `CORS_ORIGIN=https://thoughty.swirlit.dev`
 
-Replace the S3 attachment and backup endpoints, regions, and bucket names inherited from `deployments/configmap.yaml` with real values for the environment.
+Replace the S3 attachment and backup endpoints, regions, and bucket names inherited from `infra/k8s/base/configmap.yaml` with real values for the environment.
 
 ## Deployment Sequence
 
 Render locally before applying:
 
 ```bash
-kubectl kustomize k8s/server > /dev/null
-kubectl kustomize k8s/server-worker > /dev/null
-kubectl kustomize k8s/server-canary > /dev/null
+kubectl kustomize infra/k8s/overlays/server > /dev/null
+kubectl kustomize infra/k8s/overlays/server-worker > /dev/null
+kubectl kustomize infra/k8s/overlays/server-canary > /dev/null
 ```
 
 Stop an existing worker before changing the API schema, then deploy the core overlay and wait for secrets:
@@ -134,7 +134,7 @@ Stop an existing worker before changing the API schema, then deploy the core ove
 kubectl scale deployment/thoughty-cloud-sync-worker --replicas=0 -n application
 kubectl rollout status deployment/thoughty-cloud-sync-worker -n application --timeout=120s
 
-kubectl apply -k k8s/server
+kubectl apply -k infra/k8s/overlays/server
 kubectl wait --for=condition=Ready \
   externalsecret/thoughty-database \
   externalsecret/thoughty-app \
@@ -158,7 +158,7 @@ kubectl exec deployment/thoughty-server -n application -- npm run db:migrate:dis
 Apply the separate worker overlay only after migrations succeed, then roll out the web image:
 
 ```bash
-kubectl kustomize k8s/server-worker | \
+kubectl kustomize infra/k8s/overlays/server-worker | \
   kubectl set image -f - \
     thoughty-cloud-sync-worker=<registry>/thoughty-server:<tag> \
     --local -o yaml | \
@@ -176,10 +176,10 @@ The Jenkins pipeline performs this sequence automatically on `main`.
 
 ## Canary Releases
 
-The optional canary overlay transforms `deployments/canary/` for the shared namespace, ExternalSecrets, ingress host, and TLS secret. It is not part of a normal rollout. To activate a candidate:
+The optional canary overlay transforms `infra/k8s/base/canary/` for the shared namespace, ExternalSecrets, ingress host, and TLS secret. It is not part of a normal rollout. To activate a candidate:
 
 ```bash
-kubectl apply -k k8s/server-canary
+kubectl apply -k infra/k8s/overlays/server-canary
 kubectl set image deployment/thoughty-server-canary \
   thoughty-server=<registry>/thoughty-server:<candidate-tag> \
   -n application
@@ -209,6 +209,6 @@ kubectl rollout restart deployment/prometheus -n infra
 kubectl rollout status deployment/prometheus -n infra --timeout=120s
 ```
 
-Do not apply `deployments/monitoring-alerts.yaml` unless the server later installs the Prometheus Operator CRDs. Translate those rules into the server-owned Prometheus configuration instead.
+Do not apply `infra/k8s/base/monitoring-alerts.yaml` unless the server later installs the Prometheus Operator CRDs. Translate those rules into the server-owned Prometheus configuration instead.
 
 The Thoughty CronJob creates logical backups of only the `thoughty` database. Point-in-time recovery and WAL retention for shared PostgreSQL are server responsibilities and must be configured independently.
