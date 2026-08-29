@@ -19,7 +19,7 @@ spec:
           args:
             - |
               export PGPASSWORD="$POSTGRES_ADMIN_PASSWORD"
-              psql_admin="psql -h postgres.swirlit.internal -U $POSTGRES_ADMIN_USER -d appdb"
+              psql_admin="psql -h postgres.swirlit.internal -U $POSTGRES_ADMIN_USER -d postgres"
               $psql_admin -v app_user="$POSTGRES_USER" -v app_password="$POSTGRES_PASSWORD" <<'SQL'
               SELECT format('CREATE ROLE %I WITH LOGIN PASSWORD %L', :'app_user', :'app_password')
               WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = :'app_user')
