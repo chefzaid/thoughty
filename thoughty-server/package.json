@@ -1,6 +1,6 @@
 {
   "name": "thoughty-server",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "NestJS Backend for Thoughty Journal App",
   "author": "",
   "private": true,
