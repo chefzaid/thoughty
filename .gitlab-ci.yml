@@ -42,11 +42,7 @@ variables:
   stage: build
   image: docker.io/library/node@sha256:76789712cd1ae89a1225eac9077010d68987a423588042dac30446f502f1858c
   cache:
-    - key:
-        files:
-          - thoughty-server/package-lock.json
-          - thoughty-web/package-lock.json
-        prefix: thoughty-npm-v2
+    - key: thoughty-npm-v2
       paths:
         - .cache/npm/
       policy: pull-push
@@ -74,11 +70,7 @@ variables:
       artifacts: false
   image: docker.io/library/node@sha256:76789712cd1ae89a1225eac9077010d68987a423588042dac30446f502f1858c
   cache:
-    - key:
-        files:
-          - thoughty-server/package-lock.json
-          - thoughty-web/package-lock.json
-        prefix: thoughty-npm-v2
+    - key: thoughty-npm-v2
       paths:
         - .cache/npm/
       policy: pull-push
@@ -152,10 +144,7 @@ variables:
     name: mcr.microsoft.com/playwright@sha256:eac9b0a5312cdab40ee8c2429df5bf19bffdccf8f3bf3c42268e173f97541645
     entrypoint: [""]
   cache:
-    - key:
-        files:
-          - thoughty-web/package-lock.json
-        prefix: thoughty-playwright-npm-v2
+    - key: thoughty-playwright-npm-v2
       paths:
         - .cache/npm/
       policy: pull-push
