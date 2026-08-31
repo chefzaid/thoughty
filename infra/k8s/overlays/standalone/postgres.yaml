@@ -34,15 +34,14 @@ spec:
           {{- end }}
     spec:
       serviceAccountName: thoughty-postgres
-      initContainers:
-        - name: prepare-wal-archive
-          image: postgres:16-alpine
-          command: ["/bin/sh", "-c"]
-          args:
-            - chown -R postgres:postgres /var/lib/postgresql/wal-archive
-          volumeMounts:
-            - name: postgres-wal-archive
-              mountPath: /var/lib/postgresql/wal-archive
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: postgres:16-alpine
@@ -65,6 +64,15 @@ spec:
               mountPath: /var/lib/postgresql/data
             - name: postgres-wal-archive
               mountPath: /var/lib/postgresql/wal-archive
+            - name: postgres-run
+              mountPath: /var/run/postgresql
+            - name: postgres-tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           resources:
             requests:
               cpu: 100m
@@ -106,6 +114,16 @@ spec:
           volumeMounts:
             - name: postgres-wal-archive
               mountPath: /wal-archive
+            - name: uploader-tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 99
+            runAsGroup: 70
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           resources:
             requests:
               cpu: 25m
@@ -118,6 +136,12 @@ spec:
           persistentVolumeClaim:
             claimName: postgres-pvc
         - name: postgres-wal-archive
+          emptyDir: {}
+        - name: postgres-run
+          emptyDir: {}
+        - name: postgres-tmp
+          emptyDir: {}
+        - name: uploader-tmp
           emptyDir: {}
 ---
 apiVersion: v1

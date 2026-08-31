@@ -21,25 +21,26 @@ spec:
             vault.hashicorp.com/agent-inject-template-backup: null
         spec:
           serviceAccountName: default
-          containers:
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            fsGroup: 65534
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
             - name: postgres-backup
               envFrom:
                 - configMapRef:
                     name: thoughty-config
                 - secretRef:
                     name: thoughty-database
-                - secretRef:
-                    name: thoughty-backup
               args:
                 - |
                   set -eu
-                  apk add --no-cache aws-cli
                   export PGPASSWORD="$POSTGRES_PASSWORD"
-
-                  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-                  backup_file="/tmp/thoughty-postgres-${timestamp}.dump"
-                  checksum_file="${backup_file}.sha256"
-
                   pg_dump \
                     -h "$POSTGRES_HOST" \
                     -U "$POSTGRES_USER" \
@@ -47,16 +48,35 @@ spec:
                     --format=custom \
                     --no-owner \
                     --no-acl \
-                    --file="$backup_file"
-
-                  sha256sum "$backup_file" > "$checksum_file"
-
+                    --file=/backup/thoughty-postgres.dump
+                  cd /backup
+                  sha256sum thoughty-postgres.dump > thoughty-postgres.dump.sha256
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+          containers:
+            - name: backup-upload
+              envFrom:
+                - configMapRef:
+                    name: thoughty-config
+                - secretRef:
+                    name: thoughty-backup
+              args:
+                - |
+                  set -eu
+                  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
                   aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
                     --region "$POSTGRES_BACKUP_REGION" \
-                    s3 cp "$backup_file" "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/$(basename "$backup_file")" \
+                    s3 cp /backup/thoughty-postgres.dump "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/thoughty-postgres-${timestamp}.dump" \
                     --only-show-errors
-
                   aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
                     --region "$POSTGRES_BACKUP_REGION" \
-                    s3 cp "$checksum_file" "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/$(basename "$checksum_file")" \
+                    s3 cp /backup/thoughty-postgres.dump.sha256 "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/thoughty-postgres-${timestamp}.dump.sha256" \
                     --only-show-errors
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]

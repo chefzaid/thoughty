@@ -40,7 +40,15 @@ spec:
         spec:
           serviceAccountName: thoughty-postgres
           restartPolicy: OnFailure
-          containers:
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            fsGroup: 65534
+            fsGroupChangePolicy: OnRootMismatch
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
             - name: postgres-backup
               image: postgres:16-alpine
               envFrom:
@@ -50,15 +58,8 @@ spec:
               args:
                 - |
                   set -eu
-                  apk add --no-cache aws-cli
                   . /vault/secrets/database
-                  . /vault/secrets/backup
                   export PGPASSWORD="$POSTGRES_PASSWORD"
-
-                  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-                  backup_file="/tmp/thoughty-postgres-${timestamp}.dump"
-                  checksum_file="${backup_file}.sha256"
-
                   pg_dump \
                     -h postgres \
                     -U "$POSTGRES_USER" \
@@ -66,19 +67,19 @@ spec:
                     --format=custom \
                     --no-owner \
                     --no-acl \
-                    --file="$backup_file"
-
-                  sha256sum "$backup_file" > "$checksum_file"
-
-                  aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
-                    --region "$POSTGRES_BACKUP_REGION" \
-                    s3 cp "$backup_file" "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/$(basename "$backup_file")" \
-                    --only-show-errors
-
-                  aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
-                    --region "$POSTGRES_BACKUP_REGION" \
-                    s3 cp "$checksum_file" "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/$(basename "$checksum_file")" \
-                    --only-show-errors
+                    --file=/backup/thoughty-postgres.dump
+                  cd /backup
+                  sha256sum thoughty-postgres.dump > thoughty-postgres.dump.sha256
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                - name: backup-tmp
+                  mountPath: /tmp
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
               resources:
                 requests:
                   cpu: 100m
@@ -86,3 +87,48 @@ spec:
                 limits:
                   cpu: 500m
                   memory: 512Mi
+          containers:
+            - name: backup-upload
+              image: amazon/aws-cli:2.15.57
+              envFrom:
+                - configMapRef:
+                    name: thoughty-config
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -eu
+                  . /vault/secrets/backup
+                  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+                  aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
+                    --region "$POSTGRES_BACKUP_REGION" \
+                    s3 cp /backup/thoughty-postgres.dump "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/thoughty-postgres-${timestamp}.dump" \
+                    --only-show-errors
+                  aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
+                    --region "$POSTGRES_BACKUP_REGION" \
+                    s3 cp /backup/thoughty-postgres.dump.sha256 "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_BASE_PREFIX}/thoughty-postgres-${timestamp}.dump.sha256" \
+                    --only-show-errors
+              volumeMounts:
+                - name: backup
+                  mountPath: /backup
+                  readOnly: true
+                - name: upload-tmp
+                  mountPath: /tmp
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 512Mi
+          volumes:
+            - name: backup
+              emptyDir: {}
+            - name: backup-tmp
+              emptyDir: {}
+            - name: upload-tmp
+              emptyDir: {}

@@ -56,6 +56,14 @@ spec:
           {{- end }}
     spec:
       serviceAccountName: thoughty-server
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: thoughty-server
           image: thoughty-server:latest
@@ -90,6 +98,17 @@ spec:
               port: 3001
             initialDelaySeconds: 10
             periodSeconds: 5
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

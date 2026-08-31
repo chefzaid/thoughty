@@ -15,6 +15,15 @@ spec:
         vault.hashicorp.com/agent-inject-template-app: null
     spec:
       serviceAccountName: default
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: thoughty-server
           command: null
@@ -26,3 +35,8 @@ spec:
                 name: thoughty-database
             - secretRef:
                 name: thoughty-app
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]

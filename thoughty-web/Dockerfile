@@ -17,13 +17,13 @@ ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npm run build
 
 # Stage 3: Serve with nginx
-FROM docker.io/library/nginx:1.27-alpine AS production
+FROM docker.io/nginxinc/nginx-unprivileged:1.30.4-alpine@sha256:bc69cfff69f75aef06daeda8dea70de95fa9ad97a03fe134cd4e5e6789d51124 AS production
 
-RUN adduser -S appuser -G nginx
-
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build --chown=101:101 /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+EXPOSE 8080
+
+USER 101:101
 
 CMD ["nginx", "-g", "daemon off;"]
