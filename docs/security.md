@@ -19,7 +19,9 @@ Thoughty stores personal journal content, profile data, attachments, refresh tok
 
 ## Authentication and Sessions
 
-Thoughty uses bearer-token authentication.
+Production authentication is centralized in the shared Keycloak `swirlit` realm. The production Ingress uses the cluster OAuth2 Proxy as an authentication gate and forwards its short-lived Keycloak access token to `GET /api/auth/sso`. The API verifies the token's RS256 signature, issuer, expiry, and `oauth2-proxy` audience against Keycloak's JWKS before linking the verified email or creating the local Thoughty profile. It then issues the existing application bearer-token session so authorization remains scoped to Thoughty's local user ID. The gateway header is never accepted without cryptographic token verification.
+
+Local development retains the password and optional Google sign-in flows. Production users are redirected automatically to Keycloak before the application is served; Thoughty does not collect their Keycloak password.
 
 ```mermaid
 sequenceDiagram
@@ -27,7 +29,7 @@ sequenceDiagram
     participant API
     participant DB as PostgreSQL
 
-    User->>API: Login or OAuth sign-in
+    User->>API: Verified Keycloak SSO exchange, local login, or OAuth sign-in
     API->>DB: Verify/create user and store refresh token
     API-->>User: Access token + refresh token
     User->>API: API request with Authorization bearer token
@@ -140,6 +142,12 @@ Two-factor challenge tokens are stored as SHA-256 hashes, codes are stored as HM
 Password reset tokens are hashed before storage and expire after one hour. The forgot-password endpoint intentionally returns a generic success response to reduce email enumeration risk.
 
 In local or misconfigured email environments, the current email service path can fall back to logging the reset URL when SMTP delivery fails. That is useful for development, but production deployments should configure SMTP correctly and treat reset-link logging as sensitive operational output.
+
+## Software Supply Chain and Code Quality
+
+Required `01-build` and `03-package` are separate from optional `02-test`. Optional manual `01-e2e` and allowed-to-fail `02-quality` are independent verify jobs; standard mode leaves quality manual, full mode runs it automatically, and quality reporting submits without a Sonar gate wait. `01-release` depends only on the required build path, so findings never become deployment gates.
+
+The manual release-publication job publishes immutable, checksummed application archives to GitLab's Generic Package Registry and immutable container tags to its Container Registry. Deployment starts only after publication passes. Daemonless Kaniko reuses 30-day registry-backed image layers without privileged runner access.
 
 ## Security Backlog
 

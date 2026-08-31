@@ -371,6 +371,11 @@ Before a larger merge, run the broader suite that matches the scope of the chang
 
 - Playwright uses the bundled `chromium` channel locally and in CI.
 - In CI, Playwright retries failed tests twice.
+- `01-build` publishes compiled outputs, optional `02-test` publishes JUnit/coverage, and required `03-package` validates images.
+- Optional manual `01-e2e` and `02-quality` are independent verify jobs; quality is manual in standard mode, automatic in full mode, and consumes test artifacts for dependency-audit and non-blocking Sonar reports.
+- `01-release` publishes only after the required build path; `02-deploy` runs only after release passes.
+- A `PIPELINE_MODE=full` pipeline on `main` adds quality reporting and executes build, release, and deploy; E2E remains manual.
+- CI reports and build outputs are retained for seven days; immutable release archives are kept in GitLab's Generic Package Registry.
 - If local browser launch fails, run `cd thoughty-web && npm run test:e2e:install` to provision the bundled `chromium` browser.
 - Playwright reuses an existing dev server on port `5173` when one is already running.
 

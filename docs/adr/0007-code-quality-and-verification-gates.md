@@ -3,13 +3,15 @@
 - Status: Accepted
 - Date: 2026-05-27
 
+The CI enforcement and external-analysis portions of this decision are superseded by [ADR 0019](./0019-explicit-delivery-jobs.md). Its local language, lint, validation, contract-generation, and test-tooling decisions remain active.
+
 ## Context
 
-Thoughty is large enough to need meaningful quality gates, but not so large that it benefits from a heavy governance layer or multiple parallel static-analysis systems. The repository already uses a combination of TypeScript, linting, tests, generated contracts, and runtime validation. What is missing is an explicit statement that these are part of the architecture, not just developer preference.
+Thoughty is large enough to need meaningful quality checks, but not so large that it benefits from a heavy governance layer or multiple parallel static-analysis systems. The repository already uses a combination of TypeScript, linting, tests, generated contracts, and runtime validation. What is missing is an explicit statement that these are part of the architecture, not just developer preference.
 
 ## Decision
 
-Use lightweight, always-on quality gates that fit the monorepo's day-to-day development model.
+Use lightweight, locally available quality checks that fit the monorepo's day-to-day development model.
 
 - TypeScript is required across frontend and backend.
 - ESLint is the primary linting surface for both applications.
@@ -30,7 +32,7 @@ Use lightweight, always-on quality gates that fit the monorepo's day-to-day deve
 
 ## Consequences
 
-- Quality enforcement is convention-driven and integrated into normal development commands.
+- Local quality checks are convention-driven and integrated into normal development commands.
 - The repo favors fast feedback over heavyweight process tooling.
 - Architectural changes should consider their impact on local verification, generated contracts, and testability.
-- The codebase does not currently rely on a separate enterprise code-quality platform to stay maintainable.
+- Maintainability does not rely on the external analyzer being a release gate.

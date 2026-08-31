@@ -240,7 +240,7 @@ if [ "$kill" == "true" ]; then
 fi
 
 echo -e "${CYAN}→${NC} Starting database and storage..."
-docker-compose -f .devcontainer/docker-compose.yml up -d db minio
+docker compose -f infra/compose/compose.yaml up -d db minio
 echo -e "${GREEN}✔${NC} Database and MinIO started"
 echo ""
 
@@ -319,7 +319,7 @@ if ($env:kill -eq "true") {
 }
 
 Write-Step "Starting database and storage..."
-docker-compose -f .devcontainer/docker-compose.yml up -d db minio
+docker compose -f infra/compose/compose.yaml up -d db minio
 Write-Ok "Database and MinIO started"
 Write-Host ""
 
@@ -636,7 +636,6 @@ Write-Host ""
 Write-Host "Run 'mask <command> --help' for more info on a command" -ForegroundColor DarkGray
 Write-Host ""
 ```
-
 
 
 

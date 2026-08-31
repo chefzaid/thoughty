@@ -4,6 +4,8 @@ interface AuthAuxiliaryProps {
   showForgotPassword: boolean;
   googleClientId?: string;
   loading: boolean;
+  keycloakSsoEnabled: boolean;
+  handleKeycloakSignIn: () => void;
   handleGoogleSignIn: () => void;
   isLogin: boolean;
   switchMode: () => void;
@@ -14,6 +16,8 @@ function AuthAuxiliary({
   showForgotPassword,
   googleClientId,
   loading,
+  keycloakSsoEnabled,
+  handleKeycloakSignIn,
   handleGoogleSignIn,
   isLogin,
   switchMode,
@@ -31,6 +35,17 @@ function AuthAuxiliary({
       </div>
 
       <div className="social-buttons">
+        {keycloakSsoEnabled && (
+          <button
+            type="button"
+            className="social-btn keycloak-btn"
+            onClick={handleKeycloakSignIn}
+            disabled={loading}
+          >
+            <span className="keycloak-icon" aria-hidden="true">S</span>
+            <span>{t('continueWithKeycloak')}</span>
+          </button>
+        )}
         {googleClientId && (
           <button
             type="button"

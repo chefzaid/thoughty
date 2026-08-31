@@ -191,6 +191,17 @@ export class AuthController {
   }
 
   @Public()
+  @Get('sso')
+  @ApiOperation({ summary: 'Exchange the ingress-validated Keycloak identity for an app session' })
+  @ApiResponse({ status: 200, description: 'SSO authentication successful', type: AuthResponseDto })
+  @ApiResponse({ status: 401, description: 'Missing or invalid Keycloak identity' })
+  async sso(
+    @Headers('x-auth-request-access-token') accessToken?: string,
+  ): Promise<AuthResponseDto> {
+    return this.authService.keycloakLogin(accessToken);
+  }
+
+  @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.tokenRefresh))

@@ -1,214 +1,97 @@
-# Server Deployment
+# BM Cluster Deployment
 
-Thoughty's server profile targets the current `main` branch of the [BM Cluster (Bare Metal Cluster) repository](https://github.com/chefzaid/bm-cluster). The `k8s/server` overlay follows that server's ownership model:
+Thoughty targets the application-neutral platform managed by [`bm-cluster`](https://github.com/chefzaid/bm-cluster). The platform owns generic GitLab runner, Argo CD, Vault, External Secrets, registry, ingress, PostgreSQL, Redis, and monitoring services. This repository owns all Thoughty-specific GitLab, Vault, Argo CD, and Kubernetes configuration.
 
-- applications run in the `application` namespace
-- PostgreSQL and Redis are shared services in `infra`
-- NGINX owns ingress and the public address
-- Vault is exposed to workloads through External Secrets Operator
-- Jenkins, Nexus, Prometheus, Longhorn, and the infrastructure lifecycle remain server-owned
+## Production Desired State
 
-The overlay deploys only Thoughty resources. It does not create or mutate shared infrastructure.
+Argo CD reads `infra/k8s/overlays/bm-cluster` from `swirlit/thoughty` in the cluster's GitLab instance and deploys it to `apps`.
 
-## Prerequisites
+The aggregate overlay includes:
 
-Verify the required server APIs and services:
+- API, web, and cloud-sync worker Deployments
+- the public ingress for `thoughty.swirlit.dev` using `swirlit-dev-tls`
+- External Secrets for runtime, backup, registry, and database-administrator contracts
+- a database setup hook at sync wave `-1`
+- a TypeORM migration hook at sync wave `0`
+- runtime Deployments at sync wave `1`
 
-```bash
-kubectl get namespace infra
-kubectl get ingressclass nginx
-kubectl get clustersecretstore vault-backend
-kubectl get service postgres redis vault prometheus jenkins nexus -n infra
-kubectl get crd externalsecrets.external-secrets.io
-```
+The setup hook idempotently creates or updates the `thoughty` login and creates its database using the shared administrator. The migration hook runs from the same immutable server image as the release before the API and worker roll out.
 
-The server documentation reserves `application` for application workloads, but its current installer does not declare that Namespace. Create it once before the first deployment; the Jenkins pipeline performs the same command idempotently:
+Render and validate locally:
 
 ```bash
-kubectl create namespace application --dry-run=client -o yaml | kubectl apply -f -
+kubectl kustomize infra/k8s/overlays/bm-cluster >/dev/null
+kubectl apply --dry-run=client --validate=false \
+  -k infra/k8s/overlays/bm-cluster >/dev/null
+kubectl apply --dry-run=client --validate=false \
+  -f infra/argocd/application.yaml >/dev/null
 ```
 
-The server deploys Jenkins in `infra` with the `jenkins-agent` service account. A Thoughty build agent needs Node.js, Docker, and `kubectl`, plus access to the Docker registry from both the builder and the K3s nodes that pull the resulting images. Configure the Jenkins credentials referenced by the pipeline:
+## One-Time GitLab Bootstrap
 
-| Credential ID | Kind | Purpose |
-| --- | --- | --- |
-| `docker-registry-url` | Secret text | Registry host used in image names |
-| `docker-registry-creds` | Username/password | Login for pushing Thoughty images |
-| `kubeconfig` | Kubernetes CLI credential | Access to the server API |
+Prerequisites:
 
-The server's Nexus deployment exposes a Docker connector on port `5000`, but its repository must first be created as described in the server README. Use a registry address that the K3s node runtime can resolve and trust; a Kubernetes service DNS name is not automatically available while the node is pulling an image.
+- the generic instance runner is online with tag `bm-cluster`
+- GitLab, Argo CD, Vault, External Secrets, and the registry are healthy
+- `.gitlab-ci.yml` is present in the repository's current commit
+- `kubectl`, `curl`, `git`, `jq`, `openssl`, `python3`, `libsodium`, and `sudo` are installed on the control-plane host
+- `GITLAB_ADMIN_TOKEN` can manage `swirlit/thoughty`
+- `GITHUB_ADMIN_TOKEN` can manage Actions secrets and dispatch workflows for `chefzaid/thoughty`
 
-## Dedicated Database
-
-Create a dedicated `thoughty` database and login role in the shared PostgreSQL instance. Use DBGate or an administrator `psql` session; do not reuse the infrastructure administrator as the application login.
-
-```sql
-CREATE ROLE thoughty LOGIN PASSWORD '<generated-password>';
-CREATE DATABASE thoughty OWNER thoughty;
-```
-
-The resulting credentials are stored in Vault, not in Git or Jenkins.
-
-## Vault and External Secrets
-
-The `vault-backend` ClusterSecretStore authenticates as the `external-secrets` service account in `infra` through the `external-secrets-role`. The server's `scripts/configure-vault.sh` rewrites `external-secrets-policy` whenever it runs, so persist the following additions in that script's policy block rather than applying a one-off live policy:
-
-```hcl
-path "secret/data/application/thoughty/*" {
-  capabilities = ["read"]
-}
-
-path "secret/metadata/application/thoughty/*" {
-  capabilities = ["read", "list"]
-}
-```
-
-Keep the existing `secret/data/infra/*` and `secret/metadata/infra/*` rules. Re-run the server's Vault configuration script after updating the policy, then confirm the store remains ready:
+Run:
 
 ```bash
-./scripts/configure-vault.sh infra
-kubectl get clustersecretstore vault-backend
+GITLAB_ADMIN_TOKEN=<gitlab-token> \
+GITHUB_ADMIN_TOKEN=<github-token> \
+  ./infra/scripts/configure-gitlab.sh
 ```
 
-Create these KV v2 records:
+The script creates or updates the GitLab project, enables the instance runner and CI job-token pushes, configures bidirectional GitHub/GitLab push synchronization, creates a read-only registry deploy token, writes app-specific values under `apps/thoughty/*` in Vault, and applies `infra/argocd/application.yaml`. It does not add Thoughty configuration to `bm-cluster`.
 
-| Vault path | Required keys |
-| --- | --- |
-| `secret/application/thoughty/database` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` |
-| `secret/application/thoughty/app` | `JWT_SECRET`, `REFRESH_SECRET`, `TWO_FACTOR_SECRET`, `CONFIG_ENCRYPTION_SECRET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` |
-| `secret/application/thoughty/backup` | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` |
+Populate optional storage, provider, and SMTP secrets after bootstrap. The production backup CronJob is suspended by default; configure `apps/thoughty/backup` and the `POSTGRES_BACKUP_*` ConfigMap values before enabling its schedule.
 
-The app record can also contain `OPENROUTER_API_KEY`, OAuth provider credentials, and SMTP settings described in the main deployment guide. External Secrets copies each record into a namespace-scoped Secret with the same environment variable names.
+## GitLab CI Delivery
 
-After applying the overlay, verify synchronization without printing values:
+The pipeline graph shows ordered build, test, package, E2E, quality, release, deploy, and version jobs. Tests are non-blocking and E2E is optional/manual. Standard mode leaves quality manual; `PIPELINE_MODE=full` runs independent non-blocking quality/security reporting automatically and automates release and deploy while E2E remains manual.
+
+The release job:
+
+1. consumes the successful server/web build artifacts;
+2. publishes immutable server/web archives and checksums to the Generic Package Registry;
+3. publishes immutable server and web images with daemonless Kaniko and 30-day registry-backed layer caches;
+4. refuses to deploy if `main` advanced during the pipeline;
+5. commits the semantic release version and two Kustomize image tags, then creates its annotated Git tag;
+6. prepares and commits the next minor version with patch reset to zero;
+7. creates a GitLab Release linked to both packages;
+8. applies and refreshes the Thoughty Argo CD `Application`;
+9. waits for that exact commit to become `Synced` and `Healthy`; and
+10. checks the internal API and web endpoints.
+
+Deployments are serialized through the `thoughty-production` resource group. Argo CD, not CI, creates, prunes, and self-heals workloads. `infra/scripts/configure-gitlab.sh` also reconciles the GitLab project controls, CI badges, and the repository's `swirlit:thoughty` SonarQube project.
+
+## Post-Deployment Checks
 
 ```bash
-kubectl wait --for=condition=Ready \
-  externalsecret/thoughty-database \
-  externalsecret/thoughty-app \
-  externalsecret/thoughty-backup \
-  -n application \
-  --timeout=120s
-
-kubectl get secret thoughty-database thoughty-app thoughty-backup -n application
+kubectl get application thoughty -n infra
+kubectl get deployment,pod,service,ingress,cronjob -n apps
+kubectl get externalsecret -n apps | grep thoughty
+kubectl rollout status deployment/thoughty-server -n apps
+kubectl rollout status deployment/thoughty-cloud-sync-worker -n apps
+kubectl rollout status deployment/thoughty-web -n apps
+kubectl port-forward -n apps service/thoughty-server 13001:3001
 ```
 
-## DNS and TLS
-
-Create a DNS record for `thoughty.swirlit.dev` pointing to the server's NGINX ingress address. The server installer creates `swirlit-dev-tls` in `infra`, but Kubernetes TLS secrets are namespace-scoped. Provision the certificate separately in `application` for Thoughty's ingress:
+With the port-forward active in another terminal:
 
 ```bash
-kubectl create secret tls swirlit-dev-tls \
-  --cert=tls.crt \
-  --key=tls.key \
-  -n application \
-  --dry-run=client -o yaml | kubectl apply -f -
+curl --fail http://127.0.0.1:13001/api/health
+curl --fail http://127.0.0.1:13001/api/metrics
 ```
 
-Use the server's Cloudflare Origin or publicly trusted certificate workflow. Do not commit certificate material.
+Healthy means the expected Argo CD revision is `Synced` and `Healthy`, all three Deployments are available, External Secrets report `Ready=True`, and `/api/health` returns HTTP 200.
 
-## Runtime Configuration
+## Rollback And Database Safety
 
-Review `k8s/server/configmap-patch.yaml` before deployment. The overlay sets:
+Revert or change the desired image tags in Git and let Argo CD reconcile. Do not patch live Deployments as a production rollback.
 
-- `POSTGRES_HOST=postgres.infra.svc.cluster.local`
-- `REDIS_HOST=redis.infra.svc.cluster.local`
-- `FRONTEND_URL=https://thoughty.swirlit.dev`
-- `CORS_ORIGIN=https://thoughty.swirlit.dev`
-
-Replace the S3 attachment and backup endpoints, regions, and bucket names inherited from `deployments/configmap.yaml` with real values for the environment.
-
-## Deployment Sequence
-
-Render locally before applying:
-
-```bash
-kubectl kustomize k8s/server > /dev/null
-kubectl kustomize k8s/server-worker > /dev/null
-kubectl kustomize k8s/server-canary > /dev/null
-```
-
-Stop an existing worker before changing the API schema, then deploy the core overlay and wait for secrets:
-
-```bash
-kubectl scale deployment/thoughty-cloud-sync-worker --replicas=0 -n application
-kubectl rollout status deployment/thoughty-cloud-sync-worker -n application --timeout=120s
-
-kubectl apply -k k8s/server
-kubectl wait --for=condition=Ready \
-  externalsecret/thoughty-database \
-  externalsecret/thoughty-app \
-  externalsecret/thoughty-backup \
-  -n application \
-  --timeout=120s
-```
-
-On an initial deployment the worker does not exist yet, so omit the first two commands.
-
-Set the API image, wait for readiness, then apply migrations:
-
-```bash
-kubectl set image deployment/thoughty-server \
-  thoughty-server=<registry>/thoughty-server:<tag> \
-  -n application
-kubectl rollout status deployment/thoughty-server -n application --timeout=120s
-kubectl exec deployment/thoughty-server -n application -- npm run db:migrate:dist
-```
-
-Apply the separate worker overlay only after migrations succeed, then roll out the web image:
-
-```bash
-kubectl kustomize k8s/server-worker | \
-  kubectl set image -f - \
-    thoughty-cloud-sync-worker=<registry>/thoughty-server:<tag> \
-    --local -o yaml | \
-  kubectl apply -f -
-
-kubectl set image deployment/thoughty-web \
-  thoughty-web=<registry>/thoughty-web:<tag> \
-  -n application
-
-kubectl rollout status deployment/thoughty-cloud-sync-worker -n application --timeout=120s
-kubectl rollout status deployment/thoughty-web -n application --timeout=120s
-```
-
-The Jenkins pipeline performs this sequence automatically on `main`.
-
-## Canary Releases
-
-The optional canary overlay transforms `deployments/canary/` for the shared namespace, ExternalSecrets, ingress host, and TLS secret. It is not part of a normal rollout. To activate a candidate:
-
-```bash
-kubectl apply -k k8s/server-canary
-kubectl set image deployment/thoughty-server-canary \
-  thoughty-server=<registry>/thoughty-server:<candidate-tag> \
-  -n application
-kubectl set image deployment/thoughty-web-canary \
-  thoughty-web=<registry>/thoughty-web:<candidate-tag> \
-  -n application
-```
-
-Use the `X-Thoughty-Canary: always` header or NGINX canary weight annotations as described in the main deployment guide. Delete the canary overlay after promotion or rollback.
-
-## Monitoring and Backups
-
-The server runs Prometheus as a plain Deployment backed by the `prometheus-config` ConfigMap in `deployments/monitoring.yaml`; it does not install the Prometheus Operator. Add this scrape job to that file in the server repository:
-
-```yaml
-- job_name: thoughty
-  metrics_path: /api/metrics
-  static_configs:
-    - targets:
-        - thoughty-server.application.svc.cluster.local:3001
-```
-
-After deploying the updated server monitoring manifest, restart Prometheus because the current Deployment has no config-reload sidecar:
-
-```bash
-kubectl rollout restart deployment/prometheus -n infra
-kubectl rollout status deployment/prometheus -n infra --timeout=120s
-```
-
-Do not apply `deployments/monitoring-alerts.yaml` unless the server later installs the Prometheus Operator CRDs. Translate those rules into the server-owned Prometheus configuration instead.
-
-The Thoughty CronJob creates logical backups of only the `thoughty` database. Point-in-time recovery and WAL retention for shared PostgreSQL are server responsibilities and must be configured independently.
+TypeORM records completed migrations. Add a new forward migration instead of changing an applied one. Test fresh-install and upgrade paths, and create a database backup before a risky schema release.

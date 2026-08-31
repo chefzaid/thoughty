@@ -18,7 +18,7 @@ flowchart LR
 
 ## Recommended Baseline
 
-- Node.js `22` is the safest local baseline because the Dockerfiles and Jenkins pipeline both use Node `22-alpine`
+- Node.js `22` is the safest local baseline because the Dockerfiles and GitLab CI pipeline both use Node `22-alpine`
 - Docker and Docker Compose are required for PostgreSQL and local MinIO
 - [`mask`](https://github.com/jacobdeichert/mask) is optional, but it is the intended entry point for the common workflows
 
@@ -87,7 +87,7 @@ Use the manual path when you want tighter control than `mask run` provides.
 ### Infrastructure only
 
 ```bash
-docker-compose -f .devcontainer/docker-compose.yml up -d db minio
+docker compose -f infra/compose/compose.yaml up -d db minio
 ```
 
 ### Database prep
@@ -170,7 +170,7 @@ The `.env.example` files are the source of truth for local configuration. The ta
 
 | Variable group             | Typical local value                                    | Notes                                                    |
 | -------------------------- | ------------------------------------------------------ | -------------------------------------------------------- |
-| Database                   | `localhost:5432` / `postgres` / `password` / `journal` | Matches `.devcontainer/docker-compose.yml`               |
+| Database                   | `localhost:5432` / `postgres` / `password` / `journal` | Matches `infra/compose/compose.yaml`                      |
 | JWT                        | local placeholders                                     | Required for auth flows; replace for shared environments |
 | `TWO_FACTOR_SECRET`        | local secret string                                    | HMAC key for email 2FA codes; use one shared value across replicas |
 | `FRONTEND_URL`             | `http://localhost:5173`                                | Used for email links                                     |
@@ -271,7 +271,7 @@ mask build --clean
 ### Run only backend work while keeping the frontend off
 
 ```bash
-docker-compose -f .devcontainer/docker-compose.yml up -d db minio
+docker compose -f infra/compose/compose.yaml up -d db minio
 cd thoughty-server && npm run dev
 ```
 

@@ -1,0 +1,7 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thoughty-cloud-sync-worker
+  namespace: thoughty
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"

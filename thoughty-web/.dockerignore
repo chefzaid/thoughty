@@ -7,3 +7,5 @@ coverage
 .git
 .gitignore
 dist
+!dist/
+!dist/**

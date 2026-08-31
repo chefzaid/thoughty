@@ -617,6 +617,7 @@ export type TranslationKey =
   | "showPassword"
   | "hidePassword"
   | "orContinueWith"
+  | "continueWithKeycloak"
   | "continueWithGoogle"
   | "dontHaveAccount"
   | "alreadyHaveAccount"
@@ -1598,6 +1599,7 @@ export const translations: Translations = {
     showPassword: "Show password",
     hidePassword: "Hide password",
     orContinueWith: "or continue with",
+    continueWithKeycloak: "Continue with Keycloak",
     continueWithGoogle: "Continue with Google",
     dontHaveAccount: "Don't have an account?",
     alreadyHaveAccount: "Already have an account?",
@@ -2627,6 +2629,7 @@ export const translations: Translations = {
     showPassword: "Afficher le mot de passe",
     hidePassword: "Masquer le mot de passe",
     orContinueWith: "ou continuer avec",
+    continueWithKeycloak: "Continuer avec Keycloak",
     continueWithGoogle: "Continuer avec Google",
     dontHaveAccount: "Vous n'avez pas de compte ?",
     alreadyHaveAccount: "Vous avez déjà un compte ?",

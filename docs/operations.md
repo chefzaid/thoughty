@@ -2,9 +2,20 @@
 
 This runbook complements the deployment guide. The deployment guide explains how to roll Thoughty out; this document explains how to verify and troubleshoot the system after it is running.
 
-The commands below describe the standalone profile in the `thoughty` namespace. On the server profile, use the `application` namespace, inspect shared PostgreSQL in `infra`, and troubleshoot `ExternalSecret` status instead of Vault Agent files. See the [Server Deployment Guide](./server-deployment.md).
+Unless a section says otherwise, the commands below describe the standalone overlay in the `thoughty` namespace. On the BM Cluster production overlay, use the `apps` namespace, inspect shared PostgreSQL in `infra`, and troubleshoot `ExternalSecret` status instead of Vault Agent files. See the [Server Deployment Guide](./server-deployment.md).
 
 ## Runtime Surfaces
+
+Operator dashboards:
+
+| Surface | URL |
+| --- | --- |
+| Application | `https://thoughty.swirlit.dev` |
+| GitLab project | `https://gitlab.swirlit.dev/swirlit/thoughty` |
+| SonarQube quality | `https://sonarqube.swirlit.dev/dashboard?id=swirlit%3Athoughty` |
+| Argo CD | `https://argocd.swirlit.dev/applications/thoughty` |
+
+Kubernetes workloads:
 
 | Surface  | Kubernetes workload                     | Notes                                            |
 | -------- | --------------------------------------- | ------------------------------------------------ |
@@ -52,14 +63,28 @@ Log entries intentionally omit request bodies, response bodies, authorization he
 
 The API exposes Prometheus text metrics at `/api/metrics`. The server deployment includes `prometheus.io/*` scrape annotations for clusters that honor pod annotations. The endpoint reports process uptime and memory, HTTP request counts and latency sums, privacy-preserving feature usage counters, database connectivity, cloud sync queue counts by status, and stuck cloud sync job count. It does not expose request bodies, journal content, attachment data, AI prompts, provider tokens, or per-user labels.
 
-Quick checks:
+In BM Cluster, Prometheus discovers those annotations automatically, Grafana
+loads the repository-owned **Thoughty Overview** dashboard from the labeled
+ConfigMap, and Fluent Bit sends the JSON stdout stream to the shared
+`kubernetes-logs-*` Elasticsearch indices. Use the platform's generic
+**Applications Namespace Logs** Kibana dashboard and filter `app` to
+`thoughty-server` or `thoughty-cloud-sync-worker`.
+
+The repository also provisions **Thoughty — Application Logs** in Kibana. It
+uses the platform-managed least-privilege dashboard bootstrap credential to
+import its saved objects after synchronization. The dashboard is fixed to the
+API, web, and cloud-sync worker labels, separates
+warnings/errors from the complete recent stream, defaults to the last 24 hours,
+and refreshes every 30 seconds.
+
+After composing the monitoring component into an environment with the Prometheus Operator, use:
 
 ```bash
 kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhost:3001/api/metrics | head
 kubectl get prometheusrule thoughty-alerts -n thoughty
 ```
 
-`deployments/monitoring-alerts.yaml` defines the baseline alerts from ADR 0015:
+The optional `infra/k8s/components/monitoring/alerts.yaml` component defines the baseline alerts from ADR 0015 for environments with the Prometheus Operator CRDs:
 
 - API unavailable
 - API high 5xx error rate
@@ -98,32 +123,32 @@ If migrations fail:
 
 ## Canary Rollout Checks
 
-Canary releases use `deployments/canary/`, which creates `thoughty-server-canary`, `thoughty-web-canary`, and `thoughty-canary-ingress`. The worker is promoted only after the API and web images are accepted.
+BM Cluster canary releases use `infra/k8s/overlays/bm-cluster-canary`, which composes the reusable canary component and creates `thoughty-server-canary`, `thoughty-web-canary`, and `thoughty-canary-ingress` in `apps`. The worker is promoted only after the API and web images are accepted.
 
 Check canary readiness:
 
 ```bash
-kubectl rollout status deployment/thoughty-server-canary -n thoughty --timeout=120s
-kubectl rollout status deployment/thoughty-web-canary -n thoughty --timeout=120s
-kubectl get ingress thoughty-canary-ingress -n thoughty
+kubectl rollout status deployment/thoughty-server-canary -n apps --timeout=120s
+kubectl rollout status deployment/thoughty-web-canary -n apps --timeout=120s
+kubectl get ingress thoughty-canary-ingress -n apps
 ```
 
 Smoke the canary path without shifting normal traffic:
 
 ```bash
-curl -H 'X-Thoughty-Canary: always' https://thoughty.example.com/api/health
+curl -H 'X-Thoughty-Canary: always' https://thoughty.swirlit.dev/api/health
 ```
 
 Shift or stop weighted traffic:
 
 ```bash
 kubectl annotate ingress thoughty-canary-ingress \
-  -n thoughty \
+  -n apps \
   nginx.ingress.kubernetes.io/canary-weight="10" \
   --overwrite
 
 kubectl annotate ingress thoughty-canary-ingress \
-  -n thoughty \
+  -n apps \
   nginx.ingress.kubernetes.io/canary-weight="0" \
   --overwrite
 ```
@@ -131,9 +156,9 @@ kubectl annotate ingress thoughty-canary-ingress \
 If the canary misbehaves, set the weight to `0`, preserve logs from both canary deployments, and delete the canary resources only after you have captured enough evidence:
 
 ```bash
-kubectl logs deployment/thoughty-server-canary -n thoughty --tail=200
-kubectl logs deployment/thoughty-web-canary -n thoughty --tail=200
-kubectl delete -k deployments/canary
+kubectl logs deployment/thoughty-server-canary -n apps --tail=200
+kubectl logs deployment/thoughty-web-canary -n apps --tail=200
+kubectl delete -k infra/k8s/overlays/bm-cluster-canary
 ```
 
 ## Vault Secret Troubleshooting
@@ -194,6 +219,10 @@ For integration failures:
 - inspect API logs for provider-specific HTTP errors
 - confirm user-facing behavior degrades cleanly when optional integrations are unset
 
+## Keycloak SSO Checks
+
+An unauthenticated production request should be redirected through `https://keycloak.swirlit.dev/oauth2/start` to the shared `swirlit` realm. After authentication, `GET /api/auth/sso` exchanges the ingress-provided Keycloak access token for a Thoughty session. If that exchange fails, verify the `oauth2-proxy` deployment, the Ingress auth annotations, the public issuer, the internal JWKS URL, and the token audience. Do not weaken verification or trust identity headers by themselves.
+
 ## Backup and Recovery
 
 This plan defines the minimum production backup and restore model for Thoughty user data. It covers PostgreSQL journal data, attachment objects, encrypted integration settings, and the secrets needed to make restored data usable.
@@ -221,9 +250,9 @@ Required PostgreSQL backup controls:
 
 The included Kubernetes manifests implement the self-managed baseline:
 
-- `deployments/postgres.yaml` starts PostgreSQL with WAL archiving enabled and uploads archived WAL segments through a sidecar.
-- `deployments/postgres-backup.yaml` runs a daily custom-format `pg_dump` backup and uploads a matching SHA-256 checksum.
-- `deployments/configmap.yaml` owns the non-secret backup endpoint, bucket, region, and object prefixes.
+- `infra/k8s/overlays/standalone/postgres.yaml` starts PostgreSQL with WAL archiving enabled and uploads archived WAL segments through a sidecar.
+- `infra/k8s/base/postgres-backup.yaml` runs a daily custom-format `pg_dump` backup and uploads a matching SHA-256 checksum.
+- `infra/k8s/base/configmap.yaml` owns the non-secret backup endpoint, bucket, region, and object prefixes.
 - `secret/data/thoughty/backup` owns the object-store access key and secret key used only by the PostgreSQL backup surfaces.
 
 Attachment blobs live outside PostgreSQL in S3-compatible storage.

@@ -189,7 +189,7 @@
 ## Deployment and CI/CD
 
 - [x] Dockerfiles for client and server, Kubernetes deployment manifests, and deployment config files
-- [x] Create Jenkins pipeline for automated testing, building, and deployment to environments (staging, production)
+- [x] Create GitLab CI pipeline for automated testing, building, and deployment to environments (staging, production)
 - [x] Configure jobs in CI pipeline to run tests on every pull request and before merging to main branch
 - [x] Configure job in CI pipeline to run Playwright tests on a schedule (e.g. daily) to catch any regressions
 - [x] Modify deployment configuration to use the existing server infrastructure, and document the prerequisites and deployment process

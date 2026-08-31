@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: apps
+resources:
+  - ../../base
+  - external-secrets.yaml
+  - database-setup-job.yaml
+  - migration-job.yaml
+  - network-policy.yaml
+  - observability.yaml
+  - registry-credentials.yaml
+components:
+  - ../../components/worker
+patches:
+  - path: configmap-patch.yaml
+  - path: server-patch.yaml
+  - path: ingress-patch.yaml
+    target:
+      kind: Ingress
+      name: thoughty-ingress
+  - path: api-ingress-patch.yaml
+    target:
+      kind: Ingress
+      name: thoughty-api-ingress
+  - path: postgres-backup-patch.yaml
+  - path: web-patch.yaml
+  - path: worker-patch.yaml
+  - path: worker-sync-wave-patch.yaml
+images:
+  - name: thoughty-server
+    newName: registry.swirlit.dev/swirlit/thoughty/thoughty-server
+    newTag: 1.5.1
+  - name: thoughty-web
+    newName: registry.swirlit.dev/swirlit/thoughty/thoughty-web
+    newTag: 1.5.1

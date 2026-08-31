@@ -1,426 +1,110 @@
 # Deployment Guide
 
-Thoughty supports two Kubernetes profiles. The Jenkins pipeline targets the existing server infrastructure through `k8s/server`; see the [Server Deployment Guide](./server-deployment.md) for its shared-service prerequisites and rollout process.
+Thoughty provides a production profile for the shared bare-metal cluster and a standalone profile for independent installations. The production profile is described in [Server Deployment](./server-deployment.md) and is the only profile changed automatically by `.gitlab-ci.yml`.
 
-The remainder of this guide documents the standalone profile: plain manifests under `deployments/`, a dedicated `thoughty` namespace, in-cluster PostgreSQL and Redis, and Vault Agent secret injection.
+## Infrastructure Layout
 
-## Runtime Topology
+Thoughty follows the shared application-repository convention used by DevApp and Indezy:
 
-Thoughty deploys as runtime surfaces inside the `thoughty` namespace:
+| Directory | Responsibility |
+|---|---|
+| `infra/ansible/` | optional manual reconciliation of committed GitOps state |
+| `infra/argocd/` | the single Argo CD `Application` bootstrap at `application.yaml` |
+| `infra/compose/` | local Compose configuration |
+| `infra/k8s/base/` | reusable workload resources; never deployed directly as an environment |
+| `infra/k8s/components/` | reusable Kustomize components such as worker, canary, and monitoring |
+| `infra/k8s/overlays/` | complete environment-specific desired state |
+| `infra/scripts/` | idempotent configuration and repository helpers |
 
-- `thoughty-web`: Nginx serving the built React application on port `80`
-- `thoughty-server`: NestJS API serving traffic on port `3001`
-- `thoughty-cloud-sync-worker`: a dedicated background worker that runs `dist/src/cloud-sync-worker.js` from the same image as the API
-- `postgres`: PostgreSQL `16-alpine` with a `5Gi` persistent volume claim
-- `postgres-backup`: a daily CronJob that writes encrypted-bucket-ready `pg_dump` snapshots and checksums to object storage
-- `redis`: internal, ephemeral shared storage for API rate-limit counters
+Names use lowercase kebab-case and YAML files use `.yaml`. Workload files use the logical component name because each may contain more than one Kubernetes resource kind. Patch files end in `-patch.yaml`; hook jobs end in `-job.yaml`; each deployable directory has `kustomization.yaml`.
 
-```mermaid
-flowchart TD
-    Internet[User Browser] --> Ingress[NGINX Ingress]
-    Ingress -->|/| WebSvc[thoughty-web Service :80]
-    Ingress -->|/api| ApiSvc[thoughty-server Service :3001]
+Production entry points:
 
-    WebSvc --> WebPods[thoughty-web Deployment x2]
-    ApiSvc --> ApiPods[thoughty-server Deployment x2]
+- Ansible: `infra/ansible/site.yaml` with `infra/ansible/inventory.ini`
+- Argo CD: `infra/argocd/application.yaml`
+- Kubernetes: `infra/k8s/overlays/bm-cluster/kustomization.yaml`
+- GitLab bootstrap: `infra/scripts/configure-gitlab.sh`
+- immutable image-tag update: `infra/scripts/set-image-tags.sh`
 
-    ApiPods --> Pg[(PostgreSQL)]
-    ApiPods --> Redis[(Redis rate-limit counters)]
-    Worker[thoughty-cloud-sync-worker Deployment x1] --> Pg
-    Backup[postgres-backup CronJob] --> Pg
+Other profiles:
 
-    ApiPods --> S3[S3-compatible object storage]
-    Pg --> Wal[PostgreSQL WAL archive uploader]
-    Backup --> BackupS3[S3-compatible backup bucket]
-    Wal --> BackupS3
-    ApiPods --> OpenRouter[OpenRouter API]
-    ApiPods --> OAuth[Google / OneDrive / Dropbox OAuth]
-    Worker --> OAuth
+- standalone: `infra/k8s/overlays/standalone/`
+- BM Cluster canary: `infra/k8s/overlays/bm-cluster-canary/`
 
-    Vault[HashiCorp Vault Agent Injector] --> ApiPods
-    Vault --> Worker
-    Vault --> Pg
-    ConfigMap[thoughty-config ConfigMap] --> ApiPods
-    ConfigMap --> Worker
-```
+Only overlays are deployable environment profiles. Shared platform resources remain in `bm-cluster`. [Standalone Vault setup](./standalone-vault.md) documents the independent Vault Agent profile; BM Cluster production secrets are reconciled through `infra/scripts/configure-gitlab.sh` and External Secrets.
 
-## What the Manifests Actually Configure
+## Components
 
-### Kubernetes Strategy and Probes
+- `thoughty-web`: React/Vite frontend served by NGINX
+- `thoughty-server`: NestJS API on port `3001`
+- `thoughty-cloud-sync-worker`: background worker using the server image
+- `postgres-backup`: optional logical-backup CronJob
 
-- `thoughty-server` runs `2` replicas with rolling updates using `maxSurge: 1` and `maxUnavailable: 0`
-- `thoughty-web` runs `2` replicas with the same rolling update strategy
-- `thoughty-cloud-sync-worker` runs `1` replica and also uses rolling updates
-- `postgres` runs `1` replica with `Recreate`, which matches the single attached volume design
-- `postgres` starts with WAL archiving enabled; a sidecar uploads archived WAL segments to object storage for point-in-time recovery windows
-- `deployments/postgres-backup.yaml` creates a daily `postgres-backup` CronJob that uploads custom-format logical snapshots and SHA-256 checksum files
-- `redis` runs `1` ephemeral replica for shared Nest throttler counters; losing it resets counters but does not lose user data
-- `deployments/canary/` adds optional canary API and web deployments plus an NGINX canary ingress; it starts at `0%` weighted traffic and can be exercised with the `X-Thoughty-Canary: always` request header
-- The API now exposes `/api/health`, which matches the liveness and readiness probes in `deployments/server-deployment.yaml`
-- The API exposes `/api/metrics` in Prometheus text format; the API pod template includes scrape annotations for clusters that honor `prometheus.io/*` annotations
-- The web deployment probes `/` on port `80`
+The API exposes `/api/health` and Prometheus-format metrics at `/api/metrics`. The public production endpoint is `https://thoughty.swirlit.dev`. The production Ingress also publishes Thoughty in the cluster Homepage `Applications` group and protects both UI and API routes with the shared Keycloak OAuth2 Proxy. `KEYCLOAK_ISSUER`, `KEYCLOAK_JWKS_URI`, and `KEYCLOAK_AUDIENCE` are non-secret overlay settings; client and cookie secrets remain owned by the cluster identity deployment.
 
-### Image Model
+## Configuration And Secrets
 
-- `thoughty-server/Dockerfile` builds a Node `22-alpine` image and starts `node dist/src/main.js`
-- `thoughty-web/Dockerfile` builds the Vite app and serves it with `nginx:1.27-alpine`
-- The cloud sync worker does not have its own image; it reuses the server image and overrides the command to run `node dist/src/cloud-sync-worker.js`
-- The web image defaults `VITE_API_URL` to `/api`, which matches the ingress split between `/` and `/api`
+Non-secret runtime values are defined in `infra/k8s/base/configmap.yaml` and adjusted for the shared cluster by `infra/k8s/overlays/bm-cluster/configmap-patch.yaml`.
 
-### Networking Model
+The production overlay obtains secrets through External Secrets:
 
-- The ingress host defaults to `thoughty.example.com` and must be replaced for real deployments
-- `/api` routes to the API service on port `3001`
-- `/` routes to the web service on port `80`
-- The ingress annotations assume an NGINX ingress controller and enforce SSL redirect plus a `10m` body size
-- TLS is enabled through the `thoughty-tls` secret referenced by `deployments/ingress.yaml`
+| Vault KV path | Purpose |
+|---|---|
+| `apps/thoughty/database` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` |
+| `apps/thoughty/app` | signing, encryption, storage, AI, OAuth, and mail settings |
+| `apps/thoughty/backup` | object-store backup credentials |
+| `apps/thoughty/registry` | private GitLab registry pull credential |
+| `infra/postgres` | shared database administrator used only by the setup hook |
 
-## Configuration and Secrets
+`infra/scripts/configure-gitlab.sh` creates strong required database/application values when those app paths do not yet exist. Optional integration and backup values are initialized empty and must be populated before those features are enabled. Never commit those values or create plaintext Kubernetes Secrets in Git.
 
-Thoughty splits runtime configuration into two buckets:
+## Delivery Pipeline, Images, and Artifacts
 
-- non-secret values in `deployments/configmap.yaml`
-- secrets injected by Vault into backend and database pods
+The repository exposes explicit delivery jobs:
 
-### ConfigMap Values Already Wired
+- `01-build → 02-test (optional) → 03-package` is the automatic build path.
+- `01-e2e` is optional/manual; `02-quality` consumes test reports independently, manually in standard mode and automatically in full mode. Neither gates release.
+- `01-release → 02-deploy` requires the successful build path and a successful release.
+- `set-major-version` independently prepares `<major>.0.0` from the `NEW_MAJOR_VERSION` pipeline variable.
 
-These are loaded into the server and worker containers through `envFrom`:
+Select `PIPELINE_MODE=full` from **Run pipeline** on `main` to run non-blocking quality reporting, release, and deploy automatically. E2E remains an optional manual branch and cannot block it.
 
-| Variable               | Current source | Purpose                                             |
-| ---------------------- | -------------- | --------------------------------------------------- |
-| `NODE_ENV`             | ConfigMap      | Enables production behavior in NestJS               |
-| `PORT`                 | ConfigMap      | API listen port                                     |
-| `POSTGRES_HOST`        | ConfigMap      | Points backend workloads at the PostgreSQL service  |
-| `POSTGRES_PORT`        | ConfigMap      | Database port                                       |
-| `POSTGRES_READ_REPLICA_HOSTS` | ConfigMap | Optional comma-separated PostgreSQL replicas for read queries |
-| `POSTGRES_READ_REPLICA_PORTS` | ConfigMap | Optional comma-separated replica ports matching `POSTGRES_READ_REPLICA_HOSTS` |
-| `CORS_ORIGIN`          | ConfigMap      | Allowed frontend origin list for the API            |
-| `FRONTEND_URL`         | ConfigMap      | Base URL used to build links in transactional email |
-| `JWT_EXPIRES_IN`       | ConfigMap      | Access token lifetime                               |
-| `S3_ENDPOINT`          | ConfigMap      | S3-compatible endpoint for attachments              |
-| `S3_BUCKET`            | ConfigMap      | Attachment bucket name                              |
-| `S3_REGION`            | ConfigMap      | Attachment bucket region                            |
-| `POSTGRES_BACKUP_ENDPOINT` | ConfigMap  | S3-compatible endpoint for PostgreSQL backups       |
-| `POSTGRES_BACKUP_BUCKET`   | ConfigMap  | PostgreSQL backup bucket name                       |
-| `POSTGRES_BACKUP_REGION`   | ConfigMap  | PostgreSQL backup bucket region                     |
-| `POSTGRES_BACKUP_BASE_PREFIX` | ConfigMap | Prefix for daily logical snapshots                |
-| `POSTGRES_BACKUP_WAL_PREFIX`  | ConfigMap | Prefix for archived WAL segments                  |
-| `REDIS_HOST`            | ConfigMap      | Redis service host for shared API rate limits      |
-| `REDIS_PORT`            | ConfigMap      | Redis service port                                 |
-| `REDIS_DB`              | ConfigMap      | Redis logical database index                       |
-| `ENTRIES_CACHE_TTL_SECONDS` | ConfigMap  | Per-pod TTL for repeated entry-list responses      |
-| `ENTRIES_CACHE_MAX_KEYS`    | ConfigMap  | Maximum per-pod entry-list cache keys              |
-| `OPENROUTER_TAG_MODEL` | ConfigMap      | Default model for AI auto-tagging                   |
-| `OPENROUTER_EMBEDDING_MODEL` | ConfigMap | Embedding model for semantic journal search         |
-
-### Vault Secrets Already Wired
-
-These are injected through the Vault Agent templates in the manifests. Populate the values in Vault (see `deployments/vault-setup.sh`) before rollout:
-
-| Secret path                     | Used by                  | Variables                                                                                                                                                                                                                                                                                                                                 |
-| ------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `secret/data/thoughty/database` | postgres, server, worker | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`                                                                                                                                                                                                                                                                                       |
-| `secret/data/thoughty/app`      | server, worker           | `JWT_SECRET`, `REFRESH_SECRET`, `TWO_FACTOR_SECRET`, `CONFIG_ENCRYPTION_SECRET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `OPENROUTER_API_KEY`, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` |
-| `secret/data/thoughty/backup`   | postgres, backup job     | `POSTGRES_BACKUP_ACCESS_KEY`, `POSTGRES_BACKUP_SECRET_KEY`                                                                                                                                                                                                                                                                                |
-
-The variable names match exactly what the server reads at runtime, including `REFRESH_SECRET` (refresh-token signing) and the `GOOGLE_DRIVE_*` cloud-sync client credentials.
-
-### Feature-Specific Variables
-
-Every variable below is already wired into the manifests. The remaining work is populating real values in Vault — empty values simply leave the feature disabled or in fallback mode:
-
-| Feature                     | Variables                                                                                                                                            | Behavior when unset                                                                         |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Attachments                 | `S3_ACCESS_KEY`, `S3_SECRET_KEY` (secret); `S3_ENDPOINT`, `S3_BUCKET`, `S3_REGION` (ConfigMap)                                                       | The attachments service falls back to local-dev MinIO defaults                              |
-| PostgreSQL backups          | `POSTGRES_BACKUP_ACCESS_KEY`, `POSTGRES_BACKUP_SECRET_KEY` (secret); `POSTGRES_BACKUP_*` endpoint, bucket, region, and prefixes (ConfigMap)          | Backup CronJob and WAL upload sidecar fail until configured                                 |
-| Distributed throttling      | `REDIS_HOST`, `REDIS_PORT`, `REDIS_DB` or `REDIS_URL`; optional `REDIS_PASSWORD`, `REDIS_TLS`                                                         | API falls back to process-local throttling when Redis is not configured or temporarily unavailable |
-| User integration encryption | `CONFIG_ENCRYPTION_SECRET`                                                                                                                           | Required in production; protects personal OpenRouter keys and cloud provider tokens |
-| Cloud sync providers        | `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `ONEDRIVE_CLIENT_ID`, `ONEDRIVE_CLIENT_SECRET`, `DROPBOX_CLIENT_ID`, `DROPBOX_CLIENT_SECRET` | Provider auth flows are unavailable                                                         |
-| AI features                 | Optional shared `OPENROUTER_API_KEY` (secret); `OPENROUTER_TAG_MODEL`, `OPENROUTER_EMBEDDING_MODEL` (ConfigMap)                                      | Without a shared key, AI remains available only to users who save a personal OpenRouter key  |
-| Email sender override       | `SMTP_FROM`                                                                                                                                          | Falls back to sending from `SMTP_USER`                                                      |
-| PostgreSQL read replicas    | `POSTGRES_READ_REPLICA_HOSTS`, optional `POSTGRES_READ_REPLICA_PORTS`, optional `POSTGRES_READ_REPLICA_USER`, `POSTGRES_READ_REPLICA_PASSWORD`, `POSTGRES_READ_REPLICA_DB` | TypeORM routes reads to the primary database when replica hosts are empty |
-
-The frontend Google sign-in client ID is baked into the web image at build time via the `VITE_GOOGLE_CLIENT_ID` Docker build argument, not through Vault. Pass it with `--build-arg VITE_GOOGLE_CLIENT_ID=<id>` (the Jenkins pipeline forwards a `VITE_GOOGLE_CLIENT_ID` environment variable for this).
-
-## Recommended Manual Deployment Process
-
-This is the shortest safe manual process that stays aligned with the manifests and with the rollout order used by Jenkins.
-
-```mermaid
-sequenceDiagram
-    participant Operator
-    participant Registry
-    participant Cluster
-    participant Server as thoughty-server
-    participant Worker as cloud-sync-worker
-    participant Web as thoughty-web
-
-    Operator->>Registry: Build and push server + web images
-    Operator->>Cluster: Apply namespace, config, service accounts, postgres, server, ingress
-    Cluster->>Server: Start API pods with Vault secrets + ConfigMap
-    Operator->>Server: Wait for rollout, then run db:migrate:dist
-    Operator->>Cluster: Apply worker and web deployments
-    Cluster->>Worker: Start worker with same server image
-    Cluster->>Web: Start web pods
-```
-
-### 1. Prepare Cluster-Specific Values
-
-Before any rollout, update the manifest values that are intentionally placeholders:
-
-1. Set the real browser origin list (`CORS_ORIGIN`), `FRONTEND_URL`, attachment S3 endpoint/bucket/region, and PostgreSQL backup endpoint/bucket/region in `deployments/configmap.yaml`.
-2. Replace `thoughty.example.com` in `deployments/ingress.yaml` and create or provision the `thoughty-tls` TLS secret for that host.
-3. Decide whether you will edit image references in the manifests directly or patch them later with `kubectl set image`.
-4. Populate the secret values in Vault. The manifests already inject every secret the application reads; you only need to provide real values for the features you enable.
-
-### 2. Build and Push Images
+For a repeatable operator-triggered refresh, Ansible applies the repository-owned Argo CD `Application`, requests a hard source refresh, waits for a new `Synced`/`Healthy` reconciliation, and verifies all three Deployment rollouts. It deploys committed and pushed `main`, never uncommitted local overlay changes:
 
 ```bash
-# Server
-cd thoughty-server
-docker build -t <registry>/thoughty-server:<tag> .
-docker push <registry>/thoughty-server:<tag>
-
-# Web
-cd ../thoughty-web
-docker build \
-  --build-arg VITE_GOOGLE_CLIENT_ID=<google-client-id> \
-  -t <registry>/thoughty-web:<tag> .
-docker push <registry>/thoughty-web:<tag>
+ansible-playbook -i infra/ansible/inventory.ini infra/ansible/site.yaml
 ```
 
-If you want the deployed frontend to call a full external API URL instead of `/api`, also pass `--build-arg VITE_API_URL=<url>` to the web build. The default `/api` is the correct choice when traffic flows through the provided ingress. The `VITE_GOOGLE_CLIENT_ID` build argument is optional and only required if you want Google sign-in in the deployed frontend.
+The release job publishes immutable images:
 
-### 3. Configure Vault Roles and Secrets
+```text
+registry.swirlit.dev/swirlit/thoughty/thoughty-server:<semantic-version>
+registry.swirlit.dev/swirlit/thoughty/thoughty-web:<semantic-version>
+```
 
-The example commands in `deployments/vault-setup.sh` are consistent with the current manifests and service accounts. At minimum, configure:
+The worker and migration hook reuse the server image. Daemonless Kaniko builds and pushes images with 30-day registry-backed layer caching on unprivileged Kubernetes runners. Test, coverage, browser, and build reports remain downloadable as GitLab job artifacts for seven days; versioned server and web archives plus `SHA256SUMS` are also published immutably to the project's Generic Package Registry. SonarQube retains the long-lived code-quality report and quality-gate history.
 
-- the Kubernetes auth method
-- the `thoughty-server` role bound to the `thoughty-server` service account
-- the `thoughty-postgres` role bound to the `thoughty-postgres` service account
-- `secret/data/thoughty/database`
-- `secret/data/thoughty/app`
+`VERSION` starts at `1.0.0`. Each new first-parent commit advances the patch used by builds and releases. A release tags and deploys that exact version and then prepares the next minor baseline with patch reset to zero; for example, releasing `1.0.3` prepares `1.1.0`. The manual major-version job is the only supported way to change the first component, and all npm manifests are synchronized with each prepared baseline.
 
-The Vault templates in the manifests already export the full set of application secrets, so once the values exist in Vault the containers receive them automatically. Leave values for optional features empty to keep those features disabled.
+Run `infra/scripts/configure-gitlab.sh` with both `GITLAB_ADMIN_TOKEN` and `GITHUB_ADMIN_TOKEN` to reconcile project settings, the linked SonarQube project, and repository synchronization. The repository-owned bootstrap configures project metadata, labels, merge safeguards, `main` protection, cleanup, badges, a masked `SONAR_TOKEN`, encrypted GitHub Actions sync credentials, and a GitLab push/tag webhook without committing credentials.
 
-### 4. Apply Base Resources
+Every GitHub push starts `.github/workflows/sync-gitlab.yml` directly. Every GitLab branch or tag push calls GitHub's repository-dispatch endpoint and starts the same reconciler, including commits marked `[skip ci]`. It fast-forwards the lagging side, merges divergent branches without force pushing, and refuses to rewrite conflicting tags. Its monthly schedule self-rotates the managed GitLab token into the encrypted GitHub secret before expiry.
 
-Create the TLS secret before applying the ingress, unless your cluster uses cert-manager or another controller that creates the same secret automatically:
+## Standalone Profile
+
+The standalone profile retains its own namespace, PostgreSQL, Redis, Vault Agent templates, ingress placeholder, worker, and backup resources. Reusable canary and monitoring components can be composed when that environment supports them. Before using the profile, set its host/TLS, object-storage values, image references, Vault roles, and `secret/data/thoughty/*` values for that independent environment.
+
+Render it without changing a cluster:
 
 ```bash
-kubectl create secret tls thoughty-tls \
-  --cert=/path/to/tls.crt \
-  --key=/path/to/tls.key \
-  -n thoughty
+kubectl kustomize infra/k8s/overlays/standalone >/dev/null
 ```
 
-```bash
-kubectl apply -f deployments/namespace.yaml
-kubectl apply -f deployments/configmap.yaml
-kubectl apply -f deployments/vault-service-accounts.yaml
-kubectl apply -f deployments/redis.yaml
-kubectl apply -f deployments/postgres.yaml
-kubectl apply -f deployments/postgres-backup.yaml
-kubectl apply -f deployments/server-deployment.yaml
-kubectl apply -f deployments/monitoring-alerts.yaml
-kubectl apply -f deployments/ingress.yaml
-```
+For production, use the aggregate `bm-cluster` overlay and do not apply standalone resources individually.
 
-Wait for PostgreSQL before expecting the API to come up cleanly:
+## Rollback
 
-```bash
-kubectl rollout status deployment/postgres -n thoughty --timeout=120s
-```
-
-### 5. Point Deployments at the New Images
-
-If you keep the manifest image fields generic and patch them at deploy time, use:
-
-```bash
-kubectl set image deployment/thoughty-server \
-  thoughty-server=<registry>/thoughty-server:<tag> \
-  -n thoughty
-```
-
-Wait for the API rollout before migrating:
-
-```bash
-kubectl rollout status deployment/thoughty-server -n thoughty --timeout=120s
-```
-
-### 6. Run Database Migrations Before Starting the Worker
-
-This ordering matters. The Jenkins pipeline does it this way on purpose so the cloud sync worker does not start polling against an old schema.
-
-```bash
-kubectl exec deployment/thoughty-server -n thoughty -- /bin/sh -c \
-  'source /vault/secrets/database && source /vault/secrets/app && npm run db:migrate:dist'
-```
-
-The Vault secrets must be sourced explicitly because `kubectl exec` starts a fresh shell that does not run the container's startup command.
-
-The command applies timestamped TypeORM migrations in order and records each completed migration in PostgreSQL's `migrations` table. It is safe to retry after a successful run; no completed migration is applied twice. The initial versioned migration is idempotent so databases created before migration history can adopt the baseline in place.
-
-Do not edit an already-deployed migration. Add a later migration, smoke-test both a fresh database and an upgraded copy, and take a database backup before production rollout. Production rollbacks should use a forward corrective migration unless the latest migration's reviewed `down` operation is known to preserve the environment's data.
-
-### 7. Deploy the Worker and Web Surfaces
-
-```bash
-kubectl apply -k deployments/worker
-kubectl set image deployment/thoughty-cloud-sync-worker \
-  thoughty-cloud-sync-worker=<registry>/thoughty-server:<tag> \
-  -n thoughty
-
-kubectl apply -f deployments/web-deployment.yaml
-kubectl set image deployment/thoughty-web \
-  thoughty-web=<registry>/thoughty-web:<tag> \
-  -n thoughty
-```
-
-Then wait for both rollouts:
-
-```bash
-kubectl rollout status deployment/thoughty-cloud-sync-worker -n thoughty --timeout=120s
-kubectl rollout status deployment/thoughty-web -n thoughty --timeout=120s
-```
-
-## Optional Canary Rollout
-
-Use `deployments/canary/` when you want a zero-downtime release gate before promoting the main API and web deployments. The canary runs separate API and web pods behind dedicated services and an NGINX canary ingress. The cloud sync worker is intentionally excluded because running stable and canary workers at the same time could double-process queued jobs.
-
-Apply the canary and point it at candidate images:
-
-```bash
-kubectl apply -k deployments/canary
-kubectl set image deployment/thoughty-server-canary \
-  thoughty-server=<registry>/thoughty-server:<candidate-tag> \
-  -n thoughty
-kubectl set image deployment/thoughty-web-canary \
-  thoughty-web=<registry>/thoughty-web:<candidate-tag> \
-  -n thoughty
-kubectl rollout status deployment/thoughty-server-canary -n thoughty --timeout=120s
-kubectl rollout status deployment/thoughty-web-canary -n thoughty --timeout=120s
-```
-
-The canary ingress starts with `nginx.ingress.kubernetes.io/canary-weight: "0"`, so normal user traffic stays on stable. Send a header-routed smoke request through the public host:
-
-```bash
-curl -H 'X-Thoughty-Canary: always' https://thoughty.example.com/api/health
-```
-
-After smoke checks pass, shift a small percentage of traffic:
-
-```bash
-kubectl annotate ingress thoughty-canary-ingress \
-  -n thoughty \
-  nginx.ingress.kubernetes.io/canary-weight="10" \
-  --overwrite
-```
-
-Promote by updating the stable deployments to the candidate tags, waiting for rollout, running migrations from the promoted server image when needed, then updating the worker:
-
-```bash
-kubectl set image deployment/thoughty-server \
-  thoughty-server=<registry>/thoughty-server:<candidate-tag> \
-  -n thoughty
-kubectl rollout status deployment/thoughty-server -n thoughty --timeout=120s
-kubectl exec deployment/thoughty-server -n thoughty -- /bin/sh -c \
-  'source /vault/secrets/database && source /vault/secrets/app && npm run db:migrate:dist'
-kubectl set image deployment/thoughty-web \
-  thoughty-web=<registry>/thoughty-web:<candidate-tag> \
-  -n thoughty
-kubectl set image deployment/thoughty-cloud-sync-worker \
-  thoughty-cloud-sync-worker=<registry>/thoughty-server:<candidate-tag> \
-  -n thoughty
-```
-
-Rollback canary traffic by setting the canary weight back to `0` or deleting the canary resources:
-
-```bash
-kubectl annotate ingress thoughty-canary-ingress \
-  -n thoughty \
-  nginx.ingress.kubernetes.io/canary-weight="0" \
-  --overwrite
-kubectl delete -k deployments/canary
-```
-
-## Jenkins Deployment Flow
-
-The `Jenkinsfile` implements the same deployment model with more guardrails.
-
-```mermaid
-flowchart LR
-    A[Install Dependencies] --> B[Lint]
-    B --> C[Test with coverage]
-    C --> D[Build server and web images]
-    D --> E[Smoke test server image against disposable Postgres]
-    E --> F{Branch is main?}
-    F -->|No| G[Stop after verification]
-    F -->|Yes| H[Push versioned and latest tags]
-    H --> I[Apply manifests]
-    I --> J[Set server image and wait for rollout]
-    J --> K[Run db:migrate:dist]
-    K --> L[Set worker image]
-    L --> M[Set web image]
-    M --> N[Wait for worker and web rollouts]
-```
-
-### What Jenkins Verifies Before Production Rollout
-
-- `npm ci` in both projects
-- lint in both projects
-- backend coverage run via `npm run test:cov`
-- frontend coverage run via `npm run test:coverage`
-- dependency vulnerability scans via `npm audit --audit-level=high` in both projects
-- Docker builds for both runtime images
-- a smoke test that boots a disposable PostgreSQL container and runs `npm run db:migrate:dist` inside the built server image
-- a daily scheduled run of the full verification pipeline, including Playwright browser tests
-
-That smoke test is especially useful because it validates the exact server image artifact that will later be deployed.
-
-## Operations Checklist After Rollout
-
-Use these checks after either a manual rollout or a Jenkins deployment:
-
-```bash
-kubectl get pods -n thoughty
-kubectl get ingress -n thoughty
-kubectl logs deployment/thoughty-server -n thoughty --tail=100
-kubectl logs deployment/thoughty-cloud-sync-worker -n thoughty --tail=100
-kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhost:3001/api/health
-kubectl exec deployment/thoughty-server -n thoughty -- wget -qO- http://localhost:3001/api/metrics | head
-```
-
-### What Good Looks Like
-
-- PostgreSQL is `Running` and stable on a single pod
-- both API replicas become `Ready`
-- the worker starts only after schema migration completes
-- the web deployment serves the built app through the ingress host
-- the API returns a `200` from `/api/health`
-- `/api/metrics` includes `thoughty_database_up 1`, request counters after traffic, privacy-preserving feature usage counters, and cloud sync queue gauges
-
-## Manifest Reference
-
-| File                                            | Responsibility                                              |
-| ----------------------------------------------- | ----------------------------------------------------------- |
-| `k8s/server/`                                   | Server core overlay using shared infrastructure and External Secrets |
-| `k8s/server-worker/`                            | Server worker overlay applied after database migrations |
-| `k8s/server-canary/`                            | Optional server canary overlay                          |
-| `deployments/kustomization.yaml`                | Application resource bundle consumed by the server overlay |
-| `deployments/namespace.yaml`                    | Creates the `thoughty` namespace                            |
-| `deployments/configmap.yaml`                    | Non-secret runtime configuration for backend workloads      |
-| `deployments/vault-service-accounts.yaml`       | Service accounts used by Vault roles                        |
-| `deployments/redis.yaml`                        | Internal Redis deployment and service for rate limiting      |
-| `deployments/postgres.yaml`                     | PostgreSQL deployment, service, and persistent volume claim |
-| `deployments/postgres-backup.yaml`              | Daily PostgreSQL backup CronJob                             |
-| `deployments/server-deployment.yaml`            | API deployment, service, probes, and Vault injection        |
-| `deployments/worker/`                           | Dedicated background worker using the server image          |
-| `deployments/canary/`                           | Optional API/web canary deployments and NGINX canary ingress |
-| `deployments/monitoring-alerts.yaml`            | PrometheusRule alerts for API, database, and cloud sync health |
-| `deployments/web-deployment.yaml`               | Web deployment and service                                  |
-| `deployments/ingress.yaml`                      | Host and path routing for `/` and `/api`                    |
-| `deployments/vault-setup.sh`                    | Reference Vault bootstrap commands                          |
+Production rollback is a revert or a new image-tag change in Git. Argo CD self-healing makes live `kubectl set image` changes temporary. Database changes should normally be corrected with a forward migration; never edit an already-applied migration.
 
 ## Related Guides
 

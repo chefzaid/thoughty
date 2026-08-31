@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: thoughty-web
+  namespace: thoughty
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  template:
+    spec:
+      imagePullSecrets:
+        - name: thoughty-registry-auth

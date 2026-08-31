@@ -1,23 +1,29 @@
 # Stage 1: Install dependencies
-FROM node:22-alpine AS deps
+FROM docker.io/library/node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts
 
 # Stage 2: Build
-FROM node:22-alpine AS build
+FROM docker.io/library/node:22-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
-# Stage 3: Production
-FROM node:22-alpine AS production
+# Stage 3: Install runtime-only dependencies
+FROM docker.io/library/node:22-alpine AS production-deps
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+
+# Stage 4: Production
+FROM docker.io/library/node:22-alpine AS production
 WORKDIR /app
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=production-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json ./
 

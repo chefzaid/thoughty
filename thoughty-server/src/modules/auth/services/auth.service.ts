@@ -30,10 +30,26 @@ import {
 import { assertHumanAuthAttempt } from './auth-bot-protection';
 import { TwoFactorService } from './two-factor.service';
 
+interface KeycloakTokenClaims {
+  sub?: string;
+  email?: string;
+  email_verified?: boolean;
+  preferred_username?: string;
+}
+
+interface KeycloakJwk extends crypto.JsonWebKey {
+  kid?: string;
+  use?: string;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private readonly refreshSecret: string;
+  private readonly keycloakIssuer: string;
+  private readonly keycloakAudience: string;
+  private readonly keycloakJwksUri: string;
+  private keycloakKeys: { expiresAt: number; keys: KeycloakJwk[] } | null = null;
 
   constructor(
     @InjectRepository(User)
@@ -50,6 +66,18 @@ export class AuthService {
     this.refreshSecret = this.configService.get<string>(
       'REFRESH_SECRET',
       'refresh-secret-change-in-production',
+    );
+    this.keycloakIssuer = this.configService.get<string>(
+      'KEYCLOAK_ISSUER',
+      'https://keycloak.swirlit.dev/auth/realms/swirlit',
+    );
+    this.keycloakAudience = this.configService.get<string>(
+      'KEYCLOAK_AUDIENCE',
+      'oauth2-proxy',
+    );
+    this.keycloakJwksUri = this.configService.get<string>(
+      'KEYCLOAK_JWKS_URI',
+      `${this.keycloakIssuer}/protocol/openid-connect/certs`,
     );
   }
 
@@ -244,6 +272,124 @@ export class AuthService {
     }
 
     return this.createSession(user, isNewUser);
+  }
+
+  async keycloakLogin(accessToken?: string): Promise<AuthResponseDto> {
+    if (!accessToken) {
+      throw new UnauthorizedException('Keycloak access token is missing');
+    }
+
+    const decoded = this.jwtService.decode(accessToken, { complete: true });
+    const keyId = decoded?.header.kid;
+    if (!keyId) {
+      throw new UnauthorizedException('Keycloak access token has no signing key');
+    }
+
+    let claims: KeycloakTokenClaims;
+    try {
+      const signingKey = await this.getKeycloakSigningKey(keyId);
+      const publicKey = crypto
+        .createPublicKey({ key: signingKey, format: 'jwk' })
+        .export({ type: 'spki', format: 'pem' });
+      claims = await this.jwtService.verifyAsync<KeycloakTokenClaims>(accessToken, {
+        // JwtService prefers its module-level HMAC secret over an invocation-level
+        // `publicKey`. Supplying this verification key as `secret` explicitly
+        // overrides that default while jsonwebtoken still validates it as an
+        // asymmetric public key for RS256.
+        secret: publicKey,
+        algorithms: ['RS256'],
+        issuer: this.keycloakIssuer,
+        audience: this.keycloakAudience,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Rejected Keycloak SSO token: ${error instanceof Error ? error.message : 'verification failed'}`,
+      );
+      throw new UnauthorizedException('Invalid Keycloak access token');
+    }
+
+    const subject = typeof claims.sub === 'string' ? claims.sub : '';
+    const email = typeof claims.email === 'string' ? claims.email.toLowerCase() : '';
+    const preferredUsername =
+      typeof claims.preferred_username === 'string' ? claims.preferred_username : '';
+    if (!subject || !email || !preferredUsername || claims.email_verified !== true) {
+      throw new UnauthorizedException('Keycloak identity is incomplete or unverified');
+    }
+
+    let user = await this.userRepository.findOne({
+      where: { authProvider: 'keycloak', providerId: subject },
+    });
+    let isNewUser = false;
+
+    user ??= await this.userRepository.findOne({ where: { email } });
+    if (user?.deletedAt) {
+      throw new ForbiddenException(
+        'This account has been deleted. Please contact support if you believe this is a mistake.',
+      );
+    }
+
+    if (user) {
+      user.authProvider = 'keycloak';
+      user.providerId = subject;
+      user.emailVerified = true;
+      user = await this.userRepository.save(user);
+    } else {
+      isNewUser = true;
+      user = await this.userRepository.save({
+        username: preferredUsername.substring(0, 50),
+        email,
+        authProvider: 'keycloak',
+        providerId: subject,
+        emailVerified: true,
+      });
+      await this.diaryRepository.save({
+        userId: user.id,
+        name: 'Thoughts',
+        icon: '💭',
+        color: getDefaultDiaryColor(0),
+        isDefault: true,
+        visibility: 'private',
+      });
+    }
+
+    return this.createSession(user, isNewUser);
+  }
+
+  private async getKeycloakSigningKey(keyId: string): Promise<KeycloakJwk> {
+    if (!this.keycloakKeys || this.keycloakKeys.expiresAt <= Date.now()) {
+      await this.refreshKeycloakKeys();
+    }
+    let signingKey = this.keycloakKeys?.keys.find(
+      (key) => key.kid === keyId && (key.use === undefined || key.use === 'sig'),
+    );
+    if (!signingKey) {
+      await this.refreshKeycloakKeys();
+      signingKey = this.keycloakKeys?.keys.find(
+        (key) => key.kid === keyId && (key.use === undefined || key.use === 'sig'),
+      );
+    }
+    if (!signingKey) {
+      throw new Error('Keycloak signing key is unavailable');
+    }
+    return signingKey;
+  }
+
+  private async refreshKeycloakKeys(): Promise<void> {
+    const response = await fetch(this.keycloakJwksUri, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!response.ok) {
+      throw new Error(`Keycloak JWKS request failed with ${response.status}`);
+    }
+    const body = (await response.json()) as { keys?: KeycloakJwk[] };
+    if (!Array.isArray(body.keys) || body.keys.length === 0) {
+      throw new Error('Keycloak JWKS response has no keys');
+    }
+    this.keycloakKeys = {
+      keys: body.keys,
+      expiresAt: Date.now() + 5 * 60 * 1_000,
+    };
   }
 
   async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {

@@ -1,6 +1,6 @@
 {
     "name": "Thoughty Dev Container",
-    "dockerComposeFile": "docker-compose.yml",
+    "dockerComposeFile": "../infra/compose/compose.yaml",
     "service": "app",
     "workspaceFolder": "/workspace",
     "features": {

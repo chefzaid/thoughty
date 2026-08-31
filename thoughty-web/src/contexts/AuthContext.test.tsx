@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { act, render, waitFor } from '@testing-library/react';
-import { AuthProvider, useAuth } from './AuthContext';
+import { AuthProvider, exchangeKeycloakSession, useAuth } from './AuthContext';
 
 type AuthContextValue = ReturnType<typeof useAuth>;
 
@@ -28,10 +28,12 @@ describe('AuthContext', () => {
     beforeEach(() => {
         globalThis.fetch = vi.fn();
         localStorage.clear();
+        sessionStorage.clear();
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+        vi.unstubAllEnvs();
     });
 
     it('throws when useAuth is used outside provider', () => {
@@ -55,6 +57,45 @@ describe('AuthContext', () => {
         await waitFor(() => {
             expect(requireContext(ctx).loading).toBe(false);
         });
+    });
+
+    it('exchanges a production Keycloak session before rendering authenticated state', async () => {
+        vi.stubEnv('PROD', true);
+        sessionStorage.setItem('thoughty.keycloak-sso-attempt', 'pending');
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                accessToken: 'sso-access',
+                refreshToken: 'sso-refresh',
+                user: { id: 7, email: 'zaid@swirlit.dev', authProvider: 'keycloak' }
+            })
+        });
+
+        let ctx: AuthContextValue | undefined;
+        render(
+            <AuthProvider>
+                <ContextSpy onReady={(value) => { ctx = value; }} />
+            </AuthProvider>
+        );
+
+        await waitFor(() => expect(requireContext(ctx).user?.email).toBe('zaid@swirlit.dev'));
+        expect(localStorage.getItem('accessToken')).toBe('sso-access');
+    });
+
+    it('handles rejected, empty, and unavailable Keycloak exchanges without a session', async () => {
+        const onSession = vi.fn();
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        (globalThis.fetch as Mock)
+            .mockResolvedValueOnce({ ok: false })
+            .mockResolvedValueOnce({ ok: true, json: async () => null })
+            .mockRejectedValueOnce(new Error('offline'));
+
+        await exchangeKeycloakSession(onSession);
+        await exchangeKeycloakSession(onSession);
+        await exchangeKeycloakSession(onSession);
+
+        expect(onSession).not.toHaveBeenCalled();
+        expect(consoleSpy).toHaveBeenCalledOnce();
     });
 
     it('loads user when access token exists', async () => {

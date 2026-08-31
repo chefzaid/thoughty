@@ -1,11 +1,11 @@
 # Stage 1: Install dependencies
-FROM node:22-alpine AS deps
+FROM docker.io/library/node:22-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts
 
 # Stage 2: Build
-FROM node:22-alpine AS build
+FROM docker.io/library/node:22-alpine AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -17,7 +17,7 @@ ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 RUN npm run build
 
 # Stage 3: Serve with nginx
-FROM nginx:1.27-alpine AS production
+FROM docker.io/library/nginx:1.27-alpine AS production
 
 RUN adduser -S appuser -G nginx
 

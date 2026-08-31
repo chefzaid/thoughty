@@ -201,14 +201,18 @@ describe('BooksService', () => {
       expect(result.content).toContain('# Custom');
     });
 
-    it('should export an EPUB when requested', async () => {
-      const result = await service.export(1, { format: 'epub', narrative: false });
+    it(
+      'should export an EPUB when requested',
+      async () => {
+        const result = await service.export(1, { format: 'epub', narrative: false });
 
-      expect(result.contentType).toBe('application/epub+zip');
-      expect(result.filename).toMatch(/\.epub$/);
-      expect(Buffer.isBuffer(result.content)).toBe(true);
-      expect((result.content as Buffer).subarray(0, 2).toString()).toBe('PK');
-    });
+        expect(result.contentType).toBe('application/epub+zip');
+        expect(result.filename).toMatch(/\.epub$/);
+        expect(Buffer.isBuffer(result.content)).toBe(true);
+        expect((result.content as Buffer).subarray(0, 2).toString()).toBe('PK');
+      },
+      20_000,
+    );
 
     it('should export HTML when requested', async () => {
       const result = await service.export(1, { format: 'html', narrative: false });

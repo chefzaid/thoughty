@@ -14,7 +14,13 @@ export default defineConfig({
   forbidOnly: isCi,
   retries: isCi ? 2 : 0,
   workers: isCi ? 2 : undefined,
-  reporter: isCi ? [['list'], ['html', { open: 'never' }]] : 'list',
+  reporter: isCi
+    ? [
+        ['list'],
+        ['junit', { outputFile: 'test-results/playwright-junit.xml' }],
+        ['html', { open: 'never' }],
+      ]
+    : 'list',
   use: {
     baseURL: 'http://localhost:5173',
     headless: true,

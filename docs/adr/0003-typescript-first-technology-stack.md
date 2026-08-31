@@ -48,7 +48,7 @@ Use a TypeScript-first stack end to end.
 - Docker and Docker Compose for local service orchestration
 - Dev Containers for an optional containerized development environment
 - Kubernetes and Nginx for production-oriented deployment
-- Jenkins for CI/CD automation
+- GitLab CI for CI/CD automation
 - HashiCorp Vault for secret delivery
 - `mask` for repository-owned development commands
 

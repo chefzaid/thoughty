@@ -19,6 +19,11 @@ import type { AuthResult, TokenResponse, User } from './authTypes';
 import {
   signInWithGoogleAccount,
 } from './googleAuth';
+import {
+  clearKeycloakSsoAttempt,
+  hasPendingKeycloakSsoAttempt,
+  startKeycloakSso,
+} from '../utils/keycloakSso';
 
 export type { User } from './authTypes';
 
@@ -54,6 +59,23 @@ const API_BASE = '/api/auth';
 
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
+export async function exchangeKeycloakSession(
+  onSession: (session: TokenResponse) => void,
+): Promise<void> {
+  try {
+    const response = await fetch(`${API_BASE}/sso`);
+    if (!response.ok) {
+      return;
+    }
+    const session = await safeJsonParse<TokenResponse>(response);
+    if (session) {
+      onSession(session);
+    }
+  } catch (err) {
+    console.error('Keycloak SSO exchange failed:', err);
+  }
+}
 
 export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
   const [user, setUser] = useState<User | null>(null);
@@ -140,6 +162,20 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     const checkAuth = async () => {
       const accessToken = getAccessToken();
       if (!accessToken) {
+        if (import.meta.env.PROD) {
+          let sessionExchanged = false;
+          await exchangeKeycloakSession((session) => {
+            saveTokens(session.accessToken, session.refreshToken);
+            setUser(session.user);
+            sessionExchanged = true;
+          });
+          if (sessionExchanged) {
+            clearKeycloakSsoAttempt();
+          } else if (!hasPendingKeycloakSsoAttempt()) {
+            startKeycloakSso();
+            return;
+          }
+        }
         setLoading(false);
         return;
       }
@@ -155,16 +191,24 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
           }
         } else {
           clearTokens();
+          if (import.meta.env.PROD && !hasPendingKeycloakSsoAttempt()) {
+            startKeycloakSso();
+            return;
+          }
         }
       } catch (err) {
         console.error('Auth check failed:', err);
         clearTokens();
+        if (import.meta.env.PROD && !hasPendingKeycloakSsoAttempt()) {
+          startKeycloakSso();
+          return;
+        }
       }
       setLoading(false);
     };
 
     checkAuth();
-  }, [authFetch, clearTokens, getAccessToken]);
+  }, [authFetch, clearTokens, getAccessToken, saveTokens]);
 
   // Register with email/password
   const register = useCallback(async (
@@ -301,6 +345,13 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     }
     clearTokens();
     setUser(null);
+    if (import.meta.env.PROD) {
+      sessionStorage.setItem('thoughty.keycloak-sso-attempt', 'pending');
+      const returnUrl = `${window.location.origin}/`;
+      window.location.assign(
+        `https://keycloak.swirlit.dev/oauth2/sign_out?rd=${encodeURIComponent(returnUrl)}`,
+      );
+    }
   }, [clearTokens, getRefreshToken]);
 
   // Change password
