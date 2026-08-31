@@ -63,11 +63,11 @@ The production overlay obtains secrets through External Secrets:
 The repository exposes explicit delivery jobs:
 
 - `01-build → 02-test (optional) → 03-package` is the automatic build path.
-- `01-e2e` is optional/manual; `02-quality` consumes test reports independently, manually in standard mode and automatically in full mode. Neither gates release.
+- `01-e2e` is optional/manual; `02-quality` consumes test reports and `03-security` independently scans the repository, manually in standard mode and automatically in full mode. None gates release.
 - `01-release → 02-deploy` requires the successful build path and a successful release.
 - `set-major-version` independently prepares `<major>.0.0` from the `NEW_MAJOR_VERSION` pipeline variable.
 
-Select `PIPELINE_MODE=full` from **Run pipeline** on `main` to run non-blocking quality reporting, release, and deploy automatically. E2E remains an optional manual branch and cannot block it.
+Select `PIPELINE_MODE=full` from **Run pipeline** on `main` to run non-blocking quality/security reporting, release, and deploy automatically. E2E remains an optional manual branch and cannot block it.
 
 For a repeatable operator-triggered refresh, Ansible applies the repository-owned Argo CD `Application`, requests a hard source refresh, waits for a new `Synced`/`Healthy` reconciliation, and verifies all three Deployment rollouts. It deploys committed and pushed `main`, never uncommitted local overlay changes:
 
