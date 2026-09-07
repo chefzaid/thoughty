@@ -184,7 +184,7 @@ variables:
     - job: 02-test
       artifacts: true
   image:
-    name: mcr.microsoft.com/playwright@sha256:eac9b0a5312cdab40ee8c2429df5bf19bffdccf8f3bf3c42268e173f97541645
+    name: node:24.15.0-bookworm-slim@sha256:4e6b70dd6cbfc88c8157ba19aa3d9f9cce6ba4703576d55459e45efcbc9c5f5d
     entrypoint: [""]
   cache:
     - key: thoughty-sonar-v1
@@ -192,6 +192,8 @@ variables:
         - .cache/sonar/cache/
       policy: pull-push
   before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq --no-install-recommends git ca-certificates
     - export APP_VERSION="$("$CI_PROJECT_DIR/infra/scripts/current-version.sh")"
     - npm install --global @sonar/scan@5.0.0
   script:
