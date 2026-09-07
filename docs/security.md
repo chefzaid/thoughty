@@ -19,7 +19,9 @@ Thoughty stores personal journal content, profile data, attachments, refresh tok
 
 ## Authentication and Sessions
 
-Thoughty uses bearer-token authentication.
+Production authentication is centralized in the shared Keycloak `swirlit` realm. The production Ingress uses the cluster OAuth2 Proxy as an authentication gate and forwards its short-lived Keycloak access token to `GET /api/auth/sso`. The API verifies the token's RS256 signature, issuer, expiry, and `oauth2-proxy` audience against Keycloak's JWKS before linking the verified email or creating the local Thoughty profile. It then issues the existing application bearer-token session so authorization remains scoped to Thoughty's local user ID. The gateway header is never accepted without cryptographic token verification.
+
+Local development retains the password and optional Google sign-in flows. Production users are redirected automatically to Keycloak before the application is served; Thoughty does not collect their Keycloak password.
 
 ```mermaid
 sequenceDiagram
@@ -27,7 +29,7 @@ sequenceDiagram
     participant API
     participant DB as PostgreSQL
 
-    User->>API: Login or OAuth sign-in
+    User->>API: Verified Keycloak SSO exchange, local login, or OAuth sign-in
     API->>DB: Verify/create user and store refresh token
     API-->>User: Access token + refresh token
     User->>API: API request with Authorization bearer token
@@ -141,12 +143,17 @@ Password reset tokens are hashed before storage and expire after one hour. The f
 
 In local or misconfigured email environments, the current email service path can fall back to logging the reset URL when SMTP delivery fails. That is useful for development, but production deployments should configure SMTP correctly and treat reset-link logging as sensitive operational output.
 
+## Software Supply Chain and Code Quality
+
+Required `01-build` and `03-package` are separate from optional `02-test`. Optional manual `01-e2e`, allowed-to-fail `02-quality`, and independent `03-security` are verify jobs; standard mode leaves quality/security manual and full mode runs them automatically. Trivy scans dependencies, IaC, and secrets, retains JSON/SARIF findings for seven days, and exits nonzero on high/critical findings without becoming a deployment gate. `01-release` depends only on the required build path.
+
+The manual release-publication job publishes immutable, checksummed application archives to GitLab's Generic Package Registry and immutable container tags to its Container Registry. Deployment starts only after publication passes. Daemonless Kaniko reuses 30-day registry-backed image layers without privileged runner access.
+
 ## Security Backlog
 
 Important remaining work includes:
 
 - Redis-backed distributed rate limiting for multi-replica deployments
-- dependency vulnerability scanning in CI
 - structured security audit logging for sensitive actions
 - backup and disaster recovery implementation
 
@@ -160,3 +167,29 @@ Important remaining work includes:
 - Does it send journal content to a third party?
 - Does it require a new secret or secret-rotation story?
 - Does it require an ADR because it changes security or privacy assumptions?
+
+### Runtime dependency maintenance
+
+Server images pin Node 22.23.2 on Alpine, install security updates and omit
+npm and Yarn from the final runtime. The server, worker and production
+migration job run Node directly; the migration command is
+`node dist/scripts/migrate.js`. Keep package-manager commands in build and
+local development workflows. The lockfile pins `qs` 6.16.0 to address
+CVE-2026-82417 and CVE-2026-82562. Backup uploaders use a scanned, digest-pinned
+AWS CLI 2 image instead of the obsolete 2.15.57 image. Validate changes with
+the backend tests, a production image build, and image-level Trivy scans.
+Both web Dockerfiles also apply Alpine security updates to the pinned
+unprivileged NGINX image, then restore UID/GID 101 for runtime. This covers
+OS-package findings even when the operator labels their severity as Unknown.
+
+### Container configuration hardening
+
+The application workloads run with UID and GID 10001, above the host system-user
+range, with the existing read-only filesystem, dropped capabilities and runtime
+seccomp profile. Writable application data and temporary files use explicit
+volumes.
+
+Bare-metal database helper jobs consume the patched PostgreSQL 18 client image
+maintained by `bm-cluster`. The platform supplies `platform-registry-auth`, a
+Vault-backed credential restricted to pulling platform images. The application
+repository owns the helper job configuration and immutable image digest.

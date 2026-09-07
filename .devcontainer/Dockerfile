@@ -4,7 +4,7 @@ FROM node:22
 WORKDIR /workspace
 
 # Install basic tools used by the local workflow and mask tasks.
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     wget \
     unzip \
@@ -25,6 +25,10 @@ RUN set -eu; \
     else \
         echo "mask has no prebuilt binary for ${arch}; use the documented npm commands instead"; \
     fi
+
+RUN chown -R node:node /workspace
+
+USER node
 
 # Keep the container running
 CMD ["tail", "-f", "/dev/null"]

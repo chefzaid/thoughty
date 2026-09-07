@@ -41,6 +41,13 @@ coverage/
 .nyc_output/
 test-results/
 
+# CI-generated reports and release staging
+quality-reports/
+package-output/
+coverage-policy-junit.xml
+coverage-policy.env
+release.env
+
 # Temporary files
 tmp/
 temp/

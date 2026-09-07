@@ -94,7 +94,7 @@ export class EntriesQueryService {
     if (entryIds.length > 0) {
       qb.orderBy('semantic_rank', 'ASC');
     } else {
-      qb.orderBy('e.is_pinned', 'DESC').addOrderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
+      qb.orderBy('e.isPinned', 'DESC').addOrderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
     }
     qb.skip((page - 1) * limit).take(limit);
 

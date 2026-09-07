@@ -2,11 +2,20 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: thoughty-web
-  namespace: apps
+  namespace: thoughty
   annotations:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   template:
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       imagePullSecrets:
         - name: thoughty-registry-auth

@@ -40,14 +40,16 @@ export default defineConfig({
         '*.config.ts',
         'src/types/',
       ],
-      thresholds: {
-        global: {
-          branches: 80,
-          functions: 70,
-          lines: 90,
-          statements: 80,
-        },
-      },
+      thresholds: process.env.COVERAGE_POLICY_REPORT_ONLY === 'true'
+        ? undefined
+        : {
+            global: {
+              branches: 80,
+              functions: 70,
+              lines: 90,
+              statements: 80,
+            },
+          },
     },
   },
 });

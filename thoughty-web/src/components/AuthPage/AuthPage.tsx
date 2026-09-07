@@ -6,6 +6,7 @@ import AuthFormContent from './AuthFormContent';
 import AuthStatusMessages from './AuthStatusMessages';
 import AuthAuxiliary from './AuthAuxiliary';
 import TwoFactorLoginForm from './TwoFactorLoginForm';
+import { startKeycloakSso } from '../../utils/keycloakSso';
 import './AuthPage.css';
 
 interface AuthPageProps {
@@ -290,6 +291,8 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
           showForgotPassword={showForgotPassword}
           googleClientId={googleClientId}
           loading={loading}
+          keycloakSsoEnabled={import.meta.env.PROD}
+          handleKeycloakSignIn={() => startKeycloakSso()}
           handleGoogleSignIn={handleGoogleSignIn}
           isLogin={isLogin}
           switchMode={switchMode}

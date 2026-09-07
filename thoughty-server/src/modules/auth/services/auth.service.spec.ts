@@ -10,6 +10,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
+import { generateKeyPairSync } from 'node:crypto';
 import { AuthService } from './auth.service';
 import { EmailService } from './email.service';
 import { TwoFactorService } from './two-factor.service';
@@ -72,6 +73,8 @@ describe('AuthService', () => {
     jwtService = {
       sign: jest.fn().mockReturnValue('mock_token'),
       verify: jest.fn(),
+      verifyAsync: jest.fn(),
+      decode: jest.fn(),
     };
 
     emailService = {
@@ -374,6 +377,181 @@ describe('AuthService', () => {
           color: '#E76F51',
         }),
       );
+    });
+  });
+
+  describe('keycloakLogin', () => {
+    const signingKey = () => {
+      const { publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+      return { ...publicKey.export({ format: 'jwk' }), kid: 'key-1', use: 'sig' };
+    };
+
+    const mockVerifiedIdentity = (claims: Record<string, unknown> = {}) => {
+      jwtService.decode.mockReturnValue({ header: { kid: 'key-1' } });
+      jwtService.verifyAsync.mockResolvedValue({
+        sub: 'keycloak-user-id',
+        email: 'test@example.com',
+        email_verified: true,
+        preferred_username: 'testuser',
+        ...claims,
+      });
+      jest.spyOn(service as any, 'getKeycloakSigningKey').mockResolvedValue(signingKey());
+    };
+
+    it('verifies and links a Keycloak identity before creating a local session', async () => {
+      mockVerifiedIdentity();
+      userRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ ...mockUser });
+      userRepository.save.mockImplementation((user: any) => Promise.resolve(user));
+      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
+
+      const result = await service.keycloakLogin('signed-keycloak-token');
+
+      expect(jwtService.verifyAsync).toHaveBeenCalledWith(
+        'signed-keycloak-token',
+        expect.objectContaining({
+          algorithms: ['RS256'],
+          audience: 'test-secret',
+          issuer: 'test-secret',
+          secret: expect.stringContaining('BEGIN PUBLIC KEY'),
+        }),
+      );
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authProvider: 'keycloak',
+          providerId: 'keycloak-user-id',
+          emailVerified: true,
+        }),
+      );
+      expect(result.accessToken).toBe('mock_token');
+    });
+
+    it('overrides the application HMAC secret when verifying a real RS256 token', async () => {
+      const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+      const token = new JwtService().sign(
+        {
+          sub: 'keycloak-user-id',
+          email: 'test@example.com',
+          email_verified: true,
+          preferred_username: 'testuser',
+        },
+        {
+          privateKey: privateKey.export({ format: 'pem', type: 'pkcs8' }),
+          algorithm: 'RS256',
+          keyid: 'key-1',
+          issuer: 'test-secret',
+          audience: 'test-secret',
+          expiresIn: '5m',
+        },
+      );
+      (service as any).jwtService = new JwtService({ secret: 'application-hmac-secret' });
+      jest.spyOn(service as any, 'getKeycloakSigningKey').mockResolvedValue({
+        ...publicKey.export({ format: 'jwk' }),
+        kid: 'key-1',
+        use: 'sig',
+      });
+      userRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ ...mockUser });
+      userRepository.save.mockImplementation((user: any) => Promise.resolve(user));
+      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
+
+      const result = await service.keycloakLogin(token);
+
+      expect(result.user.email).toBe('test@example.com');
+      expect(result.accessToken).toBeTruthy();
+    });
+
+    it('rejects an SSO exchange without an ingress access token', async () => {
+      await expect(service.keycloakLogin()).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('creates a local profile and default diary for a new Keycloak identity', async () => {
+      mockVerifiedIdentity({ email: 'ZAID@swirlit.dev', preferred_username: 'z'.repeat(60) });
+      userRepository.findOne.mockResolvedValue(null);
+      userRepository.save.mockImplementation((user: any) =>
+        Promise.resolve({ ...user, id: 7, deletedAt: null, twoFactorEnabled: false }),
+      );
+      diaryRepository.save.mockResolvedValue({ id: 4 });
+      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
+
+      const result = await service.keycloakLogin('signed-keycloak-token');
+
+      expect(result.user.isNewUser).toBe(true);
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'zaid@swirlit.dev',
+          username: 'z'.repeat(50),
+          authProvider: 'keycloak',
+        }),
+      );
+      expect(diaryRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 7, name: 'Thoughts', isDefault: true }),
+      );
+    });
+
+    it('rejects a Keycloak identity with incomplete verified claims', async () => {
+      mockVerifiedIdentity({ email_verified: false });
+
+      await expect(service.keycloakLogin('signed-keycloak-token')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('rejects a deleted account linked by Keycloak subject', async () => {
+      mockVerifiedIdentity();
+      userRepository.findOne.mockResolvedValue({ ...mockUser, deletedAt: new Date() });
+
+      await expect(service.keycloakLogin('signed-keycloak-token')).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('rejects tokens without a key id or with a failed signature', async () => {
+      jwtService.decode.mockReturnValueOnce({ header: {} });
+      await expect(service.keycloakLogin('unsigned-token')).rejects.toThrow(
+        'Keycloak access token has no signing key',
+      );
+
+      mockVerifiedIdentity();
+      jwtService.verifyAsync.mockRejectedValueOnce(new Error('bad signature'));
+      await expect(service.keycloakLogin('bad-token')).rejects.toThrow(
+        'Invalid Keycloak access token',
+      );
+    });
+
+    it('uses cached keys and refreshes after key rotation', async () => {
+      const cachedKey = { kid: 'cached', use: 'sig', kty: 'RSA' };
+      const rotatedKey = { kid: 'rotated', use: 'sig', kty: 'RSA' };
+      (service as any).keycloakKeys = {
+        expiresAt: Date.now() + 60_000,
+        keys: [cachedKey],
+      };
+      await expect((service as any).getKeycloakSigningKey('cached')).resolves.toBe(cachedKey);
+
+      jest.spyOn(global, 'fetch').mockResolvedValue({
+        ok: true,
+        json: async () => ({ keys: [rotatedKey] }),
+      } as Response);
+      await expect((service as any).getKeycloakSigningKey('rotated')).resolves.toEqual(rotatedKey);
+    });
+
+    it('rejects failed, empty, and keyless JWKS responses', async () => {
+      const fetchSpy = jest.spyOn(global, 'fetch');
+      fetchSpy.mockResolvedValueOnce({ ok: false, status: 503 } as Response);
+      await expect((service as any).refreshKeycloakKeys()).rejects.toThrow(
+        'Keycloak JWKS request failed with 503',
+      );
+
+      fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({ keys: [] }) } as Response);
+      await expect((service as any).refreshKeycloakKeys()).rejects.toThrow(
+        'Keycloak JWKS response has no keys',
+      );
+
+      fetchSpy.mockResolvedValue({ ok: true, json: async () => ({ keys: [] }) } as Response);
+      (service as any).keycloakKeys = null;
+      await expect((service as any).getKeycloakSigningKey('missing')).rejects.toThrow();
     });
   });
 

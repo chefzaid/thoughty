@@ -113,7 +113,7 @@ describe('EntriesQueryService', () => {
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 8 });
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.is_favorite = true');
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.is_archived = false');
-    expect(entriesQb.orderBy).toHaveBeenCalledWith('e.is_pinned', 'DESC');
+    expect(entriesQb.orderBy).toHaveBeenCalledWith('e.isPinned', 'DESC');
     expect(entriesQb.addOrderBy).toHaveBeenCalledWith('e.date', 'DESC');
     expect(entriesQb.addOrderBy).toHaveBeenCalledWith('e.index', 'ASC');
     expect(entriesQb.skip).toHaveBeenCalledWith(5);

@@ -4,7 +4,7 @@ Thoughty targets the application-neutral platform managed by [`bm-cluster`](http
 
 ## Production Desired State
 
-Argo CD reads `infra/k8s/overlays/bm-cluster` from `root/thoughty` in the cluster's GitLab instance and deploys it to `apps`.
+Argo CD reads `infra/k8s/overlays/bm-cluster` from `swirlit/thoughty` in the cluster's GitLab instance and deploys it to `apps`.
 
 The aggregate overlay includes:
 
@@ -24,7 +24,7 @@ kubectl kustomize infra/k8s/overlays/bm-cluster >/dev/null
 kubectl apply --dry-run=client --validate=false \
   -k infra/k8s/overlays/bm-cluster >/dev/null
 kubectl apply --dry-run=client --validate=false \
-  -f infra/argocd/thoughty-app.yaml >/dev/null
+  -f infra/argocd/application.yaml >/dev/null
 ```
 
 ## One-Time GitLab Bootstrap
@@ -34,32 +34,40 @@ Prerequisites:
 - the generic instance runner is online with tag `bm-cluster`
 - GitLab, Argo CD, Vault, External Secrets, and the registry are healthy
 - `.gitlab-ci.yml` is present in the repository's current commit
-- `kubectl`, `curl`, `git`, `jq`, `openssl`, and `sudo` are installed on the control-plane host
-- `GITLAB_ADMIN_TOKEN` can manage `root/thoughty`
+- `kubectl`, `curl`, `git`, `jq`, `openssl`, `python3`, `libsodium`, and `sudo` are installed on the control-plane host
+- `GITLAB_ADMIN_TOKEN` can manage `swirlit/thoughty`
+- `GITHUB_ADMIN_TOKEN` can manage Actions secrets and dispatch workflows for `chefzaid/thoughty`
 
 Run:
 
 ```bash
-GITLAB_ADMIN_TOKEN=<api-token> ./infra/scripts/configure-gitlab.sh
+GITLAB_ADMIN_TOKEN=<gitlab-token> \
+GITHUB_ADMIN_TOKEN=<github-token> \
+  ./infra/scripts/configure-gitlab.sh
 ```
 
-The script creates or updates the GitLab project, enables the instance runner and CI job-token pushes, creates a read-only registry deploy token, writes app-specific values under `apps/thoughty/*` in Vault, and applies `infra/argocd/thoughty-app.yaml`. It does not add Thoughty configuration to `bm-cluster`.
+The script creates or updates the GitLab project, enables the instance runner and CI job-token pushes, configures bidirectional GitHub/GitLab push synchronization, creates a read-only registry deploy token, writes app-specific values under `apps/thoughty/*` in Vault, and applies `infra/argocd/application.yaml`. It does not add Thoughty configuration to `bm-cluster`.
 
 Populate optional storage, provider, and SMTP secrets after bootstrap. The production backup CronJob is suspended by default; configure `apps/thoughty/backup` and the `POSTGRES_BACKUP_*` ConfigMap values before enabling its schedule.
 
 ## GitLab CI Delivery
 
-Merge-request and branch pipelines validate manifests and run server, frontend, coverage, audit, build, and browser checks. A successful default-branch pipeline then:
+The pipeline graph shows ordered build, test, package, E2E, quality, security, release, deploy, and version jobs. Tests are non-blocking and E2E is optional/manual. Standard mode leaves quality and Trivy security manual; `PIPELINE_MODE=full` runs both independent, non-blocking reports automatically and automates release and deploy while E2E remains manual. `03-security` is numbered after `02-quality` but has no dependency on it.
 
-1. publishes immutable server and web images with Kaniko;
-2. refuses to deploy if `main` advanced during the pipeline;
-3. updates the two Kustomize image tags;
-4. pushes a `deploy: <version> [skip ci]` desired-state commit using `CI_JOB_TOKEN`;
-5. applies and refreshes the Thoughty Argo CD `Application`;
-6. waits for that exact commit to become `Synced` and `Healthy`; and
-7. checks the internal API and web endpoints.
+The release job:
 
-Deployments are serialized through the `thoughty-production` resource group. Argo CD, not CI, creates, prunes, and self-heals workloads.
+1. consumes the successful server/web build artifacts;
+2. publishes immutable server/web archives and checksums to the Generic Package Registry;
+3. publishes immutable server and web images with daemonless Kaniko and 30-day registry-backed layer caches;
+4. refuses to deploy if `main` advanced during the pipeline;
+5. commits the semantic release version and two Kustomize image tags, then creates its annotated Git tag;
+6. prepares and commits the next minor version with patch reset to zero;
+7. creates a GitLab Release linked to both packages;
+8. applies and refreshes the Thoughty Argo CD `Application`;
+9. waits for that exact commit to become `Synced` and `Healthy`; and
+10. checks the internal API and web endpoints.
+
+Deployments are serialized through the `thoughty-production` resource group. Argo CD, not CI, creates, prunes, and self-heals workloads. `infra/scripts/configure-gitlab.sh` also reconciles the GitLab project controls, CI badges, and the repository's `swirlit:thoughty` SonarQube project.
 
 ## Post-Deployment Checks
 

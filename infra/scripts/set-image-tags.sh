@@ -16,5 +16,5 @@ esac
 
 script_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 kustomization="$script_dir/../k8s/overlays/bm-cluster/kustomization.yaml"
-sed -i "/name: registry.swirlit.dev\/root\/thoughty\/thoughty-server/{n;s/newTag: .*/newTag: $tag/;}" "$kustomization"
-sed -i "/name: registry.swirlit.dev\/root\/thoughty\/thoughty-web/{n;s/newTag: .*/newTag: $tag/;}" "$kustomization"
+sed -i "/newName: registry.swirlit.dev\/swirlit\/thoughty\/thoughty-server/{n;s/newTag: .*/newTag: $tag/;}" "$kustomization"
+sed -i "/newName: registry.swirlit.dev\/swirlit\/thoughty\/thoughty-web/{n;s/newTag: .*/newTag: $tag/;}" "$kustomization"

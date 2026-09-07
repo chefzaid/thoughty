@@ -12,17 +12,33 @@ spec:
     spec:
       restartPolicy: OnFailure
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
       imagePullSecrets:
         - name: thoughty-registry-auth
       containers:
         - name: migrate
           image: thoughty-server:latest
-          command: ["npm", "run", "db:migrate:dist"]
+          command: ["node", "dist/scripts/migrate.js"]
           envFrom:
             - configMapRef:
                 name: thoughty-config
             - secretRef:
                 name: thoughty-database
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           resources:
             requests:
               cpu: 50m
@@ -30,3 +46,6 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+      volumes:
+        - name: tmp
+          emptyDir: {}

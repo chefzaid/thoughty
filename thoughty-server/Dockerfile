@@ -1,27 +1,31 @@
 # Stage 1: Install dependencies
-FROM node:22-alpine AS deps
+FROM docker.io/library/node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --ignore-scripts
 
 # Stage 2: Build
-FROM node:22-alpine AS build
+FROM docker.io/library/node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS build
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
 # Stage 3: Install runtime-only dependencies
-FROM node:22-alpine AS production-deps
+FROM docker.io/library/node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS production-deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 # Stage 4: Production
-FROM node:22-alpine AS production
+FROM docker.io/library/node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS production
 WORKDIR /app
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Package managers are build tools; the runtime starts Node directly.
+RUN apk upgrade --no-cache \
+    && rm -rf /usr/local/lib/node_modules/npm /opt/yarn-* \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/yarn /usr/local/bin/yarnpkg \
+    && addgroup -S appgroup && adduser -S appuser -G appgroup
 
 COPY --from=production-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist

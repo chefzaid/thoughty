@@ -1,9 +1,11 @@
 import { Controller, Get, Header } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ApiOperation, ApiProduces, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/common';
 import { MetricsService } from './metrics.service';
 
 @ApiTags('Metrics')
+@SkipThrottle()
 @Controller('metrics')
 export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}

@@ -1,0 +1,170 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: thoughty
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: postgres
+      annotations:
+        vault.hashicorp.com/agent-inject: "true"
+        vault.hashicorp.com/role: "thoughty-postgres"
+        vault.hashicorp.com/agent-inject-secret-database: "secret/data/thoughty/database"
+        vault.hashicorp.com/agent-inject-secret-backup: "secret/data/thoughty/backup"
+        vault.hashicorp.com/agent-inject-template-database: |
+          {{- with secret "secret/data/thoughty/database" -}}
+          export POSTGRES_USER="{{ .Data.data.POSTGRES_USER }}"
+          export POSTGRES_PASSWORD="{{ .Data.data.POSTGRES_PASSWORD }}"
+          export POSTGRES_DB="{{ .Data.data.POSTGRES_DB }}"
+          {{- end }}
+        vault.hashicorp.com/agent-inject-template-backup: |
+          {{- with secret "secret/data/thoughty/backup" -}}
+          export AWS_ACCESS_KEY_ID="{{ .Data.data.POSTGRES_BACKUP_ACCESS_KEY }}"
+          export AWS_SECRET_ACCESS_KEY="{{ .Data.data.POSTGRES_BACKUP_SECRET_KEY }}"
+          {{- end }}
+    spec:
+      serviceAccountName: thoughty-postgres
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 70
+        runAsGroup: 70
+        fsGroup: 70
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          envFrom:
+            - configMapRef:
+                name: thoughty-config
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              . /vault/secrets/database &&
+              docker-entrypoint.sh postgres \
+                -c wal_level=replica \
+                -c archive_mode=on \
+                -c archive_timeout=900 \
+                -c archive_command='mkdir -p /var/lib/postgresql/wal-archive && test ! -f /var/lib/postgresql/wal-archive/%f && cp %p /var/lib/postgresql/wal-archive/%f'
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: postgres-wal-archive
+              mountPath: /var/lib/postgresql/wal-archive
+            - name: postgres-run
+              mountPath: /var/run/postgresql
+            - name: postgres-tmp
+              mountPath: /tmp
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        - name: postgres-wal-archive-uploader
+          image: amazon/aws-cli@sha256:b6aeb95d19d7f5a8cae4eb814cb16739b6b2a4f2f46f427ada6a8c9a20d9881d
+          envFrom:
+            - configMapRef:
+                name: thoughty-config
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              . /vault/secrets/backup
+              while true; do
+                for file in /wal-archive/*; do
+                  [ -f "$file" ] || continue
+                  aws --endpoint-url "$POSTGRES_BACKUP_ENDPOINT" \
+                    --region "$POSTGRES_BACKUP_REGION" \
+                    s3 cp "$file" "s3://${POSTGRES_BACKUP_BUCKET}/${POSTGRES_BACKUP_WAL_PREFIX}/$(basename "$file")" \
+                    --only-show-errors &&
+                    rm -f "$file"
+                done
+                sleep 60
+              done
+          volumeMounts:
+            - name: postgres-wal-archive
+              mountPath: /wal-archive
+            - name: uploader-tmp
+              mountPath: /tmp
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 99
+            runAsGroup: 70
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+      volumes:
+        - name: postgres-data
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+        - name: postgres-wal-archive
+          emptyDir: {}
+        - name: postgres-run
+          emptyDir: {}
+        - name: postgres-tmp
+          emptyDir: {}
+        - name: uploader-tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: thoughty
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+  clusterIP: None
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: thoughty
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

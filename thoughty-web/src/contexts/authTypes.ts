@@ -6,7 +6,7 @@ export interface User {
   fullName?: string;
   avatarUrl?: string;
   isNewUser?: boolean;
-  authProvider?: 'local' | 'google';
+  authProvider?: 'local' | 'google' | 'keycloak';
   emailVerified?: boolean;
   twoFactorEnabled?: boolean;
 }
