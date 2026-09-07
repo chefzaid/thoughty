@@ -181,3 +181,15 @@ the backend tests, a production image build, and image-level Trivy scans.
 Both web Dockerfiles also apply Alpine security updates to the pinned
 unprivileged NGINX image, then restore UID/GID 101 for runtime. This covers
 OS-package findings even when the operator labels their severity as Unknown.
+
+### Container configuration hardening
+
+The application workloads run with UID and GID 10001, above the host system-user
+range, with the existing read-only filesystem, dropped capabilities and runtime
+seccomp profile. Writable application data and temporary files use explicit
+volumes.
+
+Bare-metal database helper jobs consume the patched PostgreSQL 18 client image
+maintained by `bm-cluster`. The platform supplies `platform-registry-auth`, a
+Vault-backed credential restricted to pulling platform images. The application
+repository owns the helper job configuration and immutable image digest.
