@@ -20,6 +20,9 @@
   path: /metadata/annotations/gethomepage.dev~1name
   value: Thoughty
 - op: add
+  path: /metadata/annotations/gethomepage.dev~1weight
+  value: "30"
+- op: add
   path: /metadata/annotations/gethomepage.dev~1pod-selector
   value: app=thoughty-web
 - op: replace
