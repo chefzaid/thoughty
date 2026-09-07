@@ -178,3 +178,6 @@ local development workflows. The lockfile pins `qs` 6.16.0 to address
 CVE-2026-82417 and CVE-2026-82562. Backup uploaders use a scanned, digest-pinned
 AWS CLI 2 image instead of the obsolete 2.15.57 image. Validate changes with
 the backend tests, a production image build, and image-level Trivy scans.
+Both web Dockerfiles also apply Alpine security updates to the pinned
+unprivileged NGINX image, then restore UID/GID 101 for runtime. This covers
+OS-package findings even when the operator labels their severity as Unknown.
