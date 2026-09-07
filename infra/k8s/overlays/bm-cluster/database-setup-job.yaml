@@ -12,6 +12,8 @@ spec:
     spec:
       restartPolicy: OnFailure
       automountServiceAccountToken: false
+      imagePullSecrets:
+        - name: platform-registry-auth
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
