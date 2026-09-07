@@ -109,7 +109,7 @@ Manual migration command:
 
 ```bash
 kubectl exec deployment/thoughty-server -n thoughty -- /bin/sh -c \
-  'source /vault/secrets/database && source /vault/secrets/app && npm run db:migrate:dist'
+  'source /vault/secrets/database && source /vault/secrets/app && node dist/scripts/migrate.js'
 ```
 
 If migrations fail:

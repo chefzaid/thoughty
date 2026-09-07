@@ -25,7 +25,7 @@ spec:
       containers:
         - name: migrate
           image: thoughty-server:latest
-          command: ["npm", "run", "db:migrate:dist"]
+          command: ["node", "dist/scripts/migrate.js"]
           envFrom:
             - configMapRef:
                 name: thoughty-config

@@ -167,3 +167,14 @@ Important remaining work includes:
 - Does it send journal content to a third party?
 - Does it require a new secret or secret-rotation story?
 - Does it require an ADR because it changes security or privacy assumptions?
+
+### Runtime dependency maintenance
+
+Server images pin Node 22.23.2 on Alpine, install security updates and omit
+npm and Yarn from the final runtime. The server, worker and production
+migration job run Node directly; the migration command is
+`node dist/scripts/migrate.js`. Keep package-manager commands in build and
+local development workflows. The lockfile pins `qs` 6.16.0 to address
+CVE-2026-82417 and CVE-2026-82562. Backup uploaders use a scanned, digest-pinned
+AWS CLI 2 image instead of the obsolete 2.15.57 image. Validate changes with
+the backend tests, a production image build, and image-level Trivy scans.
