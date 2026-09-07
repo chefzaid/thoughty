@@ -372,7 +372,7 @@ Before a larger merge, run the broader suite that matches the scope of the chang
 - Playwright uses the bundled `chromium` channel locally and in CI.
 - In CI, Playwright retries failed tests twice.
 - `01-build` publishes compiled outputs, optional `02-test` publishes JUnit/coverage, and required `03-package` validates images.
-- Optional manual `01-e2e`, `02-quality`, and `03-security` are independent verify jobs. Quality and security are manual in standard mode and automatic but non-blocking in full mode; Trivy retains repository vulnerability, IaC, and secret findings as JSON and SARIF artifacts without depending on quality.
+- Optional manual `01-e2e`, non-blocking `02-quality`, and `03-security` are independent verify jobs. Default-branch quality is automatic; security is manual in standard mode and automatic in full mode; Trivy retains repository vulnerability, IaC, and secret findings as JSON and SARIF artifacts without depending on quality.
 - `01-release` publishes only after the required build path; `02-deploy` runs only after release passes.
 - A `PIPELINE_MODE=full` pipeline on `main` adds quality and security reporting and executes build, release, and deploy; E2E remains manual.
 - CI reports and build outputs are retained for seven days; immutable release archives are kept in GitLab's Generic Package Registry.

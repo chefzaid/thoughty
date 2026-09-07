@@ -63,7 +63,7 @@ The production overlay obtains secrets through External Secrets:
 The repository exposes explicit delivery jobs:
 
 - `01-build → 02-test (optional) → 03-package` is the automatic build path.
-- `01-e2e` is optional/manual; `02-quality` consumes test reports and `03-security` independently scans the repository, manually in standard mode and automatically in full mode. None gates release.
+- `01-e2e` is optional/manual; `02-quality` consumes test reports and `03-security` independently scans the repository, with quality automatic on the default branch and security automatic in full mode. None gates release.
 - `01-release → 02-deploy` requires the successful build path and a successful release.
 - `set-major-version` independently prepares `<major>.0.0` from the `NEW_MAJOR_VERSION` pipeline variable.
 
@@ -111,3 +111,14 @@ Production rollback is a revert or a new image-tag change in Git. Argo CD self-h
 - [Server Deployment](./server-deployment.md)
 - [Development Guide](./development.md)
 - [Features](./features.md)
+
+## Automatic Sonar coverage
+
+The platform discovers this repository through its Argo CD workloads in `apps`.
+`.sonar-auto.json` declares the CI contract. `SONAR_SCAN_ONLY=true` on the default
+branch runs only compilation, tests/coverage and `02-quality`; it excludes image
+packaging, browser/security jobs, release, deployment and version changes.
+The platform provisions the Sonar project and masked analysis token, and requests
+a scan when analysis is missing or more than 24 hours old. Normal default-branch
+pipelines also run quality automatically. Submission failures fail the quality
+job visibly; quality findings remain independent of deployment permission.
