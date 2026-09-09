@@ -28,25 +28,13 @@ describe('NavMenu', () => {
     expect(screen.getByText('Thoughty')).toBeInTheDocument();
   });
 
-  it('renders journal navigation item', () => {
+  it.each(['journal', 'stats', 'tags', 'importExport'])('renders %s navigation item', (text) => {
     render(<NavMenu {...defaultProps} />);
-    expect(screen.getByText('journal')).toBeInTheDocument();
+    expect(screen.getByText(text)).toBeInTheDocument();
   });
 
-  it('renders stats navigation item', () => {
-    render(<NavMenu {...defaultProps} />);
-    expect(screen.getByText('stats')).toBeInTheDocument();
-  });
 
-  it('renders tags navigation item', () => {
-    render(<NavMenu {...defaultProps} />);
-    expect(screen.getByText('tags')).toBeInTheDocument();
-  });
 
-  it('renders import/export navigation item', () => {
-    render(<NavMenu {...defaultProps} />);
-    expect(screen.getByText('importExport')).toBeInTheDocument();
-  });
 
   it('highlights active navigation item', () => {
     render(<NavMenu {...defaultProps} currentView="journal" />);

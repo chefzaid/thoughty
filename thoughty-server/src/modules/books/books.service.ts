@@ -188,14 +188,7 @@ export class BooksService {
   }
 
   private async hydrateBookImages(book: Book): Promise<void> {
-    const uniqueImages = new Map<number, EmbeddedBookImage>();
-    for (const chapter of book.chapters) {
-      for (const entry of chapter.entries) {
-        for (const image of entry.images ?? []) {
-          uniqueImages.set(image.id, image);
-        }
-      }
-    }
+    const uniqueImages = collectUniqueBookImages(book);
 
     const candidates: EmbeddedBookImage[] = [];
     let reservedBytes = 0;
@@ -319,4 +312,16 @@ export class BooksService {
       },
     };
   }
+}
+
+function collectUniqueBookImages(book: Book): Map<number, EmbeddedBookImage> {
+    const uniqueImages = new Map<number, EmbeddedBookImage>();
+    for (const chapter of book.chapters) {
+      for (const entry of chapter.entries) {
+        for (const image of entry.images ?? []) {
+          uniqueImages.set(image.id, image);
+        }
+      }
+    }
+    return uniqueImages;
 }

@@ -68,7 +68,7 @@ export function bookImageExtension(image: EmbeddedBookImage): string {
 }
 
 export function escapeBookImageMarkdownText(text: string): string {
-  return text.replaceAll(/([\\`*_[\]{}()#+\-.!<>])/g, '\\$1');
+  return text.replaceAll(/([\\`*_[\]{}()#+\-.!<>])/g, String.raw`\$1`);
 }
 
 export function isSafeEmbeddedBookImage(

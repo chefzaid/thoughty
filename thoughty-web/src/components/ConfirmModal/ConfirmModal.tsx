@@ -49,7 +49,7 @@ const ConfirmModal = ({
         </h3>
         <p className={`mb-6 ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>{message}</p>
         <div className="flex justify-end gap-3">
-          <button
+          <button type="button"
             onClick={onClose}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               isLight
@@ -59,7 +59,7 @@ const ConfirmModal = ({
           >
             {t ? t('cancel') : 'Cancel'}
           </button>
-          <button
+          <button type="button"
             onClick={onConfirm}
             className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
           >

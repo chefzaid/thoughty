@@ -49,77 +49,33 @@ describe('AppShell public flows', () => {
     });
   });
 
-  it('loads the about page from /about', async () => {
-    globalThis.history.replaceState({}, '', '/about');
+  it.each([
+    ['/about', 'A quieter home for the thoughts worth keeping.', 'About Thoughty'],
+    ['/privacy', 'Privacy Policy', 'Private by design'],
+    ['/terms', 'Terms of Service', 'Using Thoughty'],
+  ])('loads the public page %s', async (path, heading, text) => {
+    globalThis.history.replaceState({}, '', path);
     setMockAuthState({ user: null, isAuthenticated: false });
-
     renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'A quieter home for the thoughts worth keeping.' })).toBeInTheDocument();
-      expect(screen.getByText('About Thoughty')).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(screen.getByText(text)).toBeInTheDocument();
   });
 
-  it('loads the privacy policy from /privacy', async () => {
-    globalThis.history.replaceState({}, '', '/privacy');
+
+
+  it.each([
+    ['/contact', 'Contact and support', 'How to guides'],
+    ['/feedback', 'Shape what Thoughty becomes next.', 'Ideas from the community'],
+    ['/blog', 'Updates, tips, and journaling inspiration.', 'From the journal desk'],
+  ])('loads the community page %s', async (path, heading, sectionHeading) => {
+    globalThis.history.replaceState({}, '', path);
     setMockAuthState({ user: null, isAuthenticated: false });
-
     renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Privacy Policy' })).toBeInTheDocument();
-      expect(screen.getByText('Private by design')).toBeInTheDocument();
-    });
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: sectionHeading })).toBeInTheDocument();
   });
 
-  it('loads the terms of service from /terms', async () => {
-    globalThis.history.replaceState({}, '', '/terms');
-    setMockAuthState({ user: null, isAuthenticated: false });
 
-    renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Terms of Service' })).toBeInTheDocument();
-      expect(screen.getByText('Using Thoughty')).toBeInTheDocument();
-    });
-  });
-
-  it('loads the contact and support page from /contact', async () => {
-    globalThis.history.replaceState({}, '', '/contact');
-    setMockAuthState({ user: null, isAuthenticated: false });
-
-    renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Contact and support' })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: 'How to guides' })).toBeInTheDocument();
-    });
-  });
-
-  it('loads the feedback page from /feedback', async () => {
-    globalThis.history.replaceState({}, '', '/feedback');
-    setMockAuthState({ user: null, isAuthenticated: false });
-
-    renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Shape what Thoughty becomes next.' })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: 'Ideas from the community' })).toBeInTheDocument();
-    });
-  });
-
-  it('loads the blog page from /blog', async () => {
-    globalThis.history.replaceState({}, '', '/blog');
-    setMockAuthState({ user: null, isAuthenticated: false });
-
-    renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Updates, tips, and journaling inspiration.' })).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: 'From the journal desk' })).toBeInTheDocument();
-    });
-  });
 
   it('loads the public email verification route', async () => {
     const verifyEmail = vi.fn().mockResolvedValue({ success: true });

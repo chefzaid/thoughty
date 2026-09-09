@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, type ComponentProps, type FocusEvent 
 import DatePicker from 'react-datepicker';
 import { formatTypedDateValue, parseTypedDateValue } from './typedDateValue';
 
-type DatePickerPlacement = ComponentProps<typeof DatePicker>['popperPlacement'];
+type DatePickerPlacement = NonNullable<ComponentProps<typeof DatePicker>['popperPlacement']>;
 type DatePickerRawChangeEvent = Parameters<NonNullable<ComponentProps<typeof DatePicker>['onChangeRaw']>>[0];
 
 interface TypedDatePickerProps {

@@ -87,7 +87,7 @@ export class StatsService {
         .getRawMany(),
       createQb()
         .select(
-          "COALESCE(SUM(CASE WHEN BTRIM(e.content) = '' THEN 0 ELSE CARDINALITY(REGEXP_SPLIT_TO_ARRAY(BTRIM(e.content), '\\s+')) END), 0)",
+          String.raw`COALESCE(SUM(CASE WHEN BTRIM(e.content) = '' THEN 0 ELSE CARDINALITY(REGEXP_SPLIT_TO_ARRAY(BTRIM(e.content), '\s+')) END), 0)`,
           'totalWords',
         )
         .getRawOne(),

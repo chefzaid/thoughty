@@ -96,7 +96,7 @@ describe('TagPicker', () => {
             render(
                 <div>
                     <TagPicker {...defaultProps} />
-                    <button>Outside</button>
+                    <button type="button">Outside</button>
                 </div>
             );
 

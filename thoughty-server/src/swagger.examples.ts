@@ -99,14 +99,7 @@ function buildExample(
   }
 
   if (schema.$ref) {
-    const refName = schema.$ref.split('/').at(-1) ?? propertyName;
-    if (seen.has(refName)) {
-      return inferScalarExample(refName);
-    }
-
-    const nextSeen = new Set(seen);
-    nextSeen.add(refName);
-    return buildExample(schemas[refName], schemas, refName, nextSeen);
+    return buildReferenceExample(schema.$ref, schemas, propertyName, seen);
   }
 
   const composed = schema.allOf ?? schema.anyOf ?? schema.oneOf;
@@ -128,18 +121,7 @@ function buildExample(
   }
 
   if (schema.type === 'object' || schema.properties) {
-    const properties = schema.properties ?? {};
-    if (Object.keys(properties).length > 0) {
-      return Object.fromEntries(
-        Object.entries(properties).map(([name, propertySchema]) => [name, buildExample(propertySchema, schemas, name, seen)]),
-      );
-    }
-
-    if (schema.additionalProperties && schema.additionalProperties !== true) {
-      return { [inferMapKey(propertyName)]: buildExample(schema.additionalProperties, schemas, propertyName, seen) };
-    }
-
-    return { [inferMapKey(propertyName)]: inferScalarExample(propertyName) };
+    return buildObjectExample(schema, schemas, propertyName, seen);
   }
 
   if (schema.type === 'boolean') {
@@ -164,26 +146,27 @@ function buildExample(
 function inferScalarExample(propertyName: string): JsonValue {
   const normalized = propertyName.toLowerCase();
 
-  if (normalized.includes('email')) return 'user@example.com';
-  if (normalized.includes('password')) return 'Password123!';
-  if (normalized.includes('token')) return 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
-  if (normalized.includes('url') || normalized.includes('uri')) return 'https://thoughty.example.com/callback';
-  if (normalized.includes('date')) return '2026-06-24';
-  if (normalized.includes('time') || normalized.endsWith('at')) return '2026-06-24T10:00:00.000Z';
-  if (normalized.includes('color')) return '#2A9D8F';
-  if (normalized.includes('icon')) return 'journal';
-  if (normalized.includes('provider')) return 'google_drive';
-  if (normalized.includes('format')) return 'markdown';
-  if (normalized.includes('visibility')) return 'private';
-  if (normalized.includes('frequency')) return 'daily';
-  if (normalized.includes('role')) return 'user';
-  if (normalized.includes('content')) return 'Today I wrote a thoughtful journal entry about focus and calm.';
-  if (normalized.includes('tag')) return 'reflection';
-  if (normalized.includes('name')) return 'Daily Journal';
-  if (normalized.includes('title')) return 'June reflections';
-  if (normalized.includes('status')) return 'ok';
-
-  return 'example';
+  const examples: Array<[boolean, JsonValue]> = [
+    [normalized.includes('email'), 'user@example.com'],
+    [normalized.includes('password'), 'Password123!'],
+    [normalized.includes('token'), 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9'],
+    [normalized.includes('url') || normalized.includes('uri'), 'https://thoughty.example.com/callback'],
+    [normalized.includes('date'), '2026-06-24'],
+    [normalized.includes('time') || normalized.endsWith('at'), '2026-06-24T10:00:00.000Z'],
+    [normalized.includes('color'), '#2A9D8F'],
+    [normalized.includes('icon'), 'journal'],
+    [normalized.includes('provider'), 'google_drive'],
+    [normalized.includes('format'), 'markdown'],
+    [normalized.includes('visibility'), 'private'],
+    [normalized.includes('frequency'), 'daily'],
+    [normalized.includes('role'), 'user'],
+    [normalized.includes('content'), 'Today I wrote a thoughtful journal entry about focus and calm.'],
+    [normalized.includes('tag'), 'reflection'],
+    [normalized.includes('name'), 'Daily Journal'],
+    [normalized.includes('title'), 'June reflections'],
+    [normalized.includes('status'), 'ok'],
+  ];
+  return examples.find(([matches]) => matches)?.[1] ?? 'example';
 }
 
 function inferNumberExample(propertyName: string): number {
@@ -210,4 +193,30 @@ function singularize(propertyName: string): string {
 
 function isJsonObject(value: unknown): value is { [key: string]: JsonValue } {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function buildObjectExample(schema: OpenApiSchema, schemas: Record<string, OpenApiSchema>, propertyName: string, seen: Set<string>): JsonValue {
+  const properties = schema.properties ?? {};
+  if (Object.keys(properties).length > 0) {
+    return Object.fromEntries(
+      Object.entries(properties).map(([name, propertySchema]) => [name, buildExample(propertySchema, schemas, name, seen)]),
+    );
+  }
+
+  if (schema.additionalProperties && schema.additionalProperties !== true) {
+    return { [inferMapKey(propertyName)]: buildExample(schema.additionalProperties, schemas, propertyName, seen) };
+  }
+
+  return { [inferMapKey(propertyName)]: inferScalarExample(propertyName) };
+}
+
+function buildReferenceExample(ref: string, schemas: Record<string, OpenApiSchema>, propertyName: string, seen: Set<string>): JsonValue {
+  const refName = ref.split('/').at(-1) ?? propertyName;
+  if (seen.has(refName)) {
+    return inferScalarExample(refName);
+  }
+
+  const nextSeen = new Set(seen);
+  nextSeen.add(refName);
+  return buildExample(schemas[refName], schemas, refName, nextSeen);
 }

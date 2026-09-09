@@ -275,14 +275,14 @@ button.profile-avatar-large {
 
 .profile-verification-badge.verified {
     border-color: rgba(14, 165, 233, 0.45);
-    background: rgba(14, 165, 233, 0.12);
+    background: #173a52;
     color: #38bdf8;
 }
 
 .profile-verification-badge.unverified {
     border-color: rgba(245, 158, 11, 0.38);
-    background: rgba(245, 158, 11, 0.10);
-    color: #f59e0b;
+    background: #49320e;
+    color: #fbbf24;
 }
 
 .profile-page.dark .profile-username {
@@ -1040,12 +1040,12 @@ button.profile-avatar-large {
 }
 
 .font-size-value.dark {
-    background: rgba(59, 130, 246, 0.14);
+    background: #20344e;
     color: #bfdbfe;
 }
 
 .font-size-value.light {
-    background: rgba(59, 130, 246, 0.12);
+    background: #dbeafe;
     color: #1d4ed8;
 }
 
@@ -1110,12 +1110,12 @@ button.profile-avatar-large {
 }
 
 .voice-preview-btn.dark {
-    background: rgba(59, 130, 246, 0.12);
+    background: #20344e;
     color: #bfdbfe;
 }
 
 .voice-preview-btn.light {
-    background: rgba(37, 99, 235, 0.08);
+    background: #e8f1ff;
     color: #1d4ed8;
 }
 
@@ -1168,12 +1168,12 @@ button.profile-avatar-large {
 }
 
 .font-preview-chip.dark {
-    background: rgba(96, 165, 250, 0.15);
+    background: #20344e;
     color: #bfdbfe;
 }
 
 .font-preview-chip.light {
-    background: rgba(37, 99, 235, 0.1);
+    background: #e8f1ff;
     color: #1d4ed8;
 }
 

@@ -31,7 +31,7 @@ function Pagination({ page, totalPages, setPage, inputPage, setInputPage, theme,
 
     return (
         <div className="flex justify-center items-center gap-2 mt-8">
-            <button
+            <button type="button"
                 onClick={() => setPage(1)}
                 disabled={page === 1}
                 className={buttonClass}
@@ -41,7 +41,7 @@ function Pagination({ page, totalPages, setPage, inputPage, setInputPage, theme,
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
                 </svg>
             </button>
-            <button
+            <button type="button"
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
                 className={buttonClass}
@@ -65,7 +65,7 @@ function Pagination({ page, totalPages, setPage, inputPage, setInputPage, theme,
                 />
                 <span className="text-gray-400 text-sm">{t('ofTotal', { total: totalPages })}</span>
             </div>
-            <button
+            <button type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className={buttonClass}
@@ -75,7 +75,7 @@ function Pagination({ page, totalPages, setPage, inputPage, setInputPage, theme,
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
             </button>
-            <button
+            <button type="button"
                 onClick={() => setPage(totalPages)}
                 disabled={page === totalPages}
                 className={buttonClass}

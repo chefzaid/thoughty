@@ -178,7 +178,8 @@ export class AiBookComposerService {
   private parseChapterFraming(content: string): BookChapterFraming {
     const normalized = content
       .replace(/^```(?:json)?\s*/i, '')
-      .replace(/\s*```$/, '')
+      .trimEnd()
+      .replace(/```$/, '')
       .trim();
 
     try {

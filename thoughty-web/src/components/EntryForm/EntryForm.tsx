@@ -47,6 +47,24 @@ interface EntryFormProps {
     readonly onDeleteTemplate?: (templateId: string) => Promise<void> | void;
 }
 
+function entryFormClasses({ theme, format, visibility }: Pick<EntryFormProps, 'theme' | 'format' | 'visibility'>) {
+    const inputClass = `w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none ${theme === 'light'
+        ? 'bg-gray-50 border-gray-300 text-gray-900'
+        : 'bg-gray-900 border-gray-700 text-gray-100'
+        }`;
+
+    const containerClass = `relative z-40 rounded-xl p-6 shadow-lg border mb-8 backdrop-blur-sm bg-opacity-50 overflow-visible ${theme === 'light'
+        ? 'bg-white border-gray-200'
+        : 'bg-gray-800 border-gray-700'
+        }`;
+
+    const markdownToggleClass = format === 'markdown'
+        ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
+        : getVisibilityButtonClass(visibility ?? 'private', theme);
+
+    return { inputClass, containerClass, markdownToggleClass };
+}
+
 function EntryForm({
     newEntryText,
     setNewEntryText,
@@ -98,19 +116,7 @@ function EntryForm({
         }
     }, [newEntryText]);
 
-    const inputClass = `w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none ${theme === 'light'
-        ? 'bg-gray-50 border-gray-300 text-gray-900'
-        : 'bg-gray-900 border-gray-700 text-gray-100'
-        }`;
-
-    const containerClass = `relative z-40 rounded-xl p-6 shadow-lg border mb-8 backdrop-blur-sm bg-opacity-50 overflow-visible ${theme === 'light'
-        ? 'bg-white border-gray-200'
-        : 'bg-gray-800 border-gray-700'
-        }`;
-
-    const markdownToggleClass = format === 'markdown'
-        ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
-        : getVisibilityButtonClass(visibility ?? 'private', theme);
+    const { inputClass, containerClass, markdownToggleClass } = entryFormClasses({ theme, format, visibility });
 
     const applyTemplate = (templateId: string): void => {
         setSelectedTemplateId(templateId);

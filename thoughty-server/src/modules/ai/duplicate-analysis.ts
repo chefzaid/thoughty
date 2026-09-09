@@ -1,3 +1,4 @@
+import { extractJsonCandidate } from '@/common/utils/json-content.util';
 import { BadGatewayException } from '@nestjs/common';
 import type { OpenRouterUsageReporter } from './ai-usage.service';
 
@@ -26,8 +27,7 @@ export function parseDuplicateGroups(
   rawContent: string,
   allowedEntryIds: ReadonlySet<number>,
 ): ParsedDuplicateGroup[] {
-  const objectMatch = /\{[\s\S]*\}/.exec(rawContent.trim());
-  const candidate = rawContent.trim().startsWith('{') ? rawContent.trim() : objectMatch?.[0];
+  const candidate = extractJsonCandidate(rawContent, '{');
   if (!candidate) return [];
 
   try {
@@ -68,7 +68,8 @@ export function parseDuplicateGroups(
       groups.push({ entryIds, confidence, reason });
     }
 
-    return groups.sort((left, right) => right.confidence - left.confidence).slice(0, MAX_GROUPS);
+    groups.sort((left, right) => right.confidence - left.confidence);
+    return groups.slice(0, MAX_GROUPS);
   } catch {
     return [];
   }

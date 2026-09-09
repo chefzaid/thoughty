@@ -5,9 +5,9 @@
  * WARNING: This is a destructive operation!
  */
 
-import { spawn } from 'child_process';
-import * as path from 'path';
-import * as readline from 'readline';
+import { spawn } from 'node:child_process';
+import * as path from 'node:path';
+import * as readline from 'node:readline';
 import { query, closeDatabase, initializeDatabase } from './lib/db';
 import { log, banner, section, summaryBox, fmt } from './lib/logger';
 

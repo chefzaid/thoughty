@@ -1,3 +1,4 @@
+import { extractJsonCandidate, trimCharacters } from '@/common/utils/json-content.util';
 import { BadGatewayException } from '@nestjs/common';
 import type { OpenRouterUsageReporter } from './ai-usage.service';
 
@@ -21,21 +22,19 @@ const MAX_TAGS_PER_ENTRY = 3;
 const MAX_CONTENT_LENGTH = 400;
 
 export function normalizeJournalTheme(value: string): string {
-  return value
+  const normalized = value
     .trim()
     .replace(/^#+/, '')
     .toLowerCase()
-    .replaceAll(/[^\p{L}\p{N}]+/gu, '-')
-    .replaceAll(/^-+|-+$/g, '')
-    .slice(0, 50);
+    .replaceAll(/[^\p{L}\p{N}]+/gu, '-');
+  return trimCharacters(normalized, '-').slice(0, 50);
 }
 
 export function parseJournalRetagPlan(
   rawContent: string,
   allowedEntryIds: ReadonlySet<number>,
 ): ParsedJournalRetagPlan {
-  const objectMatch = /\{[\s\S]*\}/.exec(rawContent.trim());
-  const candidate = rawContent.trim().startsWith('{') ? rawContent.trim() : objectMatch?.[0];
+  const candidate = extractJsonCandidate(rawContent, '{');
   if (!candidate) return { themes: [], assignments: [] };
 
   try {
@@ -53,25 +52,24 @@ export function parseJournalRetagPlan(
     const allowedThemes = new Set(themes);
     const assignmentsByEntry = new Map<number, string[]>();
 
-    if (Array.isArray(parsed.assignments)) {
-      for (const value of parsed.assignments) {
-        if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
-        const record = value as Record<string, unknown>;
-        if (!Number.isInteger(record.entryId) || !allowedEntryIds.has(record.entryId as number)) {
-          continue;
-        }
-        const tags = Array.isArray(record.tags)
-          ? [
-              ...new Set(
-                record.tags
-                  .filter((tag): tag is string => typeof tag === 'string')
-                  .map(normalizeJournalTheme)
-                  .filter((tag) => allowedThemes.has(tag)),
-              ),
-            ].slice(0, MAX_TAGS_PER_ENTRY)
-          : [];
-        assignmentsByEntry.set(record.entryId as number, tags);
+    const assignments = Array.isArray(parsed.assignments) ? parsed.assignments : [];
+    for (const value of assignments) {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
+      const record = value as Record<string, unknown>;
+      if (!Number.isInteger(record.entryId) || !allowedEntryIds.has(record.entryId as number)) {
+        continue;
       }
+      const tags = Array.isArray(record.tags)
+        ? [
+            ...new Set(
+              record.tags
+                .filter((tag): tag is string => typeof tag === 'string')
+                .map(normalizeJournalTheme)
+                .filter((tag) => allowedThemes.has(tag)),
+            ),
+          ].slice(0, MAX_TAGS_PER_ENTRY)
+        : [];
+      assignmentsByEntry.set(record.entryId as number, tags);
     }
 
     return {

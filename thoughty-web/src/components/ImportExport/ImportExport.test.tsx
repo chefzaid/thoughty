@@ -5,7 +5,8 @@ import ImportExport from './ImportExport';
 vi.mock('../../contexts/AuthContext', () => {
     const authFetch = (...args: Parameters<typeof fetch>) => {
         const [url, options] = args;
-        if (String(url).startsWith('/api/books/versions?') && options?.method !== 'POST') {
+        const requestUrl = url instanceof Request ? url.url : url.toString();
+        if (requestUrl.startsWith('/api/books/versions?') && options?.method !== 'POST') {
             return Promise.resolve({ ok: true, json: async () => [] } as Response);
         }
         return globalThis.fetch(...args);

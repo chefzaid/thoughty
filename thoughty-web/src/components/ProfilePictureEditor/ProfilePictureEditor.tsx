@@ -100,14 +100,14 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
 
     const handleMouseMove = useCallback((e: globalThis.MouseEvent): void => {
         if (!isDragging || !image) return;
-        
+
         const newX = e.clientX - dragStart.x;
         const newY = e.clientY - dragStart.y;
-        
+
         // Calculate bounds based on zoom
         const scaledSize = CANVAS_SIZE * zoom;
         const maxOffset = (scaledSize - CANVAS_SIZE) / 2;
-        
+
         setPosition({
             x: Math.max(-maxOffset, Math.min(maxOffset, newX)),
             y: Math.max(-maxOffset, Math.min(maxOffset, newY))
@@ -133,15 +133,15 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
     const handleTouchMove = useCallback((e: globalThis.TouchEvent): void => {
         if (!isDragging || !image) return;
         e.preventDefault();
-        
+
         const touch = e.touches[0];
         if (!touch) return;
         const newX = touch.clientX - dragStart.x;
         const newY = touch.clientY - dragStart.y;
-        
+
         const scaledSize = CANVAS_SIZE * zoom;
         const maxOffset = (scaledSize - CANVAS_SIZE) / 2;
-        
+
         setPosition({
             x: Math.max(-maxOffset, Math.min(maxOffset, newX)),
             y: Math.max(-maxOffset, Math.min(maxOffset, newY))
@@ -187,7 +187,7 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
         if (image.width <= 0 || image.height <= 0) return;
 
         const imgAspect = image.width / image.height;
-        
+
         let displayWidth: number, displayHeight: number;
         if (imgAspect > 1) {
             displayHeight = containerSize;
@@ -224,21 +224,17 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
         <dialog
             className="ppe-overlay"
             open
-            onClick={(event) => {
-                if (event.target === event.currentTarget) {
-                    onClose();
-                }
-            }}
             onCancel={(event) => {
                 event.preventDefault();
                 onClose();
             }}
             aria-labelledby="ppe-title"
         >
+            <button type="button" className="ppe-backdrop" aria-label={t('close')} onClick={onClose} />
             <div className={`ppe-modal ${isDark ? 'dark' : 'light'}`}>
                 <div className="ppe-header">
                     <h3 id="ppe-title">{t('editProfilePicture')}</h3>
-                    <button className="ppe-close-btn" onClick={onClose} aria-label={t('close')}>
+                    <button type="button" className="ppe-close-btn" onClick={onClose} aria-label={t('close')}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -256,7 +252,7 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
                                 onTouchStart={handleTouchStart}
                                 aria-label={t('changeProfilePicture')}
                             >
-                                <div 
+                                <div
                                     className="ppe-image-wrapper"
                                     style={{
                                         transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`
@@ -288,7 +284,7 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
                                 <span className="ppe-zoom-value" aria-live="polite">{Math.round(zoom * 100)}%</span>
                             </div>
 
-                            <button 
+                            <button type="button"
                                 className="ppe-change-image-btn"
                                 onClick={() => fileInputRef.current?.click()}
                             >
@@ -296,9 +292,9 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
                             </button>
                         </div>
                     ) : (
-                        <button 
+                        <button
                             type="button"
-                            className="ppe-upload-area" 
+                            className="ppe-upload-area"
                             onClick={() => fileInputRef.current?.click()}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -319,11 +315,11 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
                 </div>
 
                 <div className="ppe-footer">
-                    <button className="ppe-cancel-btn" onClick={onClose}>
+                    <button type="button" className="ppe-cancel-btn" onClick={onClose}>
                         {t('cancel')}
                     </button>
-                    <button 
-                        className="ppe-save-btn" 
+                    <button type="button"
+                        className="ppe-save-btn"
                         onClick={handleSave}
                         disabled={!image}
                     >

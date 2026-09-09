@@ -5,15 +5,15 @@ interface BackToTopButtonProps {
 function BackToTopButton({ t }: Readonly<BackToTopButtonProps>) {
   return (
     <div className="flex justify-center mt-6 mb-8">
-      <button
+      <button type="button"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className="text-sm text-gray-400 hover:text-blue-500 transition-colors flex items-center gap-1 group"
       >
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          className="h-4 w-4 transform group-hover:-translate-y-1 transition-transform" 
-          fill="none" 
-          viewBox="0 0 24 24" 
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4 transform group-hover:-translate-y-1 transition-transform"
+          fill="none"
+          viewBox="0 0 24 24"
           stroke="currentColor"
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />

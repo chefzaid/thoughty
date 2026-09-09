@@ -63,7 +63,7 @@ function YearMonthNavigator({
           })}
         </select>
       )}
-      <button
+      <button type="button"
         onClick={() => navYear && onNavigate(
           Number.parseInt(navYear, 10),
           navMonth ? Number.parseInt(navMonth.split('-')[1] ?? '1', 10) : null

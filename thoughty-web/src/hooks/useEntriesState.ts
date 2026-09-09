@@ -29,7 +29,7 @@ export const useEntries = (
   const [inputPage, setInputPage] = useState<string>('1');
 
   const [search, setSearch] = useState<string>('');
-  const [searchMode, setSearchModeState] = useState<EntrySearchMode>('keyword');
+  const [searchModeState, setSearchModeState] = useState<EntrySearchMode>('keyword');
   const [semanticSearchStatus, setSemanticSearchStatus] = useState<SemanticSearchStatus>('idle');
   const [semanticSearchResult, setSemanticSearchResult] = useState<SemanticSearchResponse | null>(null);
   const semanticRequestIdRef = useRef(0);
@@ -50,11 +50,11 @@ export const useEntries = (
   }, [config.entriesPerPage]);
 
   const semanticEntryIds = useMemo(() => (
-    searchMode === 'semantic'
+    searchModeState === 'semantic'
       ? semanticSearchResult?.matches.map((match) => match.entryId) ?? null
       : null
-  ), [searchMode, semanticSearchResult]);
-  const effectiveKeywordSearch = searchMode === 'keyword' ? search : '';
+  ), [searchModeState, semanticSearchResult]);
+  const effectiveKeywordSearch = searchModeState === 'keyword' ? search : '';
 
   const entriesQueryKey = useMemo(() => [
     'app',
@@ -335,7 +335,7 @@ export const useEntries = (
     setInputPage,
     search,
     setSearch,
-    searchMode,
+    searchMode: searchModeState,
     setSearchMode,
     semanticSearchStatus,
     semanticSearchResult,

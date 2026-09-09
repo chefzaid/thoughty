@@ -28,15 +28,11 @@ describe('PersonalSection', () => {
     expect(screen.getByText('personalInfo')).toBeInTheDocument();
   });
 
-  it('renders name input with current value', () => {
+  it.each(['John Doe', 'A short bio', '1990-05-15'])('renders current personal value %s', (value) => {
     render(<PersonalSection {...defaultProps} />);
-    expect(screen.getByDisplayValue('John Doe')).toBeInTheDocument();
+    expect(screen.getByDisplayValue(value)).toBeInTheDocument();
   });
 
-  it('renders bio textarea with current value', () => {
-    render(<PersonalSection {...defaultProps} />);
-    expect(screen.getByDisplayValue('A short bio')).toBeInTheDocument();
-  });
 
   it('renders email input as disabled', () => {
     render(<PersonalSection {...defaultProps} />);
@@ -44,10 +40,6 @@ describe('PersonalSection', () => {
     expect(emailInput).toBeDisabled();
   });
 
-  it('renders birthday input with value', () => {
-    render(<PersonalSection {...defaultProps} />);
-    expect(screen.getByDisplayValue('1990-05-15')).toBeInTheDocument();
-  });
 
   it('renders gender select with current value', () => {
     const { container } = render(<PersonalSection {...defaultProps} />);

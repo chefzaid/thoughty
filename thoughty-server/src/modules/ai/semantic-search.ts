@@ -51,7 +51,7 @@ export function parseEmbeddingResponse(
     vectors[item.index!] = item.embedding as number[];
   }
 
-  if (vectors.some((vector) => vector === undefined)) {
+  if (vectors.includes(undefined)) {
     throw new BadGatewayException('OpenRouter returned an incomplete embedding response');
   }
   return vectors as number[][];

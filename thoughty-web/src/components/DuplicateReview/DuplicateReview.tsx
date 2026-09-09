@@ -26,7 +26,7 @@ function DuplicateReview({
   const [failed, setFailed] = useState(false);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const wasOpenRef = useRef(false);
   const isLight = theme === 'light';
 
@@ -104,10 +104,10 @@ function DuplicateReview({
             tabIndex={-1}
             onClick={() => setIsOpen(false)}
           />
-          <section
+          <dialog
             ref={dialogRef}
             className={`duplicate-review-dialog ${isLight ? 'light' : 'dark'}`}
-            role="dialog"
+            open
             aria-modal="true"
             aria-labelledby="duplicate-review-title"
           >
@@ -187,7 +187,7 @@ function DuplicateReview({
                 </>
               )}
             </div>
-          </section>
+          </dialog>
         </div>
       )}
     </div>

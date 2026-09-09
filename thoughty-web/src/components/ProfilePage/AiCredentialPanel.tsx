@@ -90,12 +90,8 @@ function AiCredentialPanel({
     await onCredentialChanged();
   };
 
-  const statusLabel =
-    status?.source === "personal"
-      ? t("personalKeyActive")
-      : status?.source === "server"
-        ? t("serverKeyActive")
-        : t("aiUnavailable");
+  const statusLabels = { personal: "personalKeyActive", server: "serverKeyActive", none: "aiUnavailable" };
+  const statusLabel = t(statusLabels[status?.source ?? 'none']);
 
   return (
     <div className="ai-credential-panel">
@@ -170,9 +166,9 @@ function AiCredentialPanel({
       </div>
 
       {message && (
-        <p className={`ai-credential-message ${message.kind}`} role="status">
+        <output className={`ai-credential-message ${message.kind}`}>
           {message.text}
-        </p>
+        </output>
       )}
 
       {status?.hasPersonalKey && (

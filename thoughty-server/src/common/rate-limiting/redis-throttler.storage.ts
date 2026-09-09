@@ -1,6 +1,6 @@
 import { OnApplicationShutdown } from '@nestjs/common';
 import { ThrottlerStorage, ThrottlerStorageService } from '@nestjs/throttler';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 import { createClient } from 'redis';
 
 type RedisCommandResult = Array<number | string>;

@@ -3,6 +3,7 @@
 }
 
 .verify-email-status {
+  display: block;
   min-height: 3rem;
   margin: 0 0 1.5rem;
   color: #d1fae5;
@@ -14,6 +15,7 @@
 }
 
 .verify-email-page.light .verify-email-status {
+  display: block;
   color: #166534;
 }
 

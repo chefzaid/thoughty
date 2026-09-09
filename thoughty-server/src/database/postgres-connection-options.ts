@@ -5,8 +5,10 @@ type PostgresConnectionRuntimeOptions = Pick<
   'host' | 'port' | 'username' | 'password' | 'database' | 'replication'
 >;
 
+type PostgresEnvValue = string | number | undefined;
+
 interface PostgresConnectionEnv {
-  [key: string]: string | number | undefined;
+  [key: string]: PostgresEnvValue;
   POSTGRES_HOST?: string | number;
   POSTGRES_PORT?: string | number;
   POSTGRES_USER?: string | number;
@@ -54,20 +56,20 @@ export function buildPostgresConnectionOptions(env: PostgresConnectionEnv): Post
   };
 }
 
-function parseList(value: string | number | undefined): string[] {
+function parseList(value: PostgresEnvValue): string[] {
   return String(value ?? '')
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
 }
 
-function parsePorts(value: string | number | undefined): number[] {
+function parsePorts(value: PostgresEnvValue): number[] {
   return parseList(value)
     .map((port) => parsePositiveInteger(port, 0))
     .filter((port) => port > 0);
 }
 
-function parsePositiveInteger(value: string | number | undefined, fallback: number): number {
+function parsePositiveInteger(value: PostgresEnvValue, fallback: number): number {
   const parsedValue = typeof value === 'number' ? value : Number.parseInt(value ?? '', 10);
 
   if (!Number.isInteger(parsedValue) || parsedValue <= 0) {
@@ -77,7 +79,7 @@ function parsePositiveInteger(value: string | number | undefined, fallback: numb
   return parsedValue;
 }
 
-function toStringValue(value: string | number | undefined, fallback: string): string {
+function toStringValue(value: PostgresEnvValue, fallback: string): string {
   const normalized = String(value ?? '').trim();
   return normalized || fallback;
 }

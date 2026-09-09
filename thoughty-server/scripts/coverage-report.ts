@@ -9,7 +9,7 @@ import * as path from 'node:path';
 import { banner, section, summaryBox, log, fmt, formatScore as fmtScore } from './lib/logger';
 
 // Regex to strip ANSI escape codes
- 
+
 const STRIP_ANSI = /\x1B\[\d+m/g;
 
 interface CoverageResult {
@@ -23,7 +23,8 @@ async function runTest(name: string, dir: string, script: string = 'test:cov'): 
 
     return new Promise((resolve) => {
         const npmExecPath = process.env.npm_execpath;
-        const command = npmExecPath ? process.execPath : process.platform === 'win32' ? 'npm.cmd' : 'npm';
+        const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+        const command = npmExecPath ? process.execPath : npmCommand;
         const args = npmExecPath ? [npmExecPath, 'run', script] : ['run', script];
 
         const child = spawn(command, args, {

@@ -24,8 +24,7 @@ import {
 import { memoryStorage } from 'multer';
 import { Response } from 'express';
 import { AttachmentsService } from './attachments.service';
-import { LinkAttachmentDto } from './dto';
-import { AudioTranscriptionResponseDto } from './dto';
+import { LinkAttachmentDto, AudioTranscriptionResponseDto } from './dto';
 import { AudioTranscriptionService } from './audio-transcription.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';

@@ -26,7 +26,7 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
 
             {/* Navigation Items */}
             <div className="nav-items">
-                <button
+                <button type="button"
                     className={`nav-item ${currentView === 'journal' ? 'active' : ''}`}
                     onClick={() => onViewChange('journal')}
                 >
@@ -35,14 +35,14 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                     </svg>
                     {t('journal')}
                 </button>
-                <button
+                <button type="button"
                     className={`nav-item ${currentView === 'feed' ? 'active' : ''}`}
                     onClick={() => onViewChange('feed')}
                 >
                     <span className="codicon codicon-rss" aria-hidden="true" />
                     {t('feed')}
                 </button>
-                <button
+                <button type="button"
                     className={`nav-item ${currentView === 'tags' ? 'active' : ''}`}
                     onClick={() => onViewChange('tags')}
                 >
@@ -54,7 +54,7 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                     </svg>
                     {t('tags')}
                 </button>
-                <button
+                <button type="button"
                     className={`nav-item ${currentView === 'stats' ? 'active' : ''}`}
                     onClick={() => onViewChange('stats')}
                 >
@@ -63,7 +63,7 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                     </svg>
                     {t('stats')}
                 </button>
-                <button
+                <button type="button"
                     className={`nav-item ${currentView === 'importExport' ? 'active' : ''}`}
                     onClick={() => onViewChange('importExport')}
                 >
@@ -76,7 +76,7 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
 
             {/* User Profile Section */}
             <div className="nav-user-section">
-                <button
+                <button type="button"
                     className={`nav-profile-btn ${currentView === 'profile' ? 'active' : ''}`}
                     onClick={() => onViewChange('profile')}
                     title={t('profile')}
@@ -96,7 +96,7 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                     )}
                 </button>
                 {onLogout && (
-                    <button
+                    <button type="button"
                         className="nav-logout-btn"
                         onClick={onLogout}
                         title={t('logout')}

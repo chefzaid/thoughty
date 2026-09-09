@@ -85,7 +85,7 @@ export function ExportSection({
                             {t('includeVisibilityShort')}
                         </label>
                     </div>
-                    <button className="io-btn primary" onClick={onExport}>
+                    <button type="button" className="io-btn primary" onClick={onExport}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
@@ -160,7 +160,7 @@ export function ImportSection({
                         </div>
                     )}
 
-                    <button className="io-btn primary" onClick={onImport} disabled={importing}>
+                    <button type="button" className="io-btn primary" onClick={onImport} disabled={importing}>
                         {importing ? t('importing') : t('confirmImport')}
                     </button>
                 </div>
@@ -220,7 +220,7 @@ export function FormatSection({
                     </div>
                 </div>
             </div>
-            <button className="io-btn secondary" onClick={onSave}>{t('saveFormat')}</button>
+            <button type="button" className="io-btn secondary" onClick={onSave}>{t('saveFormat')}</button>
         </section>
     );
 }
@@ -248,9 +248,9 @@ export function DangerZoneSection({
             <p className="section-description">{t('deleteAllDescription', { diaryName: diaryName || '' })}</p>
             <div className="danger-actions">
                 {confirmDeleteAll && (
-                    <button className="io-btn secondary" onClick={onCancelDelete}>{t('cancel')}</button>
+                    <button type="button" className="io-btn secondary" onClick={onCancelDelete}>{t('cancel')}</button>
                 )}
-                <button className="io-btn danger" onClick={onDeleteAll} disabled={deleting}>{deleteAllLabel}</button>
+                <button type="button" className="io-btn danger" onClick={onDeleteAll} disabled={deleting}>{deleteAllLabel}</button>
             </div>
         </section>
     );

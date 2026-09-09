@@ -120,15 +120,14 @@ export class StatsCorrelationService {
       }
     }
 
-    return connections
-      .sort(
+    connections.sort(
         (left, right) =>
           right.score - left.score ||
           right.sharedTags.length - left.sharedTags.length ||
           right.sourceDate.localeCompare(left.sourceDate) ||
           right.sourceEntryId - left.sourceEntryId,
-      )
-      .slice(0, MAX_CONNECTIONS);
+      );
+    return connections.slice(0, MAX_CONNECTIONS);
   }
 
   private toEntryConnection(

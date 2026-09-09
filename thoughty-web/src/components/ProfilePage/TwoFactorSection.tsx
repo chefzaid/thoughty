@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type SubmitEvent } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
   disableTwoFactor,
@@ -61,7 +61,7 @@ function TwoFactorSection({ isDark, t }: Readonly<TwoFactorSectionProps>) {
     }
   };
 
-  const enable = async (event: FormEvent): Promise<void> => {
+  const enable = async (event: SubmitEvent): Promise<void> => {
     event.preventDefault();
     const result = await runRequest(() => enableTwoFactor(authFetch, challengeToken, code));
     if (result?.success) {
@@ -72,7 +72,7 @@ function TwoFactorSection({ isDark, t }: Readonly<TwoFactorSectionProps>) {
     }
   };
 
-  const disable = async (event: FormEvent): Promise<void> => {
+  const disable = async (event: SubmitEvent): Promise<void> => {
     event.preventDefault();
     const result = await runRequest(() => disableTwoFactor(authFetch, password));
     if (result?.success) {

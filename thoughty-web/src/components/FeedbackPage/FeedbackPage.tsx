@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { SubmitEvent, useEffect, useMemo, useState } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -89,7 +89,7 @@ function FeedbackPage({
     };
   }, [featureRequestsService, isAuthenticated]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!isAuthenticated) {
       onSignIn();
@@ -98,8 +98,10 @@ function FeedbackPage({
 
     const form = event.currentTarget;
     const formData = new FormData(event.currentTarget);
-    const title = String(formData.get('title') ?? '').trim();
-    const details = String(formData.get('body') ?? '').trim();
+    const titleValue = formData.get('title');
+    const bodyValue = formData.get('body');
+    const title = typeof titleValue === 'string' ? titleValue.trim() : '';
+    const details = typeof bodyValue === 'string' ? bodyValue.trim() : '';
 
     if (!title || !details) {
       return;
@@ -183,9 +185,9 @@ function FeedbackPage({
               {isAuthenticated ? t('feedbackSubmit') : t('feedbackSignInToSubmit')}
             </button>
             {submitted ? (
-              <p className="feedback-success" role="status">
+              <output className="feedback-success">
                 {t('feedbackSuccess')}
-              </p>
+              </output>
             ) : null}
             {actionError ? (
               <p className="feedback-error" role="alert">
@@ -202,9 +204,9 @@ function FeedbackPage({
           </div>
           <div className="feedback-ideas" aria-label={t('feedbackBoardTitle')}>
             {loading ? (
-              <p className="feedback-board-message" role="status">
+              <output className="feedback-board-message">
                 {t('feedbackLoading')}
-              </p>
+              </output>
             ) : null}
             {!loading && loadError ? (
               <p className="feedback-board-message error" role="alert">

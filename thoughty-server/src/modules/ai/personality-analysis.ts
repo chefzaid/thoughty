@@ -1,3 +1,4 @@
+import { extractJsonCandidate } from '@/common/utils/json-content.util';
 export interface WritingProfileItem {
   label: string;
   count: number;
@@ -31,7 +32,9 @@ const MAX_EVIDENCE_LENGTH = 280;
 const MAX_SUMMARY_LENGTH = 700;
 const DISALLOWED_INFERENCE_PATTERNS = [
   /\b(?:diagnos(?:is|e|ed)|disorder|mental illness|race|ethnicity|religion|sexuality|sexual orientation|political affiliation|political opinions|political profile|gender|sex|disability|nationality)\b/i,
-  /(?:^|[^\p{L}])(?:diagnos(?:tic|tiqu(?:e|er|é))|trouble|maladie mentale|race|ethnie|origine ethnique|religion|sexualité|orientation sexuelle|affiliation politique|opinions politiques|profil politique|genre|sexe|handicap|nationalité)(?=$|[^\p{L}])/iu,
+  /(?:^|[^\p{L}])(?:diagnos(?:tic|tiqu(?:e|er|é))|trouble|maladie mentale)(?=$|[^\p{L}])/iu,
+  /(?:^|[^\p{L}])(?:race|ethnie|origine ethnique|religion|sexualité|orientation sexuelle)(?=$|[^\p{L}])/iu,
+  /(?:^|[^\p{L}])(?:affiliation politique|opinions politiques|profil politique|genre|sexe|handicap|nationalité)(?=$|[^\p{L}])/iu,
 ];
 
 function normalizeText(value: unknown, maxLength: number): string {
@@ -72,10 +75,7 @@ function parseTrait(value: unknown): PersonalityTrait | null {
 }
 
 export function parsePersonalityAssessment(rawContent: string): PersonalityAssessment | null {
-  const objectMatch = /\{[\s\S]*\}/.exec(rawContent.trim());
-  const candidate = rawContent.trim().startsWith('{')
-    ? rawContent.trim()
-    : (objectMatch?.[0] ?? '{}');
+  const candidate = extractJsonCandidate(rawContent, '{') ?? '{}';
 
   try {
     const parsed = JSON.parse(candidate) as Record<string, unknown>;

@@ -267,6 +267,7 @@ export function EntryBacklinksSection({
     tagMetadata: TagMetadataMap;
     t: TranslationFn;
 }>) {
+    const emptyBacklinksLabel = t(loading ? 'loadingBacklinks' : 'noBacklinks');
     const sourceEntry = {
         id: entry.id,
         date: extractDate(entry.date),
@@ -283,10 +284,8 @@ export function EntryBacklinksSection({
                     {loading ? t('loadingBacklinks') : t('backlinksCount', { count: backlinks.length })}
                 </span>
             </div>
-            {loading && backlinks.length === 0 ? (
-                <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('loadingBacklinks')}</p>
-            ) : backlinks.length === 0 ? (
-                <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('noBacklinks')}</p>
+            {backlinks.length === 0 ? (
+                <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{emptyBacklinksLabel}</p>
             ) : (
                 <div className="space-y-2">
                     {backlinks.map((backlink) => {

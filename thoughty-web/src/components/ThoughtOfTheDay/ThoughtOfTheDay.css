@@ -137,7 +137,7 @@
 
 .thought-of-day-modal.dark .action-button {
     background: #334155;
-    color: #94a3b8;
+    color: #cbd5e1;
 }
 
 .thought-of-day-modal.dark .action-button:hover {
@@ -146,7 +146,7 @@
 }
 
 .action-button.close:hover {
-    background: #ef4444;
+    background: #b91c1c;
     color: white;
 }
 
@@ -442,7 +442,7 @@
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: #3b82f6;
+    background: #2563eb;
     color: white;
 }
 

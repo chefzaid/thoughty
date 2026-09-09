@@ -33,7 +33,7 @@ function JournalRetagReview({ isDark, onApplied, t }: JournalRetagReviewProps) {
   const [appliedCount, setAppliedCount] = useState<number | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
@@ -148,10 +148,10 @@ function JournalRetagReview({ isDark, onApplied, t }: JournalRetagReviewProps) {
               disabled={applying}
               onClick={() => setIsOpen(false)}
             />
-            <section
+            <dialog
               ref={dialogRef}
               className={`journal-retag-dialog ${isDark ? "dark" : "light"}`}
-              role="dialog"
+              open
               aria-modal="true"
               aria-labelledby="journal-retag-title"
             >
@@ -332,7 +332,7 @@ function JournalRetagReview({ isDark, onApplied, t }: JournalRetagReviewProps) {
                   </button>
                 </footer>
               )}
-            </section>
+            </dialog>
           </div>,
           document.body,
         )}

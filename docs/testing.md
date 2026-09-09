@@ -30,6 +30,11 @@ These are the cheapest checks for iterative work.
 
 The root coverage script runs both coverage suites and prints a summary for backend coverage, frontend coverage, and the average across both.
 
+Both coverage suites write `coverage/lcov.info` in their respective application
+directories for Sonar. Run them before a local Sonar analysis and keep source
+files unchanged until analysis finishes. Sonar classifies colocated `.spec.ts`,
+`.test.ts`, and `.test.tsx` files as tests, alongside the end-to-end suites.
+
 ### 3. End-to-end tests
 
 - Backend e2e: `cd thoughty-server && npm run test:e2e`

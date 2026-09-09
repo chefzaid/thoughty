@@ -114,6 +114,7 @@ export default function EntrySummaryDialog({
         ? 'border-gray-600 text-gray-200 hover:bg-gray-700'
         : 'border-gray-300 text-gray-700 hover:bg-gray-100';
 
+    const summaryAction = t(summary ? 'regenerateSummary' : 'generateSummary');
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <button
@@ -122,11 +123,11 @@ export default function EntrySummaryDialog({
                 onClick={onClose}
                 aria-label={t('close')}
             />
-            <section
-                role="dialog"
+            <dialog
+                open
                 aria-modal="true"
                 aria-labelledby={`entry-summary-title-${entryId}`}
-                className={`relative z-10 flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-lg border shadow-2xl ${panelClass}`}
+                className={`relative z-10 m-0 p-0 flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-lg border shadow-2xl ${panelClass}`}
             >
                 <header className={`flex items-center justify-between border-b px-5 py-4 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                     <h3 id={`entry-summary-title-${entryId}`} className="text-base font-semibold">
@@ -204,10 +205,10 @@ export default function EntrySummaryDialog({
                     >
                         {loading
                             ? t('generatingSummary')
-                            : t(summary ? 'regenerateSummary' : 'generateSummary')}
+                            : summaryAction}
                     </button>
                 </footer>
-            </section>
+            </dialog>
         </div>
     );
 }

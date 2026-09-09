@@ -201,7 +201,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
             return (
                 <div className="thought-of-day-error">
                     <p>{error}</p>
-                    <button onClick={handleRefresh} className="refresh-button">
+                    <button type="button" onClick={handleRefresh} className="refresh-button">
                         {t('tryAgain')}
                     </button>
                 </div>
@@ -228,7 +228,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                                 <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                             </svg>
                             {t('randomThought')}
-                            <button
+                            <button type="button"
                                 onClick={handleRefresh}
                                 className="action-button refresh inline-refresh"
                                 title={t('randomize')}
@@ -298,7 +298,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                         {t('highlightsTitle')}
                     </h2>
                     <div className="thought-of-day-actions">
-                        <button
+                        <button type="button"
                             onClick={onClose}
                             className="action-button close"
                             title={t('close')}

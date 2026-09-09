@@ -32,7 +32,7 @@ describe('VerifyEmailPage', () => {
     verifyEmail.mockResolvedValue({ success: true });
     const onContinue = renderPage('/verify-email?token=valid-token');
 
-    await waitFor(() => expect(screen.getByText('emailVerificationSuccess')).toBeInTheDocument());
+    expect(await screen.findByText('emailVerificationSuccess')).toBeInTheDocument();
     expect(verifyEmail).toHaveBeenCalledTimes(1);
     expect(verifyEmail).toHaveBeenCalledWith('valid-token');
 
@@ -48,7 +48,7 @@ describe('VerifyEmailPage', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('emailVerificationInvalid'));
     await userEvent.click(screen.getByRole('button', { name: 'tryAgain' }));
-    await waitFor(() => expect(screen.getByText('emailVerificationSuccess')).toBeInTheDocument());
+    expect(await screen.findByText('emailVerificationSuccess')).toBeInTheDocument();
 
     expect(verifyEmail).toHaveBeenCalledTimes(2);
   });

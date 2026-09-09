@@ -244,7 +244,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
             <div className="stats-container">
                 <div className="stats-error">
                     <p>{error}</p>
-                    <button onClick={fetchStats}>Retry</button>
+                    <button type="button" onClick={fetchStats}>Retry</button>
                 </div>
             </div>
         );
@@ -331,7 +331,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                             <h3>{t('thoughtsPerYear')}</h3>
                             {totalYearChartPages > 1 && (
                                 <div className="pagination-controls">
-                                    <button
+                                    <button type="button"
                                         className={`pagination-btn ${themeClass}`}
                                         onClick={() => setYearPage(p => Math.max(0, p - 1))}
                                         disabled={yearPage === 0}
@@ -342,7 +342,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                                     <span className="pagination-info">
                                         {yearPage + 1} / {totalYearChartPages}
                                     </span>
-                                    <button
+                                    <button type="button"
                                         className={`pagination-btn ${themeClass}`}
                                         onClick={() => setYearPage(p => Math.min(totalYearChartPages - 1, p + 1))}
                                         disabled={yearPage === totalYearChartPages - 1}
@@ -364,7 +364,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                             <h3>{t('thoughtsPerMonth')}</h3>
                             {totalMonthPages > 1 && (
                                 <div className="pagination-controls">
-                                    <button
+                                    <button type="button"
                                         className={`pagination-btn ${themeClass}`}
                                         onClick={() => setMonthPage(p => Math.max(0, p - 1))}
                                         disabled={monthPage === 0}
@@ -375,7 +375,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                                     <span className="pagination-info">
                                         {monthPage + 1} / {totalMonthPages}
                                     </span>
-                                    <button
+                                    <button type="button"
                                         className={`pagination-btn ${themeClass}`}
                                         onClick={() => setMonthPage(p => Math.min(totalMonthPages - 1, p + 1))}
                                         disabled={monthPage === totalMonthPages - 1}
@@ -412,7 +412,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                             <h3>{t('topTagsByYear')}</h3>
                             {totalTagsYearPages > 1 && (
                                 <div className="pagination-controls">
-                                    <button
+                                    <button type="button"
                                         className={`pagination-btn ${themeClass}`}
                                         onClick={() => setTagsYearPage(p => Math.max(0, p - 1))}
                                         disabled={tagsYearPage === 0}
@@ -423,7 +423,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                                     <span className="pagination-info">
                                         {tagsYearPage + 1} / {totalTagsYearPages}
                                     </span>
-                                    <button
+                                    <button type="button"
                                         className={`pagination-btn ${themeClass}`}
                                         onClick={() => setTagsYearPage(p => Math.min(totalTagsYearPages - 1, p + 1))}
                                         disabled={tagsYearPage === totalTagsYearPages - 1}

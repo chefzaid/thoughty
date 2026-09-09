@@ -7,11 +7,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
   document.body.appendChild(anchor);
   anchor.click();
 
-  if (typeof anchor.remove === 'function') {
-    anchor.remove();
-  } else {
-    document.body.removeChild(anchor);
-  }
+  anchor.remove();
 
   globalThis.URL.revokeObjectURL(url);
 }

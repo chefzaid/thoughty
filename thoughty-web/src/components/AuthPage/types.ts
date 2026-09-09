@@ -9,11 +9,18 @@ export interface AuthResult {
   challengeToken?: string;
 }
 
-export const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export function isValidEmail(email: string): boolean {
+  if (email.length > 254 || /\s/.test(email)) return false;
+  const parts = email.split('@');
+  if (parts.length !== 2 || !parts[0]) return false;
+  const domain = parts[1] ?? '';
+  const dot = domain.lastIndexOf('.');
+  return dot > 0 && dot < domain.length - 1;
+}
 
 export const validateForgotPassword = ({ email, t }: { email: string; t: TranslationFunction }): string => {
   if (!email) return t('enterEmail');
-  if (!emailRegex.test(email)) return t('invalidEmail');
+  if (!isValidEmail(email)) return t('invalidEmail');
   return '';
 };
 
@@ -39,7 +46,7 @@ export const validateRegister = ({
   const checks: [boolean, string][] = [
     [!username, t('enterUsername')],
     [!email, t('enterEmail')],
-    [Boolean(email) && !emailRegex.test(email), t('invalidEmail')],
+    [Boolean(email) && !isValidEmail(email), t('invalidEmail')],
     [!password, t('enterPassword')],
     [!confirmPassword, t('confirmPasswordPlaceholder')],
     [Boolean(password) && Boolean(confirmPassword) && password !== confirmPassword, t('passwordsDoNotMatch')]

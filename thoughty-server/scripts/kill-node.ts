@@ -4,8 +4,8 @@
  * Terminates all running Node.js processes (useful for dev cleanup)
  */
 
-import { exec } from 'child_process';
-import * as os from 'os';
+import { exec } from 'node:child_process';
+import * as os from 'node:os';
 import { log, banner, fmt } from './lib/logger';
 
 const isWindows = os.platform() === 'win32';

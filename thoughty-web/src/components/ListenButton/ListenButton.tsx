@@ -66,7 +66,7 @@ function ListenButton({
 
   return (
     <div className="relative" ref={menuRef}>
-      <button
+      <button type="button"
         onClick={handleClick}
         className={`p-1.5 rounded transition-colors ${getButtonClass()}`}
         title={isActive ? t('stopListening') : t('listen')}
@@ -91,7 +91,7 @@ function ListenButton({
               : 'bg-white border-gray-200'
           }`}
         >
-          <button
+          <button type="button"
             onClick={handleListenOne}
             className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 ${
               isDark
@@ -104,7 +104,7 @@ function ListenButton({
             </svg>
             {t('listenThisEntry')}
           </button>
-          <button
+          <button type="button"
             onClick={handleListenFrom}
             className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2 ${
               isDark

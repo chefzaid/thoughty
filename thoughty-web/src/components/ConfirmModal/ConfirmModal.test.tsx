@@ -24,23 +24,14 @@ describe('ConfirmModal', () => {
             expect(screen.queryByText('Delete Entry')).not.toBeInTheDocument();
         });
 
-        it('renders when isOpen is true', () => {
-            render(<ConfirmModal {...defaultProps} />);
+        it.each(['Delete Entry', 'Are you sure you want to delete this entry?'])(
+            'displays %s when open', (text) => {
+                render(<ConfirmModal {...defaultProps} />);
+                expect(screen.getByText(text)).toBeInTheDocument();
+            },
+        );
 
-            expect(screen.getByText('Delete Entry')).toBeInTheDocument();
-        });
 
-        it('displays the title', () => {
-            render(<ConfirmModal {...defaultProps} />);
-
-            expect(screen.getByText('Delete Entry')).toBeInTheDocument();
-        });
-
-        it('displays the message', () => {
-            render(<ConfirmModal {...defaultProps} />);
-
-            expect(screen.getByText('Are you sure you want to delete this entry?')).toBeInTheDocument();
-        });
 
         it('renders Cancel and Delete buttons', () => {
             render(<ConfirmModal {...defaultProps} />);

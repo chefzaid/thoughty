@@ -221,7 +221,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     return (
         <div className={`diary-manager ${isLight ? 'light' : 'dark'}`}>
             <div className="diary-manager-header">
-                <button className="back-btn" onClick={onBack}>
+                <button type="button" className="back-btn" onClick={onBack}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
@@ -233,7 +233,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
             {error && (
                 <div className="error-message">
                     {error}
-                    <button onClick={() => setError('')}>×</button>
+                    <button type="button" onClick={() => setError('')}>×</button>
                 </div>
             )}
 
@@ -378,8 +378,8 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                             </div>
                                         </div>
                                         <div className="edit-actions">
-                                            <button onClick={handleSaveEdit} className="save-btn">{t('save')}</button>
-                                            <button onClick={() => setEditingDiary(null)} className="cancel-btn">{t('cancel')}</button>
+                                            <button type="button" onClick={handleSaveEdit} className="save-btn">{t('save')}</button>
+                                            <button type="button" onClick={() => setEditingDiary(null)} className="cancel-btn">{t('cancel')}</button>
                                         </div>
                                     </div>
                                 ) : (
@@ -418,7 +418,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                         </div>
                                         <div className="diary-actions">
                                             {!diary.is_default && (
-                                                <button
+                                                <button type="button"
                                                     onClick={() => handleSetDefault(diary)}
                                                     className="action-btn set-default"
                                                     title={t('setAsDefault')}
@@ -426,7 +426,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                     ☆
                                                 </button>
                                             )}
-                                            <button
+                                            <button type="button"
                                                 onClick={() => handleEdit(diary)}
                                                 className="action-btn edit"
                                                 title={t('edit')}
@@ -434,7 +434,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                 ✏️
                                             </button>
                                             {!diary.is_default && (
-                                                <button
+                                                <button type="button"
                                                     onClick={() => handleDelete(diary)}
                                                     className="action-btn delete"
                                                     title={t('delete')}

@@ -44,6 +44,8 @@
 }
 
 .duplicate-review-dialog {
+  margin: 0;
+  padding: 0;
   position: relative;
   width: min(46rem, 100%);
   max-height: min(80vh, 48rem);

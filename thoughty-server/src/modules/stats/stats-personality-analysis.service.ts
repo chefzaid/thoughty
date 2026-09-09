@@ -1,3 +1,4 @@
+import { trimCharacters } from '@/common/utils/json-content.util';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -100,7 +101,7 @@ function addEntryToProfile(accumulator: ProfileAccumulator, entry: Entry): void 
 
   const analyzedContent = content.slice(0, MAX_CONTENT_CHARS_PER_ENTRY).toLocaleLowerCase();
   for (const match of analyzedContent.matchAll(TOKEN_PATTERN)) {
-    const word = match[0].replaceAll(/^['’-]+|['’-]+$/g, '');
+    const word = trimCharacters(match[0], "'’-");
     accumulator.analyzedWords += 1;
     if (!STOP_WORDS.has(word)) {
       incrementBounded(accumulator.wordCounts, word, MAX_TRACKED_WORDS);

@@ -311,7 +311,7 @@ function EntriesList({
                     )}
                 </div>
                 {onToggleBulkMode && (
-                    <button
+                    <button type="button"
                         onClick={onToggleBulkMode}
                         className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                             bulkMode

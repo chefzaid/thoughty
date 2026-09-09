@@ -172,8 +172,9 @@ function buildOpf(book: Book, identifier: string): string {
     .map((_, index) => `<itemref idref="chapter-${index + 1}"/>`)
     .join('\n');
   const author = book.author ? `<dc:creator>${escapeXml(book.author)}</dc:creator>` : '';
+  const coverExtension = book.cover?.image?.mimeType === 'image/png' ? 'png' : 'jpg';
   const coverManifest = book.cover?.image
-    ? `<item id="cover-image" href="cover.${book.cover.image.mimeType === 'image/png' ? 'png' : 'jpg'}" media-type="${book.cover.image.mimeType}" properties="cover-image"/>`
+    ? `<item id="cover-image" href="cover.${coverExtension}" media-type="${book.cover.image.mimeType}" properties="cover-image"/>`
     : '';
   const imageManifest = collectBookImages(book)
     .map(

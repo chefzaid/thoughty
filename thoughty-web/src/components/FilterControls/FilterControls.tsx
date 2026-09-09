@@ -179,11 +179,12 @@ function FilterControls({
         );
     };
 
+    const inactiveSearchClass = isLight ? 'bg-gray-50 text-gray-700' : 'bg-gray-900 text-gray-300';
     return (
         <div className={containerClass}>
-            <div
+            <fieldset
                 className={`semantic-search-control flex h-10 shrink-0 overflow-hidden rounded-md border ${isLight ? 'border-gray-300' : 'border-gray-700'}`}
-                role="group"
+
                 aria-label={t('searchMode')}
             >
                 {(['keyword', 'semantic'] as const).map((mode) => (
@@ -192,7 +193,7 @@ function FilterControls({
                         type="button"
                         className={`h-full px-3 text-sm font-medium ${searchMode === mode
                             ? 'bg-blue-600 text-white'
-                            : isLight ? 'bg-gray-50 text-gray-700' : 'bg-gray-900 text-gray-300'
+                            : inactiveSearchClass
                             }`}
                         aria-pressed={searchMode === mode}
                         onClick={() => setSearchMode(mode)}
@@ -200,7 +201,7 @@ function FilterControls({
                         {t(mode === 'keyword' ? 'keywordSearchMode' : 'semanticSearchMode')}
                     </button>
                 ))}
-            </div>
+            </fieldset>
             <input
                 type="text"
                 placeholder={t(searchMode === 'keyword' ? 'searchPlaceholder' : 'semanticSearchPlaceholder')}
@@ -257,7 +258,7 @@ function FilterControls({
                         isClearable
                     />
                 </div>
-                <button
+                <button type="button"
                     onClick={cycleVisibility}
                     className={`flex h-10 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getVisibilityButtonStyle()}`}
                     title="Visibility"
@@ -267,7 +268,7 @@ function FilterControls({
                     <span>{t(filterVisibility === 'all' ? 'allEntries' : filterVisibility)}</span>
                 </button>
             </div>
-            <button
+            <button type="button"
                 onClick={cycleArchiveStatus}
                 className={`flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getArchiveButtonClass()}`}
                 title={t('filterArchived')}
@@ -276,7 +277,7 @@ function FilterControls({
                 {getArchiveIcon()}
                 <span>{getArchiveLabel()}</span>
             </button>
-            <button
+            <button type="button"
                 onClick={() => { setFilterFavorites(!filterFavorites); setPage(1); }}
                 className={`flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getFavoriteButtonClass()}`}
                 title={t('filterFavorites')}
@@ -286,14 +287,14 @@ function FilterControls({
                 </svg>
                 <span>{t('favorites')}</span>
             </button>
-            <button
+            <button type="button"
                 onClick={handleReset}
                 className="h-10 shrink-0 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded-lg transition-all text-sm font-medium"
                 title={t('resetFilters')}
             >
                 {t('resetFilters')}
             </button>
-            <button
+            <button type="button"
                 onClick={onOpenHighlights}
                 className="flex h-10 shrink-0 items-center gap-2 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/50 rounded-lg transition-all text-sm font-medium"
                 title={t('seeHighlights')}

@@ -15,14 +15,15 @@ interface CloudSyncStatusCount {
 }
 
 function escapeLabel(value: MetricLabelValue): string {
-  return String(value).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/"/g, '\\"');
+  return String(value).replaceAll('\\', String.raw`\\`).replaceAll('\n', String.raw`\n`).replaceAll('"', String.raw`\"`);
 }
 
 function metricLine(name: string, value: number, labels: MetricLabels = {}): string {
   const labelEntries = Object.entries(labels);
+  const formattedLabels = labelEntries.map(([key, labelValue]) => `${key}="${escapeLabel(labelValue)}"`).join(',');
   const labelText =
     labelEntries.length > 0
-      ? `{${labelEntries.map(([key, labelValue]) => `${key}="${escapeLabel(labelValue)}"`).join(',')}}`
+      ? `{${formattedLabels}}`
       : '';
 
   return `${name}${labelText} ${Number.isFinite(value) ? value : 0}`;

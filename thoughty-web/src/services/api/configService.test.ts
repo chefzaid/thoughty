@@ -218,10 +218,10 @@ describe('configService', () => {
       vi.spyOn(URL, 'createObjectURL').mockReturnValue(mockUrl);
       vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
 
-      const mockAnchor = { href: '', download: '', click: vi.fn() } as unknown as HTMLAnchorElement;
+      const mockAnchor = document.createElement('a');
+      vi.spyOn(mockAnchor, 'click').mockImplementation(() => {});
       vi.spyOn(document, 'createElement').mockReturnValue(mockAnchor);
-      vi.spyOn(document.body, 'appendChild').mockImplementation(() => mockAnchor);
-      vi.spyOn(document.body, 'removeChild').mockImplementation(() => mockAnchor);
+
 
       mockAuthFetch.mockResolvedValue({
         ok: true,
@@ -235,6 +235,7 @@ describe('configService', () => {
       expect(mockAuthFetch).toHaveBeenCalledWith('/api/config/download-data');
       expect(mockAnchor.download).toBe('thoughty_data_2024-01-01.json');
       expect(mockAnchor.click).toHaveBeenCalled();
+      expect(mockAnchor.isConnected).toBe(false);
       expect(URL.revokeObjectURL).toHaveBeenCalledWith(mockUrl);
     });
 

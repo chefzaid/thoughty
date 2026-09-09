@@ -210,7 +210,7 @@
 }
 
 .cloud-schedule-status.active {
-    background: rgba(34, 197, 94, 0.1);
+    background: #143b2a;
     color: #86efac;
     border: 1px solid rgba(34, 197, 94, 0.2);
 }
@@ -348,8 +348,8 @@
 }
 
 .cloud-sync.light .cloud-schedule-status.active {
-    background: rgba(34, 197, 94, 0.08);
-    color: #15803d;
+    background: #e8f8ee;
+    color: #166534;
     border-color: rgba(34, 197, 94, 0.2);
 }
 

@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Controller, Get, Post, Delete, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CloudSyncService } from './cloud-sync.service';
@@ -33,7 +34,7 @@ export class CloudSyncController {
   @ApiOperation({ summary: 'Get OAuth authorization URL for a provider' })
   @ApiResponse({ status: 200, description: 'Authorization URL' })
   async getAuthUrl(@Body() dto: CloudAuthUrlDto) {
-    const state = Math.random().toString(36).substring(2);
+    const state = randomBytes(32).toString('hex');
     return this.cloudSyncService.getAuthUrl(dto.provider, dto.redirectUri, state);
   }
 

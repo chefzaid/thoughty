@@ -77,9 +77,10 @@ export function BookSection({
     onVersionDownload: (version: BookVersionData) => void;
     t: TranslationFunction;
 }>) {
+    const generatingLabel = t(uploading ? 'uploadingBook' : 'generatingBook');
     const progressLabel = savingVersion
         ? t('savingBookVersion')
-        : t(uploading ? 'uploadingBook' : 'generatingBook');
+        : generatingLabel;
 
     return (
         <section ref={sectionRef} className={`io-section ${activeSection === 'book' ? 'is-route-target' : ''}`} id="book-section">
@@ -199,8 +200,9 @@ export function BookSection({
                 </div>
 
                 {generating && (
-                    <div className="book-progress" role="progressbar" aria-valuetext={progressLabel}>
-                        <div className="book-progress__track">
+                    <div className="book-progress">
+                        <progress className="sr-only" aria-label={progressLabel} aria-valuetext={progressLabel} />
+                        <div className="book-progress__track" aria-hidden="true">
                             {BOOK_PROGRESS_STEPS.map((step) => (
                                 <span key={step} className="book-progress__marker" style={{ left: `${step}%` }} />
                             ))}
@@ -211,14 +213,14 @@ export function BookSection({
                 )}
 
                 <div className="export-option-row book-action-row">
-                    <button className="io-btn secondary" onClick={onPreview} disabled={generating}>
+                    <button type="button" className="io-btn secondary" onClick={onPreview} disabled={generating}>
                         {t('previewBook')}
                     </button>
-                    <button className="io-btn primary" onClick={onDownload} disabled={generating}>
+                    <button type="button" className="io-btn primary" onClick={onDownload} disabled={generating}>
                         <span className="codicon codicon-cloud-download" aria-hidden="true" />
                         {generating && !uploading && !savingVersion ? t('generatingBook') : t('downloadBook')}
                     </button>
-                    <button className="io-btn secondary" onClick={onCreateVersion} disabled={generating}>
+                    <button type="button" className="io-btn secondary" onClick={onCreateVersion} disabled={generating}>
                         <span className="codicon codicon-history" aria-hidden="true" />
                         {versions.length > 0 ? t('updateBookVersion') : t('createBookVersion')}
                     </button>
@@ -242,7 +244,7 @@ export function BookSection({
                             ))}
                         </select>
                     </div>
-                    <button
+                    <button type="button"
                         className="io-btn secondary book-cloud-upload"
                         onClick={onUpload}
                         disabled={!cloudProvider || generating}

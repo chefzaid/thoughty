@@ -75,7 +75,7 @@ function getLatencyStats(latencies: number[]): LatencyStats {
 
   return {
     minMs: sorted[0],
-    maxMs: sorted[sorted.length - 1],
+    maxMs: sorted.at(-1) ?? 0,
     avgMs: total / latencies.length,
     p50Ms: percentile(sorted, 50),
     p95Ms: percentile(sorted, 95),

@@ -8,7 +8,7 @@ type SubmitEvent = Parameters<NonNullable<ComponentPropsWithoutRef<'form'>['onSu
 
 // Mock all child components
 vi.mock('../DiaryTabs/DiaryTabs', () => ({
-  default: ({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, theme, t }: { 
+  default: ({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, theme, t }: {
     diaries: Diary[]; currentDiaryId: number | null; onDiaryChange: (id: number | null) => void;
     onManageDiaries: () => void; theme: string; t: (key: string) => string;
   }) => (
@@ -16,8 +16,8 @@ vi.mock('../DiaryTabs/DiaryTabs', () => ({
       <span data-testid="diary-count">{diaries.length}</span>
       <span data-testid="current-diary-id">{currentDiaryId}</span>
       <span data-testid="theme">{theme}</span>
-      <button data-testid="diary-change-btn" onClick={() => onDiaryChange(2)}>Change Diary</button>
-      <button data-testid="manage-diaries-btn" onClick={onManageDiaries}>Manage</button>
+      <button type="button" data-testid="diary-change-btn" onClick={() => onDiaryChange(2)}>Change Diary</button>
+      <button type="button" data-testid="manage-diaries-btn" onClick={onManageDiaries}>Manage</button>
       <span>{t('diaries')}</span>
     </div>
   )
@@ -33,8 +33,8 @@ vi.mock('../ThoughtOfTheDay/ThoughtOfTheDay', () => ({
     <div data-testid="thought-of-day">
       <span data-testid="totd-open">{props.isOpen.toString()}</span>
       <span data-testid="totd-diary-id">{props.diaryId}</span>
-      <button data-testid="totd-close-btn" onClick={props.onClose}>Close</button>
-      <button data-testid="totd-navigate-btn" onClick={() => props.onNavigateToEntry('2024-01-01', 0)}>Navigate</button>
+      <button type="button" data-testid="totd-close-btn" onClick={props.onClose}>Close</button>
+      <button type="button" data-testid="totd-navigate-btn" onClick={() => props.onNavigateToEntry('2024-01-01', 0)}>Navigate</button>
     </div>
   )
 }));
@@ -68,7 +68,7 @@ vi.mock('../FilterControls/FilterControls', () => ({
     <div data-testid="filter-controls">
       <input data-testid="search-input" value={props.search} onChange={(e) => props.setSearch(e.target.value)} />
       <span data-testid="filter-visibility">{props.filterVisibility}</span>
-      <button data-testid="open-highlights-btn" onClick={props.onOpenHighlights}>Highlights</button>
+      <button type="button" data-testid="open-highlights-btn" onClick={props.onOpenHighlights}>Highlights</button>
     </div>
   )
 }));
@@ -88,7 +88,7 @@ vi.mock('../EntriesList/EntriesList', () => ({
       <span data-testid="target-entry-id">{props.targetEntryId}</span>
       <span data-testid="active-target-id">{props.activeTargetId}</span>
       <span data-testid="has-source-entry">{(!!props.sourceEntry).toString()}</span>
-      <button data-testid="back-to-source-btn" onClick={props.onBackToSource}>Back</button>
+      <button type="button" data-testid="back-to-source-btn" onClick={props.onBackToSource}>Back</button>
     </div>
   )
 }));
@@ -102,7 +102,7 @@ vi.mock('../Pagination/Pagination', () => ({
     <div data-testid="pagination">
       <span data-testid="current-page">{props.page}</span>
       <span data-testid="total-pages">{props.totalPages}</span>
-      <button data-testid="next-page-btn" onClick={() => props.setPage(props.page + 1)}>Next</button>
+      <button type="button" data-testid="next-page-btn" onClick={() => props.setPage(props.page + 1)}>Next</button>
     </div>
   )
 }));
@@ -114,14 +114,14 @@ vi.mock('../YearMonthNavigator/YearMonthNavigator', () => ({
     <div data-testid="year-month-navigator">
       <span data-testid="available-years">{availableYears.join(',')}</span>
       <span data-testid="available-months">{availableMonths.join(',')}</span>
-      <button data-testid="navigate-btn" onClick={() => onNavigate(2024, 1)}>Navigate</button>
+      <button type="button" data-testid="navigate-btn" onClick={() => onNavigate(2024, 1)}>Navigate</button>
     </div>
   )
 }));
 
 vi.mock('../BackToTopButton/BackToTopButton', () => ({
   default: ({ t }: { t: (key: string) => string }) => (
-    <button data-testid="back-to-top">{t('backToTop')}</button>
+    <button type="button" data-testid="back-to-top">{t('backToTop')}</button>
   )
 }));
 
@@ -289,7 +289,7 @@ describe('JournalView', () => {
 
   it('renders all child components', () => {
     render(<JournalView {...defaultProps} />);
-    
+
     expect(screen.getByTestId('diary-tabs')).toBeInTheDocument();
     expect(screen.getByTestId('thought-of-day')).toBeInTheDocument();
     expect(screen.getByTestId('entry-form')).toBeInTheDocument();
@@ -302,7 +302,7 @@ describe('JournalView', () => {
 
   it('passes diaries data to DiaryTabs', () => {
     render(<JournalView {...defaultProps} />);
-    
+
     expect(screen.getByTestId('diary-count')).toHaveTextContent('2');
     expect(screen.getByTestId('current-diary-id')).toHaveTextContent('1');
     expect(screen.getByTestId('theme')).toHaveTextContent('dark');
@@ -310,24 +310,24 @@ describe('JournalView', () => {
 
   it('handles diary change and resets page to 1', () => {
     render(<JournalView {...defaultProps} />);
-    
+
     fireEvent.click(screen.getByTestId('diary-change-btn'));
-    
+
     expect(defaultProps.diaryTabs.onDiaryChange).toHaveBeenCalledWith(2);
     expect(defaultProps.pagination.setPage).toHaveBeenCalledWith(1);
   });
 
   it('handles manage diaries action', () => {
     render(<JournalView {...defaultProps} />);
-    
+
     fireEvent.click(screen.getByTestId('manage-diaries-btn'));
-    
+
     expect(defaultProps.diaryTabs.onManageDiaries).toHaveBeenCalled();
   });
 
   it('passes highlights modal state to ThoughtOfTheDay', () => {
     render(<JournalView {...createProps({ thoughtOfDay: { isOpen: true } })} />);
-    
+
     expect(screen.getByTestId('totd-open')).toHaveTextContent('true');
     expect(screen.getByTestId('totd-diary-id')).toHaveTextContent('1');
   });
@@ -335,42 +335,42 @@ describe('JournalView', () => {
   it('closes highlights modal', () => {
     const props = createProps({ thoughtOfDay: { isOpen: true } });
     render(<JournalView {...props} />);
-    
+
     fireEvent.click(screen.getByTestId('totd-close-btn'));
-    
+
     expect(props.thoughtOfDay.setOpen).toHaveBeenCalledWith(false);
   });
 
   it('opens highlights modal from filter controls', () => {
     render(<JournalView {...defaultProps} />);
-    
+
     fireEvent.click(screen.getByTestId('open-highlights-btn'));
-    
+
     expect(defaultProps.thoughtOfDay.setOpen).toHaveBeenCalledWith(true);
   });
 
   it('shows form error when present', () => {
     render(<JournalView {...createProps({ entryForm: { formError: 'Error message' } })} />);
-    
+
     expect(screen.getByTestId('form-error')).toHaveTextContent('Error message');
   });
 
   it('passes entry data to entries list', () => {
     render(<JournalView {...defaultProps} />);
-    
+
     expect(screen.getByTestId('loading')).toHaveTextContent('false');
     expect(screen.getByTestId('entries-count')).toHaveTextContent('2');
   });
 
   it('shows loading state in entries list', () => {
     render(<JournalView {...createProps({ entriesList: { loading: true } })} />);
-    
+
     expect(screen.getByTestId('loading')).toHaveTextContent('true');
   });
 
   it('passes pagination data correctly', () => {
     render(<JournalView {...createProps({ pagination: { page: 3, totalPages: 10 } })} />);
-    
+
     expect(screen.getByTestId('current-page')).toHaveTextContent('3');
     expect(screen.getByTestId('total-pages')).toHaveTextContent('10');
   });
@@ -378,9 +378,9 @@ describe('JournalView', () => {
   it('handles page navigation', () => {
     const props = createProps({ pagination: { page: 2 } });
     render(<JournalView {...props} />);
-    
+
     fireEvent.click(screen.getByTestId('next-page-btn'));
-    
+
     expect(props.pagination.setPage).toHaveBeenCalledWith(3);
   });
 
@@ -433,33 +433,33 @@ describe('JournalView', () => {
 
   it('passes available years and months to navigator', () => {
     render(<JournalView {...defaultProps} />);
-    
+
     expect(screen.getByTestId('available-years')).toHaveTextContent('2023,2024');
     expect(screen.getByTestId('available-months')).toHaveTextContent('January,February,March');
   });
 
   it('handles year/month navigation', () => {
     render(<JournalView {...defaultProps} />);
-    
+
     fireEvent.click(screen.getByTestId('navigate-btn'));
-    
+
     expect(defaultProps.yearMonthNavigator.onNavigate).toHaveBeenCalledWith(2024, 1);
   });
 
   it('handles back to source action', () => {
     const props = createProps({ entriesList: { sourceEntry: { date: '2024-01-01', index: 0, id: 1 } } });
     render(<JournalView {...props} />);
-    
+
     expect(screen.getByTestId('has-source-entry')).toHaveTextContent('true');
-    
+
     fireEvent.click(screen.getByTestId('back-to-source-btn'));
-    
+
     expect(props.entriesList.onBackToSource).toHaveBeenCalled();
   });
 
   it('displays active target id for navigation', () => {
     render(<JournalView {...createProps({ entriesList: { activeTargetId: 5 } })} />);
-    
+
     expect(screen.getByTestId('active-target-id')).toHaveTextContent('5');
   });
 
@@ -472,50 +472,50 @@ describe('JournalView', () => {
   it('renders with light theme', () => {
     const lightConfig = { ...mockConfig, theme: 'light' as const };
     render(<JournalView {...defaultProps} config={lightConfig} />);
-    
+
     expect(screen.getByTestId('theme')).toHaveTextContent('light');
   });
 
   it('renders with no current diary', () => {
     render(<JournalView {...createProps({ diaryTabs: { currentDiaryId: null }, thoughtOfDay: { diaryId: null } })} />);
-    
+
     expect(screen.getByTestId('current-diary-id')).toHaveTextContent('');
     expect(screen.getByTestId('totd-diary-id')).toHaveTextContent('');
   });
 
   it('renders with empty diaries list', () => {
     render(<JournalView {...createProps({ diaryTabs: { diaries: [] } })} />);
-    
+
     expect(screen.getByTestId('diary-count')).toHaveTextContent('0');
   });
 
   it('renders with empty entries list', () => {
     render(<JournalView {...createProps({ entriesList: { entries: [], groupedEntries: {} } })} />);
-    
+
     expect(screen.getByTestId('entries-count')).toHaveTextContent('0');
   });
 
   it('handles form submission', () => {
     const props = createProps({ entryForm: { newEntryText: 'New entry content' } });
     render(<JournalView {...props} />);
-    
+
     fireEvent.submit(screen.getByTestId('entry-form'));
-    
+
     expect(props.entryForm.onSubmit).toHaveBeenCalled();
   });
 
   it('displays entry visibility correctly', () => {
     render(<JournalView {...createProps({ entryForm: { visibility: 'public' } })} />);
-    
+
     expect(screen.getByTestId('entry-visibility')).toHaveTextContent('public');
   });
 
   it('handles thought of day navigation', () => {
     const props = createProps({ thoughtOfDay: { isOpen: true } });
     render(<JournalView {...props} />);
-    
+
     fireEvent.click(screen.getByTestId('totd-navigate-btn'));
-    
+
     expect(props.thoughtOfDay.onNavigateToEntry).toHaveBeenCalledWith('2024-01-01', 0);
   });
 });

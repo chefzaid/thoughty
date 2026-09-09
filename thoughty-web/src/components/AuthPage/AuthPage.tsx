@@ -1,4 +1,4 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, type SubmitEvent } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateAuthForm, getAuthSubtitleText } from './types';
 import type { TranslationFunction, AuthResult } from './types';
@@ -85,24 +85,28 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     return true;
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+  const submitTwoFactor = async (challenge: string): Promise<void> => {
+    if (twoFactorCode.length !== 6) {
+      setError(t('enterSixDigitCode'));
+      return;
+    }
+    setLoading(true);
+    const result = await verifyTwoFactor(challenge, twoFactorCode);
+    setLoading(false);
+    if (result.success) {
+      onAuthSuccess?.();
+    } else {
+      setError(result.error || t('twoFactorVerificationFailed'));
+    }
+  };
+
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     setError('');
     setSuccessMessage('');
 
     if (twoFactorChallenge) {
-      if (twoFactorCode.length !== 6) {
-        setError(t('enterSixDigitCode'));
-        return;
-      }
-      setLoading(true);
-      const result = await verifyTwoFactor(twoFactorChallenge, twoFactorCode);
-      setLoading(false);
-      if (result.success) {
-        onAuthSuccess?.();
-      } else {
-        setError(result.error || t('twoFactorVerificationFailed'));
-      }
+      await submitTwoFactor(twoFactorChallenge);
       return;
     }
 

@@ -63,7 +63,7 @@ export function CloudImportSection({
                 {connectedProviders.map((provider) => {
                     const ProviderIcon = CLOUD_PROVIDER_ICONS[provider];
                     return (
-                        <button
+                        <button type="button"
                             key={provider}
                             className={`io-btn ${cloudImportProvider === provider ? 'primary' : 'secondary'}`}
                             onClick={() => onBrowseCloudFiles(provider)}
@@ -84,7 +84,7 @@ export function CloudImportSection({
                                 <span className="cloud-file-name">{file.name}</span>
                                 <span className="cloud-file-meta">{formatFileSize(file.size)} · {formatCloudDate(file.modifiedAt)}</span>
                             </div>
-                            <button
+                            <button type="button"
                                 className="io-btn secondary"
                                 onClick={() => onImportCloudFile(cloudImportProvider, file)}
                                 disabled={importingCloudFile === file.id}
@@ -176,7 +176,7 @@ export function CloudSyncSection({
                                         {t('includeVisibility')}
                                     </label>
                                 </div>
-                                <button className="io-btn primary" onClick={() => onUpload(provider)} disabled={uploading === provider}>
+                                <button type="button" className="io-btn primary" onClick={() => onUpload(provider)} disabled={uploading === provider}>
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                     </svg>
@@ -219,9 +219,9 @@ export function CloudSyncSection({
                                 </label>
 
                                 <div className="cloud-schedule-actions">
-                                    <button className="io-btn primary" onClick={() => onSaveSchedule(provider)}>{t('cloudScheduleEnable')}</button>
-                                    {schedule?.enabled && <button className="io-btn danger" onClick={() => onRemoveSchedule(provider)}>{t('cloudScheduleDisable')}</button>}
-                                    <button className="io-btn secondary" onClick={() => onSyncNow(provider)} disabled={syncing === provider}>
+                                    <button type="button" className="io-btn primary" onClick={() => onSaveSchedule(provider)}>{t('cloudScheduleEnable')}</button>
+                                    {schedule?.enabled && <button type="button" className="io-btn danger" onClick={() => onRemoveSchedule(provider)}>{t('cloudScheduleDisable')}</button>}
+                                    <button type="button" className="io-btn secondary" onClick={() => onSyncNow(provider)} disabled={syncing === provider}>
                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>

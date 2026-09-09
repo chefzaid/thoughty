@@ -112,7 +112,7 @@ function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
     <section className={`feed-page ${theme}`} aria-labelledby="feed-heading">
       <header className="feed-header">
         <h1 id="feed-heading">{t('feed')}</h1>
-        <div className="feed-scope" role="group" aria-label={t('feedScope')}>
+        <fieldset className="feed-scope"  aria-label={t('feedScope')}>
           <button
             type="button"
             className={scope === 'community' ? 'active' : ''}
@@ -131,7 +131,7 @@ function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
             <span className="codicon codicon-eye" aria-hidden="true" />
             {t('feedMine')}
           </button>
-        </div>
+        </fieldset>
       </header>
 
       <p className="feed-count" aria-live="polite">
@@ -154,7 +154,7 @@ function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
         ))}
       </div>
 
-      {loading && <div className="feed-state" role="status"><span className="codicon codicon-loading codicon-modifier-spin" aria-hidden="true" /> {t('loading')}</div>}
+      {loading && <output className="feed-state"><span className="codicon codicon-loading codicon-modifier-spin" aria-hidden="true" /> {t('loading')}</output>}
       {!loading && error && (
         <div className="feed-state error" role="alert">
           <p>{t('feedLoadError')}</p>

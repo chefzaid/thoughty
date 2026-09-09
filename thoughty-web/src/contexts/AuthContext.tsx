@@ -159,24 +159,27 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
 
   // Check if user is logged in on mount
   useEffect(() => {
+    const restoreSsoSession = async () => {
+      if (import.meta.env.PROD) {
+        let sessionExchanged = false;
+        await exchangeKeycloakSession((session) => {
+          saveTokens(session.accessToken, session.refreshToken);
+          setUser(session.user);
+          sessionExchanged = true;
+        });
+        if (sessionExchanged) {
+          clearKeycloakSsoAttempt();
+        } else if (!hasPendingKeycloakSsoAttempt()) {
+          startKeycloakSso();
+          return;
+        }
+      }
+      setLoading(false);
+    };
     const checkAuth = async () => {
       const accessToken = getAccessToken();
       if (!accessToken) {
-        if (import.meta.env.PROD) {
-          let sessionExchanged = false;
-          await exchangeKeycloakSession((session) => {
-            saveTokens(session.accessToken, session.refreshToken);
-            setUser(session.user);
-            sessionExchanged = true;
-          });
-          if (sessionExchanged) {
-            clearKeycloakSsoAttempt();
-          } else if (!hasPendingKeycloakSsoAttempt()) {
-            startKeycloakSso();
-            return;
-          }
-        }
-        setLoading(false);
+        await restoreSsoSession();
         return;
       }
 

@@ -129,21 +129,11 @@ describe('AppShell behavior flows', () => {
     expect((pageInput as HTMLInputElement).value).toBe('1');
   });
 
-  it('displays confirm modal component', async () => {
+  it.each(['Thoughty', 'Reset Filters'])('displays %s in the journal shell', async (text) => {
     renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByText('Thoughty')).toBeInTheDocument();
-    });
+    expect(await screen.findByText(text)).toBeInTheDocument();
   });
 
-  it('renders entry editing affordances', async () => {
-    renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByText('Thoughty')).toBeInTheDocument();
-    });
-  });
 
   it('shows edit actions for journal entries', async () => {
     renderAppShell();
@@ -196,13 +186,6 @@ describe('AppShell behavior flows', () => {
     });
   });
 
-  it('has reset filters button', async () => {
-    renderAppShell();
-
-    await waitFor(() => {
-      expect(screen.getByText('Reset Filters')).toBeInTheDocument();
-    });
-  });
 
   it('scrolls to top when clicked', async () => {
     const user = userEvent.setup();

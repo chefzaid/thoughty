@@ -112,10 +112,9 @@ describe('ProfilePictureEditor', () => {
                 isDark={false}
             />
         );
-        const overlay = container.querySelector('.ppe-overlay');
-        if (overlay) {
-            fireEvent.click(overlay);
-            expect(onClose).toHaveBeenCalled();
-        }
+        const backdrop = container.querySelector<HTMLButtonElement>('.ppe-backdrop');
+        expect(backdrop).not.toBeNull();
+        fireEvent.click(backdrop!);
+        expect(onClose).toHaveBeenCalled();
     });
 });

@@ -278,33 +278,32 @@ function parseMarkdownTag(tag: string): string {
 }
 
 function parseMarkdownMetadataLine(trimmed: string): MarkdownMetadata | null {
-  const tagsMatch = /^\*\*Tags:\*\*\s*(.+?)(?:\s*\|\s*\*\*Visibility:\*\*\s*(public|private))?(?:\s*\|\s*\*\*Diary:\*\*\s*(.+?))?$/.exec(trimmed);
-  if (tagsMatch) {
-    return {
-      tags: tagsMatch[1].split(',').map(parseMarkdownTag).filter(Boolean),
-      visibility: tagsMatch[2] as EntryVisibility | undefined,
-      diaryName: tagsMatch[3]?.trim() || undefined,
-    };
+  // Split only known metadata boundaries; diary names can contain ordinary pipes.
+  const sections = trimmed.split(/\|(?=[ \t]*\*\*(?:Visibility|Diary):\*\*)/).map((part) => part.trim());
+  const result: MarkdownMetadata = { tags: [] };
+  for (const section of sections) {
+    if (!applyMarkdownMetadataSection(section, result)) return null;
   }
+  return result;
+}
 
-  const visibilityMatch = /^\*\*Visibility:\*\*\s*(public|private)(?:\s*\|\s*\*\*Diary:\*\*\s*(.+?))?$/.exec(trimmed);
-  if (visibilityMatch) {
-    return {
-      tags: [],
-      visibility: visibilityMatch[1] as EntryVisibility,
-      diaryName: visibilityMatch[2]?.trim() || undefined,
-    };
+function applyMarkdownMetadataSection(section: string, result: MarkdownMetadata): boolean {
+  if (section.startsWith('**Tags:**')) {
+    const tags = section.slice('**Tags:**'.length).trim();
+    if (!tags) return false;
+    result.tags = tags.split(',').map(parseMarkdownTag).filter(Boolean);
+  } else if (section.startsWith('**Visibility:**')) {
+    const visibility = section.slice('**Visibility:**'.length).trim();
+    if (visibility !== 'public' && visibility !== 'private') return false;
+    result.visibility = visibility;
+  } else if (section.startsWith('**Diary:**')) {
+    const diary = section.slice('**Diary:**'.length).trim();
+    if (!diary) return false;
+    result.diaryName = diary;
+  } else {
+    return false;
   }
-
-  const diaryMatch = /^\*\*Diary:\*\*\s*(.+)$/.exec(trimmed);
-  if (diaryMatch) {
-    return {
-      tags: [],
-      diaryName: diaryMatch[1].trim(),
-    };
-  }
-
-  return null;
+  return true;
 }
 
 /**

@@ -1,3 +1,4 @@
+import { extractJsonCandidate } from '@/common/utils/json-content.util';
 export interface ToneMoodAnalysis {
   dominantMood: string;
   dominantTone: string;
@@ -127,9 +128,7 @@ export function parseJournalAnalysis(
     return null;
   }
 
-  const trimmed = rawContent.trim();
-  const objectMatch = /\{[\s\S]*\}/.exec(trimmed);
-  const objectCandidate = trimmed.startsWith('{') ? trimmed : (objectMatch?.[0] ?? '{}');
+  const objectCandidate = extractJsonCandidate(rawContent, '{') ?? '{}';
 
   try {
     const parsed = JSON.parse(objectCandidate) as Record<string, unknown>;

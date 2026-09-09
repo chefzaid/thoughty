@@ -110,10 +110,9 @@ describe('ProfilePage', () => {
     });
 
     describe('Rendering', () => {
-        it('renders the profile page with title', () => {
+        it.each(['profile', 'back', 'Member since 2023'])('displays %s', (text) => {
             render(<ProfilePage {...defaultProps} />);
-
-            expect(screen.getByText('profile')).toBeInTheDocument();
+            expect(screen.getByText(text)).toBeInTheDocument();
         });
 
         it('displays profile name input with current value', () => {
@@ -144,11 +143,6 @@ describe('ProfilePage', () => {
             expect(screen.getByText('saveSettings')).toBeInTheDocument();
         });
 
-        it('renders back button', () => {
-            render(<ProfilePage {...defaultProps} />);
-
-            expect(screen.getByText('back')).toBeInTheDocument();
-        });
 
         it('renders section headers', () => {
             render(<ProfilePage {...defaultProps} />);
@@ -159,11 +153,6 @@ describe('ProfilePage', () => {
             expect(screen.getByText('subscriptionManagement')).toBeInTheDocument();
         });
 
-        it('displays member since year', () => {
-            render(<ProfilePage {...defaultProps} />);
-
-            expect(screen.getByText('Member since 2023')).toBeInTheDocument();
-        });
 
         it('offers to resend verification for an unverified local account', async () => {
             const resendVerificationEmail = vi.fn().mockResolvedValue({ success: true });

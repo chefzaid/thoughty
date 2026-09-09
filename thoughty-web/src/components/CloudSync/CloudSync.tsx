@@ -317,7 +317,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                             <div className="cloud-provider-actions">
                                 {isConnected ? (
                                     <>
-                                        <button
+                                        <button type="button"
                                             className="cloud-btn sync"
                                             onClick={() => handleUpload(provider)}
                                             disabled={uploading === provider}
@@ -327,7 +327,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                                             </svg>
                                             {uploading === provider ? t('cloudUploading') : t('cloudUpload')}
                                         </button>
-                                        <button
+                                        <button type="button"
                                             className="cloud-btn browse"
                                             onClick={() => handleBrowseFiles(provider)}
                                         >
@@ -336,7 +336,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                                             </svg>
                                             {t('cloudBrowseFiles')}
                                         </button>
-                                        <button
+                                        <button type="button"
                                             className="cloud-btn disconnect"
                                             onClick={() => handleDisconnect(provider)}
                                         >
@@ -344,7 +344,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                                         </button>
                                     </>
                                 ) : (
-                                    <button
+                                    <button type="button"
                                         className="cloud-btn connect"
                                         onClick={() => handleConnect(provider)}
                                         disabled={connecting === provider}
@@ -446,21 +446,21 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                                     </div>
 
                                     <div className="cloud-schedule-actions">
-                                        <button
+                                        <button type="button"
                                             className="cloud-btn sync"
                                             onClick={() => handleSaveSchedule(provider)}
                                         >
                                             {t('cloudScheduleEnable')}
                                         </button>
                                         {schedules[provider]?.enabled && (
-                                            <button
+                                            <button type="button"
                                                 className="cloud-btn disconnect"
                                                 onClick={() => handleRemoveSchedule(provider)}
                                             >
                                                 {t('cloudScheduleDisable')}
                                             </button>
                                         )}
-                                        <button
+                                        <button type="button"
                                             className="cloud-btn browse"
                                             onClick={() => handleSyncNow(provider)}
                                             disabled={syncing === provider}
@@ -500,7 +500,7 @@ function CloudSync({ theme, t, diaryId }: CloudSyncProps) {
                                                         </div>
                                                     </div>
                                                     <div className="cloud-file-actions">
-                                                        <button
+                                                        <button type="button"
                                                             className="cloud-btn browse"
                                                             onClick={() => handleDownload(provider, file)}
                                                             disabled={downloading === file.id}

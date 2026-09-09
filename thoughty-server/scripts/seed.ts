@@ -4,8 +4,8 @@
  * Seeds the database with test data from journal_test_data.txt
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import * as bcrypt from 'bcryptjs';
 import { query, closeDatabase } from './lib/db';
 import { log, banner, section, summaryBox, fmt, table } from './lib/logger';
@@ -49,6 +49,18 @@ function getEntryKey(date: string, index: number): string {
  *   Entries on same day separated by: ********************************************************************************
  *   Days separated by: --------------------------------------------------------------------------------
  */
+function readSeedEntryContent(lines: string[], start: number): { next: number; content: string } {
+    const contentLines: string[] = [];
+    let next = start;
+    while (next < lines.length) {
+        const line = lines[next].trim();
+        if (line.startsWith('---') || line.startsWith('********************************************************************************')) break;
+        if (line) contentLines.push(line);
+        next++;
+    }
+    return { next, content: contentLines.join('\n') };
+}
+
 function parseTestData(content: string): Entry[] {
     const entries: Entry[] = [];
     const lines = content.split('\n');
@@ -62,7 +74,7 @@ function parseTestData(content: string): Entry[] {
         const line = lines[i].trim();
 
         // Check for date entry: ---YYYY-MM-DD--[tags]
-        const dateMatch = line.match(/^---(\d{4})-(\d{2})-(\d{2})--\[([^\]]*)\]$/);
+        const dateMatch = /^---(\d{4})-(\d{2})-(\d{2})--\[([^\]]*)\]$/.exec(line);
         if (dateMatch) {
             const [, year, month, day, tagsStr] = dateMatch;
             currentDate = `${year}-${month}-${day}`;
@@ -71,71 +83,39 @@ function parseTestData(content: string): Entry[] {
             const tags = tagsStr
                 .split(',')
                 .map((t) => t.trim())
-                .filter((t) => t);
+                .filter(Boolean);
 
-            // Get content from following lines until separator
-            i++;
-            const contentLines: string[] = [];
-            while (i < lines.length) {
-                const nextLine = lines[i];
-                if (
-                    nextLine.trim().startsWith('---') ||
-                    nextLine.trim().startsWith('********************************************************************************') ||
-                    nextLine.trim().startsWith('--------------------------------------------------------------------------------')
-                ) {
-                    break;
-                }
-                if (nextLine.trim()) {
-                    contentLines.push(nextLine.trim());
-                }
-                i++;
-            }
-
-            if (contentLines.length > 0) {
+            const body = readSeedEntryContent(lines, i + 1);
+            i = body.next;
+            if (body.content) {
                 entries.push({
                     date: currentDate,
                     index: currentIndex,
                     tags: tags,
-                    content: contentLines.join('\n'),
+                    content: body.content,
                 });
             }
             continue;
         }
 
         // Check for numbered entry: ---N--[tags]
-        const numMatch = line.match(/^---(\d+)--\[([^\]]*)\]$/);
+        const numMatch = /^---(\d+)--\[([^\]]*)\]$/.exec(line);
         if (numMatch && currentDate) {
             const [, num, tagsStr] = numMatch;
-            currentIndex = parseInt(num);
+            currentIndex = Number.parseInt(num, 10);
             const tags = tagsStr
                 .split(',')
                 .map((t) => t.trim())
-                .filter((t) => t);
+                .filter(Boolean);
 
-            // Get content from following lines until separator
-            i++;
-            const contentLines: string[] = [];
-            while (i < lines.length) {
-                const nextLine = lines[i];
-                if (
-                    nextLine.trim().startsWith('---') ||
-                    nextLine.trim().startsWith('********************************************************************************') ||
-                    nextLine.trim().startsWith('--------------------------------------------------------------------------------')
-                ) {
-                    break;
-                }
-                if (nextLine.trim()) {
-                    contentLines.push(nextLine.trim());
-                }
-                i++;
-            }
-
-            if (contentLines.length > 0) {
+            const body = readSeedEntryContent(lines, i + 1);
+            i = body.next;
+            if (body.content) {
                 entries.push({
                     date: currentDate,
                     index: currentIndex,
                     tags: tags,
-                    content: contentLines.join('\n'),
+                    content: body.content,
                 });
             }
             continue;

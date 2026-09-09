@@ -48,7 +48,7 @@ describe('sanitize.util', () => {
       const num = 123 as any;
       const result = sanitizeString(num);
 
-      expect(result).toBe(123);
+      expect(result).toBe(num);
     });
 
     it('should handle unicode characters', () => {

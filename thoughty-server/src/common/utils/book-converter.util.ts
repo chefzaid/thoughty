@@ -267,14 +267,14 @@ export function stripMarkdown(content: string): string {
   return content
     .replaceAll(/```[^\n]*\n?/g, '')
     .replaceAll(/^#{1,6}\s+/gm, '')
-    .replaceAll(/^\s*>\s?/gm, '')
+    .replaceAll(/^[\t ]*>[\t ]?/gm, '')
     .replaceAll(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replaceAll(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replaceAll(/\[([^[\]]+)\]\([^)]*\)/g, '$1')
     .replaceAll(/(\*\*|__)(.*?)\1/g, '$2')
     .replaceAll(/([*_])(.*?)\1/g, '$2')
     .replaceAll(/~~(.*?)~~/g, '$1')
     .replaceAll(/`([^`]*)`/g, '$1')
-    .replaceAll(/^\s*[-*+]\s+/gm, '- ')
+    .replaceAll(/^[\t ]*[-*+][\t ]+/gm, '- ')
     .replaceAll(/^([-*_])\1{2,}\s*$/gm, '');
 }
 
@@ -330,29 +330,7 @@ export function renderBookMarkdown(book: Book, options: RenderBookOptions = {}):
     lines.push('');
   }
 
-  for (const [index, chapter] of book.chapters.entries()) {
-    lines.push(`## Chapter ${index + 1}: ${chapter.title}`, '');
-    if (chapter.introduction) {
-      lines.push('### Introduction', '', chapter.introduction, '');
-    }
-    if (chapter.narrative) {
-      lines.push(chapter.narrative, '');
-      for (const entry of chapter.entries) {
-        renderMarkdownEntryImages(lines, entry);
-      }
-    } else {
-      for (const entry of chapter.entries) {
-        if (includeDates) {
-          lines.push(`### ${entry.date}`, '');
-        }
-        lines.push(entry.content, '');
-        renderMarkdownEntryImages(lines, entry);
-      }
-    }
-    if (chapter.summary) {
-      lines.push('### Chapter Summary', '', chapter.summary, '');
-    }
-  }
+  for (const [index, chapter] of book.chapters.entries()) { renderMarkdownChapter(lines, chapter, index, includeDates); }
 
   return lines.join('\n');
 }
@@ -362,7 +340,7 @@ function renderMarkdownEntryImages(lines: string[], entry: BookEntry): void {
     const source = bookImageDataUri(image);
     if (source) {
       const name = escapeBookImageMarkdownText(image.name);
-      lines.push(`![${name}](${source})`, `*${entry.date} \\- ${name}*`, '');
+      lines.push(`![${name}](${source})`, String.raw`*${entry.date} \- ${name}*`, '');
     }
   }
 }
@@ -428,44 +406,7 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     parts.push('</ol>', '</nav>');
   }
 
-  for (const [index, chapter] of book.chapters.entries()) {
-    parts.push(
-      `<section class="chapter" id="chapter-${index + 1}">`,
-      `<h2>Chapter ${index + 1}: ${escapeHtml(chapter.title)}</h2>`,
-    );
-    if (chapter.introduction) {
-      parts.push(
-        '<aside class="chapter-framing chapter-introduction">',
-        '<h3>Introduction</h3>',
-        `<p>${escapeHtml(chapter.introduction)}</p>`,
-        '</aside>',
-      );
-    }
-    if (chapter.narrative) {
-      parts.push(`<div class="entry-content">${escapeHtml(chapter.narrative)}</div>`);
-      for (const entry of chapter.entries) {
-        renderHtmlEntryImages(parts, entry);
-      }
-    } else {
-      for (const entry of chapter.entries) {
-        parts.push('<article class="entry">');
-        if (includeDates) {
-          parts.push(`<div class="entry-date">${escapeHtml(entry.date)}</div>`);
-        }
-        parts.push(`<div class="entry-content">${escapeHtml(entry.content)}</div>`, '</article>');
-        renderHtmlEntryImages(parts, entry);
-      }
-    }
-    if (chapter.summary) {
-      parts.push(
-        '<aside class="chapter-framing chapter-summary">',
-        '<h3>Chapter Summary</h3>',
-        `<p>${escapeHtml(chapter.summary)}</p>`,
-        '</aside>',
-      );
-    }
-    parts.push('</section>');
-  }
+  for (const [index, chapter] of book.chapters.entries()) { renderHtmlChapter(parts, chapter, index, includeDates); }
 
   parts.push('</body>', '</html>');
   return parts.join('\n');
@@ -483,4 +424,69 @@ function renderHtmlEntryImages(parts: string[], entry: BookEntry): void {
       );
     }
   }
+}
+
+function renderMarkdownChapter(lines: string[], chapter: BookChapter, index: number, includeDates: boolean): void {
+  lines.push(`## Chapter ${index + 1}: ${chapter.title}`, '');
+  if (chapter.introduction) {
+    lines.push('### Introduction', '', chapter.introduction, '');
+  }
+  if (chapter.narrative) {
+    lines.push(chapter.narrative, '');
+    for (const entry of chapter.entries) {
+      renderMarkdownEntryImages(lines, entry);
+    }
+  } else {
+    for (const entry of chapter.entries) {
+      if (includeDates) {
+        lines.push(`### ${entry.date}`, '');
+      }
+      lines.push(entry.content, '');
+      renderMarkdownEntryImages(lines, entry);
+    }
+  }
+  if (chapter.summary) {
+    lines.push('### Chapter Summary', '', chapter.summary, '');
+  }
+
+}
+
+function renderHtmlChapter(parts: string[], chapter: BookChapter, index: number, includeDates: boolean): void {
+  parts.push(
+    `<section class="chapter" id="chapter-${index + 1}">`,
+    `<h2>Chapter ${index + 1}: ${escapeHtml(chapter.title)}</h2>`,
+  );
+  if (chapter.introduction) {
+    parts.push(
+      '<aside class="chapter-framing chapter-introduction">',
+      '<h3>Introduction</h3>',
+      `<p>${escapeHtml(chapter.introduction)}</p>`,
+      '</aside>',
+    );
+  }
+  if (chapter.narrative) {
+    parts.push(`<div class="entry-content">${escapeHtml(chapter.narrative)}</div>`);
+    for (const entry of chapter.entries) {
+      renderHtmlEntryImages(parts, entry);
+    }
+  } else {
+    for (const entry of chapter.entries) {
+      parts.push('<article class="entry">');
+      if (includeDates) {
+        parts.push(`<div class="entry-date">${escapeHtml(entry.date)}</div>`);
+      }
+      parts.push(`<div class="entry-content">${escapeHtml(entry.content)}</div>`, '</article>');
+      renderHtmlEntryImages(parts, entry);
+    }
+  }
+  if (chapter.summary) {
+    parts.push(
+      '<aside class="chapter-framing chapter-summary">',
+      '<h3>Chapter Summary</h3>',
+      `<p>${escapeHtml(chapter.summary)}</p>`,
+      '</aside>',
+    );
+  }
+  parts.push('</section>');
+
 }

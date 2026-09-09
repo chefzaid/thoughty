@@ -1,4 +1,4 @@
-import { FormEvent, useState } from 'react';
+import { SubmitEvent, useState } from 'react';
 
 import Footer from '../Footer/Footer';
 import '../IntroPage/IntroPage.css';
@@ -26,7 +26,7 @@ function ContactPage({ theme, t, onBackHome }: Readonly<ContactPageProps>) {
   const [submitted, setSubmitted] = useState(false);
   const isLight = theme === 'light';
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
     event.currentTarget.reset();
@@ -73,10 +73,10 @@ function ContactPage({ theme, t, onBackHome }: Readonly<ContactPageProps>) {
               {t('contactSubmit')}
             </button>
             {submitted ? (
-              <p className="contact-success" role="status">
+              <output className="contact-success">
                 <strong>{t('contactSuccessTitle')}</strong>
                 <span>{t('contactSuccessBody')}</span>
-              </p>
+              </output>
             ) : null}
           </form>
         </section>

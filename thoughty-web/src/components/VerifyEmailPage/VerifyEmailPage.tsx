@@ -48,14 +48,11 @@ function VerifyEmailPage({ t, theme, onContinue }: VerifyEmailPageProps) {
     void runVerification();
   }, [runVerification, token]);
 
-  const message =
-    status === 'verifying'
-      ? t('verifyingEmail')
-      : status === 'success'
-        ? t('emailVerificationSuccess')
-        : status === 'missing'
-          ? t('emailVerificationMissingToken')
-          : t('emailVerificationInvalid');
+  const messages = {
+    verifying: 'verifyingEmail', success: 'emailVerificationSuccess',
+    missing: 'emailVerificationMissingToken', error: 'emailVerificationInvalid',
+  };
+  const message = t(messages[status]);
 
   return (
     <main className={`auth-page verify-email-page ${theme === 'light' ? 'light' : 'dark'}`}>
@@ -67,13 +64,13 @@ function VerifyEmailPage({ t, theme, onContinue }: VerifyEmailPageProps) {
           </h1>
         </div>
 
-        <p
+        <output
           className={`verify-email-status ${status === 'error' || status === 'missing' ? 'error' : ''}`}
-          role={status === 'error' || status === 'missing' ? 'alert' : 'status'}
+          role={status === 'error' || status === 'missing' ? 'alert' : undefined}
           aria-live="polite"
         >
           {message}
-        </p>
+        </output>
 
         {status === 'error' && (
           <button type="button" className="auth-submit-btn" onClick={() => void runVerification()}>

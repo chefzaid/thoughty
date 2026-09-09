@@ -90,7 +90,8 @@ function ProfileHeaderCard({
             <span aria-hidden="true">✓</span>
             {t('verifiedAccount')}
           </span>
-        ) : user?.authProvider === 'local' ? (
+        ) : null}
+        {!user?.emailVerified && user?.authProvider === 'local' && (
           <button
             type="button"
             className="profile-verification-badge unverified"
@@ -100,7 +101,7 @@ function ProfileHeaderCard({
           >
             {resending ? t('resendingVerification') : t('resendVerification')}
           </button>
-        ) : null}
+        )}
       </div>
       {verificationMessage && (
         <p

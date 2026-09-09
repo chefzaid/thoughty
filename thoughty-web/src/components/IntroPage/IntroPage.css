@@ -113,7 +113,7 @@
 }
 
 .intro-page.dark .intro-btn.secondary {
-    background: rgba(247, 245, 237, 0.1);
+    background: #293835;
     color: #f7f5ed;
     border-color: rgba(247, 245, 237, 0.24);
 }
@@ -636,6 +636,7 @@
 
 @media (max-width: 980px) {
     .landing-hero {
+        display: block;
         min-height: auto;
         padding-top: 4rem;
         padding-bottom: 4rem;
@@ -651,9 +652,6 @@
         transform: none;
     }
 
-    .landing-hero {
-        display: block;
-    }
 
     .feature-list,
     .screenshot-grid {

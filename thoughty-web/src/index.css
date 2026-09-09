@@ -108,8 +108,8 @@ body.high-contrast-mode .modal-content {
 }
 
 .entry-reference-link:hover {
-  color: #60a5fa;
-  background-color: rgba(59, 130, 246, 0.1);
+  color: #93c5fd;
+  background: #172e53;
 }
 
 .entry-reference-link:focus {

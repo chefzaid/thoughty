@@ -179,7 +179,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
             >
               {t('exportChatHistory')}
             </button>
-            <button
+            <button type="button"
               onClick={onClose}
               className={`p-1.5 rounded-lg transition-colors ${
                 isLight ? 'hover:bg-gray-100 text-gray-500' : 'hover:bg-gray-700 text-gray-400'
@@ -271,7 +271,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
                   : 'bg-gray-900 border-gray-600 text-gray-100'
               }`}
             />
-            <button
+            <button type="button"
               onClick={handleSend}
               disabled={historyLoading || !input.trim() || loading}
               className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"

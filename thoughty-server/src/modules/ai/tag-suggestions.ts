@@ -1,3 +1,4 @@
+import { extractJsonCandidate } from '@/common/utils/json-content.util';
 import { BadGatewayException } from '@nestjs/common';
 import type { TagSuggestionStyle } from './dto/suggest-tags.dto';
 import type { OpenRouterUsageReporter } from './ai-usage.service';
@@ -21,9 +22,7 @@ interface OpenRouterTagResponse {
 }
 
 function parseTags(rawContent: string): string[] {
-  const trimmed = rawContent.trim();
-  const arrayMatch = /\[[\s\S]*\]/.exec(trimmed);
-  const candidate = trimmed.startsWith('[') ? trimmed : (arrayMatch?.[0] ?? '[]');
+  const candidate = extractJsonCandidate(rawContent, '[') ?? '[]';
 
   try {
     const parsed = JSON.parse(candidate) as unknown;

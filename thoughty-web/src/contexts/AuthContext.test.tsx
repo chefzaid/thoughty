@@ -300,9 +300,9 @@ describe('AuthContext', () => {
             await requireContext(ctx).logout();
         });
 
-        expect(localStorage.getItem('accessToken')).toBe(null);
+        expect(localStorage.getItem('accessToken')).toBeNull();
         await waitFor(() => {
-            expect(requireContext(ctx).user).toBe(null);
+            expect(requireContext(ctx).user).toBeNull();
         });
     });
 

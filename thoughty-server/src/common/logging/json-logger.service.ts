@@ -5,7 +5,7 @@ type LogMetadata = Record<string, unknown>;
 
 const SENSITIVE_KEY_PATTERN = /token|password|secret|authorization|api[_-]?key|cookie/i;
 const SENSITIVE_QUERY_PATTERN = /([?&](?:token|resetToken|verificationToken|access_token|refresh_token|code)=)[^&\s]+/gi;
-const BEARER_PATTERN = /Bearer\s+[A-Za-z0-9._~+/=-]+/gi;
+const BEARER_PATTERN = /Bearer\s+[a-z0-9._~+/=-]+/gi;
 const KEY_VALUE_SECRET_PATTERN =
   /\b(token|password|secret|authorization|api[_-]?key|cookie)=["']?[^"',\s}]+["']?/gi;
 
@@ -51,7 +51,7 @@ function sanitizeValue(value: unknown, depth = 0): unknown {
 
 function splitParams(params: unknown[]): { context?: string; metadata?: LogMetadata; trace?: string } {
   const remaining = [...params];
-  const context = typeof remaining[remaining.length - 1] === 'string' ? (remaining.pop() as string) : undefined;
+  const context = typeof remaining.at(-1) === 'string' ? (remaining.pop() as string) : undefined;
   const trace = typeof remaining[0] === 'string' && remaining[0].includes('\n') ? (remaining.shift() as string) : undefined;
 
   if (remaining.length === 0) {
@@ -117,7 +117,7 @@ export class JsonLogger implements LoggerService {
       context: context ?? this.defaultContext,
       message: sanitizeValue(message),
       trace: trace ? redactString(trace) : undefined,
-      ...((sanitizeValue(metadata) as LogMetadata | undefined) ?? {}),
+      ...(sanitizeValue(metadata) as LogMetadata | undefined),
     };
 
     const line = `${JSON.stringify(output)}\n`;

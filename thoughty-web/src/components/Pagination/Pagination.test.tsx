@@ -104,29 +104,14 @@ describe('Pagination', () => {
     expect(mockSetInputPage).toHaveBeenCalledWith('7');
   });
 
-  it('navigates to page on blur with valid input', () => {
-    render(<Pagination {...defaultProps} inputPage="7" />);
-    const input = screen.getByRole('spinbutton');
-    fireEvent.blur(input);
-    expect(mockSetPage).toHaveBeenCalledWith(7);
-    expect(mockSetInputPage).toHaveBeenCalledWith('7');
+  it.each([['7', 7], ['0', 1], ['15', 10]])('normalizes page %s to %i on blur', (inputPage, page) => {
+    render(<Pagination {...defaultProps} inputPage={inputPage} />);
+    fireEvent.blur(screen.getByRole('spinbutton'));
+    expect(mockSetPage).toHaveBeenCalledWith(page);
+    expect(mockSetInputPage).toHaveBeenCalledWith(String(page));
   });
 
-  it('clamps to 1 when input is less than 1', () => {
-    render(<Pagination {...defaultProps} inputPage="0" />);
-    const input = screen.getByRole('spinbutton');
-    fireEvent.blur(input);
-    expect(mockSetPage).toHaveBeenCalledWith(1);
-    expect(mockSetInputPage).toHaveBeenCalledWith('1');
-  });
 
-  it('clamps to totalPages when input exceeds it', () => {
-    render(<Pagination {...defaultProps} inputPage="15" />);
-    const input = screen.getByRole('spinbutton');
-    fireEvent.blur(input);
-    expect(mockSetPage).toHaveBeenCalledWith(10);
-    expect(mockSetInputPage).toHaveBeenCalledWith('10');
-  });
 
   it('handles NaN input by defaulting to 1', () => {
     render(<Pagination {...defaultProps} inputPage="abc" />);

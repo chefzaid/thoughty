@@ -96,6 +96,7 @@
 }
 
 .feedback-success {
+  display: block;
     margin: 0;
     border-radius: 8px;
     background: #d9e8da;
@@ -116,12 +117,13 @@
 }
 
 .intro-page.dark .feedback-error {
-    background: rgba(185, 28, 28, 0.22);
+    background: #492424;
     color: #fecaca;
 }
 
 .intro-page.dark .feedback-success {
-    background: rgba(45, 125, 101, 0.22);
+  display: block;
+    background: #214b3e;
     color: #d9f7e8;
 }
 
@@ -191,12 +193,14 @@
 }
 
 .feedback-board-message {
+  display: block;
     margin: 0;
     padding: 1.25rem 0;
     color: #475569;
 }
 
 .intro-page.dark .feedback-board-message {
+  display: block;
     color: #d9d3c2;
 }
 

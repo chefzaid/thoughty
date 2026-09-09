@@ -22,7 +22,7 @@ const NoticeModal = ({
   const isLight = theme === 'light';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="notice-modal-title">
+    <dialog className="fixed inset-0 z-50 m-0 h-full w-full max-w-none border-0 bg-transparent p-0 text-inherit flex items-center justify-center" open aria-modal="true" aria-labelledby="notice-modal-title">
       <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
@@ -66,7 +66,7 @@ const NoticeModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 };
 
