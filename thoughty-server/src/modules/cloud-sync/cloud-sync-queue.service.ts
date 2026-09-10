@@ -1,18 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, LessThanOrEqual, Repository } from 'typeorm';
+import { DataSource, In, IsNull, LessThanOrEqual, Raw, Repository } from 'typeorm';
+import { randomUUID } from 'node:crypto';
 import { CloudSyncJob, type CloudSyncJobStatus, Setting } from '@/database/entities';
 import type { CloudProviderType } from './dto';
 import { CloudSyncService } from './cloud-sync.service';
+import { withCloudOperation } from './providers/cloud-operation';
 
 const CLOUD_SYNC_PROVIDERS: CloudProviderType[] = ['google_drive', 'onedrive', 'dropbox'];
 const ACTIVE_JOB_STATUSES: CloudSyncJobStatus[] = ['queued', 'running'];
 const DEFAULT_MAX_ATTEMPTS = 3;
 const JOB_LOCK_TIMEOUT_MS = 15 * 60 * 1000;
+const JOB_HEARTBEAT_MS = 30_000;
 
 @Injectable()
 export class CloudSyncQueueService {
   private readonly logger = new Logger(CloudSyncQueueService.name);
+  private stopping = false;
+  private readonly activeOperations = new Set<AbortController>();
 
   constructor(
     @InjectRepository(CloudSyncJob)
@@ -77,34 +82,41 @@ export class CloudSyncQueueService {
     return insertedRows.length > 0;
   }
 
-  async recoverStaleJobs(now = new Date()): Promise<number> {
-    const staleThreshold = new Date(now.getTime() - JOB_LOCK_TIMEOUT_MS);
+  async recoverStaleJobs(now?: Date): Promise<number> {
+    const stale = now ? LessThanOrEqual(new Date(now.getTime() - JOB_LOCK_TIMEOUT_MS))
+      : Raw(alias => `${alias} <= NOW() - INTERVAL '15 minutes'`);
+    const recoveredAt = now ?? new Date();
     const staleJobs = await this.jobRepository.find({
       where: {
         status: 'running',
-        lockedAt: LessThanOrEqual(staleThreshold),
+        lockedAt: stale,
       },
     });
 
+    let recovered = 0;
     for (const job of staleJobs) {
       const canRetry = job.attemptCount < job.maxAttempts;
-      await this.jobRepository.update(job.id, {
+      const result = await this.jobRepository.update({
+        id: job.id, status: 'running', lockedBy: job.lockedBy ?? IsNull(),
+        lockedAt: stale,
+      }, {
         status: canRetry ? 'queued' : 'failed',
-        runAt: canRetry ? now : job.runAt,
+        runAt: canRetry ? recoveredAt : job.runAt,
         lockedAt: null,
         lockedBy: null,
-        finishedAt: canRetry ? null : now,
+        finishedAt: canRetry ? null : recoveredAt,
         lastError: this.appendRecoveryNote(job.lastError),
       });
+      recovered += result.affected ?? 0;
     }
 
-    return staleJobs.length;
+    return recovered;
   }
 
   async processAvailableJobs(workerId: string, maxJobs = 5): Promise<number> {
     let processedCount = 0;
 
-    while (processedCount < maxJobs) {
+    while (!this.stopping && processedCount < maxJobs) {
       const job = await this.claimNextJob(workerId);
       if (!job) {
         break;
@@ -118,9 +130,35 @@ export class CloudSyncQueueService {
   }
 
   private async runJob(job: CloudSyncJob): Promise<void> {
+    const controller = new AbortController();
+    this.activeOperations.add(controller);
+    let heartbeat: ReturnType<typeof setInterval> | undefined;
+    let renewing: Promise<void> | undefined;
+    const verifyOwnership = async () => {
+      controller.signal.throwIfAborted();
+      try {
+        const rows = await this.dataSource.query(`UPDATE cloud_sync_jobs SET locked_at = NOW(), updated_at = NOW()
+          WHERE id = $1 AND status = 'running' AND locked_by = $2
+            AND locked_at > NOW() - INTERVAL '15 minutes' RETURNING id`, [job.id, job.lockedBy]) as Array<{ id: number }>;
+        if (!rows.length) throw new Error('Cloud sync lease lost');
+      } catch (error) {
+        controller.abort(new Error('Cloud sync lease lost'));
+        throw error;
+      }
+      controller.signal.throwIfAborted();
+    };
     try {
-      const result = await this.cloudSyncService.executeDiffSync(job.userId, job.provider);
-      await this.jobRepository.update(job.id, {
+      if (this.stopping) controller.abort(new Error('Cloud sync worker stopping'));
+      await verifyOwnership();
+      heartbeat = setInterval(() => {
+        if (renewing) return;
+        renewing = verifyOwnership().catch(() => {}).finally(() => { renewing = undefined; });
+      }, JOB_HEARTBEAT_MS);
+      heartbeat.unref();
+      const result = await withCloudOperation({ signal: controller.signal, verifyOwnership },
+        () => this.cloudSyncService.executeDiffSync(job.userId, job.provider));
+      controller.signal.throwIfAborted();
+      await this.jobRepository.update(this.ownershipCriteria(job), {
         status: 'completed',
         lockedAt: null,
         lockedBy: null,
@@ -129,8 +167,22 @@ export class CloudSyncQueueService {
         resultMessage: result.message,
       });
     } catch (error) {
-      await this.failJob(job, error);
+      if (!controller.signal.aborted) await this.failJob(job, error);
+    } finally {
+      if (heartbeat) clearInterval(heartbeat);
+      await renewing;
+      this.activeOperations.delete(controller);
     }
+  }
+
+  stop(): void {
+    this.stopping = true;
+    for (const controller of this.activeOperations) controller.abort(new Error('Cloud sync worker stopping'));
+  }
+
+  private ownershipCriteria(job: CloudSyncJob) {
+    return { id: job.id, status: 'running' as const, lockedBy: job.lockedBy ?? IsNull(),
+      lockedAt: Raw(alias => `${alias} > NOW() - INTERVAL '15 minutes'`) };
   }
 
   private async failJob(job: CloudSyncJob, error: unknown): Promise<void> {
@@ -138,7 +190,7 @@ export class CloudSyncQueueService {
     const canRetry = job.attemptCount < job.maxAttempts;
     const retryAt = new Date(Date.now() + this.getRetryDelayMs(job.attemptCount));
 
-    await this.jobRepository.update(job.id, {
+    const update = await this.jobRepository.update(this.ownershipCriteria(job), {
       status: canRetry ? 'queued' : 'failed',
       runAt: canRetry ? retryAt : job.runAt,
       lockedAt: null,
@@ -148,18 +200,19 @@ export class CloudSyncQueueService {
       resultMessage: null,
     });
 
+    if (!update.affected) return;
     this.logger.error(
       `Cloud sync job ${job.id} failed for user ${job.userId} and provider ${job.provider}: ${errorMessage}`,
     );
   }
 
   private async claimNextJob(workerId: string): Promise<CloudSyncJob | null> {
+    const claimToken = `${workerId.slice(0, 80)}:${randomUUID()}`;
     const queryRunner = this.dataSource.createQueryRunner();
 
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
     try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
       const selectedRows = await queryRunner.query(
         `
           SELECT id
@@ -189,14 +242,16 @@ export class CloudSyncQueueService {
               finished_at = NULL
           WHERE id = $1
         `,
-        [jobId, workerId],
+        [jobId, claimToken],
       );
 
       await queryRunner.commitTransaction();
 
-      return this.jobRepository.findOneBy({ id: jobId });
+      const job = await this.jobRepository.findOneBy({ id: jobId, status: 'running', lockedBy: claimToken });
+      if (job) job.lockedBy = claimToken;
+      return job;
     } catch (error) {
-      await queryRunner.rollbackTransaction();
+      if (queryRunner.isTransactionActive) await queryRunner.rollbackTransaction();
       throw error;
     } finally {
       await queryRunner.release();

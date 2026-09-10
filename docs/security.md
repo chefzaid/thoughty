@@ -23,6 +23,11 @@ Production authentication is centralized in the shared Keycloak `swirlit` realm.
 
 Local development retains the password and optional Google sign-in flows. Production users are redirected automatically to Keycloak before the application is served; Thoughty does not collect their Keycloak password.
 
+This integration uses the platform's `oauth2-proxy` client. It requires no
+Thoughty-specific Keycloak client or platform-side application registration.
+This repository owns the ingress authentication annotations, issuer/JWKS
+configuration, audience checks and local account lifecycle.
+
 ```mermaid
 sequenceDiagram
     participant User

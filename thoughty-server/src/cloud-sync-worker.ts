@@ -11,7 +11,10 @@ async function bootstrap(): Promise<void> {
     logger,
   });
 
+  let shuttingDown = false;
   const shutdown = async (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
     logger.log(`Received ${signal}, shutting down cloud sync worker`);
     await app.close();
     process.exit(0);

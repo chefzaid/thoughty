@@ -6,6 +6,7 @@ describe('CloudSyncWorkerService', () => {
     enqueueDueSyncJobs: jest.Mock;
     processAvailableJobs: jest.Mock;
     recoverStaleJobs: jest.Mock;
+    stop: jest.Mock;
   };
 
   beforeEach(() => {
@@ -14,6 +15,7 @@ describe('CloudSyncWorkerService', () => {
       enqueueDueSyncJobs: jest.fn().mockResolvedValue(undefined),
       processAvailableJobs: jest.fn().mockResolvedValue(undefined),
       recoverStaleJobs: jest.fn().mockResolvedValue(undefined),
+      stop: jest.fn(),
     };
 
     service = new CloudSyncWorkerService(cloudSyncQueueService as never);
@@ -57,9 +59,27 @@ describe('CloudSyncWorkerService', () => {
     const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
 
     await service.start();
-    service.onModuleDestroy();
+    await service.onModuleDestroy();
 
     expect(clearIntervalSpy).toHaveBeenCalledTimes(2);
+    expect(cloudSyncQueueService.stop).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops claiming and waits for active work before shutdown completes', async () => {
+    let finish!: () => void;
+    cloudSyncQueueService.processAvailableJobs.mockImplementation(() => new Promise<void>(resolve => { finish = resolve; }));
+    const start = service.start();
+    for (let tick = 0; tick < 10 && !finish; tick++) await Promise.resolve();
+    let closed = false;
+    const close = service.onModuleDestroy().then(() => { closed = true; });
+    await Promise.resolve();
+    expect(cloudSyncQueueService.stop).toHaveBeenCalled();
+    expect(closed).toBe(false);
+    finish();
+    await Promise.all([start, close]);
+    jest.advanceTimersByTime(120_000);
+    expect(cloudSyncQueueService.processAvailableJobs).toHaveBeenCalledTimes(1);
+    expect(closed).toBe(true);
   });
 
   it('skips schedule scanning when a scan is already in progress', async () => {

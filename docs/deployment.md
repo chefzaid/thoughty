@@ -1,5 +1,8 @@
 # Deployment Guide
 
+This repository owns its [public DNS](dns.md), including the DNS cutover when
+the shared platform switches to HA Tunnel ingress.
+
 Thoughty provides a production profile for the shared bare-metal cluster and a standalone profile for independent installations. The production profile is described in [Server Deployment](./server-deployment.md) and is the only profile changed automatically by `.gitlab-ci.yml`.
 
 ## Infrastructure Layout
@@ -125,3 +128,42 @@ job visibly; quality findings remain independent of deployment permission.
 
 The quality job uses the shared slim Node scanner image; browser images are only
 needed for explicitly requested E2E jobs.
+
+## Future multi-node HA profile
+
+`infra/overlays/ha` composes `infra/k8s/overlays/bm-cluster`. It keeps two API
+and two web replicas, requires two eligible hostnames, and adds hostname
+spreading and per-Deployment disruption budgets. It leaves the cloud-sync
+worker at its existing single replica. Keep the normal bm-cluster overlay on
+a single host; neither profile alone makes the shared platform highly available.
+
+To opt in, persist `spec.source.path: infra/overlays/ha` in this repository's
+`infra/argocd/application.yaml`, then reconcile the Application. Bootstrap and
+release helpers may reapply this file, so a live-only override will not persist.
+Image updates continue in `infra/k8s/overlays/bm-cluster/kustomization.yaml` and
+are inherited by HA. Existing database setup and migration hooks remain in place.
+
+```sh
+kubectl kustomize infra/k8s/overlays/bm-cluster >/dev/null
+kubectl kustomize infra/overlays/ha >/dev/null
+```
+
+PostgreSQL, Redis, the configured object store, Keycloak and ingress must each
+remain available after losing a host. JWT/refresh-token state and attachments
+must be shared; the API does not require sticky sessions. Redis shares throttle
+counters, with per-process fallback during Redis failures. Validate the trusted
+proxy/client-IP path before relying on those counters across ingress replicas.
+
+The worker uses unique claim tokens, a renewable database lease, conditional
+recovery/completion and cancellation of provider requests after lease loss.
+Shutdown stops new claims and waits for active work. Keep **one worker**:
+cancelling a request cannot undo an upload the provider already accepted, and
+provider-wide idempotency is not established. Interrupted jobs are recovered
+after the lease expires; the API/web HA profile does not promise uninterrupted
+or exactly-once background sync. The [worker ADR](adr/0006-database-backed-cloud-sync-worker.md)
+describes the recovery and test contract.
+
+Before enabling, exercise login/refresh across API replicas, journal writes,
+attachment upload/download, shared throttling and an eligible-node drain. Also
+verify the database and object-store failover paths; a PDB only constrains
+voluntary eviction and cannot prevent hardware failures.

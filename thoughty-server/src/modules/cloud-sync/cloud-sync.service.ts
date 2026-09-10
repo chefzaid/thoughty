@@ -9,6 +9,7 @@ import { OneDriveProvider } from './providers/onedrive.provider';
 import { DropboxProvider } from './providers/dropbox.provider';
 import type { CloudProvider, CloudFileInfo, CloudTokens } from './providers/cloud-provider.interface';
 import type { CloudProviderType, SyncFrequency } from './dto';
+import { checkCloudCancellation, verifyCloudOwnership } from './providers/cloud-operation';
 
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 
@@ -120,9 +121,12 @@ export class CloudSyncService {
     // Refresh the token
     try {
       const newTokens = await this.providers[provider].refreshAccessToken(tokens.refreshToken);
+      await verifyCloudOwnership();
       await this.storeTokens(userId, provider, newTokens);
       return newTokens.accessToken;
     } catch (error) {
+      // A cancelled/partitioned worker must not disconnect a healthy account.
+      checkCloudCancellation();
       this.logger.error(`Failed to refresh token for ${provider}:`, error);
       await this.clearTokens(userId, provider);
       throw new BadRequestException(`${provider.replace('_', ' ')} connection expired. Please reconnect.`);
@@ -322,6 +326,7 @@ export class CloudSyncService {
     message: string;
     file?: CloudFileInfo;
   }> {
+    await verifyCloudOwnership();
     // Load schedule config
     const [formatSetting, diaryIdSetting, includeVisibilitySetting, lastHashSetting] = await Promise.all([
       this.settingRepository.findOne({ where: { userId, key: this.settingKey(provider, 'sync_format') } }),
@@ -337,6 +342,7 @@ export class CloudSyncService {
 
     // Generate export content (text formats only, per the schedule DTO)
     const exported = await this.ioService.export(userId, diaryId, includeVisibility, format);
+    await verifyCloudOwnership();
     const { filename, contentType } = exported;
     const content = String(exported.content);
 
@@ -356,6 +362,7 @@ export class CloudSyncService {
     // Upload to cloud
     const accessToken = await this.getValidAccessToken(userId, provider);
     const file = await this.providers[provider].uploadFile(accessToken, filename, content, contentType);
+    await verifyCloudOwnership();
 
     // Store new hash and timestamp
     await Promise.all([

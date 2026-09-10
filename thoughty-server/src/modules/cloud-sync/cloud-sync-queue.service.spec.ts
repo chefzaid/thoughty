@@ -18,7 +18,7 @@ describe('CloudSyncQueueService', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       findOneBy: jest.fn(),
-      update: jest.fn(),
+      update: jest.fn().mockResolvedValue({ affected: 1 }),
     };
 
     settingRepository = {
@@ -33,14 +33,14 @@ describe('CloudSyncQueueService', () => {
     queryRunner = {
       connect: jest.fn().mockResolvedValue(undefined),
       startTransaction: jest.fn().mockResolvedValue(undefined),
-      query: jest.fn(),
+      query: jest.fn().mockResolvedValue([{ id: 1 }]),
       commitTransaction: jest.fn().mockResolvedValue(undefined),
       rollbackTransaction: jest.fn().mockResolvedValue(undefined),
       release: jest.fn().mockResolvedValue(undefined),
     };
 
     dataSource = {
-      query: jest.fn(),
+      query: jest.fn().mockResolvedValue([{ id: 1 }]),
       createQueryRunner: jest.fn(() => queryRunner),
     };
 
@@ -100,7 +100,7 @@ describe('CloudSyncQueueService', () => {
 
     expect(processedCount).toBe(1);
     expect(cloudSyncService.executeDiffSync).toHaveBeenCalledWith(4, 'google_drive');
-    expect(jobRepository.update).toHaveBeenCalledWith(7, expect.objectContaining({
+    expect(jobRepository.update).toHaveBeenCalledWith(expect.objectContaining({ id: 7, status: 'running', lockedBy: expect.any(String) }), expect.objectContaining({
       status: 'completed',
       resultMessage: 'Sync completed successfully',
     }));
@@ -123,7 +123,7 @@ describe('CloudSyncQueueService', () => {
     const processedCount = await service.processAvailableJobs('worker-2', 1);
 
     expect(processedCount).toBe(1);
-    expect(jobRepository.update).toHaveBeenCalledWith(8, expect.objectContaining({
+    expect(jobRepository.update).toHaveBeenCalledWith(expect.objectContaining({ id: 8, status: 'running', lockedBy: expect.any(String) }), expect.objectContaining({
       status: 'queued',
       lastError: 'network timeout',
       lockedAt: null,
@@ -151,15 +151,47 @@ describe('CloudSyncQueueService', () => {
     const recoveredCount = await service.recoverStaleJobs(new Date('2024-06-01T00:00:00Z'));
 
     expect(recoveredCount).toBe(2);
-    expect(jobRepository.update).toHaveBeenNthCalledWith(1, 11, expect.objectContaining({
+    expect(jobRepository.update).toHaveBeenNthCalledWith(1, expect.objectContaining({ id: 11, status: 'running' }), expect.objectContaining({
       status: 'queued',
       lockedAt: null,
       lockedBy: null,
     }));
-    expect(jobRepository.update).toHaveBeenNthCalledWith(2, 12, expect.objectContaining({
+    expect(jobRepository.update).toHaveBeenNthCalledWith(2, expect.objectContaining({ id: 12, status: 'running' }), expect.objectContaining({
       status: 'failed',
       lockedAt: null,
       lockedBy: null,
     }));
+  });
+
+  it('does not count a stale read as recovered after another worker renewed it', async () => {
+    jobRepository.find.mockResolvedValue([{ id: 11, lockedBy: 'old-claim', attemptCount: 1, maxAttempts: 3 }]);
+    jobRepository.update.mockResolvedValue({ affected: 0 });
+    expect(await service.recoverStaleJobs()).toBe(0);
+    expect(jobRepository.update).toHaveBeenCalledWith(expect.objectContaining({ id: 11, status: 'running', lockedBy: 'old-claim', lockedAt: expect.anything() }), expect.anything());
+  });
+
+  it('releases its connection when starting a claim transaction fails', async () => {
+    queryRunner.startTransaction.mockRejectedValueOnce(new Error('database disconnected'));
+    await expect(service.processAvailableJobs('worker', 1)).rejects.toThrow('database disconnected');
+    expect(queryRunner.release).toHaveBeenCalledTimes(1);
+    expect(cloudSyncService.executeDiffSync).not.toHaveBeenCalled();
+  });
+
+  it('aborts a stalled provider after heartbeat ownership loss without changing the job', async () => {
+    jest.useFakeTimers();
+    try {
+      queryRunner.query.mockResolvedValueOnce([{ id: 7 }]).mockResolvedValueOnce([]);
+      jobRepository.findOneBy.mockResolvedValue({ id: 7, userId: 4, provider: 'google_drive', attemptCount: 1, maxAttempts: 3 });
+      dataSource.query.mockResolvedValueOnce([{ id: 7 }]).mockResolvedValueOnce([]);
+      let finish!: () => void;
+      cloudSyncService.executeDiffSync.mockImplementation(() => new Promise(resolve => { finish = () => resolve({ message: 'late upload' }); }));
+      const processing = service.processAvailableJobs('worker', 1);
+      for (let tick = 0; tick < 20 && !finish; tick++) await Promise.resolve();
+      await jest.advanceTimersByTimeAsync(30_000);
+      finish();
+      await processing;
+      expect(jobRepository.update).not.toHaveBeenCalled();
+      expect(dataSource.query).toHaveBeenLastCalledWith(expect.stringContaining("locked_at > NOW() - INTERVAL '15 minutes'"), [7, expect.any(String)]);
+    } finally { jest.useRealTimers(); }
   });
 });

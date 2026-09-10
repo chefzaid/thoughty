@@ -1,3 +1,4 @@
+import { cloudFetch as fetch } from './cloud-operation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { CloudProvider, CloudTokens, CloudFileInfo } from './cloud-provider.interface';

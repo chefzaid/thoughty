@@ -69,7 +69,7 @@ spec:
             - |
               source /vault/secrets/database &&
               source /vault/secrets/app &&
-              node dist/src/cloud-sync-worker.js
+              exec node dist/src/cloud-sync-worker.js
           envFrom:
             - configMapRef:
                 name: thoughty-config

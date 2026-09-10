@@ -15,25 +15,30 @@ export class CloudSyncWorkerService implements OnModuleDestroy {
   private jobPollTimer: ReturnType<typeof setInterval> | null = null;
   private scanningSchedules = false;
   private processingJobs = false;
+  private stopping = false;
+  private readonly activeTasks = new Set<Promise<void>>();
 
   constructor(private readonly cloudSyncQueueService: CloudSyncQueueService) {}
 
   async start(): Promise<void> {
     this.logger.log(`Starting cloud sync worker ${this.workerId}`);
 
-    await this.scanSchedules();
-    await this.processJobs();
+    await this.track(this.scanSchedules());
+    await this.track(this.processJobs());
+    if (this.stopping) return;
 
     this.scheduleScanTimer = setInterval(() => {
-      void this.scanSchedules();
+      void this.track(this.scanSchedules());
     }, SCHEDULE_SCAN_INTERVAL_MS);
 
     this.jobPollTimer = setInterval(() => {
-      void this.processJobs();
+      void this.track(this.processJobs());
     }, JOB_POLL_INTERVAL_MS);
   }
 
-  onModuleDestroy(): void {
+  async onModuleDestroy(): Promise<void> {
+    this.stopping = true;
+    this.cloudSyncQueueService.stop();
     if (this.scheduleScanTimer) {
       clearInterval(this.scheduleScanTimer);
       this.scheduleScanTimer = null;
@@ -43,10 +48,17 @@ export class CloudSyncWorkerService implements OnModuleDestroy {
       clearInterval(this.jobPollTimer);
       this.jobPollTimer = null;
     }
+    await Promise.allSettled(this.activeTasks);
+  }
+
+  private track(task: Promise<void>): Promise<void> {
+    this.activeTasks.add(task);
+    void task.finally(() => this.activeTasks.delete(task));
+    return task;
   }
 
   private async scanSchedules(): Promise<void> {
-    if (this.scanningSchedules) {
+    if (this.stopping || this.scanningSchedules) {
       return;
     }
 
@@ -62,7 +74,7 @@ export class CloudSyncWorkerService implements OnModuleDestroy {
   }
 
   private async processJobs(): Promise<void> {
-    if (this.processingJobs) {
+    if (this.stopping || this.processingJobs) {
       return;
     }
 
