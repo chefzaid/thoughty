@@ -1,7 +1,8 @@
 # Deployment Guide
 
 This repository owns its [public DNS](dns.md), including the DNS cutover when
-the shared platform switches to HA Tunnel ingress.
+the shared platform switches to HA Tunnel ingress. [Repository onboarding](onboarding.md)
+declares the application configuration, secret initialization, DNS and first delivery.
 
 Thoughty provides a production profile for the shared bare-metal cluster and a standalone profile for independent installations. The production profile is described in [Server Deployment](./server-deployment.md) and is the only profile changed automatically by `.gitlab-ci.yml`.
 

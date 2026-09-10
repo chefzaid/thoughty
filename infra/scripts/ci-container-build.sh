@@ -3,6 +3,8 @@ set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repository_root"
+# shellcheck source=infra/scripts/check-onboarding.sh
+source "$repository_root/infra/scripts/check-onboarding.sh"
 
 mode="${1:-verify}"
 : "${APP_VERSION:?APP_VERSION is required}"
@@ -13,6 +15,8 @@ case "$mode" in
   verify)
     ;;
   publish)
+    check_onboarding_source
+    check_onboarding_head "${CI_COMMIT_SHA:-}"
     : "${CI_REGISTRY_USER:?CI_REGISTRY_USER is required}"
     : "${CI_REGISTRY_PASSWORD:?CI_REGISTRY_PASSWORD is required}"
     mkdir -p /kaniko/.docker

@@ -22,6 +22,7 @@ Application versions start at `1.0.0` and are owned by [`VERSION`](./VERSION). E
 
 ## Documentation
 
+- [Repeatable repository onboarding](./docs/onboarding.md)
 - [Features](./docs/features.md)
 - [Architecture Overview and ADR Index](./docs/architecture.md)
 - [Data Model Reference](./docs/data-model.md)

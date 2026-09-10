@@ -3,11 +3,15 @@ set -euo pipefail
 
 repository_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$repository_root"
+# shellcheck source=infra/scripts/check-onboarding.sh
+source "$repository_root/infra/scripts/check-onboarding.sh"
+check_onboarding_source
 
 phase="${1:-all}"
 
 publish_release() {
   : "${APP_VERSION:?APP_VERSION is required}"
+  check_onboarding_head "${CI_COMMIT_SHA:-}"
   infra/scripts/ci-container-build.sh publish
 
   output_dir="$repository_root/package-output"
@@ -46,7 +50,7 @@ publish_release() {
   git add VERSION package.json package-lock.json \
     thoughty-server/package.json thoughty-server/package-lock.json \
     thoughty-web/package.json thoughty-web/package-lock.json
-  git commit -m "chore: prepare $next_version [skip ci]"
+  infra/scripts/commit-deployment.sh "chore: prepare $next_version [skip ci]"
   deploy_revision="$(git rev-parse HEAD)"
   git push origin "HEAD:$CI_DEFAULT_BRANCH" "refs/tags/$release_tag"
   printf 'APP_VERSION=%s\nDEPLOY_REVISION=%s\nRELEASE_REVISION=%s\nRELEASE_TAG=%s\nNEXT_VERSION=%s\n' \
@@ -81,6 +85,11 @@ deploy_release() {
     source release.env
   fi
   : "${DEPLOY_REVISION:?DEPLOY_REVISION is required}"
+
+  check_onboarding_head "$DEPLOY_REVISION"
+  if [[ "${APP_ONBOARDING:-false}" == true ]]; then
+    git merge-base --is-ancestor "$ONBOARDING_EXPECTED_SHA" "$DEPLOY_REVISION"
+  fi
 
   kubectl apply -f infra/argocd/application.yaml
   kubectl annotate application thoughty -n infra argocd.argoproj.io/refresh=hard --overwrite

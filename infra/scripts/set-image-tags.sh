@@ -16,5 +16,15 @@ esac
 
 script_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 kustomization="$script_dir/../k8s/overlays/bm-cluster/kustomization.yaml"
-sed -i "/newName: registry.swirlit.dev\/swirlit\/thoughty\/thoughty-server/{n;s/newTag: .*/newTag: $tag/;}" "$kustomization"
-sed -i "/newName: registry.swirlit.dev\/swirlit\/thoughty\/thoughty-web/{n;s/newTag: .*/newTag: $tag/;}" "$kustomization"
+temporary="$(mktemp "$kustomization.XXXXXX")"
+trap 'rm -f -- "$temporary"' EXIT HUP INT TERM
+awk -v tag="$tag" '
+  /^  - name:/ { application = ($0 == "  - name: thoughty-server" || $0 == "  - name: thoughty-web") }
+  application && /^    newTag:/ { $0 = "    newTag: " tag; count++ }
+  { print }
+  END { if (count != 2) exit 1 }
+' "$kustomization" > "$temporary" || {
+  echo 'Expected one server and one web image tag in the Kustomization' >&2
+  exit 1
+}
+cat "$temporary" > "$kustomization"

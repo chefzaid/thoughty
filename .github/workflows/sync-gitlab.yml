@@ -28,10 +28,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     env:
-      GITHUB_TOKEN: ${{ github.token }}
+      GITHUB_TOKEN: ${{ secrets.REPOSITORY_SYNC_ADMIN_TOKEN }}
       GITHUB_ADMIN_TOKEN: ${{ secrets.REPOSITORY_SYNC_ADMIN_TOKEN }}
       GITLAB_API_URL: https://gitlab.swirlit.dev/api/v4
-      GITLAB_PROJECT_ID: '3'
+      GITLAB_PROJECT_ID: ${{ vars.GITLAB_PROJECT_ID }}
       GITLAB_REPOSITORY: https://gitlab.swirlit.dev/swirlit/thoughty.git
       GITLAB_USERNAME: ${{ secrets.GITLAB_SYNC_USERNAME }}
       GITLAB_TOKEN: ${{ secrets.GITLAB_SYNC_TOKEN }}
@@ -55,13 +55,15 @@ jobs:
           }
 
           askpass="$RUNNER_TEMP/git-askpass"
+          GITLAB_HOST="${GITLAB_REPOSITORY#https://}"
+          export GITLAB_HOST="${GITLAB_HOST%%/*}"
           cat > "$askpass" <<'EOF'
           #!/bin/sh
           case "$1" in
             *Username*github.com*|*github.com*Username*) printf '%s\n' 'x-access-token' ;;
             *github.com*) printf '%s\n' "$GITHUB_TOKEN" ;;
-            *Username*gitlab.swirlit.dev*|*gitlab.swirlit.dev*Username*) printf '%s\n' "$GITLAB_USERNAME" ;;
-            *gitlab.swirlit.dev*) printf '%s\n' "$GITLAB_TOKEN" ;;
+            *Username*"$GITLAB_HOST"*|*"$GITLAB_HOST"*Username*) printf '%s\n' "$GITLAB_USERNAME" ;;
+            *"$GITLAB_HOST"*) printf '%s\n' "$GITLAB_TOKEN" ;;
             *) exit 1 ;;
           esac
           EOF
