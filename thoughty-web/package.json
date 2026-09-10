@@ -1,7 +1,7 @@
 {
   "name": "thoughty-web",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.11",
   "license": "MIT",
   "type": "module",
   "scripts": {

@@ -29,10 +29,10 @@ patches:
 images:
   - name: thoughty-server
     newName: registry.swirlit.dev/swirlit/thoughty/thoughty-server
-    newTag: 1.1.5
+    newTag: 1.2.11
   - name: thoughty-web
     newName: registry.swirlit.dev/swirlit/thoughty/thoughty-web
-    newTag: 1.1.5
+    newTag: 1.2.11
   - name: postgres
     newName: registry.swirlit.dev/swirlit/bm-cluster/security/postgres-client
     digest: sha256:0fbebd30e2814439e79bf53ca0187f2bfd9ff593edbb8a15a5b001daad698bdb
