@@ -55,8 +55,8 @@
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",
     "jszip": "^3.10.1",
-    "multer": "^2.1.1",
-    "nodemailer": "^9.0.6",
+    "multer": "^2.3.0",
+    "nodemailer": "^9.1.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pdfkit": "^0.19.1",
@@ -67,6 +67,9 @@
     "typeorm": "^0.3.25",
     "uuid": "^11.1.1",
     "xss": "^1.0.15"
+  },
+  "overrides": {
+    "multer": "$multer"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.16",

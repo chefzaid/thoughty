@@ -178,6 +178,20 @@ local development workflows. The lockfile pins `qs` 6.16.0 to address
 CVE-2026-82417 and CVE-2026-82562. Backup uploaders use a scanned, digest-pinned
 AWS CLI 2 image instead of the obsolete 2.15.57 image. Validate changes with
 the backend tests, a production image build, and image-level Trivy scans.
+
+The server locks Multer 2.3.0 and Nodemailer 9.1.1. The Multer override also
+updates NestJS's pinned upload middleware, so its interceptor cannot retain an
+older vulnerable copy. These releases fix the reported upload denial-of-service
+and limit-bypass issues, along with email address parsing and content-access
+issues. Upload middleware for attachments and book covers also opts into
+Multer's array-index protection and rejects nested multipart field names before
+parsing them. The forms accept one file and at most one scalar field; file-size
+limits stay in place. Regression tests exercise the actual controllers and
+interceptors, including crafted array names and oversized files. Email checks
+generate MIME messages locally without sending mail. See the
+[Multer advisory](https://github.com/expressjs/multer/security/advisories/GHSA-535w-7cp7-47q4)
+for why updating the dependency alone is insufficient.
+
 Both web Dockerfiles also apply Alpine security updates to the pinned
 unprivileged NGINX image, then restore UID/GID 101 for runtime. This covers
 OS-package findings even when the operator labels their severity as Unknown.

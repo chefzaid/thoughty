@@ -28,6 +28,7 @@ import { LinkAttachmentDto, AudioTranscriptionResponseDto } from './dto';
 import { AudioTranscriptionService } from './audio-transcription.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
+import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
 
 @ApiTags('Attachments')
 @ApiBearerAuth()
@@ -47,6 +48,7 @@ export class AttachmentsController {
     FileInterceptor('file', {
       storage: memoryStorage(),
       limits: {
+        ...MULTIPART_FIELD_LIMITS,
         fileSize: 5 * 1024 * 1024, // 5MB
       },
     }),

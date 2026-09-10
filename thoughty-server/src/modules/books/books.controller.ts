@@ -35,10 +35,11 @@ import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { CloudFileInfoDto, CloudSyncService } from '@/modules/cloud-sync';
 import { MAX_BOOK_COVER_IMAGE_SIZE } from './book-cover.util';
+import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
 
 const BOOK_COVER_UPLOAD_OPTIONS = {
   storage: memoryStorage(),
-  limits: { fileSize: MAX_BOOK_COVER_IMAGE_SIZE },
+  limits: { ...MULTIPART_FIELD_LIMITS, fileSize: MAX_BOOK_COVER_IMAGE_SIZE },
 };
 
 @ApiTags('Books')
