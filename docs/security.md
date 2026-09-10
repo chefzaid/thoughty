@@ -192,6 +192,12 @@ generate MIME messages locally without sending mail. See the
 [Multer advisory](https://github.com/expressjs/multer/security/advisories/GHSA-535w-7cp7-47q4)
 for why updating the dependency alone is insufficient.
 
+The September 10 source audit also updates development-only dependencies:
+Vitest and coverage 4.1.11, the browser compatibility databases, HumanFS,
+PostCSS selector parsing, and js-yaml 4.3.2. The js-yaml override covers
+OpenAPI tooling's exact older pin. Include development dependencies when
+scanning the lockfiles; a clean production image does not validate build tools.
+
 Both web Dockerfiles also apply Alpine security updates to the pinned
 unprivileged NGINX image, then restore UID/GID 101 for runtime. This covers
 OS-package findings even when the operator labels their severity as Unknown.
