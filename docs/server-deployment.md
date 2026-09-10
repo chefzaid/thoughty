@@ -52,7 +52,7 @@ Populate optional storage, provider, and SMTP secrets after bootstrap. The produ
 
 ## GitLab CI Delivery
 
-The pipeline graph shows ordered build, test, package, E2E, quality, security, release, deploy, and version jobs. Tests are non-blocking and E2E is optional/manual. Standard mode leaves quality and Trivy security manual; `PIPELINE_MODE=full` runs both independent, non-blocking reports automatically and automates release and deploy while E2E remains manual. `03-security` is numbered after `02-quality` but has no dependency on it.
+The pipeline graph shows ordered build, test, package, E2E, quality, security, release, deploy, and version jobs. Tests are non-blocking and E2E is optional/manual. Quality runs automatically on the default branch; standard mode leaves Trivy security manual. `PIPELINE_MODE=full` runs both independent, non-blocking reports automatically. On `main`, full mode automates release when started through **Run pipeline**; push-triggered pipelines keep release manual. Deployment follows successful publication, and E2E remains manual. `03-security` is numbered after `02-quality` but has no dependency on it.
 
 The release job:
 

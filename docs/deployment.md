@@ -67,7 +67,7 @@ The repository exposes explicit delivery jobs:
 - `01-release → 02-deploy` requires the successful build path and a successful release.
 - `set-major-version` independently prepares `<major>.0.0` from the `NEW_MAJOR_VERSION` pipeline variable.
 
-Select `PIPELINE_MODE=full` from **Run pipeline** on `main` to run non-blocking quality/security reporting, release, and deploy automatically. E2E remains an optional manual branch and cannot block it.
+Select `PIPELINE_MODE=full` from **Run pipeline** on `main` to run non-blocking quality/security reporting, release, and deploy automatically. Full-mode pipelines triggered by a push still require playing `01-release`; `02-deploy` then starts after publication succeeds. E2E remains an optional manual branch and cannot block it.
 
 For a repeatable operator-triggered refresh, Ansible applies the repository-owned Argo CD `Application`, requests a hard source refresh, waits for a new `Synced`/`Healthy` reconciliation, and verifies all three Deployment rollouts. It deploys committed and pushed `main`, never uncommitted local overlay changes:
 

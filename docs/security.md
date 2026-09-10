@@ -145,9 +145,9 @@ In local or misconfigured email environments, the current email service path can
 
 ## Software Supply Chain and Code Quality
 
-Required `01-build` and `03-package` are separate from optional `02-test`. Optional manual `01-e2e`, allowed-to-fail `02-quality`, and independent `03-security` are verify jobs; standard mode leaves quality/security manual and full mode runs them automatically. Trivy scans dependencies, IaC, and secrets, retains JSON/SARIF findings for seven days, and exits nonzero on high/critical findings without becoming a deployment gate. `01-release` depends only on the required build path.
+Required `01-build` and `03-package` are separate from optional `02-test`. Optional manual `01-e2e`, allowed-to-fail `02-quality`, and independent `03-security` are verify jobs; quality runs automatically on the default branch, while security is manual in standard mode and automatic in full mode. Trivy scans dependencies, IaC, and secrets, retains JSON/SARIF findings for seven days, and exits nonzero on high/critical findings without becoming a deployment gate. `01-release` depends only on the required build path.
 
-The manual release-publication job publishes immutable, checksummed application archives to GitLab's Generic Package Registry and immutable container tags to its Container Registry. Deployment starts only after publication passes. Daemonless Kaniko reuses 30-day registry-backed image layers without privileged runner access.
+The release-publication job is manual on `main`, except for full-mode pipelines started through **Run pipeline**, which release automatically. It publishes immutable, checksummed application archives to GitLab's Generic Package Registry and immutable container tags to its Container Registry. Deployment starts only after publication passes. Daemonless Kaniko reuses 30-day registry-backed image layers without privileged runner access.
 
 ## Security Backlog
 
@@ -213,3 +213,27 @@ Bare-metal database helper jobs consume the patched PostgreSQL 18 client image
 maintained by `bm-cluster`. The platform supplies `platform-registry-auth`, a
 Vault-backed credential restricted to pulling platform images. The application
 repository owns the helper job configuration and immutable image digest.
+
+### September 10, 2026 release verification
+
+Release `1.2.11` deploys the upload and email fixes plus the development-tooling
+updates. The API and cloud-sync worker run the same server image; the migration
+hook successfully used the same release tag before rollout. The server image
+digest is `sha256:aaf15faac1de98859246e53a392c342d97448308fad71a1b8ea3885d412283f4`;
+the web image digest is
+`sha256:cf1dcb138530dbfe6687bd4326ea2f685efc0de202f2d8d8e572d2868ee606fa`.
+
+Trivy scans of those exact image digests on September 10 reported zero
+vulnerabilities at every severity and zero exposed secrets. The source scan,
+including development dependencies, also reported zero vulnerabilities and
+secrets. The operator reported zero configuration findings for the three
+running workload ReplicaSets and five Thoughty networking resources. Argo CD
+was `Synced` and `Healthy`, all five application pods were ready, and the API
+health endpoint and web page responded successfully.
+
+The repository-wide CI configuration scan still records 42 findings (33 Low,
+9 Medium). This scan includes partial Kustomize resources, standalone profiles,
+Dockerfiles, and public ConfigMap values. Its results need separate review from
+the rendered production configuration; the clean live reports do not mean every
+source configuration finding has been resolved. No findings were suppressed to
+produce the clean dependency or live workload reports.
