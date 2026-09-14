@@ -1,4 +1,7 @@
 - op: add
+  path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.middlewares
+  value: apps-thoughty-upload-limit@kubernetescrd
+- op: add
   path: /metadata/annotations/argocd.argoproj.io~1sync-wave
   value: "0"
 - op: add

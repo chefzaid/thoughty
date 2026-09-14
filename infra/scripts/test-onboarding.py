@@ -32,7 +32,6 @@ def context(domain="cluster.example", project="team/product"):
         "REGISTRY_PUSH_HOST": "gitlab-registry.services.internal:5050",
         "GITHUB_OWNER": "operator", "GITHUB_REPOSITORY": "product",
         "DEFAULT_BRANCH": "production", "KEYCLOAK_REALM": "company",
-        "PLATFORM_SECURITY_PROJECT_PATH": "team/security",
         "SONAR_PROJECT_KEY": project.replace("/", ":"),
     }
 
@@ -180,6 +179,7 @@ class OnboardingTests(unittest.TestCase):
             self.assertEqual(ingress_hosts, {expand(host, values) for host in CONTRACT["dns"]["hosts"]})
             for doc in docs:
                 if doc["kind"] == "Ingress":
+                    self.assertEqual(doc["spec"]["ingressClassName"], "traefik")
                     self.assertTrue(all(tls["secretName"] == values["TLS_SECRET_NAME"] for tls in doc["spec"]["tls"]))
             if WEBSITE:
                 deployment = next(doc for doc in docs if doc["kind"] == "Deployment")
@@ -191,6 +191,26 @@ class OnboardingTests(unittest.TestCase):
                 if profile == PROFILE:
                     self.assertEqual(deployment["spec"]["replicas"], 1)
                     self.assertEqual(deployment["spec"]["strategy"]["type"], "Recreate")
+
+        if not WEBSITE:
+            # Canary configuration is part of the same repeatable onboarding contract.
+            canary = list(yaml.safe_load_all(subprocess.check_output([
+                "kubectl", "kustomize", str(self.copy / "infra/k8s/overlays/bm-cluster-canary")
+            ], text=True)))
+            route = next(doc for doc in canary if doc["kind"] == "IngressRoute")
+            self.assertEqual(route["spec"]["tls"]["secretName"], values["TLS_SECRET_NAME"])
+            for entry in route["spec"]["routes"]:
+                self.assertIn("Host(`" + values["APP_HOST"] + "`)", entry["match"])
+                if "Path(`/api`)" in entry["match"]:
+                    self.assertEqual(entry["middlewares"], [{"name": "thoughty-sso"}, {"name": "thoughty-upload-limit"}])
+            weighted = [doc for doc in canary if doc["kind"] == "TraefikService"]
+            self.assertEqual(len(weighted), 2)
+            for service in weighted:
+                self.assertEqual([item["weight"] for item in service["spec"]["weighted"]["services"]], [100, 0])
+            for deployment in (doc for doc in canary if doc["kind"] == "Deployment"):
+                pod = deployment["spec"]["template"]["spec"]
+                self.assertEqual(pod["imagePullSecrets"], [{"name": "thoughty-registry-auth"}])
+                self.assertTrue(pod["containers"][0]["image"].startswith(values["REGISTRY_HOST"] + "/" + values["GITLAB_PROJECT_PATH"] + "/"))
 
     def test_imported_sync_workflow_uses_github_variables(self):
         path = self.copy / ".github/workflows/sync-gitlab.yml"

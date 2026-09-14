@@ -44,7 +44,15 @@ Only overlays are deployable environment profiles. Shared platform resources rem
 - `thoughty-cloud-sync-worker`: background worker using the server image
 - `postgres-backup`: optional logical-backup CronJob
 
-The API exposes `/api/health` and Prometheus-format metrics at `/api/metrics`. The public production endpoint is `https://thoughty.swirlit.dev`. The production Ingress also publishes Thoughty in the cluster Homepage `Applications` group and protects both UI and API routes with the shared Keycloak OAuth2 Proxy. `KEYCLOAK_ISSUER`, `KEYCLOAK_JWKS_URI`, and `KEYCLOAK_AUDIENCE` are non-secret overlay settings; client and cookie secrets remain owned by the cluster identity deployment.
+The API exposes `/api/health` and Prometheus-format metrics at `/api/metrics`. The public production endpoint is `https://thoughty.swirlit.dev`. Traefik serves the native Ingress and publishes Thoughty in the cluster Homepage `Applications` group. The UI is public; API routes use the app-owned ForwardAuth Middleware with the shared Keycloak OAuth2 Proxy. It preserves login return URLs and refresh cookies, forwards the signed access token, and leaves application authorization responses intact. Both routes have a 10 MiB request limit; the platform owns HTTPS redirects and connection timeouts. `KEYCLOAK_ISSUER`, `KEYCLOAK_JWKS_URI`, and `KEYCLOAK_AUDIENCE` are non-secret overlay settings; client and cookie secrets remain owned by the cluster identity deployment.
+
+The base `ingress.yaml` owns routing and the request-limit Middleware;
+the BM overlay adds `ingress-middleware.yaml` for platform authentication.
+Optional canary routing uses an IngressRoute and two weighted TraefikServices,
+with the same API authentication and request limits. See the
+[canary runbook](operations.md#canary-rollout-checks). BM database setup and
+backup helpers use a public PostgreSQL 18.6 image pinned by digest, without
+platform registry credentials; standalone database versions are configured separately.
 
 ## Configuration And Secrets
 
@@ -96,7 +104,7 @@ Every GitHub push starts `.github/workflows/sync-gitlab.yml` directly. Every Git
 
 ## Standalone Profile
 
-The standalone profile retains its own namespace, PostgreSQL, Redis, Vault Agent templates, ingress placeholder, worker, and backup resources. Reusable canary and monitoring components can be composed when that environment supports them. Before using the profile, set its host/TLS, object-storage values, image references, Vault roles, and `secret/data/thoughty/*` values for that independent environment.
+The standalone profile retains its own namespace, PostgreSQL, Redis, Vault Agent templates, ingress placeholder, worker, and backup resources. It requires Traefik with the Kubernetes Ingress and CRD providers, strict Ingress prefix matching, and HTTP-to-HTTPS redirection. Reusable canary and monitoring components can be composed when that environment supports them. Before using the profile, set its host/TLS, object-storage values, image references, Vault roles, and `secret/data/thoughty/*` values for that independent environment.
 
 Render it without changing a cluster:
 

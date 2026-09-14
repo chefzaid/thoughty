@@ -4,10 +4,11 @@ metadata:
   name: thoughty-ingress
   namespace: thoughty
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: thoughty-thoughty-upload-limit@kubernetescrd
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   tls:
     - hosts:
         - thoughty.example.com
@@ -30,10 +31,11 @@ metadata:
   name: thoughty-api-ingress
   namespace: thoughty
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: thoughty-thoughty-upload-limit@kubernetescrd
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   tls:
     - hosts:
         - thoughty.example.com
@@ -49,3 +51,12 @@ spec:
                 name: thoughty-server
                 port:
                   number: 3001
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: thoughty-upload-limit
+  namespace: thoughty
+spec:
+  buffering:
+    maxRequestBodyBytes: 10485760

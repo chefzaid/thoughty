@@ -210,39 +210,78 @@ spec:
     - port: 80
       targetPort: 8080
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
 metadata:
   name: thoughty-canary-ingress
   namespace: thoughty
-  annotations:
-    nginx.ingress.kubernetes.io/canary: "true"
-    nginx.ingress.kubernetes.io/canary-weight: "0"
-    nginx.ingress.kubernetes.io/canary-by-header: "X-Thoughty-Canary"
-    nginx.ingress.kubernetes.io/canary-by-header-value: "always"
-    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
 spec:
-  ingressClassName: nginx
+  entryPoints:
+    - websecure
   tls:
-    - hosts:
-        - thoughty.example.com
-      secretName: thoughty-tls
-  rules:
-    - host: thoughty.example.com
-      http:
-        paths:
-          - path: /api
-            pathType: Prefix
-            backend:
-              service:
-                name: thoughty-server-canary
-                port:
-                  number: 3001
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: thoughty-web-canary
-                port:
-                  number: 80
+    secretName: thoughty-tls
+  routes:
+    # Explicit priorities keep API paths above the web catch-all and header
+    # overrides above weighted traffic. Prefix matching respects path segments.
+    - kind: Rule
+      match: Host(`thoughty.example.com`) && (Path(`/api`) || PathPrefix(`/api/`)) && Header(`X-Thoughty-Canary`, `always`)
+      priority: 400
+      middlewares:
+        - name: thoughty-upload-limit
+      services:
+        - name: thoughty-server-canary
+          port: 3001
+    - kind: Rule
+      match: Host(`thoughty.example.com`) && (Path(`/api`) || PathPrefix(`/api/`))
+      priority: 300
+      middlewares:
+        - name: thoughty-upload-limit
+      services:
+        - name: thoughty-api-rollout
+          kind: TraefikService
+    - kind: Rule
+      match: Host(`thoughty.example.com`) && Header(`X-Thoughty-Canary`, `always`)
+      priority: 200
+      middlewares:
+        - name: thoughty-upload-limit
+      services:
+        - name: thoughty-web-canary
+          port: 80
+    - kind: Rule
+      match: Host(`thoughty.example.com`)
+      priority: 100
+      middlewares:
+        - name: thoughty-upload-limit
+      services:
+        - name: thoughty-web-rollout
+          kind: TraefikService
+---
+apiVersion: traefik.io/v1alpha1
+kind: TraefikService
+metadata:
+  name: thoughty-api-rollout
+  namespace: thoughty
+spec:
+  weighted:
+    services:
+      - name: thoughty-server
+        port: 3001
+        weight: 100
+      - name: thoughty-server-canary
+        port: 3001
+        weight: 0
+---
+apiVersion: traefik.io/v1alpha1
+kind: TraefikService
+metadata:
+  name: thoughty-web-rollout
+  namespace: thoughty
+spec:
+  weighted:
+    services:
+      - name: thoughty-web
+        port: 80
+        weight: 100
+      - name: thoughty-web-canary
+        port: 80
+        weight: 0

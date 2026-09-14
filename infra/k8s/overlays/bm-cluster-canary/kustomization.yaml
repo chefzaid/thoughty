@@ -7,5 +7,20 @@ patches:
   - path: canary-server-patch.yaml
   - path: canary-ingress-patch.yaml
     target:
-      kind: Ingress
+      kind: IngressRoute
       name: thoughty-canary-ingress
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value:
+          - name: thoughty-registry-auth
+images:
+  # Set both tags (or digests) to published candidate images before deploying.
+  - name: thoughty-server
+    newName: registry.swirlit.dev/swirlit/thoughty/thoughty-server
+    newTag: canary
+  - name: thoughty-web
+    newName: registry.swirlit.dev/swirlit/thoughty/thoughty-web
+    newTag: canary

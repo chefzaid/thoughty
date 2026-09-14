@@ -123,35 +123,44 @@ If migrations fail:
 
 ## Canary Rollout Checks
 
-BM Cluster canary releases use `infra/k8s/overlays/bm-cluster-canary`, which composes the reusable canary component and creates `thoughty-server-canary`, `thoughty-web-canary`, and `thoughty-canary-ingress` in `apps`. The worker is promoted only after the API and web images are accepted.
+BM Cluster canary releases use `infra/k8s/overlays/bm-cluster-canary`, which composes the reusable canary component and creates `thoughty-server-canary`, `thoughty-web-canary`, the `thoughty-canary-ingress` IngressRoute, and two weighted TraefikServices in `apps`. Apply the stable BM profile first: it owns the shared configuration, credentials, authentication Middleware, request limit, and NetworkPolicy. Set both image tags or digests in the canary overlay to published candidate images before deploying it; the `canary` tags are placeholders. The worker is promoted only after the API and web images are accepted.
 
 Check canary readiness:
 
 ```bash
 kubectl rollout status deployment/thoughty-server-canary -n apps --timeout=120s
 kubectl rollout status deployment/thoughty-web-canary -n apps --timeout=120s
-kubectl get ingress thoughty-canary-ingress -n apps
+kubectl get ingressroute thoughty-canary-ingress -n apps
+kubectl get traefikservice thoughty-api-rollout thoughty-web-rollout -n apps
 ```
 
-Smoke the canary path without shifting normal traffic:
+Smoke the canary path without shifting normal traffic. API requests require a
+valid OAuth2 Proxy session; `COOKIE_JAR` points to a local authenticated cookie
+jar, which must never be committed:
 
 ```bash
-curl -H 'X-Thoughty-Canary: always' https://thoughty.swirlit.dev/api/health
+curl --cookie "$COOKIE_JAR" -H 'X-Thoughty-Canary: always' https://thoughty.swirlit.dev/api/health
 ```
 
 Shift or stop weighted traffic:
 
 ```bash
-kubectl annotate ingress thoughty-canary-ingress \
-  -n apps \
-  nginx.ingress.kubernetes.io/canary-weight="10" \
-  --overwrite
+for service in thoughty-api-rollout thoughty-web-rollout; do
+  kubectl patch traefikservice "$service" -n apps --type=json \
+    -p '[{"op":"replace","path":"/spec/weighted/services/0/weight","value":90},{"op":"replace","path":"/spec/weighted/services/1/weight","value":10}]'
+done
 
-kubectl annotate ingress thoughty-canary-ingress \
-  -n apps \
-  nginx.ingress.kubernetes.io/canary-weight="0" \
-  --overwrite
+# Stop ordinary canary traffic; the explicit header still selects the canary.
+for service in thoughty-api-rollout thoughty-web-rollout; do
+  kubectl patch traefikservice "$service" -n apps --type=json \
+    -p '[{"op":"replace","path":"/spec/weighted/services/0/weight","value":100},{"op":"replace","path":"/spec/weighted/services/1/weight","value":0}]'
+done
 ```
+
+Weights are per request and total 100 in these examples. API and web traffic
+are selected independently. Persist the intended weights in Git before the
+next reconciliation. Removing the canary overlay restores the stable native
+Ingress routes; it does not remove shared authentication or stable Services.
 
 If the canary misbehaves, set the weight to `0`, preserve logs from both canary deployments, and delete the canary resources only after you have captured enough evidence:
 
@@ -221,7 +230,7 @@ For integration failures:
 
 ## Keycloak SSO Checks
 
-An unauthenticated production request should be redirected through `https://keycloak.swirlit.dev/oauth2/start` to the shared `swirlit` realm. After authentication, `GET /api/auth/sso` exchanges the ingress-provided Keycloak access token for a Thoughty session. If that exchange fails, verify the `oauth2-proxy` deployment, the Ingress auth annotations, the public issuer, the internal JWKS URL, and the token audience. Do not weaken verification or trust identity headers by themselves.
+An unauthenticated production API request should be redirected to Keycloak's shared `swirlit` realm, preserving its original URL for return after login. After authentication, `GET /api/auth/sso` exchanges the ingress-provided Keycloak access token for a Thoughty session. If that exchange fails, verify the `oauth2-proxy` deployment, the app-owned ForwardAuth Middleware, the public issuer, the internal JWKS URL, and the token audience. Do not weaken verification or trust identity headers by themselves.
 
 ## Backup and Recovery
 

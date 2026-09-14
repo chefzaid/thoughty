@@ -21,11 +21,11 @@ Thoughty stores personal journal content, profile data, attachments, refresh tok
 
 Production authentication is centralized in the shared Keycloak `swirlit` realm. The production Ingress uses the cluster OAuth2 Proxy as an authentication gate and forwards its short-lived Keycloak access token to `GET /api/auth/sso`. The API verifies the token's RS256 signature, issuer, expiry, and `oauth2-proxy` audience against Keycloak's JWKS before linking the verified email or creating the local Thoughty profile. It then issues the existing application bearer-token session so authorization remains scoped to Thoughty's local user ID. The gateway header is never accepted without cryptographic token verification.
 
-Local development retains the password and optional Google sign-in flows. Production users are redirected automatically to Keycloak before the application is served; Thoughty does not collect their Keycloak password.
+Local development retains the password and optional Google sign-in flows. The production UI is public; unauthenticated API requests trigger the Keycloak login flow. Thoughty does not collect the Keycloak password.
 
 This integration uses the platform's `oauth2-proxy` client. It requires no
 Thoughty-specific Keycloak client or platform-side application registration.
-This repository owns the ingress authentication annotations, issuer/JWKS
+This repository owns the ingress authentication Middleware, issuer/JWKS
 configuration, audience checks and local account lifecycle.
 
 ```mermaid
@@ -214,10 +214,10 @@ range, with the existing read-only filesystem, dropped capabilities and runtime
 seccomp profile. Writable application data and temporary files use explicit
 volumes.
 
-Bare-metal database helper jobs consume the patched PostgreSQL 18 client image
-maintained by `bm-cluster`. The platform supplies `platform-registry-auth`, a
-Vault-backed credential restricted to pulling platform images. The application
-repository owns the helper job configuration and immutable image digest.
+Bare-metal database helper jobs consume the official public PostgreSQL 18.6
+image pinned by digest. They execute client commands as UID 65534 with a read-only
+filesystem and need no platform registry credential. This repository owns their
+configuration and image pin; application images retain app-owned pull credentials.
 
 ### September 10, 2026 release verification
 

@@ -19,7 +19,10 @@
     "infra/k8s/overlays/bm-cluster/ingress-patch.yaml",
     "infra/k8s/overlays/bm-cluster/api-ingress-patch.yaml",
     "infra/k8s/overlays/bm-cluster/database-setup-job.yaml",
-    "infra/k8s/overlays/bm-cluster/observability.yaml"
+    "infra/k8s/overlays/bm-cluster/observability.yaml",
+    "infra/k8s/overlays/bm-cluster/ingress-middleware.yaml",
+    "infra/k8s/overlays/bm-cluster-canary/canary-ingress-patch.yaml",
+    "infra/k8s/overlays/bm-cluster-canary/kustomization.yaml"
   ],
   "replacements": [
     {
@@ -45,10 +48,6 @@
     {
       "from": "gitlab-registry.swirlit.internal:5050",
       "to": "{{REGISTRY_PUSH_HOST}}"
-    },
-    {
-      "from": "registry.swirlit.dev/swirlit/bm-cluster/security",
-      "to": "{{REGISTRY_HOST}}/{{PLATFORM_SECURITY_PROJECT_PATH}}"
     },
     {
       "from": "registry.swirlit.dev/swirlit/thoughty",
