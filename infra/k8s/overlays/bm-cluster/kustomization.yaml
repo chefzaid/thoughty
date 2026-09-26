@@ -30,10 +30,10 @@ patches:
 images:
   - name: thoughty-server
     newName: registry.swirlit.dev/swirlit/thoughty/thoughty-server
-    newTag: 1.6.1
+    newTag: 1.7.2
   - name: thoughty-web
     newName: registry.swirlit.dev/swirlit/thoughty/thoughty-web
-    newTag: 1.6.1
+    newTag: 1.7.2
   - name: postgres
     newName: docker.io/library/postgres
     newTag: 18.6-bookworm
