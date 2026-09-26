@@ -38,139 +38,105 @@ function ActiveSessionsSection({ isDark, t }: Readonly<ActiveSessionsSectionProp
   const { authFetch } = useAuth();
   const [sessions, setSessions] = useState<ActiveSession[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busySessionId, setBusySessionId] = useState<number | null>(null);
-  const [revokingOthers, setRevokingOthers] = useState(false);
+  const [busySessionId, setBusySessionId] = useState<number | 'others' | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const loadSessions = useCallback(async () => {
-    setError('');
     setLoading(true);
-
     try {
       const response = await authFetch('/api/auth/sessions', {
         headers: buildRefreshTokenHeaders(),
       });
       const data = await safeJsonParse<ActiveSession[]>(response);
-
       if (!response.ok || !Array.isArray(data)) {
-        throw new Error('Could not load active sessions');
+        throw new Error('Unexpected sessions response');
       }
-
       setSessions(data);
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'Could not load active sessions');
+    } catch {
+      setError(t('sessionsLoadError'));
     } finally {
       setLoading(false);
     }
-  }, [authFetch]);
+  }, [authFetch, t]);
 
   useEffect(() => {
     void loadSessions();
   }, [loadSessions]);
 
-  const revokeSession = async (sessionId: number) => {
+  const revoke = async (target: number | 'others') => {
     setError('');
     setSuccess('');
-    setBusySessionId(sessionId);
-
+    setBusySessionId(target);
     try {
-      const response = await authFetch(`/api/auth/sessions/${sessionId}`, {
-        method: 'DELETE',
-        headers: buildRefreshTokenHeaders(),
-      });
-
+      const url = target === 'others' ? '/api/auth/sessions' : `/api/auth/sessions/${target}`;
+      const response = await authFetch(url, { method: 'DELETE', headers: buildRefreshTokenHeaders() });
       if (!response.ok) {
-        throw new Error('Could not revoke session');
+        throw new Error('Session revocation failed');
       }
-
-      setSuccess('Session revoked');
+      setSuccess(t(target === 'others' ? 'otherSessionsRevoked' : 'sessionRevoked'));
       await loadSessions();
-    } catch (revokeError) {
-      setError(revokeError instanceof Error ? revokeError.message : 'Could not revoke session');
+    } catch {
+      setError(t('sessionRevokeError'));
     } finally {
       setBusySessionId(null);
     }
   };
 
-  const revokeOtherSessions = async () => {
-    setError('');
-    setSuccess('');
-    setRevokingOthers(true);
-
-    try {
-      const response = await authFetch('/api/auth/sessions', {
-        method: 'DELETE',
-        headers: buildRefreshTokenHeaders(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Could not revoke other sessions');
-      }
-
-      setSuccess('Other sessions revoked');
-      await loadSessions();
-    } catch (revokeError) {
-      setError(revokeError instanceof Error ? revokeError.message : 'Could not revoke other sessions');
-    } finally {
-      setRevokingOthers(false);
-    }
-  };
+  const hasOtherSessions = sessions.some((session) => !session.current);
 
   return (
     <div className="setting-row">
       <div className="setting-info">
-        <span className="setting-label">Active sessions</span>
-        <span className="setting-description">Review signed-in devices and end sessions you no longer use.</span>
+        <span className="setting-label">{t('activeSessions')}</span>
+        <span className="setting-description">{t('activeSessionsDescription')}</span>
       </div>
 
-      {loading ? (
-        <span className="setting-description">{t('loading')}...</span>
-      ) : (
+      {loading && <span className="setting-description">{t('loading')}...</span>}
+      {!loading && !error && sessions.length === 0 && (
+        <span className="setting-description">{t('noActiveSessions')}</span>
+      )}
+      {!loading && sessions.length > 0 && (
         <>
-          {sessions.length === 0 ? (
-            <span className="setting-description">No active sessions found.</span>
-          ) : (
-            <div className="billing-history">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Session</th>
-                    <th>Created</th>
-                    <th>Expires</th>
-                    <th>Action</th>
+          <div className="billing-history">
+            <table>
+              <thead>
+                <tr>
+                  <th>{t('session')}</th>
+                  <th>{t('sessionCreated')}</th>
+                  <th>{t('sessionExpires')}</th>
+                  <th>{t('sessionAction')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sessions.map((session) => (
+                  <tr key={session.id}>
+                    <td>{session.current ? t('currentSession') : t('sessionNumber', { id: session.id })}</td>
+                    <td>{formatSessionDate(session.createdAt)}</td>
+                    <td>{formatSessionDate(session.expiresAt)}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className={`btn-download-data ${isDark ? 'dark' : 'light'}`}
+                        disabled={session.current || busySessionId !== null}
+                        onClick={() => void revoke(session.id)}
+                      >
+                        {busySessionId === session.id ? t('revoking') : t('revoke')}
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {sessions.map((session) => (
-                    <tr key={session.id}>
-                      <td>{session.current ? 'Current session' : `Session ${session.id}`}</td>
-                      <td>{formatSessionDate(session.createdAt)}</td>
-                      <td>{formatSessionDate(session.expiresAt)}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className={`btn-download-data ${isDark ? 'dark' : 'light'}`}
-                          disabled={session.current || busySessionId === session.id}
-                          onClick={() => void revokeSession(session.id)}
-                        >
-                          {busySessionId === session.id ? 'Revoking...' : 'Revoke'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <button
             type="button"
             className={`btn-change-password ${isDark ? 'dark' : 'light'}`}
-            disabled={revokingOthers || sessions.filter((session) => !session.current).length === 0}
-            onClick={() => void revokeOtherSessions()}
+            disabled={busySessionId !== null || !hasOtherSessions}
+            onClick={() => void revoke('others')}
           >
-            {revokingOthers ? 'Revoking...' : 'Sign out other sessions'}
+            {busySessionId === 'others' ? t('revoking') : t('signOutOtherSessions')}
           </button>
         </>
       )}

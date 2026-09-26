@@ -92,7 +92,6 @@ export default function EntryViewMode({
         handleDeleteRevision,
         handleRephrase,
         handleToggleHistory,
-        loadingBacklinks,
         loadingHistory,
         rephrasing,
         revisions,
@@ -107,7 +106,7 @@ export default function EntryViewMode({
 
     return (
         <>
-            <div className="flex justify-between items-start mb-3">
+            <div className="flex flex-wrap justify-between items-start gap-2 mb-3">
                 <EntryHeaderBadges
                     entry={entry}
                     showDiaryLabel={showDiaryLabel}
@@ -116,7 +115,7 @@ export default function EntryViewMode({
                     tagMetadata={tagMetadata}
                     t={t}
                 />
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <BackToSourceButton
                         entryId={entry.id}
                         activeTargetId={activeTargetId}
@@ -216,7 +215,6 @@ export default function EntryViewMode({
                 onNavigateToEntry={onNavigateToEntry}
                 searchTerm={searchTerm}
                 showHistory={showHistory}
-                loadingBacklinks={loadingBacklinks}
                 backlinks={backlinks}
                 loadingHistory={loadingHistory}
                 revisions={revisions}

@@ -11,6 +11,10 @@ interface PaginationProps {
 }
 
 function Pagination({ page, totalPages, setPage, inputPage, setInputPage, theme, t }: PaginationProps) {
+    if (totalPages <= 1) {
+        return null;
+    }
+
     const buttonClass = `p-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 ${theme === 'light'
             ? 'bg-white border-gray-300 hover:bg-gray-50 text-gray-600'
             : 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-400'

@@ -11,8 +11,6 @@ export type TranslationKey =
   | "feedEnd"
   | "loadMoreEntries"
   | "stats"
-  | "settings"
-  | "myJournal"
   | "whatsOnYourMind"
   | "save"
   | "public"
@@ -34,11 +32,8 @@ export type TranslationKey =
   | "resetFilters"
   | "year"
   | "month"
-  | "goToYear"
-  | "goToMonth"
   | "goToFirst"
   | "go"
-  | "pageInfo"
   | "previous"
   | "next"
   | "first"
@@ -47,12 +42,9 @@ export type TranslationKey =
   | "ofTotal"
   | "close"
   | "backToTop"
-  | "profileName"
   | "fullName"
   | "fullNameDescription"
   | "enterYourFullName"
-  | "displayName"
-  | "displayNameDescription"
   | "email"
   | "emailDescription"
   | "enterYourEmail"
@@ -102,7 +94,6 @@ export type TranslationKey =
   | "maxPinnedEntries"
   | "maxPinnedEntriesDescription"
   | "defaultVisibility"
-  | "defaultVisibilityDescription"
   | "language"
   | "tagOrganization"
   | "tagOrganizationDescription"
@@ -128,14 +119,33 @@ export type TranslationKey =
   | "journalRetagSelected"
   | "applyingJournalRetag"
   | "applyJournalRetag"
-  | "tagName"
   | "tagCategory"
   | "tagCategoryPlaceholder"
   | "tagColor"
-  | "renameTag"
   | "renameTagPlaceholder"
   | "noTagsToOrganize"
   | "resetTagAppearance"
+  | "activeSessions"
+  | "activeSessionsDescription"
+  | "noActiveSessions"
+  | "session"
+  | "sessionCreated"
+  | "sessionExpires"
+  | "sessionAction"
+  | "currentSession"
+  | "sessionNumber"
+  | "revoke"
+  | "revoking"
+  | "signOutOtherSessions"
+  | "sessionsLoadError"
+  | "sessionRevokeError"
+  | "sessionRevoked"
+  | "otherSessionsRevoked"
+  | "tagNameLabel"
+  | "newerYears"
+  | "olderYears"
+  | "visibilityFilter"
+  | "toggleTheme"
   | "newTag"
   | "newTagPlaceholder"
   | "addTag"
@@ -188,7 +198,6 @@ export type TranslationKey =
   | "saveSettings"
   | "settingsSaved"
   | "verifiedAccount"
-  | "unverifiedAccount"
   | "verifyEmailTitle"
   | "verifyingEmail"
   | "emailVerificationSuccess"
@@ -201,18 +210,14 @@ export type TranslationKey =
   | "continueToThoughty"
   | "personalInfo"
   | "appearance"
-  | "preferences"
   | "memberSince"
   | "entries"
   | "tags"
-  | "enterYourName"
   | "deleteEntryTitle"
   | "deleteEntryMessage"
   | "delete"
   | "noEntriesFound"
   | "edit"
-  | "readMore"
-  | "showLess"
   | "entryWordCount"
   | "entryReadingTimeMinutes"
   | "entryReadingTimeLessThanMinute"
@@ -222,10 +227,7 @@ export type TranslationKey =
   | "deleteEntryTemplate"
   | "templateNamePrompt"
   | "totalEntries"
-  | "currentStreak"
   | "topTags"
-  | "entriesOverTime"
-  | "tagDistribution"
   | "loadingStats"
   | "statsOverview"
   | "uniqueTags"
@@ -398,11 +400,7 @@ export type TranslationKey =
   | "profile"
   | "back"
   | "landingEyebrow"
-  | "landingTitle"
   | "landingSubtitle"
-  | "landingPulseLabel"
-  | "landingPulseTitle"
-  | "landingPulseBody"
   | "landingFeatureSection"
   | "landingFeatureHeading"
   | "landingFeaturePrivateTitle"
@@ -631,9 +629,6 @@ export type TranslationKey =
   | "continueWithGoogle"
   | "dontHaveAccount"
   | "alreadyHaveAccount"
-  | "emailPasswordRequired"
-  | "identifierPasswordRequired"
-  | "emailRequired"
   | "invalidEmail"
   | "passwordMinLength"
   | "passwordsDoNotMatch"
@@ -655,8 +650,6 @@ export type TranslationKey =
   | "backToSource"
   | "backlinks"
   | "backlinksCount"
-  | "loadingBacklinks"
-  | "noBacklinks"
   | "entryNotFound"
   | "entryNotFoundMessage"
   | "entryReferenceHint"
@@ -664,14 +657,12 @@ export type TranslationKey =
   | "manageDiaries"
   | "newDiary"
   | "diaryName"
-  | "diaryIcon"
   | "diaryColor"
   | "setAsDefault"
   | "defaultDiary"
   | "deleteDiary"
   | "deleteDiaryWarning"
   | "createDiary"
-  | "editDiary"
   | "allDiaries"
   | "noDiaries"
   | "visibilityOverrideHint"
@@ -679,12 +670,9 @@ export type TranslationKey =
   | "randomThought"
   | "onThisDay"
   | "yearsAgo"
-  | "refreshRandom"
   | "randomize"
   | "highlightsError"
   | "tryAgain"
-  | "expand"
-  | "collapse"
   | "seeHighlights"
   | "highlights"
   | "noHighlights"
@@ -696,7 +684,6 @@ export type TranslationKey =
   | "readDatesDescription"
   | "markdownEnabled"
   | "markdownDisabled"
-  | "markdownToolbar"
   | "loadingEntries"
   | "selectAll"
   | "bulkModeEnter"
@@ -713,9 +700,7 @@ export type TranslationKey =
   | "bulkDeleteMessage"
   | "selectTags"
   | "apply"
-  | "attach"
   | "attachFiles"
-  | "attachments"
   | "removeAttachment"
   | "attachmentTypeNotAllowed"
   | "attachmentTooLarge"
@@ -727,7 +712,6 @@ export type TranslationKey =
   | "copyTranscript"
   | "transcriptCopied"
   | "audioTranscriptionFailed"
-  | "closeImage"
   | "favorite"
   | "unfavorite"
   | "pinEntry"
@@ -749,7 +733,6 @@ export type TranslationKey =
   | "moreActions"
   | "dragToReorder"
   | "aiConfiguration"
-  | "aiConfigDescription"
   | "openRouterApiKey"
   | "personalKeyActive"
   | "serverKeyActive"
@@ -796,12 +779,10 @@ export type TranslationKey =
   | "noModelsFound"
   | "loadingModels"
   | "autoTagMaxTags"
-  | "autoTagMaxTagsDescription"
   | "history"
   | "viewHistory"
   | "noRevisions"
   | "revision"
-  | "restoredFrom"
   | "cloudSync"
   | "cloudSyncDescription"
   | "cloudConnect"
@@ -834,7 +815,6 @@ export type TranslationKey =
   | "cloudScheduleEnable"
   | "cloudScheduleDisable"
   | "cloudScheduleEnabled"
-  | "cloudScheduleDisabled"
   | "cloudScheduleSaved"
   | "cloudScheduleSaveError"
   | "cloudScheduleRemoved"
@@ -895,8 +875,6 @@ export const translations: Translations = {
     feedEnd: "You are all caught up.",
     loadMoreEntries: "Load more entries",
     stats: "Stats",
-    settings: "Settings",
-    myJournal: "My Journal",
     whatsOnYourMind: "What's on your mind?",
     save: "Save",
     public: "Public",
@@ -928,11 +906,8 @@ export const translations: Translations = {
     resetFilters: "Reset Filters",
     year: "Year",
     month: "Month",
-    goToYear: "Go to year",
-    goToMonth: "Go to month",
     goToFirst: "Go to first entry",
     go: "Go",
-    pageInfo: "Page {page} of {totalPages}",
     previous: "Previous",
     next: "Next",
     first: "First",
@@ -943,12 +918,9 @@ export const translations: Translations = {
     backToTop: "Back to top",
 
     // Settings
-    profileName: "Name",
     fullName: "Full Name",
     fullNameDescription: "Your full name as you want it displayed",
     enterYourFullName: "Enter your full name",
-    displayName: "Display Name",
-    displayNameDescription: "How you want to be known in the app",
     email: "Email",
     emailDescription: "Your email address for account notifications",
     enterYourEmail: "Enter your email",
@@ -1004,11 +976,10 @@ export const translations: Translations = {
     maxPinnedEntriesDescription:
       "Maximum entries that can stay pinned at the top of the journal",
     defaultVisibility: "Default Visibility",
-    defaultVisibilityDescription: "Default visibility for new entries",
     language: "Language",
     tagOrganization: "Tag Organization",
     tagOrganizationDescription:
-      "Assign categories and colors to your existing tags so related ideas are easier to scan.",
+      "Create, rename, color, and delete tags. Changes apply across all your entries.",
     organizeJournalThemes: "Organize journal themes",
     journalRetagTitle: "Review journal themes",
     journalRetagDescription:
@@ -1032,15 +1003,34 @@ export const translations: Translations = {
     journalRetagSelected: "{count} entries selected",
     applyingJournalRetag: "Applying changes...",
     applyJournalRetag: "Apply selected changes",
-    tagName: "Tag name",
     tagCategory: "Category",
     tagCategoryPlaceholder: "Examples: Work, Health, Ideas",
     tagColor: "Color",
-    renameTag: "Rename",
     renameTagPlaceholder: "Rename tag",
     noTagsToOrganize:
       "Create or save a few tags first, then organize them here.",
     resetTagAppearance: "Reset",
+    activeSessions: "Active sessions",
+    activeSessionsDescription: "Review signed-in devices and end sessions you no longer use.",
+    noActiveSessions: "No active sessions found.",
+    session: "Session",
+    sessionCreated: "Created",
+    sessionExpires: "Expires",
+    sessionAction: "Action",
+    currentSession: "Current session",
+    sessionNumber: "Session {id}",
+    revoke: "Revoke",
+    revoking: "Revoking...",
+    signOutOtherSessions: "Sign out other sessions",
+    sessionsLoadError: "Could not load active sessions.",
+    sessionRevokeError: "Could not revoke the session. Please try again.",
+    sessionRevoked: "Session revoked",
+    otherSessionsRevoked: "Other sessions revoked",
+    tagNameLabel: "Name",
+    newerYears: "Newer years",
+    olderYears: "Older years",
+    visibilityFilter: "Visibility",
+    toggleTheme: "Toggle theme",
     newTag: "New tag",
     newTagPlaceholder: "Tag name",
     addTag: "Add tag",
@@ -1101,7 +1091,6 @@ export const translations: Translations = {
     saveSettings: "Save Changes",
     settingsSaved: "Settings saved successfully",
     verifiedAccount: "Verified",
-    unverifiedAccount: "Email not verified",
     verifyEmailTitle: "Verify your email",
     verifyingEmail: "Verifying your email...",
     emailVerificationSuccess: "Your email is verified.",
@@ -1116,11 +1105,9 @@ export const translations: Translations = {
     continueToThoughty: "Continue to Thoughty",
     personalInfo: "Personal Information",
     appearance: "Appearance",
-    preferences: "Preferences",
     memberSince: "Member since {year}",
     entries: "Entries",
     tags: "Tags",
-    enterYourName: "Enter your name",
 
     // Confirm Modal
     deleteEntryTitle: "Delete Entry",
@@ -1131,8 +1118,6 @@ export const translations: Translations = {
     // Entries List
     noEntriesFound: "No entries found",
     edit: "Edit",
-    readMore: "Read more",
-    showLess: "Show less",
     entryWordCount: "{count} words",
     entryReadingTimeMinutes: "{minutes} min read",
     entryReadingTimeLessThanMinute: "<1 min read",
@@ -1144,10 +1129,7 @@ export const translations: Translations = {
 
     // Stats
     totalEntries: "Total Entries",
-    currentStreak: "Current Streak",
     topTags: "Top Tags",
-    entriesOverTime: "Entries Over Time",
-    tagDistribution: "Tag Distribution",
     loadingStats: "Loading statistics...",
     statsOverview: "Overview of your journal entries and tags",
     uniqueTags: "Unique Tags",
@@ -1344,14 +1326,8 @@ export const translations: Translations = {
     profile: "Profile",
     back: "Back",
     landingEyebrow: "Private writing, built to stay useful",
-    landingTitle:
-      "A journal that feels calm when you write and sharp when you search.",
     landingSubtitle:
       "Thoughty gives you structured diaries, fast import and export, rich entries, and privacy-first controls without turning journaling into admin work.",
-    landingPulseLabel: "Why people stay",
-    landingPulseTitle: "Everything important is still yours",
-    landingPulseBody:
-      "Keep entries portable with TXT, JSON, and Markdown exports, then bring them back with duplicate checks and diary-aware imports.",
     landingFeatureSection: "Thoughty feature highlights",
     landingFeatureHeading: "Capture the day, then keep finding what matters.",
     landingFeaturePrivateTitle: "Private by default",
@@ -1625,9 +1601,6 @@ export const translations: Translations = {
     continueWithGoogle: "Continue with Google",
     dontHaveAccount: "Don't have an account?",
     alreadyHaveAccount: "Already have an account?",
-    emailPasswordRequired: "Email and password are required",
-    identifierPasswordRequired: "Email/username and password are required",
-    emailRequired: "Email is required",
     invalidEmail: "Please enter a valid email address",
     passwordMinLength: "Password must be at least 6 characters",
     passwordsDoNotMatch: "Passwords do not match",
@@ -1656,8 +1629,6 @@ export const translations: Translations = {
     backToSource: "Back to source entry",
     backlinks: "Backlinks",
     backlinksCount: "{count} links",
-    loadingBacklinks: "Loading backlinks...",
-    noBacklinks: "No backlinks yet",
     entryNotFound: "Entry not found",
     entryNotFoundMessage:
       "This entry may have been deleted, or the link is no longer valid.",
@@ -1669,14 +1640,12 @@ export const translations: Translations = {
     manageDiaries: "Manage Diaries",
     newDiary: "New Diary",
     diaryName: "Diary Name",
-    diaryIcon: "Icon",
     diaryColor: "Color",
     setAsDefault: "Set as Default",
     defaultDiary: "Default Diary",
     deleteDiary: "Delete Diary",
     deleteDiaryWarning: "Entries will be moved to your default diary.",
     createDiary: "Create Diary",
-    editDiary: "Edit Diary",
     allDiaries: "All Diaries",
     noDiaries: "No diaries found. Create one to get started!",
     visibilityOverrideHint: "Can be overridden per entry",
@@ -1686,12 +1655,9 @@ export const translations: Translations = {
     randomThought: "Random Thought",
     onThisDay: "On This Day",
     yearsAgo: "{years} year(s) ago",
-    refreshRandom: "Get a new random thought",
     randomize: "Randomize",
     highlightsError: "Failed to load highlights",
     tryAgain: "Try again",
-    expand: "Expand",
-    collapse: "Collapse",
     seeHighlights: "See Highlights of the Day",
     highlights: "Highlights",
     noHighlights:
@@ -1706,7 +1672,6 @@ export const translations: Translations = {
     readDatesDescription: "Include dates when reading entries aloud",
     markdownEnabled: "Markdown enabled - click to switch to plain text",
     markdownDisabled: "Plain text - click to enable Markdown formatting",
-    markdownToolbar: "Markdown formatting toolbar",
     loadingEntries: "Loading entries...",
     selectAll: "Select all",
     bulkModeEnter: "Select",
@@ -1724,9 +1689,7 @@ export const translations: Translations = {
       "Are you sure you want to delete {count} entries? This cannot be undone.",
     selectTags: "Select tags...",
     apply: "Apply",
-    attach: "Attach",
     attachFiles: "Attach files",
-    attachments: "Attachments",
     removeAttachment: "Remove attachment",
     attachmentTypeNotAllowed:
       "This file type is not allowed. Allowed: images, audio, PDF, plain text.",
@@ -1740,7 +1703,6 @@ export const translations: Translations = {
     transcriptCopied: "Transcript copied",
     audioTranscriptionFailed:
       "Could not transcribe this audio. Check your AI key and try again.",
-    closeImage: "Close image",
     favorite: "Add to favorites",
     unfavorite: "Remove from favorites",
     pinEntry: "Pin entry",
@@ -1765,10 +1727,7 @@ export const translations: Translations = {
     viewHistory: "View history",
     noRevisions: "No previous versions",
     revision: "Revision",
-    restoredFrom: "Restored from",
     aiConfiguration: "AI Configuration",
-    aiConfigDescription:
-      "AI features are powered by OpenRouter. The API key is configured on the server.",
     openRouterApiKey: "OpenRouter API key",
     personalKeyActive: "Personal key active",
     serverKeyActive: "Using the server key",
@@ -1816,8 +1775,6 @@ export const translations: Translations = {
     noModelsFound: "No models found",
     loadingModels: "Loading models...",
     autoTagMaxTags: "Automatic Tag Limit",
-    autoTagMaxTagsDescription:
-      "Set the maximum number of AI-generated tags to add when you save an entry. Use 0 to disable auto-tagging.",
 
     // Cloud Sync
     cloudSync: "Cloud Sync",
@@ -1855,7 +1812,6 @@ export const translations: Translations = {
     cloudScheduleEnable: "Enable Schedule",
     cloudScheduleDisable: "Disable Schedule",
     cloudScheduleEnabled: "Scheduled sync is active",
-    cloudScheduleDisabled: "Scheduled sync is off",
     cloudScheduleSaved: "Sync schedule saved",
     cloudScheduleSaveError: "Failed to save sync schedule",
     cloudScheduleRemoved: "Sync schedule removed",
@@ -1912,8 +1868,6 @@ export const translations: Translations = {
     feedEnd: "Vous êtes à jour.",
     loadMoreEntries: "Charger plus d'entrées",
     stats: "Statistiques",
-    settings: "Paramètres",
-    myJournal: "Mon Journal",
     whatsOnYourMind: "Qu'avez-vous à l'esprit ?",
     save: "Enregistrer",
     public: "Public",
@@ -1946,11 +1900,8 @@ export const translations: Translations = {
     resetFilters: "Réinitialiser",
     year: "Année",
     month: "Mois",
-    goToYear: "Aller à l'année",
-    goToMonth: "Aller au mois",
     goToFirst: "Aller à la première entrée",
     go: "Aller",
-    pageInfo: "Page {page} sur {totalPages}",
     previous: "Précédent",
     next: "Suivant",
     first: "Premier",
@@ -1961,14 +1912,10 @@ export const translations: Translations = {
     backToTop: "Retour en haut",
 
     // Settings
-    profileName: "Nom",
     fullName: "Nom complet",
     fullNameDescription:
       "Votre nom complet tel que vous souhaitez qu'il soit affiché",
     enterYourFullName: "Entrez votre nom complet",
-    displayName: "Nom d'affichage",
-    displayNameDescription:
-      "Comment vous souhaitez être connu dans l'application",
     email: "Email",
     emailDescription: "Votre adresse email pour les notifications du compte",
     enterYourEmail: "Entrez votre email",
@@ -2026,12 +1973,10 @@ export const translations: Translations = {
     maxPinnedEntriesDescription:
       "Nombre maximum d'entrées qui peuvent rester épinglées en haut du journal",
     defaultVisibility: "Visibilité par défaut",
-    defaultVisibilityDescription:
-      "Visibilité par défaut pour les nouvelles entrées",
     language: "Langue",
     tagOrganization: "Organisation des tags",
     tagOrganizationDescription:
-      "Attribuez des catégories et des couleurs à vos tags existants pour repérer plus vite les idées liées.",
+      "Créez, renommez, colorez et supprimez vos tags. Les changements s'appliquent à toutes vos entrées.",
     organizeJournalThemes: "Organiser les thèmes du journal",
     journalRetagTitle: "Vérifier les thèmes du journal",
     journalRetagDescription:
@@ -2058,15 +2003,34 @@ export const translations: Translations = {
     journalRetagSelected: "{count} entrées sélectionnées",
     applyingJournalRetag: "Application des changements...",
     applyJournalRetag: "Appliquer les changements sélectionnés",
-    tagName: "Nom du tag",
     tagCategory: "Catégorie",
     tagCategoryPlaceholder: "Exemples : Travail, Santé, Idées",
     tagColor: "Couleur",
-    renameTag: "Renommer",
     renameTagPlaceholder: "Renommer le tag",
     noTagsToOrganize:
       "Créez ou enregistrez quelques tags puis organisez-les ici.",
     resetTagAppearance: "Réinitialiser",
+    activeSessions: "Sessions actives",
+    activeSessionsDescription: "Consultez les appareils connectés et fermez les sessions que vous n'utilisez plus.",
+    noActiveSessions: "Aucune session active.",
+    session: "Session",
+    sessionCreated: "Créée",
+    sessionExpires: "Expire",
+    sessionAction: "Action",
+    currentSession: "Session actuelle",
+    sessionNumber: "Session {id}",
+    revoke: "Révoquer",
+    revoking: "Révocation...",
+    signOutOtherSessions: "Déconnecter les autres sessions",
+    sessionsLoadError: "Impossible de charger les sessions actives.",
+    sessionRevokeError: "Impossible de révoquer la session. Veuillez réessayer.",
+    sessionRevoked: "Session révoquée",
+    otherSessionsRevoked: "Autres sessions révoquées",
+    tagNameLabel: "Nom",
+    newerYears: "Années plus récentes",
+    olderYears: "Années plus anciennes",
+    visibilityFilter: "Visibilité",
+    toggleTheme: "Changer de thème",
     newTag: "Nouveau tag",
     newTagPlaceholder: "Nom du tag",
     addTag: "Ajouter le tag",
@@ -2130,7 +2094,6 @@ export const translations: Translations = {
     saveSettings: "Enregistrer",
     settingsSaved: "Paramètres enregistrés avec succès",
     verifiedAccount: "Vérifié",
-    unverifiedAccount: "Email non vérifié",
     verifyEmailTitle: "Vérifiez votre email",
     verifyingEmail: "Vérification de votre email...",
     emailVerificationSuccess: "Votre email est vérifié.",
@@ -2145,11 +2108,9 @@ export const translations: Translations = {
     continueToThoughty: "Continuer vers Thoughty",
     personalInfo: "Informations personnelles",
     appearance: "Apparence",
-    preferences: "Préférences",
     memberSince: "Membre depuis {year}",
     entries: "Entrées",
     tags: "Tags",
-    enterYourName: "Entrez votre nom",
 
     // Confirm Modal
     deleteEntryTitle: "Supprimer l'entrée",
@@ -2160,8 +2121,6 @@ export const translations: Translations = {
     // Entries List
     noEntriesFound: "Aucune entrée trouvée",
     edit: "Modifier",
-    readMore: "Lire la suite",
-    showLess: "Voir moins",
     entryWordCount: "{count} mots",
     entryReadingTimeMinutes: "{minutes} min de lecture",
     entryReadingTimeLessThanMinute: "<1 min de lecture",
@@ -2173,10 +2132,7 @@ export const translations: Translations = {
 
     // Stats
     totalEntries: "Total des entrées",
-    currentStreak: "Série actuelle",
     topTags: "Tags populaires",
-    entriesOverTime: "Entrées au fil du temps",
-    tagDistribution: "Distribution des tags",
     loadingStats: "Chargement des statistiques...",
     statsOverview: "Aperçu de vos entrées de journal et tags",
     uniqueTags: "Tags uniques",
@@ -2381,14 +2337,8 @@ export const translations: Translations = {
     profile: "Profil",
     back: "Retour",
     landingEyebrow: "Une écriture privée, pensée pour rester utile",
-    landingTitle:
-      "Un journal apaisant à l'écriture et précis quand il faut retrouver une idée.",
     landingSubtitle:
       "Thoughty combine journaux structurés, import et export rapides, entrées riches et contrôle de la confidentialité sans transformer l'écriture en corvée.",
-    landingPulseLabel: "Pourquoi on y reste",
-    landingPulseTitle: "Tout ce qui compte vous appartient toujours",
-    landingPulseBody:
-      "Conservez vos entrées en TXT, JSON ou Markdown, puis réimportez-les avec détection des doublons et attribution intelligente aux journaux.",
     landingFeatureSection: "Points forts de Thoughty",
     landingFeatureHeading: "Notez la journée, puis retrouvez ce qui compte.",
     landingFeaturePrivateTitle: "Privé par défaut",
@@ -2667,10 +2617,6 @@ export const translations: Translations = {
     continueWithGoogle: "Continuer avec Google",
     dontHaveAccount: "Vous n'avez pas de compte ?",
     alreadyHaveAccount: "Vous avez déjà un compte ?",
-    emailPasswordRequired: "L'email et le mot de passe sont requis",
-    identifierPasswordRequired:
-      "L'email/nom d'utilisateur et le mot de passe sont requis",
-    emailRequired: "L'email est requis",
     invalidEmail: "Veuillez entrer une adresse email valide",
     passwordMinLength: "Le mot de passe doit contenir au moins 6 caractères",
     passwordsDoNotMatch: "Les mots de passe ne correspondent pas",
@@ -2701,8 +2647,6 @@ export const translations: Translations = {
     backToSource: "Retour à l'entrée source",
     backlinks: "Rétroliens",
     backlinksCount: "{count} liens",
-    loadingBacklinks: "Chargement des rétroliens...",
-    noBacklinks: "Aucun rétrolien pour le moment",
     entryNotFound: "Entrée non trouvée",
     entryNotFoundMessage:
       "Cette entrée a peut-être été supprimée, ou le lien n'est plus valide.",
@@ -2714,7 +2658,6 @@ export const translations: Translations = {
     manageDiaries: "Gérer les journaux",
     newDiary: "Nouveau journal",
     diaryName: "Nom du journal",
-    diaryIcon: "Icône",
     diaryColor: "Couleur",
     setAsDefault: "Définir par défaut",
     defaultDiary: "Journal par défaut",
@@ -2722,7 +2665,6 @@ export const translations: Translations = {
     deleteDiaryWarning:
       "Les entrées seront déplacées vers votre journal par défaut.",
     createDiary: "Créer un journal",
-    editDiary: "Modifier le journal",
     allDiaries: "Tous les journaux",
     noDiaries: "Aucun journal trouvé. Créez-en un pour commencer !",
     visibilityOverrideHint: "Peut être modifié par entrée",
@@ -2732,12 +2674,9 @@ export const translations: Translations = {
     randomThought: "Pensée aléatoire",
     onThisDay: "Ce jour-là",
     yearsAgo: "Il y a {years} an(s)",
-    refreshRandom: "Obtenir une nouvelle pensée aléatoire",
     randomize: "Aléatoire",
     highlightsError: "Échec du chargement des mises en avant",
     tryAgain: "Réessayer",
-    expand: "Développer",
-    collapse: "Réduire",
     seeHighlights: "Voir les moments forts du jour",
     highlights: "Moments forts",
     noHighlights:
@@ -2752,7 +2691,6 @@ export const translations: Translations = {
     readDatesDescription: "Inclure les dates lors de la lecture des entrées",
     markdownEnabled: "Markdown activé - cliquez pour passer au texte brut",
     markdownDisabled: "Texte brut - cliquez pour activer le formatage Markdown",
-    markdownToolbar: "Barre d'outils de formatage Markdown",
     loadingEntries: "Chargement des entrées...",
     selectAll: "Tout sélectionner",
     bulkModeEnter: "Sélectionner",
@@ -2770,9 +2708,7 @@ export const translations: Translations = {
       "Êtes-vous sûr de vouloir supprimer {count} entrées ? Cette action est irréversible.",
     selectTags: "Sélectionner des tags...",
     apply: "Appliquer",
-    attach: "Joindre",
     attachFiles: "Joindre des fichiers",
-    attachments: "Pièces jointes",
     removeAttachment: "Supprimer la pièce jointe",
     attachmentTypeNotAllowed:
       "Ce type de fichier n'est pas autorisé. Autorisés : images, audio, PDF, texte brut.",
@@ -2787,7 +2723,6 @@ export const translations: Translations = {
     transcriptCopied: "Transcription copiée",
     audioTranscriptionFailed:
       "Impossible de transcrire cet audio. Vérifiez votre clé IA et réessayez.",
-    closeImage: "Fermer l'image",
     favorite: "Ajouter aux favoris",
     unfavorite: "Retirer des favoris",
     pinEntry: "Épingler l'entrée",
@@ -2812,10 +2747,7 @@ export const translations: Translations = {
     viewHistory: "Voir l'historique",
     noRevisions: "Aucune version précédente",
     revision: "Révision",
-    restoredFrom: "Restauré à partir de",
     aiConfiguration: "Configuration IA",
-    aiConfigDescription:
-      "Les fonctionnalités IA sont alimentées par OpenRouter. La clé API est configurée sur le serveur.",
     openRouterApiKey: "Clé API OpenRouter",
     personalKeyActive: "Clé personnelle active",
     serverKeyActive: "Clé du serveur utilisée",
@@ -2863,8 +2795,6 @@ export const translations: Translations = {
     noModelsFound: "Aucun modèle trouvé",
     loadingModels: "Chargement des modèles...",
     autoTagMaxTags: "Limite de tags automatiques",
-    autoTagMaxTagsDescription:
-      "Définissez le nombre maximum de tags générés par l'IA à ajouter lors de l'enregistrement. Utilisez 0 pour désactiver l'auto-tagging.",
 
     // Cloud Sync
     cloudSync: "Synchronisation Cloud",
@@ -2902,7 +2832,6 @@ export const translations: Translations = {
     cloudScheduleEnable: "Activer la programmation",
     cloudScheduleDisable: "Désactiver la programmation",
     cloudScheduleEnabled: "La synchronisation programmée est active",
-    cloudScheduleDisabled: "La synchronisation programmée est désactivée",
     cloudScheduleSaved: "Programmation de synchronisation enregistrée",
     cloudScheduleSaveError: "Échec de l'enregistrement de la programmation",
     cloudScheduleRemoved: "Programmation de synchronisation supprimée",

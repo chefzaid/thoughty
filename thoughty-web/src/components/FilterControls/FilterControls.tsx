@@ -266,8 +266,8 @@ function FilterControls({
                     <button type="button"
                         onClick={cycleVisibility}
                         className={`flex h-10 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getVisibilityButtonStyle()}`}
-                        title="Visibility"
-                        aria-label="Visibility"
+                        title={t('visibilityFilter')}
+                        aria-label={t('visibilityFilter')}
                     >
                         {getVisibilityIcon()}
                         <span>{t(filterVisibility === 'all' ? 'allEntries' : filterVisibility)}</span>

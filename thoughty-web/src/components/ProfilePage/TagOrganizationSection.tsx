@@ -105,11 +105,11 @@ function TagOrganizationSection({
                   </div>
                   <div className="tag-manager-fields">
                     <label className="tag-manager-field">
-                      <span className="setting-label">Name</span>
+                      <span className="setting-label">{t('tagNameLabel')}</span>
                       <input
                         type="text"
                         name={`tag-name-${normalizeTagKey(tag)}`}
-                        aria-label={`Name ${tag}`}
+                        aria-label={`${t('tagNameLabel')} ${tag}`}
                         value={renameDrafts[tag] ?? tag}
                         placeholder={t('renameTagPlaceholder')}
                         onChange={(event) => {

@@ -71,8 +71,8 @@ function DiaryTabs({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, th
                     type="button"
                     className="diary-tab manage-btn"
                     onClick={onManageDiaries}
-                    title="Manage Diaries"
-                    aria-label="Manage Diaries"
+                    title={t('manageDiaries')}
+                    aria-label={t('manageDiaries')}
                 >
                     <span className="codicon codicon-settings-gear manage-icon" aria-hidden="true" />
                 </button>

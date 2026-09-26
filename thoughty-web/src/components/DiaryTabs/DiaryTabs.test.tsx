@@ -76,7 +76,7 @@ describe('DiaryTabs', () => {
 
     expect(screen.getByTitle('allDiaries')).toHaveAttribute('type', 'button');
     expect(screen.getByTitle('Work')).toHaveAttribute('type', 'button');
-    expect(screen.getByTitle('Manage Diaries')).toHaveAttribute('type', 'button');
+    expect(screen.getByTitle('manageDiaries')).toHaveAttribute('type', 'button');
   });
 
   it('renders an accent pastille for the all diaries and diary-specific tabs', () => {
@@ -97,7 +97,7 @@ describe('DiaryTabs', () => {
 
   it('calls onManageDiaries when manage button is clicked', () => {
     render(<DiaryTabs {...defaultProps} />);
-    const manageButton = screen.getByTitle('Manage Diaries');
+    const manageButton = screen.getByTitle('manageDiaries');
     fireEvent.click(manageButton);
     expect(mockOnManageDiaries).toHaveBeenCalled();
   });
@@ -116,7 +116,7 @@ describe('DiaryTabs', () => {
 
   it('renders manage diaries button with gear icon', () => {
     render(<DiaryTabs {...defaultProps} />);
-    const manageButton = screen.getByTitle('Manage Diaries');
+    const manageButton = screen.getByTitle('manageDiaries');
     expect(manageButton).toHaveClass('manage-btn');
     expect(manageButton.querySelector('.codicon-settings-gear')).toBeInTheDocument();
   });

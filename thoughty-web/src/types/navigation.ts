@@ -156,11 +156,6 @@ export function parseEntrySearchParam(searchParams: URLSearchParams): number | u
   return entryId;
 }
 
-export interface NavigationState {
-  currentView: ViewType;
-  year?: string;
-  month?: string;
-}
 
 export interface ProfileStats {
   totalEntries: number;

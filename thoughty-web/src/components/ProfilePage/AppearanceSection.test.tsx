@@ -30,14 +30,14 @@ describe('AppearanceSection', () => {
 
   it('renders theme toggle button', () => {
     render(<AppearanceSection {...defaultProps} />);
-    expect(screen.getByLabelText('Toggle theme')).toBeInTheDocument();
+    expect(screen.getByLabelText('toggleTheme')).toBeInTheDocument();
   });
 
   it('calls handleThemeToggle when theme button is clicked', async () => {
     const user = userEvent.setup();
     render(<AppearanceSection {...defaultProps} />);
 
-    await user.click(screen.getByLabelText('Toggle theme'));
+    await user.click(screen.getByLabelText('toggleTheme'));
     expect(defaultProps.handleThemeToggle).toHaveBeenCalledTimes(1);
   });
 
@@ -187,13 +187,13 @@ describe('AppearanceSection', () => {
     render(
       <AppearanceSection {...defaultProps} isDark={false} isLight={true} />
     );
-    const themeBtn = screen.getByLabelText('Toggle theme');
+    const themeBtn = screen.getByLabelText('toggleTheme');
     expect(themeBtn.className).toContain('light');
   });
 
   it('shows dark class on theme switch when isDark', () => {
     render(<AppearanceSection {...defaultProps} />);
-    const themeBtn = screen.getByLabelText('Toggle theme');
+    const themeBtn = screen.getByLabelText('toggleTheme');
     expect(themeBtn.className).toContain('dark');
   });
 

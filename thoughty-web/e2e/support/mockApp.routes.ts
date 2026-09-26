@@ -18,6 +18,18 @@ async function handleAuthRoutes({
   pathname,
   state,
 }: RouteContext): Promise<boolean> {
+  if (pathname === "/api/auth/sessions" && request.method() === "GET") {
+    await fulfillJson(route, [
+      {
+        id: 1,
+        current: true,
+        createdAt: "2024-04-20T08:00:00.000Z",
+        expiresAt: "2024-04-27T08:00:00.000Z",
+      },
+    ]);
+    return true;
+  }
+
   if (pathname === "/api/auth/two-factor/status") {
     await fulfillJson(route, {
       enabled: Boolean(state.user.twoFactorEnabled),

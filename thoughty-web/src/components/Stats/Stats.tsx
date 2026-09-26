@@ -244,7 +244,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
             <div className="stats-container">
                 <div className="stats-error">
                     <p>{error}</p>
-                    <button type="button" onClick={fetchStats}>Retry</button>
+                    <button type="button" onClick={fetchStats}>{t('retry')}</button>
                 </div>
             </div>
         );
@@ -324,149 +324,153 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                     onOpenJournalDay={onOpenJournalDay}
                 />
 
-                <div className="charts-row">
-                    {/* Thoughts per Year */}
-                    <div className={`chart-card ${themeClass}`}>
-                        <div className="chart-header">
-                            <h3>{t('thoughtsPerYear')}</h3>
-                            {totalYearChartPages > 1 && (
-                                <div className="pagination-controls">
-                                    <button type="button"
-                                        className={`pagination-btn ${themeClass}`}
-                                        onClick={() => setYearPage(p => Math.max(0, p - 1))}
-                                        disabled={yearPage === 0}
-                                        title="Previous"
-                                    >
-                                        ←
-                                    </button>
-                                    <span className="pagination-info">
-                                        {yearPage + 1} / {totalYearChartPages}
-                                    </span>
-                                    <button type="button"
-                                        className={`pagination-btn ${themeClass}`}
-                                        onClick={() => setYearPage(p => Math.min(totalYearChartPages - 1, p + 1))}
-                                        disabled={yearPage === totalYearChartPages - 1}
-                                        title="Next"
-                                    >
-                                        →
-                                    </button>
+                {stats.totalThoughts > 0 && (
+                    <>
+                        <div className="charts-row">
+                            {/* Thoughts per Year */}
+                            <div className={`chart-card ${themeClass}`}>
+                                <div className="chart-header">
+                                    <h3>{t('thoughtsPerYear')}</h3>
+                                    {totalYearChartPages > 1 && (
+                                        <div className="pagination-controls">
+                                            <button type="button"
+                                                className={`pagination-btn ${themeClass}`}
+                                                onClick={() => setYearPage(p => Math.max(0, p - 1))}
+                                                disabled={yearPage === 0}
+                                                title={t('previous')}
+                                            >
+                                                ←
+                                            </button>
+                                            <span className="pagination-info">
+                                                {yearPage + 1} / {totalYearChartPages}
+                                            </span>
+                                            <button type="button"
+                                                className={`pagination-btn ${themeClass}`}
+                                                onClick={() => setYearPage(p => Math.min(totalYearChartPages - 1, p + 1))}
+                                                disabled={yearPage === totalYearChartPages - 1}
+                                                title={t('next')}
+                                            >
+                                                →
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-                        </div>
-                        <div className="chart-wrapper">
-                            <Bar data={thoughtsPerYearChart} options={chartOptions} />
-                        </div>
-                    </div>
-
-                    {/* Thoughts per Month */}
-                    <div className={`chart-card ${themeClass}`}>
-                        <div className="chart-header">
-                            <h3>{t('thoughtsPerMonth')}</h3>
-                            {totalMonthPages > 1 && (
-                                <div className="pagination-controls">
-                                    <button type="button"
-                                        className={`pagination-btn ${themeClass}`}
-                                        onClick={() => setMonthPage(p => Math.max(0, p - 1))}
-                                        disabled={monthPage === 0}
-                                        title="Previous"
-                                    >
-                                        ←
-                                    </button>
-                                    <span className="pagination-info">
-                                        {monthPage + 1} / {totalMonthPages}
-                                    </span>
-                                    <button type="button"
-                                        className={`pagination-btn ${themeClass}`}
-                                        onClick={() => setMonthPage(p => Math.min(totalMonthPages - 1, p + 1))}
-                                        disabled={monthPage === totalMonthPages - 1}
-                                        title="Next"
-                                    >
-                                        →
-                                    </button>
+                                <div className="chart-wrapper">
+                                    <Bar data={thoughtsPerYearChart} options={chartOptions} />
                                 </div>
-                            )}
-                        </div>
-                        <div className="chart-wrapper">
-                            <Bar data={thoughtsPerMonthChart} options={chartOptions} />
-                        </div>
-                    </div>
-                </div>
+                            </div>
 
-                <div className="charts-row">
-                    <div className={`chart-card ${themeClass}`}>
-                        <h3>{t('topTags')}</h3>
-                        <div className="chart-wrapper">
-                            <Bar
-                                data={thoughtsPerTagChart}
-                                options={{
-                                    ...chartOptions,
-                                    indexAxis: 'y' as const,
-                                }}
-                            />
-                        </div>
-                    </div>
-
-                    {/* Tags per Year Breakdown */}
-                    <div className={`chart-card ${themeClass}`}>
-                        <div className="chart-header">
-                            <h3>{t('topTagsByYear')}</h3>
-                            {totalTagsYearPages > 1 && (
-                                <div className="pagination-controls">
-                                    <button type="button"
-                                        className={`pagination-btn ${themeClass}`}
-                                        onClick={() => setTagsYearPage(p => Math.max(0, p - 1))}
-                                        disabled={tagsYearPage === 0}
-                                        title="Newer years"
-                                    >
-                                        ←
-                                    </button>
-                                    <span className="pagination-info">
-                                        {tagsYearPage + 1} / {totalTagsYearPages}
-                                    </span>
-                                    <button type="button"
-                                        className={`pagination-btn ${themeClass}`}
-                                        onClick={() => setTagsYearPage(p => Math.min(totalTagsYearPages - 1, p + 1))}
-                                        disabled={tagsYearPage === totalTagsYearPages - 1}
-                                        title="Older years"
-                                    >
-                                        →
-                                    </button>
+                            {/* Thoughts per Month */}
+                            <div className={`chart-card ${themeClass}`}>
+                                <div className="chart-header">
+                                    <h3>{t('thoughtsPerMonth')}</h3>
+                                    {totalMonthPages > 1 && (
+                                        <div className="pagination-controls">
+                                            <button type="button"
+                                                className={`pagination-btn ${themeClass}`}
+                                                onClick={() => setMonthPage(p => Math.max(0, p - 1))}
+                                                disabled={monthPage === 0}
+                                                title={t('previous')}
+                                            >
+                                                ←
+                                            </button>
+                                            <span className="pagination-info">
+                                                {monthPage + 1} / {totalMonthPages}
+                                            </span>
+                                            <button type="button"
+                                                className={`pagination-btn ${themeClass}`}
+                                                onClick={() => setMonthPage(p => Math.min(totalMonthPages - 1, p + 1))}
+                                                disabled={monthPage === totalMonthPages - 1}
+                                                title={t('next')}
+                                            >
+                                                →
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
+                                <div className="chart-wrapper">
+                                    <Bar data={thoughtsPerMonthChart} options={chartOptions} />
+                                </div>
+                            </div>
                         </div>
-                        <div className="tag-breakdown">
-                            <table className="tag-table">
-                                <thead>
-                                    <tr>
-                                        <th>{t('year')}</th>
-                                        <th>{t('topTags')}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {tagsPerYearData.map(({ year, topTags }) => (
-                                        <tr key={year}>
-                                            <td>{year}</td>
-                                            <td>
-                                                {topTags.map(([tag, count]) => (
-                                                    <TagBadge
-                                                        key={tag}
-                                                        tag={tag}
-                                                        metadata={tagMetadata}
-                                                        theme={theme}
-                                                        showHash={false}
-                                                        size="xs"
-                                                        suffix={` (${count})`}
-                                                        className="mr-2"
-                                                    />
-                                                ))}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+
+                        <div className="charts-row">
+                            <div className={`chart-card ${themeClass}`}>
+                                <h3>{t('topTags')}</h3>
+                                <div className="chart-wrapper">
+                                    <Bar
+                                        data={thoughtsPerTagChart}
+                                        options={{
+                                            ...chartOptions,
+                                            indexAxis: 'y' as const,
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Tags per Year Breakdown */}
+                            <div className={`chart-card ${themeClass}`}>
+                                <div className="chart-header">
+                                    <h3>{t('topTagsByYear')}</h3>
+                                    {totalTagsYearPages > 1 && (
+                                        <div className="pagination-controls">
+                                            <button type="button"
+                                                className={`pagination-btn ${themeClass}`}
+                                                onClick={() => setTagsYearPage(p => Math.max(0, p - 1))}
+                                                disabled={tagsYearPage === 0}
+                                                title={t('newerYears')}
+                                            >
+                                                ←
+                                            </button>
+                                            <span className="pagination-info">
+                                                {tagsYearPage + 1} / {totalTagsYearPages}
+                                            </span>
+                                            <button type="button"
+                                                className={`pagination-btn ${themeClass}`}
+                                                onClick={() => setTagsYearPage(p => Math.min(totalTagsYearPages - 1, p + 1))}
+                                                disabled={tagsYearPage === totalTagsYearPages - 1}
+                                                title={t('olderYears')}
+                                            >
+                                                →
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="tag-breakdown">
+                                    <table className="tag-table">
+                                        <thead>
+                                            <tr>
+                                                <th>{t('year')}</th>
+                                                <th>{t('topTags')}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {tagsPerYearData.map(({ year, topTags }) => (
+                                                <tr key={year}>
+                                                    <td>{year}</td>
+                                                    <td>
+                                                        {topTags.map(([tag, count]) => (
+                                                            <TagBadge
+                                                                key={tag}
+                                                                tag={tag}
+                                                                metadata={tagMetadata}
+                                                                theme={theme}
+                                                                showHash={false}
+                                                                size="xs"
+                                                                suffix={` (${count})`}
+                                                                className="mr-2"
+                                                            />
+                                                        ))}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </>
+                )}
             </div>
         </div>
     );

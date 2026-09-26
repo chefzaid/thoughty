@@ -8,7 +8,7 @@ import Pagination from '../Pagination/Pagination';
 import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
 import DuplicateReview from '../DuplicateReview/DuplicateReview';
-import type { Config } from '../../types';
+import type { Config, TranslationFunction } from '../../types';
 import { useJournalKeyboardShortcuts } from './useJournalKeyboardShortcuts';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
@@ -24,7 +24,6 @@ type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' 
 type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage'>;
 type YearMonthNavigatorProps = Pick<ComponentProps<typeof YearMonthNavigator>, 'availableYears' | 'availableMonths' | 'onNavigate'>;
 type DuplicateReviewProps = Omit<ComponentProps<typeof DuplicateReview>, 'theme' | 't'>;
-type TranslationFn = (key: string, params?: Record<string, string | number>) => string;
 
 interface JournalViewProps {
   diaryTabs: DiaryTabsProps;
@@ -36,7 +35,7 @@ interface JournalViewProps {
   yearMonthNavigator: YearMonthNavigatorProps;
   duplicateReview: DuplicateReviewProps;
   config: Config;
-  t: TranslationFn;
+  t: TranslationFunction;
 }
 
 function JournalView({
@@ -137,7 +136,7 @@ function JournalView({
         t={t}
       />
 
-      <BackToTopButton t={t} />
+      {entriesList.entries.length > 0 && <BackToTopButton t={t} />}
     </>
   );
 }

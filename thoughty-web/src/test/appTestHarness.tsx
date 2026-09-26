@@ -110,7 +110,7 @@ export const mockEntriesResponse = {
   entries: mockEntries,
   total: 2,
   page: 1,
-  totalPages: 1,
+  totalPages: 2,
   allTags: ['work', 'personal'],
 };
 

@@ -1,6 +1,0 @@
-{
-  "name": "uuid",
-  "version": "14.0.0",
-  "main": "index.cjs",
-  "type": "commonjs"
-}

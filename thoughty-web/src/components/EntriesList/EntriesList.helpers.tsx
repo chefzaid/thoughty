@@ -107,7 +107,7 @@ export function EntryReorderControls({
                 type="button"
                 onPointerDown={onHandlePointerDown}
                 onKeyDown={onHandleKeyDown}
-                className={`relative z-40 flex items-center rounded-md px-1 py-0.5 transition-all cursor-grab active:cursor-grabbing select-none ${dragHandleClass}`}
+                className={`relative z-40 flex w-6 shrink-0 items-center justify-center rounded-md py-0.5 transition-all cursor-grab active:cursor-grabbing select-none ${dragHandleClass}`}
                 title={dragToReorderLabel}
                 aria-label={dragToReorderLabel}
             >

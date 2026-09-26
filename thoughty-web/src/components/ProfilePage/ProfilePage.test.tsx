@@ -131,7 +131,7 @@ describe('ProfilePage', () => {
         it('displays current theme state', () => {
             render(<ProfilePage {...defaultProps} />);
             
-            const toggle = screen.getByLabelText('Toggle theme');
+            const toggle = screen.getByLabelText('toggleTheme');
             expect(toggle).toBeInTheDocument();
             expect(toggle).toHaveClass('dark');
         });
@@ -228,7 +228,7 @@ describe('ProfilePage', () => {
             const user = userEvent.setup();
             render(<ProfilePage {...defaultProps} config={{ ...defaultProps.config, theme: 'light' }} />);
 
-            const toggle = screen.getByLabelText('Toggle theme');
+            const toggle = screen.getByLabelText('toggleTheme');
             expect(toggle).toHaveClass('light');
 
             await user.click(toggle);

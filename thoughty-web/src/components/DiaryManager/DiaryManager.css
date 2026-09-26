@@ -253,12 +253,6 @@
     color: #6b7280;
 }
 
-.visibility-hint {
-    font-size: 0.625rem;
-    color: #9ca3af;
-    font-style: italic;
-}
-
 .visibility-toggle {
     display: flex;
     align-items: center;

@@ -259,10 +259,8 @@
     .nav-items {
         width: 100%;
         min-width: 0;
+        flex-wrap: wrap;
         justify-content: flex-start;
-        overflow-x: auto;
-        padding-bottom: 0.25rem;
-        scrollbar-width: thin;
     }
 
     .nav-profile-btn {

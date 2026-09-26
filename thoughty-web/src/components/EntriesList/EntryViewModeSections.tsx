@@ -165,7 +165,6 @@ export function EntryBodySection({
     fontColor,
     onNavigateToEntry,
     searchTerm,
-    loadingBacklinks,
     backlinks,
     showHistory,
     loadingHistory,
@@ -181,7 +180,6 @@ export function EntryBodySection({
     fontColor?: string;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     searchTerm?: string;
-    loadingBacklinks: boolean;
     backlinks: EntryBacklink[];
     showHistory: boolean;
     loadingHistory: boolean;
@@ -223,7 +221,6 @@ export function EntryBodySection({
             <EntryBacklinksSection
                 entry={entry}
                 backlinks={backlinks}
-                loading={loadingBacklinks}
                 isDark={isDark}
                 onNavigateToEntry={onNavigateToEntry}
                 tagMetadata={tagMetadata}
@@ -253,7 +250,6 @@ export function EntryBodySection({
 export function EntryBacklinksSection({
     entry,
     backlinks,
-    loading,
     isDark,
     onNavigateToEntry,
     tagMetadata,
@@ -261,13 +257,15 @@ export function EntryBacklinksSection({
 }: Readonly<{
     entry: Entry;
     backlinks: EntryBacklink[];
-    loading: boolean;
     isDark: boolean;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     tagMetadata: TagMetadataMap;
     t: TranslationFn;
 }>) {
-    const emptyBacklinksLabel = t(loading ? 'loadingBacklinks' : 'noBacklinks');
+    if (backlinks.length === 0) {
+        return null;
+    }
+
     const sourceEntry = {
         id: entry.id,
         date: extractDate(entry.date),
@@ -281,53 +279,49 @@ export function EntryBacklinksSection({
                     {t('backlinks')}
                 </h4>
                 <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-                    {loading ? t('loadingBacklinks') : t('backlinksCount', { count: backlinks.length })}
+                    {t('backlinksCount', { count: backlinks.length })}
                 </span>
             </div>
-            {backlinks.length === 0 ? (
-                <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{emptyBacklinksLabel}</p>
-            ) : (
-                <div className="space-y-2">
-                    {backlinks.map((backlink) => {
-                        const backlinkDate = extractDate(backlink.date);
-                        const backlinkIndex = backlink.index || 1;
-                        return (
-                            <button
-                                key={backlink.id}
-                                type="button"
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    onNavigateToEntry(backlinkDate, backlinkIndex, sourceEntry);
-                                }}
-                                className={`w-full rounded-md border px-3 py-2 text-left transition-colors ${isDark ? 'border-gray-700 bg-gray-950/30 hover:border-blue-500/60 hover:bg-blue-500/10' : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'}`}
-                            >
-                                <div className="mb-1 flex flex-wrap items-center gap-2">
-                                    <span className={`text-xs font-mono font-semibold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
-                                        {backlinkDate}{backlinkIndex > 1 ? ` #${backlinkIndex}` : ''}
+            <div className="space-y-2">
+                {backlinks.map((backlink) => {
+                    const backlinkDate = extractDate(backlink.date);
+                    const backlinkIndex = backlink.index || 1;
+                    return (
+                        <button
+                            key={backlink.id}
+                            type="button"
+                            onClick={(event) => {
+                                event.stopPropagation();
+                                onNavigateToEntry(backlinkDate, backlinkIndex, sourceEntry);
+                            }}
+                            className={`w-full rounded-md border px-3 py-2 text-left transition-colors ${isDark ? 'border-gray-700 bg-gray-950/30 hover:border-blue-500/60 hover:bg-blue-500/10' : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50'}`}
+                        >
+                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                                <span className={`text-xs font-mono font-semibold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+                                    {backlinkDate}{backlinkIndex > 1 ? ` #${backlinkIndex}` : ''}
+                                </span>
+                                {backlink.diary_name && (
+                                    <span className={`rounded-full px-2 py-0.5 text-[11px] ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
+                                        {backlink.diary_icon ? `${backlink.diary_icon} ` : ''}{backlink.diary_name}
                                     </span>
-                                    {backlink.diary_name && (
-                                        <span className={`rounded-full px-2 py-0.5 text-[11px] ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
-                                            {backlink.diary_icon ? `${backlink.diary_icon} ` : ''}{backlink.diary_name}
-                                        </span>
-                                    )}
-                                    {backlink.tags.slice(0, 3).map((tag) => (
-                                        <TagBadge
-                                            key={tag}
-                                            tag={tag}
-                                            metadata={tagMetadata}
-                                            theme={isDark ? 'dark' : 'light'}
-                                            size="xs"
-                                        />
-                                    ))}
-                                </div>
-                                <p className={`line-clamp-2 text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    {backlink.content.length > 180 ? `${backlink.content.slice(0, 180)}...` : backlink.content}
-                                </p>
-                            </button>
-                        );
-                    })}
-                </div>
-            )}
+                                )}
+                                {backlink.tags.slice(0, 3).map((tag) => (
+                                    <TagBadge
+                                        key={tag}
+                                        tag={tag}
+                                        metadata={tagMetadata}
+                                        theme={isDark ? 'dark' : 'light'}
+                                        size="xs"
+                                    />
+                                ))}
+                            </div>
+                            <p className={`line-clamp-2 text-xs leading-relaxed ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {backlink.content.length > 180 ? `${backlink.content.slice(0, 180)}...` : backlink.content}
+                            </p>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 }

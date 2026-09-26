@@ -33,14 +33,6 @@ export interface Entry {
   attachments?: Attachment[];
 }
 
-export interface EntryFormData {
-  text: string;
-  tags: string[];
-  date: Date;
-  visibility: "public" | "private";
-  diaryId?: number | null;
-}
-
 export interface GroupedEntries {
   [date: string]: Entry[];
 }
@@ -49,18 +41,6 @@ export interface SourceEntryInfo {
   id: number;
   date: string;
   index: number;
-}
-
-export interface EntryFilters {
-  search?: string;
-  tags?: string[];
-  date?: string;
-  visibility?: "all" | "public" | "private";
-  favorites?: boolean;
-  archiveStatus?: "all" | "active" | "archived";
-  diaryId?: number | null;
-  page?: number;
-  limit?: number;
 }
 
 export interface EntriesResponse {

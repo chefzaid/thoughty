@@ -1,6 +1,8 @@
 // AuthPage types and utilities
 
-export type TranslationFunction = (key: string, params?: Record<string, string | number>) => string;
+import type { TranslationFunction } from '../../types';
+
+export type { TranslationFunction };
 
 export interface AuthResult {
   success: boolean;

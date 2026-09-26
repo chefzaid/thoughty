@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ArchiveStatusFilter, Config, Entry, EntryBacklink, GroupedEntries, SourceEntryInfo } from '../types';
 import { useApiServices } from './useApiServices';
 import type { SemanticSearchResponse } from '../services/api/aiService';
@@ -98,6 +98,7 @@ export const useEntries = (
       return result ?? { entries: [], totalPages: 1, allTags: [] };
     },
     enabled: isAuthenticated,
+    placeholderData: keepPreviousData,
   });
 
   const entryDatesQuery = useQuery({

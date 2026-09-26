@@ -148,22 +148,22 @@
     margin-bottom: 1rem;
 }
 
-.stat {
+.preview-stats .stat {
     display: flex;
     flex-direction: column;
 }
 
-.stat-value {
+.preview-stats .stat-value {
     font-size: 1.75rem;
     font-weight: 600;
     color: #a5b4fc;
 }
 
-.stat.warning .stat-value {
+.preview-stats .stat.warning .stat-value {
     color: #fbbf24;
 }
 
-.stat-label {
+.preview-stats .stat-label {
     font-size: 0.85rem;
     color: var(--text-secondary, rgba(255, 255, 255, 0.6));
 }
@@ -200,8 +200,7 @@
 }
 
 .export-option-row--split {
-    justify-content: flex-start;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 0.9rem;
 }
 

@@ -20,6 +20,7 @@
 - [x] Random thought of the day / "On this day X years ago"
 - [x] Text-to-speech reading of entries, with language-aware voice selection, preview, and optional reading of entry dates
 - [x] Write box that adapts to the content on the fly, and a "More actions" menu to declutter the buttons next to entries
+- [x] Journal filter bar grouped into search, filters, and tools (Highlights and Find duplicates), wrapping cleanly on small screens
 - [x] Delete all entries at once to start a fresh journal
 - [x] Entry templates (e.g. gratitude journal, daily reflection, meeting notes) that users can create and pick when writing a new entry
 - [x] Word count and estimated reading time displayed per entry, with averages added to stats
@@ -33,6 +34,8 @@
 - [x] Tag pick list when writing and when filtering, with the ability to add new tags on the fly
 - [x] Enhanced tags management with custom tag colors and optional categories with category-aware sorting (a random color is assigned to newly created and imported tags)
 - [x] Whole-journal tag rename that updates every entry instead of creating parallel old/new variants
+- [x] Full tag management (CRUD) in the Tags view: create tags before any entry uses them (offered in the composer and editor pickers), per-tag entry counts, rename, recolor/categorize, and delete a tag from every entry after confirmation
+- [x] Tags and themes unified into a single tag concept (no separate "theme tags")
 - [x] Composable filtering: full-text search, multi-tag, date, visibility, archive state, and diary scope can all be combined
 - [x] Multiple diaries across all features, with reordering (drag or keyboard), renaming, emoji icons, accent colors, per-diary default visibility, and a configurable default diary
 - [x] Safe diary deletion: entries move to the default diary, and the default diary itself cannot be deleted
@@ -89,7 +92,7 @@
 
 ## AI
 
-- [x] Suggest tags from the written text and auto-tag entries, with a configurable max number of tags per entry
+- [x] Suggest tags from the written text and auto-tag entries, with a configurable max number of tags per entry (one "Auto Tag" action suggests both concrete subjects and broader themes)
 - [x] Fix writing errors and style: rephrase an existing entry with selectable modes (grammar/form only, slight style enhancement, complete rewrite)
 - [x] Pass a thought to AI for analysis or further discussion (entry chat)
 - [x] AI chat history, with the option to export chats as text files
@@ -107,9 +110,9 @@
 - [x] Transcription from an Audio note
 - [ ] Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
 - [x] Use different models for different tasks, to optimize token consumption parameterized in the AI settings
-- [x] AI-generated writing prompts based on the user's journaling history and interests, to inspire new entries and reflections
+- [x] "Get Inspired": one deep reflective question based on the user's most used and most recent tags (only tag names and counts are sent to the AI), replacing the earlier list of history-based writing prompts
 - [x] Summaries of long entries, with the option to include or exclude certain details
-- [x] AI-generated tags that are more abstract or thematic, to complement the user-defined tags and provide different ways to organize and explore the journal
+- [x] AI-generated tags that are more abstract or thematic, to complement the user-defined tags (merged into the single Auto Tag action)
 - [x] Auto-theme and re-tag the whole journal: scan all entries, generate a list of discussed themes, group them into the smallest set of tags that still accurately tags each entry, then tag or re-tag entries with the appropriate ones
 
 ## Book Converter
@@ -174,6 +177,7 @@
 - [x] Calibrate existing rate limiting on API endpoints to prevent abuse without being too restrictive
 - [x] Backup and disaster recovery plan for user data
 - [x] Improve error handling and user feedback for better UX
+- [x] App-wide cleanup pass: removed dead components, barrel files, unused dependencies, unused translation keys and CSS, and fixed layout, theme, i18n, and loading-flicker bugs found in a full UI tour
 - [ ] Use WebSockets for real-time updates on public entries and messages
 - [x] Implement lazy loading for components and routes to improve initial load time
 - [x] Implement feature flags to enable/disable features without redeploying, using a third-party service

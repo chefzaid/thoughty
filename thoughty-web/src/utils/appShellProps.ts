@@ -8,7 +8,7 @@ import type FeedbackPage from '../components/FeedbackPage/FeedbackPage';
 import type IntroPage from '../components/IntroPage/IntroPage';
 import type LegalPage from '../components/LegalPage/LegalPage';
 import type VerifyEmailPage from '../components/VerifyEmailPage/VerifyEmailPage';
-import type { Config, Entry, ImportExportFormat, ImportExportSection, PublicViewType, ViewType } from '../types';
+import type { Config, Entry, ImportExportFormat, ImportExportSection, PublicViewType, TranslationFunction, ViewType } from '../types';
 import type AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
 import type { DuplicateEntryScan, RephraseMode, SummaryGuidance } from '../services/api/aiService';
@@ -27,7 +27,6 @@ export type VerifyEmailPageProps = ComponentProps<typeof VerifyEmailPage>;
 export type AuthenticatedLayoutProps = Omit<ComponentProps<typeof AuthenticatedAppLayout>, 'children'>;
 export type AuthenticatedRoutesProps = ComponentProps<typeof AuthenticatedRoutes>;
 
-type TranslationFn = (key: string, params?: Record<string, string | number>) => string;
 type AppShellRoutingState = ReturnType<typeof import('../hooks/useAppShellRouting').useAppShellRouting>;
 type EntryNavigationState = ReturnType<typeof import('../hooks/useEntryNavigation').useEntryNavigation>;
 type BulkSelectState = ReturnType<typeof import('../hooks/useAppState').useBulkSelect>;
@@ -41,7 +40,7 @@ interface BuildPublicShellPropsParams {
   configTheme?: 'light' | 'dark';
   publicView: PublicViewType | null;
   routingState: Pick<AppShellRoutingState, 'handleAuthSuccess' | 'handlePublicViewChange'>;
-  t: TranslationFn;
+  t: TranslationFunction;
 }
 
 interface BuildAuthenticatedLayoutPropsParams {
@@ -57,7 +56,7 @@ interface BuildAuthenticatedLayoutPropsParams {
   isEmailVerified: boolean;
   routingState: Pick<AppShellRoutingState, 'handleLogout' | 'handleViewChange'>;
   setChatEntry: (entry: Entry | null) => void;
-  t: TranslationFn;
+  t: TranslationFunction;
   userName: string;
 }
 
@@ -87,7 +86,7 @@ interface BuildAuthenticatedRoutesPropsParams {
   profileStats: AuthenticatedRoutesProps['profileRouteProps']['stats'] | null;
   routingState: Pick<AppShellRoutingState, 'handleBackFromDiaries' | 'handleDiaryChange' | 'handleImportExportRouteStateChange' | 'handleManageDiaries' | 'handleViewChange'>;
   setHighlightsModalOpen: (value: boolean) => void;
-  t: TranslationFn;
+  t: TranslationFunction;
   tagMetadata: TagMetadataMap;
   updateConfig: (newConfig: Config) => Promise<void>;
 }

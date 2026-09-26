@@ -194,11 +194,7 @@ describe('AppShell behavior flows', () => {
 
     renderAppShell();
 
-    await waitFor(() => {
-      expect(screen.getByText('Back to top')).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByText('Back to top'));
+    await user.click(await screen.findByText('Back to top'));
 
     expect(scrollToMock).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
   });

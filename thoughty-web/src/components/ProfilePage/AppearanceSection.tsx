@@ -171,7 +171,7 @@ function ThemeAndPaginationSettings({
             type="button"
             className={`theme-switch ${isDark ? 'dark' : 'light'}`}
             onClick={handleThemeToggle}
-            aria-label="Toggle theme"
+            aria-label={t('toggleTheme')}
           >
             <span className={`switch-thumb ${isDark ? 'on' : 'off'}`} />
           </button>

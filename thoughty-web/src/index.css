@@ -69,9 +69,7 @@ body.high-contrast-mode [tabindex]:focus-visible {
 body.high-contrast-mode .profile-page,
 body.high-contrast-mode .stat-card,
 body.high-contrast-mode .chart-card,
-body.high-contrast-mode .entry-card,
-body.high-contrast-mode .feed-entry,
-body.high-contrast-mode .modal-content {
+body.high-contrast-mode .feed-entry {
   border-color: #fff !important;
   box-shadow: none !important;
 }
@@ -116,8 +114,6 @@ body.high-contrast-mode .modal-content {
   outline: 2px solid rgba(59, 130, 246, 0.5);
   outline-offset: 1px;
 }
-
-
 
 /* Markdown content styling */
 .markdown-content h1 {

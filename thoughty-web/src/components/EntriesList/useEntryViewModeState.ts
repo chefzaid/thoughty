@@ -21,7 +21,6 @@ export default function useEntryViewModeState({
     const [revisions, setRevisions] = useLocalState<EntryRevision[]>([]);
     const [backlinks, setBacklinks] = useLocalState<EntryBacklink[]>([]);
     const [loadingHistory, setLoadingHistory] = useLocalState(false);
-    const [loadingBacklinks, setLoadingBacklinks] = useLocalState(false);
     const [rephrasing, setRephrasing] = useLocalState(false);
 
     useEffect(() => {
@@ -31,23 +30,22 @@ export default function useEntryViewModeState({
         }
 
         let cancelled = false;
-        setLoadingBacklinks(true);
         void onFetchBacklinks(entry.id)
             .then((data) => {
                 if (!cancelled) {
                     setBacklinks(data);
                 }
             })
-            .finally(() => {
+            .catch(() => {
                 if (!cancelled) {
-                    setLoadingBacklinks(false);
+                    setBacklinks([]);
                 }
             });
 
         return () => {
             cancelled = true;
         };
-    }, [entry.id, onFetchBacklinks, setBacklinks, setLoadingBacklinks]);
+    }, [entry.id, onFetchBacklinks, setBacklinks]);
 
     const handleToggleHistory = useCallback(async () => {
         if (showHistory) {
@@ -98,7 +96,6 @@ export default function useEntryViewModeState({
         handleDeleteRevision,
         handleRephrase,
         handleToggleHistory,
-        loadingBacklinks,
         loadingHistory,
         rephrasing,
         revisions,

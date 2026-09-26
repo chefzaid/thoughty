@@ -38,7 +38,7 @@ function createJsonResponse(data: unknown, ok = true): Response {
 
 describe('ActiveSessionsSection', () => {
   const authFetch = vi.fn();
-  const t = (key: string) => key;
+  const t = (key: string, params?: Record<string, string | number>) => (params ? `${key} ${params.id}` : key);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -52,8 +52,8 @@ describe('ActiveSessionsSection', () => {
   it('loads active sessions and marks the current session', async () => {
     render(<ActiveSessionsSection isDark={true} t={t} />);
 
-    expect(await screen.findByText('Current session')).toBeInTheDocument();
-    expect(screen.getByText('Session 2')).toBeInTheDocument();
+    expect(await screen.findByText('currentSession')).toBeInTheDocument();
+    expect(screen.getByText('sessionNumber 2')).toBeInTheDocument();
     expect(authFetch).toHaveBeenCalledWith('/api/auth/sessions', {
       headers: { 'X-Refresh-Token': 'current-refresh-token' },
     });
@@ -62,9 +62,9 @@ describe('ActiveSessionsSection', () => {
   it('disables revocation for the current session', async () => {
     render(<ActiveSessionsSection isDark={true} t={t} />);
 
-    await screen.findByText('Current session');
+    await screen.findByText('currentSession');
 
-    const revokeButtons = screen.getAllByRole('button', { name: 'Revoke' });
+    const revokeButtons = screen.getAllByRole('button', { name: 'revoke' });
     expect(revokeButtons[0]).toBeDisabled();
     expect(revokeButtons[1]).not.toBeDisabled();
   });
@@ -78,8 +78,8 @@ describe('ActiveSessionsSection', () => {
 
     render(<ActiveSessionsSection isDark={false} t={t} />);
 
-    await screen.findByText('Session 2');
-    await user.click(screen.getAllByRole('button', { name: 'Revoke' })[1]!);
+    await screen.findByText('sessionNumber 2');
+    await user.click(screen.getAllByRole('button', { name: 'revoke' })[1]!);
 
     await waitFor(() => {
       expect(authFetch).toHaveBeenCalledWith('/api/auth/sessions/2', {
@@ -87,7 +87,7 @@ describe('ActiveSessionsSection', () => {
         headers: { 'X-Refresh-Token': 'current-refresh-token' },
       });
     });
-    expect(await screen.findByText('Session revoked')).toBeInTheDocument();
+    expect(await screen.findByText('sessionRevoked')).toBeInTheDocument();
   });
 
   it('revokes all other sessions', async () => {
@@ -99,8 +99,8 @@ describe('ActiveSessionsSection', () => {
 
     render(<ActiveSessionsSection isDark={false} t={t} />);
 
-    await screen.findByText('Session 2');
-    await user.click(screen.getByRole('button', { name: 'Sign out other sessions' }));
+    await screen.findByText('sessionNumber 2');
+    await user.click(screen.getByRole('button', { name: 'signOutOtherSessions' }));
 
     await waitFor(() => {
       expect(authFetch).toHaveBeenCalledWith('/api/auth/sessions', {
@@ -108,6 +108,15 @@ describe('ActiveSessionsSection', () => {
         headers: { 'X-Refresh-Token': 'current-refresh-token' },
       });
     });
-    expect(await screen.findByText('Other sessions revoked')).toBeInTheDocument();
+    expect(await screen.findByText('otherSessionsRevoked')).toBeInTheDocument();
+  });
+
+  it('shows a load error without claiming there are no sessions', async () => {
+    authFetch.mockResolvedValueOnce(createJsonResponse({ message: 'Unavailable' }, false));
+
+    render(<ActiveSessionsSection isDark={true} t={t} />);
+
+    expect(await screen.findByText('sessionsLoadError')).toBeInTheDocument();
+    expect(screen.queryByText('noActiveSessions')).not.toBeInTheDocument();
   });
 });
