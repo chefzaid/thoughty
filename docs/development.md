@@ -52,6 +52,30 @@ Start only `db`, `minio`, and the API when you are working on the backend alone.
 
 `.devcontainer/` provides an `app` workspace container (Node 22, `mask`, `git`, `postgresql-client`, the GitHub CLI, and the project's recommended extensions) plus `db` and `minio` services gated on health checks. Dependencies install automatically, ports `3001`, `5173`, `5432`, `9000`, and `9001` are forwarded, and the container already sets `POSTGRES_HOST=db`, `S3_ENDPOINT=http://minio:9000`, and matching credentials, so no `.env` is needed. Because the services already run, start the app with the manual commands (`npm run migrate`, `npm run seed`, then the two `npm run dev` commands) instead of `mask run`. Do not override `POSTGRES_HOST` or `S3_ENDPOINT` in a local `.env`.
 
+## Seed Data
+
+`npm run seed` replaces the seed accounts with a deterministic journal that exercises every feature (about 10,000 entries; it takes under a minute). It only touches the seed accounts below, and `npm run db:validate-seed` checks the data, including every cross-reference, without writing. Every account uses the password `Test1234!`.
+
+| Account | Purpose |
+|---|---|
+| `test` (`test@example.com`) | The main journal: one to four entries every day since 2016 in **Thoughts**, plus **Work** (weekdays), **Dreams**, **Travel** (trips, mostly public), and **Gratitude** (weekly Markdown lists). Includes the hand-written story in `thoughty-server/data/*.txt`. |
+| `maya` | Community member with mostly public entries, for the **Feed**. |
+| `sam` | Public entries in every moderation state (`hidden`, `under_review`, `removed`) plus archived public ones; only visible, active entries reach the feed. |
+| `leo` | Soft-deleted account with public entries that must never appear in the feed; login is refused. |
+| `newbie` | Unverified account with an empty journal, for onboarding, verification, and empty states. |
+
+What the `test` journal covers:
+
+- **Journal:** plain and Markdown entries of every length (short notes to long reflections for summaries and reading time), favorites, three pinned entries, archived entries before 2020, public entries, and about 340 entries with revision history.
+- **Cross-references and backlinks:** about 870 entries link to earlier ones with `[[date]]`, `[[date#n]]`, and the legacy `entry (date--n)` form, including "one year ago today" links.
+- **Highlights:** every day since 2016 has an entry, so **On This Day** always shows several past years.
+- **Find duplicates:** two near-duplicate pairs in the last ten days of **Thoughts** and one in **Work**, plus a similar entry with a different conclusion that should not be flagged.
+- **Tags and stats:** each year has its own life theme (university, first job, moving, marathon, pandemic, wedding, parenthood, promotion, new house, sabbatical), so yearly top tags differ. Tag metadata gives most tags a color and category, and three tags (`bucket-list`, `stoicism`, `someday-maybe`) exist only in the Tags view.
+- **Other:** profile and appearance settings, two custom templates, twelve AI chat histories, two extra sessions to revoke, and six feature requests with votes from several users.
+- **Attachments:** an image, text file, PDF, and audio note with a transcript are uploaded to object storage when it is reachable; otherwise the seed skips them with a warning.
+
+AI-backed features (Auto Tag, Get Inspired, summaries, meaning search, duplicates, analyses) still need an OpenRouter key; the data is shaped so their results are meaningful.
+
 ## Configuration
 
 `thoughty-server/.env.example` and `thoughty-web/.env.example` are the reference for every variable. The defaults match the Compose stack, so copy them only to change a default or enable an optional integration.
@@ -81,7 +105,7 @@ The web app calls the API through relative `/api` paths proxied by Vite, so its 
 | Command (from the repository root) | Does |
 |---|---|
 | `npm run migrate` | apply pending migrations |
-| `npm run seed` | load development data |
+| `npm run seed` | replace the seed accounts with the development data set (see [Seed Data](#seed-data)) |
 | `npm run check-db` | check database connectivity and schema assumptions |
 | `npm run nuke-db` | drop the database contents (follow with `migrate` and `seed`) |
 | `npm run kill` | stop stray backend Node processes |

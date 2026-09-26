@@ -100,7 +100,9 @@ function TagOrganizationSection({
                       />
                     </div>
                     <span className="tag-manager-usage">
-                      {usageCount > 0 ? t('tagUsageCount', { count: usageCount }) : t('tagUnused')}
+                      {usageCount === 0 && t('tagUnused')}
+                      {usageCount === 1 && t('tagUsageCountOne')}
+                      {usageCount > 1 && t('tagUsageCount', { count: usageCount })}
                     </span>
                   </div>
                   <div className="tag-manager-fields">

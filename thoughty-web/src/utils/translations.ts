@@ -154,6 +154,7 @@ export type TranslationKey =
   | "deleteTagConfirm"
   | "deleteTagFailed"
   | "tagUsageCount"
+  | "tagUsageCountOne"
   | "tagUnused"
   | "security"
   | "currentPassword"
@@ -1040,6 +1041,7 @@ export const translations: Translations = {
       "Delete #{tag}? It will be removed from {count} entries. The entries themselves are kept.",
     deleteTagFailed: "Unable to delete the tag. Please try again.",
     tagUsageCount: "{count} entries",
+    tagUsageCountOne: "1 entry",
     tagUnused: "Unused",
 
     // Security
@@ -2040,6 +2042,7 @@ export const translations: Translations = {
       "Supprimer #{tag} ? Il sera retiré de {count} entrées. Les entrées elles-mêmes sont conservées.",
     deleteTagFailed: "Impossible de supprimer le tag. Veuillez réessayer.",
     tagUsageCount: "{count} entrées",
+    tagUsageCountOne: "1 entrée",
     tagUnused: "Inutilisé",
 
     // Security

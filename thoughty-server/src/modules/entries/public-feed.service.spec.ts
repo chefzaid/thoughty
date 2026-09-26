@@ -69,7 +69,9 @@ describe('PublicFeedService', () => {
     });
     expect(qb.andWhere).toHaveBeenCalledWith('e.user_id != :userId', { userId: 7 });
     expect(qb.andWhere).toHaveBeenCalledWith('u.deleted_at IS NULL');
-    expect(qb.orderBy).toHaveBeenCalledWith('e.created_at', 'DESC');
+    // A property path, not a column name: TypeORM cannot resolve column names
+    // when ordering a joined, paginated query.
+    expect(qb.orderBy).toHaveBeenCalledWith('e.createdAt', 'DESC');
     expect(qb.skip).toHaveBeenCalledWith(5);
     expect(qb.take).toHaveBeenCalledWith(5);
   });

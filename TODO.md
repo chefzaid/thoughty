@@ -174,6 +174,7 @@
 - [x] Health check endpoint for Kubernetes probes
 - [x] Swagger/OpenAPI documentation for the API
 - [x] Mask commands to run and test the app easily, including nuking the DB and reseeding test data
+- [x] Development seed covering every feature: daily entries since 2016 across five diaries, cross-references, revisions, duplicates to find, moderated and deleted community users for the feed, sessions, feature requests, and attachments
 - [x] Documentation restructured into a docs directory (architecture, development setup, deployment, testing, features)
 - [x] Caching of frequent requests (public entries, feed)
 - [x] Distributed rate limiting with Redis for multi-replica deployments

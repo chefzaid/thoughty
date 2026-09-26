@@ -42,7 +42,7 @@ export class PublicFeedService {
     }
 
     const total = await qb.getCount();
-    qb.orderBy('e.created_at', 'DESC')
+    qb.orderBy('e.createdAt', 'DESC')
       .addOrderBy('e.id', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);

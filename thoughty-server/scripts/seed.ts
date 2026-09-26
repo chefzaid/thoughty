@@ -1,7 +1,17 @@
 #!/usr/bin/env ts-node
 /**
- * Database Seeding Script
- * Seeds the database with test data from journal_test_data.txt
+ * Development database seed.
+ *
+ * Creates a journal that exercises every feature: daily entries since 2016
+ * (one to four per day) across five diaries, cross-references and backlinks,
+ * Markdown, favorites, pins, archive, revisions, attachments, AI chat
+ * history, planted duplicates, tag metadata (including unused tags),
+ * templates, extra sessions, community users for the public feed (with
+ * moderated, archived, and deleted-author content), an unverified user, and
+ * feature requests with votes.
+ *
+ * Every account uses the password Test1234!. The content is deterministic.
+ * Run with --validate-only to check the data without touching the database.
  */
 
 import * as fs from 'node:fs';
@@ -9,316 +19,355 @@ import * as path from 'node:path';
 import * as bcrypt from 'bcryptjs';
 import { query, closeDatabase } from './lib/db';
 import { log, banner, section, summaryBox, fmt, table } from './lib/logger';
+import { createRng, TAG_METADATA } from './lib/seed-content';
+import {
+    buildCommunityJournal,
+    buildMainJournal,
+    toIsoDate,
+    type DiaryKey,
+    type HandwrittenEntry,
+    type SeedEntry,
+} from './lib/seed-journal';
+import { createAssetUploader, createSeedAsset } from './lib/seed-assets';
 
 const JOURNAL_TEST_DATA_FILE = path.join(__dirname, '..', 'data', 'journal_test_data.txt');
 const DREAMS_TEST_DATA_FILE = path.join(__dirname, '..', 'data', 'dreams_test_data.txt');
-const SEED_ENTRY_REFERENCE_PATTERN = /entry \((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/g;
+const REFERENCE_PATTERNS = [
+    /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]/g,
+    /entry \((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/g,
+];
 const validateOnlyFlag = process.argv.includes('--validate-only');
+const PASSWORD = 'Test1234!';
 
-// Default credentials for seeded data
-const DEFAULT_USER_ID = 1;
-const DEFAULT_EMAIL = 'test@example.com';
-const DEFAULT_USERNAME = 'test';
-const DEFAULT_PASSWORD = 'Test1234!';
-
-interface Entry {
-    date: string;
-    index: number;
-    tags: string[];
-    content: string;
+interface SeedUser {
+    id: number;
+    username: string;
+    email: string;
+    verified: boolean;
+    deleted?: boolean;
+    diaries: Array<{ key: DiaryKey; name: string; icon: string; color: string; visibility: 'public' | 'private'; isDefault?: boolean }>;
+    settings: Record<string, string>;
 }
 
-interface MissingEntryReference {
-    sourceDate: string;
-    sourceIndex: number;
-    targetDate: string;
-    targetIndex: number;
-    rawReference: string;
-}
+const MAIN_USER: SeedUser = {
+    id: 1,
+    username: 'test',
+    email: 'test@example.com',
+    verified: true,
+    diaries: [
+        { key: 'thoughts', name: 'Thoughts', icon: '💭', color: '#7C3AED', visibility: 'private', isDefault: true },
+        { key: 'work', name: 'Work', icon: '💼', color: '#2563EB', visibility: 'private' },
+        { key: 'dreams', name: 'Dreams', icon: '🌙', color: '#0891B2', visibility: 'private' },
+        { key: 'travel', name: 'Travel', icon: '✈️', color: '#EA580C', visibility: 'public' },
+        { key: 'gratitude', name: 'Gratitude', icon: '🙏', color: '#DB2777', visibility: 'private' },
+    ],
+    settings: {
+        name: 'Alex Martin',
+        bio: 'Writing one entry a day since 2016. Runner, reader, parent of two.',
+        birthday: '1994-03-14',
+        gender: 'other',
+        theme: 'dark',
+        language: 'en',
+        entriesPerPage: '10',
+        maxPinnedEntries: '3',
+        defaultVisibility: 'private',
+        readDates: 'true',
+        autoTagMaxTags: '0',
+        subscriptionPlan: 'plus',
+        paymentMethodLabel: 'Visa ending in 4242',
+        tagMetadata: JSON.stringify(TAG_METADATA),
+        entryTemplates: JSON.stringify([
+            { id: 'custom-seed-1', name: 'Run log', content: 'Distance:\nTime:\nHow it felt:\n', tags: ['running'], visibility: 'private', format: 'plain' },
+            { id: 'custom-seed-2', name: 'Book notes', content: '## Book\n\n## Key ideas\n- \n\n## Quote\n> ', tags: ['books'], visibility: 'private', format: 'markdown' },
+        ]),
+    },
+};
 
-function getEntryKey(date: string, index: number): string {
-    return `${date}#${index}`;
-}
+const COMMUNITY_USERS: SeedUser[] = [
+    { id: 2, username: 'maya', email: 'maya@example.com', verified: true, diaries: [{ key: 'notes', name: 'Notes', icon: '📝', color: '#059669', visibility: 'public', isDefault: true }], settings: { name: 'Maya Chen', theme: 'light' } },
+    { id: 3, username: 'sam', email: 'sam@example.com', verified: true, diaries: [{ key: 'notes', name: 'Journal', icon: '📓', color: '#CA8A04', visibility: 'public', isDefault: true }], settings: { name: 'Sam Rivera' } },
+    { id: 4, username: 'leo', email: 'leo@example.com', verified: true, deleted: true, diaries: [{ key: 'notes', name: 'Journal', icon: '📓', color: '#6B7280', visibility: 'public', isDefault: true }], settings: {} },
+];
 
-/**
- * Parse the test data file
- * Format:
- *   ---YYYY-MM-DD--[tag1,tag2] for first entry of a day
- *   ---N--[tag1,tag2] for subsequent entries (N = 2, 3, 4...)
- *   Content follows on the next line
- *   Entries on same day separated by: ********************************************************************************
- *   Days separated by: --------------------------------------------------------------------------------
- */
-function readSeedEntryContent(lines: string[], start: number): { next: number; content: string } {
-    const contentLines: string[] = [];
-    let next = start;
-    while (next < lines.length) {
-        const line = lines[next].trim();
-        if (line.startsWith('---') || line.startsWith('********************************************************************************')) break;
-        if (line) contentLines.push(line);
-        next++;
-    }
-    return { next, content: contentLines.join('\n') };
-}
+const NEW_USER: SeedUser = {
+    id: 5,
+    username: 'newbie',
+    email: 'newbie@example.com',
+    verified: false,
+    diaries: [{ key: 'notes', name: 'My Journal', icon: '📔', color: '#7C3AED', visibility: 'private', isDefault: true }],
+    settings: {},
+};
 
-function parseTestData(content: string): Entry[] {
-    const entries: Entry[] = [];
+const ALL_USERS = [MAIN_USER, ...COMMUNITY_USERS, NEW_USER];
+
+// ---------------------------------------------------------------------------
+// Hand-written story entries (data/*.txt)
+// Format: ---YYYY-MM-DD--[tags] starts a day, ---N--[tags] adds entry N that day.
+// ---------------------------------------------------------------------------
+
+function parseTestData(content: string): HandwrittenEntry[] {
+    const entries: HandwrittenEntry[] = [];
     const lines = content.split('\n');
-
     let currentDate: string | null = null;
-    let currentIndex = 0;
-    const dateIndexMap: Record<string, number> = {};
     let i = 0;
 
     while (i < lines.length) {
         const line = lines[i].trim();
-
-        // Check for date entry: ---YYYY-MM-DD--[tags]
-        const dateMatch = /^---(\d{4})-(\d{2})-(\d{2})--\[([^\]]*)\]$/.exec(line);
-        if (dateMatch) {
-            const [, year, month, day, tagsStr] = dateMatch;
-            currentDate = `${year}-${month}-${day}`;
-            dateIndexMap[currentDate] = (dateIndexMap[currentDate] || 0) + 1;
-            currentIndex = dateIndexMap[currentDate];
-            const tags = tagsStr
-                .split(',')
-                .map((t) => t.trim())
-                .filter(Boolean);
-
-            const body = readSeedEntryContent(lines, i + 1);
-            i = body.next;
-            if (body.content) {
-                entries.push({
-                    date: currentDate,
-                    index: currentIndex,
-                    tags: tags,
-                    content: body.content,
-                });
-            }
+        const dateMatch = /^---(\d{4}-\d{2}-\d{2})--\[([^\]]*)\]$/.exec(line);
+        const numberMatch = /^---(\d+)--\[([^\]]*)\]$/.exec(line);
+        if (!dateMatch && !(numberMatch && currentDate)) {
+            i++;
             continue;
         }
+        if (dateMatch) currentDate = dateMatch[1];
+        const index = dateMatch ? entries.filter((entry) => entry.date === currentDate).length + 1 : Number.parseInt(numberMatch![1], 10);
+        const tags = (dateMatch ? dateMatch[2] : numberMatch![2]).split(',').map((tag) => tag.trim()).filter(Boolean);
 
-        // Check for numbered entry: ---N--[tags]
-        const numMatch = /^---(\d+)--\[([^\]]*)\]$/.exec(line);
-        if (numMatch && currentDate) {
-            const [, num, tagsStr] = numMatch;
-            currentIndex = Number.parseInt(num, 10);
-            const tags = tagsStr
-                .split(',')
-                .map((t) => t.trim())
-                .filter(Boolean);
-
-            const body = readSeedEntryContent(lines, i + 1);
-            i = body.next;
-            if (body.content) {
-                entries.push({
-                    date: currentDate,
-                    index: currentIndex,
-                    tags: tags,
-                    content: body.content,
-                });
-            }
-            continue;
-        }
-
+        const contentLines: string[] = [];
         i++;
+        while (i < lines.length && !lines[i].trim().startsWith('---') && !lines[i].trim().startsWith('*****')) {
+            if (lines[i].trim()) contentLines.push(lines[i].trim());
+            i++;
+        }
+        if (contentLines.length > 0) {
+            entries.push({ date: currentDate!, index, tags, content: contentLines.join('\n') });
+        }
     }
-
     return entries;
 }
 
-function findMissingEntryReferences(entries: Entry[]): MissingEntryReference[] {
-    const existingEntries = new Set(entries.map((entry) => getEntryKey(entry.date, entry.index)));
-    const missingReferences: MissingEntryReference[] = [];
+function loadHandwritten(filePath: string): HandwrittenEntry[] {
+    if (!fs.existsSync(filePath)) throw new Error(`Seed data file not found: ${filePath}`);
+    return parseTestData(fs.readFileSync(filePath, 'utf-8'));
+}
 
+/** Every [[date#n]] or entry (date--n) reference must point at an entry in the same diary. */
+function findBrokenReferences(entries: Array<{ diary?: string; date: string; index: number; content: string }>): string[] {
+    const existing = new Set(entries.map((entry) => `${entry.diary ?? ''}|${entry.date}#${entry.index}`));
+    const broken: string[] = [];
     for (const entry of entries) {
-        const matches = [...entry.content.matchAll(SEED_ENTRY_REFERENCE_PATTERN)];
-
-        for (const match of matches) {
-            const targetDate = match[1];
-            const targetIndex = Number.parseInt(match[2] || '1', 10);
-
-            if (!existingEntries.has(getEntryKey(targetDate, targetIndex))) {
-                missingReferences.push({
-                    sourceDate: entry.date,
-                    sourceIndex: entry.index,
-                    targetDate,
-                    targetIndex,
-                    rawReference: match[0],
-                });
+        for (const pattern of REFERENCE_PATTERNS) {
+            for (const match of entry.content.matchAll(pattern)) {
+                const target = `${entry.diary ?? ''}|${match[1]}#${match[2] ?? '1'}`;
+                if (!existing.has(target)) broken.push(`${entry.date}#${entry.index} -> ${match[0]}`);
             }
         }
     }
-
-    return missingReferences;
+    return broken;
 }
 
-function validateEntryReferences(entries: Entry[]): void {
-    const missingReferences = findMissingEntryReferences(entries);
+// ---------------------------------------------------------------------------
+// Database writes
+// ---------------------------------------------------------------------------
 
-    if (missingReferences.length === 0) {
-        log.success('Seed cross-references validated');
-        return;
-    }
-
-    const details = missingReferences
-        .map((reference) => `  - ${reference.sourceDate}#${reference.sourceIndex} -> ${reference.rawReference} -> ${reference.targetDate}#${reference.targetIndex}`)
-        .join('\n');
-
-    throw new Error(`Found ${missingReferences.length} invalid seed cross-reference(s):\n${details}`);
+async function resetUsers(): Promise<void> {
+    const ids = ALL_USERS.map((user) => user.id);
+    const names = ALL_USERS.map((user) => user.username);
+    const emails = ALL_USERS.map((user) => user.email);
+    await query('DELETE FROM users WHERE id = ANY($1) OR username = ANY($2) OR email = ANY($3)', [ids, names, emails]);
 }
 
-function ensureSeedDataFile(filePath: string, label: string): void {
-    if (!fs.existsSync(filePath)) {
-        throw new Error(`${label} test data file not found: ${filePath}`);
-    }
-}
-
-function loadEntriesFromFile(filePath: string): Entry[] {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return parseTestData(content);
-}
-
-async function insertEntries(diaryId: number, entries: Entry[]): Promise<void> {
-    for (const entry of entries) {
+async function insertUsers(): Promise<void> {
+    const passwordHash = await bcrypt.hash(PASSWORD, 12);
+    for (const user of ALL_USERS) {
         await query(
-            'INSERT INTO entries (user_id, diary_id, date, "index", tags, content) VALUES ($1, $2, $3, $4, $5, $6)',
-            [DEFAULT_USER_ID, diaryId, entry.date, entry.index, entry.tags, entry.content],
+            `INSERT INTO users (id, username, email, password_hash, auth_provider, email_verified, deleted_at, deletion_reason, created_at)
+             VALUES ($1, $2, $3, $4, 'local', $5, $6, $7, $8)`,
+            [
+                user.id,
+                user.username,
+                user.email,
+                passwordHash,
+                user.verified,
+                user.deleted ? new Date() : null,
+                user.deleted ? 'Seeded deleted account' : null,
+                user.id === MAIN_USER.id ? new Date('2016-01-01T08:00:00Z') : new Date('2023-01-01T08:00:00Z'),
+            ],
         );
+        for (const [key, value] of Object.entries(user.settings)) {
+            await query('INSERT INTO settings (user_id, key, value) VALUES ($1, $2, $3)', [user.id, key, value]);
+        }
+    }
+    await query(`SELECT setval(pg_get_serial_sequence('users', 'id'), GREATEST((SELECT MAX(id) FROM users), 1))`);
+}
+
+async function insertDiaries(user: SeedUser): Promise<Map<DiaryKey, number>> {
+    const ids = new Map<DiaryKey, number>();
+    for (const [position, diary] of user.diaries.entries()) {
+        const [row] = await query<{ id: number }>(
+            `INSERT INTO diaries (user_id, name, icon, color, visibility, is_default, position)
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+            [user.id, diary.name, diary.icon, diary.color, diary.visibility, Boolean(diary.isDefault), position],
+        );
+        ids.set(diary.key, row.id);
+    }
+    return ids;
+}
+
+const ENTRY_COLUMNS = ['user_id', 'diary_id', 'date', '"index"', 'tags', 'content', 'format', 'visibility', 'moderation_status', 'is_favorite', 'is_archived', 'is_pinned', 'created_at', 'updated_at'];
+
+async function insertEntries(userId: number, diaries: Map<DiaryKey, number>, entries: SeedEntry[]): Promise<Map<SeedEntry, number>> {
+    const ids = new Map<SeedEntry, number>();
+    for (let start = 0; start < entries.length; start += 400) {
+        const batch = entries.slice(start, start + 400);
+        const values: unknown[] = [];
+        const rows = batch.map((entry, row) => {
+            values.push(userId, diaries.get(entry.diary), entry.date, entry.index, entry.tags, entry.content, entry.format, entry.visibility,
+                entry.moderationStatus, entry.isFavorite, entry.isArchived, entry.isPinned, entry.createdAt, entry.updatedAt);
+            return `(${ENTRY_COLUMNS.map((_, column) => `$${row * ENTRY_COLUMNS.length + column + 1}`).join(', ')})`;
+        });
+        const inserted = await query<{ id: number }>(`INSERT INTO entries (${ENTRY_COLUMNS.join(', ')}) VALUES ${rows.join(', ')} RETURNING id`, values);
+        inserted.forEach((row, i) => ids.set(batch[i], row.id));
+    }
+    return ids;
+}
+
+async function insertEntryExtras(userId: number, entries: SeedEntry[], ids: Map<SeedEntry, number>): Promise<{ revisions: number; chats: number; attachments: number; attachmentsSkipped: boolean }> {
+    let revisions = 0;
+    let chats = 0;
+    let attachments = 0;
+    const upload = entries.some((entry) => entry.attachment) ? await createAssetUploader(process.env) : null;
+
+    for (const entry of entries) {
+        const entryId = ids.get(entry)!;
+        for (const revision of entry.revisions) {
+            await query(
+                'INSERT INTO entry_revisions (entry_id, user_id, content, tags, date, format, visibility, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+                [entryId, userId, revision.content, revision.tags.join(','), entry.date, entry.format, entry.visibility, revision.createdAt],
+            );
+            revisions++;
+        }
+        if (entry.chat) {
+            await query('INSERT INTO ai_chat_histories (user_id, entry_id, messages) VALUES ($1, $2, $3)', [userId, entryId, JSON.stringify(entry.chat)]);
+            chats++;
+        }
+        if (entry.attachment && upload) {
+            const asset = createSeedAsset(entry.attachment);
+            const storedFilename = await upload(asset);
+            await query(
+                `INSERT INTO attachments (user_id, entry_id, original_filename, stored_filename, mimetype, size, transcript, transcribed_at)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                [userId, entryId, asset.originalFilename, storedFilename, asset.mimetype, asset.body.length, asset.transcript ?? null, asset.transcript ? new Date() : null],
+            );
+            attachments++;
+        }
+    }
+    return { revisions, chats, attachments, attachmentsSkipped: !upload && entries.some((entry) => entry.attachment) };
+}
+
+async function insertSessionsAndFeatureRequests(): Promise<void> {
+    // Two sessions on other devices so "Sign out other sessions" has something to revoke.
+    for (const [daysAgo, label] of [[3, 'laptop'], [12, 'phone']] as const) {
+        await query('INSERT INTO refresh_tokens (user_id, token, expires_at, created_at) VALUES ($1, $2, $3, $4)', [
+            MAIN_USER.id,
+            `seed-session-${label}`,
+            new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+            new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
+        ]);
+    }
+
+    const requests: Array<[number, string, string, 'open' | 'reviewing' | 'planned', number[]]> = [
+        [2, 'Dark mode for the printable book', 'The PDF book always prints on white. A dark cover and paper option would be lovely.', 'open', [1, 2, 3]],
+        [3, 'Mood tracking with a daily slider', 'Let me rate my mood from 1 to 10 on each entry and chart it over time.', 'planned', [1, 2, 3, 5]],
+        [1, 'Reminders to write at a set time', 'A gentle notification in the evening if I have not written yet.', 'reviewing', [1, 3]],
+        [2, 'Export a single entry as an image', 'For sharing a quote from my journal on social media.', 'open', [2]],
+        [3, 'Spanish translation', 'Would love to use Thoughty in Spanish.', 'open', [3, 5]],
+        [5, 'Onboarding tips for new journalers', 'I just started and would like a few prompts to get going.', 'open', [5]],
+    ];
+    for (const [userId, title, details, status, voters] of requests) {
+        const [row] = await query<{ id: number }>(
+            'INSERT INTO feature_requests (user_id, title, details, status) VALUES ($1, $2, $3, $4) RETURNING id',
+            [userId, title, details, status],
+        );
+        for (const voter of voters) {
+            await query('INSERT INTO feature_request_votes (feature_request_id, user_id) VALUES ($1, $2)', [row.id, voter]);
+        }
     }
 }
 
-async function ensureDefaultUser(): Promise<void> {
-    log.step('Ensuring default user exists...');
-    const saltRounds = 12;
-    const passwordHash = await bcrypt.hash(DEFAULT_PASSWORD, saltRounds);
-
-    await query(
-        `
-        INSERT INTO users (id, username, email, password_hash, auth_provider, email_verified)
-        VALUES ($1, $2, $3, $4, 'local', true)
-        ON CONFLICT (id)
-        DO UPDATE SET
-            username = EXCLUDED.username,
-            email = EXCLUDED.email,
-            password_hash = EXCLUDED.password_hash,
-            auth_provider = 'local',
-            email_verified = true,
-            updated_at = CURRENT_TIMESTAMP
-    `,
-        [DEFAULT_USER_ID, DEFAULT_USERNAME, DEFAULT_EMAIL, passwordHash],
-    );
-
-    log.success('Default user ready');
-}
-
-async function ensureDiaries(): Promise<{ thoughtsId: number; dreamsId: number }> {
-    log.step('Creating diaries...');
-    await query('DELETE FROM diaries WHERE user_id = $1', [DEFAULT_USER_ID]);
-
-    const [thoughts] = await query<{ id: number }>(
-        `INSERT INTO diaries (user_id, name, icon, is_default) VALUES ($1, 'Thoughts', '💭', true) RETURNING id`,
-        [DEFAULT_USER_ID],
-    );
-    const [dreams] = await query<{ id: number }>(
-        `INSERT INTO diaries (user_id, name, icon, is_default) VALUES ($1, 'Dreams', '🌙', false) RETURNING id`,
-        [DEFAULT_USER_ID],
-    );
-
-    log.success(`Created diaries: Thoughts (id=${thoughts.id}), Dreams (id=${dreams.id})`);
-    return { thoughtsId: thoughts.id, dreamsId: dreams.id };
-}
-
-async function clearEntries(): Promise<void> {
-    log.step('Clearing existing entries...');
-    await query('DELETE FROM entries');
-    log.success('Entries cleared');
+function buildCommunityEntries(today: string): Map<number, SeedEntry[]> {
+    const maya = buildCommunityJournal(createRng(2), today, '2023-01-01', 4, 0.85);
+    const sam = buildCommunityJournal(createRng(3), today, '2025-01-01', 6, 0.9);
+    const leo = buildCommunityJournal(createRng(4), today, '2025-06-01', 10, 1);
+    // Sam's journal covers every moderation state and archived public entries.
+    const samPublic = sam.filter((entry) => entry.visibility === 'public');
+    samPublic.slice(0, 3).forEach((entry) => { entry.moderationStatus = 'hidden'; });
+    samPublic.slice(3, 6).forEach((entry) => { entry.moderationStatus = 'under_review'; });
+    samPublic.slice(6, 8).forEach((entry) => { entry.moderationStatus = 'removed'; });
+    samPublic.slice(8, 11).forEach((entry) => { entry.isArchived = true; });
+    return new Map([[2, maya], [3, sam], [4, leo]]);
 }
 
 async function seed(): Promise<void> {
     const startTime = Date.now();
-
-    banner('DATABASE SEEDER', 'Populating database with test data');
+    banner('DATABASE SEEDER', 'Populating the development database');
 
     try {
-        ensureSeedDataFile(JOURNAL_TEST_DATA_FILE, 'Journal');
-        ensureSeedDataFile(DREAMS_TEST_DATA_FILE, 'Dreams');
+        section('Building Journal');
+        const today = toIsoDate(new Date());
+        const handwritten = { thoughts: loadHandwritten(JOURNAL_TEST_DATA_FILE), dreams: loadHandwritten(DREAMS_TEST_DATA_FILE) };
+        const mainEntries = buildMainJournal(createRng(1), today, handwritten);
+        const communityEntries = buildCommunityEntries(today);
+        const communityCount = [...communityEntries.values()].reduce((sum, entries) => sum + entries.length, 0);
+        log.success(`Planned ${fmt.bold(String(mainEntries.length))} entries for ${MAIN_USER.username} and ${communityCount} for community users`);
 
-        section('Reading Test Data');
-        log.step('Parsing test data file...');
-        const thoughtEntries = loadEntriesFromFile(JOURNAL_TEST_DATA_FILE);
-        const dreamEntries = loadEntriesFromFile(DREAMS_TEST_DATA_FILE);
-        const totalSeedEntries = thoughtEntries.length + dreamEntries.length;
-        log.success(
-            `Found ${fmt.bold(thoughtEntries.length.toString())} Thoughts entries and ${fmt.bold(dreamEntries.length.toString())} Dreams entries to insert`,
-        );
-
-        section('Validating Test Data');
-        log.step('Checking seed cross-references...');
-        validateEntryReferences(thoughtEntries);
-        validateEntryReferences(dreamEntries);
+        section('Validating');
+        const broken = findBrokenReferences(mainEntries);
+        if (broken.length > 0) throw new Error(`Found ${broken.length} broken cross-reference(s):\n  ${broken.slice(0, 20).join('\n  ')}`);
+        const duplicateKeys = mainEntries.length - new Set(mainEntries.map((entry) => `${entry.diary}|${entry.date}#${entry.index}`)).size;
+        if (duplicateKeys > 0) throw new Error(`Found ${duplicateKeys} entries sharing a diary, date, and index`);
+        log.success('Cross-references and entry coordinates are valid');
 
         if (validateOnlyFlag) {
             summaryBox('Seed Validation Complete', [
-                ['Thoughts entries', thoughtEntries.length.toString()],
-                ['Dreams entries', dreamEntries.length.toString()],
-                ['Total entries', totalSeedEntries.toString()],
+                ['Entries (main user)', String(mainEntries.length)],
+                ['Entries (community)', String(communityCount)],
+                ['Date range', `${mainEntries.reduce((min, entry) => (entry.date < min ? entry.date : min), today)} to ${today}`],
                 ['Cross-references', 'Valid'],
-                ['Journal file', JOURNAL_TEST_DATA_FILE],
-                ['Dreams file', DREAMS_TEST_DATA_FILE],
             ]);
             process.exit(0);
         }
 
-        section('Database Setup');
-        await ensureDefaultUser();
-        await clearEntries();
-        const { thoughtsId, dreamsId } = await ensureDiaries();
+        section('Writing Database');
+        log.step('Resetting seed accounts...');
+        await resetUsers();
+        await insertUsers();
+        log.success(`Created ${ALL_USERS.length} users (password ${PASSWORD})`);
 
-        section('Inserting Entries');
-        log.step(`Inserting ${totalSeedEntries} entries across both diaries...`);
-        await insertEntries(thoughtsId, thoughtEntries);
-        await insertEntries(dreamsId, dreamEntries);
+        log.step(`Inserting ${mainEntries.length} entries for ${MAIN_USER.username}...`);
+        const mainDiaries = await insertDiaries(MAIN_USER);
+        const mainIds = await insertEntries(MAIN_USER.id, mainDiaries, mainEntries);
+        const extras = await insertEntryExtras(MAIN_USER.id, mainEntries, mainIds);
+        log.success(`Inserted entries with ${extras.revisions} revisions, ${extras.chats} chat histories, ${extras.attachments} attachments`);
+        if (extras.attachmentsSkipped) log.warning('Object storage is unreachable; attachments were skipped');
 
-        log.success(
-            `Successfully seeded ${fmt.bold(totalSeedEntries.toString())} entries (${thoughtEntries.length} Thoughts, ${dreamEntries.length} Dreams)`,
-        );
+        for (const user of [...COMMUNITY_USERS, NEW_USER]) {
+            const diaries = await insertDiaries(user);
+            await insertEntries(user.id, diaries, communityEntries.get(user.id) ?? []);
+        }
+        await insertSessionsAndFeatureRequests();
+        log.success('Inserted community journals, sessions, and feature requests');
 
         section('Summary');
-
-        // Get entries per date
-        const dateResult = await query<{ date: Date; count: string }>(
-            'SELECT date, COUNT(*) as count FROM entries GROUP BY date ORDER BY date',
+        const perDiary = await query<{ name: string; entries: string; first: Date; last: Date }>(
+            `SELECT d.name, COUNT(e.id) AS entries, MIN(e.date) AS first, MAX(e.date) AS last
+             FROM diaries d LEFT JOIN entries e ON e.diary_id = d.id
+             WHERE d.user_id = $1 GROUP BY d.name, d.position ORDER BY d.position`,
+            [MAIN_USER.id],
         );
-        const dateData: [string, string][] = dateResult.map((row) => [
-            row.date.toISOString().split('T')[0],
-            `${row.count} entries`,
-        ]);
-
-        if (dateData.length > 0) {
-            console.log('');
-            log.info('Entries per date:');
-            table(['Date', 'Count'], dateData);
-        }
-
-        // Get unique tags
-        const tagsResult = await query<{ tag: string }>(
-            'SELECT DISTINCT unnest(tags) as tag FROM entries ORDER BY tag',
-        );
-        const uniqueTags = tagsResult.map((r) => r.tag);
-
-        console.log('');
-        log.info(`Unique tags (${uniqueTags.length}): ${fmt.cyan(uniqueTags.join(', '))}`);
-
-        const duration = Date.now() - startTime;
+        table(['Diary', 'Entries', 'From', 'To'], perDiary.map((row) => [row.name, row.entries, toIsoDate(new Date(row.first)), toIsoDate(new Date(row.last))]));
+        const [tagCount] = await query<{ count: string }>('SELECT COUNT(DISTINCT tag) AS count FROM entries, unnest(tags) AS tag WHERE user_id = $1', [MAIN_USER.id]);
+        const count = (predicate: (entry: SeedEntry) => boolean) => String(mainEntries.filter(predicate).length);
 
         summaryBox('Seed Complete', [
-            ['Entries', totalSeedEntries.toString()],
-            ['Diaries', 'Thoughts, Dreams'],
-            ['Dates', dateData.length.toString()],
-            ['Tags', uniqueTags.length.toString()],
-            ['Duration', `${duration}ms`],
-            ['User', `${DEFAULT_USERNAME} (${DEFAULT_EMAIL})`],
+            ['Login', `${MAIN_USER.username} or ${MAIN_USER.email} / ${PASSWORD}`],
+            ['Entries', String(mainEntries.length)],
+            ['Tags in use', tagCount.count],
+            ['Markdown', count((entry) => entry.format === 'markdown')],
+            ['Cross-referencing', count((entry) => /\[\[\d{4}-|entry \(\d{4}-/.test(entry.content))],
+            ['Public / favorite / pinned / archived', `${count((e) => e.visibility === 'public')} / ${count((e) => e.isFavorite)} / ${count((e) => e.isPinned)} / ${count((e) => e.isArchived)}`],
+            ['Other users', 'maya, sam (moderated), leo (deleted), newbie (unverified)'],
+            ['Duration', `${Date.now() - startTime}ms`],
         ]);
 
         await closeDatabase();

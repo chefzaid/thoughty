@@ -13,10 +13,10 @@ export class EntryRevision {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ name: 'entry_id' })
   entryId: number;
 
-  @Column()
+  @Column({ name: 'user_id' })
   userId: number;
 
   @Column({ type: 'text' })
@@ -34,10 +34,10 @@ export class EntryRevision {
   @Column({ type: 'varchar', length: 20, default: 'private' })
   visibility: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @ManyToOne(() => Entry, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'entryId' })
+  @JoinColumn({ name: 'entry_id' })
   entry: Entry;
 }
