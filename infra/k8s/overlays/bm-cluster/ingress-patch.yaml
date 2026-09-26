@@ -6,7 +6,7 @@
   value: "0"
 - op: add
   path: /metadata/annotations/gethomepage.dev~1description
-  value: Personal knowledge and productivity application
+  value: Advanced journaling app with AI capabilities
 - op: add
   path: /metadata/annotations/gethomepage.dev~1enabled
   value: "true"
