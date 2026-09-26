@@ -1,44 +1,48 @@
 # Architecture Overview and ADR Index
 
-This document is the entry point for Thoughty's architecture notes and architecture decision records (ADRs). It connects the major runtime and code-organization choices to the accepted ADRs that explain why those choices exist.
+How Thoughty is put together, and the architecture decision records (ADRs) that explain why. Entity-level detail is in the [Data Model](./data-model.md); runtime deployment is in the [Deployment Guide](./deployment.md).
 
 ## System Architecture at a Glance
 
-Thoughty is a TypeScript-first journaling product built as a modular monolith API plus a route-driven React single-page application. It stores journal metadata in PostgreSQL, stores attachment blobs in S3-compatible object storage, integrates with OpenRouter for optional AI features, and runs scheduled cloud sync work in a separate worker process backed by the same database.
+Thoughty is a TypeScript-first modular monolith: one NestJS API and one route-driven React single-page application. PostgreSQL holds all journal data, S3-compatible object storage holds attachment blobs, Redis optionally shares rate-limit counters, OpenRouter provides optional AI, and a separate worker process runs scheduled cloud sync from a database-backed queue. In production, Keycloak authenticates users at the ingress and Vault supplies secrets.
 
 ```mermaid
 flowchart TD
-    Browser[Browser] --> Web[React SPA / Nginx or Vite]
-    Web -->|/api| API[NestJS API]
+    Browser[Browser] --> Web[React SPA / NGINX or Vite]
+    Browser -->|/api| Auth[Keycloak OAuth2 Proxy]
+    Auth --> API[NestJS API]
 
     API --> Pg[(PostgreSQL)]
-    API --> S3[S3-compatible object storage / MinIO]
+    API --> Redis[(Redis rate limits)]
+    API --> S3[S3-compatible object storage]
     API --> OpenRouter[OpenRouter]
-    API --> OAuth[Google / OneDrive / Dropbox OAuth]
+    API --> OAuth[Google / OneDrive / Dropbox]
 
     Worker[Cloud sync worker] --> Pg
     Worker --> OAuth
 
-    Vault[Vault Agent injection] --> API
+    Vault[Vault via External Secrets] --> API
     Vault --> Worker
-    Vault --> Pg
 ```
 
 ## Backend Architecture
 
 The backend is one NestJS application assembled from feature modules under `thoughty-server/src/modules`.
 
-| Module        | Primary responsibility                                                                 |
-| ------------- | -------------------------------------------------------------------------------------- |
-| `auth`        | local auth, OAuth sign-in, access/refresh tokens, password recovery, account lifecycle |
-| `entries`     | journal entry CRUD, revision history, tags, visibility, favorites, archive state       |
-| `diaries`     | diary containers, default diary behavior, diary ordering and fallback rules            |
-| `attachments` | attachment metadata, upload validation, object-storage retrieval                       |
-| `ai`          | AI writing assistance, tag suggestions, tone/mood analysis, entry chat history         |
-| `io`          | import, export, portability formats, cloud-sync serialization support                  |
-| `stats`       | journal statistics and insight queries                                                 |
-| `config`      | user preferences, profile/config export, encrypted integration settings                |
-| `cloud-sync`  | provider connections, scheduled sync jobs, queueing, worker execution                  |
+| Module | Responsibility |
+|---|---|
+| `auth` | SSO exchange, local and Google sign-in, tokens and sessions, email verification, 2FA, password recovery, account lifecycle |
+| `entries` | entry CRUD, revisions, tags (usage, rename, delete), visibility, favorites, pins, archive, backlinks, public feed |
+| `diaries` | diary containers, ordering, default diary and delete fallback |
+| `attachments` | upload validation, object storage, audio transcription |
+| `ai` | OpenRouter credentials and usage, tagging, inspiration, rephrasing, summaries, chat, semantic search, duplicates, theme organization, insights |
+| `stats` | statistics, heatmap, connections graph, writing-tendency analysis |
+| `io` | import and export formats, TXT format settings, delete-all |
+| `books` | book composition, covers, previews, versions |
+| `cloud-sync` | provider connections, file browsing, scheduled jobs, worker execution |
+| `config` | user preferences and profile, encrypted settings, feature flags, data export |
+| `feature-requests` | community idea board and votes |
+| `metrics` | health and Prometheus metrics |
 
 Shared runtime code belongs in `thoughty-server/src/common` only when it is genuinely cross-cutting. Persistence infrastructure and entities belong in `thoughty-server/src/database`. Operational helpers remain in `thoughty-server/scripts` rather than being mixed into runtime modules.
 
@@ -55,6 +59,7 @@ flowchart TD
     Layout --> Routes[AuthenticatedRoutes]
 
     Routes --> Journal[JournalRoute]
+    Routes --> Feed[FeedRoute]
     Routes --> Stats[StatsRoute]
     Routes --> Profile[ProfileRoute]
     Routes --> Tags[TagManagerRoute]
@@ -66,7 +71,7 @@ flowchart TD
     Services --> Generated[Generated OpenAPI types]
 ```
 
-Route files stay thin, feature components own rendering detail, and hooks coordinate shared state, URL parameters, API calls, and cross-route behavior. Query-string semantics are product behavior for flows such as diary scope, import/export presets, and entry permalinks.
+Route files stay thin, feature components own rendering, and hooks coordinate shared state, URL parameters, API calls, and cross-route behavior. Server state goes through TanStack Query; the entry list keeps the previous page on screen while the next one loads. Query-string parameters are product behavior (diary scope, import/export presets, entry permalinks). API types are generated from the server's OpenAPI document ([ADR 0004](./adr/0004-openapi-as-contract-source.md)), and a test fails if the frontend stops calling a documented product endpoint.
 
 ## Key Runtime Lifecycles
 
@@ -112,7 +117,8 @@ sequenceDiagram
 - `attachments` owns object-storage keys and file validation; entry modules should not treat original filenames as storage keys.
 - `config` owns user preferences and encrypted integration settings.
 - `cloud-sync` owns queued job status, locking, retries, and provider sync state.
-- Public/social features are not implemented yet and should not reuse private-entry assumptions without a new ADR.
+- The public feed reads only entries that are both public and moderation-visible ([ADR 0013](./adr/0013-public-social-content-and-moderation.md)); new social features must not reuse private-entry assumptions without extending that ADR.
+- Frequently repeated entry-list reads are served from a short-lived per-pod cache that entry mutations invalidate.
 
 ## ADR Process
 
@@ -128,34 +134,29 @@ Write or update an ADR when a change affects one or more of these areas:
 
 Use `Proposed` for decisions that guide upcoming work but are not implemented yet, `Accepted` for implemented or committed architecture, and `Superseded` when a newer ADR replaces an older decision.
 
-## Accepted ADRs
+## Decision Records
 
-| ADR                                                          | Decision                                                                          |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| [0001](./adr/0001-documentation-structure.md)                    | Split detailed documentation out of the root README                               |
-| [0002](./adr/0002-modular-monolith-and-route-driven-ui.md)       | Adopt a modular monolith with a route-driven UI shell                             |
-| [0003](./adr/0003-typescript-first-technology-stack.md)          | Standardize on a TypeScript-first full-stack platform                             |
-| [0004](./adr/0004-openapi-as-contract-source.md)                 | Use backend OpenAPI as the source of truth for API contracts                      |
-| [0005](./adr/0005-selective-cqrs-in-entry-domain.md)             | Apply selective CQRS in the entry domain                                          |
-| [0006](./adr/0006-database-backed-cloud-sync-worker.md)          | Run scheduled cloud sync through a separate worker and database-backed queue      |
-| [0007](./adr/0007-code-quality-and-verification-gates.md)        | Keep code quality enforcement lightweight but continuous                          |
-| [0008](./adr/0008-security-authentication-and-owasp-baseline.md) | Establish a secure-by-default authentication and OWASP baseline                   |
-| [0009](./adr/0009-rate-limiting-and-abuse-controls.md)           | Apply layered rate limiting for baseline abuse resistance                         |
-| [0010](./adr/0010-journal-data-model.md)                         | Model the journal around diaries, dated entries, revisions, and attachments       |
-| [0011](./adr/0011-attachments-and-object-storage.md)             | Store attachment metadata in PostgreSQL and blobs in S3-compatible object storage |
-| [0012](./adr/0012-delivery-health-and-operational-model.md)      | Keep delivery and operational verification simple, explicit, and repository-owned |
-| [0019](./adr/0019-explicit-delivery-jobs.md)                     | Use explicit delivery jobs and non-blocking verification |
-
-## Proposed ADRs for Upcoming Roadmap Work
-
-| ADR                                                     | Decision area                                       |
-| ------------------------------------------------------- | --------------------------------------------------- |
-| [0013](./adr/0013-public-social-content-and-moderation.md)  | Public/social content and moderation model          |
-| [0014](./adr/0014-real-time-notifications-and-messaging.md) | Real-time notifications and private messaging model |
-| [0015](./adr/0015-observability-baseline.md)                | Observability baseline                              |
-| [0016](./adr/0016-backup-and-disaster-recovery.md)          | Backup and disaster recovery model                  |
-| [0017](./adr/0017-feature-flags-and-entitlements.md)        | Feature flags, AI paywall, trials, and entitlements |
-| [0018](./adr/0018-offline-and-mobile-sync.md)               | Offline/mobile sync model                           |
+| ADR | Status | Decision |
+|---|---|---|
+| [0001](./adr/0001-documentation-structure.md) | Accepted | Split Documentation Out of Root README |
+| [0002](./adr/0002-modular-monolith-and-route-driven-ui.md) | Accepted | Adopt a Modular Monolith with a Route-Driven UI Shell and Feature-Oriented Code Structure |
+| [0003](./adr/0003-typescript-first-technology-stack.md) | Accepted | Standardize on a TypeScript-First Full-Stack Platform |
+| [0004](./adr/0004-openapi-as-contract-source.md) | Accepted | Use Backend OpenAPI as the Source of Truth for API Contracts |
+| [0005](./adr/0005-selective-cqrs-in-entry-domain.md) | Accepted | Apply Selective CQRS in the Entry Domain |
+| [0006](./adr/0006-database-backed-cloud-sync-worker.md) | Accepted | Run Scheduled Cloud Sync Through a Separate Worker and Database-Backed Queue |
+| [0007](./adr/0007-code-quality-and-verification-gates.md) | Accepted | Keep Code Quality Enforcement Lightweight but Continuous |
+| [0008](./adr/0008-security-authentication-and-owasp-baseline.md) | Accepted | Establish a Secure-by-Default Authentication and OWASP Baseline |
+| [0009](./adr/0009-rate-limiting-and-abuse-controls.md) | Accepted | Apply Layered Rate Limiting for Baseline Abuse Resistance |
+| [0010](./adr/0010-journal-data-model.md) | Accepted | Model the Journal Around Diaries, Dated Entries, Revisions, and Attachments |
+| [0011](./adr/0011-attachments-and-object-storage.md) | Accepted | Store Attachments as Metadata in PostgreSQL and Blobs in S3-Compatible Object Storage |
+| [0012](./adr/0012-delivery-health-and-operational-model.md) | Accepted | Keep Delivery and Operational Verification Simple, Explicit, and Repository-Owned |
+| [0013](./adr/0013-public-social-content-and-moderation.md) | Accepted | Define Public Social Content and Moderation Before Building Feed Features |
+| [0014](./adr/0014-real-time-notifications-and-messaging.md) | Proposed | Choose a Real-Time Notifications and Messaging Model Deliberately |
+| [0015](./adr/0015-observability-baseline.md) | Accepted | Establish a Privacy-Aware Observability Baseline |
+| [0016](./adr/0016-backup-and-disaster-recovery.md) | Accepted | Define Backup and Disaster Recovery for Journal Data |
+| [0017](./adr/0017-feature-flags-and-entitlements.md) | Accepted | Separate Feature Flags from User Entitlements |
+| [0018](./adr/0018-offline-and-mobile-sync.md) | Proposed | Decide Offline and Mobile Sync Before Building Mobile Apps |
+| [0019](./adr/0019-explicit-delivery-jobs.md) | Accepted | Use Explicit Delivery Jobs and Non-Blocking Verification |
 
 ## ADR Template
 

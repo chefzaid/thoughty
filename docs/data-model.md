@@ -1,6 +1,6 @@
 # Data Model Reference
 
-This guide is the practical reference for Thoughty's current relational model. ADR 0010 explains the architectural decision; this file maps that decision to the entities and operational rules contributors need during implementation.
+The practical reference for Thoughty's relational model. [ADR 0010](./adr/0010-journal-data-model.md) explains the decision; this file lists the entities and the rules contributors must preserve. Entities live in `thoughty-server/src/database/entities`.
 
 ## Entity Relationship Overview
 
@@ -12,8 +12,13 @@ erDiagram
     User ||--o{ Setting : has
     User ||--o{ Attachment : owns
     User ||--o{ CloudSyncJob : queues
+    User ||--o{ AiUsageEvent : records
+    User ||--o{ BookVersion : saves
+    User ||--o{ FeatureRequest : submits
+    FeatureRequest ||--o{ FeatureRequestVote : receives
 
     Diary ||--o{ Entry : contains
+    Diary ||--o{ BookVersion : scopes
     Entry ||--o{ EntryRevision : snapshots
     Entry ||--o{ Attachment : links
     Entry ||--o| AiChatHistory : has
@@ -116,7 +121,40 @@ erDiagram
         int userId
         int entryId
         json messages
-}
+    }
+
+    AiUsageEvent {
+        int id
+        int userId
+        string credentialSource
+        string model
+        int totalTokens
+        decimal cost
+    }
+
+    BookVersion {
+        int id
+        int userId
+        int diaryId
+        string scopeKey
+        int versionNumber
+        string format
+        bytea content
+        json manifest
+    }
+
+    FeatureRequest {
+        int id
+        int userId
+        string title
+        string status
+    }
+
+    FeatureRequestVote {
+        int id
+        int featureRequestId
+        int userId
+    }
 ```
 
 ## Public Feed Eligibility
@@ -140,6 +178,9 @@ The initial feed queries the relational entry/user model directly and projects o
 | `AiChatHistory` | One chat transcript per user/entry pair                | Deleted with the parent entry                                                                                                             |
 | `AiUsageEvent`  | Numerical OpenRouter usage metadata for one user       | Deleted with the user; contains no prompt or completion content                                                                            |
 | `BookVersion`   | Immutable generated book artifact in a user/diary scope | Deleted with the user or selected diary; all-diaries versions are deleted with the user                                                   |
+| `FeatureRequest` / `FeatureRequestVote` | Public idea and one vote per user per idea | Requests are deleted with their author; votes with their request or voter |
+
+Entry indexes cover the common reads: user/date timelines, diary-scoped timelines, visibility, archive and favorite filters, and the public feed.
 
 ## Journal Coordinates
 
@@ -160,12 +201,13 @@ Entries are not only identified by database `id`. The user-facing journal model 
 
 ## Tags and Metadata
 
-- Entry tags are currently stored directly on `entries.tags` as a PostgreSQL text array.
-- Entry indexes are tuned for the most common journal reads: user/date timelines, diary-scoped timelines, visibility filters, archive/favorite filters, and tag containment through a PostgreSQL GIN index.
-- Tag color/category metadata lives in user configuration rather than in a normalized tag table.
-- Whole-app tag rename operations must update entry arrays and the metadata configuration together.
-- If tags later need ownership, permissions, or rich relationships, this entry-centric model should be revisited with a new ADR.
-- Entry and tag correlations are derived on demand from `entries.tags`; no relationship rows or journal-content copies are persisted. The API returns a bounded set of entry identifiers/dates/indexes, shared tag names, and normalized scores.
+There is no tag table. Tags are strings in the `entries.tags` PostgreSQL text array (GIN-indexed for containment filters), and per-user tag metadata (color and category, keyed by lowercase tag name) is a JSON value in the `tagMetadata` setting.
+
+- The set of known tags is the union of tags used by entries and tags present in metadata. A tag created in the Tags view exists only as metadata until an entry uses it.
+- `GET /api/entries/tags` returns each used tag with its entry count; `PATCH /api/entries/tags/rename` and `DELETE /api/entries/tags?tag=` rewrite every owned entry's array. The client updates the metadata setting alongside, so both stay consistent. Renaming a tag no entry uses only moves its metadata.
+- Themes are ordinary tags; AI tagging, theme organization, and books all read and write the same arrays.
+- Entry-to-entry and tag co-occurrence correlations are derived on demand from `entries.tags` and never persisted.
+- If tags ever need their own ownership, permissions, or relationships, revisit this model with a new ADR.
 
 ## Attachments
 

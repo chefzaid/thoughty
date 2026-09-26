@@ -1,173 +1,119 @@
 # Features
 
-Thoughty is a privacy-focused journaling application built around dated entries, multiple diaries, and a workflow that makes it easy to capture, organize, revisit, and export long-lived personal writing. The core model is entry-first: writing, tags, visibility, history, highlights, statistics, and sync all build on the same journal record rather than living in disconnected tools.
+Thoughty is a privacy-focused journal built around dated entries. Writing, tags, diaries, history, statistics, AI help, and sync all operate on the same entry record rather than living in separate tools. The implemented and planned backlog is tracked in [TODO.md](../TODO.md).
 
 ```mermaid
 flowchart LR
-	Capture[Write or import entries] --> Organize[Assign diary, tags, and visibility]
+	Capture[Write or import entries] --> Organize[Diaries, tags, visibility]
 	Organize --> Revisit[Search, favorites, archive, history, highlights]
-	Revisit --> Understand[Stats and tag insights]
-	Organize --> Share[Export and cloud sync]
-	Capture --> Assist[AI fixes, AI tagging, AI chat, text-to-speech]
+	Revisit --> Understand[Stats and insights]
+	Organize --> Share[Export, books, cloud sync, public feed]
+	Capture --> Assist[AI tagging, inspiration, rephrasing, chat]
 ```
 
-## Entry-Centered Journaling
+## Writing and Entries
 
-- Entries support both plain text and Markdown formats. Markdown entries get a formatting toolbar, inline help, and live preview, while plain-text entries stay lightweight for fast capture.
-- The editor grows with the content instead of forcing a small fixed writing box, which keeps longer entries readable during drafting and editing.
-- Entry templates make repeatable formats quick to start. Built-in gratitude, daily reflection, and meeting-note templates are available immediately, and users can save or delete their own templates from the current draft.
-- Multiple entries can exist on the same day. Thoughty keeps them addressable with date-plus-index references such as `[[2024-01-15]]` and `[[2024-01-15#2]]`.
-- Entries can be backdated from the UI, edited inline, and updated without leaving the journal view. Date, tags, visibility, and other metadata are treated as part of the entry workflow rather than a separate settings surface.
-- Same-day entries can be drag-reordered, which matters for users who use one date as a container for several shorter notes, check-ins, or event logs.
-- Larger entry sets can be handled through a bulk-selection mode. Selected entries can be deleted, made public/private, archived/unarchived, tagged, moved to another diary, or rephrased with AI in one workflow.
-- Stable entry permalinks use query-driven navigation such as `?entry=<id>`, so a specific entry can be reopened directly instead of relying on scroll position alone.
-- Entries can also be shared directly from the journal. Thoughty uses the browser share sheet when it is available and falls back to copying the permalink when it is not.
-- Primary entry actions are now cleaner thanks to a dedicated `More actions` menu, which keeps the main toolbar focused on visibility, favorite, and edit while moving secondary or destructive actions out of the way.
-- Cross-reference navigation is not just link parsing. Referenced entries are opened in context, highlighted, and can return the user to the originating entry.
-- Each entry shows backlinks from other entries that reference it, with one-click navigation back to the referring thought.
-- Visibility is managed per entry with public and private states, making Thoughty usable for both strictly personal notes and selectively shareable writing.
-- The authenticated Feed view presents moderation-eligible public entries from other users in a paginated infinite-scroll timeline. A separate `My public entries` scope previews exactly what the same feed rules expose from the current journal; private, archived, moderated, and deleted-user content stays out of both views.
-- Favorites, pinned state, archive state, and revision history are all first-class entry behaviors. Pinned entries stay at the top of the journal up to the user's configured limit, edited entries keep a history trail, and individual revisions can be inspected and removed.
-- Attachments are handled inline: files can be attached to entries; image, audio, PDF, and text-like assets can be previewed in place; and larger previews open in a dedicated dialog rather than forcing blind downloads. Saved audio notes can be transcribed on demand with OpenRouter; transcripts are cached on the attachment, remain visible after reload, and can be copied from the entry card.
-- Journal navigation includes paging plus a year/month jump control, so users can move to the first entry in a period without manually paging through long histories.
-- Journal keyboard shortcuts cover fast writing and browsing: `Ctrl+N` focuses the new-entry writer, `Ctrl+/` focuses search, `Escape` closes the highlights modal, and left/right arrow keys page through entries when focus is not inside a text field.
+- **Composer.** Plain-text or Markdown entries (with a formatting toolbar, inline help, and live preview) in a box that grows with the content. The date defaults to today and accepts typed dates for backdating. Attachments, visibility, and AI actions sit next to Save.
+- **Templates.** Built-in gratitude, daily reflection, and meeting-note templates, plus user templates saved from the current draft.
+- **Several entries per day.** Entries are addressed by date and same-day index; same-day entries can be drag-reordered and are renumbered automatically.
+- **Cross-references.** Writing `[[2024-01-15]]` or `[[2024-01-15#2]]` links to another entry. Links open the target in context, highlight it, and offer a way back. Each entry lists the entries that reference it (backlinks) when there are any.
+- **Entry actions.** Visibility, favorite, pin, listen, chat, rephrase, and edit are one click away; share, summarize, history, archive, and delete live in a **More actions** menu. Sharing uses the browser share sheet or copies a stable permalink (`?entry=<id>`).
+- **Entry states.** Favorites (with their own journal view), pinned entries (kept on top, up to a configurable limit), archive, and per-entry public/private visibility.
+- **Revision history.** Every edit keeps the previous version; revisions can be viewed and deleted individually.
+- **Attachments.** Files upload to S3-compatible storage. Images, audio, PDFs, and text files preview inline, with larger previews in a dialog. Audio notes can be transcribed on demand; the transcript is cached on the attachment and can be copied.
+- **Bulk mode.** Select many entries to delete, change visibility, archive or unarchive, add tags, move to another diary, or rephrase with AI.
+- **Reading aids.** Each entry shows its word count and estimated reading time. Text-to-speech reads entries aloud with language-aware voice selection, a voice preview, and optional reading of dates.
+- **Navigation.** Pagination with a configurable page size and go-to-page box, a year/month jump control, a Back to top link, and keyboard shortcuts: `Ctrl+N` (new entry), `Ctrl+/` (search), `Esc` (close dialogs), and left/right arrows (pages).
 
-## Diaries and Long-Term Structure
+## Diaries
 
-- Journals are split into user-defined diaries rather than one undifferentiated timeline. This supports separate spaces for daily notes, work logs, dream journals, or any other writing stream.
-- Diaries can be reordered, renamed, decorated with emoji icons, and assigned accent colors, which turns the diary switcher into a meaningful navigation layer instead of a plain list.
-- An `All Diaries` view keeps cross-diary browsing possible without flattening the underlying structure.
-- Each diary carries its own default visibility, so new entries and some imported entries inherit sensible defaults from the context they are created in.
-- A default diary can be configured for faster capture, reducing the amount of per-entry setup needed for recurring workflows.
-- Deleting a non-default diary does not strand its entries. They are moved to the current default diary, and the default diary itself is protected from deletion.
-- Favorites are also exposed as a dedicated journal view, which gives saved entries a persistent home beyond a temporary filter.
-- Diary management supports both drag-based reordering and keyboard arrow reordering from the manager, so the saved order can be adjusted without relying only on pointer input.
+- Separate diaries for different writing streams, each with a name, emoji icon, accent color, and default visibility for new entries.
+- An **All Diaries** view for browsing across them, and a configurable default diary for quick capture.
+- Reordering by drag or by keyboard in the diary manager.
+- Deleting a diary moves its entries to the default diary; the default diary itself cannot be deleted.
+- The selected diary scopes the journal, stats, AI features, import/export, and books.
 
-## Tags, Filtering, and Retrieval
+## Tags, Search, and Filters
 
-- Tags are multi-valued and integrated directly into entry creation and editing. Existing tags autocomplete, but new tags can also be introduced inline without leaving the current draft.
-- Tag presentation is richer than a flat label list. Tags can carry a color and an optional category, and that metadata is reused across chips, pickers, lists, and statistics.
-- Category-aware sorting helps large tag sets stay usable. In practice, this means related tags can be grouped visually without changing the entry data model.
-- Tag metadata is global enough to support whole-app rename operations. Renaming a tag updates entries across the journal rather than creating parallel old/new variants.
-- Filtering is composable. Users can combine full-text search, multi-tag filters, date filtering, visibility state, archive state, and diary scope instead of being limited to one filter at a time.
-- Search results highlight matches in both plain-text and Markdown-backed content, which makes the results useful for scanning instead of just locating candidate entries.
-- The app includes a dedicated Tags view with full CRUD. Tags can be created before any entry uses them (they are stored as tag metadata and offered in the composer and editor pickers), listed with their entry counts, renamed across the journal, recolored or categorized, and deleted. Deleting a tag removes it from every entry after confirmation but keeps the entries themselves.
-- Frequently repeated entry-list reads are served from a short-lived per-pod cache and invalidated after entry mutations, which keeps common journal, public-visibility, and filtered views responsive without making writes stale.
+- **Tags are the single way to organize entries.** Concrete subjects and broader themes are both just tags. Existing tags autocomplete in the composer, editor, and filters, and new tags can be typed inline.
+- **Tags view (full CRUD).** Create a tag before any entry uses it (it is immediately offered in the pickers); see how many entries use each tag; rename a tag across the whole journal; set a color and an optional category (used for grouping and sorting everywhere tags appear); and delete a tag, which removes it from every entry after confirmation but keeps the entries. New and imported tags get a distinct color automatically.
+- **Journal theme organization.** From the Tags view, AI can propose a compact set of themes for the whole journal and assign them to entries; every assignment is reviewed before anything is saved (see [AI](#ai-assistance)).
+- **Filter bar.** Three groups: search (keyword or meaning-based, plus tags), filters (date, visibility, archive state, favorites, reset), and tools (Highlights and Find duplicates). All filters combine with each other and with the diary scope. The date picker only offers dates that have entries. Keyword matches are highlighted in plain-text and Markdown entries.
 
-## Highlights and Insight Surfaces
+## Highlights and Insights
 
-- The stats area is built for journal review, not just raw counts. It exposes totals and averages, entry volume over time, top tags, and tag usage trends across years.
-- Entry cards show word count and estimated reading time, and the stats overview includes average words and average reading time per entry.
-- A journaling activity heatmap adds a calendar-style view of writing frequency on the stats page, making active and quiet periods easy to spot at a glance.
-- Diary scoping carries into stats, which is important when users want to compare a focused writing stream against the full journal.
-- Tag metadata also feeds the insight layer, so charts and tag breakdowns can stay visually consistent with the colors used elsewhere in the app.
-- Longer time ranges are paged instead of silently truncated, and the tag analysis includes a year-by-year top-tag breakdown alongside the charts.
-- The Connections graph scans every entry in the selected diary scope and surfaces the 12 strongest related-entry links and tag co-occurrences. Entry links are scored from shared-tag overlap, tag links use normalized co-occurrence strength, and selecting an entry node returns to that journal date.
-- Highlights provide two different memory cues: a random entry for rediscovery and an `On This Day` view that groups matching entries by how many years ago they were written.
-- Highlight results are actionable. They link back into the full journal flow rather than trapping the user in a read-only summary screen.
+- **Highlights:** a random entry to rediscover and an **On This Day** view grouped by how many years ago each entry was written. Results link back into the journal.
+- **Stats:** totals and averages (entries, unique tags, years active, entries per year, words and reading time per entry), entries per year and per month, top tags, and top tags per year, all scoped to the selected diary and colored with tag metadata. Long ranges are paged, not truncated.
+- **Activity heatmap:** a calendar of writing frequency; selecting a day opens it in the journal.
+- **Connections graph:** the 12 strongest entry-to-entry links (scored by shared tags) and tag co-occurrences in the selected scope, computed locally without AI; selecting an entry opens it.
+- **AI insight panels:** mood and tone, recurring subjects, and an on-demand writing-tendency analysis (see [AI](#ai-assistance)).
 
-## Import, Export, and Portability
+## Import, Export, and Books
 
-- Export is not limited to one archival format. Thoughty supports TXT, JSON, and Markdown output, with optional diary scoping and optional inclusion of visibility metadata.
-- CSV export is available for spreadsheet workflows, including entry metadata plus per-entry word count and estimated reading time columns.
-- Document exports are also available: PDF, EPUB, and HTML render the journal as a linear, dated record with one section per month, a title page, and a table of contents — the plain readable counterpart to the AI-composed book converter.
-- TXT import/export can be customized with saved format settings such as date format, entry separators, and same-day separators.
-- Export filenames are generated for the chosen scope and format, which makes exports usable as real artifacts rather than anonymous downloads.
-- Import accepts TXT, JSON, and Markdown content and performs format detection before commit, so users do not need to pre-classify files correctly by hand.
-- Import is preview-first. Parsed entries are shown before they are written, duplicate candidates are identified up front, and the eventual import result reports how much was imported or skipped.
-- Diary mapping is handled as part of the import/export path. When diary names do not align cleanly, Thoughty falls back safely instead of silently dropping content.
-- Markdown preservation is treated seriously enough to keep formatting semantics across round trips, rather than collapsing everything into plain text.
-- The import/export screen is route-aware, so selected diary, section, format, and visibility options can be encoded in the URL and reopened consistently.
-- The import/export area also includes a guarded danger-zone action for deleting all entries in the current scope, with a confirmation step before the destructive request is sent.
+- **Export** to TXT, JSON, Markdown, and CSV (with word count and reading time columns), or to PDF, EPUB, and HTML documents with a title page, table of contents, and one section per month. Exports can be scoped to a diary and can include visibility. Filenames reflect the scope and format.
+- **TXT format settings** (date format, prefix and suffix, entry and same-day separators, tag brackets and separator) are saved and reused for import and export.
+- **Import** accepts TXT, JSON, and Markdown, detects the format automatically, previews parsed entries, flags duplicates with an option to skip them, and reports what was imported or skipped. Imported entries use the target diary's default visibility unless visibility is included. Markdown formatting survives round trips.
+- **Danger zone:** delete all entries in the current scope, behind a confirmation.
+- The Import/Export page encodes its diary, section, and format choices in the URL.
 
-## Book Converter
+### Book converter
 
-- The book converter turns a journal (or a single diary) into a real book: each tag becomes a chapter, and AI weaves the entries carrying that tag into flowing first-person prose — connecting the thoughts, adding transitions, and smoothing grammar while staying strictly on script (nothing is invented or dropped).
-- The AI narrative is on by default and uses the configured OpenRouter key and the user's preferred model; long chapters are composed in sequential parts that continue each other. Unchecking the narrative option produces a plain book with the entries listed chronologically per chapter, no AI required.
-- Optional AI chapter framing adds a short introduction and closing summary to every chapter. It works with either woven narrative or chronological entries and requests both pieces together while staying grounded in the source entries.
-- Output formats are PDF (title page, table of contents with chapter page numbers, document outline, and centered page footers), EPUB 3 for e-readers, standalone printable HTML, and Markdown.
-- Books are configurable before generation: custom title and author (defaulting to the diary name and username), chapter ordering (alphabetical, by entry count, or by first entry date), a date range, and an explicit tag list to use as chapters.
-- Book covers support four color palettes and an optional PNG or JPEG image. Cover images are limited to 2 MB, validated by file signature, and embedded directly in PDF, EPUB, HTML, and Markdown output. They are not stored separately; saving a generated book version preserves the complete output artifact, including its embedded cover.
-- Book generation can optionally include passive image attachments from entries. PNG and JPEG images render in every output format; GIF and WebP images render in Markdown, HTML, and EPUB. Each object-store image is fetched once even when its entry belongs to several chapters, unavailable files are skipped, and exports enforce a 5 MB per-image and 25 MB aggregate image budget.
-- Entries with several tags can appear in every matching chapter or only in their first tag's chapter, and entries without tags can be collected into a closing untagged chapter.
-- A preview endpoint returns the book outline — chapter titles, entry counts, and the date range each chapter spans — so users can check the structure in the Book section of the import/export screen before downloading (the preview never spends AI tokens).
-- Generated books can be uploaded directly to any connected Google Drive, OneDrive, or Dropbox account. PDF and EPUB files remain binary-safe through the provider upload path.
-- The Book section can preserve an immutable generated artifact as version 1 and create later versions from current journal entries and settings. History records show entry and chapter additions relative to the prior version, and every version remains available through an authenticated download. Version histories are isolated per user and selected diary, with a separate all-diaries history.
-- Markdown-formatted entries are stripped to clean prose for the PDF output, while the HTML and Markdown outputs keep the original content. Archived entries are excluded from books.
+- Turns a diary or the whole journal into a book in which each tag is a chapter. By default AI weaves each chapter's entries into first-person prose that connects the thoughts and smooths the language without inventing or dropping anything; long chapters are written in sequential parts. Without AI, chapters list the entries chronologically.
+- Optional AI chapter introductions and closing summaries, grounded in the source entries.
+- Options: title and author, chapter order (alphabetical, entry count, or first date), date range, which tags become chapters, whether multi-tag entries appear in every matching chapter or only the first, an untagged chapter, entry dates, a table of contents, and a **yearbook** mode with one chapter per year or month.
+- Covers: four color palettes and an optional PNG or JPEG image (up to 2 MB, validated by file signature, embedded in the output).
+- Entry images can be included: PNG and JPEG in every format, GIF and WebP in Markdown, HTML, and EPUB, within a 5 MB per-image and 25 MB total budget.
+- Output: PDF (title page, table of contents with page numbers, outline, page footers), EPUB 3, printable HTML, and Markdown. Archived entries are excluded.
+- **Preview Chapters** shows the outline (chapters, entry counts, date ranges) without spending AI tokens.
+- **Versions:** save the generated book as version 1, then later versions from current entries and settings; history shows added entries and chapters, and every version stays downloadable. Histories are separate per diary and for all diaries.
+- Books can be uploaded directly to a connected cloud provider.
 
-## Cloud Sync and External Storage
+## Cloud Sync
 
-- Thoughty supports Google Drive, OneDrive, and Dropbox as separate cloud sync providers. They can be connected independently rather than forcing a single-provider account model.
-- Provider connection uses OAuth popup flows, keeping the journal session inside the app while delegating credentials to the provider.
-- Cloud sync builds on the export system instead of inventing a second serialization format. That means diary scope, export format, and visibility options can be reused when pushing journal data to cloud storage.
-- Users can browse provider files, import journal data back from the cloud, and download synced files to the local device when needed.
-- The Book section reuses connected provider accounts for one-click uploads without first downloading the generated file to the device.
-- Scheduled sync is configurable per provider with `every_6h`, `every_12h`, `daily`, and `weekly` frequencies.
-- Scheduled sync is designed to avoid redundant uploads by detecting whether content has changed since the last successful run.
-- Manual `Sync Now` remains available, which is important for people who want explicit control before travel, backup, or device changes.
-- Provider tokens are stored in encrypted user config with refresh support, so long-lived integrations do not depend on repeated sign-in.
+- Google Drive, OneDrive, and Dropbox connect independently through OAuth popups; their tokens are stored encrypted and refreshed automatically.
+- Upload an export (reusing the export scope, format, and visibility options), browse provider files, import journal files from the cloud, and download synced files.
+- Scheduled sync per provider every 6 hours, 12 hours, day, or week, skipping uploads when nothing changed, plus a manual **Sync Now**.
 
-## AI Assistance and Accessibility
+## Social
 
-- Public pages and authenticated views provide localized skip navigation, a single main content destination, and automatic content focus after client-side route changes so keyboard and screen-reader users receive clear navigation context.
-- Automated Axe scans cover every public route and all seven authenticated views in both light and dark themes against WCAG 2.0, 2.1, and 2.2 A/AA rules. The audit runs as part of the Playwright suite and guards semantic structure, accessible names, and color contrast.
-- AI features are built around OpenRouter. A deployment can provide a shared server key, while each user can add a personal key from Profile; the personal key takes precedence for every AI task and removing it restores the server-key fallback. Users can also choose a default model and task-specific overrides.
-- Personal OpenRouter keys are write-only after submission. Profile shows only a short suffix and a usage dashboard with Thoughty's last 30 days of prompt, completion, reasoning, total tokens, requests, and costs plus OpenRouter's authoritative key spend, limit, and remaining balance.
-- `Fix Writing` sends draft content to the configured model to correct grammar, spelling, and punctuation while aiming to preserve the original meaning and tone, and it now supports grammar, polish, and rewrite modes.
-- Journal AI analysis adds higher-level insight surfaces for dominant mood, writing tone, and recurring subjects. It analyzes at most the 40 most recent entries in the selected diary in one request, returns bounded frequency breakdowns and short summaries, and leaves either surface independently unavailable when its AI output is malformed.
-- Duplicate review scans the 40 newest entries in the active diary, or across all diaries, for high-confidence matches that share both a central subject and a conclusion. Results are review-only: users can open either entry or route a removal through the existing confirmation flow, and no entry is deleted automatically.
-- Journal search can switch between literal keyword matching and meaning-based retrieval. Meaning search embeds the query with at most the 100 newest entries in the active diary, or across all diaries, ranks the closest 20 matches, and then reuses the normal journal query so tag, date, visibility, favorite, archive, and pagination filters still compose with the result set.
-- On-demand writing-tendency analysis can cover all entries, the active diary, or an optional date-bounded subset. The server pages through every matching entry, analyzes at most 20,000 characters per entry locally, and sends only bounded aggregate word, subject, and writing metrics to OpenRouter rather than raw journal text. Results are framed as non-clinical writing patterns, with protected-attribute and diagnostic inferences rejected before display.
-- Tags and themes are the same thing. The composer's single `Auto Tag` action suggests a mix of concrete subjects and broader, reusable themes such as values, tensions, or growth areas, complementing tags the user already chose. Automatic create/update tagging uses the same instruction when the configured per-user tag limit is greater than `0`.
-- The Tags view can organize themes across the journal in one review-first workflow. AI proposes a compact set of at most 12 themes and up to three themes per entry for the 300 newest non-empty entries; users can inspect every assignment, select entries, and choose whether to replace existing tags or add the suggested themes before anything is saved.
-- Entry-specific AI chat turns an existing journal entry into the context for a conversation, which is useful for reflection, analysis, and follow-up questions rather than generic chatbot use.
-- Long entries can be summarized from their secondary actions menu. Optional `Emphasize` and `Leave out` guidance lets the user control which source details receive attention or are omitted, and the generated result can be regenerated or copied.
-- Summary requests send only the authenticated user's server-loaded entry to OpenRouter, and profile settings include a task-specific summary model override with fallback to the default AI model.
-- `Get Inspired` asks one deep, reflective question grounded in the user's tags: the 20 most-used tags across the 200 newest entries plus the tags of the 12 newest entries, scoped to the active diary when one is selected. Another question can be requested, and `Write about this` starts or extends the draft without discarding existing text.
-- Get Inspired sends only tag names and counts, never entry text, and has its own task-specific model override.
-- AI chat history is stored per entry on the server, so reopening the same entry restores the prior conversation instead of starting from an empty modal on each device or browser.
-- The AI chat modal can export the current conversation as a plain-text transcript that includes entry metadata and the full message history.
-- Text-to-speech can read entries aloud through the browser speech synthesis API, with language-aware voice selection and an option to include entry dates in the spoken output.
+- **Feed:** a paginated, infinitely scrolling timeline of other users' public entries, and a **My public entries** tab that previews exactly what others can see of your journal. Private, archived, moderated, and deleted-account content never appears.
+- **Feature requests:** a public board of ideas ranked by votes. Anyone can browse; signed-in users can submit ideas and vote once per idea (authors vote for their own idea automatically).
 
-## Accounts, Profile, and Preferences
+## AI Assistance
 
-- Authentication supports email/password sign-up plus Google OAuth sign-in. Existing accounts can be linked when the same email is used, which reduces account fragmentation.
-- Login accepts either email or username, while access and refresh tokens handle authenticated sessions and silent token renewal.
-- Verified password accounts can enable email two-factor authentication from Profile. Password login then issues a short-lived, single-use six-digit email challenge before any access or refresh token is created; disabling the protection requires the current password.
-- Account recovery and security flows include forgot-password email delivery, password change with current-password verification, and refresh-token invalidation when credentials change.
-- Account deletion is soft-delete oriented and guarded by confirmation, which is safer than immediate irreversible removal.
-- GDPR-style data download is available from the config surface, allowing a user to export their stored account data in one response.
-- Profile management includes full name, display name, bio, birthday, avatar, and membership metadata.
-- Account identity status is surfaced in the profile and main navigation. Email verification links open a public status route, successful verification updates the active session immediately, and unverified local accounts can resend the message from their profile.
-- Avatar editing goes beyond simple upload. Users can crop, zoom, and reposition images within a circular editor before saving the final result.
-- Profile includes subscription management, with saved plan selection, a payment method label, and recent billing history shown alongside account settings.
-- Preferences cover theme, language, journal pagination size, profile birthday/gender metadata, text-to-speech date reading, preferred AI model, and the automatic AI tagging limit.
-- Appearance preferences now include font family, font size, and font color controls, which let users tune the journal to their reading comfort.
-- Text-to-speech appearance settings now include voice selection and a preview action, so users can listen to the chosen voice before saving it.
-- Runtime feature flags can be loaded from an external provider and exposed to authenticated clients so feature rollout can change without redeploying the app.
-- English and French are the currently implemented application languages, and language selection is stored as part of the user configuration.
+AI runs through OpenRouter. A deployment can provide a shared key, and each user can add a personal key in Profile, which then takes precedence for all their AI requests; removing it falls back to the shared key. Personal keys are write-only (only a short suffix is shown), and Profile shows a 30-day usage dashboard with tokens, requests, and costs, plus the key's spend, limit, and remaining balance from OpenRouter. Users pick a default model and optional per-task models (tags, writing fixes, entry chat, tone analysis, summaries, Get Inspired, book weaving). What each feature sends to the provider is listed in [Security](./security.md#ai-privacy).
 
-## Product Experience
+- **Auto Tag:** suggests tags for the draft covering both concrete subjects and the broader themes behind them, added alongside the tags already chosen. When the **Automatic Tag Limit** is above 0, entries are also tagged this way automatically on save.
+- **Get Inspired:** asks one deep, reflective question based on your most-used tags and the tags of your recent entries in the current diary. Ask for another question, or choose **Write about this** to add it to the draft.
+- **Rephrase:** rewrites the draft or an existing entry in one of three modes: grammar and form only, light style polish, or complete rewrite.
+- **Summaries:** summarize a long entry, optionally emphasizing or leaving out chosen details; results can be regenerated and copied.
+- **Entry chat:** discuss an entry with AI. The conversation is saved per entry on the server and can be exported as a text transcript.
+- **Meaning search:** find entries by idea rather than keywords among the 100 newest in scope; the top 20 matches still combine with every other filter.
+- **Find duplicates:** reviews the 40 newest entries in scope for pairs sharing both a subject and a conclusion. Results are review-only; removing an entry goes through the normal delete confirmation.
+- **Journal theme organization:** proposes at most 12 themes and up to three per entry for the 300 newest entries; you review every assignment and choose whether to add them or replace existing tags.
+- **Insights:** mood, tone, and recurring subjects across the 40 newest entries in scope, and an on-demand writing-tendency analysis over any date range that sends only aggregate metrics, not text. Results describe writing patterns and are explicitly non-clinical.
+- **Audio transcription:** transcribe an attached audio note.
 
-- Unauthenticated visitors land on a detailed intro page rather than being dropped straight into a bare login form, with feature highlights, product preview screenshots, and sign-up calls to action.
-- The app uses route-based navigation across `/journal`, `/stats`, `/profile`, `/tags`, and `/import-export`, which makes major areas linkable and easier to revisit.
-- Long journal pages include a back-to-top affordance so users can quickly return to the main controls after browsing older entries.
-- Destructive flows use confirmation dialogs, and long-running operations such as loading history, sync, or imports expose explicit loading states.
-- API failures are normalized before they reach forms and action handlers, so validation lists, structured server messages, and plain-text failures surface as readable feedback instead of generic errors.
-- Product API operations are checked against production frontend callers during tests; health and metrics remain explicit infrastructure-only exceptions. Protected attachment previews and downloads are loaded with authenticated requests and short-lived browser object URLs.
-- The public feedback page is backed by a persisted community feature-request board ranked by votes. Anyone can browse ideas, while authenticated users can submit bounded requests and cast one idempotent vote per idea; new requests automatically include their author's first vote.
-- The layout is responsive across desktop and smaller screens, with the same core journaling surfaces preserved instead of maintaining a separate reduced mobile product.
-- Footer links expose privacy, terms, and contact entry points, rounding out the application as a real hosted product rather than only an internal tool.
+## Accounts and Preferences
 
-## Future Life ERP Direction
+- Sign-in: in production through the shared Keycloak single sign-on; locally with email or username and password, or Google (linked to an existing account with the same email).
+- Security: email verification, optional email two-factor authentication, password change and reset, active session management (sign out one or all other sessions), and account deletion with confirmation.
+- Profile: full name, display name, bio, birthday, gender, and an avatar editor with crop, zoom, and repositioning; a verified badge for confirmed accounts.
+- Data: download all your data as JSON.
+- Subscription: plan selection, payment method label, and billing history.
+- Appearance: light or dark theme, high contrast, font family, size, and color with a live preview, entries per page, and pinned-entry limit.
+- Languages: English and French.
+- Runtime feature flags can be served by an external provider and change behavior without a redeploy.
 
-Thoughty may eventually grow from a journal into a personal ERP, but that expansion should preserve the existing privacy, portability, and entry-centered design principles. The Life ERP backlog is now split into concrete product areas rather than one broad idea:
+## Accessibility and Experience
 
-- a document vault for private files, OCR/search, folder and tag organization, attachment reuse, and exportable archives
-- life metrics for happiness, mood, health, sleep, energy, social time, productivity, habits, and custom trackers
-- finance tracking for expenses, income, budgets, savings goals, bills, and subscription renewals
-- health and wellness logs for symptoms, medication, appointments, exercise, nutrition, and body metrics
-- social relationship tracking for people, last-contact dates, notes, important dates, reminders, and relationship trends
-- productivity tracking for goals, projects, recurring routines, focus sessions, and weekly reviews
-- correlation dashboards and AI insights that connect journal entries with metrics, finances, health, socials, and productivity
-- import paths for existing spreadsheets and folder exports so current personal systems can move into Thoughty without lock-in
+- Skip links, a single main landmark, and focus moved to the content after every route change.
+- Every public and signed-in page is scanned with Axe against WCAG 2.0, 2.1, and 2.2 A/AA in both themes as part of the end-to-end suite.
+- Keyboard access to all interactive elements, including diary reordering and entry reordering.
+- Responsive layout: the same features on desktop and phone, with controls that wrap rather than scroll off-screen.
+- Destructive actions ask for confirmation, long operations show progress, and API errors are turned into readable messages.
+- Signed-out visitors get a landing page with feature highlights and screenshots, plus About, Blog, Privacy, Terms, Contact, and Feedback pages.
+
+## Future Direction: Life ERP
+
+Thoughty may grow into a personal ERP while keeping its privacy, portability, and entry-centered design: a document vault, life metrics and habits, finances, health, relationships, productivity, dashboards that correlate them with the journal, and importers for existing spreadsheets. The concrete backlog is in [TODO.md](../TODO.md#life-erp).

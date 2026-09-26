@@ -1,290 +1,111 @@
 # Development Guide
 
-This guide describes the local development workflow that the repository actually supports today: a NestJS API, a Vite React frontend, PostgreSQL and MinIO from Docker Compose, and a `mask` task runner that handles the common boot flow.
-
-## Local Topology
+Local development runs the NestJS API and the Vite React app on your machine, with PostgreSQL and MinIO from Docker Compose. [`mask`](https://github.com/jacobdeichert/mask) (tasks in `Maskfile.md`) wraps the common flows; every task also has a plain `npm` equivalent.
 
 ```mermaid
 flowchart LR
     Browser[Browser] --> Web[Vite dev server :5173]
-    Web --> API[NestJS API :3001]
+    Web -->|/api proxy| API[NestJS API :3001]
     API --> DB[(PostgreSQL :5432)]
-    API --> MinIO[MinIO API :9000]
-    Browser --> MinIOConsole[MinIO Console :9001]
-    API --> Swagger[Swagger UI /api-docs]
-    API --> OpenRouter[OpenRouter API]
-    API --> OAuth[Google / OneDrive / Dropbox OAuth]
+    API --> MinIO[MinIO :9000 / console :9001]
+    API --> OpenRouter[OpenRouter, optional]
+    API --> OAuth[Google / OneDrive / Dropbox, optional]
 ```
 
-## Recommended Baseline
+## Prerequisites
 
-- Node.js `22` is the safest local baseline because the Dockerfiles and GitLab CI pipeline both use Node `22-alpine`
-- Docker and Docker Compose are required for PostgreSQL and local MinIO
-- [`mask`](https://github.com/jacobdeichert/mask) is optional, but it is the intended entry point for the common workflows
+- Node.js 22 (the version used by the Dockerfiles and CI)
+- Docker with Docker Compose
+- `mask` (optional)
 
-If you prefer not to install `mask`, every major workflow also has direct `npm` commands.
-
-## Fastest Path to a Running App
-
-### 1. Install dependencies
+## Quick Start
 
 ```bash
-mask build
+mask build   # install server and web dependencies (--clean reinstalls from scratch)
+mask run     # start the whole stack
 ```
 
-Manual equivalent:
+`mask run` starts PostgreSQL and MinIO, waits for the database, applies pending migrations, seeds test data if the `users` table is empty, then starts the API in watch mode and the Vite dev server. `mask run --kill` first stops stray Node processes.
+
+| Surface | URL |
+|---|---|
+| Web app | `http://localhost:5173` |
+| API | `http://localhost:3001` |
+| Swagger UI | `http://localhost:3001/api-docs` |
+| PostgreSQL | `localhost:5432` |
+| MinIO API / console | `http://localhost:9000` / `http://localhost:9001` |
+
+### Without mask
 
 ```bash
-cd thoughty-server && npm install && cd ..
-cd thoughty-web && npm install && cd ..
-```
-
-### 2. Create local env files if you need overrides
-
-Both projects already include example env files:
-
-- `thoughty-server/.env.example`
-- `thoughty-web/.env.example`
-
-For the default local stack, you do not need many overrides. Copy the examples only when you need to change defaults or enable optional integrations.
-
-### 3. Start the full local stack
-
-```bash
-mask run
-```
-
-That single command is more than a process launcher.
-
-```mermaid
-flowchart TD
-    A[mask run] --> B[Start Postgres and MinIO via docker-compose]
-    B --> C[Wait until Postgres accepts connections]
-    C --> D[Apply pending versioned migrations]
-    D --> E{users table empty?}
-    E -->|Yes| F[Seed test data]
-    E -->|No| G[Skip seed]
-    F --> H[Start NestJS in watch mode]
-    G --> H
-    H --> I[Start Vite dev server]
-```
-
-### Local URLs
-
-| Surface       | URL                              |
-| ------------- | -------------------------------- |
-| Frontend      | `http://localhost:5173`          |
-| Backend API   | `http://localhost:3001`          |
-| Swagger UI    | `http://localhost:3001/api-docs` |
-| PostgreSQL    | `localhost:5432`                 |
-| MinIO API     | `http://localhost:9000`          |
-| MinIO Console | `http://localhost:9001`          |
-
-## Manual Startup Flow
-
-Use the manual path when you want tighter control than `mask run` provides.
-
-### Infrastructure only
-
-```bash
+cd thoughty-server && npm install && cd ../thoughty-web && npm install && cd ..
 docker compose -f infra/compose/compose.yaml up -d db minio
-```
-
-### Database prep
-
-```bash
 npm run migrate
 npm run seed
+cd thoughty-server && npm run dev    # terminal 1
+cd thoughty-web && npm run dev       # terminal 2
 ```
 
-### Start backend and frontend separately
+Start only `db`, `minio`, and the API when you are working on the backend alone.
 
-Use two terminals for this path.
+### VS Code Dev Container
 
-```bash
-cd thoughty-server && npm run dev
-cd thoughty-web && npm run dev
-```
+`.devcontainer/` provides an `app` workspace container (Node 22, `mask`, `git`, `postgresql-client`, the GitHub CLI, and the project's recommended extensions) plus `db` and `minio` services gated on health checks. Dependencies install automatically, ports `3001`, `5173`, `5432`, `9000`, and `9001` are forwarded, and the container already sets `POSTGRES_HOST=db`, `S3_ENDPOINT=http://minio:9000`, and matching credentials, so no `.env` is needed. Because the services already run, start the app with the manual commands (`npm run migrate`, `npm run seed`, then the two `npm run dev` commands) instead of `mask run`. Do not override `POSTGRES_HOST` or `S3_ENDPOINT` in a local `.env`.
 
-This manual path is useful when you do not want automatic seeding or when you want to restart one surface without touching the others.
+## Configuration
 
-## VS Code Dev Container Alternative
+`thoughty-server/.env.example` and `thoughty-web/.env.example` are the reference for every variable. The defaults match the Compose stack, so copy them only to change a default or enable an optional integration.
 
-The repository also includes a complete `.devcontainer/` setup for VS Code.
+| Server variable(s) | Local default | Notes |
+|---|---|---|
+| `POSTGRES_*` | `localhost:5432`, `postgres` / `password`, database `journal` | matches `infra/compose/compose.yaml` |
+| `POSTGRES_READ_REPLICA_*` | unset | optional read replicas; see [Data Model](./data-model.md#read-replicas) |
+| `JWT_SECRET`, `REFRESH_SECRET` | local placeholders | required; use real secrets anywhere shared |
+| `TWO_FACTOR_SECRET` | local value | HMAC key for 2FA codes; one value across replicas |
+| `CONFIG_ENCRYPTION_SECRET` | local value | encrypts provider tokens and personal AI keys; required in production |
+| `FRONTEND_URL` | `http://localhost:5173` | used in email links |
+| `CORS_ORIGIN` | `http://localhost:5173,http://localhost:3000` | comma-separated |
+| `S3_*` | local MinIO | attachment storage |
+| `REDIS_URL` or `REDIS_HOST` | unset | shared rate-limit counters; in-memory when unset |
+| `OPENROUTER_API_KEY` | empty | optional shared AI key; users can add their own in Profile |
+| `OPENROUTER_EMBEDDING_MODEL`, `OPENROUTER_TRANSCRIPTION_MODEL` | `openai/text-embedding-3-small`, `openai/whisper-large-v3` | optional overrides |
+| Google Drive, OneDrive, Dropbox client IDs/secrets | empty | needed only for cloud sync |
+| `SMTP_*` | placeholders | needed only to send real email; otherwise reset links are logged |
+| `FEATURE_FLAG_PROVIDER_URL`, `FEATURE_FLAG_PROVIDER_TOKEN`, `FEATURE_FLAG_CACHE_TTL_MS`, `FEATURE_FLAGS` | unset | external flag provider, or a static `flag=true,other=false` fallback |
+| `REQUEST_BODY_LIMIT` and friends | `1mb` JSON / `256kb` form | see [Security](./security.md#abuse-controls) |
 
-### What the devcontainer gives you
+The web app calls the API through relative `/api` paths proxied by Vite, so its only variable is `VITE_GOOGLE_CLIENT_ID` for Google sign-in.
 
-- a dedicated `app` workspace container mounted at `/workspace`, on the same Node `22` baseline as the Dockerfiles and CI
-- companion `db` and `minio` services from the same Compose file, both gated on health checks
-- automatic dependency installation (root, server, and web) through `postCreateCommand`
-- container-to-container env wired automatically (`POSTGRES_HOST=db`, `S3_ENDPOINT=http://minio:9000`, and the matching credentials), so no manual `.env` is required
-- forwarded ports for `3001`, `5173`, `5432`, `9000`, and `9001`
-- `mask`, `git`, `wget`, `unzip`, `postgresql-client`, and the GitHub CLI preinstalled in the workspace container
-- preconfigured VS Code extensions (ESLint, Prettier, Tailwind, Jest, Playwright, YAML, Docker, GitHub PRs) and format-on-save
+## Everyday Commands
 
-### How to start it
+| Command (from the repository root) | Does |
+|---|---|
+| `npm run migrate` | apply pending migrations |
+| `npm run seed` | load development data |
+| `npm run check-db` | check database connectivity and schema assumptions |
+| `npm run nuke-db` | drop the database contents (follow with `migrate` and `seed`) |
+| `npm run kill` | stop stray backend Node processes |
+| `npm run api:sync` | export the server's OpenAPI document and regenerate the web API types |
+| `npm run coverage` | run both coverage suites (same as `mask test --coverage`) |
 
-1. Open the repository in VS Code.
-2. Use the Dev Containers extension.
-3. Run `Dev Containers: Reopen in Container`.
-4. Wait for the post-create step to finish installing `thoughty-server` and `thoughty-web` dependencies.
+| Command | Does |
+|---|---|
+| `cd thoughty-server && npm run cloud-sync-worker` | run the sync worker from TypeScript for debugging |
+| `cd thoughty-server && npm run db:validate-seed` | validate seed data without writing |
+| `cd thoughty-server && npm run migration:generate -- src/database/migrations/<Name>` | generate a migration candidate |
+| `cd thoughty-server && npm run migration:revert` | revert the latest migration (development only) |
+| `cd thoughty-web && npm run typecheck` | type-check without building |
 
-### Important difference from host-based development
+Tests are covered in the [Testing Guide](./testing.md).
 
-Inside the devcontainer, the supporting services are already part of the Compose stack, and the workspace container does not install Docker Compose tooling itself. That means the normal host shortcut `mask run` is not the best entry point from inside the container.
+## Changing the API
 
-Instead, run the application manually from the container terminal.
+Backend DTOs and controllers are the source of truth for the API contract ([ADR 0004](./adr/0004-openapi-as-contract-source.md)). After changing a route or DTO, run `npm run api:sync` and commit both `thoughty-server/openapi/openapi.json` and `thoughty-web/src/generated/openapi.d.ts`. Every product endpoint must be called by the frontend; `cd thoughty-web && npm run api:usage` enforces it.
 
-### Container-to-container networking is already wired
+## Changing the Schema
 
-When the backend runs inside the `app` container, `localhost` points to that container, not to PostgreSQL or MinIO. The devcontainer Compose file sets the required overrides (`POSTGRES_HOST=db`, `S3_ENDPOINT=http://minio:9000`, and the matching credentials) directly on the `app` service, so the backend connects to the companion services out of the box.
+Schema changes need a new timestamped migration in `thoughty-server/src/database/migrations` (TypeORM `synchronize` is off). Generate a candidate against an up-to-date local database, review both `up` and `down`, apply it with `npm run migrate`, and test fresh and upgraded databases. Never edit a migration that may have run elsewhere. Reverting the initial baseline migration drops the whole schema, so only do it with a backup. See [Data Model](./data-model.md#schema-migrations).
 
-You only need to create `thoughty-server/.env` if you want to enable optional integrations like SMTP, OpenRouter, or cloud provider OAuth. The container-level values above take effect automatically and survive even if you add an `.env` for other settings, as long as you do not override `POSTGRES_HOST` or `S3_ENDPOINT` there.
+## Adding Text to the UI
 
-### Start the app from inside the container
-
-Run these commands in the devcontainer terminal.
-
-Use two terminals for the dev servers after the shared setup commands finish.
-
-```bash
-npm run migrate
-npm run seed
-cd thoughty-server && npm run dev
-cd thoughty-web && npm run dev
-```
-
-The web dev server still proxies `/api` to `http://localhost:3001`, which works in this setup because the frontend and backend both run inside the same `app` container.
-
-### When to prefer the devcontainer path
-
-- when you want a containerized Node toolchain instead of managing local Node yourself
-- when you want the workspace dependencies installed consistently through VS Code
-- when you are already using Dev Containers for the rest of your workflow
-
-## Environment Files
-
-The `.env.example` files are the source of truth for local configuration. The table below focuses on what matters most during day-to-day development.
-
-### Server env highlights
-
-| Variable group             | Typical local value                                    | Notes                                                    |
-| -------------------------- | ------------------------------------------------------ | -------------------------------------------------------- |
-| Database                   | `localhost:5432` / `postgres` / `password` / `journal` | Matches `infra/compose/compose.yaml`                      |
-| JWT                        | local placeholders                                     | Required for auth flows; replace for shared environments |
-| `TWO_FACTOR_SECRET`        | local secret string                                    | HMAC key for email 2FA codes; use one shared value across replicas |
-| `FRONTEND_URL`             | `http://localhost:5173`                                | Used for email links                                     |
-| `CORS_ORIGIN`              | `http://localhost:5173,http://localhost:3000`          | Backend splits this comma-separated list                 |
-| S3 / object storage        | local MinIO defaults                                   | No `.env` needed if you keep the defaults                |
-| `CONFIG_ENCRYPTION_SECRET` | local secret string                                    | Used for encrypted personal AI keys, user config, and cloud-sync tokens; required in production |
-| `OPENROUTER_API_KEY`       | empty by default                                       | Optional shared AI key; users can instead provide a personal OpenRouter key from Profile |
-| `OPENROUTER_EMBEDDING_MODEL` | `openai/text-embedding-3-small`                      | Optional semantic-search embedding model override        |
-| `OPENROUTER_TRANSCRIPTION_MODEL` | `openai/whisper-large-v3`                        | Optional audio-note transcription model override         |
-| Cloud provider OAuth keys  | empty by default                                       | Required only for cloud sync integrations                |
-| SMTP settings              | example placeholders                                   | Required only for real email sending flows               |
-| Feature flags              | optional external endpoint                            | `FEATURE_FLAG_PROVIDER_URL`, optional `FEATURE_FLAG_PROVIDER_TOKEN`, `FEATURE_FLAG_CACHE_TTL_MS`, and fallback `FEATURE_FLAGS=flag=true,other=false` |
-
-### Frontend env highlights
-
-| Variable                | Purpose                                  |
-| ----------------------- | ---------------------------------------- |
-| `VITE_GOOGLE_CLIENT_ID` | Enables Google sign-in from the frontend |
-
-The frontend primarily talks to the backend through relative `/api` paths and the Vite dev proxy on port `5173`, so the checked-in frontend env example only exposes `VITE_GOOGLE_CLIENT_ID`. That is accurate for the current codebase and is usually the simplest local setup.
-
-## Daily Commands
-
-### High-level task runner
-
-| Command              | What it does                                                                                   |
-| -------------------- | ---------------------------------------------------------------------------------------------- |
-| `mask build`         | Install server and frontend dependencies                                                       |
-| `mask build --clean` | Remove both `node_modules` trees and reinstall                                                 |
-| `mask run`           | Start Docker services, wait for DB, migrate, optionally seed, then launch backend and frontend |
-| `mask run --kill`    | Same as `mask run`, but first kills existing Node processes                                    |
-
-### Root-level npm commands
-
-| Command            | What it does                                             |
-| ------------------ | -------------------------------------------------------- |
-| `npm run migrate`  | Run backend migrations from the repo root                |
-| `npm run seed`     | Seed backend development data from the repo root         |
-| `npm run check-db` | Validate database connectivity and schema assumptions    |
-| `npm run nuke-db`  | Reset the database through the backend helper script     |
-| `npm run kill`     | Kill running backend Node processes                      |
-| `npm run api:sync` | Export backend OpenAPI and regenerate frontend API types |
-
-### Project-level commands worth knowing
-
-| Area     | Command                                           | Use case                                    |
-| -------- | ------------------------------------------------- | ------------------------------------------- |
-| Backend  | `cd thoughty-server && npm run dev`               | Start the NestJS API in watch mode          |
-| Backend  | `cd thoughty-server && npm run db:validate-seed`  | Check seed data quality without writing     |
-| Backend  | `cd thoughty-server && npm run cloud-sync-worker` | Run the worker directly in TS for debugging |
-| Backend  | `cd thoughty-server && npm run migration:generate -- src/database/migrations/<name>` | Generate a schema migration for review      |
-| Backend  | `cd thoughty-server && npm run migration:revert`  | Revert the latest migration in development  |
-| Frontend | `cd thoughty-web && npm run dev`                  | Start the Vite dev server                   |
-| Frontend | `cd thoughty-web && npm run typecheck`            | Run TS type checking without a build        |
-
-### Database migration workflow
-
-Entity changes that alter PostgreSQL schema require a new timestamped file in `thoughty-server/src/database/migrations`. Generate the candidate against an up-to-date local database, inspect the SQL in both `up` and `down`, and run `npm run db:migrate` to verify it. Never amend a migration that may already have run in another environment.
-
-The initial migration is also the compatibility baseline for databases created by the former idempotent script. Reverting that initial migration drops the application schema, so `migration:revert` is only a development tool and requires a backup whenever data matters.
-
-## OpenAPI and Frontend Type Sync
-
-Whenever backend DTOs or routes change, regenerate the frontend API types.
-
-```mermaid
-sequenceDiagram
-    participant Dev as Developer
-    participant Root as root package.json
-    participant Server as thoughty-server
-    participant Web as thoughty-web
-
-    Dev->>Root: npm run api:sync
-    Root->>Server: npm run openapi:export
-    Server->>Server: Generate openapi/openapi.json
-    Root->>Web: npm run api:types
-    Web->>Web: Regenerate frontend generated API types
-```
-
-The root `api:sync` command already chains the server export and the frontend type generation, so use it instead of running the two steps manually unless you are debugging one side in isolation.
-
-## Useful Local Workflows
-
-### Reset the database without reinstalling everything
-
-```bash
-npm run nuke-db
-npm run migrate
-npm run seed
-```
-
-### Restart from a clean dependency state
-
-```bash
-mask build --clean
-```
-
-### Run only backend work while keeping the frontend off
-
-```bash
-docker compose -f infra/compose/compose.yaml up -d db minio
-cd thoughty-server && npm run dev
-```
-
-### Debug cloud sync locally
-
-```bash
-cd thoughty-server && npm run cloud-sync-worker
-```
-
-That is useful when you want to exercise sync polling behavior without starting the full app through Kubernetes-style deployment flows.
-
-## Related Guides
-
-- [Features](./features.md)
-- [Testing Guide](./testing.md)
-- [Deployment Guide](./deployment.md)
+All user-facing strings go through `t('key')`. Add the key to the `TranslationKey` union and to both the English and French maps in `thoughty-web/src/utils/translations.ts`; the type checker rejects a key missing from either language.

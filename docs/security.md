@@ -1,32 +1,23 @@
 # Security and Privacy Reference
 
-Thoughty stores personal journal content, profile data, attachments, refresh tokens, and encrypted third-party provider tokens. This guide summarizes the current security model for contributors and operators.
+Thoughty stores personal journal content, profile data, attachments, sessions, and encrypted third-party credentials. This guide describes the security model contributors and operators must preserve. The decisions behind it are in [ADR 0008](./adr/0008-security-authentication-and-owasp-baseline.md) and [ADR 0009](./adr/0009-rate-limiting-and-abuse-controls.md).
 
-## Security Posture Summary
+## Baseline
 
-- API routes are protected by default through a global JWT guard.
-- Public routes must be explicitly marked with `@Public()`.
-- A global throttling guard applies baseline abuse protection, with stricter limits on sensitive auth flows.
-- JSON and URL-encoded request parsers enforce explicit body size limits before DTO validation.
-- Signup and login forms include a hidden bot-trap field that rejects automated submissions when filled.
-- Production responses use a nonce-based Content Security Policy without `unsafe-inline` script or style fallbacks.
-- DTO validation uses whitelisting and rejects unexpected fields.
-- User-controlled text and attachment filenames are sanitized in relevant flows.
-- Passwords are hashed with bcrypt.
-- Password reset tokens are hashed before storage.
-- Cloud provider tokens are encrypted at rest with AES-256-GCM using `CONFIG_ENCRYPTION_SECRET`.
-- Production secrets are expected to come from Vault-backed environment injection.
+- Every API route requires a JWT unless it is explicitly marked `@Public()`.
+- DTO validation whitelists fields and rejects unexpected ones; ownership-scoped queries always filter by the authenticated user ID.
+- User-controlled text and attachment filenames are sanitized where they are rendered or used.
+- Passwords are hashed with bcrypt; reset, verification, and 2FA tokens are stored only as hashes.
+- Cloud provider tokens and personal AI keys are encrypted at rest with AES-256-GCM using `CONFIG_ENCRYPTION_SECRET`.
+- Production responses carry a per-response nonce Content Security Policy with no `unsafe-inline` scripts or styles; Swagger UI and other HTML get the nonce applied to their inline tags. Do not reintroduce `unsafe-inline`.
+- Sign-up and login forms include a hidden bot-trap field that rejects automated submissions.
+- Production secrets come from Vault; nothing secret is committed.
 
 ## Authentication and Sessions
 
-Production authentication is centralized in the shared Keycloak `swirlit` realm. The production Ingress uses the cluster OAuth2 Proxy as an authentication gate and forwards its short-lived Keycloak access token to `GET /api/auth/sso`. The API verifies the token's RS256 signature, issuer, expiry, and `oauth2-proxy` audience against Keycloak's JWKS before linking the verified email or creating the local Thoughty profile. It then issues the existing application bearer-token session so authorization remains scoped to Thoughty's local user ID. The gateway header is never accepted without cryptographic token verification.
+Production sign-in goes through the shared Keycloak `swirlit` realm. The Ingress uses the platform's OAuth2 Proxy as an authentication gate and forwards its short-lived Keycloak access token to `GET /api/auth/sso`. The API verifies the RS256 signature, issuer, expiry, and `oauth2-proxy` audience against Keycloak's JWKS, then links the verified email to (or creates) the local Thoughty user and issues Thoughty's own access and refresh tokens, so authorization stays scoped to the local user ID. Identity headers are never trusted without that verification, and Thoughty never sees the Keycloak password. No Thoughty-specific Keycloak client is needed; this repository owns the Middleware, issuer/JWKS configuration, audience check, and local account lifecycle.
 
-Local development retains the password and optional Google sign-in flows. The production UI is public; unauthenticated API requests trigger the Keycloak login flow. Thoughty does not collect the Keycloak password.
-
-This integration uses the platform's `oauth2-proxy` client. It requires no
-Thoughty-specific Keycloak client or platform-side application registration.
-This repository owns the ingress authentication Middleware, issuer/JWKS
-configuration, audience checks and local account lifecycle.
+Local development keeps email/password and optional Google sign-in; login accepts an email or a username.
 
 ```mermaid
 sequenceDiagram
@@ -34,211 +25,102 @@ sequenceDiagram
     participant API
     participant DB as PostgreSQL
 
-    User->>API: Verified Keycloak SSO exchange, local login, or OAuth sign-in
-    API->>DB: Verify/create user and store refresh token
+    User->>API: Keycloak SSO exchange, local login, or OAuth sign-in
+    API->>DB: Verify or create user, store refresh token
     API-->>User: Access token + refresh token
-    User->>API: API request with Authorization bearer token
+    User->>API: Request with bearer token
     API-->>User: Protected response
     User->>API: Refresh request
     API->>DB: Validate stored refresh token
     API-->>User: New access token
 ```
 
-Refresh tokens are treated as active sessions. Authenticated users can list active sessions without exposing token values, revoke a non-current session by ID, or revoke all other sessions while keeping the current refresh token active. Refresh tokens are also revoked when sensitive account lifecycle events occur, including password changes, password resets, explicit logout, and account deletion.
+Refresh tokens are the active sessions. Users can list their sessions (token values are never returned), revoke one other session, or revoke all other sessions. Password changes, password resets, logout, and account deletion revoke refresh tokens. Accounts are soft-deleted after confirmation.
 
-## Public Routes
+### Email verification and two-factor authentication
 
-Public routes are exceptions to the default protected API model. They should remain few and deliberate.
+Verification links use hashed, expiring tokens. A verified password account can enable email 2FA; password login then returns an opaque challenge instead of tokens until the six-digit emailed code is confirmed. Challenge tokens are stored as SHA-256 hashes and codes as HMAC-SHA-256 values; both expire after ten minutes and are cleared atomically on success, so they cannot be replayed. Disabling 2FA requires the current password. Use one strong `TWO_FACTOR_SECRET` across all replicas (development falls back to a key derived from `JWT_SECRET`).
 
-Known public route categories include:
+### Password reset
 
-- health checks
-- signup/login/OAuth entry points
-- password recovery entry points
-- any explicitly documented public product surface added in the future
+Reset tokens are hashed and expire after one hour. The forgot-password endpoint always returns the same generic response to avoid revealing which emails exist. If SMTP delivery fails, the email service logs the reset URL, which helps local development but makes those logs sensitive; production must have working SMTP.
 
-When adding a public endpoint, document why it must be public, what throttling applies, and what information it can reveal to unauthenticated callers.
+## Public Surfaces
 
-The social feed is not an unauthenticated public endpoint. `GET /api/entries/feed` requires a valid account session, validates `scope`, `page`, and `limit`, caps pages at 20 entries, and returns only a narrow author projection (`id`, `username`, and `avatarUrl`). Community reads exclude the requester; personal previews include only the requester's own eligible public entries. Both scopes require public visibility, visible moderation state, an active entry, and a non-deleted author.
+Public routes are deliberate exceptions: health checks, sign-up/login/OAuth entry points, email verification and password recovery, the public landing and legal pages, and the read side of the feature-request board. Any new public endpoint must document why it is public, which throttle applies, and what it can reveal.
 
-Entry visibility records the author's sharing intent. The independent `moderation_status` records platform enforcement and must never be writable through ordinary entry create or update DTOs. Current values are `visible`, `hidden`, `under_review`, and `removed`; only `visible` content is feed eligible.
+The social feed is **not** public. `GET /api/entries/feed` requires a session, validates `scope`, `page`, and `limit` (at most 20 entries per page), and returns only `id`, `username`, and `avatarUrl` for authors. An entry appears only when its visibility is `public`, its moderation status is `visible`, it is not archived, and its author is not deleted. `moderation_status` (`visible`, `hidden`, `under_review`, `removed`) is platform-controlled and must never be writable through entry create or update DTOs.
 
-## Content Security Policy
+## Abuse Controls
 
-Production Helmet middleware sets a per-response nonce and uses that nonce in `script-src` and `style-src`. HTML responses, including Swagger UI, have the nonce applied to generated `<script>` and `<style>` tags before they are sent.
+Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):
 
-Do not reintroduce `unsafe-inline` for scripts or styles. If a future page needs inline assets, route them through the nonce helper or move them to external bundled assets.
+| Policy | Limit | Applies to |
+|---|---|---|
+| Default | 100 per 15 min | every route |
+| Auth attempts | 5 per 15 min | register, login, OAuth, 2FA verify/resend |
+| Token refresh | 30 per 15 min | refresh |
+| Password recovery | 3 per hour | forgot password, reset password, verify email |
+| Account security | 5 per hour | password change, verification-email resend, 2FA setup/enable/disable, session revocation, account deletion |
 
-## Rate Limiting
+Counters are stored in Redis when `REDIS_URL` or `REDIS_HOST` is set, so limits hold across replicas; if Redis is unavailable each process falls back to local counters. Behind ingress, validate the trusted proxy and client-IP path before relying on per-client limits.
 
-Current limits are documented in ADR 0009:
-
-- general default: `100` requests per `15` minutes
-- register: `5` requests per `15` minutes
-- login: `5` requests per `15` minutes
-- OAuth login: `5` requests per `15` minutes
-- refresh token: `30` requests per `15` minutes
-- forgot password: `3` requests per hour
-- reset password: `3` requests per hour
-- change password: `5` requests per hour
-- delete account: `5` requests per hour
-
-The current throttling model is process-local. In multi-replica or higher-risk deployments, shared throttling storage should be introduced instead of weakening endpoint limits.
-
-## Request Payload Limits
-
-The API disables Nest's implicit body parser and registers explicit parser limits:
-
-- JSON requests default to `1mb`.
-- URL-encoded form requests default to `256kb`.
-- `REQUEST_BODY_LIMIT` overrides both parser defaults.
-- `REQUEST_JSON_BODY_LIMIT` and `REQUEST_FORM_BODY_LIMIT` can override each parser individually.
-
-Attachment uploads keep their separate Multer file-size limit.
+Request bodies are limited before validation: JSON `1mb` and URL-encoded `256kb` by default, overridable with `REQUEST_BODY_LIMIT`, `REQUEST_JSON_BODY_LIMIT`, and `REQUEST_FORM_BODY_LIMIT`. Uploads use separate per-file Multer limits.
 
 ## Secrets
 
-Never commit real secrets. Production-like deployments should provide these through Vault or equivalent secret injection:
+Provided through Vault (see [Deployment](./deployment.md#configuration-and-secrets)) and never committed:
 
-- `JWT_SECRET`
-- `REFRESH_SECRET`
-- `TWO_FACTOR_SECRET`
-- `CONFIG_ENCRYPTION_SECRET`
-- PostgreSQL credentials
-- S3/object-storage access keys
-- OpenRouter API key
-- OAuth provider client secrets
+- `JWT_SECRET`, `REFRESH_SECRET`, `TWO_FACTOR_SECRET`
+- `CONFIG_ENCRYPTION_SECRET` — the most sensitive value: losing it makes encrypted provider tokens and personal AI keys unreadable, and leaking it exposes them
+- PostgreSQL credentials and the backup bucket credentials
+- S3 access keys for attachments
+- `OPENROUTER_API_KEY` (optional shared AI key)
+- Google, OneDrive, and Dropbox OAuth client secrets
 - SMTP credentials
-
-`CONFIG_ENCRYPTION_SECRET` is especially sensitive because it protects encrypted user integration settings such as cloud provider tokens.
 
 ## Attachments
 
-Attachment security relies on both application checks and object-storage configuration.
-
-- Validate MIME types and size limits before storage.
-- Store generated object keys separately from original filenames.
-- Serve files through application endpoints rather than exposing arbitrary object keys directly.
-- Sanitize requested filenames before object retrieval.
-- Keep bucket access private unless a future ADR explicitly changes the sharing model.
+- MIME type and size are validated before storage; uploads accept one file and at most one scalar field, and reject nested multipart field names before parsing.
+- Objects are stored under generated keys (`stored_filename`), never the original filename.
+- Files are served only through authenticated application endpoints; the frontend loads previews and downloads with authenticated requests and short-lived object URLs.
+- Buckets stay private unless a future ADR changes the sharing model.
 
 ## AI Privacy
 
-AI features are optional and can use either a deployment-wide OpenRouter key or a user-provided personal key. A personal key always takes precedence for that authenticated user. It is validated against OpenRouter before storage, encrypted at rest with AES-256-GCM using `CONFIG_ENCRYPTION_SECRET`, accepted only through dedicated authenticated endpoints, and never returned in full. General configuration reads and writes and GDPR data exports explicitly exclude it.
+AI features are optional. A deployment may provide a shared OpenRouter key, and each user may add a personal key that then takes precedence for all of their AI requests. Personal keys are validated with OpenRouter before storage, encrypted at rest, accepted only through dedicated authenticated endpoints, shown only as a short suffix, and excluded from configuration responses and GDPR exports.
 
-When enabled, relevant journal content may be sent to OpenRouter or the configured model provider for operations such as writing fixes, tag suggestions, Get Inspired questions, entry summaries, mood/tone analysis, entry-specific chat, and explicitly requested audio-note transcription. Audio transcription sends only the authenticated user's selected audio attachment, enforces the existing 5 MB upload limit again while reading storage, and persists the returned transcript on that attachment. Entry summaries and Get Inspired resolve journal history from the authenticated user ID on the server and treat journal text and tag names as untrusted source material rather than model instructions. Tag suggestions also send the draft as structured, untrusted source material and instruct the provider not to follow directions embedded in journal text. Get Inspired sends only tag names and counts derived from at most the 200 newest entries in the selected diary or the user's full journal scope, never entry text.
+What each feature sends to the provider:
 
-Whole-journal theme organization is explicitly preview-first. The server sends at most the 300 newest non-empty owned entries to OpenRouter, caps each excerpt at 400 characters, treats all journal text as untrusted data, and exposes truncation in the review UI. The provider can propose at most 12 themes and three themes per entry. Applying a reviewed plan does not call the provider again: the server validates the bounded assignments, rechecks that every referenced entry belongs to the authenticated user before making changes, and only then adds or replaces tags for the selected entries.
+| Feature | Data sent |
+|---|---|
+| Rephrase, Auto Tag, entry chat | the draft or selected entry, as structured untrusted source material |
+| Entry summary | one server-loaded entry owned by the user, plus the user's include/exclude guidance |
+| Get Inspired | tag names and counts only, from at most the 200 newest entries in scope — never entry text |
+| Mood, tone, and subject analysis | at most the 40 newest entries in scope |
+| Duplicate review | at most the 40 newest entries in scope |
+| Meaning search | the query plus at most the 100 newest entries in scope, for embeddings |
+| Journal theme organization | at most the 300 newest non-empty entries, each capped at 400 characters |
+| Writing-tendency analysis | bounded aggregate word, subject, and writing metrics computed locally — no raw text |
+| Audio transcription | the single audio attachment the user selected (5 MB limit re-checked while reading storage) |
 
-Usage accounting stores one metadata-only event per successful OpenRouter response: user ID, credential source, model, token counts, cost, and timestamp. It never stores prompts or completions. The profile dashboard aggregates personal-key events over 30 days and separately reads the current key's spend and limit from OpenRouter; provider totals can include requests made outside Thoughty with the same key.
+All prompts instruct the model not to follow instructions embedded in journal text or tag names. Theme organization is preview-first: applying a reviewed plan does not call the provider again, and the server rechecks that every referenced entry belongs to the user before changing tags. The Stats Connections graph is computed locally from entry IDs, dates, and tags, and never involves an AI provider.
 
-The Stats Connections graph is computed locally from the authenticated user's entry IDs, dates, indexes, and tags. It does not send journal data to an AI provider, include entry content in its response, or persist derived relationships. Diary filtering remains combined with user ownership in the database query, and each relationship list is capped at 12 results.
+Usage accounting stores one metadata-only row per OpenRouter response (user, credential source, model, token counts, cost, timestamp) and never prompts or completions. Local-LLM support would change these assumptions and needs its own ADR.
 
-Product and deployment documentation should make this clear to users and operators. Future local-LLM support should be covered by a dedicated ADR because it changes privacy, hosting, and performance assumptions.
+## Supply Chain and Runtime Hardening
 
-## Email Verification and Two-Factor Authentication
-
-Email verification uses hashed, expiring tokens and is required before a password account can enable email two-factor authentication. Enabling 2FA sends a six-digit code to the verified address; password login then returns an opaque challenge instead of session tokens until that code is confirmed.
-
-Two-factor challenge tokens are stored as SHA-256 hashes, codes are stored as HMAC-SHA-256 values, and both expire after ten minutes. Successful verification atomically clears the challenge so it cannot be replayed. Public verify and resend routes use the stricter authentication-attempt throttle, while setup, enable, disable, and status operations are authenticated. Set one strong `TWO_FACTOR_SECRET` value across all server replicas; when omitted, development falls back to a key derived from `JWT_SECRET`.
-
-## Password Reset Email Behavior
-
-Password reset tokens are hashed before storage and expire after one hour. The forgot-password endpoint intentionally returns a generic success response to reduce email enumeration risk.
-
-In local or misconfigured email environments, the current email service path can fall back to logging the reset URL when SMTP delivery fails. That is useful for development, but production deployments should configure SMTP correctly and treat reset-link logging as sensitive operational output.
-
-## Software Supply Chain and Code Quality
-
-Required `01-build` and `03-package` are separate from optional `02-test`. Optional manual `01-e2e`, allowed-to-fail `02-quality`, and independent `03-security` are verify jobs; quality runs automatically on the default branch, while security is manual in standard mode and automatic in full mode. Trivy scans dependencies, IaC, and secrets, retains JSON/SARIF findings for seven days, and exits nonzero on high/critical findings without becoming a deployment gate. `01-release` depends only on the required build path.
-
-The release-publication job is manual on `main`, except for full-mode pipelines started through **Run pipeline**, which release automatically. It publishes immutable, checksummed application archives to GitLab's Generic Package Registry and immutable container tags to its Container Registry. Deployment starts only after publication passes. Daemonless Kaniko reuses 30-day registry-backed image layers without privileged runner access.
-
-## Security Backlog
-
-Important remaining work includes:
-
-- Redis-backed distributed rate limiting for multi-replica deployments
-- structured security audit logging for sensitive actions
-- backup and disaster recovery implementation
+- The pipeline's Trivy job scans dependencies (including development dependencies), IaC, and secrets and retains JSON/SARIF reports; it reports but does not gate releases. Releases publish immutable, checksummed archives and images. See [Delivery Pipeline](./deployment.md#delivery-pipeline).
+- Server images pin Node 22 on Alpine with security updates applied and omit npm and Yarn from the runtime; the API, worker, and migration job run `node` directly. Web images apply Alpine updates to the pinned unprivileged NGINX image.
+- Application workloads run as UID/GID 10001 with a read-only root filesystem, all capabilities dropped, the runtime seccomp profile, and explicit volumes for writable paths. Database helper jobs use the digest-pinned public PostgreSQL 18.6 image as UID 65534 without registry credentials.
+- Dependency overrides are kept only when a transitive pin needs a security fix (currently Multer, so NestJS's upload middleware cannot keep an older vulnerable copy). Validate dependency changes with the backend tests, a production image build, and an image-level Trivy scan.
 
 ## Review Checklist for Security-Sensitive Changes
 
-- Does this introduce a new public route?
-- Does it expose user-owned journal data, attachments, settings, or provider tokens?
-- Does it need endpoint-specific rate limiting?
-- Does it need a larger request body limit or a separate upload path?
-- Does it preserve user scoping in database queries?
-- Does it send journal content to a third party?
-- Does it require a new secret or secret-rotation story?
-- Does it require an ADR because it changes security or privacy assumptions?
-
-### Runtime dependency maintenance
-
-Server images pin Node 22.23.2 on Alpine, install security updates and omit
-npm and Yarn from the final runtime. The server, worker and production
-migration job run Node directly; the migration command is
-`node dist/scripts/migrate.js`. Keep package-manager commands in build and
-local development workflows. The lockfile pins `qs` 6.16.0 to address
-CVE-2026-82417 and CVE-2026-82562. Backup uploaders use a scanned, digest-pinned
-AWS CLI 2 image instead of the obsolete 2.15.57 image. Validate changes with
-the backend tests, a production image build, and image-level Trivy scans.
-
-The server locks Multer 2.3.0 and Nodemailer 9.1.1. The Multer override also
-updates NestJS's pinned upload middleware, so its interceptor cannot retain an
-older vulnerable copy. These releases fix the reported upload denial-of-service
-and limit-bypass issues, along with email address parsing and content-access
-issues. Upload middleware for attachments and book covers also opts into
-Multer's array-index protection and rejects nested multipart field names before
-parsing them. The forms accept one file and at most one scalar field; file-size
-limits stay in place. Regression tests exercise the actual controllers and
-interceptors, including crafted array names and oversized files. Email checks
-generate MIME messages locally without sending mail. See the
-[Multer advisory](https://github.com/expressjs/multer/security/advisories/GHSA-535w-7cp7-47q4)
-for why updating the dependency alone is insufficient.
-
-The September 10 source audit also updates development-only dependencies:
-Vitest and coverage 4.1.11, the browser compatibility databases, HumanFS,
-PostCSS selector parsing, and js-yaml 4.3.2. The js-yaml override covers
-OpenAPI tooling's exact older pin. Include development dependencies when
-scanning the lockfiles; a clean production image does not validate build tools.
-
-Both web Dockerfiles also apply Alpine security updates to the pinned
-unprivileged NGINX image, then restore UID/GID 101 for runtime. This covers
-OS-package findings even when the operator labels their severity as Unknown.
-
-### Container configuration hardening
-
-The application workloads run with UID and GID 10001, above the host system-user
-range, with the existing read-only filesystem, dropped capabilities and runtime
-seccomp profile. Writable application data and temporary files use explicit
-volumes.
-
-Bare-metal database helper jobs consume the official public PostgreSQL 18.6
-image pinned by digest. They execute client commands as UID 65534 with a read-only
-filesystem and need no platform registry credential. This repository owns their
-configuration and image pin; application images retain app-owned pull credentials.
-
-### September 10, 2026 release verification
-
-Release `1.2.11` deploys the upload and email fixes plus the development-tooling
-updates. The API and cloud-sync worker run the same server image; the migration
-hook successfully used the same release tag before rollout. The server image
-digest is `sha256:aaf15faac1de98859246e53a392c342d97448308fad71a1b8ea3885d412283f4`;
-the web image digest is
-`sha256:cf1dcb138530dbfe6687bd4326ea2f685efc0de202f2d8d8e572d2868ee606fa`.
-
-Trivy scans of those exact image digests on September 10 reported zero
-vulnerabilities at every severity and zero exposed secrets. The source scan,
-including development dependencies, also reported zero vulnerabilities and
-secrets. The operator reported zero configuration findings for the three
-running workload ReplicaSets and five Thoughty networking resources. Argo CD
-was `Synced` and `Healthy`, all five application pods were ready, and the API
-health endpoint and web page responded successfully.
-
-The repository-wide CI configuration scan still records 42 findings (33 Low,
-9 Medium). This scan includes partial Kustomize resources, standalone profiles,
-Dockerfiles, and public ConfigMap values. Its results need separate review from
-the rendered production configuration; the clean live reports do not mean every
-source configuration finding has been resolved. No findings were suppressed to
-produce the clean dependency or live workload reports.
+- Does it add a public route, and is its throttle appropriate?
+- Does it expose journal data, attachments, settings, or credentials to anyone but the owner?
+- Does every query stay scoped to the authenticated user?
+- Does it send journal content to a third party, and is that listed above?
+- Does it need a larger body limit or a separate upload path?
+- Does it introduce a secret, and how is it rotated?
+- Does it change security or privacy assumptions enough to need an ADR?

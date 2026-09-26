@@ -1,6 +1,6 @@
 # ADR 0015: Establish a Privacy-Aware Observability Baseline
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-05
 
 ## Context

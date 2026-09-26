@@ -1,54 +1,49 @@
 # Thoughty
 
-Thoughty is a modern, feature-rich journal application designed to help you capture your thoughts, organize them with tags, manage multiple diaries. With big features like cloud-sync, statistics, visualizations, convert thoughts into a book, and gain meaningful insights through AI-powered analysis and recommendations. Built with a focus on privacy, flexibility, and a polished user experience, Thoughty aims to be your ultimate journaling companion.
+Thoughty is a privacy-focused journal. Write dated entries in plain text or Markdown, organize them with tags and multiple diaries, and revisit them through search, highlights, and statistics. Optional AI helps you tag, rephrase, summarize, and find inspiration; exports, printable books, and cloud sync keep your writing portable.
 
-![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
+![Node](https://img.shields.io/badge/node-22-brightgreen.svg)
 ![React](https://img.shields.io/badge/react-19-61dafb.svg)
-![NestJS](https://img.shields.io/badge/nestjs-11.1-e0234e.svg)
-![TypeScript](https://img.shields.io/badge/typescript-5.8-3178c6.svg)
+![NestJS](https://img.shields.io/badge/nestjs-11-e0234e.svg)
+![TypeScript](https://img.shields.io/badge/typescript-5-3178c6.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
-## GitLab Delivery
-
-- [Run a pipeline](https://gitlab.swirlit.dev/swirlit/thoughty/-/pipelines/new?ref=main)
-- [Pipelines and delivery jobs](https://gitlab.swirlit.dev/swirlit/thoughty/-/pipelines)
-- [Versioned application packages](https://gitlab.swirlit.dev/swirlit/thoughty/-/packages)
-- [Container images](https://gitlab.swirlit.dev/swirlit/thoughty/-/container_registry)
-- [Releases](https://gitlab.swirlit.dev/swirlit/thoughty/-/releases)
-
-GitLab exposes `build`, `verify`, `release`, and `version` stages. Their jobs are ordered as `01-build`, `02-test`, `03-package`; `01-e2e`, `02-quality`, `03-security`; `01-release`, `02-deploy`; and `set-major-version`. Build and package are required; tests and their 80 percent coverage rule are non-blocking. Quality runs automatically on the default branch. Standard mode leaves E2E, security, and release manual. `PIPELINE_MODE=full` runs non-blocking quality and Trivy security reporting automatically. On `main`, full mode also automates release and deploy when started through **Run pipeline**; push-triggered pipelines keep release manual, with deploy starting after publication succeeds. E2E remains manual.
-
-Application versions start at `1.0.0` and are owned by [`VERSION`](./VERSION). Each new commit advances the patch component for its build (`1.0.1`, `1.0.2`, ...). A successful release tags and deploys that exact version, then prepares the next minor cycle (`1.1.0`, `1.2.0`, ...). To change the major version, start a pipeline with `NEW_MAJOR_VERSION` set to the desired integer and play `set-major-version`; it prepares `<major>.0.0` and synchronizes every npm manifest.
-
-## Documentation
-
-- [Repeatable repository onboarding](./docs/onboarding.md)
-- [Features](./docs/features.md)
-- [Architecture Overview and ADR Index](./docs/architecture.md)
-- [Data Model Reference](./docs/data-model.md)
-- [Development Guide](./docs/development.md)
-- [Testing Guide](./docs/testing.md)
-- [Deployment Guide](./docs/deployment.md)
-- [Operations Runbook](./docs/operations.md)
-- [Security and Privacy Reference](./docs/security.md)
-- [Infrastructure Layout](./docs/deployment.md#infrastructure-layout)
-
-## Roadmap
-
-The feature backlog — both implemented and planned features — lives in [TODO.md](./TODO.md).
+Production: [thoughty.swirlit.dev](https://thoughty.swirlit.dev)
 
 ## Quick Start
 
+Requires Node.js 22, Docker, and optionally [`mask`](https://github.com/jacobdeichert/mask).
+
 ```bash
-mask build
-docker compose -f infra/compose/compose.yaml up -d db minio
-npm run migrate
-npm run seed
-mask run
+mask build   # install dependencies
+mask run     # start PostgreSQL and MinIO, migrate, seed, and run the API and web app
 ```
 
-For environment variables, local development setup, and test workflows, start with [docs/development.md](./docs/development.md).
+Open `http://localhost:5173`. Manual steps, configuration, and the Dev Container are in the [Development Guide](./docs/development.md).
+
+## Documentation
+
+| Guide | Covers |
+|---|---|
+| [Features](./docs/features.md) | what the product does |
+| [Architecture](./docs/architecture.md) | system design, module ownership, and the ADR index |
+| [Data Model](./docs/data-model.md) | entities, ownership and deletion rules, tags, migrations |
+| [Development](./docs/development.md) | local setup, configuration, everyday commands |
+| [Testing](./docs/testing.md) | test layers, commands, writing tests |
+| [Deployment](./docs/deployment.md) | delivery pipeline, versioning, profiles, secrets, DNS, rollback |
+| [Operations](./docs/operations.md) | health checks, logs, metrics, troubleshooting, backup and restore |
+| [Security](./docs/security.md) | authentication, abuse controls, secrets, AI privacy |
+| [Onboarding](./docs/onboarding.md) | registering the repository with the `bm-cluster` platform |
+| [Standalone Vault](./docs/standalone-vault.md) | secrets for an independent installation |
+
+The implemented and planned backlog is in [TODO.md](./TODO.md).
+
+## Delivery
+
+GitLab builds and tests every push; releases are started manually (or automatically from a `PIPELINE_MODE=full` run) and deployed by Argo CD. See [Deployment](./docs/deployment.md#delivery-pipeline) for the details.
+
+- [Run a pipeline](https://gitlab.swirlit.dev/swirlit/thoughty/-/pipelines/new?ref=main) · [Pipelines](https://gitlab.swirlit.dev/swirlit/thoughty/-/pipelines) · [Releases](https://gitlab.swirlit.dev/swirlit/thoughty/-/releases) · [Packages](https://gitlab.swirlit.dev/swirlit/thoughty/-/packages) · [Container images](https://gitlab.swirlit.dev/swirlit/thoughty/-/container_registry)
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](./LICENSE).
+MIT. See [LICENSE](./LICENSE).

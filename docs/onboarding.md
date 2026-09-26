@@ -1,4 +1,4 @@
-# Repository onboarding
+# Repository Onboarding
 
 Run `./add-repos.sh` from the `bm-cluster` checkout on an operator host, enter this
 GitHub repository, and select it for deployment. The installer offers the same
@@ -10,7 +10,8 @@ not execute downloaded setup scripts. The declaration requests:
 - a public subdomain, defaulting to `thoughty` (`@` selects the zone apex);
 - durable GitLab, registry, ingress/TLS, shared-service and authentication settings;
 - registry access and the Vault contracts required by database and runtime hooks;
-- the application DNS record, using direct ingress or the published HA Tunnel;
+- the application DNS record, using direct ingress or the published HA Tunnel
+  (see [Public DNS](deployment.md#public-dns));
 - a first pipeline, followed by verification of the API, web and worker Deployments.
 
 Public settings and replacement bindings are committed to

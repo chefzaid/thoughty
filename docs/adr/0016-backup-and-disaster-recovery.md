@@ -1,6 +1,6 @@
 # ADR 0016: Define Backup and Disaster Recovery for Journal Data
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-06-05
 
 ## Context

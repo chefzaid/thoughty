@@ -1,417 +1,137 @@
 # Testing Guide
 
-Thoughty uses a layered test strategy: backend Jest tests for API and domain behavior, frontend Vitest tests for React units/components/hooks, and Playwright browser tests for user-facing flows. This guide explains how to run those suites, how the test files are organized, and how to add new tests without making the suite hard to navigate.
+Thoughty has three test layers: backend Jest tests, frontend Vitest tests, and Playwright browser tests against a mocked API. This guide covers how to run them, how they are organized, and how to add tests. How CI runs them is described in the [Delivery Pipeline](./deployment.md#delivery-pipeline).
 
-## Test Layers
+## Layers
 
-| Layer                    | Location                             | Runner                   | Purpose                                                            |
-| ------------------------ | ------------------------------------ | ------------------------ | ------------------------------------------------------------------ |
-| Backend unit/integration | `thoughty-server/src/**/*.spec.ts`   | Jest                     | Services, controllers, guards, modules, and backend helpers        |
-| Backend e2e              | `thoughty-server/test/*.e2e-spec.ts` | Jest + Supertest         | API-level application behavior through the NestJS app              |
-| Frontend unit/component  | `thoughty-web/src/**/*.test.ts(x)`   | Vitest + Testing Library | React components, hooks, utilities, and service adapters           |
-| Frontend browser e2e     | `thoughty-web/e2e/**/*.spec.ts`      | Playwright               | User-visible browser flows with deterministic mocked API responses |
+| Layer | Location | Runner | Use it for |
+|---|---|---|---|
+| Backend unit/integration | `thoughty-server/src/**/*.spec.ts` | Jest | services, controllers, guards, DTO validation, persistence, AI and cloud integrations |
+| Backend e2e | `thoughty-server/test/*.e2e-spec.ts` | Jest + Supertest | routing, guards, and validation through the full Nest app |
+| Frontend unit/component | `thoughty-web/src/**/*.test.ts(x)` | Vitest + Testing Library | components, hooks, utilities, API service adapters |
+| Browser e2e | `thoughty-web/e2e/**/*.spec.ts` | Playwright | user flows that span routes or surfaces, accessibility |
 
-## Testing Strategy
+Run the narrowest relevant suite first, and the broader suites before merging larger changes.
 
-Thoughty has three useful testing layers in local development.
+## Commands
 
-### 1. Fast unit and component checks
-
-- Backend: `cd thoughty-server && npm test`
-- Frontend: `cd thoughty-web && npm test`
-
-These are the cheapest checks for iterative work.
-
-### 2. Coverage runs
-
-- Full aggregated report: `mask test --coverage` or `npm run coverage`
-- Backend only: `cd thoughty-server && npm run test:cov`
-- Frontend only: `cd thoughty-web && npm run test:coverage`
-
-The root coverage script runs both coverage suites and prints a summary for backend coverage, frontend coverage, and the average across both.
-
-Both coverage suites write `coverage/lcov.info` in their respective application
-directories for Sonar. Run them before a local Sonar analysis and keep source
-files unchanged until analysis finishes. Sonar classifies colocated `.spec.ts`,
-`.test.ts`, and `.test.tsx` files as tests, alongside the end-to-end suites.
-
-### 3. End-to-end tests
-
-- Backend e2e: `cd thoughty-server && npm run test:e2e`
-- Frontend browser e2e: `cd thoughty-web && npm run test:e2e`
-
-Frontend Playwright tests cover public pages, auth onboarding, journal authoring and lifecycle flows, the public-entry feed, AI-assisted writing/tagging, stats, diary management, import/export, and navigation using mocked API responses for determinism.
-
-### Practical test guidance
-
-- Run the narrowest relevant suite first.
-- Use backend e2e tests when you change routing, auth guards, DTO validation, or integration points.
-- Use Playwright when you change navigation, auth UX, journal UX, AI UX, import/export UX, or multi-step browser flows.
-- Run the full coverage path before larger merges or release prep.
-
-## Quick Commands
-
-Run commands from the repository root unless the command starts with `cd`.
-
-### Common local checks
+From the repository root:
 
 ```bash
 mask test                 # backend Jest + frontend Vitest
-mask test --backend       # backend Jest only
-mask test --frontend      # frontend Vitest only
-mask test --e2e           # frontend Playwright only
-mask test --coverage      # aggregated backend + frontend coverage
+mask test --backend       # backend only
+mask test --frontend      # frontend only
+mask test --e2e           # Playwright only
+mask test --coverage      # both coverage suites plus a combined summary (also: npm run coverage)
 ```
 
-### Direct backend commands
+Backend (`cd thoughty-server`):
 
 ```bash
-cd thoughty-server
-npm test                  # unit/integration specs in src
-npm run test:watch        # watch mode
-npm run test:cov          # backend coverage
-npm run test:e2e          # backend e2e specs in test/
-npm run test:e2e:cov      # backend e2e coverage
-npm run lint              # backend lint; currently runs eslint --fix
-npm run benchmark         # API and database performance benchmark against a running environment
-npm run chaos:check       # safe resilience probes for malformed requests and database recovery
+npm test                  # unit/integration specs (add a path or name to narrow)
+npm run test:watch
+npm run test:cov          # coverage
+npm run test:e2e          # e2e specs in test/
+npm run lint              # ESLint (applies --fix)
 ```
 
-### Backend load and performance benchmarks
-
-The backend benchmark script uses only repository dependencies and can run against local development or a deployed API.
+Frontend (`cd thoughty-web`):
 
 ```bash
-cd thoughty-server
-BENCHMARK_BASE_URL=http://localhost:3001 npm run benchmark
-```
-
-By default it exercises public API health/metrics endpoints and key PostgreSQL count queries. Useful options:
-
-| Variable                | Default                         | Purpose                                      |
-| ----------------------- | ------------------------------- | -------------------------------------------- |
-| `BENCHMARK_BASE_URL`    | `http://localhost:3001`         | API origin to benchmark                      |
-| `BENCHMARK_ENDPOINTS`   | `/api/health,/api/metrics`      | Comma-separated GET paths                    |
-| `BENCHMARK_REQUESTS`    | `100`                           | Requests per HTTP target                     |
-| `BENCHMARK_CONCURRENCY` | `10`                            | Concurrent HTTP workers                      |
-| `BENCHMARK_AUTH_TOKEN`  | unset                           | Optional bearer token for protected targets  |
-| `BENCHMARK_DB_RUNS`     | `10`                            | Runs per database query                      |
-| `BENCHMARK_SKIP_HTTP`   | unset                           | Set to `true` to skip HTTP benchmarking      |
-| `BENCHMARK_SKIP_DB`     | unset                           | Set to `true` to skip database benchmarking  |
-
-Examples:
-
-```bash
-BENCHMARK_REQUESTS=500 BENCHMARK_CONCURRENCY=25 npm run benchmark
-BENCHMARK_ENDPOINTS=/api/health,/api/metrics BENCHMARK_SKIP_DB=true npm run benchmark
-BENCHMARK_AUTH_TOKEN=<token> BENCHMARK_ENDPOINTS=/api/entries,/api/stats npm run benchmark
-```
-
-The output is CSV-shaped for easy comparison between runs. Keep benchmark runs out of production unless an operator has approved the load profile.
-
-### Backend crash and resilience checks
-
-The resilience check script runs a small set of safe fault probes against a running API and the configured PostgreSQL database. It is meant for local, staging, or explicitly approved operational checks, not unscheduled production load.
-
-```bash
-cd thoughty-server
-CHAOS_BASE_URL=http://localhost:3001 npm run chaos:check
-```
-
-HTTP probes verify that malformed JSON, missing routes, and unauthenticated private requests fail with controlled status codes, then confirm `/api/health` still returns `200`. Database probes run a successful query, an intentionally invalid statement, and a recovery query to prove the connection pool remains usable after expected SQL failure.
-
-Useful options:
-
-| Variable              | Default                 | Purpose                                 |
-| --------------------- | ----------------------- | --------------------------------------- |
-| `CHAOS_BASE_URL`      | `http://localhost:3001` | API origin to probe                     |
-| `CHAOS_TIMEOUT_MS`    | `5000`                  | Per-request timeout                     |
-| `CHAOS_SKIP_HTTP`     | unset                   | Set to `true` to skip HTTP probes       |
-| `CHAOS_SKIP_DB`       | unset                   | Set to `true` to skip database probes   |
-
-Examples:
-
-```bash
-CHAOS_SKIP_DB=true npm run chaos:check
-CHAOS_SKIP_HTTP=true npm run chaos:check
-CHAOS_BASE_URL=https://staging.example.com CHAOS_SKIP_DB=true npm run chaos:check
-```
-
-The script exits non-zero when a probe fails or when the service does not recover to a healthy state after a controlled fault.
-
-### Direct frontend commands
-
-```bash
-cd thoughty-web
-npm test                  # Vitest unit/component tests
-npm run test:watch        # Vitest watch mode
-npm run test:coverage     # frontend coverage
-npm run typecheck         # TypeScript check without build
-npm run lint              # frontend ESLint
+npm test                  # Vitest
+npm run test:watch
+npm run test:coverage
+npm run typecheck
+npm run lint
+npm run api:usage         # fails if the frontend stops calling a documented product endpoint
 npm run test:e2e          # all Playwright specs
-npm run test:e2e:install  # install Chromium for Playwright when needed
+npm run test:e2e:install  # install the bundled Chromium
+npx playwright test e2e/journal                            # one directory
+npx playwright test e2e/tags/management.spec.ts            # one file
+npx playwright test --grep "Journal Markdown authoring"    # by title
 ```
 
-### Targeted Playwright commands
+Both coverage suites write `coverage/lcov.info` in their application directories for SonarQube; colocated `.spec.ts`, `.test.ts`, and `.test.tsx` files are classified as tests. The project target is 80% coverage.
 
-```bash
-cd thoughty-web
-npx playwright test e2e/journal/entry-lifecycle.spec.ts
-npx playwright test e2e/import-export/portability.spec.ts e2e/diary/management.spec.ts
-npx playwright test e2e/accessibility/routes.spec.ts
-npx playwright test e2e/journal
-npx playwright test --grep "Journal Markdown authoring"
-```
+## Browser Tests
 
-Playwright starts the Vite dev server automatically through `thoughty-web/playwright.config.ts`:
+Playwright (`thoughty-web/playwright.config.ts`) starts the Vite dev server on port `5173` (or reuses a running one) and runs headless Chromium using the bundled `chromium` channel. There are no named projects, so do not pass `--project`. Traces and screenshots are kept on failure, and CI retries failed tests twice.
 
-- test directory: `thoughty-web/e2e`
-- base URL: `http://localhost:5173`
-- browser: Chromium
-- channel: bundled `chromium`
-- traces retained on failure
-- screenshots captured on failure
+The browser never reaches a real backend: every `/api` call is answered by the mock app in `e2e/support`. Specs are grouped by feature:
 
-## Frontend E2E Structure
+| Directory | Covers |
+|---|---|
+| `accessibility/` | Axe WCAG A/AA scans of every route in both themes, skip links, focus on route change, key dialogs |
+| `public/` | landing page and the feature-request board |
+| `auth/` | sign-up and login onboarding, two-factor authentication |
+| `navigation/` | direct routes, browser history, permalinks, diary return routes |
+| `journal/` | authoring, Markdown, lifecycle, reordering, filtering, favorites, visibility, bulk archive, history, highlights, audio transcription |
+| `tags/` | tag create, count, rename, delete, and journal theme organization |
+| `ai/` | Auto Tag, automatic tagging, Get Inspired, rephrasing, summaries, chat, meaning search, duplicates, personal API keys |
+| `stats/` | totals, heatmap, and tag insights |
+| `import-export/` | import/export formats, format settings, delete-all, books, book versions and cloud upload |
+| `cloud-sync/` | uploads, schedules, Sync Now, cloud imports |
+| `diary/` | create, edit, reorder, default, delete fallback |
+| `social/` | public feed eligibility, pagination, owner preview, mobile layout |
 
-Frontend e2e specs are grouped by feature/domain directory under `thoughty-web/e2e`. Each spec should still be named after the behavior it covers. Avoid generic buckets such as `critical-flows.spec.ts` or `feature-flows.spec.ts`; a directory and file name should tell future contributors what behavior belongs there.
+Put a new spec in the closest existing directory and name it after the behavior it covers (`journal/attachments-preview.spec.ts`, not `critical-flows.spec.ts`). Split a file once it covers unrelated behavior.
 
-Current e2e feature groups:
+### Mock API
 
-| Directory            | Covers                                                                 |
-| -------------------- | ---------------------------------------------------------------------- |
-| `e2e/accessibility/` | WCAG A/AA route scans, skip navigation, and route focus behavior       |
-| `e2e/public/`        | Public landing page and intro transitions                              |
-| `e2e/auth/`          | Sign-up and login onboarding into the journal                          |
-| `e2e/navigation/`    | Direct routes, browser history, permalinks, and diary return routes    |
-| `e2e/journal/`       | Journal authoring, lifecycle, filtering, highlights, and entry actions |
-| `e2e/tags/`          | Tag organization, journal retag review, and tag rename flows           |
-| `e2e/ai/`            | AI tag suggestions, automatic tagging, writing help, and chat history  |
-| `e2e/stats/`         | Stats totals, activity heatmap, and tag insights                       |
-| `e2e/import-export/` | JSON import/export, format settings, and delete-all flows              |
-| `e2e/cloud-sync/`    | Cloud uploads, schedules, sync-now flows, and cloud imports            |
-| `e2e/diary/`         | Diary create, edit, reorder, default, and delete fallback              |
-| `e2e/social/`        | Public-feed eligibility, pagination, owner preview, and mobile layout  |
+| File | Purpose |
+|---|---|
+| `mockApp.ts` | `setupMockApp(page, options)`: per-test state, auth tokens, route registration |
+| `mockApp.shared.ts` | state types and defaults, diaries, cloud fixtures, import/export helpers |
+| `mockApp.stats.ts` | stats response builders |
+| `mockApp.route-utils.ts` | route context and `fulfillJson` |
+| `mockApp.routes.ts` | dispatch, auth, config, and feature-request routes |
+| `mockApp.routes.entries.ts` | entries and tags |
+| `mockApp.routes.reference.ts` | stats, AI, diaries, entry references |
+| `mockApp.routes.ai-credentials.ts` | personal OpenRouter key and usage |
+| `mockApp.routes.cloud-sync.ts` | stateful cloud schedules, files, and sync payloads |
 
-Current specs by feature group:
+When a flow needs new backend behavior: add state fields to `mockApp.shared.ts`, handle the route in the smallest relevant file, record the last request payload if the test must assert on it, and return the same response shape as the real API. Keep the mock minimal; it supports the flows under test and does not reimplement the backend.
 
-| Directory            | Spec file                      |
-| -------------------- | ------------------------------ |
-| `e2e/public/`        | `intro-page.spec.ts`           |
-| `e2e/auth/`          | `onboarding.spec.ts`           |
-| `e2e/navigation/`    | `routes.spec.ts`               |
-| `e2e/journal/`       | `entry-lifecycle.spec.ts`      |
-| `e2e/journal/`       | `entry-reordering.spec.ts`     |
-| `e2e/journal/`       | `markdown-authoring.spec.ts`   |
-| `e2e/journal/`       | `navigation.spec.ts`           |
-| `e2e/journal/`       | `composable-filtering.spec.ts` |
-| `e2e/journal/`       | `highlights.spec.ts`           |
-| `e2e/journal/`       | `bulk-archive.spec.ts`         |
-| `e2e/journal/`       | `revision-history.spec.ts`     |
-| `e2e/journal/`       | `visibility-toggle.spec.ts`    |
-| `e2e/journal/`       | `favorites.spec.ts`            |
-| `e2e/tags/`          | `management.spec.ts`           |
-| `e2e/tags/`          | `journal-retagging.spec.ts`    |
-| `e2e/ai/`            | `tag-suggestions.spec.ts`      |
-| `e2e/ai/`            | `auto-tagging.spec.ts`         |
-| `e2e/ai/`            | `writing-and-chat.spec.ts`     |
-| `e2e/stats/`         | `insights.spec.ts`             |
-| `e2e/import-export/` | `basic.spec.ts`                |
-| `e2e/import-export/` | `portability.spec.ts`          |
-| `e2e/cloud-sync/`    | `management.spec.ts`           |
-| `e2e/diary/`         | `management.spec.ts`           |
-| `e2e/social/`        | `public-feed.spec.ts`          |
+## Writing Tests
 
-When adding a new e2e spec, place it in the closest existing feature directory. Create a new feature directory only when the scenario is not owned by one of the existing domains.
-
-### E2E support files
-
-The Playwright suite uses in-browser app code with mocked API routes for deterministic tests.
-
-| File                                                    | Purpose                                                                                             |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `thoughty-web/e2e/support/mockApp.ts`                   | Creates a per-test mock app state, seeds auth tokens, and registers API routes                      |
-| `thoughty-web/e2e/support/mockApp.shared.ts`            | Shared mock state types, default diaries, cloud fixtures, import/export helpers, and stats builders |
-| `thoughty-web/e2e/support/mockApp.route-utils.ts`       | Shared route context and JSON response helpers for the mock API                                     |
-| `thoughty-web/e2e/support/mockApp.routes.ts`            | Top-level route registration and dispatch for the mock API                                          |
-| `thoughty-web/e2e/support/mockApp.routes.entries.ts`    | Entry collection and mutation handlers for the mock API                                             |
-| `thoughty-web/e2e/support/mockApp.routes.reference.ts`  | Stats, AI, diary, and entry-reference handlers for the mock API                                     |
-| `thoughty-web/e2e/support/mockApp.routes.cloud-sync.ts` | Cloud-sync handlers with stateful schedules, files, and sync payload capture                        |
-
-Prefer extending the mock support when a scenario needs a realistic backend response. Keep mock behavior minimal and purpose-driven: it should support the browser flow under test, not reimplement the whole backend.
-
-## How to Add Tests
-
-### 1. Choose the right layer
-
-- Use backend Jest tests when changing backend services, controllers, DTO validation, guards, persistence behavior, or cloud/AI server integrations.
-- Use frontend Vitest tests when changing a component, hook, utility, reducer-like state transition, or API service adapter.
-- Use Playwright when the behavior is route-based, visual/user-driven, or spans multiple UI surfaces such as auth → journal → stats.
-
-### 2. Name files by feature behavior
-
-Good e2e names:
-
-- `journal/attachments-preview.spec.ts`
-- `journal/audio-transcription.spec.ts`
-- `profile/appearance-preferences.spec.ts`
-- `cloud-sync/scheduling.spec.ts`
-
-Avoid names that do not say what they contain:
-
-- `critical-flows.spec.ts`
-- `feature-flows.spec.ts`
-- `misc.spec.ts`
-
-If a file starts covering unrelated areas, split it. A focused file is easier to run, review, and maintain.
-
-### 3. Keep test titles outcome-based
-
-Prefer:
-
-```ts
-test('archives selected entries and reveals them through the archived filter', async ({ page }) => {
-  // ...
-});
-```
-
-Avoid:
-
-```ts
-test('works', async ({ page }) => {
-  // ...
-});
-```
-
-### 4. Seed only the state needed for the scenario
-
-For Playwright tests, use `setupMockApp(page, options)`:
+Seed only what the scenario needs:
 
 ```ts
 const { state } = await setupMockApp(page, {
   startAuthenticated: true,
   initialEntries: [
-    {
-      id: 101,
-      date: '2024-04-18',
-      index: 1,
-      content: 'Focused entry text',
-      tags: ['focus'],
-      visibility: 'private',
-      diaryId: 1,
-    },
+    { id: 101, date: '2024-04-18', index: 1, content: 'Focused entry', tags: ['focus'], visibility: 'private', diaryId: 1 },
   ],
 });
 ```
 
-Keep seed data small and meaningful. If the assertion only needs one entry, do not seed a full journal.
-
-### 5. Assert UI and state when both matter
-
-Playwright tests should prove the user-visible result. When the mock state captures an important payload or mutation, assert that too.
+Assert the visible result, and the captured state when the request matters:
 
 ```ts
 await expect(page.getByText('Updated entry body')).toBeVisible();
 await expect.poll(() => state.entries[0]?.content).toBe('Updated entry body');
 ```
 
-### 6. Prefer accessible selectors
+Guidelines:
 
-Use Playwright locators that reflect how users interact with the app:
+- Name tests by outcome (`'archives selected entries and reveals them through the archived filter'`, not `'works'`).
+- Prefer accessible locators (`getByRole`, `getByLabel`, `getByPlaceholder`); scope to a card such as `page.locator('#entry-101')` when a name is ambiguous, or pass `exact: true`.
+- Call `setupMockApp` before navigating, keep state in the returned `state` object, and avoid module-level mutable state; tests run in parallel.
+- Frontend unit tests usually pass an identity translator (`t = (key) => key`), so assert on translation keys rather than English text.
 
-```ts
-await page.getByRole('button', { name: 'Save' }).click();
-await page.getByPlaceholder("What's on your mind?").fill('Entry text');
-await page.getByLabel('More actions').click();
-```
+## Performance and Resilience Checks
 
-Use CSS selectors for structural UI that has no accessible handle yet, such as a scoped entry card:
+Both scripts run against a live API and database; do not point them at production without an operator's approval.
 
-```ts
-const entry = page.locator('#entry-101');
-await entry.getByRole('button', { name: 'Edit' }).click();
-```
+`cd thoughty-server && npm run benchmark` measures HTTP endpoints and key PostgreSQL queries and prints CSV-style results:
 
-### 7. Make mocked API additions explicit
+| Variable | Default | Purpose |
+|---|---|---|
+| `BENCHMARK_BASE_URL` | `http://localhost:3001` | API origin |
+| `BENCHMARK_ENDPOINTS` | `/api/health,/api/metrics` | comma-separated GET paths |
+| `BENCHMARK_REQUESTS` / `BENCHMARK_CONCURRENCY` | `100` / `10` | requests per target and concurrent workers |
+| `BENCHMARK_AUTH_TOKEN` | unset | bearer token for protected paths |
+| `BENCHMARK_DB_RUNS` | `10` | runs per database query |
+| `BENCHMARK_SKIP_HTTP` / `BENCHMARK_SKIP_DB` | unset | set to `true` to skip a part |
 
-When adding a new e2e flow that needs backend behavior:
-
-1. Add any state fields to `mockApp.shared.ts`.
-2. Add route handling to the smallest relevant handler in `mockApp.routes.ts`.
-3. Track the last request payload when the test needs to verify client behavior.
-4. Return realistic response shapes that match the app’s real services.
-
-Example pattern:
-
-```ts
-if (pathname === '/api/example' && request.method() === 'POST') {
-  state.lastExamplePayload = request.postDataJSON();
-  await fulfillJson(route, { success: true });
-  return true;
-}
-```
-
-### 8. Run the narrowest check first
-
-After adding or changing a test:
-
-```bash
-cd thoughty-web
-npx playwright test e2e/journal/the-specific-file.spec.ts
-npm run typecheck
-npm run lint
-```
-
-For backend changes:
-
-```bash
-cd thoughty-server
-npm test -- path/or/name.spec.ts
-npm run test:e2e
-```
-
-Before a larger merge, run the broader suite that matches the scope of the change.
-
-## CI and Browser Notes
-
-- Playwright uses the bundled `chromium` channel locally and in CI.
-- In CI, Playwright retries failed tests twice.
-- `01-build` publishes compiled outputs, optional `02-test` publishes JUnit/coverage, and required `03-package` validates images.
-- Optional manual `01-e2e`, non-blocking `02-quality`, and `03-security` are independent verify jobs. Default-branch quality is automatic; security is manual in standard mode and automatic in full mode; Trivy retains repository vulnerability, IaC, and secret findings as JSON and SARIF artifacts without depending on quality.
-- `01-release` publishes only after the required build path; `02-deploy` runs only after release passes.
-- A `PIPELINE_MODE=full` pipeline on `main` runs quality and security reporting automatically. Release is automatic when started through **Run pipeline** and manual for push-triggered pipelines; deployment follows successful release. E2E remains manual.
-- CI reports and build outputs are retained for seven days; immutable release archives are kept in GitLab's Generic Package Registry.
-- If local browser launch fails, run `cd thoughty-web && npm run test:e2e:install` to provision the bundled `chromium` browser.
-- Playwright reuses an existing dev server on port `5173` when one is already running.
-
-## Troubleshooting
-
-### Playwright cannot find the `chromium` project
-
-This project does not define named Playwright projects. Run without `--project=chromium`:
-
-```bash
-cd thoughty-web
-npx playwright test e2e/journal/entry-lifecycle.spec.ts
-```
-
-### A test can pass alone but fail in the full suite
-
-- Make sure the test calls `setupMockApp(page, ...)` before navigation.
-- Avoid shared mutable module-level state outside seed constants.
-- Keep mock route state per test through the returned `state` object.
-
-### A locator is ambiguous
-
-Use accessible locators with `exact: true` or scope to a region/card:
-
-```ts
-await page.getByRole('button', { name: 'Archive', exact: true }).click();
-
-const entry = page.locator('#entry-101');
-await entry.getByLabel('More actions').click();
-```
-
-### `git diff --check` reports unrelated whitespace
-
-Fix whitespace in the file you changed. If the warning comes from an unrelated pre-existing file, do not mix that cleanup into feature/test changes unless it is part of the task.
+`cd thoughty-server && npm run chaos:check` sends malformed JSON, missing routes, and unauthenticated private requests and expects controlled errors, runs a failing SQL statement to prove the pool recovers, and confirms `/api/health` still returns `200`. It exits non-zero if anything does not recover. Options: `CHAOS_BASE_URL`, `CHAOS_TIMEOUT_MS` (default `5000`), `CHAOS_SKIP_HTTP`, `CHAOS_SKIP_DB`.
