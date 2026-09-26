@@ -35,6 +35,7 @@ describe('EntriesQueryService', () => {
     entryRepository = {
       createQueryBuilder: jest.fn(),
       findOne: jest.fn(),
+      query: jest.fn(),
     };
 
     revisionRepository = {
@@ -399,5 +400,20 @@ describe('EntriesQueryService', () => {
       where: { entryId: 8, userId: 2 },
       order: { createdAt: 'DESC' },
     });
+  });
+
+  it('lists user-scoped tag usage counts', async () => {
+    entryRepository.query.mockResolvedValue([
+      { tag: 'focus', count: '3' },
+      { tag: 'work', count: 1 },
+    ]);
+
+    await expect(service.getTagUsage(4)).resolves.toEqual({
+      tags: [
+        { tag: 'focus', count: 3 },
+        { tag: 'work', count: 1 },
+      ],
+    });
+    expect(entryRepository.query).toHaveBeenCalledWith(expect.stringContaining('WHERE e.user_id = $1'), [4]);
   });
 });

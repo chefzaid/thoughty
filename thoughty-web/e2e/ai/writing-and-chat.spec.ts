@@ -83,7 +83,7 @@ test.describe('AI writing assistance and entry chat', () => {
     });
   });
 
-  test('uses a history-based writing prompt in the active diary', async ({ page }) => {
+  test('asks a tag-based inspiration question in the active diary', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     const { state } = await setupMockApp(page, {
       startAuthenticated: true,
@@ -101,21 +101,20 @@ test.describe('AI writing assistance and entry chat', () => {
     });
 
     await page.goto('/journal?diary=1');
-    await page.getByRole('button', { name: 'Writing prompts' }).click();
+    await page.getByRole('button', { name: 'Get Inspired' }).click();
 
-    const promptMenu = page.getByRole('menu', { name: 'Writing prompts' });
-    await expect(promptMenu).toBeVisible();
-    const menuBounds = await promptMenu.boundingBox();
-    expect(menuBounds).not.toBeNull();
-    expect(menuBounds!.x).toBeGreaterThanOrEqual(0);
-    expect(menuBounds!.x + menuBounds!.width).toBeLessThanOrEqual(390);
+    const inspiration = page.getByRole('dialog', { name: 'Get Inspired' });
+    await expect(inspiration).toBeVisible();
+    const panelBounds = await inspiration.boundingBox();
+    expect(panelBounds).not.toBeNull();
+    expect(panelBounds!.x).toBeGreaterThanOrEqual(0);
+    expect(panelBounds!.x + panelBounds!.width).toBeLessThanOrEqual(390);
 
-    await promptMenu.getByRole('menuitem', {
-      name: 'What helps you protect time for the work that matters?',
-    }).click();
+    const question = 'What does protecting your focus ask you to give up at work?';
+    await expect(inspiration.getByText(question)).toBeVisible();
+    await inspiration.getByRole('button', { name: 'Write about this' }).click();
 
-    await expect(page.getByPlaceholder("What's on your mind?"))
-      .toHaveValue('What helps you protect time for the work that matters?');
-    await expect.poll(() => state.lastAiWritingPromptsPayload).toEqual({ diaryId: 1 });
+    await expect(page.getByPlaceholder("What's on your mind?")).toHaveValue(question);
+    await expect.poll(() => state.lastAiInspirationPayload).toEqual({ diaryId: 1 });
   });
 });

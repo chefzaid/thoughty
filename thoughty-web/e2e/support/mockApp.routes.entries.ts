@@ -229,6 +229,33 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
     return true;
   }
 
+  if (pathname === '/api/entries/tags' && request.method() === 'GET') {
+    const counts = new Map<string, number>();
+    state.entries.forEach((entry) => {
+      unique(entry.tags).forEach((tag) => counts.set(tag, (counts.get(tag) ?? 0) + 1));
+    });
+    await fulfillJson(route, {
+      tags: [...counts.entries()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([tag, count]) => ({ tag, count })),
+    });
+    return true;
+  }
+
+  if (pathname === '/api/entries/tags' && request.method() === 'DELETE') {
+    const tag = new URL(request.url()).searchParams.get('tag') ?? '';
+    let affectedCount = 0;
+    state.entries = state.entries.map((entry) => {
+      if (!entry.tags.includes(tag)) {
+        return entry;
+      }
+      affectedCount += 1;
+      return { ...entry, tags: entry.tags.filter((current) => current !== tag) };
+    });
+    await fulfillJson(route, { success: true, affectedCount });
+    return true;
+  }
+
   if (pathname === '/api/entries/tags/rename' && request.method() === 'PATCH') {
     const payload = request.postDataJSON() as { oldTag: string; newTag: string };
     let affected = 0;

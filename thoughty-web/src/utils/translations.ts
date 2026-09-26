@@ -136,6 +136,15 @@ export type TranslationKey =
   | "renameTagPlaceholder"
   | "noTagsToOrganize"
   | "resetTagAppearance"
+  | "newTag"
+  | "newTagPlaceholder"
+  | "addTag"
+  | "tagAlreadyExists"
+  | "deleteTag"
+  | "deleteTagConfirm"
+  | "deleteTagFailed"
+  | "tagUsageCount"
+  | "tagUnused"
   | "security"
   | "currentPassword"
   | "newPassword"
@@ -546,8 +555,7 @@ export type TranslationKey =
   | "blogReading"
   | "suggestTags"
   | "suggestingTags"
-  | "suggestThemes"
-  | "suggestingThemes"
+  | "autoTagDescription"
   | "fixWriting"
   | "fixingWriting"
   | "discussEntry"
@@ -568,11 +576,13 @@ export type TranslationKey =
   | "summaryError"
   | "copySummary"
   | "summaryCopied"
-  | "writingPrompts"
-  | "chooseWritingPrompt"
-  | "generatingWritingPrompts"
-  | "regenerateWritingPrompts"
-  | "writingPromptsError"
+  | "getInspired"
+  | "getInspiredDescription"
+  | "inspirationTitle"
+  | "findingInspiration"
+  | "askAnotherQuestion"
+  | "writeAboutThis"
+  | "inspirationError"
   | "findDuplicates"
   | "duplicateScanTitle"
   | "duplicateScanDescription"
@@ -1031,6 +1041,16 @@ export const translations: Translations = {
     noTagsToOrganize:
       "Create or save a few tags first, then organize them here.",
     resetTagAppearance: "Reset",
+    newTag: "New tag",
+    newTagPlaceholder: "Tag name",
+    addTag: "Add tag",
+    tagAlreadyExists: "That tag already exists.",
+    deleteTag: "Delete tag",
+    deleteTagConfirm:
+      "Delete #{tag}? It will be removed from {count} entries. The entries themselves are kept.",
+    deleteTagFailed: "Unable to delete the tag. Please try again.",
+    tagUsageCount: "{count} entries",
+    tagUnused: "Unused",
 
     // Security
     security: "Security",
@@ -1527,10 +1547,10 @@ export const translations: Translations = {
     blogInspirationDate: "Prompt set",
     blogRead: "Read",
     blogReading: "Reading",
-    suggestTags: "Auto-Tags",
+    suggestTags: "Auto Tag",
     suggestingTags: "Tagging...",
-    suggestThemes: "Theme Tags",
-    suggestingThemes: "Finding themes...",
+    autoTagDescription:
+      "Suggest tags for what this entry is about and the themes behind it",
     fixWriting: "Rephrase",
     fixingWriting: "Rephrasing...",
     discussEntry: "Discuss with AI",
@@ -1552,12 +1572,14 @@ export const translations: Translations = {
       "Unable to summarize this entry. Check your OpenRouter API key and try again.",
     copySummary: "Copy summary",
     summaryCopied: "Summary copied",
-    writingPrompts: "Writing prompts",
-    chooseWritingPrompt: "Choose a prompt",
-    generatingWritingPrompts: "Finding a fresh direction...",
-    regenerateWritingPrompts: "Regenerate prompts",
-    writingPromptsError:
-      "Prompts need journal history and a configured OpenRouter API key.",
+    getInspired: "Get Inspired",
+    getInspiredDescription: "Get a reflective question based on your tags",
+    inspirationTitle: "A question for you",
+    findingInspiration: "Finding a question...",
+    askAnotherQuestion: "Ask another question",
+    writeAboutThis: "Write about this",
+    inspirationError:
+      "Inspiration needs a few tagged entries and a configured OpenRouter API key.",
     findDuplicates: "Find duplicates",
     duplicateScanTitle: "Similar entries",
     duplicateScanDescription:
@@ -1787,7 +1809,7 @@ export const translations: Translations = {
     openRouterChatModel: "Entry chat",
     openRouterToneModel: "Tone analysis",
     openRouterSummaryModel: "Entry summaries",
-    openRouterPromptModel: "Writing prompts",
+    openRouterPromptModel: "Get Inspired",
     openRouterBookModel: "Book weaving",
     inheritDefaultModel: "Use default model",
     searchModels: "Search models...",
@@ -2045,6 +2067,16 @@ export const translations: Translations = {
     noTagsToOrganize:
       "Créez ou enregistrez quelques tags puis organisez-les ici.",
     resetTagAppearance: "Réinitialiser",
+    newTag: "Nouveau tag",
+    newTagPlaceholder: "Nom du tag",
+    addTag: "Ajouter le tag",
+    tagAlreadyExists: "Ce tag existe déjà.",
+    deleteTag: "Supprimer le tag",
+    deleteTagConfirm:
+      "Supprimer #{tag} ? Il sera retiré de {count} entrées. Les entrées elles-mêmes sont conservées.",
+    deleteTagFailed: "Impossible de supprimer le tag. Veuillez réessayer.",
+    tagUsageCount: "{count} entrées",
+    tagUnused: "Inutilisé",
 
     // Security
     security: "Sécurité",
@@ -2556,10 +2588,10 @@ export const translations: Translations = {
     blogInspirationDate: "Série de prompts",
     blogRead: "Lire",
     blogReading: "En lecture",
-    suggestTags: "Auto-Tags",
+    suggestTags: "Auto Tag",
     suggestingTags: "Tagging...",
-    suggestThemes: "Tags thématiques",
-    suggestingThemes: "Recherche de thèmes...",
+    autoTagDescription:
+      "Suggérer des tags sur le sujet de cette entrée et les thèmes qu'elle aborde",
     fixWriting: "Reformuler",
     fixingWriting: "Reformulation...",
     discussEntry: "Discuter avec l'IA",
@@ -2582,12 +2614,14 @@ export const translations: Translations = {
       "Impossible de résumer cette entrée. Vérifiez votre clé API OpenRouter et réessayez.",
     copySummary: "Copier le résumé",
     summaryCopied: "Résumé copié",
-    writingPrompts: "Prompts d'écriture",
-    chooseWritingPrompt: "Choisir un prompt",
-    generatingWritingPrompts: "Recherche d'une nouvelle piste...",
-    regenerateWritingPrompts: "Regénérer les prompts",
-    writingPromptsError:
-      "Les prompts nécessitent un historique et une clé API OpenRouter configurée.",
+    getInspired: "S'inspirer",
+    getInspiredDescription: "Recevoir une question de réflexion basée sur vos tags",
+    inspirationTitle: "Une question pour vous",
+    findingInspiration: "Recherche d'une question...",
+    askAnotherQuestion: "Poser une autre question",
+    writeAboutThis: "Écrire à ce sujet",
+    inspirationError:
+      "L'inspiration nécessite quelques entrées taguées et une clé API OpenRouter configurée.",
     findDuplicates: "Rechercher les doublons",
     duplicateScanTitle: "Entrées similaires",
     duplicateScanDescription:
@@ -2822,7 +2856,7 @@ export const translations: Translations = {
     openRouterChatModel: "Chat d'entrée",
     openRouterToneModel: "Analyse du ton",
     openRouterSummaryModel: "Résumés d'entrées",
-    openRouterPromptModel: "Prompts d'écriture",
+    openRouterPromptModel: "S'inspirer",
     openRouterBookModel: "Tissage du livre",
     inheritDefaultModel: "Utiliser le modèle par défaut",
     searchModels: "Rechercher des modèles...",

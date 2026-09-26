@@ -13,11 +13,11 @@ import { SuggestTagsDto } from './dto/suggest-tags.dto';
 import { FixWritingDto, type FixWritingMode } from './dto/fix-writing.dto';
 import { ChatDto, ChatHistoryResponseDto, ChatMessageDto } from './dto/chat.dto';
 import { SummarizeEntryDto } from './dto/summarize-entry.dto';
-import { GenerateWritingPromptsDto } from './dto/writing-prompts.dto';
+import { GenerateInspirationDto } from './dto/inspiration.dto';
 import { requestEntrySummary } from './entry-summary';
 import { requestTagSuggestions } from './tag-suggestions';
 import { parseJournalAnalysis, type JournalAnalysis } from './journal-analysis';
-import { requestWritingPrompts } from './writing-prompts';
+import { INSPIRATION_ENTRY_WINDOW, requestInspiration, summarizeThemes } from './inspiration';
 import { resolveAiModel } from './ai-model.util';
 import { AiUsageService } from './ai-usage.service';
 import { resolveOpenRouterCredential } from './openrouter-credential.util';
@@ -141,7 +141,6 @@ export class AiService {
         content: dto.content,
         existingTags,
         maxTags,
-        style: dto.style ?? 'specific',
         onUsage: this.usageService?.reporter(userId, credential.source),
       }),
     };
@@ -170,7 +169,6 @@ export class AiService {
         content,
         existingTags,
         maxTags: Math.min(Math.max(maxTags, 1), 10),
-        style: 'specific',
         onUsage: this.usageService?.reporter(userId, credential.source),
       });
     } catch {
@@ -243,18 +241,19 @@ export class AiService {
     return { summary };
   }
 
-  async generateWritingPrompts(
+  async generateInspiration(
     userId: number,
-    dto: GenerateWritingPromptsDto,
-  ): Promise<{ prompts: string[] }> {
+    dto: GenerateInspirationDto,
+  ): Promise<{ question: string }> {
     const entries = await this.entryRepository.find({
       where: dto.diaryId == null ? { userId } : { userId, diaryId: dto.diaryId },
-      select: { date: true, tags: true, content: true },
+      select: { tags: true },
       order: { date: 'DESC', index: 'DESC' },
-      take: 12,
+      take: INSPIRATION_ENTRY_WINDOW,
     });
-    if (entries.length === 0) {
-      throw new BadRequestException('Journal history is required for writing prompts');
+    const { themes, recentThemes } = summarizeThemes(entries.map(({ tags }) => tags ?? []));
+    if (themes.length === 0) {
+      throw new BadRequestException('Tagged entries are required for inspiration');
     }
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
@@ -262,16 +261,12 @@ export class AiService {
     }
 
     const model = await this.getModel(userId, 'prompt');
-    const history = entries.map(({ date, tags, content }) => ({
-      date,
-      tags,
-      content: content.slice(0, 800),
-    }));
     return {
-      prompts: await requestWritingPrompts({
+      question: await requestInspiration({
         apiKey: credential.apiKey,
         model,
-        history,
+        themes,
+        recentThemes,
         onUsage: this.usageService?.reporter(userId, credential.source),
       }),
     };

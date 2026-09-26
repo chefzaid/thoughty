@@ -42,4 +42,45 @@ test.describe('Tag management', () => {
     ]);
     await expect(page.getByText('#focus-updated')).toBeVisible();
   });
+
+  test('creates, counts, and deletes tags from the tags view', async ({ page }) => {
+    const { state } = await setupMockApp(page, {
+      startAuthenticated: true,
+      initialEntries: [
+        {
+          id: 311,
+          date: '2024-04-18',
+          index: 1,
+          content: 'Planning the week',
+          tags: ['focus', 'planning'],
+          visibility: 'private',
+          diaryId: 1,
+        },
+        {
+          id: 312,
+          date: '2024-04-17',
+          index: 1,
+          content: 'Deep work block',
+          tags: ['focus'],
+          visibility: 'private',
+          diaryId: 1,
+        },
+      ],
+    });
+
+    await page.goto('/tags');
+    await expect(page.getByText('2 entries')).toBeVisible();
+
+    await page.getByPlaceholder('Tag name').fill('gratitude');
+    await page.getByRole('button', { name: 'Add tag' }).click();
+    await expect(page.getByLabel('Name gratitude')).toBeVisible();
+    await expect(page.getByText('Unused')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Delete tag focus' }).click();
+    await expect(page.getByText('It will be removed from 2 entries')).toBeVisible();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+
+    await expect(page.getByLabel('Name focus')).toHaveCount(0);
+    await expect.poll(() => state.entries.map((entry) => entry.tags)).toEqual([['planning'], []]);
+  });
 });

@@ -17,7 +17,7 @@ import { SuggestTagsDto } from './dto/suggest-tags.dto';
 import { FixWritingDto } from './dto/fix-writing.dto';
 import { ChatDto, ChatHistoryResponseDto, ChatResponseDto } from './dto/chat.dto';
 import { EntrySummaryResponseDto, SummarizeEntryDto } from './dto/summarize-entry.dto';
-import { GenerateWritingPromptsDto, WritingPromptsResponseDto } from './dto/writing-prompts.dto';
+import { GenerateInspirationDto, InspirationResponseDto } from './dto/inspiration.dto';
 import { AiDuplicateService } from './ai-duplicate.service';
 import {
   DuplicateEntryScanResponseDto,
@@ -143,18 +143,18 @@ export class AiController {
     return this.aiService.summarizeEntry(user.userId, dto);
   }
 
-  @Post('writing-prompts')
-  @ApiOperation({ summary: 'Generate writing prompts from recent journal history' })
+  @Post('inspiration')
+  @ApiOperation({ summary: 'Ask a reflective journal question based on the user tags' })
   @ApiResponse({
     status: 200,
-    description: 'Personalized writing prompts returned successfully',
-    type: WritingPromptsResponseDto,
+    description: 'Reflective question returned successfully',
+    type: InspirationResponseDto,
   })
-  async generateWritingPrompts(
+  async generateInspiration(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: GenerateWritingPromptsDto,
-  ): Promise<WritingPromptsResponseDto> {
-    return this.aiService.generateWritingPrompts(user.userId, dto);
+    @Body() dto: GenerateInspirationDto,
+  ): Promise<InspirationResponseDto> {
+    return this.aiService.generateInspiration(user.userId, dto);
   }
 
   @Post('duplicates')

@@ -32,6 +32,7 @@ describe('EntriesService', () => {
       delete: jest.fn(),
       bulkOperation: jest.fn(),
       renameTag: jest.fn(),
+      deleteTag: jest.fn(),
       reorderEntries: jest.fn(),
       deleteRevision: jest.fn(),
     };
@@ -243,6 +244,17 @@ describe('EntriesService', () => {
     const result = await service.renameTag(1, 'old', 'new');
 
     expect(entriesCommandService.renameTag).toHaveBeenCalledWith(1, 'old', 'new');
+    expect(result).toBe(expected);
+  });
+
+  it('deletes tags through EntriesCommandService and invalidates cached lists', async () => {
+    const expected = { success: true, affectedCount: 2 };
+    entriesCommandService.deleteTag.mockResolvedValue(expected);
+
+    const result = await service.deleteTag(1, 'old');
+
+    expect(entriesCommandService.deleteTag).toHaveBeenCalledWith(1, 'old');
+    expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
     expect(result).toBe(expected);
   });
 

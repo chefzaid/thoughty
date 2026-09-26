@@ -59,14 +59,8 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
   }
 
   if (pathname === '/api/ai/suggest-tags') {
-    const payload = request.postDataJSON() as { style?: string };
-    state.lastAiSuggestionPayload = payload;
-    await fulfillJson(route, {
-      tags:
-        payload.style === 'thematic'
-          ? ['belonging', 'self-awareness', 'balance']
-          : ['focus', 'reflection', 'writing'],
-    });
+    state.lastAiSuggestionPayload = request.postDataJSON();
+    await fulfillJson(route, { tags: ['focus', 'writing', 'self-awareness'] });
     return true;
   }
 
@@ -85,14 +79,10 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
     return true;
   }
 
-  if (pathname === '/api/ai/writing-prompts') {
-    state.lastAiWritingPromptsPayload = request.postDataJSON();
+  if (pathname === '/api/ai/inspiration') {
+    state.lastAiInspirationPayload = request.postDataJSON();
     await fulfillJson(route, {
-      prompts: [
-        'What helps you protect time for the work that matters?',
-        'Which recent lesson deserves a second look?',
-        'What would meaningful progress feel like this week?',
-      ],
+      question: 'What does protecting your focus ask you to give up at work?',
     });
     return true;
   }

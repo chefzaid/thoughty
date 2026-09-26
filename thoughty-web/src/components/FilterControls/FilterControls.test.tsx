@@ -61,6 +61,13 @@ describe('FilterControls', () => {
     expect(screen.getByPlaceholderText('searchPlaceholder')).toBeInTheDocument();
   });
 
+  it('renders extra actions next to highlights', () => {
+    render(<FilterControls {...defaultProps} actions={<button type="button">findDuplicates</button>} />);
+    const highlights = screen.getByRole('button', { name: 'highlights' });
+    const duplicates = screen.getByRole('button', { name: 'findDuplicates' });
+    expect(highlights.parentElement).toBe(duplicates.parentElement);
+  });
+
   it('renders tag picker', () => {
     render(<FilterControls {...defaultProps} />);
     expect(screen.getByTestId('tag-picker')).toBeInTheDocument();

@@ -1,42 +1,43 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
 
-interface PromptMenuPosition {
+interface InspirationPanelPosition {
     left: number;
     width: number;
     top?: number;
     bottom?: number;
 }
 
-interface WritingPromptsMenuProps {
-    onGenerate: () => Promise<string[] | null>;
-    onSelect: (prompt: string) => void;
+interface GetInspiredMenuProps {
+    onGenerate: () => Promise<string | null>;
+    onSelect: (question: string) => void;
     theme?: 'light' | 'dark';
     t: (key: string) => string;
 }
 
-export default function WritingPromptsMenu({
+export default function GetInspiredMenu({
     onGenerate,
     onSelect,
     theme,
     t,
-}: Readonly<WritingPromptsMenuProps>) {
+}: Readonly<GetInspiredMenuProps>) {
     const [open, setOpen] = useState(false);
-    const [prompts, setPrompts] = useState<string[]>([]);
+    const [question, setQuestion] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const requestIdRef = useRef(0);
-    const [menuPosition, setMenuPosition] = useState<PromptMenuPosition>({
+    const [menuPosition, setMenuPosition] = useState<InspirationPanelPosition>({
         left: 16,
         top: 16,
         width: 352,
     });
     const isLight = theme === 'light';
 
-    const loadPrompts = useCallback(async () => {
+    const loadQuestion = useCallback(async () => {
         if (loading) {
             return;
         }
@@ -46,7 +47,7 @@ export default function WritingPromptsMenu({
         setLoading(true);
         setError(false);
 
-        let result: string[] | null = null;
+        let result: string | null = null;
         try {
             result = await onGenerate();
         } catch {
@@ -58,24 +59,25 @@ export default function WritingPromptsMenu({
         }
 
         setLoading(false);
-        if (!result || result.length === 0) {
+        if (!result?.trim()) {
             setError(true);
             return;
         }
-        setPrompts(result);
+        setQuestion(result.trim());
     }, [loading, onGenerate]);
 
     const handleToggle = useCallback(() => {
         const nextOpen = !open;
         setOpen(nextOpen);
-        if (nextOpen && prompts.length === 0) {
-            void loadPrompts();
+        if (nextOpen && !question) {
+            void loadQuestion();
         }
-    }, [loadPrompts, open, prompts.length]);
+    }, [loadQuestion, open, question]);
 
-    const handleSelect = useCallback((prompt: string) => {
-        onSelect(prompt);
+    const handleSelect = useCallback((selected: string) => {
+        onSelect(selected);
         setOpen(false);
+        setQuestion(null);
     }, [onSelect]);
 
     const updateMenuPosition = useCallback(() => {
@@ -135,7 +137,7 @@ export default function WritingPromptsMenu({
     useEffect(() => {
         requestIdRef.current += 1;
         setOpen(false);
-        setPrompts([]);
+        setQuestion(null);
         setLoading(false);
         setError(false);
     }, [onGenerate]);
@@ -147,9 +149,6 @@ export default function WritingPromptsMenu({
     const panelClass = isLight
         ? 'border-gray-200 bg-white text-gray-800'
         : 'border-gray-700 bg-gray-800 text-gray-100';
-    const promptClass = isLight
-        ? 'border-gray-200 hover:border-sky-400 hover:bg-sky-50'
-        : 'border-gray-700 hover:border-sky-500 hover:bg-sky-500/10';
 
     return (
         <>
@@ -159,34 +158,32 @@ export default function WritingPromptsMenu({
                     type="button"
                     onClick={handleToggle}
                     disabled={loading && !open}
-                    className="inline-flex h-10 items-center gap-2 rounded border border-sky-500/40 bg-sky-500/10 px-3 text-sm text-sky-500 transition-colors hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-                    title={t('writingPrompts')}
+                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 text-sm text-sky-500 transition-colors hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    title={t('getInspiredDescription')}
                     aria-expanded={open}
-                    aria-haspopup="menu"
+                    aria-haspopup="dialog"
                 >
-                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3zM19 15l.75 2.25L22 18l-2.25.75L19 22l-.75-2.25L16 18l2.25-.75L19 15z" />
-                    </svg>
-                    {t('writingPrompts')}
+                    <AiSparkleIcon />
+                    {t('getInspired')}
                 </button>
             </div>
             {open && createPortal(
                 <div
                     ref={panelRef}
-                    role="menu"
-                    aria-label={t('writingPrompts')}
-                    className={`fixed z-50 max-h-[min(24rem,calc(100vh-2rem))] overflow-y-auto rounded-lg border p-3 shadow-xl ${panelClass}`}
+                    role="dialog"
+                    aria-label={t('getInspired')}
+                    className={`fixed z-50 max-h-[min(24rem,calc(100vh-2rem))] overflow-y-auto rounded-lg border p-4 shadow-xl ${panelClass}`}
                     style={menuPosition}
                 >
-                    <div className="mb-2 flex min-h-8 items-center justify-between gap-3">
-                        <span className="text-sm font-semibold">{t('chooseWritingPrompt')}</span>
-                        {prompts.length > 0 && !loading && (
+                    <div className="mb-3 flex min-h-8 items-center justify-between gap-3">
+                        <span className="text-sm font-semibold">{t('inspirationTitle')}</span>
+                        {question && !loading && (
                             <button
                                 type="button"
-                                onClick={() => void loadPrompts()}
+                                onClick={() => void loadQuestion()}
                                 className="rounded p-1.5 text-gray-500 transition-colors hover:bg-gray-500/10 hover:text-sky-500"
-                                title={t('regenerateWritingPrompts')}
-                                aria-label={t('regenerateWritingPrompts')}
+                                title={t('askAnotherQuestion')}
+                                aria-label={t('askAnotherQuestion')}
                             >
                                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 7v5h-5M4 17v-5h5M6.5 8.5A7 7 0 0118 7M17.5 15.5A7 7 0 016 17" />
@@ -196,34 +193,33 @@ export default function WritingPromptsMenu({
                     </div>
                     {loading && (
                         <p className="py-4 text-center text-sm text-gray-500" aria-live="polite">
-                            {t('generatingWritingPrompts')}
+                            {t('findingInspiration')}
                         </p>
                     )}
                     {error && !loading && (
                         <div className="space-y-3 py-2">
-                            <p role="alert" className="text-sm text-red-400">{t('writingPromptsError')}</p>
+                            <p role="alert" className="text-sm text-red-400">{t('inspirationError')}</p>
                             <button
                                 type="button"
-                                onClick={() => void loadPrompts()}
+                                onClick={() => void loadQuestion()}
                                 className="rounded border border-sky-500/40 px-3 py-1.5 text-sm text-sky-500 transition-colors hover:bg-sky-500/10"
                             >
                                 {t('retry')}
                             </button>
                         </div>
                     )}
-                    {!loading && !error && (
-                        <div className="space-y-2">
-                            {prompts.map((prompt) => (
-                                <button
-                                    key={prompt}
-                                    type="button"
-                                    role="menuitem"
-                                    onClick={() => handleSelect(prompt)}
-                                    className={`w-full rounded border px-3 py-2 text-left text-sm leading-5 transition-colors ${promptClass}`}
-                                >
-                                    {prompt}
-                                </button>
-                            ))}
+                    {question && !loading && !error && (
+                        <div className="space-y-4">
+                            <blockquote className="border-l-2 border-sky-500 pl-3 text-base leading-6">
+                                {question}
+                            </blockquote>
+                            <button
+                                type="button"
+                                onClick={() => handleSelect(question)}
+                                className="w-full rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-500 transition-colors hover:bg-sky-500/20"
+                            >
+                                {t('writeAboutThis')}
+                            </button>
                         </div>
                     )}
                 </div>,

@@ -1,10 +1,8 @@
 import { readApiErrorMessage, safeJsonParse } from "./base";
 
 export const rephraseModes = ["grammar", "polish", "rewrite"] as const;
-export const tagSuggestionStyles = ["specific", "thematic"] as const;
 
 export type RephraseMode = (typeof rephraseModes)[number];
-export type TagSuggestionStyle = (typeof tagSuggestionStyles)[number];
 
 export interface SummaryGuidance {
   includeDetails?: string;
@@ -138,7 +136,6 @@ export const createAiService = (
     content: string,
     existingTags: string[] = [],
     maxTags = 5,
-    style?: TagSuggestionStyle,
   ): Promise<string[] | null> => {
     try {
       const response = await authFetch("/api/ai/suggest-tags", {
@@ -147,7 +144,6 @@ export const createAiService = (
           content,
           existingTags,
           maxTags,
-          ...(style ? { style } : {}),
         }),
       });
 
@@ -232,27 +228,21 @@ export const createAiService = (
     }
   };
 
-  const generateWritingPrompts = async (
-    diaryId?: number,
-  ): Promise<string[] | null> => {
+  const getInspiration = async (diaryId?: number): Promise<string | null> => {
     try {
-      const response = await authFetch("/api/ai/writing-prompts", {
+      const response = await authFetch("/api/ai/inspiration", {
         method: "POST",
         body: JSON.stringify(diaryId == null ? {} : { diaryId }),
       });
 
-      const data = await safeJsonParse<{ prompts?: unknown }>(response);
-      if (!response.ok || !data || !Array.isArray(data.prompts)) {
+      const data = await safeJsonParse<{ question?: unknown }>(response);
+      if (!response.ok || typeof data?.question !== "string") {
         return null;
       }
 
-      return data.prompts
-        .filter((prompt): prompt is string => typeof prompt === "string")
-        .map((prompt) => prompt.trim())
-        .filter(Boolean)
-        .slice(0, 3);
+      return data.question.trim() || null;
     } catch (error) {
-      console.error("Error generating writing prompts:", error);
+      console.error("Error getting inspiration:", error);
       return null;
     }
   };
@@ -513,7 +503,7 @@ export const createAiService = (
     suggestTags,
     fixWriting,
     summarizeEntry,
-    generateWritingPrompts,
+    getInspiration,
     findDuplicateEntries,
     semanticSearch,
     chat,

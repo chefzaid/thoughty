@@ -265,6 +265,26 @@ export class EntriesCommandService {
     return { success: true, affectedCount: entries.length };
   }
 
+  async deleteTag(userId: number, tag: string): Promise<{ success: boolean; affectedCount: number }> {
+    const targetTag = this.sanitizeTagName(tag);
+    if (!targetTag) {
+      throw new BadRequestException('Tag is required');
+    }
+
+    const entries = await this.entryRepository
+      .createQueryBuilder('e')
+      .where('e.user_id = :userId', { userId })
+      .andWhere(':targetTag = ANY(e.tags)', { targetTag })
+      .getMany();
+
+    for (const entry of entries) {
+      entry.tags = entry.tags.filter((current) => current !== targetTag);
+      await this.entryRepository.save(entry);
+    }
+
+    return { success: true, affectedCount: entries.length };
+  }
+
   async reorderEntries(userId: number, date: string, orderedIds: number[]): Promise<{ success: boolean }> {
     const entries = await this.entryRepository.find({
       where: { userId, date },

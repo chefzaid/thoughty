@@ -11,7 +11,7 @@ describe('AiController', () => {
   let aiService: {
     suggestTags: jest.Mock;
     summarizeEntry: jest.Mock;
-    generateWritingPrompts: jest.Mock;
+    generateInspiration: jest.Mock;
     chat: jest.Mock;
     getChatHistory: jest.Mock;
     listModels: jest.Mock;
@@ -33,7 +33,7 @@ describe('AiController', () => {
     aiService = {
       suggestTags: jest.fn(),
       summarizeEntry: jest.fn(),
-      generateWritingPrompts: jest.fn(),
+      generateInspiration: jest.fn(),
       chat: jest.fn(),
       getChatHistory: jest.fn(),
       listModels: jest.fn(),
@@ -176,18 +176,18 @@ describe('AiController', () => {
     expect(result).toEqual({ summary: 'A concise summary.' });
   });
 
-  it('delegates writing prompt generation to the service', async () => {
-    aiService.generateWritingPrompts.mockResolvedValue({
-      prompts: ['What deserves more attention?'],
+  it('delegates inspiration to the service', async () => {
+    aiService.generateInspiration.mockResolvedValue({
+      question: 'What deserves more attention?',
     });
 
-    const result = await controller.generateWritingPrompts(
+    const result = await controller.generateInspiration(
       { userId: 1, email: 'test@example.com' } as any,
       { diaryId: 4 },
     );
 
-    expect(aiService.generateWritingPrompts).toHaveBeenCalledWith(1, { diaryId: 4 });
-    expect(result).toEqual({ prompts: ['What deserves more attention?'] });
+    expect(aiService.generateInspiration).toHaveBeenCalledWith(1, { diaryId: 4 });
+    expect(result).toEqual({ question: 'What deserves more attention?' });
   });
 
   it('delegates duplicate scans to the user-scoped service', async () => {

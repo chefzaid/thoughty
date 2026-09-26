@@ -43,15 +43,14 @@ describe('EntryForm', () => {
                 bold: 'Bold',
                 italic: 'Italic',
                 filterTagsPlaceholder: 'Filter by tags...',
-                suggestTags: 'Auto-Tags',
+                suggestTags: 'Auto Tag',
                 suggestingTags: 'Tagging...',
-                suggestThemes: 'Theme Tags',
-                suggestingThemes: 'Finding themes...',
-                writingPrompts: 'Writing prompts',
-                chooseWritingPrompt: 'Choose a prompt',
-                generatingWritingPrompts: 'Finding a fresh direction...',
-                regenerateWritingPrompts: 'Regenerate prompts',
-                writingPromptsError: 'Unable to generate prompts',
+                getInspired: 'Get Inspired',
+                inspirationTitle: 'A question for you',
+                findingInspiration: 'Finding a question...',
+                askAnotherQuestion: 'Ask another question',
+                writeAboutThis: 'Write about this',
+                inspirationError: 'Unable to find inspiration',
                 retry: 'Retry',
                 entryTemplate: 'Entry template',
                 noEntryTemplate: 'Choose a template',
@@ -197,20 +196,10 @@ describe('EntryForm', () => {
 
             render(<EntryForm {...defaultProps} onSuggestTags={onSuggestTags} />);
 
-            await user.click(screen.getByText('Auto-Tags'));
+            await user.click(screen.getByRole('button', { name: 'Auto Tag' }));
 
-            expect(onSuggestTags).toHaveBeenCalled();
-        });
-
-        it('requests thematic tags from a separate action', async () => {
-            const onSuggestTags = vi.fn();
-            const user = userEvent.setup();
-
-            render(<EntryForm {...defaultProps} onSuggestTags={onSuggestTags} />);
-
-            await user.click(screen.getByRole('button', { name: 'Theme Tags' }));
-
-            expect(onSuggestTags).toHaveBeenCalledWith('thematic');
+            expect(onSuggestTags).toHaveBeenCalledWith();
+            expect(screen.queryByRole('button', { name: 'Theme Tags' })).not.toBeInTheDocument();
         });
 
         it('renders the fix writing action and invokes it', async () => {
@@ -233,10 +222,8 @@ describe('EntryForm', () => {
                             markdownEnabled: 'Markdown enabled',
                             markdownDisabled: 'Markdown disabled',
                             filterTagsPlaceholder: 'Filter by tags...',
-                            suggestTags: 'Auto-Tags',
+                            suggestTags: 'Auto Tag',
                             suggestingTags: 'Tagging...',
-                            suggestThemes: 'Theme Tags',
-                            suggestingThemes: 'Finding themes...',
                             fixWriting: 'Polish Writing',
                             fixingWriting: 'Polishing...',
                         })),
@@ -268,10 +255,8 @@ describe('EntryForm', () => {
                             markdownEnabled: 'Markdown enabled',
                             markdownDisabled: 'Markdown disabled',
                             filterTagsPlaceholder: 'Filter by tags...',
-                            suggestTags: 'Auto-Tags',
+                            suggestTags: 'Auto Tag',
                             suggestingTags: 'Tagging...',
-                            suggestThemes: 'Theme Tags',
-                            suggestingThemes: 'Finding themes...',
                             fixWriting: 'Polish Writing',
                             fixingWriting: 'Polishing...',
                         })),
@@ -280,24 +265,10 @@ describe('EntryForm', () => {
             );
 
             expect(screen.getByRole('button', { name: 'Tagging...' })).toBeDisabled();
-            expect(screen.getByRole('button', { name: 'Theme Tags' })).toBeDisabled();
             expect(screen.getByRole('button', { name: 'Polishing...' })).toBeDisabled();
         });
 
-        it('shows progress on the thematic action', () => {
-            render(
-                <EntryForm
-                    {...defaultProps}
-                    suggestingTags={true}
-                    suggestingTagStyle="thematic"
-                />,
-            );
-
-            expect(screen.getByRole('button', { name: 'Finding themes...' })).toBeDisabled();
-            expect(screen.getByRole('button', { name: 'Auto-Tags' })).toBeDisabled();
-        });
-
-        it('adds a selected writing prompt without replacing the current draft', async () => {
+        it('adds the inspiration question without replacing the current draft', async () => {
             const setNewEntryText = vi.fn();
             const user = userEvent.setup();
             render(
@@ -305,16 +276,13 @@ describe('EntryForm', () => {
                     {...defaultProps}
                     newEntryText="Existing draft"
                     setNewEntryText={setNewEntryText}
-                    onGenerateWritingPrompts={vi.fn().mockResolvedValue([
-                        'What deserves a fresh perspective?',
-                    ])}
+                    onGetInspiration={vi.fn().mockResolvedValue('What deserves a fresh perspective?')}
                 />,
             );
 
-            await user.click(screen.getByRole('button', { name: 'Writing prompts' }));
-            await user.click(await screen.findByRole('menuitem', {
-                name: 'What deserves a fresh perspective?',
-            }));
+            await user.click(screen.getByRole('button', { name: 'Get Inspired' }));
+            expect(await screen.findByText('What deserves a fresh perspective?')).toBeInTheDocument();
+            await user.click(screen.getByRole('button', { name: 'Write about this' }));
 
             const updateDraft = setNewEntryText.mock.calls[0]?.[0] as
                 | ((current: string) => string)

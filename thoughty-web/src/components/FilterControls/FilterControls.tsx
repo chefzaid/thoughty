@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction } from 'react';
+import { type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
@@ -33,6 +33,7 @@ interface FilterControlsProps {
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly onOpenHighlights: () => void;
+    readonly actions?: ReactNode;
 }
 
 function FilterControls({
@@ -58,7 +59,8 @@ function FilterControls({
     setPage,
     theme,
     t,
-    onOpenHighlights
+    onOpenHighlights,
+    actions
 }: FilterControlsProps) {
     const isLight = theme === 'light';
     const inputClass = `border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
@@ -66,7 +68,7 @@ function FilterControls({
         : 'bg-gray-900 border-gray-700 text-gray-100'
         }`;
 
-    const containerClass = `journal-filter-controls flex flex-wrap items-center gap-3 mb-8 p-4 rounded-lg border overflow-visible ${theme === 'light'
+    const containerClass = `journal-filter-controls flex flex-col gap-3 mb-8 p-4 rounded-lg border overflow-visible ${theme === 'light'
         ? 'bg-white/50 border-gray-200'
         : 'bg-gray-800/50 border-gray-700/50'
         }`;
@@ -182,128 +184,135 @@ function FilterControls({
     const inactiveSearchClass = isLight ? 'bg-gray-50 text-gray-700' : 'bg-gray-900 text-gray-300';
     return (
         <div className={containerClass}>
-            <fieldset
-                className={`semantic-search-control flex h-10 shrink-0 overflow-hidden rounded-md border ${isLight ? 'border-gray-300' : 'border-gray-700'}`}
+            <div className="flex flex-wrap items-center gap-3">
+                <fieldset
+                    className={`semantic-search-control flex h-10 shrink-0 overflow-hidden rounded-md border ${isLight ? 'border-gray-300' : 'border-gray-700'}`}
 
-                aria-label={t('searchMode')}
-            >
-                {(['keyword', 'semantic'] as const).map((mode) => (
-                    <button
-                        key={mode}
-                        type="button"
-                        className={`h-full px-3 text-sm font-medium ${searchMode === mode
-                            ? 'bg-blue-600 text-white'
-                            : inactiveSearchClass
-                            }`}
-                        aria-pressed={searchMode === mode}
-                        onClick={() => setSearchMode(mode)}
-                    >
-                        {t(mode === 'keyword' ? 'keywordSearchMode' : 'semanticSearchMode')}
-                    </button>
-                ))}
-            </fieldset>
-            <input
-                type="text"
-                placeholder={t(searchMode === 'keyword' ? 'searchPlaceholder' : 'semanticSearchPlaceholder')}
-                className={`semantic-search-control ${inputClass} min-w-0 flex-1 basis-64`}
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                onKeyDown={(event) => {
-                    if (searchMode === 'semantic' && event.key === 'Enter') {
-                        event.preventDefault();
-                        void onSemanticSearch();
-                    }
-                }}
-            />
-            {searchMode === 'semantic' && (
-                <button
-                    type="button"
-                    className="semantic-search-control grid h-10 w-10 shrink-0 place-items-center rounded-md border border-blue-500 bg-blue-600 text-white disabled:cursor-not-allowed disabled:opacity-50"
-                    title={t('runSemanticSearch')}
-                    aria-label={t('runSemanticSearch')}
-                    disabled={semanticSearchStatus === 'loading' || search.trim().length < 2}
-                    onClick={() => void onSemanticSearch()}
+                    aria-label={t('searchMode')}
                 >
-                    <span
-                        className={`codicon ${semanticSearchStatus === 'loading' ? 'codicon-loading codicon-modifier-spin' : 'codicon-search'}`}
-                        aria-hidden="true"
-                    />
-                </button>
-            )}
-            <div className="relative z-30 min-w-[12rem] flex-1 basis-52">
-                <TagPicker
-                    availableTags={allTags}
-                    selectedTags={filterTags}
-                    tagMetadata={tagMetadata}
-                    onChange={(newTags) => { setFilterTags(newTags); setPage(1); }}
-                    placeholder={t('filterTagsPlaceholder')}
-                    singleSelect={false}
-                    allowNew={false}
-                    theme={theme}
+                    {(['keyword', 'semantic'] as const).map((mode) => (
+                        <button
+                            key={mode}
+                            type="button"
+                            className={`h-full px-3 text-sm font-medium ${searchMode === mode
+                                ? 'bg-blue-600 text-white'
+                                : inactiveSearchClass
+                                }`}
+                            aria-pressed={searchMode === mode}
+                            onClick={() => setSearchMode(mode)}
+                        >
+                            {t(mode === 'keyword' ? 'keywordSearchMode' : 'semanticSearchMode')}
+                        </button>
+                    ))}
+                </fieldset>
+                <input
+                    type="text"
+                    placeholder={t(searchMode === 'keyword' ? 'searchPlaceholder' : 'semanticSearchPlaceholder')}
+                    className={`semantic-search-control ${inputClass} min-w-0 flex-1 basis-64`}
+                    value={search}
+                    onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    onKeyDown={(event) => {
+                        if (searchMode === 'semantic' && event.key === 'Enter') {
+                            event.preventDefault();
+                            void onSemanticSearch();
+                        }
+                    }}
                 />
-            </div>
-            <div className="flex min-w-0 shrink-0 items-center gap-[12px]">
-                <div className="relative z-20 w-[9.5rem] sm:w-[10.5rem]">
-                    <TypedDatePicker
-                        selected={filterDateObj}
-                        onChange={(date: Date | null) => { setFilterDateObj(date); setPage(1); }}
-                        className={`w-full border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
-                            ? 'bg-gray-50 border-gray-300 text-gray-900'
-                            : 'bg-gray-900 border-gray-700 text-gray-100'
-                            }`}
-                        dateFormat="yyyy-MM-dd"
-                        placeholderText={t('filterDatePlaceholder')}
-                        popperPlacement="bottom-start"
-                        portalId="datepicker-portal"
-                        isClearable
+                {searchMode === 'semantic' && (
+                    <button
+                        type="button"
+                        className="semantic-search-control grid h-10 w-10 shrink-0 place-items-center rounded-md border border-blue-500 bg-blue-600 text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        title={t('runSemanticSearch')}
+                        aria-label={t('runSemanticSearch')}
+                        disabled={semanticSearchStatus === 'loading' || search.trim().length < 2}
+                        onClick={() => void onSemanticSearch()}
+                    >
+                        <span
+                            className={`codicon ${semanticSearchStatus === 'loading' ? 'codicon-loading codicon-modifier-spin' : 'codicon-search'}`}
+                            aria-hidden="true"
+                        />
+                    </button>
+                )}
+                <div className="relative z-30 min-w-[12rem] flex-1 basis-52">
+                    <TagPicker
+                        availableTags={allTags}
+                        selectedTags={filterTags}
+                        tagMetadata={tagMetadata}
+                        onChange={(newTags) => { setFilterTags(newTags); setPage(1); }}
+                        placeholder={t('filterTagsPlaceholder')}
+                        singleSelect={false}
+                        allowNew={false}
+                        theme={theme}
                     />
                 </div>
-                <button type="button"
-                    onClick={cycleVisibility}
-                    className={`flex h-10 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getVisibilityButtonStyle()}`}
-                    title="Visibility"
-                    aria-label="Visibility"
-                >
-                    {getVisibilityIcon()}
-                    <span>{t(filterVisibility === 'all' ? 'allEntries' : filterVisibility)}</span>
-                </button>
             </div>
-            <button type="button"
-                onClick={cycleArchiveStatus}
-                className={`flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getArchiveButtonClass()}`}
-                title={t('filterArchived')}
-                aria-label={t('filterArchived')}
-            >
-                {getArchiveIcon()}
-                <span>{getArchiveLabel()}</span>
-            </button>
-            <button type="button"
-                onClick={() => { setFilterFavorites(!filterFavorites); setPage(1); }}
-                className={`flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getFavoriteButtonClass()}`}
-                title={t('filterFavorites')}
-            >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill={filterFavorites ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-                    <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                </svg>
-                <span>{t('favorites')}</span>
-            </button>
-            <button type="button"
-                onClick={handleReset}
-                className="h-10 shrink-0 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded-lg transition-all text-sm font-medium"
-                title={t('resetFilters')}
-            >
-                {t('resetFilters')}
-            </button>
-            <button type="button"
-                onClick={onOpenHighlights}
-                className="flex h-10 shrink-0 items-center gap-2 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/50 rounded-lg transition-all text-sm font-medium"
-                title={t('seeHighlights')}
-            >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
-                </svg>
-                {t('highlights')}
-            </button>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative z-20 w-[9.5rem] sm:w-[10.5rem]">
+                        <TypedDatePicker
+                            selected={filterDateObj}
+                            onChange={(date: Date | null) => { setFilterDateObj(date); setPage(1); }}
+                            className={`w-full border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
+                                ? 'bg-gray-50 border-gray-300 text-gray-900'
+                                : 'bg-gray-900 border-gray-700 text-gray-100'
+                                }`}
+                            dateFormat="yyyy-MM-dd"
+                            placeholderText={t('filterDatePlaceholder')}
+                            popperPlacement="bottom-start"
+                            portalId="datepicker-portal"
+                            isClearable
+                        />
+                    </div>
+                    <button type="button"
+                        onClick={cycleVisibility}
+                        className={`flex h-10 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getVisibilityButtonStyle()}`}
+                        title="Visibility"
+                        aria-label="Visibility"
+                    >
+                        {getVisibilityIcon()}
+                        <span>{t(filterVisibility === 'all' ? 'allEntries' : filterVisibility)}</span>
+                    </button>
+                    <button type="button"
+                        onClick={cycleArchiveStatus}
+                        className={`flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getArchiveButtonClass()}`}
+                        title={t('filterArchived')}
+                        aria-label={t('filterArchived')}
+                    >
+                        {getArchiveIcon()}
+                        <span>{getArchiveLabel()}</span>
+                    </button>
+                    <button type="button"
+                        onClick={() => { setFilterFavorites(!filterFavorites); setPage(1); }}
+                        className={`flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border transition-all text-sm font-medium ${getFavoriteButtonClass()}`}
+                        title={t('filterFavorites')}
+                    >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill={filterFavorites ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                            <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                        <span>{t('favorites')}</span>
+                    </button>
+                    <button type="button"
+                        onClick={handleReset}
+                        className="h-10 shrink-0 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded-lg transition-all text-sm font-medium"
+                        title={t('resetFilters')}
+                    >
+                        {t('resetFilters')}
+                    </button>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <button type="button"
+                        onClick={onOpenHighlights}
+                        className="flex h-10 shrink-0 items-center gap-2 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/50 rounded-lg transition-all text-sm font-medium"
+                        title={t('seeHighlights')}
+                    >
+                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
+                        </svg>
+                        {t('highlights')}
+                    </button>
+                    {actions}
+                </div>
+            </div>
             {searchMode === 'semantic' && (
                 <div className="semantic-search-control basis-full text-sm" aria-live="polite">
                     {semanticSearchStatus === 'loading' && <p>{t('searchingSemantic')}</p>}

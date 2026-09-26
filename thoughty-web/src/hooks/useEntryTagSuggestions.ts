@@ -1,5 +1,5 @@
 import { useCallback, useState, type Dispatch, type SetStateAction } from 'react';
-import type { createAiService, TagSuggestionStyle } from '../services/api/aiService';
+import type { createAiService } from '../services/api/aiService';
 
 type AiTagService = Pick<ReturnType<typeof createAiService>, 'suggestTags'>;
 
@@ -11,18 +11,18 @@ export const useEntryTagSuggestions = (
   maxTags: number,
   setFormError: Dispatch<SetStateAction<string>>,
 ) => {
-  const [suggestingTagStyle, setSuggestingTagStyle] = useState<TagSuggestionStyle | null>(null);
+  const [suggestingTags, setSuggestingTags] = useState(false);
 
-  const handleSuggestTags = useCallback(async (style?: TagSuggestionStyle) => {
+  const handleSuggestTags = useCallback(async () => {
     if (!content.trim()) {
       setFormError('Write a thought before asking for tag suggestions');
       return false;
     }
 
     setFormError('');
-    setSuggestingTagStyle(style ?? 'specific');
-    const suggestedTags = await aiService.suggestTags(content, tags, maxTags || 5, style);
-    setSuggestingTagStyle(null);
+    setSuggestingTags(true);
+    const suggestedTags = await aiService.suggestTags(content, tags, maxTags || 5);
+    setSuggestingTags(false);
 
     if (suggestedTags === null) {
       setFormError('Unable to suggest tags. Check your OpenRouter API key and try again.');
@@ -38,8 +38,7 @@ export const useEntryTagSuggestions = (
   }, [aiService, content, maxTags, setFormError, setTags, tags]);
 
   return {
-    suggestingTags: suggestingTagStyle !== null,
-    suggestingTagStyle,
+    suggestingTags,
     handleSuggestTags,
   };
 };

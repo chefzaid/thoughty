@@ -294,6 +294,27 @@ describe('EntriesCommandService', () => {
     expect(result).toEqual({ success: true, affectedCount: 2 });
   });
 
+  it('removes a tag from every matching entry', async () => {
+    const entries = [
+      { id: 1, tags: ['old', 'keep'] },
+      { id: 2, tags: ['old'] },
+    ];
+    const getMany = jest.fn().mockResolvedValue(entries);
+    const andWhere = jest.fn().mockReturnValue({ getMany });
+    const where = jest.fn().mockReturnValue({ andWhere });
+    entryRepository.createQueryBuilder.mockReturnValue({ where });
+    entryRepository.save.mockResolvedValue({});
+
+    await expect(service.deleteTag(1, '  ')).rejects.toThrow(BadRequestException);
+
+    const result = await service.deleteTag(1, 'old');
+
+    expect(where).toHaveBeenCalledWith('e.user_id = :userId', { userId: 1 });
+    expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 1, tags: ['keep'] }));
+    expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 2, tags: [] }));
+    expect(result).toEqual({ success: true, affectedCount: 2 });
+  });
+
   it('throws when renaming a tag with no matching entries', async () => {
     const getMany = jest.fn().mockResolvedValue([]);
     const andWhere = jest.fn().mockReturnValue({ getMany });

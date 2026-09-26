@@ -166,6 +166,16 @@ export class EntriesService {
     return result;
   }
 
+  async getTagUsage(userId: number): Promise<{ tags: Array<{ tag: string; count: number }> }> {
+    return this.entriesQueryService.getTagUsage(userId);
+  }
+
+  async deleteTag(userId: number, tag: string): Promise<{ success: boolean; affectedCount: number }> {
+    const result = await this.entriesCommandService.deleteTag(userId, tag);
+    this.entryListCacheService.invalidateUser(userId);
+    return result;
+  }
+
   async reorderEntries(
     userId: number,
     date: string,

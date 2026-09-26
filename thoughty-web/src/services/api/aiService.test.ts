@@ -28,30 +28,6 @@ describe("aiService", () => {
     });
   });
 
-  it("includes the thematic style only when explicitly requested", async () => {
-    mockAuthFetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ tags: ["belonging"] }),
-    });
-
-    await service.suggestTags(
-      "A reflection about finding my place.",
-      ["journal"],
-      4,
-      "thematic",
-    );
-
-    expect(mockAuthFetch).toHaveBeenCalledWith("/api/ai/suggest-tags", {
-      method: "POST",
-      body: JSON.stringify({
-        content: "A reflection about finding my place.",
-        existingTags: ["journal"],
-        maxTags: 4,
-        style: "thematic",
-      }),
-    });
-  });
-
   it("returns null when the response is not ok", async () => {
     mockAuthFetch.mockResolvedValue({
       ok: false,
@@ -150,46 +126,33 @@ describe("aiService", () => {
     await expect(service.summarizeEntry(12)).resolves.toBeNull();
   });
 
-  it("generateWritingPrompts returns normalized prompts for a diary", async () => {
+  it("getInspiration returns a trimmed question for a diary", async () => {
     mockAuthFetch.mockResolvedValue({
       ok: true,
-      json: () =>
-        Promise.resolve({
-          prompts: [
-            " First prompt? ",
-            12,
-            "Second prompt?",
-            "Third prompt?",
-            "Ignored prompt?",
-          ],
-        }),
+      json: () => Promise.resolve({ question: " What are you avoiding? " }),
     });
 
-    const result = await service.generateWritingPrompts(4);
+    const result = await service.getInspiration(4);
 
-    expect(result).toEqual([
-      "First prompt?",
-      "Second prompt?",
-      "Third prompt?",
-    ]);
-    expect(mockAuthFetch).toHaveBeenCalledWith("/api/ai/writing-prompts", {
+    expect(result).toBe("What are you avoiding?");
+    expect(mockAuthFetch).toHaveBeenCalledWith("/api/ai/inspiration", {
       method: "POST",
       body: JSON.stringify({ diaryId: 4 }),
     });
   });
 
-  it("generateWritingPrompts returns null for malformed or failed responses", async () => {
+  it("getInspiration returns null for malformed or failed responses", async () => {
     mockAuthFetch.mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ prompts: "not-an-array" }),
+      json: () => Promise.resolve({ question: ["not-a-string"] }),
     });
     mockAuthFetch.mockResolvedValueOnce({
       ok: false,
       json: () => Promise.resolve({ error: "Unavailable" }),
     });
 
-    await expect(service.generateWritingPrompts()).resolves.toBeNull();
-    await expect(service.generateWritingPrompts()).resolves.toBeNull();
+    await expect(service.getInspiration()).resolves.toBeNull();
+    await expect(service.getInspiration()).resolves.toBeNull();
   });
 
   it("findDuplicateEntries returns a valid diary-scoped scan", async () => {
@@ -434,7 +397,7 @@ describe("aiService", () => {
 
     await expect(service.fixWriting("raw")).resolves.toBeNull();
     await expect(service.summarizeEntry(1)).resolves.toBeNull();
-    await expect(service.generateWritingPrompts()).resolves.toBeNull();
+    await expect(service.getInspiration()).resolves.toBeNull();
     await expect(service.semanticSearch("query")).resolves.toBeNull();
     await expect(service.chat(1, "entry", [])).resolves.toBeNull();
     await expect(service.getChatHistory(1)).resolves.toEqual([]);
@@ -449,7 +412,7 @@ describe("aiService", () => {
       expect.any(Error),
     );
     expect(consoleSpy).toHaveBeenCalledWith(
-      "Error generating writing prompts:",
+      "Error getting inspiration:",
       expect.any(Error),
     );
     expect(consoleSpy).toHaveBeenCalledWith(

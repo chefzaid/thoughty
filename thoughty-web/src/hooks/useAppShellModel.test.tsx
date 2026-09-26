@@ -109,9 +109,11 @@ describe('useAppShellModel', () => {
   const aiChat = vi.fn().mockResolvedValue('assistant reply');
   const fixWriting = vi.fn().mockResolvedValue('Polished text');
   const summarizeEntry = vi.fn().mockResolvedValue('Entry summary');
-  const generateWritingPrompts = vi.fn().mockResolvedValue(['Fresh prompt']);
+  const getInspiration = vi.fn().mockResolvedValue('Fresh question?');
   const getChatHistory = vi.fn().mockResolvedValue([{ role: 'assistant', content: 'history' }]);
   const renameTag = vi.fn().mockResolvedValue({ success: true });
+  const deleteTag = vi.fn().mockResolvedValue({ success: true, affectedCount: 2 });
+  const fetchTagUsage = vi.fn().mockResolvedValue([{ tag: 'current', count: 2 }]);
   const navigateToFirst = vi.fn().mockResolvedValue({ found: true, page: 4, entryId: 77 });
 
   type MockedLayoutProps = ReturnType<typeof mocks.buildAuthenticatedLayoutProps>;
@@ -171,6 +173,8 @@ describe('useAppShellModel', () => {
       entriesService: {
         navigateToFirst,
         renameTag,
+        deleteTag,
+        fetchTagUsage,
       },
       fetchEntries,
       fetchEntryDates,
@@ -231,7 +235,6 @@ describe('useAppShellModel', () => {
       setTags,
       setVisibility: vi.fn(),
       suggestingTags: false,
-      suggestingTagStyle: null,
       tags: ['current'],
       uploadedAttachments: [],
       visibility: 'private',
@@ -296,7 +299,7 @@ describe('useAppShellModel', () => {
         chat: aiChat,
         fixWriting,
         summarizeEntry,
-        generateWritingPrompts,
+        getInspiration,
         getChatHistory,
       },
     });
@@ -393,8 +396,23 @@ describe('useAppShellModel', () => {
       excludeDetails: 'names',
     });
 
-    await expect(routesProps.handleGenerateWritingPrompts?.()).resolves.toEqual(['Fresh prompt']);
-    expect(generateWritingPrompts).toHaveBeenCalledWith(9);
+    await expect(routesProps.handleGetInspiration?.()).resolves.toBe('Fresh question?');
+    expect(getInspiration).toHaveBeenCalledWith(9);
+  });
+
+  it('deletes a tag everywhere it is selected and loads tag usage', async () => {
+    const { result } = renderHook(() => useAppShellModel());
+    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
+
+    await expect(routesProps.handleDeleteTag('current')).resolves.toBe(true);
+    expect(deleteTag).toHaveBeenCalledWith('current');
+    const nextFormTags = (setTags.mock.calls.at(-1)?.[0] as (tags: string[]) => string[])(['current', 'other']);
+    const nextFilterTags = (setFilterTags.mock.calls.at(-1)?.[0] as (tags: string[]) => string[])(['current']);
+    expect(nextFormTags).toEqual(['other']);
+    expect(nextFilterTags).toEqual([]);
+    expect(fetchEntries).toHaveBeenCalled();
+
+    await expect(routesProps.handleLoadTagUsage()).resolves.toEqual([{ tag: 'current', count: 2 }]);
   });
 
   it('returns false for a failed tag rename and skips follow-up updates', async () => {

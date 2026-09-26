@@ -164,7 +164,6 @@ function createRoutesParams(
       setTags: vi.fn(),
       setVisibility: vi.fn(),
       suggestingTags: false,
-      suggestingTagStyle: null,
       tags: ['focus'],
       uploadedAttachments: [],
       visibility: 'private',
@@ -177,6 +176,8 @@ function createRoutesParams(
     handleDiscuss: vi.fn(),
     handleNavigateToFirst: vi.fn().mockResolvedValue(undefined),
     handleRenameTag: vi.fn().mockResolvedValue(true),
+    handleDeleteTag: vi.fn().mockResolvedValue(true),
+    handleLoadTagUsage: vi.fn().mockResolvedValue([]),
     highlightsModalOpen: false,
     importExportFormat: 'txt',
     importExportIncludeVisibility: false,
@@ -345,7 +346,6 @@ describe('appShellProps', () => {
         setTags: vi.fn(),
         setVisibility: vi.fn(),
         suggestingTags: false,
-        suggestingTagStyle: null,
         tags: ['focus', 'work'],
         uploadedAttachments: [],
         visibility: 'private',
@@ -408,6 +408,16 @@ describe('appShellProps', () => {
     expect(updateConfig).toHaveBeenLastCalledWith(expect.objectContaining({
       entryTemplates: expect.not.stringContaining('custom-1'),
     }));
+  });
+
+  it('offers created tags in the composer and editor but filters only by used tags', () => {
+    const props = buildAuthenticatedRoutesProps(createRoutesParams({
+      tagMetadata: { gratitude: { color: '#2563EB' }, focus: { color: '#DC2626' } },
+    }));
+
+    expect(props.journalRouteProps.entryForm.allTags).toEqual(['focus', 'gratitude', 'work']);
+    expect(props.journalRouteProps.entriesList.allTags).toEqual(['focus', 'gratitude', 'work']);
+    expect(props.journalRouteProps.filters.allTags).toEqual(['focus', 'work']);
   });
 
   it('wires profile, tag manager, diary management, and import-export callbacks', async () => {

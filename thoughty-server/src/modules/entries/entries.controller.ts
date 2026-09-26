@@ -22,6 +22,8 @@ import {
   UpdatePinnedDto,
   BulkOperationDto,
   RenameTagDto,
+  DeleteTagQueryDto,
+  TagUsageListResponseDto,
   ReorderEntriesDto,
   GetEntriesQueryDto,
   GetFirstEntryQueryDto,
@@ -114,6 +116,13 @@ export class EntriesController {
     @Query() query: GetHighlightsQueryDto,
   ) {
     return this.entriesService.getHighlights(user.userId, query);
+  }
+
+  @Get('tags')
+  @ApiOperation({ summary: "List the current user's tags with entry counts" })
+  @ApiResponse({ status: 200, description: 'Tag usage', type: TagUsageListResponseDto })
+  async getTagUsage(@CurrentUser() user: AuthenticatedUser): Promise<TagUsageListResponseDto> {
+    return this.entriesService.getTagUsage(user.userId);
   }
 
   @Get(':id/backlinks')
@@ -280,6 +289,16 @@ export class EntriesController {
     @Query() query: DeleteAllQueryDto,
   ): Promise<DeleteAllResponseDto> {
     return this.entriesService.deleteAll(user.userId, query.diaryId);
+  }
+
+  @Delete('tags')
+  @ApiOperation({ summary: "Remove a tag from all of the current user's entries" })
+  @ApiResponse({ status: 200, description: 'Tag removed from entries', type: CountedMutationResponseDto })
+  async deleteTag(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: DeleteTagQueryDto,
+  ): Promise<CountedMutationResponseDto> {
+    return this.entriesService.deleteTag(user.userId, query.tag);
   }
 
   @Delete(':id')

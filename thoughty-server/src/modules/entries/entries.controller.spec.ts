@@ -28,6 +28,8 @@ describe('EntriesController', () => {
       toggleArchived: jest.fn(),
       togglePinned: jest.fn(),
       getRevisions: jest.fn(),
+      getTagUsage: jest.fn(),
+      deleteTag: jest.fn(),
     };
     publicFeedService = { getFeed: jest.fn() };
 
@@ -293,6 +295,24 @@ describe('EntriesController', () => {
       const result = await controller.getHistory(mockUser as any, 1);
       expect(entriesService.getRevisions).toHaveBeenCalledWith(1, 1);
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('tags', () => {
+    it('lists tag usage for the current user', async () => {
+      const expected = { tags: [{ tag: 'focus', count: 2 }] };
+      entriesService.getTagUsage.mockResolvedValue(expected);
+
+      await expect(controller.getTagUsage(mockUser as any)).resolves.toBe(expected);
+      expect(entriesService.getTagUsage).toHaveBeenCalledWith(1);
+    });
+
+    it('deletes a tag for the current user', async () => {
+      const expected = { success: true, affectedCount: 2 };
+      entriesService.deleteTag.mockResolvedValue(expected);
+
+      await expect(controller.deleteTag(mockUser as any, { tag: 'focus' })).resolves.toBe(expected);
+      expect(entriesService.deleteTag).toHaveBeenCalledWith(1, 'focus');
     });
   });
 });

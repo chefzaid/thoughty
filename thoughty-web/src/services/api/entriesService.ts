@@ -12,6 +12,8 @@ export type NavigateToFirstResponse = paths['/api/entries/first']['get']['respon
 export type NavigateByDateResponse = paths['/api/entries/by-date']['get']['responses'][200]['content']['application/json'];
 type BulkOperationResponse = paths['/api/entries/bulk']['post']['responses'][200]['content']['application/json'];
 export type RenameTagResponse = paths['/api/entries/tags/rename']['patch']['responses'][200]['content']['application/json'];
+export type DeleteTagResponse = paths['/api/entries/tags']['delete']['responses'][200]['content']['application/json'];
+export type TagUsage = components['schemas']['TagUsageDto'];
 
 interface CreateEntryInput {
   text: string;
@@ -397,6 +399,35 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     }
   };
 
+  const fetchTagUsage = async (): Promise<TagUsage[] | null> => {
+    try {
+      const response = await authFetch('/api/entries/tags');
+      const data = await safeJsonParse<{ tags?: TagUsage[] }>(response);
+      if (!response.ok || !Array.isArray(data?.tags)) {
+        return null;
+      }
+      return data.tags;
+    } catch (error) {
+      console.error('Error fetching tag usage:', error);
+      return null;
+    }
+  };
+
+  const deleteTag = async (tag: string): Promise<DeleteTagResponse | null> => {
+    try {
+      const response = await authFetch(`/api/entries/tags?tag=${encodeURIComponent(tag)}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        return null;
+      }
+      return safeJsonParse<DeleteTagResponse>(response);
+    } catch (error) {
+      console.error('Error deleting tag:', error);
+      return null;
+    }
+  };
+
   return {
     fetchEntries,
     fetchEntryDates,
@@ -409,6 +440,8 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     togglePinned,
     bulkOperation,
     renameTag,
+    fetchTagUsage,
+    deleteTag,
     navigateToFirst,
     navigateByDate,
     navigateById,

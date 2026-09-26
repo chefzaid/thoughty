@@ -138,6 +138,26 @@ export class RenameTagDto {
   newTag: string;
 }
 
+export class DeleteTagQueryDto {
+  @ApiProperty({ description: 'Tag to remove from all of the current user entries' })
+  @IsString()
+  @MaxLength(50)
+  tag: string;
+}
+
+export class TagUsageDto {
+  @ApiProperty()
+  tag: string;
+
+  @ApiProperty({ description: 'Number of entries using the tag' })
+  count: number;
+}
+
+export class TagUsageListResponseDto {
+  @ApiProperty({ type: [TagUsageDto] })
+  tags: TagUsageDto[];
+}
+
 export class UpdateFavoriteDto {
   @ApiProperty({ description: 'Whether the entry is a favorite' })
   @IsBoolean()

@@ -1,9 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsOptional, Min } from 'class-validator';
 
-export class GenerateWritingPromptsDto {
+export class GenerateInspirationDto {
   @ApiPropertyOptional({
-    description: 'Diary whose recent entries should inform the prompts',
+    description: 'Diary whose tags should inform the question',
     minimum: 1,
   })
   @IsOptional()
@@ -12,10 +12,9 @@ export class GenerateWritingPromptsDto {
   diaryId?: number;
 }
 
-export class WritingPromptsResponseDto {
+export class InspirationResponseDto {
   @ApiProperty({
-    description: 'Personalized journal writing prompts',
-    type: [String],
+    description: 'A reflective journal question based on the user tags',
   })
-  prompts!: string[];
+  question!: string;
 }

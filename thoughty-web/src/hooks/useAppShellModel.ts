@@ -179,8 +179,8 @@ export function useAppShellModel(): AppShellModel {
     return aiService.summarizeEntry(entryId, guidance);
   }, [aiService]);
 
-  const handleGenerateWritingPrompts = useCallback(async () => {
-    return aiService.generateWritingPrompts(currentDiaryId ?? undefined);
+  const handleGetInspiration = useCallback(async () => {
+    return aiService.getInspiration(currentDiaryId ?? undefined);
   }, [aiService, currentDiaryId]);
 
   const handleFindDuplicateEntries = useCallback(async (diaryId?: number) => {
@@ -216,6 +216,27 @@ export function useAppShellModel(): AppShellModel {
     fetchProfileStats();
     return true;
   }, [entriesState, entryEditState, entryFormState, fetchProfileStats]);
+
+  const handleDeleteTag = useCallback(async (tag: string) => {
+    const result = await entriesState.entriesService.deleteTag(tag);
+    if (!result?.success) {
+      return false;
+    }
+
+    const withoutTag = (previousTags: string[]) => previousTags.filter((current) => current !== tag);
+    entryFormState.setTags(withoutTag);
+    entryEditState.setEditTags(withoutTag);
+    entriesState.setFilterTags(withoutTag);
+
+    entriesState.fetchEntries();
+    fetchProfileStats();
+    return true;
+  }, [entriesState, entryEditState, entryFormState, fetchProfileStats]);
+
+  const handleLoadTagUsage = useCallback(
+    () => entriesState.entriesService.fetchTagUsage(),
+    [entriesState.entriesService],
+  );
 
   useAppShellEffects({
     allTags: entriesState.allTags,
@@ -258,10 +279,12 @@ export function useAppShellModel(): AppShellModel {
     handleDiscuss,
     handleRephrase,
     handleSummarize,
-    handleGenerateWritingPrompts,
+    handleGetInspiration,
     handleFindDuplicateEntries,
     handleNavigateToFirst,
     handleRenameTag,
+    handleDeleteTag,
+    handleLoadTagUsage,
     highlightsModalOpen,
     importExportFormat,
     importExportIncludeVisibility,

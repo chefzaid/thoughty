@@ -114,6 +114,27 @@ export function serializeTagMetadata(metadata: TagMetadataMap): string {
   return JSON.stringify(Object.fromEntries(normalizedEntries));
 }
 
+/**
+ * Lists tags used by entries plus tags created in tag management, keeping the
+ * entry spelling when both exist.
+ */
+export function listKnownTags(usedTags: readonly string[], metadata: TagMetadataMap): string[] {
+  const tagsByKey = new Map<string, string>();
+  for (const tag of [...usedTags, ...Object.keys(metadata)]) {
+    const key = normalizeTagKey(tag);
+    if (key && !tagsByKey.has(key)) {
+      tagsByKey.set(key, tag.trim());
+    }
+  }
+  return [...tagsByKey.values()].sort((left, right) => left.localeCompare(right));
+}
+
+export function removeTagMetadata(metadata: TagMetadataMap, tag: string): TagMetadataMap {
+  const nextMetadata = { ...metadata };
+  delete nextMetadata[normalizeTagKey(tag)];
+  return nextMetadata;
+}
+
 export function getTagMetadata(tag: string, metadata: TagMetadataMap): TagMetadata | undefined {
   return metadata[normalizeTagKey(tag)];
 }

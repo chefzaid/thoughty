@@ -835,7 +835,9 @@ button.profile-avatar-large {
 
 .tag-manager-preview {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
     align-self: center;
     justify-content: flex-start;
     width: 12.75rem;
@@ -939,6 +941,65 @@ button.profile-avatar-large {
 .tag-manager-reset:hover {
     border-color: #3b82f6;
     color: #3b82f6;
+}
+
+.tag-manager-usage {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.tag-manager-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    align-self: center;
+    margin-top: 25px;
+}
+
+.tag-manager-row-actions .tag-manager-reset {
+    margin-top: 0;
+}
+
+.tag-manager-delete:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.tag-manager-create {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border: 1px solid;
+    border-radius: 0.75rem;
+}
+
+.tag-manager-create.dark {
+    background: rgba(17, 24, 39, 0.55);
+    border-color: rgba(75, 85, 99, 0.5);
+}
+
+.tag-manager-create.light {
+    background: rgba(249, 250, 251, 0.9);
+    border-color: rgba(209, 213, 219, 0.8);
+}
+
+.tag-manager-create-field {
+    flex: 1 1 16rem;
+}
+
+.tag-manager-create .btn-save:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.tag-manager-error {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 0.875rem;
+    color: #ef4444;
 }
 
 .tag-manager-empty {
@@ -1510,6 +1571,11 @@ button.profile-avatar-large {
         height: 2.25rem;
         justify-self: end;
         margin-top: 25px;
+    }
+
+    .tag-manager-row-actions {
+        justify-self: end;
+        margin-top: 0;
     }
 
     .ai-setting-maxtags {

@@ -174,6 +174,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/sso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Exchange the ingress-validated Keycloak identity for an app session */
+        get: operations["AuthController_sso"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/refresh": {
         parameters: {
             query?: never;
@@ -460,6 +477,24 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/entries/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the current user's tags with entry counts */
+        get: operations["EntriesController_getTagUsage"];
+        put?: never;
+        post?: never;
+        /** Remove a tag from all of the current user's entries */
+        delete: operations["EntriesController_deleteTag"];
         options?: never;
         head?: never;
         patch?: never;
@@ -826,7 +861,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/ai/writing-prompts": {
+    "/api/ai/inspiration": {
         parameters: {
             query?: never;
             header?: never;
@@ -835,8 +870,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Generate writing prompts from recent journal history */
-        post: operations["AiController_generateWritingPrompts"];
+        /** Ask a reflective journal question based on the user tags */
+        post: operations["AiController_generateInspiration"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2044,6 +2079,30 @@ export interface components {
         };
         /**
          * @example {
+         *       "tag": "reflection",
+         *       "count": 3
+         *     }
+         */
+        TagUsageDto: {
+            tag: string;
+            /** @description Number of entries using the tag */
+            count: number;
+        };
+        /**
+         * @example {
+         *       "tags": [
+         *         {
+         *           "tag": "reflection",
+         *           "count": 3
+         *         }
+         *       ]
+         *     }
+         */
+        TagUsageListResponseDto: {
+            tags: components["schemas"]["TagUsageDto"][];
+        };
+        /**
+         * @example {
          *       "id": 1,
          *       "date": "2026-06-24",
          *       "index": 1,
@@ -2455,8 +2514,7 @@ export interface components {
          *       "existingTags": [
          *         "reflection"
          *       ],
-         *       "maxTags": 5,
-         *       "style": "specific"
+         *       "maxTags": 5
          *     }
          */
         SuggestTagsDto: {
@@ -2469,12 +2527,6 @@ export interface components {
              * @default 5
              */
             maxTags: number;
-            /**
-             * @description Whether to suggest concrete subject tags or broader thematic tags
-             * @default specific
-             * @enum {string}
-             */
-            style: "specific" | "thematic";
         };
         /**
          * @example {
@@ -2521,20 +2573,18 @@ export interface components {
          *       "diaryId": 1
          *     }
          */
-        GenerateWritingPromptsDto: {
-            /** @description Diary whose recent entries should inform the prompts */
+        GenerateInspirationDto: {
+            /** @description Diary whose tags should inform the question */
             diaryId?: number;
         };
         /**
          * @example {
-         *       "prompts": [
-         *         "example"
-         *       ]
+         *       "question": "example"
          *     }
          */
-        WritingPromptsResponseDto: {
-            /** @description Personalized journal writing prompts */
-            prompts: string[];
+        InspirationResponseDto: {
+            /** @description A reflective journal question based on the user tags */
+            question: string;
         };
         /**
          * @example {
@@ -4138,6 +4188,44 @@ export interface operations {
             };
         };
     };
+    AuthController_sso: {
+        parameters: {
+            query?: never;
+            header: {
+                "x-auth-request-access-token": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description SSO authentication successful */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "user": {
+                     *         "example": "example"
+                     *       },
+                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                     *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AuthResponseDto"];
+                };
+            };
+            /** @description Missing or invalid Keycloak identity */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     AuthController_refresh: {
         parameters: {
             query?: never;
@@ -4846,6 +4934,65 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    EntriesController_getTagUsage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag usage */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "tags": [
+                     *         {
+                     *           "tag": "reflection",
+                     *           "count": 3
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TagUsageListResponseDto"];
+                };
+            };
+        };
+    };
+    EntriesController_deleteTag: {
+        parameters: {
+            query: {
+                /** @description Tag to remove from all of the current user entries */
+                tag: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Tag removed from entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "affectedCount": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CountedMutationResponseDto"];
+                };
             };
         };
     };
@@ -5706,8 +5853,7 @@ export interface operations {
                  *       "existingTags": [
                  *         "reflection"
                  *       ],
-                 *       "maxTags": 5,
-                 *       "style": "specific"
+                 *       "maxTags": 5
                  *     }
                  */
                 "application/json": components["schemas"]["SuggestTagsDto"];
@@ -5787,7 +5933,7 @@ export interface operations {
             };
         };
     };
-    AiController_generateWritingPrompts: {
+    AiController_generateInspiration: {
         parameters: {
             query?: never;
             header?: never;
@@ -5801,11 +5947,11 @@ export interface operations {
                  *       "diaryId": 1
                  *     }
                  */
-                "application/json": components["schemas"]["GenerateWritingPromptsDto"];
+                "application/json": components["schemas"]["GenerateInspirationDto"];
             };
         };
         responses: {
-            /** @description Personalized writing prompts returned successfully */
+            /** @description Reflective question returned successfully */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5813,12 +5959,10 @@ export interface operations {
                 content: {
                     /**
                      * @example {
-                     *       "prompts": [
-                     *         "example"
-                     *       ]
+                     *       "question": "example"
                      *     }
                      */
-                    "application/json": components["schemas"]["WritingPromptsResponseDto"];
+                    "application/json": components["schemas"]["InspirationResponseDto"];
                 };
             };
         };

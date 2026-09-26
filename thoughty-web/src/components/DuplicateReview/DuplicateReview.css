@@ -1,30 +1,37 @@
 .duplicate-review {
   display: flex;
-  justify-content: flex-end;
-  margin: 0.75rem 0 1rem;
+  flex-shrink: 0;
 }
 
 .duplicate-review-trigger {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  height: 2.5rem;
   border: 1px solid;
-  border-radius: 6px;
-  padding: 0.55rem 0.8rem;
+  border-radius: 0.5rem;
+  padding: 0 1rem;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
+  transition: background-color 150ms ease;
+}
+
+.duplicate-review-trigger.dark,
+.duplicate-review-trigger.light {
+  border-color: rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.1);
 }
 
 .duplicate-review-trigger.dark {
-  border-color: #4b5563;
-  background: #1f2937;
-  color: #e5e7eb;
+  color: #a78bfa;
 }
 
 .duplicate-review-trigger.light {
-  border-color: #d1d5db;
-  background: #ffffff;
-  color: #1f2937;
+  color: #6d28d9;
+}
+
+.duplicate-review-trigger:hover {
+  background: rgba(139, 92, 246, 0.2);
 }
 
 .duplicate-review-overlay {

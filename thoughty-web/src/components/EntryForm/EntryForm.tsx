@@ -8,8 +8,8 @@ import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getVisibilityButtonClass } from '../../utils/entryVisibility';
 import { resolveFontColor } from '../../types/config';
 import type { EntryTemplate, EntryTemplateDraft } from '../../utils/entryTemplates';
-import type { TagSuggestionStyle } from '../../services/api/aiService';
-import WritingPromptsMenu from './WritingPromptsMenu';
+import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
+import GetInspiredMenu from './GetInspiredMenu';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
@@ -28,11 +28,10 @@ interface EntryFormProps {
     readonly tagMetadata?: TagMetadataMap;
     readonly formError: string;
     readonly suggestingTags?: boolean;
-    readonly suggestingTagStyle?: TagSuggestionStyle | null;
-    readonly onSuggestTags?: (style?: TagSuggestionStyle) => Promise<boolean> | boolean;
+    readonly onSuggestTags?: () => Promise<boolean> | boolean;
     readonly fixingWriting?: boolean;
     readonly onFixWriting?: () => Promise<boolean> | boolean;
-    readonly onGenerateWritingPrompts?: () => Promise<string[] | null>;
+    readonly onGetInspiration?: () => Promise<string | null>;
     readonly onSubmit: NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
@@ -80,11 +79,10 @@ function EntryForm({
     tagMetadata,
     formError,
     suggestingTags = false,
-    suggestingTagStyle,
     onSuggestTags,
     fixingWriting = false,
     onFixWriting,
-    onGenerateWritingPrompts,
+    onGetInspiration,
     onSubmit,
     theme,
     t,
@@ -101,7 +99,6 @@ function EntryForm({
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
     const writingTextColor = resolveFontColor(fontColor, theme);
-    const activeTagStyle = suggestingTagStyle ?? (suggestingTags ? 'specific' : null);
     const selectedTemplate = useMemo(
         () => entryTemplates.find((template) => template.id === selectedTemplateId),
         [entryTemplates, selectedTemplateId],
@@ -275,53 +272,29 @@ function EntryForm({
                             theme={theme}
                         />
                     </div>
-                    {onGenerateWritingPrompts && (
-                        <WritingPromptsMenu
-                            onGenerate={onGenerateWritingPrompts}
-                            onSelect={(prompt) => setNewEntryText((current) => (
-                                current.trim() ? `${current}\n\n${prompt}` : prompt
+                    {onGetInspiration && (
+                        <GetInspiredMenu
+                            onGenerate={onGetInspiration}
+                            onSelect={(question) => setNewEntryText((current) => (
+                                current.trim() ? `${current}\n\n${question}` : question
                             ))}
                             theme={theme}
                             t={t}
                         />
                     )}
                     {onSuggestTags && (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    onSuggestTags();
-                                }}
-                                disabled={suggestingTags}
-                                className="px-3 py-2 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                            >
-                                {activeTagStyle === 'specific' ? t('suggestingTags') : t('suggestTags')}
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    onSuggestTags('thematic');
-                                }}
-                                disabled={suggestingTags}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-fuchsia-500/40 bg-fuchsia-500/10 text-fuchsia-500 hover:bg-fuchsia-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-                                title={t('suggestThemes')}
-                            >
-                                <svg
-                                    aria-hidden="true"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                    className="h-4 w-4 shrink-0"
-                                >
-                                    <path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4L12 3Z" />
-                                    <path d="m18.5 14 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z" />
-                                </svg>
-                                <span>
-                                    {activeTagStyle === 'thematic' ? t('suggestingThemes') : t('suggestThemes')}
-                                </span>
-                            </button>
-                        </>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onSuggestTags();
+                            }}
+                            disabled={suggestingTags}
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                            title={t('autoTagDescription')}
+                        >
+                            <AiSparkleIcon />
+                            <span>{suggestingTags ? t('suggestingTags') : t('suggestTags')}</span>
+                        </button>
                     )}
                     {onFixWriting && (
                         <button
@@ -330,9 +303,10 @@ function EntryForm({
                                 onFixWriting();
                             }}
                             disabled={fixingWriting}
-                            className="px-3 py-2 rounded-lg border border-teal-500/40 bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-teal-500/40 bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            {fixingWriting ? t('fixingWriting') : t('fixWriting')}
+                            <AiSparkleIcon />
+                            <span>{fixingWriting ? t('fixingWriting') : t('fixWriting')}</span>
                         </button>
                     )}
                     <button

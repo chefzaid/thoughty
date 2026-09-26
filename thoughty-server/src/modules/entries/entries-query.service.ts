@@ -21,6 +21,20 @@ export class EntriesQueryService {
     private readonly revisionRepository: Repository<EntryRevision>,
   ) {}
 
+  async getTagUsage(userId: number): Promise<{ tags: Array<{ tag: string; count: number }> }> {
+    const rows: Array<{ tag: string; count: number | string }> = await this.entryRepository.query(
+      `SELECT t.tag AS tag, COUNT(*)::int AS count
+         FROM entries e
+         CROSS JOIN LATERAL UNNEST(e.tags) AS t(tag)
+        WHERE e.user_id = $1
+        GROUP BY t.tag
+        ORDER BY t.tag`,
+      [userId],
+    );
+
+    return { tags: rows.map(({ tag, count }) => ({ tag, count: Number(count) })) };
+  }
+
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
     const {
       search,

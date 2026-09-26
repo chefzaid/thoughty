@@ -14,7 +14,7 @@ import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
 import type { DuplicateEntryScan, RephraseMode, SummaryGuidance } from '../services/api/aiService';
 import { buildEntryPermalink } from './appRouting';
 import { createEntryTemplate, getEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
-import type { TagMetadataMap } from './tagMetadata';
+import { listKnownTags, type TagMetadataMap } from './tagMetadata';
 
 export type IntroPageProps = ComponentProps<typeof IntroPage>;
 export type AboutPageProps = ComponentProps<typeof AboutPage>;
@@ -69,15 +69,17 @@ interface BuildAuthenticatedRoutesPropsParams {
   downloadUserData: AuthenticatedRoutesProps['profileRouteProps']['onDownloadData'];
   entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterFavorites' | 'filterTags' | 'filterVisibility' | 'groupedEntries' | 'inputPage' | 'loading' | 'page' | 'reorderEntries' | 'runSemanticSearch' | 'search' | 'searchMode' | 'semanticSearchResult' | 'semanticSearchStatus' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterFavorites' | 'setFilterTags' | 'setFilterVisibility' | 'setInputPage' | 'setPage' | 'setSearch' | 'setSearchMode' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'totalPages'>;
   entryEditState: Pick<EntryEditState, 'addEditPendingFile' | 'editDate' | 'editExistingAttachments' | 'editFormat' | 'editPendingFiles' | 'editTags' | 'editText' | 'editVisibility' | 'editingEntry' | 'handleCancelEdit' | 'handleEdit' | 'handleSaveEdit' | 'removeEditAttachment' | 'removeEditPendingFile' | 'setEditDate' | 'setEditFormat' | 'setEditTags' | 'setEditText' | 'setEditVisibility'>;
-  entryFormState: Pick<EntryFormState, 'addPendingFile' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'selectedDate' | 'setFormat' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setVisibility' | 'suggestingTags' | 'suggestingTagStyle' | 'tags' | 'uploadedAttachments' | 'visibility'>;
+  entryFormState: Pick<EntryFormState, 'addPendingFile' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'selectedDate' | 'setFormat' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setVisibility' | 'suggestingTags' | 'tags' | 'uploadedAttachments' | 'visibility'>;
   entryNavigationState: Pick<EntryNavigationState, 'handleBackToSource' | 'handleNavigateToEntry' | 'handleShareEntry'>;
   handleDiscuss: (entry: Entry) => void;
   handleRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
   handleSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
-  handleGenerateWritingPrompts?: () => Promise<string[] | null>;
+  handleGetInspiration?: () => Promise<string | null>;
   handleFindDuplicateEntries: (diaryId?: number) => Promise<DuplicateEntryScan | null>;
   handleNavigateToFirst: AuthenticatedRoutesProps['journalRouteProps']['yearMonthNavigator']['onNavigate'];
   handleRenameTag: AuthenticatedRoutesProps['tagManagerRouteProps']['onRenameTag'];
+  handleDeleteTag: AuthenticatedRoutesProps['tagManagerRouteProps']['onDeleteTag'];
+  handleLoadTagUsage: AuthenticatedRoutesProps['tagManagerRouteProps']['onLoadTagUsage'];
   highlightsModalOpen: boolean;
   importExportFormat: ImportExportFormat;
   importExportIncludeVisibility: boolean;
@@ -217,10 +219,12 @@ export function buildAuthenticatedRoutesProps({
   handleDiscuss,
   handleRephrase,
   handleSummarize,
-  handleGenerateWritingPrompts,
+  handleGetInspiration,
   handleFindDuplicateEntries,
   handleNavigateToFirst,
   handleRenameTag,
+  handleDeleteTag,
+  handleLoadTagUsage,
   highlightsModalOpen,
   importExportFormat,
   importExportIncludeVisibility,
@@ -232,6 +236,8 @@ export function buildAuthenticatedRoutesProps({
   tagMetadata,
   updateConfig,
 }: Readonly<BuildAuthenticatedRoutesPropsParams>): AuthenticatedRoutesProps {
+  const knownTags = listKnownTags(entriesState.allTags, tagMetadata);
+
   return {
     feedRouteProps: {
       theme: config.theme,
@@ -250,6 +256,8 @@ export function buildAuthenticatedRoutesProps({
       allTags: entriesState.allTags,
       onUpdateConfig: (newConfig: Config) => updateConfig(newConfig),
       onRenameTag: handleRenameTag,
+      onDeleteTag: handleDeleteTag,
+      onLoadTagUsage: handleLoadTagUsage,
       onRetagApplied: async () => {
         await entriesState.fetchEntries();
       },
@@ -342,15 +350,14 @@ export function buildAuthenticatedRoutesProps({
         setVisibility: entryFormState.setVisibility,
         format: entryFormState.format,
         setFormat: entryFormState.setFormat,
-        allTags: entriesState.allTags,
+        allTags: knownTags,
         tagMetadata,
         formError: entryFormState.formError,
         suggestingTags: entryFormState.suggestingTags,
-        suggestingTagStyle: entryFormState.suggestingTagStyle,
         onSuggestTags: entryFormState.handleSuggestTags,
         fixingWriting: entryFormState.fixingWriting,
         onFixWriting: entryFormState.handleFixWriting,
-        onGenerateWritingPrompts: handleGenerateWritingPrompts,
+        onGetInspiration: handleGetInspiration,
         onSubmit: entryFormState.handleSubmit,
         pendingFiles: entryFormState.pendingFiles,
         uploadedAttachments: entryFormState.uploadedAttachments,
@@ -401,7 +408,7 @@ export function buildAuthenticatedRoutesProps({
         setEditVisibility: entryEditState.setEditVisibility,
         editFormat: entryEditState.editFormat,
         setEditFormat: entryEditState.setEditFormat,
-        allTags: entriesState.allTags,
+        allTags: knownTags,
         tagMetadata,
         onSaveEdit: entryEditState.handleSaveEdit,
         onCancelEdit: entryEditState.handleCancelEdit,

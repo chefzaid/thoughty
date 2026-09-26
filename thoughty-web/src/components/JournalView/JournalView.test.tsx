@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import type { ComponentPropsWithoutRef } from 'react';
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import JournalView from './JournalView';
 import type { Config, Entry, Diary, GroupedEntries } from '../../types';
 
@@ -64,8 +64,10 @@ vi.mock('../FilterControls/FilterControls', () => ({
     setSearch: (s: string) => void;
     filterVisibility: string;
     onOpenHighlights: () => void;
+    actions?: ReactNode;
   }) => (
     <div data-testid="filter-controls">
+      {props.actions}
       <input data-testid="search-input" value={props.search} onChange={(e) => props.setSearch(e.target.value)} />
       <span data-testid="filter-visibility">{props.filterVisibility}</span>
       <button type="button" data-testid="open-highlights-btn" onClick={props.onOpenHighlights}>Highlights</button>
@@ -298,6 +300,12 @@ describe('JournalView', () => {
     expect(screen.getByTestId('pagination')).toBeInTheDocument();
     expect(screen.getByTestId('year-month-navigator')).toBeInTheDocument();
     expect(screen.getByTestId('back-to-top')).toBeInTheDocument();
+  });
+
+  it('renders the duplicate finder inside the filter controls', () => {
+    render(<JournalView {...defaultProps} />);
+
+    expect(screen.getByTestId('filter-controls')).toContainElement(screen.getByTestId('duplicate-review'));
   });
 
   it('passes diaries data to DiaryTabs', () => {

@@ -19,7 +19,7 @@ interface ThoughtOfDayProps {
   onNavigateToEntry: ComponentProps<typeof ThoughtOfTheDay>['onNavigateToEntry'];
 }
 type EntryFormProps = Omit<ComponentProps<typeof EntryForm>, 'theme' | 't' | 'fontColor'>;
-type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' | 't' | 'onOpenHighlights'>;
+type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' | 't' | 'onOpenHighlights' | 'actions'>;
 type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' | 'searchTerm'>;
 type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage'>;
 type YearMonthNavigatorProps = Pick<ComponentProps<typeof YearMonthNavigator>, 'availableYears' | 'availableMonths' | 'onNavigate'>;
@@ -87,12 +87,6 @@ function JournalView({
         t={t}
       />
 
-      <DuplicateReview
-        {...duplicateReview}
-        theme={config.theme}
-        t={t}
-      />
-
       <div ref={entryFormRef}>
         <EntryForm
           {...entryForm}
@@ -108,6 +102,13 @@ function JournalView({
           theme={config.theme}
           t={t}
           onOpenHighlights={() => thoughtOfDay.setOpen(true)}
+          actions={(
+            <DuplicateReview
+              {...duplicateReview}
+              theme={config.theme}
+              t={t}
+            />
+          )}
         />
       </div>
 

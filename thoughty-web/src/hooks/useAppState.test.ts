@@ -417,6 +417,8 @@ describe("useAppState Hooks", () => {
         deleteRevision: vi.fn(),
         reorderEntries: vi.fn(),
         renameTag: vi.fn(),
+        fetchTagUsage: vi.fn(),
+        deleteTag: vi.fn(),
       });
 
       const { result } = renderHook(() => useEntries(true, mockConfig, null));
@@ -495,12 +497,14 @@ describe("useAppState Hooks", () => {
         deleteRevision: vi.fn(),
         reorderEntries: vi.fn(),
         renameTag: vi.fn(),
+        fetchTagUsage: vi.fn(),
+        deleteTag: vi.fn(),
       });
       vi.mocked(createAiService).mockReturnValue({
         suggestTags: vi.fn(),
         fixWriting: vi.fn(),
         summarizeEntry: vi.fn(),
-        generateWritingPrompts: vi.fn(),
+        getInspiration: vi.fn(),
         findDuplicateEntries: vi.fn(),
         semanticSearch,
         chat: vi.fn(),
@@ -582,6 +586,8 @@ describe("useAppState Hooks", () => {
         deleteRevision: vi.fn(),
         reorderEntries: reorderEntriesMock,
         renameTag: vi.fn(),
+        fetchTagUsage: vi.fn(),
+        deleteTag: vi.fn(),
       });
 
       const { result } = renderHook(() => useEntries(true, mockConfig, null));

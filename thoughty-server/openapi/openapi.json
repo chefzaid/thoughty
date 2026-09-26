@@ -407,6 +407,47 @@
         ]
       }
     },
+    "/api/auth/sso": {
+      "get": {
+        "operationId": "AuthController_sso",
+        "parameters": [
+          {
+            "name": "x-auth-request-access-token",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSO authentication successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponseDto"
+                },
+                "example": {
+                  "user": {
+                    "example": "example"
+                  },
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
+                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid Keycloak identity"
+          }
+        },
+        "summary": "Exchange the ingress-validated Keycloak identity for an app session",
+        "tags": [
+          "Authentication"
+        ]
+      }
+    },
     "/api/auth/refresh": {
       "post": {
         "operationId": "AuthController_refresh",
@@ -1364,6 +1405,80 @@
           }
         ],
         "summary": "Get random thought and entries from this day in previous years",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/tags": {
+      "get": {
+        "operationId": "EntriesController_getTagUsage",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Tag usage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagUsageListResponseDto"
+                },
+                "example": {
+                  "tags": [
+                    {
+                      "tag": "reflection",
+                      "count": 3
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the current user's tags with entry counts",
+        "tags": [
+          "Entries"
+        ]
+      },
+      "delete": {
+        "operationId": "EntriesController_deleteTag",
+        "parameters": [
+          {
+            "name": "tag",
+            "required": true,
+            "in": "query",
+            "description": "Tag to remove from all of the current user entries",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tag removed from entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CountedMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "affectedCount": 3
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a tag from all of the current user's entries",
         "tags": [
           "Entries"
         ]
@@ -2424,8 +2539,7 @@
                 "existingTags": [
                   "reflection"
                 ],
-                "maxTags": 5,
-                "style": "specific"
+                "maxTags": 5
               }
             }
           }
@@ -2525,16 +2639,16 @@
         ]
       }
     },
-    "/api/ai/writing-prompts": {
+    "/api/ai/inspiration": {
       "post": {
-        "operationId": "AiController_generateWritingPrompts",
+        "operationId": "AiController_generateInspiration",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GenerateWritingPromptsDto"
+                "$ref": "#/components/schemas/GenerateInspirationDto"
               },
               "example": {
                 "diaryId": 1
@@ -2544,16 +2658,14 @@
         },
         "responses": {
           "200": {
-            "description": "Personalized writing prompts returned successfully",
+            "description": "Reflective question returned successfully",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WritingPromptsResponseDto"
+                  "$ref": "#/components/schemas/InspirationResponseDto"
                 },
                 "example": {
-                  "prompts": [
-                    "example"
-                  ]
+                  "question": "example"
                 }
               }
             }
@@ -2564,7 +2676,7 @@
             "bearer": []
           }
         ],
-        "summary": "Generate writing prompts from recent journal history",
+        "summary": "Ask a reflective journal question based on the user tags",
         "tags": [
           "AI"
         ]
@@ -6515,6 +6627,48 @@
           "error": "example"
         }
       },
+      "TagUsageDto": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number",
+            "description": "Number of entries using the tag"
+          }
+        },
+        "required": [
+          "tag",
+          "count"
+        ],
+        "example": {
+          "tag": "reflection",
+          "count": 3
+        }
+      },
+      "TagUsageListResponseDto": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagUsageDto"
+            }
+          }
+        },
+        "required": [
+          "tags"
+        ],
+        "example": {
+          "tags": [
+            {
+              "tag": "reflection",
+              "count": 3
+            }
+          ]
+        }
+      },
       "EntryBacklinkDto": {
         "type": "object",
         "properties": {
@@ -7252,15 +7406,6 @@
             "type": "number",
             "description": "Maximum number of tags to return",
             "default": 5
-          },
-          "style": {
-            "type": "string",
-            "description": "Whether to suggest concrete subject tags or broader thematic tags",
-            "enum": [
-              "specific",
-              "thematic"
-            ],
-            "default": "specific"
           }
         },
         "required": [
@@ -7271,8 +7416,7 @@
           "existingTags": [
             "reflection"
           ],
-          "maxTags": 5,
-          "style": "specific"
+          "maxTags": 5
         }
       },
       "FixWritingDto": {
@@ -7344,12 +7488,12 @@
           "summary": "example"
         }
       },
-      "GenerateWritingPromptsDto": {
+      "GenerateInspirationDto": {
         "type": "object",
         "properties": {
           "diaryId": {
             "type": "number",
-            "description": "Diary whose recent entries should inform the prompts",
+            "description": "Diary whose tags should inform the question",
             "minimum": 1
           }
         },
@@ -7357,24 +7501,19 @@
           "diaryId": 1
         }
       },
-      "WritingPromptsResponseDto": {
+      "InspirationResponseDto": {
         "type": "object",
         "properties": {
-          "prompts": {
-            "description": "Personalized journal writing prompts",
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "question": {
+            "type": "string",
+            "description": "A reflective journal question based on the user tags"
           }
         },
         "required": [
-          "prompts"
+          "question"
         ],
         "example": {
-          "prompts": [
-            "example"
-          ]
+          "question": "example"
         }
       },
       "FindDuplicateEntriesDto": {

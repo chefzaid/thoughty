@@ -3,6 +3,7 @@ import TagBadge from '../TagBadge/TagBadge';
 import type { ProfileConfig, TranslationFunction } from './types';
 import {
   getDefaultTagColor,
+  listKnownTags,
   normalizeTagCategory,
   normalizeTagColor,
   normalizeTagKey,
@@ -16,6 +17,8 @@ interface TagOrganizationSectionProps {
   readonly setLocalConfig: Dispatch<SetStateAction<ProfileConfig>>;
   readonly renameDrafts: Record<string, string>;
   readonly setRenameDrafts: Dispatch<SetStateAction<Record<string, string>>>;
+  readonly tagUsage?: Record<string, number>;
+  readonly onDeleteTag?: (tag: string) => void;
   readonly isDark: boolean;
   readonly t: TranslationFunction;
 }
@@ -26,15 +29,14 @@ function TagOrganizationSection({
   setLocalConfig,
   renameDrafts,
   setRenameDrafts,
+  tagUsage = {},
+  onDeleteTag,
   isDark,
   t,
 }: Readonly<TagOrganizationSectionProps>) {
   const metadata = useMemo(() => parseTagMetadata(localConfig.tagMetadata), [localConfig.tagMetadata]);
 
-  const tags = useMemo(
-    () => Array.from(new Set([...allTags, ...Object.keys(metadata)])).sort((left, right) => left.localeCompare(right)),
-    [allTags, metadata],
-  );
+  const tags = useMemo(() => listKnownTags(allTags, metadata), [allTags, metadata]);
 
   const updateMetadata = (tag: string, nextColor?: string | null, nextCategory?: string | null): void => {
     const key = normalizeTagKey(tag);
@@ -81,6 +83,7 @@ function TagOrganizationSection({
               const currentMetadata = metadata[normalizeTagKey(tag)] ?? {};
               const color = currentMetadata.color ?? getDefaultTagColor(tag);
               const previewTag = (renameDrafts[tag] ?? tag).trim() || tag;
+              const usageCount = tagUsage[tag] ?? 0;
 
               return (
                 <div key={tag} className={`tag-manager-row ${isDark ? 'dark' : 'light'}`}>
@@ -96,6 +99,9 @@ function TagOrganizationSection({
                         className="tag-manager-inline-badge"
                       />
                     </div>
+                    <span className="tag-manager-usage">
+                      {usageCount > 0 ? t('tagUsageCount', { count: usageCount }) : t('tagUnused')}
+                    </span>
                   </div>
                   <div className="tag-manager-fields">
                     <label className="tag-manager-field">
@@ -104,7 +110,7 @@ function TagOrganizationSection({
                         type="text"
                         name={`tag-name-${normalizeTagKey(tag)}`}
                         aria-label={`Name ${tag}`}
-                        value={renameDrafts[normalizeTagKey(tag)] ?? tag}
+                        value={renameDrafts[tag] ?? tag}
                         placeholder={t('renameTagPlaceholder')}
                         onChange={(event) => {
                           const nextValue = event.target.value;
@@ -142,18 +148,33 @@ function TagOrganizationSection({
                       </div>
                     </label>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => updateMetadata(tag, null, '')}
-                    className={`tag-manager-reset ${isDark ? 'dark' : 'light'}`}
-                    title={t('resetTagAppearance')}
-                    aria-label={`${t('resetTagAppearance')} ${tag}`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 6H5v4" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5.75 9.25A7 7 0 1112 19a6.96 6.96 0 01-4.95-2.05" />
-                    </svg>
-                  </button>
+                  <div className="tag-manager-row-actions">
+                    <button
+                      type="button"
+                      onClick={() => updateMetadata(tag, null, '')}
+                      className={`tag-manager-reset ${isDark ? 'dark' : 'light'}`}
+                      title={t('resetTagAppearance')}
+                      aria-label={`${t('resetTagAppearance')} ${tag}`}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 6H5v4" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M5.75 9.25A7 7 0 1112 19a6.96 6.96 0 01-4.95-2.05" />
+                      </svg>
+                    </button>
+                    {onDeleteTag && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteTag(tag)}
+                        className={`tag-manager-reset tag-manager-delete ${isDark ? 'dark' : 'light'}`}
+                        title={t('deleteTag')}
+                        aria-label={`${t('deleteTag')} ${tag}`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
