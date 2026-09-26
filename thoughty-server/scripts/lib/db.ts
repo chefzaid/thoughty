@@ -3,7 +3,7 @@
  * Uses TypeORM DataSource for connecting to PostgreSQL
  */
 
-import { DataSource } from 'typeorm';
+import { DataSource, type QueryRunner } from 'typeorm';
 import { config } from 'dotenv';
 import { join } from 'node:path';
 import { buildPostgresPoolOptions } from '../../src/database/postgres-pool-options';
@@ -38,8 +38,34 @@ export async function initializeDatabase(): Promise<DataSource> {
  * Execute a raw SQL query
  */
 export async function query<T = unknown>(sql: string, parameters: unknown[] = []): Promise<T[]> {
+    if (activeRunner) {
+        return activeRunner.query(sql, parameters);
+    }
     const ds = await initializeDatabase();
     return ds.query(sql, parameters);
+}
+
+let activeRunner: QueryRunner | null = null;
+
+/**
+ * Run fn in one database transaction: every query() inside it uses the same
+ * connection, and any error rolls everything back.
+ */
+export async function withTransaction<T>(fn: () => Promise<T>): Promise<T> {
+    const runner = (await initializeDatabase()).createQueryRunner();
+    await runner.startTransaction();
+    activeRunner = runner;
+    try {
+        const result = await fn();
+        await runner.commitTransaction();
+        return result;
+    } catch (error) {
+        await runner.rollbackTransaction();
+        throw error;
+    } finally {
+        activeRunner = null;
+        await runner.release();
+    }
 }
 
 /**

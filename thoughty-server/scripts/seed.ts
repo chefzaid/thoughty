@@ -12,12 +12,17 @@
  *
  * Every account uses the password Test1234!. The content is deterministic.
  * Run with --validate-only to check the data without touching the database.
+ *
+ * With --into-user=<username>, only the main journal is added to that existing
+ * account (which must have no entries yet): no users, settings, sessions, or
+ * community data are created, changed, or deleted, and existing diaries with
+ * the same name are reused.
  */
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as bcrypt from 'bcryptjs';
-import { query, closeDatabase } from './lib/db';
+import { query, closeDatabase, withTransaction } from './lib/db';
 import { log, banner, section, summaryBox, fmt, table } from './lib/logger';
 import { createRng, TAG_METADATA } from './lib/seed-content';
 import {
@@ -37,6 +42,8 @@ const REFERENCE_PATTERNS = [
     /entry \((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/g,
 ];
 const validateOnlyFlag = process.argv.includes('--validate-only');
+/** --into-user=<username>: add the main journal to an existing account without touching any user or setting. */
+const intoUser = process.argv.find((arg) => arg.startsWith('--into-user='))?.slice('--into-user='.length);
 const PASSWORD = 'Test1234!';
 
 interface SeedUser {
@@ -204,6 +211,33 @@ async function insertDiaries(user: SeedUser): Promise<Map<DiaryKey, number>> {
     return ids;
 }
 
+async function resolveExistingAccount(username: string): Promise<{ userId: number; diaries: Map<DiaryKey, number> }> {
+    const [user] = await query<{ id: number; deleted_at: Date | null }>('SELECT id, deleted_at FROM users WHERE username = $1', [username]);
+    if (!user) throw new Error(`No user named ${username}`);
+    if (user.deleted_at) throw new Error(`User ${username} is deleted`);
+    const [{ count }] = await query<{ count: string }>('SELECT COUNT(*) AS count FROM entries WHERE user_id = $1', [user.id]);
+    if (Number(count) > 0) throw new Error(`User ${username} already has ${count} entries; refusing to add the seed journal`);
+
+    const existing = await query<{ id: number; name: string; position: number }>('SELECT id, name, position FROM diaries WHERE user_id = $1', [user.id]);
+    const diaries = new Map<DiaryKey, number>();
+    let position = Math.max(-1, ...existing.map((diary) => diary.position ?? 0));
+    for (const diary of MAIN_USER.diaries) {
+        const match = existing.find((candidate) => candidate.name.toLowerCase() === diary.name.toLowerCase());
+        if (match) {
+            diaries.set(diary.key, match.id);
+            continue;
+        }
+        position += 1;
+        const [row] = await query<{ id: number }>(
+            `INSERT INTO diaries (user_id, name, icon, color, visibility, is_default, position)
+             VALUES ($1, $2, $3, $4, $5, false, $6) RETURNING id`,
+            [user.id, diary.name, diary.icon, diary.color, diary.visibility, position],
+        );
+        diaries.set(diary.key, row.id);
+    }
+    return { userId: user.id, diaries };
+}
+
 const ENTRY_COLUMNS = ['user_id', 'diary_id', 'date', '"index"', 'tags', 'content', 'format', 'visibility', 'moderation_status', 'is_favorite', 'is_archived', 'is_pinned', 'created_at', 'updated_at'];
 
 async function insertEntries(userId: number, diaries: Map<DiaryKey, number>, entries: SeedEntry[]): Promise<Map<SeedEntry, number>> {
@@ -329,44 +363,56 @@ async function seed(): Promise<void> {
         }
 
         section('Writing Database');
-        log.step('Resetting seed accounts...');
-        await resetUsers();
-        await insertUsers();
-        log.success(`Created ${ALL_USERS.length} users (password ${PASSWORD})`);
+        const targetUserId = await withTransaction(async () => {
+            let userId = MAIN_USER.id;
+            let diaries: Map<DiaryKey, number>;
+            if (intoUser) {
+                log.step(`Adding the journal to the existing account ${intoUser}...`);
+                ({ userId, diaries } = await resolveExistingAccount(intoUser));
+            } else {
+                log.step('Resetting seed accounts...');
+                await resetUsers();
+                await insertUsers();
+                log.success(`Created ${ALL_USERS.length} users (password ${PASSWORD})`);
+                diaries = await insertDiaries(MAIN_USER);
+            }
 
-        log.step(`Inserting ${mainEntries.length} entries for ${MAIN_USER.username}...`);
-        const mainDiaries = await insertDiaries(MAIN_USER);
-        const mainIds = await insertEntries(MAIN_USER.id, mainDiaries, mainEntries);
-        const extras = await insertEntryExtras(MAIN_USER.id, mainEntries, mainIds);
-        log.success(`Inserted entries with ${extras.revisions} revisions, ${extras.chats} chat histories, ${extras.attachments} attachments`);
-        if (extras.attachmentsSkipped) log.warning('Object storage is unreachable; attachments were skipped');
+            log.step(`Inserting ${mainEntries.length} entries...`);
+            const ids = await insertEntries(userId, diaries, mainEntries);
+            const extras = await insertEntryExtras(userId, mainEntries, ids);
+            log.success(`Inserted entries with ${extras.revisions} revisions, ${extras.chats} chat histories, ${extras.attachments} attachments`);
+            if (extras.attachmentsSkipped) log.warning('Object storage is unreachable; attachments were skipped');
 
-        for (const user of [...COMMUNITY_USERS, NEW_USER]) {
-            const diaries = await insertDiaries(user);
-            await insertEntries(user.id, diaries, communityEntries.get(user.id) ?? []);
-        }
-        await insertSessionsAndFeatureRequests();
-        log.success('Inserted community journals, sessions, and feature requests');
+            if (!intoUser) {
+                for (const user of [...COMMUNITY_USERS, NEW_USER]) {
+                    const userDiaries = await insertDiaries(user);
+                    await insertEntries(user.id, userDiaries, communityEntries.get(user.id) ?? []);
+                }
+                await insertSessionsAndFeatureRequests();
+                log.success('Inserted community journals, sessions, and feature requests');
+            }
+            return userId;
+        });
 
         section('Summary');
         const perDiary = await query<{ name: string; entries: string; first: Date; last: Date }>(
             `SELECT d.name, COUNT(e.id) AS entries, MIN(e.date) AS first, MAX(e.date) AS last
              FROM diaries d LEFT JOIN entries e ON e.diary_id = d.id
              WHERE d.user_id = $1 GROUP BY d.name, d.position ORDER BY d.position`,
-            [MAIN_USER.id],
+            [targetUserId],
         );
         table(['Diary', 'Entries', 'From', 'To'], perDiary.map((row) => [row.name, row.entries, toIsoDate(new Date(row.first)), toIsoDate(new Date(row.last))]));
-        const [tagCount] = await query<{ count: string }>('SELECT COUNT(DISTINCT tag) AS count FROM entries, unnest(tags) AS tag WHERE user_id = $1', [MAIN_USER.id]);
+        const [tagCount] = await query<{ count: string }>('SELECT COUNT(DISTINCT tag) AS count FROM entries, unnest(tags) AS tag WHERE user_id = $1', [targetUserId]);
         const count = (predicate: (entry: SeedEntry) => boolean) => String(mainEntries.filter(predicate).length);
 
         summaryBox('Seed Complete', [
-            ['Login', `${MAIN_USER.username} or ${MAIN_USER.email} / ${PASSWORD}`],
+            ['Account', intoUser ?? `${MAIN_USER.username} or ${MAIN_USER.email} / ${PASSWORD}`],
             ['Entries', String(mainEntries.length)],
             ['Tags in use', tagCount.count],
             ['Markdown', count((entry) => entry.format === 'markdown')],
             ['Cross-referencing', count((entry) => /\[\[\d{4}-|entry \(\d{4}-/.test(entry.content))],
             ['Public / favorite / pinned / archived', `${count((e) => e.visibility === 'public')} / ${count((e) => e.isFavorite)} / ${count((e) => e.isPinned)} / ${count((e) => e.isArchived)}`],
-            ['Other users', 'maya, sam (moderated), leo (deleted), newbie (unverified)'],
+            ['Other users', intoUser ? 'none (existing accounts untouched)' : 'maya, sam (moderated), leo (deleted), newbie (unverified)'],
             ['Duration', `${Date.now() - startTime}ms`],
         ]);
 
