@@ -23,6 +23,9 @@
 - [x] Journal filter bar grouped into search, filters, and tools (Highlights and Find duplicates), wrapping cleanly on small screens
 - [x] Delete all entries at once to start a fresh journal
 - [x] Entry templates (e.g. gratitude journal, daily reflection, meeting notes) that users can create and pick when writing a new entry
+- [x] Richer built-in templates for life, philosophy, and emotions (morning intentions, weekly review, decision notes replacing meeting notes, rant it out, worry check, philosophical musing, life check-in, values reflection, letters to a future self or unsent letters, dream log)
+- [x] Composer and entry editor can be resized in height by dragging while still growing with their content
+- [x] Consistent composer buttons: AI actions share one style (Auto Tag, Rephrase, Get Inspired), and Save, Save template, and Reset Filters carry icons
 - [x] Word count and estimated reading time displayed per entry, with averages added to stats
 - [x] Pinned entries that always show at the top of the list regardless of date sorting limited to a configurable number of pinned entries
 - [x] Backlinks panel showing which entries reference the current one (bidirectional linking like Obsidian/Roam)

@@ -293,9 +293,10 @@ function FilterControls({
                     </button>
                     <button type="button"
                         onClick={handleReset}
-                        className="h-10 shrink-0 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded-lg transition-all text-sm font-medium"
+                        className="inline-flex h-10 shrink-0 items-center gap-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded-lg transition-all text-sm font-medium"
                         title={t('resetFilters')}
                     >
+                        <span className="codicon codicon-discard" aria-hidden="true" />
                         {t('resetFilters')}
                     </button>
                 </div>

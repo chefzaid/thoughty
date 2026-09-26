@@ -1,4 +1,4 @@
-import { Suspense, lazy, useRef, useEffect, useMemo, useState, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
+import { Suspense, lazy, useMemo, useState, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
@@ -10,6 +10,8 @@ import { resolveFontColor } from '../../types/config';
 import type { EntryTemplate, EntryTemplateDraft } from '../../utils/entryTemplates';
 import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
 import GetInspiredMenu from './GetInspiredMenu';
+import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
+import { aiActionButtonClass } from './aiActionButton';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
@@ -96,22 +98,13 @@ function EntryForm({
     onSaveTemplate,
     onDeleteTemplate
 }: EntryFormProps) {
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const writingArea = useAutoGrowTextarea(newEntryText);
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
     const writingTextColor = resolveFontColor(fontColor, theme);
     const selectedTemplate = useMemo(
         () => entryTemplates.find((template) => template.id === selectedTemplateId),
         [entryTemplates, selectedTemplateId],
     );
-
-    // Auto-resize textarea based on content
-    useEffect(() => {
-        const textarea = textareaRef.current;
-        if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = `${Math.max(textarea.scrollHeight, 76)}px`; // 76px ≈ 3 rows minimum
-        }
-    }, [newEntryText]);
 
     const { inputClass, containerClass, markdownToggleClass } = entryFormClasses({ theme, format, visibility });
 
@@ -185,9 +178,10 @@ function EntryForm({
                                 type="button"
                                 onClick={() => void saveCurrentDraftAsTemplate()}
                                 disabled={newEntryText.trim() === ''}
-                                className="h-10 shrink-0 px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="inline-flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-sm text-emerald-500 hover:bg-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 title={t('saveEntryTemplate')}
                             >
+                                <span className="codicon codicon-save" aria-hidden="true" />
                                 {t('saveEntryTemplate')}
                             </button>
                         )}
@@ -208,8 +202,9 @@ function EntryForm({
                         <Suspense
                             fallback={(
                                 <textarea
-                                    ref={textareaRef}
-                                    className={`w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none ${theme === 'light'
+                                    ref={writingArea.ref}
+                                    onPointerUp={writingArea.onPointerUp}
+                                    className={`w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors resize-y ${theme === 'light'
                                         ? 'bg-gray-50 border-gray-300 text-gray-900'
                                         : 'bg-gray-900 border-gray-700 text-gray-100'
                                         }`}
@@ -227,7 +222,6 @@ function EntryForm({
                                     value={newEntryText}
                                     onChange={(val) => setNewEntryText(val ?? '')}
                                     preview="edit"
-                                    visibleDragbar={false}
                                     height={200}
                                     textareaProps={{
                                         placeholder: t('whatsOnYourMind'),
@@ -239,8 +233,9 @@ function EntryForm({
                         </Suspense>
                     ) : (
                         <textarea
-                            ref={textareaRef}
-                            className={`w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none ${theme === 'light'
+                            ref={writingArea.ref}
+                            onPointerUp={writingArea.onPointerUp}
+                            className={`w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors resize-y ${theme === 'light'
                                 ? 'bg-gray-50 border-gray-300 text-gray-900'
                                 : 'bg-gray-900 border-gray-700 text-gray-100'
                                 }`}
@@ -272,16 +267,6 @@ function EntryForm({
                             theme={theme}
                         />
                     </div>
-                    {onGetInspiration && (
-                        <GetInspiredMenu
-                            onGenerate={onGetInspiration}
-                            onSelect={(question) => setNewEntryText((current) => (
-                                current.trim() ? `${current}\n\n${question}` : question
-                            ))}
-                            theme={theme}
-                            t={t}
-                        />
-                    )}
                     {onSuggestTags && (
                         <button
                             type="button"
@@ -289,7 +274,7 @@ function EntryForm({
                                 onSuggestTags();
                             }}
                             disabled={suggestingTags}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                            className={aiActionButtonClass('amber')}
                             title={t('autoTagDescription')}
                         >
                             <AiSparkleIcon />
@@ -303,11 +288,21 @@ function EntryForm({
                                 onFixWriting();
                             }}
                             disabled={fixingWriting}
-                            className="flex items-center gap-2 px-3 py-2 rounded-lg border border-teal-500/40 bg-teal-500/10 text-teal-500 hover:bg-teal-500/20 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                            className={aiActionButtonClass('teal')}
                         >
                             <AiSparkleIcon />
                             <span>{fixingWriting ? t('fixingWriting') : t('fixWriting')}</span>
                         </button>
+                    )}
+                    {onGetInspiration && (
+                        <GetInspiredMenu
+                            onGenerate={onGetInspiration}
+                            onSelect={(question) => setNewEntryText((current) => (
+                                current.trim() ? `${current}\n\n${question}` : question
+                            ))}
+                            theme={theme}
+                            t={t}
+                        />
                     )}
                     <button
                         type="button"
@@ -338,8 +333,9 @@ function EntryForm({
                     </button>
                     <button
                         type="submit"
-                        className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-6 py-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-md"
+                        className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold px-6 py-2 rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-md"
                     >
+                        <span className="codicon codicon-save" aria-hidden="true" />
                         {t('save')}
                     </button>
                 </div>

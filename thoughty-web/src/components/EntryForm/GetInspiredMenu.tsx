@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
+import { aiActionButtonClass } from './aiActionButton';
 
 interface InspirationPanelPosition {
     left: number;
@@ -158,7 +159,7 @@ export default function GetInspiredMenu({
                     type="button"
                     onClick={handleToggle}
                     disabled={loading && !open}
-                    className="inline-flex h-10 items-center gap-2 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 text-sm text-sky-500 transition-colors hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                    className={aiActionButtonClass('sky')}
                     title={t('getInspiredDescription')}
                     aria-expanded={open}
                     aria-haspopup="dialog"

@@ -11,6 +11,21 @@ describe('entryTemplates', () => {
     vi.restoreAllMocks();
   });
 
+  it('ships a varied set of built-in journaling templates', () => {
+    const builtIns = getEntryTemplates().filter((template) => template.builtIn);
+    const names = builtIns.map((template) => template.name);
+
+    expect(names).toEqual(expect.arrayContaining([
+      'Decision notes',
+      'Rant it out',
+      'Philosophical musing',
+      'Life check-in',
+    ]));
+    expect(names).not.toContain('Meeting notes');
+    expect(new Set(builtIns.map((template) => template.id)).size).toBe(builtIns.length);
+    expect(builtIns.every((template) => template.content.trim() && template.tags.length > 0)).toBe(true);
+  });
+
   it('returns built-in templates plus valid custom templates', () => {
     const custom = JSON.stringify([
       {

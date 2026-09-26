@@ -13,8 +13,8 @@ flowchart LR
 
 ## Writing and Entries
 
-- **Composer.** Plain-text or Markdown entries (with a formatting toolbar, inline help, and live preview) in a box that grows with the content. The date defaults to today and accepts typed dates for backdating. Attachments, visibility, and AI actions sit next to Save.
-- **Templates.** Built-in gratitude, daily reflection, and meeting-note templates, plus user templates saved from the current draft.
+- **Composer.** Plain-text or Markdown entries (with a formatting toolbar, inline help, and live preview) in a box that grows with the content and can also be resized by dragging (the entry editor behaves the same). The date defaults to today and accepts typed dates for backdating. Attachments, visibility, and AI actions sit next to Save.
+- **Templates.** Thirteen built-in templates covering daily practice (gratitude, daily reflection, morning intentions, weekly review, life check-in), thinking things through (decision notes, philosophical musing, values reflection), emotions (rant it out, worry check, unsent letter), and more (letter to my future self, dream log), plus user templates saved from the current draft. Choosing one fills the draft, tags, format, and visibility.
 - **Several entries per day.** Entries are addressed by date and same-day index; same-day entries can be drag-reordered and are renumbered automatically.
 - **Cross-references.** Writing `[[2024-01-15]]` or `[[2024-01-15#2]]` links to another entry. Links open the target in context, highlight it, and offer a way back. Each entry lists the entries that reference it (backlinks) when there are any.
 - **Entry actions.** Visibility, favorite, pin, listen, chat, rephrase, and edit are one click away; share, summarize, history, archive, and delete live in a **More actions** menu. Sharing uses the browser share sheet or copies a stable permalink (`?entry=<id>`).

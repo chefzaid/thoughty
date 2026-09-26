@@ -8,6 +8,7 @@ import type { Attachment, Config, Diary, TranslationFunction as TranslationFn } 
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getEditFormatButtonClass, getVisibilityButtonClass } from './EntriesList.utils';
 import { resolveFontColor } from '../../types/config';
+import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
@@ -185,6 +186,7 @@ export function EditForm({
         ? 'bg-gray-900 border-gray-700 text-gray-100'
         : 'bg-gray-50 border-gray-300 text-gray-900';
     const editFormatButtonClass = getEditFormatButtonClass(editFormat, config.theme);
+    const editArea = useAutoGrowTextarea(editText);
 
     return (
         <div className="space-y-4">
@@ -193,7 +195,9 @@ export function EditForm({
                     <Suspense
                         fallback={(
                             <textarea
-                                className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none ${inputClass}`}
+                                ref={editArea.ref}
+                                onPointerUp={editArea.onPointerUp}
+                                className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
                                 style={{ color: writingTextColor }}
                                 rows={3}
                                 value={editText}
@@ -206,7 +210,6 @@ export function EditForm({
                                 value={editText}
                                 onChange={(val) => setEditText(val ?? '')}
                                 preview="edit"
-                                visibleDragbar={false}
                                 height={200}
                                 textareaProps={{ style: { color: writingTextColor } }}
                             />
@@ -214,7 +217,9 @@ export function EditForm({
                     </Suspense>
                 ) : (
                     <textarea
-                        className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none ${inputClass}`}
+                        ref={editArea.ref}
+                        onPointerUp={editArea.onPointerUp}
+                        className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
                         style={{ color: writingTextColor }}
                         rows={3}
                         value={editText}
@@ -272,8 +277,9 @@ export function EditForm({
             <div className="flex gap-2">
                 <button type="button"
                     onClick={onSaveEdit}
-                    className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
                 >
+                    <span className="codicon codicon-save" aria-hidden="true" />
                     {t('save')}
                 </button>
                 <button type="button"
