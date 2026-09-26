@@ -134,7 +134,7 @@ function JournalRetagReview({ isDark, onApplied, t }: JournalRetagReviewProps) {
         onClick={openReview}
       >
         <span className="codicon codicon-wand" aria-hidden="true" />
-        {t("organizeJournalThemes")}
+        {t("organizeJournalTags")}
       </button>
 
       {isOpen &&
@@ -176,7 +176,7 @@ function JournalRetagReview({ isDark, onApplied, t }: JournalRetagReviewProps) {
               <div className="journal-retag-content" aria-live="polite">
                 {loading && (
                   <p className="journal-retag-state">
-                    {t("scanningJournalThemes")}
+                    {t("scanningJournalTags")}
                   </p>
                 )}
                 {error && (
@@ -213,7 +213,7 @@ function JournalRetagReview({ isDark, onApplied, t }: JournalRetagReviewProps) {
                       {plan.themes.length > 0 && (
                         <div
                           className="journal-retag-themes"
-                          aria-label={t("journalThemesFound")}
+                          aria-label={t("journalTagsFound")}
                         >
                           {plan.themes.map((theme) => (
                             <span key={theme}>#{theme}</span>
@@ -293,11 +293,11 @@ function JournalRetagReview({ isDark, onApplied, t }: JournalRetagReviewProps) {
                                 aria-hidden="true"
                               />
                               <div>
-                                <small>{t("suggestedThemes")}</small>
+                                <small>{t("suggestedTags")}</small>
                                 <p>
                                   {entry.suggestedTags.length > 0
                                     ? entry.suggestedTags.join(", ")
-                                    : t("noThemes")}
+                                    : t("noMatchingTag")}
                                 </p>
                               </div>
                             </label>

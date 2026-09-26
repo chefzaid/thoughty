@@ -35,7 +35,7 @@ vi.mock('../ProfilePage/TagOrganizationSection', () => ({
 }));
 
 vi.mock('./JournalRetagReview', () => ({
-  default: () => <button type="button">organizeJournalThemes</button>,
+  default: () => <button type="button">organizeJournalTags</button>,
 }));
 
 describe('TagManagerPage', () => {

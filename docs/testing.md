@@ -66,7 +66,7 @@ The browser never reaches a real backend: every `/api` call is answered by the m
 | `auth/` | sign-up and login onboarding, two-factor authentication |
 | `navigation/` | direct routes, browser history, permalinks, diary return routes |
 | `journal/` | authoring, Markdown, lifecycle, reordering, filtering, favorites, visibility, bulk archive, history, highlights, audio transcription |
-| `tags/` | tag create, count, rename, delete, and journal theme organization |
+| `tags/` | tag create, count, rename, delete, and journal tag organization |
 | `ai/` | Auto Tag, automatic tagging, Get Inspired, rephrasing, summaries, chat, meaning search, duplicates, personal API keys |
 | `stats/` | totals, heatmap, and tag insights |
 | `import-export/` | import/export formats, format settings, delete-all, books, book versions and cloud upload |

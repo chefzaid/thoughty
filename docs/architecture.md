@@ -35,7 +35,7 @@ The backend is one NestJS application assembled from feature modules under `thou
 | `entries` | entry CRUD, revisions, tags (usage, rename, delete), visibility, favorites, pins, archive, backlinks, public feed |
 | `diaries` | diary containers, ordering, default diary and delete fallback |
 | `attachments` | upload validation, object storage, audio transcription |
-| `ai` | OpenRouter credentials and usage, tagging, inspiration, rephrasing, summaries, chat, semantic search, duplicates, theme organization, insights |
+| `ai` | OpenRouter credentials and usage, tagging, inspiration, rephrasing, summaries, chat, semantic search, duplicates, journal tag organization, insights |
 | `stats` | statistics, heatmap, connections graph, writing-tendency analysis |
 | `io` | import and export formats, TXT format settings, delete-all |
 | `books` | book composition, covers, previews, versions |

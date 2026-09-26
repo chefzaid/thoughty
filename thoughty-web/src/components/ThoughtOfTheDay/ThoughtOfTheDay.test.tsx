@@ -159,7 +159,7 @@ describe('ThoughtOfTheDay', () => {
 
         fireEvent.click(screen.getByText('Hello'));
 
-        expect(onNavigateToEntry).toHaveBeenCalledWith('2024-01-01', 3, null, true);
+        expect(onNavigateToEntry).toHaveBeenCalledWith('2024-01-01', 3, null);
         expect(onClose).toHaveBeenCalled();
     });
 });

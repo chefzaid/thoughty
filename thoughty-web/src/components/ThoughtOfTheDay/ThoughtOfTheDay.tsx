@@ -31,7 +31,7 @@ interface ThoughtOfTheDayProps {
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly diaryId?: number | null;
-    readonly onNavigateToEntry?: (date: string, index: number, sourceEntry?: SourceEntryInfo | null, highlight?: boolean) => void;
+    readonly onNavigateToEntry?: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
 }
 
 function OnThisDaySection({
@@ -43,7 +43,7 @@ function OnThisDaySection({
     onThisDay: Record<string, Entry[]>;
     t: (key: string, params?: Record<string, string | number>) => string;
     formatDate: (dateStr: string) => string;
-    onSelectEntry: (entry: Entry, highlight?: boolean) => void;
+    onSelectEntry: (entry: Entry) => void;
 }>) {
     const sortedYears = Object.keys(onThisDay).sort((a, b) => Number.parseInt(a, 10) - Number.parseInt(b, 10));
 
@@ -69,7 +69,7 @@ function OnThisDaySection({
                                 key={entry.id}
                                 type="button"
                                 className="highlight-entry clickable compact"
-                                onClick={() => onSelectEntry(entry, false)}
+                                onClick={() => onSelectEntry(entry)}
                             >
                                 <div className="entry-meta">
                                     <span className="entry-date">{formatDate(entry.date)}</span>
@@ -172,11 +172,11 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
         fetchHighlights();
     };
 
-    const handleEntryClick = (entry: Entry, highlight: boolean = true): void => {
+    const handleEntryClick = (entry: Entry): void => {
         if (onNavigateToEntry) {
             let dateStr = entry.date;
             if (dateStr.includes('T')) dateStr = dateStr.split('T')[0] ?? dateStr;
-            onNavigateToEntry(dateStr, entry.index || 1, null, highlight);
+            onNavigateToEntry(dateStr, entry.index || 1, null);
             onClose();
         }
     };

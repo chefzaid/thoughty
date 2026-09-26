@@ -97,25 +97,25 @@ export type TranslationKey =
   | "language"
   | "tagOrganization"
   | "tagOrganizationDescription"
-  | "organizeJournalThemes"
+  | "organizeJournalTags"
   | "journalRetagTitle"
   | "journalRetagDescription"
-  | "scanningJournalThemes"
+  | "scanningJournalTags"
   | "journalRetagError"
   | "journalRetagApplyError"
   | "journalRetagApplied"
   | "journalRetagScanCount"
   | "journalRetagLimited"
-  | "journalThemesFound"
+  | "journalTagsFound"
   | "journalRetagEmpty"
   | "journalRetagMode"
   | "journalRetagReplace"
   | "journalRetagAdd"
   | "clearSelection"
   | "currentTags"
-  | "suggestedThemes"
+  | "suggestedTags"
   | "noTags"
-  | "noThemes"
+  | "noMatchingTag"
   | "journalRetagSelected"
   | "applyingJournalRetag"
   | "applyJournalRetag"
@@ -981,26 +981,25 @@ export const translations: Translations = {
     tagOrganization: "Tag Organization",
     tagOrganizationDescription:
       "Create, rename, color, and delete tags. Changes apply across all your entries.",
-    organizeJournalThemes: "Organize journal themes",
-    journalRetagTitle: "Review journal themes",
-    journalRetagDescription:
-      "AI proposes a compact theme set. Review every change before applying it.",
-    scanningJournalThemes: "Analyzing journal themes...",
-    journalRetagError: "Could not analyze journal themes.",
-    journalRetagApplyError: "Could not apply the selected theme changes.",
+    organizeJournalTags: "Organize journal tags",
+    journalRetagTitle: "Review suggested tags",
+    journalRetagDescription: "AI proposes a compact set of tags for your journal. Review every change before applying it.",
+    scanningJournalTags: "Analyzing your journal...",
+    journalRetagError: "Could not analyze the journal.",
+    journalRetagApplyError: "Could not apply the selected tag changes.",
     journalRetagApplied: "Updated {count} entries.",
     journalRetagScanCount: "Analyzed {analyzed} of {total} entries.",
     journalRetagLimited: "Only the 300 most recent entries were analyzed.",
-    journalThemesFound: "Themes found",
-    journalRetagEmpty: "Write an entry before organizing journal themes.",
-    journalRetagMode: "Theme update mode",
+    journalTagsFound: "Tags proposed",
+    journalRetagEmpty: "Write an entry before organizing journal tags.",
+    journalRetagMode: "Tag update mode",
     journalRetagReplace: "Replace tags",
-    journalRetagAdd: "Add themes",
+    journalRetagAdd: "Add tags",
     clearSelection: "Clear selection",
     currentTags: "Current tags",
-    suggestedThemes: "Suggested themes",
+    suggestedTags: "Suggested tags",
     noTags: "No tags",
-    noThemes: "No matching theme",
+    noMatchingTag: "No matching tag",
     journalRetagSelected: "{count} entries selected",
     applyingJournalRetag: "Applying changes...",
     applyJournalRetag: "Apply selected changes",
@@ -1527,8 +1526,7 @@ export const translations: Translations = {
     blogReading: "Reading",
     suggestTags: "Auto Tag",
     suggestingTags: "Tagging...",
-    autoTagDescription:
-      "Suggest tags for what this entry is about and the themes behind it",
+    autoTagDescription: "Suggest tags for what this entry is about and what it means",
     fixWriting: "Rephrase",
     fixingWriting: "Rephrasing...",
     discussEntry: "Discuss with AI",
@@ -1979,29 +1977,26 @@ export const translations: Translations = {
     tagOrganization: "Organisation des tags",
     tagOrganizationDescription:
       "Créez, renommez, colorez et supprimez vos tags. Les changements s'appliquent à toutes vos entrées.",
-    organizeJournalThemes: "Organiser les thèmes du journal",
-    journalRetagTitle: "Vérifier les thèmes du journal",
-    journalRetagDescription:
-      "L'IA propose un ensemble réduit de thèmes. Vérifiez chaque changement avant de l'appliquer.",
-    scanningJournalThemes: "Analyse des thèmes du journal...",
-    journalRetagError: "Impossible d'analyser les thèmes du journal.",
-    journalRetagApplyError:
-      "Impossible d'appliquer les changements sélectionnés.",
+    organizeJournalTags: "Organiser les tags du journal",
+    journalRetagTitle: "Vérifier les tags suggérés",
+    journalRetagDescription: "L'IA propose un ensemble compact de tags pour votre journal. Vérifiez chaque changement avant de l'appliquer.",
+    scanningJournalTags: "Analyse de votre journal...",
+    journalRetagError: "Impossible d'analyser le journal.",
+    journalRetagApplyError: "Impossible d'appliquer les changements de tags sélectionnés.",
     journalRetagApplied: "{count} entrées mises à jour.",
     journalRetagScanCount: "{analyzed} entrées analysées sur {total}.",
     journalRetagLimited:
       "Seules les 300 entrées les plus récentes ont été analysées.",
-    journalThemesFound: "Thèmes trouvés",
-    journalRetagEmpty:
-      "Écrivez une entrée avant d'organiser les thèmes du journal.",
-    journalRetagMode: "Mode de mise à jour des thèmes",
+    journalTagsFound: "Tags proposés",
+    journalRetagEmpty: "Écrivez une entrée avant d'organiser les tags du journal.",
+    journalRetagMode: "Mode de mise à jour des tags",
     journalRetagReplace: "Remplacer les tags",
-    journalRetagAdd: "Ajouter les thèmes",
+    journalRetagAdd: "Ajouter les tags",
     clearSelection: "Effacer la sélection",
     currentTags: "Tags actuels",
-    suggestedThemes: "Thèmes suggérés",
+    suggestedTags: "Tags suggérés",
     noTags: "Aucun tag",
-    noThemes: "Aucun thème correspondant",
+    noMatchingTag: "Aucun tag correspondant",
     journalRetagSelected: "{count} entrées sélectionnées",
     applyingJournalRetag: "Application des changements...",
     applyJournalRetag: "Appliquer les changements sélectionnés",
@@ -2543,8 +2538,7 @@ export const translations: Translations = {
     blogReading: "En lecture",
     suggestTags: "Auto Tag",
     suggestingTags: "Tagging...",
-    autoTagDescription:
-      "Suggérer des tags sur le sujet de cette entrée et les thèmes qu'elle aborde",
+    autoTagDescription: "Suggérer des tags sur le sujet de cette entrée et ce qu'elle signifie",
     fixWriting: "Reformuler",
     fixingWriting: "Reformulation...",
     discussEntry: "Discuter avec l'IA",

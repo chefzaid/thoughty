@@ -105,8 +105,8 @@ test.describe('route accessibility', () => {
         }],
       });
       await page.goto('/tags');
-      await page.getByRole('button', { name: 'Organize journal themes' }).click();
-      await expect(page.getByRole('dialog', { name: 'Review journal themes' })).toBeVisible();
+      await page.getByRole('button', { name: 'Organize journal tags' }).click();
+      await expect(page.getByRole('dialog', { name: 'Review suggested tags' })).toBeVisible();
 
       await expectNoAccessibilityViolations(page, '.journal-retag-dialog');
     });

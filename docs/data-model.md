@@ -205,7 +205,7 @@ There is no tag table. Tags are strings in the `entries.tags` PostgreSQL text ar
 
 - The set of known tags is the union of tags used by entries and tags present in metadata. A tag created in the Tags view exists only as metadata until an entry uses it.
 - `GET /api/entries/tags` returns each used tag with its entry count; `PATCH /api/entries/tags/rename` and `DELETE /api/entries/tags?tag=` rewrite every owned entry's array. The client updates the metadata setting alongside, so both stay consistent. Renaming a tag no entry uses only moves its metadata.
-- Themes are ordinary tags; AI tagging, theme organization, and books all read and write the same arrays.
+- There is no separate notion of themes: AI tagging, journal tag organization, and books all read and write the same tag arrays. A tag's **category** is different: it is an optional label (such as Work or Health) stored in tag metadata to group related tags in pickers, lists, and charts.
 - Entry-to-entry and tag co-occurrence correlations are derived on demand from `entries.tags` and never persisted.
 - If tags ever need their own ownership, permissions, or relationships, revisit this model with a new ADR.
 

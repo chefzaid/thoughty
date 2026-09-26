@@ -100,11 +100,11 @@ What each feature sends to the provider:
 | Mood, tone, and subject analysis | at most the 40 newest entries in scope |
 | Duplicate review | at most the 40 newest entries in scope |
 | Meaning search | the query plus at most the 100 newest entries in scope, for embeddings |
-| Journal theme organization | at most the 300 newest non-empty entries, each capped at 400 characters |
+| Organize journal tags | at most the 300 newest non-empty entries, each capped at 400 characters |
 | Writing-tendency analysis | bounded aggregate word, subject, and writing metrics computed locally — no raw text |
 | Audio transcription | the single audio attachment the user selected (5 MB limit re-checked while reading storage) |
 
-All prompts instruct the model not to follow instructions embedded in journal text or tag names. Theme organization is preview-first: applying a reviewed plan does not call the provider again, and the server rechecks that every referenced entry belongs to the user before changing tags. The Stats Connections graph is computed locally from entry IDs, dates, and tags, and never involves an AI provider.
+All prompts instruct the model not to follow instructions embedded in journal text or tag names. Journal tag organization is preview-first: applying a reviewed plan does not call the provider again, and the server rechecks that every referenced entry belongs to the user before changing tags. The Stats Connections graph is computed locally from entry IDs, dates, and tags, and never involves an AI provider.
 
 Usage accounting stores one metadata-only row per OpenRouter response (user, credential source, model, token counts, cost, timestamp) and never prompts or completions. Local-LLM support would change these assumptions and needs its own ADR.
 

@@ -208,7 +208,7 @@ describe('useEntryNavigation', () => {
         id: 5,
         date: '2024-01-14',
         index: 1,
-      }, true);
+      });
     });
 
     expect(navigate).toHaveBeenCalledWith({
@@ -300,7 +300,7 @@ describe('useEntryNavigation', () => {
     })));
 
     await act(async () => {
-      await result.current.handleNavigateToEntry('2024-02-01', 2, null, false);
+      await result.current.handleNavigateToEntry('2024-02-01', 2, null);
     });
 
     expect(setSearch).toHaveBeenCalledWith('');

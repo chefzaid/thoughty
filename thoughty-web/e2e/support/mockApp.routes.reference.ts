@@ -316,7 +316,7 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
       : state.entries;
     const sorted = sortEntries(scopedEntries);
     const randomEntry = sorted[0] ?? null;
-    const onThisDayEntry = sorted[1] ?? sorted[0] ?? null;
+    const onThisDayEntry = sorted.at(-1) ?? null;
 
     await fulfillJson(route, {
       randomEntry: randomEntry ? toEntryResponse(randomEntry, state) : null,

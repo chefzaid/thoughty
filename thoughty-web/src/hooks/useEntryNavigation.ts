@@ -88,7 +88,6 @@ export function useEntryNavigation({
   const [pendingEntryTarget, setPendingEntryTarget] = useState<{
     date: string;
     index: number;
-    highlight: boolean;
   } | null>(null);
 
   const needsJournalResetForPermalink = useCallback((): boolean => {
@@ -243,14 +242,11 @@ export function useEntryNavigation({
   const executeEntryNavigation = useCallback(async (
     date: string,
     index: number,
-    highlight: boolean,
   ) => {
     const data = await entriesService.navigateByDate(date, index, getLimit());
     if (data?.found) {
       setPage(data.page || 1);
-      if (highlight) {
-        setTargetEntryId(data.entryId || null);
-      }
+      setTargetEntryId(data.entryId || null);
       setActiveTargetId(data.entryId || null);
     } else {
       showEntryNotFoundToast();
@@ -305,7 +301,6 @@ export function useEntryNavigation({
     date: string,
     index: number = 1,
     sourceEntryInfo: SourceEntryInfo | null = null,
-    highlight: boolean = true,
   ) => {
     clearJournalPermalink();
 
@@ -317,13 +312,13 @@ export function useEntryNavigation({
       });
     }
 
-    setPendingEntryTarget({ date, index, highlight });
+    setPendingEntryTarget({ date, index });
 
     if (needsJournalResetForPermalink()) {
       resetJournalFiltersForPermalink();
     }
 
-    await executeEntryNavigation(date, index, highlight);
+    await executeEntryNavigation(date, index);
   }, [clearJournalPermalink, executeEntryNavigation, needsJournalResetForPermalink, resetJournalFiltersForPermalink, setSourceEntry]);
 
   useEffect(() => {
@@ -340,10 +335,7 @@ export function useEntryNavigation({
       return;
     }
 
-    if (pendingEntryTarget.highlight) {
-      setTargetEntryId(matchedEntry.id);
-    }
-
+    setTargetEntryId(matchedEntry.id);
     setActiveTargetId(matchedEntry.id);
     setPendingEntryTarget(null);
   }, [entries, loading, pendingEntryTarget, setActiveTargetId, setTargetEntryId]);

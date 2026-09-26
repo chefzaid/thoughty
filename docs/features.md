@@ -37,7 +37,7 @@ flowchart LR
 
 - **Tags are the single way to organize entries.** Concrete subjects and broader themes are both just tags. Existing tags autocomplete in the composer, editor, and filters, and new tags can be typed inline.
 - **Tags view (full CRUD).** Create a tag before any entry uses it (it is immediately offered in the pickers); see how many entries use each tag; rename a tag across the whole journal; set a color and an optional category (used for grouping and sorting everywhere tags appear); and delete a tag, which removes it from every entry after confirmation but keeps the entries. New and imported tags get a distinct color automatically.
-- **Journal theme organization.** From the Tags view, AI can propose a compact set of themes for the whole journal and assign them to entries; every assignment is reviewed before anything is saved (see [AI](#ai-assistance)).
+- **Organize journal tags.** From the Tags view, AI can propose a compact set of tags for the whole journal and assign them to entries; every assignment is reviewed before anything is saved (see [AI](#ai-assistance)).
 - **Filter bar.** Three groups: search (keyword or meaning-based, plus tags), filters (date, visibility, archive state, favorites, reset), and tools (Highlights and Find duplicates). All filters combine with each other and with the diary scope. The date picker only offers dates that have entries. Keyword matches are highlighted in plain-text and Markdown entries.
 
 ## Highlights and Insights
@@ -90,7 +90,7 @@ AI runs through OpenRouter. A deployment can provide a shared key, and each user
 - **Entry chat:** discuss an entry with AI. The conversation is saved per entry on the server and can be exported as a text transcript.
 - **Meaning search:** find entries by idea rather than keywords among the 100 newest in scope; the top 20 matches still combine with every other filter.
 - **Find duplicates:** reviews the 40 newest entries in scope for pairs sharing both a subject and a conclusion. Results are review-only; removing an entry goes through the normal delete confirmation.
-- **Journal theme organization:** proposes at most 12 themes and up to three per entry for the 300 newest entries; you review every assignment and choose whether to add them or replace existing tags.
+- **Organize journal tags:** proposes at most 12 tags and up to three per entry for the 300 newest entries; you review every assignment and choose whether to add them or replace existing tags.
 - **Insights:** mood, tone, and recurring subjects across the 40 newest entries in scope, and an on-demand writing-tendency analysis over any date range that sends only aggregate metrics, not text. Results describe writing patterns and are explicitly non-clinical.
 - **Audio transcription:** transcribe an attached audio note.
 

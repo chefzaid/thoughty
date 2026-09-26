@@ -55,7 +55,7 @@ describe("JournalRetagReview", () => {
     render(<JournalRetagReview isDark={false} onApplied={onApplied} t={t} />);
 
     await user.click(
-      screen.getByRole("button", { name: "organizeJournalThemes" }),
+      screen.getByRole("button", { name: "organizeJournalTags" }),
     );
 
     expect(await screen.findByText("#growth")).toBeVisible();
@@ -107,7 +107,7 @@ describe("JournalRetagReview", () => {
     );
 
     await user.click(
-      screen.getByRole("button", { name: "organizeJournalThemes" }),
+      screen.getByRole("button", { name: "organizeJournalTags" }),
     );
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Provider unavailable",
@@ -118,7 +118,7 @@ describe("JournalRetagReview", () => {
     expect(previewJournalRetag).toHaveBeenCalledTimes(2);
     await user.keyboard("{Escape}");
     expect(
-      screen.getByRole("button", { name: "organizeJournalThemes" }),
+      screen.getByRole("button", { name: "organizeJournalTags" }),
     ).toHaveFocus();
   });
 });

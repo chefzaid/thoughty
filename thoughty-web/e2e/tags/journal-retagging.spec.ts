@@ -30,10 +30,10 @@ test.describe("Journal theme organization", () => {
     });
 
     await page.goto("/tags");
-    await page.getByRole("button", { name: "Organize journal themes" }).click();
+    await page.getByRole("button", { name: "Organize journal tags" }).click();
 
     const dialog = page.getByRole("dialog", {
-      name: "Review journal themes",
+      name: "Review suggested tags",
     });
     await expect(dialog).toBeVisible();
     const desktopBounds = await dialog.boundingBox();
@@ -44,7 +44,7 @@ test.describe("Journal theme organization", () => {
     await expect(dialog.getByText("#growth")).toBeVisible();
     await expect(dialog.getByText("Analyzed 2 of 2 entries.")).toBeVisible();
 
-    await dialog.getByRole("button", { name: "Add themes" }).click();
+    await dialog.getByRole("button", { name: "Add tags" }).click();
     await dialog.getByRole("checkbox").nth(1).uncheck();
     await dialog
       .getByRole("button", { name: "Apply selected changes" })
@@ -80,8 +80,8 @@ test.describe("Journal theme organization", () => {
     });
 
     await page.goto("/tags");
-    await page.getByRole("button", { name: "Organize journal themes" }).click();
-    const dialog = page.getByRole("dialog", { name: "Review journal themes" });
+    await page.getByRole("button", { name: "Organize journal tags" }).click();
+    const dialog = page.getByRole("dialog", { name: "Review suggested tags" });
     await expect(dialog).toBeVisible();
 
     const bounds = await dialog.boundingBox();

@@ -17,6 +17,11 @@
  * account (which must have no entries yet): no users, settings, sessions, or
  * community data are created, changed, or deleted, and existing diaries with
  * the same name are reused.
+ *
+ * With --community-only, only the community accounts (maya, sam, and the
+ * deleted leo) and their journals are added, with database-assigned ids and no
+ * password, so nobody can sign in as them. It refuses if any of those usernames
+ * or emails already exist and never changes existing users.
  */
 
 import * as fs from 'node:fs';
@@ -44,6 +49,8 @@ const REFERENCE_PATTERNS = [
 const validateOnlyFlag = process.argv.includes('--validate-only');
 /** --into-user=<username>: add the main journal to an existing account without touching any user or setting. */
 const intoUser = process.argv.find((arg) => arg.startsWith('--into-user='))?.slice('--into-user='.length);
+/** --community-only: add only the public community accounts (maya, sam, leo), passwordless, next to existing users. */
+const communityOnly = process.argv.includes('--community-only');
 const PASSWORD = 'Test1234!';
 
 interface SeedUser {
@@ -196,6 +203,32 @@ async function insertUsers(): Promise<void> {
         }
     }
     await query(`SELECT setval(pg_get_serial_sequence('users', 'id'), GREATEST((SELECT MAX(id) FROM users), 1))`);
+}
+
+async function insertCommunityAccounts(communityEntries: Map<number, SeedEntry[]>): Promise<number> {
+    const names = COMMUNITY_USERS.map((user) => user.username);
+    const emails = COMMUNITY_USERS.map((user) => user.email);
+    const conflicts = await query<{ username: string }>('SELECT username FROM users WHERE username = ANY($1) OR email = ANY($2)', [names, emails]);
+    if (conflicts.length > 0) {
+        throw new Error(`Community accounts already exist (${conflicts.map((row) => row.username).join(', ')}); refusing to add them again`);
+    }
+
+    let inserted = 0;
+    for (const user of COMMUNITY_USERS) {
+        const [row] = await query<{ id: number }>(
+            `INSERT INTO users (username, email, password_hash, auth_provider, email_verified, deleted_at, deletion_reason)
+             VALUES ($1, $2, NULL, 'local', true, $3, $4) RETURNING id`,
+            [user.username, user.email, user.deleted ? new Date() : null, user.deleted ? 'Seeded deleted account' : null],
+        );
+        for (const [key, value] of Object.entries(user.settings)) {
+            await query('INSERT INTO settings (user_id, key, value) VALUES ($1, $2, $3)', [row.id, key, value]);
+        }
+        const diaries = await insertDiaries({ ...user, id: row.id });
+        const entries = communityEntries.get(user.id) ?? [];
+        await insertEntries(row.id, diaries, entries);
+        inserted += entries.length;
+    }
+    return inserted;
 }
 
 async function insertDiaries(user: SeedUser): Promise<Map<DiaryKey, number>> {
@@ -363,6 +396,17 @@ async function seed(): Promise<void> {
         }
 
         section('Writing Database');
+        if (communityOnly) {
+            const inserted = await withTransaction(() => insertCommunityAccounts(communityEntries));
+            summaryBox('Community Seed Complete', [
+                ['Accounts', COMMUNITY_USERS.map((user) => user.username + (user.deleted ? ' (deleted)' : '')).join(', ')],
+                ['Entries', String(inserted)],
+                ['Sign-in', 'disabled (no password)'],
+                ['Duration', `${Date.now() - startTime}ms`],
+            ]);
+            await closeDatabase();
+            process.exit(0);
+        }
         const targetUserId = await withTransaction(async () => {
             let userId = MAIN_USER.id;
             let diaries: Map<DiaryKey, number>;
