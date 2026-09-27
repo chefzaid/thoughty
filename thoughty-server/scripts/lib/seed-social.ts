@@ -8,6 +8,23 @@ import { query } from './db';
 const TEST = 1;
 const MAYA = 2;
 const SAM = 3;
+const NEWBIE = 5;
+const WRITERS = [TEST, MAYA, SAM];
+const THREADED_ENTRIES_PER_WRITER = 5;
+const COMMENT_LINES = [
+    'This one stayed with me all day.',
+    'Same here. Thanks for sharing it.',
+    'Beautifully put.',
+    'I needed to read this today.',
+    'The last line made me stop and think.',
+    'I have been circling the same question lately.',
+    'Saving this one for a slower morning.',
+    'You put words to something I could not name.',
+    'Such a gentle way to look at it.',
+    'This made me want to go for a walk.',
+    'Reading this with my coffee. Perfect timing.',
+    'I love how honest this is.',
+];
 
 export async function insertSessionsAndSocialData(): Promise<void> {
     // Two sessions on other devices so "Sign out other sessions" has something to revoke.
@@ -38,39 +55,55 @@ export async function insertSessionsAndSocialData(): Promise<void> {
         }
     }
 
-    // test follows maya and sam; maya and sam follow test back, so both follow lists have content.
-    for (const [followerId, followedId] of [[TEST, MAYA], [TEST, SAM], [MAYA, TEST], [SAM, TEST]]) {
+    // test follows maya and sam, who follow test back; newbie follows two writers, maya follows sam.
+    const follows = [[TEST, MAYA], [TEST, SAM], [MAYA, TEST], [SAM, TEST], [NEWBIE, TEST], [NEWBIE, MAYA], [MAYA, SAM]];
+    for (const [followerId, followedId] of follows) {
         await query('INSERT INTO user_follows (follower_id, followed_id) VALUES ($1, $2)', [followerId, followedId]);
     }
 
-    // A short thread under the newest feed entry of test and of maya, so both commenting and
-    // the entry owner's right to delete other people's comments can be tried.
-    const threads: Record<number, Array<[number, string]>> = {
-        [TEST]: [[MAYA, 'This one stayed with me all day.'], [SAM, 'Same here. Thanks for sharing it.']],
-        [MAYA]: [[TEST, 'Beautifully put.'], [SAM, 'I needed to read this today.']],
-    };
-    const newestPublic = await query<{ id: number; user_id: number }>(
-        `SELECT DISTINCT ON (user_id) id, user_id FROM entries
-         WHERE user_id = ANY($1) AND visibility = 'public' AND moderation_status = 'visible' AND NOT is_archived
-         ORDER BY user_id, created_at DESC, id DESC`,
-        [Object.keys(threads).map(Number)],
+    // Threads and likes under each writer's newest feed entries: enough for the leaderboard to rank
+    // several entries and for test to earn the comment and like badges.
+    const recentPublic = await query<{ id: number; user_id: number; rank: string }>(
+        `SELECT id, user_id, rank FROM (
+             SELECT id, user_id, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC, id DESC) AS rank
+             FROM entries
+             WHERE user_id = ANY($1) AND visibility = 'public' AND moderation_status = 'visible' AND NOT is_archived
+         ) ranked
+         WHERE rank <= $2
+         ORDER BY user_id, rank`,
+        [WRITERS, THREADED_ENTRIES_PER_WRITER],
     );
-    for (const entry of newestPublic) {
-        for (const [userId, content] of threads[entry.user_id]) {
-            await query('INSERT INTO entry_comments (entry_id, user_id, content) VALUES ($1, $2, $3)', [entry.id, userId, content]);
+    let line = 0;
+    for (const entry of recentPublic) {
+        const rank = Number(entry.rank);
+        const others = WRITERS.filter((userId) => userId !== entry.user_id);
+        // Newest entries draw extra voices, so counts differ between entries.
+        const commenters = rank === 1 ? [...others, NEWBIE] : others;
+        for (const userId of commenters) {
+            await query('INSERT INTO entry_comments (entry_id, user_id, content) VALUES ($1, $2, $3)', [
+                entry.id,
+                userId,
+                COMMENT_LINES[line++ % COMMENT_LINES.length],
+            ]);
         }
-    }
-
-    // Likes on both threaded entries (never by their own author), and maya liking test's comment.
-    for (const entry of newestPublic) {
-        const likers = entry.user_id === TEST ? [MAYA, SAM] : [TEST, SAM];
+        if (rank === 1) {
+            // The author's own reply shows in the thread but never counts toward rankings or karma.
+            await query('INSERT INTO entry_comments (entry_id, user_id, content) VALUES ($1, $2, $3)', [
+                entry.id,
+                entry.user_id,
+                'Thank you all for reading.',
+            ]);
+        }
+        const likers = rank % 2 === 1 ? [...others, NEWBIE] : others;
         for (const userId of likers) {
             await query('INSERT INTO entry_likes (entry_id, user_id) VALUES ($1, $2)', [entry.id, userId]);
         }
     }
+
+    // Authors like the comments other people left on their entries.
     await query(
         `INSERT INTO comment_likes (comment_id, user_id)
-         SELECT id, $1 FROM entry_comments WHERE user_id = $2`,
-        [MAYA, TEST],
+         SELECT c.id, e.user_id FROM entry_comments c JOIN entries e ON e.id = c.entry_id
+         WHERE c.user_id <> e.user_id`,
     );
 }
