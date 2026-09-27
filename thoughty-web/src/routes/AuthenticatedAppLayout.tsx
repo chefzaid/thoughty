@@ -1,11 +1,13 @@
 import { useRef, type ReactNode } from 'react';
 import NavMenu from '../components/NavMenu/NavMenu';
+import AutoDismiss from '../components/AutoDismiss/AutoDismiss';
 import ConfirmModal from '../components/ConfirmModal/ConfirmModal';
 import Footer from '../components/Footer/Footer';
 import AiChatModal from '../components/AiChatModal/AiChatModal';
 import type { ViewType, Config, Entry } from '../types';
 import { normalizeFontSize, resolveFontFamily } from '../types/config';
 import { useRouteChangeFocus } from '../hooks/useRouteChangeFocus';
+import type { TransientMessage } from '../hooks/useTransientMessage';
 
 interface AuthenticatedAppLayoutProps {
   readonly children: ReactNode;
@@ -24,7 +26,7 @@ interface AuthenticatedAppLayoutProps {
   readonly onCloseBulkModal: () => void;
   readonly onConfirmBulkDelete: () => void;
   readonly selectedCount: number;
-  readonly entryToastVisible: boolean;
+  readonly entryToast: TransientMessage;
   readonly chatEntry: Entry | null;
   readonly onCloseChat: () => void;
   readonly onLoadChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
@@ -48,7 +50,7 @@ function AuthenticatedAppLayout({
   onCloseBulkModal,
   onConfirmBulkDelete,
   selectedCount,
-  entryToastVisible,
+  entryToast,
   chatEntry,
   onCloseChat,
   onLoadChatHistory,
@@ -104,7 +106,7 @@ function AuthenticatedAppLayout({
           theme={config.theme}
         />
 
-        {entryToastVisible && (
+        <AutoDismiss message={entryToast} durationMs={4000}>
           <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 px-4">
             <div
               role="alert"
@@ -115,7 +117,7 @@ function AuthenticatedAppLayout({
               <p className={`mt-1 text-sm ${config.theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>{t('entryNotFoundMessage')}</p>
             </div>
           </div>
-        )}
+        </AutoDismiss>
 
         {chatEntry && (
           <AiChatModal

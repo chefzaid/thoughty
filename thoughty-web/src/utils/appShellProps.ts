@@ -1,5 +1,7 @@
 import type { ComponentProps } from 'react';
 
+import type { TransientMessage } from '../hooks/useTransientMessage';
+
 import type AboutPage from '../components/AboutPage/AboutPage';
 import type AuthPage from '../components/AuthPage/AuthPage';
 import type BlogPage from '../components/BlogPage/BlogPage';
@@ -50,7 +52,7 @@ interface BuildAuthenticatedLayoutPropsParams {
   config: Config;
   currentView: ViewType | null;
   deleteModalState: Pick<DeleteModalState, 'cancelDelete' | 'confirmDelete' | 'deleteModalOpen'>;
-  entryToastVisible: boolean;
+  entryToast: TransientMessage;
   handleAiChat: (entryId: number, entryContent: string, messages: { role: 'user' | 'assistant'; content: string }[]) => Promise<string | null>;
   handleLoadAiChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
   isEmailVerified: boolean;
@@ -172,7 +174,7 @@ export function buildAuthenticatedLayoutProps({
   config,
   currentView,
   deleteModalState,
-  entryToastVisible,
+  entryToast,
   handleAiChat,
   handleLoadAiChatHistory,
   isEmailVerified,
@@ -197,7 +199,7 @@ export function buildAuthenticatedLayoutProps({
     onCloseBulkModal: bulkSelectState.cancelBulkModal,
     onConfirmBulkDelete: bulkSelectState.confirmBulkDelete,
     selectedCount: bulkSelectState.selectedIds.size,
-    entryToastVisible,
+    entryToast,
     chatEntry,
     onCloseChat: () => setChatEntry(null),
     onLoadChatHistory: handleLoadAiChatHistory,

@@ -4,6 +4,7 @@ import type { NavigateFunction } from 'react-router-dom';
 import type { Entry, SourceEntryInfo, ViewType } from '../types';
 import type { useEntries } from './useAppState';
 import { getPathForView } from '../types';
+import { useTransientMessage } from './useTransientMessage';
 import { buildEntryPermalink, ENTRY_PERMALINK_PARAM, toSearchString } from '../utils/appRouting';
 
 type EntriesState = ReturnType<typeof useEntries>;
@@ -82,8 +83,8 @@ export function useEntryNavigation({
   sourceEntry,
   t,
 }: Readonly<UseEntryNavigationParams>) {
-  const [entryToastVisible, setEntryToastVisible] = useState(false);
-  const [entryToastToken, setEntryToastToken] = useState(0);
+  const entryToast = useTransientMessage();
+  const showEntryNotFoundToast = entryToast.show;
   const [handledPermalinkEntryId, setHandledPermalinkEntryId] = useState<number | null>(null);
   const [pendingEntryTarget, setPendingEntryTarget] = useState<{
     date: string;
@@ -219,25 +220,6 @@ export function useEntryNavigation({
       setHandledPermalinkEntryId(null);
     }
   }, [currentView, navigate, searchParams]);
-
-  const showEntryNotFoundToast = useCallback(() => {
-    setEntryToastVisible(true);
-    setEntryToastToken((previousToken) => previousToken + 1);
-  }, []);
-
-  useEffect(() => {
-    if (!entryToastVisible) {
-      return;
-    }
-
-    const timeoutId = globalThis.setTimeout(() => {
-      setEntryToastVisible(false);
-    }, 4000);
-
-    return () => {
-      globalThis.clearTimeout(timeoutId);
-    };
-  }, [entryToastToken, entryToastVisible]);
 
   const executeEntryNavigation = useCallback(async (
     date: string,
@@ -389,7 +371,7 @@ export function useEntryNavigation({
   }, [entriesService, getLimit, handledPermalinkEntryId, isAuthenticated, needsJournalResetForPermalink, resetJournalFiltersForPermalink, routeEntryId, setActiveTargetId, setPage, setSourceEntry, setTargetEntryId, showEntryNotFoundToast]);
 
   return {
-    entryToastVisible,
+    entryToast,
     handleBackToSource,
     handleNavigateToEntry,
     handleShareEntry,

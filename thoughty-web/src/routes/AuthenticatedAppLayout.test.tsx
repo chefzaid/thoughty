@@ -17,7 +17,7 @@ const defaultProps = {
   onCloseBulkModal: vi.fn(),
   onConfirmBulkDelete: vi.fn(),
   selectedCount: 0,
-  entryToastVisible: false,
+  entryToast: { visible: false, showCount: 0, show: vi.fn(), hide: vi.fn() },
   chatEntry: null,
   onCloseChat: vi.fn(),
   onLoadChatHistory: vi.fn().mockResolvedValue([]),

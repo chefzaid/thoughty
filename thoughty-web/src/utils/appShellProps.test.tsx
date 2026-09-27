@@ -42,7 +42,7 @@ function createLayoutParams(
       confirmDelete: vi.fn(),
       deleteModalOpen: false,
     },
-    entryToastVisible: false,
+    entryToast: { visible: false, showCount: 0, show: vi.fn(), hide: vi.fn() },
     handleAiChat: vi.fn().mockResolvedValue(null),
     handleLoadAiChatHistory: vi.fn().mockResolvedValue([]),
     isEmailVerified: true,

@@ -239,7 +239,7 @@ describe('useEntryNavigation', () => {
     const { result } = renderHook(() => useEntryNavigation(params));
 
     await waitFor(() => {
-      expect(result.current.entryToastVisible).toBe(true);
+      expect(result.current.entryToast.visible).toBe(true);
     });
 
     expect(navigateById).toHaveBeenCalledWith(77, 10);

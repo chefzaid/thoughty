@@ -39,16 +39,34 @@ test.describe('Route navigation', () => {
   });
 
   test('shows a toast for a missing journal permalink', async ({ page }) => {
+    await page.clock.install();
     await setupMockApp(page, {
       startAuthenticated: true,
       initialEntries: statsEntries,
     });
+    // Hold the lookup so time can be frozen before the toast's countdown starts.
+    let answerLookup: () => void = () => undefined;
+    const lookupRequested = new Promise<void>((requested) => {
+      void page.route('**/api/entries/by-date?id=999*', async (route) => {
+        await new Promise<void>((answer) => {
+          answerLookup = answer;
+          requested();
+        });
+        await route.fulfill({ json: { found: false } });
+      });
+    });
 
     await page.goto('/journal?entry=999');
+    await lookupRequested;
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+    answerLookup();
 
-    await expect(page.getByRole('alert')).toBeVisible();
-    await expect(page.getByText('Entry not found')).toBeVisible();
-    await expect(page.getByText('This entry may have been deleted, or the link is no longer valid.')).toBeVisible();
+    const toast = page.getByRole('alert');
+    await expect(toast).toContainText('Entry not found');
+    await expect(toast).toContainText('This entry may have been deleted, or the link is no longer valid.');
+
+    await page.clock.runFor(4000);
+    await expect(toast).toHaveCount(0);
   });
 
   test('supports public auth deep links and browser history', async ({ page }) => {

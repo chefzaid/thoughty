@@ -304,7 +304,7 @@ export function useAppShellModel(): AppShellModel {
     config,
     currentView,
     deleteModalState,
-    entryToastVisible: entryNavigationState.entryToastVisible,
+    entryToast: entryNavigationState.entryToast,
     handleAiChat,
     handleLoadAiChatHistory,
     isEmailVerified: user?.emailVerified ?? false,

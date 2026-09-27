@@ -13,6 +13,8 @@ import {
   serializeTagMetadata,
 } from '../../utils/tagMetadata';
 import JournalRetagReview from './JournalRetagReview';
+import { useTransientMessage } from '../../hooks/useTransientMessage';
+import AutoDismiss from '../AutoDismiss/AutoDismiss';
 
 const MAX_TAG_LENGTH = 50;
 
@@ -39,7 +41,7 @@ function TagManagerPage({
 }: Readonly<TagManagerPageProps>) {
   const [localConfig, setLocalConfig] = useState<ProfileConfig>(config);
   const [renameDrafts, setRenameDrafts] = useState<Record<string, string>>({});
-  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const saveToast = useTransientMessage();
   const [tagUsage, setTagUsage] = useState<Record<string, number>>({});
   const [newTagName, setNewTagName] = useState('');
   const [tagError, setTagError] = useState('');
@@ -139,8 +141,7 @@ function TagManagerPage({
       await onUpdateConfig(nextConfig);
       setLocalConfig(nextConfig);
       setRenameDrafts({});
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      saveToast.show();
     })();
   };
 
@@ -206,9 +207,9 @@ function TagManagerPage({
         t={t}
       />
 
-      {saveSuccess && (
-        <div className="profile-save-toast">{t('settingsSaved')}</div>
-      )}
+      <AutoDismiss message={saveToast} durationMs={3000}>
+        <div className="profile-save-toast" role="status">{t('settingsSaved')}</div>
+      </AutoDismiss>
     </div>
   );
 }

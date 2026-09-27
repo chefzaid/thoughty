@@ -4,6 +4,7 @@ import { setupMockApp } from '../support/mockApp';
 
 test.describe('Tag management', () => {
   test('renames a tag across entries from the tags view', async ({ page }) => {
+    await page.clock.install();
     const { state } = await setupMockApp(page, {
       startAuthenticated: true,
       initialEntries: [
@@ -33,14 +34,19 @@ test.describe('Tag management', () => {
 
     const focusNameInput = page.getByLabel('Name focus');
     await focusNameInput.fill('focus-updated');
+    // Freeze time so the confirmation cannot expire before it is asserted.
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
     await page.getByRole('button', { name: 'Save Changes' }).click();
 
-    await expect(page.getByText('Settings saved successfully')).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: 'Settings saved successfully' })).toBeVisible();
     await expect.poll(() => state.entries.map((entry) => entry.tags)).toEqual([
       ['focus-updated', 'planning'],
       ['focus-updated'],
     ]);
     await expect(page.getByText('#focus-updated')).toBeVisible();
+
+    await page.clock.runFor(3000);
+    await expect(page.getByText('Settings saved successfully')).toHaveCount(0);
   });
 
   test('creates, counts, and deletes tags from the tags view', async ({ page }) => {

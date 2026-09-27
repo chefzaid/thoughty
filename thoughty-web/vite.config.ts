@@ -44,6 +44,11 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 5173,
+    // Transform the app up front so the first page loads (and parallel browser tests) do not
+    // all wait on on-demand compilation of the same modules.
+    warmup: {
+      clientFiles: ['./src/main.tsx', './src/routes/*.tsx', './src/components/**/*.tsx', '!./src/**/*.test.tsx'],
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3001',

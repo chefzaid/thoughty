@@ -120,6 +120,10 @@ Guidelines:
 - Prefer accessible locators (`getByRole`, `getByLabel`, `getByPlaceholder`); scope to a card such as `page.locator('#entry-101')` when a name is ambiguous, or pass `exact: true`.
 - Call `setupMockApp` before navigating, keep state in the returned `state` object, and avoid module-level mutable state; tests run in parallel.
 - Frontend unit tests usually pass an identity translator (`t = (key) => key`), so assert on translation keys rather than English text.
+- Never race a message that hides itself (toasts, save confirmations). Install `page.clock` before navigating, pause it just before the action that shows the message, assert, then `page.clock.runFor(...)` to check that it hides. `e2e/tags/management.spec.ts` and the missing-permalink test in `e2e/navigation/routes.spec.ts` show the pattern, including holding an API route until the clock is paused.
+- Transient messages use `useTransientMessage` with `AutoDismiss`, which starts the countdown only once the message is on screen, so it cannot expire while lazy code is still loading.
+
+The Vite dev server pre-transforms the app on start (`server.warmup` in `vite.config.ts`), so parallel browser tests do not all wait on compiling the same modules for their first page load.
 
 ## Performance and Resilience Checks
 

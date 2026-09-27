@@ -14,6 +14,8 @@ import ProfileActions from './ProfileActions';
 import DataPrivacySection from './DataPrivacySection';
 import SubscriptionSection from './SubscriptionSection';
 import AchievementsSection from './AchievementsSection';
+import { useTransientMessage } from '../../hooks/useTransientMessage';
+import AutoDismiss from '../AutoDismiss/AutoDismiss';
 
 // Import types and utilities
 import type { 
@@ -58,7 +60,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Save success toast
-  const [saveSuccess, setSaveSuccess] = useState<boolean>(false);
+  const saveToast = useTransientMessage();
 
   // Delete account state
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
@@ -177,8 +179,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
   const handleSave = (): void => {
     void (async () => {
       await onUpdateConfig(localConfig);
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      saveToast.show();
     })();
   };
 
@@ -280,9 +281,9 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
 
       <ProfileActions onBack={onBack} handleSave={handleSave} t={t} />
 
-      {saveSuccess && (
-        <div className="profile-save-toast">{t('settingsSaved')}</div>
-      )}
+      <AutoDismiss message={saveToast} durationMs={3000}>
+        <div className="profile-save-toast" role="status">{t('settingsSaved')}</div>
+      </AutoDismiss>
     </div>
   );
 }

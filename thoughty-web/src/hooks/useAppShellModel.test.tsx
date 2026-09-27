@@ -279,7 +279,7 @@ describe('useAppShellModel', () => {
       toggleSelect: vi.fn(),
     });
     mocks.useEntryNavigation.mockReturnValue({
-      entryToastVisible: true,
+      entryToast: { visible: true, showCount: 1, show: vi.fn(), hide: vi.fn() },
       handleBackToSource: vi.fn(),
       handleNavigateToEntry: vi.fn(),
       handleShareEntry: vi.fn(),
@@ -327,7 +327,7 @@ describe('useAppShellModel', () => {
       userName: 'Config Name',
       avatarUrl: 'config-avatar.png',
       isEmailVerified: true,
-      entryToastVisible: true,
+      entryToast: expect.objectContaining({ visible: true }),
     });
     expect(result.current.authenticatedRoutesProps).toMatchObject({
       kind: 'routes',
