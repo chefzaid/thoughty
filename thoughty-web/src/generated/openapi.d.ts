@@ -1600,6 +1600,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/entries/{entryId}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List comments on a public entry */
+        get: operations["CommentsController_list"];
+        put?: never;
+        /** Comment on a public entry */
+        post: operations["CommentsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/entries/{entryId}/comments/{commentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a comment you wrote or one on your entry */
+        delete: operations["CommentsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1987,6 +2022,7 @@ export interface components {
          *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *       "format": "plain",
          *       "createdAt": "2026-06-24T10:00:00.000Z",
+         *       "commentCount": 3,
          *       "author": {
          *         "id": 1,
          *         "username": "Daily Journal",
@@ -2005,6 +2041,8 @@ export interface components {
             format: "plain" | "markdown";
             /** Format: date-time */
             createdAt: string;
+            /** @description Comments by active users */
+            commentCount: number;
             author: components["schemas"]["PublicFeedAuthorDto"];
         };
         /**
@@ -2020,6 +2058,7 @@ export interface components {
          *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *           "format": "plain",
          *           "createdAt": "2026-06-24T10:00:00.000Z",
+         *           "commentCount": 3,
          *           "author": {
          *             "id": 1,
          *             "username": "Daily Journal",
@@ -3893,6 +3932,93 @@ export interface components {
             /** @example true */
             following: boolean;
         };
+        /**
+         * @example {
+         *       "id": 2,
+         *       "username": "maya",
+         *       "avatarUrl": null
+         *     }
+         */
+        EntryCommentAuthorDto: {
+            /** @example 2 */
+            id: number;
+            /** @example maya */
+            username: string;
+            /** @example null */
+            avatarUrl: string | null;
+        };
+        /**
+         * @example {
+         *       "id": 41,
+         *       "content": "This one stayed with me all day.",
+         *       "createdAt": "2026-09-01T08:30:00.000Z",
+         *       "author": {
+         *         "id": 2,
+         *         "username": "maya",
+         *         "avatarUrl": null
+         *       },
+         *       "canDelete": true
+         *     }
+         */
+        EntryCommentDto: {
+            /** @example 41 */
+            id: number;
+            /** @example This one stayed with me all day. */
+            content: string;
+            /** @example 2026-09-01T08:30:00.000Z */
+            createdAt: string;
+            author: components["schemas"]["EntryCommentAuthorDto"];
+            /** @description The current user wrote the comment or owns the entry */
+            canDelete: boolean;
+        };
+        /**
+         * @example {
+         *       "comments": [
+         *         {
+         *           "id": 41,
+         *           "content": "This one stayed with me all day.",
+         *           "createdAt": "2026-09-01T08:30:00.000Z",
+         *           "author": {
+         *             "id": 2,
+         *             "username": "maya",
+         *             "avatarUrl": null
+         *           },
+         *           "canDelete": true
+         *         }
+         *       ],
+         *       "total": 3
+         *     }
+         */
+        EntryCommentsResponseDto: {
+            /** @description Most recent comments, oldest first */
+            comments: components["schemas"]["EntryCommentDto"][];
+            /**
+             * @description All visible comments on the entry
+             * @example 3
+             */
+            total: number;
+        };
+        /**
+         * @example {
+         *       "content": "This one stayed with me all day."
+         *     }
+         */
+        CreateEntryCommentDto: {
+            /** @example This one stayed with me all day. */
+            content: string;
+        };
+        /**
+         * @example {
+         *       "id": 41,
+         *       "deleted": true
+         *     }
+         */
+        EntryCommentDeletedDto: {
+            /** @example 41 */
+            id: number;
+            /** @example true */
+            deleted: boolean;
+        };
     };
     responses: never;
     parameters: never;
@@ -4857,6 +4983,7 @@ export interface operations {
                      *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                      *           "format": "plain",
                      *           "createdAt": "2026-06-24T10:00:00.000Z",
+                     *           "commentCount": 3,
                      *           "author": {
                      *             "id": 1,
                      *             "username": "Daily Journal",
@@ -7949,6 +8076,140 @@ export interface operations {
                      */
                     "application/json": components["schemas"]["FollowStateDto"];
                 };
+            };
+        };
+    };
+    CommentsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recent comments, oldest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "comments": [
+                     *         {
+                     *           "id": 41,
+                     *           "content": "This one stayed with me all day.",
+                     *           "createdAt": "2026-09-01T08:30:00.000Z",
+                     *           "author": {
+                     *             "id": 2,
+                     *             "username": "maya",
+                     *             "avatarUrl": null
+                     *           },
+                     *           "canDelete": true
+                     *         }
+                     *       ],
+                     *       "total": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryCommentsResponseDto"];
+                };
+            };
+            /** @description The entry is not visible in the public feed */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CommentsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "content": "This one stayed with me all day."
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateEntryCommentDto"];
+            };
+        };
+        responses: {
+            /** @description The new comment */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 41,
+                     *       "content": "This one stayed with me all day.",
+                     *       "createdAt": "2026-09-01T08:30:00.000Z",
+                     *       "author": {
+                     *         "id": 2,
+                     *         "username": "maya",
+                     *         "avatarUrl": null
+                     *       },
+                     *       "canDelete": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryCommentDto"];
+                };
+            };
+            /** @description The entry is not visible in the public feed */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    CommentsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: number;
+                commentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The comment was deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 41,
+                     *       "deleted": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryCommentDeletedDto"];
+                };
+            };
+            /** @description No deletable comment with this id on the entry */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

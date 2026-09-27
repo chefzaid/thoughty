@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFeedService } from '../../hooks/useFeedService';
 import type { PublicFeedEntry, PublicFeedScope } from '../../services/api';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
+import EntryComments from './EntryComments';
 import FeedAuthor from './FeedAuthor';
 import FollowingPanel from './FollowingPanel';
 import { useFollows } from './useFollows';
@@ -158,6 +159,13 @@ function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
                 {entry.tags.map((tag) => <li key={tag}>#{tag}</li>)}
               </ul>
             )}
+            <EntryComments
+              entryId={entry.id}
+              commentCount={entry.commentCount}
+              feedService={feedService}
+              theme={theme}
+              t={t}
+            />
           </article>
         ))}
       </div>

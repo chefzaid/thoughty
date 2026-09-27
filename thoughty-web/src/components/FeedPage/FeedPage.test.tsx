@@ -27,6 +27,7 @@ const createEntry = (id: number, username: string, isFollowed = false) => ({
   content: `Entry ${id}`,
   format: 'plain' as const,
   createdAt: '2026-08-01T12:00:00.000Z',
+  commentCount: 0,
   author: { id: id + 100, username, avatarUrl: null, isFollowed },
 });
 

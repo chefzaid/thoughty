@@ -1154,6 +1154,7 @@
                       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                       "format": "plain",
                       "createdAt": "2026-06-24T10:00:00.000Z",
+                      "commentCount": 3,
                       "author": {
                         "id": 1,
                         "username": "Daily Journal",
@@ -5828,6 +5829,173 @@
           "Social"
         ]
       }
+    },
+    "/api/entries/{entryId}/comments": {
+      "get": {
+        "operationId": "CommentsController_list",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Recent comments, oldest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryCommentsResponseDto"
+                },
+                "example": {
+                  "comments": [
+                    {
+                      "id": 41,
+                      "content": "This one stayed with me all day.",
+                      "createdAt": "2026-09-01T08:30:00.000Z",
+                      "author": {
+                        "id": 2,
+                        "username": "maya",
+                        "avatarUrl": null
+                      },
+                      "canDelete": true
+                    }
+                  ],
+                  "total": 3
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entry is not visible in the public feed"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List comments on a public entry",
+        "tags": [
+          "Social"
+        ]
+      },
+      "post": {
+        "operationId": "CommentsController_create",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEntryCommentDto"
+              },
+              "example": {
+                "content": "This one stayed with me all day."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The new comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryCommentDto"
+                },
+                "example": {
+                  "id": 41,
+                  "content": "This one stayed with me all day.",
+                  "createdAt": "2026-09-01T08:30:00.000Z",
+                  "author": {
+                    "id": 2,
+                    "username": "maya",
+                    "avatarUrl": null
+                  },
+                  "canDelete": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entry is not visible in the public feed"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Comment on a public entry",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/entries/{entryId}/comments/{commentId}": {
+      "delete": {
+        "operationId": "CommentsController_remove",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The comment was deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryCommentDeletedDto"
+                },
+                "example": {
+                  "id": 41,
+                  "deleted": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No deletable comment with this id on the entry"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a comment you wrote or one on your entry",
+        "tags": [
+          "Social"
+        ]
+      }
     }
   },
   "info": {
@@ -6550,6 +6718,10 @@
             "format": "date-time",
             "type": "string"
           },
+          "commentCount": {
+            "type": "number",
+            "description": "Comments by active users"
+          },
           "author": {
             "$ref": "#/components/schemas/PublicFeedAuthorDto"
           }
@@ -6562,6 +6734,7 @@
           "content",
           "format",
           "createdAt",
+          "commentCount",
           "author"
         ],
         "example": {
@@ -6574,6 +6747,7 @@
           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
           "format": "plain",
           "createdAt": "2026-06-24T10:00:00.000Z",
+          "commentCount": 3,
           "author": {
             "id": 1,
             "username": "Daily Journal",
@@ -6623,6 +6797,7 @@
               "content": "Today I wrote a thoughtful journal entry about focus and calm.",
               "format": "plain",
               "createdAt": "2026-06-24T10:00:00.000Z",
+              "commentCount": 3,
               "author": {
                 "id": 1,
                 "username": "Daily Journal",
@@ -9762,6 +9937,151 @@
         "example": {
           "userId": 2,
           "following": true
+        }
+      },
+      "EntryCommentAuthorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 2
+          },
+          "username": {
+            "type": "string",
+            "example": "maya"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "avatarUrl"
+        ],
+        "example": {
+          "id": 2,
+          "username": "maya",
+          "avatarUrl": null
+        }
+      },
+      "EntryCommentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 41
+          },
+          "content": {
+            "type": "string",
+            "example": "This one stayed with me all day."
+          },
+          "createdAt": {
+            "type": "string",
+            "example": "2026-09-01T08:30:00.000Z"
+          },
+          "author": {
+            "$ref": "#/components/schemas/EntryCommentAuthorDto"
+          },
+          "canDelete": {
+            "type": "boolean",
+            "description": "The current user wrote the comment or owns the entry"
+          }
+        },
+        "required": [
+          "id",
+          "content",
+          "createdAt",
+          "author",
+          "canDelete"
+        ],
+        "example": {
+          "id": 41,
+          "content": "This one stayed with me all day.",
+          "createdAt": "2026-09-01T08:30:00.000Z",
+          "author": {
+            "id": 2,
+            "username": "maya",
+            "avatarUrl": null
+          },
+          "canDelete": true
+        }
+      },
+      "EntryCommentsResponseDto": {
+        "type": "object",
+        "properties": {
+          "comments": {
+            "description": "Most recent comments, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntryCommentDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 3,
+            "description": "All visible comments on the entry"
+          }
+        },
+        "required": [
+          "comments",
+          "total"
+        ],
+        "example": {
+          "comments": [
+            {
+              "id": 41,
+              "content": "This one stayed with me all day.",
+              "createdAt": "2026-09-01T08:30:00.000Z",
+              "author": {
+                "id": 2,
+                "username": "maya",
+                "avatarUrl": null
+              },
+              "canDelete": true
+            }
+          ],
+          "total": 3
+        }
+      },
+      "CreateEntryCommentDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "example": "This one stayed with me all day.",
+            "minLength": 1,
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "example": {
+          "content": "This one stayed with me all day."
+        }
+      },
+      "EntryCommentDeletedDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 41
+          },
+          "deleted": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "id",
+          "deleted"
+        ],
+        "example": {
+          "id": 41,
+          "deleted": true
         }
       }
     }

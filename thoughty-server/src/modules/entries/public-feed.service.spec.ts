@@ -19,12 +19,22 @@ function createQueryBuilder() {
 describe('PublicFeedService', () => {
   const repository = { createQueryBuilder: jest.fn() };
   const followRepository = { find: jest.fn() };
+  const commentQb: Record<string, jest.Mock> = {};
+  const commentRepository = { createQueryBuilder: jest.fn(() => commentQb) };
   let service: PublicFeedService;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    for (const method of ['innerJoin', 'select', 'addSelect', 'where', 'andWhere', 'groupBy']) {
+      commentQb[method] = jest.fn(() => commentQb);
+    }
+    commentQb.getRawMany = jest.fn().mockResolvedValue([]);
     followRepository.find.mockResolvedValue([]);
-    service = new PublicFeedService(repository as never, followRepository as never);
+    service = new PublicFeedService(
+      repository as never,
+      followRepository as never,
+      commentRepository as never,
+    );
   });
 
   it('returns a narrow, paginated community feed', async () => {
@@ -45,6 +55,7 @@ describe('PublicFeedService', () => {
     ]);
     repository.createQueryBuilder.mockReturnValue(qb);
     followRepository.find.mockResolvedValue([{ followedId: 3 }]);
+    commentQb.getRawMany.mockResolvedValue([{ entryId: '8', count: '4' }]);
 
     await expect(service.getFeed(7, { page: 2, limit: 5 })).resolves.toEqual({
       entries: [
@@ -56,6 +67,7 @@ describe('PublicFeedService', () => {
           content: 'A public reflection',
           format: 'markdown',
           createdAt,
+          commentCount: 4,
           author: { id: 3, username: 'writer', avatarUrl: '/avatar.png', isFollowed: true },
         },
       ],
@@ -80,6 +92,8 @@ describe('PublicFeedService', () => {
     expect(followRepository.find).toHaveBeenCalledWith(
       expect.objectContaining({ select: { followedId: true } }),
     );
+    expect(commentQb.where).toHaveBeenCalledWith('c.entry_id IN (:...entryIds)', { entryIds: [8] });
+    expect(commentQb.andWhere).toHaveBeenCalledWith('u.deleted_at IS NULL');
   });
 
   it('limits the following scope to followed authors', async () => {
@@ -95,6 +109,7 @@ describe('PublicFeedService', () => {
       { userId: 7 },
     );
     expect(followRepository.find).not.toHaveBeenCalled();
+    expect(commentRepository.createQueryBuilder).not.toHaveBeenCalled();
   });
 
   it('scopes the preview to the authenticated user', async () => {
@@ -133,6 +148,7 @@ describe('PublicFeedService', () => {
     const result = await service.getFeed(7, { scope: 'mine' });
 
     expect(result.entries[0].author.isFollowed).toBe(false);
+    expect(result.entries[0].commentCount).toBe(0);
     expect(followRepository.find).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,7 @@
 import { Controller, Delete, Get, Param, ParseIntPipe, Put } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthenticatedUser, CurrentUser } from '@/common';
+import { Throttle } from '@nestjs/throttler';
+import { AuthenticatedUser, CurrentUser, RATE_LIMITS, throttleDefault } from '@/common';
 import { FollowStateDto, FollowsResponseDto } from './dto';
 import { FollowsService } from './follows.service';
 
@@ -22,6 +23,7 @@ export class FollowsController {
   }
 
   @Put(':userId')
+  @Throttle(throttleDefault(RATE_LIMITS.socialWrite))
   @ApiOperation({ summary: 'Follow an author who has public entries in the feed' })
   @ApiResponse({ status: 200, description: 'The user is followed', type: FollowStateDto })
   @ApiResponse({ status: 400, description: 'Users cannot follow themselves' })
@@ -34,6 +36,7 @@ export class FollowsController {
   }
 
   @Delete(':userId')
+  @Throttle(throttleDefault(RATE_LIMITS.socialWrite))
   @ApiOperation({ summary: 'Stop following a user' })
   @ApiResponse({ status: 200, description: 'The user is no longer followed', type: FollowStateDto })
   unfollow(

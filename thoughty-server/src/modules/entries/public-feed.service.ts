@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { Entry, UserFollow } from '@/database/entities';
+import { Entry, EntryComment, UserFollow } from '@/database/entities';
 import type { GetPublicFeedQueryDto, PublicFeedResponseDto } from './dto';
 import { applyPublicFeedVisibility } from './public-feed-visibility';
 
@@ -12,6 +12,8 @@ export class PublicFeedService {
     private readonly entryRepository: Repository<Entry>,
     @InjectRepository(UserFollow)
     private readonly followRepository: Repository<UserFollow>,
+    @InjectRepository(EntryComment)
+    private readonly commentRepository: Repository<EntryComment>,
   ) {}
 
   async getFeed(userId: number, query: GetPublicFeedQueryDto): Promise<PublicFeedResponseDto> {
@@ -53,10 +55,13 @@ export class PublicFeedService {
       .take(limit);
     const entries = await qb.getMany();
     const totalPages = Math.ceil(total / limit);
-    const followedIds = await this.findFollowedAuthorIds(
-      userId,
-      entries.map((entry) => entry.user.id),
-    );
+    const [followedIds, commentCounts] = await Promise.all([
+      this.findFollowedAuthorIds(
+        userId,
+        entries.map((entry) => entry.user.id),
+      ),
+      this.countComments(entries.map((entry) => entry.id)),
+    ]);
 
     return {
       entries: entries.map((entry) => ({
@@ -67,6 +72,7 @@ export class PublicFeedService {
         content: entry.content,
         format: entry.format,
         createdAt: entry.createdAt,
+        commentCount: commentCounts.get(entry.id) ?? 0,
         author: {
           id: entry.user.id,
           username: entry.user.username,
@@ -90,5 +96,20 @@ export class PublicFeedService {
       select: { followedId: true },
     });
     return new Set(follows.map((follow) => follow.followedId));
+  }
+
+  private async countComments(entryIds: number[]): Promise<Map<number, number>> {
+    if (entryIds.length === 0) return new Map();
+
+    const rows = await this.commentRepository
+      .createQueryBuilder('c')
+      .innerJoin('c.user', 'u')
+      .select('c.entry_id', 'entryId')
+      .addSelect('COUNT(c.id)', 'count')
+      .where('c.entry_id IN (:...entryIds)', { entryIds })
+      .andWhere('u.deleted_at IS NULL')
+      .groupBy('c.entry_id')
+      .getRawMany<{ entryId: number | string; count: number | string }>();
+    return new Map(rows.map((row) => [Number(row.entryId), Number(row.count)]));
   }
 }

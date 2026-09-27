@@ -1,5 +1,6 @@
 import type { FollowedUser } from '../../services/api';
 import { FeedAvatar } from './FeedAuthor';
+import './FollowingPanel.css';
 
 interface FollowingPanelProps {
   readonly following: readonly FollowedUser[];

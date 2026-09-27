@@ -1,0 +1,100 @@
+.feed-following {
+  margin: 0.75rem 0 0.5rem;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid #374151;
+  border-radius: 0.5rem;
+  background: #1f2937;
+}
+
+.feed-page.light .feed-following {
+  border-color: #e5e7eb;
+  background: #fff;
+}
+
+.feed-following-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.feed-following-header h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.feed-following-header p {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.feed-page.light .feed-following-header p,
+.feed-page.light .feed-following-note {
+  color: #6b7280;
+}
+
+.feed-following-note {
+  margin: 0.6rem 0 0;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+.feed-following-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feed-following-list li {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.25rem 0.3rem 0.25rem 0.25rem;
+  border: 1px solid #4b5563;
+  border-radius: 999px;
+}
+
+.feed-page.light .feed-following-list li {
+  border-color: #d1d5db;
+}
+
+.feed-following-list .feed-avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+  flex-basis: 1.75rem;
+  font-size: 0.7rem;
+}
+
+.feed-following-name {
+  overflow: hidden;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-following-list button {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.feed-following-list button:hover {
+  background: rgba(148, 163, 184, 0.2);
+}

@@ -7,6 +7,7 @@ export const RATE_LIMITS = {
   tokenRefresh: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
   passwordRecovery: { limit: 3, ttl: ONE_HOUR_MS },
   accountSecurity: { limit: 5, ttl: ONE_HOUR_MS },
+  socialWrite: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
 } as const;
 
 export const throttleDefault = (limit: (typeof RATE_LIMITS)[keyof typeof RATE_LIMITS]) => ({

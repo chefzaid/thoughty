@@ -21,7 +21,7 @@ Before implementing feed or social interaction features, define a public-content
 - Define social write surfaces, such as comments and likes, with their own ownership, deletion, and abuse controls.
 - Decide whether feed reads use direct relational queries initially or a dedicated projection once scale requires it.
 
-The first implementation uses authenticated, direct relational reads. The community scope returns only visible, public, non-archived entries from active users other than the requester; the personal preview applies the same eligibility rules to the requester's entries. Feed responses expose only the author's ID, username, avatar URL, and whether the requester follows them alongside bounded entry fields. Follows are a separate `user_follows` relation; only authors with feed-eligible entries can be followed, and a **Following** scope applies the same eligibility rules to followed authors.
+The first implementation uses authenticated, direct relational reads. The community scope returns only visible, public, non-archived entries from active users other than the requester; the personal preview applies the same eligibility rules to the requester's entries. Feed responses expose only the author's ID, username, avatar URL, and whether the requester follows them alongside bounded entry fields. Follows are a separate `user_follows` relation; only authors with feed-eligible entries can be followed, and a **Following** scope applies the same eligibility rules to followed authors. Comments are a separate `entry_comments` relation that is only readable and writable while its entry is feed-eligible; the comment author and the entry owner can delete a comment, and social writes share a dedicated throttle.
 
 ## Rationale
 

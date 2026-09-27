@@ -61,4 +61,30 @@ describe('feedService', () => {
     expect(authFetch).toHaveBeenNthCalledWith(1, '/api/follows/2', { method: 'PUT' });
     expect(authFetch).toHaveBeenNthCalledWith(2, '/api/follows/9', { method: 'DELETE' });
   });
+
+  it('lists, posts, and deletes entry comments', async () => {
+    const comment = {
+      id: 3,
+      content: 'Hello',
+      createdAt: '2026-09-01T00:00:00.000Z',
+      author: { id: 2, username: 'maya', avatarUrl: null },
+      canDelete: true,
+    };
+    const authFetch = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ comments: [comment], total: 1 }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(comment), { status: 201 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ id: 3, deleted: true }), { status: 200 }));
+    const service = createFeedService(authFetch);
+
+    await expect(service.fetchComments(8)).resolves.toEqual({ data: { comments: [comment], total: 1 }, error: null });
+    await expect(service.addComment(8, 'Hello')).resolves.toEqual({ data: comment, error: null });
+    await expect(service.deleteComment(8, 3)).resolves.toEqual({ data: { id: 3, deleted: true }, error: null });
+    expect(authFetch).toHaveBeenNthCalledWith(1, '/api/entries/8/comments');
+    expect(authFetch).toHaveBeenNthCalledWith(2, '/api/entries/8/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: 'Hello' }),
+    });
+    expect(authFetch).toHaveBeenNthCalledWith(3, '/api/entries/8/comments/3', { method: 'DELETE' });
+  });
 });

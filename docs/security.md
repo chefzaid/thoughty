@@ -53,6 +53,8 @@ The social feed is **not** public. `GET /api/entries/feed` requires a session, v
 
 Follows (`/api/follows`) also require a session. `PUT /api/follows/:userId` answers `404` unless the target currently has a feed-eligible entry, so user ids cannot be probed for private or deleted accounts, and `400` for a self-follow. The follow list only exposes the same author fields as the feed plus the follow date; followers are only counted, never listed.
 
+Comments (`/api/entries/:entryId/comments`) require a session and answer `404` unless the entry is feed-eligible, so private, moderated, archived, or deleted-author entries cannot be probed. Content is trimmed, limited to 1,000 characters, stored as typed, and always rendered as escaped plain text. Only the comment author or the entry owner can delete a comment; anyone else gets `404`.
+
 ## Abuse Controls
 
 Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):
@@ -64,6 +66,7 @@ Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):
 | Token refresh | 30 per 15 min | refresh |
 | Password recovery | 3 per hour | forgot password, reset password, verify email |
 | Account security | 5 per hour | password change, verification-email resend, 2FA setup/enable/disable, session revocation, account deletion |
+| Social writes | 30 per 15 min | follow, unfollow, post comment, delete comment |
 
 Counters are stored in Redis when `REDIS_URL` or `REDIS_HOST` is set, so limits hold across replicas; if Redis is unavailable each process falls back to local counters. Behind ingress, validate the trusted proxy and client-IP path before relying on per-client limits.
 

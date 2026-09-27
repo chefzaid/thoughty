@@ -8,6 +8,9 @@ export type PublicFeedResponse = paths['/api/entries/feed']['get']['responses'][
 export type FollowedUser = components['schemas']['FollowedUserDto'];
 export type FollowsResponse = components['schemas']['FollowsResponseDto'];
 export type FollowState = components['schemas']['FollowStateDto'];
+export type EntryComment = components['schemas']['EntryCommentDto'];
+export type EntryCommentsResponse = components['schemas']['EntryCommentsResponseDto'];
+export type EntryCommentDeleted = components['schemas']['EntryCommentDeletedDto'];
 
 export interface ServiceResult<T> {
   data: T | null;
@@ -46,6 +49,28 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
       ? authFetch(`/api/follows/${userId}`, { method: 'PUT' })
       : authFetch(`/api/follows/${userId}`, { method: 'DELETE' });
     return requestJson(request, 'Failed to update the follow');
+  },
+
+  fetchComments(entryId: number): Promise<ServiceResult<EntryCommentsResponse>> {
+    return requestJson(authFetch(`/api/entries/${entryId}/comments`), 'Failed to load comments');
+  },
+
+  addComment(entryId: number, content: string): Promise<ServiceResult<EntryComment>> {
+    return requestJson(
+      authFetch(`/api/entries/${entryId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      }),
+      'Failed to post the comment',
+    );
+  },
+
+  deleteComment(entryId: number, commentId: number): Promise<ServiceResult<EntryCommentDeleted>> {
+    return requestJson(
+      authFetch(`/api/entries/${entryId}/comments/${commentId}`, { method: 'DELETE' }),
+      'Failed to delete the comment',
+    );
   },
 });
 

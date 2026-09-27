@@ -7,8 +7,9 @@
  * Markdown, favorites, pins, archive, revisions, attachments, AI chat
  * history, planted duplicates, tag metadata (including unused tags),
  * templates, extra sessions, community users for the public feed (with
- * moderated, archived, and deleted-author content), follows between test and
- * the community users, an unverified user, and feature requests with votes.
+ * moderated, archived, and deleted-author content), follows and comments
+ * between test and the community users, an unverified user, and feature
+ * requests with votes.
  *
  * Every account uses the password Test1234!. The content is deterministic.
  * Run with --validate-only to check the data without touching the database.
@@ -322,7 +323,7 @@ async function insertEntryExtras(userId: number, entries: SeedEntry[], ids: Map<
     return { revisions, chats, attachments, attachmentsSkipped: !upload && entries.some((entry) => entry.attachment) };
 }
 
-async function insertSessionsAndFeatureRequests(): Promise<void> {
+async function insertSessionsAndSocialData(): Promise<void> {
     // Two sessions on other devices so "Sign out other sessions" has something to revoke.
     for (const [daysAgo, label] of [[3, 'laptop'], [12, 'phone']] as const) {
         await query('INSERT INTO refresh_tokens (user_id, token, expires_at, created_at) VALUES ($1, $2, $3, $4)', [
@@ -354,6 +355,24 @@ async function insertSessionsAndFeatureRequests(): Promise<void> {
     // test follows maya and sam; maya and sam follow test back, so both follow lists have content.
     for (const [followerId, followedId] of [[1, 2], [1, 3], [2, 1], [3, 1]]) {
         await query('INSERT INTO user_follows (follower_id, followed_id) VALUES ($1, $2)', [followerId, followedId]);
+    }
+
+    // A short thread under the newest feed entry of test and of maya, so both commenting and
+    // the entry owner's right to delete other people's comments can be tried.
+    const threads: Record<number, Array<[number, string]>> = {
+        1: [[2, 'This one stayed with me all day.'], [3, 'Same here. Thanks for sharing it.']],
+        2: [[1, 'Beautifully put.'], [3, 'I needed to read this today.']],
+    };
+    const newestPublic = await query<{ id: number; user_id: number }>(
+        `SELECT DISTINCT ON (user_id) id, user_id FROM entries
+         WHERE user_id = ANY($1) AND visibility = 'public' AND moderation_status = 'visible' AND NOT is_archived
+         ORDER BY user_id, created_at DESC, id DESC`,
+        [Object.keys(threads).map(Number)],
+    );
+    for (const entry of newestPublic) {
+        for (const [userId, content] of threads[entry.user_id]) {
+            await query('INSERT INTO entry_comments (entry_id, user_id, content) VALUES ($1, $2, $3)', [entry.id, userId, content]);
+        }
     }
 }
 
@@ -437,8 +456,8 @@ async function seed(): Promise<void> {
                     const userDiaries = await insertDiaries(user);
                     await insertEntries(user.id, userDiaries, communityEntries.get(user.id) ?? []);
                 }
-                await insertSessionsAndFeatureRequests();
-                log.success('Inserted community journals, sessions, follows, and feature requests');
+                await insertSessionsAndSocialData();
+                log.success('Inserted community journals, sessions, follows, comments, and feature requests');
             }
             return userId;
         });

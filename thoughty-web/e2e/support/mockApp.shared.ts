@@ -79,6 +79,15 @@ export interface MockFeatureRequest {
   createdAt: string;
 }
 
+export interface MockComment {
+  id: number;
+  entryId: number;
+  userId: number;
+  username: string;
+  content: string;
+  createdAt: string;
+}
+
 export interface MockBookVersion {
   id: number;
   versionNumber: number;
@@ -103,6 +112,7 @@ export interface SetupMockAppOptions {
   cloudFiles?: MockCloudFile[];
   followedUserIds?: number[];
   followerCount?: number;
+  comments?: MockComment[];
 }
 
 export interface MockAppState {
@@ -149,6 +159,7 @@ export interface MockAppState {
   featureRequestVotes: number[];
   followedUserIds: number[];
   followerCount: number;
+  comments: MockComment[];
   bookVersions: MockBookVersion[];
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
@@ -398,6 +409,7 @@ export function createMockAppState(
     featureRequestVotes: [],
     followedUserIds: [...(options.followedUserIds || [])],
     followerCount: options.followerCount ?? 0,
+    comments: [...(options.comments || [])],
     bookVersions: [],
     nextEntryId:
       (options.initialEntries?.reduce(

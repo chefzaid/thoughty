@@ -72,7 +72,7 @@ The browser never reaches a real backend: every `/api` call is answered by the m
 | `import-export/` | import/export formats, format settings, delete-all, books, book versions and cloud upload |
 | `cloud-sync/` | uploads, schedules, Sync Now, cloud imports |
 | `diary/` | create, edit, reorder, default, delete fallback |
-| `social/` | public feed eligibility, pagination, owner preview, mobile layout, following and unfollowing authors |
+| `social/` | public feed eligibility, pagination, owner preview, mobile layout, following and unfollowing authors, comments |
 
 Put a new spec in the closest existing directory and name it after the behavior it covers (`journal/attachments-preview.spec.ts`, not `critical-flows.spec.ts`). Split a file once it covers unrelated behavior.
 
@@ -87,7 +87,7 @@ Put a new spec in the closest existing directory and name it after the behavior 
 | `mockApp.routes.ts` | dispatch, auth, config, and feature-request routes |
 | `mockApp.routes.entries.ts` | entries and tags |
 | `mockApp.routes.io.ts` | import/export and book routes |
-| `mockApp.routes.social.ts` | public feed scopes and follows |
+| `mockApp.routes.social.ts` | public feed scopes, follows, and comments |
 | `mockApp.routes.reference.ts` | stats, AI, diaries, entry references |
 | `mockApp.routes.ai-credentials.ts` | personal OpenRouter key and usage |
 | `mockApp.routes.cloud-sync.ts` | stateful cloud schedules, files, and sync payloads |

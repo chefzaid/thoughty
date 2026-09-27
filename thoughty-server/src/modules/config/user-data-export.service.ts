@@ -5,6 +5,7 @@ import {
   Attachment,
   Diary,
   Entry,
+  EntryComment,
   EntryRevision,
   Setting,
   User,
@@ -29,22 +30,26 @@ export class UserDataExportService {
     private readonly attachmentRepository: Repository<Attachment>,
     @InjectRepository(UserFollow)
     private readonly followRepository: Repository<UserFollow>,
+    @InjectRepository(EntryComment)
+    private readonly commentRepository: Repository<EntryComment>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, follows] = await Promise.all([
-      this.userRepository.findOne({ where: { id: userId } }),
-      this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
-      this.entryRepository.find({ where: { userId }, order: { date: 'ASC', index: 'ASC' } }),
-      this.revisionRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
-      this.attachmentRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
-      this.settingRepository.find({ where: { userId } }),
-      this.followRepository.find({
-        where: { followerId: userId },
-        relations: { followed: true },
-        order: { createdAt: 'ASC' },
-      }),
-    ]);
+    const [user, diaries, entries, revisions, attachments, settings, follows, comments] =
+      await Promise.all([
+        this.userRepository.findOne({ where: { id: userId } }),
+        this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
+        this.entryRepository.find({ where: { userId }, order: { date: 'ASC', index: 'ASC' } }),
+        this.revisionRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
+        this.attachmentRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
+        this.settingRepository.find({ where: { userId } }),
+        this.followRepository.find({
+          where: { followerId: userId },
+          relations: { followed: true },
+          order: { createdAt: 'ASC' },
+        }),
+        this.commentRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
+      ]);
 
     const safeUser = user
       ? {
@@ -117,6 +122,12 @@ export class UserDataExportService {
         userId: follow.followedId,
         username: follow.followed.username,
         followedAt: follow.createdAt,
+      })),
+      comments: comments.map((comment) => ({
+        id: comment.id,
+        entryId: comment.entryId,
+        content: comment.content,
+        createdAt: comment.createdAt,
       })),
     };
   }

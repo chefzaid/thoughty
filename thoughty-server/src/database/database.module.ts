@@ -16,6 +16,7 @@ import {
   FeatureRequestVote,
   BookVersion,
   UserFollow,
+  EntryComment,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -56,6 +57,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           FeatureRequestVote,
           BookVersion,
           UserFollow,
+          EntryComment,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),
@@ -82,6 +84,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
       FeatureRequestVote,
       BookVersion,
       UserFollow,
+      EntryComment,
     ]),
   ],
   exports: [TypeOrmModule],

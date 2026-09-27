@@ -4,6 +4,7 @@ import {
   Attachment,
   Diary,
   Entry,
+  EntryComment,
   EntryRevision,
   Setting,
   User,
@@ -20,6 +21,7 @@ describe('UserDataExportService', () => {
   let revisionRepository: any;
   let attachmentRepository: any;
   let followRepository: any;
+  let commentRepository: any;
 
   beforeEach(async () => {
     settingRepository = { find: jest.fn() };
@@ -29,6 +31,7 @@ describe('UserDataExportService', () => {
     revisionRepository = { find: jest.fn() };
     attachmentRepository = { find: jest.fn() };
     followRepository = { find: jest.fn().mockResolvedValue([]) };
+    commentRepository = { find: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -40,6 +43,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(EntryRevision), useValue: revisionRepository },
         { provide: getRepositoryToken(Attachment), useValue: attachmentRepository },
         { provide: getRepositoryToken(UserFollow), useValue: followRepository },
+        { provide: getRepositoryToken(EntryComment), useValue: commentRepository },
       ],
     }).compile();
 
@@ -113,6 +117,9 @@ describe('UserDataExportService', () => {
         followed: { id: 2, username: 'maya', email: 'maya@example.com' },
       },
     ]);
+    commentRepository.find.mockResolvedValue([
+      { id: 9, entryId: 40, userId: 1, content: 'Lovely', createdAt: new Date('2024-03-01') },
+    ]);
 
     const result = await service.downloadData(1);
 
@@ -137,6 +144,12 @@ describe('UserDataExportService', () => {
     expect(result.following).toEqual([
       { userId: 2, username: 'maya', followedAt: new Date('2024-02-01') },
     ]);
+    expect(result.comments).toEqual([
+      { id: 9, entryId: 40, content: 'Lovely', createdAt: new Date('2024-03-01') },
+    ]);
+    expect(commentRepository.find).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 1 } }),
+    );
     expect(followRepository.find).toHaveBeenCalledWith(
       expect.objectContaining({ where: { followerId: 1 } }),
     );

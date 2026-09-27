@@ -43,6 +43,7 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
       content: entry.content,
       format: entry.format || 'plain',
       createdAt: entry.createdAt || `${entry.date}T12:00:00.000Z`,
+      commentCount: state.comments.filter((comment) => comment.entryId === entry.id).length,
       author: {
         id: authorId(entry, state),
         username: entry.authorUsername || state.user.username,
@@ -99,6 +100,62 @@ async function handleFollowRoutes({ route, request, pathname, state }: RouteCont
   return false;
 }
 
+async function handleCommentRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
+  const match = /^\/api\/entries\/(\d+)\/comments(?:\/(\d+))?$/.exec(pathname);
+  if (!match) {
+    return false;
+  }
+
+  const entryId = Number(match[1]);
+  const entry = feedEligibleEntries(state).find((candidate) => candidate.id === entryId);
+  if (!entry) {
+    await fulfillJson(route, { message: 'Entry not found', statusCode: 404 }, { status: 404 });
+    return true;
+  }
+  const isEntryOwner = authorId(entry, state) === state.user.id;
+  const toResponse = (comment: MockAppState['comments'][number]) => ({
+    id: comment.id,
+    content: comment.content,
+    createdAt: comment.createdAt,
+    author: { id: comment.userId, username: comment.username, avatarUrl: null },
+    canDelete: isEntryOwner || comment.userId === state.user.id,
+  });
+
+  if (!match[2] && request.method() === 'GET') {
+    const comments = state.comments.filter((comment) => comment.entryId === entryId);
+    await fulfillJson(route, { comments: comments.map(toResponse), total: comments.length });
+    return true;
+  }
+  if (!match[2] && request.method() === 'POST') {
+    const { content } = request.postDataJSON() as { content: string };
+    const comment = {
+      id: Math.max(0, ...state.comments.map((candidate) => candidate.id)) + 1,
+      entryId,
+      userId: state.user.id,
+      username: state.user.username,
+      content: content.trim(),
+      createdAt: '2026-07-25T12:00:00.000Z',
+    };
+    state.comments.push(comment);
+    await fulfillJson(route, toResponse(comment), { status: 201 });
+    return true;
+  }
+  if (match[2] && request.method() === 'DELETE') {
+    const commentId = Number(match[2]);
+    const comment = state.comments.find((candidate) => candidate.id === commentId && candidate.entryId === entryId);
+    if (!comment || !toResponse(comment).canDelete) {
+      await fulfillJson(route, { message: 'Comment not found', statusCode: 404 }, { status: 404 });
+      return true;
+    }
+    state.comments = state.comments.filter((candidate) => candidate.id !== commentId);
+    await fulfillJson(route, { id: commentId, deleted: true });
+    return true;
+  }
+  return false;
+}
+
 export async function handleSocialRoutes(context: RouteContext): Promise<boolean> {
-  return (await handlePublicFeedRoute(context)) || handleFollowRoutes(context);
+  return (await handlePublicFeedRoute(context))
+    || (await handleFollowRoutes(context))
+    || handleCommentRoutes(context);
 }

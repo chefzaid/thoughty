@@ -8,6 +8,7 @@ import {
   EntryRevision,
   Attachment,
   UserFollow,
+  EntryComment,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -16,7 +17,16 @@ import { FeatureFlagsService } from '@/common';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Setting, User, Diary, Entry, EntryRevision, Attachment, UserFollow]),
+    TypeOrmModule.forFeature([
+      Setting,
+      User,
+      Diary,
+      Entry,
+      EntryRevision,
+      Attachment,
+      UserFollow,
+      EntryComment,
+    ]),
   ],
   controllers: [ConfigController],
   providers: [ConfigService, FeatureFlagsService, UserDataExportService],

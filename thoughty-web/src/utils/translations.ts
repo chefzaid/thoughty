@@ -20,6 +20,16 @@ export type TranslationKey =
   | "followsLoadError"
   | "unfollowAuthor"
   | "followUpdateError"
+  | "commentsCount"
+  | "commentsEmpty"
+  | "commentsLoadError"
+  | "writeComment"
+  | "postComment"
+  | "deleteComment"
+  | "deleteCommentBy"
+  | "deleteCommentConfirm"
+  | "commentPostError"
+  | "commentDeleteError"
   | "loadMoreEntries"
   | "stats"
   | "whatsOnYourMind"
@@ -896,6 +906,16 @@ export const translations: Translations = {
     followsLoadError: "The people you follow could not be loaded.",
     unfollowAuthor: "Unfollow {username}",
     followUpdateError: "The follow could not be updated. Please try again.",
+    commentsCount: "Comments ({count})",
+    commentsEmpty: "No comments yet. Start the conversation.",
+    commentsLoadError: "The comments could not be loaded.",
+    writeComment: "Write a comment",
+    postComment: "Post",
+    deleteComment: "Delete comment",
+    deleteCommentBy: "Delete the comment by {username}",
+    deleteCommentConfirm: "This comment will be removed for everyone. This cannot be undone.",
+    commentPostError: "The comment could not be posted. Please try again.",
+    commentDeleteError: "The comment could not be deleted. Please try again.",
     loadMoreEntries: "Load more entries",
     stats: "Stats",
     whatsOnYourMind: "What's on your mind?",
@@ -1431,7 +1451,7 @@ export const translations: Translations = {
       "Journal entries are private by default. Public visibility is an explicit entry-level choice. Eligible public entries can appear to signed-in users in the community feed, while platform moderation can hide public content without changing your ownership. Anyone who can see your public entries can follow you; followers are only shown to you as a count.",
     privacyDataTitle: "Data we use",
     privacyDataBody:
-      "Thoughty stores account details, profile settings, diaries, entries, tags, attachments, the people you follow, sync preferences, and subscription records needed to provide the service.",
+      "Thoughty stores account details, profile settings, diaries, entries, tags, attachments, the people you follow, your comments, sync preferences, and subscription records needed to provide the service.",
     privacyControlTitle: "Your controls",
     privacyControlBody:
       "You can edit or delete entries, download your user data, export journals in portable formats, change visibility, and delete your account from the app.",
@@ -1899,6 +1919,16 @@ export const translations: Translations = {
     followsLoadError: "Les personnes que vous suivez n'ont pas pu être chargées.",
     unfollowAuthor: "Ne plus suivre {username}",
     followUpdateError: "L'abonnement n'a pas pu être mis à jour. Veuillez réessayer.",
+    commentsCount: "Commentaires ({count})",
+    commentsEmpty: "Aucun commentaire pour le moment. Lancez la conversation.",
+    commentsLoadError: "Les commentaires n'ont pas pu être chargés.",
+    writeComment: "Écrire un commentaire",
+    postComment: "Publier",
+    deleteComment: "Supprimer le commentaire",
+    deleteCommentBy: "Supprimer le commentaire de {username}",
+    deleteCommentConfirm: "Ce commentaire sera supprimé pour tout le monde. Cette action est irréversible.",
+    commentPostError: "Le commentaire n'a pas pu être publié. Veuillez réessayer.",
+    commentDeleteError: "Le commentaire n'a pas pu être supprimé. Veuillez réessayer.",
     loadMoreEntries: "Charger plus d'entrées",
     stats: "Statistiques",
     whatsOnYourMind: "Qu'avez-vous à l'esprit ?",
@@ -2451,7 +2481,7 @@ export const translations: Translations = {
       "Les entrées du journal sont privées par défaut. La visibilité publique est un choix explicite pour chaque entrée. Les entrées publiques éligibles peuvent apparaître aux utilisateurs connectés dans le fil de la communauté, tandis que la modération peut masquer un contenu public sans changer votre propriété. Toute personne qui voit vos entrées publiques peut vous suivre ; vos abonnés ne vous sont présentés que sous forme de nombre.",
     privacyDataTitle: "Données utilisées",
     privacyDataBody:
-      "Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, personnes que vous suivez, préférences de synchronisation et éléments d’abonnement nécessaires au service.",
+      "Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, personnes que vous suivez, vos commentaires, préférences de synchronisation et éléments d’abonnement nécessaires au service.",
     privacyControlTitle: "Vos contrôles",
     privacyControlBody:
       "Vous pouvez modifier ou supprimer des entrées, télécharger vos données, exporter vos journaux dans des formats portables, changer la visibilité et supprimer votre compte.",

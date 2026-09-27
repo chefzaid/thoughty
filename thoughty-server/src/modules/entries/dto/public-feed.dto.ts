@@ -63,6 +63,9 @@ export class PublicFeedEntryDto {
   @ApiProperty()
   createdAt: Date;
 
+  @ApiProperty({ description: 'Comments by active users' })
+  commentCount: number;
+
   @ApiProperty({ type: PublicFeedAuthorDto })
   author: PublicFeedAuthorDto;
 }
