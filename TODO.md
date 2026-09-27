@@ -141,7 +141,7 @@
 - [x] Likes for entries and comments
 - [ ] Chatting and messaging between users
 - [ ] Notifications for messages, comments, likes, new followers
-- [ ] Leaderboard for most active users, most liked entries, most commented entries
+- [x] Leaderboard for most active users, most liked entries, most commented entries
 - [ ] Badges for achievements and karma points
 - [x] Feature requests and voting system for new features
 - [ ] Add a way to report a public thought (call for violence) and ban the user if needed

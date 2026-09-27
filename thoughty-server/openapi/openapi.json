@@ -6192,6 +6192,88 @@
           "Social"
         ]
       }
+    },
+    "/api/leaderboard": {
+      "get": {
+        "operationId": "LeaderboardController_getLeaderboard",
+        "parameters": [
+          {
+            "name": "period",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "month",
+              "type": "string",
+              "enum": [
+                "week",
+                "month",
+                "year",
+                "all"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Most active authors, most liked entries, and most commented entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeaderboardResponseDto"
+                },
+                "example": {
+                  "period": "week",
+                  "mostActiveAuthors": [
+                    {
+                      "author": {
+                        "id": 2,
+                        "username": "maya",
+                        "avatarUrl": null
+                      },
+                      "publicEntries": 12
+                    }
+                  ],
+                  "mostLikedEntries": [
+                    {
+                      "id": 41,
+                      "date": "2026-09-01",
+                      "excerpt": "The first lines of the entry…",
+                      "author": {
+                        "id": 2,
+                        "username": "maya",
+                        "avatarUrl": null
+                      },
+                      "count": 7
+                    }
+                  ],
+                  "mostCommentedEntries": [
+                    {
+                      "id": 41,
+                      "date": "2026-09-01",
+                      "excerpt": "The first lines of the entry…",
+                      "author": {
+                        "id": 2,
+                        "username": "maya",
+                        "avatarUrl": null
+                      },
+                      "count": 7
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rank public authors and entries for a period",
+        "tags": [
+          "Social"
+        ]
+      }
     }
   },
   "info": {
@@ -10330,6 +10412,180 @@
         "example": {
           "liked": true,
           "likeCount": 4
+        }
+      },
+      "LeaderboardAuthorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 2
+          },
+          "username": {
+            "type": "string",
+            "example": "maya"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "avatarUrl"
+        ],
+        "example": {
+          "id": 2,
+          "username": "maya",
+          "avatarUrl": null
+        }
+      },
+      "LeaderboardAuthorRankDto": {
+        "type": "object",
+        "properties": {
+          "author": {
+            "$ref": "#/components/schemas/LeaderboardAuthorDto"
+          },
+          "publicEntries": {
+            "type": "number",
+            "example": 12,
+            "description": "Public entries published in the period"
+          }
+        },
+        "required": [
+          "author",
+          "publicEntries"
+        ],
+        "example": {
+          "author": {
+            "id": 2,
+            "username": "maya",
+            "avatarUrl": null
+          },
+          "publicEntries": 12
+        }
+      },
+      "LeaderboardEntryRankDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 41
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-09-01"
+          },
+          "excerpt": {
+            "type": "string",
+            "example": "The first lines of the entry…",
+            "description": "At most 280 characters"
+          },
+          "author": {
+            "$ref": "#/components/schemas/LeaderboardAuthorDto"
+          },
+          "count": {
+            "type": "number",
+            "example": 7,
+            "description": "Likes, or comments from other people"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "excerpt",
+          "author",
+          "count"
+        ],
+        "example": {
+          "id": 41,
+          "date": "2026-09-01",
+          "excerpt": "The first lines of the entry…",
+          "author": {
+            "id": 2,
+            "username": "maya",
+            "avatarUrl": null
+          },
+          "count": 7
+        }
+      },
+      "LeaderboardResponseDto": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "enum": [
+              "week",
+              "month",
+              "year",
+              "all"
+            ]
+          },
+          "mostActiveAuthors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardAuthorRankDto"
+            }
+          },
+          "mostLikedEntries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardEntryRankDto"
+            }
+          },
+          "mostCommentedEntries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeaderboardEntryRankDto"
+            }
+          }
+        },
+        "required": [
+          "period",
+          "mostActiveAuthors",
+          "mostLikedEntries",
+          "mostCommentedEntries"
+        ],
+        "example": {
+          "period": "week",
+          "mostActiveAuthors": [
+            {
+              "author": {
+                "id": 2,
+                "username": "maya",
+                "avatarUrl": null
+              },
+              "publicEntries": 12
+            }
+          ],
+          "mostLikedEntries": [
+            {
+              "id": 41,
+              "date": "2026-09-01",
+              "excerpt": "The first lines of the entry…",
+              "author": {
+                "id": 2,
+                "username": "maya",
+                "avatarUrl": null
+              },
+              "count": 7
+            }
+          ],
+          "mostCommentedEntries": [
+            {
+              "id": 41,
+              "date": "2026-09-01",
+              "excerpt": "The first lines of the entry…",
+              "author": {
+                "id": 2,
+                "username": "maya",
+                "avatarUrl": null
+              },
+              "count": 7
+            }
+          ]
         }
       }
     }

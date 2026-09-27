@@ -21,10 +21,11 @@ const SCOPES: ReadonlyArray<{ scope: PublicFeedScope; icon: string; label: strin
 
 interface FeedPageProps {
   readonly theme?: 'light' | 'dark';
+  readonly onOpenLeaderboard?: () => void;
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
+function FeedPage({ theme = 'dark', onOpenLeaderboard, t }: Readonly<FeedPageProps>) {
   const feedService = useFeedService();
   const currentUserId = useAuth().user?.id;
   const follows = useFollows(feedService);
@@ -107,7 +108,15 @@ function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
   return (
     <section className={`feed-page ${theme}`} aria-labelledby="feed-heading">
       <header className="feed-header">
-        <h1 id="feed-heading">{t('feed')}</h1>
+        <div className="feed-title">
+          <h1 id="feed-heading">{t('feed')}</h1>
+          {onOpenLeaderboard && (
+            <button type="button" className="feed-leaderboard-link" onClick={onOpenLeaderboard}>
+              <span className="codicon codicon-star-full" aria-hidden="true" />
+              {t('leaderboard')}
+            </button>
+          )}
+        </div>
         <fieldset className="feed-scope" aria-label={t('feedScope')}>
           {SCOPES.map((option) => (
             <button

@@ -80,6 +80,7 @@ flowchart LR
 - **Follows:** follow or unfollow an author from any of their feed entries. The **Following** tab lists the people you follow (with a quick unfollow) and shows how many people follow you. Follows are included in the personal data download.
 - **Comments:** every feed entry has a comment thread showing its count. Signed-in users can comment (up to 1,000 characters of plain text) on any entry in the feed, delete their own comments, and remove any comment left on their own public entries after a confirmation. Comments are included in the personal data download.
 - **Likes:** like or unlike any entry or comment in the feed written by someone else; your own entries and comments show their like count. Likes are included in the personal data download.
+- **Leaderboard:** opened from the Feed header (`/feed?view=leaderboard`), it ranks the ten most active writers (public entries published), the most liked entries, and the most commented entries for this week, this month, this year, or all time. Only content the feed can show counts, and authors' own comments on their entries are ignored.
 - **Feature requests:** a public board of ideas ranked by votes. Anyone can browse; signed-in users can submit ideas and vote once per idea (authors vote for their own idea automatically).
 
 ## AI Assistance

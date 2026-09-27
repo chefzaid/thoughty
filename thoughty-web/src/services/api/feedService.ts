@@ -12,6 +12,8 @@ export type EntryComment = components['schemas']['EntryCommentDto'];
 export type EntryCommentsResponse = components['schemas']['EntryCommentsResponseDto'];
 export type EntryCommentDeleted = components['schemas']['EntryCommentDeletedDto'];
 export type LikeState = components['schemas']['LikeStateDto'];
+export type Leaderboard = components['schemas']['LeaderboardResponseDto'];
+export type LeaderboardPeriod = Leaderboard['period'];
 
 export interface ServiceResult<T> {
   data: T | null;
@@ -72,6 +74,10 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
       authFetch(`/api/entries/${entryId}/comments/${commentId}`, { method: 'DELETE' }),
       'Failed to delete the comment',
     );
+  },
+
+  fetchLeaderboard(period: LeaderboardPeriod): Promise<ServiceResult<Leaderboard>> {
+    return requestJson(authFetch(`/api/leaderboard?period=${period}`), 'Failed to load the leaderboard');
   },
 
   setEntryLike(entryId: number, like: boolean): Promise<ServiceResult<LikeState>> {

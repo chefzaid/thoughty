@@ -35,6 +35,20 @@ export type TranslationKey =
   | "likeEntryBy"
   | "likeCommentBy"
   | "likeUpdateError"
+  | "leaderboard"
+  | "leaderboardPeriod"
+  | "leaderboardWeek"
+  | "leaderboardMonth"
+  | "leaderboardYear"
+  | "leaderboardAllTime"
+  | "leaderboardNote"
+  | "leaderboardLoadError"
+  | "leaderboardEmpty"
+  | "leaderboardMostActive"
+  | "leaderboardMostLiked"
+  | "leaderboardMostCommented"
+  | "leaderboardPublicEntries"
+  | "backToFeed"
   | "loadMoreEntries"
   | "stats"
   | "whatsOnYourMind"
@@ -926,6 +940,20 @@ export const translations: Translations = {
     likeEntryBy: "Like the entry by {username}",
     likeCommentBy: "Like the comment by {username}",
     likeUpdateError: "The like could not be updated.",
+    leaderboard: "Leaderboard",
+    leaderboardPeriod: "Leaderboard period",
+    leaderboardWeek: "This week",
+    leaderboardMonth: "This month",
+    leaderboardYear: "This year",
+    leaderboardAllTime: "All time",
+    leaderboardNote: "Only public entries shown in the feed count. Likes and comments from authors on their own entries are not counted.",
+    leaderboardLoadError: "The leaderboard could not be loaded.",
+    leaderboardEmpty: "Nothing to rank for this period yet.",
+    leaderboardMostActive: "Most active writers",
+    leaderboardMostLiked: "Most liked entries",
+    leaderboardMostCommented: "Most commented entries",
+    leaderboardPublicEntries: "Public entries: {count}",
+    backToFeed: "Back to the feed",
     loadMoreEntries: "Load more entries",
     stats: "Stats",
     whatsOnYourMind: "What's on your mind?",
@@ -1944,6 +1972,20 @@ export const translations: Translations = {
     likeEntryBy: "Aimer l'entrée de {username}",
     likeCommentBy: "Aimer le commentaire de {username}",
     likeUpdateError: "Le j'aime n'a pas pu être mis à jour.",
+    leaderboard: "Classement",
+    leaderboardPeriod: "Période du classement",
+    leaderboardWeek: "Cette semaine",
+    leaderboardMonth: "Ce mois-ci",
+    leaderboardYear: "Cette année",
+    leaderboardAllTime: "Depuis toujours",
+    leaderboardNote: "Seules les entrées publiques visibles dans le fil comptent. Les j'aime et commentaires des auteurs sur leurs propres entrées ne sont pas comptés.",
+    leaderboardLoadError: "Le classement n'a pas pu être chargé.",
+    leaderboardEmpty: "Rien à classer pour cette période.",
+    leaderboardMostActive: "Auteurs les plus actifs",
+    leaderboardMostLiked: "Entrées les plus aimées",
+    leaderboardMostCommented: "Entrées les plus commentées",
+    leaderboardPublicEntries: "Entrées publiques : {count}",
+    backToFeed: "Retour au fil",
     loadMoreEntries: "Charger plus d'entrées",
     stats: "Statistiques",
     whatsOnYourMind: "Qu'avez-vous à l'esprit ?",

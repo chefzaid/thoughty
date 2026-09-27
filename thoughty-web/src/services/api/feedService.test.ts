@@ -104,4 +104,12 @@ describe('feedService', () => {
       ['/api/entries/8/comments/3/like', { method: 'DELETE' }],
     ]);
   });
+
+  it('loads the leaderboard for a period', async () => {
+    const payload = { period: 'week', mostActiveAuthors: [], mostLikedEntries: [], mostCommentedEntries: [] };
+    const authFetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
+
+    await expect(createFeedService(authFetch).fetchLeaderboard('week')).resolves.toEqual({ data: payload, error: null });
+    expect(authFetch).toHaveBeenCalledWith('/api/leaderboard?period=week');
+  });
 });

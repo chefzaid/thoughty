@@ -194,8 +194,43 @@ async function handleLikeRoutes({ route, request, pathname, state }: RouteContex
   return true;
 }
 
+async function handleLeaderboardRoute({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
+  if (pathname !== '/api/leaderboard' || request.method() !== 'GET') {
+    return false;
+  }
+
+  const period = searchParams.get('period') || 'month';
+  // The mock ignores the period window: every eligible entry counts, so tests control rankings through fixtures.
+  const entries = feedEligibleEntries(state);
+  const author = (entry: MockEntry) => ({
+    id: authorId(entry, state),
+    username: entry.authorUsername || state.user.username,
+    avatarUrl: entry.authorAvatarUrl ?? null,
+  });
+  const rankEntries = (count: (entry: MockEntry) => number) => entries
+    .map((entry) => ({ entry, count: count(entry) }))
+    .filter(({ count: value }) => value > 0)
+    .sort((left, right) => right.count - left.count)
+    .map(({ entry, count: value }) => ({ id: entry.id, date: entry.date, excerpt: entry.content, author: author(entry), count: value }));
+  const authors = new Map<number, { author: ReturnType<typeof author>; publicEntries: number }>();
+  for (const entry of entries) {
+    const current = authors.get(authorId(entry, state)) ?? { author: author(entry), publicEntries: 0 };
+    authors.set(current.author.id, { ...current, publicEntries: current.publicEntries + 1 });
+  }
+
+  await fulfillJson(route, {
+    period,
+    mostActiveAuthors: [...authors.values()].sort((left, right) => right.publicEntries - left.publicEntries),
+    mostLikedEntries: rankEntries((entry) => likeState(entry.likeCount, state.likedEntryIds, entry.id).likeCount),
+    mostCommentedEntries: rankEntries((entry) => state.comments
+      .filter((comment) => comment.entryId === entry.id && comment.userId !== authorId(entry, state)).length),
+  });
+  return true;
+}
+
 export async function handleSocialRoutes(context: RouteContext): Promise<boolean> {
   return (await handlePublicFeedRoute(context))
+    || (await handleLeaderboardRoute(context))
     || (await handleFollowRoutes(context))
     || (await handleLikeRoutes(context))
     || handleCommentRoutes(context);

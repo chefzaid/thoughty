@@ -1671,6 +1671,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rank public authors and entries for a period */
+        get: operations["LeaderboardController_getLeaderboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4091,6 +4108,117 @@ export interface components {
              * @example 4
              */
             likeCount: number;
+        };
+        /**
+         * @example {
+         *       "id": 2,
+         *       "username": "maya",
+         *       "avatarUrl": null
+         *     }
+         */
+        LeaderboardAuthorDto: {
+            /** @example 2 */
+            id: number;
+            /** @example maya */
+            username: string;
+            /** @example null */
+            avatarUrl: string | null;
+        };
+        /**
+         * @example {
+         *       "author": {
+         *         "id": 2,
+         *         "username": "maya",
+         *         "avatarUrl": null
+         *       },
+         *       "publicEntries": 12
+         *     }
+         */
+        LeaderboardAuthorRankDto: {
+            author: components["schemas"]["LeaderboardAuthorDto"];
+            /**
+             * @description Public entries published in the period
+             * @example 12
+             */
+            publicEntries: number;
+        };
+        /**
+         * @example {
+         *       "id": 41,
+         *       "date": "2026-09-01",
+         *       "excerpt": "The first lines of the entry…",
+         *       "author": {
+         *         "id": 2,
+         *         "username": "maya",
+         *         "avatarUrl": null
+         *       },
+         *       "count": 7
+         *     }
+         */
+        LeaderboardEntryRankDto: {
+            /** @example 41 */
+            id: number;
+            /** @example 2026-09-01 */
+            date: string;
+            /**
+             * @description At most 280 characters
+             * @example The first lines of the entry…
+             */
+            excerpt: string;
+            author: components["schemas"]["LeaderboardAuthorDto"];
+            /**
+             * @description Likes, or comments from other people
+             * @example 7
+             */
+            count: number;
+        };
+        /**
+         * @example {
+         *       "period": "week",
+         *       "mostActiveAuthors": [
+         *         {
+         *           "author": {
+         *             "id": 2,
+         *             "username": "maya",
+         *             "avatarUrl": null
+         *           },
+         *           "publicEntries": 12
+         *         }
+         *       ],
+         *       "mostLikedEntries": [
+         *         {
+         *           "id": 41,
+         *           "date": "2026-09-01",
+         *           "excerpt": "The first lines of the entry…",
+         *           "author": {
+         *             "id": 2,
+         *             "username": "maya",
+         *             "avatarUrl": null
+         *           },
+         *           "count": 7
+         *         }
+         *       ],
+         *       "mostCommentedEntries": [
+         *         {
+         *           "id": 41,
+         *           "date": "2026-09-01",
+         *           "excerpt": "The first lines of the entry…",
+         *           "author": {
+         *             "id": 2,
+         *             "username": "maya",
+         *             "avatarUrl": null
+         *           },
+         *           "count": 7
+         *         }
+         *       ]
+         *     }
+         */
+        LeaderboardResponseDto: {
+            /** @enum {string} */
+            period: "week" | "month" | "year" | "all";
+            mostActiveAuthors: components["schemas"]["LeaderboardAuthorRankDto"][];
+            mostLikedEntries: components["schemas"]["LeaderboardEntryRankDto"][];
+            mostCommentedEntries: components["schemas"]["LeaderboardEntryRankDto"][];
         };
     };
     responses: never;
@@ -8445,6 +8573,69 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    LeaderboardController_getLeaderboard: {
+        parameters: {
+            query?: {
+                period?: "week" | "month" | "year" | "all";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Most active authors, most liked entries, and most commented entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "period": "week",
+                     *       "mostActiveAuthors": [
+                     *         {
+                     *           "author": {
+                     *             "id": 2,
+                     *             "username": "maya",
+                     *             "avatarUrl": null
+                     *           },
+                     *           "publicEntries": 12
+                     *         }
+                     *       ],
+                     *       "mostLikedEntries": [
+                     *         {
+                     *           "id": 41,
+                     *           "date": "2026-09-01",
+                     *           "excerpt": "The first lines of the entry…",
+                     *           "author": {
+                     *             "id": 2,
+                     *             "username": "maya",
+                     *             "avatarUrl": null
+                     *           },
+                     *           "count": 7
+                     *         }
+                     *       ],
+                     *       "mostCommentedEntries": [
+                     *         {
+                     *           "id": 41,
+                     *           "date": "2026-09-01",
+                     *           "excerpt": "The first lines of the entry…",
+                     *           "author": {
+                     *             "id": 2,
+                     *             "username": "maya",
+                     *             "avatarUrl": null
+                     *           },
+                     *           "count": 7
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["LeaderboardResponseDto"];
+                };
             };
         };
     };

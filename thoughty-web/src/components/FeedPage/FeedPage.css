@@ -17,6 +17,41 @@
   margin-bottom: 0.25rem;
 }
 
+.feed-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+}
+
+.feed-leaderboard-link {
+  display: inline-flex;
+  min-height: 2rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid #4b5563;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feed-page.light .feed-leaderboard-link {
+  border-color: #d1d5db;
+}
+
+.feed-leaderboard-link:hover {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.feed-leaderboard-link:focus-visible {
+  outline: 3px solid #38bdf8;
+  outline-offset: 2px;
+}
+
 .feed-header h1 {
   margin: 0;
   font-size: 1.5rem;

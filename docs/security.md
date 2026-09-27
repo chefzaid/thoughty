@@ -57,6 +57,8 @@ Comments (`/api/entries/:entryId/comments`) require a session and answer `404` u
 
 Likes (`PUT`/`DELETE` `/api/entries/:entryId/like` and `/api/entries/:entryId/comments/:commentId/like`) follow the same eligibility rule, are idempotent, and refuse self-likes with `400` so like counts cannot be inflated by their author.
 
+`GET /api/leaderboard` requires a session and only aggregates feed-eligible content, so private journaling activity never leaks into rankings; it ignores authors' comments on their own entries and interactions from deleted accounts, and returns plain-text excerpts of at most 280 characters with the same narrow author fields as the feed.
+
 ## Abuse Controls
 
 Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):

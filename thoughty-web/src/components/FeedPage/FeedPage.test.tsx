@@ -243,4 +243,21 @@ describe('FeedPage', () => {
     expect(screen.queryByRole('button', { name: /likeEntryBy/ })).not.toBeInTheDocument();
     expect(screen.getByTitle('likes')).toHaveTextContent('1');
   });
+
+  it('opens the leaderboard from the header when the route allows it', async () => {
+    fetchPublicFeed.mockResolvedValue({
+      data: { entries: [], total: 0, page: 1, totalPages: 0, hasMore: false },
+      error: null,
+    });
+    const onOpenLeaderboard = vi.fn();
+
+    const { unmount } = render(<FeedPage t={t} />);
+    expect(screen.queryByRole('button', { name: 'leaderboard' })).not.toBeInTheDocument();
+    unmount();
+
+    render(<FeedPage t={t} onOpenLeaderboard={onOpenLeaderboard} />);
+    fireEvent.click(screen.getByRole('button', { name: 'leaderboard' }));
+    expect(onOpenLeaderboard).toHaveBeenCalled();
+    await screen.findByText('feedEmptyCommunity');
+  });
 });
