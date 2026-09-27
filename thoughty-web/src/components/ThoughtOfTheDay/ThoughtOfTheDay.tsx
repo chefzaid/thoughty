@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import HighlightCard from './HighlightCard';
 import './ThoughtOfTheDay.css';
 import { useAuth } from '../../contexts/AuthContext';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 interface Entry {
     id: number;
@@ -84,6 +85,8 @@ function OnThisDaySection({
 function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry }: ThoughtOfTheDayProps) {
     const { authFetch } = useAuth();
     const modalRef = useRef<HTMLDivElement | null>(null);
+    const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+    const titleId = useId();
     const [highlights, setHighlights] = useState<Highlights | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -135,16 +138,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
         };
     }, [isOpen, onClose]);
 
-    // Close on Escape key
-    useEffect(() => {
-        const handleKeyDown = (e: globalThis.KeyboardEvent): void => {
-            if (e.key === 'Escape' && isOpen) {
-                onClose();
-            }
-        };
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+    useDialogFocus({ isOpen, dialogRef: modalRef, initialFocusRef: closeButtonRef, onClose });
 
     // Prevent body scroll when modal is open
     useEffect(() => {
@@ -269,9 +263,15 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
 
     return (
         <div className={`thought-of-day-overlay ${themeClass}`}>
-            <div ref={modalRef} className={`thought-of-day-modal ${themeClass}`}>
+            <div
+                ref={modalRef}
+                className={`thought-of-day-modal ${themeClass}`}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+            >
                 <div className="thought-of-day-header">
-                    <h2 className="thought-of-day-title">
+                    <h2 id={titleId} className="thought-of-day-title">
                         <svg className="sparkle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
                         </svg>
@@ -279,11 +279,13 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                     </h2>
                     <div className="thought-of-day-actions">
                         <button type="button"
+                            ref={closeButtonRef}
                             onClick={onClose}
                             className="action-button close"
                             title={t('close')}
+                            aria-label={t('close')}
                         >
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                                 <path d="M18 6L6 18M6 6l12 12" />
                             </svg>
                         </button>

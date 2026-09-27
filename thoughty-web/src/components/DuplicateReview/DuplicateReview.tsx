@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { DuplicateEntryScan } from '../../services/api/aiService';
 import type { TranslationFunction } from '../../types';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 import './DuplicateReview.css';
 
 interface DuplicateReviewProps {
@@ -27,7 +28,6 @@ function DuplicateReview({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const triggerButtonRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const wasOpenRef = useRef(false);
   const isLight = theme === 'light';
 
   useEffect(() => {
@@ -36,36 +36,13 @@ function DuplicateReview({
     setFailed(false);
   }, [diaryId]);
 
-  useEffect(() => {
-    if (!isOpen) {
-      if (wasOpenRef.current) triggerButtonRef.current?.focus();
-      wasOpenRef.current = false;
-      return undefined;
-    }
-    wasOpenRef.current = true;
-    closeButtonRef.current?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsOpen(false);
-      if (event.key !== 'Tab') return;
-
-      const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
-        'button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled)',
-      );
-      if (!focusableElements || focusableElements.length === 0) return;
-      const first = focusableElements.item(0);
-      const last = focusableElements.item(focusableElements.length - 1);
-      if (!first || !last) return;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    globalThis.addEventListener('keydown', handleKeyDown);
-    return () => globalThis.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  useDialogFocus({
+    isOpen,
+    dialogRef,
+    initialFocusRef: closeButtonRef,
+    onClose: () => setIsOpen(false),
+    returnFocusRef: triggerButtonRef,
+  });
 
   const runScan = async () => {
     setIsOpen(true);

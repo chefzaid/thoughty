@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { test, expect } from '@playwright/test';
 import { setupMockApp } from '../support/mockApp';
 
@@ -39,4 +40,45 @@ test.describe('Journal highlights', () => {
     await expect(page).toHaveURL(/\/journal\?diary=all$/);
     await expect(page.locator('#entry-101')).toHaveClass(/highlight-entry/);
   });
+
+  for (const theme of ['dark', 'light'] as const) {
+    test(`keeps keyboard focus inside the highlights dialog in the ${theme} theme`, async ({ page }) => {
+      const today = new Date().toISOString().slice(0, 10);
+      const lastYear = `${Number(today.slice(0, 4)) - 1}${today.slice(4)}`;
+      await setupMockApp(page, {
+        startAuthenticated: true,
+        config: { theme },
+        initialEntries: [
+          { id: 201, date: today, index: 1, content: 'Written today', tags: [], visibility: 'private', diaryId: 1 },
+          { id: 202, date: lastYear, index: 1, content: 'Written a year ago', tags: [], visibility: 'private', diaryId: 1 },
+        ],
+      });
+      await page.goto('/journal?diary=all');
+
+      const trigger = page.getByRole('button', { name: 'Highlights' });
+      await trigger.focus();
+      await page.keyboard.press('Enter');
+
+      const dialog = page.getByRole('dialog', { name: 'Highlights' });
+      await expect(dialog.getByRole('button', { name: 'Close' })).toBeFocused();
+      await expect(dialog.getByRole('button', { name: /Written a year ago/ })).toBeVisible();
+
+      for (let press = 0; press < 8; press += 1) {
+        await page.keyboard.press('Tab');
+        await expect(dialog.locator(':focus')).toHaveCount(1);
+      }
+      await page.keyboard.press('Shift+Tab');
+      await expect(dialog.locator(':focus')).toHaveCount(1);
+
+      const results = await new AxeBuilder({ page })
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+        .include('.thought-of-day-modal')
+        .analyze();
+      expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) }))).toEqual([]);
+
+      await page.keyboard.press('Escape');
+      await expect(dialog).toHaveCount(0);
+      await expect(trigger).toBeFocused();
+    });
+  }
 });

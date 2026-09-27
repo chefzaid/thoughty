@@ -336,10 +336,12 @@
 
 .thought-of-day-modal.light .entry-diary {
     background: #f1f5f9;
+    color: #475569;
 }
 
 .thought-of-day-modal.dark .entry-diary {
     background: #334155;
+    color: #e2e8f0;
 }
 
 .thought-of-day-modal .entry-content {
