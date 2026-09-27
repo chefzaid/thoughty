@@ -33,7 +33,7 @@ Open `http://localhost:5173`. Manual steps, configuration, and the Dev Container
 | [Deployment](./docs/deployment.md) | delivery pipeline, versioning, profiles, secrets, DNS, rollback |
 | [Operations](./docs/operations.md) | health checks, logs, metrics, troubleshooting, backup and restore |
 | [Security](./docs/security.md) | authentication, abuse controls, secrets, AI privacy |
-| [Onboarding](./docs/onboarding.md) | registering the repository with the `bm-cluster` platform |
+| [Onboarding](./docs/onboarding.md) | registering the repository with the `swirl-cloud` platform |
 | [Standalone Vault](./docs/standalone-vault.md) | secrets for an independent installation |
 
 The implemented and planned backlog is in [TODO.md](./TODO.md).

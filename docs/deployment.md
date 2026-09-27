@@ -1,6 +1,6 @@
 # Deployment Guide
 
-Thoughty runs in production on the shared bare-metal K3s platform managed by [`bm-cluster`](https://github.com/chefzaid/bm-cluster), at `https://thoughty.swirlit.dev`. The platform owns the generic services (GitLab runner, Argo CD, Vault, External Secrets, registry, Traefik ingress, PostgreSQL, Redis, Keycloak, monitoring). This repository owns everything Thoughty-specific: its GitLab project settings, Vault contracts, Argo CD `Application`, Kubernetes manifests, and public DNS.
+Thoughty runs in production on the shared bare-metal K3s platform managed by [`swirl-cloud`](https://github.com/chefzaid/swirl-cloud), at `https://thoughty.swirlit.dev`. The platform owns the generic services (GitLab runner, Argo CD, Vault, External Secrets, registry, Traefik ingress, PostgreSQL, Redis, Keycloak, monitoring). This repository owns everything Thoughty-specific: its GitLab project settings, Vault contracts, Argo CD `Application`, Kubernetes manifests, and public DNS.
 
 This guide is the single reference for the delivery pipeline, versioning, deployment profiles, secrets, and rollback. Day-2 checks and troubleshooting live in the [Operations Runbook](./operations.md); first-time registration with the platform is covered by [Repository Onboarding](./onboarding.md).
 
@@ -22,8 +22,8 @@ The database setup and migration hooks also reuse these images.
 | `infra/argocd/` | the Argo CD `Application` (`application.yaml`) |
 | `infra/k8s/base/` | reusable workload resources; never deployed directly |
 | `infra/k8s/components/` | reusable Kustomize components (worker, canary, monitoring) |
-| `infra/k8s/overlays/` | complete deployable profiles: `bm-cluster`, `bm-cluster-canary`, `standalone` |
-| `infra/overlays/ha` | opt-in multi-node profile composed from `bm-cluster` |
+| `infra/k8s/overlays/` | complete deployable profiles: `swirl-cloud`, `swirl-cloud-canary`, `standalone` |
+| `infra/overlays/ha` | opt-in multi-node profile composed from `swirl-cloud` |
 | `infra/ansible/` | optional operator refresh of committed GitOps state |
 | `infra/compose/` | local development services |
 | `infra/scripts/` | idempotent configuration and repository helpers |
@@ -33,14 +33,14 @@ Names use lowercase kebab-case and `.yaml`. Patch files end in `-patch.yaml`, ho
 Render the profiles locally without touching a cluster:
 
 ```bash
-kubectl kustomize infra/k8s/overlays/bm-cluster >/dev/null
+kubectl kustomize infra/k8s/overlays/swirl-cloud >/dev/null
 kubectl kustomize infra/overlays/ha >/dev/null
 kubectl kustomize infra/k8s/overlays/standalone >/dev/null
 ```
 
 ## Production Desired State
 
-Argo CD reads `infra/k8s/overlays/bm-cluster` from `swirlit/thoughty` in the cluster GitLab and deploys it to the `apps` namespace. The overlay contains:
+Argo CD reads `infra/k8s/overlays/swirl-cloud` from `swirlit/thoughty` in the cluster GitLab and deploys it to the `apps` namespace. The overlay contains:
 
 - the API, web, and worker Deployments;
 - the Ingress for `thoughty.swirlit.dev` with the `swirlit-dev-tls` certificate;
@@ -53,11 +53,11 @@ Argo CD, not CI, creates, prunes, and self-heals workloads.
 
 ### Ingress and authentication
 
-The UI is public. API routes pass through an app-owned Traefik ForwardAuth Middleware backed by the platform's shared Keycloak OAuth2 Proxy, which preserves login return URLs and forwards the signed access token to the API (see [Security](./security.md#authentication-and-sessions)). Both routes have a 10 MiB request limit. The base `ingress.yaml` owns routing and the request-limit Middleware; the `bm-cluster` overlay adds `ingress-middleware.yaml`. `KEYCLOAK_ISSUER`, `KEYCLOAK_JWKS_URI`, and `KEYCLOAK_AUDIENCE` are non-secret overlay settings. Thoughty also appears in the cluster Homepage `Applications` group.
+The UI is public. API routes pass through an app-owned Traefik ForwardAuth Middleware backed by the platform's shared Keycloak OAuth2 Proxy, which preserves login return URLs and forwards the signed access token to the API (see [Security](./security.md#authentication-and-sessions)). Both routes have a 10 MiB request limit. The base `ingress.yaml` owns routing and the request-limit Middleware; the `swirl-cloud` overlay adds `ingress-middleware.yaml`. `KEYCLOAK_ISSUER`, `KEYCLOAK_JWKS_URI`, and `KEYCLOAK_AUDIENCE` are non-secret overlay settings. Thoughty also appears in the cluster Homepage `Applications` group.
 
 ## Configuration and Secrets
 
-Non-secret runtime values live in `infra/k8s/base/configmap.yaml`, adjusted for production by `infra/k8s/overlays/bm-cluster/configmap-patch.yaml`. Production secrets come from Vault through External Secrets:
+Non-secret runtime values live in `infra/k8s/base/configmap.yaml`, adjusted for production by `infra/k8s/overlays/swirl-cloud/configmap-patch.yaml`. Production secrets come from Vault through External Secrets:
 
 | Vault KV path | Contents |
 |---|---|
@@ -127,7 +127,7 @@ This repository owns the `thoughty.swirlit.dev` record; the platform supplies th
   ```
 - **HA Tunnel:** after the platform's HA activation succeeds, switch to a proxied `CNAME` targeting `<publishedTunnelID>.cfargotunnel.com`. Confirm the published checkpoint first; no output means it is not ready:
   ```sh
-  kubectl get configmap bm-cluster-public-ingress -n infra -o json | \
+  kubectl get configmap swirl-cloud-public-ingress -n infra -o json | \
     jq -er '.data | select(.mode == "tunnel" and .domain == "swirlit.dev" and
       .publishedTunnelID != null and .publishedTunnelID != "" and
       .publishedTunnelID == .tunnelID) | .publishedTunnelID + ".cfargotunnel.com"'
@@ -137,15 +137,15 @@ Before changing a record, review conflicting A/AAAA/CNAME records for the exact 
 
 ## Other Profiles
 
-### Canary (`infra/k8s/overlays/bm-cluster-canary`)
+### Canary (`infra/k8s/overlays/swirl-cloud-canary`)
 
 Adds `thoughty-server-canary`, `thoughty-web-canary`, the `thoughty-canary-ingress` IngressRoute, and two weighted TraefikServices on top of the stable profile, which keeps ownership of shared configuration, credentials, authentication, request limits, and NetworkPolicy. Set both image references to published candidate versions first (the `canary` tags are placeholders). The worker is promoted only after the API and web candidates are accepted. Traffic shifting and rollback steps are in the [canary runbook](./operations.md#canary-rollouts).
 
 ### Multi-node HA (`infra/overlays/ha`)
 
-Composes `bm-cluster` with two API and two web replicas, hostname spreading across two eligible nodes, and per-Deployment disruption budgets. The worker stays at one replica: its database lease makes interrupted jobs recoverable, but a cancelled request cannot undo an upload a provider already accepted, so sync is not exactly-once (see [ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)).
+Composes `swirl-cloud` with two API and two web replicas, hostname spreading across two eligible nodes, and per-Deployment disruption budgets. The worker stays at one replica: its database lease makes interrupted jobs recoverable, but a cancelled request cannot undo an upload a provider already accepted, so sync is not exactly-once (see [ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)).
 
-To opt in, commit `spec.source.path: infra/overlays/ha` in `infra/argocd/application.yaml` and reconcile; a live-only override is lost on the next release. Image updates still go to the `bm-cluster` overlay and are inherited. PostgreSQL, Redis, object storage, Keycloak, and ingress must each survive losing a host, and the trusted proxy/client-IP path must be validated before relying on shared throttle counters. Before enabling, exercise login and refresh across API replicas, journal writes, attachment upload/download, shared throttling, and an eligible-node drain.
+To opt in, commit `spec.source.path: infra/overlays/ha` in `infra/argocd/application.yaml` and reconcile; a live-only override is lost on the next release. Image updates still go to the `swirl-cloud` overlay and are inherited. PostgreSQL, Redis, object storage, Keycloak, and ingress must each survive losing a host, and the trusted proxy/client-IP path must be validated before relying on shared throttle counters. Before enabling, exercise login and refresh across API replicas, journal writes, attachment upload/download, shared throttling, and an eligible-node drain.
 
 ### Standalone (`infra/k8s/overlays/standalone`)
 

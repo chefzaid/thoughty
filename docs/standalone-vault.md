@@ -1,6 +1,6 @@
 # Standalone Vault Setup
 
-These commands configure the independent Vault Agent profile. BM Cluster production uses the `apps/thoughty/*` External Secrets contracts created by `infra/scripts/configure-gitlab.sh`; do not apply this standalone setup there.
+These commands configure the independent Vault Agent profile. Swirl Cloud production uses the `apps/thoughty/*` External Secrets contracts created by `infra/scripts/configure-gitlab.sh`; do not apply this standalone setup there.
 
 ## Enable Kubernetes Authentication
 

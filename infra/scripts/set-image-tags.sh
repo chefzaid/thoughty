@@ -15,7 +15,7 @@ case "$tag" in
 esac
 
 script_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
-kustomization="$script_dir/../k8s/overlays/bm-cluster/kustomization.yaml"
+kustomization="$script_dir/../k8s/overlays/swirl-cloud/kustomization.yaml"
 temporary="$(mktemp "$kustomization.XXXXXX")"
 trap 'rm -f -- "$temporary"' EXIT HUP INT TERM
 awk -v tag="$tag" '

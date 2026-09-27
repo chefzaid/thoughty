@@ -36,7 +36,7 @@ publish_release() {
   git add VERSION package.json package-lock.json \
     thoughty-server/package.json thoughty-server/package-lock.json \
     thoughty-web/package.json thoughty-web/package-lock.json \
-    infra/k8s/overlays/bm-cluster/kustomization.yaml
+    infra/k8s/overlays/swirl-cloud/kustomization.yaml
   git commit -m "release: $APP_VERSION [skip ci]"
   release_revision="$(git rev-parse HEAD)"
   release_tag="v$APP_VERSION"

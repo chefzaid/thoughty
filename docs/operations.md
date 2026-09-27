@@ -2,7 +2,7 @@
 
 How to verify and troubleshoot Thoughty after it is deployed. How it gets deployed is in the [Deployment Guide](./deployment.md).
 
-Commands target production: the `bm-cluster` profile in the `apps` namespace, with secrets from External Secrets and PostgreSQL shared in `infra`. For the standalone profile, use the `thoughty` namespace, the bundled `deployment/postgres`, and Vault Agent files under `/vault/secrets` instead.
+Commands target production: the `swirl-cloud` profile in the `apps` namespace, with secrets from External Secrets and PostgreSQL shared in `infra`. For the standalone profile, use the `thoughty` namespace, the bundled `deployment/postgres`, and Vault Agent files under `/vault/secrets` instead.
 
 ## Runtime Surfaces
 
@@ -65,7 +65,7 @@ kubectl exec deployment/thoughty-server -n apps -- node dist/scripts/migrate.js
 
 ## Canary Rollouts
 
-With the canary overlay applied (see [Deployment](./deployment.md#canary-infrak8soverlaysbm-cluster-canary)):
+With the canary overlay applied (see [Deployment](./deployment.md#canary-infrak8soverlaysswirl-cloud-canary)):
 
 ```bash
 kubectl rollout status deployment/thoughty-server-canary -n apps --timeout=120s
@@ -89,7 +89,7 @@ for service in thoughty-api-rollout thoughty-web-rollout; do
 done
 ```
 
-Persist the intended weights in Git before the next reconciliation. If the canary misbehaves, set its weight to `0`, save logs from both canary Deployments, then remove it with `kubectl delete -k infra/k8s/overlays/bm-cluster-canary`. Removing the canary restores the stable Ingress routes without touching shared authentication or stable Services.
+Persist the intended weights in Git before the next reconciliation. If the canary misbehaves, set its weight to `0`, save logs from both canary Deployments, then remove it with `kubectl delete -k infra/k8s/overlays/swirl-cloud-canary`. Removing the canary restores the stable Ingress routes without touching shared authentication or stable Services.
 
 ## Troubleshooting
 

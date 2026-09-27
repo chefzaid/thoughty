@@ -14,7 +14,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT = json.loads((ROOT / "infra/onboarding.json").read_text())
 WEBSITE = CONTRACT["readiness"]["deployments"] == ["website"]
-PROFILE = "infra/k8s" if WEBSITE else "infra/k8s/overlays/bm-cluster"
+PROFILE = "infra/k8s" if WEBSITE else "infra/k8s/overlays/swirl-cloud"
 
 
 def context(domain="cluster.example", project="team/product"):
@@ -195,7 +195,7 @@ class OnboardingTests(unittest.TestCase):
         if not WEBSITE:
             # Canary configuration is part of the same repeatable onboarding contract.
             canary = list(yaml.safe_load_all(subprocess.check_output([
-                "kubectl", "kustomize", str(self.copy / "infra/k8s/overlays/bm-cluster-canary")
+                "kubectl", "kustomize", str(self.copy / "infra/k8s/overlays/swirl-cloud-canary")
             ], text=True)))
             route = next(doc for doc in canary if doc["kind"] == "IngressRoute")
             self.assertEqual(route["spec"]["tls"]["secretName"], values["TLS_SECRET_NAME"])

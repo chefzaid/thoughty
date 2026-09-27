@@ -14,15 +14,15 @@
     ".github/workflows/sync-gitlab.yml",
     "sonar-project.properties",
     "infra/argocd/application.yaml",
-    "infra/k8s/overlays/bm-cluster/kustomization.yaml",
-    "infra/k8s/overlays/bm-cluster/configmap-patch.yaml",
-    "infra/k8s/overlays/bm-cluster/ingress-patch.yaml",
-    "infra/k8s/overlays/bm-cluster/api-ingress-patch.yaml",
-    "infra/k8s/overlays/bm-cluster/database-setup-job.yaml",
-    "infra/k8s/overlays/bm-cluster/observability.yaml",
-    "infra/k8s/overlays/bm-cluster/ingress-middleware.yaml",
-    "infra/k8s/overlays/bm-cluster-canary/canary-ingress-patch.yaml",
-    "infra/k8s/overlays/bm-cluster-canary/kustomization.yaml"
+    "infra/k8s/overlays/swirl-cloud/kustomization.yaml",
+    "infra/k8s/overlays/swirl-cloud/configmap-patch.yaml",
+    "infra/k8s/overlays/swirl-cloud/ingress-patch.yaml",
+    "infra/k8s/overlays/swirl-cloud/api-ingress-patch.yaml",
+    "infra/k8s/overlays/swirl-cloud/database-setup-job.yaml",
+    "infra/k8s/overlays/swirl-cloud/observability.yaml",
+    "infra/k8s/overlays/swirl-cloud/ingress-middleware.yaml",
+    "infra/k8s/overlays/swirl-cloud-canary/canary-ingress-patch.yaml",
+    "infra/k8s/overlays/swirl-cloud-canary/kustomization.yaml"
   ],
   "replacements": [
     {
