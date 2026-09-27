@@ -96,7 +96,7 @@
     color: #f1f5f9;
 }
 
-.sparkle-icon {
+.thought-of-day-modal .sparkle-icon {
     width: 1.5rem;
     height: 1.5rem;
     color: #f59e0b;
@@ -107,7 +107,7 @@
     gap: 0.5rem;
 }
 
-.action-button {
+.thought-of-day-modal .action-button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -119,7 +119,7 @@
     transition: all 0.2s ease;
 }
 
-.action-button svg {
+.thought-of-day-modal .action-button svg {
     width: 1.125rem;
     height: 1.125rem;
     transition: transform 0.3s ease;
@@ -145,24 +145,24 @@
     color: #f1f5f9;
 }
 
-.action-button.close:hover {
+.thought-of-day-modal .action-button.close:hover {
     background: #b91c1c;
     color: white;
 }
 
-.action-button.refresh:hover svg {
+.thought-of-day-modal .action-button.refresh:hover svg {
     animation: spin 0.5s ease-in-out;
 }
 
 /* Inline refresh button next to section title */
-.action-button.inline-refresh {
+.thought-of-day-modal .action-button.inline-refresh {
     width: 1.5rem;
     height: 1.5rem;
     border-radius: 0.375rem;
     margin-left: 0.25rem;
 }
 
-.action-button.inline-refresh svg {
+.thought-of-day-modal .action-button.inline-refresh svg {
     width: 0.75rem;
     height: 0.75rem;
 }
@@ -186,7 +186,7 @@
 }
 
 /* Sections */
-.highlight-section {
+.thought-of-day-modal .highlight-section {
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -217,61 +217,95 @@
 }
 
 /* Entry Cards */
-.highlight-entry {
+.thought-of-day-modal .highlight-card {
     padding: 1.25rem;
     border-radius: 0.75rem;
     transition: all 0.2s ease;
 }
 
-.highlight-entry.clickable {
+.thought-of-day-modal .highlight-card.clickable {
+    position: relative;
     cursor: pointer;
 }
 
-.thought-of-day-modal.light .highlight-entry {
+/* The date button covers the whole card, which keeps the card clickable without nesting
+   the preview inside a button. */
+.thought-of-day-modal .highlight-card-open {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.thought-of-day-modal .highlight-card-open::after {
+    position: absolute;
+    inset: 0;
+    border-radius: 0.75rem;
+    content: '';
+}
+
+.thought-of-day-modal .highlight-card-open:focus-visible {
+    outline: none;
+}
+
+.thought-of-day-modal .highlight-card-open:focus-visible::after {
+    outline: 3px solid #3b82f6;
+    outline-offset: 2px;
+}
+
+/* Links inside a preview stay clickable above the card-wide button. */
+.thought-of-day-modal .highlight-card .entry-content a {
+    position: relative;
+    z-index: 1;
+}
+
+.thought-of-day-modal.light .highlight-card {
     background: #ffffff;
     border: 1px solid #e2e8f0;
 }
 
-.thought-of-day-modal.light .highlight-entry:hover {
+.thought-of-day-modal.light .highlight-card:hover {
     transform: translateY(-2px);
 }
 
-.thought-of-day-modal.dark .highlight-entry {
+.thought-of-day-modal.dark .highlight-card {
     background: #1e293b;
     border: 1px solid #334155;
 }
 
-.thought-of-day-modal.dark .highlight-entry:hover {
+.thought-of-day-modal.dark .highlight-card:hover {
     transform: translateY(-2px);
 }
 
 /* Blue highlight only for random thought entry */
-.thought-of-day-modal.light .random-thought .highlight-entry:hover {
+.thought-of-day-modal.light .random-thought .highlight-card:hover {
     border-color: #3b82f6;
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
-.thought-of-day-modal.dark .random-thought .highlight-entry:hover {
+.thought-of-day-modal.dark .random-thought .highlight-card:hover {
     border-color: #3b82f6;
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
 }
 
 /* Subtle hover for on-this-day entries */
-.thought-of-day-modal.light .on-this-day .highlight-entry:hover {
+.thought-of-day-modal.light .on-this-day .highlight-card:hover {
     border-color: #cbd5e1;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.thought-of-day-modal.dark .on-this-day .highlight-entry:hover {
+.thought-of-day-modal.dark .on-this-day .highlight-card:hover {
     border-color: #475569;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.highlight-entry.compact {
+.thought-of-day-modal .highlight-card.compact {
     padding: 1rem;
 }
 
-.entry-meta {
+.thought-of-day-modal .entry-meta {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -287,11 +321,11 @@
     color: #94a3b8;
 }
 
-.entry-date {
+.thought-of-day-modal .entry-date {
     font-weight: 500;
 }
 
-.entry-diary {
+.thought-of-day-modal .entry-diary {
     display: flex;
     align-items: center;
     gap: 0.25rem;
@@ -308,7 +342,7 @@
     background: #334155;
 }
 
-.entry-content {
+.thought-of-day-modal .entry-content {
     font-size: 0.9375rem;
     line-height: 1.7;
 }
@@ -321,14 +355,14 @@
     color: #e2e8f0;
 }
 
-.entry-tags {
+.thought-of-day-modal .entry-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 0.375rem;
     margin-top: 1rem;
 }
 
-.entry-tags .tag {
+.thought-of-day-modal .entry-tags .tag {
     padding: 0.25rem 0.625rem;
     border-radius: 9999px;
     font-size: 0.75rem;
@@ -345,24 +379,24 @@
     color: #60a5fa;
 }
 
-.entry-tags .tag.more {
+.thought-of-day-modal .entry-tags .tag.more {
     opacity: 0.7;
 }
 
 /* On This Day */
-.on-this-day-entries {
+.thought-of-day-modal .on-this-day-entries {
     display: flex;
     flex-direction: column;
     gap: 1.25rem;
 }
 
-.year-group {
+.thought-of-day-modal .year-group {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
 }
 
-.year-badge {
+.thought-of-day-modal .year-badge {
     display: inline-flex;
     align-items: center;
     align-self: flex-start;
@@ -434,7 +468,7 @@
     color: #64748b;
 }
 
-.refresh-button {
+.thought-of-day-modal .refresh-button {
     padding: 0.625rem 1.25rem;
     border-radius: 0.5rem;
     border: none;
@@ -446,7 +480,7 @@
     color: white;
 }
 
-.refresh-button:hover {
+.thought-of-day-modal .refresh-button:hover {
     background: #2563eb;
     transform: translateY(-1px);
 }
@@ -458,7 +492,7 @@
         gap: 2rem;
     }
 
-    .highlight-section {
+    .thought-of-day-modal .highlight-section {
         flex: 1;
     }
 }

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useCallback, useMemo } from 'react';
+import React, { Suspense, lazy, useMemo } from 'react';
 import type { Components } from 'react-markdown';
 
 const BRACKET_REFERENCE_PATTERN = /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]/i;
@@ -188,16 +188,29 @@ function EntryContentRenderer({
 
     const parts = useMemo(() => parseContentParts(displayContent), [displayContent]);
 
-    const handleReferenceClick = useCallback((date: string, index: number): void => {
-        if (onNavigateToEntry) {
-            onNavigateToEntry(date, index, sourceEntry);
+    // Without a navigation handler (previews, the public feed) a reference is plain styled text,
+    // so it never becomes a dead button or a button nested inside a clickable card.
+    const renderReference = (part: ReferenceContentPart) => {
+        if (!onNavigateToEntry) {
+            return <span key={part.key} className="entry-reference-link">{part.displayText}</span>;
         }
-    }, [onNavigateToEntry, sourceEntry]);
 
-    const getTitle = useCallback((date: string, index: number): string => {
-        const indexSuffix = index > 1 ? ` (#${index})` : '';
-        return `Navigate to entry on ${date}${indexSuffix}`;
-    }, []);
+        const indexSuffix = part.index > 1 ? ` (#${part.index})` : '';
+        return (
+            <button
+                key={part.key}
+                type="button"
+                className="entry-reference-link"
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigateToEntry(part.date, part.index, sourceEntry);
+                }}
+                title={`Navigate to entry on ${part.date}${indexSuffix}`}
+            >
+                {part.displayText}
+            </button>
+        );
+    };
 
     // Markdown rendering mode
     if (format === 'markdown') {
@@ -223,20 +236,7 @@ function EntryContentRenderer({
                     }
 
                     if (part.type === 'reference') {
-                        return (
-                            <button
-                                key={part.key}
-                                type="button"
-                                className="entry-reference-link"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleReferenceClick(part.date, part.index);
-                                }}
-                                title={getTitle(part.date, part.index)}
-                            >
-                                {part.displayText}
-                            </button>
-                        );
+                        return renderReference(part);
                     }
 
                     return null;
@@ -258,20 +258,7 @@ function EntryContentRenderer({
                 }
 
                 if (part.type === 'reference') {
-                    return (
-                        <button
-                            key={part.key}
-                            type="button"
-                            className="entry-reference-link"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleReferenceClick(part.date, part.index);
-                            }}
-                            title={getTitle(part.date, part.index)}
-                        >
-                            {part.displayText}
-                        </button>
-                    );
+                    return renderReference(part);
                 }
 
                 return null;

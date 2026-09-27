@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
+import HighlightCard from './HighlightCard';
 import './ThoughtOfTheDay.css';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -65,24 +65,14 @@ function OnThisDaySection({
                             {t('yearsAgo', { years: yearsAgo })}
                         </div>
                         {(onThisDay[yearsAgo] ?? []).map((entry) => (
-                            <button
+                            <HighlightCard
                                 key={entry.id}
-                                type="button"
-                                className="highlight-entry clickable compact"
-                                onClick={() => onSelectEntry(entry)}
-                            >
-                                <div className="entry-meta">
-                                    <span className="entry-date">{formatDate(entry.date)}</span>
-                                    {entry.diary_name && (
-                                        <span className="entry-diary">
-                                            {entry.diary_icon} {entry.diary_name}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="entry-content">
-                                    <EntryContentRenderer content={entry.content} format={entry.format} maxLength={200} />
-                                </div>
-                            </button>
+                                entry={entry}
+                                formattedDate={formatDate(entry.date)}
+                                maxLength={200}
+                                compact
+                                onOpen={() => onSelectEntry(entry)}
+                            />
                         ))}
                     </div>
                 ))}
@@ -238,22 +228,12 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                                 </svg>
                             </button>
                         </h3>
-                        <button
-                            type="button"
-                            className="highlight-entry clickable"
-                            onClick={() => handleEntryClick(randomEntry)}
+                        <HighlightCard
+                            entry={randomEntry}
+                            formattedDate={formatDate(randomEntry.date)}
+                            maxLength={300}
+                            onOpen={() => handleEntryClick(randomEntry)}
                         >
-                            <div className="entry-meta">
-                                <span className="entry-date">{formatDate(randomEntry.date)}</span>
-                                {randomEntry.diary_name && (
-                                    <span className="entry-diary">
-                                        {randomEntry.diary_icon} {randomEntry.diary_name}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="entry-content">
-                                <EntryContentRenderer content={randomEntry.content} format={randomEntry.format} maxLength={300} />
-                            </div>
                             {randomEntry.tags && randomEntry.tags.length > 0 && (
                                 <div className="entry-tags">
                                     {randomEntry.tags.slice(0, 5).map((tag) => (
@@ -264,7 +244,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
                                     )}
                                 </div>
                             )}
-                        </button>
+                        </HighlightCard>
                     </div>
                 )}
 

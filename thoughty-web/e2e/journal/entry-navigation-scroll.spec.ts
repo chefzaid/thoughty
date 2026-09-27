@@ -37,7 +37,13 @@ test.describe('Navigating to an entry', () => {
   });
 
   test('scrolls to an On This Day entry opened from Highlights', async ({ page }) => {
+    const nestingErrors: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' && message.text().includes('cannot be a descendant of')) nestingErrors.push(message.text());
+    });
     await page.getByRole('button', { name: 'Highlights' }).click();
+    await expect(page.getByRole('heading', { name: 'On This Day' })).toBeVisible();
+    expect(nestingErrors).toEqual([]);
     await page.getByRole('button', { name: /The oldest entry, where it all started/ }).last().click();
 
     const target = page.locator(`#entry-${OLD_ENTRY_ID}`);

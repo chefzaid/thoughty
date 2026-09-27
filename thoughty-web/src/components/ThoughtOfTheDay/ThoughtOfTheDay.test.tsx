@@ -157,7 +157,7 @@ describe('ThoughtOfTheDay', () => {
             expect(screen.getByText('Hello')).toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByText('Hello'));
+        fireEvent.click(screen.getByRole('button', { name: /Hello/ }));
 
         expect(onNavigateToEntry).toHaveBeenCalledWith('2024-01-01', 3, null);
         expect(onClose).toHaveBeenCalled();

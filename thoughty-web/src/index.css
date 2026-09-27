@@ -115,6 +115,15 @@ body.high-contrast-mode .feed-entry {
   outline-offset: 1px;
 }
 
+/* A reference with nowhere to navigate (previews, the public feed) is text, not a link. */
+span.entry-reference-link,
+span.entry-reference-link:hover {
+  color: #3b82f6;
+  background: none;
+  text-decoration: none;
+  cursor: inherit;
+}
+
 /* Markdown content styling */
 .markdown-content h1 {
   @apply text-2xl font-bold mt-4 mb-2;

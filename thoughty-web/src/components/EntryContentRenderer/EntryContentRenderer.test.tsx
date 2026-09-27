@@ -50,6 +50,13 @@ describe('EntryContentRenderer', () => {
             expect(link).toHaveClass('entry-reference-link');
         });
 
+        it('renders references as plain text when there is nowhere to navigate', () => {
+            render(<EntryContentRenderer content="See [[2026-01-10]] for more" />);
+
+            expect(screen.queryByRole('button')).not.toBeInTheDocument();
+            expect(screen.getByText('[[2026-01-10]]')).toHaveClass('entry-reference-link');
+        });
+
         it('detects [[yyyy-mm-dd#X]] format', () => {
             render(<EntryContentRenderer {...defaultProps} content="Check [[2026-01-10#2]]" />);
 
