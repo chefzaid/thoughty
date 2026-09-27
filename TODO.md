@@ -136,10 +136,12 @@
 ## Social Features
 
 - [x] Feed that shows public entries from other users with infinite scroll and to preview your own public entries
+- [ ] Feed text-to-speech: read a single entry aloud or continue reading from that entry onward, matching the Journal's reading controls
 - [x] Allow users to follow other users
 - [x] Comments on public entries
 - [x] Likes for entries and comments
-- [ ] Chatting and messaging between users
+- [ ] Chatting and messaging between users, with one-to-one and group conversations
+- [ ] Discuss button offers two choices: "With AI" for the existing entry AI chat, and "With Someone" using the planned user chat feature (depends on chat implementation)
 - [ ] Notifications for messages, comments, likes, new followers
 - [x] Leaderboard for most active users, most liked entries, most commented entries
 - [x] Badges for achievements and karma points
