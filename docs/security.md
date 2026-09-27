@@ -49,7 +49,9 @@ Reset tokens are hashed and expire after one hour. The forgot-password endpoint 
 
 Public routes are deliberate exceptions: health checks, sign-up/login/OAuth entry points, email verification and password recovery, the public landing and legal pages, and the read side of the feature-request board. Any new public endpoint must document why it is public, which throttle applies, and what it can reveal.
 
-The social feed is **not** public. `GET /api/entries/feed` requires a session, validates `scope`, `page`, and `limit` (at most 20 entries per page), and returns only `id`, `username`, and `avatarUrl` for authors. An entry appears only when its visibility is `public`, its moderation status is `visible`, it is not archived, and its author is not deleted. `moderation_status` (`visible`, `hidden`, `under_review`, `removed`) is platform-controlled and must never be writable through entry create or update DTOs.
+The social feed is **not** public. `GET /api/entries/feed` requires a session, validates `scope` (`community`, `following`, or `mine`), `page`, and `limit` (at most 20 entries per page), and returns only `id`, `username`, `avatarUrl`, and whether the requester follows them for authors. An entry appears only when its visibility is `public`, its moderation status is `visible`, it is not archived, and its author is not deleted. `moderation_status` (`visible`, `hidden`, `under_review`, `removed`) is platform-controlled and must never be writable through entry create or update DTOs.
+
+Follows (`/api/follows`) also require a session. `PUT /api/follows/:userId` answers `404` unless the target currently has a feed-eligible entry, so user ids cannot be probed for private or deleted accounts, and `400` for a self-follow. The follow list only exposes the same author fields as the feed plus the follow date; followers are only counted, never listed.
 
 ## Abuse Controls
 
@@ -66,6 +68,8 @@ Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):
 Counters are stored in Redis when `REDIS_URL` or `REDIS_HOST` is set, so limits hold across replicas; if Redis is unavailable each process falls back to local counters. Behind ingress, validate the trusted proxy and client-IP path before relying on per-client limits.
 
 Request bodies are limited before validation: JSON `1mb` and URL-encoded `256kb` by default, overridable with `REQUEST_BODY_LIMIT`, `REQUEST_JSON_BODY_LIMIT`, and `REQUEST_FORM_BODY_LIMIT`. Uploads use separate per-file Multer limits.
+
+Database errors caused by client input, such as an id beyond PostgreSQL's integer range, are answered with `400` by the global `DatabaseInputExceptionFilter` instead of surfacing as `500`.
 
 ## Secrets
 

@@ -1107,6 +1107,7 @@
               "type": "string",
               "enum": [
                 "community",
+                "following",
                 "mine"
               ]
             }
@@ -1156,7 +1157,8 @@
                       "author": {
                         "id": 1,
                         "username": "Daily Journal",
-                        "avatarUrl": "https://thoughty.example.com/callback"
+                        "avatarUrl": "https://thoughty.example.com/callback",
+                        "isFollowed": true
                       }
                     }
                   ],
@@ -5704,6 +5706,128 @@
           "Feature Requests"
         ]
       }
+    },
+    "/api/follows": {
+      "get": {
+        "operationId": "FollowsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Users followed by the authenticated user and how many follow them",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowsResponseDto"
+                },
+                "example": {
+                  "following": [
+                    {
+                      "id": 2,
+                      "username": "maya",
+                      "avatarUrl": null,
+                      "followedAt": "2026-09-01T08:30:00.000Z"
+                    }
+                  ],
+                  "followerCount": 3
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List followed users and the follower count",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/follows/{userId}": {
+      "put": {
+        "operationId": "FollowsController_follow",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The user is followed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowStateDto"
+                },
+                "example": {
+                  "userId": 2,
+                  "following": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Users cannot follow themselves"
+          },
+          "404": {
+            "description": "No followable author with this id"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Follow an author who has public entries in the feed",
+        "tags": [
+          "Social"
+        ]
+      },
+      "delete": {
+        "operationId": "FollowsController_unfollow",
+        "parameters": [
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The user is no longer followed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowStateDto"
+                },
+                "example": {
+                  "userId": 2,
+                  "following": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Stop following a user",
+        "tags": [
+          "Social"
+        ]
+      }
     }
   },
   "info": {
@@ -6376,16 +6500,22 @@
           "avatarUrl": {
             "type": "string",
             "nullable": true
+          },
+          "isFollowed": {
+            "type": "boolean",
+            "description": "Whether the current user follows this author"
           }
         },
         "required": [
           "id",
-          "username"
+          "username",
+          "isFollowed"
         ],
         "example": {
           "id": 1,
           "username": "Daily Journal",
-          "avatarUrl": "https://thoughty.example.com/callback"
+          "avatarUrl": "https://thoughty.example.com/callback",
+          "isFollowed": true
         }
       },
       "PublicFeedEntryDto": {
@@ -6447,7 +6577,8 @@
           "author": {
             "id": 1,
             "username": "Daily Journal",
-            "avatarUrl": "https://thoughty.example.com/callback"
+            "avatarUrl": "https://thoughty.example.com/callback",
+            "isFollowed": true
           }
         }
       },
@@ -6495,7 +6626,8 @@
               "author": {
                 "id": 1,
                 "username": "Daily Journal",
-                "avatarUrl": "https://thoughty.example.com/callback"
+                "avatarUrl": "https://thoughty.example.com/callback",
+                "isFollowed": true
               }
             }
           ],
@@ -9543,6 +9675,93 @@
           "requestId": 14,
           "votes": 28,
           "voted": true
+        }
+      },
+      "FollowedUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 2
+          },
+          "username": {
+            "type": "string",
+            "example": "maya"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": null
+          },
+          "followedAt": {
+            "type": "string",
+            "example": "2026-09-01T08:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "avatarUrl",
+          "followedAt"
+        ],
+        "example": {
+          "id": 2,
+          "username": "maya",
+          "avatarUrl": null,
+          "followedAt": "2026-09-01T08:30:00.000Z"
+        }
+      },
+      "FollowsResponseDto": {
+        "type": "object",
+        "properties": {
+          "following": {
+            "description": "Active users the current user follows",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FollowedUserDto"
+            }
+          },
+          "followerCount": {
+            "type": "number",
+            "example": 3,
+            "description": "Number of active users following the current user"
+          }
+        },
+        "required": [
+          "following",
+          "followerCount"
+        ],
+        "example": {
+          "following": [
+            {
+              "id": 2,
+              "username": "maya",
+              "avatarUrl": null,
+              "followedAt": "2026-09-01T08:30:00.000Z"
+            }
+          ],
+          "followerCount": 3
+        }
+      },
+      "FollowStateDto": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "number",
+            "example": 2
+          },
+          "following": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "userId",
+          "following"
+        ],
+        "example": {
+          "userId": 2,
+          "following": true
         }
       }
     }

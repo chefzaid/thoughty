@@ -1565,6 +1565,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/follows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List followed users and the follower count */
+        get: operations["FollowsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/follows/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Follow an author who has public entries in the feed */
+        put: operations["FollowsController_follow"];
+        post?: never;
+        /** Stop following a user */
+        delete: operations["FollowsController_unfollow"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1930,13 +1965,16 @@ export interface components {
          * @example {
          *       "id": 1,
          *       "username": "Daily Journal",
-         *       "avatarUrl": "https://thoughty.example.com/callback"
+         *       "avatarUrl": "https://thoughty.example.com/callback",
+         *       "isFollowed": true
          *     }
          */
         PublicFeedAuthorDto: {
             id: number;
             username: string;
             avatarUrl?: string | null;
+            /** @description Whether the current user follows this author */
+            isFollowed: boolean;
         };
         /**
          * @example {
@@ -1952,7 +1990,8 @@ export interface components {
          *       "author": {
          *         "id": 1,
          *         "username": "Daily Journal",
-         *         "avatarUrl": "https://thoughty.example.com/callback"
+         *         "avatarUrl": "https://thoughty.example.com/callback",
+         *         "isFollowed": true
          *       }
          *     }
          */
@@ -1984,7 +2023,8 @@ export interface components {
          *           "author": {
          *             "id": 1,
          *             "username": "Daily Journal",
-         *             "avatarUrl": "https://thoughty.example.com/callback"
+         *             "avatarUrl": "https://thoughty.example.com/callback",
+         *             "isFollowed": true
          *           }
          *         }
          *       ],
@@ -3801,6 +3841,58 @@ export interface components {
             /** @example true */
             voted: boolean;
         };
+        /**
+         * @example {
+         *       "id": 2,
+         *       "username": "maya",
+         *       "avatarUrl": null,
+         *       "followedAt": "2026-09-01T08:30:00.000Z"
+         *     }
+         */
+        FollowedUserDto: {
+            /** @example 2 */
+            id: number;
+            /** @example maya */
+            username: string;
+            /** @example null */
+            avatarUrl: string | null;
+            /** @example 2026-09-01T08:30:00.000Z */
+            followedAt: string;
+        };
+        /**
+         * @example {
+         *       "following": [
+         *         {
+         *           "id": 2,
+         *           "username": "maya",
+         *           "avatarUrl": null,
+         *           "followedAt": "2026-09-01T08:30:00.000Z"
+         *         }
+         *       ],
+         *       "followerCount": 3
+         *     }
+         */
+        FollowsResponseDto: {
+            /** @description Active users the current user follows */
+            following: components["schemas"]["FollowedUserDto"][];
+            /**
+             * @description Number of active users following the current user
+             * @example 3
+             */
+            followerCount: number;
+        };
+        /**
+         * @example {
+         *       "userId": 2,
+         *       "following": true
+         *     }
+         */
+        FollowStateDto: {
+            /** @example 2 */
+            userId: number;
+            /** @example true */
+            following: boolean;
+        };
     };
     responses: never;
     parameters: never;
@@ -4736,7 +4828,7 @@ export interface operations {
     EntriesController_getPublicFeed: {
         parameters: {
             query?: {
-                scope?: "community" | "mine";
+                scope?: "community" | "following" | "mine";
                 page?: number;
                 limit?: number;
             };
@@ -4768,7 +4860,8 @@ export interface operations {
                      *           "author": {
                      *             "id": 1,
                      *             "username": "Daily Journal",
-                     *             "avatarUrl": "https://thoughty.example.com/callback"
+                     *             "avatarUrl": "https://thoughty.example.com/callback",
+                     *             "isFollowed": true
                      *           }
                      *         }
                      *       ],
@@ -7752,6 +7845,109 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["FeatureRequestVoteResponseDto"];
+                };
+            };
+        };
+    };
+    FollowsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Users followed by the authenticated user and how many follow them */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "following": [
+                     *         {
+                     *           "id": 2,
+                     *           "username": "maya",
+                     *           "avatarUrl": null,
+                     *           "followedAt": "2026-09-01T08:30:00.000Z"
+                     *         }
+                     *       ],
+                     *       "followerCount": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FollowsResponseDto"];
+                };
+            };
+        };
+    };
+    FollowsController_follow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user is followed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "userId": 2,
+                     *       "following": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FollowStateDto"];
+                };
+            };
+            /** @description Users cannot follow themselves */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No followable author with this id */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    FollowsController_unfollow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                userId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user is no longer followed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "userId": 2,
+                     *       "following": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FollowStateDto"];
                 };
             };
         };

@@ -101,6 +101,8 @@ export interface SetupMockAppOptions {
   cloudStatus?: MockAppState["cloudStatus"];
   cloudSchedules?: MockAppState["cloudSchedules"];
   cloudFiles?: MockCloudFile[];
+  followedUserIds?: number[];
+  followerCount?: number;
 }
 
 export interface MockAppState {
@@ -145,6 +147,8 @@ export interface MockAppState {
   cloudFiles: MockCloudFile[];
   featureRequests: MockFeatureRequest[];
   featureRequestVotes: number[];
+  followedUserIds: number[];
+  followerCount: number;
   bookVersions: MockBookVersion[];
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
@@ -392,6 +396,8 @@ export function createMockAppState(
       ...request,
     })),
     featureRequestVotes: [],
+    followedUserIds: [...(options.followedUserIds || [])],
+    followerCount: options.followerCount ?? 0,
     bookVersions: [],
     nextEntryId:
       (options.initialEntries?.reduce(

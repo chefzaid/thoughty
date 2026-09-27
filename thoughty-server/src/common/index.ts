@@ -1,5 +1,6 @@
 export * from './decorators';
 export * from './feature-flags';
+export * from './filters';
 export * from './logging';
 export * from './metrics';
 export * from './rate-limiting';

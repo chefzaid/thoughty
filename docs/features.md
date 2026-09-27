@@ -76,7 +76,8 @@ flowchart LR
 
 ## Social
 
-- **Feed:** a paginated, infinitely scrolling timeline of other users' public entries, and a **My public entries** tab that previews exactly what others can see of your journal. Private, archived, moderated, and deleted-account content never appears.
+- **Feed:** a paginated, infinitely scrolling timeline of other users' public entries, a **Following** tab limited to the authors you follow, and a **My public entries** tab that previews exactly what others can see of your journal. Private, archived, moderated, and deleted-account content never appears.
+- **Follows:** follow or unfollow an author from any of their feed entries. The **Following** tab lists the people you follow (with a quick unfollow) and shows how many people follow you. Follows are included in the personal data download.
 - **Feature requests:** a public board of ideas ranked by votes. Anyone can browse; signed-in users can submit ideas and vote once per idea (authors vote for their own idea automatically).
 
 ## AI Assistance

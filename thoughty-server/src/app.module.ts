@@ -1,6 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { DatabaseModule } from './database';
 import { AuthModule, JwtAuthGuard } from './modules/auth';
@@ -15,8 +15,14 @@ import { AiModule } from './modules/ai';
 import { CloudSyncModule } from './modules/cloud-sync';
 import { MetricsModule } from './modules/metrics';
 import { FeatureRequestsModule } from './modules/feature-requests';
+import { SocialModule } from './modules/social';
 import { HealthController } from './health.controller';
-import { createThrottlerModuleOptions, JsonLogger, RequestLoggingMiddleware } from './common';
+import {
+  createThrottlerModuleOptions,
+  DatabaseInputExceptionFilter,
+  JsonLogger,
+  RequestLoggingMiddleware,
+} from './common';
 
 @Module({
   controllers: [HealthController],
@@ -46,6 +52,7 @@ import { createThrottlerModuleOptions, JsonLogger, RequestLoggingMiddleware } fr
     CloudSyncModule,
     MetricsModule,
     FeatureRequestsModule,
+    SocialModule,
   ],
   providers: [
     // Global JWT Auth Guard
@@ -57,6 +64,11 @@ import { createThrottlerModuleOptions, JsonLogger, RequestLoggingMiddleware } fr
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Client input rejected by the database (e.g. out-of-range ids) is a 400, not a 500
+    {
+      provide: APP_FILTER,
+      useClass: DatabaseInputExceptionFilter,
     },
     {
       provide: JsonLogger,

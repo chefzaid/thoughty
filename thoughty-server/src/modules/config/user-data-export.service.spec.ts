@@ -1,6 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Attachment, Diary, Entry, EntryRevision, Setting, User } from '@/database/entities';
+import {
+  Attachment,
+  Diary,
+  Entry,
+  EntryRevision,
+  Setting,
+  User,
+  UserFollow,
+} from '@/database/entities';
 import { UserDataExportService } from './user-data-export.service';
 
 describe('UserDataExportService', () => {
@@ -11,6 +19,7 @@ describe('UserDataExportService', () => {
   let entryRepository: any;
   let revisionRepository: any;
   let attachmentRepository: any;
+  let followRepository: any;
 
   beforeEach(async () => {
     settingRepository = { find: jest.fn() };
@@ -19,6 +28,7 @@ describe('UserDataExportService', () => {
     entryRepository = { find: jest.fn() };
     revisionRepository = { find: jest.fn() };
     attachmentRepository = { find: jest.fn() };
+    followRepository = { find: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -29,6 +39,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(Entry), useValue: entryRepository },
         { provide: getRepositoryToken(EntryRevision), useValue: revisionRepository },
         { provide: getRepositoryToken(Attachment), useValue: attachmentRepository },
+        { provide: getRepositoryToken(UserFollow), useValue: followRepository },
       ],
     }).compile();
 
@@ -94,6 +105,14 @@ describe('UserDataExportService', () => {
     settingRepository.find.mockResolvedValue([
       { key: 'theme', value: 'dark', updatedAt: new Date('2024-01-01') },
     ]);
+    followRepository.find.mockResolvedValue([
+      {
+        followerId: 1,
+        followedId: 2,
+        createdAt: new Date('2024-02-01'),
+        followed: { id: 2, username: 'maya', email: 'maya@example.com' },
+      },
+    ]);
 
     const result = await service.downloadData(1);
 
@@ -115,6 +134,12 @@ describe('UserDataExportService', () => {
       }),
     ]);
     expect(result.settings).toHaveLength(1);
+    expect(result.following).toEqual([
+      { userId: 2, username: 'maya', followedAt: new Date('2024-02-01') },
+    ]);
+    expect(followRepository.find).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { followerId: 1 } }),
+    );
   });
 
   it('should exclude sensitive fields from user data', async () => {

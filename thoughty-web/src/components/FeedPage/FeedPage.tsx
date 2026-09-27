@@ -3,35 +3,27 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFeedService } from '../../hooks/useFeedService';
 import type { PublicFeedEntry, PublicFeedScope } from '../../services/api';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
+import FeedAuthor from './FeedAuthor';
+import FollowingPanel from './FollowingPanel';
+import { useFollows } from './useFollows';
 import './FeedPage.css';
 
 const PAGE_SIZE = 10;
+
+const SCOPES: ReadonlyArray<{ scope: PublicFeedScope; icon: string; label: string; empty: string }> = [
+  { scope: 'community', icon: 'globe', label: 'feedCommunity', empty: 'feedEmptyCommunity' },
+  { scope: 'following', icon: 'organization', label: 'feedFollowing', empty: 'feedEmptyFollowing' },
+  { scope: 'mine', icon: 'eye', label: 'feedMine', empty: 'feedEmptyMine' },
+];
 
 interface FeedPageProps {
   readonly theme?: 'light' | 'dark';
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function FeedAuthor({ entry }: Readonly<{ entry: PublicFeedEntry }>) {
-  const initial = entry.author.username.charAt(0).toUpperCase();
-
-  return (
-    <div className="feed-author">
-      <div className={`feed-avatar ${entry.author.avatarUrl ? 'has-image' : ''}`} aria-hidden="true">
-        {entry.author.avatarUrl
-          ? <img src={entry.author.avatarUrl} alt="" />
-          : initial}
-      </div>
-      <div className="feed-author-details">
-        <strong>{entry.author.username}</strong>
-        <time dateTime={entry.date}>{entry.date}</time>
-      </div>
-    </div>
-  );
-}
-
 function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
   const feedService = useFeedService();
+  const follows = useFollows(feedService);
   const [scope, setScope] = useState<PublicFeedScope>('community');
   const [entries, setEntries] = useState<PublicFeedEntry[]>([]);
   const [page, setPage] = useState(1);
@@ -106,33 +98,40 @@ function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
     void fetchPage(scope, entries.length === 0 ? 1 : page + 1, entries.length === 0, generation);
   };
 
-  const emptyMessage = scope === 'community' ? t('feedEmptyCommunity') : t('feedEmptyMine');
+  const emptyMessage = t(SCOPES.find((option) => option.scope === scope)!.empty);
 
   return (
     <section className={`feed-page ${theme}`} aria-labelledby="feed-heading">
       <header className="feed-header">
         <h1 id="feed-heading">{t('feed')}</h1>
-        <fieldset className="feed-scope"  aria-label={t('feedScope')}>
-          <button
-            type="button"
-            className={scope === 'community' ? 'active' : ''}
-            aria-pressed={scope === 'community'}
-            onClick={() => setScope('community')}
-          >
-            <span className="codicon codicon-globe" aria-hidden="true" />
-            {t('feedCommunity')}
-          </button>
-          <button
-            type="button"
-            className={scope === 'mine' ? 'active' : ''}
-            aria-pressed={scope === 'mine'}
-            onClick={() => setScope('mine')}
-          >
-            <span className="codicon codicon-eye" aria-hidden="true" />
-            {t('feedMine')}
-          </button>
+        <fieldset className="feed-scope" aria-label={t('feedScope')}>
+          {SCOPES.map((option) => (
+            <button
+              key={option.scope}
+              type="button"
+              className={scope === option.scope ? 'active' : ''}
+              aria-pressed={scope === option.scope}
+              onClick={() => setScope(option.scope)}
+            >
+              <span className={`codicon codicon-${option.icon}`} aria-hidden="true" />
+              {t(option.label)}
+            </button>
+          ))}
         </fieldset>
       </header>
+
+      {scope === 'following' && (
+        <FollowingPanel
+          following={follows.following}
+          followerCount={follows.followerCount}
+          loaded={follows.loaded}
+          loadError={follows.loadError}
+          pendingIds={follows.pendingIds}
+          onUnfollow={(user) => void follows.setFollow(user, false)}
+          t={t}
+        />
+      )}
+      {follows.updateError && <p className="feed-follow-error" role="alert">{t('followUpdateError')}</p>}
 
       <p className="feed-count" aria-live="polite">
         {entries.length > 0 ? t('feedCount', { count: entries.length, total }) : ''}
@@ -141,7 +140,16 @@ function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
       <div className="feed-list">
         {entries.map((entry) => (
           <article className="feed-entry" key={entry.id}>
-            <FeedAuthor entry={entry} />
+            <FeedAuthor
+              author={entry.author}
+              date={entry.date}
+              t={t}
+              follow={scope === 'mine' ? undefined : {
+                followed: follows.isFollowed(entry.author),
+                pending: follows.pendingIds.has(entry.author.id),
+                onToggle: () => void follows.setFollow(entry.author, !follows.isFollowed(entry.author)),
+              }}
+            />
             <div className="feed-content">
               <EntryContentRenderer content={entry.content} format={entry.format} />
             </div>

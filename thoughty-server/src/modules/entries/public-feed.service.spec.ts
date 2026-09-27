@@ -18,11 +18,13 @@ function createQueryBuilder() {
 
 describe('PublicFeedService', () => {
   const repository = { createQueryBuilder: jest.fn() };
+  const followRepository = { find: jest.fn() };
   let service: PublicFeedService;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new PublicFeedService(repository as never);
+    followRepository.find.mockResolvedValue([]);
+    service = new PublicFeedService(repository as never, followRepository as never);
   });
 
   it('returns a narrow, paginated community feed', async () => {
@@ -42,6 +44,7 @@ describe('PublicFeedService', () => {
       },
     ]);
     repository.createQueryBuilder.mockReturnValue(qb);
+    followRepository.find.mockResolvedValue([{ followedId: 3 }]);
 
     await expect(service.getFeed(7, { page: 2, limit: 5 })).resolves.toEqual({
       entries: [
@@ -53,7 +56,7 @@ describe('PublicFeedService', () => {
           content: 'A public reflection',
           format: 'markdown',
           createdAt,
-          author: { id: 3, username: 'writer', avatarUrl: '/avatar.png' },
+          author: { id: 3, username: 'writer', avatarUrl: '/avatar.png', isFollowed: true },
         },
       ],
       total: 12,
@@ -74,6 +77,24 @@ describe('PublicFeedService', () => {
     expect(qb.orderBy).toHaveBeenCalledWith('e.createdAt', 'DESC');
     expect(qb.skip).toHaveBeenCalledWith(5);
     expect(qb.take).toHaveBeenCalledWith(5);
+    expect(followRepository.find).toHaveBeenCalledWith(
+      expect.objectContaining({ select: { followedId: true } }),
+    );
+  });
+
+  it('limits the following scope to followed authors', async () => {
+    const qb = createQueryBuilder();
+    qb.getCount.mockResolvedValue(0);
+    qb.getMany.mockResolvedValue([]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+
+    await service.getFeed(7, { scope: 'following' });
+
+    expect(qb.andWhere).toHaveBeenCalledWith(
+      'e.user_id IN (SELECT f.followed_id FROM user_follows f WHERE f.follower_id = :userId)',
+      { userId: 7 },
+    );
+    expect(followRepository.find).not.toHaveBeenCalled();
   });
 
   it('scopes the preview to the authenticated user', async () => {
@@ -90,5 +111,28 @@ describe('PublicFeedService', () => {
       hasMore: false,
     });
     expect(qb.andWhere).toHaveBeenCalledWith('e.user_id = :userId', { userId: 7 });
+  });
+
+  it('never marks the current user as followed', async () => {
+    const qb = createQueryBuilder();
+    qb.getCount.mockResolvedValue(1);
+    qb.getMany.mockResolvedValue([
+      {
+        id: 1,
+        date: '2026-08-01',
+        index: 1,
+        tags: [],
+        content: 'Mine',
+        format: 'plain',
+        createdAt: new Date(),
+        user: { id: 7, username: 'me', avatarUrl: null },
+      },
+    ]);
+    repository.createQueryBuilder.mockReturnValue(qb);
+
+    const result = await service.getFeed(7, { scope: 'mine' });
+
+    expect(result.entries[0].author.isFollowed).toBe(false);
+    expect(followRepository.find).not.toHaveBeenCalled();
   });
 });

@@ -7,8 +7,8 @@
  * Markdown, favorites, pins, archive, revisions, attachments, AI chat
  * history, planted duplicates, tag metadata (including unused tags),
  * templates, extra sessions, community users for the public feed (with
- * moderated, archived, and deleted-author content), an unverified user, and
- * feature requests with votes.
+ * moderated, archived, and deleted-author content), follows between test and
+ * the community users, an unverified user, and feature requests with votes.
  *
  * Every account uses the password Test1234!. The content is deterministic.
  * Run with --validate-only to check the data without touching the database.
@@ -350,6 +350,11 @@ async function insertSessionsAndFeatureRequests(): Promise<void> {
             await query('INSERT INTO feature_request_votes (feature_request_id, user_id) VALUES ($1, $2)', [row.id, voter]);
         }
     }
+
+    // test follows maya and sam; maya and sam follow test back, so both follow lists have content.
+    for (const [followerId, followedId] of [[1, 2], [1, 3], [2, 1], [3, 1]]) {
+        await query('INSERT INTO user_follows (follower_id, followed_id) VALUES ($1, $2)', [followerId, followedId]);
+    }
 }
 
 function buildCommunityEntries(today: string): Map<number, SeedEntry[]> {
@@ -433,7 +438,7 @@ async function seed(): Promise<void> {
                     await insertEntries(user.id, userDiaries, communityEntries.get(user.id) ?? []);
                 }
                 await insertSessionsAndFeatureRequests();
-                log.success('Inserted community journals, sessions, and feature requests');
+                log.success('Inserted community journals, sessions, follows, and feature requests');
             }
             return userId;
         });

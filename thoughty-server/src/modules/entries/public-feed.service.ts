@@ -1,14 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Entry } from '@/database/entities';
+import { In, Repository } from 'typeorm';
+import { Entry, UserFollow } from '@/database/entities';
 import type { GetPublicFeedQueryDto, PublicFeedResponseDto } from './dto';
+import { applyPublicFeedVisibility } from './public-feed-visibility';
 
 @Injectable()
 export class PublicFeedService {
   constructor(
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
+    @InjectRepository(UserFollow)
+    private readonly followRepository: Repository<UserFollow>,
   ) {}
 
   async getFeed(userId: number, query: GetPublicFeedQueryDto): Promise<PublicFeedResponseDto> {
@@ -29,14 +32,16 @@ export class PublicFeedService {
         'u.id',
         'u.username',
         'u.avatarUrl',
-      ])
-      .where('e.visibility = :visibility', { visibility: 'public' })
-      .andWhere('e.moderation_status = :moderationStatus', { moderationStatus: 'visible' })
-      .andWhere('e.is_archived = false')
-      .andWhere('u.deleted_at IS NULL');
+      ]);
+    applyPublicFeedVisibility(qb);
 
     if (scope === 'mine') {
       qb.andWhere('e.user_id = :userId', { userId });
+    } else if (scope === 'following') {
+      qb.andWhere(
+        'e.user_id IN (SELECT f.followed_id FROM user_follows f WHERE f.follower_id = :userId)',
+        { userId },
+      );
     } else {
       qb.andWhere('e.user_id != :userId', { userId });
     }
@@ -48,6 +53,10 @@ export class PublicFeedService {
       .take(limit);
     const entries = await qb.getMany();
     const totalPages = Math.ceil(total / limit);
+    const followedIds = await this.findFollowedAuthorIds(
+      userId,
+      entries.map((entry) => entry.user.id),
+    );
 
     return {
       entries: entries.map((entry) => ({
@@ -62,6 +71,7 @@ export class PublicFeedService {
           id: entry.user.id,
           username: entry.user.username,
           avatarUrl: entry.user.avatarUrl,
+          isFollowed: followedIds.has(entry.user.id),
         },
       })),
       total,
@@ -69,5 +79,16 @@ export class PublicFeedService {
       totalPages,
       hasMore: page < totalPages,
     };
+  }
+
+  private async findFollowedAuthorIds(userId: number, authorIds: number[]): Promise<Set<number>> {
+    const candidates = [...new Set(authorIds)].filter((authorId) => authorId !== userId);
+    if (candidates.length === 0) return new Set();
+
+    const follows = await this.followRepository.find({
+      where: { followerId: userId, followedId: In(candidates) },
+      select: { followedId: true },
+    });
+    return new Set(follows.map((follow) => follow.followedId));
   }
 }

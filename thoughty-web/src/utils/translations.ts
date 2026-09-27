@@ -9,6 +9,17 @@ export type TranslationKey =
   | "feedLoadError"
   | "feedCount"
   | "feedEnd"
+  | "feedFollowing"
+  | "feedEmptyFollowing"
+  | "followAuthor"
+  | "followingAuthor"
+  | "followingListTitle"
+  | "followingCount"
+  | "followersCount"
+  | "followingListEmpty"
+  | "followsLoadError"
+  | "unfollowAuthor"
+  | "followUpdateError"
   | "loadMoreEntries"
   | "stats"
   | "whatsOnYourMind"
@@ -874,6 +885,17 @@ export const translations: Translations = {
     feedLoadError: "The public feed could not be loaded.",
     feedCount: "Showing {count} of {total}",
     feedEnd: "You are all caught up.",
+    feedFollowing: "Following",
+    feedEmptyFollowing: "No public entries from people you follow yet. Follow writers from the Community feed to see them here.",
+    followAuthor: "Follow",
+    followingAuthor: "Following",
+    followingListTitle: "People you follow",
+    followingCount: "Following: {count}",
+    followersCount: "Followers: {count}",
+    followingListEmpty: "You are not following anyone yet.",
+    followsLoadError: "The people you follow could not be loaded.",
+    unfollowAuthor: "Unfollow {username}",
+    followUpdateError: "The follow could not be updated. Please try again.",
     loadMoreEntries: "Load more entries",
     stats: "Stats",
     whatsOnYourMind: "What's on your mind?",
@@ -1406,10 +1428,10 @@ export const translations: Translations = {
       "Thoughty is built for private journaling. This policy explains what the app needs to run and how your data stays under your control.",
     privacyIntroTitle: "Private by design",
     privacyIntroBody:
-      "Journal entries are private by default. Public visibility is an explicit entry-level choice. Eligible public entries can appear to signed-in users in the community feed, while platform moderation can hide public content without changing your ownership.",
+      "Journal entries are private by default. Public visibility is an explicit entry-level choice. Eligible public entries can appear to signed-in users in the community feed, while platform moderation can hide public content without changing your ownership. Anyone who can see your public entries can follow you; followers are only shown to you as a count.",
     privacyDataTitle: "Data we use",
     privacyDataBody:
-      "Thoughty stores account details, profile settings, diaries, entries, tags, attachments, sync preferences, and subscription records needed to provide the service.",
+      "Thoughty stores account details, profile settings, diaries, entries, tags, attachments, the people you follow, sync preferences, and subscription records needed to provide the service.",
     privacyControlTitle: "Your controls",
     privacyControlBody:
       "You can edit or delete entries, download your user data, export journals in portable formats, change visibility, and delete your account from the app.",
@@ -1866,6 +1888,17 @@ export const translations: Translations = {
     feedLoadError: "Le fil public n'a pas pu être chargé.",
     feedCount: "{count} entrées affichées sur {total}",
     feedEnd: "Vous êtes à jour.",
+    feedFollowing: "Abonnements",
+    feedEmptyFollowing: "Aucune entrée publique des personnes que vous suivez pour le moment. Suivez des auteurs depuis le fil Communauté pour les voir ici.",
+    followAuthor: "Suivre",
+    followingAuthor: "Abonné",
+    followingListTitle: "Personnes que vous suivez",
+    followingCount: "Abonnements : {count}",
+    followersCount: "Abonnés : {count}",
+    followingListEmpty: "Vous ne suivez personne pour le moment.",
+    followsLoadError: "Les personnes que vous suivez n'ont pas pu être chargées.",
+    unfollowAuthor: "Ne plus suivre {username}",
+    followUpdateError: "L'abonnement n'a pas pu être mis à jour. Veuillez réessayer.",
     loadMoreEntries: "Charger plus d'entrées",
     stats: "Statistiques",
     whatsOnYourMind: "Qu'avez-vous à l'esprit ?",
@@ -2415,10 +2448,10 @@ export const translations: Translations = {
       "Thoughty est conçu pour un journal privé. Cette politique explique ce dont l’application a besoin pour fonctionner et comment vos données restent sous votre contrôle.",
     privacyIntroTitle: "Privé par conception",
     privacyIntroBody:
-      "Les entrées du journal sont privées par défaut. La visibilité publique est un choix explicite pour chaque entrée. Les entrées publiques éligibles peuvent apparaître aux utilisateurs connectés dans le fil de la communauté, tandis que la modération peut masquer un contenu public sans changer votre propriété.",
+      "Les entrées du journal sont privées par défaut. La visibilité publique est un choix explicite pour chaque entrée. Les entrées publiques éligibles peuvent apparaître aux utilisateurs connectés dans le fil de la communauté, tandis que la modération peut masquer un contenu public sans changer votre propriété. Toute personne qui voit vos entrées publiques peut vous suivre ; vos abonnés ne vous sont présentés que sous forme de nombre.",
     privacyDataTitle: "Données utilisées",
     privacyDataBody:
-      "Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, préférences de synchronisation et éléments d’abonnement nécessaires au service.",
+      "Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, personnes que vous suivez, préférences de synchronisation et éléments d’abonnement nécessaires au service.",
     privacyControlTitle: "Vos contrôles",
     privacyControlBody:
       "Vous pouvez modifier ou supprimer des entrées, télécharger vos données, exporter vos journaux dans des formats portables, changer la visibilité et supprimer votre compte.",

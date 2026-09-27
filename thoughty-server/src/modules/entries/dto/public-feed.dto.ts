@@ -2,7 +2,7 @@ import { Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export const publicFeedScopes = ['community', 'mine'] as const;
+export const publicFeedScopes = ['community', 'following', 'mine'] as const;
 export type PublicFeedScope = (typeof publicFeedScopes)[number];
 
 export class GetPublicFeedQueryDto {
@@ -36,6 +36,9 @@ export class PublicFeedAuthorDto {
 
   @ApiPropertyOptional({ type: String, nullable: true })
   avatarUrl: string | null;
+
+  @ApiProperty({ description: 'Whether the current user follows this author' })
+  isFollowed: boolean;
 }
 
 export class PublicFeedEntryDto {

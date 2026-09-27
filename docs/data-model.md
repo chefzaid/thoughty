@@ -16,6 +16,7 @@ erDiagram
     User ||--o{ BookVersion : saves
     User ||--o{ FeatureRequest : submits
     FeatureRequest ||--o{ FeatureRequestVote : receives
+    User ||--o{ UserFollow : follows
 
     Diary ||--o{ Entry : contains
     Diary ||--o{ BookVersion : scopes
@@ -155,13 +156,19 @@ erDiagram
         int featureRequestId
         int userId
     }
+
+    UserFollow {
+        int followerId
+        int followedId
+        datetime createdAt
+    }
 ```
 
 ## Public Feed Eligibility
 
 `Entry.visibility` and `Entry.moderationStatus` are independent. Visibility is the owner's explicit sharing choice; moderation status is a platform-controlled state with `visible`, `hidden`, `under_review`, and `removed` values. The public feed reads only entries where visibility and moderation are both `public`/`visible`, the entry is not archived, and its author is not deleted. The composite `idx_entries_public_feed` index supports these bounded, newest-first reads.
 
-The initial feed queries the relational entry/user model directly and projects only feed-safe author fields. Follow, report, comment, like, and enforcement records remain separate future entities rather than being encoded into entry ownership or visibility.
+The feed queries the relational entry/user model directly and projects only feed-safe author fields. `UserFollow` is a separate relation keyed by `(follower_id, followed_id)`, with a check that nobody follows themselves and an index on `followed_id` for follower counts; the **Following** feed scope applies the same eligibility rules to followed authors only. A user can only be followed while they have at least one feed-eligible entry, so follows cannot probe private accounts. Report, comment, like, and enforcement records remain separate future entities rather than being encoded into entry ownership or visibility.
 
 ## Ownership and Deletion Rules
 
@@ -179,6 +186,7 @@ The initial feed queries the relational entry/user model directly and projects o
 | `AiUsageEvent`  | Numerical OpenRouter usage metadata for one user       | Deleted with the user; contains no prompt or completion content                                                                            |
 | `BookVersion`   | Immutable generated book artifact in a user/diary scope | Deleted with the user or selected diary; all-diaries versions are deleted with the user                                                   |
 | `FeatureRequest` / `FeatureRequestVote` | Public idea and one vote per user per idea | Requests are deleted with their author; votes with their request or voter |
+| `UserFollow` | One follow per follower/followed pair | Deleted with either user; soft-deleted users are hidden from follow lists and follower counts |
 
 Entry indexes cover the common reads: user/date timelines, diary-scoped timelines, visibility, archive and favorite filters, and the public feed.
 

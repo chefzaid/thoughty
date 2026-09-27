@@ -11,3 +11,4 @@ export * from './cloud-sync-job.entity';
 export * from './feature-request.entity';
 export * from './feature-request-vote.entity';
 export * from './book-version.entity';
+export * from './user-follow.entity';

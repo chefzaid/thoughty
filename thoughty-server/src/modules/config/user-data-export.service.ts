@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Attachment, Diary, Entry, EntryRevision, Setting, User } from '@/database/entities';
+import {
+  Attachment,
+  Diary,
+  Entry,
+  EntryRevision,
+  Setting,
+  User,
+  UserFollow,
+} from '@/database/entities';
 import { SENSITIVE_CONFIG_KEYS } from './config.service';
 
 @Injectable()
@@ -19,16 +27,23 @@ export class UserDataExportService {
     private readonly revisionRepository: Repository<EntryRevision>,
     @InjectRepository(Attachment)
     private readonly attachmentRepository: Repository<Attachment>,
+    @InjectRepository(UserFollow)
+    private readonly followRepository: Repository<UserFollow>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, follows] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       this.entryRepository.find({ where: { userId }, order: { date: 'ASC', index: 'ASC' } }),
       this.revisionRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
       this.attachmentRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
       this.settingRepository.find({ where: { userId } }),
+      this.followRepository.find({
+        where: { followerId: userId },
+        relations: { followed: true },
+        order: { createdAt: 'ASC' },
+      }),
     ]);
 
     const safeUser = user
@@ -98,6 +113,11 @@ export class UserDataExportService {
         createdAt: attachment.createdAt,
       })),
       settings: safeSettings,
+      following: follows.map((follow) => ({
+        userId: follow.followedId,
+        username: follow.followed.username,
+        followedAt: follow.createdAt,
+      })),
     };
   }
 }
