@@ -6,7 +6,9 @@ import EntryComments from './EntryComments';
 const fetchComments = vi.fn();
 const addComment = vi.fn();
 const deleteComment = vi.fn();
-const feedService = { fetchComments, addComment, deleteComment } as never;
+const setCommentLike = vi.fn();
+const feedService = { fetchComments, addComment, deleteComment, setCommentLike } as never;
+const ME = 102;
 
 const t = (key: string, params?: Record<string, string | number>) =>
   params ? `${key} ${Object.values(params).join(' ')}` : key;
@@ -17,10 +19,12 @@ const comment = (id: number, username: string, canDelete: boolean) => ({
   createdAt: '2026-09-01T10:00:00.000Z',
   author: { id: id + 100, username, avatarUrl: null },
   canDelete,
+  likeCount: id === 1 ? 2 : 0,
+  liked: false,
 });
 
 function renderThread(commentCount = 2) {
-  render(<EntryComments entryId={8} commentCount={commentCount} feedService={feedService} theme="dark" t={t} />);
+  render(<EntryComments entryId={8} commentCount={commentCount} currentUserId={ME} feedService={feedService} theme="dark" t={t} />);
   fireEvent.click(screen.getByRole('button', { name: `commentsCount ${commentCount}` }));
 }
 
@@ -34,7 +38,7 @@ describe('EntryComments', () => {
   });
 
   it('loads the thread only when opened and renders comments as plain text', async () => {
-    render(<EntryComments entryId={8} commentCount={2} feedService={feedService} theme="dark" t={t} />);
+    render(<EntryComments entryId={8} commentCount={2} currentUserId={ME} feedService={feedService} theme="dark" t={t} />);
     const toggle = screen.getByRole('button', { name: 'commentsCount 2' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(fetchComments).not.toHaveBeenCalled();
@@ -114,5 +118,29 @@ describe('EntryComments', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('commentsLoadError');
     expect(screen.queryByLabelText('writeComment')).not.toBeInTheDocument();
+  });
+
+  it('likes comments by others and only shows the count on your own', async () => {
+    setCommentLike.mockResolvedValue({ data: { liked: true, likeCount: 3 }, error: null });
+    renderThread();
+    await screen.findByText('Comment 1 <b>raw</b>');
+
+    expect(screen.queryByRole('button', { name: /likeCommentBy Me/ })).not.toBeInTheDocument();
+    const likeAda = screen.getByRole('button', { name: 'likeCommentBy Ada, likesCount 2' });
+    expect(likeAda).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(likeAda);
+
+    expect(await screen.findByRole('button', { name: 'likeCommentBy Ada, likesCount 3' })).toHaveAttribute('aria-pressed', 'true');
+    expect(setCommentLike).toHaveBeenCalledWith(8, 1, true);
+  });
+
+  it('keeps the like state and reports an error when the update fails', async () => {
+    setCommentLike.mockResolvedValue({ data: null, error: 'Failed' });
+    renderThread();
+    fireEvent.click(await screen.findByRole('button', { name: 'likeCommentBy Ada, likesCount 2' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('likeUpdateError');
+    expect(screen.getByRole('button', { name: 'likeCommentBy Ada, likesCount 2' })).toBeEnabled();
   });
 });

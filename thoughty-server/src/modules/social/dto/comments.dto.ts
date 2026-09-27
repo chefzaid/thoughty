@@ -37,6 +37,12 @@ export class EntryCommentDto {
 
   @ApiProperty({ description: 'The current user wrote the comment or owns the entry' })
   canDelete!: boolean;
+
+  @ApiProperty({ example: 2, description: 'Likes by active users' })
+  likeCount!: number;
+
+  @ApiProperty({ description: 'Whether the current user likes the comment' })
+  liked!: boolean;
 }
 
 export class EntryCommentsResponseDto {

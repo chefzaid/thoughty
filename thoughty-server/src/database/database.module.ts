@@ -17,6 +17,8 @@ import {
   BookVersion,
   UserFollow,
   EntryComment,
+  EntryLike,
+  CommentLike,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -58,6 +60,8 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           BookVersion,
           UserFollow,
           EntryComment,
+          EntryLike,
+          CommentLike,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),
@@ -85,6 +89,8 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
       BookVersion,
       UserFollow,
       EntryComment,
+      EntryLike,
+      CommentLike,
     ]),
   ],
   exports: [TypeOrmModule],

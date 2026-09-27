@@ -66,6 +66,12 @@ export class PublicFeedEntryDto {
   @ApiProperty({ description: 'Comments by active users' })
   commentCount: number;
 
+  @ApiProperty({ description: 'Likes by active users' })
+  likeCount: number;
+
+  @ApiProperty({ description: 'Whether the current user likes the entry' })
+  liked: boolean;
+
   @ApiProperty({ type: PublicFeedAuthorDto })
   author: PublicFeedAuthorDto;
 }

@@ -39,6 +39,7 @@ describe('CommentsService', () => {
     delete: jest.fn(),
   };
   const entryRepository = { createQueryBuilder: jest.fn() };
+  const likesService = { summarizeCommentLikes: jest.fn() };
   let entryQb: Record<string, jest.Mock>;
   let service: CommentsService;
 
@@ -47,13 +48,21 @@ describe('CommentsService', () => {
     entryQb = createQueryBuilder();
     entryQb.getOne.mockResolvedValue({ id: 8, userId: 5 });
     entryRepository.createQueryBuilder.mockReturnValue(entryQb);
-    service = new CommentsService(commentRepository as never, entryRepository as never);
+    likesService.summarizeCommentLikes.mockResolvedValue(new Map());
+    service = new CommentsService(
+      commentRepository as never,
+      entryRepository as never,
+      likesService as never,
+    );
   });
 
   it('lists the newest comments oldest first with narrow authors and delete rights', async () => {
     const qb = createQueryBuilder();
     qb.getManyAndCount.mockResolvedValue([[comment(2, 7, 'me'), comment(1, 3, 'maya')], 2]);
     commentRepository.createQueryBuilder.mockReturnValue(qb);
+    likesService.summarizeCommentLikes.mockResolvedValue(
+      new Map([[1, { likeCount: 3, liked: true }]]),
+    );
 
     await expect(service.list(7, 8)).resolves.toEqual({
       comments: [
@@ -63,6 +72,8 @@ describe('CommentsService', () => {
           createdAt: '2026-09-01T10:00:00.000Z',
           author: { id: 3, username: 'maya', avatarUrl: null },
           canDelete: false,
+          likeCount: 3,
+          liked: true,
         },
         {
           id: 2,
@@ -70,10 +81,13 @@ describe('CommentsService', () => {
           createdAt: '2026-09-02T10:00:00.000Z',
           author: { id: 7, username: 'me', avatarUrl: null },
           canDelete: true,
+          likeCount: 0,
+          liked: false,
         },
       ],
       total: 2,
     });
+    expect(likesService.summarizeCommentLikes).toHaveBeenCalledWith(7, [2, 1]);
     expect(entryQb.where).toHaveBeenCalledWith('e.id = :entryId', { entryId: 8 });
     expect(entryQb.andWhere).toHaveBeenCalledWith('e.visibility = :visibility', {
       visibility: 'public',

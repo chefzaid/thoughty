@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Entry, EntryComment, UserFollow } from '@/database/entities';
 import type { GetPublicFeedQueryDto, PublicFeedResponseDto } from './dto';
+import { LikesService } from './likes.service';
 import { applyPublicFeedVisibility } from './public-feed-visibility';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class PublicFeedService {
     private readonly followRepository: Repository<UserFollow>,
     @InjectRepository(EntryComment)
     private readonly commentRepository: Repository<EntryComment>,
+    private readonly likesService: LikesService,
   ) {}
 
   async getFeed(userId: number, query: GetPublicFeedQueryDto): Promise<PublicFeedResponseDto> {
@@ -55,12 +57,14 @@ export class PublicFeedService {
       .take(limit);
     const entries = await qb.getMany();
     const totalPages = Math.ceil(total / limit);
-    const [followedIds, commentCounts] = await Promise.all([
+    const entryIds = entries.map((entry) => entry.id);
+    const [followedIds, commentCounts, likes] = await Promise.all([
       this.findFollowedAuthorIds(
         userId,
         entries.map((entry) => entry.user.id),
       ),
-      this.countComments(entries.map((entry) => entry.id)),
+      this.countComments(entryIds),
+      this.likesService.summarizeEntryLikes(userId, entryIds),
     ]);
 
     return {
@@ -73,6 +77,8 @@ export class PublicFeedService {
         format: entry.format,
         createdAt: entry.createdAt,
         commentCount: commentCounts.get(entry.id) ?? 0,
+        likeCount: likes.get(entry.id)?.likeCount ?? 0,
+        liked: likes.get(entry.id)?.liked ?? false,
         author: {
           id: entry.user.id,
           username: entry.user.username,

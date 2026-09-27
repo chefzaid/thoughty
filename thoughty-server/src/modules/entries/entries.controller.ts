@@ -31,8 +31,6 @@ import {
   GetHighlightsQueryDto,
   DeleteAllQueryDto,
   EntriesListResponseDto,
-  GetPublicFeedQueryDto,
-  PublicFeedResponseDto,
   EntryDatesResponseDto,
   FirstEntryResponseDto,
   EntryLookupResponseDto,
@@ -43,7 +41,6 @@ import {
   DeleteAllResponseDto,
   SuccessResponseDto,
 } from './dto';
-import { PublicFeedService } from './public-feed.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 
@@ -52,10 +49,7 @@ import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 @UseGuards(JwtAuthGuard)
 @Controller('entries')
 export class EntriesController {
-  constructor(
-    private readonly entriesService: EntriesService,
-    private readonly publicFeedService: PublicFeedService,
-  ) {}
+  constructor(private readonly entriesService: EntriesService) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all entries with optional filters and pagination' })
@@ -65,16 +59,6 @@ export class EntriesController {
     @Query() query: GetEntriesQueryDto,
   ): Promise<EntriesListResponseDto> {
     return this.entriesService.getEntries(user.userId, query);
-  }
-
-  @Get('feed')
-  @ApiOperation({ summary: 'Get moderation-visible public entries for the social feed' })
-  @ApiResponse({ status: 200, description: 'Paginated public feed', type: PublicFeedResponseDto })
-  getPublicFeed(
-    @CurrentUser() user: AuthenticatedUser,
-    @Query() query: GetPublicFeedQueryDto,
-  ): Promise<PublicFeedResponseDto> {
-    return this.publicFeedService.getFeed(user.userId, query);
   }
 
   @Get('dates')

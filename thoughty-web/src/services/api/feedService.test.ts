@@ -87,4 +87,21 @@ describe('feedService', () => {
     });
     expect(authFetch).toHaveBeenNthCalledWith(3, '/api/entries/8/comments/3', { method: 'DELETE' });
   });
+
+  it('likes and unlikes entries and comments', async () => {
+    const authFetch = vi.fn().mockImplementation(async () => new Response(JSON.stringify({ liked: true, likeCount: 1 }), { status: 200 }));
+    const service = createFeedService(authFetch);
+
+    await expect(service.setEntryLike(8, true)).resolves.toEqual({ data: { liked: true, likeCount: 1 }, error: null });
+    await service.setEntryLike(8, false);
+    await service.setCommentLike(8, 3, true);
+    await service.setCommentLike(8, 3, false);
+
+    expect(authFetch.mock.calls).toEqual([
+      ['/api/entries/8/like', { method: 'PUT' }],
+      ['/api/entries/8/like', { method: 'DELETE' }],
+      ['/api/entries/8/comments/3/like', { method: 'PUT' }],
+      ['/api/entries/8/comments/3/like', { method: 'DELETE' }],
+    ]);
+  });
 });

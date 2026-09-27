@@ -2,9 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import {
   Attachment,
+  CommentLike,
   Diary,
   Entry,
   EntryComment,
+  EntryLike,
   EntryRevision,
   Setting,
   User,
@@ -22,6 +24,8 @@ describe('UserDataExportService', () => {
   let attachmentRepository: any;
   let followRepository: any;
   let commentRepository: any;
+  let entryLikeRepository: any;
+  let commentLikeRepository: any;
 
   beforeEach(async () => {
     settingRepository = { find: jest.fn() };
@@ -32,6 +36,8 @@ describe('UserDataExportService', () => {
     attachmentRepository = { find: jest.fn() };
     followRepository = { find: jest.fn().mockResolvedValue([]) };
     commentRepository = { find: jest.fn().mockResolvedValue([]) };
+    entryLikeRepository = { find: jest.fn().mockResolvedValue([]) };
+    commentLikeRepository = { find: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -44,6 +50,8 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(Attachment), useValue: attachmentRepository },
         { provide: getRepositoryToken(UserFollow), useValue: followRepository },
         { provide: getRepositoryToken(EntryComment), useValue: commentRepository },
+        { provide: getRepositoryToken(EntryLike), useValue: entryLikeRepository },
+        { provide: getRepositoryToken(CommentLike), useValue: commentLikeRepository },
       ],
     }).compile();
 
@@ -120,6 +128,12 @@ describe('UserDataExportService', () => {
     commentRepository.find.mockResolvedValue([
       { id: 9, entryId: 40, userId: 1, content: 'Lovely', createdAt: new Date('2024-03-01') },
     ]);
+    entryLikeRepository.find.mockResolvedValue([
+      { entryId: 40, userId: 1, createdAt: new Date('2024-03-02') },
+    ]);
+    commentLikeRepository.find.mockResolvedValue([
+      { commentId: 12, userId: 1, createdAt: new Date('2024-03-03') },
+    ]);
 
     const result = await service.downloadData(1);
 
@@ -147,6 +161,10 @@ describe('UserDataExportService', () => {
     expect(result.comments).toEqual([
       { id: 9, entryId: 40, content: 'Lovely', createdAt: new Date('2024-03-01') },
     ]);
+    expect(result.likes).toEqual({
+      entries: [{ entryId: 40, likedAt: new Date('2024-03-02') }],
+      comments: [{ commentId: 12, likedAt: new Date('2024-03-03') }],
+    });
     expect(commentRepository.find).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: 1 } }),
     );

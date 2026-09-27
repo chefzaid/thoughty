@@ -32,7 +32,7 @@ The backend is one NestJS application assembled from feature modules under `thou
 | Module | Responsibility |
 |---|---|
 | `auth` | SSO exchange, local and Google sign-in, tokens and sessions, email verification, 2FA, password recovery, account lifecycle |
-| `entries` | entry CRUD, revisions, tags (usage, rename, delete), visibility, favorites, pins, archive, backlinks, public feed |
+| `entries` | entry CRUD, revisions, tags (usage, rename, delete), visibility, favorites, pins, archive, backlinks |
 | `diaries` | diary containers, ordering, default diary and delete fallback |
 | `attachments` | upload validation, object storage, audio transcription |
 | `ai` | OpenRouter credentials and usage, tagging, inspiration, rephrasing, summaries, chat, semantic search, duplicates, journal tag organization, insights |
@@ -42,7 +42,7 @@ The backend is one NestJS application assembled from feature modules under `thou
 | `cloud-sync` | provider connections, file browsing, scheduled jobs, worker execution |
 | `config` | user preferences and profile, encrypted settings, feature flags, data export |
 | `feature-requests` | community idea board and votes |
-| `social` | follows (follow, unfollow, following list, follower count) and comments on public entries |
+| `social` | public feed, follows (follow, unfollow, following list, follower count), comments, and likes on public entries and comments |
 | `metrics` | health and Prometheus metrics |
 
 Shared runtime code belongs in `thoughty-server/src/common` only when it is genuinely cross-cutting. Persistence infrastructure and entities belong in `thoughty-server/src/database`. Operational helpers remain in `thoughty-server/scripts` rather than being mixed into runtime modules.

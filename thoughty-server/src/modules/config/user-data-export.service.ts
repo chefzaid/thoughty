@@ -3,9 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   Attachment,
+  CommentLike,
   Diary,
   Entry,
   EntryComment,
+  EntryLike,
   EntryRevision,
   Setting,
   User,
@@ -32,24 +34,22 @@ export class UserDataExportService {
     private readonly followRepository: Repository<UserFollow>,
     @InjectRepository(EntryComment)
     private readonly commentRepository: Repository<EntryComment>,
+    @InjectRepository(EntryLike)
+    private readonly entryLikeRepository: Repository<EntryLike>,
+    @InjectRepository(CommentLike)
+    private readonly commentLikeRepository: Repository<CommentLike>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, follows, comments] =
-      await Promise.all([
-        this.userRepository.findOne({ where: { id: userId } }),
-        this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
-        this.entryRepository.find({ where: { userId }, order: { date: 'ASC', index: 'ASC' } }),
-        this.revisionRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
-        this.attachmentRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
-        this.settingRepository.find({ where: { userId } }),
-        this.followRepository.find({
-          where: { followerId: userId },
-          relations: { followed: true },
-          order: { createdAt: 'ASC' },
-        }),
-        this.commentRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
-      ]);
+    const [user, diaries, entries, revisions, attachments, settings, social] = await Promise.all([
+      this.userRepository.findOne({ where: { id: userId } }),
+      this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
+      this.entryRepository.find({ where: { userId }, order: { date: 'ASC', index: 'ASC' } }),
+      this.revisionRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
+      this.attachmentRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
+      this.settingRepository.find({ where: { userId } }),
+      this.collectSocialData(userId),
+    ]);
 
     const safeUser = user
       ? {
@@ -118,6 +118,24 @@ export class UserDataExportService {
         createdAt: attachment.createdAt,
       })),
       settings: safeSettings,
+      ...social,
+    };
+  }
+
+  private async collectSocialData(userId: number) {
+    const order = { createdAt: 'ASC' } as const;
+    const [follows, comments, entryLikes, commentLikes] = await Promise.all([
+      this.followRepository.find({
+        where: { followerId: userId },
+        relations: { followed: true },
+        order,
+      }),
+      this.commentRepository.find({ where: { userId }, order }),
+      this.entryLikeRepository.find({ where: { userId }, order }),
+      this.commentLikeRepository.find({ where: { userId }, order }),
+    ]);
+
+    return {
       following: follows.map((follow) => ({
         userId: follow.followedId,
         username: follow.followed.username,
@@ -129,6 +147,13 @@ export class UserDataExportService {
         content: comment.content,
         createdAt: comment.createdAt,
       })),
+      likes: {
+        entries: entryLikes.map((like) => ({ entryId: like.entryId, likedAt: like.createdAt })),
+        comments: commentLikes.map((like) => ({
+          commentId: like.commentId,
+          likedAt: like.createdAt,
+        })),
+      },
     };
   }
 }

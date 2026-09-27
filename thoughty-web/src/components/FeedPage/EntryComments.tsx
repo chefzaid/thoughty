@@ -1,8 +1,9 @@
-import { useEffect, useId, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import { useEffect, useId, useState, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from 'react';
 
 import type { EntryComment, FeedService } from '../../services/api';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import { FeedAvatar } from './FeedAuthor';
+import LikeButton from './LikeButton';
 import './EntryComments.css';
 
 export const COMMENT_MAX_LENGTH = 1000;
@@ -11,6 +12,7 @@ type Translate = (key: string, params?: Record<string, string | number>) => stri
 
 interface CommentThreadProps {
   readonly entryId: number;
+  readonly currentUserId: number | undefined;
   readonly feedService: FeedService;
   readonly theme: 'light' | 'dark';
   readonly onTotalChange: Dispatch<SetStateAction<number>>;
@@ -18,7 +20,7 @@ interface CommentThreadProps {
 }
 
 /** Loads, posts, and deletes the comments of one entry; mounted only while the thread is open. */
-function CommentThread({ entryId, feedService, theme, onTotalChange, t }: CommentThreadProps) {
+function CommentThread({ entryId, currentUserId, feedService, theme, onTotalChange, t }: CommentThreadProps) {
   const inputId = useId();
   const [comments, setComments] = useState<EntryComment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +97,14 @@ function CommentThread({ entryId, feedService, theme, onTotalChange, t }: Commen
                   <time dateTime={comment.createdAt}>{comment.createdAt.slice(0, 10)}</time>
                 </p>
                 <p className="feed-comment-text">{comment.content}</p>
+                <LikeButton
+                  liked={comment.liked}
+                  likeCount={comment.likeCount}
+                  canLike={comment.author.id !== currentUserId}
+                  label={t('likeCommentBy', { username: comment.author.username })}
+                  onChange={(like) => feedService.setCommentLike(entryId, comment.id, like)}
+                  t={t}
+                />
               </div>
               {comment.canDelete && (
                 <button
@@ -145,12 +155,15 @@ function CommentThread({ entryId, feedService, theme, onTotalChange, t }: Commen
 interface EntryCommentsProps {
   readonly entryId: number;
   readonly commentCount: number;
+  readonly currentUserId: number | undefined;
+  /** Rendered before the comments toggle in the entry's action row. */
+  readonly likeButton?: ReactNode;
   readonly feedService: FeedService;
   readonly theme: 'light' | 'dark';
   readonly t: Translate;
 }
 
-function EntryComments({ entryId, commentCount, feedService, theme, t }: EntryCommentsProps) {
+function EntryComments({ entryId, commentCount, currentUserId, likeButton, feedService, theme, t }: EntryCommentsProps) {
   const threadId = useId();
   const [open, setOpen] = useState(false);
   const [total, setTotal] = useState(commentCount);
@@ -158,19 +171,29 @@ function EntryComments({ entryId, commentCount, feedService, theme, t }: EntryCo
 
   return (
     <div className="feed-entry-comments">
-      <button
-        type="button"
-        className="feed-comments-toggle"
-        aria-expanded={open}
-        aria-controls={threadId}
-        onClick={() => setOpen((current) => !current)}
-      >
-        <span className="codicon codicon-comment" aria-hidden="true" />
-        {t('commentsCount', { count: total })}
-      </button>
+      <div className="feed-entry-actions">
+        {likeButton}
+        <button
+          type="button"
+          className="feed-comments-toggle"
+          aria-expanded={open}
+          aria-controls={threadId}
+          onClick={() => setOpen((current) => !current)}
+        >
+          <span className="codicon codicon-comment" aria-hidden="true" />
+          {t('commentsCount', { count: total })}
+        </button>
+      </div>
       <div id={threadId} hidden={!open}>
         {open && (
-          <CommentThread entryId={entryId} feedService={feedService} theme={theme} onTotalChange={setTotal} t={t} />
+          <CommentThread
+            entryId={entryId}
+            currentUserId={currentUserId}
+            feedService={feedService}
+            theme={theme}
+            onTotalChange={setTotal}
+            t={t}
+          />
         )}
       </div>
     </div>

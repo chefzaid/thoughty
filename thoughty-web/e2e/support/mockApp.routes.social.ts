@@ -3,6 +3,15 @@ import type { MockAppState, MockEntry } from './mockApp.shared';
 
 const authorId = (entry: MockEntry, state: MockAppState) => entry.userId ?? state.user.id;
 
+function likeState(baseCount: number | undefined, likedIds: number[], id: number) {
+  const liked = likedIds.includes(id);
+  return { liked, likeCount: (baseCount ?? 0) + (liked ? 1 : 0) };
+}
+
+function setLiked(likedIds: number[], id: number, like: boolean) {
+  return like ? [...new Set([...likedIds, id])] : likedIds.filter((candidate) => candidate !== id);
+}
+
 function feedEligibleEntries(state: MockAppState) {
   return state.entries
     .filter((entry) => entry.visibility === 'public')
@@ -44,6 +53,7 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
       format: entry.format || 'plain',
       createdAt: entry.createdAt || `${entry.date}T12:00:00.000Z`,
       commentCount: state.comments.filter((comment) => comment.entryId === entry.id).length,
+      ...likeState(entry.likeCount, state.likedEntryIds, entry.id),
       author: {
         id: authorId(entry, state),
         username: entry.authorUsername || state.user.username,
@@ -119,6 +129,7 @@ async function handleCommentRoutes({ route, request, pathname, state }: RouteCon
     createdAt: comment.createdAt,
     author: { id: comment.userId, username: comment.username, avatarUrl: null },
     canDelete: isEntryOwner || comment.userId === state.user.id,
+    ...likeState(comment.likeCount, state.likedCommentIds, comment.id),
   });
 
   if (!match[2] && request.method() === 'GET') {
@@ -154,8 +165,38 @@ async function handleCommentRoutes({ route, request, pathname, state }: RouteCon
   return false;
 }
 
+async function handleLikeRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
+  const match = /^\/api\/entries\/(\d+)(?:\/comments\/(\d+))?\/like$/.exec(pathname);
+  if (!match || !['PUT', 'DELETE'].includes(request.method())) {
+    return false;
+  }
+
+  const like = request.method() === 'PUT';
+  const entry = feedEligibleEntries(state).find((candidate) => candidate.id === Number(match[1]));
+  const comment = match[2] ? state.comments.find((candidate) => candidate.id === Number(match[2])) : undefined;
+  if (!entry || (match[2] && comment?.entryId !== entry.id)) {
+    await fulfillJson(route, { message: 'Not found', statusCode: 404 }, { status: 404 });
+    return true;
+  }
+  const ownerId = comment ? comment.userId : authorId(entry, state);
+  if (like && ownerId === state.user.id) {
+    await fulfillJson(route, { message: 'You cannot like your own content', statusCode: 400 }, { status: 400 });
+    return true;
+  }
+
+  if (comment) {
+    state.likedCommentIds = setLiked(state.likedCommentIds, comment.id, like);
+    await fulfillJson(route, likeState(comment.likeCount, state.likedCommentIds, comment.id));
+  } else {
+    state.likedEntryIds = setLiked(state.likedEntryIds, entry.id, like);
+    await fulfillJson(route, likeState(entry.likeCount, state.likedEntryIds, entry.id));
+  }
+  return true;
+}
+
 export async function handleSocialRoutes(context: RouteContext): Promise<boolean> {
   return (await handlePublicFeedRoute(context))
     || (await handleFollowRoutes(context))
+    || (await handleLikeRoutes(context))
     || handleCommentRoutes(context);
 }

@@ -30,6 +30,11 @@ export type TranslationKey =
   | "deleteCommentConfirm"
   | "commentPostError"
   | "commentDeleteError"
+  | "likes"
+  | "likesCount"
+  | "likeEntryBy"
+  | "likeCommentBy"
+  | "likeUpdateError"
   | "loadMoreEntries"
   | "stats"
   | "whatsOnYourMind"
@@ -916,6 +921,11 @@ export const translations: Translations = {
     deleteCommentConfirm: "This comment will be removed for everyone. This cannot be undone.",
     commentPostError: "The comment could not be posted. Please try again.",
     commentDeleteError: "The comment could not be deleted. Please try again.",
+    likes: "Likes",
+    likesCount: "Likes: {count}",
+    likeEntryBy: "Like the entry by {username}",
+    likeCommentBy: "Like the comment by {username}",
+    likeUpdateError: "The like could not be updated.",
     loadMoreEntries: "Load more entries",
     stats: "Stats",
     whatsOnYourMind: "What's on your mind?",
@@ -1451,7 +1461,7 @@ export const translations: Translations = {
       "Journal entries are private by default. Public visibility is an explicit entry-level choice. Eligible public entries can appear to signed-in users in the community feed, while platform moderation can hide public content without changing your ownership. Anyone who can see your public entries can follow you; followers are only shown to you as a count.",
     privacyDataTitle: "Data we use",
     privacyDataBody:
-      "Thoughty stores account details, profile settings, diaries, entries, tags, attachments, the people you follow, your comments, sync preferences, and subscription records needed to provide the service.",
+      "Thoughty stores account details, profile settings, diaries, entries, tags, attachments, the people you follow, your comments and likes, sync preferences, and subscription records needed to provide the service.",
     privacyControlTitle: "Your controls",
     privacyControlBody:
       "You can edit or delete entries, download your user data, export journals in portable formats, change visibility, and delete your account from the app.",
@@ -1929,6 +1939,11 @@ export const translations: Translations = {
     deleteCommentConfirm: "Ce commentaire sera supprimé pour tout le monde. Cette action est irréversible.",
     commentPostError: "Le commentaire n'a pas pu être publié. Veuillez réessayer.",
     commentDeleteError: "Le commentaire n'a pas pu être supprimé. Veuillez réessayer.",
+    likes: "J'aime",
+    likesCount: "J'aime : {count}",
+    likeEntryBy: "Aimer l'entrée de {username}",
+    likeCommentBy: "Aimer le commentaire de {username}",
+    likeUpdateError: "Le j'aime n'a pas pu être mis à jour.",
     loadMoreEntries: "Charger plus d'entrées",
     stats: "Statistiques",
     whatsOnYourMind: "Qu'avez-vous à l'esprit ?",
@@ -2481,7 +2496,7 @@ export const translations: Translations = {
       "Les entrées du journal sont privées par défaut. La visibilité publique est un choix explicite pour chaque entrée. Les entrées publiques éligibles peuvent apparaître aux utilisateurs connectés dans le fil de la communauté, tandis que la modération peut masquer un contenu public sans changer votre propriété. Toute personne qui voit vos entrées publiques peut vous suivre ; vos abonnés ne vous sont présentés que sous forme de nombre.",
     privacyDataTitle: "Données utilisées",
     privacyDataBody:
-      "Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, personnes que vous suivez, vos commentaires, préférences de synchronisation et éléments d’abonnement nécessaires au service.",
+      "Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, personnes que vous suivez, vos commentaires et j'aime, préférences de synchronisation et éléments d’abonnement nécessaires au service.",
     privacyControlTitle: "Vos contrôles",
     privacyControlBody:
       "Vous pouvez modifier ou supprimer des entrées, télécharger vos données, exporter vos journaux dans des formats portables, changer la visibilité et supprimer votre compte.",

@@ -11,6 +11,7 @@ export type FollowState = components['schemas']['FollowStateDto'];
 export type EntryComment = components['schemas']['EntryCommentDto'];
 export type EntryCommentsResponse = components['schemas']['EntryCommentsResponseDto'];
 export type EntryCommentDeleted = components['schemas']['EntryCommentDeletedDto'];
+export type LikeState = components['schemas']['LikeStateDto'];
 
 export interface ServiceResult<T> {
   data: T | null;
@@ -71,6 +72,20 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
       authFetch(`/api/entries/${entryId}/comments/${commentId}`, { method: 'DELETE' }),
       'Failed to delete the comment',
     );
+  },
+
+  setEntryLike(entryId: number, like: boolean): Promise<ServiceResult<LikeState>> {
+    const request = like
+      ? authFetch(`/api/entries/${entryId}/like`, { method: 'PUT' })
+      : authFetch(`/api/entries/${entryId}/like`, { method: 'DELETE' });
+    return requestJson(request, 'Failed to update the like');
+  },
+
+  setCommentLike(entryId: number, commentId: number, like: boolean): Promise<ServiceResult<LikeState>> {
+    const request = like
+      ? authFetch(`/api/entries/${entryId}/comments/${commentId}/like`, { method: 'PUT' })
+      : authFetch(`/api/entries/${entryId}/comments/${commentId}/like`, { method: 'DELETE' });
+    return requestJson(request, 'Failed to update the like');
   },
 });
 

@@ -7,8 +7,8 @@
  * Markdown, favorites, pins, archive, revisions, attachments, AI chat
  * history, planted duplicates, tag metadata (including unused tags),
  * templates, extra sessions, community users for the public feed (with
- * moderated, archived, and deleted-author content), follows and comments
- * between test and the community users, an unverified user, and feature
+ * moderated, archived, and deleted-author content), follows, comments, and
+ * likes between test and the community users, an unverified user, and feature
  * requests with votes.
  *
  * Every account uses the password Test1234!. The content is deterministic.
@@ -40,6 +40,7 @@ import {
     type SeedEntry,
 } from './lib/seed-journal';
 import { createAssetUploader, createSeedAsset } from './lib/seed-assets';
+import { insertSessionsAndSocialData } from './lib/seed-social';
 
 const JOURNAL_TEST_DATA_FILE = path.join(__dirname, '..', 'data', 'journal_test_data.txt');
 const DREAMS_TEST_DATA_FILE = path.join(__dirname, '..', 'data', 'dreams_test_data.txt');
@@ -323,59 +324,6 @@ async function insertEntryExtras(userId: number, entries: SeedEntry[], ids: Map<
     return { revisions, chats, attachments, attachmentsSkipped: !upload && entries.some((entry) => entry.attachment) };
 }
 
-async function insertSessionsAndSocialData(): Promise<void> {
-    // Two sessions on other devices so "Sign out other sessions" has something to revoke.
-    for (const [daysAgo, label] of [[3, 'laptop'], [12, 'phone']] as const) {
-        await query('INSERT INTO refresh_tokens (user_id, token, expires_at, created_at) VALUES ($1, $2, $3, $4)', [
-            MAIN_USER.id,
-            `seed-session-${label}`,
-            new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-            new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000),
-        ]);
-    }
-
-    const requests: Array<[number, string, string, 'open' | 'reviewing' | 'planned', number[]]> = [
-        [2, 'Dark mode for the printable book', 'The PDF book always prints on white. A dark cover and paper option would be lovely.', 'open', [1, 2, 3]],
-        [3, 'Mood tracking with a daily slider', 'Let me rate my mood from 1 to 10 on each entry and chart it over time.', 'planned', [1, 2, 3, 5]],
-        [1, 'Reminders to write at a set time', 'A gentle notification in the evening if I have not written yet.', 'reviewing', [1, 3]],
-        [2, 'Export a single entry as an image', 'For sharing a quote from my journal on social media.', 'open', [2]],
-        [3, 'Spanish translation', 'Would love to use Thoughty in Spanish.', 'open', [3, 5]],
-        [5, 'Onboarding tips for new journalers', 'I just started and would like a few prompts to get going.', 'open', [5]],
-    ];
-    for (const [userId, title, details, status, voters] of requests) {
-        const [row] = await query<{ id: number }>(
-            'INSERT INTO feature_requests (user_id, title, details, status) VALUES ($1, $2, $3, $4) RETURNING id',
-            [userId, title, details, status],
-        );
-        for (const voter of voters) {
-            await query('INSERT INTO feature_request_votes (feature_request_id, user_id) VALUES ($1, $2)', [row.id, voter]);
-        }
-    }
-
-    // test follows maya and sam; maya and sam follow test back, so both follow lists have content.
-    for (const [followerId, followedId] of [[1, 2], [1, 3], [2, 1], [3, 1]]) {
-        await query('INSERT INTO user_follows (follower_id, followed_id) VALUES ($1, $2)', [followerId, followedId]);
-    }
-
-    // A short thread under the newest feed entry of test and of maya, so both commenting and
-    // the entry owner's right to delete other people's comments can be tried.
-    const threads: Record<number, Array<[number, string]>> = {
-        1: [[2, 'This one stayed with me all day.'], [3, 'Same here. Thanks for sharing it.']],
-        2: [[1, 'Beautifully put.'], [3, 'I needed to read this today.']],
-    };
-    const newestPublic = await query<{ id: number; user_id: number }>(
-        `SELECT DISTINCT ON (user_id) id, user_id FROM entries
-         WHERE user_id = ANY($1) AND visibility = 'public' AND moderation_status = 'visible' AND NOT is_archived
-         ORDER BY user_id, created_at DESC, id DESC`,
-        [Object.keys(threads).map(Number)],
-    );
-    for (const entry of newestPublic) {
-        for (const [userId, content] of threads[entry.user_id]) {
-            await query('INSERT INTO entry_comments (entry_id, user_id, content) VALUES ($1, $2, $3)', [entry.id, userId, content]);
-        }
-    }
-}
-
 function buildCommunityEntries(today: string): Map<number, SeedEntry[]> {
     const maya = buildCommunityJournal(createRng(2), today, '2023-01-01', 4, 0.85);
     const sam = buildCommunityJournal(createRng(3), today, '2025-01-01', 6, 0.9);
@@ -457,7 +405,7 @@ async function seed(): Promise<void> {
                     await insertEntries(user.id, userDiaries, communityEntries.get(user.id) ?? []);
                 }
                 await insertSessionsAndSocialData();
-                log.success('Inserted community journals, sessions, follows, comments, and feature requests');
+                log.success('Inserted community journals, sessions, follows, comments, likes, and feature requests');
             }
             return userId;
         });

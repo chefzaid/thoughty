@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Entry, EntryRevision, Diary, UserFollow, EntryComment } from '@/database/entities';
+import { Entry, EntryRevision, Diary } from '@/database/entities';
 import { AiModule } from '@/modules/ai';
 import { UserConfigModule } from '@/modules/config';
 import { EntriesController } from './entries.controller';
@@ -9,10 +9,9 @@ import { EntriesQueryService } from './entries-query.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaggingService } from './entry-tagging.service';
-import { PublicFeedService } from './public-feed.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary, UserFollow, EntryComment]), UserConfigModule, AiModule],
+  imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary]), UserConfigModule, AiModule],
   controllers: [EntriesController],
   providers: [
     EntriesService,
@@ -20,7 +19,6 @@ import { PublicFeedService } from './public-feed.service';
     EntriesCommandService,
     EntryListCacheService,
     EntryTaggingService,
-    PublicFeedService,
   ],
   exports: [EntriesService],
 })

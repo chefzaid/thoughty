@@ -2,7 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, EntryComment } from '@/database/entities';
-import { applyPublicFeedVisibility } from '@/modules/entries/public-feed-visibility';
+import { LikesService, type LikeSummary } from './likes.service';
+import { findFeedVisibleEntry } from './public-feed-visibility';
 import type { EntryCommentDeletedDto, EntryCommentDto, EntryCommentsResponseDto } from './dto';
 
 /** Newest comments returned per entry; older ones are counted in `total`. */
@@ -12,6 +13,7 @@ function toCommentDto(
   comment: EntryComment,
   currentUserId: number,
   entryOwnerId: number,
+  likes: LikeSummary = { likeCount: 0, liked: false },
 ): EntryCommentDto {
   return {
     id: comment.id,
@@ -23,6 +25,8 @@ function toCommentDto(
       avatarUrl: comment.user.avatarUrl,
     },
     canDelete: comment.userId === currentUserId || entryOwnerId === currentUserId,
+    likeCount: likes.likeCount,
+    liked: likes.liked,
   };
 }
 
@@ -33,10 +37,11 @@ export class CommentsService {
     private readonly commentRepository: Repository<EntryComment>,
     @InjectRepository(Entry)
     private readonly entryRepository: Repository<Entry>,
+    private readonly likesService: LikesService,
   ) {}
 
   async list(userId: number, entryId: number): Promise<EntryCommentsResponseDto> {
-    const entry = await this.findFeedVisibleEntry(entryId);
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId);
     const [comments, total] = await this.commentRepository
       .createQueryBuilder('c')
       .innerJoinAndSelect('c.user', 'u')
@@ -48,14 +53,20 @@ export class CommentsService {
       .take(MAX_LISTED_COMMENTS)
       .getManyAndCount();
 
+    const likes = await this.likesService.summarizeCommentLikes(
+      userId,
+      comments.map((comment) => comment.id),
+    );
     return {
-      comments: comments.reverse().map((comment) => toCommentDto(comment, userId, entry.userId)),
+      comments: comments
+        .reverse()
+        .map((comment) => toCommentDto(comment, userId, entry.userId, likes.get(comment.id))),
       total,
     };
   }
 
   async create(userId: number, entryId: number, content: string): Promise<EntryCommentDto> {
-    const entry = await this.findFeedVisibleEntry(entryId);
+    const entry = await findFeedVisibleEntry(this.entryRepository, entryId);
     const saved = await this.commentRepository.save(
       this.commentRepository.create({ entryId, userId, content }),
     );
@@ -81,20 +92,5 @@ export class CommentsService {
 
     await this.commentRepository.delete({ id: commentId });
     return { id: commentId, deleted: true };
-  }
-
-  /** Comments exist only around entries the feed may show; anything else looks missing. */
-  private async findFeedVisibleEntry(entryId: number): Promise<Pick<Entry, 'id' | 'userId'>> {
-    const entry = await applyPublicFeedVisibility(
-      this.entryRepository
-        .createQueryBuilder('e')
-        .innerJoin('e.user', 'u')
-        .select(['e.id', 'e.userId'])
-        .where('e.id = :entryId', { entryId }),
-    ).getOne();
-    if (!entry) {
-      throw new NotFoundException('Entry not found');
-    }
-    return entry;
   }
 }

@@ -7,10 +7,15 @@ import FeedPage from './FeedPage';
 const fetchPublicFeed = vi.fn();
 const fetchFollows = vi.fn();
 const setFollowing = vi.fn();
-const feedService = { fetchPublicFeed, fetchFollows, setFollowing };
+const setEntryLike = vi.fn();
+const feedService = { fetchPublicFeed, fetchFollows, setFollowing, setEntryLike };
 
 vi.mock('../../hooks/useFeedService', () => ({
   useFeedService: () => feedService,
+}));
+
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({ user: { id: 1, username: 'Me' } }),
 }));
 
 const t = (key: string, params?: Record<string, string | number>) => {
@@ -28,6 +33,8 @@ const createEntry = (id: number, username: string, isFollowed = false) => ({
   format: 'plain' as const,
   createdAt: '2026-08-01T12:00:00.000Z',
   commentCount: 0,
+  likeCount: 1,
+  liked: false,
   author: { id: id + 100, username, avatarUrl: null, isFollowed },
 });
 
@@ -211,5 +218,29 @@ describe('FeedPage', () => {
     await waitFor(() => expect(fetchPublicFeed).toHaveBeenLastCalledWith('mine', 1, 10));
     await screen.findByText('Entry 3');
     expect(screen.queryByRole('button', { name: /followAuthor/ })).not.toBeInTheDocument();
+  });
+
+  it('likes community entries but only shows the count on your own', async () => {
+    fetchPublicFeed
+      .mockResolvedValueOnce({
+        data: { entries: [createEntry(1, 'Ada')], total: 1, page: 1, totalPages: 1, hasMore: false },
+        error: null,
+      })
+      .mockResolvedValueOnce({
+        data: { entries: [createEntry(3, 'Me')], total: 1, page: 1, totalPages: 1, hasMore: false },
+        error: null,
+      });
+    setEntryLike.mockResolvedValue({ data: { liked: true, likeCount: 2 }, error: null });
+
+    render(<FeedPage t={t} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'likeEntryBy Ada, likesCount 1' }));
+
+    expect(await screen.findByRole('button', { name: 'likeEntryBy Ada, likesCount 2' })).toHaveAttribute('aria-pressed', 'true');
+    expect(setEntryLike).toHaveBeenCalledWith(1, true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'feedMine' }));
+    await screen.findByText('Entry 3');
+    expect(screen.queryByRole('button', { name: /likeEntryBy/ })).not.toBeInTheDocument();
+    expect(screen.getByTitle('likes')).toHaveTextContent('1');
   });
 });

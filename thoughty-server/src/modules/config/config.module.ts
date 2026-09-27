@@ -9,6 +9,8 @@ import {
   Attachment,
   UserFollow,
   EntryComment,
+  EntryLike,
+  CommentLike,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -26,6 +28,8 @@ import { FeatureFlagsService } from '@/common';
       Attachment,
       UserFollow,
       EntryComment,
+      EntryLike,
+      CommentLike,
     ]),
   ],
   controllers: [ConfigController],

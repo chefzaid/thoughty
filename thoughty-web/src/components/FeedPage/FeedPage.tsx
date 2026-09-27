@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { useAuth } from '../../contexts/AuthContext';
 import { useFeedService } from '../../hooks/useFeedService';
 import type { PublicFeedEntry, PublicFeedScope } from '../../services/api';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import EntryComments from './EntryComments';
+import LikeButton from './LikeButton';
 import FeedAuthor from './FeedAuthor';
 import FollowingPanel from './FollowingPanel';
 import { useFollows } from './useFollows';
@@ -24,6 +26,7 @@ interface FeedPageProps {
 
 function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
   const feedService = useFeedService();
+  const currentUserId = useAuth().user?.id;
   const follows = useFollows(feedService);
   const [scope, setScope] = useState<PublicFeedScope>('community');
   const [entries, setEntries] = useState<PublicFeedEntry[]>([]);
@@ -162,9 +165,20 @@ function FeedPage({ theme = 'dark', t }: Readonly<FeedPageProps>) {
             <EntryComments
               entryId={entry.id}
               commentCount={entry.commentCount}
+              currentUserId={currentUserId}
               feedService={feedService}
               theme={theme}
               t={t}
+              likeButton={(
+                <LikeButton
+                  liked={entry.liked}
+                  likeCount={entry.likeCount}
+                  canLike={scope !== 'mine'}
+                  label={t('likeEntryBy', { username: entry.author.username })}
+                  onChange={(like) => feedService.setEntryLike(entry.id, like)}
+                  t={t}
+                />
+              )}
             />
           </article>
         ))}

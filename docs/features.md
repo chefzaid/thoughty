@@ -79,6 +79,7 @@ flowchart LR
 - **Feed:** a paginated, infinitely scrolling timeline of other users' public entries, a **Following** tab limited to the authors you follow, and a **My public entries** tab that previews exactly what others can see of your journal. Private, archived, moderated, and deleted-account content never appears.
 - **Follows:** follow or unfollow an author from any of their feed entries. The **Following** tab lists the people you follow (with a quick unfollow) and shows how many people follow you. Follows are included in the personal data download.
 - **Comments:** every feed entry has a comment thread showing its count. Signed-in users can comment (up to 1,000 characters of plain text) on any entry in the feed, delete their own comments, and remove any comment left on their own public entries after a confirmation. Comments are included in the personal data download.
+- **Likes:** like or unlike any entry or comment in the feed written by someone else; your own entries and comments show their like count. Likes are included in the personal data download.
 - **Feature requests:** a public board of ideas ranked by votes. Anyone can browse; signed-in users can submit ideas and vote once per idea (authors vote for their own idea automatically).
 
 ## AI Assistance

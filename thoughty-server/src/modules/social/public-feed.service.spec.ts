@@ -21,6 +21,7 @@ describe('PublicFeedService', () => {
   const followRepository = { find: jest.fn() };
   const commentQb: Record<string, jest.Mock> = {};
   const commentRepository = { createQueryBuilder: jest.fn(() => commentQb) };
+  const likesService = { summarizeEntryLikes: jest.fn() };
   let service: PublicFeedService;
 
   beforeEach(() => {
@@ -30,10 +31,12 @@ describe('PublicFeedService', () => {
     }
     commentQb.getRawMany = jest.fn().mockResolvedValue([]);
     followRepository.find.mockResolvedValue([]);
+    likesService.summarizeEntryLikes.mockResolvedValue(new Map());
     service = new PublicFeedService(
       repository as never,
       followRepository as never,
       commentRepository as never,
+      likesService as never,
     );
   });
 
@@ -56,6 +59,9 @@ describe('PublicFeedService', () => {
     repository.createQueryBuilder.mockReturnValue(qb);
     followRepository.find.mockResolvedValue([{ followedId: 3 }]);
     commentQb.getRawMany.mockResolvedValue([{ entryId: '8', count: '4' }]);
+    likesService.summarizeEntryLikes.mockResolvedValue(
+      new Map([[8, { likeCount: 6, liked: true }]]),
+    );
 
     await expect(service.getFeed(7, { page: 2, limit: 5 })).resolves.toEqual({
       entries: [
@@ -68,6 +74,8 @@ describe('PublicFeedService', () => {
           format: 'markdown',
           createdAt,
           commentCount: 4,
+          likeCount: 6,
+          liked: true,
           author: { id: 3, username: 'writer', avatarUrl: '/avatar.png', isFollowed: true },
         },
       ],
@@ -149,6 +157,7 @@ describe('PublicFeedService', () => {
 
     expect(result.entries[0].author.isFollowed).toBe(false);
     expect(result.entries[0].commentCount).toBe(0);
+    expect(result.entries[0]).toEqual(expect.objectContaining({ likeCount: 0, liked: false }));
     expect(followRepository.find).not.toHaveBeenCalled();
   });
 });

@@ -45,6 +45,8 @@ export interface MockEntry {
   is_favorite?: boolean;
   is_archived?: boolean;
   moderationStatus?: "visible" | "hidden" | "under_review" | "removed";
+  /** Likes by other users, before the current user's own like. */
+  likeCount?: number;
   createdAt?: string;
   format?: "plain" | "markdown";
   diaryId?: number | null;
@@ -86,6 +88,8 @@ export interface MockComment {
   username: string;
   content: string;
   createdAt: string;
+  /** Likes by other users, before the current user's own like. */
+  likeCount?: number;
 }
 
 export interface MockBookVersion {
@@ -113,6 +117,8 @@ export interface SetupMockAppOptions {
   followedUserIds?: number[];
   followerCount?: number;
   comments?: MockComment[];
+  likedEntryIds?: number[];
+  likedCommentIds?: number[];
 }
 
 export interface MockAppState {
@@ -160,6 +166,8 @@ export interface MockAppState {
   followedUserIds: number[];
   followerCount: number;
   comments: MockComment[];
+  likedEntryIds: number[];
+  likedCommentIds: number[];
   bookVersions: MockBookVersion[];
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
@@ -410,6 +418,8 @@ export function createMockAppState(
     followedUserIds: [...(options.followedUserIds || [])],
     followerCount: options.followerCount ?? 0,
     comments: [...(options.comments || [])],
+    likedEntryIds: [...(options.likedEntryIds || [])],
+    likedCommentIds: [...(options.likedCommentIds || [])],
     bookVersions: [],
     nextEntryId:
       (options.initialEntries?.reduce(

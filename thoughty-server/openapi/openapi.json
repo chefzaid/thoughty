@@ -1094,95 +1094,6 @@
         ]
       }
     },
-    "/api/entries/feed": {
-      "get": {
-        "operationId": "EntriesController_getPublicFeed",
-        "parameters": [
-          {
-            "name": "scope",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "default": "community",
-              "type": "string",
-              "enum": [
-                "community",
-                "following",
-                "mine"
-              ]
-            }
-          },
-          {
-            "name": "page",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "default": 1,
-              "type": "number"
-            }
-          },
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 20,
-              "default": 10,
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Paginated public feed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PublicFeedResponseDto"
-                },
-                "example": {
-                  "entries": [
-                    {
-                      "id": 1,
-                      "date": "2026-06-24",
-                      "index": 1,
-                      "tags": [
-                        "reflection"
-                      ],
-                      "content": "Today I wrote a thoughtful journal entry about focus and calm.",
-                      "format": "plain",
-                      "createdAt": "2026-06-24T10:00:00.000Z",
-                      "commentCount": 3,
-                      "author": {
-                        "id": 1,
-                        "username": "Daily Journal",
-                        "avatarUrl": "https://thoughty.example.com/callback",
-                        "isFollowed": true
-                      }
-                    }
-                  ],
-                  "total": 1,
-                  "page": 1,
-                  "totalPages": 1,
-                  "hasMore": true
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get moderation-visible public entries for the social feed",
-        "tags": [
-          "Entries"
-        ]
-      }
-    },
     "/api/entries/dates": {
       "get": {
         "operationId": "EntriesController_getDates",
@@ -5708,6 +5619,97 @@
         ]
       }
     },
+    "/api/entries/feed": {
+      "get": {
+        "operationId": "FeedController_getFeed",
+        "parameters": [
+          {
+            "name": "scope",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "community",
+              "type": "string",
+              "enum": [
+                "community",
+                "following",
+                "mine"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 20,
+              "default": 10,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated public feed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicFeedResponseDto"
+                },
+                "example": {
+                  "entries": [
+                    {
+                      "id": 1,
+                      "date": "2026-06-24",
+                      "index": 1,
+                      "tags": [
+                        "reflection"
+                      ],
+                      "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                      "format": "plain",
+                      "createdAt": "2026-06-24T10:00:00.000Z",
+                      "commentCount": 3,
+                      "likeCount": 3,
+                      "liked": true,
+                      "author": {
+                        "id": 1,
+                        "username": "Daily Journal",
+                        "avatarUrl": "https://thoughty.example.com/callback",
+                        "isFollowed": true
+                      }
+                    }
+                  ],
+                  "total": 1,
+                  "page": 1,
+                  "totalPages": 1,
+                  "hasMore": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get moderation-visible public entries for the social feed",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
     "/api/follows": {
       "get": {
         "operationId": "FollowsController_list",
@@ -5862,7 +5864,9 @@
                         "username": "maya",
                         "avatarUrl": null
                       },
-                      "canDelete": true
+                      "canDelete": true,
+                      "likeCount": 2,
+                      "liked": true
                     }
                   ],
                   "total": 3
@@ -5926,7 +5930,9 @@
                     "username": "maya",
                     "avatarUrl": null
                   },
-                  "canDelete": true
+                  "canDelete": true,
+                  "likeCount": 2,
+                  "liked": true
                 }
               }
             }
@@ -5992,6 +5998,196 @@
           }
         ],
         "summary": "Delete a comment you wrote or one on your entry",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/entries/{entryId}/like": {
+      "put": {
+        "operationId": "LikesController_likeEntry",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Like state and count of the entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikeStateDto"
+                },
+                "example": {
+                  "liked": true,
+                  "likeCount": 4
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Users cannot like their own entries"
+          },
+          "404": {
+            "description": "The entry is not visible in the public feed"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Like a public entry written by someone else",
+        "tags": [
+          "Social"
+        ]
+      },
+      "delete": {
+        "operationId": "LikesController_unlikeEntry",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Like state and count of the entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikeStateDto"
+                },
+                "example": {
+                  "liked": true,
+                  "likeCount": 4
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The entry is not visible in the public feed"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove your like from a public entry",
+        "tags": [
+          "Social"
+        ]
+      }
+    },
+    "/api/entries/{entryId}/comments/{commentId}/like": {
+      "put": {
+        "operationId": "LikesController_likeComment",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Like state and count of the comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikeStateDto"
+                },
+                "example": {
+                  "liked": true,
+                  "likeCount": 4
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Users cannot like their own comments"
+          },
+          "404": {
+            "description": "No visible comment with this id on the entry"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Like a comment written by someone else",
+        "tags": [
+          "Social"
+        ]
+      },
+      "delete": {
+        "operationId": "LikesController_unlikeComment",
+        "parameters": [
+          {
+            "name": "entryId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "commentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Like state and count of the comment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikeStateDto"
+                },
+                "example": {
+                  "liked": true,
+                  "likeCount": 4
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No visible comment with this id on the entry"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove your like from a comment",
         "tags": [
           "Social"
         ]
@@ -6654,162 +6850,6 @@
           "allTags": [
             "reflection"
           ]
-        }
-      },
-      "PublicFeedAuthorDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "username": {
-            "type": "string"
-          },
-          "avatarUrl": {
-            "type": "string",
-            "nullable": true
-          },
-          "isFollowed": {
-            "type": "boolean",
-            "description": "Whether the current user follows this author"
-          }
-        },
-        "required": [
-          "id",
-          "username",
-          "isFollowed"
-        ],
-        "example": {
-          "id": 1,
-          "username": "Daily Journal",
-          "avatarUrl": "https://thoughty.example.com/callback",
-          "isFollowed": true
-        }
-      },
-      "PublicFeedEntryDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number"
-          },
-          "date": {
-            "type": "string"
-          },
-          "index": {
-            "type": "number"
-          },
-          "tags": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "content": {
-            "type": "string"
-          },
-          "format": {
-            "type": "string",
-            "enum": [
-              "plain",
-              "markdown"
-            ]
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string"
-          },
-          "commentCount": {
-            "type": "number",
-            "description": "Comments by active users"
-          },
-          "author": {
-            "$ref": "#/components/schemas/PublicFeedAuthorDto"
-          }
-        },
-        "required": [
-          "id",
-          "date",
-          "index",
-          "tags",
-          "content",
-          "format",
-          "createdAt",
-          "commentCount",
-          "author"
-        ],
-        "example": {
-          "id": 1,
-          "date": "2026-06-24",
-          "index": 1,
-          "tags": [
-            "reflection"
-          ],
-          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
-          "format": "plain",
-          "createdAt": "2026-06-24T10:00:00.000Z",
-          "commentCount": 3,
-          "author": {
-            "id": 1,
-            "username": "Daily Journal",
-            "avatarUrl": "https://thoughty.example.com/callback",
-            "isFollowed": true
-          }
-        }
-      },
-      "PublicFeedResponseDto": {
-        "type": "object",
-        "properties": {
-          "entries": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/PublicFeedEntryDto"
-            }
-          },
-          "total": {
-            "type": "number"
-          },
-          "page": {
-            "type": "number"
-          },
-          "totalPages": {
-            "type": "number"
-          },
-          "hasMore": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "entries",
-          "total",
-          "page",
-          "totalPages",
-          "hasMore"
-        ],
-        "example": {
-          "entries": [
-            {
-              "id": 1,
-              "date": "2026-06-24",
-              "index": 1,
-              "tags": [
-                "reflection"
-              ],
-              "content": "Today I wrote a thoughtful journal entry about focus and calm.",
-              "format": "plain",
-              "createdAt": "2026-06-24T10:00:00.000Z",
-              "commentCount": 3,
-              "author": {
-                "id": 1,
-                "username": "Daily Journal",
-                "avatarUrl": "https://thoughty.example.com/callback",
-                "isFollowed": true
-              }
-            }
-          ],
-          "total": 1,
-          "page": 1,
-          "totalPages": 1,
-          "hasMore": true
         }
       },
       "EntryDatesResponseDto": {
@@ -9852,6 +9892,176 @@
           "voted": true
         }
       },
+      "PublicFeedAuthorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "username": {
+            "type": "string"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "isFollowed": {
+            "type": "boolean",
+            "description": "Whether the current user follows this author"
+          }
+        },
+        "required": [
+          "id",
+          "username",
+          "isFollowed"
+        ],
+        "example": {
+          "id": 1,
+          "username": "Daily Journal",
+          "avatarUrl": "https://thoughty.example.com/callback",
+          "isFollowed": true
+        }
+      },
+      "PublicFeedEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string"
+          },
+          "index": {
+            "type": "number"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "commentCount": {
+            "type": "number",
+            "description": "Comments by active users"
+          },
+          "likeCount": {
+            "type": "number",
+            "description": "Likes by active users"
+          },
+          "liked": {
+            "type": "boolean",
+            "description": "Whether the current user likes the entry"
+          },
+          "author": {
+            "$ref": "#/components/schemas/PublicFeedAuthorDto"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "index",
+          "tags",
+          "content",
+          "format",
+          "createdAt",
+          "commentCount",
+          "likeCount",
+          "liked",
+          "author"
+        ],
+        "example": {
+          "id": 1,
+          "date": "2026-06-24",
+          "index": 1,
+          "tags": [
+            "reflection"
+          ],
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "format": "plain",
+          "createdAt": "2026-06-24T10:00:00.000Z",
+          "commentCount": 3,
+          "likeCount": 3,
+          "liked": true,
+          "author": {
+            "id": 1,
+            "username": "Daily Journal",
+            "avatarUrl": "https://thoughty.example.com/callback",
+            "isFollowed": true
+          }
+        }
+      },
+      "PublicFeedResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicFeedEntryDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "totalPages": {
+            "type": "number"
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "entries",
+          "total",
+          "page",
+          "totalPages",
+          "hasMore"
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": 1,
+              "date": "2026-06-24",
+              "index": 1,
+              "tags": [
+                "reflection"
+              ],
+              "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+              "format": "plain",
+              "createdAt": "2026-06-24T10:00:00.000Z",
+              "commentCount": 3,
+              "likeCount": 3,
+              "liked": true,
+              "author": {
+                "id": 1,
+                "username": "Daily Journal",
+                "avatarUrl": "https://thoughty.example.com/callback",
+                "isFollowed": true
+              }
+            }
+          ],
+          "total": 1,
+          "page": 1,
+          "totalPages": 1,
+          "hasMore": true
+        }
+      },
       "FollowedUserDto": {
         "type": "object",
         "properties": {
@@ -9988,6 +10198,15 @@
           "canDelete": {
             "type": "boolean",
             "description": "The current user wrote the comment or owns the entry"
+          },
+          "likeCount": {
+            "type": "number",
+            "example": 2,
+            "description": "Likes by active users"
+          },
+          "liked": {
+            "type": "boolean",
+            "description": "Whether the current user likes the comment"
           }
         },
         "required": [
@@ -9995,7 +10214,9 @@
           "content",
           "createdAt",
           "author",
-          "canDelete"
+          "canDelete",
+          "likeCount",
+          "liked"
         ],
         "example": {
           "id": 41,
@@ -10006,7 +10227,9 @@
             "username": "maya",
             "avatarUrl": null
           },
-          "canDelete": true
+          "canDelete": true,
+          "likeCount": 2,
+          "liked": true
         }
       },
       "EntryCommentsResponseDto": {
@@ -10040,7 +10263,9 @@
                 "username": "maya",
                 "avatarUrl": null
               },
-              "canDelete": true
+              "canDelete": true,
+              "likeCount": 2,
+              "liked": true
             }
           ],
           "total": 3
@@ -10082,6 +10307,29 @@
         "example": {
           "id": 41,
           "deleted": true
+        }
+      },
+      "LikeStateDto": {
+        "type": "object",
+        "properties": {
+          "liked": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the current user likes the item"
+          },
+          "likeCount": {
+            "type": "number",
+            "example": 4,
+            "description": "Likes by active users"
+          }
+        },
+        "required": [
+          "liked",
+          "likeCount"
+        ],
+        "example": {
+          "liked": true,
+          "likeCount": 4
         }
       }
     }

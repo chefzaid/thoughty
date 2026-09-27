@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, UserFollow } from '@/database/entities';
-import { applyPublicFeedVisibility } from '@/modules/entries/public-feed-visibility';
+import { applyPublicFeedVisibility } from './public-feed-visibility';
 import type { FollowStateDto, FollowsResponseDto } from './dto';
 
 @Injectable()
