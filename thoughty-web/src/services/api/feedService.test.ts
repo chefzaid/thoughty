@@ -112,4 +112,12 @@ describe('feedService', () => {
     await expect(createFeedService(authFetch).fetchLeaderboard('week')).resolves.toEqual({ data: payload, error: null });
     expect(authFetch).toHaveBeenCalledWith('/api/leaderboard?period=week');
   });
+
+  it('loads the current user achievements', async () => {
+    const payload = { karma: 0, stats: {}, badges: [] };
+    const authFetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(payload), { status: 200 }));
+
+    await expect(createFeedService(authFetch).fetchAchievements()).resolves.toEqual({ data: payload, error: null });
+    expect(authFetch).toHaveBeenCalledWith('/api/achievements');
+  });
 });

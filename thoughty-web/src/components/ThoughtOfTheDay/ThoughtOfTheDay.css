@@ -192,7 +192,7 @@
     gap: 1rem;
 }
 
-.section-title {
+.thought-of-day-modal .section-title {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -203,7 +203,7 @@
     margin: 0;
 }
 
-.section-title svg {
+.thought-of-day-modal .section-title svg {
     width: 1rem;
     height: 1rem;
 }

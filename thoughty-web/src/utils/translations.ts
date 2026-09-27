@@ -49,6 +49,37 @@ export type TranslationKey =
   | "leaderboardMostCommented"
   | "leaderboardPublicEntries"
   | "backToFeed"
+  | "achievements"
+  | "achievementsLoadError"
+  | "karma"
+  | "karmaExplanation"
+  | "badgeEarned"
+  | "badgeProgress"
+  | "achievementStatLikesReceived"
+  | "achievementStatCommentsReceived"
+  | "achievementStatFollowers"
+  | "achievementStatPublicEntries"
+  | "achievementStatLongestStreak"
+  | "badgeFirstPublicEntry"
+  | "badgeFirstPublicEntryDescription"
+  | "badgeStoryteller"
+  | "badgeStorytellerDescription"
+  | "badgeHundredEntries"
+  | "badgeHundredEntriesDescription"
+  | "badgeWeekStreak"
+  | "badgeWeekStreakDescription"
+  | "badgeMonthStreak"
+  | "badgeMonthStreakDescription"
+  | "badgeWellLiked"
+  | "badgeWellLikedDescription"
+  | "badgeBeloved"
+  | "badgeBelovedDescription"
+  | "badgeConversationStarter"
+  | "badgeConversationStarterDescription"
+  | "badgeCommunityVoice"
+  | "badgeCommunityVoiceDescription"
+  | "badgeConnector"
+  | "badgeConnectorDescription"
   | "loadMoreEntries"
   | "stats"
   | "whatsOnYourMind"
@@ -954,6 +985,37 @@ export const translations: Translations = {
     leaderboardMostCommented: "Most commented entries",
     leaderboardPublicEntries: "Public entries: {count}",
     backToFeed: "Back to the feed",
+    achievements: "Achievements",
+    achievementsLoadError: "Your achievements could not be loaded.",
+    karma: "Karma",
+    karmaExplanation: "Karma adds up the likes and comments other people gave your public entries and comments, plus your followers. Journaling badges use your private entries too, and only you can see this section.",
+    badgeEarned: "Earned",
+    badgeProgress: "Progress: {progress} of {threshold}",
+    achievementStatLikesReceived: "Likes received",
+    achievementStatCommentsReceived: "Comments received",
+    achievementStatFollowers: "Followers",
+    achievementStatPublicEntries: "Public entries",
+    achievementStatLongestStreak: "Longest streak (days)",
+    badgeFirstPublicEntry: "First public thought",
+    badgeFirstPublicEntryDescription: "Share an entry in the public feed.",
+    badgeStoryteller: "Storyteller",
+    badgeStorytellerDescription: "Have {count} entries in the public feed.",
+    badgeHundredEntries: "Dedicated journaler",
+    badgeHundredEntriesDescription: "Write {count} journal entries.",
+    badgeWeekStreak: "Week-long streak",
+    badgeWeekStreakDescription: "Write on {count} days in a row.",
+    badgeMonthStreak: "Month-long streak",
+    badgeMonthStreakDescription: "Write on {count} days in a row.",
+    badgeWellLiked: "Well liked",
+    badgeWellLikedDescription: "Receive {count} likes.",
+    badgeBeloved: "Beloved",
+    badgeBelovedDescription: "Receive {count} likes.",
+    badgeConversationStarter: "Conversation starter",
+    badgeConversationStarterDescription: "Receive {count} comments from others.",
+    badgeCommunityVoice: "Community voice",
+    badgeCommunityVoiceDescription: "Write {count} comments.",
+    badgeConnector: "Connector",
+    badgeConnectorDescription: "Be followed by {count} people.",
     loadMoreEntries: "Load more entries",
     stats: "Stats",
     whatsOnYourMind: "What's on your mind?",
@@ -1986,6 +2048,37 @@ export const translations: Translations = {
     leaderboardMostCommented: "Entrées les plus commentées",
     leaderboardPublicEntries: "Entrées publiques : {count}",
     backToFeed: "Retour au fil",
+    achievements: "Succès",
+    achievementsLoadError: "Vos succès n'ont pas pu être chargés.",
+    karma: "Karma",
+    karmaExplanation: "Le karma additionne les j'aime et commentaires que d'autres personnes ont laissés sur vos entrées et commentaires publics, ainsi que vos abonnés. Les badges d'écriture utilisent aussi vos entrées privées, et cette section n'est visible que par vous.",
+    badgeEarned: "Obtenu",
+    badgeProgress: "Progression : {progress} sur {threshold}",
+    achievementStatLikesReceived: "J'aime reçus",
+    achievementStatCommentsReceived: "Commentaires reçus",
+    achievementStatFollowers: "Abonnés",
+    achievementStatPublicEntries: "Entrées publiques",
+    achievementStatLongestStreak: "Plus longue série (jours)",
+    badgeFirstPublicEntry: "Première pensée publique",
+    badgeFirstPublicEntryDescription: "Partagez une entrée dans le fil public.",
+    badgeStoryteller: "Récits partagés",
+    badgeStorytellerDescription: "Ayez {count} entrées dans le fil public.",
+    badgeHundredEntries: "Plume assidue",
+    badgeHundredEntriesDescription: "Écrivez {count} entrées de journal.",
+    badgeWeekStreak: "Une semaine d'affilée",
+    badgeWeekStreakDescription: "Écrivez {count} jours de suite.",
+    badgeMonthStreak: "Un mois d'affilée",
+    badgeMonthStreakDescription: "Écrivez {count} jours de suite.",
+    badgeWellLiked: "Pensées appréciées",
+    badgeWellLikedDescription: "Recevez {count} j'aime.",
+    badgeBeloved: "Pensées adorées",
+    badgeBelovedDescription: "Recevez {count} j'aime.",
+    badgeConversationStarter: "Source de conversations",
+    badgeConversationStarterDescription: "Recevez {count} commentaires d'autres personnes.",
+    badgeCommunityVoice: "Voix de la communauté",
+    badgeCommunityVoiceDescription: "Écrivez {count} commentaires.",
+    badgeConnector: "Esprit fédérateur",
+    badgeConnectorDescription: "Ayez {count} abonnés.",
     loadMoreEntries: "Charger plus d'entrées",
     stats: "Statistiques",
     whatsOnYourMind: "Qu'avez-vous à l'esprit ?",

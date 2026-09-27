@@ -6274,6 +6274,54 @@
           "Social"
         ]
       }
+    },
+    "/api/achievements": {
+      "get": {
+        "operationId": "AchievementsController_getAchievements",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Only ever returns the authenticated user’s own achievements",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AchievementsResponseDto"
+                },
+                "example": {
+                  "karma": 30,
+                  "stats": {
+                    "publicEntries": 12,
+                    "totalEntries": 340,
+                    "longestStreak": 9,
+                    "likesReceived": 21,
+                    "commentsReceived": 6,
+                    "commentsWritten": 4,
+                    "followers": 3
+                  },
+                  "badges": [
+                    {
+                      "id": "well-liked",
+                      "metric": "publicEntries",
+                      "threshold": 10,
+                      "progress": 7,
+                      "earned": false
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get your karma, activity stats, and badges",
+        "tags": [
+          "Social"
+        ]
+      }
     }
   },
   "info": {
@@ -10584,6 +10632,155 @@
                 "avatarUrl": null
               },
               "count": 7
+            }
+          ]
+        }
+      },
+      "AchievementStatsDto": {
+        "type": "object",
+        "properties": {
+          "publicEntries": {
+            "type": "number",
+            "example": 12,
+            "description": "Entries currently visible in the public feed"
+          },
+          "totalEntries": {
+            "type": "number",
+            "example": 340,
+            "description": "All journal entries, private ones included"
+          },
+          "longestStreak": {
+            "type": "number",
+            "example": 9,
+            "description": "Most consecutive days with at least one entry"
+          },
+          "likesReceived": {
+            "type": "number",
+            "example": 21,
+            "description": "Likes on your public entries and comments"
+          },
+          "commentsReceived": {
+            "type": "number",
+            "example": 6,
+            "description": "Comments from other people on your public entries"
+          },
+          "commentsWritten": {
+            "type": "number",
+            "example": 4
+          },
+          "followers": {
+            "type": "number",
+            "example": 3
+          }
+        },
+        "required": [
+          "publicEntries",
+          "totalEntries",
+          "longestStreak",
+          "likesReceived",
+          "commentsReceived",
+          "commentsWritten",
+          "followers"
+        ],
+        "example": {
+          "publicEntries": 12,
+          "totalEntries": 340,
+          "longestStreak": 9,
+          "likesReceived": 21,
+          "commentsReceived": 6,
+          "commentsWritten": 4,
+          "followers": 3
+        }
+      },
+      "AchievementBadgeDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "well-liked"
+          },
+          "metric": {
+            "type": "string",
+            "enum": [
+              "publicEntries",
+              "totalEntries",
+              "longestStreak",
+              "likesReceived",
+              "commentsReceived",
+              "commentsWritten",
+              "followers"
+            ]
+          },
+          "threshold": {
+            "type": "number",
+            "example": 10
+          },
+          "progress": {
+            "type": "number",
+            "example": 7,
+            "description": "Current value of the metric, capped at the threshold"
+          },
+          "earned": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        "required": [
+          "id",
+          "metric",
+          "threshold",
+          "progress",
+          "earned"
+        ],
+        "example": {
+          "id": "well-liked",
+          "metric": "publicEntries",
+          "threshold": 10,
+          "progress": 7,
+          "earned": false
+        }
+      },
+      "AchievementsResponseDto": {
+        "type": "object",
+        "properties": {
+          "karma": {
+            "type": "number",
+            "example": 30,
+            "description": "Likes received plus comments received plus followers"
+          },
+          "stats": {
+            "$ref": "#/components/schemas/AchievementStatsDto"
+          },
+          "badges": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AchievementBadgeDto"
+            }
+          }
+        },
+        "required": [
+          "karma",
+          "stats",
+          "badges"
+        ],
+        "example": {
+          "karma": 30,
+          "stats": {
+            "publicEntries": 12,
+            "totalEntries": 340,
+            "longestStreak": 9,
+            "likesReceived": 21,
+            "commentsReceived": 6,
+            "commentsWritten": 4,
+            "followers": 3
+          },
+          "badges": [
+            {
+              "id": "well-liked",
+              "metric": "publicEntries",
+              "threshold": 10,
+              "progress": 7,
+              "earned": false
             }
           ]
         }

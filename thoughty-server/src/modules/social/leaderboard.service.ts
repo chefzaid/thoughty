@@ -9,7 +9,7 @@ import type {
   LeaderboardPeriod,
   LeaderboardResponseDto,
 } from './dto';
-import { applyPublicFeedVisibility } from './public-feed-visibility';
+import { applyPublicFeedVisibility, joinEngagementByOthers } from './public-feed-visibility';
 
 export const LEADERBOARD_SIZE = 10;
 export const EXCERPT_LENGTH = 280;
@@ -115,9 +115,7 @@ export class LeaderboardService {
     table: 'entry_likes' | 'entry_comments',
   ): Promise<EntryRankRow[]> {
     return (
-      this.publicEntries(since)
-        .innerJoin(table, 'x', 'x.entry_id = e.id AND x.user_id <> e.user_id')
-        .innerJoin('users', 'xu', 'xu.id = x.user_id AND xu.deleted_at IS NULL')
+      joinEngagementByOthers(this.publicEntries(since), table)
         .select('e.id', 'id')
         // Raw DATE values would be parsed into time-zone-dependent Date objects.
         .addSelect("TO_CHAR(e.date, 'YYYY-MM-DD')", 'date')

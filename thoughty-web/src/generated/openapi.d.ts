@@ -1688,6 +1688,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/achievements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get your karma, activity stats, and badges */
+        get: operations["AchievementsController_getAchievements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4219,6 +4236,104 @@ export interface components {
             mostActiveAuthors: components["schemas"]["LeaderboardAuthorRankDto"][];
             mostLikedEntries: components["schemas"]["LeaderboardEntryRankDto"][];
             mostCommentedEntries: components["schemas"]["LeaderboardEntryRankDto"][];
+        };
+        /**
+         * @example {
+         *       "publicEntries": 12,
+         *       "totalEntries": 340,
+         *       "longestStreak": 9,
+         *       "likesReceived": 21,
+         *       "commentsReceived": 6,
+         *       "commentsWritten": 4,
+         *       "followers": 3
+         *     }
+         */
+        AchievementStatsDto: {
+            /**
+             * @description Entries currently visible in the public feed
+             * @example 12
+             */
+            publicEntries: number;
+            /**
+             * @description All journal entries, private ones included
+             * @example 340
+             */
+            totalEntries: number;
+            /**
+             * @description Most consecutive days with at least one entry
+             * @example 9
+             */
+            longestStreak: number;
+            /**
+             * @description Likes on your public entries and comments
+             * @example 21
+             */
+            likesReceived: number;
+            /**
+             * @description Comments from other people on your public entries
+             * @example 6
+             */
+            commentsReceived: number;
+            /** @example 4 */
+            commentsWritten: number;
+            /** @example 3 */
+            followers: number;
+        };
+        /**
+         * @example {
+         *       "id": "well-liked",
+         *       "metric": "publicEntries",
+         *       "threshold": 10,
+         *       "progress": 7,
+         *       "earned": false
+         *     }
+         */
+        AchievementBadgeDto: {
+            /** @example well-liked */
+            id: string;
+            /** @enum {string} */
+            metric: "publicEntries" | "totalEntries" | "longestStreak" | "likesReceived" | "commentsReceived" | "commentsWritten" | "followers";
+            /** @example 10 */
+            threshold: number;
+            /**
+             * @description Current value of the metric, capped at the threshold
+             * @example 7
+             */
+            progress: number;
+            /** @example false */
+            earned: boolean;
+        };
+        /**
+         * @example {
+         *       "karma": 30,
+         *       "stats": {
+         *         "publicEntries": 12,
+         *         "totalEntries": 340,
+         *         "longestStreak": 9,
+         *         "likesReceived": 21,
+         *         "commentsReceived": 6,
+         *         "commentsWritten": 4,
+         *         "followers": 3
+         *       },
+         *       "badges": [
+         *         {
+         *           "id": "well-liked",
+         *           "metric": "publicEntries",
+         *           "threshold": 10,
+         *           "progress": 7,
+         *           "earned": false
+         *         }
+         *       ]
+         *     }
+         */
+        AchievementsResponseDto: {
+            /**
+             * @description Likes received plus comments received plus followers
+             * @example 30
+             */
+            karma: number;
+            stats: components["schemas"]["AchievementStatsDto"];
+            badges: components["schemas"]["AchievementBadgeDto"][];
         };
     };
     responses: never;
@@ -8635,6 +8750,49 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["LeaderboardResponseDto"];
+                };
+            };
+        };
+    };
+    AchievementsController_getAchievements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Only ever returns the authenticated user’s own achievements */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "karma": 30,
+                     *       "stats": {
+                     *         "publicEntries": 12,
+                     *         "totalEntries": 340,
+                     *         "longestStreak": 9,
+                     *         "likesReceived": 21,
+                     *         "commentsReceived": 6,
+                     *         "commentsWritten": 4,
+                     *         "followers": 3
+                     *       },
+                     *       "badges": [
+                     *         {
+                     *           "id": "well-liked",
+                     *           "metric": "publicEntries",
+                     *           "threshold": 10,
+                     *           "progress": 7,
+                     *           "earned": false
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AchievementsResponseDto"];
                 };
             };
         };

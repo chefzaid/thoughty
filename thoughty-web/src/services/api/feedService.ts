@@ -14,6 +14,7 @@ export type EntryCommentDeleted = components['schemas']['EntryCommentDeletedDto'
 export type LikeState = components['schemas']['LikeStateDto'];
 export type Leaderboard = components['schemas']['LeaderboardResponseDto'];
 export type LeaderboardPeriod = Leaderboard['period'];
+export type Achievements = components['schemas']['AchievementsResponseDto'];
 
 export interface ServiceResult<T> {
   data: T | null;
@@ -78,6 +79,10 @@ export const createFeedService = (authFetch: (url: string, options?: RequestInit
 
   fetchLeaderboard(period: LeaderboardPeriod): Promise<ServiceResult<Leaderboard>> {
     return requestJson(authFetch(`/api/leaderboard?period=${period}`), 'Failed to load the leaderboard');
+  },
+
+  fetchAchievements(): Promise<ServiceResult<Achievements>> {
+    return requestJson(authFetch('/api/achievements'), 'Failed to load achievements');
   },
 
   setEntryLike(entryId: number, like: boolean): Promise<ServiceResult<LikeState>> {

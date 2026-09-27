@@ -18,6 +18,19 @@ export function applyPublicFeedVisibility<T extends ObjectLiteral>(
 }
 
 /**
+ * Joins likes or comments on the queried entries (alias `e`) that come from other people
+ * whose accounts are not deleted, as `x` (the interaction) and `xu` (its author).
+ */
+export function joinEngagementByOthers<T extends ObjectLiteral>(
+  qb: SelectQueryBuilder<T>,
+  table: 'entry_likes' | 'entry_comments',
+): SelectQueryBuilder<T> {
+  return qb
+    .innerJoin(table, 'x', 'x.entry_id = e.id AND x.user_id <> e.user_id')
+    .innerJoin('users', 'xu', 'xu.id = x.user_id AND xu.deleted_at IS NULL');
+}
+
+/**
  * Social interactions exist only around entries the feed may show; anything else
  * answers as missing so private entries cannot be probed.
  */

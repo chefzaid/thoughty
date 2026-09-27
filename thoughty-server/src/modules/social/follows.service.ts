@@ -24,12 +24,7 @@ export class FollowsService {
         .andWhere('u.deleted_at IS NULL')
         .orderBy('u.username', 'ASC')
         .getMany(),
-      this.followRepository
-        .createQueryBuilder('f')
-        .innerJoin('f.follower', 'u')
-        .where('f.followed_id = :userId', { userId })
-        .andWhere('u.deleted_at IS NULL')
-        .getCount(),
+      this.countFollowers(userId),
     ]);
 
     return {
@@ -41,6 +36,16 @@ export class FollowsService {
       })),
       followerCount,
     };
+  }
+
+  /** Followers whose accounts are not deleted. */
+  countFollowers(userId: number): Promise<number> {
+    return this.followRepository
+      .createQueryBuilder('f')
+      .innerJoin('f.follower', 'u')
+      .where('f.followed_id = :userId', { userId })
+      .andWhere('u.deleted_at IS NULL')
+      .getCount();
   }
 
   async follow(userId: number, targetUserId: number): Promise<FollowStateDto> {

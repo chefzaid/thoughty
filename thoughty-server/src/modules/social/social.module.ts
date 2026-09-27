@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommentLike, Entry, EntryComment, EntryLike, UserFollow } from '@/database/entities';
+import { AchievementsController } from './achievements.controller';
+import { AchievementsService } from './achievements.service';
 import { CommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';
 import { FeedController } from './feed.controller';
@@ -20,7 +22,15 @@ import { PublicFeedService } from './public-feed.service';
     CommentsController,
     LikesController,
     LeaderboardController,
+    AchievementsController,
   ],
-  providers: [PublicFeedService, FollowsService, CommentsService, LikesService, LeaderboardService],
+  providers: [
+    PublicFeedService,
+    FollowsService,
+    CommentsService,
+    LikesService,
+    LeaderboardService,
+    AchievementsService,
+  ],
 })
 export class SocialModule {}

@@ -81,6 +81,7 @@ flowchart LR
 - **Comments:** every feed entry has a comment thread showing its count. Signed-in users can comment (up to 1,000 characters of plain text) on any entry in the feed, delete their own comments, and remove any comment left on their own public entries after a confirmation. Comments are included in the personal data download.
 - **Likes:** like or unlike any entry or comment in the feed written by someone else; your own entries and comments show their like count. Likes are included in the personal data download.
 - **Leaderboard:** opened from the Feed header (`/feed?view=leaderboard`), it ranks the ten most active writers (public entries published), the most liked entries, and the most commented entries for this week, this month, this year, or all time. Only content the feed can show counts, and authors' own comments on their entries are ignored.
+- **Achievements:** a private Profile section shows your karma (likes and comments other people gave your public entries and comments, plus followers), your activity numbers, and ten badges with progress toward the ones not yet earned: first public thought, 25 public entries, 100 entries, 7- and 30-day writing streaks, 10 and 100 likes, 10 comments received, 10 comments written, and 10 followers. Everything is computed live from your data, so badges follow deletions and moderation.
 - **Feature requests:** a public board of ideas ranked by votes. Anyone can browse; signed-in users can submit ideas and vote once per idea (authors vote for their own idea automatically).
 
 ## AI Assistance

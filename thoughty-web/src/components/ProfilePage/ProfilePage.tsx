@@ -13,6 +13,7 @@ import CloudProvidersSection from './CloudProvidersSection';
 import ProfileActions from './ProfileActions';
 import DataPrivacySection from './DataPrivacySection';
 import SubscriptionSection from './SubscriptionSection';
+import AchievementsSection from './AchievementsSection';
 
 // Import types and utilities
 import type { 
@@ -210,6 +211,8 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
         handlePictureUpload={handlePictureUpload}
         uploadingPicture={uploadingPicture}
       />
+
+      <AchievementsSection t={t} />
 
       <div className="profile-two-column">
         <PersonalSection

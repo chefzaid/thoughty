@@ -23,6 +23,10 @@ vi.mock('./AISection', () => ({
     ),
 }));
 
+vi.mock('./AchievementsSection', () => ({
+  default: () => <section aria-label="achievements" />,
+}));
+
 vi.mock('./CloudProvidersSection', () => ({
     default: () => <div>cloudProviders</div>,
 }));

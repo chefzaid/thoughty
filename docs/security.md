@@ -59,6 +59,8 @@ Likes (`PUT`/`DELETE` `/api/entries/:entryId/like` and `/api/entries/:entryId/co
 
 `GET /api/leaderboard` requires a session and only aggregates feed-eligible content, so private journaling activity never leaks into rankings; it ignores authors' comments on their own entries and interactions from deleted accounts, and returns plain-text excerpts of at most 280 characters with the same narrow author fields as the feed.
 
+`GET /api/achievements` only ever returns the requester's own karma, stats, and badges. Its journaling numbers (total entries, longest streak) come from private entries, so no endpoint exposes another user's achievements.
+
 ## Abuse Controls
 
 Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):

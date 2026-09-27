@@ -99,4 +99,14 @@ describe('FollowsService', () => {
     await expect(service.unfollow(1, 2)).resolves.toEqual({ userId: 2, following: false });
     expect(followRepository.delete).toHaveBeenCalledWith({ followerId: 1, followedId: 2 });
   });
+
+  it('counts only active followers', async () => {
+    const countQb = createQueryBuilder();
+    countQb.getCount.mockResolvedValue(4);
+    followRepository.createQueryBuilder.mockReturnValue(countQb);
+
+    await expect(service.countFollowers(1)).resolves.toBe(4);
+    expect(countQb.innerJoin).toHaveBeenCalledWith('f.follower', 'u');
+    expect(countQb.andWhere).toHaveBeenCalledWith('u.deleted_at IS NULL');
+  });
 });

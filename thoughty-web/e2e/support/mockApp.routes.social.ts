@@ -228,8 +228,58 @@ async function handleLeaderboardRoute({ route, request, pathname, searchParams, 
   return true;
 }
 
+const MOCK_BADGES = [
+  { id: 'first-public-entry', metric: 'publicEntries', threshold: 1 },
+  { id: 'hundred-entries', metric: 'totalEntries', threshold: 100 },
+  { id: 'week-streak', metric: 'longestStreak', threshold: 7 },
+  { id: 'well-liked', metric: 'likesReceived', threshold: 10 },
+  { id: 'connector', metric: 'followers', threshold: 10 },
+] as const;
+
+function longestStreak(dates: string[]) {
+  const days = [...new Set(dates)].map((date) => Date.parse(`${date}T00:00:00Z`) / 86_400_000).sort((a, b) => a - b);
+  let best = 0;
+  let run = 0;
+  days.forEach((day, index) => {
+    run = index > 0 && day - days[index - 1] === 1 ? run + 1 : 1;
+    best = Math.max(best, run);
+  });
+  return best;
+}
+
+async function handleAchievementsRoute({ route, request, pathname, state }: RouteContext): Promise<boolean> {
+  if (pathname !== '/api/achievements' || request.method() !== 'GET') {
+    return false;
+  }
+
+  const own = state.entries.filter((entry) => authorId(entry, state) === state.user.id);
+  const ownPublicIds = new Set(feedEligibleEntries(state).filter((entry) => own.includes(entry)).map((entry) => entry.id));
+  const stats = {
+    publicEntries: ownPublicIds.size,
+    totalEntries: own.length,
+    longestStreak: longestStreak(own.map((entry) => entry.date)),
+    likesReceived: own.reduce((sum, entry) => sum + (entry.likeCount ?? 0), 0)
+      + state.comments.filter((comment) => comment.userId === state.user.id).reduce((sum, comment) => sum + (comment.likeCount ?? 0), 0),
+    commentsReceived: state.comments.filter((comment) => ownPublicIds.has(comment.entryId) && comment.userId !== state.user.id).length,
+    commentsWritten: state.comments.filter((comment) => comment.userId === state.user.id).length,
+    followers: state.followerCount,
+  };
+
+  await fulfillJson(route, {
+    karma: stats.likesReceived + stats.commentsReceived + stats.followers,
+    stats,
+    badges: MOCK_BADGES.map((badge) => ({
+      ...badge,
+      progress: Math.min(stats[badge.metric], badge.threshold),
+      earned: stats[badge.metric] >= badge.threshold,
+    })),
+  });
+  return true;
+}
+
 export async function handleSocialRoutes(context: RouteContext): Promise<boolean> {
   return (await handlePublicFeedRoute(context))
+    || (await handleAchievementsRoute(context))
     || (await handleLeaderboardRoute(context))
     || (await handleFollowRoutes(context))
     || (await handleLikeRoutes(context))
