@@ -12,7 +12,7 @@
   value: "true"
 - op: add
   path: /metadata/annotations/gethomepage.dev~1group
-  value: Applications
+  value: Applications - PROD
 - op: add
   path: /metadata/annotations/gethomepage.dev~1href
   value: https://thoughty.swirlit.dev
