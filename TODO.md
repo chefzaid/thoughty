@@ -240,3 +240,54 @@
 - [ ] AI insights that surface patterns, correlations, risks, and suggestions across journals and life metrics while respecting privacy controls
 - [ ] Import paths for existing spreadsheets and folder exports, including CSV templates for finances, subscriptions, health logs, and mood tracking
 - [ ] Fine-grained permissions and visibility so Life ERP data can stay private even if selected thoughts become public
+
+## Product Direction (added 2026-10-04)
+
+Thoughty already covers a broad private journal: writing, diaries, tags, AI help, insights, a book converter, sync and a small public feed. On features alone it competes with every mass-market journaling app. The niche to own is **the private journal that becomes your life story**: writing stays private by construction, AI only ever sees what the writer approves, and the journal turns into printed books, guided memoirs and a legacy for family. Coaches and therapists get a separate tier to guide their clients' journaling without seeing more than each client shares.
+
+Customers: people who journal seriously or want a memoir (premium subscription and printed books), families who give a "tell your story" memoir to a parent or grandparent (gift purchases), and coaches and therapists (per-practitioner plan).
+
+Differentiators, each covered below:
+
+1. Zero-knowledge diaries: entries and attachments encrypted on the device; AI runs locally or only on text sent with explicit consent.
+2. From journal to printed book: the book converter ends with a hardcover delivered home.
+3. Guided memoir: weekly questions, answers become chapters, relatives can contribute.
+4. Legacy: chosen diaries pass to chosen people after a verified event.
+5. A practitioner tier hosted to health-data standards.
+
+### Privacy and Trust
+
+- [ ] **ADR — end-to-end encryption:** optional zero-knowledge diaries with keys derived on the device (passphrase plus recovery key); entries, revisions, attachments and books encrypted client-side. Decide how search, stats, feed, sync, books and AI work on an encrypted diary (on-device index, local model, explicit per-request decryption) and which features stay unavailable. Users choose per diary.
+- [ ] Recovery for encrypted diaries: a recovery key and optional trusted-contact recovery; state clearly before enabling that losing both loses the diary.
+- [ ] AI privacy mode per diary: off, local model only, or cloud model with per-request consent, showing exactly what text leaves the device before it is sent (builds on the local LLM item above).
+- [ ] Transparency page: what is stored, where (EU), which processors receive data (AI, payments, email, printing), retention, and a yearly report of authority data requests.
+- [ ] External penetration test before launching paid plans, and a published vulnerability disclosure policy with `security.txt`.
+
+### Books and Memoir
+
+- [ ] Printed books: send the generated book to a print-on-demand partner (hardcover or softcover, sizes), with print-ready interior and cover (bleed, margins, embedded fonts, image resolution checks), a price quote, checkout and order tracking.
+- [ ] Guided memoir program: a series of questions (childhood, family, work, places, lessons) delivered weekly by email or notification; answers by text or voice (using transcription) become entries in a memoir diary, with progress toward a finished book.
+- [ ] Gift purchases: buy a memoir program or a printed book for someone else, with a gift message and invitation; the giver sees only what the writer chooses to share.
+- [ ] Family contributions: invited relatives add memories and photos to a memoir diary, published only after the owner approves each one.
+- [ ] Memoir interview mode: AI follow-up questions that deepen an answer, grounded strictly in what the writer said (same rules as book weaving).
+- [ ] Year in review: a yearly recap (entries, words, top tags, mood arc, highlights) kept private or shared, and printable as a booklet.
+
+### Legacy
+
+- [ ] Legacy contacts: the user names people and the diaries or books each may receive. After a configurable inactivity period, repeated check-ins to the user, and verification by the contacts, the selected content is released; any sign of life cancels the process. Document how deceased users' data is handled.
+
+### Practitioner Tier
+
+- [ ] **ADR — practitioner accounts:** practices with practitioners and linked clients. A client shares chosen entries or diaries and can revoke at any time; practitioners never see anything else.
+- [ ] Journaling programs: practitioners assign prompts and templates on a schedule; clients receive reminders; completion is visible to the practitioner.
+- [ ] Session preparation: with the client's consent, an AI summary of entries shared since the last session and the mood trend; practitioner notes stay separate and private to the practitioner.
+- [ ] Health-data hosting: journaling shared for therapy follow-up is health data, and hosting it on behalf of practitioners in France requires HDS-certified hosting. Settle hosting and processors before launching the tier; such data never trains models and goes only to approved processors.
+- [ ] Practitioner billing per seat, with client accounts included.
+
+### Commercial Foundation
+
+- [ ] Payments: choose a payment provider with EU VAT handling for digital services (one-stop shop) or a merchant of record, plus app-store billing once mobile apps ship. Completes the subscription and paywall items above.
+- [ ] Plans and entitlements enforced server-side: free (core journal, AI with the user's own key), premium (encryption, AI quota, books, unlimited diaries), memoir and gift, practitioner. The admin console reads and changes them.
+- [ ] Importers from other journaling apps (Day One and Journey exports), and a full export as a Markdown folder with attachments.
+- [ ] Opt-in lifecycle emails (welcome, trial ending, writing streaks, year in review) that respect notification preferences.
+- [ ] Help center and support tickets with response targets per plan; a status page for paid users.
