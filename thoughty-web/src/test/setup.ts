@@ -1,17 +1,10 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup, configure } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
+import { configure } from '@testing-library/react';
+import { vi } from 'vitest';
 import { createElement, type ChangeEvent } from 'react';
 
 // Lazy renderers can take a few seconds to resolve on a contended CI node.
 configure({ asyncUtilTimeout: 10000 });
-
-// vmThreads keeps Testing Library loaded across the files of one worker, so its
-// automatic cleanup only covers the first file; without this, a run with a
-// single worker leaves each file's DOM behind for the next.
-afterEach(() => {
-  cleanup();
-});
 
 // Mock the Web Speech API globally for all tests
 if (!globalThis.speechSynthesis) {
