@@ -410,7 +410,8 @@ export function createMockAppState(
       readDates: true,
       ...options.config,
     },
-    diaries: options.diaries || DEFAULT_DIARIES,
+    // Copied, so diaries a test creates never leak into the next test's defaults
+    diaries: (options.diaries || DEFAULT_DIARIES).map((diary) => ({ ...diary })),
     entries: sortEntries(options.initialEntries || []),
     revisions: options.initialRevisions || {},
     cloudStatus: options.cloudStatus || DEFAULT_CLOUD_STATUS,
