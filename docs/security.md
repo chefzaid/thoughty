@@ -6,6 +6,7 @@ Thoughty stores personal journal content, profile data, attachments, sessions, a
 
 - Every API route requires a JWT unless it is explicitly marked `@Public()`.
 - DTO validation whitelists fields and rejects unexpected ones; ownership-scoped queries always filter by the authenticated user ID.
+- Every referenced container is checked against the caller too: an entry can only be created in, moved to, or imported into a diary the writer owns; any other diary ID answers `404`.
 - User-controlled text and attachment filenames are sanitized where they are rendered or used.
 - Passwords are hashed with bcrypt; reset, verification, and 2FA tokens are stored only as hashes.
 - Cloud provider tokens and personal AI keys are encrypted at rest with AES-256-GCM using `CONFIG_ENCRYPTION_SECRET`.

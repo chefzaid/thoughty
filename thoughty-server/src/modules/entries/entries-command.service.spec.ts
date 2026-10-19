@@ -105,6 +105,28 @@ describe('EntriesCommandService', () => {
     expect(result).toEqual({ success: true, entryId: 9 });
   });
 
+  it('creates an entry in a requested diary the writer owns', async () => {
+    diaryRepository.findOne.mockResolvedValue({ id: 12, userId: 4 });
+    entryRepository.count.mockResolvedValue(0);
+    entryRepository.save.mockResolvedValue({ id: 15 });
+
+    await service.create(4, { text: 'In my travel diary', tags: [], diaryId: 12 });
+
+    expect(diaryRepository.findOne).toHaveBeenCalledWith({ where: { id: 12, userId: 4 } });
+    expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ diaryId: 12 }));
+  });
+
+  it('rejects an entry aimed at a diary the writer does not own', async () => {
+    diaryRepository.findOne.mockResolvedValue(null);
+
+    await expect(service.create(4, { text: 'Not my diary', tags: [], diaryId: 99 }))
+      .rejects.toThrow(NotFoundException);
+
+    expect(diaryRepository.findOne).toHaveBeenCalledWith({ where: { id: 99, userId: 4 } });
+    expect(entryTaggingService.resolveSavedTags).not.toHaveBeenCalled();
+    expect(entryRepository.save).not.toHaveBeenCalled();
+  });
+
   it('updates an entry, writes a revision, and reindexes the original day when the date changes', async () => {
     const existingEntry = {
       id: 3,

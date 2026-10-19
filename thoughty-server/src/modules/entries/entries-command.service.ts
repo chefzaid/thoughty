@@ -27,16 +27,9 @@ export class EntriesCommandService {
   }
 
   async create(userId: number, dto: CreateEntryDto): Promise<{ success: boolean; entryId: number }> {
+    const targetDiaryId = await this.resolveTargetDiaryId(userId, dto.diaryId);
     const resolvedTags = await this.entryTaggingService.resolveSavedTags(userId, dto.text, dto.tags);
     const dateStr = dto.date || new Date().toISOString().split('T')[0];
-
-    let targetDiaryId = dto.diaryId;
-    if (!targetDiaryId) {
-      const defaultDiary = await this.diaryRepository.findOne({
-        where: { userId, isDefault: true },
-      });
-      targetDiaryId = defaultDiary?.id;
-    }
 
     const countResult = await this.entryRepository.count({
       where: { userId, date: dateStr },
@@ -55,6 +48,20 @@ export class EntriesCommandService {
     });
 
     return { success: true, entryId: entry.id };
+  }
+
+  /** A requested diary must belong to the writer; without one, the entry goes to their default diary. */
+  private async resolveTargetDiaryId(userId: number, diaryId?: number): Promise<number | undefined> {
+    if (diaryId) {
+      const diary = await this.diaryRepository.findOne({ where: { id: diaryId, userId } });
+      if (!diary) {
+        throw new NotFoundException('Diary not found');
+      }
+      return diary.id;
+    }
+
+    const defaultDiary = await this.diaryRepository.findOne({ where: { userId, isDefault: true } });
+    return defaultDiary?.id;
   }
 
   async update(

@@ -159,6 +159,7 @@
 - [x] Spam and bots protection on sign up and login forms
 - [x] Rate limiting and prevent DDOS from too much data sent
 - [x] Content Security Policy hardening (replace unsafe-inline with nonces)
+- [x] Entries can only be created in diaries the writer owns (creating an entry in another user's diary answers 404)
 
 ## Tests
 
