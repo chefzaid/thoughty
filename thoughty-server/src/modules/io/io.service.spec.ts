@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BadRequestException, PayloadTooLargeException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import { IoService } from './io.service';
 import { Entry, Setting, Diary, User } from '@/database/entities';
 
@@ -479,6 +479,7 @@ Test entry content
 
     it('should use provided diaryId', async () => {
       settingRepository.find.mockResolvedValue([]);
+      diaryRepository.findOne.mockResolvedValue({ ...mockDiary, id: 5 });
       entryRepository.count.mockResolvedValue(0);
       entryRepository.save.mockResolvedValue(mockEntry);
       const mockQb = entryRepository.createQueryBuilder();
@@ -498,6 +499,22 @@ Test content
           diaryId: 5,
         }),
       );
+    });
+
+    it('refuses to import into a diary the user does not own', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      diaryRepository.findOne.mockResolvedValue(null);
+
+      const content = `
+---2024-01-15--[tag1]
+Test content
+
+--------------------------------------------------------------------------------
+`;
+
+      await expect(service.import(1, { content, diaryId: 99 })).rejects.toThrow(NotFoundException);
+      expect(diaryRepository.findOne).toHaveBeenCalledWith({ where: { id: 99, userId: 1 } });
+      expect(entryRepository.save).not.toHaveBeenCalled();
     });
 
     it('should use diary default visibility when entry has no visibility', async () => {

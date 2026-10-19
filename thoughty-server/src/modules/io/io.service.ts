@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, PayloadTooLargeException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, Setting, Diary, User } from '@/database/entities';
@@ -65,7 +65,11 @@ export class IoService {
 
   private async getTargetDiaryId(userId: number, providedDiaryId?: number): Promise<number | undefined> {
     if (providedDiaryId) {
-      return providedDiaryId;
+      const diary = await this.diaryRepository.findOne({ where: { id: providedDiaryId, userId } });
+      if (!diary) {
+        throw new NotFoundException('Diary not found');
+      }
+      return diary.id;
     }
 
     const defaultDiary = await this.diaryRepository.findOne({
