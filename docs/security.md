@@ -100,6 +100,10 @@ Provided through Vault (see [Deployment](./deployment.md#configuration-and-secre
 - Files are served only through authenticated application endpoints; the frontend loads previews and downloads with authenticated requests and short-lived object URLs.
 - Buckets stay private unless a future ADR changes the sharing model.
 
+## Guided Memoir
+
+Memoir answers are private entries; the API never makes them public, and a writer can only start, answer, or move the memoir into a diary they own (anything else answers `404`). Recordings attached to an answer must be the writer's own uploads and are checked before any entry is written. Weekly emails go only to verified addresses of live accounts, contain only the catalogue question and a link to `/memoir`, never journal text, and the worker logs a failed send by user id without the address. A memoir answer is an ordinary entry, so the AI rules below apply unchanged: transcription and AI book weaving send text only when the writer asks for them.
+
 ## AI Privacy
 
 AI features are optional. A deployment may provide a shared OpenRouter key, and each user may add a personal key that then takes precedence for all of their AI requests. Personal keys are validated with OpenRouter before storage, encrypted at rest, accepted only through dedicated authenticated endpoints, shown only as a short suffix, and excluded from configuration responses and GDPR exports.

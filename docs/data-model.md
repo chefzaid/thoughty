@@ -21,6 +21,10 @@ erDiagram
     User ||--o{ EntryLike : gives
     User ||--o{ CommentLike : gives
     EntryComment ||--o{ CommentLike : receives
+    User ||--o| MemoirProgram : runs
+    Diary ||--o{ MemoirProgram : collects
+    User ||--o{ MemoirAnswer : writes
+    Entry ||--o| MemoirAnswer : answers
 
     Diary ||--o{ Entry : contains
     Diary ||--o{ BookVersion : scopes
@@ -188,7 +192,31 @@ erDiagram
         int userId
         datetime createdAt
     }
+
+    MemoirProgram {
+        int id
+        int userId
+        int diaryId
+        string status
+        boolean emailEnabled
+        int deliveryWeekday
+        string timeZone
+        string currentQuestionId
+        datetime nextDeliveryAt
+        datetime lastEmailedAt
+    }
+
+    MemoirAnswer {
+        int userId
+        string questionId
+        int entryId
+        datetime createdAt
+    }
 ```
+
+## Guided Memoir
+
+`MemoirProgram` holds one guided memoir per user: the diary that collects answers, `active` or `paused`, the email choice, and the weekly schedule (`delivery_weekday` 0 = Sunday and an IANA `time_zone`, delivered at 09:00 local; `TIMESTAMPTZ` columns). `current_question_id` is this week's question and `next_delivery_at` drives the worker. The question catalogue is code (`thoughty-server/src/modules/memoir/memoir-questions.ts`), so questions are referenced by stable string ids rather than rows. `MemoirAnswer` links a question to the entry that answers it, keyed by `(user_id, question_id)` with a unique `entry_id`: one answer per question. Answers are ordinary private entries; their text lives only in `entries`.
 
 ## Public Feed Eligibility
 
@@ -213,6 +241,8 @@ The feed queries the relational entry/user model directly and projects only feed
 | `BookVersion`   | Immutable generated book artifact in a user/diary scope | Deleted with the user or selected diary; all-diaries versions are deleted with the user                                                   |
 | `FeatureRequest` / `FeatureRequestVote` | Public idea and one vote per user per idea | Requests are deleted with their author; votes with their request or voter |
 | `UserFollow` | One follow per follower/followed pair | Deleted with either user; soft-deleted users are hidden from follow lists and follower counts |
+| `MemoirProgram` | One guided memoir per user | Deleted with the user or when the memoir is stopped; deleting its diary keeps the program with no diary until another is chosen |
+| `MemoirAnswer` | Links one question to one answer entry of the same user | Deleted with the user or the entry (the question then counts as unanswered); kept when the memoir is stopped |
 | `EntryComment` | Written by one user on one entry | Deleted with the entry or its author; removable by its author or the entry owner |
 | `EntryLike` / `CommentLike` | One like per user per entry or comment | Deleted with the liked item or the user |
 

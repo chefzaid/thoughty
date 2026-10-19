@@ -267,7 +267,7 @@ Differentiators, each covered below:
 ### Books and Memoir
 
 - [ ] Printed books: send the generated book to a print-on-demand partner (hardcover or softcover, sizes), with print-ready interior and cover (bleed, margins, embedded fonts, image resolution checks), a price quote, checkout and order tracking.
-- [ ] Guided memoir program: a series of questions (childhood, family, work, places, lessons) delivered weekly by email or notification; answers by text or voice (using transcription) become entries in a memoir diary, with progress toward a finished book.
+- [x] Guided memoir program: a series of questions (childhood, family, work, places, lessons) delivered weekly by email or notification; answers by text or voice (using transcription) become entries in a memoir diary, with progress toward a finished book.
 - [ ] Gift purchases: buy a memoir program or a printed book for someone else, with a gift message and invitation; the giver sees only what the writer chooses to share.
 - [ ] Family contributions: invited relatives add memories and photos to a memoir diary, published only after the owner approves each one.
 - [ ] Memoir interview mode: AI follow-up questions that deepen an answer, grounded strictly in what the writer said (same rules as book weaving).

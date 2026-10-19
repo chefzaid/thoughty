@@ -68,6 +68,18 @@ flowchart LR
 - **Versions:** save the generated book as version 1, then later versions from current entries and settings; history shows added entries and chapters, and every version stays downloadable. Histories are separate per diary and for all diaries.
 - Books can be uploaded directly to a connected cloud provider.
 
+## Guided Memoir
+
+A guided program that turns the journal into a life story, opened from **Memoir** in the navigation (`/memoir`).
+
+- **Fifty-two questions in seven chapters,** in life order: childhood, growing up, family, love and friendship, work, places, and lessons. Questions and chapter titles are written in English and French.
+- **Start:** choose a new private diary (named by the writer; restarting with the same name continues in it) or an existing one, the weekday for new questions, and whether to receive them by email. Questions arrive at 9:00 in the browser's time zone, and the first question is available right away.
+- **This week's question:** answer it, ask for **Another question** (the next unanswered one), or open the answer in the journal. Every question can also be answered at any time, in any order, from the chapter list.
+- **Answers** are private Markdown entries in the memoir diary, dated by the writer's local day, opening with the question as a heading and tagged with the chapter title, so the book converter makes one chapter per life chapter. A recording can be made in the browser (up to 15 minutes) or uploaded (up to 5 MB); it is kept as an attachment and, when AI is available, can be turned into editable text first.
+- **Weekly email:** when enabled, the background worker emails each new question in the writer's language with a link straight to it. Emails go only to verified addresses; the page explains when email cannot reach the writer.
+- **Progress:** questions answered, words written, estimated printed pages (250 words a page), chapters started, and per-chapter progress, with **Turn my memoir into a book** opening the book converter on the memoir diary.
+- **Settings:** change the diary, weekday, or email choice, pause and resume weekly questions, or stop the memoir. Stopping keeps every answer in the journal, and they count again if the memoir is restarted. The program and answer links are part of the personal data download.
+
 ## Cloud Sync
 
 - Google Drive, OneDrive, and Dropbox connect independently through OAuth popups; their tokens are stored encrypted and refreshed automatically.

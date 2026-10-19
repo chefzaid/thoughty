@@ -19,6 +19,8 @@ import {
   EntryComment,
   EntryLike,
   CommentLike,
+  MemoirProgram,
+  MemoirAnswer,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -62,6 +64,8 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           EntryComment,
           EntryLike,
           CommentLike,
+          MemoirProgram,
+          MemoirAnswer,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),
@@ -91,6 +95,8 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
       EntryComment,
       EntryLike,
       CommentLike,
+      MemoirProgram,
+      MemoirAnswer,
     ]),
   ],
   exports: [TypeOrmModule],

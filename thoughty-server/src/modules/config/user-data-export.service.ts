@@ -9,6 +9,8 @@ import {
   EntryComment,
   EntryLike,
   EntryRevision,
+  MemoirAnswer,
+  MemoirProgram,
   Setting,
   User,
   UserFollow,
@@ -38,10 +40,14 @@ export class UserDataExportService {
     private readonly entryLikeRepository: Repository<EntryLike>,
     @InjectRepository(CommentLike)
     private readonly commentLikeRepository: Repository<CommentLike>,
+    @InjectRepository(MemoirProgram)
+    private readonly memoirProgramRepository: Repository<MemoirProgram>,
+    @InjectRepository(MemoirAnswer)
+    private readonly memoirAnswerRepository: Repository<MemoirAnswer>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, social] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       this.entryRepository.find({ where: { userId }, order: { date: 'ASC', index: 'ASC' } }),
@@ -49,6 +55,7 @@ export class UserDataExportService {
       this.attachmentRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
       this.settingRepository.find({ where: { userId } }),
       this.collectSocialData(userId),
+      this.collectMemoirData(userId),
     ]);
 
     const safeUser = user
@@ -119,6 +126,35 @@ export class UserDataExportService {
       })),
       settings: safeSettings,
       ...social,
+      memoir,
+    };
+  }
+
+  private async collectMemoirData(userId: number) {
+    const [program, answers] = await Promise.all([
+      this.memoirProgramRepository.findOne({ where: { userId } }),
+      this.memoirAnswerRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
+    ]);
+
+    return {
+      program: program
+        ? {
+            diaryId: program.diaryId,
+            status: program.status,
+            emailEnabled: program.emailEnabled,
+            deliveryWeekday: program.deliveryWeekday,
+            timeZone: program.timeZone,
+            currentQuestionId: program.currentQuestionId,
+            nextDeliveryAt: program.nextDeliveryAt,
+            lastEmailedAt: program.lastEmailedAt,
+            startedAt: program.createdAt,
+          }
+        : null,
+      answers: answers.map((answer) => ({
+        questionId: answer.questionId,
+        entryId: answer.entryId,
+        answeredAt: answer.createdAt,
+      })),
     };
   }
 

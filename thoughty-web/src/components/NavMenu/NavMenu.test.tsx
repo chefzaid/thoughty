@@ -28,7 +28,7 @@ describe('NavMenu', () => {
     expect(screen.getByText('Thoughty')).toBeInTheDocument();
   });
 
-  it.each(['journal', 'stats', 'tags', 'importExport'])('renders %s navigation item', (text) => {
+  it.each(['journal', 'memoir', 'stats', 'tags', 'importExport'])('renders %s navigation item', (text) => {
     render(<NavMenu {...defaultProps} />);
     expect(screen.getByText(text)).toBeInTheDocument();
   });
@@ -67,6 +67,15 @@ describe('NavMenu', () => {
     const tagsButton = screen.getByText('tags');
     fireEvent.click(tagsButton);
     expect(mockOnViewChange).toHaveBeenCalledWith('tags');
+  });
+
+  it('opens the memoir and highlights it while it is the current view', () => {
+    const { rerender } = render(<NavMenu {...defaultProps} />);
+    fireEvent.click(screen.getByText('memoir'));
+    expect(mockOnViewChange).toHaveBeenCalledWith('memoir');
+
+    rerender(<NavMenu {...defaultProps} currentView="memoir" />);
+    expect(screen.getByText('memoir').closest('button')).toHaveClass('active');
   });
 
   it('calls onViewChange when importExport is clicked', () => {

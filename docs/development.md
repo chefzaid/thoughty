@@ -72,6 +72,7 @@ What the `test` journal covers:
 - **Find duplicates:** two near-duplicate pairs in the last ten days of **Thoughts** and one in **Work**, plus a similar entry with a different conclusion that should not be flagged.
 - **Tags and stats:** each year has its own life theme (university, first job, moving, marathon, pandemic, wedding, parenthood, promotion, new house, sabbatical), so yearly top tags differ. Tag metadata gives most tags a color and category, and three tags (`bucket-list`, `stoicism`, `someday-maybe`) exist only in the Tags view.
 - **Social:** `test`, `maya`, and `sam` follow each other (and `newbie` follows two of them). The five newest public entries of each writer carry comment threads and likes from the others, including the author's own reply under the newest one (which never counts), and authors like the comments on their entries. This fills the **Following** feed, comment threads, the **Leaderboard**, and **Achievements**: `test` has earned the comment, like, and writing badges and shows progress toward the follower badge.
+- **Guided memoir:** a private **My memoir** diary with five answered questions across three chapters, weekly emails on Sundays in Paris time, and the next unanswered question as this week's.
 - **Other:** profile and appearance settings, two custom templates, twelve AI chat histories, two extra sessions to revoke, and six feature requests with votes from several users.
 - **Attachments:** an image, text file, PDF, and audio note with a transcript are uploaded to object storage when it is reachable; otherwise the seed skips them with a warning.
 
@@ -115,7 +116,7 @@ The web app calls the API through relative `/api` paths proxied by Vite, so its 
 
 | Command | Does |
 |---|---|
-| `cd thoughty-server && npm run cloud-sync-worker` | run the sync worker from TypeScript for debugging |
+| `cd thoughty-server && npm run cloud-sync-worker` | run the background worker (cloud sync and weekly memoir questions) from TypeScript for debugging |
 | `cd thoughty-server && npm run db:validate-seed` | validate seed data without writing |
 | `cd thoughty-server && npm run migration:generate -- src/database/migrations/<Name>` | generate a migration candidate |
 | `cd thoughty-server && npm run migration:revert` | revert the latest migration (development only) |

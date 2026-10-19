@@ -1,0 +1,65 @@
+.memoir-chapter {
+  margin-top: 1rem;
+}
+
+.memoir-chapter h3 {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.memoir-questions {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memoir-questions li {
+  padding: 0.55rem 0;
+  border-top: 1px solid #374151;
+}
+
+.memoir-page.light .memoir-questions li {
+  border-top-color: #e5e7eb;
+}
+
+.memoir-question-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.memoir-question-icon {
+  flex: 0 0 auto;
+  margin-top: 0.15rem;
+  color: #6b7280;
+}
+
+.memoir-questions li.answered .memoir-question-icon {
+  color: #34d399;
+}
+
+.memoir-page.light .memoir-questions li.answered .memoir-question-icon {
+  color: #047857;
+}
+
+.memoir-question-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .memoir-question-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .memoir-question-row .memoir-link {
+    grid-column: 2;
+    justify-self: start;
+    margin-left: -0.5rem;
+  }
+}

@@ -20,6 +20,7 @@ describe('IntroPage', () => {
     expect(screen.getByText('Private writing, built to stay useful')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Thoughty' })).toBeInTheDocument();
     expect(screen.getByText('Portable import and export')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'A guided memoir, one question a week' })).toBeInTheDocument();
     expect(screen.getByText('Useful after the writing')).toBeInTheDocument();
     expect(screen.getByText('The main workflows are visible before you sign up.')).toBeInTheDocument();
     expect(screen.getByText('A focused journal surface')).toBeInTheDocument();

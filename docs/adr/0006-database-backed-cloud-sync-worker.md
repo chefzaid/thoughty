@@ -54,6 +54,14 @@ Use a dedicated worker process for scheduled cloud sync and back it with a datab
   state when an interrupted upload has an ambiguous outcome.
 - If background workloads broaden substantially beyond cloud sync, the current queue model may need to evolve into a more general job platform.
 
+## Weekly Memoir Delivery (2026-10-19)
+
+The same worker process also delivers guided-memoir questions; API replicas never do.
+
+- `MemoirDeliveryWorkerService` scans once a minute for `memoir_programs` that are `active`, due (`next_delivery_at <= now`), and owned by a live account, in batches of 50 claimed with `FOR UPDATE OF p SKIP LOCKED`, so overlapping scans never deliver the same week twice.
+- Inside that transaction each program moves to its next unanswered question and its next delivery (the chosen weekday at 09:00 in the program's time zone). Emails are sent after the commit; a failed email is logged and does not undo the new question, and `last_emailed_at` records successful sends only.
+- There is no job table: the program row is the schedule, and the partial index `idx_memoir_programs_due` keeps the scan cheap. A stopped worker only delays questions; the in-app question is set when the program starts, so the memoir works without it.
+
 ## Verification
 
 The backend tests cover heartbeat cancellation, independent operation signals

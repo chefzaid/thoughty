@@ -246,6 +246,20 @@
 }
 
 /* Responsive adjustments */
+/* Between phone and desktop widths the items move to their own row under the brand and profile. */
+@media (min-width: 641px) and (max-width: 1100px) {
+    .nav-menu {
+        flex-wrap: wrap;
+        row-gap: 0.5rem;
+    }
+
+    .nav-items {
+        order: 3;
+        width: 100%;
+        flex-wrap: wrap;
+    }
+}
+
 @media (max-width: 640px) {
     .nav-menu {
         flex-wrap: wrap;

@@ -337,4 +337,48 @@ describe('EmailService', () => {
       );
     });
   });
+
+  describe('sendMemoirQuestionEmail', () => {
+    const email = {
+      subject: "This week's memoir question",
+      heading: 'Your question for this week',
+      question: 'Which <adult> outside your family left a mark on your childhood?',
+      actionLabel: 'Answer now',
+      actionUrl: 'https://thoughty.example.com/memoir?question=childhood-adult&x="y"',
+      footer: 'Pause these emails in Memoir settings.',
+    };
+
+    it('sends the localized question with escaped markup and a plain-text alternative', async () => {
+      configService = createConfigService({
+        SMTP_HOST: 'smtp.example.com',
+        SMTP_PORT: 587,
+        SMTP_USER: 'user@example.com',
+        SMTP_PASS: 'password',
+        SMTP_FROM: 'noreply@example.com',
+      });
+      service = new EmailService(configService as ConfigService);
+
+      await service.sendMemoirQuestionEmail('writer@example.com', email);
+
+      const message = mockTransporter.sendMail.mock.calls[0][0];
+      expect(message).toEqual(expect.objectContaining({
+        from: 'noreply@example.com',
+        to: 'writer@example.com',
+        subject: "This week's memoir question",
+      }));
+      expect(message.html).toContain('Which &lt;adult&gt; outside your family');
+      expect(message.html).toContain('href="https://thoughty.example.com/memoir?question=childhood-adult&amp;x=&quot;y&quot;"');
+      expect(message.text).toContain('Answer now: https://thoughty.example.com/memoir?question=childhood-adult');
+      expect(message.text).toContain('Pause these emails in Memoir settings.');
+    });
+
+    it('should throw error when transporter is not configured', async () => {
+      configService = createConfigService({});
+      service = new EmailService(configService as ConfigService);
+
+      await expect(service.sendMemoirQuestionEmail('writer@example.com', email)).rejects.toThrow(
+        'Email service not configured',
+      );
+    });
+  });
 });

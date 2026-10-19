@@ -1,4 +1,6 @@
-export type TranslationKey =
+import { memoirTranslations, type MemoirTranslationKey } from "./translations.memoir";
+
+type CoreTranslationKey =
   | "journal"
   | "feed"
   | "feedScope"
@@ -926,6 +928,8 @@ export type TranslationKey =
   | "subscriptionIncluded"
   | "subscriptionPreviousCycle";
 
+export type TranslationKey = CoreTranslationKey | MemoirTranslationKey;
+
 export type Language = "en" | "fr";
 
 export type TranslationParams = Record<string, string | number>;
@@ -934,6 +938,7 @@ export type Translations = Record<Language, Record<TranslationKey, string>>;
 
 export const translations: Translations = {
   en: {
+    ...memoirTranslations.en,
     // App
     journal: "Journal",
     feed: "Feed",
@@ -1997,6 +2002,7 @@ export const translations: Translations = {
     subscriptionPreviousCycle: "Previous billing cycle",
   },
   fr: {
+    ...memoirTranslations.fr,
     // App
     journal: "Journal",
     feed: "Fil public",

@@ -146,6 +146,10 @@ function IntroPage({ theme, t, onSignIn, onSignUp }: IntroPageProps) {
           <h2>{t('landingFeatureHeading')}</h2>
         </div>
         <div className="feature-list">
+          <article className="feature-item feature-highlight">
+            <h3>{t('landingFeatureMemoirTitle')}</h3>
+            <p>{t('landingFeatureMemoirBody')}</p>
+          </article>
           {FEATURE_ITEMS.map(([titleKey, bodyKey]) => (
             <article className="feature-item" key={titleKey}>
               <h3>{t(titleKey)}</h3>

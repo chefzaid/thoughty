@@ -74,6 +74,7 @@ function createRoutesParams(
     diariesState: {
       currentDiaryId: 3,
       diaries: [],
+      fetchDiaries: vi.fn().mockResolvedValue(undefined),
       handleCreateDiary: vi.fn().mockResolvedValue(undefined),
       handleDeleteDiary: vi.fn().mockResolvedValue(undefined),
       handleReorderDiaries: vi.fn().mockResolvedValue(undefined),
@@ -258,6 +259,7 @@ describe('appShellProps', () => {
       diariesState: {
         currentDiaryId: 3,
         diaries: [],
+        fetchDiaries: vi.fn().mockResolvedValue(undefined),
         handleCreateDiary: vi.fn().mockResolvedValue(undefined),
         handleDeleteDiary: vi.fn().mockResolvedValue(undefined),
         handleReorderDiaries: vi.fn().mockResolvedValue(undefined),
@@ -420,6 +422,19 @@ describe('appShellProps', () => {
     expect(props.journalRouteProps.filters.allTags).toEqual(['focus', 'work']);
   });
 
+  it('gives the memoir the diaries, the interface language, and a way to refresh diaries', async () => {
+    const fetchDiaries = vi.fn().mockResolvedValue(undefined);
+    const diaries = [{ id: 3, name: 'Work', icon: 'W', visibility: 'private' as const }];
+    const props = buildAuthenticatedRoutesProps(createRoutesParams({
+      config: { theme: 'light', name: 'Zaid', tagMetadata: '{}', language: 'fr' },
+      diariesState: { ...createRoutesParams().diariesState, diaries, fetchDiaries },
+    }));
+
+    expect(props.memoirRouteProps).toEqual(expect.objectContaining({ theme: 'light', language: 'fr', diaries }));
+    await props.memoirRouteProps.onDiariesChanged();
+    expect(fetchDiaries).toHaveBeenCalled();
+  });
+
   it('wires profile, tag manager, diary management, and import-export callbacks', async () => {
     const updateConfig = vi.fn().mockResolvedValue(undefined);
     const downloadUserData = vi.fn().mockResolvedValue(true);
@@ -440,6 +455,7 @@ describe('appShellProps', () => {
       diariesState: {
         currentDiaryId: 3,
         diaries: [{ id: 3, name: 'Work', icon: 'W', visibility: 'private' }],
+        fetchDiaries: vi.fn().mockResolvedValue(undefined),
         handleCreateDiary: vi.fn().mockResolvedValue(undefined),
         handleDeleteDiary,
         handleReorderDiaries: vi.fn().mockResolvedValue(undefined),

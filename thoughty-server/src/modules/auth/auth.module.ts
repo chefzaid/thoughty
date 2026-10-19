@@ -36,6 +36,6 @@ import { JwtAuthGuard } from './guards';
     JwtStrategy,
     JwtAuthGuard,
   ],
-  exports: [AuthService, EmailVerificationService, JwtAuthGuard, JwtModule],
+  exports: [AuthService, EmailService, EmailVerificationService, JwtAuthGuard, JwtModule],
 })
 export class AuthModule {}

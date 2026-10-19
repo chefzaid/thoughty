@@ -6,6 +6,8 @@ interface ConfirmModalProps {
   onConfirm: () => void;
   title: string;
   message: string;
+  /** Label of the confirming button; defaults to Delete. */
+  confirmLabel?: string;
   theme?: 'light' | 'dark';
   t?: TranslationFunction;
 }
@@ -16,6 +18,7 @@ const ConfirmModal = ({
   onConfirm,
   title,
   message,
+  confirmLabel,
   theme = 'dark',
   t,
 }: ConfirmModalProps) => {
@@ -63,7 +66,7 @@ const ConfirmModal = ({
             onClick={onConfirm}
             className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
           >
-            {t ? t('delete') : 'Delete'}
+            {confirmLabel ?? (t ? t('delete') : 'Delete')}
           </button>
         </div>
       </div>

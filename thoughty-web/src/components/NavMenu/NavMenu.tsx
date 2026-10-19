@@ -36,6 +36,13 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                     {t('journal')}
                 </button>
                 <button type="button"
+                    className={`nav-item ${currentView === 'memoir' ? 'active' : ''}`}
+                    onClick={() => onViewChange('memoir')}
+                >
+                    <span className="codicon codicon-history" aria-hidden="true" />
+                    {t('memoir')}
+                </button>
+                <button type="button"
                     className={`nav-item ${currentView === 'feed' ? 'active' : ''}`}
                     onClick={() => onViewChange('feed')}
                 >

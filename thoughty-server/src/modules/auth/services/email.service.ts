@@ -1,6 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { escapeHtml } from '@/common/utils';
+
+/** Localized copy for the weekly guided-memoir question email. */
+export interface MemoirQuestionEmail {
+  subject: string;
+  heading: string;
+  question: string;
+  actionLabel: string;
+  actionUrl: string;
+  footer: string;
+}
 
 @Injectable()
 export class EmailService {
@@ -158,6 +169,38 @@ export class EmailService {
         </div>
       `,
       text: `Your Thoughty security code is ${code}. It expires in ${expiresInMinutes} minutes and can be used once.`,
+    });
+  }
+
+  async sendMemoirQuestionEmail(toEmail: string, email: MemoirQuestionEmail): Promise<void> {
+    if (!this.transporter) {
+      throw new Error('Email service not configured');
+    }
+
+    const fromAddress =
+      this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER');
+    const actionUrl = escapeHtml(email.actionUrl);
+
+    await this.transporter.sendMail({
+      from: fromAddress,
+      to: toEmail,
+      subject: email.subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #333;">${escapeHtml(email.heading)}</h2>
+          <p style="color: #111; font-size: 20px; line-height: 1.5;">${escapeHtml(email.question)}</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${actionUrl}"
+               style="background-color: #6366f1; color: white; padding: 12px 24px;
+                      text-decoration: none; border-radius: 6px; font-size: 16px;">
+              ${escapeHtml(email.actionLabel)}
+            </a>
+          </div>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #999; font-size: 12px;">${escapeHtml(email.footer)}</p>
+        </div>
+      `,
+      text: `${email.heading}\n\n${email.question}\n\n${email.actionLabel}: ${email.actionUrl}\n\n${email.footer}\n`,
     });
   }
 

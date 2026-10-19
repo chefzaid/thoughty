@@ -8,8 +8,8 @@
  * history, planted duplicates, tag metadata (including unused tags),
  * templates, extra sessions, community users for the public feed (with
  * moderated, archived, and deleted-author content), follows, comments, and
- * likes between test and the community users, an unverified user, and feature
- * requests with votes.
+ * likes between test and the community users, a guided memoir in progress, an
+ * unverified user, and feature requests with votes.
  *
  * Every account uses the password Test1234!. The content is deterministic.
  * Run with --validate-only to check the data without touching the database.
@@ -41,6 +41,7 @@ import {
 } from './lib/seed-journal';
 import { createAssetUploader, createSeedAsset } from './lib/seed-assets';
 import { insertSessionsAndSocialData } from './lib/seed-social';
+import { insertMemoir } from './lib/seed-memoir';
 
 const JOURNAL_TEST_DATA_FILE = path.join(__dirname, '..', 'data', 'journal_test_data.txt');
 const DREAMS_TEST_DATA_FILE = path.join(__dirname, '..', 'data', 'dreams_test_data.txt');
@@ -406,6 +407,8 @@ async function seed(): Promise<void> {
                 }
                 await insertSessionsAndSocialData();
                 log.success('Inserted community journals, sessions, follows, comments, likes, and feature requests');
+                const memoirAnswers = await insertMemoir();
+                log.success(`Started the guided memoir with ${memoirAnswers} answered questions`);
             }
             return userId;
         });

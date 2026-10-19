@@ -8,6 +8,7 @@ import {
   type EmbeddedBookImage,
   normalizeEmbeddedBookImages,
 } from './book-image.util';
+import { escapeHtml } from './sanitize.util';
 
 export type ChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type TagScope = 'all' | 'first';
@@ -276,15 +277,6 @@ export function stripMarkdown(content: string): string {
     .replaceAll(/`([^`]*)`/g, '$1')
     .replaceAll(/^[\t ]*[-*+][\t ]+/gm, '- ')
     .replaceAll(/^([-*_])\1{2,}\s*$/gm, '');
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
 }
 
 export interface RenderBookOptions {

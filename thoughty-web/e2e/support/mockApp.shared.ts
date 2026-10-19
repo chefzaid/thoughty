@@ -1,3 +1,5 @@
+import { createMockMemoirState, type MockMemoirProgram, type MockMemoirState } from "./mockApp.memoir";
+
 type AuthPayload = {
   email?: string;
   password?: string;
@@ -119,6 +121,8 @@ export interface SetupMockAppOptions {
   comments?: MockComment[];
   likedEntryIds?: number[];
   likedCommentIds?: number[];
+  /** A started guided memoir (defaults filled in), or null/omitted for one not started yet. */
+  memoirProgram?: Partial<MockMemoirProgram> | null;
 }
 
 export interface MockAppState {
@@ -169,6 +173,7 @@ export interface MockAppState {
   likedEntryIds: number[];
   likedCommentIds: number[];
   bookVersions: MockBookVersion[];
+  memoir: MockMemoirState;
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
   lastRegisterPayload: AuthPayload | null;
@@ -421,6 +426,7 @@ export function createMockAppState(
     likedEntryIds: [...(options.likedEntryIds || [])],
     likedCommentIds: [...(options.likedCommentIds || [])],
     bookVersions: [],
+    memoir: createMockMemoirState(options.memoirProgram ?? null),
     nextEntryId:
       (options.initialEntries?.reduce(
         (maxId, entry) => Math.max(maxId, entry.id),

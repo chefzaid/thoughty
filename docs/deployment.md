@@ -10,7 +10,7 @@ This guide is the single reference for the delivery pipeline, versioning, deploy
 |---|---|---|
 | `thoughty-web` | `thoughty-web` | React build served by unprivileged NGINX |
 | `thoughty-server` | `thoughty-server` | NestJS API on port `3001`; `/api/health` and Prometheus `/api/metrics` |
-| `thoughty-cloud-sync-worker` | `thoughty-server` | Scheduled cloud sync; always a single replica |
+| `thoughty-cloud-sync-worker` | `thoughty-server` | Scheduled cloud sync and weekly memoir questions; always a single replica |
 | `postgres-backup` | public PostgreSQL 18.6 (digest-pinned) | Daily logical backup CronJob; suspended until configured |
 
 The database setup and migration hooks also reuse these images.

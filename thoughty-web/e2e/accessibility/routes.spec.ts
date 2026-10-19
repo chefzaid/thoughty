@@ -19,6 +19,7 @@ const PUBLIC_ROUTES = [
 const AUTHENTICATED_ROUTES = [
   '/journal',
   '/feed',
+  '/memoir',
   '/tags',
   '/profile',
   '/diaries',
@@ -65,6 +66,16 @@ test.describe('route accessibility', () => {
         await expectNoAccessibilityViolations(page);
       });
     }
+  }
+
+  for (const theme of THEMES) {
+    test(`${theme} guided memoir in progress with an open answer`, async ({ page }) => {
+      await setupMockApp(page, { startAuthenticated: true, config: { theme }, memoirProgram: { diaryId: 1 } });
+      await page.goto('/memoir');
+      await page.getByRole('button', { name: 'Answer', exact: true }).click();
+
+      await expectNoAccessibilityViolations(page);
+    });
   }
 
   test('public skip links and route changes move focus to page content', async ({ page }) => {

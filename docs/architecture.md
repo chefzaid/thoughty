@@ -4,7 +4,7 @@ How Thoughty is put together, and the architecture decision records (ADRs) that 
 
 ## System Architecture at a Glance
 
-Thoughty is a TypeScript-first modular monolith: one NestJS API and one route-driven React single-page application. PostgreSQL holds all journal data, S3-compatible object storage holds attachment blobs, Redis optionally shares rate-limit counters, OpenRouter provides optional AI, and a separate worker process runs scheduled cloud sync from a database-backed queue. In production, Keycloak authenticates users at the ingress and Vault supplies secrets.
+Thoughty is a TypeScript-first modular monolith: one NestJS API and one route-driven React single-page application. PostgreSQL holds all journal data, S3-compatible object storage holds attachment blobs, Redis optionally shares rate-limit counters, OpenRouter provides optional AI, and a separate worker process runs scheduled cloud sync from a database-backed queue and delivers the weekly guided-memoir questions. In production, Keycloak authenticates users at the ingress and Vault supplies secrets.
 
 ```mermaid
 flowchart TD
@@ -18,8 +18,9 @@ flowchart TD
     API --> OpenRouter[OpenRouter]
     API --> OAuth[Google / OneDrive / Dropbox]
 
-    Worker[Cloud sync worker] --> Pg
+    Worker[Background worker] --> Pg
     Worker --> OAuth
+    Worker --> SMTP[SMTP]
 
     Vault[Vault via External Secrets] --> API
     Vault --> Worker
@@ -43,6 +44,7 @@ The backend is one NestJS application assembled from feature modules under `thou
 | `config` | user preferences and profile, encrypted settings, feature flags, data export |
 | `feature-requests` | community idea board and votes |
 | `social` | public feed, follows (follow, unfollow, following list, follower count), comments, and likes on public entries and comments, leaderboard, achievements (karma and badges) |
+| `memoir` | guided memoir: question catalogue, program settings, answers as entries, weekly question delivery and email |
 | `metrics` | health and Prometheus metrics |
 
 Shared runtime code belongs in `thoughty-server/src/common` only when it is genuinely cross-cutting. Persistence infrastructure and entities belong in `thoughty-server/src/database`. Operational helpers remain in `thoughty-server/scripts` rather than being mixed into runtime modules.
@@ -66,6 +68,7 @@ flowchart TD
     Routes --> Tags[TagManagerRoute]
     Routes --> Diaries[DiariesRoute]
     Routes --> ImportExport[ImportExportRoute]
+    Routes --> Memoir[MemoirRoute]
 
     Shell --> Hooks[App shell hooks]
     Hooks --> Services[API service factories]
@@ -118,6 +121,7 @@ sequenceDiagram
 - `attachments` owns object-storage keys and file validation; entry modules should not treat original filenames as storage keys.
 - `config` owns user preferences and encrypted integration settings.
 - `cloud-sync` owns queued job status, locking, retries, and provider sync state.
+- `memoir` owns the question catalogue and which entry answers which question; answers are created through the `entries` service, so entry rules (diary ownership, tagging, caching) still apply.
 - The public feed reads only entries that are both public and moderation-visible ([ADR 0013](./adr/0013-public-social-content-and-moderation.md)); new social features must not reuse private-entry assumptions without extending that ADR.
 - Frequently repeated entry-list reads are served from a short-lived per-pod cache that entry mutations invalidate.
 
@@ -144,7 +148,7 @@ Use `Proposed` for decisions that guide upcoming work but are not implemented ye
 | [0003](./adr/0003-typescript-first-technology-stack.md) | Accepted | Standardize on a TypeScript-First Full-Stack Platform |
 | [0004](./adr/0004-openapi-as-contract-source.md) | Accepted | Use Backend OpenAPI as the Source of Truth for API Contracts |
 | [0005](./adr/0005-selective-cqrs-in-entry-domain.md) | Accepted | Apply Selective CQRS in the Entry Domain |
-| [0006](./adr/0006-database-backed-cloud-sync-worker.md) | Accepted | Run Scheduled Cloud Sync Through a Separate Worker and Database-Backed Queue |
+| [0006](./adr/0006-database-backed-cloud-sync-worker.md) | Accepted | Run Scheduled Cloud Sync (and Weekly Memoir Delivery) Through a Separate Worker and Database-Backed Queue |
 | [0007](./adr/0007-code-quality-and-verification-gates.md) | Accepted | Keep Code Quality Enforcement Lightweight but Continuous |
 | [0008](./adr/0008-security-authentication-and-owasp-baseline.md) | Accepted | Establish a Secure-by-Default Authentication and OWASP Baseline |
 | [0009](./adr/0009-rate-limiting-and-abuse-controls.md) | Accepted | Apply Layered Rate Limiting for Baseline Abuse Resistance |

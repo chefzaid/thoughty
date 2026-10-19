@@ -108,6 +108,17 @@ from cloud_sync_jobs order by updated_at desc limit 20;
 
 If jobs look stuck, confirm the worker runs the same image as the API, look for `status = 'running'` with an old `locked_at`, and read `last_error` before changing data. Prefer a reviewed recovery script over ad hoc SQL for repeated problems.
 
+### Weekly memoir questions
+
+The worker also moves due memoir programs to their next question once a minute and emails it when SMTP is configured. A failed email is logged as `Weekly memoir email for user <id> failed` and is not retried; the new question is still on the writer's Memoir page.
+
+```sql
+select user_id, status, email_enabled, current_question_id, next_delivery_at, last_emailed_at
+from memoir_programs where status = 'active' and next_delivery_at <= now() order by next_delivery_at limit 20;
+```
+
+Rows that stay due mean the worker is not running or is failing before its transaction commits; check its logs and rollout first.
+
 ### Attachments
 
 Failures can involve PostgreSQL metadata and the object store. Check the S3 endpoint, bucket, region, and credentials; API logs around upload and download; the attachment rows for the affected entry; and whether each `stored_filename` exists in the bucket. `original_filename` is display metadata, never the object key.

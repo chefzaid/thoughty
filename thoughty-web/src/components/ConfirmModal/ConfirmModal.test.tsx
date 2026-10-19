@@ -79,6 +79,19 @@ describe('ConfirmModal', () => {
         });
     });
 
+    describe('Confirm label', () => {
+        it('names the confirming action when one is given', async () => {
+            const onConfirm = vi.fn();
+            const user = userEvent.setup();
+            render(<ConfirmModal {...defaultProps} onConfirm={onConfirm} confirmLabel="Stop the memoir" />);
+
+            expect(screen.queryByText('Delete')).not.toBeInTheDocument();
+            await user.click(screen.getByText('Stop the memoir'));
+
+            expect(onConfirm).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('Backdrop', () => {
         it('calls onClose when backdrop is clicked', async () => {
             const onClose = vi.fn();

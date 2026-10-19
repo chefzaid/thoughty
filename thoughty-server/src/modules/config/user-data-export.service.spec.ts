@@ -8,6 +8,8 @@ import {
   EntryComment,
   EntryLike,
   EntryRevision,
+  MemoirAnswer,
+  MemoirProgram,
   Setting,
   User,
   UserFollow,
@@ -26,6 +28,8 @@ describe('UserDataExportService', () => {
   let commentRepository: any;
   let entryLikeRepository: any;
   let commentLikeRepository: any;
+  let memoirProgramRepository: any;
+  let memoirAnswerRepository: any;
 
   beforeEach(async () => {
     settingRepository = { find: jest.fn() };
@@ -38,6 +42,8 @@ describe('UserDataExportService', () => {
     commentRepository = { find: jest.fn().mockResolvedValue([]) };
     entryLikeRepository = { find: jest.fn().mockResolvedValue([]) };
     commentLikeRepository = { find: jest.fn().mockResolvedValue([]) };
+    memoirProgramRepository = { findOne: jest.fn().mockResolvedValue(null) };
+    memoirAnswerRepository = { find: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -52,6 +58,8 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(EntryComment), useValue: commentRepository },
         { provide: getRepositoryToken(EntryLike), useValue: entryLikeRepository },
         { provide: getRepositoryToken(CommentLike), useValue: commentLikeRepository },
+        { provide: getRepositoryToken(MemoirProgram), useValue: memoirProgramRepository },
+        { provide: getRepositoryToken(MemoirAnswer), useValue: memoirAnswerRepository },
       ],
     }).compile();
 
@@ -165,12 +173,55 @@ describe('UserDataExportService', () => {
       entries: [{ entryId: 40, likedAt: new Date('2024-03-02') }],
       comments: [{ commentId: 12, likedAt: new Date('2024-03-03') }],
     });
+    expect(result.memoir).toEqual({ program: null, answers: [] });
     expect(commentRepository.find).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: 1 } }),
     );
     expect(followRepository.find).toHaveBeenCalledWith(
       expect.objectContaining({ where: { followerId: 1 } }),
     );
+  });
+
+  it('includes the guided memoir program and which entries answer which questions', async () => {
+    userRepository.findOne.mockResolvedValue(null);
+    diaryRepository.find.mockResolvedValue([]);
+    entryRepository.find.mockResolvedValue([]);
+    revisionRepository.find.mockResolvedValue([]);
+    attachmentRepository.find.mockResolvedValue([]);
+    settingRepository.find.mockResolvedValue([]);
+    memoirProgramRepository.findOne.mockResolvedValue({
+      userId: 1,
+      diaryId: 6,
+      status: 'active',
+      emailEnabled: true,
+      deliveryWeekday: 0,
+      timeZone: 'Europe/Paris',
+      currentQuestionId: 'childhood-play',
+      nextDeliveryAt: new Date('2026-10-25T08:00:00Z'),
+      lastEmailedAt: null,
+      createdAt: new Date('2026-10-04T15:20:00Z'),
+    });
+    memoirAnswerRepository.find.mockResolvedValue([
+      { userId: 1, questionId: 'childhood-home', entryId: 81, createdAt: new Date('2026-10-05T09:00:00Z') },
+    ]);
+
+    const result = await service.downloadData(1);
+
+    expect(result.memoir).toEqual({
+      program: {
+        diaryId: 6,
+        status: 'active',
+        emailEnabled: true,
+        deliveryWeekday: 0,
+        timeZone: 'Europe/Paris',
+        currentQuestionId: 'childhood-play',
+        nextDeliveryAt: new Date('2026-10-25T08:00:00Z'),
+        lastEmailedAt: null,
+        startedAt: new Date('2026-10-04T15:20:00Z'),
+      },
+      answers: [{ questionId: 'childhood-home', entryId: 81, answeredAt: new Date('2026-10-05T09:00:00Z') }],
+    });
+    expect(memoirAnswerRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { createdAt: 'ASC' } });
   });
 
   it('should exclude sensitive fields from user data', async () => {

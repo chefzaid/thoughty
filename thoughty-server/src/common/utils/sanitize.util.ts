@@ -13,6 +13,18 @@ export function sanitizeString(str: string): string {
 }
 
 /**
+ * Escape text for interpolation into HTML markup or attribute values
+ */
+export function escapeHtml(text: string): string {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+/**
  * Deep sanitize object recursively
  */
 export function sanitizeObject<T>(obj: T): T {

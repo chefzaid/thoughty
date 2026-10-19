@@ -72,6 +72,7 @@ The browser never reaches a real backend: every `/api` call is answered by the m
 | `import-export/` | import/export formats, format settings, delete-all, books, book versions and cloud upload |
 | `cloud-sync/` | uploads, schedules, Sync Now, cloud imports |
 | `diary/` | create, edit, reorder, default, delete fallback |
+| `memoir/` | starting the guided memoir, text and recorded answers with transcription, another question, pause and resume, stopping, the email link, the book link, French copy, phone layout |
 | `social/` | public feed eligibility, pagination, owner preview, mobile layout, following and unfollowing authors, comments, likes, leaderboard, achievements |
 
 Put a new spec in the closest existing directory and name it after the behavior it covers (`journal/attachments-preview.spec.ts`, not `critical-flows.spec.ts`). Split a file once it covers unrelated behavior.
@@ -87,6 +88,7 @@ Put a new spec in the closest existing directory and name it after the behavior 
 | `mockApp.routes.ts` | dispatch, auth, config, and feature-request routes |
 | `mockApp.routes.entries.ts` | entries and tags |
 | `mockApp.routes.io.ts` | import/export and book routes |
+| `mockApp.memoir.ts` / `mockApp.routes.memoir.ts` | a short memoir catalogue and program state, and the memoir routes |
 | `mockApp.routes.social.ts` | public feed scopes, follows, comments, likes, the leaderboard, and achievements |
 | `mockApp.routes.reference.ts` | stats, AI, diaries, entry references |
 | `mockApp.routes.ai-credentials.ts` | personal OpenRouter key and usage |

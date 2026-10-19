@@ -66,7 +66,7 @@ interface BuildAuthenticatedRoutesPropsParams {
   bulkSelectState: Pick<BulkSelectState, 'bulkMode' | 'clearSelection' | 'requestBulkAction' | 'selectedIds' | 'selectAll' | 'toggleBulkMode' | 'toggleSelect'>;
   config: Config;
   deleteModalState: Pick<DeleteModalState, 'handleDelete'>;
-  diariesState: Pick<DiariesState, 'currentDiaryId' | 'diaries' | 'handleCreateDiary' | 'handleDeleteDiary' | 'handleReorderDiaries' | 'handleSetDefaultDiary' | 'handleUpdateDiary'>;
+  diariesState: Pick<DiariesState, 'currentDiaryId' | 'diaries' | 'fetchDiaries' | 'handleCreateDiary' | 'handleDeleteDiary' | 'handleReorderDiaries' | 'handleSetDefaultDiary' | 'handleUpdateDiary'>;
   downloadUserData: AuthenticatedRoutesProps['profileRouteProps']['onDownloadData'];
   entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterFavorites' | 'filterTags' | 'filterVisibility' | 'groupedEntries' | 'inputPage' | 'loading' | 'page' | 'reorderEntries' | 'runSemanticSearch' | 'search' | 'searchMode' | 'semanticSearchResult' | 'semanticSearchStatus' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterFavorites' | 'setFilterTags' | 'setFilterVisibility' | 'setInputPage' | 'setPage' | 'setSearch' | 'setSearchMode' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'totalPages'>;
   entryEditState: Pick<EntryEditState, 'addEditPendingFile' | 'editDate' | 'editExistingAttachments' | 'editFormat' | 'editPendingFiles' | 'editTags' | 'editText' | 'editVisibility' | 'editingEntry' | 'handleCancelEdit' | 'handleEdit' | 'handleSaveEdit' | 'removeEditAttachment' | 'removeEditPendingFile' | 'setEditDate' | 'setEditFormat' | 'setEditTags' | 'setEditText' | 'setEditVisibility'>;
@@ -242,6 +242,13 @@ export function buildAuthenticatedRoutesProps({
   return {
     feedRouteProps: {
       theme: config.theme,
+      t,
+    },
+    memoirRouteProps: {
+      theme: config.theme,
+      language: config.language,
+      diaries: diariesState.diaries,
+      onDiariesChanged: diariesState.fetchDiaries,
       t,
     },
     profileRouteProps: {

@@ -101,3 +101,24 @@ export const createAuthFetch = (
     return fetch(url, { ...options, headers });
   };
 };
+
+export interface ServiceResult<T> {
+  data: T | null;
+  error: string | null;
+}
+
+/** Resolves a JSON request to its data or a readable error, never throwing. */
+export async function requestJson<T>(request: Promise<Response>, fallbackError: string): Promise<ServiceResult<T>> {
+  try {
+    const response = await request;
+    if (!response.ok) {
+      return { data: null, error: await readApiErrorMessage(response, fallbackError) };
+    }
+
+    const data = await safeJsonParse<T>(response);
+    return data ? { data, error: null } : { data: null, error: fallbackError };
+  } catch (error) {
+    console.error(`${fallbackError}:`, error);
+    return { data: null, error: fallbackError };
+  }
+}

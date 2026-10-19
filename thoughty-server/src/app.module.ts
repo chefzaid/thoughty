@@ -16,6 +16,7 @@ import { CloudSyncModule } from './modules/cloud-sync';
 import { MetricsModule } from './modules/metrics';
 import { FeatureRequestsModule } from './modules/feature-requests';
 import { SocialModule } from './modules/social';
+import { MemoirModule } from './modules/memoir';
 import { HealthController } from './health.controller';
 import {
   createThrottlerModuleOptions,
@@ -53,6 +54,7 @@ import {
     MetricsModule,
     FeatureRequestsModule,
     SocialModule,
+    MemoirModule,
   ],
   providers: [
     // Global JWT Auth Guard

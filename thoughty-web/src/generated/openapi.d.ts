@@ -1705,6 +1705,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/memoir": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the guided memoir: program settings, questions by chapter, and progress */
+        get: operations["MemoirController_getOverview"];
+        put?: never;
+        /** Start the guided memoir in a new or existing diary */
+        post: operations["MemoirController_start"];
+        /** Stop the guided memoir; answers stay in the journal */
+        delete: operations["MemoirController_leave"];
+        options?: never;
+        head?: never;
+        /** Change memoir settings, or pause and resume weekly questions */
+        patch: operations["MemoirController_update"];
+        trace?: never;
+    };
+    "/api/memoir/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Replace this week's question with the next unanswered one */
+        post: operations["MemoirController_skip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/memoir/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer a memoir question as a private entry in the memoir diary */
+        post: operations["MemoirController_answer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4334,6 +4388,302 @@ export interface components {
             karma: number;
             stats: components["schemas"]["AchievementStatsDto"];
             badges: components["schemas"]["AchievementBadgeDto"][];
+        };
+        /**
+         * @example {
+         *       "diaryId": 4,
+         *       "status": "active",
+         *       "emailEnabled": true,
+         *       "emailAvailable": false,
+         *       "deliveryWeekday": 0,
+         *       "timeZone": "Europe/Paris",
+         *       "currentQuestionId": "childhood-play",
+         *       "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+         *       "startedAt": "2026-10-04T15:20:00.000Z"
+         *     }
+         */
+        MemoirProgramDto: {
+            /**
+             * @description Null when the memoir diary was deleted
+             * @example 4
+             */
+            diaryId: number | null;
+            /**
+             * @example active
+             * @enum {string}
+             */
+            status: "active" | "paused";
+            /** @example true */
+            emailEnabled: boolean;
+            /**
+             * @description Whether weekly emails can reach this account (mail is configured and the address verified)
+             * @example false
+             */
+            emailAvailable: boolean;
+            /** @example 0 */
+            deliveryWeekday: number;
+            /** @example Europe/Paris */
+            timeZone: string;
+            /**
+             * @description This week's question; null once every question is answered
+             * @example childhood-play
+             */
+            currentQuestionId: string | null;
+            /** @example 2026-10-25T08:00:00.000Z */
+            nextDeliveryAt: string;
+            /** @example 2026-10-04T15:20:00.000Z */
+            startedAt: string;
+        };
+        /**
+         * @example {
+         *       "en": "What did the home you grew up in look, sound, and smell like?",
+         *       "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *     }
+         */
+        LocalizedTextDto: {
+            /** @example What did the home you grew up in look, sound, and smell like? */
+            en: string;
+            /** @example À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ? */
+            fr: string;
+        };
+        /**
+         * @example {
+         *       "entryId": 812,
+         *       "answeredAt": "2026-10-12T09:41:00.000Z"
+         *     }
+         */
+        MemoirAnswerRefDto: {
+            /** @example 812 */
+            entryId: number;
+            /** @example 2026-10-12T09:41:00.000Z */
+            answeredAt: string;
+        };
+        /**
+         * @example {
+         *       "id": "childhood-home",
+         *       "text": {
+         *         "en": "What did the home you grew up in look, sound, and smell like?",
+         *         "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *       },
+         *       "answer": {
+         *         "entryId": 812,
+         *         "answeredAt": "2026-10-12T09:41:00.000Z"
+         *       }
+         *     }
+         */
+        MemoirQuestionDto: {
+            /** @example childhood-home */
+            id: string;
+            text: components["schemas"]["LocalizedTextDto"];
+            answer: components["schemas"]["MemoirAnswerRefDto"] | null;
+        };
+        /**
+         * @example {
+         *       "id": "childhood",
+         *       "title": {
+         *         "en": "What did the home you grew up in look, sound, and smell like?",
+         *         "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *       },
+         *       "questions": [
+         *         {
+         *           "id": "childhood-home",
+         *           "text": {
+         *             "en": "What did the home you grew up in look, sound, and smell like?",
+         *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *           },
+         *           "answer": {
+         *             "entryId": 812,
+         *             "answeredAt": "2026-10-12T09:41:00.000Z"
+         *           }
+         *         }
+         *       ]
+         *     }
+         */
+        MemoirChapterDto: {
+            /** @example childhood */
+            id: string;
+            title: components["schemas"]["LocalizedTextDto"];
+            questions: components["schemas"]["MemoirQuestionDto"][];
+        };
+        /**
+         * @example {
+         *       "answered": 12,
+         *       "total": 52,
+         *       "words": 8400,
+         *       "estimatedPages": 34
+         *     }
+         */
+        MemoirProgressDto: {
+            /** @example 12 */
+            answered: number;
+            /** @example 52 */
+            total: number;
+            /**
+             * @description Words written in the answers, question headings excluded
+             * @example 8400
+             */
+            words: number;
+            /**
+             * @description Approximate printed pages at 250 words per page
+             * @example 34
+             */
+            estimatedPages: number;
+        };
+        /**
+         * @example {
+         *       "program": {
+         *         "diaryId": 4,
+         *         "status": "active",
+         *         "emailEnabled": true,
+         *         "emailAvailable": false,
+         *         "deliveryWeekday": 0,
+         *         "timeZone": "Europe/Paris",
+         *         "currentQuestionId": "childhood-play",
+         *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+         *         "startedAt": "2026-10-04T15:20:00.000Z"
+         *       },
+         *       "chapters": [
+         *         {
+         *           "id": "childhood",
+         *           "title": {
+         *             "en": "What did the home you grew up in look, sound, and smell like?",
+         *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *           },
+         *           "questions": [
+         *             {
+         *               "id": "childhood-home",
+         *               "text": {
+         *                 "en": "What did the home you grew up in look, sound, and smell like?",
+         *                 "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+         *               },
+         *               "answer": {
+         *                 "entryId": 812,
+         *                 "answeredAt": "2026-10-12T09:41:00.000Z"
+         *               }
+         *             }
+         *           ]
+         *         }
+         *       ],
+         *       "progress": {
+         *         "answered": 12,
+         *         "total": 52,
+         *         "words": 8400,
+         *         "estimatedPages": 34
+         *       }
+         *     }
+         */
+        MemoirOverviewDto: {
+            /** @description Null until the program is started */
+            program: components["schemas"]["MemoirProgramDto"] | null;
+            chapters: components["schemas"]["MemoirChapterDto"][];
+            progress: components["schemas"]["MemoirProgressDto"];
+        };
+        /**
+         * @example {
+         *       "diaryId": 4,
+         *       "diaryName": "My memoir",
+         *       "emailEnabled": true,
+         *       "deliveryWeekday": 0,
+         *       "timeZone": "Europe/Paris"
+         *     }
+         */
+        StartMemoirDto: {
+            /**
+             * @description An existing diary to collect the answers; omit to create one named diaryName
+             * @example 4
+             */
+            diaryId?: number;
+            /**
+             * @description Name of the diary to create (or reuse) when diaryId is omitted
+             * @example My memoir
+             */
+            diaryName?: string;
+            /**
+             * @description Email each weekly question
+             * @example true
+             */
+            emailEnabled: boolean;
+            /**
+             * @description 0 = Sunday through 6 = Saturday
+             * @example 0
+             */
+            deliveryWeekday: number;
+            /**
+             * @description IANA time zone for the 09:00 weekly delivery
+             * @example Europe/Paris
+             */
+            timeZone: string;
+        };
+        /**
+         * @example {
+         *       "diaryId": 4,
+         *       "emailEnabled": false,
+         *       "deliveryWeekday": 3,
+         *       "timeZone": "Europe/Paris",
+         *       "status": "paused"
+         *     }
+         */
+        UpdateMemoirDto: {
+            /** @example 4 */
+            diaryId?: number;
+            /** @example false */
+            emailEnabled?: boolean;
+            /** @example 3 */
+            deliveryWeekday?: number;
+            /** @example Europe/Paris */
+            timeZone?: string;
+            /**
+             * @description Paused programs get no new weekly question or email
+             * @example paused
+             * @enum {string}
+             */
+            status?: "active" | "paused";
+        };
+        /**
+         * @example {
+         *       "success": true
+         *     }
+         */
+        MemoirLeftDto: {
+            /** @example true */
+            success: boolean;
+        };
+        /**
+         * @example {
+         *       "questionId": "childhood-home",
+         *       "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
+         *       "attachmentIds": [
+         *         31
+         *       ]
+         *     }
+         */
+        AnswerMemoirQuestionDto: {
+            /** @example childhood-home */
+            questionId: string;
+            /**
+             * @description The answer; may be empty when a voice recording is attached
+             * @example A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.
+             */
+            text: string;
+            /**
+             * @description Uploaded attachments (such as a voice recording) to keep with the answer
+             * @example [
+             *       31
+             *     ]
+             */
+            attachmentIds?: number[];
+        };
+        /**
+         * @example {
+         *       "questionId": "childhood-home",
+         *       "entryId": 812
+         *     }
+         */
+        MemoirAnswerResultDto: {
+            /** @example childhood-home */
+            questionId: string;
+            /** @example 812 */
+            entryId: number;
         };
     };
     responses: never;
@@ -8794,6 +9144,397 @@ export interface operations {
                      */
                     "application/json": components["schemas"]["AchievementsResponseDto"];
                 };
+            };
+        };
+    };
+    MemoirController_getOverview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The memoir overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "program": {
+                     *         "diaryId": 4,
+                     *         "status": "active",
+                     *         "emailEnabled": true,
+                     *         "emailAvailable": false,
+                     *         "deliveryWeekday": 0,
+                     *         "timeZone": "Europe/Paris",
+                     *         "currentQuestionId": "childhood-play",
+                     *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+                     *         "startedAt": "2026-10-04T15:20:00.000Z"
+                     *       },
+                     *       "chapters": [
+                     *         {
+                     *           "id": "childhood",
+                     *           "title": {
+                     *             "en": "What did the home you grew up in look, sound, and smell like?",
+                     *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *           },
+                     *           "questions": [
+                     *             {
+                     *               "id": "childhood-home",
+                     *               "text": {
+                     *                 "en": "What did the home you grew up in look, sound, and smell like?",
+                     *                 "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *               },
+                     *               "answer": {
+                     *                 "entryId": 812,
+                     *                 "answeredAt": "2026-10-12T09:41:00.000Z"
+                     *               }
+                     *             }
+                     *           ]
+                     *         }
+                     *       ],
+                     *       "progress": {
+                     *         "answered": 12,
+                     *         "total": 52,
+                     *         "words": 8400,
+                     *         "estimatedPages": 34
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MemoirOverviewDto"];
+                };
+            };
+        };
+    };
+    MemoirController_start: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "diaryId": 4,
+                 *       "diaryName": "My memoir",
+                 *       "emailEnabled": true,
+                 *       "deliveryWeekday": 0,
+                 *       "timeZone": "Europe/Paris"
+                 *     }
+                 */
+                "application/json": components["schemas"]["StartMemoirDto"];
+            };
+        };
+        responses: {
+            /** @description The memoir overview with the first question */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "program": {
+                     *         "diaryId": 4,
+                     *         "status": "active",
+                     *         "emailEnabled": true,
+                     *         "emailAvailable": false,
+                     *         "deliveryWeekday": 0,
+                     *         "timeZone": "Europe/Paris",
+                     *         "currentQuestionId": "childhood-play",
+                     *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+                     *         "startedAt": "2026-10-04T15:20:00.000Z"
+                     *       },
+                     *       "chapters": [
+                     *         {
+                     *           "id": "childhood",
+                     *           "title": {
+                     *             "en": "What did the home you grew up in look, sound, and smell like?",
+                     *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *           },
+                     *           "questions": [
+                     *             {
+                     *               "id": "childhood-home",
+                     *               "text": {
+                     *                 "en": "What did the home you grew up in look, sound, and smell like?",
+                     *                 "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *               },
+                     *               "answer": {
+                     *                 "entryId": 812,
+                     *                 "answeredAt": "2026-10-12T09:41:00.000Z"
+                     *               }
+                     *             }
+                     *           ]
+                     *         }
+                     *       ],
+                     *       "progress": {
+                     *         "answered": 12,
+                     *         "total": 52,
+                     *         "words": 8400,
+                     *         "estimatedPages": 34
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MemoirOverviewDto"];
+                };
+            };
+            /** @description The chosen diary does not belong to you */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The memoir is already started */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MemoirController_leave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The memoir program was removed */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MemoirLeftDto"];
+                };
+            };
+        };
+    };
+    MemoirController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "diaryId": 4,
+                 *       "emailEnabled": false,
+                 *       "deliveryWeekday": 3,
+                 *       "timeZone": "Europe/Paris",
+                 *       "status": "paused"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateMemoirDto"];
+            };
+        };
+        responses: {
+            /** @description The updated memoir overview */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "program": {
+                     *         "diaryId": 4,
+                     *         "status": "active",
+                     *         "emailEnabled": true,
+                     *         "emailAvailable": false,
+                     *         "deliveryWeekday": 0,
+                     *         "timeZone": "Europe/Paris",
+                     *         "currentQuestionId": "childhood-play",
+                     *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+                     *         "startedAt": "2026-10-04T15:20:00.000Z"
+                     *       },
+                     *       "chapters": [
+                     *         {
+                     *           "id": "childhood",
+                     *           "title": {
+                     *             "en": "What did the home you grew up in look, sound, and smell like?",
+                     *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *           },
+                     *           "questions": [
+                     *             {
+                     *               "id": "childhood-home",
+                     *               "text": {
+                     *                 "en": "What did the home you grew up in look, sound, and smell like?",
+                     *                 "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *               },
+                     *               "answer": {
+                     *                 "entryId": 812,
+                     *                 "answeredAt": "2026-10-12T09:41:00.000Z"
+                     *               }
+                     *             }
+                     *           ]
+                     *         }
+                     *       ],
+                     *       "progress": {
+                     *         "answered": 12,
+                     *         "total": 52,
+                     *         "words": 8400,
+                     *         "estimatedPages": 34
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MemoirOverviewDto"];
+                };
+            };
+            /** @description The memoir is not started or the diary does not belong to you */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MemoirController_skip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The memoir overview with the new question */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "program": {
+                     *         "diaryId": 4,
+                     *         "status": "active",
+                     *         "emailEnabled": true,
+                     *         "emailAvailable": false,
+                     *         "deliveryWeekday": 0,
+                     *         "timeZone": "Europe/Paris",
+                     *         "currentQuestionId": "childhood-play",
+                     *         "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+                     *         "startedAt": "2026-10-04T15:20:00.000Z"
+                     *       },
+                     *       "chapters": [
+                     *         {
+                     *           "id": "childhood",
+                     *           "title": {
+                     *             "en": "What did the home you grew up in look, sound, and smell like?",
+                     *             "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *           },
+                     *           "questions": [
+                     *             {
+                     *               "id": "childhood-home",
+                     *               "text": {
+                     *                 "en": "What did the home you grew up in look, sound, and smell like?",
+                     *                 "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                     *               },
+                     *               "answer": {
+                     *                 "entryId": 812,
+                     *                 "answeredAt": "2026-10-12T09:41:00.000Z"
+                     *               }
+                     *             }
+                     *           ]
+                     *         }
+                     *       ],
+                     *       "progress": {
+                     *         "answered": 12,
+                     *         "total": 52,
+                     *         "words": 8400,
+                     *         "estimatedPages": 34
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MemoirOverviewDto"];
+                };
+            };
+            /** @description The memoir is not started */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    MemoirController_answer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "questionId": "childhood-home",
+                 *       "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
+                 *       "attachmentIds": [
+                 *         31
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["AnswerMemoirQuestionDto"];
+            };
+        };
+        responses: {
+            /** @description The entry holding the answer */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "questionId": "childhood-home",
+                     *       "entryId": 812
+                     *     }
+                     */
+                    "application/json": components["schemas"]["MemoirAnswerResultDto"];
+                };
+            };
+            /** @description The answer is empty and has no recording */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown question, memoir not started, or attachment not yours */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The question already has an answer, or the memoir has no diary */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

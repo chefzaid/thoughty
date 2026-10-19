@@ -21,6 +21,7 @@ describe('cloud-sync-worker bootstrap', () => {
     const createApplicationContext = jest.fn().mockResolvedValue(app);
     const FakeAppModule = class {};
     const FakeWorkerService = class {};
+    const FakeMemoirWorkerService = class {};
 
     jest.spyOn(process, 'once').mockImplementation(((signal: string, handler: () => void) => {
       handlers[signal] = handler;
@@ -32,15 +33,20 @@ describe('cloud-sync-worker bootstrap', () => {
     jest.doMock('./app.module', () => ({ AppModule: FakeAppModule }));
     jest.doMock('./common', () => ({ JsonLogger: jest.fn(() => logger) }));
     jest.doMock('./modules/cloud-sync/cloud-sync-worker.service', () => ({ CloudSyncWorkerService: FakeWorkerService }));
+    jest.doMock('./modules/memoir/memoir-delivery-worker.service', () => ({
+      MemoirDeliveryWorkerService: FakeMemoirWorkerService,
+    }));
 
     await import('./cloud-sync-worker');
+    await flushBootstrap();
     await flushBootstrap();
 
     expect(createApplicationContext).toHaveBeenCalledWith(FakeAppModule, {
       logger,
     });
     expect(app.get).toHaveBeenCalledWith(FakeWorkerService);
-    expect(start).toHaveBeenCalled();
+    expect(app.get).toHaveBeenCalledWith(FakeMemoirWorkerService);
+    expect(start).toHaveBeenCalledTimes(2);
     expect(typeof handlers.SIGINT).toBe('function');
     expect(typeof handlers.SIGTERM).toBe('function');
 
@@ -62,6 +68,7 @@ describe('cloud-sync-worker bootstrap', () => {
     jest.doMock('./app.module', () => ({ AppModule: class {} }));
     jest.doMock('./common', () => ({ JsonLogger: jest.fn(() => logger) }));
     jest.doMock('./modules/cloud-sync/cloud-sync-worker.service', () => ({ CloudSyncWorkerService: class {} }));
+    jest.doMock('./modules/memoir/memoir-delivery-worker.service', () => ({ MemoirDeliveryWorkerService: class {} }));
 
     await import('./cloud-sync-worker');
     await flushBootstrap();

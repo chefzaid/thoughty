@@ -1,4 +1,4 @@
-import { readApiErrorMessage, safeJsonParse } from './base';
+import { requestJson, type ServiceResult } from './base';
 import type { components, paths } from '../../generated/openapi';
 
 export type PublicFeedScope = 'community' | 'following' | 'mine';
@@ -16,27 +16,7 @@ export type Leaderboard = components['schemas']['LeaderboardResponseDto'];
 export type LeaderboardPeriod = Leaderboard['period'];
 export type Achievements = components['schemas']['AchievementsResponseDto'];
 
-export interface ServiceResult<T> {
-  data: T | null;
-  error: string | null;
-}
-
 export type PublicFeedResult = ServiceResult<PublicFeedResponse>;
-
-async function requestJson<T>(request: Promise<Response>, fallbackError: string): Promise<ServiceResult<T>> {
-  try {
-    const response = await request;
-    if (!response.ok) {
-      return { data: null, error: await readApiErrorMessage(response, fallbackError) };
-    }
-
-    const data = await safeJsonParse<T>(response);
-    return data ? { data, error: null } : { data: null, error: fallbackError };
-  } catch (error) {
-    console.error(`${fallbackError}:`, error);
-    return { data: null, error: fallbackError };
-  }
-}
 
 export const createFeedService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => ({
   fetchPublicFeed(scope: PublicFeedScope, page: number, limit = 10): Promise<PublicFeedResult> {

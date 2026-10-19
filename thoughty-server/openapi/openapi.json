@@ -6322,6 +6322,405 @@
           "Social"
         ]
       }
+    },
+    "/api/memoir": {
+      "get": {
+        "operationId": "MemoirController_getOverview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The memoir overview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoirOverviewDto"
+                },
+                "example": {
+                  "program": {
+                    "diaryId": 4,
+                    "status": "active",
+                    "emailEnabled": true,
+                    "emailAvailable": false,
+                    "deliveryWeekday": 0,
+                    "timeZone": "Europe/Paris",
+                    "currentQuestionId": "childhood-play",
+                    "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+                    "startedAt": "2026-10-04T15:20:00.000Z"
+                  },
+                  "chapters": [
+                    {
+                      "id": "childhood",
+                      "title": {
+                        "en": "What did the home you grew up in look, sound, and smell like?",
+                        "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                      },
+                      "questions": [
+                        {
+                          "id": "childhood-home",
+                          "text": {
+                            "en": "What did the home you grew up in look, sound, and smell like?",
+                            "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                          },
+                          "answer": {
+                            "entryId": 812,
+                            "answeredAt": "2026-10-12T09:41:00.000Z"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "progress": {
+                    "answered": 12,
+                    "total": 52,
+                    "words": 8400,
+                    "estimatedPages": 34
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the guided memoir: program settings, questions by chapter, and progress",
+        "tags": [
+          "Memoir"
+        ]
+      },
+      "post": {
+        "operationId": "MemoirController_start",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartMemoirDto"
+              },
+              "example": {
+                "diaryId": 4,
+                "diaryName": "My memoir",
+                "emailEnabled": true,
+                "deliveryWeekday": 0,
+                "timeZone": "Europe/Paris"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The memoir overview with the first question",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoirOverviewDto"
+                },
+                "example": {
+                  "program": {
+                    "diaryId": 4,
+                    "status": "active",
+                    "emailEnabled": true,
+                    "emailAvailable": false,
+                    "deliveryWeekday": 0,
+                    "timeZone": "Europe/Paris",
+                    "currentQuestionId": "childhood-play",
+                    "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+                    "startedAt": "2026-10-04T15:20:00.000Z"
+                  },
+                  "chapters": [
+                    {
+                      "id": "childhood",
+                      "title": {
+                        "en": "What did the home you grew up in look, sound, and smell like?",
+                        "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                      },
+                      "questions": [
+                        {
+                          "id": "childhood-home",
+                          "text": {
+                            "en": "What did the home you grew up in look, sound, and smell like?",
+                            "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                          },
+                          "answer": {
+                            "entryId": 812,
+                            "answeredAt": "2026-10-12T09:41:00.000Z"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "progress": {
+                    "answered": 12,
+                    "total": 52,
+                    "words": 8400,
+                    "estimatedPages": 34
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The chosen diary does not belong to you"
+          },
+          "409": {
+            "description": "The memoir is already started"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start the guided memoir in a new or existing diary",
+        "tags": [
+          "Memoir"
+        ]
+      },
+      "patch": {
+        "operationId": "MemoirController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMemoirDto"
+              },
+              "example": {
+                "diaryId": 4,
+                "emailEnabled": false,
+                "deliveryWeekday": 3,
+                "timeZone": "Europe/Paris",
+                "status": "paused"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The updated memoir overview",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoirOverviewDto"
+                },
+                "example": {
+                  "program": {
+                    "diaryId": 4,
+                    "status": "active",
+                    "emailEnabled": true,
+                    "emailAvailable": false,
+                    "deliveryWeekday": 0,
+                    "timeZone": "Europe/Paris",
+                    "currentQuestionId": "childhood-play",
+                    "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+                    "startedAt": "2026-10-04T15:20:00.000Z"
+                  },
+                  "chapters": [
+                    {
+                      "id": "childhood",
+                      "title": {
+                        "en": "What did the home you grew up in look, sound, and smell like?",
+                        "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                      },
+                      "questions": [
+                        {
+                          "id": "childhood-home",
+                          "text": {
+                            "en": "What did the home you grew up in look, sound, and smell like?",
+                            "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                          },
+                          "answer": {
+                            "entryId": 812,
+                            "answeredAt": "2026-10-12T09:41:00.000Z"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "progress": {
+                    "answered": 12,
+                    "total": 52,
+                    "words": 8400,
+                    "estimatedPages": 34
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The memoir is not started or the diary does not belong to you"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change memoir settings, or pause and resume weekly questions",
+        "tags": [
+          "Memoir"
+        ]
+      },
+      "delete": {
+        "operationId": "MemoirController_leave",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The memoir program was removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoirLeftDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Stop the guided memoir; answers stay in the journal",
+        "tags": [
+          "Memoir"
+        ]
+      }
+    },
+    "/api/memoir/skip": {
+      "post": {
+        "operationId": "MemoirController_skip",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The memoir overview with the new question",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoirOverviewDto"
+                },
+                "example": {
+                  "program": {
+                    "diaryId": 4,
+                    "status": "active",
+                    "emailEnabled": true,
+                    "emailAvailable": false,
+                    "deliveryWeekday": 0,
+                    "timeZone": "Europe/Paris",
+                    "currentQuestionId": "childhood-play",
+                    "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+                    "startedAt": "2026-10-04T15:20:00.000Z"
+                  },
+                  "chapters": [
+                    {
+                      "id": "childhood",
+                      "title": {
+                        "en": "What did the home you grew up in look, sound, and smell like?",
+                        "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                      },
+                      "questions": [
+                        {
+                          "id": "childhood-home",
+                          "text": {
+                            "en": "What did the home you grew up in look, sound, and smell like?",
+                            "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                          },
+                          "answer": {
+                            "entryId": 812,
+                            "answeredAt": "2026-10-12T09:41:00.000Z"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "progress": {
+                    "answered": 12,
+                    "total": 52,
+                    "words": 8400,
+                    "estimatedPages": 34
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The memoir is not started"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Replace this week's question with the next unanswered one",
+        "tags": [
+          "Memoir"
+        ]
+      }
+    },
+    "/api/memoir/answers": {
+      "post": {
+        "operationId": "MemoirController_answer",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerMemoirQuestionDto"
+              },
+              "example": {
+                "questionId": "childhood-home",
+                "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
+                "attachmentIds": [
+                  31
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "The entry holding the answer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoirAnswerResultDto"
+                },
+                "example": {
+                  "questionId": "childhood-home",
+                  "entryId": 812
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The answer is empty and has no recording"
+          },
+          "404": {
+            "description": "Unknown question, memoir not started, or attachment not yours"
+          },
+          "409": {
+            "description": "The question already has an answer, or the memoir has no diary"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Answer a memoir question as a private entry in the memoir diary",
+        "tags": [
+          "Memoir"
+        ]
+      }
     }
   },
   "info": {
@@ -10783,6 +11182,467 @@
               "earned": false
             }
           ]
+        }
+      },
+      "MemoirProgramDto": {
+        "type": "object",
+        "properties": {
+          "diaryId": {
+            "type": "number",
+            "nullable": true,
+            "example": 4,
+            "description": "Null when the memoir diary was deleted"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused"
+            ],
+            "example": "active"
+          },
+          "emailEnabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "emailAvailable": {
+            "type": "boolean",
+            "example": false,
+            "description": "Whether weekly emails can reach this account (mail is configured and the address verified)"
+          },
+          "deliveryWeekday": {
+            "type": "number",
+            "example": 0,
+            "minimum": 0,
+            "maximum": 6
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris"
+          },
+          "currentQuestionId": {
+            "type": "string",
+            "nullable": true,
+            "example": "childhood-play",
+            "description": "This week's question; null once every question is answered"
+          },
+          "nextDeliveryAt": {
+            "type": "string",
+            "example": "2026-10-25T08:00:00.000Z"
+          },
+          "startedAt": {
+            "type": "string",
+            "example": "2026-10-04T15:20:00.000Z"
+          }
+        },
+        "required": [
+          "diaryId",
+          "status",
+          "emailEnabled",
+          "emailAvailable",
+          "deliveryWeekday",
+          "timeZone",
+          "currentQuestionId",
+          "nextDeliveryAt",
+          "startedAt"
+        ],
+        "example": {
+          "diaryId": 4,
+          "status": "active",
+          "emailEnabled": true,
+          "emailAvailable": false,
+          "deliveryWeekday": 0,
+          "timeZone": "Europe/Paris",
+          "currentQuestionId": "childhood-play",
+          "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+          "startedAt": "2026-10-04T15:20:00.000Z"
+        }
+      },
+      "LocalizedTextDto": {
+        "type": "object",
+        "properties": {
+          "en": {
+            "type": "string",
+            "example": "What did the home you grew up in look, sound, and smell like?"
+          },
+          "fr": {
+            "type": "string",
+            "example": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+          }
+        },
+        "required": [
+          "en",
+          "fr"
+        ],
+        "example": {
+          "en": "What did the home you grew up in look, sound, and smell like?",
+          "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+        }
+      },
+      "MemoirAnswerRefDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "example": 812
+          },
+          "answeredAt": {
+            "type": "string",
+            "example": "2026-10-12T09:41:00.000Z"
+          }
+        },
+        "required": [
+          "entryId",
+          "answeredAt"
+        ],
+        "example": {
+          "entryId": 812,
+          "answeredAt": "2026-10-12T09:41:00.000Z"
+        }
+      },
+      "MemoirQuestionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "childhood-home"
+          },
+          "text": {
+            "$ref": "#/components/schemas/LocalizedTextDto"
+          },
+          "answer": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemoirAnswerRefDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "answer"
+        ],
+        "example": {
+          "id": "childhood-home",
+          "text": {
+            "en": "What did the home you grew up in look, sound, and smell like?",
+            "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+          },
+          "answer": {
+            "entryId": 812,
+            "answeredAt": "2026-10-12T09:41:00.000Z"
+          }
+        }
+      },
+      "MemoirChapterDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "childhood"
+          },
+          "title": {
+            "$ref": "#/components/schemas/LocalizedTextDto"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoirQuestionDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "questions"
+        ],
+        "example": {
+          "id": "childhood",
+          "title": {
+            "en": "What did the home you grew up in look, sound, and smell like?",
+            "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+          },
+          "questions": [
+            {
+              "id": "childhood-home",
+              "text": {
+                "en": "What did the home you grew up in look, sound, and smell like?",
+                "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+              },
+              "answer": {
+                "entryId": 812,
+                "answeredAt": "2026-10-12T09:41:00.000Z"
+              }
+            }
+          ]
+        }
+      },
+      "MemoirProgressDto": {
+        "type": "object",
+        "properties": {
+          "answered": {
+            "type": "number",
+            "example": 12
+          },
+          "total": {
+            "type": "number",
+            "example": 52
+          },
+          "words": {
+            "type": "number",
+            "example": 8400,
+            "description": "Words written in the answers, question headings excluded"
+          },
+          "estimatedPages": {
+            "type": "number",
+            "example": 34,
+            "description": "Approximate printed pages at 250 words per page"
+          }
+        },
+        "required": [
+          "answered",
+          "total",
+          "words",
+          "estimatedPages"
+        ],
+        "example": {
+          "answered": 12,
+          "total": 52,
+          "words": 8400,
+          "estimatedPages": 34
+        }
+      },
+      "MemoirOverviewDto": {
+        "type": "object",
+        "properties": {
+          "program": {
+            "nullable": true,
+            "description": "Null until the program is started",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MemoirProgramDto"
+              }
+            ]
+          },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MemoirChapterDto"
+            }
+          },
+          "progress": {
+            "$ref": "#/components/schemas/MemoirProgressDto"
+          }
+        },
+        "required": [
+          "program",
+          "chapters",
+          "progress"
+        ],
+        "example": {
+          "program": {
+            "diaryId": 4,
+            "status": "active",
+            "emailEnabled": true,
+            "emailAvailable": false,
+            "deliveryWeekday": 0,
+            "timeZone": "Europe/Paris",
+            "currentQuestionId": "childhood-play",
+            "nextDeliveryAt": "2026-10-25T08:00:00.000Z",
+            "startedAt": "2026-10-04T15:20:00.000Z"
+          },
+          "chapters": [
+            {
+              "id": "childhood",
+              "title": {
+                "en": "What did the home you grew up in look, sound, and smell like?",
+                "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+              },
+              "questions": [
+                {
+                  "id": "childhood-home",
+                  "text": {
+                    "en": "What did the home you grew up in look, sound, and smell like?",
+                    "fr": "À quoi ressemblait la maison de votre enfance : ses pièces, ses bruits, ses odeurs ?"
+                  },
+                  "answer": {
+                    "entryId": 812,
+                    "answeredAt": "2026-10-12T09:41:00.000Z"
+                  }
+                }
+              ]
+            }
+          ],
+          "progress": {
+            "answered": 12,
+            "total": 52,
+            "words": 8400,
+            "estimatedPages": 34
+          }
+        }
+      },
+      "StartMemoirDto": {
+        "type": "object",
+        "properties": {
+          "diaryId": {
+            "type": "number",
+            "example": 4,
+            "description": "An existing diary to collect the answers; omit to create one named diaryName"
+          },
+          "diaryName": {
+            "type": "string",
+            "example": "My memoir",
+            "maxLength": 100,
+            "description": "Name of the diary to create (or reuse) when diaryId is omitted"
+          },
+          "emailEnabled": {
+            "type": "boolean",
+            "example": true,
+            "description": "Email each weekly question"
+          },
+          "deliveryWeekday": {
+            "type": "number",
+            "example": 0,
+            "minimum": 0,
+            "maximum": 6,
+            "description": "0 = Sunday through 6 = Saturday"
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "maxLength": 64,
+            "description": "IANA time zone for the 09:00 weekly delivery"
+          }
+        },
+        "required": [
+          "emailEnabled",
+          "deliveryWeekday",
+          "timeZone"
+        ],
+        "example": {
+          "diaryId": 4,
+          "diaryName": "My memoir",
+          "emailEnabled": true,
+          "deliveryWeekday": 0,
+          "timeZone": "Europe/Paris"
+        }
+      },
+      "UpdateMemoirDto": {
+        "type": "object",
+        "properties": {
+          "diaryId": {
+            "type": "number",
+            "example": 4
+          },
+          "emailEnabled": {
+            "type": "boolean",
+            "example": false
+          },
+          "deliveryWeekday": {
+            "type": "number",
+            "example": 3,
+            "minimum": 0,
+            "maximum": 6
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "maxLength": 64
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "paused"
+            ],
+            "example": "paused",
+            "description": "Paused programs get no new weekly question or email"
+          }
+        },
+        "example": {
+          "diaryId": 4,
+          "emailEnabled": false,
+          "deliveryWeekday": 3,
+          "timeZone": "Europe/Paris",
+          "status": "paused"
+        }
+      },
+      "MemoirLeftDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "example": {
+          "success": true
+        }
+      },
+      "AnswerMemoirQuestionDto": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "example": "childhood-home",
+            "maxLength": 64
+          },
+          "text": {
+            "type": "string",
+            "example": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
+            "maxLength": 45000,
+            "description": "The answer; may be empty when a voice recording is attached"
+          },
+          "attachmentIds": {
+            "example": [
+              31
+            ],
+            "maxItems": 5,
+            "description": "Uploaded attachments (such as a voice recording) to keep with the answer",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "questionId",
+          "text"
+        ],
+        "example": {
+          "questionId": "childhood-home",
+          "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
+          "attachmentIds": [
+            31
+          ]
+        }
+      },
+      "MemoirAnswerResultDto": {
+        "type": "object",
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "example": "childhood-home"
+          },
+          "entryId": {
+            "type": "number",
+            "example": 812
+          }
+        },
+        "required": [
+          "questionId",
+          "entryId"
+        ],
+        "example": {
+          "questionId": "childhood-home",
+          "entryId": 812
         }
       }
     }

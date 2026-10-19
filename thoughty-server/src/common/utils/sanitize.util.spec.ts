@@ -1,4 +1,4 @@
-import { sanitizeString, sanitizeObject } from './sanitize.util';
+import { escapeHtml, sanitizeString, sanitizeObject } from './sanitize.util';
 
 describe('sanitize.util', () => {
   describe('sanitizeString', () => {
@@ -209,6 +209,14 @@ describe('sanitize.util', () => {
       expect(result.items[0]).not.toContain('<script>');
       expect((result.items[1] as { nested: string }).nested).not.toContain('<div>');
       expect((result.items[2] as { deep: string }[])[0].deep).not.toContain('<span>');
+    });
+  });
+
+  describe('escapeHtml', () => {
+    it('escapes markup and both quote styles', () => {
+      expect(escapeHtml(`<a href="x" title='y'>Tom & Jerry</a>`)).toBe(
+        '&lt;a href=&quot;x&quot; title=&#39;y&#39;&gt;Tom &amp; Jerry&lt;/a&gt;',
+      );
     });
   });
 });

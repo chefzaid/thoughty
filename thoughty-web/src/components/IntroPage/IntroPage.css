@@ -334,6 +334,10 @@
     gap: 1rem;
 }
 
+.feature-list .feature-highlight {
+    grid-column: 1 / -1;
+}
+
 .feature-item,
 .landing-screenshot,
 .landing-cta {
