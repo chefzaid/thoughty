@@ -216,7 +216,7 @@ describe('ImportExport book section', () => {
 
         await renderBookSection();
 
-        fireEvent.change(screen.getByLabelText('exportFormat'), { target: { value: 'html' } });
+        fireEvent.change(screen.getByLabelText('bookFormatLabel'), { target: { value: 'html' } });
         fireEvent.change(screen.getByLabelText('bookTagScope'), { target: { value: 'first' } });
         fireEvent.click(screen.getByText('bookIncludeToc'));
         fireEvent.click(screen.getByText('downloadBook'));
@@ -318,7 +318,7 @@ describe('ImportExport book section', () => {
 
         await waitFor(() => expect(screen.getByLabelText('bookCloudProvider')).toHaveValue('google_drive'));
         fireEvent.change(screen.getByLabelText('bookTitleLabel'), { target: { value: 'My Year' } });
-        fireEvent.change(screen.getByLabelText('exportFormat'), { target: { value: 'epub' } });
+        fireEvent.change(screen.getByLabelText('bookFormatLabel'), { target: { value: 'epub' } });
         fireEvent.change(screen.getByLabelText('bookCloudProvider'), { target: { value: 'dropbox' } });
         fireEvent.click(screen.getByRole('button', { name: 'uploadBook' }));
 

@@ -117,7 +117,7 @@ export function BookSection({
 
                 <div className="book-options-grid book-options-grid--settings">
                     <div className="export-option-group export-option-group--format book-field">
-                        <label htmlFor="book-format">{t('exportFormat')}</label>
+                        <label htmlFor="book-format">{t('bookFormatLabel')}</label>
                         <select
                             id="book-format"
                             value={options.format}

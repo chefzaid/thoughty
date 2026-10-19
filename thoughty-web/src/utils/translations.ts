@@ -381,6 +381,7 @@ type CoreTranslationKey =
   | "bookTitlePlaceholder"
   | "bookAuthorLabel"
   | "bookAuthorPlaceholder"
+  | "bookFormatLabel"
   | "bookFormatPdf"
   | "bookFormatEpub"
   | "bookFormatHtml"
@@ -1374,6 +1375,7 @@ export const translations: Translations = {
     bookTitlePlaceholder: "Defaults to the diary name",
     bookAuthorLabel: "Author",
     bookAuthorPlaceholder: "Defaults to your username",
+    bookFormatLabel: "Book format",
     bookFormatPdf: "PDF (.pdf)",
     bookFormatEpub: "EPUB (.epub)",
     bookFormatHtml: "HTML (.html)",
@@ -2451,6 +2453,7 @@ export const translations: Translations = {
     bookTitlePlaceholder: "Par défaut : le nom du journal",
     bookAuthorLabel: "Auteur",
     bookAuthorPlaceholder: "Par défaut : votre nom d'utilisateur",
+    bookFormatLabel: "Format du livre",
     bookFormatPdf: "PDF (.pdf)",
     bookFormatEpub: "EPUB (.epub)",
     bookFormatHtml: "HTML (.html)",
