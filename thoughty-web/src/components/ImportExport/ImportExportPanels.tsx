@@ -1,6 +1,7 @@
 import type { ChangeEvent, ReactNode, RefObject } from 'react';
 import type { ImportExportFormat, ImportExportSection, TranslationFunction } from '../../types';
 import { EXPORT_FORMAT_OPTIONS, type FormatConfig, type PreviewData } from './ImportExport.types';
+import './ImportExportPanels.css';
 
 const DATE_FORMAT_OPTIONS = ['YYYY-MM-DD', 'DD-MM-YYYY', 'MM-DD-YYYY', 'YYYY/MM/DD', 'DD/MM/YYYY'] as const;
 const COUNTED_FIELDS: ReadonlyArray<{ key: 'entrySeparator' | 'sameDaySeparator'; labelKey: string }> = [
@@ -68,8 +69,9 @@ export function ExportSection({
             <div className="export-controls">
                 <div className="export-option-row export-option-row--split">
                     <div className="export-option-group export-option-group--format">
-                        <label>{t('exportFormat')}</label>
+                        <label htmlFor="export-format">{t('exportFormat')}</label>
                         <select
+                            id="export-format"
                             value={exportFormat}
                             onChange={(event) => onChangeExportFormat(event.target.value as ImportExportFormat)}
                             className="format-select"
@@ -190,9 +192,9 @@ export function FormatSection({
                 <div className="format-row format-row--separators">
                     {COUNTED_FIELDS.map((field) => (
                         <div key={field.key} className="format-field">
-                            <label>{t(field.labelKey)}</label>
+                            <label htmlFor={`format-${field.key}`}>{t(field.labelKey)}</label>
                             <div className="input-with-count">
-                                <input type="text" value={formatConfig[field.key]} onChange={(event) => onInputChange(field.key, event.target.value)} />
+                                <input id={`format-${field.key}`} type="text" value={formatConfig[field.key]} onChange={(event) => onInputChange(field.key, event.target.value)} />
                                 <span className="char-count">{formatConfig[field.key].length}</span>
                             </div>
                         </div>
@@ -201,8 +203,9 @@ export function FormatSection({
                 <div className="format-row format-row--compact">
                     {COMPACT_FIELDS.map((field) => (
                         <div key={field.key} className="format-field format-field--compact">
-                            <label>{t(field.labelKey)}</label>
+                            <label htmlFor={`format-${field.key}`}>{t(field.labelKey)}</label>
                             <input
+                                id={`format-${field.key}`}
                                 type="text"
                                 value={formatConfig[field.key]}
                                 onChange={(event) => onInputChange(field.key, event.target.value)}
@@ -211,8 +214,8 @@ export function FormatSection({
                         </div>
                     ))}
                     <div className="format-field format-field--compact">
-                        <label>{t('dateFormat')}</label>
-                        <select value={formatConfig.dateFormat} onChange={(event) => onInputChange('dateFormat', event.target.value)}>
+                        <label htmlFor="format-dateFormat">{t('dateFormat')}</label>
+                        <select id="format-dateFormat" value={formatConfig.dateFormat} onChange={(event) => onInputChange('dateFormat', event.target.value)}>
                             {DATE_FORMAT_OPTIONS.map((option) => (
                                 <option key={option} value={option}>{option}</option>
                             ))}

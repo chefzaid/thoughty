@@ -1,0 +1,35 @@
+/* Danger Zone */
+.danger-zone {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.danger-zone h3 {
+    color: #f87171;
+}
+
+.danger-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.io-btn.danger {
+    background: linear-gradient(135deg, #dc2626, #ef4444);
+    color: white;
+}
+
+.io-btn.danger:hover {
+    background: linear-gradient(135deg, #b91c1c, #dc2626);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.import-export.light .danger-zone {
+    background: rgba(239, 68, 68, 0.05);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.import-export.light .danger-zone h3 {
+    color: #b91c1c;
+}

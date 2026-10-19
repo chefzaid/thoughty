@@ -3,6 +3,7 @@ import type { CloudExportFormat, TranslationFunction } from '../../types';
 import type { CloudFileInfo, CloudProviderType, SyncFrequency, SyncScheduleConfig } from '../../services/api/cloudSyncService';
 import { CLOUD_PROVIDER_ICONS, CLOUD_PROVIDER_NAMES } from '../CloudProviderIcons';
 import { CLOUD_FORMAT_OPTIONS } from './ImportExport.types';
+import './ImportExportCloudSection.css';
 const SCHEDULE_OPTIONS: ReadonlyArray<{ value: SyncFrequency; labelKey: string }> = [
     { value: 'every_6h', labelKey: 'cloudScheduleEvery6h' },
     { value: 'every_12h', labelKey: 'cloudScheduleEvery12h' },
@@ -164,8 +165,8 @@ export function CloudSyncSection({
                             <div className="cloud-sync-row">
                                 <div className="cloud-sync-upload-options">
                                     <div className="cloud-upload-row">
-                                        <label>{t('exportFormat')}</label>
-                                        <select value={cloudExportFormat} onChange={(event) => setCloudExportFormat(event.target.value as CloudExportFormat)}>
+                                        <label htmlFor={`cloud-${provider}-upload-format`}>{t('exportFormat')}</label>
+                                        <select id={`cloud-${provider}-upload-format`} value={cloudExportFormat} onChange={(event) => setCloudExportFormat(event.target.value as CloudExportFormat)}>
                                             {CLOUD_FORMAT_OPTIONS.map((option) => (
                                                 <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
                                             ))}
@@ -192,8 +193,8 @@ export function CloudSyncSection({
                                 {schedule?.nextSyncAt && schedule?.enabled && <div className="cloud-schedule-meta">{t('cloudNextSync', { date: formatCloudDate(schedule.nextSyncAt) })}</div>}
 
                                 <div className="cloud-upload-row">
-                                    <label>{t('cloudScheduleFrequency')}</label>
-                                    <select value={scheduleFrequency[provider]} onChange={(event) => setScheduleFrequency((current) => ({ ...current, [provider]: event.target.value as SyncFrequency }))}>
+                                    <label htmlFor={`cloud-${provider}-frequency`}>{t('cloudScheduleFrequency')}</label>
+                                    <select id={`cloud-${provider}-frequency`} value={scheduleFrequency[provider]} onChange={(event) => setScheduleFrequency((current) => ({ ...current, [provider]: event.target.value as SyncFrequency }))}>
                                         {SCHEDULE_OPTIONS.map((option) => (
                                             <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
                                         ))}
@@ -201,8 +202,8 @@ export function CloudSyncSection({
                                 </div>
 
                                 <div className="cloud-upload-row">
-                                    <label>{t('exportFormat')}</label>
-                                    <select value={scheduleFormat[provider]} onChange={(event) => setScheduleFormat((current) => ({ ...current, [provider]: event.target.value as CloudExportFormat }))}>
+                                    <label htmlFor={`cloud-${provider}-schedule-format`}>{t('exportFormat')}</label>
+                                    <select id={`cloud-${provider}-schedule-format`} value={scheduleFormat[provider]} onChange={(event) => setScheduleFormat((current) => ({ ...current, [provider]: event.target.value as CloudExportFormat }))}>
                                         {CLOUD_FORMAT_OPTIONS.map((option) => (
                                             <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
                                         ))}
