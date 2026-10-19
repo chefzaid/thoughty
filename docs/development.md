@@ -98,7 +98,7 @@ AI-backed features (Auto Tag, Get Inspired, summaries, meaning search, duplicate
 | Google Drive, OneDrive, Dropbox client IDs/secrets | empty | needed only for cloud sync |
 | `SMTP_*` | placeholders | needed only to send real email; otherwise reset links are logged |
 | `FEATURE_FLAG_PROVIDER_URL`, `FEATURE_FLAG_PROVIDER_TOKEN`, `FEATURE_FLAG_CACHE_TTL_MS`, `FEATURE_FLAGS` | unset | external flag provider, or a static `flag=true,other=false` fallback |
-| `REQUEST_BODY_LIMIT` and friends | `1mb` JSON / `256kb` form | see [Security](./security.md#abuse-controls) |
+| `REQUEST_BODY_LIMIT` and friends | `1mb` JSON / `256kb` form / `8mb` import JSON | see [Security](./security.md#abuse-controls) |
 
 The web app calls the API through relative `/api` paths proxied by Vite, so its only variable is `VITE_GOOGLE_CLIENT_ID` for Google sign-in.
 

@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
 import { createSwaggerDocument } from './swagger';
-import { attachCspNonce, buildHelmetOptions, getRequestPayloadLimits, JsonLogger } from './common';
+import { attachCspNonce, buildHelmetOptions, getRequestPayloadLimits, JsonLogger, useImportBodyParser } from './common';
 
 async function bootstrap() {
   const logger = new JsonLogger('Bootstrap');
@@ -19,6 +19,7 @@ async function bootstrap() {
   // Security middleware
   app.use(attachCspNonce);
   app.use(helmet(buildHelmetOptions(process.env.NODE_ENV === 'production')));
+  useImportBodyParser(app, payloadLimits.importJson);
   app.useBodyParser('json', { limit: payloadLimits.json });
   app.useBodyParser('urlencoded', { extended: true, limit: payloadLimits.urlencoded });
 
@@ -70,6 +71,7 @@ async function bootstrap() {
     docsUrl: `http://localhost:${port}/api-docs`,
     jsonBodyLimit: payloadLimits.json,
     formBodyLimit: payloadLimits.urlencoded,
+    importBodyLimit: payloadLimits.importJson,
   });
 }
 

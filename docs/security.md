@@ -77,7 +77,7 @@ Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):
 
 Counters are stored in Redis when `REDIS_URL` or `REDIS_HOST` is set, so limits hold across replicas; if Redis is unavailable each process falls back to local counters. Behind ingress, validate the trusted proxy and client-IP path before relying on per-client limits.
 
-Request bodies are limited before validation: JSON `1mb` and URL-encoded `256kb` by default, overridable with `REQUEST_BODY_LIMIT`, `REQUEST_JSON_BODY_LIMIT`, and `REQUEST_FORM_BODY_LIMIT`. Uploads use separate per-file Multer limits.
+Request bodies are limited before validation: JSON `1mb` and URL-encoded `256kb` by default, overridable with `REQUEST_BODY_LIMIT`, `REQUEST_JSON_BODY_LIMIT`, and `REQUEST_FORM_BODY_LIMIT`. Only the import routes (`/api/io/preview` and `/api/io/import`) accept JSON up to `8mb` (`REQUEST_IMPORT_BODY_LIMIT`), so a text file up to the 5 MB import limit fits once it is escaped as JSON. Uploads use separate per-file Multer limits.
 
 Database errors caused by client input, such as an id beyond PostgreSQL's integer range, are answered with `400` by the global `DatabaseInputExceptionFilter` instead of surfacing as `500`.
 

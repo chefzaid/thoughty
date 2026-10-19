@@ -75,6 +75,7 @@
 - [x] Cloud sync of the journal with the main cloud providers (OneDrive, Google Drive, ...)
 - [x] Scheduled background sync through a queue and worker instead of manual one-off exports
 - [x] Preview-first import with automatic format detection, duplicate detection with optional skipping, and a report of imported/skipped entries
+- [x] Text imports up to the advertised 5 MB reach the server (the import routes accept larger JSON bodies than the rest of the API)
 - [x] Download of all user data (GDPR)
 - [x] CSV export for entries and stats data
 
