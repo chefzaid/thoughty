@@ -1,14 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { browserTimeZone, formatDeliveryDate, localize, resolveMemoirLanguage, weekdayName, WEEKDAYS } from './memoirFormat';
+import { browserTimeZone, formatDeliveryDate, localize, weekdayName, WEEKDAYS } from './memoirFormat';
 
 describe('memoirFormat', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('uses French copy for French and English for everything else', () => {
-    expect(resolveMemoirLanguage('fr')).toBe('fr');
-    expect(resolveMemoirLanguage('de')).toBe('en');
-    expect(resolveMemoirLanguage(undefined)).toBe('en');
+  it('uses the French copy when there is one', () => {
     expect(localize({ en: 'Childhood', fr: 'Enfance' }, 'fr')).toBe('Enfance');
     expect(localize({ en: 'Childhood', fr: '' }, 'fr')).toBe('Childhood');
   });

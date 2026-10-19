@@ -83,7 +83,8 @@ export class AttachmentsService implements OnModuleInit {
     }
   }
 
-  async upload(userId: number, file: Express.Multer.File, entryId?: number): Promise<Attachment> {
+  /** Rejects a missing file, a type outside the allowlist, or a file over the size limit. */
+  assertUploadable(file: Express.Multer.File | undefined): asserts file is Express.Multer.File {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
@@ -99,6 +100,10 @@ export class AttachmentsService implements OnModuleInit {
         `File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`,
       );
     }
+  }
+
+  async upload(userId: number, file: Express.Multer.File, entryId?: number): Promise<Attachment> {
+    this.assertUploadable(file);
 
     if (entryId) {
       const entry = await this.entryRepository.findOne({

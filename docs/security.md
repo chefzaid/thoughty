@@ -74,10 +74,11 @@ Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):
 | Password recovery | 3 per hour | forgot password, reset password, verify email |
 | Account security | 5 per hour | password change, verification-email resend, 2FA setup/enable/disable, session revocation, account deletion |
 | Social writes | 30 per 15 min | follow, unfollow, post and delete comments, like and unlike |
+| Import writes | 300 per 15 min | app import batches: `POST /api/io/import/entries` and `/api/io/import/attachments` |
 
 Counters are stored in Redis when `REDIS_URL` or `REDIS_HOST` is set, so limits hold across replicas; if Redis is unavailable each process falls back to local counters. Behind ingress, validate the trusted proxy and client-IP path before relying on per-client limits.
 
-Request bodies are limited before validation: JSON `1mb` and URL-encoded `256kb` by default, overridable with `REQUEST_BODY_LIMIT`, `REQUEST_JSON_BODY_LIMIT`, and `REQUEST_FORM_BODY_LIMIT`. Only the import routes (`/api/io/preview` and `/api/io/import`) accept JSON up to `8mb` (`REQUEST_IMPORT_BODY_LIMIT`), so a text file up to the 5 MB import limit fits once it is escaped as JSON. Uploads use separate per-file Multer limits.
+Request bodies are limited before validation: JSON `1mb` and URL-encoded `256kb` by default, overridable with `REQUEST_BODY_LIMIT`, `REQUEST_JSON_BODY_LIMIT`, and `REQUEST_FORM_BODY_LIMIT`. Only the import routes (`/api/io/preview` and `/api/io/import`, including its app-import batches) accept JSON up to `8mb` (`REQUEST_IMPORT_BODY_LIMIT`), so a text file up to the 5 MB import limit fits once it is escaped as JSON. Uploads use separate per-file Multer limits.
 
 Database errors caused by client input, such as an id beyond PostgreSQL's integer range, are answered with `400` by the global `DatabaseInputExceptionFilter` instead of surfacing as `500`.
 
@@ -99,6 +100,15 @@ Provided through Vault (see [Deployment](./deployment.md#configuration-and-secre
 - Objects are stored under generated keys (`stored_filename`), never the original filename.
 - Files are served only through authenticated application endpoints; the frontend loads previews and downloads with authenticated requests and short-lived object URLs.
 - Buckets stay private unless a future ADR changes the sharing model.
+
+## App Imports and the Markdown Export
+
+Day One and Journey exports are read in the browser; only the mapped entries and their photos and recordings are sent ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)). Journey's HTML is parsed in an inert `DOMParser` document, keeping text, emphasis, lists, and `http`, `https`, or `mailto` links only; scripts, images, and other markup are dropped before the Markdown renderer sees anything. On the server:
+
+- Imported entries are always private, whatever the target diary's default, and can only go to a diary the writer owns (`404` otherwise). Diaries created for source journals are private.
+- An entry batch is validated as a whole (at most 200 entries, 50,000 characters each, 20 tags of 50 characters) and saved in one transaction; tags are sanitized like any other tag.
+- A file batch holds at most 8 files and one `entryIds` field with no nested names. Every entry must belong to the writer and every file must pass the attachment allowlist and 5 MB limit before any file is stored.
+- The Markdown export streams one attachment at a time, re-checks the 5 MB limit while reading storage, builds every path from sanitized names (no separators, reserved characters, or `..`), and stops reading storage when the download is closed.
 
 ## Guided Memoir
 

@@ -1,17 +1,15 @@
-import { useState, useEffect, useCallback, useRef, type ChangeEvent } from 'react';
+import { useState, useEffect, useRef, type ChangeEvent } from 'react';
 import './ImportExport.css';
 import { useAuth } from '../../contexts/AuthContext';
-import { useApiServices } from '../../hooks/useAppState';
-import type { CloudExportFormat, ImportExportFormat, ImportExportSection } from '../../types';
-import type { CloudFileInfo, CloudProviderType, CloudStatus, SyncFrequency, SyncScheduleConfig } from '../../services/api/cloudSyncService';
+import type { ImportExportFormat, ImportExportSection } from '../../types';
 import { CloudImportSection, CloudSyncSection } from './ImportExportCloudSection';
 import { DangerZoneSection, ExportSection, FormatSection, ImportSection, RouteActions } from './ImportExportPanels';
 import { ImportExportBookPanel } from './ImportExportBookPanel';
+import { AppImportPanel } from './appImport/AppImportPanel';
+import { useImportExportCloud } from './useImportExportCloud';
 import { downloadBlob } from '../../utils/downloadFile';
 import {
-    CLOUD_PROVIDERS,
     DEFAULT_FORMAT_CONFIG,
-    createProviderRecord,
     type FormatConfig,
     type ImportExportProps,
     type ImportExportRouteState,
@@ -22,15 +20,16 @@ import {
 function ImportExport({
     theme,
     t,
+    language = 'en',
     diaryId,
     diaryName,
+    onDiariesChanged,
     initialSection = 'export',
     initialExportFormat = 'txt',
     initialIncludeVisibility = false,
     onRouteStateChange,
 }: Readonly<ImportExportProps>) {
     const { authFetch } = useAuth();
-    const { cloudSyncService } = useApiServices();
     const [formatConfig, setFormatConfig] = useState<FormatConfig>(DEFAULT_FORMAT_CONFIG);
     const [loading, setLoading] = useState(true);
     const [importing, setImporting] = useState(false);
@@ -43,21 +42,6 @@ function ImportExport({
     const [activeSection, setActiveSection] = useState<ImportExportSection>(initialSection);
     const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
     const [deleting, setDeleting] = useState(false);
-    const [cloudStatus, setCloudStatus] = useState<Partial<CloudStatus>>({});
-    const [cloudLoading, setCloudLoading] = useState(true);
-    const [uploading, setUploading] = useState<CloudProviderType | null>(null);
-    const [syncing, setSyncing] = useState<CloudProviderType | null>(null);
-    const [schedules, setSchedules] = useState<Record<string, SyncScheduleConfig>>({});
-    const [scheduleFrequency, setScheduleFrequency] = useState<Record<string, SyncFrequency>>(createProviderRecord('daily'));
-    const [scheduleFormat, setScheduleFormat] = useState<Record<string, CloudExportFormat>>(createProviderRecord('txt'));
-    const [scheduleIncludeVisibility, setScheduleIncludeVisibility] = useState<Record<string, boolean>>(createProviderRecord(false));
-    const [cloudExportFormat, setCloudExportFormat] = useState<CloudExportFormat>('txt');
-    const [cloudIncludeVisibility, setCloudIncludeVisibility] = useState(false);
-    const [cloudImportProvider, setCloudImportProvider] = useState<CloudProviderType | null>(null);
-    const [cloudFiles, setCloudFiles] = useState<CloudFileInfo[]>([]);
-    const [loadingCloudFiles, setLoadingCloudFiles] = useState(false);
-    const [importingCloudFile, setImportingCloudFile] = useState<string | null>(null);
-    const connectedProviders = CLOUD_PROVIDERS.filter((provider) => cloudStatus[provider]?.connected);
     const exportSectionRef = useRef<HTMLElement | null>(null);
     const importSectionRef = useRef<HTMLElement | null>(null);
     const bookSectionRef = useRef<HTMLElement | null>(null);
@@ -115,51 +99,6 @@ function ImportExport({
         })();
     }, [authFetch]);
 
-    const fetchCloudStatus = useCallback(async (): Promise<void> => {
-        const data = await cloudSyncService.getStatus();
-        if (data) {
-            setCloudStatus(data);
-        }
-        setCloudLoading(false);
-    }, [cloudSyncService]);
-
-    const fetchSchedules = useCallback(async (): Promise<void> => {
-        const data = await cloudSyncService.getSchedules();
-        if (!data) {
-            return;
-        }
-
-        setSchedules(data);
-        const nextFrequency = createProviderRecord<SyncFrequency>('daily');
-        const nextFormat = createProviderRecord<CloudExportFormat>('txt');
-        const nextIncludeVisibility = createProviderRecord(false);
-
-        for (const provider of CLOUD_PROVIDERS) {
-            const config = data[provider];
-            if (!config) {
-                continue;
-            }
-            if (config.frequency) {
-                nextFrequency[provider] = config.frequency;
-            }
-            if (config.format) {
-                nextFormat[provider] = config.format as CloudExportFormat;
-            }
-            if (config.includeVisibility !== undefined) {
-                nextIncludeVisibility[provider] = config.includeVisibility;
-            }
-        }
-
-        setScheduleFrequency(nextFrequency);
-        setScheduleFormat(nextFormat);
-        setScheduleIncludeVisibility(nextIncludeVisibility);
-    }, [cloudSyncService]);
-
-    useEffect(() => {
-        void fetchCloudStatus();
-        void fetchSchedules();
-    }, [fetchCloudStatus, fetchSchedules]);
-
     async function previewImportContent(content: string, successText?: string): Promise<void> {
         setFileContent(content);
         try {
@@ -182,6 +121,8 @@ function ImportExport({
             showMessage('error', t('previewError'));
         }
     }
+
+    const cloud = useImportExportCloud({ diaryId, showMessage, previewImportContent, t });
 
     async function saveFormatSettings(): Promise<void> {
         try {
@@ -279,77 +220,6 @@ function ImportExport({
         setFormatConfig((current) => ({ ...current, [key]: value }));
     }
 
-    async function handleCloudUpload(provider: CloudProviderType): Promise<void> {
-        setUploading(provider);
-        const result = await cloudSyncService.uploadExport(provider, {
-            diaryId: diaryId ?? undefined,
-            format: cloudExportFormat,
-            includeVisibility: cloudIncludeVisibility,
-        });
-        showMessage(result ? 'success' : 'error', result ? t('cloudUploadSuccess', { name: result.name }) : t('cloudUploadError'));
-        setUploading(null);
-    }
-
-    async function handleSaveSchedule(provider: CloudProviderType): Promise<void> {
-        const success = await cloudSyncService.setSchedule(provider, {
-            frequency: scheduleFrequency[provider] || 'daily',
-            format: scheduleFormat[provider],
-            diaryId: diaryId ?? undefined,
-            includeVisibility: scheduleIncludeVisibility[provider],
-        });
-        if (success) {
-            showMessage('success', t('cloudScheduleSaved'));
-            await fetchSchedules();
-        } else {
-            showMessage('error', t('cloudScheduleSaveError'));
-        }
-    }
-
-    async function handleRemoveSchedule(provider: CloudProviderType): Promise<void> {
-        const success = await cloudSyncService.deleteSchedule(provider);
-        if (success) {
-            showMessage('success', t('cloudScheduleRemoved'));
-            await fetchSchedules();
-        } else {
-            showMessage('error', t('cloudScheduleRemoveError'));
-        }
-    }
-
-    async function handleSyncNow(provider: CloudProviderType): Promise<void> {
-        setSyncing(provider);
-        const result = await cloudSyncService.triggerSync(provider);
-        if (result) {
-            showMessage('success', result.synced ? t('cloudSyncSuccess', { name: result.file?.name || '' }) : t('cloudSyncNoChanges'));
-            await fetchSchedules();
-        } else {
-            showMessage('error', t('cloudSyncError'));
-        }
-        setSyncing(null);
-    }
-
-    async function handleBrowseCloudFiles(provider: CloudProviderType): Promise<void> {
-        if (cloudImportProvider === provider) {
-            setCloudImportProvider(null);
-            setCloudFiles([]);
-            return;
-        }
-        setCloudImportProvider(provider);
-        setLoadingCloudFiles(true);
-        setCloudFiles(await cloudSyncService.listFiles(provider));
-        setLoadingCloudFiles(false);
-    }
-
-    async function handleCloudFileImport(provider: CloudProviderType, file: CloudFileInfo): Promise<void> {
-        setImportingCloudFile(file.id);
-        const content = await cloudSyncService.downloadFile(provider, file.id);
-        if (content) {
-            await previewImportContent(content, t('cloudDownloadSuccess', { name: file.name }));
-        } else {
-            showMessage('error', t('cloudDownloadError'));
-        }
-        setImportingCloudFile(null);
-    }
-
     async function handleDeleteAll(): Promise<void> {
         if (!confirmDeleteAll) {
             setConfirmDeleteAll(true);
@@ -432,19 +302,16 @@ function ImportExport({
                     onFileSelect={handleFileSelect}
                     onSetSkipDuplicates={setSkipDuplicates}
                     onImport={handleImport}
-                    cloudImportContent={(
-                        <CloudImportSection
-                            cloudLoading={cloudLoading}
-                            connectedProviders={connectedProviders}
-                            cloudImportProvider={cloudImportProvider}
-                            cloudFiles={cloudFiles}
-                            loadingCloudFiles={loadingCloudFiles}
-                            importingCloudFile={importingCloudFile}
-                            onBrowseCloudFiles={handleBrowseCloudFiles}
-                            onImportCloudFile={handleCloudFileImport}
+                    appImportContent={(
+                        <AppImportPanel
+                            diaryId={diaryId}
+                            diaryName={diaryName}
+                            language={language}
+                            onImported={onDiariesChanged}
                             t={t}
                         />
                     )}
+                    cloudImportContent={<CloudImportSection {...cloud.importProps} t={t} />}
                     t={t}
                 />
             </div>
@@ -455,32 +322,12 @@ function ImportExport({
                 diaryName={diaryName}
                 diaryId={diaryId}
                 authFetch={authFetch}
-                connectedProviders={connectedProviders}
+                connectedProviders={cloud.connectedProviders}
                 showMessage={showMessage}
                 t={t}
             />
 
-            <CloudSyncSection
-                connectedProviders={connectedProviders}
-                schedules={schedules}
-                uploading={uploading}
-                syncing={syncing}
-                scheduleFrequency={scheduleFrequency}
-                setScheduleFrequency={setScheduleFrequency}
-                scheduleFormat={scheduleFormat}
-                setScheduleFormat={setScheduleFormat}
-                scheduleIncludeVisibility={scheduleIncludeVisibility}
-                setScheduleIncludeVisibility={setScheduleIncludeVisibility}
-                cloudExportFormat={cloudExportFormat}
-                setCloudExportFormat={setCloudExportFormat}
-                cloudIncludeVisibility={cloudIncludeVisibility}
-                setCloudIncludeVisibility={setCloudIncludeVisibility}
-                onUpload={handleCloudUpload}
-                onSaveSchedule={handleSaveSchedule}
-                onRemoveSchedule={handleRemoveSchedule}
-                onSyncNow={handleSyncNow}
-                t={t}
-            />
+            <CloudSyncSection {...cloud.syncProps} t={t} />
 
             <FormatSection formatConfig={formatConfig} onInputChange={handleInputChange} onSave={saveFormatSettings} t={t} />
 

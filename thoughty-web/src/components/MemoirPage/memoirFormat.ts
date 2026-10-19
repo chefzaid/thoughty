@@ -2,10 +2,6 @@ import type { LocalizedText } from '../../services/api';
 
 export type MemoirLanguage = keyof LocalizedText;
 
-export function resolveMemoirLanguage(language: string | undefined): MemoirLanguage {
-  return language === 'fr' ? 'fr' : 'en';
-}
-
 export function localize(text: LocalizedText, language: MemoirLanguage): string {
   return text[language] || text.en;
 }

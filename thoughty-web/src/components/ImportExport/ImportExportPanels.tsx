@@ -109,6 +109,7 @@ export function ImportSection({
     onFileSelect,
     onSetSkipDuplicates,
     onImport,
+    appImportContent,
     cloudImportContent,
     t,
 }: Readonly<{
@@ -121,6 +122,7 @@ export function ImportSection({
     onFileSelect: (event: ChangeEvent<HTMLInputElement>) => void | Promise<void>;
     onSetSkipDuplicates: (value: boolean) => void;
     onImport: () => void;
+    appImportContent?: ReactNode;
     cloudImportContent?: ReactNode;
     t: TranslationFunction;
 }>) {
@@ -168,6 +170,7 @@ export function ImportSection({
                 </div>
             )}
 
+            {appImportContent}
             {cloudImportContent}
         </section>
     );

@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
+import { buildZip } from '../../src/test/zipFixture';
 import { setupMockApp } from '../support/mockApp';
 
 const PUBLIC_ROUTES = [
@@ -74,6 +75,25 @@ test.describe('route accessibility', () => {
       await page.goto('/memoir');
       await page.getByRole('button', { name: 'Answer', exact: true }).click();
 
+      await expectNoAccessibilityViolations(page);
+    });
+  }
+
+  for (const theme of THEMES) {
+    test(`${theme} Day One import preview and result`, async ({ page }) => {
+      await setupMockApp(page, { startAuthenticated: true, config: { theme } });
+      await page.goto('/import-export?section=import');
+      const panel = page.getByRole('region', { name: 'From Day One or Journey' });
+      const archive = await buildZip([
+        { name: 'Journal.json', data: JSON.stringify({ metadata: {}, entries: [{ uuid: 'A', creationDate: '2024-03-05T10:00:00Z', text: 'Hello' }] }) },
+        { name: 'Travel.json', data: JSON.stringify({ metadata: {}, entries: [{ uuid: 'B', creationDate: '2024-03-06T10:00:00Z', text: 'Bye' }] }) },
+      ]);
+      await panel.getByLabel('Choose an export').setInputFiles({ name: 'export.zip', mimeType: 'application/zip', buffer: Buffer.from(archive) });
+      await expect(panel.getByRole('button', { name: 'Start the import' })).toBeVisible();
+
+      await expectNoAccessibilityViolations(page);
+      await panel.getByRole('button', { name: 'Start the import' }).click();
+      await expect(panel.getByText('Import finished')).toBeVisible();
       await expectNoAccessibilityViolations(page);
     });
   }

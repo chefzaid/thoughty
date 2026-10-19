@@ -290,6 +290,6 @@ Differentiators, each covered below:
 
 - [ ] Payments: choose a payment provider with EU VAT handling for digital services (one-stop shop) or a merchant of record, plus app-store billing once mobile apps ship. Completes the subscription and paywall items above.
 - [ ] Plans and entitlements enforced server-side: free (core journal, AI with the user's own key), premium (encryption, AI quota, books, unlimited diaries), memoir and gift, practitioner. The admin console reads and changes them.
-- [ ] Importers from other journaling apps (Day One and Journey exports), and a full export as a Markdown folder with attachments.
+- [x] Importers from other journaling apps (Day One and Journey exports), and a full export as a Markdown folder with attachments.
 - [ ] Opt-in lifecycle emails (welcome, trial ending, writing streaks, year in review) that respect notification preferences.
 - [ ] Help center and support tickets with response targets per plan; a status page for paid users.

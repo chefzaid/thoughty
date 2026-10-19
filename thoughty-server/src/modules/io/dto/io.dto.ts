@@ -57,10 +57,14 @@ export class ExportQueryDto {
   @IsBoolean()
   includeVisibility?: boolean;
 
-  @ApiPropertyOptional({ description: 'Export file format', enum: ['txt', 'json', 'md', 'csv', 'pdf', 'html', 'epub'], default: 'txt' })
+  @ApiPropertyOptional({
+    description: 'Export file format; `zip` is a Markdown folder with one file per entry and its attachments',
+    enum: ['txt', 'json', 'md', 'csv', 'pdf', 'html', 'epub', 'zip'],
+    default: 'txt',
+  })
   @IsOptional()
-  @IsIn(['txt', 'json', 'md', 'csv', 'pdf', 'html', 'epub'])
-  format?: 'txt' | 'json' | 'md' | 'csv' | 'pdf' | 'html' | 'epub';
+  @IsIn(['txt', 'json', 'md', 'csv', 'pdf', 'html', 'epub', 'zip'])
+  format?: 'txt' | 'json' | 'md' | 'csv' | 'pdf' | 'html' | 'epub' | 'zip';
 }
 
 export class PreviewImportDto {

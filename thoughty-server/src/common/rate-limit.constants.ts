@@ -8,6 +8,8 @@ export const RATE_LIMITS = {
   passwordRecovery: { limit: 3, ttl: ONE_HOUR_MS },
   accountSecurity: { limit: 5, ttl: ONE_HOUR_MS },
   socialWrite: { limit: 30, ttl: FIFTEEN_MINUTES_MS },
+  // App imports send one request per batch of entries or files; a large library needs hundreds.
+  importWrite: { limit: 300, ttl: FIFTEEN_MINUTES_MS },
 } as const;
 
 export const throttleDefault = (limit: (typeof RATE_LIMITS)[keyof typeof RATE_LIMITS]) => ({

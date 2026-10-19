@@ -218,6 +218,10 @@ erDiagram
 
 `MemoirProgram` holds one guided memoir per user: the diary that collects answers, `active` or `paused`, the email choice, and the weekly schedule (`delivery_weekday` 0 = Sunday and an IANA `time_zone`, delivered at 09:00 local; `TIMESTAMPTZ` columns). `current_question_id` is this week's question and `next_delivery_at` drives the worker. The question catalogue is code (`thoughty-server/src/modules/memoir/memoir-questions.ts`), so questions are referenced by stable string ids rather than rows. `MemoirAnswer` links a question to the entry that answers it, keyed by `(user_id, question_id)` with a unique `entry_id`: one answer per question. Answers are ordinary private entries; their text lives only in `entries`.
 
+## Imported Entries
+
+Entries brought in from Day One or Journey keep `import_ref`, the source app and the entry's ID there (`dayone:<uuid>`, `journey:<id>`), with a partial unique index on `(user_id, import_ref)`. An import looks entries up by this reference before creating them, so importing the same export again returns the existing entries (and the names of their attachments) instead of duplicating them. Entries that were not imported leave it null. Imported entries are private Markdown entries, numbered after the entries already on their day; their photos and recordings are ordinary attachments.
+
 ## Public Feed Eligibility
 
 `Entry.visibility` and `Entry.moderationStatus` are independent. Visibility is the owner's explicit sharing choice; moderation status is a platform-controlled state with `visible`, `hidden`, `under_review`, and `removed` values. The public feed reads only entries where visibility and moderation are both `public`/`visible`, the entry is not archived, and its author is not deleted. The composite `idx_entries_public_feed` index supports these bounded, newest-first reads.

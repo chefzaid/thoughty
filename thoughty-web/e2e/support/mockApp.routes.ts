@@ -8,6 +8,7 @@ import { handleBookRoutes, handleIoRoutes } from "./mockApp.routes.io";
 import { handleReferenceRoutes } from "./mockApp.routes.reference";
 import { handleSocialRoutes } from "./mockApp.routes.social";
 import { handleMemoirRoutes } from "./mockApp.routes.memoir";
+import { handleAppImportRoutes } from "./mockApp.routes.app-import";
 
 async function handleAuthRoutes({
   route,
@@ -328,6 +329,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     if (await handleReferenceRoutes(context)) {
+      return;
+    }
+    if (await handleAppImportRoutes(context)) {
       return;
     }
     if (await handleIoRoutes(context)) {

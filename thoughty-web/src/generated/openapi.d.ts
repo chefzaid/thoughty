@@ -1092,7 +1092,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Export entries as a text file */
+        /** Export entries as a file, or as a ZIP folder of Markdown files with attachments */
         get: operations["IoController_export"];
         put?: never;
         post?: never;
@@ -1130,6 +1130,125 @@ export interface paths {
         put?: never;
         /** Import entries from parsed content */
         post: operations["IoController_import"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/io/import/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Import a batch of entries from another journaling app (Day One, Journey) */
+        post: operations["IoController_importAppEntries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/io/import/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attach photos and recordings from an app import to their entries */
+        post: operations["IoController_importAttachments"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload a file attachment */
+        post: operations["AttachmentsController_upload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{id}/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Link an attachment to an entry */
+        post: operations["AttachmentsController_linkToEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{id}/transcribe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transcribe an audio attachment */
+        post: operations["AttachmentsController_transcribe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete an attachment */
+        delete: operations["AttachmentsController_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/attachments/file/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serve an attachment file */
+        get: operations["AttachmentsController_serveFile"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1217,91 +1336,6 @@ export interface paths {
         put?: never;
         /** Generate a book and upload it to a connected cloud provider */
         post: operations["BooksController_upload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Upload a file attachment */
-        post: operations["AttachmentsController_upload"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/{id}/link": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Link an attachment to an entry */
-        post: operations["AttachmentsController_linkToEntry"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/{id}/transcribe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Transcribe an audio attachment */
-        post: operations["AttachmentsController_transcribe"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete an attachment */
-        delete: operations["AttachmentsController_delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/attachments/file/{filename}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Serve an attachment file */
-        get: operations["AttachmentsController_serveFile"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3587,6 +3621,158 @@ export interface components {
         };
         /**
          * @example {
+         *       "sourceId": "example",
+         *       "date": "2024-03-05",
+         *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *       "tags": [
+         *         "reflection"
+         *       ],
+         *       "favorite": true,
+         *       "journal": "example"
+         *     }
+         */
+        AppImportEntryDto: {
+            /** @description ID of the entry in the source app; an entry already imported is not imported again */
+            sourceId: string;
+            /**
+             * @description Local day the entry was written
+             * @example 2024-03-05
+             */
+            date: string;
+            /** @description Entry text as Markdown; may be empty when the entry holds only photos */
+            content: string;
+            tags: string[];
+            favorite?: boolean;
+            /** @description Name of the journal the entry belongs to in the source app */
+            journal?: string;
+        };
+        /**
+         * @example {
+         *       "source": "dayone",
+         *       "entries": [
+         *         {
+         *           "sourceId": "example",
+         *           "date": "2024-03-05",
+         *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *           "tags": [
+         *             "reflection"
+         *           ],
+         *           "favorite": true,
+         *           "journal": "example"
+         *         }
+         *       ],
+         *       "diaryId": 1,
+         *       "journalsAsDiaries": true
+         *     }
+         */
+        AppImportDto: {
+            /** @enum {string} */
+            source: "dayone" | "journey";
+            entries: components["schemas"]["AppImportEntryDto"][];
+            /** @description Diary for the entries; defaults to the default diary */
+            diaryId?: number;
+            /** @description Put each source journal in the diary of the same name, creating the missing ones */
+            journalsAsDiaries?: boolean;
+        };
+        /**
+         * @example {
+         *       "sourceId": "example",
+         *       "entryId": 1,
+         *       "alreadyImported": true,
+         *       "attachedFiles": [
+         *         "example"
+         *       ]
+         *     }
+         */
+        AppImportedEntryDto: {
+            sourceId: string;
+            entryId: number;
+            /** @description True when an earlier import already brought this entry in */
+            alreadyImported: boolean;
+            /** @description Names of the files already attached to the entry */
+            attachedFiles: string[];
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "sourceId": "example",
+         *           "entryId": 1,
+         *           "alreadyImported": true,
+         *           "attachedFiles": [
+         *             "example"
+         *           ]
+         *         }
+         *       ],
+         *       "importedCount": 3,
+         *       "alreadyImportedCount": 3,
+         *       "createdDiaries": [
+         *         "example"
+         *       ]
+         *     }
+         */
+        AppImportResponseDto: {
+            entries: components["schemas"]["AppImportedEntryDto"][];
+            importedCount: number;
+            alreadyImportedCount: number;
+            /** @description Diaries created for source journals */
+            createdDiaries: string[];
+        };
+        /**
+         * @example {
+         *       "id": 1,
+         *       "entryId": 1,
+         *       "originalFilename": "Daily Journal"
+         *     }
+         */
+        ImportedAttachmentDto: {
+            id: number;
+            entryId: number;
+            originalFilename: string;
+        };
+        /**
+         * @example {
+         *       "attachments": [
+         *         {
+         *           "id": 1,
+         *           "entryId": 1,
+         *           "originalFilename": "Daily Journal"
+         *         }
+         *       ]
+         *     }
+         */
+        ImportAttachmentsResponseDto: {
+            attachments: components["schemas"]["ImportedAttachmentDto"][];
+        };
+        /**
+         * @example {
+         *       "entryId": 1
+         *     }
+         */
+        LinkAttachmentDto: {
+            /** @description Entry ID to link attachment to */
+            entryId?: number;
+        };
+        /**
+         * @example {
+         *       "transcript": "example",
+         *       "transcribed_at": "2026-06-24T10:00:00.000Z",
+         *       "cached": true
+         *     }
+         */
+        AudioTranscriptionResponseDto: {
+            /** @description Transcribed audio text */
+            transcript: string;
+            /**
+             * Format: date-time
+             * @description When the transcript was generated
+             */
+            transcribed_at: string;
+            /** @description Whether the stored transcript was returned without a provider call */
+            cached: boolean;
+        };
+        /**
+         * @example {
          *       "id": 1,
          *       "versionNumber": 1,
          *       "title": "June reflections",
@@ -3670,33 +3856,6 @@ export interface components {
             size: number;
             /** @description Provider modification timestamp */
             modifiedAt: string;
-        };
-        /**
-         * @example {
-         *       "entryId": 1
-         *     }
-         */
-        LinkAttachmentDto: {
-            /** @description Entry ID to link attachment to */
-            entryId?: number;
-        };
-        /**
-         * @example {
-         *       "transcript": "example",
-         *       "transcribed_at": "2026-06-24T10:00:00.000Z",
-         *       "cached": true
-         *     }
-         */
-        AudioTranscriptionResponseDto: {
-            /** @description Transcribed audio text */
-            transcript: string;
-            /**
-             * Format: date-time
-             * @description When the transcript was generated
-             */
-            transcribed_at: string;
-            /** @description Whether the stored transcript was returned without a provider call */
-            cached: boolean;
         };
         /**
          * @example {
@@ -7531,8 +7690,8 @@ export interface operations {
                 diaryId?: number;
                 /** @description Include visibility field in export */
                 includeVisibility?: boolean;
-                /** @description Export file format */
-                format?: "txt" | "json" | "md" | "csv" | "pdf" | "html" | "epub";
+                /** @description Export file format; `zip` is a Markdown folder with one file per entry and its attachments */
+                format?: "txt" | "json" | "md" | "csv" | "pdf" | "html" | "epub" | "zip";
             };
             header?: never;
             path?: never;
@@ -7540,7 +7699,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Text file content */
+            /** @description File content */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7627,6 +7786,227 @@ export interface operations {
                      */
                     "application/json": components["schemas"]["ImportResponseDto"];
                 };
+            };
+        };
+    };
+    IoController_importAppEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "source": "dayone",
+                 *       "entries": [
+                 *         {
+                 *           "sourceId": "example",
+                 *           "date": "2024-03-05",
+                 *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                 *           "tags": [
+                 *             "reflection"
+                 *           ],
+                 *           "favorite": true,
+                 *           "journal": "example"
+                 *         }
+                 *       ],
+                 *       "diaryId": 1,
+                 *       "journalsAsDiaries": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["AppImportDto"];
+            };
+        };
+        responses: {
+            /** @description Entry ID for each source entry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "entries": [
+                     *         {
+                     *           "sourceId": "example",
+                     *           "entryId": 1,
+                     *           "alreadyImported": true,
+                     *           "attachedFiles": [
+                     *             "example"
+                     *           ]
+                     *         }
+                     *       ],
+                     *       "importedCount": 3,
+                     *       "alreadyImportedCount": 3,
+                     *       "createdDiaries": [
+                     *         "example"
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AppImportResponseDto"];
+                };
+            };
+        };
+    };
+    IoController_importAttachments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @example 12,12,13 */
+                    entryIds: string;
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Stored attachments */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "attachments": [
+                     *         {
+                     *           "id": 1,
+                     *           "entryId": 1,
+                     *           "originalFilename": "Daily Journal"
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ImportAttachmentsResponseDto"];
+                };
+            };
+        };
+    };
+    AttachmentsController_upload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["LinkAttachmentDto"];
+            };
+        };
+        responses: {
+            /** @description File uploaded successfully */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_linkToEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "entryId": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["LinkAttachmentDto"];
+            };
+        };
+        responses: {
+            /** @description Attachment linked to entry */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_transcribe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Audio attachment transcribed or cached transcript returned */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "transcript": "example",
+                     *       "transcribed_at": "2026-06-24T10:00:00.000Z",
+                     *       "cached": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AudioTranscriptionResponseDto"];
+                };
+            };
+        };
+    };
+    AttachmentsController_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Attachment deleted */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    AttachmentsController_serveFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -8034,126 +8414,6 @@ export interface operations {
                      */
                     "application/json": components["schemas"]["CloudFileInfoDto"];
                 };
-            };
-        };
-    };
-    AttachmentsController_upload: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["LinkAttachmentDto"];
-            };
-        };
-        responses: {
-            /** @description File uploaded successfully */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_linkToEntry: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                /**
-                 * @example {
-                 *       "entryId": 1
-                 *     }
-                 */
-                "application/json": components["schemas"]["LinkAttachmentDto"];
-            };
-        };
-        responses: {
-            /** @description Attachment linked to entry */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_transcribe: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Audio attachment transcribed or cached transcript returned */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    /**
-                     * @example {
-                     *       "transcript": "example",
-                     *       "transcribed_at": "2026-06-24T10:00:00.000Z",
-                     *       "cached": true
-                     *     }
-                     */
-                    "application/json": components["schemas"]["AudioTranscriptionResponseDto"];
-                };
-            };
-        };
-    };
-    AttachmentsController_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Attachment deleted */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    AttachmentsController_serveFile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                filename: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description File content */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
             };
         };
     };

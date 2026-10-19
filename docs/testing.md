@@ -51,6 +51,8 @@ npx playwright test e2e/tags/management.spec.ts            # one file
 npx playwright test --grep "Journal Markdown authoring"    # by title
 ```
 
+Vitest runs each file in its own worker thread (`pool: 'threads'`), so one file's modules, mocks, and rendered DOM never reach the next, whatever the order or worker count. Tests that need real `Blob` streams, `CompressionStream`, or `DecompressionStream`, such as the ZIP reader and the app importers, opt into the Node environment with `// @vitest-environment node`; `src/test/zipFixture.ts` builds the ZIP archives they read.
+
 Both coverage suites write `coverage/lcov.info` in their application directories for SonarQube; colocated `.spec.ts`, `.test.ts`, and `.test.tsx` files are classified as tests. The project target is 80% coverage.
 
 ## Browser Tests
@@ -69,7 +71,7 @@ The browser never reaches a real backend: every `/api` call is answered by the m
 | `tags/` | tag create, count, rename, delete, and journal tag organization |
 | `ai/` | Auto Tag, automatic tagging, Get Inspired, rephrasing, summaries, chat, meaning search, duplicates, personal API keys |
 | `stats/` | totals, heatmap, and tag insights |
-| `import-export/` | import/export formats, format settings, delete-all, books, book versions and cloud upload |
+| `import-export/` | import/export formats, format settings, delete-all, books, book versions and cloud upload, Day One and Journey imports with their photos, the Markdown folder export |
 | `cloud-sync/` | uploads, schedules, Sync Now, cloud imports |
 | `diary/` | create, edit, reorder, default, delete fallback |
 | `memoir/` | starting the guided memoir, text and recorded answers with transcription, another question, pause and resume, stopping, the email link, the book link, French copy, phone layout |
@@ -88,6 +90,7 @@ Put a new spec in the closest existing directory and name it after the behavior 
 | `mockApp.routes.ts` | dispatch, auth, config, and feature-request routes |
 | `mockApp.routes.entries.ts` | entries and tags |
 | `mockApp.routes.io.ts` | import/export and book routes |
+| `mockApp.app-import.ts` / `mockApp.routes.app-import.ts` | app-import state (source references, uploaded files) and the entry and attachment batch routes |
 | `mockApp.memoir.ts` / `mockApp.routes.memoir.ts` | a short memoir catalogue and program state, and the memoir routes |
 | `mockApp.routes.social.ts` | public feed scopes, follows, comments, likes, the leaderboard, and achievements |
 | `mockApp.routes.reference.ts` | stats, AI, diaries, entry references |

@@ -19,6 +19,7 @@ import { Attachment } from './attachment.entity';
 @Index('idx_entries_user_archive_date', ['userId', 'isArchived', 'date'])
 @Index('idx_entries_user_favorite_date', ['userId', 'isFavorite', 'date'])
 @Index('idx_entries_public_feed', ['visibility', 'moderationStatus', 'isArchived', 'createdAt'])
+@Index('idx_entries_user_import_ref', ['userId', 'importRef'], { unique: true, where: 'import_ref IS NOT NULL' })
 export class Entry {
   @PrimaryGeneratedColumn()
   id: number;
@@ -58,6 +59,10 @@ export class Entry {
 
   @Column({ name: 'is_pinned', type: 'boolean', default: false })
   isPinned: boolean;
+
+  /** Source app and entry ID (`dayone:<uuid>`) for entries brought in by an app import. */
+  @Column({ name: 'import_ref', type: 'varchar', length: 120, nullable: true })
+  importRef: string | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

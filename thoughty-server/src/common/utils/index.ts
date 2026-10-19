@@ -7,3 +7,5 @@ export * from './book-image.util';
 export * from './book-cover-style.util';
 export * from './image-validation.util';
 export * from './diary-color.util';
+export * from './zip-writer.util';
+export * from './markdown-archive.util';

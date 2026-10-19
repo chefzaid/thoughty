@@ -3462,7 +3462,7 @@
             "name": "format",
             "required": false,
             "in": "query",
-            "description": "Export file format",
+            "description": "Export file format; `zip` is a Markdown folder with one file per entry and its attachments",
             "schema": {
               "default": "txt",
               "type": "string",
@@ -3473,14 +3473,15 @@
                 "csv",
                 "pdf",
                 "html",
-                "epub"
+                "epub",
+                "zip"
               ]
             }
           }
         ],
         "responses": {
           "200": {
-            "description": "Text file content"
+            "description": "File content"
           }
         },
         "security": [
@@ -3488,7 +3489,7 @@
             "bearer": []
           }
         ],
-        "summary": "Export entries as a text file",
+        "summary": "Export entries as a file, or as a ZIP folder of Markdown files with attachments",
         "tags": [
           "Import/Export"
         ]
@@ -3590,6 +3591,312 @@
         "summary": "Import entries from parsed content",
         "tags": [
           "Import/Export"
+        ]
+      }
+    },
+    "/api/io/import/entries": {
+      "post": {
+        "operationId": "IoController_importAppEntries",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AppImportDto"
+              },
+              "example": {
+                "source": "dayone",
+                "entries": [
+                  {
+                    "sourceId": "example",
+                    "date": "2024-03-05",
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "tags": [
+                      "reflection"
+                    ],
+                    "favorite": true,
+                    "journal": "example"
+                  }
+                ],
+                "diaryId": 1,
+                "journalsAsDiaries": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entry ID for each source entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AppImportResponseDto"
+                },
+                "example": {
+                  "entries": [
+                    {
+                      "sourceId": "example",
+                      "entryId": 1,
+                      "alreadyImported": true,
+                      "attachedFiles": [
+                        "example"
+                      ]
+                    }
+                  ],
+                  "importedCount": 3,
+                  "alreadyImportedCount": 3,
+                  "createdDiaries": [
+                    "example"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import a batch of entries from another journaling app (Day One, Journey)",
+        "tags": [
+          "Import/Export"
+        ]
+      }
+    },
+    "/api/io/import/attachments": {
+      "post": {
+        "operationId": "IoController_importAttachments",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "entryIds",
+                  "files"
+                ],
+                "properties": {
+                  "entryIds": {
+                    "type": "string",
+                    "example": "12,12,13"
+                  },
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "maxItems": 8
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stored attachments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportAttachmentsResponseDto"
+                },
+                "example": {
+                  "attachments": [
+                    {
+                      "id": 1,
+                      "entryId": 1,
+                      "originalFilename": "Daily Journal"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Attach photos and recordings from an app import to their entries",
+        "tags": [
+          "Import/Export"
+        ]
+      }
+    },
+    "/api/attachments/upload": {
+      "post": {
+        "operationId": "AttachmentsController_upload",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkAttachmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Upload a file attachment",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/{id}/link": {
+      "post": {
+        "operationId": "AttachmentsController_linkToEntry",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkAttachmentDto"
+              },
+              "example": {
+                "entryId": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Attachment linked to entry"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link an attachment to an entry",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/{id}/transcribe": {
+      "post": {
+        "operationId": "AttachmentsController_transcribe",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Audio attachment transcribed or cached transcript returned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AudioTranscriptionResponseDto"
+                },
+                "example": {
+                  "transcript": "example",
+                  "transcribed_at": "2026-06-24T10:00:00.000Z",
+                  "cached": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Transcribe an audio attachment",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/{id}": {
+      "delete": {
+        "operationId": "AttachmentsController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment deleted"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete an attachment",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/file/{filename}": {
+      "get": {
+        "operationId": "AttachmentsController_serveFile",
+        "parameters": [
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Serve an attachment file",
+        "tags": [
+          "Attachments"
         ]
       }
     },
@@ -4915,177 +5222,6 @@
         "summary": "Generate a book and upload it to a connected cloud provider",
         "tags": [
           "Books"
-        ]
-      }
-    },
-    "/api/attachments/upload": {
-      "post": {
-        "operationId": "AttachmentsController_upload",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "multipart/form-data": {
-              "schema": {
-                "$ref": "#/components/schemas/LinkAttachmentDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "File uploaded successfully"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Upload a file attachment",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/{id}/link": {
-      "post": {
-        "operationId": "AttachmentsController_linkToEntry",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LinkAttachmentDto"
-              },
-              "example": {
-                "entryId": 1
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Attachment linked to entry"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Link an attachment to an entry",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/{id}/transcribe": {
-      "post": {
-        "operationId": "AttachmentsController_transcribe",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Audio attachment transcribed or cached transcript returned",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AudioTranscriptionResponseDto"
-                },
-                "example": {
-                  "transcript": "example",
-                  "transcribed_at": "2026-06-24T10:00:00.000Z",
-                  "cached": true
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Transcribe an audio attachment",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/{id}": {
-      "delete": {
-        "operationId": "AttachmentsController_delete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Attachment deleted"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Delete an attachment",
-        "tags": [
-          "Attachments"
-        ]
-      }
-    },
-    "/api/attachments/file/{filename}": {
-      "get": {
-        "operationId": "AttachmentsController_serveFile",
-        "parameters": [
-          {
-            "name": "filename",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "File content"
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Serve an attachment file",
-        "tags": [
-          "Attachments"
         ]
       }
     },
@@ -9830,6 +9966,270 @@
           "totalProcessed": 1
         }
       },
+      "AppImportEntryDto": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string",
+            "description": "ID of the entry in the source app; an entry already imported is not imported again"
+          },
+          "date": {
+            "type": "string",
+            "description": "Local day the entry was written",
+            "example": "2024-03-05"
+          },
+          "content": {
+            "type": "string",
+            "description": "Entry text as Markdown; may be empty when the entry holds only photos"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "favorite": {
+            "type": "boolean"
+          },
+          "journal": {
+            "type": "string",
+            "description": "Name of the journal the entry belongs to in the source app"
+          }
+        },
+        "required": [
+          "sourceId",
+          "date",
+          "content",
+          "tags"
+        ],
+        "example": {
+          "sourceId": "example",
+          "date": "2024-03-05",
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "tags": [
+            "reflection"
+          ],
+          "favorite": true,
+          "journal": "example"
+        }
+      },
+      "AppImportDto": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "dayone",
+              "journey"
+            ]
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppImportEntryDto"
+            }
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "Diary for the entries; defaults to the default diary"
+          },
+          "journalsAsDiaries": {
+            "type": "boolean",
+            "description": "Put each source journal in the diary of the same name, creating the missing ones"
+          }
+        },
+        "required": [
+          "source",
+          "entries"
+        ],
+        "example": {
+          "source": "dayone",
+          "entries": [
+            {
+              "sourceId": "example",
+              "date": "2024-03-05",
+              "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+              "tags": [
+                "reflection"
+              ],
+              "favorite": true,
+              "journal": "example"
+            }
+          ],
+          "diaryId": 1,
+          "journalsAsDiaries": true
+        }
+      },
+      "AppImportedEntryDto": {
+        "type": "object",
+        "properties": {
+          "sourceId": {
+            "type": "string"
+          },
+          "entryId": {
+            "type": "number"
+          },
+          "alreadyImported": {
+            "type": "boolean",
+            "description": "True when an earlier import already brought this entry in"
+          },
+          "attachedFiles": {
+            "description": "Names of the files already attached to the entry",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "sourceId",
+          "entryId",
+          "alreadyImported",
+          "attachedFiles"
+        ],
+        "example": {
+          "sourceId": "example",
+          "entryId": 1,
+          "alreadyImported": true,
+          "attachedFiles": [
+            "example"
+          ]
+        }
+      },
+      "AppImportResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AppImportedEntryDto"
+            }
+          },
+          "importedCount": {
+            "type": "number"
+          },
+          "alreadyImportedCount": {
+            "type": "number"
+          },
+          "createdDiaries": {
+            "description": "Diaries created for source journals",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "entries",
+          "importedCount",
+          "alreadyImportedCount",
+          "createdDiaries"
+        ],
+        "example": {
+          "entries": [
+            {
+              "sourceId": "example",
+              "entryId": 1,
+              "alreadyImported": true,
+              "attachedFiles": [
+                "example"
+              ]
+            }
+          ],
+          "importedCount": 3,
+          "alreadyImportedCount": 3,
+          "createdDiaries": [
+            "example"
+          ]
+        }
+      },
+      "ImportedAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "entryId": {
+            "type": "number"
+          },
+          "originalFilename": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "entryId",
+          "originalFilename"
+        ],
+        "example": {
+          "id": 1,
+          "entryId": 1,
+          "originalFilename": "Daily Journal"
+        }
+      },
+      "ImportAttachmentsResponseDto": {
+        "type": "object",
+        "properties": {
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImportedAttachmentDto"
+            }
+          }
+        },
+        "required": [
+          "attachments"
+        ],
+        "example": {
+          "attachments": [
+            {
+              "id": 1,
+              "entryId": 1,
+              "originalFilename": "Daily Journal"
+            }
+          ]
+        }
+      },
+      "LinkAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "description": "Entry ID to link attachment to"
+          }
+        },
+        "example": {
+          "entryId": 1
+        }
+      },
+      "AudioTranscriptionResponseDto": {
+        "type": "object",
+        "properties": {
+          "transcript": {
+            "type": "string",
+            "description": "Transcribed audio text"
+          },
+          "transcribed_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When the transcript was generated"
+          },
+          "cached": {
+            "type": "boolean",
+            "description": "Whether the stored transcript was returned without a provider call"
+          }
+        },
+        "required": [
+          "transcript",
+          "transcribed_at",
+          "cached"
+        ],
+        "example": {
+          "transcript": "example",
+          "transcribed_at": "2026-06-24T10:00:00.000Z",
+          "cached": true
+        }
+      },
       "BookVersionResponseDto": {
         "type": "object",
         "properties": {
@@ -10007,46 +10407,6 @@
           "name": "Daily Journal",
           "size": 1,
           "modifiedAt": "2026-06-24T10:00:00.000Z"
-        }
-      },
-      "LinkAttachmentDto": {
-        "type": "object",
-        "properties": {
-          "entryId": {
-            "type": "number",
-            "description": "Entry ID to link attachment to"
-          }
-        },
-        "example": {
-          "entryId": 1
-        }
-      },
-      "AudioTranscriptionResponseDto": {
-        "type": "object",
-        "properties": {
-          "transcript": {
-            "type": "string",
-            "description": "Transcribed audio text"
-          },
-          "transcribed_at": {
-            "format": "date-time",
-            "type": "string",
-            "description": "When the transcript was generated"
-          },
-          "cached": {
-            "type": "boolean",
-            "description": "Whether the stored transcript was returned without a provider call"
-          }
-        },
-        "required": [
-          "transcript",
-          "transcribed_at",
-          "cached"
-        ],
-        "example": {
-          "transcript": "example",
-          "transcribed_at": "2026-06-24T10:00:00.000Z",
-          "cached": true
         }
       },
       "CloudAuthUrlDto": {

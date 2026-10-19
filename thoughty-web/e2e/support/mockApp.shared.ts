@@ -1,4 +1,5 @@
 import { createMockMemoirState, type MockMemoirProgram, type MockMemoirState } from "./mockApp.memoir";
+import { createMockAppImportState, type MockAppImportState } from "./mockApp.app-import";
 
 type AuthPayload = {
   email?: string;
@@ -174,6 +175,7 @@ export interface MockAppState {
   likedCommentIds: number[];
   bookVersions: MockBookVersion[];
   memoir: MockMemoirState;
+  appImport: MockAppImportState;
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
   lastRegisterPayload: AuthPayload | null;
@@ -356,6 +358,10 @@ export function buildExportBody(
   entries: MockEntry[],
   format: string | null,
 ): { contentType: string; body: string; extension: string } {
+  if (format === "zip") {
+    return { contentType: "application/zip", extension: "zip", body: "PK mock archive" };
+  }
+
   if (format === "json") {
     return {
       contentType: "application/json",
@@ -428,6 +434,7 @@ export function createMockAppState(
     likedCommentIds: [...(options.likedCommentIds || [])],
     bookVersions: [],
     memoir: createMockMemoirState(options.memoirProgram ?? null),
+    appImport: createMockAppImportState(),
     nextEntryId:
       (options.initialEntries?.reduce(
         (maxId, entry) => Math.max(maxId, entry.id),

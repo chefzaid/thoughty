@@ -38,7 +38,7 @@ The backend is one NestJS application assembled from feature modules under `thou
 | `attachments` | upload validation, object storage, audio transcription |
 | `ai` | OpenRouter credentials and usage, tagging, inspiration, rephrasing, summaries, chat, semantic search, duplicates, journal tag organization, insights |
 | `stats` | statistics, heatmap, connections graph, writing-tendency analysis |
-| `io` | import and export formats, TXT format settings, delete-all |
+| `io` | import and export formats, TXT format settings, delete-all, Day One and Journey imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
 | `books` | book composition, covers, previews, versions |
 | `cloud-sync` | provider connections, file browsing, scheduled jobs, worker execution |
 | `config` | user preferences and profile, encrypted settings, feature flags, data export |
@@ -162,6 +162,7 @@ Use `Proposed` for decisions that guide upcoming work but are not implemented ye
 | [0017](./adr/0017-feature-flags-and-entitlements.md) | Accepted | Separate Feature Flags from User Entitlements |
 | [0018](./adr/0018-offline-and-mobile-sync.md) | Proposed | Decide Offline and Mobile Sync Before Building Mobile Apps |
 | [0019](./adr/0019-explicit-delivery-jobs.md) | Accepted | Use Explicit Delivery Jobs and Non-Blocking Verification |
+| [0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md) | Accepted | Read Other Apps' Exports in the Browser and Stream the Full Export |
 
 ## ADR Template
 

@@ -1,0 +1,127 @@
+.app-import {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+}
+
+.app-import h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+/* Visually hidden but still reachable with the keyboard, unlike the other file inputs */
+.app-import .app-import-input {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.app-import-file {
+    position: relative;
+}
+
+.app-import-file:focus-within .file-label {
+    outline: 3px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+.app-import-box {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.import-export .app-import-box .preview-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+    gap: 1rem;
+    margin-bottom: 0;
+}
+
+.app-import-heading {
+    margin: 0;
+    font-weight: 600;
+}
+
+.app-import-error {
+    color: #fca5a5;
+}
+
+.app-import-note {
+    margin: 0;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+    font-size: 0.9rem;
+}
+
+.app-import-destination {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    border-radius: 8px;
+}
+
+.app-import-destination legend {
+    padding: 0 0.25rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.app-import-destination .checkbox-label {
+    align-items: flex-start;
+    overflow-wrap: anywhere;
+}
+
+.app-import-destination input[type="radio"] {
+    flex: 0 0 auto;
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.2rem;
+    accent-color: #6366f1;
+}
+
+.app-import-progress {
+    width: 100%;
+    height: 0.6rem;
+    accent-color: #6366f1;
+}
+
+.app-import-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.app-import-failures {
+    margin: 0;
+    padding-left: 1.25rem;
+    font-size: 0.85rem;
+    overflow-wrap: anywhere;
+}
+
+.app-import .io-btn:focus-visible,
+.app-import input[type="radio"]:focus-visible {
+    outline: 3px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+.import-export.light .app-import {
+    border-top-color: #e5e7eb;
+}
+
+.import-export.light .app-import-note {
+    color: #4b5563;
+}
+
+.import-export.light .app-import-error {
+    color: #b91c1c;
+}
+
+.import-export.light .app-import-destination {
+    border-color: #d1d5db;
+}

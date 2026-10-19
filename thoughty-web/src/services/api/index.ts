@@ -9,3 +9,4 @@ export * from './attachmentsService';
 export * from './aiService';
 export * from './cloudSyncService';
 export * from './memoirService';
+export * from './appImportService';

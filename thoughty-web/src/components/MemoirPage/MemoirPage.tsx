@@ -10,7 +10,8 @@ import MemoirIntro from './MemoirIntro';
 import MemoirProgress from './MemoirProgress';
 import MemoirQuestionCard from './MemoirQuestionCard';
 import MemoirSettings from './MemoirSettings';
-import { localize, resolveMemoirLanguage } from './memoirFormat';
+import { resolveLanguage } from '../../utils/language';
+import { localize } from './memoirFormat';
 import { useMemoir } from './useMemoir';
 import './MemoirPage.css';
 
@@ -44,7 +45,7 @@ function MemoirPage({
   onDiariesChanged,
   t,
 }: MemoirPageProps) {
-  const language = resolveMemoirLanguage(rawLanguage);
+  const language = resolveLanguage(rawLanguage);
   const memoir = useMemoir();
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(initialQuestionId);
   const [skipping, setSkipping] = useState(false);

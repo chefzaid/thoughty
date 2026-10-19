@@ -1,5 +1,6 @@
 import type { CloudExportFormat, ImportExportFormat, ImportExportSection, TranslationFunction } from '../../types';
 import type { CloudProviderType } from '../../services/api/cloudSyncService';
+import type { Language } from '../../utils/translations';
 
 export const CLOUD_PROVIDERS = ['google_drive', 'onedrive', 'dropbox'] as const satisfies readonly CloudProviderType[];
 export const EXPORT_FORMAT_OPTIONS: ReadonlyArray<{ value: ImportExportFormat; labelKey: string }> = [
@@ -10,6 +11,7 @@ export const EXPORT_FORMAT_OPTIONS: ReadonlyArray<{ value: ImportExportFormat; l
     { value: 'pdf', labelKey: 'bookFormatPdf' },
     { value: 'epub', labelKey: 'bookFormatEpub' },
     { value: 'html', labelKey: 'bookFormatHtml' },
+    { value: 'zip', labelKey: 'formatMarkdownFolder' },
 ];
 
 // Cloud sync uploads support the text-based formats only
@@ -154,8 +156,11 @@ export interface ImportExportRouteState {
 export interface ImportExportProps {
     readonly theme?: 'light' | 'dark';
     readonly t: TranslationFunction;
+    readonly language?: Language;
     readonly diaryId?: number | null;
     readonly diaryName?: string;
+    /** Called after an app import created diaries, so the diary list can be refreshed. */
+    readonly onDiariesChanged?: () => void;
     readonly initialSection?: ImportExportSection;
     readonly initialExportFormat?: ImportExportFormat;
     readonly initialIncludeVisibility?: boolean;

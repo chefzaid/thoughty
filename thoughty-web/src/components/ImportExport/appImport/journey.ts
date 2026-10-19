@@ -1,0 +1,62 @@
+import type { ZipEntry } from '../../../utils/zipReader';
+import { attachmentTypeFor, cleanSourceId, cleanTags, localDate } from './appImportMedia';
+import type { ImportedEntry, ImportedMedia } from './appImportTypes';
+import { htmlToMarkdown, looksLikeHtml } from './htmlToMarkdown';
+
+interface JourneyEntry {
+  id?: unknown;
+  date_journal?: unknown;
+  timezone?: unknown;
+  text?: unknown;
+  type?: unknown;
+  tags?: unknown;
+  favourite?: unknown;
+  photos?: unknown;
+}
+
+/** Finds a photo by file name anywhere in the export. */
+export type JourneyMediaLookup = (fileName: string) => ZipEntry | undefined;
+
+export const JOURNEY_JOURNAL = 'Journey';
+
+export function isJourneyEntry(data: unknown): data is JourneyEntry {
+  return Boolean(data) && typeof data === 'object'
+    && typeof (data as JourneyEntry).date_journal === 'number'
+    && typeof (data as JourneyEntry).text === 'string';
+}
+
+/** One entry from its JSON file; `fallbackId` is the file name, for entries without an ID. */
+export function parseJourneyEntry(
+  data: JourneyEntry,
+  fallbackId: string,
+  lookup: JourneyMediaLookup,
+): { entry: ImportedEntry; skippedMedia: number } {
+  const timestamp = data.date_journal as number;
+  const text = data.text as string;
+  const media: ImportedMedia[] = [];
+  let skippedMedia = 0;
+
+  for (const name of Array.isArray(data.photos) ? data.photos : []) {
+    const file = typeof name === 'string' ? lookup(name.toLowerCase()) : undefined;
+    const type = file ? attachmentTypeFor(file.name) : null;
+    if (!file || !type) {
+      skippedMedia++;
+      continue;
+    }
+    media.push({ name: name as string, file, ...type });
+  }
+
+  return {
+    entry: {
+      sourceId: cleanSourceId(typeof data.id === 'string' && data.id ? data.id : fallbackId),
+      date: localDate(timestamp, typeof data.timezone === 'string' ? data.timezone : undefined),
+      timestamp,
+      content: data.type === 'html' || looksLikeHtml(text) ? htmlToMarkdown(text) : text.trim(),
+      tags: cleanTags(data.tags),
+      favorite: data.favourite === true,
+      journal: JOURNEY_JOURNAL,
+      media,
+    },
+    skippedMedia,
+  };
+}
