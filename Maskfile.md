@@ -240,8 +240,8 @@ if [ "$kill" == "true" ]; then
 fi
 
 echo -e "${CYAN}→${NC} Starting database and storage..."
-docker compose -f infra/compose/compose.yaml up -d db minio
-echo -e "${GREEN}✔${NC} Database and MinIO started"
+docker compose -f infra/compose/compose.yaml up -d db storage
+echo -e "${GREEN}✔${NC} Database and object storage started"
 echo ""
 
 # Wait for Postgres to be ready
@@ -319,8 +319,8 @@ if ($env:kill -eq "true") {
 }
 
 Write-Step "Starting database and storage..."
-docker compose -f infra/compose/compose.yaml up -d db minio
-Write-Ok "Database and MinIO started"
+docker compose -f infra/compose/compose.yaml up -d db storage
+Write-Ok "Database and object storage started"
 Write-Host ""
 
 # Wait for Postgres to be ready

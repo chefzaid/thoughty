@@ -39,7 +39,7 @@ Use a TypeScript-first stack end to end.
 
 ### Storage and integration
 
-- S3-compatible object storage for attachments, with MinIO used in local development
+- S3-compatible object storage for attachments, with RustFS used in local development (MinIO until its images stopped being published)
 - OpenRouter for optional AI-backed writing assistance, analysis, and chat features
 - Google, OneDrive, and Dropbox OAuth integrations for sign-in and cloud-sync surfaces
 
@@ -58,7 +58,7 @@ Use a TypeScript-first stack end to end.
 - React and Vite fit a product with frequent UI iteration, route-aware state, and a large amount of client-side interaction.
 - NestJS aligns with the codebase's need for structured modules, guards, decorators, validation, and API documentation from the same source.
 - PostgreSQL is a good fit for the data model because entries are heavily queried by date, tags, visibility, archive state, favorites, and diary scope. The product benefits from relational integrity and expressive query support more than from schemaless flexibility.
-- S3-compatible storage keeps attachment handling portable between local MinIO development and production object-storage backends.
+- S3-compatible storage keeps attachment handling portable between local development and production object-storage backends.
 - OpenAPI keeps frontend/backend contracts explicit while allowing generated client-side types.
 - Docker Compose, Dev Containers, and `mask` keep local setup reproducible without hiding the individual npm and service commands.
 - The deployment stack matches the repository's current operational target rather than an abstract platform-agnostic ideal.

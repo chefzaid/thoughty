@@ -16,7 +16,7 @@ Requires Node.js 22, Docker, and optionally [`mask`](https://github.com/jacobdei
 
 ```bash
 mask build   # install dependencies
-mask run     # start PostgreSQL and MinIO, migrate, seed, and run the API and web app
+mask run     # start PostgreSQL and S3 storage, migrate, seed, and run the API and web app
 ```
 
 Open `http://localhost:5173`. Manual steps, configuration, and the Dev Container are in the [Development Guide](./docs/development.md).

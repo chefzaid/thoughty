@@ -1,13 +1,13 @@
 # Development Guide
 
-Local development runs the NestJS API and the Vite React app on your machine, with PostgreSQL and MinIO from Docker Compose. [`mask`](https://github.com/jacobdeichert/mask) (tasks in `Maskfile.md`) wraps the common flows; every task also has a plain `npm` equivalent.
+Local development runs the NestJS API and the Vite React app on your machine, with PostgreSQL and [RustFS](https://github.com/rustfs/rustfs) (S3-compatible object storage) from Docker Compose. [`mask`](https://github.com/jacobdeichert/mask) (tasks in `Maskfile.md`) wraps the common flows; every task also has a plain `npm` equivalent.
 
 ```mermaid
 flowchart LR
     Browser[Browser] --> Web[Vite dev server :5173]
     Web -->|/api proxy| API[NestJS API :3001]
     API --> DB[(PostgreSQL :5432)]
-    API --> MinIO[MinIO :9000 / console :9001]
+    API --> S3[RustFS S3 :9000 / console :9001]
     API --> OpenRouter[OpenRouter, optional]
     API --> OAuth[Google / OneDrive / Dropbox, optional]
 ```
@@ -25,7 +25,7 @@ mask build   # install server and web dependencies (--clean reinstalls from scra
 mask run     # start the whole stack
 ```
 
-`mask run` starts PostgreSQL and MinIO, waits for the database, applies pending migrations, seeds test data if the `users` table is empty, then starts the API in watch mode and the Vite dev server. `mask run --kill` first stops stray Node processes.
+`mask run` starts PostgreSQL and RustFS, waits for the database, applies pending migrations, seeds test data if the `users` table is empty, then starts the API in watch mode and the Vite dev server. `mask run --kill` first stops stray Node processes.
 
 | Surface | URL |
 |---|---|
@@ -33,24 +33,26 @@ mask run     # start the whole stack
 | API | `http://localhost:3001` |
 | Swagger UI | `http://localhost:3001/api-docs` |
 | PostgreSQL | `localhost:5432` |
-| MinIO API / console | `http://localhost:9000` / `http://localhost:9001` |
+| S3 API / storage console | `http://localhost:9000` / `http://localhost:9001/rustfs/console/` (user and password `minioadmin`) |
 
 ### Without mask
 
 ```bash
 cd thoughty-server && npm install && cd ../thoughty-web && npm install && cd ..
-docker compose -f infra/compose/compose.yaml up -d db minio
+docker compose -f infra/compose/compose.yaml up -d db storage
 npm run migrate
 npm run seed
 cd thoughty-server && npm run dev    # terminal 1
 cd thoughty-web && npm run dev       # terminal 2
 ```
 
-Start only `db`, `minio`, and the API when you are working on the backend alone.
+Start only `db`, `storage`, and the API when you are working on the backend alone.
+
+Both services listen on `127.0.0.1` only. Storage ran on MinIO before its images stopped being published; attachments kept in an old `minio-data` volume are not carried over, so run `npm run seed` again if seeded attachments are missing.
 
 ### VS Code Dev Container
 
-`.devcontainer/` provides an `app` workspace container (Node 22, `mask`, `git`, `postgresql-client`, the GitHub CLI, and the project's recommended extensions) plus `db` and `minio` services gated on health checks. Dependencies install automatically, ports `3001`, `5173`, `5432`, `9000`, and `9001` are forwarded, and the container already sets `POSTGRES_HOST=db`, `S3_ENDPOINT=http://minio:9000`, and matching credentials, so no `.env` is needed. Because the services already run, start the app with the manual commands (`npm run migrate`, `npm run seed`, then the two `npm run dev` commands) instead of `mask run`. Do not override `POSTGRES_HOST` or `S3_ENDPOINT` in a local `.env`.
+`.devcontainer/` provides an `app` workspace container (Node 22, `mask`, `git`, `postgresql-client`, the GitHub CLI, and the project's recommended extensions) plus `db` and `storage` services gated on health checks. Dependencies install automatically, ports `3001`, `5173`, `5432`, `9000`, and `9001` are forwarded, and the container already sets `POSTGRES_HOST=db`, `S3_ENDPOINT=http://storage:9000`, and matching credentials, so no `.env` is needed. Because the services already run, start the app with the manual commands (`npm run migrate`, `npm run seed`, then the two `npm run dev` commands) instead of `mask run`. Do not override `POSTGRES_HOST` or `S3_ENDPOINT` in a local `.env`.
 
 ## Seed Data
 
@@ -91,7 +93,7 @@ AI-backed features (Auto Tag, Get Inspired, summaries, meaning search, duplicate
 | `CONFIG_ENCRYPTION_SECRET` | local value | encrypts provider tokens and personal AI keys; required in production |
 | `FRONTEND_URL` | `http://localhost:5173` | used in email links |
 | `CORS_ORIGIN` | `http://localhost:5173,http://localhost:3000` | comma-separated |
-| `S3_*` | local MinIO | attachment storage |
+| `S3_*` | local RustFS | attachment storage |
 | `REDIS_URL` or `REDIS_HOST` | unset | shared rate-limit counters; in-memory when unset |
 | `OPENROUTER_API_KEY` | empty | optional shared AI key; users can add their own in Profile |
 | `OPENROUTER_EMBEDDING_MODEL`, `OPENROUTER_TRANSCRIPTION_MODEL` | `openai/text-embedding-3-small`, `openai/whisper-large-v3` | optional overrides |

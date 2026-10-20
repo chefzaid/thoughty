@@ -13,7 +13,7 @@ Split attachment handling into relational metadata plus S3-compatible blob stora
 
 - Persist attachment metadata in PostgreSQL.
 - Store actual file contents in S3-compatible object storage.
-- Use MinIO-compatible defaults for local development.
+- Use MinIO-compatible defaults for local development (served by RustFS since MinIO images stopped being published).
 - Keep the storage key separate from the original filename by generating a UUID-based stored filename.
 - Load uploaded files in memory during request handling, then write them to object storage after validation.
 - Allow only a defined MIME-type allowlist and enforce a `5MB` maximum file size.
@@ -23,7 +23,7 @@ Split attachment handling into relational metadata plus S3-compatible blob stora
 
 - Blob storage is a better fit than relational large-object storage for portability, operational simplicity, and parity between local and deployed environments.
 - Metadata still belongs in the database because ownership, entry linkage, MIME type, and created-at information are part of the domain model.
-- S3 compatibility keeps the design vendor-neutral enough to work with local MinIO and production object stores.
+- S3 compatibility keeps the design vendor-neutral enough to work with a local S3-compatible server and production object stores.
 - Separating original and stored filenames reduces collision risk and prevents the original upload name from becoming the object key.
 
 ## Consequences

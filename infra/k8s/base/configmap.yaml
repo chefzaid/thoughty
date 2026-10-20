@@ -18,7 +18,7 @@ data:
   # Access token lifetime (consumed by @nestjs/jwt sign options).
   JWT_EXPIRES_IN: "15m"
   # Object storage (non-secret parts). Credentials are injected via Vault.
-  # Replace with your real S3-compatible endpoint (there is no in-cluster MinIO).
+  # Replace with your real S3-compatible endpoint (there is no in-cluster object store).
   S3_ENDPOINT: "https://s3.us-east-1.amazonaws.com"
   S3_BUCKET: "thoughty-attachments"
   S3_REGION: "us-east-1"
