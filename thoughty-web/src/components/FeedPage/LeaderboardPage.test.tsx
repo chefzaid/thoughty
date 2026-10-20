@@ -33,6 +33,7 @@ describe('LeaderboardPage', () => {
     const liked = await screen.findByRole('region', { name: 'leaderboardMostLiked' });
     expect(within(liked).getByText('Liked <b>entry</b>')).toBeInTheDocument();
     expect(within(liked).getByText('likesCount 5')).toBeInTheDocument();
+    expect(liked.querySelector('p .feed-avatar')).toBeNull();
     const active = screen.getByRole('region', { name: 'leaderboardMostActive' });
     expect(within(active).getByText('leaderboardPublicEntries 12')).toBeInTheDocument();
     const commented = screen.getByRole('region', { name: 'leaderboardMostCommented' });

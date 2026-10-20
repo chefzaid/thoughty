@@ -36,7 +36,7 @@ function EntryRanking({ id, title, icon, countKey, entries, t }: EntryRankingPro
           {entries.map((entry) => (
             <li key={entry.id} className="leaderboard-entry">
               <p className="leaderboard-excerpt">{entry.excerpt}</p>
-              <p className="leaderboard-meta">
+              <div className="leaderboard-meta">
                 <FeedAvatar author={entry.author} />
                 <strong>{entry.author.username}</strong>
                 <time dateTime={entry.date}>{entry.date}</time>
@@ -44,7 +44,7 @@ function EntryRanking({ id, title, icon, countKey, entries, t }: EntryRankingPro
                   <span className={`codicon codicon-${icon}`} aria-hidden="true" />
                   {t(countKey, { count: entry.count })}
                 </span>
-              </p>
+              </div>
             </li>
           ))}
         </ol>
