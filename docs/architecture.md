@@ -38,6 +38,7 @@ The backend is one NestJS application assembled from feature modules under `thou
 | `attachments` | upload validation, object storage, audio transcription |
 | `ai` | OpenRouter credentials and usage, tagging, inspiration, rephrasing, summaries, chat, semantic search, duplicates, journal tag organization, insights |
 | `stats` | statistics, heatmap, connections graph, writing-tendency analysis |
+| `review` | year in review: yearly totals, rhythm, themes, highlights, and the on-request AI mood arc |
 | `io` | import and export formats, TXT format settings, delete-all, Day One and Journey imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
 | `books` | book composition, covers, previews, versions |
 | `cloud-sync` | provider connections, file browsing, scheduled jobs, worker execution |

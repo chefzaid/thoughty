@@ -9,6 +9,7 @@ import {
   EntryLike,
   EntryRevision,
   MemoirAnswer,
+  YearReviewMood,
   MemoirProgram,
   Setting,
   User,
@@ -30,6 +31,7 @@ describe('UserDataExportService', () => {
   let commentLikeRepository: any;
   let memoirProgramRepository: any;
   let memoirAnswerRepository: any;
+  let yearReviewMoodRepository: any;
 
   beforeEach(async () => {
     settingRepository = { find: jest.fn() };
@@ -44,6 +46,7 @@ describe('UserDataExportService', () => {
     commentLikeRepository = { find: jest.fn().mockResolvedValue([]) };
     memoirProgramRepository = { findOne: jest.fn().mockResolvedValue(null) };
     memoirAnswerRepository = { find: jest.fn().mockResolvedValue([]) };
+    yearReviewMoodRepository = { find: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -60,6 +63,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(CommentLike), useValue: commentLikeRepository },
         { provide: getRepositoryToken(MemoirProgram), useValue: memoirProgramRepository },
         { provide: getRepositoryToken(MemoirAnswer), useValue: memoirAnswerRepository },
+        { provide: getRepositoryToken(YearReviewMood), useValue: yearReviewMoodRepository },
       ],
     }).compile();
 
@@ -222,6 +226,37 @@ describe('UserDataExportService', () => {
       answers: [{ questionId: 'childhood-home', entryId: 81, answeredAt: new Date('2026-10-05T09:00:00Z') }],
     });
     expect(memoirAnswerRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { createdAt: 'ASC' } });
+  });
+
+  it('includes the mood readings saved with year reviews', async () => {
+    for (const repository of [diaryRepository, entryRepository, revisionRepository, attachmentRepository, settingRepository]) {
+      repository.find.mockResolvedValue([]);
+    }
+    yearReviewMoodRepository.find.mockResolvedValue([
+      {
+        userId: 1,
+        year: 2025,
+        diaryId: null,
+        months: [{ month: '2025-01', mood: 'hopeful', valence: 1 }],
+        summary: 'A hopeful start.',
+        analyzedEntries: 4,
+        createdAt: new Date('2026-01-02T10:00:00Z'),
+      },
+    ]);
+
+    const result = await service.downloadData(1);
+
+    expect(result.yearReviewMoods).toEqual([
+      {
+        year: 2025,
+        diaryId: null,
+        months: [{ month: '2025-01', mood: 'hopeful', valence: 1 }],
+        summary: 'A hopeful start.',
+        analyzedEntries: 4,
+        generatedAt: new Date('2026-01-02T10:00:00Z'),
+      },
+    ]);
+    expect(yearReviewMoodRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { year: 'ASC', createdAt: 'ASC' } });
   });
 
   it('should exclude sensitive fields from user data', async () => {

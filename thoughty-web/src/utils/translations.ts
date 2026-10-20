@@ -1,5 +1,6 @@
 import { appImportTranslations, type AppImportTranslationKey } from "./translations.appImport";
 import { memoirTranslations, type MemoirTranslationKey } from "./translations.memoir";
+import { reviewTranslations, type ReviewTranslationKey } from "./translations.review";
 
 type CoreTranslationKey =
   | "journal"
@@ -930,7 +931,7 @@ type CoreTranslationKey =
   | "subscriptionIncluded"
   | "subscriptionPreviousCycle";
 
-export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey;
+export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey;
 
 export type Language = "en" | "fr";
 
@@ -942,6 +943,7 @@ export const translations: Translations = {
   en: {
     ...memoirTranslations.en,
     ...appImportTranslations.en,
+    ...reviewTranslations.en,
     // App
     journal: "Journal",
     feed: "Feed",
@@ -2008,6 +2010,7 @@ export const translations: Translations = {
   fr: {
     ...memoirTranslations.fr,
     ...appImportTranslations.fr,
+    ...reviewTranslations.fr,
     // App
     journal: "Journal",
     feed: "Fil public",

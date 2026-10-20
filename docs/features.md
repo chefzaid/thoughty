@@ -47,6 +47,7 @@ flowchart LR
 - **Activity heatmap:** a calendar of writing frequency; selecting a day opens it in the journal.
 - **Connections graph:** the 12 strongest entry-to-entry links (scored by shared tags) and tag co-occurrences in the selected scope, computed locally without AI; selecting an entry opens it.
 - **AI insight panels:** mood and tone, recurring subjects, and an on-demand writing-tendency analysis (see [AI](#ai-assistance)).
+- **Year in review** (`/review`, linked from Stats): one year of writing, for all diaries or one. It shows entries, words, writing days, the longest streak, favorites, and files, compared with the year before; entries per month and per weekday; top tags and the tags first used that year; and moments to reread (the first and last entries, up to four favorites, and the longest entry), each opening in the journal. On request, AI reads the mood of each month from a sample of entries and draws the year's mood arc with a short summary; the reading is kept until it is read again. The review is private: **Share a summary** posts only a numbers-first text the writer can edit (top themes only if ticked) as a public entry, and **Print or save as PDF** prints it as an A5 booklet without the controls. In January it opens on the year just finished, and on the latest year with entries when the current one is empty.
 
 ## Import, Export, and Books
 

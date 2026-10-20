@@ -1793,6 +1793,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recap of one year of writing: totals, rhythm, themes, highlights, and the saved mood arc */
+        get: operations["ReviewController_getReview"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/review/mood": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Read the mood of each month of the year with AI and keep it with the review */
+        post: operations["ReviewController_readMood"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -4843,6 +4877,236 @@ export interface components {
             questionId: string;
             /** @example 812 */
             entryId: number;
+        };
+        /**
+         * @example {
+         *       "entries": 1,
+         *       "words": 1,
+         *       "writingDays": 1,
+         *       "longestStreak": 1,
+         *       "favorites": 1,
+         *       "attachments": 1,
+         *       "averageWords": 1
+         *     }
+         */
+        YearReviewTotalsDto: {
+            entries: number;
+            words: number;
+            /** @description Days with at least one entry */
+            writingDays: number;
+            /** @description Most consecutive days with an entry */
+            longestStreak: number;
+            favorites: number;
+            /** @description Photos, recordings, and other files attached that year */
+            attachments: number;
+            averageWords: number;
+        };
+        /**
+         * @example {
+         *       "entries": 1,
+         *       "words": 1,
+         *       "writingDays": 1
+         *     }
+         */
+        YearReviewComparisonDto: {
+            entries: number;
+            words: number;
+            writingDays: number;
+        };
+        /**
+         * @example {
+         *       "month": 6,
+         *       "entries": 1,
+         *       "words": 1
+         *     }
+         */
+        YearReviewMonthDto: {
+            month: number;
+            entries: number;
+            words: number;
+        };
+        /**
+         * @example {
+         *       "tag": "reflection",
+         *       "count": 3
+         *     }
+         */
+        YearReviewTagDto: {
+            tag: string;
+            count: number;
+        };
+        /**
+         * @example {
+         *       "kind": "first",
+         *       "entryId": 1,
+         *       "date": "2025-03-05",
+         *       "excerpt": "example",
+         *       "words": 1,
+         *       "tags": [
+         *         "reflection"
+         *       ]
+         *     }
+         */
+        YearReviewHighlightDto: {
+            /** @enum {string} */
+            kind: "first" | "favorite" | "longest" | "last";
+            entryId: number;
+            /** @example 2025-03-05 */
+            date: string;
+            /** @description The start of the entry as plain text */
+            excerpt: string;
+            words: number;
+            tags: string[];
+        };
+        /**
+         * @example {
+         *       "month": "2025-03",
+         *       "mood": "example",
+         *       "valence": 1
+         *     }
+         */
+        YearReviewMoodMonthDto: {
+            /** @example 2025-03 */
+            month: string;
+            mood: string;
+            valence: number;
+        };
+        /**
+         * @example {
+         *       "months": [
+         *         {
+         *           "month": "2025-03",
+         *           "mood": "example",
+         *           "valence": 1
+         *         }
+         *       ],
+         *       "summary": "example",
+         *       "analyzedEntries": 1,
+         *       "generatedAt": "2026-06-24T10:00:00.000Z"
+         *     }
+         */
+        YearReviewMoodDto: {
+            months: components["schemas"]["YearReviewMoodMonthDto"][];
+            summary: string;
+            analyzedEntries: number;
+            generatedAt: string;
+        };
+        /**
+         * @example {
+         *       "year": 2026,
+         *       "diaryId": 1,
+         *       "availableYears": [
+         *         2026
+         *       ],
+         *       "totals": {
+         *         "entries": 1,
+         *         "words": 1,
+         *         "writingDays": 1,
+         *         "longestStreak": 1,
+         *         "favorites": 1,
+         *         "attachments": 1,
+         *         "averageWords": 1
+         *       },
+         *       "previousYear": {
+         *         "entries": 1,
+         *         "words": 1,
+         *         "writingDays": 1
+         *       },
+         *       "months": [
+         *         {
+         *           "month": 6,
+         *           "entries": 1,
+         *           "words": 1
+         *         }
+         *       ],
+         *       "weekdays": [
+         *         1
+         *       ],
+         *       "topTags": [
+         *         {
+         *           "tag": "reflection",
+         *           "count": 3
+         *         }
+         *       ],
+         *       "newTags": [
+         *         "reflection"
+         *       ],
+         *       "highlights": [
+         *         {
+         *           "kind": "first",
+         *           "entryId": 1,
+         *           "date": "2025-03-05",
+         *           "excerpt": "example",
+         *           "words": 1,
+         *           "tags": [
+         *             "reflection"
+         *           ]
+         *         }
+         *       ],
+         *       "mood": {
+         *         "months": [
+         *           {
+         *             "month": "2025-03",
+         *             "mood": "example",
+         *             "valence": 1
+         *           }
+         *         ],
+         *         "summary": "example",
+         *         "analyzedEntries": 1,
+         *         "generatedAt": "2026-06-24T10:00:00.000Z"
+         *       },
+         *       "aiAvailable": true
+         *     }
+         */
+        YearReviewDto: {
+            year: number;
+            diaryId: number | null;
+            /** @description Years with entries in this scope, newest first */
+            availableYears: number[];
+            totals: components["schemas"]["YearReviewTotalsDto"];
+            /** @description The year before, when it has entries */
+            previousYear: components["schemas"]["YearReviewComparisonDto"] | null;
+            /** @description Twelve months, January first */
+            months: components["schemas"]["YearReviewMonthDto"][];
+            /** @description Entries per weekday, Monday first */
+            weekdays: number[];
+            topTags: components["schemas"]["YearReviewTagDto"][];
+            /** @description Tags first used this year */
+            newTags: string[];
+            highlights: components["schemas"]["YearReviewHighlightDto"][];
+            mood: components["schemas"]["YearReviewMoodDto"] | null;
+            /** @description Whether the mood of the year can be read with AI */
+            aiAvailable: boolean;
+        };
+        /**
+         * @example {
+         *       "year": 2025,
+         *       "diaryId": 1
+         *     }
+         */
+        YearMoodRequestDto: {
+            /** @example 2025 */
+            year: number;
+            diaryId?: number;
+        };
+        /**
+         * @example {
+         *       "mood": {
+         *         "months": [
+         *           {
+         *             "month": "2025-03",
+         *             "mood": "example",
+         *             "valence": 1
+         *           }
+         *         ],
+         *         "summary": "example",
+         *         "analyzedEntries": 1,
+         *         "generatedAt": "2026-06-24T10:00:00.000Z"
+         *       }
+         *     }
+         */
+        YearMoodResponseDto: {
+            mood: components["schemas"]["YearReviewMoodDto"];
         };
     };
     responses: never;
@@ -9791,6 +10055,171 @@ export interface operations {
             };
             /** @description The question already has an answer, or the memoir has no diary */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewController_getReview: {
+        parameters: {
+            query: {
+                year: number;
+                /** @description Review one diary instead of all of them */
+                diaryId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The review of that year */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "year": 2026,
+                     *       "diaryId": 1,
+                     *       "availableYears": [
+                     *         2026
+                     *       ],
+                     *       "totals": {
+                     *         "entries": 1,
+                     *         "words": 1,
+                     *         "writingDays": 1,
+                     *         "longestStreak": 1,
+                     *         "favorites": 1,
+                     *         "attachments": 1,
+                     *         "averageWords": 1
+                     *       },
+                     *       "previousYear": {
+                     *         "entries": 1,
+                     *         "words": 1,
+                     *         "writingDays": 1
+                     *       },
+                     *       "months": [
+                     *         {
+                     *           "month": 6,
+                     *           "entries": 1,
+                     *           "words": 1
+                     *         }
+                     *       ],
+                     *       "weekdays": [
+                     *         1
+                     *       ],
+                     *       "topTags": [
+                     *         {
+                     *           "tag": "reflection",
+                     *           "count": 3
+                     *         }
+                     *       ],
+                     *       "newTags": [
+                     *         "reflection"
+                     *       ],
+                     *       "highlights": [
+                     *         {
+                     *           "kind": "first",
+                     *           "entryId": 1,
+                     *           "date": "2025-03-05",
+                     *           "excerpt": "example",
+                     *           "words": 1,
+                     *           "tags": [
+                     *             "reflection"
+                     *           ]
+                     *         }
+                     *       ],
+                     *       "mood": {
+                     *         "months": [
+                     *           {
+                     *             "month": "2025-03",
+                     *             "mood": "example",
+                     *             "valence": 1
+                     *           }
+                     *         ],
+                     *         "summary": "example",
+                     *         "analyzedEntries": 1,
+                     *         "generatedAt": "2026-06-24T10:00:00.000Z"
+                     *       },
+                     *       "aiAvailable": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["YearReviewDto"];
+                };
+            };
+            /** @description Diary not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ReviewController_readMood: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "year": 2025,
+                 *       "diaryId": 1
+                 *     }
+                 */
+                "application/json": components["schemas"]["YearMoodRequestDto"];
+            };
+        };
+        responses: {
+            /** @description The mood arc, saved with the review */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "mood": {
+                     *         "months": [
+                     *           {
+                     *             "month": "2025-03",
+                     *             "mood": "example",
+                     *             "valence": 1
+                     *           }
+                     *         ],
+                     *         "summary": "example",
+                     *         "analyzedEntries": 1,
+                     *         "generatedAt": "2026-06-24T10:00:00.000Z"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["YearMoodResponseDto"];
+                };
+            };
+            /** @description No entries to read in that year */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Diary not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description AI is not available or could not read the year */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

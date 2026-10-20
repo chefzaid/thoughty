@@ -6857,6 +6857,184 @@
           "Memoir"
         ]
       }
+    },
+    "/api/review": {
+      "get": {
+        "operationId": "ReviewController_getReview",
+        "parameters": [
+          {
+            "name": "year",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": 2025,
+              "type": "number"
+            }
+          },
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Review one diary instead of all of them",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The review of that year",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YearReviewDto"
+                },
+                "example": {
+                  "year": 2026,
+                  "diaryId": 1,
+                  "availableYears": [
+                    2026
+                  ],
+                  "totals": {
+                    "entries": 1,
+                    "words": 1,
+                    "writingDays": 1,
+                    "longestStreak": 1,
+                    "favorites": 1,
+                    "attachments": 1,
+                    "averageWords": 1
+                  },
+                  "previousYear": {
+                    "entries": 1,
+                    "words": 1,
+                    "writingDays": 1
+                  },
+                  "months": [
+                    {
+                      "month": 6,
+                      "entries": 1,
+                      "words": 1
+                    }
+                  ],
+                  "weekdays": [
+                    1
+                  ],
+                  "topTags": [
+                    {
+                      "tag": "reflection",
+                      "count": 3
+                    }
+                  ],
+                  "newTags": [
+                    "reflection"
+                  ],
+                  "highlights": [
+                    {
+                      "kind": "first",
+                      "entryId": 1,
+                      "date": "2025-03-05",
+                      "excerpt": "example",
+                      "words": 1,
+                      "tags": [
+                        "reflection"
+                      ]
+                    }
+                  ],
+                  "mood": {
+                    "months": [
+                      {
+                        "month": "2025-03",
+                        "mood": "example",
+                        "valence": 1
+                      }
+                    ],
+                    "summary": "example",
+                    "analyzedEntries": 1,
+                    "generatedAt": "2026-06-24T10:00:00.000Z"
+                  },
+                  "aiAvailable": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Diary not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Recap of one year of writing: totals, rhythm, themes, highlights, and the saved mood arc",
+        "tags": [
+          "Year in review"
+        ]
+      }
+    },
+    "/api/review/mood": {
+      "post": {
+        "operationId": "ReviewController_readMood",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/YearMoodRequestDto"
+              },
+              "example": {
+                "year": 2025,
+                "diaryId": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The mood arc, saved with the review",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/YearMoodResponseDto"
+                },
+                "example": {
+                  "mood": {
+                    "months": [
+                      {
+                        "month": "2025-03",
+                        "mood": "example",
+                        "valence": 1
+                      }
+                    ],
+                    "summary": "example",
+                    "analyzedEntries": 1,
+                    "generatedAt": "2026-06-24T10:00:00.000Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No entries to read in that year"
+          },
+          "404": {
+            "description": "Diary not found"
+          },
+          "503": {
+            "description": "AI is not available or could not read the year"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Read the mood of each month of the year with AI and keep it with the review",
+        "tags": [
+          "Year in review"
+        ]
+      }
     }
   },
   "info": {
@@ -12003,6 +12181,440 @@
         "example": {
           "questionId": "childhood-home",
           "entryId": 812
+        }
+      },
+      "YearReviewTotalsDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "number"
+          },
+          "words": {
+            "type": "number"
+          },
+          "writingDays": {
+            "type": "number",
+            "description": "Days with at least one entry"
+          },
+          "longestStreak": {
+            "type": "number",
+            "description": "Most consecutive days with an entry"
+          },
+          "favorites": {
+            "type": "number"
+          },
+          "attachments": {
+            "type": "number",
+            "description": "Photos, recordings, and other files attached that year"
+          },
+          "averageWords": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "entries",
+          "words",
+          "writingDays",
+          "longestStreak",
+          "favorites",
+          "attachments",
+          "averageWords"
+        ],
+        "example": {
+          "entries": 1,
+          "words": 1,
+          "writingDays": 1,
+          "longestStreak": 1,
+          "favorites": 1,
+          "attachments": 1,
+          "averageWords": 1
+        }
+      },
+      "YearReviewComparisonDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "number"
+          },
+          "words": {
+            "type": "number"
+          },
+          "writingDays": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "entries",
+          "words",
+          "writingDays"
+        ],
+        "example": {
+          "entries": 1,
+          "words": 1,
+          "writingDays": 1
+        }
+      },
+      "YearReviewMonthDto": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 12
+          },
+          "entries": {
+            "type": "number"
+          },
+          "words": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "month",
+          "entries",
+          "words"
+        ],
+        "example": {
+          "month": 6,
+          "entries": 1,
+          "words": 1
+        }
+      },
+      "YearReviewTagDto": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "string"
+          },
+          "count": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "tag",
+          "count"
+        ],
+        "example": {
+          "tag": "reflection",
+          "count": 3
+        }
+      },
+      "YearReviewHighlightDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "first",
+              "favorite",
+              "longest",
+              "last"
+            ]
+          },
+          "entryId": {
+            "type": "number"
+          },
+          "date": {
+            "type": "string",
+            "example": "2025-03-05"
+          },
+          "excerpt": {
+            "type": "string",
+            "description": "The start of the entry as plain text"
+          },
+          "words": {
+            "type": "number"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "entryId",
+          "date",
+          "excerpt",
+          "words",
+          "tags"
+        ],
+        "example": {
+          "kind": "first",
+          "entryId": 1,
+          "date": "2025-03-05",
+          "excerpt": "example",
+          "words": 1,
+          "tags": [
+            "reflection"
+          ]
+        }
+      },
+      "YearReviewMoodMonthDto": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "example": "2025-03"
+          },
+          "mood": {
+            "type": "string"
+          },
+          "valence": {
+            "type": "number",
+            "minimum": -2,
+            "maximum": 2
+          }
+        },
+        "required": [
+          "month",
+          "mood",
+          "valence"
+        ],
+        "example": {
+          "month": "2025-03",
+          "mood": "example",
+          "valence": 1
+        }
+      },
+      "YearReviewMoodDto": {
+        "type": "object",
+        "properties": {
+          "months": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/YearReviewMoodMonthDto"
+            }
+          },
+          "summary": {
+            "type": "string"
+          },
+          "analyzedEntries": {
+            "type": "number"
+          },
+          "generatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "months",
+          "summary",
+          "analyzedEntries",
+          "generatedAt"
+        ],
+        "example": {
+          "months": [
+            {
+              "month": "2025-03",
+              "mood": "example",
+              "valence": 1
+            }
+          ],
+          "summary": "example",
+          "analyzedEntries": 1,
+          "generatedAt": "2026-06-24T10:00:00.000Z"
+        }
+      },
+      "YearReviewDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number"
+          },
+          "diaryId": {
+            "type": "number",
+            "nullable": true
+          },
+          "availableYears": {
+            "description": "Years with entries in this scope, newest first",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "totals": {
+            "$ref": "#/components/schemas/YearReviewTotalsDto"
+          },
+          "previousYear": {
+            "nullable": true,
+            "description": "The year before, when it has entries",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/YearReviewComparisonDto"
+              }
+            ]
+          },
+          "months": {
+            "description": "Twelve months, January first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/YearReviewMonthDto"
+            }
+          },
+          "weekdays": {
+            "description": "Entries per weekday, Monday first",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "topTags": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/YearReviewTagDto"
+            }
+          },
+          "newTags": {
+            "description": "Tags first used this year",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "highlights": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/YearReviewHighlightDto"
+            }
+          },
+          "mood": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/YearReviewMoodDto"
+              }
+            ]
+          },
+          "aiAvailable": {
+            "type": "boolean",
+            "description": "Whether the mood of the year can be read with AI"
+          }
+        },
+        "required": [
+          "year",
+          "diaryId",
+          "availableYears",
+          "totals",
+          "previousYear",
+          "months",
+          "weekdays",
+          "topTags",
+          "newTags",
+          "highlights",
+          "mood",
+          "aiAvailable"
+        ],
+        "example": {
+          "year": 2026,
+          "diaryId": 1,
+          "availableYears": [
+            2026
+          ],
+          "totals": {
+            "entries": 1,
+            "words": 1,
+            "writingDays": 1,
+            "longestStreak": 1,
+            "favorites": 1,
+            "attachments": 1,
+            "averageWords": 1
+          },
+          "previousYear": {
+            "entries": 1,
+            "words": 1,
+            "writingDays": 1
+          },
+          "months": [
+            {
+              "month": 6,
+              "entries": 1,
+              "words": 1
+            }
+          ],
+          "weekdays": [
+            1
+          ],
+          "topTags": [
+            {
+              "tag": "reflection",
+              "count": 3
+            }
+          ],
+          "newTags": [
+            "reflection"
+          ],
+          "highlights": [
+            {
+              "kind": "first",
+              "entryId": 1,
+              "date": "2025-03-05",
+              "excerpt": "example",
+              "words": 1,
+              "tags": [
+                "reflection"
+              ]
+            }
+          ],
+          "mood": {
+            "months": [
+              {
+                "month": "2025-03",
+                "mood": "example",
+                "valence": 1
+              }
+            ],
+            "summary": "example",
+            "analyzedEntries": 1,
+            "generatedAt": "2026-06-24T10:00:00.000Z"
+          },
+          "aiAvailable": true
+        }
+      },
+      "YearMoodRequestDto": {
+        "type": "object",
+        "properties": {
+          "year": {
+            "type": "number",
+            "example": 2025
+          },
+          "diaryId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "year"
+        ],
+        "example": {
+          "year": 2025,
+          "diaryId": 1
+        }
+      },
+      "YearMoodResponseDto": {
+        "type": "object",
+        "properties": {
+          "mood": {
+            "$ref": "#/components/schemas/YearReviewMoodDto"
+          }
+        },
+        "required": [
+          "mood"
+        ],
+        "example": {
+          "mood": {
+            "months": [
+              {
+                "month": "2025-03",
+                "mood": "example",
+                "valence": 1
+              }
+            ],
+            "summary": "example",
+            "analyzedEntries": 1,
+            "generatedAt": "2026-06-24T10:00:00.000Z"
+          }
         }
       }
     }

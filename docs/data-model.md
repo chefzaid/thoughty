@@ -25,6 +25,8 @@ erDiagram
     Diary ||--o{ MemoirProgram : collects
     User ||--o{ MemoirAnswer : writes
     Entry ||--o| MemoirAnswer : answers
+    User ||--o{ YearReviewMood : keeps
+    Diary ||--o{ YearReviewMood : scopes
 
     Diary ||--o{ Entry : contains
     Diary ||--o{ BookVersion : scopes
@@ -217,6 +219,10 @@ erDiagram
 ## Guided Memoir
 
 `MemoirProgram` holds one guided memoir per user: the diary that collects answers, `active` or `paused`, the email choice, and the weekly schedule (`delivery_weekday` 0 = Sunday and an IANA `time_zone`, delivered at 09:00 local; `TIMESTAMPTZ` columns). `current_question_id` is this week's question and `next_delivery_at` drives the worker. The question catalogue is code (`thoughty-server/src/modules/memoir/memoir-questions.ts`), so questions are referenced by stable string ids rather than rows. `MemoirAnswer` links a question to the entry that answers it, keyed by `(user_id, question_id)` with a unique `entry_id`: one answer per question. Answers are ordinary private entries; their text lives only in `entries`.
+
+## Year Review Moods
+
+`YearReviewMood` keeps the latest AI reading of a year's mood: the writer, the year, the diary (null for all diaries), one `{month, mood, valence}` item per month in a JSONB array (valence from -2 to 2), a summary, and how many entries were read. A unique index on `(user_id, year, COALESCE(diary_id, 0))` keeps one reading per scope; reading again replaces it in one transaction. Deleting the user or the diary deletes the reading. Everything else in the year in review is computed from entries on request and not stored.
 
 ## Imported Entries
 

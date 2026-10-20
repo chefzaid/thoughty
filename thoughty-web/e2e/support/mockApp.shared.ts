@@ -1,5 +1,6 @@
 import { createMockMemoirState, type MockMemoirProgram, type MockMemoirState } from "./mockApp.memoir";
 import { createMockAppImportState, type MockAppImportState } from "./mockApp.app-import";
+import { createMockReviewState, type MockReviewState } from "./mockApp.review";
 
 type AuthPayload = {
   email?: string;
@@ -176,6 +177,7 @@ export interface MockAppState {
   bookVersions: MockBookVersion[];
   memoir: MockMemoirState;
   appImport: MockAppImportState;
+  review: MockReviewState;
   nextEntryId: number;
   lastLoginPayload: AuthPayload | null;
   lastRegisterPayload: AuthPayload | null;
@@ -435,6 +437,7 @@ export function createMockAppState(
     bookVersions: [],
     memoir: createMockMemoirState(options.memoirProgram ?? null),
     appImport: createMockAppImportState(),
+    review: createMockReviewState(),
     nextEntryId:
       (options.initialEntries?.reduce(
         (maxId, entry) => Math.max(maxId, entry.id),

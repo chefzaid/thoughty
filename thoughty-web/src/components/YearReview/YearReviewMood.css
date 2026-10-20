@@ -1,0 +1,59 @@
+/* Mood */
+.review-mood-summary {
+  margin: 0 0 0.75rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.review-mood-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.review-mood-axis {
+  stroke: rgba(148, 163, 184, 0.4);
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 4 4;
+}
+
+.review-mood-line {
+  fill: none;
+  stroke: #f59e0b;
+  stroke-width: 3;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.review-mood-point {
+  fill: #fbbf24;
+}
+
+.review-page.light .review-mood-line {
+  stroke: #b45309;
+}
+
+.review-page.light .review-mood-point {
+  fill: #92400e;
+}
+
+.review-mood-months {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  gap: 0.35rem 0.75rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+}
+
+.review-mood-month {
+  margin-right: 0.35rem;
+  font-weight: 700;
+}
+
+.review-privacy {
+  margin-top: 0.75rem;
+}

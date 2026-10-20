@@ -1,5 +1,9 @@
+import { useNavigate } from 'react-router-dom';
+
 import DiaryTabs from '../components/DiaryTabs/DiaryTabs';
 import Stats from '../components/Stats/Stats';
+import YearReviewTeaser from '../components/YearReview/YearReviewTeaser';
+import { getPathForView } from '../types';
 import type { Diary } from '../types';
 import type { TagMetadataMap } from '../utils/tagMetadata';
 
@@ -24,6 +28,8 @@ function StatsRoute({
   t,
   tagMetadata,
 }: Readonly<StatsRouteProps>) {
+  const navigate = useNavigate();
+
   return (
     <>
       <DiaryTabs
@@ -32,6 +38,11 @@ function StatsRoute({
         onDiaryChange={onDiaryChange}
         onManageDiaries={onManageDiaries}
         theme={theme}
+        t={t}
+      />
+      <YearReviewTeaser
+        theme={theme}
+        onOpen={() => navigate(`${getPathForView('review')}${currentDiaryId ? `?diary=${currentDiaryId}` : ''}`)}
         t={t}
       />
       <Stats

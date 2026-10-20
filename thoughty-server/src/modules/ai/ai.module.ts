@@ -11,6 +11,7 @@ import { AiSemanticSearchService } from './ai-semantic-search.service';
 import { AiCredentialsService } from './ai-credentials.service';
 import { AiUsageService } from './ai-usage.service';
 import { AiJournalRetagService } from './ai-journal-retag.service';
+import { AiYearMoodService } from './ai-year-mood.service';
 
 @Module({
   imports: [UserConfigModule, TypeOrmModule.forFeature([Entry, AiChatHistory, AiUsageEvent])],
@@ -24,7 +25,8 @@ import { AiJournalRetagService } from './ai-journal-retag.service';
     AiCredentialsService,
     AiUsageService,
     AiJournalRetagService,
+    AiYearMoodService,
   ],
-  exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService],
+  exports: [AiService, AiBookComposerService, AiPersonalityService, AiUsageService, AiCredentialsService, AiYearMoodService],
 })
 export class AiModule {}

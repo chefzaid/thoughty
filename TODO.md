@@ -272,7 +272,7 @@ Differentiators, each covered below:
 - [ ] Gift purchases: buy a memoir program or a printed book for someone else, with a gift message and invitation; the giver sees only what the writer chooses to share.
 - [ ] Family contributions: invited relatives add memories and photos to a memoir diary, published only after the owner approves each one.
 - [ ] Memoir interview mode: AI follow-up questions that deepen an answer, grounded strictly in what the writer said (same rules as book weaving).
-- [ ] Year in review: a yearly recap (entries, words, top tags, mood arc, highlights) kept private or shared, and printable as a booklet.
+- [x] Year in review: a yearly recap (entries, words, top tags, mood arc, highlights) kept private or shared, and printable as a booklet.
 
 ### Legacy
 

@@ -1,6 +1,6 @@
 # Thoughty
 
-Thoughty is a privacy-focused journal. Write dated entries in plain text or Markdown, organize them with tags and multiple diaries, and revisit them through search, highlights, and statistics. A guided memoir asks one life-story question a week and turns the answers, written or spoken, into the chapters of a book. Optional AI helps you tag, rephrase, summarize, and find inspiration. Your journal stays portable: bring it over from Day One or Journey with its photos, export it as a folder of Markdown files with attachments, print it as a book, or sync it to the cloud.
+Thoughty is a privacy-focused journal. Write dated entries in plain text or Markdown, organize them with tags and multiple diaries, and revisit them through search, highlights, and statistics. A guided memoir asks one life-story question a week and turns the answers, written or spoken, into the chapters of a book. Each year gets a private review of what you wrote, with the moments worth rereading and, if you ask, the mood of your year. Optional AI helps you tag, rephrase, summarize, and find inspiration. Your journal stays portable: bring it over from Day One or Journey with its photos, export it as a folder of Markdown files with attachments, print it as a book, or sync it to the cloud.
 
 ![Node](https://img.shields.io/badge/node-22-brightgreen.svg)
 ![React](https://img.shields.io/badge/react-19-61dafb.svg)

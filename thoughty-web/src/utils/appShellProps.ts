@@ -251,6 +251,12 @@ export function buildAuthenticatedRoutesProps({
       onDiariesChanged: diariesState.fetchDiaries,
       t,
     },
+    reviewRouteProps: {
+      theme: config.theme,
+      language: config.language,
+      diaries: diariesState.diaries,
+      t,
+    },
     profileRouteProps: {
       config,
       onUpdateConfig: (newConfig: Config) => updateConfig(newConfig),

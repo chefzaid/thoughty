@@ -1,6 +1,6 @@
 // Navigation and view types
 
-export type ViewType = 'journal' | 'feed' | 'memoir' | 'tags' | 'profile' | 'diaries' | 'stats' | 'importExport';
+export type ViewType = 'journal' | 'feed' | 'memoir' | 'tags' | 'profile' | 'diaries' | 'stats' | 'review' | 'importExport';
 export type PublicViewType = 'intro' | 'login' | 'register' | 'verifyEmail' | 'about' | 'privacy' | 'terms' | 'contact' | 'feedback' | 'blog';
 export type DiaryScopedViewType = 'journal' | 'diaries' | 'stats' | 'importExport';
 export type DiaryReturnViewType = Exclude<DiaryScopedViewType, 'diaries'>;
@@ -35,6 +35,7 @@ export const VIEW_PATHS: Record<ViewType, string> = {
   profile: '/profile',
   diaries: '/diaries',
   stats: '/stats',
+  review: '/review',
   importExport: '/import-export',
 };
 

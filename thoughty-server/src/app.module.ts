@@ -17,6 +17,7 @@ import { MetricsModule } from './modules/metrics';
 import { FeatureRequestsModule } from './modules/feature-requests';
 import { SocialModule } from './modules/social';
 import { MemoirModule } from './modules/memoir';
+import { ReviewModule } from './modules/review';
 import { HealthController } from './health.controller';
 import {
   createThrottlerModuleOptions,
@@ -55,6 +56,7 @@ import {
     FeatureRequestsModule,
     SocialModule,
     MemoirModule,
+    ReviewModule,
   ],
   providers: [
     // Global JWT Auth Guard

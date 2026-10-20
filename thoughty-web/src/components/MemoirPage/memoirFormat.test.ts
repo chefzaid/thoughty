@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { browserTimeZone, formatDeliveryDate, localize, weekdayName, WEEKDAYS } from './memoirFormat';
+import { weekdayName } from '../../utils/calendarNames';
+import { browserTimeZone, formatDeliveryDate, localize, WEEKDAYS } from './memoirFormat';
 
 describe('memoirFormat', () => {
   afterEach(() => vi.restoreAllMocks());

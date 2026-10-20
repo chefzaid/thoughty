@@ -110,6 +110,10 @@ Day One and Journey exports are read in the browser; only the mapped entries and
 - A file batch holds at most 8 files and one `entryIds` field with no nested names. Every entry must belong to the writer and every file must pass the attachment allowlist and 5 MB limit before any file is stored.
 - The Markdown export streams one attachment at a time, re-checks the 5 MB limit while reading storage, builds every path from sanitized names (no separators, reserved characters, or `..`), and stops reading storage when the download is closed.
 
+## Year in Review
+
+The review is computed on request from the writer's own entries and is never public. Sharing posts only the text the writer read and edited, as an ordinary public entry; tag names are left out unless the writer ticks the option. Reviews and mood readings are scoped to a diary only when the writer owns it (`404` otherwise).
+
 ## Guided Memoir
 
 Memoir answers are private entries; the API never makes them public, and a writer can only start, answer, or move the memoir into a diary they own (anything else answers `404`). Recordings attached to an answer must be the writer's own uploads and are checked before any entry is written. Weekly emails go only to verified addresses of live accounts, contain only the catalogue question and a link to `/memoir`, never journal text, and the worker logs a failed send by user id without the address. A memoir answer is an ordinary entry, so the AI rules below apply unchanged: transcription and AI book weaving send text only when the writer asks for them.
@@ -130,9 +134,10 @@ What each feature sends to the provider:
 | Meaning search | the query plus at most the 100 newest entries in scope, for embeddings |
 | Organize journal tags | at most the 300 newest non-empty entries, each capped at 400 characters |
 | Writing-tendency analysis | bounded aggregate word, subject, and writing metrics computed locally — no raw text |
+| Year in review mood arc | only when the user asks: up to five non-archived entries per month of the chosen year, spread across the month, as plain text capped at 600 characters each; the reading (a mood word and a -2 to 2 score per month, plus a summary) is stored in `year_review_moods` and included in the GDPR export |
 | Audio transcription | the single audio attachment the user selected (5 MB limit re-checked while reading storage) |
 
-All prompts instruct the model not to follow instructions embedded in journal text or tag names. Journal tag organization is preview-first: applying a reviewed plan does not call the provider again, and the server rechecks that every referenced entry belongs to the user before changing tags. The Stats Connections graph is computed locally from entry IDs, dates, and tags, and never involves an AI provider.
+All prompts instruct the model not to follow instructions embedded in journal text or tag names. Mood readings that use clinical labels are discarded rather than shown. Journal tag organization is preview-first: applying a reviewed plan does not call the provider again, and the server rechecks that every referenced entry belongs to the user before changing tags. The Stats Connections graph is computed locally from entry IDs, dates, and tags, and never involves an AI provider.
 
 Usage accounting stores one metadata-only row per OpenRouter response (user, credential source, model, token counts, cost, timestamp) and never prompts or completions. Local-LLM support would change these assumptions and needs its own ADR.
 

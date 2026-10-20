@@ -1,5 +1,6 @@
 import type { TranslationFunction } from '../../types';
-import { WEEKDAYS, weekdayName, type MemoirLanguage } from './memoirFormat';
+import { weekdayName } from '../../utils/calendarNames';
+import { WEEKDAYS, type MemoirLanguage } from './memoirFormat';
 
 interface MemoirScheduleFieldsProps {
   readonly idPrefix: string;

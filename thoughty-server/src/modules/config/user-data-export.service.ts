@@ -11,6 +11,7 @@ import {
   EntryRevision,
   MemoirAnswer,
   MemoirProgram,
+  YearReviewMood,
   Setting,
   User,
   UserFollow,
@@ -44,10 +45,12 @@ export class UserDataExportService {
     private readonly memoirProgramRepository: Repository<MemoirProgram>,
     @InjectRepository(MemoirAnswer)
     private readonly memoirAnswerRepository: Repository<MemoirAnswer>,
+    @InjectRepository(YearReviewMood)
+    private readonly yearReviewMoodRepository: Repository<YearReviewMood>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       this.entryRepository.find({ where: { userId }, order: { date: 'ASC', index: 'ASC' } }),
@@ -56,6 +59,7 @@ export class UserDataExportService {
       this.settingRepository.find({ where: { userId } }),
       this.collectSocialData(userId),
       this.collectMemoirData(userId),
+      this.yearReviewMoodRepository.find({ where: { userId }, order: { year: 'ASC', createdAt: 'ASC' } }),
     ]);
 
     const safeUser = user
@@ -127,6 +131,14 @@ export class UserDataExportService {
       settings: safeSettings,
       ...social,
       memoir,
+      yearReviewMoods: yearReviewMoods.map((mood) => ({
+        year: mood.year,
+        diaryId: mood.diaryId,
+        months: mood.months,
+        summary: mood.summary,
+        analyzedEntries: mood.analyzedEntries,
+        generatedAt: mood.createdAt,
+      })),
     };
   }
 

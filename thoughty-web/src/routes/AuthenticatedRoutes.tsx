@@ -8,6 +8,7 @@ import ImportExportRoute from './ImportExportRoute';
 import JournalRoute from './JournalRoute';
 import MemoirRoute from './MemoirRoute';
 import ProfileRoute from './ProfileRoute';
+import ReviewRoute from './ReviewRoute';
 import StatsRoute from './StatsRoute';
 import TagManagerRoute from './TagManagerRoute';
 
@@ -18,6 +19,7 @@ interface AuthenticatedRoutesProps {
   journalRouteProps: ComponentProps<typeof JournalRoute>;
   memoirRouteProps: ComponentProps<typeof MemoirRoute>;
   profileRouteProps: ComponentProps<typeof ProfileRoute>;
+  reviewRouteProps: ComponentProps<typeof ReviewRoute>;
   statsRouteProps: ComponentProps<typeof StatsRoute>;
   tagManagerRouteProps: ComponentProps<typeof TagManagerRoute>;
 }
@@ -29,6 +31,7 @@ function AuthenticatedRoutes({
   journalRouteProps,
   memoirRouteProps,
   profileRouteProps,
+  reviewRouteProps,
   statsRouteProps,
   tagManagerRouteProps,
 }: Readonly<AuthenticatedRoutesProps>) {
@@ -40,6 +43,7 @@ function AuthenticatedRoutes({
       <Route path={getPathForView('feed')} element={<FeedRoute {...feedRouteProps} />} />
       <Route path={getPathForView('memoir')} element={<MemoirRoute {...memoirRouteProps} />} />
       <Route path={getPathForView('stats')} element={<StatsRoute {...statsRouteProps} />} />
+      <Route path={getPathForView('review')} element={<ReviewRoute {...reviewRouteProps} />} />
       <Route path={getPathForView('importExport')} element={<ImportExportRoute {...importExportRouteProps} />} />
       <Route path={getPathForView('journal')} element={<JournalRoute {...journalRouteProps} />} />
       <Route path="*" element={<Navigate to={getPathForView('journal')} replace />} />

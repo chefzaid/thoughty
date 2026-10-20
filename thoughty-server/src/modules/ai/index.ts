@@ -2,6 +2,8 @@ export * from './ai.module';
 export * from './ai.controller';
 export * from './ai-book-composer.service';
 export * from './ai-personality.service';
+export * from './ai-year-mood.service';
+export * from './year-mood-analysis';
 export * from './ai-duplicate.service';
 export * from './ai-semantic-search.service';
 export * from './ai-credentials.service';

@@ -13,6 +13,7 @@ import {
   CommentLike,
   MemoirProgram,
   MemoirAnswer,
+  YearReviewMood,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -34,6 +35,7 @@ import { FeatureFlagsService } from '@/common';
       CommentLike,
       MemoirProgram,
       MemoirAnswer,
+      YearReviewMood,
     ]),
   ],
   controllers: [ConfigController],

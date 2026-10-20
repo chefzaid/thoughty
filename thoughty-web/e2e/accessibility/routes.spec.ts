@@ -25,6 +25,7 @@ const AUTHENTICATED_ROUTES = [
   '/profile',
   '/diaries',
   '/stats',
+  '/review',
   '/import-export',
 ] as const;
 
@@ -74,6 +75,27 @@ test.describe('route accessibility', () => {
       await setupMockApp(page, { startAuthenticated: true, config: { theme }, memoirProgram: { diaryId: 1 } });
       await page.goto('/memoir');
       await page.getByRole('button', { name: 'Answer', exact: true }).click();
+
+      await expectNoAccessibilityViolations(page);
+    });
+  }
+
+  for (const theme of THEMES) {
+    test(`${theme} year in review with its mood and share form`, async ({ page }) => {
+      await setupMockApp(page, {
+        startAuthenticated: true,
+        config: { theme },
+        initialEntries: [
+          { id: 1, date: '2025-02-03', index: 1, content: 'Snow and soup.', tags: ['winter'], visibility: 'private', is_favorite: true },
+          { id: 2, date: '2025-05-20', index: 1, content: 'Long walk by the sea.', tags: ['walks'], visibility: 'private' },
+          { id: 3, date: '2025-11-02', index: 1, content: 'Leaves everywhere.', tags: ['walks'], visibility: 'private' },
+        ],
+      });
+      await page.goto('/review?year=2025');
+      const mood = page.getByRole('region', { name: 'The mood of your year' });
+      await mood.getByRole('button', { name: 'Read the mood of my year' }).click();
+      await expect(mood.getByRole('img')).toBeVisible();
+      await page.getByRole('button', { name: 'Share a summary' }).click();
 
       await expectNoAccessibilityViolations(page);
     });
