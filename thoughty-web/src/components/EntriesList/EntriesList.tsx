@@ -355,7 +355,7 @@ function EntriesList({
                                     <div
                                         key={entry.id}
                                         id={`entry-${entry.id}`}
-                                        className={`relative rounded-lg p-5 shadow-sm border transition-all flex gap-3 ${
+                                        className={`relative rounded-lg p-5 shadow-sm border transition-all flex gap-3 has-[[aria-expanded=true]]:z-30 ${
                                             isDark ? 'bg-gray-800 border-gray-700 hover:border-gray-600' : 'bg-white border-gray-200 hover:border-gray-300'
                                         } ${targetEntryId === entry.id || activeTargetId === entry.id ? 'highlight-entry' : ''} ${bulkMode && selectedIds?.has(entry.id) ? getSelectedRingClass(isDark) : ''}${dragHighlightClass}`}
                                         data-archived={entry.is_archived ? 'true' : 'false'}

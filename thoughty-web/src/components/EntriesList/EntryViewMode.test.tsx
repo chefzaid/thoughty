@@ -151,8 +151,10 @@ describe('EntryViewMode', () => {
 
         expect(screen.queryByTitle('Delete')).not.toBeInTheDocument();
         expect(screen.getByTitle('Discuss entry')).toBeInTheDocument();
+        expect(screen.getByLabelText('More actions')).toHaveAttribute('aria-expanded', 'false');
 
         await user.click(screen.getByLabelText('More actions'));
+        expect(screen.getByRole('button', { name: 'More actions' })).toHaveAttribute('aria-expanded', 'true');
 
         expect(screen.getByTitle('Open entry permalink')).toHaveAttribute('href', getTestEntryPermalink(mockEntries[0].id));
         expect(screen.getByTitle('Share entry')).toBeInTheDocument();

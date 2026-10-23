@@ -15,8 +15,9 @@ describe('MemoirAnswersService', () => {
       findOne: jest.fn().mockResolvedValue({ userId: 3, diaryId: 6, timeZone: 'America/Los_Angeles' }),
     };
     answerRepository = {
-      exists: jest.fn().mockResolvedValue(false),
+      findOne: jest.fn().mockResolvedValue(null),
       insert: jest.fn().mockResolvedValue(undefined),
+      update: jest.fn().mockResolvedValue(undefined),
     };
     entriesService = {
       create: jest.fn().mockResolvedValue({ success: true, entryId: 81 }),
@@ -86,7 +87,7 @@ describe('MemoirAnswersService', () => {
   });
 
   it('refuses a second answer and attachments the writer does not own before writing anything', async () => {
-    answerRepository.exists.mockResolvedValueOnce(true);
+    answerRepository.findOne.mockResolvedValueOnce({ questionId: 'love-first', entryId: 40, entry: { id: 40 } });
     await expect(service.answer(3, { questionId: 'love-first', text: 'x' })).rejects.toThrow(ConflictException);
 
     attachmentsService.getOwnedAttachment.mockRejectedValueOnce(new NotFoundException('Attachment not found'));
@@ -107,5 +108,17 @@ describe('MemoirAnswersService', () => {
     answerRepository.insert.mockRejectedValueOnce(new Error('connection lost'));
     await expect(service.answer(3, { questionId: 'love-first', text: 'x' })).rejects.toThrow('connection lost');
     expect(entriesService.delete).toHaveBeenCalledTimes(2);
+  });
+
+  it('answers again when the previous answer is in the recycle bin, moving the link to the new entry', async () => {
+    answerRepository.findOne.mockResolvedValueOnce({ questionId: 'love-first', entryId: 40, entry: null });
+
+    await expect(service.answer(3, { questionId: 'love-first', text: 'A new telling' })).resolves.toEqual({
+      questionId: 'love-first',
+      entryId: 81,
+    });
+
+    expect(answerRepository.update).toHaveBeenCalledWith({ userId: 3, questionId: 'love-first' }, { entryId: 81 });
+    expect(answerRepository.insert).not.toHaveBeenCalled();
   });
 });

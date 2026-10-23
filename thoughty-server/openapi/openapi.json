@@ -7035,6 +7035,246 @@
           "Year in review"
         ]
       }
+    },
+    "/api/recycle-bin": {
+      "get": {
+        "operationId": "RecycleBinController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20,
+              "example": 20,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A page of the recycle bin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecycleBinListResponseDto"
+                },
+                "example": {
+                  "entries": [
+                    {
+                      "id": 12,
+                      "date": "2026-10-21",
+                      "content": "Walked by the river before work and finally felt rested.",
+                      "format": "plain",
+                      "tags": [
+                        "walks"
+                      ],
+                      "diaryId": 2,
+                      "diaryName": "Daily Journal",
+                      "diaryIcon": "📓",
+                      "diaryColor": "#2A9D8F",
+                      "attachmentCount": 1,
+                      "deletedAt": "2026-10-22T08:30:00.000Z",
+                      "purgeAt": "2026-11-21T08:30:00.000Z"
+                    }
+                  ],
+                  "total": 1,
+                  "page": 1,
+                  "totalPages": 1,
+                  "retentionDays": 30
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List deleted entries kept for 30 days, most recently deleted first",
+        "tags": [
+          "Recycle bin"
+        ]
+      },
+      "delete": {
+        "operationId": "RecycleBinController_empty",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Recycle bin emptied",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecycleBinDeleteResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "deletedCount": 2
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Empty the recycle bin",
+        "tags": [
+          "Recycle bin"
+        ]
+      }
+    },
+    "/api/recycle-bin/restore": {
+      "post": {
+        "operationId": "RecycleBinController_restore",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecycleBinSelectionDto"
+              },
+              "example": {
+                "ids": [
+                  12,
+                  15
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entries restored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecycleBinRestoreResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "restoredCount": 2,
+                  "movedToDefaultCount": 0
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "None of the entries are in the recycle bin"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restore entries to their diary, or to the default diary when theirs is gone",
+        "tags": [
+          "Recycle bin"
+        ]
+      }
+    },
+    "/api/recycle-bin/restore-all": {
+      "post": {
+        "operationId": "RecycleBinController_restoreAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Entries restored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecycleBinRestoreResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "restoredCount": 2,
+                  "movedToDefaultCount": 0
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The recycle bin is empty"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Restore every entry in the recycle bin",
+        "tags": [
+          "Recycle bin"
+        ]
+      }
+    },
+    "/api/recycle-bin/delete": {
+      "post": {
+        "operationId": "RecycleBinController_deletePermanently",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecycleBinSelectionDto"
+              },
+              "example": {
+                "ids": [
+                  12,
+                  15
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entries deleted permanently",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecycleBinDeleteResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "deletedCount": 2
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "None of the entries are in the recycle bin"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete entries from the recycle bin for good, with their history and files",
+        "tags": [
+          "Recycle bin"
+        ]
+      }
     }
   },
   "info": {
@@ -12615,6 +12855,240 @@
             "analyzedEntries": 1,
             "generatedAt": "2026-06-24T10:00:00.000Z"
           }
+        }
+      },
+      "TrashedEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 12
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-21",
+            "format": "date"
+          },
+          "content": {
+            "type": "string",
+            "example": "Walked by the river before work and finally felt rested."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ],
+            "example": "plain"
+          },
+          "tags": {
+            "example": [
+              "walks"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "diaryId": {
+            "type": "number",
+            "nullable": true,
+            "example": 2,
+            "description": "Diary the entry returns to; null when that diary is gone"
+          },
+          "diaryName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Daily Journal"
+          },
+          "diaryIcon": {
+            "type": "string",
+            "nullable": true,
+            "example": "📓"
+          },
+          "diaryColor": {
+            "type": "string",
+            "nullable": true,
+            "example": "#2A9D8F"
+          },
+          "attachmentCount": {
+            "type": "number",
+            "example": 1,
+            "description": "Files kept with the entry until it is restored or removed"
+          },
+          "deletedAt": {
+            "type": "string",
+            "example": "2026-10-22T08:30:00.000Z",
+            "format": "date-time"
+          },
+          "purgeAt": {
+            "type": "string",
+            "example": "2026-11-21T08:30:00.000Z",
+            "format": "date-time",
+            "description": "When the entry is removed for good"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "content",
+          "format",
+          "tags",
+          "diaryId",
+          "diaryName",
+          "diaryIcon",
+          "diaryColor",
+          "attachmentCount",
+          "deletedAt",
+          "purgeAt"
+        ],
+        "example": {
+          "id": 12,
+          "date": "2026-10-21",
+          "content": "Walked by the river before work and finally felt rested.",
+          "format": "plain",
+          "tags": [
+            "walks"
+          ],
+          "diaryId": 2,
+          "diaryName": "Daily Journal",
+          "diaryIcon": "📓",
+          "diaryColor": "#2A9D8F",
+          "attachmentCount": 1,
+          "deletedAt": "2026-10-22T08:30:00.000Z",
+          "purgeAt": "2026-11-21T08:30:00.000Z"
+        }
+      },
+      "RecycleBinListResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TrashedEntryDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "example": 1
+          },
+          "page": {
+            "type": "number",
+            "example": 1
+          },
+          "totalPages": {
+            "type": "number",
+            "example": 1
+          },
+          "retentionDays": {
+            "type": "number",
+            "example": 30
+          }
+        },
+        "required": [
+          "entries",
+          "total",
+          "page",
+          "totalPages",
+          "retentionDays"
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": 12,
+              "date": "2026-10-21",
+              "content": "Walked by the river before work and finally felt rested.",
+              "format": "plain",
+              "tags": [
+                "walks"
+              ],
+              "diaryId": 2,
+              "diaryName": "Daily Journal",
+              "diaryIcon": "📓",
+              "diaryColor": "#2A9D8F",
+              "attachmentCount": 1,
+              "deletedAt": "2026-10-22T08:30:00.000Z",
+              "purgeAt": "2026-11-21T08:30:00.000Z"
+            }
+          ],
+          "total": 1,
+          "page": 1,
+          "totalPages": 1,
+          "retentionDays": 30
+        }
+      },
+      "RecycleBinSelectionDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "example": [
+              12,
+              15
+            ],
+            "description": "Entries in the recycle bin",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "example": {
+          "ids": [
+            12,
+            15
+          ]
+        }
+      },
+      "RecycleBinRestoreResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "restoredCount": {
+            "type": "number",
+            "example": 2
+          },
+          "movedToDefaultCount": {
+            "type": "number",
+            "example": 0,
+            "description": "Restored entries whose diary no longer exists and went to the default diary"
+          }
+        },
+        "required": [
+          "success",
+          "restoredCount",
+          "movedToDefaultCount"
+        ],
+        "example": {
+          "success": true,
+          "restoredCount": 2,
+          "movedToDefaultCount": 0
+        }
+      },
+      "RecycleBinDeleteResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "deletedCount": {
+            "type": "number",
+            "example": 2
+          }
+        },
+        "required": [
+          "success",
+          "deletedCount"
+        ],
+        "example": {
+          "success": true,
+          "deletedCount": 2
         }
       }
     }

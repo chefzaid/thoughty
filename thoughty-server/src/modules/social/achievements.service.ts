@@ -114,7 +114,7 @@ export class AchievementsService {
       `SELECT MAX(run) AS streak FROM (
          SELECT COUNT(*) AS run FROM (
            SELECT day - (ROW_NUMBER() OVER (ORDER BY day))::int AS island
-           FROM (SELECT DISTINCT date AS day FROM entries WHERE user_id = $1) days
+           FROM (SELECT DISTINCT date AS day FROM entries WHERE user_id = $1 AND deleted_at IS NULL) days
          ) numbered
          GROUP BY island
        ) runs`,

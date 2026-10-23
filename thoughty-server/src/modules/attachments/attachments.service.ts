@@ -242,21 +242,26 @@ export class AttachmentsService implements OnModuleInit {
       where: { userId, entryId },
     });
 
-    for (const attachment of attachments) {
+    await this.removeStoredFiles(attachments.map((attachment) => attachment.storedFilename));
+    await this.attachmentRepository.remove(attachments);
+  }
+
+  /**
+   * Deletes blobs whose attachment rows are already gone, such as the files of entries removed
+   * from the recycle bin. A failed delete is logged and skipped so the others still go.
+   */
+  async removeStoredFiles(storedFilenames: string[]): Promise<void> {
+    for (const storedFilename of storedFilenames) {
       try {
         await this.s3.send(
           new DeleteObjectCommand({
             Bucket: this.bucket,
-            Key: attachment.storedFilename,
+            Key: storedFilename,
           }),
         );
       } catch (err) {
-        this.logger.warn(
-          `Could not delete S3 object ${attachment.storedFilename}: ${(err as Error).message}`,
-        );
+        this.logger.warn(`Could not delete S3 object ${storedFilename}: ${(err as Error).message}`);
       }
     }
-
-    await this.attachmentRepository.remove(attachments);
   }
 }

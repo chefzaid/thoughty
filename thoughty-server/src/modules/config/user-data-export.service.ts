@@ -53,7 +53,8 @@ export class UserDataExportService {
     const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
-      this.entryRepository.find({ where: { userId }, order: { date: 'ASC', index: 'ASC' } }),
+      // Entries in the recycle bin are still personal data until they are removed for good
+      this.entryRepository.find({ where: { userId }, order: { date: 'ASC', index: 'ASC' }, withDeleted: true }),
       this.revisionRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
       this.attachmentRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
       this.settingRepository.find({ where: { userId } }),
@@ -107,6 +108,7 @@ export class UserDataExportService {
         visibility: entry.visibility,
         isFavorite: entry.isFavorite,
         createdAt: entry.createdAt,
+        deletedAt: entry.deletedAt,
       })),
       revisions: revisions.map((revision) => ({
         id: revision.id,

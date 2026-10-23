@@ -53,6 +53,10 @@ describe('AchievementsService', () => {
       followers: 5,
     });
     expect(result.karma).toBe(20);
+    expect(entryRepository.query).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE user_id = $1 AND deleted_at IS NULL'),
+      [7],
+    );
     expect(result.badges).toHaveLength(BADGES.length);
     expect(result.badges.filter((badge) => badge.earned).map((badge) => badge.id)).toEqual([
       'first-public-entry',

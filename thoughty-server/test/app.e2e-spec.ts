@@ -112,6 +112,16 @@ describe('AppController (e2e)', () => {
     });
 
     it.each([
+      ['get', '/api/recycle-bin'],
+      ['post', '/api/recycle-bin/restore'],
+      ['post', '/api/recycle-bin/restore-all'],
+      ['post', '/api/recycle-bin/delete'],
+      ['delete', '/api/recycle-bin'],
+    ] as const)('%s %s - should require authentication', (method, path) => {
+      return request(app.getHttpServer())[method](path).send({}).expect(401);
+    });
+
+    it.each([
       ['get', '/api/auth/two-factor/status'],
       ['post', '/api/auth/two-factor/setup'],
       ['post', '/api/auth/two-factor/enable'],

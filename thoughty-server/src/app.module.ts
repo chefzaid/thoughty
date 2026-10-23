@@ -18,6 +18,7 @@ import { FeatureRequestsModule } from './modules/feature-requests';
 import { SocialModule } from './modules/social';
 import { MemoirModule } from './modules/memoir';
 import { ReviewModule } from './modules/review';
+import { RecycleBinModule } from './modules/recycle-bin';
 import { HealthController } from './health.controller';
 import {
   createThrottlerModuleOptions,
@@ -57,6 +58,7 @@ import {
     SocialModule,
     MemoirModule,
     ReviewModule,
+    RecycleBinModule,
   ],
   providers: [
     // Global JWT Auth Guard

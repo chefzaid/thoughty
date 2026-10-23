@@ -65,6 +65,11 @@ export interface MockEntry {
   }>;
 }
 
+/** An entry in the recycle bin, with when it was deleted. */
+export interface MockTrashedEntry extends MockEntry {
+  deletedAt: string;
+}
+
 export interface MockEntryRevision {
   id: number;
   entryId: number;
@@ -113,6 +118,8 @@ export interface SetupMockAppOptions {
   startAuthenticated?: boolean;
   initialEntries?: MockEntry[];
   initialRevisions?: Record<number, MockEntryRevision[]>;
+  /** Entries already in the recycle bin. */
+  initialTrash?: MockTrashedEntry[];
   config?: Partial<MockAppState["config"]>;
   diaries?: MockAppState["diaries"];
   cloudStatus?: MockAppState["cloudStatus"];
@@ -163,6 +170,7 @@ export interface MockAppState {
     color?: string | null;
   }>;
   entries: MockEntry[];
+  trash: MockTrashedEntry[];
   revisions: Record<number, MockEntryRevision[]>;
   cloudStatus: Record<MockCloudProvider, MockCloudProviderStatus>;
   cloudSchedules: Partial<Record<MockCloudProvider, MockCloudSchedule>>;
@@ -317,6 +325,21 @@ export function sortEntries(entries: MockEntry[]): MockEntry[] {
   });
 }
 
+/** Moves entries to the recycle bin and closes the gaps they leave in their days, as the API does. */
+export function moveToTrash(state: MockAppState, isTrashed: (entry: MockEntry) => boolean): number {
+  const deletedAt = new Date().toISOString();
+  const trashed = state.entries.filter(isTrashed);
+  state.trash.push(...trashed.map((entry) => ({ ...entry, deletedAt })));
+  const remaining = sortEntries(state.entries.filter((entry) => !isTrashed(entry)));
+  const dayCounts = new Map<string, number>();
+  state.entries = remaining.map((entry) => {
+    const index = (dayCounts.get(entry.date) ?? 0) + 1;
+    dayCounts.set(entry.date, index);
+    return { ...entry, index };
+  });
+  return trashed.length;
+}
+
 export function unique<T>(values: T[]): T[] {
   return [...new Set(values)];
 }
@@ -421,6 +444,7 @@ export function createMockAppState(
     // Copied, so diaries a test creates never leak into the next test's defaults
     diaries: (options.diaries || DEFAULT_DIARIES).map((diary) => ({ ...diary })),
     entries: sortEntries(options.initialEntries || []),
+    trash: (options.initialTrash || []).map((entry) => ({ ...entry })),
     revisions: options.initialRevisions || {},
     cloudStatus: options.cloudStatus || DEFAULT_CLOUD_STATUS,
     cloudSchedules: options.cloudSchedules || DEFAULT_CLOUD_SCHEDULES,
@@ -439,10 +463,10 @@ export function createMockAppState(
     appImport: createMockAppImportState(),
     review: createMockReviewState(),
     nextEntryId:
-      (options.initialEntries?.reduce(
+      [...(options.initialEntries || []), ...(options.initialTrash || [])].reduce(
         (maxId, entry) => Math.max(maxId, entry.id),
         0,
-      ) || 0) + 1,
+      ) + 1,
     lastLoginPayload: null,
     lastRegisterPayload: null,
     lastVerificationToken: null,

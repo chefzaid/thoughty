@@ -68,5 +68,6 @@ test.describe('Journal entry lifecycle', () => {
 
     await expect(page.getByText(lifecycleEntry.content)).toHaveCount(0);
     await expect.poll(() => state.entries.length).toBe(0);
+    await expect.poll(() => state.trash.length).toBe(1);
   });
 });

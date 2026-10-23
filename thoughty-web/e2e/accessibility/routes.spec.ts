@@ -27,6 +27,7 @@ const AUTHENTICATED_ROUTES = [
   '/stats',
   '/review',
   '/import-export',
+  '/recycle-bin',
 ] as const;
 
 const THEMES = ['dark', 'light'] as const;
@@ -68,6 +69,26 @@ test.describe('route accessibility', () => {
         await expectNoAccessibilityViolations(page);
       });
     }
+  }
+
+  for (const theme of THEMES) {
+    test(`${theme} recycle bin with entries waiting and a delete confirmation`, async ({ page }) => {
+      await setupMockApp(page, {
+        startAuthenticated: true,
+        config: { theme },
+        initialTrash: [
+          { id: 41, date: '2026-10-20', index: 1, content: 'Rain on the tram window.', tags: ['commute'], visibility: 'private', diaryId: 2, deletedAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString() },
+          { id: 42, date: '2026-10-18', index: 1, content: 'Bread from the corner bakery.', tags: [], visibility: 'private', diaryId: 1, deletedAt: new Date().toISOString() },
+        ],
+      });
+      await page.goto('/recycle-bin');
+      await expect(page.getByRole('article')).toHaveCount(2);
+      await expectNoAccessibilityViolations(page);
+
+      await page.getByRole('button', { name: 'Delete the entry of October 20, 2026 forever' }).click();
+      await expect(page.getByRole('heading', { name: 'Delete forever?' })).toBeVisible();
+      await expectNoAccessibilityViolations(page);
+    });
   }
 
   for (const theme of THEMES) {

@@ -4,6 +4,7 @@ import { AppModule } from './app.module';
 import { JsonLogger } from './common';
 import { CloudSyncWorkerService } from './modules/cloud-sync/cloud-sync-worker.service';
 import { MemoirDeliveryWorkerService } from './modules/memoir/memoir-delivery-worker.service';
+import { RecycleBinPurgeWorkerService } from './modules/recycle-bin/recycle-bin-purge-worker.service';
 
 const logger = new JsonLogger('CloudSyncWorkerBootstrap');
 
@@ -30,6 +31,7 @@ async function bootstrap(): Promise<void> {
 
   await app.get(CloudSyncWorkerService).start();
   await app.get(MemoirDeliveryWorkerService).start();
+  await app.get(RecycleBinPurgeWorkerService).start();
 }
 
 bootstrap().catch((error: unknown) => {

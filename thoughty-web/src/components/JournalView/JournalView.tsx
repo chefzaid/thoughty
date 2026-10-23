@@ -34,6 +34,7 @@ interface JournalViewProps {
   pagination: PaginationProps;
   yearMonthNavigator: YearMonthNavigatorProps;
   duplicateReview: DuplicateReviewProps;
+  onOpenRecycleBin: () => void;
   config: Config;
   t: TranslationFunction;
 }
@@ -47,6 +48,7 @@ function JournalView({
   pagination,
   yearMonthNavigator,
   duplicateReview,
+  onOpenRecycleBin,
   config,
   t
 }: Readonly<JournalViewProps>) {
@@ -102,11 +104,25 @@ function JournalView({
           t={t}
           onOpenHighlights={() => thoughtOfDay.setOpen(true)}
           actions={(
-            <DuplicateReview
-              {...duplicateReview}
-              theme={config.theme}
-              t={t}
-            />
+            <>
+              <DuplicateReview
+                {...duplicateReview}
+                theme={config.theme}
+                t={t}
+              />
+              <button
+                type="button"
+                onClick={onOpenRecycleBin}
+                className={`flex h-10 shrink-0 items-center gap-2 rounded-lg border px-4 text-sm font-medium transition-all ${config.theme === 'light'
+                  ? 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100'
+                  : 'border-gray-600 bg-gray-900 text-gray-300 hover:bg-gray-800'
+                  }`}
+                title={t('recycleBinOpenHint')}
+              >
+                <span className="codicon codicon-trash" aria-hidden="true" />
+                {t('recycleBin')}
+              </button>
+            </>
           )}
         />
       </div>

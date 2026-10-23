@@ -82,6 +82,8 @@ describe('MemoirService', () => {
           entry: { id: 81, content: `### Home?\n\n${'word '.repeat(300)}` },
         },
         { questionId: 'retired-question', entryId: 82, createdAt: new Date('2026-10-06T09:00:00Z'), entry: { id: 82, content: 'Old answer' } },
+        // In the recycle bin: the join leaves the entry out
+        { questionId: 'childhood-earliest-memory', entryId: 83, createdAt: new Date('2026-10-07T09:00:00Z'), entry: null },
       ]);
 
       const overview = await service.getOverview(3);

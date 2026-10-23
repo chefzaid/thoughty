@@ -1,4 +1,5 @@
 import {
+  moveToTrash,
   sortEntries,
   unique,
   type MockAppState,
@@ -121,10 +122,8 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
   if (pathname === '/api/entries/all' && request.method() === 'DELETE') {
     const diaryId = searchParams.get('diaryId');
     state.lastDeleteAllRequestUrl = new URL(request.url());
-    state.entries = diaryId
-      ? state.entries.filter((entry) => String(entry.diaryId ?? 1) !== diaryId)
-      : [];
-    await fulfillJson(route, { success: true });
+    const deletedCount = moveToTrash(state, (entry) => !diaryId || String(entry.diaryId ?? 1) === diaryId);
+    await fulfillJson(route, { success: true, deletedCount });
     return true;
   }
 
@@ -154,7 +153,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
     const selectedIds = new Set(payload.ids);
 
     if (payload.action === 'delete') {
-      state.entries = state.entries.filter((entry) => !selectedIds.has(entry.id));
+      moveToTrash(state, (entry) => selectedIds.has(entry.id));
     } else {
       state.entries = state.entries.map((entry) => {
         if (!selectedIds.has(entry.id)) {
@@ -274,7 +273,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
 
   if (updateMatch && request.method() === 'DELETE') {
     const entryId = Number(updateMatch[1]);
-    state.entries = state.entries.filter((entry) => entry.id !== entryId);
+    moveToTrash(state, (entry) => entry.id === entryId);
     await fulfillJson(route, { success: true });
     return true;
   }

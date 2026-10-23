@@ -257,6 +257,12 @@ export function buildAuthenticatedRoutesProps({
       diaries: diariesState.diaries,
       t,
     },
+    recycleBinRouteProps: {
+      theme: config.theme,
+      language: config.language,
+      diaries: diariesState.diaries,
+      t,
+    },
     profileRouteProps: {
       config,
       onUpdateConfig: (newConfig: Config) => updateConfig(newConfig),

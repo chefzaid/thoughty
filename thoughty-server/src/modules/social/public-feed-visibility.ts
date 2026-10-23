@@ -4,8 +4,8 @@ import type { Entry } from '@/database/entities';
 
 /**
  * Restricts an entry query to what the public feed may show: public, moderation-visible,
- * unarchived entries by authors whose accounts are not deleted. The query must alias the
- * entries table as `e` and join the author as `u`.
+ * unarchived entries outside the recycle bin, by authors whose accounts are not deleted. The
+ * query must alias the entries table as `e` and join the author as `u`.
  */
 export function applyPublicFeedVisibility<T extends ObjectLiteral>(
   qb: SelectQueryBuilder<T>,
@@ -14,6 +14,7 @@ export function applyPublicFeedVisibility<T extends ObjectLiteral>(
     .andWhere('e.visibility = :visibility', { visibility: 'public' })
     .andWhere('e.moderation_status = :moderationStatus', { moderationStatus: 'visible' })
     .andWhere('e.is_archived = false')
+    .andWhere('e.deleted_at IS NULL')
     .andWhere('u.deleted_at IS NULL');
 }
 

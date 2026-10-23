@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   ManyToOne,
   OneToMany,
   JoinColumn,
@@ -19,7 +20,11 @@ import { Attachment } from './attachment.entity';
 @Index('idx_entries_user_archive_date', ['userId', 'isArchived', 'date'])
 @Index('idx_entries_user_favorite_date', ['userId', 'isFavorite', 'date'])
 @Index('idx_entries_public_feed', ['visibility', 'moderationStatus', 'isArchived', 'createdAt'])
-@Index('idx_entries_user_import_ref', ['userId', 'importRef'], { unique: true, where: 'import_ref IS NOT NULL' })
+@Index('idx_entries_user_import_ref', ['userId', 'importRef'], {
+  unique: true,
+  where: 'import_ref IS NOT NULL AND deleted_at IS NULL',
+})
+@Index('idx_entries_user_deleted_at', ['userId', 'deletedAt'], { where: 'deleted_at IS NOT NULL' })
 export class Entry {
   @PrimaryGeneratedColumn()
   id: number;
@@ -66,6 +71,13 @@ export class Entry {
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
+
+  /**
+   * When the entry went to the recycle bin. TypeORM leaves trashed entries out of every
+   * find and select query unless the query asks for them with `withDeleted`.
+   */
+  @DeleteDateColumn({ name: 'deleted_at', type: 'timestamptz', nullable: true })
+  deletedAt: Date | null;
 
   @ManyToOne(() => User, (user) => user.entries, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })

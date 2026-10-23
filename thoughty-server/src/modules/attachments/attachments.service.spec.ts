@@ -297,4 +297,17 @@ describe('AttachmentsService', () => {
       expect(attachmentRepository.remove).toHaveBeenCalledWith([att1, att2]);
     });
   });
+
+  describe('removeStoredFiles', () => {
+    it('deletes each blob and keeps going when one delete fails', async () => {
+      const warn = jest.spyOn((service as any).logger, 'warn').mockImplementation(() => undefined);
+      mockSend.mockRejectedValueOnce(new Error('timeout')).mockResolvedValueOnce({});
+
+      await service.removeStoredFiles(['first.jpg', 'second.m4a']);
+
+      expect(mockSend).toHaveBeenCalledTimes(2);
+      expect(mockSend).toHaveBeenLastCalledWith(expect.objectContaining({ Key: 'second.m4a', _type: 'DeleteObject' }));
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('first.jpg'));
+    });
+  });
 });

@@ -9,6 +9,21 @@ import { EntryTaggingService } from './entry-tagging.service';
 
 const DEFAULT_MAX_PINNED_ENTRIES = 3;
 
+/** The writer's pinned-entry limit from their `maxPinnedEntries` setting: 3 by default, at most 20. */
+export function resolveMaxPinnedEntries(setting?: string | null): number {
+  const parsedLimit = Number.parseInt(setting ?? '', 10);
+
+  if (!Number.isFinite(parsedLimit) || parsedLimit < 1) {
+    return DEFAULT_MAX_PINNED_ENTRIES;
+  }
+
+  return Math.min(parsedLimit, 20);
+}
+
+function countOutsideBin(entries: Entry[]): number {
+  return entries.filter((entry) => !entry.deletedAt).length;
+}
+
 @Injectable()
 export class EntriesCommandService {
   constructor(
@@ -181,11 +196,13 @@ export class EntriesCommandService {
     return { success: true, entry: updated };
   }
 
+  /** Moves every entry in scope to the recycle bin; entries already there keep their deletion time. */
   async deleteAll(userId: number, diaryId?: number): Promise<{ success: boolean; deletedCount: number }> {
     let deleteQb = this.entryRepository
       .createQueryBuilder()
-      .delete()
-      .where('user_id = :userId', { userId });
+      .softDelete()
+      .where('user_id = :userId', { userId })
+      .andWhere('deleted_at IS NULL');
 
     if (diaryId) {
       deleteQb = deleteQb.andWhere('diary_id = :diaryId', { diaryId });
@@ -195,6 +212,7 @@ export class EntriesCommandService {
     return { success: true, deletedCount: result.affected || 0 };
   }
 
+  /** Moves the entry to the recycle bin and closes the gap it leaves in its day. */
   async delete(userId: number, id: number): Promise<{ success: boolean }> {
     const entry = await this.entryRepository.findOne({ where: { id, userId } });
     if (!entry) {
@@ -202,7 +220,7 @@ export class EntriesCommandService {
     }
 
     const entryDate = entry.date;
-    await this.entryRepository.delete({ id, userId });
+    await this.entryRepository.softDelete({ id, userId });
 
     const remainingEntries = await this.entryRepository.find({
       where: { userId, date: entryDate },
@@ -254,8 +272,10 @@ export class EntriesCommandService {
       throw new BadRequestException('New tag name must be different');
     }
 
+    // Entries in the recycle bin follow the rename too, so restoring one never brings the old tag back
     const entries = await this.entryRepository
       .createQueryBuilder('e')
+      .withDeleted()
       .where('e.user_id = :userId', { userId })
       .andWhere(':sourceTag = ANY(e.tags)', { sourceTag })
       .getMany();
@@ -269,7 +289,7 @@ export class EntriesCommandService {
       await this.entryRepository.save(entry);
     }
 
-    return { success: true, affectedCount: entries.length };
+    return { success: true, affectedCount: countOutsideBin(entries) };
   }
 
   async deleteTag(userId: number, tag: string): Promise<{ success: boolean; affectedCount: number }> {
@@ -280,6 +300,7 @@ export class EntriesCommandService {
 
     const entries = await this.entryRepository
       .createQueryBuilder('e')
+      .withDeleted()
       .where('e.user_id = :userId', { userId })
       .andWhere(':targetTag = ANY(e.tags)', { targetTag })
       .getMany();
@@ -289,7 +310,7 @@ export class EntriesCommandService {
       await this.entryRepository.save(entry);
     }
 
-    return { success: true, affectedCount: entries.length };
+    return { success: true, affectedCount: countOutsideBin(entries) };
   }
 
   async reorderEntries(userId: number, date: string, orderedIds: number[]): Promise<{ success: boolean }> {
@@ -337,7 +358,7 @@ export class EntriesCommandService {
   ): Promise<{ success: boolean; affectedCount: number }> {
     const affectedDates = [...new Set(entries.map((entry) => entry.date))];
 
-    await this.entryRepository.delete({ id: In(validIds), userId });
+    await this.entryRepository.softDelete({ id: In(validIds), userId });
 
     for (const date of affectedDates) {
       const remaining = await this.entryRepository.find({
@@ -415,12 +436,6 @@ export class EntriesCommandService {
 
   private async getMaxPinnedEntries(userId: number): Promise<number> {
     const config = await this.configService.getConfig(userId);
-    const parsedLimit = Number.parseInt(config.maxPinnedEntries ?? '', 10);
-
-    if (!Number.isFinite(parsedLimit) || parsedLimit < 1) {
-      return DEFAULT_MAX_PINNED_ENTRIES;
-    }
-
-    return Math.min(parsedLimit, 20);
+    return resolveMaxPinnedEntries(config.maxPinnedEntries);
   }
 }

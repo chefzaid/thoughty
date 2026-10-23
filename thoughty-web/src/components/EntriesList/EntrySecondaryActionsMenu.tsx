@@ -115,6 +115,7 @@ export default function EntrySecondaryActionsMenu({
                 className={`p-1.5 ${menuButtonClass}`}
                 title={t('moreActions')}
                 ariaLabel={t('moreActions')}
+                ariaExpanded={menuOpen}
             >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5h.01M12 12h.01M12 19h.01" />

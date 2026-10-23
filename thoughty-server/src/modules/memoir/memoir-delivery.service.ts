@@ -64,8 +64,13 @@ export class MemoirDeliveryService {
 
       const pending: PendingEmail[] = [];
       for (const row of due) {
+        // An answer whose entry is in the recycle bin leaves its question open again
         const answered = await manager.query(
-          'SELECT question_id FROM memoir_answers WHERE user_id = $1',
+          `
+            SELECT a.question_id FROM memoir_answers a
+            JOIN entries e ON e.id = a.entry_id
+            WHERE a.user_id = $1 AND e.deleted_at IS NULL
+          `,
           [row.user_id],
         ) as Array<{ question_id: string }>;
         const next = nextUnansweredQuestion(row.current_question_id, new Set(answered.map((item) => item.question_id)));

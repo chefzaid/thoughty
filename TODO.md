@@ -349,7 +349,7 @@ Concrete product features that build on what exists. Each one fills a gap visibl
 
 ### Writing
 
-- [ ] Recycle bin: deleted entries, diaries and attachments are kept for 30 days and can be restored. Deletion is immediate today, which is risky with bulk delete and "delete all entries".
+- [x] Recycle bin: deleted entries (one at a time, in bulk, or with "delete all entries") are kept for 30 days, hidden everywhere else, and can be restored to their diary or deleted forever from the bin, which then removes their files too. Diaries still move their entries to the default diary when deleted, and attachments are kept and restored with their entry rather than on their own.
 - [ ] Optional entry title and time of day. Entries only carry a date and a same-day index. Titles would show in lists, exports and book section headings, and times would order same-day entries automatically. Day One and Journey exports already include both.
 - [ ] Mood check-in on each entry: a five-point scale with optional feeling words, stored as data rather than guessed by AI. It feeds stats and the year in review mood arc without spending tokens, and later the Life ERP metrics.
 - [ ] Server-side draft autosave, so a draft started on one device continues on another, with a warning before leaving unsaved text.

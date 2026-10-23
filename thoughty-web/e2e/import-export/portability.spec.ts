@@ -34,8 +34,9 @@ test.describe('Import/export portability', () => {
     await page.getByRole('button', { name: 'Delete All Entries' }).click();
     await page.getByRole('button', { name: 'Yes, Delete Everything' }).click();
 
-    await expect(page.getByText('All entries have been deleted')).toBeVisible();
+    await expect(page.getByText('All entries were moved to the recycle bin for 30 days')).toBeVisible();
     await expect.poll(() => state.entries.length).toBe(0);
+    await expect.poll(() => state.trash.map((entry) => entry.id)).toEqual([401]);
     await expect.poll(() => state.lastDeleteAllRequestUrl?.searchParams.get('diaryId')).toBe('1');
   });
 });

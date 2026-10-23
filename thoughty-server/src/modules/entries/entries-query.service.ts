@@ -26,7 +26,7 @@ export class EntriesQueryService {
       `SELECT t.tag AS tag, COUNT(*)::int AS count
          FROM entries e
          CROSS JOIN LATERAL UNNEST(e.tags) AS t(tag)
-        WHERE e.user_id = $1
+        WHERE e.user_id = $1 AND e.deleted_at IS NULL
         GROUP BY t.tag
         ORDER BY t.tag`,
       [userId],

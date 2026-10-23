@@ -11,3 +11,4 @@ export * from './cloudSyncService';
 export * from './memoirService';
 export * from './appImportService';
 export * from './reviewService';
+export * from './recycleBinService';

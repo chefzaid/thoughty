@@ -18,6 +18,7 @@ describe('EntriesCommandService', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       save: jest.fn(),
+      softDelete: jest.fn(),
       update: jest.fn(),
     };
 
@@ -219,9 +220,9 @@ describe('EntriesCommandService', () => {
     expect(entryRepository.save).not.toHaveBeenCalled();
   });
 
-  it('deletes entries and reindexes remaining entries for the same date', async () => {
+  it('moves a deleted entry to the recycle bin and reindexes the rest of its day', async () => {
     entryRepository.findOne.mockResolvedValue({ id: 12, userId: 2, date: '2024-01-20' });
-    entryRepository.delete.mockResolvedValue({ affected: 1 });
+    entryRepository.softDelete.mockResolvedValue({ affected: 1 });
     entryRepository.find.mockResolvedValue([
       { id: 20, userId: 2, date: '2024-01-20', index: 3 },
       { id: 21, userId: 2, date: '2024-01-20', index: 9 },
@@ -230,22 +231,27 @@ describe('EntriesCommandService', () => {
 
     const result = await service.delete(2, 12);
 
-    expect(entryRepository.delete).toHaveBeenCalledWith({ id: 12, userId: 2 });
+    expect(entryRepository.softDelete).toHaveBeenCalledWith({ id: 12, userId: 2 });
+    expect(entryRepository.delete).not.toHaveBeenCalled();
     expect(entryRepository.save).toHaveBeenNthCalledWith(1, expect.objectContaining({ id: 20, index: 1 }));
     expect(entryRepository.save).toHaveBeenNthCalledWith(2, expect.objectContaining({ id: 21, index: 2 }));
     expect(result).toEqual({ success: true });
   });
 
-  it('deletes all entries with an optional diary filter', async () => {
+  it('moves every entry in scope to the recycle bin, leaving entries already there untouched', async () => {
     const execute = jest.fn().mockResolvedValue({ affected: 4 });
-    const andWhere = jest.fn().mockReturnValue({ execute });
-    const where = jest.fn().mockReturnValue({ andWhere, execute });
-    const del = jest.fn().mockReturnValue({ where });
-    entryRepository.createQueryBuilder.mockReturnValue({ delete: del });
+    const qb: Record<string, jest.Mock> = { execute };
+    qb.andWhere = jest.fn().mockReturnValue(qb);
+    qb.where = jest.fn().mockReturnValue(qb);
+    const softDelete = jest.fn().mockReturnValue(qb);
+    entryRepository.createQueryBuilder.mockReturnValue({ softDelete, delete: jest.fn() });
 
     const result = await service.deleteAll(4, 9);
 
-    expect(andWhere).toHaveBeenCalledWith('diary_id = :diaryId', { diaryId: 9 });
+    expect(softDelete).toHaveBeenCalled();
+    expect(qb.where).toHaveBeenCalledWith('user_id = :userId', { userId: 4 });
+    expect(qb.andWhere).toHaveBeenCalledWith('deleted_at IS NULL');
+    expect(qb.andWhere).toHaveBeenCalledWith('diary_id = :diaryId', { diaryId: 9 });
     expect(result).toEqual({ success: true, deletedCount: 4 });
   });
 
@@ -255,7 +261,7 @@ describe('EntriesCommandService', () => {
       { id: 2, userId: 9, date: '2024-01-16', tags: ['beta'] },
     ];
     entryRepository.find.mockResolvedValue(entries);
-    entryRepository.delete.mockResolvedValue({ affected: 2 });
+    entryRepository.softDelete.mockResolvedValue({ affected: 2 });
     entryRepository.update.mockResolvedValue({ affected: 2 });
     entryRepository.save.mockResolvedValue({});
     diaryRepository.findOne.mockResolvedValue({ id: 77, userId: 9 });
@@ -276,6 +282,8 @@ describe('EntriesCommandService', () => {
 
     await expect(service.bulkOperation(9, { ids: [1, 2], action: 'delete' }))
       .resolves.toEqual({ success: true, affectedCount: 2 });
+    expect(entryRepository.softDelete).toHaveBeenCalledWith({ id: expect.anything(), userId: 9 });
+    expect(entryRepository.delete).not.toHaveBeenCalled();
 
     await expect(service.bulkOperation(9, { ids: [1], action: 'visibility' }))
       .rejects.toThrow(BadRequestException);
@@ -295,15 +303,17 @@ describe('EntriesCommandService', () => {
     await expect(service.bulkOperation(1, { ids: [1], action: 'delete' })).rejects.toThrow(NotFoundException);
   });
 
-  it('renames tags with validation and deduplication', async () => {
+  it('renames tags with validation and deduplication, in the recycle bin too', async () => {
     const entries = [
-      { id: 1, tags: ['old', 'keep'] },
-      { id: 2, tags: ['keep', 'old', 'new'] },
+      { id: 1, tags: ['old', 'keep'], deletedAt: null },
+      { id: 2, tags: ['keep', 'old', 'new'], deletedAt: null },
+      { id: 3, tags: ['old'], deletedAt: new Date('2024-02-01') },
     ];
     const getMany = jest.fn().mockResolvedValue(entries);
     const andWhere = jest.fn().mockReturnValue({ getMany });
     const where = jest.fn().mockReturnValue({ andWhere });
-    entryRepository.createQueryBuilder.mockReturnValue({ where });
+    const withDeleted = jest.fn().mockReturnValue({ where });
+    entryRepository.createQueryBuilder.mockReturnValue({ withDeleted });
     entryRepository.save.mockResolvedValue({});
 
     await expect(service.renameTag(1, '', 'next')).rejects.toThrow(BadRequestException);
@@ -313,6 +323,7 @@ describe('EntriesCommandService', () => {
 
     expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 1, tags: ['new', 'keep'] }));
     expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 2, tags: ['keep', 'new'] }));
+    expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 3, tags: ['new'] }));
     expect(result).toEqual({ success: true, affectedCount: 2 });
   });
 
@@ -324,7 +335,8 @@ describe('EntriesCommandService', () => {
     const getMany = jest.fn().mockResolvedValue(entries);
     const andWhere = jest.fn().mockReturnValue({ getMany });
     const where = jest.fn().mockReturnValue({ andWhere });
-    entryRepository.createQueryBuilder.mockReturnValue({ where });
+    const withDeleted = jest.fn().mockReturnValue({ where });
+    entryRepository.createQueryBuilder.mockReturnValue({ withDeleted });
     entryRepository.save.mockResolvedValue({});
 
     await expect(service.deleteTag(1, '  ')).rejects.toThrow(BadRequestException);
@@ -341,7 +353,7 @@ describe('EntriesCommandService', () => {
     const getMany = jest.fn().mockResolvedValue([]);
     const andWhere = jest.fn().mockReturnValue({ getMany });
     const where = jest.fn().mockReturnValue({ andWhere });
-    entryRepository.createQueryBuilder.mockReturnValue({ where });
+    entryRepository.createQueryBuilder.mockReturnValue({ withDeleted: jest.fn().mockReturnValue({ where }) });
 
     await expect(service.renameTag(1, 'missing', 'new')).rejects.toThrow(NotFoundException);
   });

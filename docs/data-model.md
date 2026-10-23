@@ -76,6 +76,7 @@ erDiagram
         string moderationStatus
         boolean isFavorite
         boolean isArchived
+        datetime deletedAt
     }
 
     EntryRevision {
@@ -224,13 +225,19 @@ erDiagram
 
 `YearReviewMood` keeps the latest AI reading of a year's mood: the writer, the year, the diary (null for all diaries), one `{month, mood, valence}` item per month in a JSONB array (valence from -2 to 2), a summary, and how many entries were read. A unique index on `(user_id, year, COALESCE(diary_id, 0))` keeps one reading per scope; reading again replaces it in one transaction. Deleting the user or the diary deletes the reading. Everything else in the year in review is computed from entries on request and not stored.
 
+## Recycle Bin
+
+Deleting an entry sets `entries.deleted_at` (`TIMESTAMPTZ`, a TypeORM delete date column) instead of removing the row. TypeORM leaves these rows out of every entity query and join, and the raw SQL reads (tag usage, achievements, the public feed) filter `deleted_at IS NULL` themselves, so an entry in the bin is invisible everywhere except the recycle bin endpoints (`/api/recycle-bin`). Its revisions, attachments, AI chat, comments, likes, and memoir answer row stay in place. Live entries on the same day are renumbered when one is deleted; a restored entry goes back at the end of its day, into its diary or into the default diary when that diary no longer exists. The partial index `idx_entries_user_deleted_at` on `(user_id, deleted_at)` serves the bin listing and the purge.
+
+Entries stay in the bin for 30 days. The background worker purges older ones hourly in batches, locking rows with `FOR UPDATE SKIP LOCKED` so replicas never purge the same entry twice: the entry rows are hard-deleted (cascading their revisions, attachment rows, chat, comments, likes, and memoir answers) and the attachments' objects are removed from storage after the transaction commits. Deleting forever from the bin, one entry or the whole bin, takes the same path.
+
 ## Imported Entries
 
-Entries brought in from Day One or Journey keep `import_ref`, the source app and the entry's ID there (`dayone:<uuid>`, `journey:<id>`), with a partial unique index on `(user_id, import_ref)`. An import looks entries up by this reference before creating them, so importing the same export again returns the existing entries (and the names of their attachments) instead of duplicating them. Entries that were not imported leave it null. Imported entries are private Markdown entries, numbered after the entries already on their day; their photos and recordings are ordinary attachments.
+Entries brought in from Day One or Journey keep `import_ref`, the source app and the entry's ID there (`dayone:<uuid>`, `journey:<id>`), with a partial unique index on `(user_id, import_ref)` that covers only entries outside the recycle bin. An import looks entries up by this reference before creating them, so importing the same export again returns the existing entries (and the names of their attachments) instead of duplicating them. Entries that were not imported leave it null. An entry in the bin does not hold its reference: importing the same export again creates a new entry, and restoring the old one then clears its reference so the two do not collide. Imported entries are private Markdown entries, numbered after the entries already on their day; their photos and recordings are ordinary attachments.
 
 ## Public Feed Eligibility
 
-`Entry.visibility` and `Entry.moderationStatus` are independent. Visibility is the owner's explicit sharing choice; moderation status is a platform-controlled state with `visible`, `hidden`, `under_review`, and `removed` values. The public feed reads only entries where visibility and moderation are both `public`/`visible`, the entry is not archived, and its author is not deleted. The composite `idx_entries_public_feed` index supports these bounded, newest-first reads.
+`Entry.visibility` and `Entry.moderationStatus` are independent. Visibility is the owner's explicit sharing choice; moderation status is a platform-controlled state with `visible`, `hidden`, `under_review`, and `removed` values. The public feed reads only entries where visibility and moderation are both `public`/`visible`, the entry is not archived or in the recycle bin, and its author is not deleted. The composite `idx_entries_public_feed` index supports these bounded, newest-first reads.
 
 The feed queries the relational entry/user model directly and projects only feed-safe author fields. `UserFollow` is a separate relation keyed by `(follower_id, followed_id)`, with a check that nobody follows themselves and an index on `followed_id` for follower counts; the **Following** feed scope applies the same eligibility rules to followed authors only. A user can only be followed while they have at least one feed-eligible entry, so follows cannot probe private accounts. `EntryComment` holds plain-text comments of at most 1,000 non-blank characters; comments can only be read or written while their entry is feed-eligible, and comments by deleted users are neither listed nor counted. `EntryLike` and `CommentLike` allow one like per user and item (keyed by item and user); nobody can like their own entry or comment, likes follow the same feed-eligibility rule, and likes by deleted users are not counted. Report and enforcement records remain separate future entities rather than being encoded into entry ownership or visibility.
 
@@ -240,7 +247,7 @@ The feed queries the relational entry/user model directly and projects only feed
 | --------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `User`          | Root owner for private journal data                    | Accounts are soft-deleted at the application layer; user-owned rows use cascade relationships where hard deletion is performed            |
 | `Diary`         | Owned by one user                                      | Hard deletion cascades from user; deleting a diary should move entries to the default diary when handled through the application workflow |
-| `Entry`         | Owned by one user and optionally assigned to one diary | Hard deletion cascades attachments, revisions, and AI chat history                                                                        |
+| `Entry`         | Owned by one user and optionally assigned to one diary | Deleting moves it to the recycle bin (`deleted_at`) for 30 days; purging it then hard-deletes the row, cascading attachments, revisions, AI chat history, comments, likes, and memoir answers |
 | `EntryRevision` | Snapshot for one entry and user                        | Deleted with the parent entry                                                                                                             |
 | `Attachment`    | Owned by one user and optionally linked to one entry   | Database row, including any cached audio transcript, is deleted with user/entry; object-store cleanup must be considered separately       |
 | `Setting`       | Key/value setting for one user                         | Deleted with the user                                                                                                                     |
@@ -252,7 +259,7 @@ The feed queries the relational entry/user model directly and projects only feed
 | `FeatureRequest` / `FeatureRequestVote` | Public idea and one vote per user per idea | Requests are deleted with their author; votes with their request or voter |
 | `UserFollow` | One follow per follower/followed pair | Deleted with either user; soft-deleted users are hidden from follow lists and follower counts |
 | `MemoirProgram` | One guided memoir per user | Deleted with the user or when the memoir is stopped; deleting its diary keeps the program with no diary until another is chosen |
-| `MemoirAnswer` | Links one question to one answer entry of the same user | Deleted with the user or the entry (the question then counts as unanswered); kept when the memoir is stopped |
+| `MemoirAnswer` | Links one question to one answer entry of the same user | Deleted with the user or the entry; while the entry is in the recycle bin the question counts as unanswered, and answering it again points the row at the new entry; kept when the memoir is stopped |
 | `EntryComment` | Written by one user on one entry | Deleted with the entry or its author; removable by its author or the entry owner |
 | `EntryLike` / `CommentLike` | One like per user per entry or comment | Deleted with the liked item or the user |
 
@@ -272,7 +279,7 @@ Entries are not only identified by database `id`. The user-facing journal model 
 - Diary names are unique per user.
 - One diary should act as the default capture target.
 - The default diary is protected from deletion by the application workflow.
-- When a non-default diary is deleted through the application workflow, entries should be moved to the current default diary instead of being stranded.
+- When a non-default diary is deleted through the application workflow, entries, including those in the recycle bin, should be moved to the current default diary instead of being stranded.
 - `All Diaries` is a view concern, not a persisted diary row.
 
 ## Tags and Metadata

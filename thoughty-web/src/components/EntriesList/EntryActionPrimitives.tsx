@@ -6,6 +6,8 @@ interface IconActionButtonProps {
     onClick: () => void;
     children: ReactNode;
     ariaLabel?: string;
+    /** Set for a button that opens a menu, so the menu state is announced. */
+    ariaExpanded?: boolean;
 }
 
 export function IconActionButton({
@@ -14,6 +16,7 @@ export function IconActionButton({
     onClick,
     children,
     ariaLabel,
+    ariaExpanded,
 }: Readonly<IconActionButtonProps>) {
     return (
         <button
@@ -22,6 +25,8 @@ export function IconActionButton({
             className={`${className} rounded transition-colors`}
             title={title}
             aria-label={ariaLabel ?? title}
+            aria-haspopup={ariaExpanded === undefined ? undefined : 'menu'}
+            aria-expanded={ariaExpanded}
         >
             {children}
         </button>

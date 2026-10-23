@@ -4,7 +4,7 @@ How Thoughty is put together, and the architecture decision records (ADRs) that 
 
 ## System Architecture at a Glance
 
-Thoughty is a TypeScript-first modular monolith: one NestJS API and one route-driven React single-page application. PostgreSQL holds all journal data, S3-compatible object storage holds attachment blobs, Redis optionally shares rate-limit counters, OpenRouter provides optional AI, and a separate worker process runs scheduled cloud sync from a database-backed queue and delivers the weekly guided-memoir questions. In production, Keycloak authenticates users at the ingress and Vault supplies secrets.
+Thoughty is a TypeScript-first modular monolith: one NestJS API and one route-driven React single-page application. PostgreSQL holds all journal data, S3-compatible object storage holds attachment blobs, Redis optionally shares rate-limit counters, OpenRouter provides optional AI, and a separate worker process runs scheduled cloud sync from a database-backed queue, delivers the weekly guided-memoir questions, and empties recycle-bin entries older than 30 days. In production, Keycloak authenticates users at the ingress and Vault supplies secrets.
 
 ```mermaid
 flowchart TD
@@ -21,6 +21,7 @@ flowchart TD
     Worker[Background worker] --> Pg
     Worker --> OAuth
     Worker --> SMTP[SMTP]
+    Worker --> S3
 
     Vault[Vault via External Secrets] --> API
     Vault --> Worker
@@ -34,6 +35,7 @@ The backend is one NestJS application assembled from feature modules under `thou
 |---|---|
 | `auth` | SSO exchange, local and Google sign-in, tokens and sessions, email verification, 2FA, password recovery, account lifecycle |
 | `entries` | entry CRUD, revisions, tags (usage, rename, delete), visibility, favorites, pins, archive, backlinks |
+| `recycle-bin` | deleted entries kept for 30 days: listing, restore, delete forever, empty, and the hourly purge of expired entries and their files |
 | `diaries` | diary containers, ordering, default diary and delete fallback |
 | `attachments` | upload validation, object storage, audio transcription |
 | `ai` | OpenRouter credentials and usage, tagging, inspiration, rephrasing, summaries, chat, semantic search, duplicates, journal tag organization, insights |
@@ -119,6 +121,7 @@ sequenceDiagram
 
 - `entries` owns entry lifecycle behavior; other modules should call its APIs/services instead of mutating entry rules ad hoc.
 - `diaries` owns default-diary and delete-fallback semantics.
+- Deleting an entry only marks it deleted (`deleted_at`); `recycle-bin` owns restoring and purging such entries. Queries that bypass TypeORM's entity filtering (raw SQL, `update`, `delete`) must add `deleted_at IS NULL` themselves.
 - `attachments` owns object-storage keys and file validation; entry modules should not treat original filenames as storage keys.
 - `config` owns user preferences and encrypted integration settings.
 - `cloud-sync` owns queued job status, locking, retries, and provider sync state.

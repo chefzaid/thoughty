@@ -10,6 +10,7 @@ export class DiaryEntryTransferService {
     private readonly entryRepository: Pick<Repository<Entry>, 'update'>,
   ) {}
 
+  /** Moves entries in the recycle bin too, so restoring one later finds a diary that still exists. */
   async moveEntriesToDiary(userId: number, sourceDiaryId: number, targetDiaryId: number): Promise<void> {
     await this.entryRepository.update({ diaryId: sourceDiaryId, userId }, { diaryId: targetDiaryId });
   }

@@ -22,6 +22,7 @@ flowchart LR
 - **Revision history.** Every edit keeps the previous version; revisions can be viewed and deleted individually.
 - **Attachments.** Files upload to S3-compatible storage. Images, audio, PDFs, and text files preview inline, with larger previews in a dialog. Audio notes can be transcribed on demand; the transcript is cached on the attachment and can be copied.
 - **Bulk mode.** Select many entries to delete, change visibility, archive or unarchive, add tags, move to another diary, or rephrase with AI.
+- **Recycle bin** (`/recycle-bin`, opened from the filter bar tools). Deleting an entry, alone, in bulk, or with "delete all entries", moves it to the recycle bin for 30 days instead of removing it. Entries in the bin are left out of everything else: the journal, search, tags, stats, highlights, the year in review, the feed, exports, books, AI features, backlinks, achievements, and memoir progress. Each one shows where it will return, when it was deleted, how many days remain, and how many files it has. Entries can be restored one by one or all at once, at the end of their day and in their original diary (the default diary when that diary was deleted since); restoring keeps their revisions and attachments. Entries can also be deleted forever one by one, or the whole bin emptied, after a confirmation. An hourly background job removes entries that have been in the bin for more than 30 days, with their revisions and their files in object storage.
 - **Reading aids.** Each entry shows its word count and estimated reading time. Text-to-speech reads entries aloud with language-aware voice selection, a voice preview, and optional reading of dates.
 - **Navigation.** Pagination with a configurable page size and go-to-page box, a year/month jump control, a Back to top link, and keyboard shortcuts: `Ctrl+N` (new entry), `Ctrl+/` (search), `Esc` (close dialogs), and left/right arrows (pages).
 
@@ -30,7 +31,7 @@ flowchart LR
 - Separate diaries for different writing streams, each with a name, emoji icon, accent color, and default visibility for new entries.
 - An **All Diaries** view for browsing across them, and a configurable default diary for quick capture.
 - Reordering by drag or by keyboard in the diary manager.
-- Deleting a diary moves its entries to the default diary; the default diary itself cannot be deleted.
+- Deleting a diary moves its entries, including those in the recycle bin, to the default diary; the default diary itself cannot be deleted.
 - The selected diary scopes the journal, stats, AI features, import/export, and books.
 
 ## Tags, Search, and Filters
@@ -38,7 +39,7 @@ flowchart LR
 - **Tags are the single way to organize entries.** Concrete subjects and broader themes are both just tags. Existing tags autocomplete in the composer, editor, and filters, and new tags can be typed inline.
 - **Tags view (full CRUD).** Create a tag before any entry uses it (it is immediately offered in the pickers); see how many entries use each tag; rename a tag across the whole journal; set a color and an optional category (used for grouping and sorting everywhere tags appear); and delete a tag, which removes it from every entry after confirmation but keeps the entries. New and imported tags get a distinct color automatically.
 - **Organize journal tags.** From the Tags view, AI can propose a compact set of tags for the whole journal and assign them to entries; every assignment is reviewed before anything is saved (see [AI](#ai-assistance)).
-- **Filter bar.** Three groups: search (keyword or meaning-based, plus tags), filters (date, visibility, archive state, favorites, reset), and tools (Highlights and Find duplicates). All filters combine with each other and with the diary scope. The date picker only offers dates that have entries. Keyword matches are highlighted in plain-text and Markdown entries.
+- **Filter bar.** Three groups: search (keyword or meaning-based, plus tags), filters (date, visibility, archive state, favorites, reset), and tools (Highlights, Find duplicates, and the Recycle bin). All filters combine with each other and with the diary scope. The date picker only offers dates that have entries. Keyword matches are highlighted in plain-text and Markdown entries.
 
 ## Highlights and Insights
 
@@ -56,7 +57,7 @@ flowchart LR
 - **TXT format settings** (date format, prefix and suffix, entry and same-day separators, tag brackets and separator) are saved and reused for import and export.
 - **Import** accepts TXT, JSON, and Markdown, detects the format automatically, previews parsed entries, flags duplicates with an option to skip them, and reports what was imported or skipped. Imported entries use the target diary's default visibility unless visibility is included. Markdown formatting survives round trips.
 - **Import from Day One and Journey:** choose a Day One export (the JSON `.zip`, or its `.json` alone) or a Journey `.zip`. The file is read in the browser, which shows the entries, journals, date range, and photos and recordings it found before anything is sent. Entries arrive as private Markdown entries on the day they were written (in their own time zone), with tags, stars as favorites, and photos and recordings as attachments; Journey's HTML becomes Markdown and Day One's needless escapes are dropped. Each journal can go to a diary of the same name (created when missing) or everything to the current diary. Photos over 5 MB are scaled down, HEIC photos are converted where the browser can read them, and videos are left out; the summary lists any file that could not be attached. Importing the same export again skips what is already there, so a stopped import continues where it left off.
-- **Danger zone:** delete all entries in the current scope, behind a confirmation.
+- **Danger zone:** move all entries in the current scope to the recycle bin, behind a confirmation.
 - The Import/Export page encodes its diary, section, and format choices in the URL.
 
 ### Book converter

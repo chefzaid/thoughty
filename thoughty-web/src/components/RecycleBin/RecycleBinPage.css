@@ -1,0 +1,231 @@
+.recycle-bin-page {
+  display: grid;
+  width: min(100%, 56rem);
+  gap: 1rem;
+  margin: 0 auto;
+  padding: 0.5rem 0 3rem;
+  color: #f3f4f6;
+}
+
+.recycle-bin-page.light {
+  color: #111827;
+}
+
+.recycle-bin-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.recycle-bin-header h1 {
+  margin: 0;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+}
+
+.recycle-bin-intro,
+.recycle-bin-count,
+.recycle-bin-state {
+  margin: 0.25rem 0 0;
+  max-width: 38rem;
+  color: #d1d5db;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.recycle-bin-page.light .recycle-bin-intro,
+.recycle-bin-page.light .recycle-bin-count,
+.recycle-bin-page.light .recycle-bin-state {
+  color: #4b5563;
+}
+
+.recycle-bin-state {
+  max-width: none;
+  padding: 2rem 0;
+  text-align: center;
+}
+
+.recycle-bin-toolbar,
+.recycle-bin-entry-actions,
+.recycle-bin-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.recycle-bin-pagination {
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.recycle-bin-primary,
+.recycle-bin-secondary,
+.recycle-bin-danger {
+  display: inline-flex;
+  min-height: 2.5rem;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.5rem 0.95rem;
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.recycle-bin-primary {
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.recycle-bin-primary:hover:not(:disabled) {
+  background: #1e40af;
+}
+
+.recycle-bin-secondary {
+  border-color: #4b5563;
+  background: transparent;
+  color: inherit;
+}
+
+.recycle-bin-page.light .recycle-bin-secondary {
+  border-color: #d1d5db;
+}
+
+.recycle-bin-secondary:hover:not(:disabled) {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.recycle-bin-danger {
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
+.recycle-bin-page.light .recycle-bin-danger {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.recycle-bin-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.22);
+}
+
+.recycle-bin-primary:disabled,
+.recycle-bin-secondary:disabled,
+.recycle-bin-danger:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.recycle-bin-primary:focus-visible,
+.recycle-bin-secondary:focus-visible,
+.recycle-bin-danger:focus-visible {
+  outline: 3px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+.recycle-bin-notice p {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid rgba(52, 211, 153, 0.45);
+  border-radius: 0.5rem;
+  background: rgba(16, 185, 129, 0.12);
+  font-size: 0.9rem;
+}
+
+.recycle-bin-page.light .recycle-bin-notice p {
+  border-color: #6ee7b7;
+  background: #ecfdf5;
+}
+
+.recycle-bin-notice p.recycle-bin-error {
+  border-color: rgba(248, 113, 113, 0.6);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.recycle-bin-page.light .recycle-bin-notice p.recycle-bin-error {
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.recycle-bin-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recycle-bin-entry article {
+  display: grid;
+  min-width: 0;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid #374151;
+  border-radius: 0.75rem;
+  background: #1f2937;
+}
+
+.recycle-bin-page.light .recycle-bin-entry article {
+  border-color: #e5e7eb;
+  background: #fff;
+}
+
+.recycle-bin-entry-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.recycle-bin-entry-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.recycle-bin-diary {
+  padding: 0.1rem 0.6rem;
+  border: 1px solid #4b5563;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.recycle-bin-page.light .recycle-bin-diary {
+  border-color: #d1d5db;
+}
+
+.recycle-bin-excerpt {
+  margin: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.recycle-bin-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0;
+  color: #d1d5db;
+  font-size: 0.8rem;
+}
+
+.recycle-bin-page.light .recycle-bin-meta {
+  color: #4b5563;
+}
+
+.recycle-bin-meta .recycle-bin-soon {
+  color: #fcd34d;
+  font-weight: 600;
+}
+
+.recycle-bin-page.light .recycle-bin-meta .recycle-bin-soon {
+  color: #92400e;
+}

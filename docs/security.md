@@ -101,6 +101,13 @@ Provided through Vault (see [Deployment](./deployment.md#configuration-and-secre
 - Files are served only through authenticated application endpoints; the frontend loads previews and downloads with authenticated requests and short-lived object URLs.
 - Buckets stay private unless a future ADR changes the sharing model.
 
+## Recycle Bin
+
+- Deleted entries stay in the recycle bin for 30 days. While there they are never served by any other endpoint: not to the owner's journal, search, exports, books, or AI features, and never to the public feed, comments, or likes, even when the entry was public.
+- The recycle bin endpoints act only on the authenticated writer's own deleted entries; ids of live entries or of other writers' entries answer `404` and change nothing.
+- After 30 days the worker deletes the entries, their revisions, and their attachment rows, then removes the attachments' objects from storage. A storage failure is logged by key and does not stop the purge. Deleting forever or emptying the bin removes the data the same way, immediately.
+- The personal data download includes entries in the recycle bin, marked with their `deletedAt`, because they are still stored.
+
 ## App Imports and the Markdown Export
 
 Day One and Journey exports are read in the browser; only the mapped entries and their photos and recordings are sent ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)). Journey's HTML is parsed in an inert `DOMParser` document, keeping text, emphasis, lists, and `http`, `https`, or `mailto` links only; scripts, images, and other markup are dropped before the Markdown renderer sees anything. On the server:

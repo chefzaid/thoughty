@@ -402,7 +402,7 @@ describe('EntriesQueryService', () => {
     });
   });
 
-  it('lists user-scoped tag usage counts', async () => {
+  it('lists user-scoped tag usage counts outside the recycle bin', async () => {
     entryRepository.query.mockResolvedValue([
       { tag: 'focus', count: '3' },
       { tag: 'work', count: 1 },
@@ -414,6 +414,9 @@ describe('EntriesQueryService', () => {
         { tag: 'work', count: 1 },
       ],
     });
-    expect(entryRepository.query).toHaveBeenCalledWith(expect.stringContaining('WHERE e.user_id = $1'), [4]);
+    expect(entryRepository.query).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE e.user_id = $1 AND e.deleted_at IS NULL'),
+      [4],
+    );
   });
 });

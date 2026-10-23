@@ -20,6 +20,6 @@ import { EntryTaggingService } from './entry-tagging.service';
     EntryListCacheService,
     EntryTaggingService,
   ],
-  exports: [EntriesService],
+  exports: [EntriesService, EntryListCacheService],
 })
 export class EntriesModule {}

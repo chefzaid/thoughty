@@ -246,6 +246,10 @@ async function handleDiaryRoutes({ route, request, pathname, state }: RouteConte
     state.entries = state.entries.map((entry) =>
       (entry.diaryId ?? 1) === diaryId ? { ...entry, diaryId: defaultDiary?.id ?? 1 } : entry,
     );
+    // Entries in the recycle bin move too, as the API does
+    state.trash = state.trash.map((entry) =>
+      (entry.diaryId ?? 1) === diaryId ? { ...entry, diaryId: defaultDiary?.id ?? 1 } : entry,
+    );
     await fulfillJson(route, { success: true });
     return true;
   }

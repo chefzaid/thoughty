@@ -111,6 +111,20 @@ describe('UserDataExportService', () => {
         visibility: 'private',
         isFavorite: false,
         createdAt: new Date('2024-01-15'),
+        deletedAt: null,
+      },
+      {
+        id: 2,
+        diaryId: 1,
+        date: '2024-01-16',
+        index: 1,
+        content: 'Deleted yesterday',
+        tags: [],
+        format: 'plaintext',
+        visibility: 'private',
+        isFavorite: false,
+        createdAt: new Date('2024-01-16'),
+        deletedAt: new Date('2024-02-01T08:00:00Z'),
       },
     ]);
     revisionRepository.find.mockResolvedValue([]);
@@ -157,7 +171,11 @@ describe('UserDataExportService', () => {
     expect(result.diaries).toEqual(
       expect.arrayContaining([expect.objectContaining({ color: '#E76F51' })]),
     );
-    expect(result.entries).toHaveLength(1);
+    expect(entryRepository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 1 }, withDeleted: true }));
+    expect(result.entries).toEqual([
+      expect.objectContaining({ id: 1, deletedAt: null }),
+      expect.objectContaining({ id: 2, deletedAt: new Date('2024-02-01T08:00:00Z') }),
+    ]);
     expect(result.revisions).toHaveLength(0);
     expect(result.attachments).toEqual([
       expect.objectContaining({

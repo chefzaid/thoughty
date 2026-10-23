@@ -1,6 +1,7 @@
 import { appImportTranslations, type AppImportTranslationKey } from "./translations.appImport";
 import { memoirTranslations, type MemoirTranslationKey } from "./translations.memoir";
 import { reviewTranslations, type ReviewTranslationKey } from "./translations.review";
+import { recycleBinTranslations, type RecycleBinTranslationKey } from "./translations.recycleBin";
 
 type CoreTranslationKey =
   | "journal"
@@ -931,7 +932,7 @@ type CoreTranslationKey =
   | "subscriptionIncluded"
   | "subscriptionPreviousCycle";
 
-export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey;
+export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey;
 
 export type Language = "en" | "fr";
 
@@ -944,6 +945,7 @@ export const translations: Translations = {
     ...memoirTranslations.en,
     ...appImportTranslations.en,
     ...reviewTranslations.en,
+    ...recycleBinTranslations.en,
     // App
     journal: "Journal",
     feed: "Feed",
@@ -1265,7 +1267,7 @@ export const translations: Translations = {
     // Confirm Modal
     deleteEntryTitle: "Delete Entry",
     deleteEntryMessage:
-      "Are you sure you want to delete this entry? This action cannot be undone.",
+      "Move this entry to the recycle bin? You can restore it from there for 30 days.",
     delete: "Delete",
 
     // Entries List
@@ -1467,10 +1469,10 @@ export const translations: Translations = {
     downloadDataError: "Failed to download data. Please try again.",
     dangerZone: "Danger Zone",
     deleteAllDescription:
-      "Permanently delete all entries from {diaryName}. This action cannot be undone.",
+      "Move all entries from {diaryName} to the recycle bin. You can restore them from there for 30 days, then they are removed for good.",
     deleteAllEntries: "Delete All Entries",
     confirmDeleteAll: "Yes, Delete Everything",
-    deleteAllSuccess: "All entries have been deleted",
+    deleteAllSuccess: "All entries were moved to the recycle bin for 30 days",
     deleteAllError: "Failed to delete entries",
     deleting: "Deleting...",
 
@@ -1839,7 +1841,7 @@ export const translations: Translations = {
     bulkClearSelection: "Clear",
     bulkDeleteTitle: "Delete entries",
     bulkDeleteMessage:
-      "Are you sure you want to delete {count} entries? This cannot be undone.",
+      "Move {count} entries to the recycle bin? You can restore them from there for 30 days.",
     selectTags: "Select tags...",
     apply: "Apply",
     attachFiles: "Attach files",
@@ -2011,6 +2013,7 @@ export const translations: Translations = {
     ...memoirTranslations.fr,
     ...appImportTranslations.fr,
     ...reviewTranslations.fr,
+    ...recycleBinTranslations.fr,
     // App
     journal: "Journal",
     feed: "Fil public",
@@ -2340,7 +2343,7 @@ export const translations: Translations = {
     // Confirm Modal
     deleteEntryTitle: "Supprimer l'entrée",
     deleteEntryMessage:
-      "Êtes-vous sûr de vouloir supprimer cette entrée ? Cette action est irréversible.",
+      "Placer cette entrée dans la corbeille ? Vous pourrez l’y restaurer pendant 30 jours.",
     delete: "Supprimer",
 
     // Entries List
@@ -2550,10 +2553,10 @@ export const translations: Translations = {
     downloadDataError: "Échec du téléchargement. Veuillez réessayer.",
     dangerZone: "Zone de danger",
     deleteAllDescription:
-      "Supprimer définitivement toutes les entrées de {diaryName}. Cette action est irréversible.",
+      "Placer toutes les entrées de {diaryName} dans la corbeille. Vous pourrez les y restaurer pendant 30 jours, puis elles seront supprimées définitivement.",
     deleteAllEntries: "Supprimer toutes les entrées",
     confirmDeleteAll: "Oui, tout supprimer",
-    deleteAllSuccess: "Toutes les entrées ont été supprimées",
+    deleteAllSuccess: "Toutes les entrées sont dans la corbeille pour 30 jours",
     deleteAllError: "Échec de la suppression des entrées",
     deleting: "Suppression...",
 
@@ -2930,7 +2933,7 @@ export const translations: Translations = {
     bulkClearSelection: "Effacer",
     bulkDeleteTitle: "Supprimer les entrées",
     bulkDeleteMessage:
-      "Êtes-vous sûr de vouloir supprimer {count} entrées ? Cette action est irréversible.",
+      "Placer {count} entrées dans la corbeille ? Vous pourrez les y restaurer pendant 30 jours.",
     selectTags: "Sélectionner des tags...",
     apply: "Appliquer",
     attachFiles: "Joindre des fichiers",

@@ -41,7 +41,13 @@ export class MemoirAnswersService {
     if (!dto.text && attachmentIds.length === 0) {
       throw new BadRequestException('Write an answer or attach a recording');
     }
-    if (await this.answerRepository.exists({ where: { userId, questionId: question.id } })) {
+    // An answer whose entry is in the recycle bin no longer counts, so the question can be answered again
+    const previous = await this.answerRepository.findOne({
+      where: { userId, questionId: question.id },
+      relations: { entry: true },
+      select: { questionId: true, entryId: true, entry: { id: true } },
+    });
+    if (previous?.entry) {
       throw new ConflictException('This question already has an answer');
     }
     for (const attachmentId of attachmentIds) {
@@ -59,7 +65,11 @@ export class MemoirAnswersService {
     });
 
     try {
-      await this.answerRepository.insert({ userId, questionId: question.id, entryId });
+      if (previous) {
+        await this.answerRepository.update({ userId, questionId: question.id }, { entryId });
+      } else {
+        await this.answerRepository.insert({ userId, questionId: question.id, entryId });
+      }
     } catch (error: unknown) {
       // A concurrent answer won the race: keep the journal free of the duplicate entry.
       await this.entriesService.delete(userId, entryId);

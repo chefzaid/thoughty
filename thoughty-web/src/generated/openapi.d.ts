@@ -1827,6 +1827,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recycle-bin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List deleted entries kept for 30 days, most recently deleted first */
+        get: operations["RecycleBinController_list"];
+        put?: never;
+        post?: never;
+        /** Empty the recycle bin */
+        delete: operations["RecycleBinController_empty"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recycle-bin/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore entries to their diary, or to the default diary when theirs is gone */
+        post: operations["RecycleBinController_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recycle-bin/restore-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore every entry in the recycle bin */
+        post: operations["RecycleBinController_restoreAll"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recycle-bin/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Delete entries from the recycle bin for good, with their history and files */
+        post: operations["RecycleBinController_deletePermanently"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -5107,6 +5176,158 @@ export interface components {
          */
         YearMoodResponseDto: {
             mood: components["schemas"]["YearReviewMoodDto"];
+        };
+        /**
+         * @example {
+         *       "id": 12,
+         *       "date": "2026-10-21",
+         *       "content": "Walked by the river before work and finally felt rested.",
+         *       "format": "plain",
+         *       "tags": [
+         *         "walks"
+         *       ],
+         *       "diaryId": 2,
+         *       "diaryName": "Daily Journal",
+         *       "diaryIcon": "📓",
+         *       "diaryColor": "#2A9D8F",
+         *       "attachmentCount": 1,
+         *       "deletedAt": "2026-10-22T08:30:00.000Z",
+         *       "purgeAt": "2026-11-21T08:30:00.000Z"
+         *     }
+         */
+        TrashedEntryDto: {
+            /** @example 12 */
+            id: number;
+            /**
+             * Format: date
+             * @example 2026-10-21
+             */
+            date: string;
+            /** @example Walked by the river before work and finally felt rested. */
+            content: string;
+            /**
+             * @example plain
+             * @enum {string}
+             */
+            format: "plain" | "markdown";
+            /**
+             * @example [
+             *       "walks"
+             *     ]
+             */
+            tags: string[];
+            /**
+             * @description Diary the entry returns to; null when that diary is gone
+             * @example 2
+             */
+            diaryId: number | null;
+            /** @example Daily Journal */
+            diaryName: string | null;
+            /** @example 📓 */
+            diaryIcon: string | null;
+            /** @example #2A9D8F */
+            diaryColor: string | null;
+            /**
+             * @description Files kept with the entry until it is restored or removed
+             * @example 1
+             */
+            attachmentCount: number;
+            /**
+             * Format: date-time
+             * @example 2026-10-22T08:30:00.000Z
+             */
+            deletedAt: string;
+            /**
+             * Format: date-time
+             * @description When the entry is removed for good
+             * @example 2026-11-21T08:30:00.000Z
+             */
+            purgeAt: string;
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "id": 12,
+         *           "date": "2026-10-21",
+         *           "content": "Walked by the river before work and finally felt rested.",
+         *           "format": "plain",
+         *           "tags": [
+         *             "walks"
+         *           ],
+         *           "diaryId": 2,
+         *           "diaryName": "Daily Journal",
+         *           "diaryIcon": "📓",
+         *           "diaryColor": "#2A9D8F",
+         *           "attachmentCount": 1,
+         *           "deletedAt": "2026-10-22T08:30:00.000Z",
+         *           "purgeAt": "2026-11-21T08:30:00.000Z"
+         *         }
+         *       ],
+         *       "total": 1,
+         *       "page": 1,
+         *       "totalPages": 1,
+         *       "retentionDays": 30
+         *     }
+         */
+        RecycleBinListResponseDto: {
+            entries: components["schemas"]["TrashedEntryDto"][];
+            /** @example 1 */
+            total: number;
+            /** @example 1 */
+            page: number;
+            /** @example 1 */
+            totalPages: number;
+            /** @example 30 */
+            retentionDays: number;
+        };
+        /**
+         * @example {
+         *       "ids": [
+         *         12,
+         *         15
+         *       ]
+         *     }
+         */
+        RecycleBinSelectionDto: {
+            /**
+             * @description Entries in the recycle bin
+             * @example [
+             *       12,
+             *       15
+             *     ]
+             */
+            ids: number[];
+        };
+        /**
+         * @example {
+         *       "success": true,
+         *       "restoredCount": 2,
+         *       "movedToDefaultCount": 0
+         *     }
+         */
+        RecycleBinRestoreResponseDto: {
+            /** @example true */
+            success: boolean;
+            /** @example 2 */
+            restoredCount: number;
+            /**
+             * @description Restored entries whose diary no longer exists and went to the default diary
+             * @example 0
+             */
+            movedToDefaultCount: number;
+        };
+        /**
+         * @example {
+         *       "success": true,
+         *       "deletedCount": 2
+         *     }
+         */
+        RecycleBinDeleteResponseDto: {
+            /** @example true */
+            success: boolean;
+            /** @example 2 */
+            deletedCount: number;
         };
     };
     responses: never;
@@ -10220,6 +10441,206 @@ export interface operations {
             };
             /** @description AI is not available or could not read the year */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecycleBinController_list: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the recycle bin */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "entries": [
+                     *         {
+                     *           "id": 12,
+                     *           "date": "2026-10-21",
+                     *           "content": "Walked by the river before work and finally felt rested.",
+                     *           "format": "plain",
+                     *           "tags": [
+                     *             "walks"
+                     *           ],
+                     *           "diaryId": 2,
+                     *           "diaryName": "Daily Journal",
+                     *           "diaryIcon": "📓",
+                     *           "diaryColor": "#2A9D8F",
+                     *           "attachmentCount": 1,
+                     *           "deletedAt": "2026-10-22T08:30:00.000Z",
+                     *           "purgeAt": "2026-11-21T08:30:00.000Z"
+                     *         }
+                     *       ],
+                     *       "total": 1,
+                     *       "page": 1,
+                     *       "totalPages": 1,
+                     *       "retentionDays": 30
+                     *     }
+                     */
+                    "application/json": components["schemas"]["RecycleBinListResponseDto"];
+                };
+            };
+        };
+    };
+    RecycleBinController_empty: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recycle bin emptied */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "deletedCount": 2
+                     *     }
+                     */
+                    "application/json": components["schemas"]["RecycleBinDeleteResponseDto"];
+                };
+            };
+        };
+    };
+    RecycleBinController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "ids": [
+                 *         12,
+                 *         15
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["RecycleBinSelectionDto"];
+            };
+        };
+        responses: {
+            /** @description Entries restored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "restoredCount": 2,
+                     *       "movedToDefaultCount": 0
+                     *     }
+                     */
+                    "application/json": components["schemas"]["RecycleBinRestoreResponseDto"];
+                };
+            };
+            /** @description None of the entries are in the recycle bin */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecycleBinController_restoreAll: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entries restored */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "restoredCount": 2,
+                     *       "movedToDefaultCount": 0
+                     *     }
+                     */
+                    "application/json": components["schemas"]["RecycleBinRestoreResponseDto"];
+                };
+            };
+            /** @description The recycle bin is empty */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    RecycleBinController_deletePermanently: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "ids": [
+                 *         12,
+                 *         15
+                 *       ]
+                 *     }
+                 */
+                "application/json": components["schemas"]["RecycleBinSelectionDto"];
+            };
+        };
+        responses: {
+            /** @description Entries deleted permanently */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "deletedCount": 2
+                     *     }
+                     */
+                    "application/json": components["schemas"]["RecycleBinDeleteResponseDto"];
+                };
+            };
+            /** @description None of the entries are in the recycle bin */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

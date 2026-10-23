@@ -197,17 +197,22 @@ export class MemoirService {
   }
 
   private async loadAnsweredIds(userId: number): Promise<Set<string>> {
-    const answers = await this.answerRepository.find({ where: { userId }, select: { questionId: true } });
-    return new Set(answers.map((answer) => answer.questionId));
+    const answers = await this.answerRepository.find({
+      where: { userId },
+      relations: { entry: true },
+      select: { questionId: true, entryId: true, entry: { id: true } },
+    });
+    return new Set(answers.filter((answer) => answer.entry).map((answer) => answer.questionId));
   }
 
+  /** Answers whose entry is in the recycle bin load without it and count as unanswered. */
   private async loadAnswers(userId: number): Promise<AnswerSummary[]> {
     const answers = await this.answerRepository.find({
       where: { userId },
       relations: { entry: true },
       select: { questionId: true, entryId: true, createdAt: true, entry: { id: true, content: true } },
     });
-    return answers.map((answer) => ({
+    return answers.filter((answer) => answer.entry).map((answer) => ({
       questionId: answer.questionId,
       entryId: answer.entryId,
       createdAt: answer.createdAt,

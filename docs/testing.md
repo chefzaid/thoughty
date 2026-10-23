@@ -67,7 +67,7 @@ The browser never reaches a real backend: every `/api` call is answered by the m
 | `public/` | landing page and the feature-request board |
 | `auth/` | sign-up and login onboarding, two-factor authentication |
 | `navigation/` | direct routes, browser history, permalinks, diary return routes |
-| `journal/` | authoring, Markdown, lifecycle, reordering, filtering, favorites, visibility, bulk archive, history, highlights, audio transcription |
+| `journal/` | authoring, Markdown, lifecycle, reordering, filtering, favorites, visibility, bulk archive, history, highlights, audio transcription, recycle bin |
 | `tags/` | tag create, count, rename, delete, and journal tag organization |
 | `ai/` | Auto Tag, automatic tagging, Get Inspired, rephrasing, summaries, chat, meaning search, duplicates, personal API keys |
 | `stats/` | totals, heatmap, and tag insights; the year in review (numbers, diary scope, mood arc, sharing, French, phone layout) |
@@ -88,7 +88,8 @@ Put a new spec in the closest existing directory and name it after the behavior 
 | `mockApp.stats.ts` | stats response builders |
 | `mockApp.route-utils.ts` | route context and `fulfillJson` |
 | `mockApp.routes.ts` | dispatch, auth, config, and feature-request routes |
-| `mockApp.routes.entries.ts` | entries and tags |
+| `mockApp.routes.entries.ts` | entries and tags; deleting moves entries to the mock recycle bin (`state.trash`) |
+| `mockApp.routes.recycle-bin.ts` | listing, restoring, deleting forever, and emptying the recycle bin |
 | `mockApp.routes.io.ts` | import/export and book routes |
 | `mockApp.review.ts` / `mockApp.routes.review.ts` | a small year review built from the test's entries, and saved mood readings |
 | `mockApp.app-import.ts` / `mockApp.routes.app-import.ts` | app-import state (source references, uploaded files) and the entry and attachment batch routes |

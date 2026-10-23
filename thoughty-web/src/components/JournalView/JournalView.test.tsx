@@ -264,6 +264,7 @@ describe('JournalView', () => {
         availableMonths: ['January', 'February', 'March'],
         onNavigate: vi.fn(),
       },
+      onOpenRecycleBin: vi.fn(),
       config: mockConfig,
       t: mockT,
     };
@@ -525,5 +526,16 @@ describe('JournalView', () => {
     fireEvent.click(screen.getByTestId('totd-navigate-btn'));
 
     expect(props.thoughtOfDay.onNavigateToEntry).toHaveBeenCalledWith('2024-01-01', 0);
+  });
+
+  it('opens the recycle bin from the filter bar tools', () => {
+    const props = createProps();
+    render(<JournalView {...props} />);
+
+    const button = screen.getByRole('button', { name: 'recycleBin' });
+    expect(screen.getByTestId('filter-controls')).toContainElement(button);
+    fireEvent.click(button);
+
+    expect(props.onOpenRecycleBin).toHaveBeenCalledTimes(1);
   });
 });

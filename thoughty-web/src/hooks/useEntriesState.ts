@@ -10,6 +10,8 @@ export type SemanticSearchStatus = 'idle' | 'loading' | 'complete' | 'error';
 const ENTRY_DATES_QUERY_KEY = ['app', 'entry-dates'] as const;
 const ENTRY_YEARS_MONTHS_QUERY_KEY = ['app', 'entry-years-months'] as const;
 const ENTRIES_QUERY_KEY = 'entries';
+/** Every query that reads journal entries, for screens that bring entries back from elsewhere. */
+export const JOURNAL_ENTRY_QUERY_KEYS = [['app', ENTRIES_QUERY_KEY], ENTRY_DATES_QUERY_KEY, ENTRY_YEARS_MONTHS_QUERY_KEY] as const;
 const EMPTY_ENTRIES: Entry[] = [];
 const EMPTY_STRINGS: string[] = [];
 const EMPTY_NUMBERS: number[] = [];
