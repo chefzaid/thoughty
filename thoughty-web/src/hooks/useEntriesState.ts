@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { ArchiveStatusFilter, Config, Entry, EntryBacklink, GroupedEntries, SourceEntryInfo } from '../types';
+import type { ArchiveStatusFilter, Config, Entry, EntryBacklink, EntrySearchSort, GroupedEntries, SourceEntryInfo } from '../types';
 import { useApiServices } from './useApiServices';
 import type { SemanticSearchResponse } from '../services/api/aiService';
 
@@ -32,6 +32,7 @@ export const useEntries = (
 
   const [search, setSearch] = useState<string>('');
   const [searchModeState, setSearchModeState] = useState<EntrySearchMode>('keyword');
+  const [searchSort, setSearchSort] = useState<EntrySearchSort>('relevance');
   const [semanticSearchStatus, setSemanticSearchStatus] = useState<SemanticSearchStatus>('idle');
   const [semanticSearchResult, setSemanticSearchResult] = useState<SemanticSearchResponse | null>(null);
   const semanticRequestIdRef = useRef(0);
@@ -57,6 +58,8 @@ export const useEntries = (
       : null
   ), [searchModeState, semanticSearchResult]);
   const effectiveKeywordSearch = searchModeState === 'keyword' ? search : '';
+  /** Keyword results are shown in the server's order (best match first) instead of grouped by day. */
+  const rankedResults = effectiveKeywordSearch.trim() !== '' && searchSort === 'relevance';
 
   const entriesQueryKey = useMemo(() => [
     'app',
@@ -65,6 +68,7 @@ export const useEntries = (
       page,
       limit: getLimit(),
       search: effectiveKeywordSearch,
+      searchSort: effectiveKeywordSearch.trim() ? searchSort : null,
       semanticEntryIds,
       filterTags,
       filterDate: filterDateObj
@@ -75,7 +79,7 @@ export const useEntries = (
       filterArchiveStatus,
       currentDiaryId,
     },
-  ] as const, [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterFavorites, filterTags, filterVisibility, getLimit, page, semanticEntryIds]);
+  ] as const, [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterFavorites, filterTags, filterVisibility, getLimit, page, searchSort, semanticEntryIds]);
 
   const entriesQuery = useQuery({
     queryKey: entriesQueryKey,
@@ -88,6 +92,7 @@ export const useEntries = (
         page,
         limit: getLimit(),
         search: effectiveKeywordSearch,
+        sort: searchSort,
         filterTags,
         filterDate,
         filterVisibility: filterVisibility === 'all' ? '' : filterVisibility,
@@ -340,6 +345,9 @@ export const useEntries = (
     setSearch,
     searchMode: searchModeState,
     setSearchMode,
+    searchSort,
+    setSearchSort,
+    rankedResults,
     semanticSearchStatus,
     semanticSearchResult,
     runSemanticSearch,

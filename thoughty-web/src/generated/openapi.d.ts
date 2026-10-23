@@ -2183,7 +2183,11 @@ export interface components {
          *           "transcribed_at": "2026-06-24T10:00:00.000Z"
          *         }
          *       ],
-         *       "created_at": "2026-06-24T10:00:00.000Z"
+         *       "created_at": "2026-06-24T10:00:00.000Z",
+         *       "search_matches": [
+         *         "morning run",
+         *         "swimming"
+         *       ]
          *     }
          */
         EntryResponseDto: {
@@ -2206,6 +2210,14 @@ export interface components {
             attachments?: components["schemas"]["AttachmentResponseDto"][];
             /** Format: date-time */
             created_at: string;
+            /**
+             * @description With a search: the words and phrases of this entry that match it, as written in the entry, longest first, for highlighting. Empty when only a tag matched.
+             * @example [
+             *       "morning run",
+             *       "swimming"
+             *     ]
+             */
+            search_matches?: string[];
         };
         /**
          * @example {
@@ -2239,7 +2251,11 @@ export interface components {
          *               "transcribed_at": "2026-06-24T10:00:00.000Z"
          *             }
          *           ],
-         *           "created_at": "2026-06-24T10:00:00.000Z"
+         *           "created_at": "2026-06-24T10:00:00.000Z",
+         *           "search_matches": [
+         *             "morning run",
+         *             "swimming"
+         *           ]
          *         }
          *       ],
          *       "total": 1,
@@ -2319,7 +2335,11 @@ export interface components {
          *             "transcribed_at": "2026-06-24T10:00:00.000Z"
          *           }
          *         ],
-         *         "created_at": "2026-06-24T10:00:00.000Z"
+         *         "created_at": "2026-06-24T10:00:00.000Z",
+         *         "search_matches": [
+         *           "morning run",
+         *           "swimming"
+         *         ]
          *       },
          *       "page": 1,
          *       "entryId": 1,
@@ -2593,7 +2613,11 @@ export interface components {
          *             "transcribed_at": "2026-06-24T10:00:00.000Z"
          *           }
          *         ],
-         *         "created_at": "2026-06-24T10:00:00.000Z"
+         *         "created_at": "2026-06-24T10:00:00.000Z",
+         *         "search_matches": [
+         *           "morning run",
+         *           "swimming"
+         *         ]
          *       }
          *     }
          */
@@ -6141,8 +6165,10 @@ export interface operations {
     EntriesController_getEntries: {
         parameters: {
             query?: {
-                /** @description Search term for content or tags */
+                /** @description Full-text search over content and tags, with English and French word forms and accents ignored. Supports "exact phrases" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts. */
                 search?: string;
+                /** @description Order of search results: best match first, or by date as without a search */
+                sort?: "relevance" | "date";
                 /** @description Comma-separated entry IDs to include, in relevance order */
                 ids?: string;
                 /** @description Comma-separated list of tags to filter by */
@@ -6203,7 +6229,11 @@ export interface operations {
                      *               "transcribed_at": "2026-06-24T10:00:00.000Z"
                      *             }
                      *           ],
-                     *           "created_at": "2026-06-24T10:00:00.000Z"
+                     *           "created_at": "2026-06-24T10:00:00.000Z",
+                     *           "search_matches": [
+                     *             "morning run",
+                     *             "swimming"
+                     *           ]
                      *         }
                      *       ],
                      *       "total": 1,
@@ -6382,7 +6412,11 @@ export interface operations {
                      *             "transcribed_at": "2026-06-24T10:00:00.000Z"
                      *           }
                      *         ],
-                     *         "created_at": "2026-06-24T10:00:00.000Z"
+                     *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "search_matches": [
+                     *           "morning run",
+                     *           "swimming"
+                     *         ]
                      *       },
                      *       "page": 1,
                      *       "entryId": 1,
@@ -6700,7 +6734,11 @@ export interface operations {
                      *             "transcribed_at": "2026-06-24T10:00:00.000Z"
                      *           }
                      *         ],
-                     *         "created_at": "2026-06-24T10:00:00.000Z"
+                     *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "search_matches": [
+                     *           "morning run",
+                     *           "swimming"
+                     *         ]
                      *       }
                      *     }
                      */
@@ -6794,7 +6832,11 @@ export interface operations {
                      *             "transcribed_at": "2026-06-24T10:00:00.000Z"
                      *           }
                      *         ],
-                     *         "created_at": "2026-06-24T10:00:00.000Z"
+                     *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "search_matches": [
+                     *           "morning run",
+                     *           "swimming"
+                     *         ]
                      *       }
                      *     }
                      */
@@ -6861,7 +6903,11 @@ export interface operations {
                      *             "transcribed_at": "2026-06-24T10:00:00.000Z"
                      *           }
                      *         ],
-                     *         "created_at": "2026-06-24T10:00:00.000Z"
+                     *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "search_matches": [
+                     *           "morning run",
+                     *           "swimming"
+                     *         ]
                      *       }
                      *     }
                      */
@@ -6928,7 +6974,11 @@ export interface operations {
                      *             "transcribed_at": "2026-06-24T10:00:00.000Z"
                      *           }
                      *         ],
-                     *         "created_at": "2026-06-24T10:00:00.000Z"
+                     *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "search_matches": [
+                     *           "morning run",
+                     *           "swimming"
+                     *         ]
                      *       }
                      *     }
                      */
@@ -6995,7 +7045,11 @@ export interface operations {
                      *             "transcribed_at": "2026-06-24T10:00:00.000Z"
                      *           }
                      *         ],
-                     *         "created_at": "2026-06-24T10:00:00.000Z"
+                     *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "search_matches": [
+                     *           "morning run",
+                     *           "swimming"
+                     *         ]
                      *       }
                      *     }
                      */

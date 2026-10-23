@@ -1,5 +1,5 @@
 import { readApiErrorMessage, safeJsonParse } from './base';
-import type { ArchiveStatusFilter, Entry, EntryBacklink, EntriesResponse, EntryRevision } from '../../types';
+import type { ArchiveStatusFilter, Entry, EntryBacklink, EntriesResponse, EntryRevision, EntrySearchSort } from '../../types';
 import type { components, paths } from '../../generated/openapi';
 
 type CreateEntryRequestDto = components['schemas']['CreateEntryDto'];
@@ -32,6 +32,8 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     page: number;
     limit: number;
     search: string;
+    /** Order of keyword search results; sent only with a search. */
+    sort?: EntrySearchSort;
     filterTags: string[];
     filterDate: string;
     filterVisibility: string;
@@ -49,6 +51,9 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
         date: params.filterDate,
         visibility: params.filterVisibility
       });
+      if (params.search.trim() && params.sort) {
+        urlParams.append('sort', params.sort);
+      }
       if (params.diaryId) {
         urlParams.append('diaryId', params.diaryId.toString());
       }

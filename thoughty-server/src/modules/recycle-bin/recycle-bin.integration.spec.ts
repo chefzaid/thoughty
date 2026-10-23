@@ -5,6 +5,7 @@ import { DiariesService } from '@/modules/diaries/diaries.service';
 import { DiaryEntryTransferService } from '@/modules/diaries/diary-entry-transfer.service';
 import { EntriesCommandService } from '@/modules/entries/entries-command.service';
 import { EntriesQueryService } from '@/modules/entries/entries-query.service';
+import { EntrySearchService } from '@/modules/entries/entry-search.service';
 import { RecycleBinService } from './recycle-bin.service';
 
 const url = process.env.THOUGHTY_PG_TEST_URL;
@@ -59,7 +60,7 @@ integration('PostgreSQL recycle bin', () => {
       { resolveSavedTags: async (_user: number, _text: string, tags: string[]) => tags } as never,
       configService as never,
     );
-    queries = new EntriesQueryService(entries, revisions);
+    queries = new EntriesQueryService(entries, revisions, new EntrySearchService(entries));
     removeStoredFiles = jest.fn().mockResolvedValue(undefined);
     bin = new RecycleBinService(
       dataSource,

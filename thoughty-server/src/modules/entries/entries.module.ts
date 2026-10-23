@@ -8,6 +8,7 @@ import { EntriesService } from './entries.service';
 import { EntriesQueryService } from './entries-query.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
+import { EntrySearchService } from './entry-search.service';
 import { EntryTaggingService } from './entry-tagging.service';
 
 @Module({
@@ -18,6 +19,7 @@ import { EntryTaggingService } from './entry-tagging.service';
     EntriesQueryService,
     EntriesCommandService,
     EntryListCacheService,
+    EntrySearchService,
     EntryTaggingService,
   ],
   exports: [EntriesService, EntryListCacheService],

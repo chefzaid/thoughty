@@ -30,6 +30,7 @@ describe('EntriesQueryService', () => {
   let service: EntriesQueryService;
   let entryRepository: Record<string, jest.Mock>;
   let revisionRepository: Record<string, jest.Mock>;
+  let entrySearch: Record<string, jest.Mock>;
 
   beforeEach(() => {
     entryRepository = {
@@ -42,7 +43,22 @@ describe('EntriesQueryService', () => {
       find: jest.fn(),
     };
 
-    service = new EntriesQueryService(entryRepository as never, revisionRepository as never);
+    entrySearch = {
+      prepare: jest.fn().mockResolvedValue({
+        kind: 'text',
+        text: 'work',
+        matchQuery: "'work':*",
+        exactQuery: "'work'",
+        terms: [{ text: 'work', prefix: true }],
+      }),
+      findMatches: jest.fn().mockResolvedValue(new Map([[1, ['Work']]])),
+    };
+
+    service = new EntriesQueryService(
+      entryRepository as never,
+      revisionRepository as never,
+      entrySearch as never,
+    );
   });
 
   afterEach(() => {
@@ -97,13 +113,17 @@ describe('EntriesQueryService', () => {
       limit: 5,
     });
 
+    expect(entrySearch.prepare).toHaveBeenCalledWith('work');
     expect(entriesQb.andWhere).toHaveBeenCalledWith(
-      '(e.content ILIKE :search OR :searchTerm = ANY(e.tags))',
-      {
-        search: '%work%',
-        searchTerm: 'work',
-      },
+      '(e.search_vector @@ CAST(:searchQuery AS tsquery) OR e.tags @> :searchTags)',
+      { searchQuery: "'work':*", searchTags: ['work'] },
     );
+    expect(entriesQb.addSelect).toHaveBeenCalledWith(
+      'ts_rank(e.search_vector, CAST(:searchQuery AS tsquery), 1) + ts_rank(e.search_vector, CAST(:exactQuery AS tsquery), 1)',
+      'search_rank',
+    );
+    expect(entriesQb.setParameter).toHaveBeenCalledWith('exactQuery', "'work'");
+    expect(entrySearch.findMatches).toHaveBeenCalledWith(4, [1], [{ text: 'work', prefix: true }]);
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.tags @> :tagList', {
       tagList: ['work', 'focus'],
     });
@@ -114,7 +134,7 @@ describe('EntriesQueryService', () => {
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 8 });
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.is_favorite = true');
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.is_archived = false');
-    expect(entriesQb.orderBy).toHaveBeenCalledWith('e.isPinned', 'DESC');
+    expect(entriesQb.orderBy).toHaveBeenCalledWith('search_rank', 'DESC');
     expect(entriesQb.addOrderBy).toHaveBeenCalledWith('e.date', 'DESC');
     expect(entriesQb.addOrderBy).toHaveBeenCalledWith('e.index', 'ASC');
     expect(entriesQb.skip).toHaveBeenCalledWith(5);
@@ -149,6 +169,7 @@ describe('EntriesQueryService', () => {
               transcribed_at: new Date('2024-01-15T10:05:00Z'),
             },
           ],
+          search_matches: ['Work'],
         },
       ],
       total: 12,
@@ -156,6 +177,41 @@ describe('EntriesQueryService', () => {
       totalPages: 3,
       allTags: ['alpha', 'work'],
     });
+  });
+
+  it('keeps date order for a search when asked, pinned entries first', async () => {
+    const entriesQb = createQueryBuilder();
+    entriesQb.getCount.mockResolvedValue(0);
+    entriesQb.getMany.mockResolvedValue([]);
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(entriesQb)
+      .mockReturnValueOnce(createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([]) }));
+
+    const result = await service.getEntries(4, { search: 'work', sort: 'date' });
+
+    expect(entriesQb.orderBy).toHaveBeenCalledWith('e.isPinned', 'DESC');
+    expect(entriesQb.orderBy).not.toHaveBeenCalledWith('search_rank', 'DESC');
+    expect(result.entries).toEqual([]);
+  });
+
+  it('matches searches without words literally, with LIKE wildcards escaped', async () => {
+    entrySearch.prepare.mockResolvedValue({ kind: 'literal', text: '100%_🎉' });
+    const entriesQb = createQueryBuilder();
+    entriesQb.getCount.mockResolvedValue(1);
+    entriesQb.getMany.mockResolvedValue([{ id: 9, content: '100%_🎉', tags: [], attachments: [] }]);
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(entriesQb)
+      .mockReturnValueOnce(createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([]) }));
+
+    const result = await service.getEntries(4, { search: '100%_🎉' });
+
+    expect(entriesQb.andWhere).toHaveBeenCalledWith(
+      '(e.content ILIKE :searchPattern OR e.tags @> :searchTags)',
+      { searchPattern: String.raw`%100\%\_🎉%`, searchTags: ['100%_🎉'] },
+    );
+    expect(entriesQb.orderBy).toHaveBeenCalledWith('e.isPinned', 'DESC');
+    expect(entrySearch.findMatches).not.toHaveBeenCalled();
+    expect(result.entries[0]).not.toHaveProperty('search_matches');
   });
 
   it('returns available dates ordered descending', async () => {

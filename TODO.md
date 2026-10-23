@@ -363,7 +363,7 @@ Concrete product features that build on what exists. Each one fills a gap visibl
 
 ### Search and Revisit
 
-- [ ] Full-text search: replace the `ILIKE` match in `entries-query.service.ts` with PostgreSQL full-text search (a `tsvector` column with a GIN index and English and French stemming). Add exact-phrase and exclusion operators and ranked results, so search stays fast on journals that span decades.
+- [x] Full-text search: the `ILIKE` match is replaced by PostgreSQL full-text search over content and tags (a generated `tsvector` indexed in English and French with accents ignored, and a per-writer GIN index), with "exact phrases", `-` exclusions, `OR`, prefix matching on the last word, best-match ranking with a date-order switch, server-side highlights of stemmed words and phrases, and operator help in English and French, so search stays fast on journals that span decades.
 - [ ] Saved searches: save any combination of filters (for example favorites tagged "family" in 2019) as a named view in the journal.
 - [ ] Calendar view: a month grid with the entries of each day, next to the list view.
 - [ ] Life eras: named date ranges ("University", "The Paris years") usable as filters, as book chapters, and as context for memoir answers.

@@ -63,11 +63,11 @@ The browser never reaches a real backend: every `/api` call is answered by the m
 
 | Directory | Covers |
 |---|---|
-| `accessibility/` | Axe WCAG A/AA scans of every route in both themes, skip links, focus on route change, key dialogs |
+| `accessibility/` | Axe WCAG A/AA scans of every route in both themes, the journal search controls, skip links, focus on route change, key dialogs |
 | `public/` | landing page and the feature-request board |
 | `auth/` | sign-up and login onboarding, two-factor authentication |
 | `navigation/` | direct routes, browser history, permalinks, diary return routes |
-| `journal/` | authoring, Markdown, lifecycle, reordering, filtering, favorites, visibility, bulk archive, history, highlights, audio transcription, recycle bin |
+| `journal/` | authoring, Markdown, lifecycle, reordering, filtering, full-text search (operators, prefix matches, ordering, highlights, French help), favorites, visibility, bulk archive, history, highlights, audio transcription, recycle bin |
 | `tags/` | tag create, count, rename, delete, and journal tag organization |
 | `ai/` | Auto Tag, automatic tagging, Get Inspired, rephrasing, summaries, chat, meaning search, duplicates, personal API keys |
 | `stats/` | totals, heatmap, and tag insights; the year in review (numbers, diary scope, mood arc, sharing, French, phone layout) |
@@ -89,6 +89,7 @@ Put a new spec in the closest existing directory and name it after the behavior 
 | `mockApp.route-utils.ts` | route context and `fulfillJson` |
 | `mockApp.routes.ts` | dispatch, auth, config, and feature-request routes |
 | `mockApp.routes.entries.ts` | entries and tags; deleting moves entries to the mock recycle bin (`state.trash`) |
+| `mockApp.search.ts` | a small keyword search for the entries route: whole words, quoted phrases, exclusions, OR, a prefix last word, best-match order, and `search_matches`, without stemming |
 | `mockApp.routes.recycle-bin.ts` | listing, restoring, deleting forever, and emptying the recycle bin |
 | `mockApp.routes.io.ts` | import/export and book routes |
 | `mockApp.review.ts` / `mockApp.routes.review.ts` | a small year review built from the test's entries, and saved mood readings |

@@ -391,6 +391,46 @@ describe('EntryContentRenderer', () => {
             });
         });
 
+        describe('Server search matches', () => {
+            it('highlights the matched words and phrases as whole words', () => {
+                const { container } = render(
+                    <EntryContentRenderer
+                        {...defaultProps}
+                        content="A morning run, then running past the brunch place."
+                        searchTerm='"morning run" runn'
+                        searchMatches={['morning run', 'running']}
+                    />
+                );
+
+                const marks = [...container.querySelectorAll('mark')].map((mark) => mark.textContent);
+                expect(marks).toEqual(['morning run', 'running']);
+            });
+
+            it('highlights nothing when only a tag matched', () => {
+                const { container } = render(
+                    <EntryContentRenderer {...defaultProps} content="Family dinner" searchTerm="families" searchMatches={[]} />
+                );
+
+                expect(container.querySelectorAll('mark')).toHaveLength(0);
+            });
+
+            it('highlights server matches inside markdown', async () => {
+                const { container } = render(
+                    <EntryContentRenderer
+                        {...defaultProps}
+                        content="Walking **walks** daily"
+                        format="markdown"
+                        searchTerm="walk"
+                        searchMatches={['Walking', 'walks']}
+                    />
+                );
+
+                await waitFor(() => {
+                    expect([...container.querySelectorAll('mark')].map((mark) => mark.textContent)).toEqual(['Walking', 'walks']);
+                });
+            });
+        });
+
         describe('Highlighting with cross-references', () => {
             it('highlights text parts but not cross-references', () => {
                 const { container } = render(

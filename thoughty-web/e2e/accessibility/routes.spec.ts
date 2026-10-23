@@ -92,6 +92,26 @@ test.describe('route accessibility', () => {
   }
 
   for (const theme of THEMES) {
+    test(`${theme} journal search with its help, result order, and highlights`, async ({ page }) => {
+      await setupMockApp(page, {
+        startAuthenticated: true,
+        config: { theme },
+        initialEntries: [
+          { id: 51, date: '2026-10-20', index: 1, content: 'A morning run by the harbor.', tags: ['running'], visibility: 'private', diaryId: 1 },
+          { id: 52, date: '2026-10-19', index: 1, content: 'Morning run, then morning coffee.', tags: [], visibility: 'private', diaryId: 1 },
+        ],
+      });
+      await page.goto('/journal');
+      await page.getByRole('textbox', { name: 'Search entries' }).fill('morning');
+      await expect(page.locator('#entry-52 mark').first()).toBeVisible();
+      await expect(page.getByRole('group', { name: 'Order of search results' })).toBeVisible();
+
+      // The search box, its help, and the result order; the rest of the journal is scanned by the route test.
+      await expectNoAccessibilityViolations(page, '.journal-search-options, input[aria-describedby]');
+    });
+  }
+
+  for (const theme of THEMES) {
     test(`${theme} guided memoir in progress with an open answer`, async ({ page }) => {
       await setupMockApp(page, { startAuthenticated: true, config: { theme }, memoirProgram: { diaryId: 1 } });
       await page.goto('/memoir');

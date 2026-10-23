@@ -886,9 +886,25 @@
             "name": "search",
             "required": false,
             "in": "query",
-            "description": "Search term for content or tags",
+            "description": "Full-text search over content and tags, with English and French word forms and accents ignored. Supports \"exact phrases\" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts.",
             "schema": {
+              "maxLength": 500,
+              "example": "\"morning run\" -rain OR swim",
               "type": "string"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Order of search results: best match first, or by date as without a search",
+            "schema": {
+              "default": "relevance",
+              "type": "string",
+              "enum": [
+                "relevance",
+                "date"
+              ]
             }
           },
           {
@@ -1020,7 +1036,11 @@
                           "transcribed_at": "2026-06-24T10:00:00.000Z"
                         }
                       ],
-                      "created_at": "2026-06-24T10:00:00.000Z"
+                      "created_at": "2026-06-24T10:00:00.000Z",
+                      "search_matches": [
+                        "morning run",
+                        "swimming"
+                      ]
                     }
                   ],
                   "total": 1,
@@ -1273,7 +1293,11 @@
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
-                    "created_at": "2026-06-24T10:00:00.000Z"
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
                   },
                   "page": 1,
                   "entryId": 1,
@@ -1670,7 +1694,11 @@
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
-                    "created_at": "2026-06-24T10:00:00.000Z"
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
                   }
                 }
               }
@@ -1790,7 +1818,11 @@
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
-                    "created_at": "2026-06-24T10:00:00.000Z"
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
                   }
                 }
               }
@@ -1873,7 +1905,11 @@
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
-                    "created_at": "2026-06-24T10:00:00.000Z"
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
                   }
                 }
               }
@@ -1956,7 +1992,11 @@
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
-                    "created_at": "2026-06-24T10:00:00.000Z"
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
                   }
                 }
               }
@@ -2039,7 +2079,11 @@
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
                     ],
-                    "created_at": "2026-06-24T10:00:00.000Z"
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
                   }
                 }
               }
@@ -7813,6 +7857,17 @@
           "created_at": {
             "format": "date-time",
             "type": "string"
+          },
+          "search_matches": {
+            "description": "With a search: the words and phrases of this entry that match it, as written in the entry, longest first, for highlighting. Empty when only a tag matched.",
+            "example": [
+              "morning run",
+              "swimming"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "required": [
@@ -7858,7 +7913,11 @@
               "transcribed_at": "2026-06-24T10:00:00.000Z"
             }
           ],
-          "created_at": "2026-06-24T10:00:00.000Z"
+          "created_at": "2026-06-24T10:00:00.000Z",
+          "search_matches": [
+            "morning run",
+            "swimming"
+          ]
         }
       },
       "EntriesListResponseDto": {
@@ -7924,7 +7983,11 @@
                   "transcribed_at": "2026-06-24T10:00:00.000Z"
                 }
               ],
-              "created_at": "2026-06-24T10:00:00.000Z"
+              "created_at": "2026-06-24T10:00:00.000Z",
+              "search_matches": [
+                "morning run",
+                "swimming"
+              ]
             }
           ],
           "total": 1,
@@ -8050,7 +8113,11 @@
                 "transcribed_at": "2026-06-24T10:00:00.000Z"
               }
             ],
-            "created_at": "2026-06-24T10:00:00.000Z"
+            "created_at": "2026-06-24T10:00:00.000Z",
+            "search_matches": [
+              "morning run",
+              "swimming"
+            ]
           },
           "page": 1,
           "entryId": 1,
@@ -8522,7 +8589,11 @@
                 "transcribed_at": "2026-06-24T10:00:00.000Z"
               }
             ],
-            "created_at": "2026-06-24T10:00:00.000Z"
+            "created_at": "2026-06-24T10:00:00.000Z",
+            "search_matches": [
+              "morning run",
+              "swimming"
+            ]
           }
         }
       },

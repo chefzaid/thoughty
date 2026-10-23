@@ -37,6 +37,17 @@ describe('EntryListCacheService', () => {
     expect(cache.get(8, { tags: 'focus,work', visibility: 'public', page: 1, limit: 10 })).toBeUndefined();
   });
 
+  it('keeps search orders and meaning-search results apart', () => {
+    const cache = new EntryListCacheService({ ENTRIES_CACHE_TTL_SECONDS: '30' });
+    cache.set(7, { search: 'walk' }, response);
+    cache.set(7, { ids: '3,1' }, { ...response, total: 2 });
+
+    expect(cache.get(7, { search: 'walk', sort: 'relevance' })).toEqual(response);
+    expect(cache.get(7, { search: 'walk', sort: 'date' })).toBeUndefined();
+    expect(cache.get(7, { ids: '3,1' })?.total).toBe(2);
+    expect(cache.get(7, { ids: '1,3' })).toBeUndefined();
+  });
+
   it('expires cached entries after the configured ttl', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-01-15T10:00:00Z'));

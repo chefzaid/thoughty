@@ -82,6 +82,8 @@ Request bodies are limited before validation: JSON `1mb` and URL-encoded `256kb`
 
 Database errors caused by client input, such as an id beyond PostgreSQL's integer range, are answered with `400` by the global `DatabaseInputExceptionFilter` instead of surfacing as `500`.
 
+Keyword searches are capped at 500 characters and reach PostgreSQL only as bound parameters. `websearch_to_tsquery` reads any text without raising syntax errors, the one word passed to `to_tsquery` as a prefix is restricted to letters and digits, and the literal fallback escapes `LIKE` wildcards. Search and its highlights are scoped to the authenticated writer and leave out entries in the recycle bin.
+
 ## Secrets
 
 Provided through Vault (see [Deployment](./deployment.md#configuration-and-secrets)) and never committed:

@@ -102,10 +102,12 @@ function createRoutesParams(
       inputPage: '1',
       loading: false,
       page: 1,
+      rankedResults: false,
       reorderEntries: vi.fn().mockResolvedValue(undefined),
       runSemanticSearch: vi.fn().mockResolvedValue(undefined),
       search: '',
       searchMode: 'keyword',
+      searchSort: 'relevance',
       semanticSearchResult: null,
       semanticSearchStatus: 'idle',
       setFilterArchiveStatus: vi.fn(),
@@ -117,6 +119,7 @@ function createRoutesParams(
       setPage: vi.fn(),
       setSearch: vi.fn(),
       setSearchMode: vi.fn(),
+      setSearchSort: vi.fn(),
       sourceEntry: null,
       targetEntryId: null,
       toggleArchived: vi.fn().mockResolvedValue(undefined),
@@ -285,10 +288,12 @@ describe('appShellProps', () => {
         inputPage: '1',
         loading: false,
         page: 1,
+        rankedResults: true,
         reorderEntries: vi.fn().mockResolvedValue(undefined),
         runSemanticSearch: vi.fn().mockResolvedValue(undefined),
         search: '',
         searchMode: 'keyword',
+        searchSort: 'date',
         semanticSearchResult: null,
         semanticSearchStatus: 'idle',
         setFilterArchiveStatus: vi.fn(),
@@ -300,6 +305,7 @@ describe('appShellProps', () => {
         setPage: vi.fn(),
         setSearch: vi.fn(),
         setSearchMode: vi.fn(),
+        setSearchSort: vi.fn(),
         sourceEntry: null,
         targetEntryId: null,
         toggleArchived: vi.fn().mockResolvedValue(undefined),
@@ -367,6 +373,8 @@ describe('appShellProps', () => {
     expect(props.journalRouteProps.entryForm.tags).toEqual(['focus', 'work']);
     expect(props.journalRouteProps.entryForm.format).toBe('markdown');
     expect(props.journalRouteProps.entriesList.onCancelEdit).toBe(handleCancelEdit);
+    expect(props.journalRouteProps.entriesList.rankedOrder).toBe(true);
+    expect(props.journalRouteProps.filters.searchSort).toBe('date');
   });
 
   it('wires entry templates through user config', async () => {

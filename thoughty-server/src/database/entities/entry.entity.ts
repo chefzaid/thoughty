@@ -73,6 +73,20 @@ export class Entry {
   createdAt: Date;
 
   /**
+   * Content and tags as English and French search terms: a stored column PostgreSQL generates
+   * with `entry_search_vector(content, tags)`. It is never written by the application and never
+   * loaded with the entry; it is not declared as generated so that saves do not read it back.
+   */
+  @Column({
+    name: 'search_vector',
+    type: 'tsvector',
+    select: false,
+    insert: false,
+    update: false,
+  })
+  searchVector?: string;
+
+  /**
    * When the entry went to the recycle bin. TypeORM leaves trashed entries out of every
    * find and select query unless the query asks for them with `withDeleted`.
    */

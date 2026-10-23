@@ -52,6 +52,21 @@ describe('entriesService', () => {
       expect(mockAuthFetch).toHaveBeenCalledWith(expect.stringContaining('diaryId=5'));
     });
 
+    it('sends the search order only with a search', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+      });
+
+      await service.fetchEntries({ ...defaultParams, search: '"morning run" -rain', sort: 'date' });
+      await service.fetchEntries({ ...defaultParams, search: ' ', sort: 'date' });
+
+      const [withSearch, withoutSearch] = mockAuthFetch.mock.calls.map(([url]) => new URL(String(url), 'http://test').searchParams);
+      expect(withSearch?.get('search')).toBe('"morning run" -rain');
+      expect(withSearch?.get('sort')).toBe('date');
+      expect(withoutSearch?.has('sort')).toBe(false);
+    });
+
     it('returns null when response is not ok', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: false,

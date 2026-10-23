@@ -43,6 +43,10 @@ const DEFAULT_DB_TARGETS: DbBenchmarkTarget[] = [
   { name: 'users_count', sql: 'select count(*) from users where deleted_at is null' },
   { name: 'diaries_count', sql: 'select count(*) from diaries' },
   { name: 'entries_count', sql: 'select count(*) from entries' },
+  {
+    name: 'entries_full_text_search',
+    sql: "select count(*) from entries where deleted_at is null and search_vector @@ (websearch_to_tsquery('thoughty_en', 'walk') || websearch_to_tsquery('thoughty_fr', 'walk'))",
+  },
   { name: 'cloud_sync_jobs_count', sql: 'select count(*) from cloud_sync_jobs' },
 ];
 

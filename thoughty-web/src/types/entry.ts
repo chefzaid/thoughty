@@ -31,7 +31,12 @@ export interface Entry {
   updated_at?: string;
   index?: number;
   attachments?: Attachment[];
+  /** With a keyword search: the words and phrases of this entry that matched, as written. */
+  search_matches?: string[];
 }
+
+/** Keyword search results come best match first, or by date as without a search. */
+export type EntrySearchSort = 'relevance' | 'date';
 
 export interface GroupedEntries {
   [date: string]: Entry[];

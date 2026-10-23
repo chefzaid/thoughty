@@ -1,8 +1,8 @@
-import { type Dispatch, type ReactNode, type SetStateAction } from 'react';
+import { useId, useState, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
-import type { ArchiveStatusFilter } from '../../types';
+import type { ArchiveStatusFilter, EntrySearchSort } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import type { SemanticSearchResponse } from '../../services/api/aiService';
 import type { EntrySearchMode, SemanticSearchStatus } from '../../hooks/useEntriesState';
@@ -14,6 +14,8 @@ interface FilterControlsProps {
     readonly setSearch: Dispatch<SetStateAction<string>>;
     readonly searchMode: EntrySearchMode;
     readonly setSearchMode: (mode: EntrySearchMode) => void;
+    readonly searchSort: EntrySearchSort;
+    readonly setSearchSort: (sort: EntrySearchSort) => void;
     readonly semanticSearchStatus: SemanticSearchStatus;
     readonly semanticSearchResult: SemanticSearchResponse | null;
     readonly onSemanticSearch: () => Promise<void>;
@@ -41,6 +43,8 @@ function FilterControls({
     setSearch,
     searchMode,
     setSearchMode,
+    searchSort,
+    setSearchSort,
     semanticSearchStatus,
     semanticSearchResult,
     onSemanticSearch,
@@ -63,6 +67,9 @@ function FilterControls({
     actions
 }: FilterControlsProps) {
     const isLight = theme === 'light';
+    const searchHelpId = useId();
+    const [searchFocused, setSearchFocused] = useState(false);
+    const hasKeywordSearch = searchMode === 'keyword' && search.trim() !== '';
     const inputClass = `border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
         ? 'bg-gray-50 border-gray-300 text-gray-900'
         : 'bg-gray-900 border-gray-700 text-gray-100'
@@ -76,6 +83,7 @@ function FilterControls({
     const handleReset = (): void => {
         setSearch('');
         setSearchMode('keyword');
+        setSearchSort('relevance');
         setFilterTags([]);
         setFilterDateObj(null);
         setFilterVisibility('all');
@@ -208,9 +216,13 @@ function FilterControls({
                 <input
                     type="text"
                     placeholder={t(searchMode === 'keyword' ? 'searchPlaceholder' : 'semanticSearchPlaceholder')}
+                    aria-label={t('searchEntriesLabel')}
+                    aria-describedby={searchMode === 'keyword' ? searchHelpId : undefined}
                     className={`semantic-search-control ${inputClass} min-w-0 flex-1 basis-64`}
                     value={search}
                     onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setSearchFocused(false)}
                     onKeyDown={(event) => {
                         if (searchMode === 'semantic' && event.key === 'Enter') {
                             event.preventDefault();
@@ -246,6 +258,33 @@ function FilterControls({
                     />
                 </div>
             </div>
+            {searchMode === 'keyword' && (searchFocused || hasKeywordSearch ? (
+                <div className="journal-search-options flex flex-wrap items-center justify-between gap-2">
+                    <p id={searchHelpId} className={`min-w-0 flex-1 basis-72 text-xs ${isLight ? 'text-gray-600' : 'text-gray-400'}`}>
+                        {t('searchHelp')}
+                    </p>
+                    {hasKeywordSearch && (
+                        <fieldset
+                            className={`flex h-8 shrink-0 overflow-hidden rounded-md border text-xs ${isLight ? 'border-gray-300' : 'border-gray-700'}`}
+                            aria-label={t('searchSort')}
+                        >
+                            {(['relevance', 'date'] as const).map((sort) => (
+                                <button
+                                    key={sort}
+                                    type="button"
+                                    className={`h-full px-3 font-medium ${searchSort === sort ? 'bg-blue-600 text-white' : inactiveSearchClass}`}
+                                    aria-pressed={searchSort === sort}
+                                    onClick={() => { setSearchSort(sort); setPage(1); }}
+                                >
+                                    {t(sort === 'relevance' ? 'searchSortRelevance' : 'searchSortDate')}
+                                </button>
+                            ))}
+                        </fieldset>
+                    )}
+                </div>
+            ) : (
+                <p id={searchHelpId} className="sr-only">{t('searchHelp')}</p>
+            ))}
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="relative z-20 w-[9.5rem] sm:w-[10.5rem]">

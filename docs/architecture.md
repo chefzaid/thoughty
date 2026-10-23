@@ -34,7 +34,7 @@ The backend is one NestJS application assembled from feature modules under `thou
 | Module | Responsibility |
 |---|---|
 | `auth` | SSO exchange, local and Google sign-in, tokens and sessions, email verification, 2FA, password recovery, account lifecycle |
-| `entries` | entry CRUD, revisions, tags (usage, rename, delete), visibility, favorites, pins, archive, backlinks |
+| `entries` | entry CRUD, full-text search with ranking and highlights, revisions, tags (usage, rename, delete), visibility, favorites, pins, archive, backlinks |
 | `recycle-bin` | deleted entries kept for 30 days: listing, restore, delete forever, empty, and the hourly purge of expired entries and their files |
 | `diaries` | diary containers, ordering, default diary and delete fallback |
 | `attachments` | upload validation, object storage, audio transcription |

@@ -180,10 +180,28 @@ export class UpdatePinnedDto {
 }
 
 export class GetEntriesQueryDto {
-  @ApiPropertyOptional({ description: 'Search term for content or tags' })
+  @ApiPropertyOptional({
+    description:
+      'Full-text search over content and tags, with English and French word forms and accents ignored. ' +
+      'Supports "exact phrases" in quotes, a leading minus to exclude a word or phrase, and OR between ' +
+      'alternatives; the last word also matches the longer words it starts.',
+    example: '"morning run" -rain OR swim',
+    maxLength: 500,
+  })
   @IsOptional()
   @IsString()
+  @MaxLength(500)
   search?: string;
+
+  @ApiPropertyOptional({
+    description: 'Order of search results: best match first, or by date as without a search',
+    enum: ['relevance', 'date'],
+    default: 'relevance',
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsEnum(['relevance', 'date'])
+  sort?: 'relevance' | 'date';
 
   @ApiPropertyOptional({ description: 'Comma-separated entry IDs to include, in relevance order' })
   @IsOptional()
@@ -380,6 +398,15 @@ export class EntryResponseDto {
 
   @ApiProperty()
   created_at: Date;
+
+  @ApiPropertyOptional({
+    type: [String],
+    description:
+      'With a search: the words and phrases of this entry that match it, as written in the entry, ' +
+      'longest first, for highlighting. Empty when only a tag matched.',
+    example: ['morning run', 'swimming'],
+  })
+  search_matches?: string[];
 }
 
 export class EntriesListResponseDto {

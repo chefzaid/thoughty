@@ -1,5 +1,6 @@
 import React, { Suspense, lazy, useMemo } from 'react';
 import type { Components } from 'react-markdown';
+import { buildSearchHighlightPattern, splitSearchHighlights } from '../../utils/searchHighlight';
 
 const BRACKET_REFERENCE_PATTERN = /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]/i;
 const LEGACY_REFERENCE_PATTERN = /entry\s*\((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/i;
@@ -41,6 +42,8 @@ interface EntryContentRendererProps {
     readonly sourceEntry?: SourceEntryInfo;
     readonly maxLength?: number;
     readonly searchTerm?: string;
+    /** The words and phrases of this entry that matched the search, from the server. */
+    readonly searchMatches?: readonly string[];
 }
 
 const LazyMarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
@@ -72,37 +75,32 @@ function findNextReference(content: string, startIndex: number): ReferenceMatch 
     };
 }
 
-function escapeRegExp(str: string): string {
-    return str.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
-}
-
-function highlightText(text: string, key: string, searchTerm: string): React.ReactNode {
-    const escaped = escapeRegExp(searchTerm);
-    const searchRegex = new RegExp(`(${escaped})`, 'gi');
-    const segments = text.split(searchRegex);
-    if (segments.length <= 1) return text;
+function highlightText(text: string, key: string, pattern: RegExp | null): React.ReactNode {
+    if (!pattern) return text;
+    const segments = splitSearchHighlights(text, pattern);
+    if (!segments.some((segment) => segment.marked)) return text;
     return (
         <>
             {segments.map((segment, i) =>
-                searchRegex.test(segment)
-                    ? <mark key={`${key}-hl-${i}`} className="bg-yellow-300 dark:bg-yellow-500/40 text-inherit rounded-sm px-0.5">{segment}</mark>
-                    : segment
+                segment.marked
+                    ? <mark key={`${key}-hl-${i}`} className="bg-yellow-300 dark:bg-yellow-500/40 text-inherit rounded-sm px-0.5">{segment.text}</mark>
+                    : segment.text
             )}
         </>
     );
 }
 
-function highlightChildren(children: React.ReactNode, keyPrefix: string, searchTerm: string): React.ReactNode {
+function highlightChildren(children: React.ReactNode, keyPrefix: string, pattern: RegExp): React.ReactNode {
     return React.Children.map(children, (child, i) => {
         if (typeof child === 'string') {
-            return highlightText(child, `${keyPrefix}-${i}`, searchTerm);
+            return highlightText(child, `${keyPrefix}-${i}`, pattern);
         }
         return child;
     });
 }
 
-function createMarkdownHighlightComponents(searchTerm: string): Components {
-    const hl = (children: React.ReactNode, prefix: string) => highlightChildren(children, prefix, searchTerm);
+function createMarkdownHighlightComponents(pattern: RegExp): Components {
+    const hl = (children: React.ReactNode, prefix: string) => highlightChildren(children, prefix, pattern);
     return {
         p: ({ children, ...props }) => <p {...props}>{hl(children, 'md-p')}</p>,
         li: ({ children, ...props }) => <li {...props}>{hl(children, 'md-li')}</li>,
@@ -173,11 +171,16 @@ function EntryContentRenderer({
     onNavigateToEntry, 
     sourceEntry,
     maxLength,
-    searchTerm
+    searchTerm,
+    searchMatches
 }: Readonly<EntryContentRendererProps>) {
+    const highlightPattern = useMemo(
+        () => buildSearchHighlightPattern(searchTerm, searchMatches),
+        [searchTerm, searchMatches]
+    );
     const markdownComponents = useMemo(
-        () => searchTerm && searchTerm.trim() !== '' ? createMarkdownHighlightComponents(searchTerm) : undefined,
-        [searchTerm]
+        () => highlightPattern ? createMarkdownHighlightComponents(highlightPattern) : undefined,
+        [highlightPattern]
     );
 
     const displayContent = useMemo(() => (
@@ -247,14 +250,14 @@ function EntryContentRenderer({
 
     // Plain text rendering mode (original behavior)
     if (!parts || parts.length === 0) {
-        return <>{searchTerm ? highlightText(displayContent, 'root', searchTerm) : displayContent}</>;
+        return <>{highlightText(displayContent, 'root', highlightPattern)}</>;
     }
 
     return (
         <>
             {parts.map((part) => {
                 if (part.type === 'text') {
-                    return <span key={part.key}>{searchTerm ? highlightText(part.content || '', part.key, searchTerm) : part.content}</span>;
+                    return <span key={part.key}>{highlightText(part.content || '', part.key, highlightPattern)}</span>;
                 }
 
                 if (part.type === 'reference') {

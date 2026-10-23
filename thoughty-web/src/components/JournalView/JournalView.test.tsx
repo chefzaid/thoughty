@@ -206,6 +206,8 @@ describe('JournalView', () => {
         setSearch: vi.fn(),
         searchMode: 'keyword',
         setSearchMode: vi.fn(),
+        searchSort: 'relevance',
+        setSearchSort: vi.fn(),
         semanticSearchStatus: 'idle',
         semanticSearchResult: null,
         onSemanticSearch: vi.fn().mockResolvedValue(undefined),

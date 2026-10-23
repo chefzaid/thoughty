@@ -21,3 +21,15 @@ describe('Entry entity indexes', () => {
     );
   });
 });
+
+describe('Entry search vector', () => {
+  it('is left to PostgreSQL: never selected, inserted, or updated by the application', () => {
+    const column = getMetadataArgsStorage().columns.find(
+      (candidate) => candidate.target === Entry && candidate.propertyName === 'searchVector',
+    );
+
+    expect(column?.options).toEqual(
+      expect.objectContaining({ name: 'search_vector', type: 'tsvector', select: false, insert: false, update: false }),
+    );
+  });
+});

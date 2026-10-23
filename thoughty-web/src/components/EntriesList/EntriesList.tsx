@@ -18,12 +18,16 @@ import {
     getEntryCardStyle,
     getEntryDragHighlightClass,
     getSelectedRingClass,
+    groupRankedEntries,
+    type EntryDisplayGroup,
 } from './EntriesList.utils';
 
 interface EntriesListProps {
     loading: boolean;
     entries: Entry[];
     groupedEntries: GroupedEntries;
+    /** Show entries in the order they came (best search match first), under their dates, instead of by day. */
+    rankedOrder?: boolean;
     config: Config;
     onEdit: (entry: Entry) => void;
     onDelete: (id: number) => void;
@@ -81,6 +85,7 @@ function EntriesList({
     loading,
     entries,
     groupedEntries,
+    rankedOrder = false,
     config,
     onEdit,
     onDelete,
@@ -227,8 +232,12 @@ function EntriesList({
         () => Object.keys(unpinnedGroupedEntries).sort((a, b) => b.localeCompare(a)),
         [unpinnedGroupedEntries],
     );
-    const displayGroups = useMemo(
-        () => [
+    const displayGroups = useMemo<EntryDisplayGroup[]>(() => {
+        if (rankedOrder) {
+            return groupRankedEntries(entries);
+        }
+
+        return [
             ...(pinnedEntries.length > 0
                 ? [{ key: 'pinned', label: t('pinnedEntries'), date: null, entries: pinnedEntries }]
                 : []),
@@ -238,9 +247,8 @@ function EntriesList({
                 date,
                 entries: unpinnedGroupedEntries[date] ?? [],
             })),
-        ],
-        [pinnedEntries, sortedDates, t, unpinnedGroupedEntries],
-    );
+        ];
+    }, [entries, pinnedEntries, rankedOrder, sortedDates, t, unpinnedGroupedEntries]);
     const speechDates = useMemo(
         () => Object.keys(groupedEntries).sort((a, b) => b.localeCompare(a)),
         [groupedEntries],

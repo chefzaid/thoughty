@@ -11,6 +11,8 @@ import {
   EntryBacklinksResponseDto,
 } from './dto';
 import { entryContentReferencesTarget } from './entry-references.util';
+import { escapeLikePattern } from './entry-search-query';
+import { EntrySearchService, type PreparedEntrySearch } from './entry-search.service';
 
 @Injectable()
 export class EntriesQueryService {
@@ -19,6 +21,7 @@ export class EntriesQueryService {
     private readonly entryRepository: Repository<Entry>,
     @InjectRepository(EntryRevision)
     private readonly revisionRepository: Repository<EntryRevision>,
+    private readonly entrySearch: EntrySearchService,
   ) {}
 
   async getTagUsage(userId: number): Promise<{ tags: Array<{ tag: string; count: number }> }> {
@@ -38,6 +41,7 @@ export class EntriesQueryService {
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
     const {
       search,
+      sort,
       ids,
       tags,
       date,
@@ -64,10 +68,22 @@ export class EntriesQueryService {
       qb.setParameter('semanticOrder', entryIds);
     }
 
-    if (search) {
-      qb.andWhere('(e.content ILIKE :search OR :searchTerm = ANY(e.tags))', {
-        search: `%${search}%`,
-        searchTerm: search,
+    const prepared = search ? await this.entrySearch.prepare(search) : null;
+    if (prepared?.kind === 'text') {
+      // Tags are part of the search vector; an exact tag name still matches when it holds
+      // nothing PostgreSQL reads as a word.
+      qb.andWhere('(e.search_vector @@ CAST(:searchQuery AS tsquery) OR e.tags @> :searchTags)', {
+        searchQuery: prepared.matchQuery,
+        searchTags: [prepared.text],
+      });
+      qb.addSelect(this.searchRankExpression(prepared), 'search_rank');
+      if (prepared.exactQuery) {
+        qb.setParameter('exactQuery', prepared.exactQuery);
+      }
+    } else if (prepared?.kind === 'literal') {
+      qb.andWhere('(e.content ILIKE :searchPattern OR e.tags @> :searchTags)', {
+        searchPattern: `%${escapeLikePattern(prepared.text)}%`,
+        searchTags: [prepared.text],
       });
     }
 
@@ -107,6 +123,8 @@ export class EntriesQueryService {
 
     if (entryIds.length > 0) {
       qb.orderBy('semantic_rank', 'ASC');
+    } else if (prepared?.kind === 'text' && sort !== 'date') {
+      qb.orderBy('search_rank', 'DESC').addOrderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
     } else {
       qb.orderBy('e.isPinned', 'DESC').addOrderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
     }
@@ -124,6 +142,15 @@ export class EntriesQueryService {
       entriesPromise,
       tagsPromise,
     ]);
+
+    const searchMatches =
+      prepared?.kind === 'text'
+        ? await this.entrySearch.findMatches(
+            userId,
+            entries.map((entry) => entry.id),
+            prepared.terms,
+          )
+        : undefined;
 
     const allTags = tagsResult
       .map((result) => result.tag)
@@ -156,12 +183,25 @@ export class EntriesQueryService {
           transcript: attachment.transcript ?? undefined,
           transcribed_at: attachment.transcribedAt ?? undefined,
         })),
+        ...(searchMatches ? { search_matches: searchMatches.get(entry.id) ?? [] } : {}),
       })),
       total,
       page,
       totalPages: Math.ceil(total / limit),
       allTags,
     };
+  }
+
+  /**
+   * Relevance of an entry to the search: tag matches weigh more than content matches, and
+   * ts_rank's normalization 1 keeps long entries from winning by length alone. Entries that
+   * hold the last word whole rank above those that only hold a longer word it starts.
+   */
+  private searchRankExpression(prepared: Extract<PreparedEntrySearch, { kind: 'text' }>): string {
+    const matchRank = 'ts_rank(e.search_vector, CAST(:searchQuery AS tsquery), 1)';
+    return prepared.exactQuery
+      ? `${matchRank} + ts_rank(e.search_vector, CAST(:exactQuery AS tsquery), 1)`
+      : matchRank;
   }
 
   async getDates(userId: number): Promise<{ dates: string[] }> {

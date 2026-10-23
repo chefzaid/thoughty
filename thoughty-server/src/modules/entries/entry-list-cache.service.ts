@@ -80,9 +80,11 @@ export class EntryListCacheService {
       date: query.date ?? '',
       diaryId: query.diaryId ?? '',
       favorites: query.favorites === true,
+      ids: query.ids ?? '',
       limit: query.limit ?? 10,
       page: query.page ?? 1,
       search: query.search?.trim() ?? '',
+      sort: query.sort ?? 'relevance',
       tags: tags ?? '',
       visibility: query.visibility ?? '',
     };

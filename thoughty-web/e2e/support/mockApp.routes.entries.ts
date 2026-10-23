@@ -6,6 +6,7 @@ import {
   type MockEntry,
 } from './mockApp.shared';
 import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
+import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 
 function getAutoTagLimit(state: MockAppState): number {
   return Number.parseInt(String(state.config.autoTagMaxTags ?? '0'), 10);
@@ -22,9 +23,10 @@ function resolveTags(state: MockAppState, tags: string[]): string[] {
 function getFilteredEntries(
   state: MockAppState,
   searchParams: URLSearchParams,
-): { filtered: MockEntry[]; pageNumber: number; limit: number } {
+): { filtered: MockEntry[]; pageNumber: number; limit: number; searchResults: Map<number, MockSearchResult> | null } {
   let filtered = sortEntries(state.entries);
-  const search = searchParams.get('search') || '';
+  const search = (searchParams.get('search') || '').trim();
+  const sort = searchParams.get('sort') || 'relevance';
   const tags = (searchParams.get('tags') || '').split(',').filter(Boolean);
   const date = searchParams.get('date') || '';
   const visibility = searchParams.get('visibility') || '';
@@ -37,8 +39,19 @@ function getFilteredEntries(
   const pageNumber = Number(searchParams.get('page') || '1');
   const limit = Number(searchParams.get('limit') || '10');
 
+  let searchResults: Map<number, MockSearchResult> | null = null;
   if (search) {
-    filtered = filtered.filter((entry) => entry.content.toLowerCase().includes(search.toLowerCase()));
+    const results = new Map<number, MockSearchResult>();
+    for (const entry of filtered) {
+      const result = matchMockSearch(entry, search);
+      if (result) results.set(entry.id, result);
+    }
+    searchResults = results;
+    filtered = filtered.filter((entry) => results.has(entry.id));
+    if (sort === 'relevance') {
+      // Array sort is stable, so equal scores keep date order.
+      filtered.sort((left, right) => results.get(right.id)!.score - results.get(left.id)!.score);
+    }
   }
   if (tags.length > 0) {
     filtered = filtered.filter((entry) => tags.every((tag) => entry.tags.includes(tag)));
@@ -68,18 +81,21 @@ function getFilteredEntries(
       .sort((left, right) => semanticRank.get(left.id)! - semanticRank.get(right.id)!);
   }
 
-  return { filtered, pageNumber, limit };
+  return { filtered, pageNumber, limit, searchResults };
 }
 
 async function handleEntriesCollectionRoute({ route, request, pathname, searchParams, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/entries' && request.method() === 'GET') {
-    const { filtered, pageNumber, limit } = getFilteredEntries(state, searchParams);
+    const { filtered, pageNumber, limit, searchResults } = getFilteredEntries(state, searchParams);
     const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
     const startIndex = (pageNumber - 1) * limit;
     const pagedEntries = filtered.slice(startIndex, startIndex + limit);
 
     await fulfillJson(route, {
-      entries: pagedEntries.map((entry) => toEntryResponse(entry, state)),
+      entries: pagedEntries.map((entry) => ({
+        ...toEntryResponse(entry, state),
+        ...(searchResults ? { search_matches: searchResults.get(entry.id)?.matches ?? [] } : {}),
+      })),
       total: filtered.length,
       page: pageNumber,
       totalPages,

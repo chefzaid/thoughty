@@ -77,6 +77,7 @@ erDiagram
         boolean isFavorite
         boolean isArchived
         datetime deletedAt
+        tsvector searchVector
     }
 
     EntryRevision {
@@ -263,7 +264,7 @@ The feed queries the relational entry/user model directly and projects only feed
 | `EntryComment` | Written by one user on one entry | Deleted with the entry or its author; removable by its author or the entry owner |
 | `EntryLike` / `CommentLike` | One like per user per entry or comment | Deleted with the liked item or the user |
 
-Entry indexes cover the common reads: user/date timelines, diary-scoped timelines, visibility, archive and favorite filters, and the public feed.
+Entry indexes cover the common reads: user/date timelines, diary-scoped timelines, visibility, archive and favorite filters, full-text search, and the public feed.
 
 ## Journal Coordinates
 
@@ -291,6 +292,41 @@ There is no tag table. Tags are strings in the `entries.tags` PostgreSQL text ar
 - There is no separate notion of themes: AI tagging, journal tag organization, and books all read and write the same tag arrays. A tag's **category** is different: it is an optional label (such as Work or Health) stored in tag metadata to group related tags in pickers, lists, and charts.
 - Entry-to-entry and tag co-occurrence correlations are derived on demand from `entries.tags` and never persisted.
 - If tags ever need their own ownership, permissions, or relationships, revisit this model with a new ADR.
+
+## Full-Text Search
+
+`entries.search_vector` is a stored generated `tsvector` (`GENERATED ALWAYS AS (entry_search_vector(content, tags)) STORED`), so PostgreSQL recomputes it on every insert and update and the application never writes or loads it (the entity column is `select`, `insert`, and `update` false). Tags are weighted `A` and content `B`. The GIN index `idx_entries_user_search_vector` covers `(user_id, search_vector)` through the `btree_gin` extension, so a search reads only the searching writer's matching entries rather than every writer's. The `tags` GIN index still serves the exact tag-name match that runs alongside, which keeps tags such as `c++` findable when PostgreSQL reads no word in them.
+
+**Language configuration.** Each entry is indexed twice, with `thoughty_en` and `thoughty_fr`: copies of PostgreSQL's `english` and `french` configurations that pass words through `unaccent` before the Snowball stemmer, so `ete` finds "été" and `walk` finds "walking". Searches are read with both and either may match. This beats the alternatives for this product:
+
+- A per-user language would stem every entry by the interface language, but the interface language says nothing about what was written: Thoughty is used in English and French, journals often mix both, sometimes in one entry, and an entry has no language of its own to choose from.
+- `simple` with `unaccent` ignores accents and case but has no stemming, so `run` would not find "running" nor `souvenir` find "souvenirs".
+- Detecting the language of each entry is unreliable for short entries and mixed text, and would still need both configurations at query time.
+
+The costs are accepted: the vector is about twice the size of a single-language one, and each language's stop words are indexed by the other half, so a search for "the" or "le" matches rather than being ignored. A side benefit is that each stemmer leaves the other language's words almost whole, which helps prefix matches.
+
+**Queries.** The search is parsed by `websearch_to_tsquery` in both configurations, joined with `||`. It supports `"exact phrases"`, a leading `-` to exclude a word or phrase, and `or` (in any case), and it never raises a syntax error on user input. The last word, when it is a bare word of at least two letters or digits outside quotes, also matches the longer words it starts (`to_tsquery('word:*')`), joined with the rest of the search by `&&`, or by `||` after `or`. A search in which PostgreSQL reads no word at all (only symbols or emoji) falls back to a literal `ILIKE` with its wildcards escaped. Every other filter, the diary scope, and the recycle-bin exclusion combine with the search as before.
+
+**Ranking and highlights.** With a search, results are ordered by `ts_rank(search_vector, query, 1)` (normalized by entry length) plus the rank of the search without the prefix, so entries holding the whole word come before those that only hold a longer word, then by date; `sort=date` keeps the usual pinned and date order. For each page, `ts_headline` marks every word and phrase that was not excluded, in both configurations; adjacent marked words are joined and a run is kept only when it matches its term by itself, so a quoted phrase is highlighted where the phrase appears and not wherever one of its words does. The runs come back as `search_matches`, as written in the entry, and the web app highlights exactly those, as whole words.
+
+**Migration and operations.** `EntryFullTextSearch1785974400000` installs `unaccent` and `btree_gin` (trusted contrib extensions since PostgreSQL 13, so the database owner can install them; both ship with the official images) and leaves them installed on rollback. `entry_search_vector` is `IMMUTABLE` and sets `search_path FROM CURRENT`, so the column can still be computed while `pg_restore` runs with an empty search path. Adding the column rewrites `entries` once: about 17 s for 107,000 entries locally.
+
+### Search Performance on a Large Journal
+
+Measured on PostgreSQL 16 on a development machine with the dev seed's main journal (9,785 entries written from 2015 to 2026, 2.3 MB of text) and a ten-fold copy of it under another account (97,850 entries, 22 MB), first page of 10, median of seven runs through `EntriesQueryService.getEntries`:
+
+| Request | 9,785 entries | 97,850 entries |
+|---|---|---|
+| No search (baseline) | 13 ms | 119 ms |
+| Rare or absent word (`zzzz`) | 12 ms | 103 ms |
+| `"long run" -rain` (5.5% of entries match) | 16 ms | 109 ms |
+| `walk` (7%) | 22 ms | 164 ms |
+| `gratef`, read as a prefix (10%) | 25 ms | 142 ms |
+| `coffee or tea` (22%) | 31 ms | 229 ms |
+| The former `ILIKE` match alone, without the rest of the page | 25 to 43 ms | 240 to 380 ms |
+| Highlights for a page of 50 entries | 6 to 9 ms | 4 to 7 ms |
+
+The index lookup itself takes under a millisecond for a rare word at either size, where `ILIKE` read every entry's text. What a search adds now grows with the number of matching entries, because every match is counted and ranked: roughly 5 to 8 ms per thousand matches, plus a few milliseconds to prepare the query and the highlights. Date order (`sort=date`) is 20 to 35% faster on broad searches because it skips the ranking. Most of the large-journal baseline is the list of all tags returned with every page, not the search. The vector takes about 650 bytes per seed entry (2.8 times its text, since tags and content are each indexed in two languages) and the index 15 MB for 107,000 entries. `npm run benchmark` includes an `entries_full_text_search` query for checking a real database.
 
 ## Attachments
 

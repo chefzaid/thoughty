@@ -77,3 +77,29 @@ export function getEntryDragHighlightClass(
 
     return '';
 }
+export interface EntryDisplayGroup {
+    key: string;
+    label: string;
+    /** The day the group stands for, or null when its entries cannot be reordered within it. */
+    date: string | null;
+    entries: Entry[];
+}
+
+/**
+ * Groups entries in the order they came, starting a new group whenever the day changes, so best
+ * search matches stay first. The groups are not reorderable, because each holds only the matching
+ * entries of its day.
+ */
+export function groupRankedEntries(entries: readonly Entry[]): EntryDisplayGroup[] {
+    const groups: EntryDisplayGroup[] = [];
+    for (const entry of entries) {
+        const date = extractDate(entry.date);
+        const current = groups.at(-1);
+        if (current?.label === date) {
+            current.entries.push(entry);
+            continue;
+        }
+        groups.push({ key: `ranked-${groups.length}-${date}`, label: date, date: null, entries: [entry] });
+    }
+    return groups;
+}

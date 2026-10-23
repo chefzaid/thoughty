@@ -61,6 +61,26 @@ describe('EntriesList', () => {
         expect(screen.getByText('Third entry')).toBeInTheDocument();
     });
 
+    it('keeps best search matches first under their dates, with pinning and reordering off', () => {
+        const onReorderEntries = vi.fn();
+        render(<EntriesList {...createEntriesListProps({
+            rankedOrder: true,
+            onReorderEntries,
+            entries: [
+                mockEntries[2],
+                { ...mockEntries[0], is_pinned: true },
+                mockEntries[1],
+            ],
+        })} />);
+
+        const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent);
+        const cards = [...document.querySelectorAll('[id^="entry-"]')].map((card) => card.id);
+
+        expect(headings).toEqual(['2024-01-14', '2024-01-15']);
+        expect(cards).toEqual(['entry-3', 'entry-1', 'entry-2']);
+        expect(screen.queryByTitle('Drag to reorder')).not.toBeInTheDocument();
+    });
+
     it('applies the correct theme classes', () => {
         const { rerender } = render(<EntriesList {...createEntriesListProps({ config: { theme: 'dark' } })} />);
 

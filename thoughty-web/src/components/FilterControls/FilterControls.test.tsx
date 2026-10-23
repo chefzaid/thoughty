@@ -32,6 +32,8 @@ describe('FilterControls', () => {
     setSearch: mockSetSearch,
     searchMode: 'keyword' as const,
     setSearchMode: vi.fn(),
+    searchSort: 'relevance' as const,
+    setSearchSort: vi.fn(),
     semanticSearchStatus: 'idle' as const,
     semanticSearchResult: null,
     onSemanticSearch: vi.fn().mockResolvedValue(undefined),
@@ -248,5 +250,48 @@ describe('FilterControls', () => {
 
     expect(setSearchMode).toHaveBeenCalledWith('keyword');
     expect(screen.getByRole('alert')).toHaveTextContent('semanticSearchError');
+  });
+
+  it('explains the search operators to assistive technology and, while searching, on screen', () => {
+    const { rerender } = render(<FilterControls {...defaultProps} />);
+    const input = screen.getByRole('textbox', { name: 'searchEntriesLabel' });
+    const help = screen.getByText('searchHelp');
+
+    expect(input).toHaveAttribute('aria-describedby', help.id);
+    expect(help).toHaveClass('sr-only');
+
+    fireEvent.focus(input);
+    expect(screen.getByText('searchHelp')).not.toHaveClass('sr-only');
+    fireEvent.blur(input);
+    expect(screen.getByText('searchHelp')).toHaveClass('sr-only');
+
+    rerender(<FilterControls {...defaultProps} search='"morning run" -rain' />);
+    expect(screen.getByText('searchHelp')).not.toHaveClass('sr-only');
+  });
+
+  it('offers best match or date order only for a keyword search', () => {
+    const setSearchSort = vi.fn();
+    const { rerender } = render(<FilterControls {...defaultProps} setSearchSort={setSearchSort} />);
+    expect(screen.queryByRole('group', { name: 'searchSort' })).not.toBeInTheDocument();
+
+    rerender(<FilterControls {...defaultProps} search="walk" setSearchSort={setSearchSort} />);
+    expect(screen.getByRole('button', { name: 'searchSortRelevance' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'searchSortDate' }));
+    expect(setSearchSort).toHaveBeenCalledWith('date');
+    expect(mockSetPage).toHaveBeenCalledWith(1);
+
+    rerender(<FilterControls {...defaultProps} search="walk" searchMode="semantic" setSearchSort={setSearchSort} />);
+    expect(screen.queryByRole('group', { name: 'searchSort' })).not.toBeInTheDocument();
+    expect(screen.queryByText('searchHelp')).not.toBeInTheDocument();
+  });
+
+  it('resets the search order with the other filters', () => {
+    const setSearchSort = vi.fn();
+    render(<FilterControls {...defaultProps} search="walk" searchSort="date" setSearchSort={setSearchSort} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'resetFilters' }));
+
+    expect(setSearchSort).toHaveBeenCalledWith('relevance');
+    expect(mockSetSearch).toHaveBeenCalledWith('');
   });
 });

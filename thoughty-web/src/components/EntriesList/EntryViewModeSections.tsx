@@ -211,6 +211,7 @@ export function EntryBodySection({
                         index: entry.index || 1,
                     }}
                     searchTerm={searchTerm}
+                    searchMatches={entry.search_matches}
                 />
             </div>
             <div className={`mt-3 flex flex-wrap gap-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
