@@ -52,7 +52,6 @@
 - [x] Settings popup transformed into a full profile page with dedicated sections
 - [x] Dark/light theme as a flip switch
 - [x] Font customization (type, size, color) with live preview in Appearance settings
-- [x] Configurable AI API key (OpenRouter) to use AI features with your own token
 - [x] Delete account
 - [x] Stay on the profile page after saving settings, with a success toast
 - [x] Routes and paths for each view (Journal, Stats, Profile, Tags, etc.)
@@ -62,7 +61,6 @@
 - [x] Counts of entries per year and per month/year with graphs
 - [x] Tag stats per periods of time with graphs
 - [x] Journaling activity heatmap (GitHub-style contribution grid) in the stats page
-- [x] Tone and mood analysis of entries (AI)
 - [x] Totals and averages, top tags, year-by-year tag trends, and diary scoping carried into stats
 
 ## Import / Export & Cloud Sync
@@ -84,14 +82,11 @@
 - [x] Intro page showcasing the app features with links to login / sign up
 - [x] Footer with Privacy, Terms, and Contact entry points, responsive layout, and a back-to-top control
 - [x] More detailed landing page with features presentation, screenshots, and sign up call to action
-- [x] Subscription management page for users to manage their subscription, see billing history, and update payment method in Profile page
-- [ ] Subscription-based access to premium features, with a free trial period and a freemium tier with limited features to attract new users
 - [x] About page with the story behind Thoughty, the mission, and the team
 - [x] Terms of Service and Privacy Policy pages
 - [x] Contact and support page with a form to submit inquiries and a How To guides / FAQ section
 - [x] Feedback and feature request page for users to submit their ideas and upvote existing ones
 - [x] Blog section for updates, tips, and journaling inspiration
-- [x] Email validation flow for account security (password reset via email already works)
 - [ ] Admin console for app settings and AI model management (define and change AI models for each AI task type, monitor usage, and manage user access to AI features, ban abusive users, etc.)
 
 ## AI
@@ -106,10 +101,8 @@
 - [x] Search entries by meaning or idea instead of keywords (semantic search)
 - [x] Subjects discussed stats (analyzed by AI)
 - [x] Personality analysis through the choice of words and subjects of all entries or a chosen subset of them
-- [ ] AI features should be locked behind a paywall with a free trial (except if own API token is provided)
 - [ ] AI chats social features, like sharing a chat to your feed for your followers to see and interact with (a chat that starts from a public thought)
-- [x] Possibility to provide your own API key to use AI features with your own token, and a usage dashboard to monitor your token consumption and costs
-- [ ] Local LLM processing for privacy
+- [x] Possibility to provide your own API key (OpenRouter) to use AI features with your own token, and a usage dashboard to monitor your token consumption and costs
 - [x] Graph of insights and correlations from all entries, to discover patterns and connections between them, do the same for tags
 - [x] Transcription from an Audio note
 - [ ] Ability to read PDF and ePub files, annotate them, then export these annotations as thoughts in a specific general or specific Journal
@@ -147,8 +140,7 @@
 - [x] Leaderboard for most active users, most liked entries, most commented entries
 - [x] Badges for achievements and karma points
 - [x] Feature requests and voting system for new features
-- [ ] Add a way to report a public thought (call for violence) and ban the user if needed
-- [ ] The user is first prompted to make the thought private, then temporarily banned if they don't comply, then permanently banned after repeated offenses
+- [ ] Report a public thought (for example a call for violence): the author is first asked to make it private, then temporarily banned if they don't comply, then permanently banned after repeated offenses. Entries already carry a moderation status (visible, hidden, under review, removed) that the feed respects, but nothing lets users report an entry or changes that status yet
 - [ ] Show thoughts to a selected few users instead of whole public
 
 ## Security
@@ -230,7 +222,6 @@
 
 - [ ] Mobile app version for iOS and Android with offline mode for journaling without internet connection and sync once connected
 - [ ] Desktop app with offline mode for journaling without internet connection and sync once connected
-- [ ] Recurring journaling reminders and writing prompts via app notifications at a user-configured time
 
 ## Life ERP
 
@@ -262,7 +253,7 @@ Differentiators, each covered below:
 
 - [ ] **ADR — end-to-end encryption:** optional zero-knowledge diaries with keys derived on the device (passphrase plus recovery key); entries, revisions, attachments and books encrypted client-side. Decide how search, stats, feed, sync, books and AI work on an encrypted diary (on-device index, local model, explicit per-request decryption) and which features stay unavailable. Users choose per diary.
 - [ ] Recovery for encrypted diaries: a recovery key and optional trusted-contact recovery; state clearly before enabling that losing both loses the diary.
-- [ ] AI privacy mode per diary: off, local model only, or cloud model with per-request consent, showing exactly what text leaves the device before it is sent (builds on the local LLM item above).
+- [ ] AI privacy mode per diary: off, local model only (LLM processing on the device or the user's own machine), or cloud model with per-request consent, showing exactly what text leaves the device before it is sent.
 - [ ] Transparency page: what is stored, where (EU), which processors receive data (AI, payments, email, printing), retention, and a yearly report of authority data requests.
 - [ ] External penetration test before launching paid plans, and a published vulnerability disclosure policy with `security.txt`.
 
@@ -289,8 +280,8 @@ Differentiators, each covered below:
 
 ### Commercial Foundation
 
-- [ ] Payments: choose a payment provider with EU VAT handling for digital services (one-stop shop) or a merchant of record, plus app-store billing once mobile apps ship. Completes the subscription and paywall items above.
-- [ ] Plans and entitlements enforced server-side: free (core journal, AI with the user's own key), premium (encryption, AI quota, books, unlimited diaries), memoir and gift, practitioner. The admin console reads and changes them.
+- [ ] Payments: choose a payment provider with EU VAT handling for digital services (one-stop shop) or a merchant of record, plus app-store billing once mobile apps ship. Then connect the Profile subscription page to it: the page exists, but today the plan is a plain setting picked from a dropdown, the billing history is generated from the current date, and the payment method defaults to a sample "Card ending 4242"; it needs real plan changes, invoices, payment method updates and cancellation.
+- [ ] Plans and entitlements enforced server-side: free (core journal, AI with the user's own key), premium (encryption, AI quota, books, unlimited diaries), memoir and gift, practitioner, with a free trial of premium. AI features without the user's own key are premium only. The admin console reads and changes them.
 - [x] Importers from other journaling apps (Day One and Journey exports), and a full export as a Markdown folder with attachments.
 - [ ] Opt-in lifecycle emails (welcome, trial ending, writing streaks, year in review) that respect notification preferences.
 - [ ] Help center and support tickets with response targets per plan; a status page for paid users.
@@ -314,7 +305,7 @@ The market splits three ways, and no product spans all of them. Everyday journal
 
 - [ ] First-run onboarding that asks what the writer is here for (daily journal, life story, a gift, coming from another app) and lands them in the right place: a first template, the memoir start page, the gift flow, or the Day One or Journey importer.
 - [ ] Define and track a north-star metric (weekly writing days per active writer) plus the funnel from sign-up to first entry, to fifth entry, to week four, using the existing telemetry, with privacy-safe counts only and no entry text.
-- [ ] Reminders that work on the web today: installable PWA with web push and an optional email nudge at a chosen time, so reminders do not wait for the native apps.
+- [ ] Recurring journaling reminders and writing prompts at a user-configured time: installable PWA with web push and an optional email nudge on the web today, then app notifications once the native apps ship.
 - [ ] Gentle streaks and a "pick up where you left off" prompt after a gap, without guilt-driven copy; streaks already exist as badges and can feed this.
 - [ ] Monthly private recap email (opt-in): entries written, a memory from that month in past years, and a link back, as the low-cost sibling of the year in review.
 

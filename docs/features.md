@@ -125,7 +125,7 @@ AI runs through OpenRouter. A deployment can provide a shared key, and each user
 - Security: email verification, optional email two-factor authentication, password change and reset, active session management (sign out one or all other sessions), and account deletion with confirmation.
 - Profile: full name, display name, bio, birthday, gender, and an avatar editor with crop, zoom, and repositioning; a verified badge for confirmed accounts.
 - Data: download all your data as JSON.
-- Subscription: plan selection, payment method label, and billing history.
+- Subscription: a placeholder page in the profile. The plan is a saved setting with no payment behind it, and the billing history and default payment method are sample data until a payment provider is connected.
 - Appearance: light or dark theme, high contrast, font family, size, and color with a live preview, entries per page, and pinned-entry limit.
 - Languages: English and French.
 - Runtime feature flags can be served by an external provider and change behavior without a redeploy.
