@@ -180,7 +180,7 @@
 - [x] App-wide cleanup pass: removed dead components, barrel files, unused dependencies, unused translation keys and CSS, and fixed layout, theme, i18n, and loading-flicker bugs found in a full UI tour
 - [ ] Use WebSockets for real-time updates on public entries and messages
 - [x] Implement lazy loading for components and routes to improve initial load time
-- [x] Implement feature flags to enable/disable features without redeploying, using a third-party service
+- [ ] Feature flags to enable/disable features without redeploying, using a third-party service. The server already serves flags (`ai`, `bookConverter`, `cloudSync`, `publicSharing`) at `GET /api/config/feature-flags`, from an external provider or defaults, but neither the web app nor any server module reads them yet, so no feature can be switched off
 - [x] Check that OpenAPI documentation is up to date and complete for all endpoints, and add examples for request and response bodies
 - [x] Ensure that all API endpoints are effectively used in the UI (either the app or the admin console). Implement the frontend that would use them if necessary, or remove the endpoints.
 

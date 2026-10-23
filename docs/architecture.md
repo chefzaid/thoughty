@@ -4,7 +4,13 @@ How Thoughty is put together, and the architecture decision records (ADRs) that 
 
 ## System Architecture at a Glance
 
-Thoughty is a TypeScript-first modular monolith: one NestJS API and one route-driven React single-page application. PostgreSQL holds all journal data, S3-compatible object storage holds attachment blobs, Redis optionally shares rate-limit counters, OpenRouter provides optional AI, and a separate worker process runs scheduled cloud sync from a database-backed queue, delivers the weekly guided-memoir questions, and empties recycle-bin entries older than 30 days. In production, Keycloak authenticates users at the ingress and Vault supplies secrets.
+Thoughty is a TypeScript-first modular monolith: one NestJS API and one route-driven React single-page application.
+
+- PostgreSQL holds all journal data; S3-compatible object storage holds attachment files.
+- Redis, when configured, shares rate-limit counters between API replicas.
+- OpenRouter provides optional AI. SMTP sends account and memoir emails.
+- A separate worker process runs the background jobs (see [Background Worker](#background-worker)).
+- In production, Keycloak authenticates users at the ingress and Vault supplies secrets.
 
 ```mermaid
 flowchart TD
@@ -17,10 +23,11 @@ flowchart TD
     API --> S3[S3-compatible object storage]
     API --> OpenRouter[OpenRouter]
     API --> OAuth[Google / OneDrive / Dropbox]
+    API --> SMTP[SMTP]
 
     Worker[Background worker] --> Pg
     Worker --> OAuth
-    Worker --> SMTP[SMTP]
+    Worker --> SMTP
     Worker --> S3
 
     Vault[Vault via External Secrets] --> API
@@ -29,119 +36,96 @@ flowchart TD
 
 ## Backend Architecture
 
-The backend is one NestJS application assembled from feature modules under `thoughty-server/src/modules`.
+`AppModule` registers the global JWT and throttling guards, so every request is authenticated (unless its route is marked public), throttled, and DTO-validated before a feature module runs a user-scoped query. The feature modules live in `thoughty-server/src/modules`:
 
 | Module | Responsibility |
 |---|---|
-| `auth` | SSO exchange, local and Google sign-in, tokens and sessions, email verification, 2FA, password recovery, account lifecycle |
-| `entries` | entry CRUD, full-text search with ranking and highlights, revisions, tags (usage, rename, delete), visibility, favorites, pins, archive, backlinks |
-| `recycle-bin` | deleted entries kept for 30 days: listing, restore, delete forever, empty, and the hourly purge of expired entries and their files |
-| `diaries` | diary containers, ordering, default diary and delete fallback |
+| `auth` | SSO exchange, local and Google sign-in, tokens and sessions, email verification, 2FA, password recovery, account deletion |
+| `entries` | entry CRUD (title, time, mood, feelings), full-text search, revisions, tags, visibility, favorites, pins, archive, reordering, task list ticks, backlinks, highlights, delete-all |
+| `recycle-bin` | deleted entries kept for 30 days: list, restore, delete forever, empty, and the hourly purge |
+| `diaries` | diary containers, ordering, default diary, moving entries when a diary is deleted |
 | `attachments` | upload validation, object storage, audio transcription |
-| `ai` | OpenRouter credentials and usage, tagging, inspiration, rephrasing, summaries, chat, semantic search, duplicates, journal tag organization, insights |
-| `stats` | statistics, heatmap, connections graph, writing-tendency analysis |
-| `review` | year in review: yearly totals, rhythm, themes, highlights, and the on-request AI mood arc |
-| `io` | import and export formats, TXT format settings, delete-all, Day One and Journey imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
-| `books` | book composition, covers, previews, versions |
-| `cloud-sync` | provider connections, file browsing, scheduled jobs, worker execution |
-| `config` | user preferences and profile, encrypted settings, feature flags, data export |
+| `ai` | OpenRouter credentials and usage, tag suggestions, inspiration, rephrasing, summaries, chat, semantic search, duplicates, tag organization, writing insights |
+| `stats` | statistics, heatmap, mood stats, connections graph, writing-tendency analysis |
+| `review` | year in review: totals, rhythm, themes, highlights, moods, and the on-request AI mood arc |
+| `io` | import and export formats, TXT format settings, Day One and Journey imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
+| `books` | book composition, covers, previews, saved versions |
+| `cloud-sync` | provider connections, file browsing, schedules, queued jobs |
+| `config` | user preferences and profile, encrypted settings, data export, the feature-flag endpoint (no feature reads flags yet) |
 | `feature-requests` | community idea board and votes |
-| `social` | public feed, follows (follow, unfollow, following list, follower count), comments, and likes on public entries and comments, leaderboard, achievements (karma and badges) |
-| `memoir` | guided memoir: question catalogue, program settings, answers as entries, weekly question delivery and email |
-| `metrics` | health and Prometheus metrics |
+| `social` | public feed, follows, comments, likes, leaderboard, achievements (karma and badges) |
+| `memoir` | guided memoir: question catalogue, program settings, answers as entries, weekly delivery and email |
+| `metrics` | Prometheus metrics (the health endpoint is `HealthController` in `AppModule`) |
 
-Shared runtime code belongs in `thoughty-server/src/common` only when it is genuinely cross-cutting. Persistence infrastructure and entities belong in `thoughty-server/src/database`. Operational helpers remain in `thoughty-server/scripts` rather than being mixed into runtime modules.
+Cross-cutting runtime code goes in `src/common`, entities and migrations in `src/database`, and operational scripts in `thoughty-server/scripts`.
+
+### Background Worker
+
+`thoughty-server/src/cloud-sync-worker.ts` boots `AppModule` as a Nest application context without HTTP and starts three loops that API replicas never run. The worker stays at one replica ([ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)). Manual uploads, downloads, and "sync now" run inline in the API request, not through the queue.
+
+| Service | Interval | Work |
+|---|---|---|
+| `CloudSyncWorkerService` | jobs every 5 s, schedules every 60 s | turns due sync schedules (stored in `settings`) into `cloud_sync_jobs` rows, claims them with `FOR UPDATE SKIP LOCKED`, runs the sync, retries, and recovers stale jobs |
+| `MemoirDeliveryWorkerService` | every 60 s | moves due `memoir_programs` to their next question and sends the weekly email |
+| `RecycleBinPurgeWorkerService` | hourly | hard-deletes entries in the recycle bin for over 30 days and removes their files |
 
 ## Frontend Architecture
 
-The frontend is one React SPA under `thoughty-web/src`. Its major boundary is route-driven rather than microfrontend-driven.
+The frontend is one React SPA under `thoughty-web/src`. Its main boundary is the route, not a microfrontend.
 
 ```mermaid
 flowchart TD
     App[App.tsx] --> Query[TanStack Query client]
     App --> Router[BrowserRouter]
     Router --> Shell[AppShell]
+    Shell --> Public[PublicAppLayout and public pages]
     Shell --> Layout[AuthenticatedAppLayout]
     Layout --> Routes[AuthenticatedRoutes]
 
     Routes --> Journal[JournalRoute]
     Routes --> Feed[FeedRoute]
-    Routes --> Stats[StatsRoute]
-    Routes --> Profile[ProfileRoute]
-    Routes --> Tags[TagManagerRoute]
-    Routes --> Diaries[DiariesRoute]
-    Routes --> ImportExport[ImportExportRoute]
     Routes --> Memoir[MemoirRoute]
+    Routes --> Stats[StatsRoute]
+    Routes --> Review[ReviewRoute]
+    Routes --> RecycleBin[RecycleBinRoute]
+    Routes --> ImportExport[ImportExportRoute]
+    Routes --> Diaries[DiariesRoute]
+    Routes --> Tags[TagManagerRoute]
+    Routes --> Profile[ProfileRoute]
 
     Shell --> Hooks[App shell hooks]
     Hooks --> Services[API service factories]
     Services --> Generated[Generated OpenAPI types]
 ```
 
-Route files stay thin, feature components own rendering, and hooks coordinate shared state, URL parameters, API calls, and cross-route behavior. Server state goes through TanStack Query; the entry list keeps the previous page on screen while the next one loads. Query-string parameters are product behavior (diary scope, import/export presets, entry permalinks). API types are generated from the server's OpenAPI document ([ADR 0004](./adr/0004-openapi-as-contract-source.md)), and a test fails if the frontend stops calling a documented product endpoint.
-
-## Key Runtime Lifecycles
-
-### Authenticated API request
-
-```mermaid
-sequenceDiagram
-    participant Browser
-    participant API as NestJS API
-    participant Guard as JWT + throttling guards
-    participant Module as Feature module
-    participant DB as PostgreSQL
-
-    Browser->>API: Request with bearer token
-    API->>Guard: Authenticate, throttle, validate public-route metadata
-    Guard->>Module: Controller and DTO validation
-    Module->>DB: User-scoped query or mutation
-    DB-->>Module: Result
-    Module-->>Browser: JSON response
-```
-
-### Cloud sync execution
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant API as API / scheduler
-    participant DB as cloud_sync_jobs
-    participant Worker
-    participant Provider as Cloud provider
-
-    User->>API: Configure or trigger sync
-    API->>DB: Queue durable job
-    Worker->>DB: Claim due queued job
-    Worker->>Provider: Export/upload or import/download
-    Worker->>DB: Mark completed or failed with result/error
-```
+- Route files stay thin. Components render; hooks own shared state, URL parameters, and API calls.
+- Server state goes through TanStack Query. The entry list keeps the previous page on screen while the next one loads.
+- Query-string parameters are product behavior: diary scope, import/export presets, entry permalinks.
+- API types are generated from the server's OpenAPI document ([ADR 0004](./adr/0004-openapi-as-contract-source.md)). A test fails if the frontend stops calling a documented product endpoint.
 
 ## Data Ownership Rules
 
-- `entries` owns entry lifecycle behavior; other modules should call its APIs/services instead of mutating entry rules ad hoc.
-- `diaries` owns default-diary and delete-fallback semantics.
-- Deleting an entry only marks it deleted (`deleted_at`); `recycle-bin` owns restoring and purging such entries. Queries that bypass TypeORM's entity filtering (raw SQL, `update`, `delete`) must add `deleted_at IS NULL` themselves.
-- `attachments` owns object-storage keys and file validation; entry modules should not treat original filenames as storage keys.
-- `config` owns user preferences and encrypted integration settings.
-- `cloud-sync` owns queued job status, locking, retries, and provider sync state.
-- `memoir` owns the question catalogue and which entry answers which question; answers are created through the `entries` service, so entry rules (diary ownership, tagging, caching) still apply.
-- The public feed reads only entries that are both public and moderation-visible ([ADR 0013](./adr/0013-public-social-content-and-moderation.md)); new social features must not reuse private-entry assumptions without extending that ADR.
-- Frequently repeated entry-list reads are served from a short-lived per-pod cache that entry mutations invalidate.
+- `entries` owns entry lifecycle rules; other modules call its services. `diaries` owns the default diary and moving entries off a deleted diary.
+- Deleting an entry only sets `deleted_at`; `recycle-bin` owns restoring and purging. Queries that bypass TypeORM's entity filtering (raw SQL, `update`, `delete`) must add `deleted_at IS NULL` themselves.
+- `attachments` owns object-storage keys and file validation. Original filenames are never storage keys.
+- `config` owns preferences and encrypted integration settings. `cloud-sync` owns job status, locking, retries, and provider sync state.
+- `memoir` owns the question catalogue and which entry answers which question. Answers are created through the `entries` service, so entry rules still apply.
+- The public feed reads only entries that are both public and moderation-visible ([ADR 0013](./adr/0013-public-social-content-and-moderation.md)). New social features must not reuse private-entry assumptions without extending that ADR.
+- Repeated entry-list reads are served from a short-lived per-pod cache (30 s by default, `ENTRIES_CACHE_TTL_SECONDS`) that entry mutations invalidate.
 
 ## ADR Process
 
-Write or update an ADR when a change affects one or more of these areas:
+Write or update an ADR when a change affects:
 
 - runtime topology or deployment ordering
-- persistence model, ownership boundaries, or deletion behavior
+- the persistence model, ownership boundaries, or deletion behavior
 - security, privacy, authentication, authorization, or abuse controls
-- API contract strategy or frontend/backend integration boundaries
-- background processing, queues, sync, or eventual consistency
+- the API contract or the frontend/backend boundary
+- background processing, queues, or sync
 - observability, backup, recovery, or production operations
-- roadmap features that materially change the product shape, such as social feeds, real-time messaging, paywalls, or offline sync
+- the product's shape, such as social feeds, real-time messaging, paywalls, or offline sync
 
-Use `Proposed` for decisions that guide upcoming work but are not implemented yet, `Accepted` for implemented or committed architecture, and `Superseded` when a newer ADR replaces an older decision.
+Status is `Proposed` for a decision that guides upcoming work, `Accepted` for implemented or committed architecture, and `Superseded` when a newer ADR replaces it.
 
 ## Decision Records
 
@@ -152,7 +136,7 @@ Use `Proposed` for decisions that guide upcoming work but are not implemented ye
 | [0003](./adr/0003-typescript-first-technology-stack.md) | Accepted | Standardize on a TypeScript-First Full-Stack Platform |
 | [0004](./adr/0004-openapi-as-contract-source.md) | Accepted | Use Backend OpenAPI as the Source of Truth for API Contracts |
 | [0005](./adr/0005-selective-cqrs-in-entry-domain.md) | Accepted | Apply Selective CQRS in the Entry Domain |
-| [0006](./adr/0006-database-backed-cloud-sync-worker.md) | Accepted | Run Scheduled Cloud Sync (and Weekly Memoir Delivery) Through a Separate Worker and Database-Backed Queue |
+| [0006](./adr/0006-database-backed-cloud-sync-worker.md) | Accepted | Run Scheduled Cloud Sync Through a Separate Worker and Database-Backed Queue |
 | [0007](./adr/0007-code-quality-and-verification-gates.md) | Accepted | Keep Code Quality Enforcement Lightweight but Continuous |
 | [0008](./adr/0008-security-authentication-and-owasp-baseline.md) | Accepted | Establish a Secure-by-Default Authentication and OWASP Baseline |
 | [0009](./adr/0009-rate-limiting-and-abuse-controls.md) | Accepted | Apply Layered Rate Limiting for Baseline Abuse Resistance |

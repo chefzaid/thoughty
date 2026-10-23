@@ -1,158 +1,124 @@
 # Deployment Guide
 
-Thoughty runs in production on the shared bare-metal K3s platform managed by [`swirl-cloud`](https://github.com/chefzaid/swirl-cloud), at `https://thoughty.swirlit.dev`. The platform owns the generic services (GitLab runner, Argo CD, Vault, External Secrets, registry, Traefik ingress, PostgreSQL, Redis, Keycloak, monitoring). This repository owns everything Thoughty-specific: its GitLab project settings, Vault contracts, Argo CD `Application`, Kubernetes manifests, and public DNS.
+Thoughty runs on the shared K3s platform [`swirl-cloud`](https://github.com/chefzaid/swirl-cloud) at `https://thoughty.swirlit.dev`. The platform provides shared services (GitLab, Argo CD, Vault, Traefik, PostgreSQL, Redis, Keycloak, monitoring). This repository owns CI, Vault contracts, the Argo CD `Application`, manifests, and DNS. Day-2 work is in the [Operations Runbook](./operations.md); first-time setup is in [Repository Onboarding](./onboarding.md).
 
-This guide is the single reference for the delivery pipeline, versioning, deployment profiles, secrets, and rollback. Day-2 checks and troubleshooting live in the [Operations Runbook](./operations.md); first-time registration with the platform is covered by [Repository Onboarding](./onboarding.md).
+## Workloads and Profiles
 
-## Components
-
-| Workload | Image | Notes |
-|---|---|---|
-| `thoughty-web` | `thoughty-web` | React build served by unprivileged NGINX |
-| `thoughty-server` | `thoughty-server` | NestJS API on port `3001`; `/api/health` and Prometheus `/api/metrics` |
-| `thoughty-cloud-sync-worker` | `thoughty-server` | Scheduled cloud sync and weekly memoir questions; always a single replica |
-| `postgres-backup` | public PostgreSQL 18.6 (digest-pinned) | Daily logical backup CronJob; suspended until configured |
-
-The database setup and migration hooks also reuse these images.
-
-## Infrastructure Layout
-
-| Directory | Responsibility |
+| Workload | Notes |
 |---|---|
-| `infra/argocd/` | the Argo CD `Application` (`application.yaml`) |
-| `infra/k8s/base/` | reusable workload resources; never deployed directly |
-| `infra/k8s/components/` | reusable Kustomize components (worker, canary, monitoring) |
-| `infra/k8s/overlays/` | complete deployable profiles: `swirl-cloud`, `swirl-cloud-canary`, `standalone` |
-| `infra/overlays/ha` | opt-in multi-node profile composed from `swirl-cloud` |
-| `infra/ansible/` | optional operator refresh of committed GitOps state |
-| `infra/compose/` | local development services |
-| `infra/scripts/` | idempotent configuration and repository helpers |
+| `thoughty-web` | NGINX serving the React build; 2 replicas |
+| `thoughty-server` | NestJS API on port `3001`; 2 replicas |
+| `thoughty-cloud-sync-worker` | same image as the API; runs cloud sync, memoir delivery, and recycle-bin purge; always 1 replica |
+| `postgres-backup` | daily `pg_dump` CronJob; suspended in production until configured |
 
-Names use lowercase kebab-case and `.yaml`. Patch files end in `-patch.yaml`, hook jobs in `-job.yaml`, and every deployable directory has a `kustomization.yaml`.
+| Profile | Use |
+|---|---|
+| `infra/k8s/overlays/swirl-cloud` | production in `apps`, deployed by Argo CD |
+| `infra/k8s/overlays/swirl-cloud-canary` | canary, applied by hand on top of production |
+| `infra/overlays/ha` | opt-in multi-node production |
+| `infra/k8s/overlays/standalone` | independent install in `thoughty` |
 
-Render the profiles locally without touching a cluster:
-
-```bash
-kubectl kustomize infra/k8s/overlays/swirl-cloud >/dev/null
-kubectl kustomize infra/overlays/ha >/dev/null
-kubectl kustomize infra/k8s/overlays/standalone >/dev/null
-```
+Overlays build on `infra/k8s/base` and `infra/k8s/components`. Render one with `kubectl kustomize <dir>`.
 
 ## Production Desired State
 
-Argo CD reads `infra/k8s/overlays/swirl-cloud` from `swirlit/thoughty` in the cluster GitLab and deploys it to the `apps` namespace. The overlay contains:
+Argo CD syncs `infra/k8s/overlays/swirl-cloud` from `main` of `swirlit/thoughty` into `apps`, with prune and self-heal. Sync order:
 
-- the API, web, and worker Deployments;
-- the Ingress for `thoughty.swirlit.dev` with the `swirlit-dev-tls` certificate;
-- External Secrets for runtime, backup, registry, and database-administrator values;
-- a database setup hook (sync wave `-1`) that idempotently creates the `thoughty` login and database;
-- a TypeORM migration hook (sync wave `0`) that runs `node dist/scripts/migrate.js` from the release image;
-- the runtime Deployments (sync wave `1`).
+1. Wave `-2`: ConfigMap and External Secrets.
+2. Wave `-1`: `thoughty-db-setup` hook creates the `thoughty` role and database if missing.
+3. Wave `0`: `thoughty-db-migrate` hook runs `node dist/scripts/migrate.js` from the release image.
+4. Wave `1`: API, web, and worker Deployments.
+5. PostSync: `thoughty-kibana-bootstrap` imports the log dashboard.
 
-Argo CD, not CI, creates, prunes, and self-heals workloads.
-
-### Ingress and authentication
-
-The UI is public. API routes pass through an app-owned Traefik ForwardAuth Middleware backed by the platform's shared Keycloak OAuth2 Proxy, which preserves login return URLs and forwards the signed access token to the API (see [Security](./security.md#authentication-and-sessions)). Both routes have a 10 MiB request limit. The base `ingress.yaml` owns routing and the request-limit Middleware; the `swirl-cloud` overlay adds `ingress-middleware.yaml`. `KEYCLOAK_ISSUER`, `KEYCLOAK_JWKS_URI`, and `KEYCLOAK_AUDIENCE` are non-secret overlay settings. Thoughty also appears in the cluster Homepage `Applications` group.
+The UI is public. `/api` goes through the `thoughty-sso` ForwardAuth Middleware and the shared Keycloak OAuth2 Proxy (see [Security](./security.md#authentication-and-sessions)). Both routes cap request bodies at 10 MiB.
 
 ## Configuration and Secrets
 
-Non-secret runtime values live in `infra/k8s/base/configmap.yaml`, adjusted for production by `infra/k8s/overlays/swirl-cloud/configmap-patch.yaml`. Production secrets come from Vault through External Secrets:
+Non-secret settings are in `infra/k8s/base/configmap.yaml`, overridden by `infra/k8s/overlays/swirl-cloud/configmap-patch.yaml` (hosts, `CORS_ORIGIN`, `FRONTEND_URL`, `KEYCLOAK_*`). The S3 and backup endpoints are AWS placeholders; set them before enabling attachments or backups.
 
 | Vault KV path | Contents |
 |---|---|
 | `apps/thoughty/database` | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` |
-| `apps/thoughty/app` | signing, encryption, storage, AI, OAuth, and mail settings |
-| `apps/thoughty/backup` | object-store credentials for database backups |
+| `apps/thoughty/app` | signing, encryption, S3, AI, OAuth, and SMTP values |
+| `apps/thoughty/backup` | backup bucket credentials |
 | `apps/thoughty/registry` | read-only registry pull credential |
-| `infra/postgres` | shared database administrator, used only by the setup hook |
+| `infra/postgres` | shared database admin, setup hook only |
 
-Onboarding (or `infra/scripts/configure-gitlab.sh`) creates strong required database, signing, and encryption values when they are missing and never overwrites existing ones. Optional storage, AI, cloud-provider, SMTP, and backup values start empty; populate them before enabling the matching feature. Never commit secret values or create plaintext Kubernetes Secrets in Git. The full secret list is in [Security](./security.md#secrets).
+Always set `CONFIG_ENCRYPTION_SECRET`: the API and worker do not start without it, and losing it makes stored provider tokens unreadable. Always set `JWT_SECRET`, `REFRESH_SECRET`, and `TWO_FACTOR_SECRET`: they fall back to insecure defaults. Onboarding and `infra/scripts/configure-gitlab.sh` generate these and the database password when missing, and never overwrite them. Other values start empty. Never commit secrets. Full list: [Security](./security.md#secrets).
 
 ## Delivery Pipeline
 
-GitLab CI (`.gitlab-ci.yml`) exposes four stages with explicitly ordered jobs:
-
 | Stage | Jobs | Behavior |
 |---|---|---|
-| `build` | `01-build` → `02-test` → `03-package` | Build and package are required. Tests are non-blocking; the 80% coverage rule reports but does not gate. |
-| `verify` | `01-e2e`, `02-quality`, `03-security` | Independent reports that never gate a release. E2E is always manual. Quality (SonarQube) runs automatically on the default branch. Security (Trivy dependency, IaC, and secret scans) is manual in standard mode. |
-| `release` | `01-release` → `02-deploy` | Release needs only the required build path; deploy starts after release publishes successfully. |
-| `version` | `set-major-version` | Manual; prepares `<major>.0.0` from the `NEW_MAJOR_VERSION` variable. |
+| `build` | `01-build` → `02-test` → `03-package` | Build and package must pass. Tests and the 80% coverage rule only report. |
+| `verify` | `01-e2e`, `02-quality`, `03-security` | Reports only. E2E is manual. SonarQube runs automatically on `main`. Trivy is manual. |
+| `release` | `01-release` → `02-deploy` | Needs only build and package. |
+| `version` | `set-major-version` | Manual; sets `<NEW_MAJOR_VERSION>.0.0`. |
 
-**When release runs.** On `main`, release is manual for push-triggered pipelines. Starting a pipeline from **Run pipeline** with `PIPELINE_MODE=full` also runs quality and security automatically and releases and deploys without a manual step. `SONAR_SCAN_ONLY=true` pipelines (requested automatically by the platform when analysis is missing or older than 24 hours) run only build, tests, and quality, and can never release.
+Release is manual on `main`. It runs automatically from **Run pipeline** with `PIPELINE_MODE=full` (which also runs quality and security) and from onboarding pipelines. It never runs on other branches, merge requests, or `SONAR_SCAN_ONLY=true` pipelines, which the platform starts when analysis is older than 24 hours.
 
-**What release does.**
+`01-release`:
 
-1. Consumes the successful server and web build artifacts.
-2. Publishes immutable server and web archives plus `SHA256SUMS` to the Generic Package Registry.
-3. Builds and pushes immutable images with daemonless Kaniko (30-day registry layer cache, unprivileged runners):
-   `registry.swirlit.dev/swirlit/thoughty/thoughty-server:<version>` and `.../thoughty-web:<version>`.
-4. Refuses to continue if `main` advanced during the pipeline.
-5. Commits the release version and both Kustomize image tags, then creates the annotated Git tag.
-6. Commits the next minor version baseline.
-7. Creates a GitLab Release linked to both packages.
+1. Builds and pushes `registry.swirlit.dev/swirlit/thoughty/thoughty-{server,web}:<version>` with Kaniko.
+2. Uploads both archives and `SHA256SUMS` to the Generic Package Registry.
+3. Stops if `main` moved during the pipeline.
+4. Commits `release: <version>` with the new image tags, tags `v<version>`, commits the next minor baseline, and pushes.
+5. Creates a GitLab Release.
 
-**What deploy does.** It applies and hard-refreshes the Argo CD `Application`, waits for that exact commit to be `Synced` and `Healthy`, then checks the internal API and web endpoints. Deployments are serialized through the `thoughty-production` resource group.
+`02-deploy` applies the `Application`, hard-refreshes it, waits up to 15 minutes for the pushed commit to be `Synced` and `Healthy`, then smoke-checks the internal API and web URLs. Release jobs share the `thoughty-production` resource group. CI artifacts expire after 7 days.
 
-CI reports and build outputs are kept for seven days; release archives are immutable in the package registry, and SonarQube keeps long-term quality history.
+**Versioning.** [`VERSION`](../VERSION) holds the baseline (for example `1.9.0`). Each later first-parent commit adds one to the patch. Releasing `1.9.3` prepares `1.10.0`. Only `set-major-version` changes the major number.
 
-### Versioning
+**Repository sync.** `.github/workflows/sync-gitlab.yml` mirrors every GitHub and GitLab push without force-pushing or rewriting tags.
 
-[`VERSION`](../VERSION) owns the application version and starts at `1.0.0`. Each new first-parent commit advances the patch number used by builds (`1.0.1`, `1.0.2`, ...). A release tags and deploys that exact version, then prepares the next minor baseline with the patch reset (releasing `1.0.3` prepares `1.1.0`). `set-major-version` is the only supported way to change the major number, and every npm manifest is synchronized with each prepared baseline.
-
-### Repository synchronization and bootstrap
-
-Every GitHub push runs `.github/workflows/sync-gitlab.yml`, and every GitLab branch or tag push dispatches the same workflow (including `[skip ci]` commits). It fast-forwards the lagging side, merges divergent branches without force-pushing, refuses to rewrite conflicting tags, and rotates its managed GitLab token monthly.
-
-`infra/scripts/configure-gitlab.sh` is a manual administration helper, separate from onboarding. Run it with `GITLAB_ADMIN_TOKEN` and `GITHUB_ADMIN_TOKEN` to reconcile project metadata, labels, `main` protection, merge safeguards, cleanup policies, badges, the linked SonarQube project and masked `SONAR_TOKEN`, encrypted GitHub sync credentials, the push/tag webhook, Vault values under `apps/thoughty/*`, and the Argo CD `Application`. It needs `kubectl`, `curl`, `git`, `jq`, `openssl`, `python3`, `libsodium`, and `sudo` on the control-plane host.
-
-### Operator refresh
-
-To re-reconcile committed `main` without a pipeline (it never deploys uncommitted changes):
-
-```bash
-ansible-playbook -i infra/ansible/inventory.ini infra/ansible/site.yaml
-```
-
-It applies the Argo CD `Application`, requests a hard refresh, waits for a new `Synced`/`Healthy` reconciliation, and verifies all three Deployment rollouts.
+**Admin helpers.** `infra/scripts/configure-gitlab.sh` (manual, on the control-plane host, with `GITLAB_ADMIN_TOKEN` and `GITHUB_ADMIN_TOKEN`) reconciles project settings, SonarQube, sync credentials, Vault values, and the `Application`. `ansible-playbook -i infra/ansible/inventory.ini infra/ansible/site.yaml` re-syncs committed `main` without a pipeline.
 
 ## Public DNS
 
-This repository owns the `thoughty.swirlit.dev` record; the platform supplies the zone, TLS, ingress, and the optional HA Tunnel. Onboarding asks the platform to reconcile exactly this host. For a customized installation, use the host and zone saved by onboarding.
+This repository owns the app host record; the platform supplies the zone, TLS, and ingress. Use a proxied Cloudflare record:
 
-- **Direct ingress:** a proxied Cloudflare `A` record pointing at the public ingress IPv4:
-  ```sh
-  kubectl get service traefik -n infra -o jsonpath='{.status.loadBalancer.ingress[0].ip}'
-  ```
-- **HA Tunnel:** after the platform's HA activation succeeds, switch to a proxied `CNAME` targeting `<publishedTunnelID>.cfargotunnel.com`. Confirm the published checkpoint first; no output means it is not ready:
-  ```sh
-  kubectl get configmap swirl-cloud-public-ingress -n infra -o json | \
-    jq -er '.data | select(.mode == "tunnel" and .domain == "swirlit.dev" and
-      .publishedTunnelID != null and .publishedTunnelID != "" and
-      .publishedTunnelID == .tunnelID) | .publishedTunnelID + ".cfargotunnel.com"'
-  ```
+| Mode | Record |
+|---|---|
+| Direct ingress | `A` to `kubectl get service traefik -n infra -o jsonpath='{.status.loadBalancer.ingress[0].ip}'` |
+| HA Tunnel | `CNAME` to `<publishedTunnelID>.cfargotunnel.com`, only after HA activation succeeds |
 
-Before changing a record, review conflicting A/AAAA/CNAME records for the exact hostname and preserve unrelated records such as MX and TXT. Verify the public URL and API health afterwards.
+Get the tunnel target (no output means not ready):
+
+```sh
+kubectl get configmap swirl-cloud-public-ingress -n infra -o json | \
+  jq -er '.data | select(.mode == "tunnel" and .domain == "swirlit.dev" and
+    .publishedTunnelID != null and .publishedTunnelID != "" and
+    .publishedTunnelID == .tunnelID) | .publishedTunnelID + ".cfargotunnel.com"'
+```
+
+Remove conflicting A/AAAA/CNAME records for the host first, keep MX and TXT, then check the URL and API health.
 
 ## Other Profiles
 
 ### Canary (`infra/k8s/overlays/swirl-cloud-canary`)
 
-Adds `thoughty-server-canary`, `thoughty-web-canary`, the `thoughty-canary-ingress` IngressRoute, and two weighted TraefikServices on top of the stable profile, which keeps ownership of shared configuration, credentials, authentication, request limits, and NetworkPolicy. Set both image references to published candidate versions first (the `canary` tags are placeholders). The worker is promoted only after the API and web candidates are accepted. Traffic shifting and rollback steps are in the [canary runbook](./operations.md#canary-rollouts).
+Adds one-replica `thoughty-server-canary` and `thoughty-web-canary`, the `thoughty-canary-ingress` IngressRoute, and weighted TraefikServices. Config, secrets, and auth stay with the stable profile. Argo CD does not manage it.
+
+- Replace the placeholder `canary` image tags with published versions.
+- It has no migration hook. Only canary a version whose migrations are applied and safe for the stable version.
+- It has no worker. The worker moves with the next release.
+
+Steps: [canary runbook](./operations.md#canary-rollouts).
 
 ### Multi-node HA (`infra/overlays/ha`)
 
-Composes `swirl-cloud` with two API and two web replicas, hostname spreading across two eligible nodes, and per-Deployment disruption budgets. The worker stays at one replica: its database lease makes interrupted jobs recoverable, but a cancelled request cannot undo an upload a provider already accepted, so sync is not exactly-once (see [ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)).
-
-To opt in, commit `spec.source.path: infra/overlays/ha` in `infra/argocd/application.yaml` and reconcile; a live-only override is lost on the next release. Image updates still go to the `swirl-cloud` overlay and are inherited. PostgreSQL, Redis, object storage, Keycloak, and ingress must each survive losing a host, and the trusted proxy/client-IP path must be validated before relying on shared throttle counters. Before enabling, exercise login and refresh across API replicas, journal writes, attachment upload/download, shared throttling, and an eligible-node drain.
+Spreads the API and web replicas across two nodes and adds a PodDisruptionBudget for each. The worker stays single: its lease recovers jobs, but sync is not exactly-once ([ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)). To enable, commit `spec.source.path: infra/overlays/ha` in `infra/argocd/application.yaml`. First confirm the shared services survive a host loss, and test login, attachments, throttling, and a node drain.
 
 ### Standalone (`infra/k8s/overlays/standalone`)
 
-An independent installation with its own namespace (`thoughty`), PostgreSQL (with WAL archiving), Redis, Vault Agent secret templates, placeholder ingress, worker, and backups. It requires Traefik with the Kubernetes Ingress and CRD providers, strict prefix matching, and HTTP-to-HTTPS redirection. Set host/TLS, object storage, image references, and Vault roles and values first; see [Standalone Vault Setup](./standalone-vault.md). Never apply standalone resources to the production cluster.
+Bundles PostgreSQL 16 with WAL archiving, Redis, the worker, and an active backup CronJob. Secrets come from Vault Agent: see [Standalone Vault Setup](./standalone-vault.md). Before applying, set image references, the ingress host and TLS secret, `CORS_ORIGIN`, `FRONTEND_URL`, and the S3 and backup endpoints. It needs Traefik with Ingress and CRD providers. It has no migration hook: [run migrations](./operations.md#migrations) after each deploy. Never apply it to the production cluster.
 
 ## Rollback and Database Safety
 
-Roll back by reverting the release commit or changing the image tags in Git and letting Argo CD reconcile. Live `kubectl set image` changes are reverted by self-healing and are not a rollback.
+Roll back in Git. Argo CD reverts `kubectl set image`.
 
-TypeORM records applied migrations. Fix schema problems with a new forward migration, never by editing an applied one; test fresh-install and upgrade paths, and take a database backup before a risky schema release.
+1. Run `infra/scripts/set-image-tags.sh <previous version>`.
+2. Commit and push `infra/k8s/overlays/swirl-cloud/kustomization.yaml` to `main`.
+3. Let Argo CD sync.
+
+Migrations only move forward and a rollback does not undo them, so the previous image must work with the current schema. Fix schema problems with a new migration, never by editing an applied one. Back up before a risky schema release.

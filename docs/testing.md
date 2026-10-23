@@ -1,123 +1,89 @@
 # Testing Guide
 
-Thoughty has three test layers: backend Jest tests, frontend Vitest tests, and Playwright browser tests against a mocked API. This guide covers how to run them, how they are organized, and how to add tests. How CI runs them is described in the [Delivery Pipeline](./deployment.md#delivery-pipeline).
+Thoughty has three test layers: backend Jest tests, frontend Vitest tests, and Playwright browser tests against a mocked API. How CI runs them is in the [Delivery Pipeline](./deployment.md#delivery-pipeline).
 
 ## Layers
 
 | Layer | Location | Runner | Use it for |
 |---|---|---|---|
-| Backend unit/integration | `thoughty-server/src/**/*.spec.ts` | Jest | services, controllers, guards, DTO validation, persistence, AI and cloud integrations |
-| Backend e2e | `thoughty-server/test/*.e2e-spec.ts` | Jest + Supertest | routing, guards, and validation through the full Nest app |
-| Frontend unit/component | `thoughty-web/src/**/*.test.ts(x)` | Vitest + Testing Library | components, hooks, utilities, API service adapters |
-| Browser e2e | `thoughty-web/e2e/**/*.spec.ts` | Playwright | user flows that span routes or surfaces, accessibility |
+| Backend unit | `thoughty-server/src/**/*.spec.ts` | Jest | services, controllers, guards, DTOs, integrations |
+| Backend PostgreSQL | `thoughty-server/src/**/*.integration.spec.ts` | Jest, real PostgreSQL | SQL behavior such as search, recycle bin, cloud sync leases |
+| Backend e2e | `thoughty-server/test/*.e2e-spec.ts` | Jest + Supertest | routing, guards, and validation through the full app |
+| Frontend unit | `thoughty-web/src/**/*.test.ts(x)` | Vitest + Testing Library | components, hooks, utilities, API adapters |
+| Browser e2e | `thoughty-web/e2e/**/*.spec.ts` | Playwright | user flows, accessibility |
 
-Run the narrowest relevant suite first, and the broader suites before merging larger changes.
+Run the narrowest suite first and the broader ones before you merge a larger change.
 
 ## Commands
 
-From the repository root:
+| Command (repository root) | Runs |
+|---|---|
+| `mask test` | backend Jest and frontend Vitest (`--backend` or `--frontend` for one) |
+| `mask test --e2e` | Playwright only |
+| `mask test --coverage` / `npm run coverage` | both coverage suites and a combined summary |
+
+| Command (`thoughty-server`) | Runs |
+|---|---|
+| `npm test` | Jest specs; add a path or name to narrow |
+| `npm run test:watch` / `npm run test:cov` | watch mode / coverage |
+| `npm run test:e2e` | `test/` specs. They boot the full app, so start the Compose `db` and run `npm run migrate` first. |
+| `npm run lint` | ESLint, applying fixes |
+
+| Command (`thoughty-web`) | Runs |
+|---|---|
+| `npm test` | Vitest |
+| `npm run test:watch` / `npm run test:coverage` | watch mode / coverage (fails below the thresholds in `vitest.config.ts`) |
+| `npm run typecheck` / `npm run lint` | type check / ESLint |
+| `npm run api:usage` | fails if the frontend stops calling a documented endpoint |
+| `npm run test:e2e:install` | install the bundled Chromium (once) |
+| `npm run test:e2e` | all Playwright specs |
+| `npx playwright test e2e/journal` | one directory; also takes a file or `--grep "<title>"` |
+
+CI reports whether the combined line coverage of both apps reaches 80%, without blocking. Both suites write `coverage/lcov.info` for SonarQube.
+
+## PostgreSQL Integration Specs
+
+The `*.integration.spec.ts` files run only when `THOUGHTY_PG_TEST_URL` is set, so `npm test` and CI skip them. The URL must name the database `thoughty_ha_test` on `localhost` or `127.0.0.1`; any other URL fails the run.
+
+Each suite gets its own database. `createPostgresTestDatabase` (in `src/database/postgres-test-database.test-helpers.ts`) creates `thoughty_ha_test_<pid>_<random>` from the URL, applies the migrations, and drops the database when the suite calls `drop()`. Suites share no tables, so they run in parallel. The role needs `CREATEDB`. A killed run can leave a `thoughty_ha_test_*` database behind; drop it by hand.
+
+Run them against a throwaway Docker PostgreSQL (needs Docker and `python3`):
 
 ```bash
-mask test                 # backend Jest + frontend Vitest
-mask test --backend       # backend only
-mask test --frontend      # frontend only
-mask test --e2e           # Playwright only
-mask test --coverage      # both coverage suites plus a combined summary (also: npm run coverage)
+infra/scripts/test-cloud-sync-postgres.sh
 ```
 
-Backend (`cd thoughty-server`):
+Or against the Compose database, after you create the base database once:
 
 ```bash
-npm test                  # unit/integration specs (add a path or name to narrow)
-npm run test:watch
-npm run test:cov          # coverage
-npm run test:e2e          # e2e specs in test/
-npm run lint              # ESLint (applies --fix)
-```
-
-### PostgreSQL integration specs
-
-The `*.integration.spec.ts` files (full-text search, entry titles and times, moods, task lists, the recycle bin, cloud sync lease races) run against a real PostgreSQL. They are skipped unless `THOUGHTY_PG_TEST_URL` is set, so `npm test` and CI, which set no URL, run without a database. The URL must point at a database named `thoughty_ha_test` on `localhost` or `127.0.0.1`; anything else fails the run rather than touch a real database.
-
-Each suite creates a database of its own from that connection (`thoughty_ha_test_<pid>_<random>`), applies the migrations (or builds only the tables it needs), and drops it when it finishes, through `createPostgresTestDatabase` in `src/database/postgres-test-database.test-helpers.ts`. Suites never share tables, so they run in parallel Jest workers like every other spec, and a suite that rolls migrations back and forward affects nobody else. The connecting role needs the `CREATEDB` privilege. A run that is killed midway can leave a `thoughty_ha_test_*` database behind; drop it by hand.
-
-```bash
+docker compose -f infra/compose/compose.yaml exec db createdb -U postgres thoughty_ha_test
+cd thoughty-server
 THOUGHTY_PG_TEST_URL=postgresql://postgres:password@127.0.0.1:5432/thoughty_ha_test npm test -- integration.spec
-infra/scripts/test-cloud-sync-postgres.sh   # the same specs against a throwaway Docker PostgreSQL
 ```
 
-New integration specs use `describePostgres` and `createPostgresTestDatabase` from the helper instead of reading the URL themselves, and empty their tables in `beforeEach` (for example `TRUNCATE users RESTART IDENTITY CASCADE`).
+A new spec wraps its suite in `describePostgres`, calls `createPostgresTestDatabase` in `beforeAll` (with `POSTGRES_SETUP_TIMEOUT_MS`), calls `drop()` in `afterAll`, and empties its tables in `beforeEach` (for example `TRUNCATE users RESTART IDENTITY CASCADE`).
 
-Frontend (`cd thoughty-web`):
+## Frontend Unit Tests
 
-```bash
-npm test                  # Vitest
-npm run test:watch
-npm run test:coverage
-npm run typecheck
-npm run lint
-npm run api:usage         # fails if the frontend stops calling a documented product endpoint
-npm run test:e2e          # all Playwright specs
-npm run test:e2e:install  # install the bundled Chromium
-npx playwright test e2e/journal                            # one directory
-npx playwright test e2e/tags/management.spec.ts            # one file
-npx playwright test --grep "Journal Markdown authoring"    # by title
-```
-
-Vitest runs each file in its own worker thread (`pool: 'threads'`), so one file's modules, mocks, and rendered DOM never reach the next, whatever the order or worker count. Tests that need real `Blob` streams, `CompressionStream`, or `DecompressionStream`, such as the ZIP reader and the app importers, opt into the Node environment with `// @vitest-environment node`; `src/test/zipFixture.ts` builds the ZIP archives they read.
-
-Both coverage suites write `coverage/lcov.info` in their application directories for SonarQube; colocated `.spec.ts`, `.test.ts`, and `.test.tsx` files are classified as tests. The project target is 80% coverage.
+Vitest uses `jsdom` with `src/test/setup.ts` and runs each file in its own thread, so mocks and DOM never leak between files. Helpers live in `src/test/`. Tests that need real `Blob` streams or `CompressionStream` add `// @vitest-environment node`. Unit tests usually pass an identity translator (`t = (key) => key`), so assert on translation keys, not English text.
 
 ## Browser Tests
 
-Playwright (`thoughty-web/playwright.config.ts`) starts the Vite dev server on port `5173` (or reuses a running one) and runs headless Chromium using the bundled `chromium` channel. There are no named projects, so do not pass `--project`. Traces and screenshots are kept on failure, and CI retries failed tests twice.
+Playwright starts the Vite dev server on port `5173` (or reuses a running one) and runs headless Chromium. There are no named projects, so do not pass `--project`. Traces and screenshots are kept on failure, and CI retries a failed test twice.
 
-The browser never reaches a real backend: every `/api` call is answered by the mock app in `e2e/support`. Specs are grouped by feature:
+The mock app in `e2e/support` answers every `/api` call, so you need no API server or database. Specs are grouped by feature: `accessibility`, `ai`, `auth`, `cloud-sync`, `diary`, `import-export`, `journal`, `memoir`, `navigation`, `public`, `social`, `stats`, and `tags`. Put a new spec in the closest directory and name it after its behavior (`journal/attachments-preview.spec.ts`, not `critical-flows.spec.ts`).
 
-| Directory | Covers |
-|---|---|
-| `accessibility/` | Axe WCAG A/AA scans of every route in both themes, the journal with entries (cards, search highlights, every filter set, the Markdown composer and the entry editor) in both themes and with high contrast, the journal search, skip links, focus on route change, key dialogs |
-| `public/` | landing page and the feature-request board |
-| `auth/` | sign-up and login onboarding, two-factor authentication |
-| `navigation/` | direct routes, browser history, permalinks, diary return routes |
-| `journal/` | authoring, Markdown (the toolbar named in French in the composer and the editor), focus mode (typewriter scrolling, session goal, Esc keeping the draft, the shortcut from the composer and the editor, Axe in both themes, high contrast, French), Markdown task lists (ticking by mouse and keyboard, one revision for a run of ticks, the toolbar button and help, French, read-only boxes in the feed, plain text left alone), lifecycle, reordering, entry titles and times (Now, ordering, stable numbers, dragging untimed entries, title search, French), mood check-ins (composer, editor and history, mood filter, French feelings), filtering, full-text search (operators, prefix matches, ordering, highlights, French help), favorites, visibility, bulk archive, history, highlights, audio transcription, recycle bin |
-| `tags/` | tag create, count, rename, delete, and journal tag organization |
-| `ai/` | Auto Tag, automatic tagging, Get Inspired, rephrasing, summaries, chat, meaning search, duplicates, personal API keys |
-| `stats/` | totals, heatmap, and tag insights; recorded moods by month, weekday, and feeling, per diary; the year in review (numbers, diary scope, mood arc from recorded moods or AI, sharing, French, phone layout) |
-| `import-export/` | import/export formats, format settings, delete-all, books, book versions and cloud upload, Day One and Journey imports with their photos, the Markdown folder export |
-| `cloud-sync/` | uploads, schedules, Sync Now, cloud imports |
-| `diary/` | create, edit, reorder, default, delete fallback |
-| `memoir/` | starting the guided memoir, text and recorded answers with transcription, another question, pause and resume, stopping, the email link, the book link, French copy, phone layout |
-| `social/` | public feed eligibility, pagination, owner preview, mobile layout, following and unfollowing authors, comments, likes, leaderboard, achievements |
+### Accessibility
 
-Put a new spec in the closest existing directory and name it after the behavior it covers (`journal/attachments-preview.spec.ts`, not `critical-flows.spec.ts`). Split a file once it covers unrelated behavior.
+`e2e/accessibility/` runs axe (`@axe-core/playwright`) with the WCAG 2.0, 2.1, and 2.2 A and AA tags. `routes.spec.ts` scans every route in both themes and checks skip links, focus on route change, and key dialogs. `journal.spec.ts` scans the journal, search, filters, composer, and editor in both themes and with high contrast. Feature specs such as `journal/focus-mode.spec.ts` scan their own surfaces. Give a new page or dialog a scan with the same tags.
 
 ### Mock API
 
-| File | Purpose |
-|---|---|
-| `mockApp.ts` | `setupMockApp(page, options)`: per-test state, auth tokens, route registration |
-| `mockApp.shared.ts` | state types and defaults, diaries, cloud fixtures, import/export helpers |
-| `mockApp.stats.ts` | stats response builders, including recorded moods |
-| `mockApp.route-utils.ts` | route context and `fulfillJson` |
-| `mockApp.routes.ts` | dispatch, auth, config, and feature-request routes |
-| `mockApp.routes.entries.ts` | entries and tags; deleting moves entries to the mock recycle bin (`state.trash`); task ticks are recorded in `state.taskRequests` and keep one revision for a run of ticks |
-| `mockApp.search.ts` | a small keyword search for the entries route: whole words, quoted phrases, exclusions, OR, a prefix last word, best-match order, and `search_matches` over titles and text, without stemming |
-| `mockApp.routes.recycle-bin.ts` | listing, restoring, deleting forever, and emptying the recycle bin |
-| `mockApp.routes.io.ts` | import/export and book routes |
-| `mockApp.review.ts` / `mockApp.routes.review.ts` | a small year review built from the test's entries (with the arc of their recorded moods), and saved mood readings |
-| `mockApp.app-import.ts` / `mockApp.routes.app-import.ts` | app-import state (source references, uploaded files) and the entry and attachment batch routes |
-| `mockApp.memoir.ts` / `mockApp.routes.memoir.ts` | a short memoir catalogue and program state, and the memoir routes |
-| `mockApp.routes.social.ts` | public feed scopes, follows, comments, likes, the leaderboard, and achievements |
-| `mockApp.routes.reference.ts` | stats, AI, diaries, entry references |
-| `mockApp.routes.ai-credentials.ts` | personal OpenRouter key and usage |
-| `mockApp.routes.cloud-sync.ts` | stateful cloud schedules, files, and sync payloads |
+`setupMockApp(page, options)` in `e2e/support/mockApp.ts` sets up per-test state, auth, and routes. State types and defaults are in `mockApp.shared.ts`, and routes are split by feature into `mockApp.routes.*.ts`. For new backend behavior, add state fields to `mockApp.shared.ts`, handle the route in the closest routes file, record the request if the test asserts on it, and return the real API's response shape. Keep the mock minimal; it does not reimplement the backend.
 
-When a flow needs new backend behavior: add state fields to `mockApp.shared.ts`, handle the route in the smallest relevant file, record the last request payload if the test must assert on it, and return the same response shape as the real API. Keep the mock minimal; it supports the flows under test and does not reimplement the backend.
+## Writing a Browser Test
 
-## Writing Tests
-
-Seed only what the scenario needs:
+Seed only what the scenario needs. Assert the visible result, and the captured state when the request matters:
 
 ```ts
 const { state } = await setupMockApp(page, {
@@ -126,39 +92,19 @@ const { state } = await setupMockApp(page, {
     { id: 101, date: '2024-04-18', index: 1, content: 'Focused entry', tags: ['focus'], visibility: 'private', diaryId: 1 },
   ],
 });
-```
-
-Assert the visible result, and the captured state when the request matters:
-
-```ts
+// navigate and act, then:
 await expect(page.getByText('Updated entry body')).toBeVisible();
 await expect.poll(() => state.entries[0]?.content).toBe('Updated entry body');
 ```
 
-Guidelines:
-
 - Name tests by outcome (`'archives selected entries and reveals them through the archived filter'`, not `'works'`).
-- Prefer accessible locators (`getByRole`, `getByLabel`, `getByPlaceholder`); scope to a card such as `page.locator('#entry-101')` when a name is ambiguous, or pass `exact: true`.
-- Call `setupMockApp` before navigating, keep state in the returned `state` object, and avoid module-level mutable state; tests run in parallel.
-- Frontend unit tests usually pass an identity translator (`t = (key) => key`), so assert on translation keys rather than English text.
-- Never race a message that hides itself (toasts, save confirmations). Install `page.clock` before navigating, pause it just before the action that shows the message, assert, then `page.clock.runFor(...)` to check that it hides. `e2e/tags/management.spec.ts` and the missing-permalink test in `e2e/navigation/routes.spec.ts` show the pattern, including holding an API route until the clock is paused.
-- Transient messages use `useTransientMessage` with `AutoDismiss`, which starts the countdown only once the message is on screen, so it cannot expire while lazy code is still loading.
-
-The Vite dev server pre-transforms the app on start (`server.warmup` in `vite.config.ts`), so parallel browser tests do not all wait on compiling the same modules for their first page load.
+- Prefer `getByRole`, `getByLabel`, and `getByPlaceholder`. Scope to a card (`page.locator('#entry-101')`) or pass `exact: true` when a name is ambiguous.
+- Call `setupMockApp` before you navigate. Keep state in the returned `state`, not in module variables; tests run in parallel.
+- Never race a message that hides itself. Install `page.clock` before you navigate, pause it before the action, assert, then `page.clock.runFor(...)` to check that it hides. See `e2e/tags/management.spec.ts`.
 
 ## Performance and Resilience Checks
 
-Both scripts run against a live API and database; do not point them at production without an operator's approval.
+These `thoughty-server` scripts hit a live API and database. Do not point them at production without an operator's approval.
 
-`cd thoughty-server && npm run benchmark` measures HTTP endpoints and key PostgreSQL queries and prints CSV-style results:
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `BENCHMARK_BASE_URL` | `http://localhost:3001` | API origin |
-| `BENCHMARK_ENDPOINTS` | `/api/health,/api/metrics` | comma-separated GET paths |
-| `BENCHMARK_REQUESTS` / `BENCHMARK_CONCURRENCY` | `100` / `10` | requests per target and concurrent workers |
-| `BENCHMARK_AUTH_TOKEN` | unset | bearer token for protected paths |
-| `BENCHMARK_DB_RUNS` | `10` | runs per database query |
-| `BENCHMARK_SKIP_HTTP` / `BENCHMARK_SKIP_DB` | unset | set to `true` to skip a part |
-
-`cd thoughty-server && npm run chaos:check` sends malformed JSON, missing routes, and unauthenticated private requests and expects controlled errors, runs a failing SQL statement to prove the pool recovers, and confirms `/api/health` still returns `200`. It exits non-zero if anything does not recover. Options: `CHAOS_BASE_URL`, `CHAOS_TIMEOUT_MS` (default `5000`), `CHAOS_SKIP_HTTP`, `CHAOS_SKIP_DB`.
+- `npm run benchmark` times HTTP endpoints and key queries. It reads `BENCHMARK_BASE_URL` (default `http://localhost:3001`), `BENCHMARK_ENDPOINTS` (default `/api/health,/api/metrics`), `BENCHMARK_REQUESTS`, `BENCHMARK_CONCURRENCY`, `BENCHMARK_AUTH_TOKEN`, `BENCHMARK_DB_RUNS`, `BENCHMARK_SKIP_HTTP`, and `BENCHMARK_SKIP_DB`.
+- `npm run chaos:check` sends bad requests and a failing SQL statement, then checks that `/api/health` still returns `200`. It exits non-zero if anything does not recover. It reads `CHAOS_BASE_URL`, `CHAOS_TIMEOUT_MS`, `CHAOS_SKIP_HTTP`, and `CHAOS_SKIP_DB`.

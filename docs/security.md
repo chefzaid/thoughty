@@ -1,66 +1,39 @@
 # Security and Privacy Reference
 
-Thoughty stores personal journal content, profile data, attachments, sessions, and encrypted third-party credentials. This guide describes the security model contributors and operators must preserve. The decisions behind it are in [ADR 0008](./adr/0008-security-authentication-and-owasp-baseline.md) and [ADR 0009](./adr/0009-rate-limiting-and-abuse-controls.md).
+Thoughty stores private journals, attachments, sessions, and encrypted third-party credentials. This page lists the rules the code enforces and new code must keep. Decisions are in [ADR 0008](./adr/0008-security-authentication-and-owasp-baseline.md) and [ADR 0009](./adr/0009-rate-limiting-and-abuse-controls.md).
 
 ## Baseline
 
-- Every API route requires a JWT unless it is explicitly marked `@Public()`.
-- DTO validation whitelists fields and rejects unexpected ones; ownership-scoped queries always filter by the authenticated user ID.
-- Every referenced container is checked against the caller too: an entry can only be created in, moved to, or imported into a diary the writer owns; any other diary ID answers `404`.
-- User-controlled text and attachment filenames are sanitized where they are rendered or used.
-- Passwords are hashed with bcrypt; reset, verification, and 2FA tokens are stored only as hashes.
-- Cloud provider tokens and personal AI keys are encrypted at rest with AES-256-GCM using `CONFIG_ENCRYPTION_SECRET`.
-- Production responses carry a per-response nonce Content Security Policy with no `unsafe-inline` scripts or styles; Swagger UI and other HTML get the nonce applied to their inline tags. Do not reintroduce `unsafe-inline`.
-- Sign-up and login forms include a hidden bot-trap field that rejects automated submissions.
-- Production secrets come from Vault; nothing secret is committed.
+- Every API route needs an access token unless marked `@Public()`.
+- The global `ValidationPipe` whitelists DTO fields and rejects unknown ones.
+- Every query is scoped to the authenticated user. A diary or entry the caller does not own answers `404`, including the target diary when creating, moving, or importing entries.
+- Passwords use bcrypt. Reset, verification, and 2FA challenge tokens are stored only as SHA-256 hashes.
+- In production, API responses carry a per-response nonce CSP with no `unsafe-inline` (`common/security/csp.ts`), and served HTML such as Swagger UI gets the nonce. Do not add `unsafe-inline`. The web NGINX config sets `X-Frame-Options`, `X-Content-Type-Options`, and `Referrer-Policy`, but no CSP.
 
 ## Authentication and Sessions
 
-Production sign-in goes through the shared Keycloak `swirlit` realm. The Ingress uses the platform's OAuth2 Proxy as an authentication gate and forwards its short-lived Keycloak access token to `GET /api/auth/sso`. The API verifies the RS256 signature, issuer, expiry, and `oauth2-proxy` audience against Keycloak's JWKS, then links the verified email to (or creates) the local Thoughty user and issues Thoughty's own access and refresh tokens, so authorization stays scoped to the local user ID. Identity headers are never trusted without that verification, and Thoughty never sees the Keycloak password. No Thoughty-specific Keycloak client is needed; this repository owns the Middleware, issuer/JWKS configuration, audience check, and local account lifecycle.
+In production, the ingress sends every `/api` request through the platform's Keycloak OAuth2 Proxy, which forwards the Keycloak access token to `GET /api/auth/sso`. The API verifies its RS256 signature against Keycloak's JWKS, plus issuer, expiry, and the `oauth2-proxy` audience, and requires a verified email. It then links or creates the local user and issues Thoughty's own tokens. Identity headers are never trusted unverified. Local development uses email or username with a password, and optional Google sign-in.
 
-Local development keeps email/password and optional Google sign-in; login accepts an email or a username.
+- **Access token:** JWT signed with `JWT_SECRET`, 15 minutes by default (`JWT_EXPIRES_IN`).
+- **Refresh token:** JWT signed with `REFRESH_SECRET`, valid 7 days, and stored in `refresh_tokens`. Each stored token is a session. Refresh needs a matching row and does not rotate the token.
+- The web app keeps both tokens in `localStorage`.
+- Users can list sessions (token values are never returned) and revoke one or all others. Logout deletes the presented token. Password change, password reset, and account deletion delete all of them.
+- Account deletion is a soft delete (local accounts confirm the password). The account can no longer sign in; its content stays in the database.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant API
-    participant DB as PostgreSQL
+**Email verification and 2FA.** Verification tokens last 24 hours. Verified password accounts can enable email 2FA. Login then returns an opaque challenge until the six-digit code is confirmed. Codes are HMAC-SHA-256 values keyed by `TWO_FACTOR_SECRET` (derived from `JWT_SECRET` if unset; use one value across replicas). Challenges expire after 10 minutes and are cleared atomically on success. Disabling 2FA needs the password.
 
-    User->>API: Keycloak SSO exchange, local login, or OAuth sign-in
-    API->>DB: Verify or create user, store refresh token
-    API-->>User: Access token + refresh token
-    User->>API: Request with bearer token
-    API-->>User: Protected response
-    User->>API: Refresh request
-    API->>DB: Validate stored refresh token
-    API-->>User: New access token
-```
-
-Refresh tokens are the active sessions. Users can list their sessions (token values are never returned), revoke one other session, or revoke all other sessions. Password changes, password resets, logout, and account deletion revoke refresh tokens. Accounts are soft-deleted after confirmation.
-
-### Email verification and two-factor authentication
-
-Verification links use hashed, expiring tokens. A verified password account can enable email 2FA; password login then returns an opaque challenge instead of tokens until the six-digit emailed code is confirmed. Challenge tokens are stored as SHA-256 hashes and codes as HMAC-SHA-256 values; both expire after ten minutes and are cleared atomically on success, so they cannot be replayed. Disabling 2FA requires the current password. Use one strong `TWO_FACTOR_SECRET` across all replicas (development falls back to a key derived from `JWT_SECRET`).
-
-### Password reset
-
-Reset tokens are hashed and expire after one hour. The forgot-password endpoint always returns the same generic response to avoid revealing which emails exist. If SMTP delivery fails, the email service logs the reset URL, which helps local development but makes those logs sensitive; production must have working SMTP.
+**Password reset.** Reset tokens last one hour and are cleared on use. Forgot-password always returns the same message. Failed emails are logged with the error and user ID only, never the link, so production needs working SMTP.
 
 ## Public Surfaces
 
-Public routes are deliberate exceptions: health checks, sign-up/login/OAuth entry points, email verification and password recovery, the public landing and legal pages, and the read side of the feature-request board. Any new public endpoint must document why it is public, which throttle applies, and what it can reveal.
+`@Public()` routes: health, metrics, register, login, 2FA verify and resend, OAuth, SSO, refresh, logout, forgot and reset password, verify email, and the feature-request list. A new public route must state why, which throttle applies, and what it reveals.
 
-The social feed is **not** public. Entry moods and feelings are private even on public entries: the feed selects its entry columns explicitly and leaves them out, and share text never carries them. `GET /api/entries/feed` requires a session, validates `scope` (`community`, `following`, or `mine`), `page`, and `limit` (at most 20 entries per page), and returns only `id`, `username`, `avatarUrl`, and whether the requester follows them for authors. An entry appears only when its visibility is `public`, its moderation status is `visible`, it is not archived, and its author is not deleted. `moderation_status` (`visible`, `hidden`, `under_review`, `removed`) is platform-controlled and must never be writable through entry create or update DTOs.
+Social features need a session and share one rule (`modules/social/public-feed-visibility.ts`): an entry is visible only if it is `public`, has `moderation_status = 'visible'`, is not archived or in the recycle bin, and its author is not deleted. Follows, comments, and likes on anything else answer `404`.
 
-Follows (`/api/follows`) also require a session. `PUT /api/follows/:userId` answers `404` unless the target currently has a feed-eligible entry, so user ids cannot be probed for private or deleted accounts, and `400` for a self-follow. The follow list only exposes the same author fields as the feed plus the follow date; followers are only counted, never listed.
-
-Comments (`/api/entries/:entryId/comments`) require a session and answer `404` unless the entry is feed-eligible, so private, moderated, archived, or deleted-author entries cannot be probed. Content is trimmed, limited to 1,000 characters, stored as typed, and always rendered as escaped plain text. Only the comment author or the entry owner can delete a comment; anyone else gets `404`.
-
-Likes (`PUT`/`DELETE` `/api/entries/:entryId/like` and `/api/entries/:entryId/comments/:commentId/like`) follow the same eligibility rule, are idempotent, and refuse self-likes with `400` so like counts cannot be inflated by their author.
-
-`GET /api/leaderboard` requires a session and only aggregates feed-eligible content, so private journaling activity never leaks into rankings; it ignores authors' comments on their own entries and interactions from deleted accounts, and returns plain-text excerpts of at most 280 characters with the same narrow author fields as the feed.
-
-`GET /api/achievements` only ever returns the requester's own karma, stats, and badges. Its journaling numbers (total entries, longest streak) come from private entries, so no endpoint exposes another user's achievements.
+- `moderation_status` is platform-controlled. No entry DTO may accept it.
+- The feed returns at most 20 entries per page and leaves out mood and feelings. Authors show only `id`, `username`, `avatarUrl`, and follow state. Followers are counted, never listed.
+- Self-follows and self-likes answer `400`. Comments are at most 1,000 characters and render as escaped text.
+- The leaderboard counts only visible content. Achievements are returned only to their owner.
 
 ## Abuse Controls
 
@@ -68,101 +41,76 @@ Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):
 
 | Policy | Limit | Applies to |
 |---|---|---|
-| Default | 100 per 15 min | every route |
-| Auth attempts | 5 per 15 min | register, login, OAuth, 2FA verify/resend |
+| Default | 100 per 15 min | every route except health and metrics |
+| Auth attempts | 5 per 15 min | register, login, OAuth, 2FA verify and resend |
 | Token refresh | 30 per 15 min | refresh |
 | Password recovery | 3 per hour | forgot password, reset password, verify email |
-| Account security | 5 per hour | password change, verification-email resend, 2FA setup/enable/disable, session revocation, account deletion |
-| Social writes | 30 per 15 min | follow, unfollow, post and delete comments, like and unlike |
-| Import writes | 300 per 15 min | app import batches: `POST /api/io/import/entries` and `/api/io/import/attachments` |
+| Account security | 5 per hour | password change, verification resend, 2FA changes, session revocation, account deletion |
+| Social writes | 30 per 15 min | follows, comments, likes |
+| Import writes | 300 per 15 min | app-import batches (`/api/io/import/entries`, `/api/io/import/attachments`) |
 
-Counters are stored in Redis when `REDIS_URL` or `REDIS_HOST` is set, so limits hold across replicas; if Redis is unavailable each process falls back to local counters. Behind ingress, validate the trusted proxy and client-IP path before relying on per-client limits.
-
-Request bodies are limited before validation: JSON `1mb` and URL-encoded `256kb` by default, overridable with `REQUEST_BODY_LIMIT`, `REQUEST_JSON_BODY_LIMIT`, and `REQUEST_FORM_BODY_LIMIT`. Only the import routes (`/api/io/preview` and `/api/io/import`, including its app-import batches) accept JSON up to `8mb` (`REQUEST_IMPORT_BODY_LIMIT`), so a text file up to the 5 MB import limit fits once it is escaped as JSON. Uploads use separate per-file Multer limits.
-
-Database errors caused by client input, such as an id beyond PostgreSQL's integer range, are answered with `400` by the global `DatabaseInputExceptionFilter` instead of surfacing as `500`.
-
-Keyword searches are capped at 500 characters and reach PostgreSQL only as bound parameters. `websearch_to_tsquery` reads any text without raising syntax errors, the one word passed to `to_tsquery` as a prefix is restricted to letters and digits, and the literal fallback escapes `LIKE` wildcards. Search and its highlights are scoped to the authenticated writer and leave out entries in the recycle bin.
+- Counters use Redis when `REDIS_URL` or `REDIS_HOST` is set, and fall back to in-process counters if Redis fails.
+- Counters key on the client IP. Behind an ingress, check the trusted-proxy and client-IP path before relying on per-client limits.
+- Register and login reject requests that fill the hidden `website` bot-trap field.
+- Body limits (`common/security/request-payload-limits.ts`): JSON `1mb` and forms `256kb`, set with `REQUEST_BODY_LIMIT`, `REQUEST_JSON_BODY_LIMIT`, and `REQUEST_FORM_BODY_LIMIT`. Only `/api/io/preview` and `/api/io/import/*` accept JSON up to `8mb` (`REQUEST_IMPORT_BODY_LIMIT`), so a 5 MB text import fits once escaped. The ingress caps bodies at 10 MiB.
+- Uploads take one file of at most 5 MB and one scalar field, with no nested field names (`common/multipart-limits.ts`). App-import file batches take up to 8 files.
+- Search is capped at 500 characters and uses bound parameters only.
+- Client input the database rejects answers `400` (`DatabaseInputExceptionFilter`).
 
 ## Secrets
 
-Provided through Vault (see [Deployment](./deployment.md#configuration-and-secrets)) and never committed:
+Production secrets live in Vault and reach the cluster through External Secrets (`infra/k8s/overlays/swirl-cloud/external-secrets.yaml`). The standalone profile uses [Vault Agent](./standalone-vault.md). Nothing secret is committed. Setup and rotation: [Deployment](./deployment.md#configuration-and-secrets).
 
 - `JWT_SECRET`, `REFRESH_SECRET`, `TWO_FACTOR_SECRET`
-- `CONFIG_ENCRYPTION_SECRET` — the most sensitive value: losing it makes encrypted provider tokens and personal AI keys unreadable, and leaking it exposes them
-- PostgreSQL credentials and the backup bucket credentials
-- S3 access keys for attachments
-- `OPENROUTER_API_KEY` (optional shared AI key)
-- Google, OneDrive, and Dropbox OAuth client secrets
-- SMTP credentials
+- `CONFIG_ENCRYPTION_SECRET`: the most sensitive value. Leaking it exposes stored provider tokens and AI keys; losing it makes them unreadable.
+- PostgreSQL and backup credentials, S3 keys, the optional shared `OPENROUTER_API_KEY`, cloud-provider OAuth client secrets, and SMTP credentials
 
-## Attachments
+The signing secrets have development defaults in code. Only `CONFIG_ENCRYPTION_SECRET` is enforced at production startup, so set every value.
 
-- MIME type and size are validated before storage; uploads accept one file and at most one scalar field, and reject nested multipart field names before parsing.
-- Objects are stored under generated keys (`stored_filename`), never the original filename.
-- Files are served only through authenticated application endpoints; the frontend loads previews and downloads with authenticated requests and short-lived object URLs.
-- Buckets stay private unless a future ADR changes the sharing model.
+## Data Protection
 
-## Recycle Bin
-
-- Deleted entries stay in the recycle bin for 30 days. While there they are never served by any other endpoint: not to the owner's journal, search, exports, books, or AI features, and never to the public feed, comments, or likes, even when the entry was public.
-- The recycle bin endpoints act only on the authenticated writer's own deleted entries; ids of live entries or of other writers' entries answer `404` and change nothing.
-- After 30 days the worker deletes the entries, their revisions, and their attachment rows, then removes the attachments' objects from storage. A storage failure is logged by key and does not stop the purge. Deleting forever or emptying the bin removes the data the same way, immediately.
-- The personal data download includes entries in the recycle bin, marked with their `deletedAt`, because they are still stored.
-
-## App Imports and the Markdown Export
-
-Day One and Journey exports are read in the browser; only the mapped entries and their photos and recordings are sent ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)). Journey's HTML is parsed in an inert `DOMParser` document, keeping text, emphasis, lists, and `http`, `https`, or `mailto` links only; scripts, images, and other markup are dropped before the Markdown renderer sees anything. On the server:
-
-- Imported entries are always private, whatever the target diary's default, and can only go to a diary the writer owns (`404` otherwise). Diaries created for source journals are private.
-- An entry batch is validated as a whole (at most 200 entries, 50,000 characters each, 20 tags of 50 characters) and saved in one transaction; tags are sanitized like any other tag.
-- A file batch holds at most 8 files and one `entryIds` field with no nested names. Every entry must belong to the writer and every file must pass the attachment allowlist and 5 MB limit before any file is stored.
-- The Markdown export streams one attachment at a time, re-checks the 5 MB limit while reading storage, builds every path from sanitized names (no separators, reserved characters, or `..`), and stops reading storage when the download is closed.
-
-## Year in Review
-
-The review is computed on request from the writer's own entries and is never public. Sharing posts only the text the writer read and edited, as an ordinary public entry; tag names are left out unless the writer ticks the option. Reviews and mood readings are scoped to a diary only when the writer owns it (`404` otherwise).
-
-## Guided Memoir
-
-Memoir answers are private entries; the API never makes them public, and a writer can only start, answer, or move the memoir into a diary they own (anything else answers `404`). Recordings attached to an answer must be the writer's own uploads and are checked before any entry is written. Weekly emails go only to verified addresses of live accounts, contain only the catalogue question and a link to `/memoir`, never journal text, and the worker logs a failed send by user id without the address. A memoir answer is an ordinary entry, so the AI rules below apply unchanged: transcription and AI book weaving send text only when the writer asks for them.
+- **Encryption at rest:** personal OpenRouter keys and cloud-provider tokens are encrypted with AES-256-GCM using `CONFIG_ENCRYPTION_SECRET`. Other settings are plain text. Personal keys are checked with OpenRouter before storage, shown only as their last five characters, and left out of `GET /api/config` and the data download. Cloud tokens appear in both as ciphertext.
+- **Attachments:** a MIME allowlist (images including SVG, PDF, text, audio) and the 5 MB limit are checked before storage. Objects use random UUID keys in private buckets. The file route needs a session but does not check ownership; it relies on the unguessable key.
+- **Recycle bin:** deleted entries are hidden from every other feature for 30 days, then purged with their revisions, attachments, chat, comments, and likes. Deleting forever purges at once. Storage failures are logged by key and do not stop the purge.
+- **Data download:** includes recycle-bin entries, revisions, attachment metadata, settings, social and memoir data, and stored mood readings. It leaves out the password hash, session tokens, the personal AI key, and AI chat history.
+- **App imports:** Day One and Journey exports are parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)). Journey HTML goes through an inert `DOMParser` that keeps only text, basic formatting, and `http`, `https`, or `mailto` links. Imported entries are private and go only to the writer's own diaries. A batch holds at most 200 entries and is saved in one transaction. Every file is checked before any is stored.
+- **Markdown export:** streams one attachment at a time, re-checks the 5 MB limit, and builds paths from sanitized names.
+- **Memoir:** answers are private entries. Weekly emails go only to verified addresses of live accounts and contain the question and a link, never journal text.
+- **Year in review:** computed on request and never public. Sharing posts only the text the writer edited, without tags unless chosen.
 
 ## AI Privacy
 
-AI features are optional. A deployment may provide a shared OpenRouter key, and each user may add a personal key that then takes precedence for all of their AI requests. Personal keys are validated with OpenRouter before storage, encrypted at rest, accepted only through dedicated authenticated endpoints, shown only as a short suffix, and excluded from configuration responses and GDPR exports.
+AI is optional and uses OpenRouter. A user's personal key, when set, replaces the shared key for all of their requests.
 
-What each feature sends to the provider:
-
-| Feature | Data sent |
+| Feature | What is sent |
 |---|---|
-| Rephrase, Auto Tag, entry chat | the draft or selected entry, as structured untrusted source material |
-| Entry summary | one server-loaded entry owned by the user, plus the user's include/exclude guidance |
-| Get Inspired | tag names and counts only, from at most the 200 newest entries in scope — never entry text |
-| Mood, tone, and subject analysis | at most the 40 newest entries in scope |
-| Duplicate review | at most the 40 newest entries in scope |
-| Meaning search | the query plus at most the 100 newest entries in scope, for embeddings |
-| Organize journal tags | at most the 300 newest non-empty entries, each capped at 400 characters |
-| Writing-tendency analysis | bounded aggregate word, subject, and writing metrics computed locally — no raw text |
-| Year in review mood arc | only when the user asks: up to five non-archived entries per month of the chosen year, spread across the month, as plain text capped at 600 characters each; the reading (a mood word and a -2 to 2 score per month, plus a summary) is stored in `year_review_moods` and included in the GDPR export |
-| Audio transcription | the single audio attachment the user selected (5 MB limit re-checked while reading storage) |
+| Rephrase | the draft, up to 10,000 characters |
+| Auto Tag | the draft, up to 10,000 characters, and its current tags |
+| Entry chat | the entry, up to 10,000 characters, and up to 50 messages. Chats are stored per entry. |
+| Entry summary | one owned entry, plus the writer's include and exclude notes |
+| Get Inspired | tag names and counts from the 200 newest entries. No entry text. |
+| Stats mood, tone, subjects | each time stats load with a key available: the 40 newest entries, with date, tags, and up to 1,200 characters each |
+| Writing tendencies | aggregate word, subject, and writing metrics. No entry text. |
+| Duplicate review | the 40 newest entries, up to 400 characters each |
+| Meaning search | the query and the 100 newest entries, up to 1,200 characters each |
+| Organize tags | the 300 newest entries, up to 400 characters each |
+| Year mood arc | on request: up to 5 entries per month, 600 characters each. The reading is stored. |
+| Book weaving | on by default in book export (strict or creative): the date and full text of each chapter's entries, in parts of about 20,000 characters. No images. |
+| Book chapter framing | when chosen: each chapter's dates and text, cut to 20,000 characters, for the introduction and summary |
+| Audio transcription | the one selected audio attachment, up to 5 MB |
 
-All prompts instruct the model not to follow instructions embedded in journal text or tag names. Mood readings that use clinical labels are discarded rather than shown. Journal tag organization is preview-first: applying a reviewed plan does not call the provider again, and the server rechecks that every referenced entry belongs to the user before changing tags. The Stats Connections graph is computed locally from entry IDs, dates, and tags, and never involves an AI provider.
+- Auto Tag, summary, Get Inspired, duplicate review, and tag organization tell the model to ignore instructions in entry text or tags. The other prompts do not yet. New prompts must.
+- Mood readings with clinical labels are discarded. Applying a tag plan does not call the provider again.
+- Usage rows store metadata only (model, tokens, cost, time), never prompts or completions.
 
-Usage accounting stores one metadata-only row per OpenRouter response (user, credential source, model, token counts, cost, timestamp) and never prompts or completions. Local-LLM support would change these assumptions and needs its own ADR.
+## Review Checklist
 
-## Supply Chain and Runtime Hardening
+Runtime hardening and scanning are in [Deployment](./deployment.md#delivery-pipeline). For security-sensitive changes, check:
 
-- The pipeline's Trivy job scans dependencies (including development dependencies), IaC, and secrets and retains JSON/SARIF reports; it reports but does not gate releases. Releases publish immutable, checksummed archives and images. See [Delivery Pipeline](./deployment.md#delivery-pipeline).
-- Server images pin Node 22 on Alpine with security updates applied and omit npm and Yarn from the runtime; the API, worker, and migration job run `node` directly. Web images apply Alpine updates to the pinned unprivileged NGINX image.
-- Application workloads run as UID/GID 10001 with a read-only root filesystem, all capabilities dropped, the runtime seccomp profile, and explicit volumes for writable paths. Database helper jobs use the digest-pinned public PostgreSQL 18.6 image as UID 65534 without registry credentials.
-- Dependency overrides are kept only when a transitive pin needs a security fix (currently Multer, so NestJS's upload middleware cannot keep an older vulnerable copy). Validate dependency changes with the backend tests, a production image build, and an image-level Trivy scan.
-
-## Review Checklist for Security-Sensitive Changes
-
-- Does it add a public route, and is its throttle appropriate?
+- Does it add a public route, and is its throttle right?
 - Does it expose journal data, attachments, settings, or credentials to anyone but the owner?
-- Does every query stay scoped to the authenticated user?
-- Does it send journal content to a third party, and is that listed above?
-- Does it need a larger body limit or a separate upload path?
-- Does it introduce a secret, and how is it rotated?
-- Does it change security or privacy assumptions enough to need an ADR?
+- Is every query scoped to the user, including referenced diaries and entries?
+- Does it send journal content to a third party, and is it in the AI table?
+- Does it need a larger body limit or a new upload path?
+- Does it add a secret, and how is it rotated?
+- Does it change security assumptions enough to need an ADR?

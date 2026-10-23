@@ -1,180 +1,130 @@
 # Operations Runbook
 
-How to verify and troubleshoot Thoughty after it is deployed. How it gets deployed is in the [Deployment Guide](./deployment.md).
-
-Commands target production: the `swirl-cloud` profile in the `apps` namespace, with secrets from External Secrets and PostgreSQL shared in `infra`. For the standalone profile, use the `thoughty` namespace, the bundled `deployment/postgres`, and Vault Agent files under `/vault/secrets` instead.
-
-## Runtime Surfaces
+How to check and troubleshoot a deployed Thoughty. Deployment itself is in the [Deployment Guide](./deployment.md). Commands target production (`apps`). For standalone, use namespace `thoughty` and the Vault Agent files in `/vault/secrets`.
 
 | Surface | Location |
 |---|---|
 | Application | `https://thoughty.swirlit.dev` |
-| GitLab project | `https://gitlab.swirlit.dev/swirlit/thoughty` |
+| GitLab | `https://gitlab.swirlit.dev/swirlit/thoughty` |
 | Argo CD | `https://argocd.swirlit.dev/applications/thoughty` |
 | SonarQube | `https://sonarqube.swirlit.dev/dashboard?id=swirlit%3Athoughty` |
-| Grafana | **Thoughty Overview** dashboard |
-| Kibana | **Thoughty — Application Logs** dashboard |
+| Grafana / Kibana | **Thoughty Overview** / **Thoughty — Application Logs** |
 
-## Health After a Rollout
+## Health Checks
 
 ```bash
 kubectl get application thoughty -n infra
-kubectl get deployment,pod,ingress,cronjob -n apps | grep thoughty
-kubectl get externalsecret -n apps | grep thoughty
-kubectl rollout status deployment/thoughty-server -n apps --timeout=120s
-kubectl rollout status deployment/thoughty-cloud-sync-worker -n apps --timeout=120s
-kubectl rollout status deployment/thoughty-web -n apps --timeout=120s
+kubectl get deployment,pod,cronjob,externalsecret -n apps | grep thoughty
 kubectl exec deployment/thoughty-server -n apps -- wget -qO- http://localhost:3001/api/health
 ```
 
-Healthy means the expected Argo CD revision is `Synced` and `Healthy`, all three Deployments are available, every External Secret reports `Ready=True`, and `/api/health` returns `{"status":"ok"}`. The public API sits behind Keycloak, so an unauthenticated `curl` of `https://thoughty.swirlit.dev/api/health` returns a login redirect rather than JSON; check health from inside the cluster as above.
+Healthy means: Argo CD `Synced` and `Healthy` at the expected revision, all three Deployments available, every External Secret `Ready=True`, and `/api/health` returning `"status":"ok"`. Check from inside the cluster; public `/api` calls without a session get a login redirect. `/api/health` does not check the database; use `thoughty_database_up`.
 
-## Logs
+Probes on API (`/api/health`) and web (`/`): liveness every 10s with a 5s timeout restarts a pod after 6 failures (about a minute); readiness every 5s with a 3s timeout. The worker has no probes.
+
+## Logs and Metrics
 
 ```bash
-kubectl logs deployment/thoughty-server -n apps --tail=200
-kubectl logs deployment/thoughty-cloud-sync-worker -n apps --tail=200
-kubectl logs deployment/thoughty-web -n apps --tail=200
+kubectl logs deployment/<thoughty-server|thoughty-web|thoughty-cloud-sync-worker> -n apps --tail=200
 ```
 
-API and worker logs are one JSON object per line. Request logs include `requestId` (taken from `x-request-id` or generated, and echoed in the response header), `method`, `path`, `statusCode`, `latencyMs`, and `userId` when authenticated. They never include request or response bodies, authorization headers, journal content, attachments, AI prompts or responses, or raw reset/verification tokens.
+API and worker logs are JSON lines. Request logs carry `requestId` (also the `x-request-id` response header), `method`, `path`, `statusCode`, `latencyMs`, and `userId`. They never contain bodies, auth headers, journal content, AI text, or tokens. The Kibana dashboard is imported by the `thoughty-kibana-bootstrap` hook.
 
-Fluent Bit ships stdout to the shared `kubernetes-logs-*` indices. Use the **Thoughty — Application Logs** Kibana dashboard (API, web, and worker; warnings and errors separated; last 24 hours; 30-second refresh), which the repository provisions with the platform's least-privilege dashboard credential, or the generic **Applications Namespace Logs** dashboard filtered by `app`.
-
-## Metrics and Alerts
-
-`/api/metrics` exposes Prometheus text: process uptime and memory, HTTP request counts and latency sums, database connectivity, cloud sync queue counts by status, the stuck-job count, and `thoughty_feature_usage_total{feature,action,status_family}`. Feature labels come from API route groups, never from user input, so usage can be measured without per-user tracking. Nothing user-identifying is exported.
-
-The platform Prometheus discovers the pod scrape annotations, and Grafana loads the repository's **Thoughty Overview** dashboard from its labeled ConfigMap. Where the Prometheus Operator is available, the optional `infra/k8s/components/monitoring` component adds the `thoughty-alerts` PrometheusRule from [ADR 0015](./adr/0015-observability-baseline.md): API unavailable, high 5xx rate, PostgreSQL connectivity down, worker unavailable, cloud sync failures, and stuck sync jobs.
+`/api/metrics` exports request counts and latency, `thoughty_database_up`, `thoughty_cloud_sync_jobs{status}`, `thoughty_cloud_sync_stuck_jobs` (locked over 15 minutes), `thoughty_feature_usage_total` (no user data), and process memory and uptime. Prometheus scrapes the API pods by annotation. The optional `infra/k8s/components/monitoring` component adds the `thoughty-alerts` PrometheusRule ([ADR 0015](./adr/0015-observability-baseline.md)). No overlay includes it, and its expressions select `namespace="thoughty"`: change that to `apps` for production.
 
 ## Migrations
 
-Argo CD runs the migration hook before rolling out the API and worker. If it fails:
+Production runs the `thoughty-db-migrate` hook before the rollout. If it fails, save its logs, check that the `thoughty-database` secret is ready and the database reachable, and read the `migrations` table. Do not restart the worker until the schema matches the code.
 
-- read the hook job logs and keep them before retrying;
-- confirm the External Secrets for the database are `Ready` and the database is reachable;
-- confirm the image contains `dist/scripts/migrate.js` and the timestamped migrations;
-- inspect the `migrations` table for the last completed version;
-- do not restart the worker until the schema matches the deployed code.
-
-To run migrations by hand (standalone: `source /vault/secrets/database && source /vault/secrets/app &&` first):
+Run by hand (standalone needs this after every deploy):
 
 ```bash
 kubectl exec deployment/thoughty-server -n apps -- node dist/scripts/migrate.js
+kubectl exec deployment/thoughty-server -n thoughty -- sh -c \
+  '. /vault/secrets/database && . /vault/secrets/app && node dist/scripts/migrate.js'
 ```
 
 ## Canary Rollouts
 
-With the canary overlay applied (see [Deployment](./deployment.md#canary-infrak8soverlaysswirl-cloud-canary)):
+Read the [canary limits](./deployment.md#canary-infrak8soverlaysswirl-cloud-canary) first.
 
-```bash
-kubectl rollout status deployment/thoughty-server-canary -n apps --timeout=120s
-kubectl rollout status deployment/thoughty-web-canary -n apps --timeout=120s
-kubectl get ingressroute thoughty-canary-ingress -n apps
-kubectl get traefikservice thoughty-api-rollout thoughty-web-rollout -n apps
-```
+1. Set both image tags, apply, and wait:
 
-Smoke-test the canary without shifting traffic. API calls need an authenticated OAuth2 Proxy session; `COOKIE_JAR` is a local cookie file that must never be committed:
+   ```bash
+   kubectl apply -k infra/k8s/overlays/swirl-cloud-canary
+   kubectl rollout status deployment/thoughty-server-canary -n apps
+   kubectl rollout status deployment/thoughty-web-canary -n apps
+   ```
 
-```bash
-curl --cookie "$COOKIE_JAR" -H 'X-Thoughty-Canary: always' https://thoughty.swirlit.dev/api/health
-```
+2. Smoke-test with the override header. `COOKIE_JAR` holds a signed-in session; never commit it.
 
-Shift traffic by setting the stable/canary weights (they total 100 and apply per request; API and web are selected independently). Setting the canary weight to `0` stops ordinary canary traffic while the header still reaches it:
+   ```bash
+   curl --cookie "$COOKIE_JAR" -H 'X-Thoughty-Canary: always' https://thoughty.swirlit.dev/api/health
+   ```
 
-```bash
-for service in thoughty-api-rollout thoughty-web-rollout; do
-  kubectl patch traefikservice "$service" -n apps --type=json \
-    -p '[{"op":"replace","path":"/spec/weighted/services/0/weight","value":90},{"op":"replace","path":"/spec/weighted/services/1/weight","value":10}]'
-done
-```
+3. Shift traffic. Weights are stable/canary, total 100, per request. Reapplying the overlay resets them to 100/0.
 
-Persist the intended weights in Git before the next reconciliation. If the canary misbehaves, set its weight to `0`, save logs from both canary Deployments, then remove it with `kubectl delete -k infra/k8s/overlays/swirl-cloud-canary`. Removing the canary restores the stable Ingress routes without touching shared authentication or stable Services.
+   ```bash
+   for s in thoughty-api-rollout thoughty-web-rollout; do
+     kubectl patch traefikservice "$s" -n apps --type=json \
+       -p '[{"op":"replace","path":"/spec/weighted/services/0/weight","value":90},{"op":"replace","path":"/spec/weighted/services/1/weight","value":10}]'
+   done
+   ```
+
+4. To abort, set the canary weight to `0`, save both canary logs, and run `kubectl delete -k infra/k8s/overlays/swirl-cloud-canary`. The stable routes keep working.
 
 ## Troubleshooting
 
-### Secrets
+| Symptom | Check |
+|---|---|
+| Startup failure, DB auth or decryption errors | `kubectl describe externalsecret <name> -n apps`; `CONFIG_ENCRYPTION_SECRET` set. Check names only, never print values. |
+| Restarts under load | Liveness fails after a minute of slow `/api/health`. Check node CPU and the 500m / 512Mi limits. |
+| `02-deploy` timeout | Argo CD status and hook logs. |
+| Attachment errors | S3 endpoint, bucket, credentials; each `stored_filename` exists in the bucket. |
+| AI or cloud provider errors | `OPENROUTER_API_KEY`; OAuth client IDs, secrets, and redirect URIs. |
+| SSO fails | `oauth2-proxy`, the `thoughty-sso` Middleware, and the `KEYCLOAK_*` values. Never trust identity headers alone. |
 
-Missing or wrong secrets show up as startup failures, database authentication errors, provider auth failures, disabled AI features, or token decryption errors. Check `kubectl get externalsecret -n apps` and `kubectl describe externalsecret <name> -n apps` (standalone: list `/vault/secrets` in the pod and test for file presence). Only ever verify presence and variable names; never print values into logs or chat.
+The worker runs three loops, never in API pods:
 
-### Cloud sync worker
+| Loop | Interval | Error log |
+|---|---|---|
+| Cloud sync | 60s scan, 5s poll | `Failed to process queued cloud sync jobs` |
+| Weekly memoir questions and email | 60s | `Weekly memoir email for user <id> failed` (not retried) |
+| Recycle-bin purge (deleted over 30 days, with files) | hourly | `Failed to empty expired recycle bin entries` |
 
-The worker claims due jobs from `cloud_sync_jobs`, holds a renewable lease, and records completion or failure.
+A sync lease older than 15 minutes is requeued on the next scan, or failed after 3 attempts. Inspect before changing data:
 
 ```sql
-select id, user_id, provider, status, attempt_count, run_at, locked_at, locked_by, last_error
+select id, provider, status, attempt_count, locked_at, last_error
 from cloud_sync_jobs order by updated_at desc limit 20;
+select user_id, next_delivery_at from memoir_programs
+where status = 'active' and next_delivery_at <= now() limit 20;
 ```
 
-If jobs look stuck, confirm the worker runs the same image as the API, look for `status = 'running'` with an old `locked_at`, and read `last_error` before changing data. Prefer a reviewed recovery script over ad hoc SQL for repeated problems.
-
-### Weekly memoir questions
-
-The worker also moves due memoir programs to their next question once a minute and emails it when SMTP is configured. A failed email is logged as `Weekly memoir email for user <id> failed` and is not retried; the new question is still on the writer's Memoir page.
-
-```sql
-select user_id, status, email_enabled, current_question_id, next_delivery_at, last_emailed_at
-from memoir_programs where status = 'active' and next_delivery_at <= now() order by next_delivery_at limit 20;
-```
-
-Rows that stay due mean the worker is not running or is failing before its transaction commits; check its logs and rollout first.
-
-### Attachments
-
-Failures can involve PostgreSQL metadata and the object store. Check the S3 endpoint, bucket, region, and credentials; API logs around upload and download; the attachment rows for the affected entry; and whether each `stored_filename` exists in the bucket. `original_filename` is display metadata, never the object key.
-
-### AI and OAuth integrations
-
-AI features need `OPENROUTER_API_KEY` or a personal key saved by the user. Cloud providers need their OAuth client IDs and secrets and redirect URIs that match the deployed URLs. Check API logs for provider HTTP errors, and confirm the UI degrades cleanly when an optional integration is unset.
-
-### Keycloak SSO
-
-An unauthenticated API request should redirect to Keycloak's `swirlit` realm and return to the original URL after login; `GET /api/auth/sso` then exchanges the forwarded Keycloak token for a Thoughty session. If the exchange fails, check the `oauth2-proxy` Deployment, the ForwardAuth Middleware, the issuer, the internal JWKS URL, and the token audience. Never weaken verification or trust identity headers on their own.
+Memoir rows that stay due mean the worker is down or failing.
 
 ## Backup and Recovery
 
-### Objectives
-
 | Objective | Target |
 |---|---|
-| RPO | 15 minutes for PostgreSQL (WAL archiving or managed PITR); 1 hour for attachments (bucket versioning and replication) |
-| RTO | 4 hours for a full restore, including secrets and rollout |
-| Retention | 35 daily snapshots plus 7 days of point-in-time logs; attachment versions for at least 35 days |
-| Restore drills | Quarterly, in a non-production environment, report kept for 1 year |
+| RPO | 15 minutes for PostgreSQL; 1 hour for attachments |
+| RTO | 4 hours |
+| Retention | 35 daily dumps, 7 days of WAL, 35 days of attachment versions |
+| Drills | quarterly, outside production |
 
-### What is protected
+The `postgres-backup` CronJob runs at 02:15 UTC. It uploads `base/thoughty-postgres-<timestamp>.dump` and `.sha256` to `POSTGRES_BACKUP_BUCKET` and never prunes, so set lifecycle rules. Standalone also uploads WAL to `wal/` every minute. Production PostgreSQL point-in-time recovery belongs to the platform. Attachment buckets need versioning, encryption, and delete protection. Keep `CONFIG_ENCRYPTION_SECRET` restorable on its own.
 
-- **PostgreSQL** is the source of truth for users, diaries, entries, revisions, settings, sessions, sync jobs, AI chat history and usage, book versions, and attachment metadata. The `postgres-backup` CronJob (`infra/k8s/base/postgres-backup.yaml`) takes a daily custom-format `pg_dump` and uploads it with a SHA-256 checksum; the standalone PostgreSQL also archives WAL through a sidecar. Endpoint, bucket, and prefixes come from the ConfigMap; credentials from `apps/thoughty/backup` (standalone: `secret/thoughty/backup`). The production CronJob stays suspended until those are configured.
-- **Attachment blobs** live in S3-compatible storage. The bucket needs versioning, server-side encryption, lifecycle protection against immediate hard deletion, and replication where available.
-- **Secrets** must be restorable separately, especially `CONFIG_ENCRYPTION_SECRET`, without which encrypted provider tokens and personal AI keys are unreadable. JWT, refresh, and 2FA secrets must be restorable for controlled recovery and rotatable afterwards.
+Enable production backups: fill `apps/thoughty/backup`, set `POSTGRES_BACKUP_*` in `configmap-patch.yaml`, remove `suspend: true` from `postgres-backup-patch.yaml`, commit, then test with `kubectl create job --from=cronjob/postgres-backup backup-test -n apps`.
 
-### Restore procedure
+Restore:
 
-1. Declare the incident and stop the cloud sync worker if corruption, deletion, or replay is possible.
-2. Choose the newest safe PostgreSQL restore point and the matching attachment version window.
-3. Verify the backup checksum, then restore into an isolated database; never overwrite production in place.
-4. Restore or expose the matching attachment versions.
-5. Restore secrets, checking presence and names only.
-6. Run migrations if the target image needs them.
-7. Validate: `/api/health`, the counts below compared with the backup, and at least three sampled attachment downloads.
-8. Point the workloads at the restored database and bucket only after validation passes.
-9. Rotate credentials if the incident involved exposure or compromise.
-10. Write the incident report: timeline, restore point, estimated data loss, validation evidence, and follow-ups.
+1. Stop the worker if data loss can spread; its purge deletes for good. Commit `replicas: 0`, because self-heal reverts `kubectl scale`.
+2. Pick a restore point and the matching attachment versions.
+3. Download the dump as `thoughty-postgres.dump` (the name the checksum expects) and run `sha256sum -c`.
+4. Restore into an isolated database: `pg_restore --no-owner --no-acl -d <db> thoughty-postgres.dump`.
+5. Restore attachments and secrets. Run migrations if needed.
+6. Compare row counts (`users`, `entries`, `entry_revisions`, `attachments`) and download three attachments.
+7. Switch workloads to the restored data only after that passes. Rotate exposed credentials.
+8. Record the timeline, restore point, data loss, and evidence.
 
-```sql
-select count(*) from users where deleted_at is null;
-select count(*) from diaries;
-select count(*) from entries;
-select count(*) from entry_revisions;
-select count(*) from attachments;
-select count(*) from cloud_sync_jobs;
-select user_id, entry_id, stored_filename from attachments order by updated_at desc limit 20;
-```
-
-Every sampled `stored_filename` must exist in the restored bucket. Drills should also export one test user's data through the app and record elapsed time against the RTO and the newest restored write against the RPO.
-
-### Open follow-ups
-
-- Automate the attachment inventory comparison against database metadata.
-- Alert on missed backups, failed WAL archiving, and failed restore drills.
-- Decide whether production needs a cross-region standby or managed replicas.
+Follow-ups: automate the attachment inventory check, alert on missed backups and WAL failures, and decide on a cross-region standby.

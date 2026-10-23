@@ -1,10 +1,10 @@
 # Standalone Vault Setup
 
-These commands configure the independent Vault Agent profile. Swirl Cloud production uses the `apps/thoughty/*` External Secrets contracts created by `infra/scripts/configure-gitlab.sh`; do not apply this standalone setup there.
+Vault setup for the [standalone profile](deployment.md#standalone-infrak8soverlaysstandalone) in namespace `thoughty`. Production uses External Secrets; do not apply this there.
 
-## Enable Kubernetes Authentication
+## 1. Enable Kubernetes authentication
 
-Run once per independent cluster:
+Once per cluster:
 
 ```bash
 vault auth enable kubernetes
@@ -12,9 +12,9 @@ vault write auth/kubernetes/config \
   kubernetes_host="https://$KUBERNETES_SERVICE_HOST:$KUBERNETES_SERVICE_PORT"
 ```
 
-## Store Standalone Secrets
+## 2. Store secrets
 
-Replace every placeholder before running these commands:
+Replace every placeholder.
 
 ```bash
 vault kv put secret/thoughty/database \
@@ -47,9 +47,9 @@ vault kv put secret/thoughty/backup \
   POSTGRES_BACKUP_SECRET_KEY="<backup-bucket-secret-key>"
 ```
 
-`JWT_SECRET`, `REFRESH_SECRET`, and `TWO_FACTOR_SECRET` are required for production authentication. `CONFIG_ENCRYPTION_SECRET` protects encrypted user configuration and cloud-sync tokens. Attachment and backup credentials should be scoped only to their required buckets or prefixes.
+The API and worker do not start without `CONFIG_ENCRYPTION_SECRET`. The JWT, refresh, and 2FA secrets fall back to insecure defaults, so always set them. Scope S3 and backup credentials to their own buckets.
 
-## Create Policies
+## 3. Create policies
 
 ```bash
 vault policy write thoughty-server - <<'EOF'
@@ -71,7 +71,9 @@ path "secret/data/thoughty/backup" {
 EOF
 ```
 
-## Bind Service Accounts
+## 4. Bind service accounts
+
+`thoughty-server` serves the API and worker; `thoughty-postgres` serves PostgreSQL and backups.
 
 ```bash
 vault write auth/kubernetes/role/thoughty-server \

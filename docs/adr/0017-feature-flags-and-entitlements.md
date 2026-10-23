@@ -33,3 +33,7 @@ Treat feature flags and entitlements as separate concepts.
 - The configuration model may need new tables or settings for flags, subscriptions, trials, and user-owned provider keys.
 - Generated API contracts should expose enough state for the frontend to explain available/unavailable features without duplicating enforcement logic.
 - The initial implementation supports a remote feature flag provider through `FEATURE_FLAG_PROVIDER_URL`, with cached reads and inline fallback flags for local development.
+
+## Implementation Note (2026-10-23)
+
+Flags are served by `GET /api/config/feature-flags`, but no server module checks a flag and the web app does not fetch them yet, so no feature is currently switched on or off by a flag. Entitlements and trials are not implemented.

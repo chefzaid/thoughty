@@ -1,6 +1,6 @@
 # Data Model Reference
 
-The practical reference for Thoughty's relational model. [ADR 0010](./adr/0010-journal-data-model.md) explains the decision; this file lists the entities and the rules contributors must preserve. Entities live in `thoughty-server/src/database/entities`.
+The practical reference for Thoughty's relational model. [ADR 0010](./adr/0010-journal-data-model.md) explains the decision; this file lists the entities and the rules contributors must preserve. Columns are documented by the entity files in [`thoughty-server/src/database/entities`](../thoughty-server/src/database/entities); the schema itself is defined by the [migrations](../thoughty-server/src/database/migrations).
 
 ## Entity Relationship Overview
 
@@ -8,336 +8,122 @@ The practical reference for Thoughty's relational model. [ADR 0010](./adr/0010-j
 erDiagram
     User ||--o{ Diary : owns
     User ||--o{ Entry : owns
-    User ||--o{ RefreshToken : has
-    User ||--o{ Setting : has
     User ||--o{ Attachment : owns
+    User ||--o{ Setting : has
+    User ||--o{ RefreshToken : has
     User ||--o{ CloudSyncJob : queues
     User ||--o{ AiUsageEvent : records
     User ||--o{ BookVersion : saves
     User ||--o{ FeatureRequest : submits
+    User ||--o{ FeatureRequestVote : casts
     FeatureRequest ||--o{ FeatureRequestVote : receives
     User ||--o{ UserFollow : follows
     User ||--o{ EntryComment : writes
     User ||--o{ EntryLike : gives
     User ||--o{ CommentLike : gives
-    EntryComment ||--o{ CommentLike : receives
     User ||--o| MemoirProgram : runs
-    Diary ||--o{ MemoirProgram : collects
     User ||--o{ MemoirAnswer : writes
-    Entry ||--o| MemoirAnswer : answers
     User ||--o{ YearReviewMood : keeps
-    Diary ||--o{ YearReviewMood : scopes
 
     Diary ||--o{ Entry : contains
     Diary ||--o{ BookVersion : scopes
+    Diary ||--o{ MemoirProgram : collects
+    Diary ||--o{ YearReviewMood : scopes
+
     Entry ||--o{ EntryRevision : snapshots
     Entry ||--o{ Attachment : links
     Entry ||--o| AiChatHistory : has
     Entry ||--o{ EntryComment : receives
     Entry ||--o{ EntryLike : receives
-
-    User {
-        int id
-        string username
-        string email
-        string passwordHash
-        string authProvider
-        string providerId
-        boolean emailVerified
-        boolean twoFactorEnabled
-        string twoFactorChallengeTokenHash
-        string twoFactorChallengeCodeHash
-        string twoFactorChallengePurpose
-        datetime twoFactorChallengeExpires
-        datetime deletedAt
-    }
-
-    Diary {
-        int id
-        int userId
-        string name
-        string icon
-        string color
-        string visibility
-        boolean isDefault
-        int position
-    }
-
-    Entry {
-        int id
-        int userId
-        int diaryId
-        date date
-        int index
-        time timeOfDay
-        string title
-        smallint mood
-        string feelings
-        string tags
-        text content
-        string format
-        string visibility
-        string moderationStatus
-        boolean isFavorite
-        boolean isArchived
-        datetime deletedAt
-        tsvector searchVector
-    }
-
-    EntryRevision {
-        int id
-        int entryId
-        int userId
-        text content
-        string title
-        time timeOfDay
-        smallint mood
-        string feelings
-        string tags
-        string date
-        string format
-        string visibility
-        datetime createdAt
-    }
-
-    Attachment {
-        int id
-        int userId
-        int entryId
-        string originalFilename
-        string storedFilename
-        string mimetype
-        int size
-        text transcript
-        datetime transcribedAt
-    }
-
-    Setting {
-        int id
-        int userId
-        string key
-        text value
-    }
-
-    RefreshToken {
-        int id
-        int userId
-        string token
-        datetime expiresAt
-    }
-
-    CloudSyncJob {
-        int id
-        int userId
-        string provider
-        string triggerType
-        string status
-        int attemptCount
-        int maxAttempts
-        datetime runAt
-        datetime lockedAt
-        string lockedBy
-    }
-
-    AiChatHistory {
-        int id
-        int userId
-        int entryId
-        json messages
-    }
-
-    AiUsageEvent {
-        int id
-        int userId
-        string credentialSource
-        string model
-        int totalTokens
-        decimal cost
-    }
-
-    BookVersion {
-        int id
-        int userId
-        int diaryId
-        string scopeKey
-        int versionNumber
-        string format
-        bytea content
-        json manifest
-    }
-
-    FeatureRequest {
-        int id
-        int userId
-        string title
-        string status
-    }
-
-    FeatureRequestVote {
-        int id
-        int featureRequestId
-        int userId
-    }
-
-    UserFollow {
-        int followerId
-        int followedId
-        datetime createdAt
-    }
-
-    EntryComment {
-        int id
-        int entryId
-        int userId
-        string content
-        datetime createdAt
-    }
-
-    EntryLike {
-        int entryId
-        int userId
-        datetime createdAt
-    }
-
-    CommentLike {
-        int commentId
-        int userId
-        datetime createdAt
-    }
-
-    MemoirProgram {
-        int id
-        int userId
-        int diaryId
-        string status
-        boolean emailEnabled
-        int deliveryWeekday
-        string timeZone
-        string currentQuestionId
-        datetime nextDeliveryAt
-        datetime lastEmailedAt
-    }
-
-    MemoirAnswer {
-        int userId
-        string questionId
-        int entryId
-        datetime createdAt
-    }
+    Entry ||--o| MemoirAnswer : answers
+    EntryComment ||--o{ CommentLike : receives
 ```
 
-## Guided Memoir
-
-`MemoirProgram` holds one guided memoir per user: the diary that collects answers, `active` or `paused`, the email choice, and the weekly schedule (`delivery_weekday` 0 = Sunday and an IANA `time_zone`, delivered at 09:00 local; `TIMESTAMPTZ` columns). `current_question_id` is this week's question and `next_delivery_at` drives the worker. The question catalogue is code (`thoughty-server/src/modules/memoir/memoir-questions.ts`), so questions are referenced by stable string ids rather than rows. `MemoirAnswer` links a question to the entry that answers it, keyed by `(user_id, question_id)` with a unique `entry_id`: one answer per question. Answers are ordinary private entries; their text lives only in `entries`.
-
-## Year Review Moods
-
-`YearReviewMood` keeps the latest AI reading of a year's mood: the writer, the year, the diary (null for all diaries), one `{month, mood, valence}` item per month in a JSONB array (valence from -2 to 2), a summary, and how many entries were read. A unique index on `(user_id, year, COALESCE(diary_id, 0))` keeps one reading per scope; reading again replaces it in one transaction. Deleting the user or the diary deletes the reading. Everything else in the year in review is computed from entries on request and not stored.
-
-## Entry Moods
-
-An entry can carry a mood check-in that the writer chose: `entries.mood` (`SMALLINT`, nullable, checked by `chk_entries_mood` to lie between 1, very low, and 5, very good) and `entries.feelings` (`TEXT[]`, `NOT NULL DEFAULT '{}'`). Feelings can be recorded without a mood. They are stored lowercase without duplicates, at most 10 of at most 40 characters, with the characters that would break the export formats (commas, semicolons, pipes, braces, brackets, backticks, and double quotes) taken out (`normalizeFeelings`). The curated feelings the app offers are stored by their English key (`calm`, `tired`), whatever the writer's language, so stats count "calm" and "calme" as one feeling; words the writer types are kept in their own words. Revisions keep both columns, with the same check (`chk_entry_revisions_mood`).
-
-The partial index `idx_entries_user_mood_date` on `(user_id, mood, date) WHERE mood IS NOT NULL` serves the journal's mood filter by level (`mood=4,5`) or any mood (`mood=any`; `mood=none` lists entries without one) and the mood stats. The stats (`StatsMoodService`) and the year in review (`summarizeRecordedMoods`) are computed from these columns on request, with the usual diary scope and without entries in the recycle bin; nothing about them is stored. The mood is private: the public feed selects its columns explicitly and leaves both out, and share text never includes it.
-
-`EntryMood1786147200000` adds the columns, checks, and index. Both columns have constant defaults, so no existing row is rewritten; rolling back drops them with what was recorded.
-
-## Task List Ticks
-
-Markdown task list items (`- [ ]` and `- [x]`) are plain text in `entries.content`; nothing else stores them. `PATCH /api/entries/:id/tasks` sets the box on one line of the content (counted from 0) and changes nothing else (`EntryTaskListService`). It locks the entry row (`FOR UPDATE`) for the change, so ticks sent at the same time are applied one after the other, and answers `409` when the line is no longer a task, for example after an edit on another device. Like any edit it first saves the entry as it was to `entry_revisions`, except when the latest revision is under ten minutes old and the entry differs from it only in its ticks (`revisionCoversTicks`): that revision already holds the version from before the ticking began, so a run of ticks keeps one revision. Plain-text entries are refused, and entries in the recycle bin are not found. No migration was needed.
-
-## Recycle Bin
-
-Deleting an entry sets `entries.deleted_at` (`TIMESTAMPTZ`, a TypeORM delete date column) instead of removing the row. TypeORM leaves these rows out of every entity query and join, and the raw SQL reads (tag usage, achievements, the public feed) filter `deleted_at IS NULL` themselves, so an entry in the bin is invisible everywhere except the recycle bin endpoints (`/api/recycle-bin`). Its revisions, attachments, AI chat, comments, likes, and memoir answer row stay in place. Live entries on the same day are renumbered when one is deleted; a restored entry goes back at the end of its day, into its diary or into the default diary when that diary no longer exists. The partial index `idx_entries_user_deleted_at` on `(user_id, deleted_at)` serves the bin listing and the purge.
-
-Entries stay in the bin for 30 days. The background worker purges older ones hourly in batches, locking rows with `FOR UPDATE SKIP LOCKED` so replicas never purge the same entry twice: the entry rows are hard-deleted (cascading their revisions, attachment rows, chat, comments, likes, and memoir answers) and the attachments' objects are removed from storage after the transaction commits. Deleting forever from the bin, one entry or the whole bin, takes the same path.
-
-## Imported Entries
-
-Entries brought in from Day One or Journey keep `import_ref`, the source app and the entry's ID there (`dayone:<uuid>`, `journey:<id>`), with a partial unique index on `(user_id, import_ref)` that covers only entries outside the recycle bin. An import looks entries up by this reference before creating them, so importing the same export again returns the existing entries (and the names of their attachments) instead of duplicating them. Entries that were not imported leave it null. An entry in the bin does not hold its reference: importing the same export again creates a new entry, and restoring the old one then clears its reference so the two do not collide. Imported entries are private Markdown entries, numbered after the entries already on their day; their photos and recordings are ordinary attachments.
-
-## Public Feed Eligibility
-
-`Entry.visibility` and `Entry.moderationStatus` are independent. Visibility is the owner's explicit sharing choice; moderation status is a platform-controlled state with `visible`, `hidden`, `under_review`, and `removed` values. The public feed reads only entries where visibility and moderation are both `public`/`visible`, the entry is not archived or in the recycle bin, and its author is not deleted. The composite `idx_entries_public_feed` index supports these bounded, newest-first reads.
-
-The feed queries the relational entry/user model directly and projects only feed-safe author fields. `UserFollow` is a separate relation keyed by `(follower_id, followed_id)`, with a check that nobody follows themselves and an index on `followed_id` for follower counts; the **Following** feed scope applies the same eligibility rules to followed authors only. A user can only be followed while they have at least one feed-eligible entry, so follows cannot probe private accounts. `EntryComment` holds plain-text comments of at most 1,000 non-blank characters; comments can only be read or written while their entry is feed-eligible, and comments by deleted users are neither listed nor counted. `EntryLike` and `CommentLike` allow one like per user and item (keyed by item and user); nobody can like their own entry or comment, likes follow the same feed-eligibility rule, and likes by deleted users are not counted. Report and enforcement records remain separate future entities rather than being encoded into entry ownership or visibility.
+Uniqueness rules worth knowing: diary names per user, one setting per key, one AI chat per entry, one vote per idea, one like per user and item, one follow per pair (never yourself), one memoir program per user, and one memoir answer per question and per entry. Comments hold 1 to 1,000 non-blank characters.
 
 ## Ownership and Deletion Rules
 
-| Entity          | Ownership rule                                         | Deletion behavior                                                                                                                         |
-| --------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `User`          | Root owner for private journal data                    | Accounts are soft-deleted at the application layer; user-owned rows use cascade relationships where hard deletion is performed            |
-| `Diary`         | Owned by one user                                      | Hard deletion cascades from user; deleting a diary should move entries to the default diary when handled through the application workflow |
-| `Entry`         | Owned by one user and optionally assigned to one diary | Deleting moves it to the recycle bin (`deleted_at`) for 30 days; purging it then hard-deletes the row, cascading attachments, revisions, AI chat history, comments, likes, and memoir answers |
-| `EntryRevision` | Snapshot for one entry and user                        | Deleted with the parent entry                                                                                                             |
-| `Attachment`    | Owned by one user and optionally linked to one entry   | Database row, including any cached audio transcript, is deleted with user/entry; object-store cleanup must be considered separately       |
-| `Setting`       | Key/value setting for one user                         | Deleted with the user                                                                                                                     |
-| `RefreshToken`  | Session continuation token for one user                | Deleted with the user; revoked by deleting stored rows during sensitive account events                                                    |
-| `CloudSyncJob`  | Durable sync work item for one user/provider           | Deleted with the user in the SQL migration model                                                                                          |
-| `AiChatHistory` | One chat transcript per user/entry pair                | Deleted with the parent entry                                                                                                             |
-| `AiUsageEvent`  | Numerical OpenRouter usage metadata for one user       | Deleted with the user; contains no prompt or completion content                                                                            |
-| `BookVersion`   | Immutable generated book artifact in a user/diary scope | Deleted with the user or selected diary; all-diaries versions are deleted with the user                                                   |
-| `FeatureRequest` / `FeatureRequestVote` | Public idea and one vote per user per idea | Requests are deleted with their author; votes with their request or voter |
-| `UserFollow` | One follow per follower/followed pair | Deleted with either user; soft-deleted users are hidden from follow lists and follower counts |
-| `MemoirProgram` | One guided memoir per user | Deleted with the user or when the memoir is stopped; deleting its diary keeps the program with no diary until another is chosen |
-| `MemoirAnswer` | Links one question to one answer entry of the same user | Deleted with the user or the entry; while the entry is in the recycle bin the question counts as unanswered, and answering it again points the row at the new entry; kept when the memoir is stopped |
-| `EntryComment` | Written by one user on one entry | Deleted with the entry or its author; removable by its author or the entry owner |
-| `EntryLike` / `CommentLike` | One like per user per entry or comment | Deleted with the liked item or the user |
+Every table except `users` references a user, and those foreign keys cascade. Accounts are soft-deleted (`users.deleted_at`), so the user cascades run only when an operator hard-deletes a user row.
 
-Entry indexes cover the common reads: user/date timelines, diary-scoped timelines, visibility, archive and favorite filters, full-text search, and the public feed.
+| Entity | Deletion behavior |
+|---|---|
+| `User` | Deleting an account sets `deleted_at` and removes refresh tokens. Deleted users cannot sign in, and their content leaves the feed, follows, comments, likes, and counts. |
+| `Diary` | The default diary cannot be deleted. Deleting another first moves its entries, including those in the recycle bin, to the default diary. `entries.diary_id` is `ON DELETE SET NULL` as a safety net. |
+| `Entry` | Deleting moves it to the [recycle bin](#recycle-bin). Purging it hard-deletes the row, which cascades revisions, attachment rows, AI chat, comments, likes, and the memoir answer. |
+| `EntryRevision`, `AiChatHistory`, `EntryComment`, `EntryLike`, `CommentLike` | Deleted with their entry (or comment). Comments and likes also go with their author. A comment can be removed by its author or the entry owner. |
+| `Attachment` | The row is deleted with its entry or user. Purging an entry and deleting an attachment also remove the stored object. Any other hard delete leaves the object behind. |
+| `MemoirProgram` | Deleted with the user or when the memoir is stopped. Deleting its diary keeps the program with no diary (`SET NULL`) until another is chosen. |
+| `MemoirAnswer` | Deleted with the user or the entry. Kept when the memoir is stopped. While the entry is in the recycle bin the question counts as unanswered; answering it again points the row at the new entry. |
+| `BookVersion`, `YearReviewMood` | Deleted with the user or their diary. |
+| Everything else | Deleted with the user. Votes also go with their request. |
 
-## Journal Coordinates
+## Entries
 
-Entries are not only identified by database `id`. The user-facing journal model also treats `date` and same-day `index` as meaningful coordinates.
+### Journal Coordinates
 
-- `date` is a journal date, not just the date part of `created_at`.
-- `index` distinguishes multiple entries on the same date.
-- Entry permalinks use stable IDs, while cross-reference text can use date-plus-index forms such as `[[2024-01-15]]` and `[[2024-01-15#2]]`.
-- `time_of_day` (`TIME(0)`, nullable, served as `HH:MM`) and `title` (`VARCHAR(200)`, nullable, one line) are optional; revisions keep both.
-- `index` is the link number and stays stable: a new entry takes the next number of its day, and times never renumber anything, so `[[date#n]]` keeps resolving to the same entry. Deleting an entry still closes the gap in its day.
-- A day is listed by `time_of_day ASC NULLS FIRST, index ASC` (`addSameDayOrder`): entries without a time in their manual order, then entries with a time, earliest first. The journal, the entry-page lookup behind `[[date#n]]` links (a row comparison over the same three keys), backlinks, books, PDF/HTML/EPUB documents, and the year in review use this order.
-- Drag reordering applies to entries without a time. `PATCH /api/entries/reorder` gives the listed entries the indexes they already hold, sorted, in the new order, so entries left out of the list (the timed ones) keep their numbers.
-- Text exports (TXT, JSON, Markdown, CSV, the Markdown folder) list a day by `index`, because an import numbers a day's entries in file order: a file imported into an empty journal gives every entry its number back.
+An entry is identified by `id`, but its journal `date` (chosen by the writer, not taken from `created_at`) and same-day `index` are product-level coordinates too.
 
-## Diary Rules
+- `index` numbers the entries of one day. A new entry takes the next number of its day. Deleting an entry closes the gap; a restored entry goes to the end of its day.
+- Permalinks use `id`. Cross-references use `[[2024-01-15]]` and `[[2024-01-15#2]]`, which resolve by date and index.
+- `title` (`VARCHAR(200)`, one line) and `time_of_day` (`TIME(0)`, served as `HH:MM`) are optional. Setting a time never renumbers anything, so `[[date#n]]` keeps pointing at the same entry.
+- A day is listed by `time_of_day ASC NULLS FIRST, index ASC` (`addSameDayOrder`): untimed entries in their manual order, then timed entries earliest first. The journal, `[[date#n]]` lookups, backlinks, books, PDF/HTML/EPUB documents, and the year in review use this order.
+- Drag reordering (`PATCH /api/entries/reorder`) applies to untimed entries. It reuses the indexes the listed entries already hold, so entries left out of the list keep their numbers.
+- Text exports (TXT, JSON, Markdown, CSV, the Markdown folder) list a day by `index`. An import numbers a day's entries in file order, so importing into an empty journal restores every number.
 
-- Diary names are unique per user.
-- One diary should act as the default capture target.
-- The default diary is protected from deletion by the application workflow.
-- When a non-default diary is deleted through the application workflow, entries, including those in the recycle bin, should be moved to the current default diary instead of being stranded.
-- `All Diaries` is a view concern, not a persisted diary row.
+### Recycle Bin
 
-## Tags and Metadata
+Deleting entries (singly, in bulk, or with delete-all) sets `entries.deleted_at`, a TypeORM delete date column. TypeORM leaves these rows out of entity queries and joins. **Raw SQL, `update`, and `delete` calls must add `deleted_at IS NULL` themselves**, as the tag usage, achievements, and public feed queries do. An entry in the bin is visible only through `/api/recycle-bin`.
 
-There is no tag table. Tags are strings in the `entries.tags` PostgreSQL text array (GIN-indexed for containment filters), and per-user tag metadata (color and category, keyed by lowercase tag name) is a JSON value in the `tagMetadata` setting.
+- Related rows stay in place while the entry is in the bin. Restoring puts it back at the end of its day, in its diary or in the default diary when that diary is gone.
+- Entries stay 30 days. The worker purges older ones hourly in batches of 100 with `FOR UPDATE SKIP LOCKED`, then removes their attachment objects after commit. Deleting forever from the bin takes the same path.
+- The partial index `idx_entries_user_deleted_at` on `(user_id, deleted_at) WHERE deleted_at IS NOT NULL` serves the bin listing and the purge.
 
-- The set of known tags is the union of tags used by entries and tags present in metadata. A tag created in the Tags view exists only as metadata until an entry uses it.
-- `GET /api/entries/tags` returns each used tag with its entry count; `PATCH /api/entries/tags/rename` and `DELETE /api/entries/tags?tag=` rewrite every owned entry's array. The client updates the metadata setting alongside, so both stay consistent. Renaming a tag no entry uses only moves its metadata.
-- There is no separate notion of themes: AI tagging, journal tag organization, and books all read and write the same tag arrays. A tag's **category** is different: it is an optional label (such as Work or Health) stored in tag metadata to group related tags in pickers, lists, and charts.
-- Entry-to-entry and tag co-occurrence correlations are derived on demand from `entries.tags` and never persisted.
+### Imported Entries
+
+Entries imported from Day One or Journey ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)) keep `import_ref`, the source app and its entry ID (`dayone:<uuid>`, `journey:<id>`). Other entries leave it null.
+
+- An import looks entries up by reference first, so running the same import again returns the existing entries and their attachment names instead of duplicating them.
+- The partial unique index `idx_entries_user_import_ref` on `(user_id, import_ref)` skips entries in the recycle bin. Importing again creates a new entry; restoring the old one then clears its reference.
+- Imported entries are private Markdown entries, numbered after the entries already on their day. Their media are ordinary attachments.
+
+### Moods and Feelings
+
+- `mood` is a nullable `SMALLINT` from 1 (very low) to 5 (very good), checked by `chk_entries_mood`. `feelings` is `TEXT[] NOT NULL DEFAULT '{}'` and can be set without a mood.
+- `normalizeFeelings` stores feelings lowercase and without duplicates: at most 10, each at most 40 characters, with the characters that would break the export formats removed (commas, semicolons, pipes, braces, brackets, backticks, and double quotes).
+- Curated feelings are stored by their English key (`calm`), whatever the interface language. Words the writer types are kept as written.
+- The partial index `idx_entries_user_mood_date` on `(user_id, mood, date) WHERE mood IS NOT NULL` serves the mood filter (`mood=4,5`, `mood=any`, `mood=none`) and mood stats. Stats (`StatsMoodService`) and the year in review compute from these columns on request.
+- Mood and feelings are private: the public feed and share text never include them.
+
+### Task List Ticks
+
+Markdown task items (`- [ ]`, `- [x]`) are plain text in `entries.content`; nothing else stores them.
+
+- `PATCH /api/entries/:id/tasks` (`EntryTaskListService`) sets the box on one 0-based line and changes nothing else. It locks the row (`FOR UPDATE`) so concurrent ticks serialize, and answers `409` when the line is no longer a task. Plain-text entries are refused.
+- It saves a revision like any edit, unless the latest revision is under ten minutes old and differs only in ticks (`revisionCoversTicks`), so a run of ticks keeps one revision.
+
+## Tags
+
+There is no tag table. Tags are strings in the `entries.tags` text array, GIN-indexed for containment filters. Per-user tag metadata (color and category, keyed by lowercase tag name) is a JSON value in the `tagMetadata` setting.
+
+- The known tags are the union of tags used by entries and tags in metadata. A tag created in the Tags view exists only as metadata until an entry uses it.
+- `GET /api/entries/tags` returns used tags with counts. `PATCH /api/entries/tags/rename` and `DELETE /api/entries/tags?tag=` rewrite every owned entry's array; the client updates the metadata alongside.
+- AI tagging, tag organization, and books use the same arrays. A **category** (such as Work) only groups tags in the UI. Tag correlations are computed on demand.
 - If tags ever need their own ownership, permissions, or relationships, revisit this model with a new ADR.
 
 ## Full-Text Search
 
-`entries.search_vector` is a stored generated `tsvector` (`GENERATED ALWAYS AS (entry_search_vector(title, content, tags)) STORED`), so PostgreSQL recomputes it on every insert and update and the application never writes or loads it (the entity column is `select`, `insert`, and `update` false). Titles and tags are weighted `A` and content `B`. The GIN index `idx_entries_user_search_vector` covers `(user_id, search_vector)` through the `btree_gin` extension, so a search reads only the searching writer's matching entries rather than every writer's. The `tags` GIN index still serves the exact tag-name match that runs alongside, which keeps tags such as `c++` findable when PostgreSQL reads no word in them.
+`entries.search_vector` is a stored generated `tsvector`, `GENERATED ALWAYS AS (entry_search_vector(title, content, tags)) STORED`. PostgreSQL keeps it current; the application never selects or writes it.
 
-**Language configuration.** Each entry is indexed twice, with `thoughty_en` and `thoughty_fr`: copies of PostgreSQL's `english` and `french` configurations that pass words through `unaccent` before the Snowball stemmer, so `ete` finds "été" and `walk` finds "walking". Searches are read with both and either may match. This beats the alternatives for this product:
-
-- A per-user language would stem every entry by the interface language, but the interface language says nothing about what was written: Thoughty is used in English and French, journals often mix both, sometimes in one entry, and an entry has no language of its own to choose from.
-- `simple` with `unaccent` ignores accents and case but has no stemming, so `run` would not find "running" nor `souvenir` find "souvenirs".
-- Detecting the language of each entry is unreliable for short entries and mixed text, and would still need both configurations at query time.
-
-The costs are accepted: the vector is about twice the size of a single-language one, and each language's stop words are indexed by the other half, so a search for "the" or "le" matches rather than being ignored. A side benefit is that each stemmer leaves the other language's words almost whole, which helps prefix matches.
-
-**Queries.** The search is parsed by `websearch_to_tsquery` in both configurations, joined with `||`. It supports `"exact phrases"`, a leading `-` to exclude a word or phrase, and `or` (in any case), and it never raises a syntax error on user input. The last word, when it is a bare word of at least two letters or digits outside quotes, also matches the longer words it starts (`to_tsquery('word:*')`), joined with the rest of the search by `&&`, or by `||` after `or`. A search in which PostgreSQL reads no word at all (only symbols or emoji) falls back to a literal `ILIKE` with its wildcards escaped. Every other filter, the diary scope, and the recycle-bin exclusion combine with the search as before.
-
-**Ranking and highlights.** With a search, results are ordered by `ts_rank(search_vector, query, 1)` (normalized by entry length) plus the rank of the search without the prefix, so entries holding the whole word come before those that only hold a longer word, then by date; `sort=date` keeps the usual pinned and date order. For each page, `ts_headline` marks every word and phrase that was not excluded, in both configurations; adjacent marked words are joined and a run is kept only when it matches its term by itself, so a quoted phrase is highlighted where the phrase appears and not wherever one of its words does. The title and the text are marked separately, so a phrase never spans the two. The runs come back as `search_matches`, as written in the entry, and the web app highlights exactly those, as whole words.
-
-**Migration and operations.** `EntryFullTextSearch1785974400000` installs `unaccent` and `btree_gin` (trusted contrib extensions since PostgreSQL 13, so the database owner can install them; both ship with the official images) and leaves them installed on rollback. `entry_search_vector` is `IMMUTABLE` and sets `search_path FROM CURRENT`, so the column can still be computed while `pg_restore` runs with an empty search path. Adding the column rewrites `entries` once: about 17 s for 107,000 entries locally. `EntryTitleAndTime1786060800000` adds `title` and `time_of_day` to `entries` and `entry_revisions`, replaces the function with the three-argument `entry_search_vector(title, content, tags)`, and rebuilds the generated column and its index, which rewrites `entries` once more; rolling it back restores the two-argument vector before dropping the columns. The literal fallback for searches without words also matches titles.
+- **Weights and index.** Title and tags weigh `A`, content `B`. The GIN index `idx_entries_user_search_vector` on `(user_id, search_vector)` uses `btree_gin`, so a search reads only the writer's own matches. The `tags` GIN index serves an exact tag-name match alongside, which keeps tags such as `c++` findable.
+- **Languages.** Every entry is indexed with both `thoughty_en` and `thoughty_fr`, copies of `english` and `french` that apply `unaccent` before stemming (`ete` finds "été", `walk` finds "walking"). Journals mix both languages and an entry has no language of its own, so a per-user, per-entry, or unstemmed `simple` configuration was rejected. The cost is a vector twice the size, and stop words of one language are indexed by the other.
+- **Queries.** `websearch_to_tsquery` parses the search in both configurations, joined with `||`. It supports `"phrases"`, `-exclusions`, and `or`, and never raises a syntax error. A last bare word of two or more characters also matches as a prefix (`word:*`). A search with no words (only symbols or emoji) falls back to an escaped `ILIKE` on title and content plus an exact tag match.
+- **Ranking.** Results sort by `ts_rank(search_vector, query, 1)` plus the rank without the prefix term, so whole words come first, then by date. `sort=date` keeps the usual pinned and date order.
+- **Highlights.** `ts_headline` marks the non-excluded terms in title and text separately. A marked run is kept only when it matches its term by itself, so a phrase is highlighted only where it appears whole. The runs are returned as `search_matches`, and the web app highlights exactly those.
+- **Migrations.** `EntryFullTextSearch1785974400000` installs `unaccent` and `btree_gin` (trusted contrib extensions, kept on rollback). `entry_search_vector` is `IMMUTABLE` with `SET search_path FROM CURRENT`, so it works while `pg_restore` runs with an empty search path. `EntryTitleAndTime1786060800000` replaced it with the three-argument version. Changing the generated column rewrites `entries` (about 17 s for 107,000 entries locally).
 
 ### Search Performance on a Large Journal
 
-Measured on PostgreSQL 16 on a development machine with the dev seed's main journal (9,785 entries written from 2015 to 2026, 2.3 MB of text) and a ten-fold copy of it under another account (97,850 entries, 22 MB), first page of 10, median of seven runs through `EntriesQueryService.getEntries`:
+Measured on PostgreSQL 16 on a development machine with the dev seed's main journal (9,785 entries from 2015 to 2026, 2.3 MB of text) and a ten-fold copy under another account (97,850 entries, 22 MB). First page of 10, median of seven runs through `EntriesQueryService.getEntries`:
 
 | Request | 9,785 entries | 97,850 entries |
 |---|---|---|
@@ -347,43 +133,41 @@ Measured on PostgreSQL 16 on a development machine with the dev seed's main jour
 | `walk` (7%) | 22 ms | 164 ms |
 | `gratef`, read as a prefix (10%) | 25 ms | 142 ms |
 | `coffee or tea` (22%) | 31 ms | 229 ms |
-| The former `ILIKE` match alone, without the rest of the page | 25 to 43 ms | 240 to 380 ms |
+| `ILIKE` match alone, for comparison | 25 to 43 ms | 240 to 380 ms |
 | Highlights for a page of 50 entries | 6 to 9 ms | 4 to 7 ms |
 
-The index lookup itself takes under a millisecond for a rare word at either size, where `ILIKE` read every entry's text. What a search adds now grows with the number of matching entries, because every match is counted and ranked: roughly 5 to 8 ms per thousand matches, plus a few milliseconds to prepare the query and the highlights. Date order (`sort=date`) is 20 to 35% faster on broad searches because it skips the ranking. Most of the large-journal baseline is the list of all tags returned with every page, not the search. The vector takes about 650 bytes per seed entry (2.8 times its text, since tags and content are each indexed in two languages) and the index 15 MB for 107,000 entries. `npm run benchmark` includes an `entries_full_text_search` query for checking a real database.
+The index lookup takes under a millisecond for a rare word. Search cost grows with the number of matches, since each is counted and ranked: roughly 5 to 8 ms per thousand. `sort=date` is 20 to 35% faster on broad searches because it skips ranking. Most of the large baseline is the tag list returned with every page. The vector takes about 650 bytes per entry (2.8 times its text) and the index 15 MB for 107,000 entries. `npm run benchmark` includes an `entries_full_text_search` query for checking a real database.
 
-## Attachments
+## Public Feed Eligibility
 
-- Attachment metadata lives in PostgreSQL.
-- Blob contents live in S3-compatible object storage.
-- `originalFilename` is display metadata; `storedFilename` is the generated object key.
-- Attachments may be uploaded before final entry linkage and associated later.
-- Object-store cleanup is a cross-resource concern and should be handled explicitly when attachment lifecycle behavior changes.
+`Entry.visibility` (the owner's choice) and `Entry.moderationStatus` (`visible`, `hidden`, `under_review`, `removed`, set by the platform) are independent ([ADR 0013](./adr/0013-public-social-content-and-moderation.md)). An entry is **feed-eligible** when it is `public` and `visible`, not archived, not in the recycle bin, and its author is not deleted. The composite index `idx_entries_public_feed` serves the newest-first feed reads.
 
-## Settings and Integration State
+- The feed reads entries and users directly and projects only feed-safe author fields.
+- The **Following** scope applies the same rules to followed authors. A user can be followed only while they have a feed-eligible entry, so follows cannot probe private accounts.
+- Comments and likes can be read or written only while their entry is feed-eligible. Nobody can like their own entry or comment. Content by deleted users is neither listed nor counted.
+- Reports and enforcement records do not exist yet. They will be separate entities, not new visibility values.
 
-`settings` stores user-scoped key/value configuration. Some values are ordinary preferences, while cloud provider tokens, personal OpenRouter keys, and related integration secrets are encrypted before storage by the application using `CONFIG_ENCRYPTION_SECRET`. Personal OpenRouter keys are excluded from general configuration responses and user-data exports.
+## Other Domains
 
-Treat settings as user-owned application state, not as a general-purpose dumping ground. New setting groups should document their keys, value shape, and privacy impact.
-
-`ai_usage_events` stores request-level numerical accounting returned by OpenRouter. It records the user, whether the personal or server credential was used, model, token counts, cost, and timestamp. The table deliberately excludes prompts, completions, and credentials; the dashboard aggregates only personal-key events from the last 30 days.
-
-## Book Versions
-
-`book_versions` stores each saved generated book as an immutable binary artifact. A `scope_key` separates each diary's sequence from the all-diaries sequence, and `(user_id, scope_key, version_number)` is unique. Creation takes a PostgreSQL transaction-scoped advisory lock for that user and scope before assigning the next version number.
-
-The JSON source manifest contains chapter titles and source entry IDs only. It supports added-entry and added-chapter comparisons without exposing journal content through history responses. The generated `BYTEA` artifact preserves the exact PDF, EPUB, HTML, or Markdown output and is excluded from ordinary TypeORM selects; download queries select it explicitly and always filter by the authenticated owner.
+- **Diaries.** One diary is the default capture target. `All Diaries` is a view, not a row.
+- **Attachments.** Metadata lives in PostgreSQL and blobs in S3-compatible storage ([ADR 0011](./adr/0011-attachments-and-object-storage.md)). `storedFilename` is the generated object key; `originalFilename` is only for display. A file can be uploaded before it is linked to an entry.
+- **Settings.** `settings` holds user-scoped key/value configuration. Cloud provider tokens, personal OpenRouter keys, and other integration secrets are encrypted with `CONFIG_ENCRYPTION_SECRET`. Personal OpenRouter keys are left out of configuration responses and data exports. New setting groups should document their keys, value shape, and privacy impact.
+- **AI usage.** `ai_usage_events` records credential source (personal or server), model, tokens, and cost, never prompts, completions, or keys. The dashboard shows personal-key usage for the last 30 days.
+- **Book versions.** Each saved book is an immutable `BYTEA` file (PDF, EPUB, HTML, or Markdown) with a manifest of chapter titles and entry IDs only. `scope_key` gives each diary, and all diaries, its own version sequence; a transaction-scoped advisory lock serializes numbering. The binary is loaded only by the owner's download query.
+- **Guided memoir.** `MemoirProgram` stores the collecting diary, `active` or `paused`, the email choice, and the schedule: `delivery_weekday` (0 = Sunday) at 09:00 in the IANA `time_zone`. `current_question_id` is this week's question and `next_delivery_at` drives the worker. The question catalogue is code (`modules/memoir/memoir-questions.ts`), referenced by stable string IDs. Answers are ordinary private entries; `MemoirAnswer` only links question and entry.
+- **Year in review.** Everything is computed from entries on request except the AI mood arc. `YearReviewMood` keeps the latest reading per scope (diary null for all diaries): one `{month, mood, valence}` item per month in JSONB (valence -2 to 2), a summary, and the number of entries read. Reading again replaces it in one transaction.
 
 ## Schema Migrations
 
-The database schema is managed by ordered TypeORM migrations in `thoughty-server/src/database/migrations`; TypeORM `synchronize` remains disabled. `npm run db:migrate` initializes the application data source and applies every pending migration in one transaction.
+The schema is managed by ordered TypeORM migrations in `thoughty-server/src/database/migrations`; `synchronize` is off.
 
-`InitialSchema1784764800000` is an idempotent baseline of the schema that preceded migration history. On an existing Thoughty database, it verifies and fills any missing baseline objects before TypeORM records it in the `migrations` table. On a fresh database, it creates the complete baseline. Subsequent schema changes must be added as new timestamped migrations and must not edit a migration that has already shipped.
-
-Generate a candidate migration with `npm run migration:generate -- src/database/migrations/<name>`, review both directions carefully, then test it against fresh and representative upgraded databases before deployment.
+- `npm run migrate` (root) or `npm run db:migrate` (server) applies every pending migration in one transaction.
+- `InitialSchema1784764800000` is an idempotent baseline. On an existing database it fills in missing baseline objects before being recorded; on a fresh database it creates the whole baseline.
+- Each schema change is a new timestamped migration. Never edit a migration that has shipped.
+- Generate a candidate with `npm run migration:generate -- src/database/migrations/<name>`, review both `up` and `down`, and test against fresh and upgraded databases. Most migrations have a spec next to the data source in `thoughty-server/src/database`.
 
 ## Read Replicas
 
-The TypeORM PostgreSQL connection supports optional read replicas through `POSTGRES_READ_REPLICA_HOSTS`. When one or more replica hosts are configured, TypeORM keeps writes on the primary `POSTGRES_HOST` connection and may route read queries to replica connections. Replica ports can be supplied with `POSTGRES_READ_REPLICA_PORTS`; replica user, password, and database values inherit the primary credentials unless `POSTGRES_READ_REPLICA_USER`, `POSTGRES_READ_REPLICA_PASSWORD`, or `POSTGRES_READ_REPLICA_DB` are set.
+Read replicas are optional. Set `POSTGRES_READ_REPLICA_HOSTS` (comma-separated) and TypeORM keeps writes on `POSTGRES_HOST` while it may route reads to the replicas. `POSTGRES_READ_REPLICA_PORTS` sets their ports. User, password, and database inherit the primary's values unless `POSTGRES_READ_REPLICA_USER`, `POSTGRES_READ_REPLICA_PASSWORD`, or `POSTGRES_READ_REPLICA_DB` are set.
 
-Operators should only enable replicas that are streaming from the primary with acceptable lag for journal, stats, search, and future feed reads. Migrations and write paths still target the primary database.
+Enable only replicas that stream from the primary with acceptable lag for journal, stats, search, and feed reads. Migrations and writes always target the primary.
