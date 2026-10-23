@@ -3,7 +3,7 @@
   value: "1"
 - op: add
   path: /metadata/annotations/traefik.ingress.kubernetes.io~1router.middlewares
-  value: apps-thoughty-sso@kubernetescrd,apps-thoughty-upload-limit@kubernetescrd
+  value: apps-thoughty-upload-limit@kubernetescrd
 - op: replace
   path: /spec/tls/0/hosts/0
   value: thoughty.swirlit.dev

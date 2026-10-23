@@ -10,13 +10,14 @@ Thoughty is a TypeScript-first modular monolith: one NestJS API and one route-dr
 - Redis, when configured, shares rate-limit counters between API replicas.
 - OpenRouter provides optional AI. SMTP sends account and memoir emails.
 - A separate worker process runs the background jobs (see [Background Worker](#background-worker)).
-- In production, Keycloak authenticates users at the ingress and Vault supplies secrets.
+- Users sign in with a local Thoughty account or, in production, with Keycloak single sign-on through the platform's OAuth2 Proxy, which guards only the SSO exchange route. Vault supplies secrets in production.
 
 ```mermaid
 flowchart TD
     Browser[Browser] --> Web[React SPA / NGINX or Vite]
-    Browser -->|/api| Auth[Keycloak OAuth2 Proxy]
-    Auth --> API[NestJS API]
+    Browser -->|/api| API[NestJS API]
+    Browser -->|/api/auth/sso| Auth[Keycloak OAuth2 Proxy]
+    Auth --> API
 
     API --> Pg[(PostgreSQL)]
     API --> Redis[(Redis rate limits)]

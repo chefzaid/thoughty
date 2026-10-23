@@ -1,0 +1,31 @@
+# Only the Keycloak SSO exchange goes through the shared OAuth2 Proxy: it receives the signed
+# Keycloak access token, which the API verifies before issuing a Thoughty session. The rest of
+# /api is open so local accounts can register and sign in; the API authenticates every request
+# itself. This longer path wins over /api.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: thoughty-sso-ingress
+  namespace: apps
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: apps-thoughty-sso@kubernetescrd,apps-thoughty-upload-limit@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - thoughty.swirlit.dev
+      secretName: swirlit-dev-tls
+  rules:
+    - host: thoughty.swirlit.dev
+      http:
+        paths:
+          - path: /api/auth/sso
+            pathType: Prefix
+            backend:
+              service:
+                name: thoughty-server
+                port:
+                  number: 3001

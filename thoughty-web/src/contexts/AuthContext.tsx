@@ -23,7 +23,7 @@ import {
 import {
   clearKeycloakSsoAttempt,
   hasPendingKeycloakSsoAttempt,
-  startKeycloakSso,
+  markKeycloakSsoFailed,
 } from '../utils/keycloakSso';
 
 export type { User } from './authTypes';
@@ -199,18 +199,19 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
 
   // Check if user is logged in on mount
   useEffect(() => {
+    // Local accounts and Keycloak SSO live side by side: a visitor is never sent to Keycloak
+    // unasked. The Keycloak session is exchanged only on the way back from "Continue with
+    // Keycloak", which marks the attempt before leaving for the sign-in page.
     const restoreSsoSession = async () => {
-      if (import.meta.env.PROD) {
+      if (import.meta.env.PROD && hasPendingKeycloakSsoAttempt()) {
+        clearKeycloakSsoAttempt();
         let sessionExchanged = false;
         await exchangeKeycloakSession((session) => {
           startSession(session);
           sessionExchanged = true;
         });
-        if (sessionExchanged) {
-          clearKeycloakSsoAttempt();
-        } else if (!hasPendingKeycloakSsoAttempt()) {
-          startKeycloakSso();
-          return;
+        if (!sessionExchanged) {
+          markKeycloakSsoFailed();
         }
       }
       setLoading(false);
@@ -233,18 +234,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
           }
         } else {
           clearSession();
-          if (import.meta.env.PROD && !hasPendingKeycloakSsoAttempt()) {
-            startKeycloakSso();
-            return;
-          }
         }
       } catch (err) {
         console.error('Auth check failed:', err);
         clearSession();
-        if (import.meta.env.PROD && !hasPendingKeycloakSsoAttempt()) {
-          startKeycloakSso();
-          return;
-        }
       }
       setLoading(false);
     };
@@ -373,16 +366,17 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     } catch (err) {
       console.error('Logout error:', err);
     }
+    const signedInWithKeycloak = user?.authProvider === 'keycloak';
     clearSession();
     setUser(null);
-    if (import.meta.env.PROD) {
-      sessionStorage.setItem('thoughty.keycloak-sso-attempt', 'pending');
+    // Only a Keycloak account also ends its Keycloak session; a local account just signs out here.
+    if (import.meta.env.PROD && signedInWithKeycloak) {
       const returnUrl = `${window.location.origin}/`;
       window.location.assign(
         `https://keycloak.swirlit.dev/oauth2/sign_out?rd=${encodeURIComponent(returnUrl)}`,
       );
     }
-  }, [clearSession]);
+  }, [clearSession, user]);
 
   // Change password
   const changePassword = useCallback(async (

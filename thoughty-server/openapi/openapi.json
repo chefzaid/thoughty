@@ -5859,6 +5859,9 @@
                 "example": "thoughty_database_up 1\nthoughty_cloud_sync_jobs_stuck 0\n"
               }
             }
+          },
+          "404": {
+            "description": "The caller is not on the private network"
           }
         },
         "summary": "Render Prometheus metrics",

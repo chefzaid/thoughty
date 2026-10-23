@@ -1,4 +1,4 @@
-import { useState, useEffect, type SubmitEvent } from 'react';
+import { useState, useEffect, useRef, type SubmitEvent } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { validateAuthForm, getAuthSubtitleText } from './types';
 import type { TranslationFunction, AuthResult } from './types';
@@ -6,7 +6,7 @@ import AuthFormContent from './AuthFormContent';
 import AuthStatusMessages from './AuthStatusMessages';
 import AuthAuxiliary from './AuthAuxiliary';
 import TwoFactorLoginForm from './TwoFactorLoginForm';
-import { startKeycloakSso } from '../../utils/keycloakSso';
+import { clearKeycloakSsoFailure, hasKeycloakSsoFailure, startKeycloakSso } from '../../utils/keycloakSso';
 import './AuthPage.css';
 
 interface AuthPageProps {
@@ -27,7 +27,8 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [username, setUsername] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
+  // A failed return from Keycloak is reported once, on the sign-in page it came back to
+  const [error, setError] = useState<string>(() => (hasKeycloakSsoFailure() ? t('keycloakSignInFailed') : ''));
   const [successMessage, setSuccessMessage] = useState<string>('');
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [website, setWebsite] = useState<string>('');
@@ -59,6 +60,14 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
   }, [googleClientId]);
 
   useEffect(() => {
+    clearKeycloakSsoFailure();
+  }, []);
+
+  // The form starts in `mode`; it is reset only when the route switches modes afterwards
+  const renderedMode = useRef(mode);
+  useEffect(() => {
+    if (renderedMode.current === mode) return;
+    renderedMode.current = mode;
     setCurrentMode(mode);
     setShowForgotPassword(false);
     setError('');

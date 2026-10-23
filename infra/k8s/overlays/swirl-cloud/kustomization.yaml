@@ -10,6 +10,7 @@ resources:
   - observability.yaml
   - registry-credentials.yaml
   - ingress-middleware.yaml
+  - sso-ingress.yaml
 components:
   - ../../components/worker
 patches:

@@ -121,7 +121,7 @@ All AI features are optional and run through OpenRouter. A deployment can provid
 
 ## Accounts and Preferences
 
-- **Sign-in.** In production, through the shared Keycloak single sign-on. Locally, with email or username and password, or with Google.
+- **Sign-in.** Register and sign in with an email or username and password, or choose **Continue with Keycloak** for the shared single sign-on in production. A Keycloak sign-in with the same verified email links to the existing account, which keeps its password. Google sign-in is available when configured.
 - **Security.** Email verification, optional two-factor codes by email, password change and reset, active session management, and account deletion. A deleted account is signed out at once and erased with everything in it within 30 days.
 - **Profile.** Name, display name, bio, birthday, gender, and an avatar with crop and zoom. Confirmed accounts get a verified badge.
 - **Data.** Download all your data as JSON.

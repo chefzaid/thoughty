@@ -10069,6 +10069,13 @@ export interface operations {
                     "text/plain": unknown;
                 };
             };
+            /** @description The caller is not on the private network */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
     FeatureRequestsController_list: {

@@ -1,7 +1,9 @@
-import { Controller, Get, Header } from '@nestjs/common';
+import { Controller, Get, Header, NotFoundException, Req } from '@nestjs/common';
+import type { Request } from 'express';
 import { SkipThrottle } from '@nestjs/throttler';
 import { ApiOperation, ApiProduces, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from '@/common';
+import { isPrivateNetworkAddress } from '@/common/security';
 import { MetricsService } from './metrics.service';
 
 @ApiTags('Metrics')
@@ -10,6 +12,10 @@ import { MetricsService } from './metrics.service';
 export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}
 
+  /**
+   * Prometheus scrapes the pods directly. The API is also reachable through the public ingress,
+   * so requests from outside the private network answer as if the route did not exist.
+   */
   @Public()
   @Get()
   @Header('Content-Type', 'text/plain; version=0.0.4; charset=utf-8')
@@ -24,7 +30,11 @@ export class MetricsController {
       },
     },
   })
-  getMetrics(): Promise<string> {
+  @ApiResponse({ status: 404, description: 'The caller is not on the private network' })
+  async getMetrics(@Req() request: Pick<Request, 'ip'>): Promise<string> {
+    if (!isPrivateNetworkAddress(request.ip)) {
+      throw new NotFoundException();
+    }
     return this.metricsService.renderPrometheusMetrics();
   }
 }

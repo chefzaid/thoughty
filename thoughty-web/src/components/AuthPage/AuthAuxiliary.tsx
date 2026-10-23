@@ -28,11 +28,15 @@ function AuthAuxiliary({
   const switchPrompt = isLogin ? t('dontHaveAccount') : t('alreadyHaveAccount');
   const switchAction = isLogin ? t('signUp') : t('signIn');
 
+  const hasProviders = keycloakSsoEnabled || Boolean(googleClientId);
+
   return (
     <>
-      <div className="auth-divider">
-        <span>{t('orContinueWith')}</span>
-      </div>
+      {hasProviders && (
+        <div className="auth-divider">
+          <span>{t('orContinueWith')}</span>
+        </div>
+      )}
 
       <div className="social-buttons">
         {keycloakSsoEnabled && (

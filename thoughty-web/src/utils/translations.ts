@@ -710,6 +710,7 @@ type CoreTranslationKey =
   | "hidePassword"
   | "orContinueWith"
   | "continueWithKeycloak"
+  | "keycloakSignInFailed"
   | "continueWithGoogle"
   | "dontHaveAccount"
   | "alreadyHaveAccount"
@@ -1765,6 +1766,7 @@ export const translations: Translations = {
     hidePassword: "Hide password",
     orContinueWith: "or continue with",
     continueWithKeycloak: "Continue with Keycloak",
+    keycloakSignInFailed: "Keycloak sign-in did not complete. Try again, or sign in with your Thoughty email and password.",
     continueWithGoogle: "Continue with Google",
     dontHaveAccount: "Don't have an account?",
     alreadyHaveAccount: "Already have an account?",
@@ -2860,6 +2862,7 @@ export const translations: Translations = {
     hidePassword: "Masquer le mot de passe",
     orContinueWith: "ou continuer avec",
     continueWithKeycloak: "Continuer avec Keycloak",
+    keycloakSignInFailed: "La connexion avec Keycloak n'a pas abouti. Réessayez, ou connectez-vous avec votre e-mail et votre mot de passe Thoughty.",
     continueWithGoogle: "Continuer avec Google",
     dontHaveAccount: "Vous n'avez pas de compte ?",
     alreadyHaveAccount: "Vous avez déjà un compte ?",

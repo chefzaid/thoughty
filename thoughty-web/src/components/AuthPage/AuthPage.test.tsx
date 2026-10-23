@@ -47,6 +47,36 @@ describe('AuthPage', () => {
         expect(screen.getByLabelText('password')).toBeInTheDocument();
     });
 
+    it('offers Keycloak next to the local forms in production, on sign-in and sign-up', () => {
+        vi.stubEnv('PROD', true);
+        const { unmount } = render(<AuthPage t={mockT} theme="dark" />);
+        expect(screen.getByText('orContinueWith')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /continueWithKeycloak/ })).toBeInTheDocument();
+        expect(screen.getByLabelText('password')).toBeInTheDocument();
+        unmount();
+
+        render(<AuthPage t={mockT} theme="dark" mode="register" />);
+        expect(screen.getByRole('button', { name: /continueWithKeycloak/ })).toBeInTheDocument();
+        expect(screen.getByLabelText('username')).toBeInTheDocument();
+        vi.unstubAllEnvs();
+    });
+
+    it('shows no provider divider when no sign-in provider is offered', () => {
+        render(<AuthPage t={mockT} theme="dark" />);
+        expect(screen.queryByText('orContinueWith')).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /continueWithKeycloak/ })).not.toBeInTheDocument();
+    });
+
+    it('reports a Keycloak sign-in that did not complete once', () => {
+        sessionStorage.setItem('thoughty.keycloak-sso-failed', 'true');
+        const { unmount } = render(<AuthPage t={mockT} theme="dark" />);
+        expect(screen.getByText('keycloakSignInFailed')).toBeInTheDocument();
+        unmount();
+
+        render(<AuthPage t={mockT} theme="dark" />);
+        expect(screen.queryByText('keycloakSignInFailed')).not.toBeInTheDocument();
+    });
+
     it('renders registration mode when controlled by props', () => {
         render(<AuthPage t={mockT} theme="dark" mode="register" />);
         expect(screen.getByText('createAccount')).toBeInTheDocument();

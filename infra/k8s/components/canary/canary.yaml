@@ -229,6 +229,24 @@ spec:
   routes:
     # Explicit priorities keep API paths above the web catch-all and header
     # overrides above weighted traffic. Prefix matching respects path segments.
+    # The SSO exchange has its own routes so an overlay can put only it behind
+    # an authentication middleware.
+    - kind: Rule
+      match: Host(`thoughty.example.com`) && (Path(`/api/auth/sso`) || PathPrefix(`/api/auth/sso/`)) && Header(`X-Thoughty-Canary`, `always`)
+      priority: 450
+      middlewares:
+        - name: thoughty-upload-limit
+      services:
+        - name: thoughty-server-canary
+          port: 3001
+    - kind: Rule
+      match: Host(`thoughty.example.com`) && (Path(`/api/auth/sso`) || PathPrefix(`/api/auth/sso/`))
+      priority: 350
+      middlewares:
+        - name: thoughty-upload-limit
+      services:
+        - name: thoughty-api-rollout
+          kind: TraefikService
     - kind: Rule
       match: Host(`thoughty.example.com`) && (Path(`/api`) || PathPrefix(`/api/`)) && Header(`X-Thoughty-Canary`, `always`)
       priority: 400

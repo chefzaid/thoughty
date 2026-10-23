@@ -69,6 +69,20 @@ function renderAuth(): { current: () => AuthContextValue } {
     return { current: () => requireContext(ctx) };
 }
 
+/** Replaces window.location with a copy whose assign() is a spy, restored after each test. */
+function stubLocationAssign(): Mock {
+    const assign = vi.fn();
+    const original = window.location;
+    Object.defineProperty(window, 'location', {
+        configurable: true,
+        value: { ...original, origin: original.origin, href: original.href, assign },
+    });
+    locationRestorers.push(() => Object.defineProperty(window, 'location', { configurable: true, value: original }));
+    return assign;
+}
+
+const locationRestorers: Array<() => void> = [];
+
 async function renderSignedOut(): Promise<{ current: () => AuthContextValue }> {
     const auth = renderAuth();
     await waitFor(() => expect(auth.current().loading).toBe(false));
@@ -85,6 +99,7 @@ describe('AuthContext', () => {
     afterEach(() => {
         vi.restoreAllMocks();
         vi.unstubAllEnvs();
+        locationRestorers.splice(0).forEach((restore) => restore());
     });
 
     it('throws when useAuth is used outside provider', () => {
@@ -164,6 +179,58 @@ describe('AuthContext', () => {
         await waitFor(() => expect(auth.current().user?.email).toBe('zaid@swirlit.dev'));
         expect(auth.current().getAccessToken()).toBe('sso-access');
         expect(localStorage.getItem('accessToken')).toBeNull();
+    });
+
+    it('never sends a production visitor to Keycloak unasked', async () => {
+        vi.stubEnv('PROD', true);
+        const assign = stubLocationAssign();
+        const fetchMock = routeFetch();
+
+        const auth = await renderSignedOut();
+
+        expect(auth.current().user).toBeNull();
+        expect(callsTo(fetchMock, '/api/auth/sso')).toHaveLength(0);
+        expect(assign).not.toHaveBeenCalled();
+    });
+
+    it('reports a Keycloak sign-in that did not complete and stays signed out', async () => {
+        vi.stubEnv('PROD', true);
+        const assign = stubLocationAssign();
+        sessionStorage.setItem('thoughty.keycloak-sso-attempt', 'pending');
+        routeFetch({ '/api/auth/sso': [json({ message: 'Unauthorized' }, 401)] });
+
+        const auth = await renderSignedOut();
+
+        expect(auth.current().user).toBeNull();
+        expect(sessionStorage.getItem('thoughty.keycloak-sso-attempt')).toBeNull();
+        expect(sessionStorage.getItem('thoughty.keycloak-sso-failed')).toBe('true');
+        expect(assign).not.toHaveBeenCalled();
+    });
+
+    it('ends the Keycloak session on logout only for a Keycloak account', async () => {
+        vi.stubEnv('PROD', true);
+        const assign = stubLocationAssign();
+        routeFetch({
+            '/api/auth/login': [json({ accessToken: 'access', user: { id: 3, email: 'local@example.com', authProvider: 'local' } })],
+            '/api/auth/sso': [json({ accessToken: 'sso', user: { id: 7, email: 'sso@example.com', authProvider: 'keycloak' } })],
+        });
+        const auth = await renderSignedOut();
+
+        await act(async () => {
+            await auth.current().login('local@example.com', 'pass');
+        });
+        await act(async () => {
+            await auth.current().logout();
+        });
+        expect(assign).not.toHaveBeenCalled();
+
+        sessionStorage.setItem('thoughty.keycloak-sso-attempt', 'pending');
+        const ssoAuth = renderAuth();
+        await waitFor(() => expect(ssoAuth.current().user?.email).toBe('sso@example.com'));
+        await act(async () => {
+            await ssoAuth.current().logout();
+        });
+        expect(assign).toHaveBeenCalledWith(expect.stringContaining('https://keycloak.swirlit.dev/oauth2/sign_out?rd='));
     });
 
     it('handles rejected, empty, and unavailable Keycloak exchanges without a session', async () => {

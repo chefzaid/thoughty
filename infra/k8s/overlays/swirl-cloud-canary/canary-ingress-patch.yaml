@@ -1,18 +1,24 @@
 - op: replace
-  path: /spec/routes/0/match
+  path: /spec/routes/2/match
   value: Host(`thoughty.swirlit.dev`) && (Path(`/api`) || PathPrefix(`/api/`)) && Header(`X-Thoughty-Canary`, `always`)
 - op: replace
-  path: /spec/routes/1/match
+  path: /spec/routes/3/match
   value: Host(`thoughty.swirlit.dev`) && (Path(`/api`) || PathPrefix(`/api/`))
 - op: replace
-  path: /spec/routes/2/match
+  path: /spec/routes/4/match
   value: Host(`thoughty.swirlit.dev`) && Header(`X-Thoughty-Canary`, `always`)
 - op: replace
-  path: /spec/routes/3/match
+  path: /spec/routes/5/match
   value: Host(`thoughty.swirlit.dev`)
 - op: replace
   path: /spec/tls/secretName
   value: swirlit-dev-tls
+- op: replace
+  path: /spec/routes/0/match
+  value: Host(`thoughty.swirlit.dev`) && (Path(`/api/auth/sso`) || PathPrefix(`/api/auth/sso/`)) && Header(`X-Thoughty-Canary`, `always`)
+- op: replace
+  path: /spec/routes/1/match
+  value: Host(`thoughty.swirlit.dev`) && (Path(`/api/auth/sso`) || PathPrefix(`/api/auth/sso/`))
 - op: add
   path: /spec/routes/0/middlewares/0
   value:

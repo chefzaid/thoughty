@@ -201,8 +201,12 @@ class OnboardingTests(unittest.TestCase):
             self.assertEqual(route["spec"]["tls"]["secretName"], values["TLS_SECRET_NAME"])
             for entry in route["spec"]["routes"]:
                 self.assertIn("Host(`" + values["APP_HOST"] + "`)", entry["match"])
-                if "Path(`/api`)" in entry["match"]:
+                # Only the SSO exchange goes through the authentication middleware; the rest of
+                # /api serves local accounts and authenticates requests itself.
+                if "Path(`/api/auth/sso`)" in entry["match"]:
                     self.assertEqual(entry["middlewares"], [{"name": "thoughty-sso"}, {"name": "thoughty-upload-limit"}])
+                elif "Path(`/api`)" in entry["match"]:
+                    self.assertEqual(entry["middlewares"], [{"name": "thoughty-upload-limit"}])
             weighted = [doc for doc in canary if doc["kind"] == "TraefikService"]
             self.assertEqual(len(weighted), 2)
             for service in weighted:

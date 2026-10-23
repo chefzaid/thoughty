@@ -30,7 +30,7 @@ Argo CD syncs `infra/k8s/overlays/swirl-cloud` from `main` of `swirlit/thoughty`
 4. Wave `1`: API, web, and worker Deployments.
 5. PostSync: `thoughty-kibana-bootstrap` imports the log dashboard.
 
-The UI is public. `/api` goes through the `thoughty-sso` ForwardAuth Middleware and the shared Keycloak OAuth2 Proxy (see [Security](./security.md#authentication-and-sessions)). Both routes cap request bodies at 10 MiB.
+The UI and `/api` are public, so local accounts can register and sign in. Only `/api/auth/sso` (`overlays/swirl-cloud/sso-ingress.yaml`, and the matching canary routes) goes through the `thoughty-sso` ForwardAuth Middleware and the shared Keycloak OAuth2 Proxy; as the longer path it wins over `/api` (see [Security](./security.md#authentication-and-sessions)). Every route caps request bodies at 10 MiB.
 
 ## Configuration and Secrets
 

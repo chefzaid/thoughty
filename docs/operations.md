@@ -30,7 +30,7 @@ kubectl logs deployment/<thoughty-server|thoughty-web|thoughty-cloud-sync-worker
 
 API and worker logs are JSON lines. Request logs carry `requestId` (also the `x-request-id` response header), `method`, `path`, `statusCode`, `latencyMs`, and `userId`. They never contain bodies, auth headers, journal content, AI text, or tokens. The Kibana dashboard is imported by the `thoughty-kibana-bootstrap` hook.
 
-`/api/metrics` exports request counts and latency, `thoughty_database_up`, `thoughty_cloud_sync_jobs{status}`, `thoughty_cloud_sync_stuck_jobs` (locked over 15 minutes), `thoughty_feature_usage_total` (no user data), and process memory and uptime. Prometheus scrapes the API pods by annotation. The optional `infra/k8s/components/monitoring` component holds the `thoughty-alerts` PrometheusRule ([ADR 0015](./adr/0015-observability-baseline.md)). Its expressions match the Thoughty pods and Deployments by name, not by namespace, so they work in any namespace. No overlay includes it, because swirl-cloud runs a plain Prometheus without the Prometheus Operator and Argo CD would reject the unknown resource. To alert in production, add the same rules to the platform's Prometheus configuration; on a cluster with the Operator, add the component to the overlay and make sure the API pods are scraped.
+`/api/metrics` exports request counts and latency, `thoughty_database_up`, `thoughty_cloud_sync_jobs{status}`, `thoughty_cloud_sync_stuck_jobs` (locked over 15 minutes), `thoughty_feature_usage_total` (no user data), and process memory and uptime. Prometheus scrapes the API pods by annotation; the endpoint answers only private-network addresses, so it returns `404` through the public URL. The optional `infra/k8s/components/monitoring` component holds the `thoughty-alerts` PrometheusRule ([ADR 0015](./adr/0015-observability-baseline.md)). Its expressions match the Thoughty pods and Deployments by name, not by namespace, so they work in any namespace. No overlay includes it, because swirl-cloud runs a plain Prometheus without the Prometheus Operator and Argo CD would reject the unknown resource. To alert in production, add the same rules to the platform's Prometheus configuration; on a cluster with the Operator, add the component to the overlay and make sure the API pods are scraped.
 
 ## Migrations
 
@@ -82,7 +82,7 @@ Read the [canary limits](./deployment.md#canary-infrak8soverlaysswirl-cloud-cana
 | `02-deploy` timeout | Argo CD status and hook logs. |
 | Attachment errors | S3 endpoint, bucket, credentials; each `stored_filename` exists in the bucket. |
 | AI or cloud provider errors | `OPENROUTER_API_KEY`; OAuth client IDs, secrets, and redirect URIs. |
-| SSO fails | `oauth2-proxy`, the `thoughty-sso` Middleware, and the `KEYCLOAK_*` values. Never trust identity headers alone. |
+| SSO fails ("Keycloak sign-in did not complete" on the sign-in page) | `oauth2-proxy`, the `thoughty-sso` Middleware on the `thoughty-sso-ingress` route, and the `KEYCLOAK_*` values. Local accounts keep working meanwhile. Never trust identity headers alone. |
 
 The worker runs four loops, never in API pods:
 
