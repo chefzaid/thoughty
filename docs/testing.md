@@ -35,6 +35,19 @@ npm run test:e2e          # e2e specs in test/
 npm run lint              # ESLint (applies --fix)
 ```
 
+### PostgreSQL integration specs
+
+The `*.integration.spec.ts` files (full-text search, entry titles and times, moods, task lists, the recycle bin, cloud sync lease races) run against a real PostgreSQL. They are skipped unless `THOUGHTY_PG_TEST_URL` is set, so `npm test` and CI, which set no URL, run without a database. The URL must point at a database named `thoughty_ha_test` on `localhost` or `127.0.0.1`; anything else fails the run rather than touch a real database.
+
+Each suite creates a database of its own from that connection (`thoughty_ha_test_<pid>_<random>`), applies the migrations (or builds only the tables it needs), and drops it when it finishes, through `createPostgresTestDatabase` in `src/database/postgres-test-database.test-helpers.ts`. Suites never share tables, so they run in parallel Jest workers like every other spec, and a suite that rolls migrations back and forward affects nobody else. The connecting role needs the `CREATEDB` privilege. A run that is killed midway can leave a `thoughty_ha_test_*` database behind; drop it by hand.
+
+```bash
+THOUGHTY_PG_TEST_URL=postgresql://postgres:password@127.0.0.1:5432/thoughty_ha_test npm test -- integration.spec
+infra/scripts/test-cloud-sync-postgres.sh   # the same specs against a throwaway Docker PostgreSQL
+```
+
+New integration specs use `describePostgres` and `createPostgresTestDatabase` from the helper instead of reading the URL themselves, and empty their tables in `beforeEach` (for example `TRUNCATE users RESTART IDENTITY CASCADE`).
+
 Frontend (`cd thoughty-web`):
 
 ```bash

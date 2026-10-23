@@ -1,12 +1,12 @@
 import { DataSource } from 'typeorm';
 import { CloudSyncJob } from '@/database/entities';
+import {
+  createPostgresTestDatabase,
+  describePostgres,
+  POSTGRES_SETUP_TIMEOUT_MS,
+  type PostgresTestDatabase,
+} from '@/database/postgres-test-database.test-helpers';
 import { CloudSyncQueueService } from './cloud-sync-queue.service';
-
-const url = process.env.THOUGHTY_PG_TEST_URL;
-if (url && (!['127.0.0.1', 'localhost'].includes(new URL(url).hostname) || new URL(url).pathname !== '/thoughty_ha_test')) {
-  throw new Error('Use the isolated thoughty_ha_test localhost fixture');
-}
-const integration = url ? describe : describe.skip;
 
 function pending() {
   let resolve!: () => void;
@@ -15,14 +15,16 @@ function pending() {
   return { promise, resolve, reject };
 }
 
-integration('PostgreSQL cloud sync lease races', () => {
+describePostgres('PostgreSQL cloud sync lease races', () => {
+  let database: PostgresTestDatabase;
   let first: DataSource;
   let second: DataSource;
   beforeAll(async () => {
-    first = await new DataSource({ type: 'postgres', url, entities: [CloudSyncJob], synchronize: true }).initialize();
-    second = await new DataSource({ type: 'postgres', url, entities: [CloudSyncJob] }).initialize();
-  });
-  afterAll(async () => { await first.destroy(); await second.destroy(); });
+    database = await createPostgresTestDatabase({ entities: [CloudSyncJob], synchronize: true });
+    first = database.dataSource;
+    second = await new DataSource({ type: 'postgres', url: database.url, entities: [CloudSyncJob] }).initialize();
+  }, POSTGRES_SETUP_TIMEOUT_MS);
+  afterAll(async () => { await second?.destroy(); await database?.drop(); });
   beforeEach(async () => { await first.query('TRUNCATE cloud_sync_jobs RESTART IDENTITY'); });
 
   function queue(database: DataSource, executeDiffSync = jest.fn().mockResolvedValue({ message: 'done' })) {

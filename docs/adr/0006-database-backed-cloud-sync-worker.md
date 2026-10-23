@@ -66,8 +66,8 @@ The same worker process also delivers guided-memoir questions; API replicas neve
 
 The backend tests cover heartbeat cancellation, independent operation signals
 and shutdown awaiting active work. `infra/scripts/test-cloud-sync-postgres.sh`
-runs real PostgreSQL races for stale completion/failure and heartbeat versus
-recovery. It creates its own localhost-only Docker database and does not use
+runs the PostgreSQL integration specs, including real races for stale
+completion/failure and heartbeat versus recovery. It creates its own localhost-only Docker database and does not use
 application credentials. Run it after backend dependencies are installed;
 normal Jest runs skip this integration fixture unless its explicit test URL is
 set. No live cloud provider calls are made by these tests.

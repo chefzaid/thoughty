@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Run lease-race tests only against a disposable local PostgreSQL fixture.
+# Run the PostgreSQL integration specs (cloud sync lease races, entries, recycle bin) in
+# parallel against a disposable local PostgreSQL fixture; each suite creates its own database.
 set -euo pipefail
 set +x
 umask 077
@@ -21,4 +22,4 @@ for attempt in $(seq 1 60); do
 done
 fixture_port="$(docker port "$container" 5432/tcp | cut -d: -f2)"
 THOUGHTY_PG_TEST_URL="postgresql://postgres:$(cat "$fixture_dir/password")@127.0.0.1:$fixture_port/thoughty_ha_test" \
-  npx jest --runInBand --testPathPattern=cloud-sync-queue.integration.spec
+  npx jest --testPathPattern='\.integration\.spec\.ts$'

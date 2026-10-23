@@ -1,33 +1,28 @@
-import { join } from 'node:path';
 import { DataSource, type Repository } from 'typeorm';
+import {
+  createPostgresTestDatabase,
+  describePostgres,
+  POSTGRES_SETUP_TIMEOUT_MS,
+  type PostgresTestDatabase,
+} from '@/database/postgres-test-database.test-helpers';
 import { Entry, EntryRevision, User } from '@/database/entities';
 import { EntriesQueryService } from './entries-query.service';
 import { EntrySearchService } from './entry-search.service';
 
-const url = process.env.THOUGHTY_PG_TEST_URL;
-if (url && (!['127.0.0.1', 'localhost'].includes(new URL(url).hostname) || new URL(url).pathname !== '/thoughty_ha_test')) {
-  throw new Error('Use the isolated thoughty_ha_test localhost fixture');
-}
-const integration = url ? describe : describe.skip;
-
-integration('PostgreSQL entry titles and times of day', () => {
+describePostgres('PostgreSQL entry titles and times of day', () => {
+  let database: PostgresTestDatabase;
   let dataSource: DataSource;
   let entries: Repository<Entry>;
   let queries: EntriesQueryService;
   let userId: number;
 
   beforeAll(async () => {
-    dataSource = await new DataSource({
-      type: 'postgres',
-      url,
-      entities: [join(__dirname, '..', '..', 'database', 'entities', '*.entity.ts')],
-      migrations: [join(__dirname, '..', '..', 'database', 'migrations', '*.ts')],
-    }).initialize();
-    await dataSource.runMigrations({ transaction: 'all' });
+    database = await createPostgresTestDatabase();
+    dataSource = database.dataSource;
     entries = dataSource.getRepository(Entry);
     queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries));
-  });
-  afterAll(async () => { await dataSource.destroy(); });
+  }, POSTGRES_SETUP_TIMEOUT_MS);
+  afterAll(async () => { await database?.drop(); });
 
   beforeEach(async () => {
     await dataSource.query('TRUNCATE users RESTART IDENTITY CASCADE');

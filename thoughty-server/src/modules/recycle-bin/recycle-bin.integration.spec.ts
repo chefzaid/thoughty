@@ -1,5 +1,10 @@
-import { join } from 'node:path';
 import { DataSource, type Repository } from 'typeorm';
+import {
+  createPostgresTestDatabase,
+  describePostgres,
+  POSTGRES_SETUP_TIMEOUT_MS,
+  type PostgresTestDatabase,
+} from '@/database/postgres-test-database.test-helpers';
 import { Attachment, Diary, Entry, EntryRevision, MemoirAnswer, User } from '@/database/entities';
 import { DiariesService } from '@/modules/diaries/diaries.service';
 import { DiaryEntryTransferService } from '@/modules/diaries/diary-entry-transfer.service';
@@ -8,14 +13,10 @@ import { EntriesQueryService } from '@/modules/entries/entries-query.service';
 import { EntrySearchService } from '@/modules/entries/entry-search.service';
 import { RecycleBinService } from './recycle-bin.service';
 
-const url = process.env.THOUGHTY_PG_TEST_URL;
-if (url && (!['127.0.0.1', 'localhost'].includes(new URL(url).hostname) || new URL(url).pathname !== '/thoughty_ha_test')) {
-  throw new Error('Use the isolated thoughty_ha_test localhost fixture');
-}
-const integration = url ? describe : describe.skip;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-integration('PostgreSQL recycle bin', () => {
+describePostgres('PostgreSQL recycle bin', () => {
+  let database: PostgresTestDatabase;
   let dataSource: DataSource;
   let entries: Repository<Entry>;
   let diaries: Repository<Diary>;
@@ -31,19 +32,14 @@ integration('PostgreSQL recycle bin', () => {
   let travelDiary: Diary;
 
   beforeAll(async () => {
-    dataSource = await new DataSource({
-      type: 'postgres',
-      url,
-      entities: [join(__dirname, '..', '..', 'database', 'entities', '*.entity.ts')],
-      migrations: [join(__dirname, '..', '..', 'database', 'migrations', '*.ts')],
-    }).initialize();
-    await dataSource.runMigrations({ transaction: 'all' });
+    database = await createPostgresTestDatabase();
+    dataSource = database.dataSource;
     entries = dataSource.getRepository(Entry);
     diaries = dataSource.getRepository(Diary);
     attachments = dataSource.getRepository(Attachment);
     revisions = dataSource.getRepository(EntryRevision);
-  });
-  afterAll(async () => { await dataSource.destroy(); });
+  }, POSTGRES_SETUP_TIMEOUT_MS);
+  afterAll(async () => { await database?.drop(); });
 
   beforeEach(async () => {
     await dataSource.query('TRUNCATE users RESTART IDENTITY CASCADE');

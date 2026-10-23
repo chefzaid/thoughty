@@ -108,6 +108,7 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s",
       "!**/*.spec.ts",
+      "!**/*.test-helpers.ts",
       "!**/*.module.ts",
       "!main.ts",
       "!**/index.ts",
