@@ -207,6 +207,7 @@
 - [x] Modify deployment configuration to use the existing server infrastructure, and document the prerequisites and deployment process
 - [x] CI pipeline for automated dependency vulnerability scanning (npm audit, Dependabot/Renovate)
 - [x] Blue-green or canary deployment strategy for zero-downtime releases
+- [x] Probes that tolerate a loaded node: every probe waited Kubernetes' 1-second default, so on swirl-cloud's loaded node (2026-10-23: load 114, swap full) working containers were restarted. Liveness probes now wait 5 seconds and fail for a minute before a restart, readiness probes wait 3 seconds, and the standalone PostgreSQL probe no longer passes an unexpanded `$(POSTGRES_USER)` (a probe command expands only literal `env` values)
 
 ## Database
 

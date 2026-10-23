@@ -80,16 +80,21 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+          # A probe command expands $(VAR) only from a literal env value, never from
+          # envFrom or the Vault file, so it names no user: pg_isready needs none.
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+              command: ["pg_isready", "-q"]
             initialDelaySeconds: 15
             periodSeconds: 10
+            timeoutSeconds: 10
+            failureThreshold: 6
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "$(POSTGRES_USER)"]
+              command: ["pg_isready", "-q"]
             initialDelaySeconds: 5
             periodSeconds: 5
+            timeoutSeconds: 5
         - name: postgres-wal-archive-uploader
           image: docker.io/amazon/aws-cli@sha256:b6aeb95d19d7f5a8cae4eb814cb16739b6b2a4f2f46f427ada6a8c9a20d9881d
           envFrom:
