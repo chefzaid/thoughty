@@ -289,7 +289,7 @@ export function EntryBodySection({
                     onToggleTask={onToggleTask}
                 />
             </div>
-            <div className={`mt-3 flex flex-wrap gap-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+            <div className={`mt-3 flex flex-wrap gap-2 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                 <span>{t('entryWordCount', { count: wordCount })}</span>
                 <span aria-hidden="true">/</span>
                 <span>{readingTimeLabel}</span>

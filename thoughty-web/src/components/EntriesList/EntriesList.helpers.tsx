@@ -252,7 +252,7 @@ export function EditForm({
                                 onChange={(val) => setEditText(val ?? '')}
                                 preview="edit"
                                 height={200}
-                                textareaProps={{ style: { color: writingTextColor } }}
+                                textareaProps={{ 'aria-label': t('entryTextLabel'), style: { color: writingTextColor } }}
                                 t={t}
                             />
                         </div>
@@ -265,6 +265,7 @@ export function EditForm({
                         className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
                         style={{ color: writingTextColor }}
                         rows={3}
+                        aria-label={t('entryTextLabel')}
                         value={editText}
                         onChange={(e) => setEditText(e.target.value)}
                     />
@@ -283,7 +284,9 @@ export function EditForm({
             )}
             <div className="flex flex-wrap gap-3">
                 <div className="w-40">
+                    <label htmlFor={`${fieldId}-date`} className="sr-only">{t('entryDateLabel')}</label>
                     <TypedDatePicker
+                        id={`${fieldId}-date`}
                         selected={editDate}
                         onChange={(date: Date | null) => setEditDate(date)}
                         className={`w-full border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${inputClass}`}
@@ -351,7 +354,7 @@ export function EditForm({
             <div className="flex gap-2">
                 <button type="button"
                     onClick={onSaveEdit}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-lg text-sm font-medium transition-colors"
                 >
                     <span className="codicon codicon-save" aria-hidden="true" />
                     {t('save')}

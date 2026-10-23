@@ -92,7 +92,7 @@ function highlightText(text: string, key: string, pattern: RegExp | null): React
         <>
             {segments.map((segment, i) =>
                 segment.marked
-                    ? <mark key={`${key}-hl-${i}`} className="bg-yellow-300 dark:bg-yellow-500/40 text-inherit rounded-sm px-0.5">{segment.text}</mark>
+                    ? <mark key={`${key}-hl-${i}`} className="search-highlight rounded-sm px-0.5">{segment.text}</mark>
                     : segment.text
             )}
         </>

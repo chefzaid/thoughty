@@ -6,6 +6,8 @@ type DatePickerPlacement = NonNullable<ComponentProps<typeof DatePicker>['popper
 type DatePickerRawChangeEvent = Parameters<NonNullable<ComponentProps<typeof DatePicker>['onChangeRaw']>>[0];
 
 interface TypedDatePickerProps {
+    /** The input's id, for a `<label htmlFor>` that names it. */
+    readonly id?: string;
     readonly selected: Date | null;
     readonly onChange: (date: Date | null) => void;
     readonly className?: string;
@@ -17,6 +19,7 @@ interface TypedDatePickerProps {
 }
 
 function TypedDatePicker({
+    id,
     selected,
     onChange,
     className,
@@ -63,6 +66,7 @@ function TypedDatePicker({
 
     return (
         <DatePicker
+            id={id}
             selected={selected}
             onChange={handlePickerChange}
             onChangeRaw={handleRawChange}

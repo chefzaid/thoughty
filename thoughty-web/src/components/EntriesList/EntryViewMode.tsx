@@ -127,7 +127,7 @@ export default function EntryViewMode({
                         t={t}
                     />
                     <span
-                        className="text-xs text-gray-500 font-mono"
+                        className={`text-xs font-mono ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
                         title={t('entryLinkNumberHint', { reference: `[[${extractDate(entry.date)}#${entry.index ?? 1}]]` })}
                     >
                         #{entry.index}

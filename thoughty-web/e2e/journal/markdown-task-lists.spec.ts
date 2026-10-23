@@ -55,7 +55,6 @@ test.describe('Markdown task lists', () => {
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-      .include('#entry-701 .markdown-content')
       .analyze();
     expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) }))).toEqual([]);
   });

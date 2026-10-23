@@ -155,7 +155,7 @@ function JournalView({
         t={t}
       />
 
-      {entriesList.entries.length > 0 && <BackToTopButton t={t} />}
+      {entriesList.entries.length > 0 && <BackToTopButton theme={config.theme} t={t} />}
     </>
   );
 }

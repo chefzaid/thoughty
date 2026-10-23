@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
 import { aiActionButtonClass } from './aiActionButton';
+import { tintedTextClass } from '../../utils/tintedText';
 
 interface InspirationPanelPosition {
     left: number;
@@ -159,7 +160,7 @@ export default function GetInspiredMenu({
                     type="button"
                     onClick={handleToggle}
                     disabled={loading && !open}
-                    className={aiActionButtonClass('sky')}
+                    className={aiActionButtonClass('sky', theme)}
                     title={t('getInspiredDescription')}
                     aria-expanded={open}
                     aria-haspopup="dialog"
@@ -193,17 +194,17 @@ export default function GetInspiredMenu({
                         )}
                     </div>
                     {loading && (
-                        <p className="py-4 text-center text-sm text-gray-500" aria-live="polite">
+                        <p className={`py-4 text-center text-sm ${tintedTextClass('gray', theme)}`} aria-live="polite">
                             {t('findingInspiration')}
                         </p>
                     )}
                     {error && !loading && (
                         <div className="space-y-3 py-2">
-                            <p role="alert" className="text-sm text-red-400">{t('inspirationError')}</p>
+                            <p role="alert" className={`text-sm ${tintedTextClass('red', theme)}`}>{t('inspirationError')}</p>
                             <button
                                 type="button"
                                 onClick={() => void loadQuestion()}
-                                className="rounded border border-sky-500/40 px-3 py-1.5 text-sm text-sky-500 transition-colors hover:bg-sky-500/10"
+                                className={`rounded border border-sky-500/40 px-3 py-1.5 text-sm ${tintedTextClass('sky', theme)} transition-colors hover:bg-sky-500/10`}
                             >
                                 {t('retry')}
                             </button>
@@ -217,7 +218,7 @@ export default function GetInspiredMenu({
                             <button
                                 type="button"
                                 onClick={() => handleSelect(question)}
-                                className="w-full rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-500 transition-colors hover:bg-sky-500/20"
+                                className={`w-full rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium ${tintedTextClass('sky', theme)} transition-colors hover:bg-sky-500/20`}
                             >
                                 {t('writeAboutThis')}
                             </button>

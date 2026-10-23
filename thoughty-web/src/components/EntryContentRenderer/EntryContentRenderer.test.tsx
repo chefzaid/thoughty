@@ -343,7 +343,7 @@ describe('EntryContentRenderer', () => {
 
                 const mark = container.querySelector('mark');
                 expect(mark).toBeInTheDocument();
-                expect(mark).toHaveClass('bg-yellow-300');
+                expect(mark).toHaveClass('search-highlight');
             });
 
             it('does not highlight when searchTerm is empty', () => {

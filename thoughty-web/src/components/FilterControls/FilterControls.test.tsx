@@ -219,15 +219,27 @@ describe('FilterControls', () => {
   });
 
   it('applies correct styling for public visibility button', () => {
-    render(<FilterControls {...defaultProps} filterVisibility="public" />);
-    const visibilityButton = screen.getByTitle('visibilityFilter');
-    expect(visibilityButton).toHaveClass('text-green-500');
+    const { unmount } = render(<FilterControls {...defaultProps} filterVisibility="public" />);
+    expect(screen.getByTitle('visibilityFilter')).toHaveClass('text-green-400');
+    unmount();
+
+    render(<FilterControls {...defaultProps} filterVisibility="public" theme="light" />);
+    expect(screen.getByTitle('visibilityFilter')).toHaveClass('text-green-800');
   });
 
   it('applies correct styling for private visibility button', () => {
     render(<FilterControls {...defaultProps} filterVisibility="private" />);
     const visibilityButton = screen.getByTitle('visibilityFilter');
-    expect(visibilityButton).toHaveClass('text-gray-500');
+    expect(visibilityButton).toHaveClass('text-gray-400');
+  });
+
+  it('keeps the reset button readable in both themes', () => {
+    const { unmount } = render(<FilterControls {...defaultProps} />);
+    expect(screen.getByRole('button', { name: /resetFilters/ })).toHaveClass('text-red-300');
+    unmount();
+
+    render(<FilterControls {...defaultProps} theme="light" />);
+    expect(screen.getByRole('button', { name: /resetFilters/ })).toHaveClass('text-red-700');
   });
 
   it('runs meaning search from Enter and reports bounded results', () => {

@@ -22,6 +22,7 @@ if (!globalThis.speechSynthesis) {
 }
 
 interface DatePickerProps {
+  id?: string;
   selected: Date | null;
   onChange: (date: Date | null) => void;
   onChangeRaw?: (event?: ChangeEvent<HTMLInputElement>) => void;
@@ -35,6 +36,7 @@ interface DatePickerProps {
 // Mock react-datepicker to avoid issues with CSS imports in tests
 vi.mock('react-datepicker', () => ({
   default: function MockDatePicker({
+    id,
     selected,
     onChange,
     onChangeRaw,
@@ -45,6 +47,7 @@ vi.mock('react-datepicker', () => ({
     value,
   }: DatePickerProps) {
     return createElement('input', {
+      id,
       type: 'text',
       'data-testid': 'date-picker',
       className: className,

@@ -18,7 +18,7 @@ export default function HighlightedText({ text, searchTerm, searchMatches }: Hig
     return (
         <>
             {segments.map((segment, index) => (segment.marked
-                ? <mark key={`${index}-${segment.text}`} className="bg-yellow-300 dark:bg-yellow-500/40 text-inherit rounded-sm px-0.5">{segment.text}</mark>
+                ? <mark key={`${index}-${segment.text}`} className="search-highlight rounded-sm px-0.5">{segment.text}</mark>
                 : segment.text))}
         </>
     );

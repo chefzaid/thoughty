@@ -303,15 +303,15 @@ function EntriesList({
     const showInitialLoading = loading && entries.length === 0;
     const isRefreshing = loading && entries.length > 0;
 
+    const isDark = config.theme !== 'light';
     if (showInitialLoading) {
-        return <p className="text-center text-gray-500">{t('loadingEntries')}</p>;
+        return <p className={`text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{t('loadingEntries')}</p>;
     }
     if (entries.length === 0) {
-        return <p className="text-center text-gray-500">{t('noEntriesFound')}</p>;
+        return <p className={`text-center ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>{t('noEntriesFound')}</p>;
     }
 
     const isEditing = (entry: Entry) => editingEntry !== null && editingEntry.id === entry.id;
-    const isDark = config.theme !== 'light';
     const dragToReorderLabel = t('dragToReorder') === 'dragToReorder' ? 'Drag to reorder' : t('dragToReorder');
     const dropHereLabel = t('dropToReorder') === 'dropToReorder' ? 'Release to move here' : t('dropToReorder');
     const allEntryIds = entries.map((entry) => entry.id);

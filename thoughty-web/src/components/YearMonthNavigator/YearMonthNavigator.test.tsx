@@ -50,6 +50,11 @@ describe('YearMonthNavigator', () => {
     expect(screen.getByText('goToFirst:')).toBeInTheDocument();
   });
 
+  it('names the year select for assistive technology', () => {
+    render(<YearMonthNavigator {...defaultProps} />);
+    expect(screen.getByRole('combobox', { name: 'year' })).toBeInTheDocument();
+  });
+
   it('calls setNavYear and clears month when year is selected', () => {
     render(<YearMonthNavigator {...defaultProps} />);
     const yearSelect = screen.getByRole('combobox');

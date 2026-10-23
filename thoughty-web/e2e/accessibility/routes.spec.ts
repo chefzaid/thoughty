@@ -106,8 +106,7 @@ test.describe('route accessibility', () => {
       await expect(page.locator('#entry-52 mark').first()).toBeVisible();
       await expect(page.getByRole('group', { name: 'Order of search results' })).toBeVisible();
 
-      // The search box, its help, and the result order; the rest of the journal is scanned by the route test.
-      await expectNoAccessibilityViolations(page, '.journal-search-options, input[aria-describedby]');
+      await expectNoAccessibilityViolations(page);
     });
   }
 

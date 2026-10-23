@@ -57,6 +57,12 @@ body.high-contrast-mode .entry-reference-link {
   text-decoration-thickness: 2px;
 }
 
+/* Light surfaces keep their colors in high contrast, so links there need a dark blue, not cyan. */
+body.high-contrast-mode.light-mode a,
+body.high-contrast-mode.light-mode .entry-reference-link {
+  color: #00317a !important;
+}
+
 body.high-contrast-mode button:focus-visible,
 body.high-contrast-mode input:focus-visible,
 body.high-contrast-mode select:focus-visible,
@@ -72,6 +78,22 @@ body.high-contrast-mode .chart-card,
 body.high-contrast-mode .feed-entry {
   border-color: #fff !important;
   box-shadow: none !important;
+}
+
+/* Search matches: a dim yellow behind light text in the dark theme, bright yellow behind dark text in the light theme */
+.search-highlight {
+  background-color: rgb(234 179 8 / 0.4);
+  color: #fff;
+}
+
+.light-mode .search-highlight {
+  background-color: #fde047;
+  color: #111827;
+}
+
+body.high-contrast-mode .search-highlight {
+  background-color: #ffff00;
+  color: #000;
 }
 
 /* Highlight animation for navigating to entries */
@@ -97,7 +119,7 @@ body.high-contrast-mode .feed-entry {
 
 /* Entry cross-reference links */
 .entry-reference-link {
-  color: #3b82f6;
+  color: #60a5fa;
   text-decoration: underline;
   cursor: pointer;
   transition: color 0.2s, background-color 0.2s;
@@ -118,10 +140,26 @@ body.high-contrast-mode .feed-entry {
 /* A reference with nowhere to navigate (previews, the public feed) is text, not a link. */
 span.entry-reference-link,
 span.entry-reference-link:hover {
-  color: #3b82f6;
+  color: #60a5fa;
   background: none;
   text-decoration: none;
   cursor: inherit;
+}
+
+.light-mode .entry-reference-link,
+.light-mode span.entry-reference-link:hover {
+  color: #1d4ed8;
+}
+
+.light-mode button.entry-reference-link:hover {
+  color: #1e40af;
+  background: #dbeafe;
+}
+
+/* The Markdown editor's toolbar buttons are 20px squares; WCAG 2.2 asks for 24px targets */
+.w-md-editor .w-md-editor-toolbar li > button {
+  min-width: 24px;
+  min-height: 24px;
 }
 
 /* Markdown content styling */

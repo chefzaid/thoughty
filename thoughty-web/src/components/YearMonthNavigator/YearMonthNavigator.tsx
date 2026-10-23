@@ -1,4 +1,5 @@
 import type { Config } from '../../types';
+import { tintedTextClass } from '../../utils/tintedText';
 
 interface YearMonthNavigatorProps {
   availableYears: number[];
@@ -33,6 +34,7 @@ function YearMonthNavigator({
         {t('goToFirst')}:
       </span>
       <select
+        aria-label={t('year')}
         value={navYear}
         onChange={(e) => { setNavYear(e.target.value); setNavMonth(''); }}
         className={`border rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${
@@ -48,6 +50,7 @@ function YearMonthNavigator({
       </select>
       {navYear && availableMonths.some(m => m.startsWith(navYear)) && (
         <select
+          aria-label={t('month')}
           value={navMonth}
           onChange={(e) => setNavMonth(e.target.value)}
           className={`border rounded px-2 py-1 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${
@@ -69,7 +72,7 @@ function YearMonthNavigator({
           navMonth ? Number.parseInt(navMonth.split('-')[1] ?? '1', 10) : null
         )}
         disabled={!navYear}
-        className="px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/50 rounded transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`px-3 py-1 bg-blue-500/10 hover:bg-blue-500/20 ${tintedTextClass('blue', config.theme)} border border-blue-500/50 rounded transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         {t('go')}
       </button>

@@ -1,13 +1,14 @@
 interface BackToTopButtonProps {
+  theme?: 'light' | 'dark';
   t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function BackToTopButton({ t }: Readonly<BackToTopButtonProps>) {
+function BackToTopButton({ theme, t }: Readonly<BackToTopButtonProps>) {
   return (
     <div className="flex justify-center mt-6 mb-8">
       <button type="button"
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="text-sm text-gray-400 hover:text-blue-500 transition-colors flex items-center gap-1 group"
+        className={`text-sm ${theme === 'light' ? 'text-gray-600 hover:text-blue-700' : 'text-gray-400 hover:text-blue-400'} transition-colors flex items-center gap-1 group`}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"

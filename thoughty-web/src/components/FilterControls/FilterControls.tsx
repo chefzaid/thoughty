@@ -7,6 +7,7 @@ import type { TagMetadataMap } from '../../utils/tagMetadata';
 import type { SemanticSearchResponse } from '../../services/api/aiService';
 import type { EntrySearchMode, SemanticSearchStatus } from '../../hooks/useEntriesState';
 import { MOOD_FILTER_OPTIONS, isMoodFilter, type MoodFilter } from '../../utils/entryMood';
+import { tintedTextClass } from '../../utils/tintedText';
 
 type VisibilityFilter = 'all' | 'public' | 'private';
 
@@ -108,10 +109,10 @@ function FilterControls({
 
     const getVisibilityButtonStyle = (): string => {
         if (filterVisibility === 'public') {
-            return 'bg-green-500/10 border-green-500/50 text-green-500 hover:bg-green-500/20';
+            return `bg-green-500/10 border-green-500/50 ${tintedTextClass('green', theme)} hover:bg-green-500/20`;
         }
         if (filterVisibility === 'private') {
-            return 'bg-gray-500/10 border-gray-500/50 text-gray-500 hover:bg-gray-500/20';
+            return `bg-gray-500/10 border-gray-500/50 ${tintedTextClass('gray', theme)} hover:bg-gray-500/20`;
         }
 
         if (isLight) {
@@ -123,7 +124,7 @@ function FilterControls({
 
     const getFavoriteButtonClass = (): string => {
         if (filterFavorites) {
-            return 'bg-yellow-500/10 border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/20';
+            return `bg-yellow-500/10 border-yellow-500/50 ${tintedTextClass('yellow', theme)} hover:bg-yellow-500/20`;
         }
 
         if (isLight) {
@@ -143,10 +144,10 @@ function FilterControls({
 
     const getArchiveButtonClass = (): string => {
         if (filterArchiveStatus === 'archived') {
-            return 'bg-sky-500/10 border-sky-500/50 text-sky-500 hover:bg-sky-500/20';
+            return `bg-sky-500/10 border-sky-500/50 ${tintedTextClass('sky', theme)} hover:bg-sky-500/20`;
         }
         if (filterArchiveStatus === 'active') {
-            return 'bg-emerald-500/10 border-emerald-500/50 text-emerald-500 hover:bg-emerald-500/20';
+            return `bg-emerald-500/10 border-emerald-500/50 ${tintedTextClass('emerald', theme)} hover:bg-emerald-500/20`;
         }
 
         if (isLight) {
@@ -344,7 +345,7 @@ function FilterControls({
                             setPage(1);
                         }}
                         className={`h-10 shrink-0 rounded-lg border px-3 text-sm font-medium outline-none focus:ring-1 focus:ring-blue-500 ${filterMood
-                            ? 'bg-blue-500/10 border-blue-500/50 text-blue-500'
+                            ? `bg-blue-500/10 border-blue-500/50 ${tintedTextClass('blue', theme)}`
                             : isLight ? 'bg-gray-50 border-gray-300 text-gray-700' : 'bg-gray-900 border-gray-700 text-gray-300'
                             }`}
                         aria-label={t('moodFilterLabel')}
@@ -356,7 +357,7 @@ function FilterControls({
                     </select>
                     <button type="button"
                         onClick={handleReset}
-                        className="inline-flex h-10 shrink-0 items-center gap-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded-lg transition-all text-sm font-medium"
+                        className={`inline-flex h-10 shrink-0 items-center gap-2 px-4 bg-red-500/10 hover:bg-red-500/20 ${tintedTextClass('red', theme)} border border-red-500/50 rounded-lg transition-all text-sm font-medium`}
                         title={t('resetFilters')}
                     >
                         <span className="codicon codicon-discard" aria-hidden="true" />
@@ -366,7 +367,7 @@ function FilterControls({
                 <div className="flex flex-wrap items-center gap-2">
                     <button type="button"
                         onClick={onOpenHighlights}
-                        className="flex h-10 shrink-0 items-center gap-2 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/50 rounded-lg transition-all text-sm font-medium"
+                        className={`flex h-10 shrink-0 items-center gap-2 px-4 bg-amber-500/10 hover:bg-amber-500/20 ${tintedTextClass('amber', theme)} border border-amber-500/50 rounded-lg transition-all text-sm font-medium`}
                         title={t('seeHighlights')}
                     >
                         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

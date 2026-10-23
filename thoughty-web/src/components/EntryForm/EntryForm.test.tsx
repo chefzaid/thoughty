@@ -60,6 +60,7 @@ describe('EntryForm', () => {
                 entryTitleLabel: 'Title (optional)',
                 entryTitlePlaceholder: 'Title (optional)',
                 entryTimeLabel: 'Time of day (optional)',
+                entryDateLabel: 'Date of the entry',
                 entryTimeNow: 'Now',
                 entryTimeNowLabel: 'Set the time of day to now',
                 entryTimeClear: 'Remove the time of day',
@@ -70,6 +71,13 @@ describe('EntryForm', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+    });
+
+    it('labels the date field and keeps the AI actions readable in the light theme', () => {
+        render(<EntryForm {...defaultProps} theme="light" onSuggestTags={vi.fn()} />);
+
+        expect(screen.getByLabelText('Date of the entry')).toHaveAttribute('id', 'composer-date');
+        expect(screen.getByRole('button', { name: 'Auto Tag' })).toHaveClass('text-amber-800');
     });
 
     describe('Markdown toggle', () => {
@@ -93,7 +101,7 @@ describe('EntryForm', () => {
             await screen.findByTestId('md-editor');
 
             const mdButton = screen.getByText('MD').closest('button');
-            expect(mdButton).toHaveClass('border-indigo-500');
+            expect(mdButton).toHaveClass('border-indigo-500', 'text-indigo-300');
         });
 
         it('calls setFormat when MD button is clicked', async () => {

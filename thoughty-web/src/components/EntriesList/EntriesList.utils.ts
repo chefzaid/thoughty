@@ -2,13 +2,14 @@ import type { CSSProperties } from 'react';
 import { resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 export { getVisibilityButtonClass } from '../../utils/entryVisibility';
 import type { Entry } from '../../types';
+import { tintedTextClass } from '../../utils/tintedText';
 
 export const extractDate = (date: string): string =>
     date.includes('T') ? (date.split('T')[0] ?? date) : date;
 
 export function getEditFormatButtonClass(editFormat: 'plain' | 'markdown', theme?: 'light' | 'dark'): string {
     if (editFormat === 'markdown') {
-        return 'border-indigo-500 bg-indigo-500/10 text-indigo-500';
+        return `border-indigo-500 bg-indigo-500/10 ${tintedTextClass('indigo', theme)}`;
     }
 
     return theme === 'light'
@@ -33,8 +34,9 @@ export function getEntryDiaryBadgeStyle(entry: Entry, isDark: boolean): CSSPrope
         name: entry.diary_name,
     });
 
+    // The diary's color tints the border and background; the text stays neutral so it keeps its contrast, as tag badges do
     return {
-        color: diaryColor,
+        color: isDark ? '#F9FAFB' : '#111827',
         borderColor: withAlpha(diaryColor, isDark ? 0.5 : 0.25),
         backgroundColor: withAlpha(diaryColor, isDark ? 0.18 : 0.12),
     };

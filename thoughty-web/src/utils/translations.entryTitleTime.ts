@@ -3,6 +3,8 @@ import type { Language } from './translations';
 export type EntryTitleTimeTranslationKey =
   | 'entryTitleLabel'
   | 'entryTitlePlaceholder'
+  | 'entryDateLabel'
+  | 'entryTextLabel'
   | 'entryTimeLabel'
   | 'entryTimeNow'
   | 'entryTimeNowLabel'
@@ -18,6 +20,8 @@ export const entryTitleTimeTranslations: Record<Language, Record<EntryTitleTimeT
   en: {
     entryTitleLabel: 'Title (optional)',
     entryTitlePlaceholder: 'Title (optional)',
+    entryDateLabel: 'Date of the entry',
+    entryTextLabel: 'Text of the entry',
     entryTimeLabel: 'Time of day (optional)',
     entryTimeNow: 'Now',
     entryTimeNowLabel: 'Set the time of day to now',
@@ -32,6 +36,8 @@ export const entryTitleTimeTranslations: Record<Language, Record<EntryTitleTimeT
   fr: {
     entryTitleLabel: 'Titre (facultatif)',
     entryTitlePlaceholder: 'Titre (facultatif)',
+    entryDateLabel: 'Date de l’entrée',
+    entryTextLabel: 'Texte de l’entrée',
     entryTimeLabel: 'Heure (facultative)',
     entryTimeNow: 'Maintenant',
     entryTimeNowLabel: 'Mettre l’heure actuelle',

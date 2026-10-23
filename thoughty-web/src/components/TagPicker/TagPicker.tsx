@@ -138,6 +138,7 @@ function TagPicker({
                     type="text"
                     className={`min-h-8 flex-1 min-w-[120px] outline-none bg-transparent placeholder-gray-500 ${isLight ? 'text-gray-900' : 'text-gray-100'}`}
                     placeholder={selectedTags.length === 0 ? placeholder : ''}
+                    aria-label={placeholder}
                     value={inputValue}
                     onChange={handleInputChange}
                     onFocus={() => setIsOpen(true)}

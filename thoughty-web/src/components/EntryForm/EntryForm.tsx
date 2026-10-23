@@ -12,6 +12,7 @@ import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
 import GetInspiredMenu from './GetInspiredMenu';
 import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 import { aiActionButtonClass } from './aiActionButton';
+import { tintedTextClass } from '../../utils/tintedText';
 import EntryTimeField from './EntryTimeField';
 import EntryMoodField from './EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
@@ -81,7 +82,7 @@ function entryFormClasses({ theme, format, visibility }: Pick<EntryFormProps, 't
         }`;
 
     const markdownToggleClass = format === 'markdown'
-        ? 'border-indigo-500 bg-indigo-500/10 text-indigo-500'
+        ? `border-indigo-500 bg-indigo-500/10 ${tintedTextClass('indigo', theme)}`
         : getVisibilityButtonClass(visibility ?? 'private', theme);
 
     return { inputClass, containerClass, markdownToggleClass };
@@ -210,7 +211,7 @@ function EntryForm({
                                 type="button"
                                 onClick={() => void saveCurrentDraftAsTemplate()}
                                 disabled={newEntryText.trim() === ''}
-                                className="inline-flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-sm text-emerald-500 hover:bg-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                className={`inline-flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-sm ${tintedTextClass('emerald', theme)} hover:bg-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
                                 title={t('saveEntryTemplate')}
                             >
                                 <span className="codicon codicon-save" aria-hidden="true" />
@@ -221,7 +222,7 @@ function EntryForm({
                             <button
                                 type="button"
                                 onClick={() => void deleteSelectedTemplate()}
-                                className="h-10 shrink-0 px-3 rounded-lg border border-red-500/40 bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all"
+                                className={`h-10 shrink-0 px-3 rounded-lg border border-red-500/40 bg-red-500/10 ${tintedTextClass('red', theme)} hover:bg-red-500/20 transition-all`}
                                 title={t('deleteEntryTemplate')}
                             >
                                 {t('deleteEntryTemplate')}
@@ -310,7 +311,9 @@ function EntryForm({
                 )}
                 <div className="flex flex-wrap gap-4 items-end">
                     <div className="w-40 z-10">
+                        <label htmlFor="composer-date" className="sr-only">{t('entryDateLabel')}</label>
                         <TypedDatePicker
+                            id="composer-date"
                             selected={selectedDate}
                             onChange={(date: Date | null) => date && setSelectedDate(date)}
                             className={inputClass}
@@ -344,7 +347,7 @@ function EntryForm({
                                 onSuggestTags();
                             }}
                             disabled={suggestingTags}
-                            className={aiActionButtonClass('amber')}
+                            className={aiActionButtonClass('amber', theme)}
                             title={t('autoTagDescription')}
                         >
                             <AiSparkleIcon />
@@ -358,7 +361,7 @@ function EntryForm({
                                 onFixWriting();
                             }}
                             disabled={fixingWriting}
-                            className={aiActionButtonClass('teal')}
+                            className={aiActionButtonClass('teal', theme)}
                         >
                             <AiSparkleIcon />
                             <span>{fixingWriting ? t('fixingWriting') : t('fixWriting')}</span>
