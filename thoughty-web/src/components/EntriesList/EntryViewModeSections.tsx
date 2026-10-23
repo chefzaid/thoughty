@@ -14,6 +14,7 @@ import type {
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getEntryMetrics } from '../../utils/entryMetrics';
 import { formatTimeOfDay } from '../../utils/entryTime';
+import { describeMood, feelingLabel, isMoodLevel, moodEmoji, moodLabelKey } from '../../utils/entryMood';
 import { resolveFontColor } from '../../types/config';
 import {
     extractDate,
@@ -84,6 +85,11 @@ export function EntryHistorySection({
                                 {[rev.timeOfDay, rev.title ? t('revisionTitle', { title: rev.title }) : null].filter(Boolean).join(' · ')}
                             </p>
                         )}
+                        {(isMoodLevel(rev.mood) || (rev.feelings?.length ?? 0) > 0) && (
+                            <p className={`mb-1 text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {t('revisionMood', { mood: describeMood(rev.mood, rev.feelings, t) })}
+                            </p>
+                        )}
                         <div className={`whitespace-pre-wrap ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                             {rev.content}
                         </div>
@@ -113,6 +119,42 @@ export function EntryHistorySection({
             </h4>
             {content}
         </div>
+    );
+}
+
+/** The mood as its label, with the emoji as decoration, then the feelings; nothing when none is recorded. */
+export function EntryMoodBadge({
+    entry,
+    isDark,
+    t,
+}: Readonly<{ entry: Pick<Entry, 'mood' | 'feelings'>; isDark: boolean; t: TranslationFn }>) {
+    const level = isMoodLevel(entry.mood) ? entry.mood : null;
+    const feelings = entry.feelings ?? [];
+    if (level === null && feelings.length === 0) {
+        return null;
+    }
+
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${isDark ? 'border-blue-400/30 bg-blue-500/10 text-blue-200' : 'border-blue-200 bg-blue-50 text-blue-800'}`}
+            data-mood={level ?? undefined}
+        >
+            <span className="sr-only">{t('moodLabel')}: </span>
+            {level !== null && (
+                <>
+                    <span aria-hidden="true">{moodEmoji(level)}</span>
+                    <span>{t(moodLabelKey(level))}</span>
+                </>
+            )}
+            {feelings.length > 0 && (
+                <span className={isDark ? 'text-blue-300/90' : 'text-blue-700'}>
+                    {level !== null && <span aria-hidden="true">· </span>}
+                    {level !== null && <span className="sr-only">, {t('feelingsLabel')}: </span>}
+                    {level === null && <span className="sr-only">{t('feelingsLabel')}: </span>}
+                    {feelings.map((feeling) => feelingLabel(feeling, t)).join(', ')}
+                </span>
+            )}
+        </span>
     );
 }
 
@@ -147,6 +189,7 @@ export function EntryHeaderBadges({
                     {timeLabel}
                 </time>
             )}
+            <EntryMoodBadge entry={entry} isDark={isDark} t={t} />
             {showDiaryLabel && entry.diary_name && (
                 <span
                     className="inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-full border font-medium"

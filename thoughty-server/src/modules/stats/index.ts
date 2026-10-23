@@ -4,4 +4,5 @@ export * from './stats.service';
 export * from './stats-journal-analysis.service';
 export * from './stats-personality-analysis.service';
 export * from './stats-correlation.service';
+export * from './stats-mood.service';
 export * from './dto';

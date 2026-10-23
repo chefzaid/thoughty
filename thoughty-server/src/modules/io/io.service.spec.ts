@@ -346,6 +346,22 @@ Test entry content
       expect(result).toHaveProperty('duplicateCount');
     });
 
+    it('keeps the mood and feelings written in the file', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      diaryRepository.findOne.mockResolvedValue(mockDiary);
+      entryRepository.count.mockResolvedValue(0);
+      entryRepository.save.mockResolvedValue(mockEntry);
+      entryRepository.createQueryBuilder().getMany.mockResolvedValue([]);
+
+      await service.import(1, { content: '---2024-01-15--[tag1]--{mood:2}--{feelings:tired,hopeful}\nLong day\n' });
+
+      expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+        mood: 2,
+        feelings: ['tired', 'hopeful'],
+        content: 'Long day',
+      }));
+    });
+
     it('should throw BadRequestException for empty content', async () => {
       await expect(service.preview(1, { content: '' })).rejects.toThrow(BadRequestException);
     });

@@ -3,6 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useEntryNavigation } from './useEntryNavigation';
+import type { MoodFilter } from '../utils/entryMood';
 
 type UseEntryNavigationParams = Parameters<typeof useEntryNavigation>[0];
 
@@ -22,6 +23,7 @@ function createParams(overrides: Partial<UseEntryNavigationParams> = {}): UseEnt
     filterArchiveStatus: 'all',
     filterDateObj: null,
     filterFavorites: false,
+    filterMood: '',
     filterTags: [],
     filterVisibility: 'all',
     getLimit: vi.fn(() => 10),
@@ -37,6 +39,7 @@ function createParams(overrides: Partial<UseEntryNavigationParams> = {}): UseEnt
     setFilterArchiveStatus: createSetterSpy<'all' | 'active' | 'archived'>(),
     setFilterDateObj: createSetterSpy<Date | null>(),
     setFilterFavorites: createSetterSpy<boolean>(),
+    setFilterMood: createSetterSpy<MoodFilter>(),
     setFilterTags: createSetterSpy<string[]>(),
     setFilterVisibility: createSetterSpy<'all' | 'public' | 'private'>(),
     setPage: createSetterSpy<number>(),
@@ -293,6 +296,7 @@ describe('useEntryNavigation', () => {
     const setFilterVisibility = createSetterSpy<'all' | 'public' | 'private'>();
     const setFilterFavorites = createSetterSpy<boolean>();
     const setFilterArchiveStatus = createSetterSpy<'all' | 'active' | 'archived'>();
+    const setFilterMood = createSetterSpy<MoodFilter>();
     const setCurrentDiaryId = createSetterSpy<number | null>();
     const setPage = createSetterSpy<number>();
     const navigateByDate = vi.fn().mockResolvedValue({ found: true, page: 5, entryId: 13 });
@@ -305,6 +309,7 @@ describe('useEntryNavigation', () => {
       filterArchiveStatus: 'active',
       filterDateObj: new Date('2024-01-15'),
       filterFavorites: true,
+      filterMood: '4,5',
       filterTags: ['work'],
       filterVisibility: 'private',
       navigate,
@@ -315,6 +320,7 @@ describe('useEntryNavigation', () => {
       setFilterArchiveStatus,
       setFilterDateObj,
       setFilterFavorites,
+      setFilterMood,
       setFilterTags,
       setFilterVisibility,
       setPage,
@@ -331,6 +337,7 @@ describe('useEntryNavigation', () => {
     expect(setFilterVisibility).toHaveBeenCalledWith('all');
     expect(setFilterFavorites).toHaveBeenCalledWith(false);
     expect(setFilterArchiveStatus).toHaveBeenCalledWith('all');
+    expect(setFilterMood).toHaveBeenCalledWith('');
     expect(setCurrentDiaryId).toHaveBeenCalledWith(null);
     expect(navigate).toHaveBeenCalledWith({ pathname: '/journal', search: '?diary=all' }, { replace: true });
     expect(setPage).toHaveBeenCalledWith(1);

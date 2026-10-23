@@ -49,6 +49,7 @@ export class EntriesQueryService {
       visibility,
       favorites,
       archiveStatus,
+      mood,
       diaryId,
       page = 1,
       limit = 10,
@@ -120,6 +121,14 @@ export class EntriesQueryService {
       qb.andWhere('e.is_archived = true');
     }
 
+    if (mood === 'any') {
+      qb.andWhere('e.mood IS NOT NULL');
+    } else if (mood === 'none') {
+      qb.andWhere('e.mood IS NULL');
+    } else if (mood) {
+      qb.andWhere('e.mood IN (:...moods)', { moods: [...new Set(mood.split(',').map(Number))] });
+    }
+
     const totalPromise = qb.getCount();
 
     if (entryIds.length > 0) {
@@ -166,6 +175,8 @@ export class EntriesQueryService {
         index: entry.index,
         title: entry.title ?? null,
         time_of_day: entry.timeOfDay ?? null,
+        mood: entry.mood ?? null,
+        feelings: entry.feelings ?? [],
         tags: entry.tags,
         content: entry.content,
         format: entry.format,

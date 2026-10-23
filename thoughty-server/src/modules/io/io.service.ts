@@ -179,6 +179,8 @@ export class IoService {
       index: nextIndex,
       title: entry.title ?? null,
       timeOfDay: entry.timeOfDay ?? null,
+      mood: entry.mood ?? null,
+      feelings: entry.feelings ?? [],
       tags: entry.tags,
       content: entry.content,
       format: entry.format || 'plain',

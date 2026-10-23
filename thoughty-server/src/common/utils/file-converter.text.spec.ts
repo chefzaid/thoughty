@@ -214,6 +214,48 @@ Line 3
     });
   });
 
+  describe('moods and feelings', () => {
+    const checkedIn = [
+      createEntry({ tags: ['walks'], content: 'River walk', title: 'Before work', timeOfDay: '07:10', mood: 4, feelings: ['calm', 'hopeful'] }),
+      createEntry({ index: 2, tags: ['notes'], content: 'Untimed thought', feelings: ['tired'] }),
+      createEntry({ date: '2024-01-16', content: 'No check-in' }),
+    ];
+
+    it('writes the mood and feelings after the Markdown flag and before the title', () => {
+      const exported = generateTextFile([
+        { ...checkedIn[0], format: 'markdown' as const },
+        ...checkedIn.slice(1),
+      ]);
+
+      expect(exported).toContain('---2024-01-15 07:10--[walks]{md}--{mood:4}--{feelings:calm,hopeful}--{title:Before work}\r\nRiver walk');
+      expect(exported).toContain('---2--[notes]--{feelings:tired}\r\nUntimed thought');
+      expect(exported).toContain('---2024-01-16--[]\r\nNo check-in');
+    });
+
+    it('roundtrips moods and feelings with every other header field', () => {
+      const imported = parseTextFile(generateTextFile(checkedIn, undefined, true));
+
+      expect(imported[0]).toMatchObject({ title: 'Before work', timeOfDay: '07:10', mood: 4, feelings: ['calm', 'hopeful'], visibility: 'private' });
+      expect(imported[1]).toMatchObject({ index: 2, feelings: ['tired'], content: 'Untimed thought' });
+      expect(imported[1].mood).toBeUndefined();
+      expect(imported[2].mood).toBeUndefined();
+      expect(imported[2].feelings).toBeUndefined();
+    });
+
+    it('keeps moods on the header line when titles go on the first line', () => {
+      const config = { titlePlacement: 'firstLine' as const };
+      const imported = parseTextFile(generateTextFile(checkedIn, config), config);
+
+      expect(imported[0]).toMatchObject({ title: 'Before work', mood: 4, content: 'River walk' });
+    });
+
+    it('does not take a line with a mood off the scale for a header', () => {
+      const [entry] = parseTextFile('---2024-01-15--[]--{mood:9}\nText\n');
+
+      expect(entry).toBeUndefined();
+    });
+  });
+
   describe('titles and times', () => {
     const dayWithTimes = [
       createEntry({ tags: ['walks'], content: 'River walk', title: 'Before work {early}', timeOfDay: '07:10' }),

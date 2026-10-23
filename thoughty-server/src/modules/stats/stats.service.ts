@@ -5,6 +5,7 @@ import { Entry } from '@/database/entities';
 import { StatsResponseDto } from './dto';
 import { StatsJournalAnalysisService } from './stats-journal-analysis.service';
 import { StatsCorrelationService } from './stats-correlation.service';
+import { StatsMoodService } from './stats-mood.service';
 
 const WORDS_PER_MINUTE = 200;
 
@@ -15,6 +16,7 @@ export class StatsService {
     private readonly entryRepository: Repository<Entry>,
     private readonly statsJournalAnalysisService: StatsJournalAnalysisService,
     private readonly statsCorrelationService: StatsCorrelationService,
+    private readonly statsMoodService: StatsMoodService,
   ) {}
 
   async getStats(userId: number, diaryId?: number): Promise<StatsResponseDto> {
@@ -41,6 +43,7 @@ export class StatsService {
       tagsPerMonthResult,
       wordCountResult,
       correlations,
+      moods,
     ] = await Promise.all([
       createQb().getCount(),
       createQb()
@@ -92,6 +95,7 @@ export class StatsService {
         )
         .getRawOne(),
       this.statsCorrelationService.analyze(userId, diaryId),
+      this.statsMoodService.analyze(userId, diaryId),
     ]);
 
     const thoughtsPerYear: Record<string, number> = {};
@@ -165,6 +169,7 @@ export class StatsService {
       toneMoodAnalysis: journalAnalysis?.toneMoodAnalysis ?? null,
       subjectAnalysis: journalAnalysis?.subjectAnalysis ?? null,
       correlations,
+      moods,
     };
   }
 }

@@ -11,6 +11,8 @@ describe('EntryListCacheService', () => {
       index: 1,
       title: null,
       time_of_day: null,
+      mood: null,
+      feelings: [],
       tags: ['focus'],
       content: 'Cached entry',
       format: 'plain',
@@ -48,6 +50,15 @@ describe('EntryListCacheService', () => {
     expect(cache.get(7, { search: 'walk', sort: 'date' })).toBeUndefined();
     expect(cache.get(7, { ids: '3,1' })?.total).toBe(2);
     expect(cache.get(7, { ids: '1,3' })).toBeUndefined();
+  });
+
+  it('keeps mood filters apart', () => {
+    const cache = new EntryListCacheService({ ENTRIES_CACHE_TTL_SECONDS: '30' });
+    cache.set(7, { mood: '4,5' }, response);
+
+    expect(cache.get(7, { mood: '4,5' })).toEqual(response);
+    expect(cache.get(7, { mood: '1' })).toBeUndefined();
+    expect(cache.get(7, {})).toBeUndefined();
   });
 
   it('expires cached entries after the configured ttl', () => {

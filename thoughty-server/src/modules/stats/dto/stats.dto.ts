@@ -160,6 +160,53 @@ export class StatsCorrelationsDto {
   tagConnections!: TagCorrelationDto[];
 }
 
+export class StatsMoodMonthDto {
+  @ApiProperty({ example: '2025-03' })
+  month!: string;
+
+  @ApiProperty({ example: 3.8, minimum: 1, maximum: 5, description: 'Average recorded mood that month, to one decimal' })
+  average!: number;
+
+  @ApiProperty({ example: 12, description: 'Entries with a recorded mood that month' })
+  entries!: number;
+}
+
+export class StatsMoodWeekdayDto {
+  @ApiProperty({ type: Number, nullable: true, example: 3.6, minimum: 1, maximum: 5 })
+  average!: number | null;
+
+  @ApiProperty({ example: 9 })
+  entries!: number;
+}
+
+export class StatsFeelingDto {
+  @ApiProperty({ example: 'calm' })
+  feeling!: string;
+
+  @ApiProperty({ example: 14 })
+  count!: number;
+}
+
+export class StatsMoodDto {
+  @ApiProperty({ example: 48, description: 'Entries with a recorded mood' })
+  recordedEntries!: number;
+
+  @ApiProperty({ type: Number, nullable: true, example: 3.7, description: 'Average recorded mood from 1 (very low) to 5 (very good)' })
+  averageMood!: number | null;
+
+  @ApiProperty({ type: [Number], example: [2, 5, 12, 20, 9], description: 'Entries per mood level, from 1 (very low) to 5 (very good)' })
+  levels!: number[];
+
+  @ApiProperty({ type: [StatsMoodMonthDto], description: 'Months with a recorded mood, oldest first' })
+  months!: StatsMoodMonthDto[];
+
+  @ApiProperty({ type: [StatsMoodWeekdayDto], description: 'Seven weekdays, Monday first' })
+  weekdays!: StatsMoodWeekdayDto[];
+
+  @ApiProperty({ type: [StatsFeelingDto], description: 'The feeling words recorded most often, up to ten' })
+  topFeelings!: StatsFeelingDto[];
+}
+
 export class StatsResponseDto {
   @ApiProperty({ example: 120 })
   totalThoughts!: number;
@@ -237,4 +284,7 @@ export class StatsResponseDto {
 
   @ApiProperty({ type: StatsCorrelationsDto })
   correlations!: StatsCorrelationsDto;
+
+  @ApiProperty({ type: StatsMoodDto, description: 'Recorded moods and feelings, computed without AI' })
+  moods!: StatsMoodDto;
 }

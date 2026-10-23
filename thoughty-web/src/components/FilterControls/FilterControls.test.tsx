@@ -47,6 +47,8 @@ describe('FilterControls', () => {
     setFilterFavorites: vi.fn(),
     filterArchiveStatus: 'active' as const,
     setFilterArchiveStatus: vi.fn(),
+    filterMood: '' as const,
+    setFilterMood: vi.fn(),
     allTags: ['tag1', 'tag2', 'tag3'],
     setPage: mockSetPage,
     theme: 'dark' as const,
@@ -131,7 +133,25 @@ describe('FilterControls', () => {
     expect(mockSetFilterDateObj).toHaveBeenCalledWith(null);
     expect(mockSetFilterVisibility).toHaveBeenCalledWith('all');
     expect(defaultProps.setFilterArchiveStatus).toHaveBeenCalledWith('active');
+    expect(defaultProps.setFilterMood).toHaveBeenCalledWith('');
     expect(mockSetPage).toHaveBeenCalledWith(1);
+  });
+
+  it('filters by mood level, by any mood or none, and back to page one', () => {
+    const setFilterMood = vi.fn();
+    render(<FilterControls {...defaultProps} setFilterMood={setFilterMood} />);
+
+    const select = screen.getByRole('combobox', { name: 'moodFilterLabel' });
+    expect(select).toHaveValue('');
+    expect(Array.from((select as HTMLSelectElement).options).map((option) => option.value)).toEqual(['', 'any', 'none', '4,5', '1,2', '5', '4', '3', '2', '1']);
+    expect(screen.getByRole('option', { name: 'moodLevel5' })).toBeInTheDocument();
+
+    fireEvent.change(select, { target: { value: '4,5' } });
+    expect(setFilterMood).toHaveBeenCalledWith('4,5');
+    expect(mockSetPage).toHaveBeenCalledWith(1);
+
+    fireEvent.change(select, { target: { value: 'none' } });
+    expect(setFilterMood).toHaveBeenLastCalledWith('none');
   });
 
   it('cycles archive filter from active to archived', () => {

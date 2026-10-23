@@ -67,10 +67,10 @@ The browser never reaches a real backend: every `/api` call is answered by the m
 | `public/` | landing page and the feature-request board |
 | `auth/` | sign-up and login onboarding, two-factor authentication |
 | `navigation/` | direct routes, browser history, permalinks, diary return routes |
-| `journal/` | authoring, Markdown, lifecycle, reordering, entry titles and times (Now, ordering, stable numbers, dragging untimed entries, title search, French), filtering, full-text search (operators, prefix matches, ordering, highlights, French help), favorites, visibility, bulk archive, history, highlights, audio transcription, recycle bin |
+| `journal/` | authoring, Markdown, lifecycle, reordering, entry titles and times (Now, ordering, stable numbers, dragging untimed entries, title search, French), mood check-ins (composer, editor and history, mood filter, French feelings), filtering, full-text search (operators, prefix matches, ordering, highlights, French help), favorites, visibility, bulk archive, history, highlights, audio transcription, recycle bin |
 | `tags/` | tag create, count, rename, delete, and journal tag organization |
 | `ai/` | Auto Tag, automatic tagging, Get Inspired, rephrasing, summaries, chat, meaning search, duplicates, personal API keys |
-| `stats/` | totals, heatmap, and tag insights; the year in review (numbers, diary scope, mood arc, sharing, French, phone layout) |
+| `stats/` | totals, heatmap, and tag insights; recorded moods by month, weekday, and feeling, per diary; the year in review (numbers, diary scope, mood arc from recorded moods or AI, sharing, French, phone layout) |
 | `import-export/` | import/export formats, format settings, delete-all, books, book versions and cloud upload, Day One and Journey imports with their photos, the Markdown folder export |
 | `cloud-sync/` | uploads, schedules, Sync Now, cloud imports |
 | `diary/` | create, edit, reorder, default, delete fallback |
@@ -85,14 +85,14 @@ Put a new spec in the closest existing directory and name it after the behavior 
 |---|---|
 | `mockApp.ts` | `setupMockApp(page, options)`: per-test state, auth tokens, route registration |
 | `mockApp.shared.ts` | state types and defaults, diaries, cloud fixtures, import/export helpers |
-| `mockApp.stats.ts` | stats response builders |
+| `mockApp.stats.ts` | stats response builders, including recorded moods |
 | `mockApp.route-utils.ts` | route context and `fulfillJson` |
 | `mockApp.routes.ts` | dispatch, auth, config, and feature-request routes |
 | `mockApp.routes.entries.ts` | entries and tags; deleting moves entries to the mock recycle bin (`state.trash`) |
 | `mockApp.search.ts` | a small keyword search for the entries route: whole words, quoted phrases, exclusions, OR, a prefix last word, best-match order, and `search_matches` over titles and text, without stemming |
 | `mockApp.routes.recycle-bin.ts` | listing, restoring, deleting forever, and emptying the recycle bin |
 | `mockApp.routes.io.ts` | import/export and book routes |
-| `mockApp.review.ts` / `mockApp.routes.review.ts` | a small year review built from the test's entries, and saved mood readings |
+| `mockApp.review.ts` / `mockApp.routes.review.ts` | a small year review built from the test's entries (with the arc of their recorded moods), and saved mood readings |
 | `mockApp.app-import.ts` / `mockApp.routes.app-import.ts` | app-import state (source references, uploaded files) and the entry and attachment batch routes |
 | `mockApp.memoir.ts` / `mockApp.routes.memoir.ts` | a short memoir catalogue and program state, and the memoir routes |
 | `mockApp.routes.social.ts` | public feed scopes, follows, comments, likes, the leaderboard, and achievements |

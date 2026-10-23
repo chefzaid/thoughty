@@ -59,6 +59,35 @@ describe('EntryViewMode', () => {
         expect(time).toHaveTextContent(/6:45\sPM/);
     });
 
+    it('shows the recorded mood by its label, with the emoji hidden from screen readers, and the feelings', () => {
+        renderEntryViewMode({ entry: { ...mockEntries[0], mood: 4, feelings: ['calm', 'nostalgic'] } });
+
+        const badge = screen.getByText('Good').closest('[data-mood]');
+        expect(badge).toHaveAttribute('data-mood', '4');
+        expect(badge).toHaveTextContent('Mood: 🙂Good· , Feelings: calm, nostalgic');
+        expect(screen.getByText('🙂')).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('shows feelings recorded without a mood, and no badge when neither is recorded', () => {
+        const { unmount } = renderEntryViewMode({ entry: { ...mockEntries[0], mood: null, feelings: ['tired'] } });
+        expect(screen.getByText('tired')).toBeInTheDocument();
+        unmount();
+
+        renderEntryViewMode({ entry: { ...mockEntries[0], mood: null, feelings: [] } });
+        expect(screen.queryByText('Mood:', { exact: false })).not.toBeInTheDocument();
+    });
+
+    it('shows the mood an earlier version had in the history', async () => {
+        const onFetchHistory = vi.fn().mockResolvedValue([{ ...mockRevisions[0], mood: 2, feelings: ['tired'] }]);
+        const user = userEvent.setup();
+        renderEntryViewMode({ onFetchHistory });
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('View history'));
+
+        expect(await screen.findByText('Mood: Low · tired')).toBeInTheDocument();
+    });
+
     it('explains the stable link number and shows no title or time when the entry has none', () => {
         renderEntryViewMode({ entry: { ...mockEntries[1], title: null, time_of_day: null } });
 

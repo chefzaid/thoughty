@@ -16,6 +16,7 @@ interface StatsRouteProps {
   readonly theme?: 'light' | 'dark';
   readonly t: (key: string, params?: Record<string, string | number>) => string;
   readonly tagMetadata?: TagMetadataMap;
+  readonly language?: string;
 }
 
 function StatsRoute({
@@ -27,6 +28,7 @@ function StatsRoute({
   theme,
   t,
   tagMetadata,
+  language,
 }: Readonly<StatsRouteProps>) {
   const navigate = useNavigate();
 
@@ -51,6 +53,7 @@ function StatsRoute({
         diaryId={currentDiaryId}
         onOpenJournalDay={onOpenJournalDay}
         tagMetadata={tagMetadata}
+        language={language}
       />
     </>
   );

@@ -144,6 +144,35 @@ describe('Stats Component', () => {
         });
     });
 
+    it('shows the recorded moods next to the AI insights, and an invitation when there are none', async () => {
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                ...mockStatsData,
+                moods: {
+                    recordedEntries: 3,
+                    averageMood: 4,
+                    levels: [0, 0, 1, 1, 1],
+                    months: [{ month: '2024-01', average: 4, entries: 3 }],
+                    weekdays: Array.from({ length: 7 }, () => ({ average: null, entries: 0 })),
+                    topFeelings: [{ feeling: 'calm', count: 2 }],
+                },
+            }),
+        });
+
+        const { unmount } = render(<Stats {...defaultProps} language="en" />);
+
+        const panel = await screen.findByRole('region', { name: 'statsMoodTitle' });
+        expect(within(panel).getByText('statsMoodAverage')).toBeInTheDocument();
+        expect(within(panel).getByText('feelingCalm')).toBeInTheDocument();
+        unmount();
+
+        (globalThis.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => mockStatsData });
+        render(<Stats {...defaultProps} />);
+
+        expect(await screen.findByText('statsMoodEmpty')).toBeInTheDocument();
+    });
+
     it('renders stats and charts on successful fetch', async () => {
         (globalThis.fetch as Mock).mockResolvedValue({
             ok: true,

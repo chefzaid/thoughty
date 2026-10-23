@@ -4,6 +4,7 @@ import type { ArchiveStatusFilter, Config, Entry, EntryBacklink, EntrySearchSort
 import { useApiServices } from './useApiServices';
 import type { SemanticSearchResponse } from '../services/api/aiService';
 import { compareSameDayEntries, reassignSameDayIndexes } from '../utils/entryTime';
+import type { MoodFilter } from '../utils/entryMood';
 
 export type EntrySearchMode = 'keyword' | 'semantic';
 export type SemanticSearchStatus = 'idle' | 'loading' | 'complete' | 'error';
@@ -42,6 +43,7 @@ export const useEntries = (
   const [filterVisibility, setFilterVisibility] = useState<'all' | 'public' | 'private'>('all');
   const [filterFavorites, setFilterFavorites] = useState<boolean>(false);
   const [filterArchiveStatus, setFilterArchiveStatus] = useState<ArchiveStatusFilter>('active');
+  const [filterMood, setFilterMood] = useState<MoodFilter>('');
 
   const [targetEntryId, setTargetEntryId] = useState<number | null>(null);
   const [activeTargetId, setActiveTargetId] = useState<number | null>(null);
@@ -78,9 +80,10 @@ export const useEntries = (
       filterVisibility,
       filterFavorites,
       filterArchiveStatus,
+      filterMood,
       currentDiaryId,
     },
-  ] as const, [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterFavorites, filterTags, filterVisibility, getLimit, page, searchSort, semanticEntryIds]);
+  ] as const, [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterFavorites, filterMood, filterTags, filterVisibility, getLimit, page, searchSort, semanticEntryIds]);
 
   const entriesQuery = useQuery({
     queryKey: entriesQueryKey,
@@ -99,6 +102,7 @@ export const useEntries = (
         filterVisibility: filterVisibility === 'all' ? '' : filterVisibility,
         favorites: filterFavorites,
         archiveStatus: filterArchiveStatus,
+        mood: filterMood,
         diaryId: currentDiaryId,
         entryIds: semanticEntryIds,
       });
@@ -362,6 +366,8 @@ export const useEntries = (
     setFilterFavorites,
     filterArchiveStatus,
     setFilterArchiveStatus,
+    filterMood,
+    setFilterMood,
     availableYears,
     availableMonths,
     targetEntryId,

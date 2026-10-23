@@ -35,6 +35,8 @@ export function toEntryResponse(entry: MockEntry, state: MockAppState) {
     ...entry,
     title: entry.title ?? null,
     time_of_day: entry.time_of_day ?? null,
+    mood: entry.mood ?? null,
+    feelings: entry.feelings ?? [],
     diary_id: entry.diaryId ?? null,
     diary_name: diary?.name,
     diary_icon: diary?.icon,

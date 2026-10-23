@@ -35,6 +35,7 @@ export const TIME_OF_DAY_TRANSFORMER: ValueTransformer = {
   where: 'import_ref IS NOT NULL AND deleted_at IS NULL',
 })
 @Index('idx_entries_user_deleted_at', ['userId', 'deletedAt'], { where: 'deleted_at IS NOT NULL' })
+@Index('idx_entries_user_mood_date', ['userId', 'mood', 'date'], { where: 'mood IS NOT NULL' })
 export class Entry {
   @PrimaryGeneratedColumn()
   id: number;
@@ -65,6 +66,17 @@ export class Entry {
 
   @Column('text', { array: true, default: [] })
   tags: string[];
+
+  /**
+   * Optional mood check-in from 1 (very low) to 5 (very good), recorded by the writer. It stays
+   * private: the public feed and share texts never carry it.
+   */
+  @Column({ type: 'smallint', nullable: true })
+  mood: number | null;
+
+  /** Optional feeling words with the mood: curated ones by their English name, or the writer's own. */
+  @Column('text', { array: true, default: [] })
+  feelings: string[];
 
   @Column({ type: 'text' })
   content: string;

@@ -41,3 +41,30 @@ describe('entry title and time of day', () => {
     await expect(invalidProperties(plainToInstance(UpdateEntryDto, { ...base, timeOfDay: '8:30' }))).resolves.toEqual(['timeOfDay']);
   });
 });
+
+describe('entry mood check-in', () => {
+  const base = { text: 'Text', tags: ['tag'], date: '2024-01-15' };
+
+  it('accepts a mood from 1 to 5 and up to ten feeling words, or null and an empty list to remove them', async () => {
+    await expect(invalidProperties(plainToInstance(CreateEntryDto, { ...base, mood: 1, feelings: ['calm', 'my own word'] }))).resolves.toEqual([]);
+    await expect(invalidProperties(plainToInstance(UpdateEntryDto, { ...base, mood: 5, feelings: Array.from({ length: 10 }, (_, index) => `w${index}`) }))).resolves.toEqual([]);
+    await expect(invalidProperties(plainToInstance(UpdateEntryDto, { ...base, mood: null, feelings: [] }))).resolves.toEqual([]);
+  });
+
+  it('rejects moods off the scale and too many or too long feelings', async () => {
+    await expect(invalidProperties(plainToInstance(CreateEntryDto, { ...base, mood: 0 }))).resolves.toEqual(['mood']);
+    await expect(invalidProperties(plainToInstance(CreateEntryDto, { ...base, mood: 6 }))).resolves.toEqual(['mood']);
+    await expect(invalidProperties(plainToInstance(CreateEntryDto, { ...base, mood: 2.5 }))).resolves.toEqual(['mood']);
+    await expect(invalidProperties(plainToInstance(UpdateEntryDto, { ...base, feelings: Array.from({ length: 11 }, (_, index) => `w${index}`) }))).resolves.toEqual(['feelings']);
+    await expect(invalidProperties(plainToInstance(UpdateEntryDto, { ...base, feelings: ['x'.repeat(41)] }))).resolves.toEqual(['feelings']);
+  });
+
+  it('filters by mood levels, any mood, or no mood', async () => {
+    for (const mood of ['3', '1,2', '4,5', 'any', 'none', '']) {
+      await expect(invalidProperties(plainToInstance(GetEntriesQueryDto, { mood }))).resolves.toEqual([]);
+    }
+    for (const mood of ['0', '6', 'good', '1,,2', '1;2']) {
+      await expect(invalidProperties(plainToInstance(GetEntriesQueryDto, { mood }))).resolves.toEqual(['mood']);
+    }
+  });
+});

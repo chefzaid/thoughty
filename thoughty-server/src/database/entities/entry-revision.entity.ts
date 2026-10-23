@@ -34,6 +34,12 @@ export class EntryRevision {
   @Column({ type: 'varchar', length: 200, nullable: true })
   title: string | null;
 
+  @Column({ type: 'smallint', nullable: true })
+  mood: number | null;
+
+  @Column('text', { array: true, default: [] })
+  feelings: string[];
+
   @Column({ type: 'varchar', length: 20, default: 'plaintext' })
   format: string;
 

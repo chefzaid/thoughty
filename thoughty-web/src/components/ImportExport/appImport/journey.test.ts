@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ZipEntry } from '../../../utils/zipReader';
 import { htmlToMarkdown, looksLikeHtml } from './htmlToMarkdown';
-import { isJourneyEntry, parseJourneyEntry } from './journey';
+import { isJourneyEntry, journeyMood, parseJourneyEntry } from './journey';
 
 const zipEntry = (name: string): ZipEntry => ({ name, size: 10, compressedSize: 10, method: 0, encrypted: false, localHeaderOffset: 0 });
 
@@ -81,6 +81,18 @@ describe('parseJourneyEntry', () => {
     );
 
     expect(entry).toEqual(expect.objectContaining({ date: '2020-05-02', timeOfDay: '07:15', title: 'Night shift', content: 'Busy.' }));
+  });
+
+  it('keeps a Journey mood on the 1 to 5 scale and ignores none, other values, and the sentiment', () => {
+    const parse = (mood: unknown) => parseJourneyEntry({ id: 'm', date_journal: 0, text: 'Hi', mood, sentiment: 0.8 } as never, 'm', () => undefined).entry;
+
+    expect(parse(4)).toEqual(expect.objectContaining({ mood: 4 }));
+    expect(parse(1).mood).toBe(1);
+    for (const value of [0, 6, -1, 2.5, '3', null, undefined]) {
+      expect(parse(value)).not.toHaveProperty('mood');
+    }
+    expect(journeyMood(5)).toBe(5);
+    expect(journeyMood(0)).toBeUndefined();
   });
 
   it('recognizes Journey entries', () => {

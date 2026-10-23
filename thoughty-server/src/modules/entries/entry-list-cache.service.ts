@@ -82,6 +82,7 @@ export class EntryListCacheService {
       favorites: query.favorites === true,
       ids: query.ids ?? '',
       limit: query.limit ?? 10,
+      mood: query.mood ?? '',
       page: query.page ?? 1,
       search: query.search?.trim() ?? '',
       sort: query.sort ?? 'relevance',

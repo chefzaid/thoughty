@@ -4,6 +4,8 @@ export interface ArchiveEntry {
   date: string;
   title?: string | null;
   timeOfDay?: string | null;
+  mood?: number | null;
+  feelings?: string[] | null;
   content: string;
   tags: string[];
   format: 'plain' | 'markdown';
@@ -78,6 +80,12 @@ export function renderArchiveEntry(entry: ArchiveEntry, diaryName: string | null
   if (diaryName) {
     frontMatter.push(`diary: ${JSON.stringify(diaryName)}`);
   }
+  if (entry.mood) {
+    frontMatter.push(`mood: ${entry.mood}`);
+  }
+  if (entry.feelings && entry.feelings.length > 0) {
+    frontMatter.push(`feelings: ${JSON.stringify(entry.feelings)}`);
+  }
   frontMatter.push(
     `tags: ${JSON.stringify(entry.tags)}`,
     `visibility: ${entry.visibility}`,
@@ -105,13 +113,13 @@ const README_TEXT: Record<ArchiveLanguage, { title: string; summary: (entries: n
     title: 'Thoughty export',
     summary: (entries, diaries, date) => `Exported on ${date}: ${entries} ${entries === 1 ? 'entry' : 'entries'} in ${diaries} ${diaries === 1 ? 'diary' : 'diaries'}.`,
     layout:
-      'Each diary is a folder with one folder per year. Every entry is a Markdown file named after its date and title, starting with YAML front matter (title, date, time, diary, tags, visibility, format, favorite, archived). Photos, recordings, and other attachments are in the year’s `attachments` folder and linked from their entry, so the folder opens as it is in Markdown editors such as Obsidian.',
+      'Each diary is a folder with one folder per year. Every entry is a Markdown file named after its date and title, starting with YAML front matter (title, date, time, diary, mood from 1 for very low to 5 for very good, feelings, tags, visibility, format, favorite, archived). Photos, recordings, and other attachments are in the year’s `attachments` folder and linked from their entry, so the folder opens as it is in Markdown editors such as Obsidian.',
   },
   fr: {
     title: 'Export Thoughty',
     summary: (entries, diaries, date) => `Exporté le ${date} : ${entries} ${entries === 1 ? 'entrée' : 'entrées'} dans ${diaries} ${diaries === 1 ? 'journal' : 'journaux'}.`,
     layout:
-      'Chaque journal est un dossier, avec un dossier par année. Chaque entrée est un fichier Markdown nommé d’après sa date et son titre, qui commence par un en-tête YAML (titre, date, heure, journal, tags, visibilité, format, favori, archivé). Les photos, enregistrements et autres pièces jointes sont dans le dossier `attachments` de l’année et liés depuis leur entrée : le dossier s’ouvre tel quel dans les éditeurs Markdown comme Obsidian.',
+      'Chaque journal est un dossier, avec un dossier par année. Chaque entrée est un fichier Markdown nommé d’après sa date et son titre, qui commence par un en-tête YAML (titre, date, heure, journal, humeur de 1 pour très basse à 5 pour très bonne, ressentis, tags, visibilité, format, favori, archivé). Les photos, enregistrements et autres pièces jointes sont dans le dossier `attachments` de l’année et liés depuis leur entrée : le dossier s’ouvre tel quel dans les éditeurs Markdown comme Obsidian.',
   },
 };
 

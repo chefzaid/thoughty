@@ -306,6 +306,31 @@ describe("useEntryActions", () => {
       expect(result.current.timeOfDay).toBe("");
     });
 
+    it("handleSubmit sends the mood and feelings, then clears them", async () => {
+      const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
+      await createEntriesServiceMock({ createEntry });
+      const { result } = renderHook(() =>
+        useEntryForm({ defaultVisibility: "private", entriesPerPage: 10 }, 1, mockOnSuccess),
+      );
+
+      expect(result.current.mood).toBeNull();
+      expect(result.current.feelings).toEqual([]);
+      act(() => {
+        result.current.setNewEntryText("Test entry");
+        result.current.setTags(["tag1"]);
+        result.current.setMood(2);
+        result.current.setFeelings(["tired", "hopeful"]);
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit(mockEvent);
+      });
+
+      expect(createEntry).toHaveBeenCalledWith(expect.objectContaining({ mood: 2, feelings: ["tired", "hopeful"] }));
+      expect(result.current.mood).toBeNull();
+      expect(result.current.feelings).toEqual([]);
+    });
+
     it("handleSubmit sends no title or time when they are left empty", async () => {
       const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
       await createEntriesServiceMock({ createEntry });
@@ -841,6 +866,39 @@ describe("useEntryActions", () => {
       });
 
       expect(updateEntry).toHaveBeenCalledWith(1, expect.objectContaining({ title: null, timeOfDay: null }));
+    });
+
+    it("loads the mood and feelings of the edited entry and saves their removal", async () => {
+      const updateEntry = vi.fn().mockResolvedValue(true);
+      await createEntriesServiceMock({ updateEntry });
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+
+      act(() => {
+        result.current.handleEdit({
+          id: 1,
+          content: "Original",
+          mood: 5,
+          feelings: ["joyful"],
+          tags: ["tag1"],
+          date: "2024-01-01",
+          visibility: "private" as const,
+        });
+      });
+      expect(result.current.editMood).toBe(5);
+      expect(result.current.editFeelings).toEqual(["joyful"]);
+
+      act(() => {
+        result.current.setEditMood(null);
+        result.current.setEditFeelings([]);
+      });
+      await act(async () => {
+        await result.current.handleSaveEdit();
+      });
+
+      expect(updateEntry).toHaveBeenCalledWith(1, expect.objectContaining({ mood: null, feelings: [] }));
+      expect(result.current.editMood).toBeNull();
     });
 
     it("returns early when there is no edit date or entry to save", async () => {

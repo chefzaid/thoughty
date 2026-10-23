@@ -9,6 +9,7 @@ import type {
   YearReviewDto,
   YearReviewHighlightDto,
   YearReviewMoodDto,
+  YearReviewRecordedMoodDto,
   YearReviewTagDto,
 } from './dto';
 import { countWords, isoWeekdayIndex, longestStreak, plainExcerpt } from './year-review-stats';
@@ -17,6 +18,7 @@ const TOP_TAGS = 10;
 const NEW_TAGS = 10;
 const FAVORITE_HIGHLIGHTS = 4;
 const EXCERPT_LENGTH = 220;
+const TOP_FEELINGS = 5;
 
 export interface YearEntry {
   id: number;
@@ -26,6 +28,8 @@ export interface YearEntry {
   tags: string[];
   isFavorite: boolean;
   isArchived: boolean;
+  mood: number | null;
+  feelings: string[];
   words: number;
 }
 
@@ -39,6 +43,46 @@ export function toMoodDto(mood: YearReviewMood): YearReviewMoodDto {
     summary: mood.summary,
     analyzedEntries: mood.analyzedEntries,
     generatedAt: mood.createdAt.toISOString(),
+  };
+}
+
+const roundMood = (value: number): number => Math.round(value * 10) / 10;
+
+/**
+ * The year's mood arc from the moods the writer recorded, without AI: the average of each month
+ * with a recorded mood and the feeling words used most. Null when no entry of the year has a mood.
+ */
+export function summarizeRecordedMoods(entries: Array<Pick<YearEntry, 'date' | 'mood' | 'feelings'>>): YearReviewRecordedMoodDto | null {
+  const months = new Map<string, { total: number; entries: number }>();
+  const feelings = new Map<string, number>();
+  let total = 0;
+  let recorded = 0;
+  for (const entry of entries) {
+    for (const feeling of new Set(entry.feelings)) {
+      feelings.set(feeling, (feelings.get(feeling) ?? 0) + 1);
+    }
+    if (entry.mood === null) {
+      continue;
+    }
+    const month = entry.date.slice(0, 7);
+    const sum = months.get(month) ?? { total: 0, entries: 0 };
+    months.set(month, { total: sum.total + entry.mood, entries: sum.entries + 1 });
+    total += entry.mood;
+    recorded++;
+  }
+  if (recorded === 0) {
+    return null;
+  }
+  return {
+    entries: recorded,
+    average: roundMood(total / recorded),
+    months: [...months.entries()]
+      .sort(([first], [second]) => first.localeCompare(second))
+      .map(([month, sum]) => ({ month, average: roundMood(sum.total / sum.entries), entries: sum.entries })),
+    topFeelings: [...feelings.entries()]
+      .map(([feeling, count]) => ({ feeling, count }))
+      .sort((first, second) => second.count - first.count || first.feeling.localeCompare(second.feeling))
+      .slice(0, TOP_FEELINGS),
   };
 }
 
@@ -69,7 +113,7 @@ export class YearReviewService {
     const query = addSameDayOrder(
       this.entryRepository
         .createQueryBuilder('e')
-        .select(['e.id', 'e.index', 'e.content', 'e.tags', 'e.isFavorite', 'e.isArchived'])
+        .select(['e.id', 'e.index', 'e.content', 'e.tags', 'e.isFavorite', 'e.isArchived', 'e.mood', 'e.feelings'])
         .addSelect(`to_char(e.date, 'YYYY-MM-DD')`, 'day')
         .where('e.user_id = :userId', { userId })
         .andWhere('e.date BETWEEN :from AND :to', { from, to })
@@ -89,6 +133,8 @@ export class YearReviewService {
       tags: entry.tags ?? [],
       isFavorite: entry.isFavorite,
       isArchived: entry.isArchived,
+      mood: entry.mood ?? null,
+      feelings: entry.feelings ?? [],
       words: countWords(entry.content),
     }));
   }
@@ -142,6 +188,7 @@ export class YearReviewService {
       newTags: rankedTags.filter(({ tag }) => !earlierTags.has(tag)).slice(0, NEW_TAGS).map(({ tag }) => tag),
       highlights: this.pickHighlights(entries),
       mood: mood ? toMoodDto(mood) : null,
+      recordedMood: summarizeRecordedMoods(entries),
       aiAvailable: credentials.aiAvailable,
     };
   }

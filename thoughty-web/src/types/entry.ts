@@ -18,6 +18,10 @@ export interface Entry {
   title?: string | null;
   /** Optional time of day (`HH:MM`); it orders the day without renumbering it. */
   time_of_day?: string | null;
+  /** Optional mood check-in, from 1 (very low) to 5 (very good). Never shown in the public feed. */
+  mood?: number | null;
+  /** Feeling words: curated ones by their English key, or the writer's own, lowercased. */
+  feelings?: string[];
   content: string;
   tags: string[];
   date: string;
@@ -63,6 +67,8 @@ export interface EntryRevision {
   entryId: number;
   title?: string | null;
   timeOfDay?: string | null;
+  mood?: number | null;
+  feelings?: string[];
   content: string;
   tags: string[];
   date: string;

@@ -92,7 +92,12 @@ integration('PostgreSQL entry titles and times of day', () => {
   it('rolls back to the content and tags vector and applies again', async () => {
     await write({ title: 'Lighthouse', content: 'Fog all day' });
 
-    await dataSource.undoLastMigration({ transaction: 'all' });
+    // Later migrations are undone first, down to the one that added titles and times
+    const executed = (await dataSource.query('SELECT name FROM migrations ORDER BY id DESC')) as Array<{ name: string }>;
+    for (const { name } of executed) {
+      await dataSource.undoLastMigration({ transaction: 'all' });
+      if (name === 'EntryTitleAndTime1786060800000') break;
+    }
     const columns = (await dataSource.query(
       `SELECT column_name FROM information_schema.columns WHERE table_name = 'entries' AND column_name IN ('title', 'time_of_day', 'search_vector')`,
     )) as Array<{ column_name: string }>;

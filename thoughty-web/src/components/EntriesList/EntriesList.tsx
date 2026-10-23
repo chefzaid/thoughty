@@ -43,6 +43,10 @@ interface EntriesListProps {
     setEditTitle?: Dispatch<SetStateAction<string>>;
     editTimeOfDay?: string;
     setEditTimeOfDay?: Dispatch<SetStateAction<string>>;
+    editMood?: number | null;
+    setEditMood?: Dispatch<SetStateAction<number | null>>;
+    editFeelings?: string[];
+    setEditFeelings?: Dispatch<SetStateAction<string[]>>;
     editTags: string[];
     setEditTags: Dispatch<SetStateAction<string[]>>;
     editDate: Date | null;
@@ -105,6 +109,10 @@ function EntriesList({
     setEditTitle,
     editTimeOfDay,
     setEditTimeOfDay,
+    editMood,
+    setEditMood,
+    editFeelings,
+    setEditFeelings,
     editTags,
     setEditTags,
     editDate,
@@ -415,6 +423,10 @@ function EntriesList({
                                                     setEditTitle={setEditTitle}
                                                     editTimeOfDay={editTimeOfDay}
                                                     setEditTimeOfDay={setEditTimeOfDay}
+                                                    editMood={editMood}
+                                                    setEditMood={setEditMood}
+                                                    editFeelings={editFeelings}
+                                                    setEditFeelings={setEditFeelings}
                                                     editDate={editDate}
                                                     setEditDate={setEditDate}
                                                     allTags={allTags}

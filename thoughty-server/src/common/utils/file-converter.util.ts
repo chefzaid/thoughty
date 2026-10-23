@@ -1,4 +1,5 @@
 import { normalizeEntryTitle, normalizeTimeOfDay } from './entry-order.util';
+import { normalizeFeelings, normalizeMood } from './entry-mood.util';
 
 /**
  * Where TXT files keep entry titles: on the header line as `--{title:…}` (the default, which
@@ -89,6 +90,8 @@ export interface ParsedEntry {
   index: number;
   title?: string;
   timeOfDay?: string;
+  mood?: number;
+  feelings?: string[];
   tags: string[];
   content: string;
   format: EntryFormat;
@@ -104,6 +107,8 @@ interface EntryData {
   index: number;
   title?: string | null;
   timeOfDay?: string | null;
+  mood?: number | null;
+  feelings?: string[] | null;
   tags: string[];
   content: string;
   format?: EntryFormat;
@@ -116,6 +121,8 @@ interface MarkdownParseState {
   currentIndex: number;
   currentTitle?: string;
   currentTime?: string;
+  currentMood?: number;
+  currentFeelings?: string[];
   currentTags: string[];
   currentVisibility?: EntryVisibility;
   currentDiaryName?: string;
@@ -126,6 +133,8 @@ interface MarkdownParseState {
 interface MarkdownMetadata {
   title?: string;
   timeOfDay?: string;
+  mood?: number;
+  feelings?: string[];
   tags: string[];
   visibility?: EntryVisibility;
   diaryName?: string;
@@ -176,7 +185,7 @@ function buildTextEntryHeader(
   const timeStr = time ? ` ${time}` : '';
   const title = normalizeEntryTitle(entry.title);
   const titleStr = title && config.titlePlacement === 'header' ? `--{title:${title}}` : '';
-  const metadata = `${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}${titleStr}`;
+  const metadata = `${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}${textMoodFlags(entry)}${titleStr}`;
   const titleLine = config.titlePlacement === 'firstLine' ? [title ?? ''] : [];
 
   if (entryDate !== currentDate) {
@@ -191,6 +200,24 @@ function buildTextEntryHeader(
   return ['', config.sameDaySeparator, '', `${config.datePrefix}${entry.index}${timeStr}${metadata}`, ...titleLine];
 }
 
+/**
+ * `--{mood:4}` and `--{feelings:calm,tired}` for an entry with a mood check-in, written after the
+ * Markdown flag and before the title. Entries without one write nothing, so their header lines read
+ * exactly as before moods existed, and files written before then import unchanged.
+ */
+function textMoodFlags(entry: EntryData): string {
+  const mood = normalizeMood(entry.mood);
+  const feelings = normalizeFeelings(entry.feelings);
+  return `${mood ? `--{mood:${mood}}` : ''}${feelings.length > 0 ? `--{feelings:${feelings.join(',')}}` : ''}`;
+}
+
+/** A parsed entry's mood and feelings, only when it has them. */
+function moodFields(mood: unknown, feelings: unknown): Pick<ParsedEntry, 'mood' | 'feelings'> {
+  const level = normalizeMood(mood);
+  const words = normalizeFeelings(feelings);
+  return { ...(level && { mood: level }), ...(words.length > 0 && { feelings: words }) };
+}
+
 function createParsedTextEntry(
   match: RegExpExecArray,
   date: string,
@@ -201,13 +228,14 @@ function createParsedTextEntry(
   const visibility = match[4] as EntryVisibility | undefined;
   const diaryName = match[5] || undefined;
   const format: EntryFormat = match[6] ? 'markdown' : 'plain';
-  const title = normalizeEntryTitle(match[7]);
+  const title = normalizeEntryTitle(match[9]);
 
   return {
     date,
     index,
     ...(title && { title }),
     ...(timeOfDay && { timeOfDay }),
+    ...moodFields(match[7], match[8]),
     tags: parseTagList(match[3], config.tagSeparator),
     content: '',
     format,
@@ -256,10 +284,14 @@ function buildMarkdownMetaLines(entry: EntryData, includeVisibility: boolean): s
   const tagLabels = (entry.tags || []).map((tag) => `\`${tag}\``).join(', ');
   const timeStr = time ? `**Time:** ${time}` : '';
   const titleStr = title ? `**Title:** ${title}` : '';
+  const mood = normalizeMood(entry.mood);
+  const moodStr = mood ? `**Mood:** ${mood}/5` : '';
+  const feelings = normalizeFeelings(entry.feelings);
+  const feelingsStr = feelings.length > 0 ? `**Feelings:** ${feelings.join(', ')}` : '';
   const tagsStr = tagLabels ? `**Tags:** ${tagLabels}` : '';
   const visStr = includeVisibility ? `**Visibility:** ${entry.visibility || 'private'}` : '';
   const diaryStr = entry.diaryName ? `**Diary:** ${entry.diaryName}` : '';
-  const meta = [timeStr, titleStr, tagsStr, visStr, diaryStr].filter(Boolean).join(' | ');
+  const meta = [timeStr, titleStr, moodStr, feelingsStr, tagsStr, visStr, diaryStr].filter(Boolean).join(' | ');
 
   return meta ? [meta, ''] : [];
 }
@@ -270,6 +302,8 @@ function createMarkdownParseState(): MarkdownParseState {
     currentIndex: 0,
     currentTitle: undefined,
     currentTime: undefined,
+    currentMood: undefined,
+    currentFeelings: undefined,
     currentTags: [],
     currentVisibility: undefined,
     currentDiaryName: undefined,
@@ -287,6 +321,7 @@ function finalizeMarkdownEntry(entries: ParsedEntry[], state: MarkdownParseState
         index: state.currentIndex,
         ...(state.currentTitle && { title: state.currentTitle }),
         ...(state.currentTime && { timeOfDay: state.currentTime }),
+        ...moodFields(state.currentMood, state.currentFeelings),
         tags: state.currentTags,
         content,
         format: 'markdown',
@@ -300,6 +335,8 @@ function finalizeMarkdownEntry(entries: ParsedEntry[], state: MarkdownParseState
     ...state,
     currentTitle: undefined,
     currentTime: undefined,
+    currentMood: undefined,
+    currentFeelings: undefined,
     currentTags: [],
     currentVisibility: undefined,
     currentDiaryName: undefined,
@@ -314,7 +351,7 @@ function parseMarkdownTag(tag: string): string {
 
 function parseMarkdownMetadataLine(trimmed: string): MarkdownMetadata | null {
   // Split only known metadata boundaries; diary names can contain ordinary pipes.
-  const sections = trimmed.split(/\|(?=[ \t]*\*\*(?:Time|Title|Tags|Visibility|Diary):\*\*)/).map((part) => part.trim());
+  const sections = trimmed.split(/\|(?=[ \t]*\*\*(?:Time|Title|Mood|Feelings|Tags|Visibility|Diary):\*\*)/).map((part) => part.trim());
   const result: MarkdownMetadata = { tags: [] };
   for (const section of sections) {
     if (!applyMarkdownMetadataSection(section, result)) return null;
@@ -331,6 +368,14 @@ function applyMarkdownMetadataSection(section: string, result: MarkdownMetadata)
     const title = normalizeEntryTitle(section.slice('**Title:**'.length));
     if (!title) return false;
     result.title = title;
+  } else if (section.startsWith('**Mood:**')) {
+    const mood = /^([1-5])(?:\s*\/\s*5)?$/.exec(section.slice('**Mood:**'.length).trim());
+    if (!mood) return false;
+    result.mood = Number(mood[1]);
+  } else if (section.startsWith('**Feelings:**')) {
+    const feelings = normalizeFeelings(section.slice('**Feelings:**'.length));
+    if (feelings.length === 0) return false;
+    result.feelings = feelings;
   } else if (section.startsWith('**Tags:**')) {
     const tags = section.slice('**Tags:**'.length).trim();
     if (!tags) return false;
@@ -397,8 +442,8 @@ export function parseTextFile(
   const escapedTagClose = escapeRegex(config.tagCloseBracket);
 
   // A header holds the date (or the same-day number), an optional time, the tags, and the optional
-  // visibility, diary, Markdown flag, and title, in that order
-  const metadataPattern = String.raw`(?: (\d{1,2}:\d{2}))?${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}(?:--${escapedTagOpen}(public|private)${escapedTagClose})?(?:--\{diary:([^}]+)\})?(\{md\})?(?:--\{title:(.*)\})?$`;
+  // visibility, diary, Markdown flag, mood, feelings, and title, in that order
+  const metadataPattern = String.raw`(?: (\d{1,2}:\d{2}))?${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}(?:--${escapedTagOpen}(public|private)${escapedTagClose})?(?:--\{diary:([^}]+)\})?(\{md\})?(?:--\{mood:([1-5])\})?(?:--\{feelings:([^}]*)\})?(?:--\{title:(.*)\})?$`;
   const datePattern = new RegExp(String.raw`^${escapedPrefix}(\d{4}[-./]\d{2}[-./]\d{2})${metadataPattern}`);
   const indexPattern = new RegExp(String.raw`^${escapedPrefix}(\d+)${metadataPattern}`);
   let awaitingTitleLine = false;
@@ -493,6 +538,7 @@ export function generateJsonFile(entries: EntryData[], includeVisibility = false
       index: entry.index,
       ...(time && { time }),
       ...(title && { title }),
+      ...moodFields(entry.mood, entry.feelings),
       tags: entry.tags || [],
       content: entry.content || '',
       format: entry.format || 'plain',
@@ -531,6 +577,8 @@ export function generateCsvFile(entries: EntryData[], includeVisibility = false)
     'index',
     'time',
     'title',
+    'mood',
+    'feelings',
     'diary',
     'tags',
     ...(includeVisibility ? ['visibility'] : []),
@@ -549,6 +597,8 @@ export function generateCsvFile(entries: EntryData[], includeVisibility = false)
       entry.index,
       normalizeTimeOfDay(entry.timeOfDay) ?? undefined,
       normalizeEntryTitle(entry.title) ?? undefined,
+      normalizeMood(entry.mood) ?? undefined,
+      normalizeFeelings(entry.feelings).join(';'),
       entry.diaryName,
       (entry.tags || []).join(';'),
       ...(includeVisibility ? [entry.visibility || 'private'] : []),
@@ -593,6 +643,7 @@ export function parseJsonFile(content: string): ParsedEntry[] {
       if (time) {
         entry.timeOfDay = time;
       }
+      Object.assign(entry, moodFields(e.mood, e.feelings));
       if (e.visibility === 'public' || e.visibility === 'private') {
         entry.visibility = e.visibility;
       }
@@ -665,6 +716,8 @@ export function parseMarkdownFile(content: string): ParsedEntry[] {
         ...state,
         currentTitle: metadata.title,
         currentTime: metadata.timeOfDay,
+        currentMood: metadata.mood,
+        currentFeelings: metadata.feelings,
         currentTags: metadata.tags,
         currentVisibility: metadata.visibility,
         currentDiaryName: metadata.diaryName,

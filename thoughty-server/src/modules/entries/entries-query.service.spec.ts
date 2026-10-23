@@ -76,6 +76,8 @@ describe('EntriesQueryService', () => {
       index: 1,
       title: 'Planning day',
       timeOfDay: '08:30',
+      mood: 4,
+      feelings: ['focused'],
       tags: ['work'],
       content: 'First entry',
       format: 'markdown',
@@ -152,6 +154,8 @@ describe('EntriesQueryService', () => {
           index: 1,
           title: 'Planning day',
           time_of_day: '08:30',
+          mood: 4,
+          feelings: ['focused'],
           tags: ['work'],
           content: 'First entry',
           format: 'markdown',
@@ -182,6 +186,24 @@ describe('EntriesQueryService', () => {
       totalPages: 3,
       allTags: ['alpha', 'work'],
     });
+  });
+
+  it.each([
+    ['4,5', 'e.mood IN (:...moods)', { moods: [4, 5] }],
+    ['2,2', 'e.mood IN (:...moods)', { moods: [2] }],
+    ['any', 'e.mood IS NOT NULL', undefined],
+    ['none', 'e.mood IS NULL', undefined],
+  ])('filters the journal by the mood %p', async (mood, condition, parameters) => {
+    const entriesQb = createQueryBuilder();
+    entriesQb.getCount.mockResolvedValue(0);
+    entriesQb.getMany.mockResolvedValue([]);
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(entriesQb)
+      .mockReturnValueOnce(createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([]) }));
+
+    await service.getEntries(4, { mood });
+
+    expect(entriesQb.andWhere).toHaveBeenCalledWith(...(parameters ? [condition, parameters] : [condition]));
   });
 
   it('keeps date order for a search when asked, pinned entries first', async () => {

@@ -4,6 +4,47 @@ interface StatsEntry {
   index: number;
   content: string;
   tags: string[];
+  mood?: number | null;
+  feelings?: string[];
+}
+
+const roundMood = (value: number) => Math.round(value * 10) / 10;
+
+/** Recorded moods summed up as the server does: by month, by weekday (Monday first), and the top feelings. */
+export function buildMockMoods(entries: StatsEntry[]) {
+  const recorded = entries.filter((entry) => typeof entry.mood === "number") as Array<StatsEntry & { mood: number }>;
+  const levels = [0, 0, 0, 0, 0];
+  const months = new Map<string, { total: number; entries: number }>();
+  const weekdays = Array.from({ length: 7 }, () => ({ total: 0, entries: 0 }));
+  for (const entry of recorded) {
+    levels[entry.mood - 1]++;
+    const month = months.get(entry.date.slice(0, 7)) ?? { total: 0, entries: 0 };
+    month.total += entry.mood;
+    month.entries++;
+    months.set(entry.date.slice(0, 7), month);
+    const weekday = weekdays[(new Date(`${entry.date}T00:00:00Z`).getUTCDay() + 6) % 7]!;
+    weekday.total += entry.mood;
+    weekday.entries++;
+  }
+  const feelings = new Map<string, number>();
+  for (const entry of entries) {
+    for (const feeling of entry.feelings ?? []) feelings.set(feeling, (feelings.get(feeling) ?? 0) + 1);
+  }
+  const total = recorded.reduce((sum, entry) => sum + entry.mood, 0);
+
+  return {
+    recordedEntries: recorded.length,
+    averageMood: recorded.length > 0 ? roundMood(total / recorded.length) : null,
+    levels,
+    months: [...months.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([month, value]) => ({ month, average: roundMood(value.total / value.entries), entries: value.entries })),
+    weekdays: weekdays.map((value) => ({ average: value.entries > 0 ? roundMood(value.total / value.entries) : null, entries: value.entries })),
+    topFeelings: [...feelings.entries()]
+      .map(([feeling, count]) => ({ feeling, count }))
+      .sort((left, right) => right.count - left.count || left.feeling.localeCompare(right.feeling))
+      .slice(0, 10),
+  };
 }
 
 function buildMockCorrelations(entries: StatsEntry[]) {
@@ -125,5 +166,6 @@ export function buildStats(entries: StatsEntry[]) {
           }
         : null,
     correlations: buildMockCorrelations(entries),
+    moods: buildMockMoods(entries),
   };
 }

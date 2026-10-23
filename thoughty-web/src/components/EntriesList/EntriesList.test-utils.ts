@@ -122,6 +122,13 @@ const translations: Record<string, string> = {
     bulkClearSelection: 'Clear selection',
     selectTags: 'Select tags',
     apply: 'Apply',
+    moodLabel: 'Mood',
+    feelingsLabel: 'Feelings',
+    moodLevel2: 'Low',
+    moodLevel4: 'Good',
+    feelingCalm: 'calm',
+    feelingTired: 'tired',
+    revisionMood: 'Mood: {mood}',
 };
 
 export const t = (key: string, params?: Record<string, string | number>): string => {

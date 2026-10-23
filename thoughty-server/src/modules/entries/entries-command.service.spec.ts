@@ -240,6 +240,48 @@ describe('EntriesCommandService', () => {
     expect(entryRepository.find).not.toHaveBeenCalled();
   });
 
+  it('stores a recorded mood with cleaned feeling words, and none when left out', async () => {
+    diaryRepository.findOne.mockResolvedValue({ id: 42 });
+    entryRepository.count.mockResolvedValue(0);
+    entryRepository.save.mockResolvedValue({ id: 8 });
+
+    await service.create(5, { text: 'Good day', tags: ['a'], mood: 4, feelings: [' Calm ', 'calm', 'Grateful'] });
+    await service.create(5, { text: 'Plain', tags: ['a'] });
+
+    expect(entryRepository.save).toHaveBeenNthCalledWith(1, expect.objectContaining({ mood: 4, feelings: ['calm', 'grateful'] }));
+    expect(entryRepository.save).toHaveBeenNthCalledWith(2, expect.objectContaining({ mood: null, feelings: [] }));
+  });
+
+  it('keeps the mood in the revision and leaves it alone when an edit omits it', async () => {
+    const existingEntry = {
+      id: 3,
+      userId: 8,
+      content: 'Old text',
+      mood: 2,
+      feelings: ['tired'],
+      tags: ['old'],
+      date: '2024-01-10',
+      format: 'plain',
+      visibility: 'private',
+      index: 1,
+    };
+    entryRepository.findOne.mockResolvedValue({ ...existingEntry });
+    entryRepository.save.mockImplementation(async (entry) => entry);
+
+    const kept = await service.update(8, 3, { text: 'Rephrased', tags: ['old'], date: '2024-01-10' });
+
+    expect(revisionRepository.save).toHaveBeenCalledWith(expect.objectContaining({ mood: 2, feelings: ['tired'] }));
+    expect(kept.entry).toMatchObject({ mood: 2, feelings: ['tired'] });
+
+    entryRepository.findOne.mockResolvedValue({ ...existingEntry });
+    const changed = await service.update(8, 3, { text: 'Old text', tags: ['old'], date: '2024-01-10', mood: 5, feelings: ['Relieved'] });
+    expect(changed.entry).toMatchObject({ mood: 5, feelings: ['relieved'] });
+
+    entryRepository.findOne.mockResolvedValue({ ...existingEntry });
+    const cleared = await service.update(8, 3, { text: 'Old text', tags: ['old'], date: '2024-01-10', mood: null, feelings: [] });
+    expect(cleared.entry).toMatchObject({ mood: null, feelings: [] });
+  });
+
   it('throws when updating a missing entry', async () => {
     entryRepository.findOne.mockResolvedValue(null);
 

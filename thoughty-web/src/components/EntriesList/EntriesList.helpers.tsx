@@ -10,6 +10,7 @@ import { getEditFormatButtonClass, getVisibilityButtonClass } from './EntriesLis
 import { resolveFontColor } from '../../types/config';
 import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 import EntryTimeField from '../EntryForm/EntryTimeField';
+import EntryMoodField from '../EntryForm/EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
@@ -145,6 +146,10 @@ interface EditFormProps {
     setEditTitle?: Dispatch<SetStateAction<string>>;
     editTimeOfDay?: string;
     setEditTimeOfDay?: Dispatch<SetStateAction<string>>;
+    editMood?: number | null;
+    setEditMood?: Dispatch<SetStateAction<number | null>>;
+    editFeelings?: string[];
+    setEditFeelings?: Dispatch<SetStateAction<string[]>>;
     editDate: Date | null;
     setEditDate: Dispatch<SetStateAction<Date | null>>;
     allTags: string[];
@@ -174,6 +179,10 @@ export function EditForm({
     setEditTitle,
     editTimeOfDay = '',
     setEditTimeOfDay,
+    editMood = null,
+    setEditMood,
+    editFeelings = [],
+    setEditFeelings,
     editDate,
     setEditDate,
     allTags,
@@ -257,6 +266,17 @@ export function EditForm({
                     />
                 )}
             </div>
+            {setEditMood && setEditFeelings && (
+                <EntryMoodField
+                    id={`${fieldId}-mood`}
+                    mood={editMood}
+                    onMoodChange={setEditMood}
+                    feelings={editFeelings}
+                    onFeelingsChange={setEditFeelings}
+                    theme={config.theme}
+                    t={t}
+                />
+            )}
             <div className="flex flex-wrap gap-3">
                 <div className="w-40">
                     <TypedDatePicker

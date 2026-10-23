@@ -2162,6 +2162,11 @@ export interface components {
          *       "index": 1,
          *       "title": "Morning walk by the river",
          *       "time_of_day": "08:30",
+         *       "mood": 4,
+         *       "feelings": [
+         *         "calm",
+         *         "grateful"
+         *       ],
          *       "tags": [
          *         "reflection"
          *       ],
@@ -2205,6 +2210,19 @@ export interface components {
              * @example 08:30
              */
             time_of_day: string | null;
+            /**
+             * @description Recorded mood from 1 (very low) to 5 (very good), or null
+             * @example 4
+             */
+            mood: number | null;
+            /**
+             * @description Feeling words recorded with the mood
+             * @example [
+             *       "calm",
+             *       "grateful"
+             *     ]
+             */
+            feelings: string[];
             tags: string[];
             content: string;
             /** @enum {string} */
@@ -2239,6 +2257,11 @@ export interface components {
          *           "index": 1,
          *           "title": "Morning walk by the river",
          *           "time_of_day": "08:30",
+         *           "mood": 4,
+         *           "feelings": [
+         *             "calm",
+         *             "grateful"
+         *           ],
          *           "tags": [
          *             "reflection"
          *           ],
@@ -2325,6 +2348,11 @@ export interface components {
          *         "index": 1,
          *         "title": "Morning walk by the river",
          *         "time_of_day": "08:30",
+         *         "mood": 4,
+         *         "feelings": [
+         *           "calm",
+         *           "grateful"
+         *         ],
          *         "tags": [
          *           "reflection"
          *         ],
@@ -2466,6 +2494,11 @@ export interface components {
          * @example {
          *       "title": "Morning walk by the river",
          *       "timeOfDay": "08:30",
+         *       "mood": 4,
+         *       "feelings": [
+         *         "calm",
+         *         "grateful"
+         *       ],
          *       "text": "example",
          *       "tags": [
          *         "reflection"
@@ -2487,6 +2520,19 @@ export interface components {
              * @example 08:30
              */
             timeOfDay?: string | null;
+            /**
+             * @description Optional mood check-in from 1 (very low) to 5 (very good); null removes it. It is private: the public feed never shows it.
+             * @example 4
+             */
+            mood?: number | null;
+            /**
+             * @description Optional feeling words with the mood: curated ones by their English name, or the writer's own words. Stored lowercase without duplicates; an empty list removes them.
+             * @example [
+             *       "calm",
+             *       "grateful"
+             *     ]
+             */
+            feelings?: string[];
             /** @description Entry content */
             text: string;
             /** @description Tags for the entry */
@@ -2595,6 +2641,11 @@ export interface components {
          * @example {
          *       "title": "Morning walk by the river",
          *       "timeOfDay": "08:30",
+         *       "mood": 4,
+         *       "feelings": [
+         *         "calm",
+         *         "grateful"
+         *       ],
          *       "text": "example",
          *       "tags": [
          *         "reflection"
@@ -2615,6 +2666,19 @@ export interface components {
              * @example 08:30
              */
             timeOfDay?: string | null;
+            /**
+             * @description Optional mood check-in from 1 (very low) to 5 (very good); null removes it. It is private: the public feed never shows it.
+             * @example 4
+             */
+            mood?: number | null;
+            /**
+             * @description Optional feeling words with the mood: curated ones by their English name, or the writer's own words. Stored lowercase without duplicates; an empty list removes them.
+             * @example [
+             *       "calm",
+             *       "grateful"
+             *     ]
+             */
+            feelings?: string[];
             /** @description Entry content */
             text: string;
             /** @description Tags for the entry */
@@ -2640,6 +2704,11 @@ export interface components {
          *         "index": 1,
          *         "title": "Morning walk by the river",
          *         "time_of_day": "08:30",
+         *         "mood": 4,
+         *         "feelings": [
+         *           "calm",
+         *           "grateful"
+         *         ],
          *         "tags": [
          *           "reflection"
          *         ],
@@ -3460,6 +3529,112 @@ export interface components {
         };
         /**
          * @example {
+         *       "month": "2025-03",
+         *       "average": 3.8,
+         *       "entries": 12
+         *     }
+         */
+        StatsMoodMonthDto: {
+            /** @example 2025-03 */
+            month: string;
+            /**
+             * @description Average recorded mood that month, to one decimal
+             * @example 3.8
+             */
+            average: number;
+            /**
+             * @description Entries with a recorded mood that month
+             * @example 12
+             */
+            entries: number;
+        };
+        /**
+         * @example {
+         *       "average": 3.6,
+         *       "entries": 9
+         *     }
+         */
+        StatsMoodWeekdayDto: {
+            /** @example 3.6 */
+            average: number | null;
+            /** @example 9 */
+            entries: number;
+        };
+        /**
+         * @example {
+         *       "feeling": "calm",
+         *       "count": 14
+         *     }
+         */
+        StatsFeelingDto: {
+            /** @example calm */
+            feeling: string;
+            /** @example 14 */
+            count: number;
+        };
+        /**
+         * @example {
+         *       "recordedEntries": 48,
+         *       "averageMood": 3.7,
+         *       "levels": [
+         *         2,
+         *         5,
+         *         12,
+         *         20,
+         *         9
+         *       ],
+         *       "months": [
+         *         {
+         *           "month": "2025-03",
+         *           "average": 3.8,
+         *           "entries": 12
+         *         }
+         *       ],
+         *       "weekdays": [
+         *         {
+         *           "average": 3.6,
+         *           "entries": 9
+         *         }
+         *       ],
+         *       "topFeelings": [
+         *         {
+         *           "feeling": "calm",
+         *           "count": 14
+         *         }
+         *       ]
+         *     }
+         */
+        StatsMoodDto: {
+            /**
+             * @description Entries with a recorded mood
+             * @example 48
+             */
+            recordedEntries: number;
+            /**
+             * @description Average recorded mood from 1 (very low) to 5 (very good)
+             * @example 3.7
+             */
+            averageMood: number | null;
+            /**
+             * @description Entries per mood level, from 1 (very low) to 5 (very good)
+             * @example [
+             *       2,
+             *       5,
+             *       12,
+             *       20,
+             *       9
+             *     ]
+             */
+            levels: number[];
+            /** @description Months with a recorded mood, oldest first */
+            months: components["schemas"]["StatsMoodMonthDto"][];
+            /** @description Seven weekdays, Monday first */
+            weekdays: components["schemas"]["StatsMoodWeekdayDto"][];
+            /** @description The feeling words recorded most often, up to ten */
+            topFeelings: components["schemas"]["StatsFeelingDto"][];
+        };
+        /**
+         * @example {
          *       "totalThoughts": 120,
          *       "averageWordsPerEntry": 184,
          *       "averageReadingTimeMinutes": 1,
@@ -3542,6 +3717,36 @@ export interface components {
          *             "strength": 76
          *           }
          *         ]
+         *       },
+         *       "moods": {
+         *         "recordedEntries": 48,
+         *         "averageMood": 3.7,
+         *         "levels": [
+         *           2,
+         *           5,
+         *           12,
+         *           20,
+         *           9
+         *         ],
+         *         "months": [
+         *           {
+         *             "month": "2025-03",
+         *             "average": 3.8,
+         *             "entries": 12
+         *           }
+         *         ],
+         *         "weekdays": [
+         *           {
+         *             "average": 3.6,
+         *             "entries": 9
+         *           }
+         *         ],
+         *         "topFeelings": [
+         *           {
+         *             "feeling": "calm",
+         *             "count": 14
+         *           }
+         *         ]
          *       }
          *     }
          */
@@ -3619,6 +3824,8 @@ export interface components {
             toneMoodAnalysis?: components["schemas"]["ToneMoodAnalysisDto"] | null;
             subjectAnalysis?: components["schemas"]["SubjectAnalysisDto"] | null;
             correlations: components["schemas"]["StatsCorrelationsDto"];
+            /** @description Recorded moods and feelings, computed without AI */
+            moods: components["schemas"]["StatsMoodDto"];
         };
         /**
          * @example {
@@ -3809,6 +4016,7 @@ export interface components {
          *       "date": "2024-03-05",
          *       "timeOfDay": "08:30",
          *       "title": "Morning walk by the river",
+         *       "mood": 4,
          *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *       "tags": [
          *         "reflection"
@@ -3835,6 +4043,11 @@ export interface components {
              * @example Morning walk by the river
              */
             title?: string;
+            /**
+             * @description Mood the writer recorded in the source app, on the scale from 1 (very low) to 5 (very good)
+             * @example 4
+             */
+            mood?: number;
             /** @description Entry text as Markdown; may be empty when the entry holds only photos */
             content: string;
             tags: string[];
@@ -3851,6 +4064,7 @@ export interface components {
          *           "date": "2024-03-05",
          *           "timeOfDay": "08:30",
          *           "title": "Morning walk by the river",
+         *           "mood": 4,
          *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *           "tags": [
          *             "reflection"
@@ -5168,6 +5382,74 @@ export interface components {
         };
         /**
          * @example {
+         *       "month": "2025-03",
+         *       "average": 3.8,
+         *       "entries": 9
+         *     }
+         */
+        YearReviewRecordedMoodMonthDto: {
+            /** @example 2025-03 */
+            month: string;
+            /**
+             * @description Average recorded mood that month, to one decimal
+             * @example 3.8
+             */
+            average: number;
+            /**
+             * @description Entries with a recorded mood that month
+             * @example 9
+             */
+            entries: number;
+        };
+        /**
+         * @example {
+         *       "feeling": "calm",
+         *       "count": 6
+         *     }
+         */
+        YearReviewFeelingDto: {
+            /** @example calm */
+            feeling: string;
+            /** @example 6 */
+            count: number;
+        };
+        /**
+         * @example {
+         *       "entries": 64,
+         *       "average": 3.7,
+         *       "months": [
+         *         {
+         *           "month": "2025-03",
+         *           "average": 3.8,
+         *           "entries": 9
+         *         }
+         *       ],
+         *       "topFeelings": [
+         *         {
+         *           "feeling": "calm",
+         *           "count": 6
+         *         }
+         *       ]
+         *     }
+         */
+        YearReviewRecordedMoodDto: {
+            /**
+             * @description Entries of the year with a recorded mood
+             * @example 64
+             */
+            entries: number;
+            /**
+             * @description Average recorded mood of the year, to one decimal
+             * @example 3.7
+             */
+            average: number;
+            /** @description Months with a recorded mood, January first */
+            months: components["schemas"]["YearReviewRecordedMoodMonthDto"][];
+            /** @description The feeling words recorded most often that year, up to five */
+            topFeelings: components["schemas"]["YearReviewFeelingDto"][];
+        };
+        /**
+         * @example {
          *       "year": 2026,
          *       "diaryId": 1,
          *       "availableYears": [
@@ -5230,6 +5512,23 @@ export interface components {
          *         "analyzedEntries": 1,
          *         "generatedAt": "2026-06-24T10:00:00.000Z"
          *       },
+         *       "recordedMood": {
+         *         "entries": 64,
+         *         "average": 3.7,
+         *         "months": [
+         *           {
+         *             "month": "2025-03",
+         *             "average": 3.8,
+         *             "entries": 9
+         *           }
+         *         ],
+         *         "topFeelings": [
+         *           {
+         *             "feeling": "calm",
+         *             "count": 6
+         *           }
+         *         ]
+         *       },
          *       "aiAvailable": true
          *     }
          */
@@ -5249,7 +5548,10 @@ export interface components {
             /** @description Tags first used this year */
             newTags: string[];
             highlights: components["schemas"]["YearReviewHighlightDto"][];
+            /** @description The saved AI reading of the year, if any */
             mood: components["schemas"]["YearReviewMoodDto"] | null;
+            /** @description The mood arc drawn from the moods the writer recorded that year, without AI; null when none were recorded. When present, it is shown instead of the AI reading. */
+            recordedMood: components["schemas"]["YearReviewRecordedMoodDto"] | null;
             /** @description Whether the mood of the year can be read with AI */
             aiAvailable: boolean;
         };
@@ -6273,6 +6575,8 @@ export interface operations {
                 favorites?: boolean;
                 /** @description Filter by archive state */
                 archiveStatus?: "all" | "active" | "archived";
+                /** @description Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; "any" for entries with a mood, or "none" for entries without one */
+                mood?: string;
                 /** @description Diary ID */
                 diaryId?: number;
                 page?: number;
@@ -6301,6 +6605,11 @@ export interface operations {
                      *           "index": 1,
                      *           "title": "Morning walk by the river",
                      *           "time_of_day": "08:30",
+                     *           "mood": 4,
+                     *           "feelings": [
+                     *             "calm",
+                     *             "grateful"
+                     *           ],
                      *           "tags": [
                      *             "reflection"
                      *           ],
@@ -6357,6 +6666,11 @@ export interface operations {
                  * @example {
                  *       "title": "Morning walk by the river",
                  *       "timeOfDay": "08:30",
+                 *       "mood": 4,
+                 *       "feelings": [
+                 *         "calm",
+                 *         "grateful"
+                 *       ],
                  *       "text": "example",
                  *       "tags": [
                  *         "reflection"
@@ -6488,6 +6802,11 @@ export interface operations {
                      *         "index": 1,
                      *         "title": "Morning walk by the river",
                      *         "time_of_day": "08:30",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm",
+                     *           "grateful"
+                     *         ],
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -6786,6 +7105,11 @@ export interface operations {
                  * @example {
                  *       "title": "Morning walk by the river",
                  *       "timeOfDay": "08:30",
+                 *       "mood": 4,
+                 *       "feelings": [
+                 *         "calm",
+                 *         "grateful"
+                 *       ],
                  *       "text": "example",
                  *       "tags": [
                  *         "reflection"
@@ -6816,6 +7140,11 @@ export interface operations {
                      *         "index": 1,
                      *         "title": "Morning walk by the river",
                      *         "time_of_day": "08:30",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm",
+                     *           "grateful"
+                     *         ],
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -6916,6 +7245,11 @@ export interface operations {
                      *         "index": 1,
                      *         "title": "Morning walk by the river",
                      *         "time_of_day": "08:30",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm",
+                     *           "grateful"
+                     *         ],
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -6989,6 +7323,11 @@ export interface operations {
                      *         "index": 1,
                      *         "title": "Morning walk by the river",
                      *         "time_of_day": "08:30",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm",
+                     *           "grateful"
+                     *         ],
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -7062,6 +7401,11 @@ export interface operations {
                      *         "index": 1,
                      *         "title": "Morning walk by the river",
                      *         "time_of_day": "08:30",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm",
+                     *           "grateful"
+                     *         ],
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -7135,6 +7479,11 @@ export interface operations {
                      *         "index": 1,
                      *         "title": "Morning walk by the river",
                      *         "time_of_day": "08:30",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm",
+                     *           "grateful"
+                     *         ],
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -8226,6 +8575,36 @@ export interface operations {
                      *             "strength": 76
                      *           }
                      *         ]
+                     *       },
+                     *       "moods": {
+                     *         "recordedEntries": 48,
+                     *         "averageMood": 3.7,
+                     *         "levels": [
+                     *           2,
+                     *           5,
+                     *           12,
+                     *           20,
+                     *           9
+                     *         ],
+                     *         "months": [
+                     *           {
+                     *             "month": "2025-03",
+                     *             "average": 3.8,
+                     *             "entries": 12
+                     *           }
+                     *         ],
+                     *         "weekdays": [
+                     *           {
+                     *             "average": 3.6,
+                     *             "entries": 9
+                     *           }
+                     *         ],
+                     *         "topFeelings": [
+                     *           {
+                     *             "feeling": "calm",
+                     *             "count": 14
+                     *           }
+                     *         ]
                      *       }
                      *     }
                      */
@@ -8460,6 +8839,7 @@ export interface operations {
                  *           "date": "2024-03-05",
                  *           "timeOfDay": "08:30",
                  *           "title": "Morning walk by the river",
+                 *           "mood": 4,
                  *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                  *           "tags": [
                  *             "reflection"
@@ -10537,6 +10917,23 @@ export interface operations {
                      *         "summary": "example",
                      *         "analyzedEntries": 1,
                      *         "generatedAt": "2026-06-24T10:00:00.000Z"
+                     *       },
+                     *       "recordedMood": {
+                     *         "entries": 64,
+                     *         "average": 3.7,
+                     *         "months": [
+                     *           {
+                     *             "month": "2025-03",
+                     *             "average": 3.8,
+                     *             "entries": 9
+                     *           }
+                     *         ],
+                     *         "topFeelings": [
+                     *           {
+                     *             "feeling": "calm",
+                     *             "count": 6
+                     *           }
+                     *         ]
                      *       },
                      *       "aiAvailable": true
                      *     }

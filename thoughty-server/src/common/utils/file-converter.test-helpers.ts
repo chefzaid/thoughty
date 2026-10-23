@@ -3,6 +3,8 @@ export type ConverterTestEntry = {
   index: number;
   title?: string;
   timeOfDay?: string;
+  mood?: number;
+  feelings?: string[];
   tags: string[];
   content: string;
   format: 'plain' | 'markdown';

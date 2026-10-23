@@ -9,6 +9,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
   Min,
   ValidateNested,
@@ -16,6 +17,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
+import { MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
 
 export const APP_IMPORT_SOURCES = ['dayone', 'journey'] as const;
 export type AppImportSource = (typeof APP_IMPORT_SOURCES)[number];
@@ -43,6 +45,18 @@ export class AppImportEntryDto {
   @IsString()
   @MaxLength(MAX_ENTRY_TITLE_LENGTH)
   title?: string;
+
+  @ApiPropertyOptional({
+    description: 'Mood the writer recorded in the source app, on the scale from 1 (very low) to 5 (very good)',
+    minimum: MIN_MOOD,
+    maximum: MAX_MOOD,
+    example: 4,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(MIN_MOOD)
+  @Max(MAX_MOOD)
+  mood?: number;
 
   @ApiProperty({ description: 'Entry text as Markdown; may be empty when the entry holds only photos' })
   @IsString()

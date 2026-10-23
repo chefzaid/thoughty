@@ -31,6 +31,7 @@ const review = (overrides: Partial<YearReview> = {}): YearReview => ({
     { kind: 'favorite', entryId: 12, date: '2025-06-14', excerpt: 'The lake with everyone.', words: 4, tags: ['family'] },
   ],
   mood: null,
+  recordedMood: null,
   aiAvailable: true,
   ...overrides,
 });
@@ -143,6 +144,56 @@ describe('YearReviewPage', () => {
     expect(within(moodCard).getByRole('img', { name: /January: hopeful, February: tired, April: bright/ })).toBeInTheDocument();
     expect(moodCard.querySelectorAll('polyline')).toHaveLength(2);
     expect(within(moodCard).getByRole('button', { name: 'reviewMoodAgain' })).toBeInTheDocument();
+  });
+
+  it('labels an AI reading as such and suggests recording moods', async () => {
+    reviewService.fetchReview.mockResolvedValue({
+      data: review({
+        mood: {
+          months: [{ month: '2025-01', mood: 'hopeful', valence: 1 }],
+          summary: 'A hopeful start.',
+          analyzedEntries: 5,
+          generatedAt: '2026-01-02T10:00:00.000Z',
+        },
+      }),
+      error: null,
+    });
+    renderPage();
+    const moodCard = await screen.findByRole('region', { name: 'reviewMoodTitle' });
+
+    expect(within(moodCard).getByText('reviewMoodAiSource')).toBeInTheDocument();
+    expect(within(moodCard).getByText('reviewMoodRecordHint')).toBeInTheDocument();
+    expect(within(moodCard).queryByText('reviewMoodRecordedSource')).not.toBeInTheDocument();
+  });
+
+  it('draws the arc from recorded moods without AI, even when an AI reading is saved', async () => {
+    reviewService.fetchReview.mockResolvedValue({
+      data: review({
+        mood: {
+          months: [{ month: '2025-01', mood: 'hopeful', valence: 1 }],
+          summary: 'An old AI reading.',
+          analyzedEntries: 5,
+          generatedAt: '2026-01-02T10:00:00.000Z',
+        },
+        recordedMood: {
+          entries: 9,
+          average: 3.6,
+          months: [{ month: '2025-03', average: 2, entries: 4 }, { month: '2025-04', average: 4.8, entries: 5 }],
+          topFeelings: [{ feeling: 'calm', count: 4 }, { feeling: 'nostalgic', count: 2 }],
+        },
+      }),
+      error: null,
+    });
+    renderPage();
+    const moodCard = await screen.findByRole('region', { name: 'reviewMoodTitle' });
+
+    expect(within(moodCard).getByText('reviewMoodRecordedSource')).toBeInTheDocument();
+    expect(within(moodCard).getByText('reviewMoodRecordedSummary 3.6 | moodLevel4 | reviewEntries_other 9')).toBeInTheDocument();
+    expect(within(moodCard).getByRole('img', { name: /March: moodLevel2, April: moodLevel5/ })).toBeInTheDocument();
+    expect(moodCard.querySelectorAll('polyline')).toHaveLength(1);
+    expect(within(moodCard).getByText('reviewMoodRecordedFeelings feelingCalm, nostalgic')).toBeInTheDocument();
+    expect(within(moodCard).queryByText('An old AI reading.')).not.toBeInTheDocument();
+    expect(within(moodCard).queryByRole('button')).not.toBeInTheDocument();
   });
 
   it('reports a failed mood reading and explains when AI is not set up', async () => {

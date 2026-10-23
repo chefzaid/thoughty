@@ -54,6 +54,8 @@ describe('PublicFeedService', () => {
         tags: ['growth'],
         content: 'A public reflection',
         format: 'markdown',
+        mood: 2,
+        feelings: ['lonely'],
         createdAt,
         user: { id: 3, username: 'writer', avatarUrl: '/avatar.png', email: 'private@example.com' },
       },
@@ -91,6 +93,9 @@ describe('PublicFeedService', () => {
     expect(qb.select).toHaveBeenCalledWith(
       expect.arrayContaining(['e.title', 'e.timeOfDay', 'e.content', 'u.id', 'u.username', 'u.avatarUrl']),
     );
+    // Recorded moods are private: the feed neither reads nor returns them
+    expect(qb.select.mock.calls[0][0]).not.toEqual(expect.arrayContaining(['e.mood']));
+    expect(qb.select.mock.calls[0][0]).not.toEqual(expect.arrayContaining(['e.feelings']));
     expect(qb.andWhere).toHaveBeenCalledWith('e.moderation_status = :moderationStatus', {
       moderationStatus: 'visible',
     });

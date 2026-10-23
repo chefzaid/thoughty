@@ -970,6 +970,16 @@
             }
           },
           {
+            "name": "mood",
+            "required": false,
+            "in": "query",
+            "description": "Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; \"any\" for entries with a mood, or \"none\" for entries without one",
+            "schema": {
+              "example": "4,5",
+              "type": "string"
+            }
+          },
+          {
             "name": "diaryId",
             "required": false,
             "in": "query",
@@ -1015,6 +1025,11 @@
                       "index": 1,
                       "title": "Morning walk by the river",
                       "time_of_day": "08:30",
+                      "mood": 4,
+                      "feelings": [
+                        "calm",
+                        "grateful"
+                      ],
                       "tags": [
                         "reflection"
                       ],
@@ -1079,6 +1094,11 @@
               "example": {
                 "title": "Morning walk by the river",
                 "timeOfDay": "08:30",
+                "mood": 4,
+                "feelings": [
+                  "calm",
+                  "grateful"
+                ],
                 "text": "example",
                 "tags": [
                   "reflection"
@@ -1276,6 +1296,11 @@
                     "index": 1,
                     "title": "Morning walk by the river",
                     "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
                     "tags": [
                       "reflection"
                     ],
@@ -1654,6 +1679,11 @@
               "example": {
                 "title": "Morning walk by the river",
                 "timeOfDay": "08:30",
+                "mood": 4,
+                "feelings": [
+                  "calm",
+                  "grateful"
+                ],
                 "text": "example",
                 "tags": [
                   "reflection"
@@ -1683,6 +1713,11 @@
                     "index": 1,
                     "title": "Morning walk by the river",
                     "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
                     "tags": [
                       "reflection"
                     ],
@@ -1809,6 +1844,11 @@
                     "index": 1,
                     "title": "Morning walk by the river",
                     "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
                     "tags": [
                       "reflection"
                     ],
@@ -1898,6 +1938,11 @@
                     "index": 1,
                     "title": "Morning walk by the river",
                     "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
                     "tags": [
                       "reflection"
                     ],
@@ -1987,6 +2032,11 @@
                     "index": 1,
                     "title": "Morning walk by the river",
                     "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
                     "tags": [
                       "reflection"
                     ],
@@ -2076,6 +2126,11 @@
                     "index": 1,
                     "title": "Morning walk by the river",
                     "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
                     "tags": [
                       "reflection"
                     ],
@@ -3366,6 +3421,36 @@
                         "strength": 76
                       }
                     ]
+                  },
+                  "moods": {
+                    "recordedEntries": 48,
+                    "averageMood": 3.7,
+                    "levels": [
+                      2,
+                      5,
+                      12,
+                      20,
+                      9
+                    ],
+                    "months": [
+                      {
+                        "month": "2025-03",
+                        "average": 3.8,
+                        "entries": 12
+                      }
+                    ],
+                    "weekdays": [
+                      {
+                        "average": 3.6,
+                        "entries": 9
+                      }
+                    ],
+                    "topFeelings": [
+                      {
+                        "feeling": "calm",
+                        "count": 14
+                      }
+                    ]
                   }
                 }
               }
@@ -3678,6 +3763,7 @@
                     "date": "2024-03-05",
                     "timeOfDay": "08:30",
                     "title": "Morning walk by the river",
+                    "mood": 4,
                     "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                     "tags": [
                       "reflection"
@@ -7021,6 +7107,23 @@
                     "analyzedEntries": 1,
                     "generatedAt": "2026-06-24T10:00:00.000Z"
                   },
+                  "recordedMood": {
+                    "entries": 64,
+                    "average": 3.7,
+                    "months": [
+                      {
+                        "month": "2025-03",
+                        "average": 3.8,
+                        "entries": 9
+                      }
+                    ],
+                    "topFeelings": [
+                      {
+                        "feeling": "calm",
+                        "count": 6
+                      }
+                    ]
+                  },
                   "aiAvailable": true
                 }
               }
@@ -7849,6 +7952,25 @@
             "description": "Time of day (HH:MM), or null",
             "example": "08:30"
           },
+          "mood": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Recorded mood from 1 (very low) to 5 (very good), or null",
+            "example": 4
+          },
+          "feelings": {
+            "description": "Feeling words recorded with the mood",
+            "example": [
+              "calm",
+              "grateful"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -7915,6 +8037,8 @@
           "index",
           "title",
           "time_of_day",
+          "mood",
+          "feelings",
           "tags",
           "content",
           "format",
@@ -7932,6 +8056,11 @@
           "index": 1,
           "title": "Morning walk by the river",
           "time_of_day": "08:30",
+          "mood": 4,
+          "feelings": [
+            "calm",
+            "grateful"
+          ],
           "tags": [
             "reflection"
           ],
@@ -8004,6 +8133,11 @@
               "index": 1,
               "title": "Morning walk by the river",
               "time_of_day": "08:30",
+              "mood": 4,
+              "feelings": [
+                "calm",
+                "grateful"
+              ],
               "tags": [
                 "reflection"
               ],
@@ -8136,6 +8270,11 @@
             "index": 1,
             "title": "Morning walk by the river",
             "time_of_day": "08:30",
+            "mood": 4,
+            "feelings": [
+              "calm",
+              "grateful"
+            ],
             "tags": [
               "reflection"
             ],
@@ -8360,6 +8499,26 @@
             "nullable": true,
             "example": "08:30"
           },
+          "mood": {
+            "type": "number",
+            "description": "Optional mood check-in from 1 (very low) to 5 (very good); null removes it. It is private: the public feed never shows it.",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 5,
+            "example": 4
+          },
+          "feelings": {
+            "description": "Optional feeling words with the mood: curated ones by their English name, or the writer's own words. Stored lowercase without duplicates; an empty list removes them.",
+            "maxItems": 10,
+            "example": [
+              "calm",
+              "grateful"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "text": {
             "type": "string",
             "description": "Entry content"
@@ -8403,6 +8562,11 @@
         "example": {
           "title": "Morning walk by the river",
           "timeOfDay": "08:30",
+          "mood": 4,
+          "feelings": [
+            "calm",
+            "grateful"
+          ],
           "text": "example",
           "tags": [
             "reflection"
@@ -8589,6 +8753,26 @@
             "nullable": true,
             "example": "08:30"
           },
+          "mood": {
+            "type": "number",
+            "description": "Optional mood check-in from 1 (very low) to 5 (very good); null removes it. It is private: the public feed never shows it.",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 5,
+            "example": 4
+          },
+          "feelings": {
+            "description": "Optional feeling words with the mood: curated ones by their English name, or the writer's own words. Stored lowercase without duplicates; an empty list removes them.",
+            "maxItems": 10,
+            "example": [
+              "calm",
+              "grateful"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "text": {
             "type": "string",
             "description": "Entry content"
@@ -8628,6 +8812,11 @@
         "example": {
           "title": "Morning walk by the river",
           "timeOfDay": "08:30",
+          "mood": 4,
+          "feelings": [
+            "calm",
+            "grateful"
+          ],
           "text": "example",
           "tags": [
             "reflection"
@@ -8661,6 +8850,11 @@
             "index": 1,
             "title": "Morning walk by the river",
             "time_of_day": "08:30",
+            "mood": 4,
+            "feelings": [
+              "calm",
+              "grateful"
+            ],
             "tags": [
               "reflection"
             ],
@@ -10045,6 +10239,171 @@
           ]
         }
       },
+      "StatsMoodMonthDto": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "example": "2025-03"
+          },
+          "average": {
+            "type": "number",
+            "example": 3.8,
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Average recorded mood that month, to one decimal"
+          },
+          "entries": {
+            "type": "number",
+            "example": 12,
+            "description": "Entries with a recorded mood that month"
+          }
+        },
+        "required": [
+          "month",
+          "average",
+          "entries"
+        ],
+        "example": {
+          "month": "2025-03",
+          "average": 3.8,
+          "entries": 12
+        }
+      },
+      "StatsMoodWeekdayDto": {
+        "type": "object",
+        "properties": {
+          "average": {
+            "type": "number",
+            "nullable": true,
+            "example": 3.6,
+            "minimum": 1,
+            "maximum": 5
+          },
+          "entries": {
+            "type": "number",
+            "example": 9
+          }
+        },
+        "required": [
+          "average",
+          "entries"
+        ],
+        "example": {
+          "average": 3.6,
+          "entries": 9
+        }
+      },
+      "StatsFeelingDto": {
+        "type": "object",
+        "properties": {
+          "feeling": {
+            "type": "string",
+            "example": "calm"
+          },
+          "count": {
+            "type": "number",
+            "example": 14
+          }
+        },
+        "required": [
+          "feeling",
+          "count"
+        ],
+        "example": {
+          "feeling": "calm",
+          "count": 14
+        }
+      },
+      "StatsMoodDto": {
+        "type": "object",
+        "properties": {
+          "recordedEntries": {
+            "type": "number",
+            "example": 48,
+            "description": "Entries with a recorded mood"
+          },
+          "averageMood": {
+            "type": "number",
+            "nullable": true,
+            "example": 3.7,
+            "description": "Average recorded mood from 1 (very low) to 5 (very good)"
+          },
+          "levels": {
+            "example": [
+              2,
+              5,
+              12,
+              20,
+              9
+            ],
+            "description": "Entries per mood level, from 1 (very low) to 5 (very good)",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "months": {
+            "description": "Months with a recorded mood, oldest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsMoodMonthDto"
+            }
+          },
+          "weekdays": {
+            "description": "Seven weekdays, Monday first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsMoodWeekdayDto"
+            }
+          },
+          "topFeelings": {
+            "description": "The feeling words recorded most often, up to ten",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsFeelingDto"
+            }
+          }
+        },
+        "required": [
+          "recordedEntries",
+          "averageMood",
+          "levels",
+          "months",
+          "weekdays",
+          "topFeelings"
+        ],
+        "example": {
+          "recordedEntries": 48,
+          "averageMood": 3.7,
+          "levels": [
+            2,
+            5,
+            12,
+            20,
+            9
+          ],
+          "months": [
+            {
+              "month": "2025-03",
+              "average": 3.8,
+              "entries": 12
+            }
+          ],
+          "weekdays": [
+            {
+              "average": 3.6,
+              "entries": 9
+            }
+          ],
+          "topFeelings": [
+            {
+              "feeling": "calm",
+              "count": 14
+            }
+          ]
+        }
+      },
       "StatsResponseDto": {
         "type": "object",
         "properties": {
@@ -10154,6 +10513,14 @@
           },
           "correlations": {
             "$ref": "#/components/schemas/StatsCorrelationsDto"
+          },
+          "moods": {
+            "description": "Recorded moods and feelings, computed without AI",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsMoodDto"
+              }
+            ]
           }
         },
         "required": [
@@ -10167,7 +10534,8 @@
           "thoughtsPerTag",
           "tagsPerYear",
           "tagsPerMonth",
-          "correlations"
+          "correlations",
+          "moods"
         ],
         "example": {
           "totalThoughts": 120,
@@ -10250,6 +10618,36 @@
                 "secondTag": "focus",
                 "sharedEntries": 14,
                 "strength": 76
+              }
+            ]
+          },
+          "moods": {
+            "recordedEntries": 48,
+            "averageMood": 3.7,
+            "levels": [
+              2,
+              5,
+              12,
+              20,
+              9
+            ],
+            "months": [
+              {
+                "month": "2025-03",
+                "average": 3.8,
+                "entries": 12
+              }
+            ],
+            "weekdays": [
+              {
+                "average": 3.6,
+                "entries": 9
+              }
+            ],
+            "topFeelings": [
+              {
+                "feeling": "calm",
+                "count": 14
               }
             ]
           }
@@ -10582,6 +10980,13 @@
             "description": "Title of the entry in the source app",
             "example": "Morning walk by the river"
           },
+          "mood": {
+            "type": "number",
+            "description": "Mood the writer recorded in the source app, on the scale from 1 (very low) to 5 (very good)",
+            "minimum": 1,
+            "maximum": 5,
+            "example": 4
+          },
           "content": {
             "type": "string",
             "description": "Entry text as Markdown; may be empty when the entry holds only photos"
@@ -10611,6 +11016,7 @@
           "date": "2024-03-05",
           "timeOfDay": "08:30",
           "title": "Morning walk by the river",
+          "mood": 4,
           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
           "tags": [
             "reflection"
@@ -10656,6 +11062,7 @@
               "date": "2024-03-05",
               "timeOfDay": "08:30",
               "title": "Morning walk by the river",
+              "mood": 4,
               "content": "Today I wrote a thoughtful journal entry about focus and calm.",
               "tags": [
                 "reflection"
@@ -12863,6 +13270,112 @@
           "generatedAt": "2026-06-24T10:00:00.000Z"
         }
       },
+      "YearReviewRecordedMoodMonthDto": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "example": "2025-03"
+          },
+          "average": {
+            "type": "number",
+            "example": 3.8,
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Average recorded mood that month, to one decimal"
+          },
+          "entries": {
+            "type": "number",
+            "example": 9,
+            "description": "Entries with a recorded mood that month"
+          }
+        },
+        "required": [
+          "month",
+          "average",
+          "entries"
+        ],
+        "example": {
+          "month": "2025-03",
+          "average": 3.8,
+          "entries": 9
+        }
+      },
+      "YearReviewFeelingDto": {
+        "type": "object",
+        "properties": {
+          "feeling": {
+            "type": "string",
+            "example": "calm"
+          },
+          "count": {
+            "type": "number",
+            "example": 6
+          }
+        },
+        "required": [
+          "feeling",
+          "count"
+        ],
+        "example": {
+          "feeling": "calm",
+          "count": 6
+        }
+      },
+      "YearReviewRecordedMoodDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "number",
+            "example": 64,
+            "description": "Entries of the year with a recorded mood"
+          },
+          "average": {
+            "type": "number",
+            "example": 3.7,
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Average recorded mood of the year, to one decimal"
+          },
+          "months": {
+            "description": "Months with a recorded mood, January first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/YearReviewRecordedMoodMonthDto"
+            }
+          },
+          "topFeelings": {
+            "description": "The feeling words recorded most often that year, up to five",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/YearReviewFeelingDto"
+            }
+          }
+        },
+        "required": [
+          "entries",
+          "average",
+          "months",
+          "topFeelings"
+        ],
+        "example": {
+          "entries": 64,
+          "average": 3.7,
+          "months": [
+            {
+              "month": "2025-03",
+              "average": 3.8,
+              "entries": 9
+            }
+          ],
+          "topFeelings": [
+            {
+              "feeling": "calm",
+              "count": 6
+            }
+          ]
+        }
+      },
       "YearReviewDto": {
         "type": "object",
         "properties": {
@@ -12928,10 +13441,21 @@
           },
           "mood": {
             "nullable": true,
+            "description": "The saved AI reading of the year, if any",
             "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/YearReviewMoodDto"
+              }
+            ]
+          },
+          "recordedMood": {
+            "nullable": true,
+            "description": "The mood arc drawn from the moods the writer recorded that year, without AI; null when none were recorded. When present, it is shown instead of the AI reading.",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/YearReviewRecordedMoodDto"
               }
             ]
           },
@@ -12952,6 +13476,7 @@
           "newTags",
           "highlights",
           "mood",
+          "recordedMood",
           "aiAvailable"
         ],
         "example": {
@@ -13016,6 +13541,23 @@
             "summary": "example",
             "analyzedEntries": 1,
             "generatedAt": "2026-06-24T10:00:00.000Z"
+          },
+          "recordedMood": {
+            "entries": 64,
+            "average": 3.7,
+            "months": [
+              {
+                "month": "2025-03",
+                "average": 3.8,
+                "entries": 9
+              }
+            ],
+            "topFeelings": [
+              {
+                "feeling": "calm",
+                "count": 6
+              }
+            ]
           },
           "aiAvailable": true
         }

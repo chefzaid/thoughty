@@ -1,6 +1,7 @@
-import type { YearReviewMood as YearMood } from '../../services/api';
+import type { YearReview, YearReviewMood as YearMood } from '../../services/api';
 import type { TranslationFunction } from '../../types';
 import { monthName } from '../../utils/calendarNames';
+import { feelingLabel, moodLabelKey, nearestMoodLevel } from '../../utils/entryMood';
 import type { Language } from '../../utils/translations';
 import { countPhrase } from './yearReviewFormat';
 import './YearReviewMood.css';
@@ -9,8 +10,19 @@ const WIDTH = 720;
 const HEIGHT = 150;
 const COLUMN = WIDTH / 12;
 
+type RecordedMood = NonNullable<YearReview['recordedMood']>;
+
+/** One point of the arc: the month (`YYYY-MM`), its valence from -2 to 2, and what it reads as. */
+interface ArcPoint {
+  readonly month: string;
+  readonly valence: number;
+  readonly label: string;
+}
+
 interface YearReviewMoodProps {
   readonly mood: YearMood | null;
+  /** Moods the writer recorded that year; when present, the arc is drawn from them, without AI. */
+  readonly recordedMood?: RecordedMood | null;
   readonly aiAvailable: boolean;
   readonly reading: boolean;
   readonly failed: boolean;
@@ -24,7 +36,7 @@ function pointFor(month: number, valence: number): [number, number] {
 }
 
 /** Runs of consecutive months, so a month without a reading leaves a gap in the line. */
-function segments(readings: YearMood['months']): Array<Array<[number, number]>> {
+function segments(readings: readonly ArcPoint[]): Array<Array<[number, number]>> {
   const runs: Array<Array<[number, number]>> = [];
   let previousMonth = -1;
   for (const reading of readings) {
@@ -38,25 +50,25 @@ function segments(readings: YearMood['months']): Array<Array<[number, number]>> 
   return runs;
 }
 
-function MoodChart({ mood, language, t }: Readonly<{ mood: YearMood; language: Language; t: TranslationFunction }>) {
-  const described = mood.months.map((reading) => `${monthName(Number(reading.month.slice(5, 7)), language)}: ${reading.mood}`).join(', ');
+function MoodChart({ points, labelKey, language, t }: Readonly<{ points: readonly ArcPoint[]; labelKey: string; language: Language; t: TranslationFunction }>) {
+  const described = points.map((reading) => `${monthName(Number(reading.month.slice(5, 7)), language)}: ${reading.label}`).join(', ');
   return (
     <>
-      <svg className="review-mood-chart" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={t('reviewMoodChartLabel', { moods: described })}>
+      <svg className="review-mood-chart" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={t(labelKey, { moods: described })}>
         <line x1="0" x2={WIDTH} y1={HEIGHT / 2} y2={HEIGHT / 2} className="review-mood-axis" />
-        {segments(mood.months).map((run) => (
+        {segments(points).map((run) => (
           <polyline key={run.map((point) => point.join(',')).join(' ')} points={run.map((point) => point.join(',')).join(' ')} className="review-mood-line" />
         ))}
-        {mood.months.map((reading) => {
+        {points.map((reading) => {
           const [x, y] = pointFor(Number(reading.month.slice(5, 7)), reading.valence);
           return <circle key={reading.month} cx={x} cy={y} r="6" className="review-mood-point" />;
         })}
       </svg>
       <ol className="review-mood-months" aria-hidden="true">
-        {mood.months.map((reading) => (
+        {points.map((reading) => (
           <li key={reading.month}>
             <span className="review-mood-month">{monthName(Number(reading.month.slice(5, 7)), language, 'short')}</span>
-            <span>{reading.mood}</span>
+            <span>{reading.label}</span>
           </li>
         ))}
       </ol>
@@ -64,8 +76,50 @@ function MoodChart({ mood, language, t }: Readonly<{ mood: YearMood; language: L
   );
 }
 
-/** The mood arc, read with AI only when the writer asks. */
-function YearReviewMood({ mood, aiAvailable, reading, failed, onRead, language, t }: YearReviewMoodProps) {
+function formatAverage(value: number, language: Language): string {
+  return value.toLocaleString(language, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+/** The arc from the moods the writer recorded: no AI, nothing sent anywhere. */
+function RecordedMoodArc({ recorded, language, t }: Readonly<{ recorded: RecordedMood; language: Language; t: TranslationFunction }>) {
+  // Recorded moods run from 1 to 5; the arc is drawn from -2 to 2 around "Okay"
+  const points = recorded.months.map((month) => ({
+    month: month.month,
+    valence: month.average - 3,
+    label: t(moodLabelKey(nearestMoodLevel(month.average))),
+  }));
+  const feelings = recorded.topFeelings.map((feeling) => feelingLabel(feeling.feeling, t)).join(', ');
+
+  return (
+    <>
+      <p className="review-mood-source review-mood-source-recorded">{t('reviewMoodRecordedSource')}</p>
+      <p className="review-mood-summary">
+        {t('reviewMoodRecordedSummary', {
+          average: formatAverage(recorded.average, language),
+          label: t(moodLabelKey(nearestMoodLevel(recorded.average))),
+          entries: countPhrase(t, 'reviewEntries', recorded.entries, language),
+        })}
+      </p>
+      <MoodChart points={points} labelKey="reviewMoodRecordedChartLabel" language={language} t={t} />
+      {feelings && <p className="review-note">{t('reviewMoodRecordedFeelings', { feelings })}</p>}
+    </>
+  );
+}
+
+/**
+ * The mood arc. When the writer recorded moods that year it is drawn from them, without AI;
+ * otherwise AI reads it from a sample of entries, only when the writer asks.
+ */
+function YearReviewMood({ mood, recordedMood = null, aiAvailable, reading, failed, onRead, language, t }: YearReviewMoodProps) {
+  if (recordedMood) {
+    return (
+      <section className="review-card review-mood" aria-labelledby="review-mood-heading">
+        <h2 id="review-mood-heading">{t('reviewMoodTitle')}</h2>
+        <RecordedMoodArc recorded={recordedMood} language={language} t={t} />
+      </section>
+    );
+  }
+
   const generatedOn = mood
     ? new Intl.DateTimeFormat(language, { dateStyle: 'long' }).format(new Date(mood.generatedAt))
     : '';
@@ -75,8 +129,14 @@ function YearReviewMood({ mood, aiAvailable, reading, failed, onRead, language, 
       <h2 id="review-mood-heading">{t('reviewMoodTitle')}</h2>
       {mood ? (
         <>
+          <p className="review-mood-source">{t('reviewMoodAiSource')}</p>
           <p className="review-mood-summary">{mood.summary}</p>
-          <MoodChart mood={mood} language={language} t={t} />
+          <MoodChart
+            points={mood.months.map((month) => ({ month: month.month, valence: month.valence, label: month.mood }))}
+            labelKey="reviewMoodChartLabel"
+            language={language}
+            t={t}
+          />
           <p className="review-note">
             {t('reviewMoodGenerated', { date: generatedOn, entries: countPhrase(t, 'reviewEntries', mood.analyzedEntries, language) })}
           </p>
@@ -98,6 +158,7 @@ function YearReviewMood({ mood, aiAvailable, reading, failed, onRead, language, 
         <p className="review-note review-print-hidden">{t('reviewMoodUnavailable')}</p>
       )}
       {failed && <p className="review-error" role="alert">{t('reviewMoodError')}</p>}
+      <p className="review-note review-print-hidden">{t('reviewMoodRecordHint')}</p>
     </section>
   );
 }

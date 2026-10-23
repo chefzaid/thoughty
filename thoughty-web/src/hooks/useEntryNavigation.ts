@@ -17,6 +17,7 @@ interface UseEntryNavigationParams {
   filterArchiveStatus: EntriesState['filterArchiveStatus'];
   filterDateObj: EntriesState['filterDateObj'];
   filterFavorites: EntriesState['filterFavorites'];
+  filterMood: EntriesState['filterMood'];
   filterTags: EntriesState['filterTags'];
   filterVisibility: EntriesState['filterVisibility'];
   getLimit: EntriesState['getLimit'];
@@ -32,6 +33,7 @@ interface UseEntryNavigationParams {
   setFilterArchiveStatus: EntriesState['setFilterArchiveStatus'];
   setFilterDateObj: EntriesState['setFilterDateObj'];
   setFilterFavorites: EntriesState['setFilterFavorites'];
+  setFilterMood: EntriesState['setFilterMood'];
   setFilterTags: EntriesState['setFilterTags'];
   setFilterVisibility: EntriesState['setFilterVisibility'];
   setPage: EntriesState['setPage'];
@@ -59,6 +61,7 @@ export function useEntryNavigation({
   filterArchiveStatus,
   filterDateObj,
   filterFavorites,
+  filterMood,
   filterTags,
   filterVisibility,
   getLimit,
@@ -74,6 +77,7 @@ export function useEntryNavigation({
   setFilterArchiveStatus,
   setFilterDateObj,
   setFilterFavorites,
+  setFilterMood,
   setFilterTags,
   setFilterVisibility,
   setPage,
@@ -112,6 +116,10 @@ export function useEntryNavigation({
       return true;
     }
 
+    if (filterMood !== '') {
+      return true;
+    }
+
     if (filterArchiveStatus !== 'all') {
       return true;
     }
@@ -131,6 +139,7 @@ export function useEntryNavigation({
     filterDateObj,
     filterArchiveStatus,
     filterFavorites,
+    filterMood,
     filterTags,
     filterVisibility,
     page,
@@ -163,6 +172,10 @@ export function useEntryNavigation({
       setFilterFavorites(false);
     }
 
+    if (filterMood !== '') {
+      setFilterMood('');
+    }
+
     if (filterArchiveStatus !== 'all') {
       setFilterArchiveStatus('all');
     }
@@ -192,6 +205,7 @@ export function useEntryNavigation({
     filterDateObj,
     filterArchiveStatus,
     filterFavorites,
+    filterMood,
     filterTags,
     filterVisibility,
     navigate,
@@ -203,6 +217,7 @@ export function useEntryNavigation({
     setFilterArchiveStatus,
     setFilterDateObj,
     setFilterFavorites,
+    setFilterMood,
     setFilterTags,
     setFilterVisibility,
     setPage,

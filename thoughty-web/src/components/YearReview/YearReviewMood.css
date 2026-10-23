@@ -57,3 +57,17 @@
 .review-privacy {
   margin-top: 0.75rem;
 }
+
+.review-mood-source {
+  display: inline-block;
+  margin: 0 0 0.6rem;
+  padding: 0.2rem 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.review-mood-source-recorded {
+  border-color: rgba(245, 158, 11, 0.55);
+}

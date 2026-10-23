@@ -33,6 +33,7 @@ function getFilteredEntries(
   const favorites = searchParams.get('favorites') === 'true';
   const archiveStatus = searchParams.get('archiveStatus') || 'active';
   const diaryId = searchParams.get('diaryId');
+  const mood = searchParams.get('mood') || '';
   const semanticIds = searchParams.get('ids')
     ?.split(',')
     .map((id) => Number(id)) ?? null;
@@ -74,6 +75,14 @@ function getFilteredEntries(
   if (diaryId) {
     filtered = filtered.filter((entry) => String(entry.diaryId ?? 1) === diaryId);
   }
+  if (mood === 'any') {
+    filtered = filtered.filter((entry) => entry.mood != null);
+  } else if (mood === 'none') {
+    filtered = filtered.filter((entry) => entry.mood == null);
+  } else if (mood) {
+    const levels = mood.split(',').map(Number);
+    filtered = filtered.filter((entry) => entry.mood != null && levels.includes(entry.mood));
+  }
   if (semanticIds) {
     const semanticRank = new Map(semanticIds.map((id, index) => [id, index]));
     filtered = filtered
@@ -112,6 +121,8 @@ async function handleEntriesCollectionRoute({ route, request, pathname, searchPa
     text: string;
     title?: string | null;
     timeOfDay?: string | null;
+    mood?: number | null;
+    feelings?: string[];
     tags: string[];
     date: string;
     visibility?: 'public' | 'private' | null;
@@ -125,6 +136,8 @@ async function handleEntriesCollectionRoute({ route, request, pathname, searchPa
     index: sameDayEntries.length + 1,
     title: payload.title?.trim() || null,
     time_of_day: payload.timeOfDay || null,
+    mood: payload.mood ?? null,
+    feelings: payload.feelings ?? [],
     content: payload.text,
     tags: resolveTags(state, payload.tags),
     visibility: payload.visibility || 'private',
@@ -259,6 +272,8 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
       text: string;
       title?: string | null;
       timeOfDay?: string | null;
+      mood?: number | null;
+      feelings?: string[];
       tags: string[];
       date: string;
       visibility: 'public' | 'private';
@@ -278,6 +293,8 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
           content: entry.content,
           title: entry.title ?? null,
           timeOfDay: entry.time_of_day ?? null,
+          mood: entry.mood ?? null,
+          feelings: entry.feelings ?? [],
           tags: entry.tags,
           date: entry.date,
           visibility: entry.visibility,
@@ -290,6 +307,8 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
         ...entry,
         ...(payload.title === undefined ? {} : { title: payload.title?.trim() || null }),
         ...(payload.timeOfDay === undefined ? {} : { time_of_day: payload.timeOfDay || null }),
+        ...(payload.mood === undefined ? {} : { mood: payload.mood }),
+        ...(payload.feelings === undefined ? {} : { feelings: payload.feelings }),
         content: payload.text,
         tags: resolveTags(state, payload.tags),
         date: payload.date,

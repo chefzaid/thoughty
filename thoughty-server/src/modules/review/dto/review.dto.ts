@@ -135,6 +135,39 @@ export class YearReviewMoodDto {
   generatedAt: string;
 }
 
+export class YearReviewRecordedMoodMonthDto {
+  @ApiProperty({ example: '2025-03' })
+  month: string;
+
+  @ApiProperty({ example: 3.8, minimum: 1, maximum: 5, description: 'Average recorded mood that month, to one decimal' })
+  average: number;
+
+  @ApiProperty({ example: 9, description: 'Entries with a recorded mood that month' })
+  entries: number;
+}
+
+export class YearReviewFeelingDto {
+  @ApiProperty({ example: 'calm' })
+  feeling: string;
+
+  @ApiProperty({ example: 6 })
+  count: number;
+}
+
+export class YearReviewRecordedMoodDto {
+  @ApiProperty({ example: 64, description: 'Entries of the year with a recorded mood' })
+  entries: number;
+
+  @ApiProperty({ example: 3.7, minimum: 1, maximum: 5, description: 'Average recorded mood of the year, to one decimal' })
+  average: number;
+
+  @ApiProperty({ type: [YearReviewRecordedMoodMonthDto], description: 'Months with a recorded mood, January first' })
+  months: YearReviewRecordedMoodMonthDto[];
+
+  @ApiProperty({ type: [YearReviewFeelingDto], description: 'The feeling words recorded most often that year, up to five' })
+  topFeelings: YearReviewFeelingDto[];
+}
+
 export class YearReviewDto {
   @ApiProperty()
   year: number;
@@ -166,8 +199,17 @@ export class YearReviewDto {
   @ApiProperty({ type: [YearReviewHighlightDto] })
   highlights: YearReviewHighlightDto[];
 
-  @ApiProperty({ type: YearReviewMoodDto, nullable: true })
+  @ApiProperty({ type: YearReviewMoodDto, nullable: true, description: 'The saved AI reading of the year, if any' })
   mood: YearReviewMoodDto | null;
+
+  @ApiProperty({
+    type: YearReviewRecordedMoodDto,
+    nullable: true,
+    description:
+      'The mood arc drawn from the moods the writer recorded that year, without AI; null when none were recorded. ' +
+      'When present, it is shown instead of the AI reading.',
+  })
+  recordedMood: YearReviewRecordedMoodDto | null;
 
   @ApiProperty({ description: 'Whether the mood of the year can be read with AI' })
   aiAvailable: boolean;

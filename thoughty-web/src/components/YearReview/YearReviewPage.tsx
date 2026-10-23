@@ -61,6 +61,7 @@ function YearReviewPage({ theme, language: rawLanguage, diaries, year, diaryId, 
         <YearReviewHighlights review={data} language={language} onOpenEntry={onOpenEntry} t={t} />
         <YearReviewMood
           mood={data.mood}
+          recordedMood={data.recordedMood}
           aiAvailable={data.aiAvailable}
           reading={mood.isPending}
           failed={mood.isError}

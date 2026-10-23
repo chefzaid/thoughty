@@ -71,6 +71,8 @@ erDiagram
         int index
         time timeOfDay
         string title
+        smallint mood
+        string feelings
         string tags
         text content
         string format
@@ -89,6 +91,8 @@ erDiagram
         text content
         string title
         time timeOfDay
+        smallint mood
+        string feelings
         string tags
         string date
         string format
@@ -229,6 +233,14 @@ erDiagram
 ## Year Review Moods
 
 `YearReviewMood` keeps the latest AI reading of a year's mood: the writer, the year, the diary (null for all diaries), one `{month, mood, valence}` item per month in a JSONB array (valence from -2 to 2), a summary, and how many entries were read. A unique index on `(user_id, year, COALESCE(diary_id, 0))` keeps one reading per scope; reading again replaces it in one transaction. Deleting the user or the diary deletes the reading. Everything else in the year in review is computed from entries on request and not stored.
+
+## Entry Moods
+
+An entry can carry a mood check-in that the writer chose: `entries.mood` (`SMALLINT`, nullable, checked by `chk_entries_mood` to lie between 1, very low, and 5, very good) and `entries.feelings` (`TEXT[]`, `NOT NULL DEFAULT '{}'`). Feelings can be recorded without a mood. They are stored lowercase without duplicates, at most 10 of at most 40 characters, with the characters that would break the export formats (commas, semicolons, pipes, braces, brackets, backticks, and double quotes) taken out (`normalizeFeelings`). The curated feelings the app offers are stored by their English key (`calm`, `tired`), whatever the writer's language, so stats count "calm" and "calme" as one feeling; words the writer types are kept in their own words. Revisions keep both columns, with the same check (`chk_entry_revisions_mood`).
+
+The partial index `idx_entries_user_mood_date` on `(user_id, mood, date) WHERE mood IS NOT NULL` serves the journal's mood filter by level (`mood=4,5`) or any mood (`mood=any`; `mood=none` lists entries without one) and the mood stats. The stats (`StatsMoodService`) and the year in review (`summarizeRecordedMoods`) are computed from these columns on request, with the usual diary scope and without entries in the recycle bin; nothing about them is stored. The mood is private: the public feed selects its columns explicitly and leaves both out, and share text never includes it.
+
+`EntryMood1786147200000` adds the columns, checks, and index. Both columns have constant defaults, so no existing row is rewritten; rolling back drops them with what was recorded.
 
 ## Recycle Bin
 

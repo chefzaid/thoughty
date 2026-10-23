@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Entry, EntryRevision, Diary } from '@/database/entities';
-import { normalizeEntryTitle, normalizeTimeOfDay, sanitizeString } from '@/common/utils';
+import { normalizeEntryTitle, normalizeFeelings, normalizeMood, normalizeTimeOfDay, sanitizeString } from '@/common/utils';
 import { ConfigService } from '@/modules/config';
 import { CreateEntryDto, UpdateEntryDto, BulkOperationDto } from './dto';
 import { EntryTaggingService } from './entry-tagging.service';
@@ -58,6 +58,8 @@ export class EntriesCommandService {
       index: nextIndex,
       title: normalizeEntryTitle(dto.title),
       timeOfDay: normalizeTimeOfDay(dto.timeOfDay),
+      mood: normalizeMood(dto.mood),
+      feelings: normalizeFeelings(dto.feelings),
       tags: resolvedTags,
       content: dto.text,
       format: dto.format || 'plain',
@@ -101,6 +103,8 @@ export class EntriesCommandService {
       content: entry.content,
       title: entry.title,
       timeOfDay: entry.timeOfDay,
+      mood: entry.mood,
+      feelings: entry.feelings ?? [],
       tags: entry.tags,
       date: entry.date,
       format: entry.format,
@@ -124,6 +128,12 @@ export class EntriesCommandService {
     }
     if (dto.timeOfDay !== undefined) {
       entry.timeOfDay = normalizeTimeOfDay(dto.timeOfDay);
+    }
+    if (dto.mood !== undefined) {
+      entry.mood = normalizeMood(dto.mood);
+    }
+    if (dto.feelings !== undefined) {
+      entry.feelings = normalizeFeelings(dto.feelings);
     }
     entry.tags = resolvedTags;
     entry.date = dto.date;

@@ -582,3 +582,144 @@ button.heatmap-cell:focus-visible {
     min-width: 3rem;
     text-align: center;
 }
+
+/* Recorded moods */
+.mood-card {
+    grid-column: 1 / -1;
+}
+
+.mood-panel-section {
+    margin-bottom: 1.5rem;
+}
+
+.mood-panel-section h4 {
+    margin: 0;
+    font-size: 0.8rem;
+    letter-spacing: 0.05em;
+    opacity: 0.72;
+    text-transform: uppercase;
+}
+
+.mood-line-chart {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.4rem;
+    margin-top: 0.75rem;
+}
+
+.mood-line-scale {
+    position: relative;
+    height: 200px;
+    min-width: 4.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.7rem;
+    opacity: 0.72;
+    white-space: nowrap;
+}
+
+.mood-line-scale li {
+    position: absolute;
+    right: 0;
+    line-height: 1;
+    transform: translateY(-50%);
+}
+
+.mood-line-plot {
+    position: relative;
+    height: 200px;
+}
+
+.mood-line-plot svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.mood-gridline {
+    stroke-width: 1;
+}
+
+.dark .mood-gridline {
+    stroke: rgba(255, 255, 255, 0.08);
+}
+
+.light .mood-gridline {
+    stroke: rgba(15, 23, 42, 0.08);
+}
+
+.dark .mood-gridline-mid {
+    stroke: rgba(255, 255, 255, 0.2);
+}
+
+.light .mood-gridline-mid {
+    stroke: rgba(15, 23, 42, 0.2);
+}
+
+.mood-line {
+    fill: none;
+    stroke: #3b82f6;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.mood-point {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 999px;
+    background: #3b82f6;
+    cursor: default;
+}
+
+/* A larger invisible hit area than the dot, for the hover tooltip */
+.mood-point::before {
+    content: '';
+    position: absolute;
+    inset: -9px;
+    border-radius: 999px;
+}
+
+.dark .mood-point {
+    box-shadow: 0 0 0 2px #1f2937;
+}
+
+.light .mood-point {
+    box-shadow: 0 0 0 2px #ffffff;
+}
+
+.mood-line-months {
+    grid-column: 2;
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.7rem;
+    opacity: 0.72;
+    text-align: center;
+}
+
+.mood-line-months li {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.mood-line-year {
+    font-size: 0.65rem;
+    opacity: 0.8;
+}
+
+.tone-mood-bar-fill.recorded-mood {
+    background: #3b82f6;
+}
+
+.tone-mood-bar-fill.recorded-feeling {
+    background: #8b5cf6;
+}

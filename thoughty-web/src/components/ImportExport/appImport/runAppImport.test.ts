@@ -118,6 +118,23 @@ describe('runAppImport', () => {
     ]);
   });
 
+  it('sends the mood only when the source app recorded one', async () => {
+    acceptEntries();
+
+    await runAppImport(
+      exportOf([entry('A', { mood: 4 }), entry('B')]),
+      { diaryId: 4, journalsAsDiaries: false },
+      service,
+      onProgress,
+      new AbortController().signal,
+    );
+
+    expect(importEntries.mock.calls[0]![0].entries).toEqual([
+      { sourceId: 'A', date: '2024-03-05', mood: 4, content: 'Entry A', tags: [], favorite: false },
+      { sourceId: 'B', date: '2024-03-05', content: 'Entry B', tags: [], favorite: false },
+    ]);
+  });
+
   it('sends journal names only when journals become diaries', async () => {
     acceptEntries();
 

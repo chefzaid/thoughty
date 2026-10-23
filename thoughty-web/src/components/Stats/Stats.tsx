@@ -19,6 +19,8 @@ import StatsActivityHeatmap from './StatsActivityHeatmap';
 import StatsInsights from './StatsInsights';
 import StatsPersonalityPanel from './StatsPersonalityPanel';
 import StatsCorrelationGraph from './StatsCorrelationGraph';
+import StatsMoodPanel from './StatsMoodPanel';
+import { resolveLanguage } from '../../utils/language';
 
 // Register Chart.js components
 ChartJS.register(
@@ -37,6 +39,7 @@ interface StatsProps {
     readonly diaryId?: number | null;
     readonly onOpenJournalDay?: (date: string) => void | Promise<void>;
     readonly tagMetadata?: TagMetadataMap;
+    readonly language?: string;
 }
 
 type StatsData = components['schemas']['StatsResponseDto'];
@@ -68,9 +71,17 @@ const EMPTY_STATS: StatsData = {
         entryConnections: [],
         tagConnections: [],
     },
+    moods: {
+        recordedEntries: 0,
+        averageMood: null,
+        levels: [0, 0, 0, 0, 0],
+        months: [],
+        weekdays: [],
+        topFeelings: [],
+    },
 };
 
-function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps) {
+function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: StatsProps) {
     const { authFetch } = useAuth();
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -301,6 +312,12 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata }: StatsProps)
                             themeClass={themeClass}
                             toneMoodAnalysis={stats.toneMoodAnalysis}
                             subjectAnalysis={stats.subjectAnalysis}
+                            t={t}
+                        />
+                        <StatsMoodPanel
+                            moods={stats.moods ?? EMPTY_STATS.moods}
+                            themeClass={themeClass}
+                            language={resolveLanguage(language)}
                             t={t}
                         />
                         <StatsPersonalityPanel

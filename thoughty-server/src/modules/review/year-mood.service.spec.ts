@@ -23,6 +23,8 @@ describe('YearMoodService', () => {
     tags: [],
     isFavorite: false,
     isArchived: false,
+    mood: null,
+    feelings: [],
     words: 5,
     ...overrides,
   });

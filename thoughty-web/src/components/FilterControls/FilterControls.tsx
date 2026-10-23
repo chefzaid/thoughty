@@ -6,6 +6,7 @@ import type { ArchiveStatusFilter, EntrySearchSort } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import type { SemanticSearchResponse } from '../../services/api/aiService';
 import type { EntrySearchMode, SemanticSearchStatus } from '../../hooks/useEntriesState';
+import { MOOD_FILTER_OPTIONS, isMoodFilter, type MoodFilter } from '../../utils/entryMood';
 
 type VisibilityFilter = 'all' | 'public' | 'private';
 
@@ -29,6 +30,8 @@ interface FilterControlsProps {
     readonly setFilterFavorites: Dispatch<SetStateAction<boolean>>;
     readonly filterArchiveStatus: ArchiveStatusFilter;
     readonly setFilterArchiveStatus: Dispatch<SetStateAction<ArchiveStatusFilter>>;
+    readonly filterMood: MoodFilter;
+    readonly setFilterMood: Dispatch<SetStateAction<MoodFilter>>;
     readonly allTags: string[];
     readonly tagMetadata?: TagMetadataMap;
     readonly setPage: Dispatch<SetStateAction<number>>;
@@ -58,6 +61,8 @@ function FilterControls({
     setFilterFavorites,
     filterArchiveStatus,
     setFilterArchiveStatus,
+    filterMood,
+    setFilterMood,
     allTags,
     tagMetadata,
     setPage,
@@ -89,6 +94,7 @@ function FilterControls({
         setFilterVisibility('all');
         setFilterFavorites(false);
         setFilterArchiveStatus('active');
+        setFilterMood('');
         setPage(1);
     };
 
@@ -330,6 +336,24 @@ function FilterControls({
                         </svg>
                         <span>{t('favorites')}</span>
                     </button>
+                    <select
+                        value={filterMood}
+                        onChange={(event) => {
+                            const value = event.target.value;
+                            setFilterMood(isMoodFilter(value) ? value : '');
+                            setPage(1);
+                        }}
+                        className={`h-10 shrink-0 rounded-lg border px-3 text-sm font-medium outline-none focus:ring-1 focus:ring-blue-500 ${filterMood
+                            ? 'bg-blue-500/10 border-blue-500/50 text-blue-500'
+                            : isLight ? 'bg-gray-50 border-gray-300 text-gray-700' : 'bg-gray-900 border-gray-700 text-gray-300'
+                            }`}
+                        aria-label={t('moodFilterLabel')}
+                        title={t('moodFilterLabel')}
+                    >
+                        {MOOD_FILTER_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
+                        ))}
+                    </select>
                     <button type="button"
                         onClick={handleReset}
                         className="inline-flex h-10 shrink-0 items-center gap-2 px-4 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/50 rounded-lg transition-all text-sm font-medium"

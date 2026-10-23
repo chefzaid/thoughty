@@ -67,6 +67,19 @@ describe('entriesService', () => {
       expect(withoutSearch?.has('sort')).toBe(false);
     });
 
+    it('sends the mood filter only when one is chosen', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+      });
+
+      await service.fetchEntries({ ...defaultParams, mood: '4,5' });
+      await service.fetchEntries({ ...defaultParams, mood: '' });
+
+      expect(new URL(String(mockAuthFetch.mock.calls[0]?.[0]), 'https://x.test').searchParams.get('mood')).toBe('4,5');
+      expect(String(mockAuthFetch.mock.calls[1]?.[0])).not.toContain('mood=');
+    });
+
     it('returns null when response is not ok', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: false,
@@ -169,6 +182,16 @@ describe('entriesService', () => {
       const requestOptions = mockAuthFetch.mock.calls[0]?.[1];
       expect(requestOptions).toBeDefined();
       expect(JSON.parse(String(requestOptions?.body))).toEqual({ ...newEntry, format: 'plain' });
+    });
+
+    it('sends the mood and feelings only when they are recorded', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ success: true, entryId: 44 }) });
+
+      await service.createEntry({ ...newEntry, mood: 4, feelings: ['calm', 'nostalgic'] });
+      await service.createEntry({ ...newEntry, mood: null, feelings: [] });
+
+      expect(JSON.parse(String(mockAuthFetch.mock.calls[0]?.[1]?.body))).toEqual({ ...newEntry, mood: 4, feelings: ['calm', 'nostalgic'], format: 'plain' });
+      expect(JSON.parse(String(mockAuthFetch.mock.calls[1]?.[1]?.body))).toEqual({ ...newEntry, format: 'plain' });
     });
 
     it('sends the title and time of day only when they are set', async () => {

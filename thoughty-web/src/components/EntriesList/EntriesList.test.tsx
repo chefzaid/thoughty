@@ -184,6 +184,35 @@ describe('EntriesList', () => {
         expect(setEditTimeOfDay).toHaveBeenCalledWith('');
     });
 
+    it('edits the mood of the entry being edited, under ids that do not look like entry cards', async () => {
+        const setEditMood = vi.fn();
+        const setEditFeelings = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <EntriesList
+                {...createEntriesListProps({
+                    editingEntry: mockEntries[0],
+                    editText: 'Edited content',
+                    editTags: ['work'],
+                    editDate: new Date('2024-01-15'),
+                    editMood: 4,
+                    setEditMood,
+                    editFeelings: ['calm'],
+                    setEditFeelings,
+                })}
+            />,
+        );
+
+        const good = screen.getByRole('radio', { name: 'Good' });
+        expect(good).toBeChecked();
+        expect(good.id).toBe('edit-entry-1-mood-4');
+        expect(document.querySelectorAll('[id^="entry-"] [id^="entry-"]')).toHaveLength(0);
+        await user.click(screen.getByRole('radio', { name: 'Low' }));
+        expect(setEditMood).toHaveBeenCalledWith(2);
+        await user.click(screen.getByRole('button', { name: 'calm' }));
+        expect(setEditFeelings).toHaveBeenCalledWith([]);
+    });
+
     it('renders edit mode for the active entry and keeps others in view mode', () => {
         render(
             <EntriesList

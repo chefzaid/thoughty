@@ -409,6 +409,29 @@ describe('EntryForm', () => {
         });
     });
 
+    describe('Mood', () => {
+        it('shows no mood field when the composer does not handle it', () => {
+            render(<EntryForm {...defaultProps} />);
+
+            expect(screen.queryByRole('radio')).not.toBeInTheDocument();
+        });
+
+        it('records a mood with composer ids that entry cards never use', async () => {
+            const setMood = vi.fn();
+            const setFeelings = vi.fn();
+            render(<EntryForm {...defaultProps} mood={null} setMood={setMood} feelings={[]} setFeelings={setFeelings} />);
+
+            const radio = screen.getByRole('radio', { name: 'moodLevel4' });
+            expect(radio.id).toBe('composer-mood-4');
+            await userEvent.click(radio);
+            expect(setMood).toHaveBeenCalledWith(4);
+
+            await userEvent.click(screen.getByRole('button', { name: 'feelingsLegend' }));
+            await userEvent.click(screen.getByRole('button', { name: 'feelingCalm' }));
+            expect(setFeelings).toHaveBeenCalledWith(['calm']);
+        });
+    });
+
     describe('Title and time of day', () => {
         it('shows neither field when the composer does not handle them', () => {
             render(<EntryForm {...defaultProps} />);

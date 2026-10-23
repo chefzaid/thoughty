@@ -20,6 +20,9 @@ interface CreateEntryInput {
   /** Sent only when set. */
   title?: string | null;
   timeOfDay?: string | null;
+  /** Sent only when set. */
+  mood?: number | null;
+  feelings?: string[];
   tags: string[];
   date: string;
   visibility: CreateEntryRequestDto['visibility'] | null;
@@ -42,6 +45,8 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     filterVisibility: string;
     favorites: boolean;
     archiveStatus: ArchiveStatusFilter;
+    /** `any`, `none`, or levels such as `4,5`; empty for every entry. */
+    mood?: string;
     diaryId: number | null;
     entryIds?: number[] | null;
   }): Promise<EntriesResponse | null> => {
@@ -65,6 +70,9 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
       }
       if (params.archiveStatus !== 'all') {
         urlParams.append('archiveStatus', params.archiveStatus);
+      }
+      if (params.mood) {
+        urlParams.append('mood', params.mood);
       }
       if (params.entryIds) {
         urlParams.append('ids', params.entryIds.length > 0 ? params.entryIds.join(',') : '0');
@@ -113,6 +121,8 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
         text: entry.text,
         ...(entry.title ? { title: entry.title } : {}),
         ...(entry.timeOfDay ? { timeOfDay: entry.timeOfDay } : {}),
+        ...(entry.mood ? { mood: entry.mood } : {}),
+        ...(entry.feelings && entry.feelings.length > 0 ? { feelings: entry.feelings } : {}),
         tags: entry.tags,
         date: entry.date,
         visibility: entry.visibility ?? 'private',

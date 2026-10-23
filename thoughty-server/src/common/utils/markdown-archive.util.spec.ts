@@ -85,6 +85,13 @@ describe('renderArchiveEntry', () => {
     expect(markdown.startsWith('---\ntitle: "Sea \\"day\\""\ndate: 2024-03-05\ntime: "08:30"\ntags:')).toBe(true);
   });
 
+  it('keeps the mood and feelings in the front matter after the diary, only when recorded', () => {
+    const markdown = renderArchiveEntry({ ...entry, mood: 2, feelings: ['tired', 'hopeful'] }, 'Travel', []);
+
+    expect(markdown).toContain('diary: "Travel"\nmood: 2\nfeelings: ["tired","hopeful"]\ntags:');
+    expect(renderArchiveEntry({ ...entry, mood: null, feelings: [] }, null, [])).not.toMatch(/mood:|feelings:/);
+  });
+
   it('marks favorites and archived entries and omits a missing diary', () => {
     const markdown = renderArchiveEntry({ ...entry, isFavorite: true, isArchived: true }, null, []);
 

@@ -22,9 +22,9 @@ describe('file-converter.util structured formats', () => {
         createEntry({ date: '2024-01-16', content: 'No title or time' }),
       ], true);
 
-      expect(exported).toContain('date,index,time,title,diary,tags,visibility,format,word_count,reading_time_minutes,content');
-      expect(exported).toContain('2024-01-15,1,07:45,"Early start, again",Work,journal;work,public,plain,5,1,First entry with five words');
-      expect(exported).toContain('2024-01-16,1,,,,,private,plain,4,1,No title or time');
+      expect(exported).toContain('date,index,time,title,mood,feelings,diary,tags,visibility,format,word_count,reading_time_minutes,content');
+      expect(exported).toContain('2024-01-15,1,07:45,"Early start, again",,,Work,journal;work,public,plain,5,1,First entry with five words');
+      expect(exported).toContain('2024-01-16,1,,,,,,,private,plain,4,1,No title or time');
     });
 
     it('escapes commas, quotes, and newlines for spreadsheet imports', () => {
@@ -134,6 +134,66 @@ describe('file-converter.util structured formats', () => {
       expect(imported).toHaveLength(2);
       expect(imported[0]).toMatchObject({ format: 'markdown', visibility: 'public' });
       expect(imported[1]).toMatchObject({ format: 'plain', visibility: 'private' });
+    });
+  });
+
+  describe('moods and feelings', () => {
+    it('roundtrips the mood and feelings through JSON, leaving them out of entries without them', () => {
+      const exported = generateJsonFile([
+        createEntry({ content: 'Good day', mood: 4, feelings: ['calm', 'grateful'] }),
+        createEntry({ index: 2, content: 'No check-in' }),
+      ]);
+
+      expect(JSON.parse(exported).entries[0]).toMatchObject({ mood: 4, feelings: ['calm', 'grateful'] });
+      expect(JSON.parse(exported).entries[1]).not.toHaveProperty('mood');
+      expect(JSON.parse(exported).entries[1]).not.toHaveProperty('feelings');
+      const imported = parseJsonFile(exported);
+      expect(imported[0]).toMatchObject({ mood: 4, feelings: ['calm', 'grateful'] });
+      expect(imported[1].mood).toBeUndefined();
+      expect(imported[1].feelings).toBeUndefined();
+    });
+
+    it('ignores moods off the scale and cleans feelings in JSON', () => {
+      const [entry, other] = parseJsonFile(JSON.stringify([
+        { date: '2024-01-15', content: 'Text', mood: 7, feelings: ['  Tired ', 'tired', ''] },
+        { date: '2024-01-16', content: 'Text', mood: '2', feelings: 'sad, lonely' },
+      ]));
+
+      expect(entry.mood).toBeUndefined();
+      expect(entry.feelings).toEqual(['tired']);
+      expect(other).toMatchObject({ mood: 2, feelings: ['sad', 'lonely'] });
+    });
+
+    it('writes the mood and feelings in the Markdown metadata line and reads them back', () => {
+      const exported = generateMarkdownFile([
+        createEntry({ tags: ['walks'], content: 'By the river', title: 'Rain', mood: 5, feelings: ['joyful', 'free spirited'] }),
+        createEntry({ index: 2, content: 'Second', feelings: ['tired'] }),
+      ]);
+
+      expect(exported).toContain('**Title:** Rain | **Mood:** 5/5 | **Feelings:** joyful, free spirited | **Tags:** `walks`');
+      expect(exported).toContain('**Feelings:** tired\n\nSecond');
+      const imported = parseMarkdownFile(exported);
+      expect(imported[0]).toMatchObject({ title: 'Rain', mood: 5, feelings: ['joyful', 'free spirited'], tags: ['walks'], content: 'By the river' });
+      expect(imported[1]).toMatchObject({ feelings: ['tired'], content: 'Second' });
+      expect(imported[1].mood).toBeUndefined();
+    });
+
+    it('keeps a Markdown line with a mood off the scale as text', () => {
+      const [entry] = parseMarkdownFile('# 2024-01-15\n\n**Mood:** great\n\nText');
+
+      expect(entry.mood).toBeUndefined();
+      expect(entry.content).toBe('**Mood:** great\n\nText');
+    });
+
+    it('adds mood and feelings columns to CSV exports', () => {
+      const exported = generateCsvFile([
+        createEntry({ content: 'Checked in', mood: 3, feelings: ['calm', 'tired'] }),
+        createEntry({ date: '2024-01-16', content: 'Not checked in' }),
+      ]);
+
+      expect(exported).toContain('date,index,time,title,mood,feelings,diary,tags,format,word_count,reading_time_minutes,content');
+      expect(exported).toContain('2024-01-15,1,,,3,calm;tired,,,plain,2,1,Checked in');
+      expect(exported).toContain('2024-01-16,1,,,,,,,plain,3,1,Not checked in');
     });
   });
 

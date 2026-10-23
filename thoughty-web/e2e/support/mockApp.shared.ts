@@ -47,6 +47,9 @@ export interface MockEntry {
   title?: string | null;
   /** Optional time of day, `HH:MM`. */
   time_of_day?: string | null;
+  /** Optional mood from 1 (very low) to 5 (very good), and feeling words. */
+  mood?: number | null;
+  feelings?: string[];
   content: string;
   tags: string[];
   visibility: "public" | "private";
@@ -80,6 +83,8 @@ export interface MockEntryRevision {
   content: string;
   title?: string | null;
   timeOfDay?: string | null;
+  mood?: number | null;
+  feelings?: string[];
   tags: string[];
   date: string;
   format: "plain" | "markdown";

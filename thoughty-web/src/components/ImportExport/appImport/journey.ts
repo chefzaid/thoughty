@@ -13,6 +13,7 @@ interface JourneyEntry {
   tags?: unknown;
   favourite?: unknown;
   photos?: unknown;
+  mood?: unknown;
 }
 
 /** Finds a photo by file name anywhere in the export. */
@@ -26,6 +27,14 @@ export function isJourneyEntry(data: unknown): data is JourneyEntry {
     && typeof (data as JourneyEntry).text === 'string';
 }
 
+/**
+ * Journey stores its mood as a number, 0 when none was chosen; only the levels of Thoughty's own
+ * scale, 1 to 5, are kept. The `sentiment` Journey computes itself is not a mood the writer chose.
+ */
+export function journeyMood(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= 5 ? value : undefined;
+}
+
 /** One entry from its JSON file; `fallbackId` is the file name, for entries without an ID. */
 export function parseJourneyEntry(
   data: JourneyEntry,
@@ -35,6 +44,7 @@ export function parseJourneyEntry(
   const timestamp = data.date_journal as number;
   const timeZone = typeof data.timezone === 'string' ? data.timezone : undefined;
   const title = cleanTitle(data.title);
+  const mood = journeyMood(data.mood);
   const text = data.text as string;
   const media: ImportedMedia[] = [];
   let skippedMedia = 0;
@@ -56,6 +66,7 @@ export function parseJourneyEntry(
       timeOfDay: localTime(timestamp, timeZone),
       timestamp,
       ...(title ? { title } : {}),
+      ...(mood ? { mood } : {}),
       content: data.type === 'html' || looksLikeHtml(text) ? htmlToMarkdown(text) : text.trim(),
       tags: cleanTags(data.tags),
       favorite: data.favourite === true,

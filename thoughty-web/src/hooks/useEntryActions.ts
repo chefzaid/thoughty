@@ -63,6 +63,8 @@ export const useEntryForm = (
   const [newEntryText, setNewEntryText] = useState<string>('');
   const [title, setTitle] = useState<string>('');
   const [timeOfDay, setTimeOfDay] = useState<string>('');
+  const [mood, setMood] = useState<number | null>(null);
+  const [feelings, setFeelings] = useState<string[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [visibility, setVisibility] = useState<'public' | 'private' | null>(null);
@@ -78,6 +80,8 @@ export const useEntryForm = (
     setNewEntryText('');
     setTitle('');
     setTimeOfDay('');
+    setMood(null);
+    setFeelings([]);
     setTags([]);
     setFormat('plain');
     setVisibility(config.defaultVisibility || 'private');
@@ -115,6 +119,8 @@ export const useEntryForm = (
       text: newEntryText,
       title: cleanEntryTitle(title),
       timeOfDay: timeOfDay || null,
+      mood,
+      feelings,
       tags,
       date: formatEntryDate(selectedDate),
       visibility,
@@ -143,7 +149,7 @@ export const useEntryForm = (
 
     resetEntryForm();
     onSuccess();
-  }, [attachmentsService, currentDiaryId, entriesService, format, newEntryText, onSuccess, pendingFiles, resetEntryForm, selectedDate, tags, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
+  }, [attachmentsService, currentDiaryId, entriesService, feelings, format, mood, newEntryText, onSuccess, pendingFiles, resetEntryForm, selectedDate, tags, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
 
   const addPendingFile = useCallback((file: File) => {
     setPendingFiles((prev) => [...prev, file]);
@@ -189,6 +195,10 @@ export const useEntryForm = (
     setTitle,
     timeOfDay,
     setTimeOfDay,
+    mood,
+    setMood,
+    feelings,
+    setFeelings,
     tags,
     setTags,
     selectedDate,
@@ -219,6 +229,8 @@ export const useEntryEdit = (config: Config, onSave: () => void) => {
   const [editText, setEditText] = useState<string>('');
   const [editTitle, setEditTitle] = useState<string>('');
   const [editTimeOfDay, setEditTimeOfDay] = useState<string>('');
+  const [editMood, setEditMood] = useState<number | null>(null);
+  const [editFeelings, setEditFeelings] = useState<string[]>([]);
   const [editTags, setEditTags] = useState<string[]>([]);
   const [editDate, setEditDate] = useState<Date | null>(null);
   const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
@@ -231,6 +243,8 @@ export const useEntryEdit = (config: Config, onSave: () => void) => {
     setEditText(entry.content);
     setEditTitle(entry.title ?? '');
     setEditTimeOfDay(entry.time_of_day ?? '');
+    setEditMood(entry.mood ?? null);
+    setEditFeelings(entry.feelings ?? []);
     setEditTags(entry.tags || []);
     setEditVisibility(entry.visibility || 'private');
     setEditFormat(entry.format || 'plain');
@@ -249,6 +263,8 @@ export const useEntryEdit = (config: Config, onSave: () => void) => {
     setEditText('');
     setEditTitle('');
     setEditTimeOfDay('');
+    setEditMood(null);
+    setEditFeelings([]);
     setEditTags([]);
     setEditDate(null);
     setEditVisibility('private');
@@ -270,6 +286,8 @@ export const useEntryEdit = (config: Config, onSave: () => void) => {
       text: editText,
       title: cleanEntryTitle(editTitle),
       timeOfDay: editTimeOfDay || null,
+      mood: editMood,
+      feelings: editFeelings,
       tags: editTags,
       date: formatEntryDate(editDate),
       visibility: editVisibility,
@@ -295,7 +313,7 @@ export const useEntryEdit = (config: Config, onSave: () => void) => {
 
     handleCancelEdit();
     onSave();
-  }, [attachmentsService, autoTagLimit, editDate, editExistingAttachments, editFormat, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, onSave]);
+  }, [attachmentsService, autoTagLimit, editDate, editExistingAttachments, editFeelings, editFormat, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, onSave]);
 
   const addEditPendingFile = useCallback((file: File) => {
     setEditPendingFiles((prev) => [...prev, file]);
@@ -317,6 +335,10 @@ export const useEntryEdit = (config: Config, onSave: () => void) => {
     setEditTitle,
     editTimeOfDay,
     setEditTimeOfDay,
+    editMood,
+    setEditMood,
+    editFeelings,
+    setEditFeelings,
     editTags,
     setEditTags,
     editDate,

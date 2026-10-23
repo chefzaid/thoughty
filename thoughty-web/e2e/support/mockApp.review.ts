@@ -1,4 +1,5 @@
 import type { MockEntry } from "./mockApp.shared";
+import { buildMockMoods } from "./mockApp.stats";
 
 /** Year-in-review state for the mock API; the handlers are in mockApp.routes.review.ts. */
 export interface MockYearMood {
@@ -20,6 +21,15 @@ export function createMockReviewState(): MockReviewState {
 }
 
 const countWords = (text: string) => (text.trim() ? text.trim().split(/\s+/).length : 0);
+
+/** The arc from the moods recorded that year, without AI; null when none was recorded. */
+function recordedMoodOf(entries: MockEntry[]) {
+  const moods = buildMockMoods(entries);
+  if (moods.recordedEntries === 0 || moods.averageMood === null) {
+    return null;
+  }
+  return { entries: moods.recordedEntries, average: moods.averageMood, months: moods.months, topFeelings: moods.topFeelings.slice(0, 5) };
+}
 
 /** A small version of the server's review: enough for the browser flows, not its exact rules. */
 export function buildMockReview(entries: MockEntry[], year: number, diaryId: number | null, state: MockReviewState) {
@@ -72,6 +82,7 @@ export function buildMockReview(entries: MockEntry[], year: number, diaryId: num
       ...(last && last !== first ? [highlight("last", last)] : []),
     ],
     mood: state.moods[`${year}:${diaryId ?? "all"}`] ?? null,
+    recordedMood: recordedMoodOf(inYear),
     aiAvailable: state.aiAvailable,
   };
 }

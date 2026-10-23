@@ -18,6 +18,8 @@ export interface ImportedEntry {
   readonly timeOfDay?: string;
   readonly timestamp: number;
   readonly title?: string;
+  /** Mood from 1 (very low) to 5 (very good), when the source app recorded one. */
+  readonly mood?: number;
   readonly content: string;
   readonly tags: string[];
   readonly favorite: boolean;

@@ -12,20 +12,28 @@ import {
   ArrayMinSize,
   IsBoolean,
   Matches,
+  Max,
   ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
+import { MAX_FEELING_LENGTH, MAX_FEELINGS, MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
 
 const TITLE_DESCRIPTION = 'Optional one-line title; empty or null removes it';
 const TIME_OF_DAY_DESCRIPTION =
   'Optional time of day on a 24-hour clock (HH:MM); null removes it. Same-day entries without a time ' +
   'come first in their manual order, then those with one, earliest first. It never changes the ' +
   'same-day index that cross-references use.';
+const MOOD_DESCRIPTION =
+  'Optional mood check-in from 1 (very low) to 5 (very good); null removes it. It is private: the public ' +
+  'feed never shows it.';
+const FEELINGS_DESCRIPTION =
+  'Optional feeling words with the mood: curated ones by their English name, or the writer\'s own words. ' +
+  'Stored lowercase without duplicates; an empty list removes them.';
 
-/** Title and time of day, shared by creating and editing; left out of an edit, they stay as they are. */
-class EntryTitleAndTimeDto {
+/** Title, time of day, and mood, shared by creating and editing; left out of an edit, they stay as they are. */
+class EntryDetailsDto {
   @ApiPropertyOptional({ description: TITLE_DESCRIPTION, type: String, nullable: true, maxLength: MAX_ENTRY_TITLE_LENGTH, example: 'Morning walk by the river' })
   @IsOptional()
   @IsString()
@@ -37,9 +45,24 @@ class EntryTitleAndTimeDto {
   @ValidateIf((_, value) => value !== null && value !== undefined && value !== '')
   @Matches(TIME_OF_DAY_PATTERN, { message: 'Time of day must be HH:MM' })
   timeOfDay?: string | null;
+
+  @ApiPropertyOptional({ description: MOOD_DESCRIPTION, type: Number, nullable: true, minimum: MIN_MOOD, maximum: MAX_MOOD, example: 4 })
+  @ValidateIf((_, value) => value !== null && value !== undefined)
+  @IsInt({ message: 'Mood must be a whole number from 1 to 5' })
+  @Min(MIN_MOOD)
+  @Max(MAX_MOOD)
+  mood?: number | null;
+
+  @ApiPropertyOptional({ description: FEELINGS_DESCRIPTION, type: [String], maxItems: MAX_FEELINGS, example: ['calm', 'grateful'] })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(MAX_FEELINGS, { message: `Maximum ${MAX_FEELINGS} feelings allowed` })
+  @IsString({ each: true })
+  @MaxLength(MAX_FEELING_LENGTH, { each: true, message: `Feeling exceeds maximum length of ${MAX_FEELING_LENGTH} characters` })
+  feelings?: string[];
 }
 
-export class CreateEntryDto extends EntryTitleAndTimeDto {
+export class CreateEntryDto extends EntryDetailsDto {
   @ApiProperty({ description: 'Entry content' })
   @IsString()
   @MaxLength(50000, { message: 'Content exceeds maximum length of 50000 characters' })
@@ -74,7 +97,7 @@ export class CreateEntryDto extends EntryTitleAndTimeDto {
   format?: 'plain' | 'markdown';
 }
 
-export class UpdateEntryDto extends EntryTitleAndTimeDto {
+export class UpdateEntryDto extends EntryDetailsDto {
   @ApiProperty({ description: 'Entry content' })
   @IsString()
   @MaxLength(50000)
@@ -263,6 +286,18 @@ export class GetEntriesQueryDto {
   @IsEnum(['all', 'active', 'archived'])
   archiveStatus?: 'all' | 'active' | 'archived';
 
+  @ApiPropertyOptional({
+    description:
+      'Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; ' +
+      '"any" for entries with a mood, or "none" for entries without one',
+    example: '4,5',
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsString()
+  @Matches(/^(any|none|[1-5](,[1-5]){0,4})$/, { message: 'Mood filter must be levels from 1 to 5, any, or none' })
+  mood?: string;
+
   @ApiPropertyOptional({ description: 'Diary ID' })
   @IsOptional()
   @Transform(({ value }) => {
@@ -396,6 +431,12 @@ export class EntryResponseDto {
 
   @ApiProperty({ type: String, nullable: true, description: 'Time of day (HH:MM), or null', example: '08:30' })
   time_of_day: string | null;
+
+  @ApiProperty({ type: Number, nullable: true, minimum: MIN_MOOD, maximum: MAX_MOOD, description: 'Recorded mood from 1 (very low) to 5 (very good), or null', example: 4 })
+  mood: number | null;
+
+  @ApiProperty({ type: [String], description: 'Feeling words recorded with the mood', example: ['calm', 'grateful'] })
+  feelings: string[];
 
   @ApiProperty({ type: [String] })
   tags: string[];

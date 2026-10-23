@@ -13,6 +13,7 @@ import GetInspiredMenu from './GetInspiredMenu';
 import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 import { aiActionButtonClass } from './aiActionButton';
 import EntryTimeField from './EntryTimeField';
+import EntryMoodField from './EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
@@ -26,6 +27,11 @@ interface EntryFormProps {
     /** Optional time of day (`HH:MM`); empty when the entry has none. */
     readonly timeOfDay?: string;
     readonly setTimeOfDay?: Dispatch<SetStateAction<string>>;
+    /** Optional mood from 1 to 5, and feeling words; null and empty when not recorded. */
+    readonly mood?: number | null;
+    readonly setMood?: Dispatch<SetStateAction<number | null>>;
+    readonly feelings?: string[];
+    readonly setFeelings?: Dispatch<SetStateAction<string[]>>;
     readonly selectedDate: Date;
     readonly setSelectedDate: Dispatch<SetStateAction<Date>>;
     readonly tags: string[];
@@ -81,6 +87,10 @@ function EntryForm({
     setTitle,
     timeOfDay = '',
     setTimeOfDay,
+    mood = null,
+    setMood,
+    feelings = [],
+    setFeelings,
     selectedDate,
     setSelectedDate,
     tags,
@@ -275,6 +285,17 @@ function EntryForm({
                         />
                     )}
                 </div>
+                {setMood && setFeelings && (
+                    <EntryMoodField
+                        id="composer-mood"
+                        mood={mood}
+                        onMoodChange={setMood}
+                        feelings={feelings}
+                        onFeelingsChange={setFeelings}
+                        theme={theme}
+                        t={t}
+                    />
+                )}
                 <div className="flex flex-wrap gap-4 items-end">
                     <div className="w-40 z-10">
                         <TypedDatePicker

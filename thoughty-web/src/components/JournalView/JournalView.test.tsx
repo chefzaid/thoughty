@@ -221,6 +221,8 @@ describe('JournalView', () => {
         setFilterFavorites: vi.fn(),
         filterArchiveStatus: 'active',
         setFilterArchiveStatus: vi.fn(),
+        filterMood: '',
+        setFilterMood: vi.fn(),
         allTags: ['tag1', 'tag2', 'tag3'],
         setPage: vi.fn(),
       },

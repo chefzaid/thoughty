@@ -4,7 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { IsNull } from 'typeorm';
 import { Attachment, Diary, Entry, YearReviewMood } from '@/database/entities';
 import { AiCredentialsService } from '@/modules/ai';
-import { YearReviewService } from './year-review.service';
+import { summarizeRecordedMoods, YearReviewService } from './year-review.service';
 
 interface FakeEntry {
   id: number;
@@ -14,6 +14,8 @@ interface FakeEntry {
   tags?: string[];
   isFavorite?: boolean;
   isArchived?: boolean;
+  mood?: number | null;
+  feelings?: string[];
 }
 
 describe('YearReviewService', () => {
@@ -39,7 +41,7 @@ describe('YearReviewService', () => {
       });
     }
     builder.getRawAndEntities = jest.fn(async () => ({
-      entities: entries.map((entry) => ({ index: 1, tags: [], isFavorite: false, isArchived: false, ...entry })),
+      entities: entries.map((entry) => ({ index: 1, tags: [], isFavorite: false, isArchived: false, mood: null, feelings: [], ...entry })),
       raw: [...entries].reverse().map((entry) => ({ e_id: entry.id, day: entry.date })),
     }));
     builder.getRawMany = jest.fn(async () =>
@@ -106,8 +108,43 @@ describe('YearReviewService', () => {
       { tag: 'winter', count: 1 },
     ]);
     expect(review.newTags).toEqual(['travel', 'health', 'winter']);
-    expect(review).toEqual(expect.objectContaining({ year: 2025, diaryId: null, mood: null, aiAvailable: true }));
+    expect(review).toEqual(expect.objectContaining({ year: 2025, diaryId: null, mood: null, recordedMood: null, aiAvailable: true }));
     expect(moodRepository.findOne).toHaveBeenCalledWith({ where: { userId: 7, year: 2025, diaryId: IsNull() } });
+  });
+
+  it('draws the mood arc from the moods recorded that year, without AI', async () => {
+    entries = [
+      { id: 1, date: '2025-01-06', content: 'Back to work.', mood: 2, feelings: ['tired', 'stressed'] },
+      { id: 2, date: '2025-01-20', content: 'Better.', mood: 3, feelings: ['tired'] },
+      { id: 3, date: '2025-02-02', content: 'No check-in.' },
+      { id: 4, date: '2025-04-11', content: 'Holidays.', mood: 5, feelings: ['joyful', 'tired'] },
+    ];
+
+    const review = await service.getReview(7, 2025);
+
+    expect(review.recordedMood).toEqual({
+      entries: 3,
+      average: 3.3,
+      months: [
+        { month: '2025-01', average: 2.5, entries: 2 },
+        { month: '2025-04', average: 5, entries: 1 },
+      ],
+      topFeelings: [
+        { feeling: 'tired', count: 3 },
+        { feeling: 'joyful', count: 1 },
+        { feeling: 'stressed', count: 1 },
+      ],
+    });
+    expect(builders[0].select).toHaveBeenCalledWith(expect.arrayContaining(['e.mood', 'e.feelings']));
+  });
+
+  it('keeps at most five feelings and leaves the arc out when no mood was recorded', () => {
+    const many = summarizeRecordedMoods([
+      { date: '2025-05-01', mood: 4, feelings: ['a', 'b', 'c', 'd', 'e', 'f'] },
+    ]);
+    expect(many?.topFeelings.map(({ feeling }) => feeling)).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(summarizeRecordedMoods([{ date: '2025-05-01', mood: null, feelings: ['calm'] }])).toBeNull();
+    expect(summarizeRecordedMoods([])).toBeNull();
   });
 
   it('picks the first and last entries, favorites, and the longest entry, skipping archived and empty ones', async () => {
