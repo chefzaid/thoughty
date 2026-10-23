@@ -234,6 +234,54 @@ describe('AttachmentsService', () => {
     });
   });
 
+  describe('getOwnedFile', () => {
+    it('streams a file only for the user who owns its attachment', async () => {
+      const body = Readable.from(['x']);
+      attachmentRepository.findOne.mockResolvedValue(mockAttachment);
+      mockSend.mockResolvedValue({ Body: body, ContentType: 'text/html' });
+
+      const result = await service.getOwnedFile(1, 'abc-uuid.jpg');
+
+      expect(attachmentRepository.findOne).toHaveBeenCalledWith({
+        where: { storedFilename: 'abc-uuid.jpg', userId: 1 },
+      });
+      expect(result).toEqual({
+        stream: body,
+        contentType: 'image/jpeg',
+        originalFilename: 'photo.jpg',
+        inline: true,
+      });
+    });
+
+    it('answers missing for another user without touching storage', async () => {
+      attachmentRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.getOwnedFile(2, 'abc-uuid.jpg')).rejects.toThrow(NotFoundException);
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('marks SVG and text as downloads and unknown types as octet-stream', async () => {
+      mockSend.mockResolvedValue({ Body: Readable.from(['x']) });
+      attachmentRepository.findOne.mockResolvedValueOnce({
+        ...mockAttachment,
+        mimetype: 'image/svg+xml',
+      });
+      await expect(service.getOwnedFile(1, 'a.svg')).resolves.toMatchObject({
+        contentType: 'image/svg+xml',
+        inline: false,
+      });
+
+      attachmentRepository.findOne.mockResolvedValueOnce({ ...mockAttachment, mimetype: 'text/plain' });
+      await expect(service.getOwnedFile(1, 'a.txt')).resolves.toMatchObject({ inline: false });
+
+      attachmentRepository.findOne.mockResolvedValueOnce({ ...mockAttachment, mimetype: 'text/html' });
+      await expect(service.getOwnedFile(1, 'a.html')).resolves.toMatchObject({
+        contentType: 'application/octet-stream',
+        inline: false,
+      });
+    });
+  });
+
   describe('getFileBuffer', () => {
     it('collects a storage stream into a bounded buffer', async () => {
       mockSend.mockResolvedValue({
@@ -299,11 +347,11 @@ describe('AttachmentsService', () => {
   });
 
   describe('removeStoredFiles', () => {
-    it('deletes each blob and keeps going when one delete fails', async () => {
+    it('deletes each blob, keeps going when one delete fails, and returns the keys that failed', async () => {
       const warn = jest.spyOn((service as any).logger, 'warn').mockImplementation(() => undefined);
       mockSend.mockRejectedValueOnce(new Error('timeout')).mockResolvedValueOnce({});
 
-      await service.removeStoredFiles(['first.jpg', 'second.m4a']);
+      await expect(service.removeStoredFiles(['first.jpg', 'second.m4a'])).resolves.toEqual(['first.jpg']);
 
       expect(mockSend).toHaveBeenCalledTimes(2);
       expect(mockSend).toHaveBeenLastCalledWith(expect.objectContaining({ Key: 'second.m4a', _type: 'DeleteObject' }));

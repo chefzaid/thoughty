@@ -23,33 +23,15 @@ export interface GoogleApi {
   };
 }
 
-export interface GoogleCredentialPayload {
-  sub: string;
-  email: string;
-  name: string;
-  picture: string;
-}
-
-export function parseGoogleCredentialPayload(credential: string): GoogleCredentialPayload {
-  const payloadPart = credential.split('.')[1];
-  if (!payloadPart) {
-    throw new Error('Invalid JWT format');
-  }
-
-  return JSON.parse(atob(payloadPart)) as GoogleCredentialPayload;
-}
-
-type OAuthLogin = (
-  provider: string,
-  providerId: string,
-  email: string,
-  name: string,
-  avatarUrl: string,
-) => Promise<AuthResult>;
+/**
+ * Signs in with the Google ID token (`credential`) exactly as Google issued it. The server
+ * verifies it and reads the identity from it; nothing is decoded or trusted here.
+ */
+type GoogleCredentialLogin = (credential: string) => Promise<AuthResult>;
 
 export function signInWithGoogleAccount(
   googleClientId: string,
-  oauthLogin: OAuthLogin,
+  loginWithCredential: GoogleCredentialLogin,
 ): Promise<AuthResult> {
   return new Promise((resolve, reject) => {
     const google = (globalThis as unknown as { google?: GoogleApi }).google;
@@ -61,16 +43,11 @@ export function signInWithGoogleAccount(
     google.accounts.id.initialize({
       client_id: googleClientId,
       callback: (response) => {
-        let payload: GoogleCredentialPayload;
-        try {
-          payload = parseGoogleCredentialPayload(response.credential);
-        } catch (error) {
-          reject(error);
+        if (!response.credential) {
+          reject(new Error('Google did not return a credential'));
           return;
         }
-        void oauthLogin('google', payload.sub, payload.email, payload.name, payload.picture)
-          .then(resolve)
-          .catch(reject);
+        void loginWithCredential(response.credential).then(resolve).catch(reject);
       },
     });
 

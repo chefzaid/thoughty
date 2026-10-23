@@ -39,8 +39,7 @@ function AttachmentPreviewDialog({ preview, isDark, onClose, t }: AttachmentPrev
             {preview.downloadUrl && (
               <a
                 href={preview.downloadUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                download={preview.name}
                 className={`${isDark ? 'text-blue-300 hover:text-blue-200' : 'text-blue-700 hover:text-blue-800'}`}
               >
                 {t('downloadAttachment')}

@@ -23,12 +23,22 @@ import {
 } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
 import { Response } from 'express';
-import { AttachmentsService } from './attachments.service';
+import { AttachmentsService, ServedAttachmentFile } from './attachments.service';
 import { LinkAttachmentDto, AudioTranscriptionResponseDto } from './dto';
 import { AudioTranscriptionService } from './audio-transcription.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
+
+/** Builds a Content-Disposition header whose filename cannot break out of the header value. */
+function contentDisposition(inline: boolean, originalFilename: string): string {
+  const fallback = originalFilename.replace(/[^\w.\- ]/g, '_').slice(0, 150) || 'attachment';
+  const encoded = encodeURIComponent(originalFilename).replace(
+    /['()*]/g,
+    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+  return `${inline ? 'inline' : 'attachment'}; filename="${fallback}"; filename*=UTF-8''${encoded}`;
+}
 
 @ApiTags('Attachments')
 @ApiBearerAuth()
@@ -129,16 +139,30 @@ export class AttachmentsController {
   @ApiOperation({ summary: 'Serve an attachment file' })
   @ApiParam({ name: 'filename', type: String })
   @ApiResponse({ status: 200, description: 'File content' })
-  async serveFile(@Param('filename') filename: string, @Res() res: Response) {
+  @ApiResponse({ status: 404, description: 'File missing or not owned by the caller' })
+  async serveFile(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('filename') filename: string,
+    @Res() res: Response,
+  ) {
     // Sanitize filename to prevent path traversal
     const sanitized = filename.replace(/[^a-zA-Z0-9._-]/g, '');
 
+    let file: ServedAttachmentFile;
     try {
-      const { stream, contentType } = await this.attachmentsService.getFileStream(sanitized);
-      res.setHeader('Content-Type', contentType);
-      stream.pipe(res);
+      file = await this.attachmentsService.getOwnedFile(user.userId, sanitized);
     } catch {
       throw new NotFoundException('File not found');
     }
+
+    res.setHeader('Content-Type', file.contentType);
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Disposition', contentDisposition(file.inline, file.originalFilename));
+    if (!file.inline) {
+      // Types such as SVG can carry script; never let one run if it is opened directly.
+      res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+    }
+    file.stream.on('error', () => res.destroy());
+    file.stream.pipe(res);
   }
 }

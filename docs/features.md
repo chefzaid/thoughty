@@ -122,7 +122,7 @@ All AI features are optional and run through OpenRouter. A deployment can provid
 ## Accounts and Preferences
 
 - **Sign-in.** In production, through the shared Keycloak single sign-on. Locally, with email or username and password, or with Google.
-- **Security.** Email verification, optional two-factor codes by email, password change and reset, active session management, and account deletion.
+- **Security.** Email verification, optional two-factor codes by email, password change and reset, active session management, and account deletion. A deleted account is signed out at once and erased with everything in it within 30 days.
 - **Profile.** Name, display name, bio, birthday, gender, and an avatar with crop and zoom. Confirmed accounts get a verified badge.
 - **Data.** Download all your data as JSON.
 - **Subscription.** A placeholder page. The plan is a saved setting with no payment behind it, and the billing history and payment method are sample data until a payment provider is connected.

@@ -6,6 +6,7 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   type ReactNode,
 } from 'react';
 import { readApiErrorMessage, safeJsonParse } from '../services/api/base';
@@ -60,6 +61,36 @@ const API_BASE = '/api/auth';
 // Google OAuth configuration
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
+/** Keys where older versions kept tokens in localStorage; they are removed on load. */
+const LEGACY_TOKEN_KEYS = ['accessToken', 'refreshToken'] as const;
+const REFRESH_LOCK_NAME = 'thoughty.auth-refresh';
+
+/**
+ * Removes tokens an older version left in localStorage, returning the refresh token so it can be
+ * exchanged once for the httpOnly cookie and the session survives the upgrade.
+ */
+export function takeLegacyRefreshToken(): string | null {
+  try {
+    const refreshToken = localStorage.getItem('refreshToken');
+    for (const key of LEGACY_TOKEN_KEYS) {
+      localStorage.removeItem(key);
+    }
+    return refreshToken;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Refresh tokens are single-use, so refreshes from several tabs must not race with the same
+ * cookie. The Web Locks API runs them one at a time across tabs; each then sends the cookie the
+ * previous one received.
+ */
+function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator === 'undefined' ? undefined : navigator.locks;
+  return locks ? locks.request(REFRESH_LOCK_NAME, task) as Promise<T> : task();
+}
+
 export async function exchangeKeycloakSession(
   onSession: (session: TokenResponse) => void,
 ): Promise<void> {
@@ -82,49 +113,58 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Get tokens from localStorage
-  const getAccessToken = useCallback((): string | null => localStorage.getItem('accessToken'), []);
-  const getRefreshToken = useCallback((): string | null => localStorage.getItem('refreshToken'), []);
+  // The access token lives in memory only; the refresh token is an httpOnly cookie the page
+  // cannot read, so a reload gets a new access token through refreshAccessToken.
+  const accessTokenRef = useRef<string | null>(null);
+  const refreshInFlightRef = useRef<Promise<string | null> | null>(null);
 
-  // Save tokens to localStorage
-  const saveTokens = useCallback((accessToken: string, refreshToken: string): void => {
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
+  const getAccessToken = useCallback((): string | null => accessTokenRef.current, []);
+
+  const startSession = useCallback((session: TokenResponse): void => {
+    accessTokenRef.current = session.accessToken;
+    setUser(session.user);
   }, []);
 
-  // Clear tokens from localStorage
-  const clearTokens = useCallback((): void => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+  const clearSession = useCallback((): void => {
+    accessTokenRef.current = null;
   }, []);
 
-  // Refresh access token
-  const refreshAccessToken = useCallback(async (): Promise<string | null> => {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) {
-      return null;
-    }
+  // Exchange the refresh token cookie for a new access token (and a rotated cookie). Concurrent
+  // callers share one request, since a refresh token works only once.
+  const refreshAccessToken = useCallback((legacyRefreshToken?: string | null): Promise<string | null> => {
+    refreshInFlightRef.current ??= withRefreshLock(async () => {
+      try {
+        const response = await fetch(`${API_BASE}/refresh`, {
+          method: 'POST',
+          credentials: 'same-origin',
+          ...(legacyRefreshToken
+            ? {
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken: legacyRefreshToken }),
+            }
+            : {}),
+        });
 
-    try {
-      const response = await fetch(`${API_BASE}/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
-      });
+        if (!response.ok) {
+          throw new Error('Token refresh failed');
+        }
 
-      if (!response.ok) {
-        throw new Error('Token refresh failed');
+        const data = await safeJsonParse<{ accessToken?: string }>(response);
+        if (!data?.accessToken) {
+          throw new Error('Token refresh failed');
+        }
+        accessTokenRef.current = data.accessToken;
+        return data.accessToken;
+      } catch {
+        accessTokenRef.current = null;
+        setUser(null);
+        return null;
       }
-
-      const data = await response.json();
-      localStorage.setItem('accessToken', data.accessToken);
-      return data.accessToken;
-    } catch {
-      clearTokens();
-      setUser(null);
-      return null;
-    }
-  }, [clearTokens, getRefreshToken]);
+    }).finally(() => {
+      refreshInFlightRef.current = null;
+    });
+    return refreshInFlightRef.current;
+  }, []);
 
   // Fetch with auto token refresh
   const authFetch = useCallback(
@@ -163,8 +203,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       if (import.meta.env.PROD) {
         let sessionExchanged = false;
         await exchangeKeycloakSession((session) => {
-          saveTokens(session.accessToken, session.refreshToken);
-          setUser(session.user);
+          startSession(session);
           sessionExchanged = true;
         });
         if (sessionExchanged) {
@@ -177,7 +216,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setLoading(false);
     };
     const checkAuth = async () => {
-      const accessToken = getAccessToken();
+      const accessToken = await refreshAccessToken(takeLegacyRefreshToken());
       if (!accessToken) {
         await restoreSsoSession();
         return;
@@ -190,10 +229,10 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
           if (userData) {
             setUser(userData);
           } else {
-            clearTokens();
+            clearSession();
           }
         } else {
-          clearTokens();
+          clearSession();
           if (import.meta.env.PROD && !hasPendingKeycloakSsoAttempt()) {
             startKeycloakSso();
             return;
@@ -201,7 +240,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         }
       } catch (err) {
         console.error('Auth check failed:', err);
-        clearTokens();
+        clearSession();
         if (import.meta.env.PROD && !hasPendingKeycloakSsoAttempt()) {
           startKeycloakSso();
           return;
@@ -211,7 +250,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     };
 
     checkAuth();
-  }, [authFetch, clearTokens, getAccessToken, saveTokens]);
+  }, [authFetch, clearSession, refreshAccessToken, startSession]);
 
   // Register with email/password
   const register = useCallback(async (
@@ -224,15 +263,14 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     try {
       const data = await registerWithPassword({ email, password, username, website });
 
-      saveTokens(data.accessToken, data.refreshToken);
-      setUser(data.user);
+      startSession(data);
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed';
       setError(message);
       return { success: false, error: message };
     }
-  }, [saveTokens]);
+  }, [startSession]);
 
   // Login with email or username
   const login = useCallback(async (identifier: string, password: string, website = ''): Promise<AuthResult> => {
@@ -249,15 +287,14 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         };
       }
 
-      saveTokens(data.accessToken, data.refreshToken);
-      setUser(data.user);
+      startSession(data);
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed';
       setError(message);
       return { success: false, error: message };
     }
-  }, [saveTokens]);
+  }, [startSession]);
 
   const verifyTwoFactor = useCallback(async (
     challengeToken: string,
@@ -266,15 +303,14 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     setError(null);
     try {
       const data = await verifyTwoFactorLogin(challengeToken, code);
-      saveTokens(data.accessToken, data.refreshToken);
-      setUser(data.user);
+      startSession(data);
       return { success: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Two-factor verification failed';
       setError(message);
       return { success: false, error: message };
     }
-  }, [saveTokens]);
+  }, [startSession]);
 
   const resendTwoFactor = useCallback(async (challengeToken: string): Promise<AuthResult> => {
     setError(null);
@@ -293,20 +329,14 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
     }
   }, []);
 
-  // OAuth login (Google/Facebook)
-  const oauthLogin = useCallback(async (
-    provider: string,
-    providerId: string,
-    email: string,
-    name: string,
-    avatarUrl: string
-  ): Promise<AuthResult> => {
+  // Google login: the server verifies the raw Google ID token and reads the identity from it
+  const googleCredentialLogin = useCallback(async (credential: string): Promise<AuthResult> => {
     setError(null);
     try {
       const response = await fetch(`${API_BASE}/oauth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider, providerId, email, name, avatarUrl }),
+        body: JSON.stringify({ provider: 'google', credential }),
       });
 
       if (!response.ok) {
@@ -319,34 +349,31 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         throw new Error('Server unavailable');
       }
 
-      saveTokens(data.accessToken, data.refreshToken);
-      setUser(data.user);
+      startSession(data);
       return { success: true, isNewUser: data.user.isNewUser };
     } catch (err) {
       const message = err instanceof Error ? err.message : 'OAuth login failed';
       setError(message);
       return { success: false, error: message };
     }
-  }, [saveTokens]);
+  }, [startSession]);
 
   // Google Sign In
   const signInWithGoogle = useCallback(async (): Promise<AuthResult> => {
-    return signInWithGoogleAccount(GOOGLE_CLIENT_ID, oauthLogin);
-  }, [oauthLogin]);
+    return signInWithGoogleAccount(GOOGLE_CLIENT_ID, googleCredentialLogin);
+  }, [googleCredentialLogin]);
 
-  // Logout
+  // Logout: the server revokes the refresh token from its cookie and clears the cookie
   const logout = useCallback(async (): Promise<void> => {
-    const refreshToken = getRefreshToken();
     try {
       await fetch(`${API_BASE}/logout`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken }),
+        credentials: 'same-origin',
       });
     } catch (err) {
       console.error('Logout error:', err);
     }
-    clearTokens();
+    clearSession();
     setUser(null);
     if (import.meta.env.PROD) {
       sessionStorage.setItem('thoughty.keycloak-sso-attempt', 'pending');
@@ -355,7 +382,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         `https://keycloak.swirlit.dev/oauth2/sign_out?rd=${encodeURIComponent(returnUrl)}`,
       );
     }
-  }, [clearTokens, getRefreshToken]);
+  }, [clearSession]);
 
   // Change password
   const changePassword = useCallback(async (
@@ -487,8 +514,8 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
 
       const data = await safeJsonParse<{ message?: string }>(response);
 
-      // Log the user out after account deletion
-      clearTokens();
+      // Log the user out after account deletion; the server has cleared the cookie
+      clearSession();
       setUser(null);
       return { success: true, message: data?.message };
     } catch (err) {
@@ -496,7 +523,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setError(message);
       return { success: false, error: message };
     }
-  }, [authFetch, clearTokens]);
+  }, [authFetch, clearSession]);
 
   const value = useMemo<AuthContextValue>(() => ({
     user,

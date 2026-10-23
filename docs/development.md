@@ -41,12 +41,13 @@ cd thoughty-web && npm run dev       # terminal 2
 
 ## Configuration
 
-The defaults in the code match the Compose stack, so you need no `.env` locally. To change a value, copy `thoughty-server/.env.example` to `thoughty-server/.env`. The example file lists the database, JWT, CORS, SMTP, Redis, S3, OpenRouter, and cloud sync variables.
+The defaults in the code match the Compose stack, so you need no `.env` locally. To change a value, copy `thoughty-server/.env.example` to `thoughty-server/.env`. The example file lists the database, JWT, CORS, SMTP, Redis, S3, OpenRouter, cloud sync, Google sign-in, `TRUST_PROXY`, and `ACCOUNT_PURGE_AFTER_DAYS` variables.
 
 | To enable | Set |
 |---|---|
 | AI features | `OPENROUTER_API_KEY`, or a personal key in Profile |
 | Cloud sync | the Google Drive, OneDrive, or Dropbox client ID and secret |
+| Google sign-in | `GOOGLE_CLIENT_ID` on the server and the same value as `VITE_GOOGLE_CLIENT_ID` for the web app |
 | Email (password reset, verification, 2FA codes, memoir questions) | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`. Without them, no email is sent and the API logs a warning. |
 | Shared rate-limit counters | `REDIS_URL` or `REDIS_HOST` (in memory when unset) |
 

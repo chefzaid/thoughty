@@ -21,9 +21,9 @@ export interface AuthResult {
   expiresInSeconds?: number;
 }
 
+/** A new session. The refresh token never reaches the page: it is an httpOnly cookie. */
 export interface TokenResponse {
   accessToken: string;
-  refreshToken: string;
   user: User;
 }
 

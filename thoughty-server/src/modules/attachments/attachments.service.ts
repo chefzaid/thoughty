@@ -42,6 +42,32 @@ const ALLOWED_MIMETYPES = [
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
+/** Types a browser may render inline; anything else (SVG, text) is served as a download. */
+const INLINE_MIMETYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'application/pdf',
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/mp4',
+  'audio/x-m4a',
+  'audio/aac',
+  'audio/ogg',
+  'audio/wav',
+  'audio/wave',
+  'audio/x-wav',
+  'audio/webm',
+]);
+
+export interface ServedAttachmentFile {
+  stream: Readable;
+  contentType: string;
+  originalFilename: string;
+  inline: boolean;
+}
+
 @Injectable()
 export class AttachmentsService implements OnModuleInit {
   private readonly logger = new Logger(AttachmentsService.name);
@@ -180,6 +206,30 @@ export class AttachmentsService implements OnModuleInit {
     };
   }
 
+  /**
+   * Opens a stored file for the user who owns its attachment. Attachments are never shown in the
+   * public feed, so nobody else may read them; a key that is not the caller's answers as missing.
+   * The type comes from the attachment row (limited to the upload allowlist), not from storage.
+   */
+  async getOwnedFile(userId: number, storedFilename: string): Promise<ServedAttachmentFile> {
+    const attachment = await this.attachmentRepository.findOne({
+      where: { storedFilename, userId },
+    });
+    if (!attachment) {
+      throw new NotFoundException('File not found');
+    }
+    const { stream } = await this.getFileStream(attachment.storedFilename);
+    const contentType = ALLOWED_MIMETYPES.includes(attachment.mimetype)
+      ? attachment.mimetype
+      : 'application/octet-stream';
+    return {
+      stream,
+      contentType,
+      originalFilename: attachment.originalFilename,
+      inline: INLINE_MIMETYPES.has(contentType),
+    };
+  }
+
   async getOwnedAttachment(userId: number, attachmentId: number): Promise<Attachment> {
     const attachment = await this.attachmentRepository.findOne({
       where: { id: attachmentId, userId },
@@ -248,9 +298,11 @@ export class AttachmentsService implements OnModuleInit {
 
   /**
    * Deletes blobs whose attachment rows are already gone, such as the files of entries removed
-   * from the recycle bin. A failed delete is logged and skipped so the others still go.
+   * from the recycle bin. A failed delete is logged and skipped so the others still go; the keys
+   * that could not be deleted are returned.
    */
-  async removeStoredFiles(storedFilenames: string[]): Promise<void> {
+  async removeStoredFiles(storedFilenames: string[]): Promise<string[]> {
+    const failed: string[] = [];
     for (const storedFilename of storedFilenames) {
       try {
         await this.s3.send(
@@ -261,7 +313,9 @@ export class AttachmentsService implements OnModuleInit {
         );
       } catch (err) {
         this.logger.warn(`Could not delete S3 object ${storedFilename}: ${(err as Error).message}`);
+        failed.push(storedFilename);
       }
     }
+    return failed;
   }
 }

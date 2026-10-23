@@ -1,4 +1,12 @@
-import { IsEmail, IsString, MinLength, Matches, IsOptional, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsIn,
+  IsString,
+  MinLength,
+  Matches,
+  IsOptional,
+  MaxLength,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
@@ -49,33 +57,39 @@ export class LoginDto {
 }
 
 export class OAuthDto {
-  @ApiProperty({ example: 'google', enum: ['google', 'facebook'] })
-  @IsString()
-  provider: 'google' | 'facebook';
+  @ApiProperty({ example: 'google', enum: ['google'] })
+  @IsIn(['google'])
+  provider: 'google';
 
-  @ApiProperty({ example: '123456789' })
+  @ApiProperty({
+    description:
+      'The Google ID token (the `credential` from Google Identity Services), sent unmodified. ' +
+      'The server verifies its signature, issuer, audience, and expiry and reads the identity ' +
+      'from it; the email must be verified by Google.',
+  })
   @IsString()
-  providerId: string;
-
-  @ApiProperty({ example: 'user@example.com' })
-  @IsEmail()
-  email: string;
-
-  @ApiPropertyOptional({ example: 'John Doe' })
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
-  @IsOptional()
-  @IsString()
-  avatarUrl?: string;
+  @MinLength(1)
+  @MaxLength(4096)
+  credential: string;
 }
 
 export class RefreshTokenDto {
-  @ApiProperty()
+  @ApiPropertyOptional({
+    deprecated: true,
+    description:
+      'Transitional: a refresh token an older web client kept in browser storage, accepted only ' +
+      'when no refresh token cookie is present and exchanged once for the cookie. Current ' +
+      'clients send no body; the httpOnly refresh token cookie is used.',
+  })
+  @IsOptional()
   @IsString()
-  refreshToken: string;
+  @MaxLength(2048)
+  refreshToken?: string;
+}
+
+export class AccessTokenResponseDto {
+  @ApiProperty({ description: 'Short-lived access token; keep it in memory only' })
+  accessToken: string;
 }
 
 export class ChangePasswordDto {
@@ -139,11 +153,12 @@ export class AuthResponseDto {
     isNewUser?: boolean;
   };
 
-  @ApiProperty()
+  @ApiProperty({
+    description:
+      'Short-lived access token; keep it in memory only. The refresh token is set as an ' +
+      'httpOnly cookie scoped to /api/auth and never appears in a response body.',
+  })
   accessToken: string;
-
-  @ApiProperty()
-  refreshToken: string;
 }
 
 export class TwoFactorChallengeResponseDto {

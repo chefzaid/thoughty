@@ -29,6 +29,15 @@ describe('swagger helpers', () => {
         },
         'bearerAuth',
       )
+      .addCookieAuth(
+        'thoughty_refresh_token',
+        {
+          type: 'apiKey',
+          in: 'cookie',
+          description: 'httpOnly refresh token cookie (path /api/auth) set when a session starts',
+        },
+        'thoughty_refresh_token',
+      )
       .addServer('http://localhost:4567')
       .build();
 

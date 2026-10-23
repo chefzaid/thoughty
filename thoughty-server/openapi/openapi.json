@@ -52,7 +52,7 @@
         },
         "responses": {
           "201": {
-            "description": "User registered successfully",
+            "description": "User registered and signed in. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth).",
             "content": {
               "application/json": {
                 "schema": {
@@ -62,8 +62,7 @@
                   "user": {
                     "example": "example"
                   },
-                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
               }
             }
@@ -102,7 +101,7 @@
         },
         "responses": {
           "200": {
-            "description": "Login tokens, or an email-code challenge when two-factor authentication is enabled",
+            "description": "The session, or an email-code challenge when two-factor authentication is enabled. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth).",
             "content": {
               "application/json": {
                 "schema": {
@@ -120,7 +119,6 @@
                     "example": "example"
                   },
                   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
                   "twoFactorRequired": true,
                   "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
                   "expiresInSeconds": 600
@@ -158,7 +156,7 @@
         },
         "responses": {
           "200": {
-            "description": "Login completed",
+            "description": "Login completed. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth).",
             "content": {
               "application/json": {
                 "schema": {
@@ -168,8 +166,7 @@
                   "user": {
                     "example": "example"
                   },
-                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
               }
             }
@@ -371,17 +368,14 @@
               },
               "example": {
                 "provider": "google",
-                "providerId": "123456789",
-                "email": "user@example.com",
-                "name": "John Doe",
-                "avatarUrl": "https://example.com/avatar.jpg"
+                "credential": "example"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "OAuth authentication successful",
+            "description": "Google sign-in successful. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth).",
             "content": {
               "application/json": {
                 "schema": {
@@ -391,17 +385,22 @@
                   "user": {
                     "example": "example"
                   },
-                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
               }
             }
           },
           "400": {
             "description": "Missing required fields"
+          },
+          "401": {
+            "description": "Invalid Google credential or unverified email"
+          },
+          "503": {
+            "description": "Google sign-in is not configured on this server"
           }
         },
-        "summary": "Authenticate with OAuth provider",
+        "summary": "Sign in with a verified Google ID token",
         "tags": [
           "Authentication"
         ]
@@ -422,7 +421,7 @@
         ],
         "responses": {
           "200": {
-            "description": "SSO authentication successful",
+            "description": "SSO authentication successful. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth).",
             "content": {
               "application/json": {
                 "schema": {
@@ -432,8 +431,7 @@
                   "user": {
                     "example": "example"
                   },
-                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
               }
             }
@@ -450,10 +448,11 @@
     },
     "/api/auth/refresh": {
       "post": {
+        "description": "Each refresh token works once: it is replaced by a new one in the cookie, and reusing the old one fails.",
         "operationId": "AuthController_refresh",
         "parameters": [],
         "requestBody": {
-          "required": true,
+          "required": false,
           "content": {
             "application/json": {
               "schema": {
@@ -467,13 +466,28 @@
         },
         "responses": {
           "200": {
-            "description": "New access token"
+            "description": "New access token. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccessTokenResponseDto"
+                },
+                "example": {
+                  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Invalid or expired refresh token"
+            "description": "Missing, invalid, expired, or reused refresh token"
           }
         },
-        "summary": "Refresh access token",
+        "security": [
+          {
+            "thoughty_refresh_token": []
+          }
+        ],
+        "summary": "Exchange the refresh token cookie for a new access token",
         "tags": [
           "Authentication"
         ]
@@ -483,25 +497,17 @@
       "post": {
         "operationId": "AuthController_logout",
         "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshTokenDto"
-              },
-              "example": {
-                "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
             "description": "Logged out successfully"
           }
         },
-        "summary": "Logout and invalidate refresh token",
+        "security": [
+          {
+            "thoughty_refresh_token": []
+          }
+        ],
+        "summary": "Logout, revoke the refresh token, and clear its cookie",
         "tags": [
           "Authentication"
         ]
@@ -509,26 +515,9 @@
     },
     "/api/auth/sessions": {
       "get": {
+        "description": "The session of the refresh token cookie is marked current.",
         "operationId": "AuthController_listSessions",
-        "parameters": [
-          {
-            "name": "x-refresh-token",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-Refresh-Token",
-            "in": "header",
-            "description": "Current refresh token for marking this session",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Active sessions",
@@ -557,6 +546,9 @@
         },
         "security": [
           {
+            "thoughty_refresh_token": []
+          },
+          {
             "bearer": []
           }
         ],
@@ -566,35 +558,21 @@
         ]
       },
       "delete": {
+        "description": "The session of the refresh token cookie is kept.",
         "operationId": "AuthController_revokeOtherSessions",
-        "parameters": [
-          {
-            "name": "x-refresh-token",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-Refresh-Token",
-            "in": "header",
-            "description": "Current refresh token to keep active",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Other sessions revoked"
           },
           "400": {
-            "description": "Current refresh token missing"
+            "description": "Refresh token cookie missing"
           }
         },
         "security": [
+          {
+            "thoughty_refresh_token": []
+          },
           {
             "bearer": []
           }
@@ -607,6 +585,7 @@
     },
     "/api/auth/sessions/{id}": {
       "delete": {
+        "description": "The session of the refresh token cookie cannot be revoked here; use logout.",
         "operationId": "AuthController_revokeSession",
         "parameters": [
           {
@@ -615,23 +594,6 @@
             "in": "path",
             "schema": {
               "type": "number"
-            }
-          },
-          {
-            "name": "x-refresh-token",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "X-Refresh-Token",
-            "in": "header",
-            "description": "Current refresh token to protect it from revocation",
-            "required": false,
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -644,6 +606,9 @@
           }
         },
         "security": [
+          {
+            "thoughty_refresh_token": []
+          },
           {
             "bearer": []
           }
@@ -861,7 +826,7 @@
         },
         "responses": {
           "200": {
-            "description": "Account deleted"
+            "description": "Account deleted; the refresh token cookie is cleared"
           },
           "401": {
             "description": "Invalid password"
@@ -2404,7 +2369,7 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "User configuration"
+            "description": "User preferences (the keys POST /api/config accepts), as text"
           }
         },
         "security": [
@@ -2418,11 +2383,57 @@
         ]
       },
       "post": {
+        "description": "Saves the given preferences. Credentials, cloud connections, sync state, and export format have their own endpoints and cannot be set here.",
         "operationId": "ConfigController_updateConfig",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConfigDto"
+              },
+              "example": {
+                "theme": "light",
+                "name": "Daily Journal",
+                "bio": "example",
+                "email": "user@example.com",
+                "birthday": "example",
+                "gender": "example",
+                "avatarUrl": "https://thoughty.example.com/callback",
+                "fontFamily": "system",
+                "fontSize": "example",
+                "fontColor": "#2A9D8F",
+                "highContrast": "true",
+                "ttsVoiceUri": "https://thoughty.example.com/callback",
+                "language": "en",
+                "entriesPerPage": "example",
+                "maxPinnedEntries": "example",
+                "defaultVisibility": "public",
+                "readDates": "true",
+                "openRouterModel": "example",
+                "openRouterTagModel": "reflection",
+                "openRouterWritingModel": "example",
+                "openRouterChatModel": "example",
+                "openRouterToneModel": "example",
+                "openRouterSummaryModel": "example",
+                "openRouterPromptModel": "example",
+                "openRouterBookModel": "example",
+                "autoTagMaxTags": "reflection",
+                "tagMetadata": "reflection",
+                "entryTemplates": "example",
+                "subscriptionPlan": "free",
+                "paymentMethodLabel": "example"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Configuration updated"
+          },
+          "400": {
+            "description": "Unknown or reserved setting, or an invalid value"
           }
         },
         "security": [
@@ -4145,6 +4156,9 @@
         "responses": {
           "200": {
             "description": "File content"
+          },
+          "404": {
+            "description": "File missing or not owned by the caller"
           }
         },
         "security": [
@@ -7575,6 +7589,12 @@
         "bearerFormat": "JWT",
         "type": "http",
         "description": "Enter your JWT access token"
+      },
+      "thoughty_refresh_token": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "thoughty_refresh_token",
+        "description": "httpOnly refresh token cookie (path /api/auth) set when a session starts"
       }
     },
     "schemas": {
@@ -7585,23 +7605,19 @@
             "type": "object"
           },
           "accessToken": {
-            "type": "string"
-          },
-          "refreshToken": {
-            "type": "string"
+            "type": "string",
+            "description": "Short-lived access token; keep it in memory only. The refresh token is set as an httpOnly cookie scoped to /api/auth and never appears in a response body."
           }
         },
         "required": [
           "user",
-          "accessToken",
-          "refreshToken"
+          "accessToken"
         ],
         "example": {
           "user": {
             "example": "example"
           },
-          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-          "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         }
       },
       "TwoFactorChallengeResponseDto": {
@@ -7771,52 +7787,49 @@
             "type": "string",
             "example": "google",
             "enum": [
-              "google",
-              "facebook"
+              "google"
             ]
           },
-          "providerId": {
+          "credential": {
             "type": "string",
-            "example": "123456789"
-          },
-          "email": {
-            "type": "string",
-            "example": "user@example.com"
-          },
-          "name": {
-            "type": "string",
-            "example": "John Doe"
-          },
-          "avatarUrl": {
-            "type": "string",
-            "example": "https://example.com/avatar.jpg"
+            "description": "The Google ID token (the `credential` from Google Identity Services), sent unmodified. The server verifies its signature, issuer, audience, and expiry and reads the identity from it; the email must be verified by Google."
           }
         },
         "required": [
           "provider",
-          "providerId",
-          "email"
+          "credential"
         ],
         "example": {
           "provider": "google",
-          "providerId": "123456789",
-          "email": "user@example.com",
-          "name": "John Doe",
-          "avatarUrl": "https://example.com/avatar.jpg"
+          "credential": "example"
         }
       },
       "RefreshTokenDto": {
         "type": "object",
         "properties": {
           "refreshToken": {
-            "type": "string"
+            "type": "string",
+            "deprecated": true,
+            "description": "Transitional: a refresh token an older web client kept in browser storage, accepted only when no refresh token cookie is present and exchanged once for the cookie. Current clients send no body; the httpOnly refresh token cookie is used."
+          }
+        },
+        "example": {
+          "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        }
+      },
+      "AccessTokenResponseDto": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "Short-lived access token; keep it in memory only"
           }
         },
         "required": [
-          "refreshToken"
+          "accessToken"
         ],
         "example": {
-          "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+          "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         }
       },
       "SessionResponseDto": {
@@ -9095,6 +9108,224 @@
         "example": {
           "success": true,
           "deletedCount": 3
+        }
+      },
+      "UpdateConfigDto": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ],
+            "description": "Color theme"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Display name"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 10000,
+            "description": "Profile bio"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "description": "Contact email shown on the profile"
+          },
+          "birthday": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "Birthday as YYYY-MM-DD, or empty",
+            "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$"
+          },
+          "gender": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Gender"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "maxLength": 1000000,
+            "description": "Profile picture as a base64 image data URL or an http(s) URL, or empty",
+            "pattern": "^(data:image\\/[\\w.+-]+;base64,[\\w+/=]*|https?:\\/\\/\\S+)?$"
+          },
+          "fontFamily": {
+            "type": "string",
+            "enum": [
+              "system",
+              "serif",
+              "modern",
+              "mono"
+            ],
+            "description": "Font family"
+          },
+          "fontSize": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Font size in pixels",
+            "pattern": "^\\d{1,3}$"
+          },
+          "fontColor": {
+            "type": "string",
+            "maxLength": 7,
+            "description": "Text color as #rrggbb, or empty for the theme default",
+            "pattern": "^(#[0-9a-fA-F]{6})?$"
+          },
+          "highContrast": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "High contrast mode"
+          },
+          "ttsVoiceUri": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Text-to-speech voice URI, or empty for the default"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr"
+            ],
+            "description": "Interface language"
+          },
+          "entriesPerPage": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Entries per page",
+            "pattern": "^\\d{1,3}$"
+          },
+          "maxPinnedEntries": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Maximum pinned entries",
+            "pattern": "^\\d{1,3}$"
+          },
+          "defaultVisibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "description": "Visibility of new entries"
+          },
+          "readDates": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Read entry dates aloud"
+          },
+          "openRouterModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterTagModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterWritingModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterChatModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterToneModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterSummaryModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterPromptModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterBookModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "autoTagMaxTags": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Maximum tags suggested automatically (0 turns it off)",
+            "pattern": "^\\d{1,3}$"
+          },
+          "tagMetadata": {
+            "type": "string",
+            "maxLength": 500000,
+            "description": "Tag colors and descriptions as serialized JSON"
+          },
+          "entryTemplates": {
+            "type": "string",
+            "maxLength": 500000,
+            "description": "Custom entry templates as serialized JSON"
+          },
+          "subscriptionPlan": {
+            "type": "string",
+            "enum": [
+              "free",
+              "plus",
+              "pro"
+            ],
+            "description": "Subscription plan"
+          },
+          "paymentMethodLabel": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Payment method label"
+          }
+        },
+        "example": {
+          "theme": "light",
+          "name": "Daily Journal",
+          "bio": "example",
+          "email": "user@example.com",
+          "birthday": "example",
+          "gender": "example",
+          "avatarUrl": "https://thoughty.example.com/callback",
+          "fontFamily": "system",
+          "fontSize": "example",
+          "fontColor": "#2A9D8F",
+          "highContrast": "true",
+          "ttsVoiceUri": "https://thoughty.example.com/callback",
+          "language": "en",
+          "entriesPerPage": "example",
+          "maxPinnedEntries": "example",
+          "defaultVisibility": "public",
+          "readDates": "true",
+          "openRouterModel": "example",
+          "openRouterTagModel": "reflection",
+          "openRouterWritingModel": "example",
+          "openRouterChatModel": "example",
+          "openRouterToneModel": "example",
+          "openRouterSummaryModel": "example",
+          "openRouterPromptModel": "example",
+          "openRouterBookModel": "example",
+          "autoTagMaxTags": "reflection",
+          "tagMetadata": "reflection",
+          "entryTemplates": "example",
+          "subscriptionPlan": "free",
+          "paymentMethodLabel": "example"
         }
       },
       "OpenRouterCredentialStatusDto": {

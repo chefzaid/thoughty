@@ -163,6 +163,8 @@ test.describe('route accessibility', () => {
   test('public skip links and route changes move focus to page content', async ({ page }) => {
     await setupMockApp(page);
     await page.goto('/');
+    // The page renders once the session check (a refresh call) has answered
+    await expect(page.getByRole('button', { name: 'Sign In' }).first()).toBeVisible();
 
     await page.keyboard.press('Tab');
     const publicSkipLink = page.getByRole('link', { name: 'Skip to content' });

@@ -1,3 +1,7 @@
+# Opt-in: needs the Prometheus Operator CRDs, and Prometheus scraping the API pods through their
+# prometheus.io/* annotations. swirl-cloud runs a plain Prometheus without these CRDs.
+# The expressions select pods and Deployments by name, not by namespace, because kustomize does
+# not rewrite PromQL; this keeps them correct in any overlay namespace (apps, thoughty).
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -10,7 +14,8 @@ spec:
     - name: thoughty.operational
       rules:
         - alert: ThoughtyApiUnavailable
-          expr: absent(up{namespace="thoughty",pod=~"thoughty-server-.*"} == 1) or sum(up{namespace="thoughty",pod=~"thoughty-server-.*"}) < 1
+          # Deployment pod names only (thoughty-server-<hash>-<id>), so canary pods do not count.
+          expr: absent(up{pod=~"thoughty-server-[a-z0-9]+-[a-z0-9]+"} == 1) or sum by (namespace) (up{pod=~"thoughty-server-[a-z0-9]+-[a-z0-9]+"}) < 1
           for: 2m
           labels:
             severity: critical
@@ -20,9 +25,9 @@ spec:
         - alert: ThoughtyApiHighErrorRate
           expr: |
             (
-              sum(rate(thoughty_http_requests_total{status=~"5.."}[5m]))
+              sum by (namespace) (rate(thoughty_http_requests_total{status=~"5.."}[5m]))
               /
-              clamp_min(sum(rate(thoughty_http_requests_total[5m])), 1)
+              clamp_min(sum by (namespace) (rate(thoughty_http_requests_total[5m])), 1)
             ) > 0.05
           for: 10m
           labels:
@@ -39,7 +44,7 @@ spec:
             summary: Thoughty API cannot reach PostgreSQL
             description: The metrics endpoint reports failed database connectivity checks.
         - alert: ThoughtyCloudSyncWorkerUnavailable
-          expr: kube_deployment_status_replicas_available{namespace="thoughty",deployment="thoughty-cloud-sync-worker"} < 1
+          expr: kube_deployment_status_replicas_available{deployment="thoughty-cloud-sync-worker"} < 1
           for: 5m
           labels:
             severity: warning

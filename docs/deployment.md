@@ -8,7 +8,7 @@ Thoughty runs on the shared K3s platform [`swirl-cloud`](https://github.com/chef
 |---|---|
 | `thoughty-web` | NGINX serving the React build; 2 replicas |
 | `thoughty-server` | NestJS API on port `3001`; 2 replicas |
-| `thoughty-cloud-sync-worker` | same image as the API; runs cloud sync, memoir delivery, and recycle-bin purge; always 1 replica |
+| `thoughty-cloud-sync-worker` | same image as the API; runs cloud sync, memoir delivery, and the recycle-bin and account purges; always 1 replica |
 | `postgres-backup` | daily `pg_dump` CronJob; suspended in production until configured |
 
 | Profile | Use |
@@ -44,7 +44,7 @@ Non-secret settings are in `infra/k8s/base/configmap.yaml`, overridden by `infra
 | `apps/thoughty/registry` | read-only registry pull credential |
 | `infra/postgres` | shared database admin, setup hook only |
 
-Always set `CONFIG_ENCRYPTION_SECRET`: the API and worker do not start without it, and losing it makes stored provider tokens unreadable. Always set `JWT_SECRET`, `REFRESH_SECRET`, and `TWO_FACTOR_SECRET`: they fall back to insecure defaults. Onboarding and `infra/scripts/configure-gitlab.sh` generate these and the database password when missing, and never overwrite them. Other values start empty. Never commit secrets. Full list: [Security](./security.md#secrets).
+Always set `CONFIG_ENCRYPTION_SECRET`: the API and worker do not start without it, and losing it makes stored provider tokens unreadable. Always set `JWT_SECRET` and `REFRESH_SECRET` (and `TWO_FACTOR_SECRET`) to at least 32 random characters: in production the API and worker refuse to start when one is missing or an example value. Onboarding and `infra/scripts/configure-gitlab.sh` generate these and the database password when missing, and never overwrite them. Other values start empty. `TRUST_PROXY` must match the proxies in front of the API (swirl-cloud sets `2` in its ConfigMap patch; see [Security](./security.md#abuse-controls)). Google sign-in needs `GOOGLE_CLIENT_ID` on the server, equal to the web's build-time `VITE_GOOGLE_CLIENT_ID`; production signs in through Keycloak and sets neither. Never commit secrets. Full list: [Security](./security.md#secrets).
 
 ## Delivery Pipeline
 

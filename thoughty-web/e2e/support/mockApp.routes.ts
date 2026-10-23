@@ -100,7 +100,6 @@ async function handleAuthRoutes({
     state.twoFactorChallengeToken = null;
     await fulfillJson(route, {
       accessToken: "test-access-token",
-      refreshToken: "test-refresh-token",
       user: state.user,
     });
     return true;
@@ -164,7 +163,6 @@ async function handleAuthRoutes({
 
     await fulfillJson(route, {
       accessToken: "test-access-token",
-      refreshToken: "test-refresh-token",
       user: state.user,
     });
     return true;
@@ -185,9 +183,29 @@ async function handleAuthRoutes({
 
     await fulfillJson(route, {
       accessToken: "test-access-token",
-      refreshToken: "test-refresh-token",
       user: state.user,
     });
+    return true;
+  }
+
+  // The refresh token is an httpOnly cookie in the real app; the mock tracks it as
+  // `state.authenticated`, set by login/register/2FA and cleared by logout.
+  if (pathname === "/api/auth/refresh") {
+    if (!state.authenticated) {
+      await fulfillJson(
+        route,
+        { message: "Refresh token is missing" },
+        { status: 401 },
+      );
+      return true;
+    }
+    await fulfillJson(route, { accessToken: "test-access-token" });
+    return true;
+  }
+
+  if (pathname === "/api/auth/logout") {
+    state.authenticated = false;
+    await fulfillJson(route, { success: true });
     return true;
   }
 

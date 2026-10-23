@@ -16,7 +16,7 @@ describe('JwtStrategy', () => {
 
   describe('constructor', () => {
     it('should get JWT_SECRET from config service', () => {
-      expect(configService.get).toHaveBeenCalledWith('JWT_SECRET', 'your-secret-key-change-in-production');
+      expect(configService.get).toHaveBeenCalledWith('JWT_SECRET');
     });
   });
 

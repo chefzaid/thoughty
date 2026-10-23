@@ -224,6 +224,7 @@ export class EmailService {
           </p>
           <p style="color: #666; font-size: 16px;">
             You will no longer be able to access your account or any associated data.
+            Your journal and everything stored with your account will be permanently erased within 30 days.
           </p>
           <p style="color: #666; font-size: 16px;">
             If you did not request this deletion, or if you believe this was done in error, 
@@ -241,6 +242,7 @@ export class EmailService {
         Your Thoughty account has been successfully deleted as per your request.
         
         You will no longer be able to access your account or any associated data.
+        Your journal and everything stored with your account will be permanently erased within 30 days.
         
         If you did not request this deletion, or if you believe this was done in error, 
         please contact our support team immediately.

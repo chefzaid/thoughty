@@ -1,5 +1,6 @@
 import { AiPersonalityService } from './ai-personality.service';
 import type { WritingProfile } from './personality-analysis';
+import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
 
 describe('AiPersonalityService', () => {
   const fetchMock = jest.fn();
@@ -55,6 +56,7 @@ describe('AiPersonalityService', () => {
     const request = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
     expect(JSON.parse(request.messages[1].content)).toEqual(profile);
     expect(request.messages[0].content).toContain('Do not diagnose');
+    expect(request.messages[0].content).toContain(UNTRUSTED_CONTENT_INSTRUCTION);
     expect(request.messages[1].content).not.toContain('rawContent');
   });
 

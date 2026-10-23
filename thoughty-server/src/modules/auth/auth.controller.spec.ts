@@ -1,9 +1,22 @@
+import { ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import type { Request, Response } from 'express';
 import { RATE_LIMITS } from '@/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './services/auth.service';
 import { EmailVerificationService } from './services/email-verification.service';
 import { TwoFactorService } from './services/two-factor.service';
+
+const COOKIE = 'thoughty_refresh_token';
+const COOKIE_OPTIONS = { httpOnly: true, secure: false, sameSite: 'strict', path: '/api/auth' };
+
+const mockResponse = () =>
+  ({ cookie: jest.fn(), clearCookie: jest.fn() }) as unknown as Response & {
+    cookie: jest.Mock;
+    clearCookie: jest.Mock;
+  };
+
+const requestWithCookie = (cookie?: string) => ({ headers: { cookie } }) as unknown as Request;
 
 const getThrottleMetadata = (handler: Function) => ({
   limit: Reflect.getMetadata('THROTTLER:LIMITdefault', handler),
@@ -91,28 +104,79 @@ describe('AuthController', () => {
   });
 
   describe('register', () => {
-    it('delegates to authService.register', async () => {
+    it('signs the new user in with a refresh token cookie only', async () => {
       const dto = { email: 'a@b.com', password: 'Pass123!@' } as any;
-      const expected = { user: { id: 1 }, accessToken: 'token', refreshToken: 'rt' };
-      authService.register!.mockResolvedValue(expected as any);
+      authService.register!.mockResolvedValue({
+        user: { id: 1 },
+        accessToken: 'token',
+        refreshToken: 'rt',
+      });
       emailVerificationService.sendVerificationEmail.mockResolvedValue({ success: true });
+      const res = mockResponse();
 
-      const result = await controller.register(dto);
+      const result = await controller.register(dto, res);
       expect(authService.register).toHaveBeenCalledWith(dto);
       expect(emailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(1);
-      expect(result).toBe(expected);
+      expect(result).toEqual({ user: { id: 1 }, accessToken: 'token' });
+      expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'rt', {
+        ...COOKIE_OPTIONS,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
     });
   });
 
   describe('login', () => {
-    it('delegates to authService.login', async () => {
+    it('moves the refresh token out of the body into an httpOnly cookie', async () => {
       const dto = { identifier: 'a@b.com', password: 'Pass123!@' };
-      const expected = { accessToken: 'token', refreshToken: 'rt' };
-      authService.login!.mockResolvedValue(expected as any);
+      authService.login!.mockResolvedValue({
+        user: { id: 1 },
+        accessToken: 'token',
+        refreshToken: 'rt',
+      });
+      const res = mockResponse();
 
-      const result = await controller.login(dto);
+      const result = await controller.login(dto, res);
       expect(authService.login).toHaveBeenCalledWith(dto);
-      expect(result).toBe(expected);
+      expect(result).toEqual({ user: { id: 1 }, accessToken: 'token' });
+      expect(result).not.toHaveProperty('refreshToken');
+      expect(res.cookie).toHaveBeenCalledWith(
+        COOKIE,
+        'rt',
+        expect.objectContaining({ httpOnly: true, sameSite: 'strict', path: '/api/auth' }),
+      );
+    });
+
+    it('marks the cookie Secure in production', async () => {
+      const previous = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        authService.login!.mockResolvedValue({
+          user: { id: 1 },
+          accessToken: 't',
+          refreshToken: 'rt',
+        });
+        const res = mockResponse();
+
+        await controller.login({ identifier: 'a', password: 'b' }, res);
+        expect(res.cookie).toHaveBeenCalledWith(
+          COOKIE,
+          'rt',
+          expect.objectContaining({ secure: true }),
+        );
+      } finally {
+        process.env.NODE_ENV = previous;
+      }
+    });
+
+    it('returns a two-factor challenge without setting a cookie', async () => {
+      const challenge = { twoFactorRequired: true, challengeToken: 'c', expiresInSeconds: 600 };
+      authService.login!.mockResolvedValue(challenge);
+      const res = mockResponse();
+
+      await expect(controller.login({ identifier: 'a', password: 'b' }, res)).resolves.toBe(
+        challenge,
+      );
+      expect(res.cookie).not.toHaveBeenCalled();
     });
   });
 
@@ -125,11 +189,17 @@ describe('AuthController', () => {
 
     it('verifies a login challenge through authService', async () => {
       const dto = { challengeToken: 'challenge-token', code: '123456' };
-      const expected = { accessToken: 'token', refreshToken: 'refresh', user: { id: 1 } };
-      authService.verifyTwoFactorLogin = jest.fn().mockResolvedValue(expected);
+      authService.verifyTwoFactorLogin = jest
+        .fn()
+        .mockResolvedValue({ accessToken: 'token', refreshToken: 'refresh', user: { id: 1 } });
+      const res = mockResponse();
 
-      await expect(controller.verifyTwoFactor(dto)).resolves.toBe(expected);
+      await expect(controller.verifyTwoFactor(dto, res)).resolves.toEqual({
+        accessToken: 'token',
+        user: { id: 1 },
+      });
       expect(authService.verifyTwoFactorLogin).toHaveBeenCalledWith(dto);
+      expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'refresh', expect.any(Object));
     });
 
     it('resends a public challenge', async () => {
@@ -173,47 +243,127 @@ describe('AuthController', () => {
   });
 
   describe('oauth', () => {
-    it('delegates to authService.oauthLogin', async () => {
-      const dto = { provider: 'google' as const, providerId: '123', email: 'a@b.com' };
-      const expected = { accessToken: 'token' };
-      authService.oauthLogin!.mockResolvedValue(expected as any);
+    it('delegates the Google credential and sets the refresh token cookie', async () => {
+      const dto = { provider: 'google' as const, credential: 'google-id-token' };
+      authService.oauthLogin!.mockResolvedValue({
+        accessToken: 'token',
+        refreshToken: 'rt',
+        user: { id: 1 },
+      });
+      const res = mockResponse();
 
-      const result = await controller.oauth(dto);
+      const result = await controller.oauth(dto, res);
       expect(authService.oauthLogin).toHaveBeenCalledWith(dto);
-      expect(result).toBe(expected);
+      expect(result).toEqual({ accessToken: 'token', user: { id: 1 } });
+      expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'rt', expect.any(Object));
+    });
+
+    it('sets no cookie when the credential is refused', async () => {
+      authService.oauthLogin!.mockRejectedValue(new ServiceUnavailableException());
+      const res = mockResponse();
+
+      await expect(
+        controller.oauth({ provider: 'google', credential: 'x' }, res),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
+      expect(res.cookie).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('sso', () => {
+    it('sets the refresh token cookie after the Keycloak exchange', async () => {
+      authService.keycloakLogin = jest
+        .fn()
+        .mockResolvedValue({ accessToken: 'token', refreshToken: 'rt', user: { id: 1 } });
+      const res = mockResponse();
+
+      await expect(controller.sso(res, 'keycloak-token')).resolves.toEqual({
+        accessToken: 'token',
+        user: { id: 1 },
+      });
+      expect(authService.keycloakLogin).toHaveBeenCalledWith('keycloak-token');
+      expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'rt', expect.any(Object));
     });
   });
 
   describe('refresh', () => {
-    it('delegates to authService.refreshToken', async () => {
-      const dto = { refreshToken: 'rt' };
-      const expected = { accessToken: 'new_token' };
-      authService.refreshToken!.mockResolvedValue(expected);
+    it('reads the cookie, rotates it, and returns only the access token', async () => {
+      authService.refreshToken!.mockResolvedValue({
+        accessToken: 'new_token',
+        refreshToken: 'new_rt',
+      });
+      const res = mockResponse();
 
-      const result = await controller.refresh(dto);
-      expect(authService.refreshToken).toHaveBeenCalledWith('rt');
-      expect(result).toBe(expected);
+      const result = await controller.refresh(
+        requestWithCookie(`theme=dark; ${COOKIE}=old_rt`),
+        res,
+        {},
+      );
+      expect(authService.refreshToken).toHaveBeenCalledWith('old_rt');
+      expect(result).toEqual({ accessToken: 'new_token' });
+      expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'new_rt', expect.any(Object));
+    });
+
+    it('prefers the cookie over a legacy body token', async () => {
+      authService.refreshToken!.mockResolvedValue({ accessToken: 'a', refreshToken: 'b' });
+
+      await controller.refresh(requestWithCookie(`${COOKIE}=cookie_rt`), mockResponse(), {
+        refreshToken: 'body_rt',
+      });
+      expect(authService.refreshToken).toHaveBeenCalledWith('cookie_rt');
+    });
+
+    it('exchanges a legacy body token for the cookie when no cookie is present', async () => {
+      authService.refreshToken!.mockResolvedValue({ accessToken: 'a', refreshToken: 'b' });
+      const res = mockResponse();
+
+      await controller.refresh(requestWithCookie(), res, { refreshToken: 'legacy_rt' });
+      expect(authService.refreshToken).toHaveBeenCalledWith('legacy_rt');
+      expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'b', expect.any(Object));
+    });
+
+    it('clears the cookie when the refresh token is rejected', async () => {
+      authService.refreshToken!.mockRejectedValue(new UnauthorizedException());
+      const res = mockResponse();
+
+      await expect(
+        controller.refresh(requestWithCookie(`${COOKIE}=reused`), res, {}),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+      expect(res.clearCookie).toHaveBeenCalledWith(COOKIE, COOKIE_OPTIONS);
+      expect(res.cookie).not.toHaveBeenCalled();
+    });
+
+    it('keeps the cookie after a transient failure', async () => {
+      authService.refreshToken!.mockRejectedValue(new Error('database unavailable'));
+      const res = mockResponse();
+
+      await expect(controller.refresh(requestWithCookie(`${COOKIE}=rt`), res, {})).rejects.toThrow(
+        'database unavailable',
+      );
+      expect(res.clearCookie).not.toHaveBeenCalled();
     });
   });
 
   describe('logout', () => {
-    it('delegates to authService.logout', async () => {
-      const dto = { refreshToken: 'rt' };
-      const expected = { success: true };
-      authService.logout!.mockResolvedValue(expected);
+    it('revokes the cookie token and clears the cookie', async () => {
+      authService.logout!.mockResolvedValue({ success: true });
+      const res = mockResponse();
 
-      const result = await controller.logout(dto);
+      const result = await controller.logout(requestWithCookie(`${COOKIE}=rt`), res);
       expect(authService.logout).toHaveBeenCalledWith('rt');
-      expect(result).toEqual(expected);
+      expect(res.clearCookie).toHaveBeenCalledWith(COOKIE, COOKIE_OPTIONS);
+      expect(result).toEqual({ success: true });
     });
   });
 
   describe('sessions', () => {
-    it('delegates session listing with the current refresh token header', async () => {
+    it('delegates session listing with the refresh token cookie', async () => {
       const expected = [{ id: 1, current: true }];
       authService.listSessions.mockResolvedValue(expected);
 
-      const result = await controller.listSessions(mockUser as any, 'rt');
+      const result = await controller.listSessions(
+        mockUser as any,
+        requestWithCookie(`${COOKIE}=rt`),
+      );
 
       expect(authService.listSessions).toHaveBeenCalledWith(1, 'rt');
       expect(result).toBe(expected);
@@ -223,7 +373,11 @@ describe('AuthController', () => {
       const expected = { success: true };
       authService.revokeSession.mockResolvedValue(expected);
 
-      const result = await controller.revokeSession(mockUser as any, 2, 'rt');
+      const result = await controller.revokeSession(
+        mockUser as any,
+        2,
+        requestWithCookie(`${COOKIE}=rt`),
+      );
 
       expect(authService.revokeSession).toHaveBeenCalledWith(1, 2, 'rt');
       expect(result).toBe(expected);
@@ -233,10 +387,21 @@ describe('AuthController', () => {
       const expected = { success: true };
       authService.revokeOtherSessions.mockResolvedValue(expected);
 
-      const result = await controller.revokeOtherSessions(mockUser as any, 'rt');
+      const result = await controller.revokeOtherSessions(
+        mockUser as any,
+        requestWithCookie(`${COOKIE}=rt`),
+      );
 
       expect(authService.revokeOtherSessions).toHaveBeenCalledWith(1, 'rt');
       expect(result).toBe(expected);
+    });
+
+    it('passes no token when the cookie is absent', async () => {
+      authService.listSessions.mockResolvedValue([]);
+
+      await controller.listSessions(mockUser as any, requestWithCookie('other=1'));
+
+      expect(authService.listSessions).toHaveBeenCalledWith(1, undefined);
     });
   });
 
@@ -315,9 +480,12 @@ describe('AuthController', () => {
       const expected = { success: true, message: 'Deleted' };
       authService.deleteAccount!.mockResolvedValue(expected);
 
-      const result = await controller.deleteAccount(mockUser as any, dto);
+      const res = mockResponse();
+
+      const result = await controller.deleteAccount(mockUser as any, dto, res);
       expect(authService.deleteAccount).toHaveBeenCalledWith(1, 'Pass123!@');
       expect(result).toBe(expected);
+      expect(res.clearCookie).toHaveBeenCalledWith(COOKIE, COOKIE_OPTIONS);
     });
   });
 });

@@ -16,7 +16,7 @@ import {
   User,
   UserFollow,
 } from '@/database/entities';
-import { SENSITIVE_CONFIG_KEYS } from './config.service';
+import { isExportableSettingKey } from './config.service';
 
 @Injectable()
 export class UserDataExportService {
@@ -77,7 +77,7 @@ export class UserDataExportService {
       : null;
 
     const safeSettings = settings
-      .filter((setting) => !SENSITIVE_CONFIG_KEYS.has(setting.key))
+      .filter((setting) => isExportableSettingKey(setting.key))
       .map((setting) => ({
         key: setting.key,
         value: setting.value,

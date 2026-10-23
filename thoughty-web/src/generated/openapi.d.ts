@@ -166,7 +166,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Authenticate with OAuth provider */
+        /** Sign in with a verified Google ID token */
         post: operations["AuthController_oauth"];
         delete?: never;
         options?: never;
@@ -200,7 +200,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Refresh access token */
+        /**
+         * Exchange the refresh token cookie for a new access token
+         * @description Each refresh token works once: it is replaced by a new one in the cookie, and reusing the old one fails.
+         */
         post: operations["AuthController_refresh"];
         delete?: never;
         options?: never;
@@ -217,7 +220,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Logout and invalidate refresh token */
+        /** Logout, revoke the refresh token, and clear its cookie */
         post: operations["AuthController_logout"];
         delete?: never;
         options?: never;
@@ -232,11 +235,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List active sessions for the current user */
+        /**
+         * List active sessions for the current user
+         * @description The session of the refresh token cookie is marked current.
+         */
         get: operations["AuthController_listSessions"];
         put?: never;
         post?: never;
-        /** Revoke all other active sessions */
+        /**
+         * Revoke all other active sessions
+         * @description The session of the refresh token cookie is kept.
+         */
         delete: operations["AuthController_revokeOtherSessions"];
         options?: never;
         head?: never;
@@ -253,7 +262,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Revoke one active session */
+        /**
+         * Revoke one active session
+         * @description The session of the refresh token cookie cannot be revoked here; use logout.
+         */
         delete: operations["AuthController_revokeSession"];
         options?: never;
         head?: never;
@@ -718,7 +730,10 @@ export interface paths {
         /** Get user configuration */
         get: operations["ConfigController_getConfig"];
         put?: never;
-        /** Update user configuration */
+        /**
+         * Update user configuration
+         * @description Saves the given preferences. Credentials, cloud connections, sync state, and export format have their own endpoints and cannot be set here.
+         */
         post: operations["ConfigController_updateConfig"];
         delete?: never;
         options?: never;
@@ -1925,14 +1940,13 @@ export interface components {
          *       "user": {
          *         "example": "example"
          *       },
-         *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-         *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+         *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
          *     }
          */
         AuthResponseDto: {
             user: Record<string, never>;
+            /** @description Short-lived access token; keep it in memory only. The refresh token is set as an httpOnly cookie scoped to /api/auth and never appears in a response body. */
             accessToken: string;
-            refreshToken: string;
         };
         /**
          * @example {
@@ -2030,10 +2044,7 @@ export interface components {
         /**
          * @example {
          *       "provider": "google",
-         *       "providerId": "123456789",
-         *       "email": "user@example.com",
-         *       "name": "John Doe",
-         *       "avatarUrl": "https://example.com/avatar.jpg"
+         *       "credential": "example"
          *     }
          */
         OAuthDto: {
@@ -2041,15 +2052,9 @@ export interface components {
              * @example google
              * @enum {string}
              */
-            provider: "google" | "facebook";
-            /** @example 123456789 */
-            providerId: string;
-            /** @example user@example.com */
-            email: string;
-            /** @example John Doe */
-            name?: string;
-            /** @example https://example.com/avatar.jpg */
-            avatarUrl?: string;
+            provider: "google";
+            /** @description The Google ID token (the `credential` from Google Identity Services), sent unmodified. The server verifies its signature, issuer, audience, and expiry and reads the identity from it; the email must be verified by Google. */
+            credential: string;
         };
         /**
          * @example {
@@ -2057,7 +2062,20 @@ export interface components {
          *     }
          */
         RefreshTokenDto: {
-            refreshToken: string;
+            /**
+             * @deprecated
+             * @description Transitional: a refresh token an older web client kept in browser storage, accepted only when no refresh token cookie is present and exchanged once for the cookie. Current clients send no body; the httpOnly refresh token cookie is used.
+             */
+            refreshToken?: string;
+        };
+        /**
+         * @example {
+         *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+         *     }
+         */
+        AccessTokenResponseDto: {
+            /** @description Short-lived access token; keep it in memory only */
+            accessToken: string;
         };
         /**
          * @example {
@@ -2827,6 +2845,123 @@ export interface components {
         DeleteAllResponseDto: {
             success: boolean;
             deletedCount: number;
+        };
+        /**
+         * @example {
+         *       "theme": "light",
+         *       "name": "Daily Journal",
+         *       "bio": "example",
+         *       "email": "user@example.com",
+         *       "birthday": "example",
+         *       "gender": "example",
+         *       "avatarUrl": "https://thoughty.example.com/callback",
+         *       "fontFamily": "system",
+         *       "fontSize": "example",
+         *       "fontColor": "#2A9D8F",
+         *       "highContrast": "true",
+         *       "ttsVoiceUri": "https://thoughty.example.com/callback",
+         *       "language": "en",
+         *       "entriesPerPage": "example",
+         *       "maxPinnedEntries": "example",
+         *       "defaultVisibility": "public",
+         *       "readDates": "true",
+         *       "openRouterModel": "example",
+         *       "openRouterTagModel": "reflection",
+         *       "openRouterWritingModel": "example",
+         *       "openRouterChatModel": "example",
+         *       "openRouterToneModel": "example",
+         *       "openRouterSummaryModel": "example",
+         *       "openRouterPromptModel": "example",
+         *       "openRouterBookModel": "example",
+         *       "autoTagMaxTags": "reflection",
+         *       "tagMetadata": "reflection",
+         *       "entryTemplates": "example",
+         *       "subscriptionPlan": "free",
+         *       "paymentMethodLabel": "example"
+         *     }
+         */
+        UpdateConfigDto: {
+            /**
+             * @description Color theme
+             * @enum {string}
+             */
+            theme?: "light" | "dark";
+            /** @description Display name */
+            name?: string;
+            /** @description Profile bio */
+            bio?: string;
+            /** @description Contact email shown on the profile */
+            email?: string;
+            /** @description Birthday as YYYY-MM-DD, or empty */
+            birthday?: string;
+            /** @description Gender */
+            gender?: string;
+            /** @description Profile picture as a base64 image data URL or an http(s) URL, or empty */
+            avatarUrl?: string;
+            /**
+             * @description Font family
+             * @enum {string}
+             */
+            fontFamily?: "system" | "serif" | "modern" | "mono";
+            /** @description Font size in pixels */
+            fontSize?: string;
+            /** @description Text color as #rrggbb, or empty for the theme default */
+            fontColor?: string;
+            /**
+             * @description High contrast mode
+             * @enum {string}
+             */
+            highContrast?: "true" | "false";
+            /** @description Text-to-speech voice URI, or empty for the default */
+            ttsVoiceUri?: string;
+            /**
+             * @description Interface language
+             * @enum {string}
+             */
+            language?: "en" | "fr";
+            /** @description Entries per page */
+            entriesPerPage?: string;
+            /** @description Maximum pinned entries */
+            maxPinnedEntries?: string;
+            /**
+             * @description Visibility of new entries
+             * @enum {string}
+             */
+            defaultVisibility?: "public" | "private";
+            /**
+             * @description Read entry dates aloud
+             * @enum {string}
+             */
+            readDates?: "true" | "false";
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterTagModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterWritingModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterChatModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterToneModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterSummaryModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterPromptModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterBookModel?: string;
+            /** @description Maximum tags suggested automatically (0 turns it off) */
+            autoTagMaxTags?: string;
+            /** @description Tag colors and descriptions as serialized JSON */
+            tagMetadata?: string;
+            /** @description Custom entry templates as serialized JSON */
+            entryTemplates?: string;
+            /**
+             * @description Subscription plan
+             * @enum {string}
+             */
+            subscriptionPlan?: "free" | "plus" | "pro";
+            /** @description Payment method label */
+            paymentMethodLabel?: string;
         };
         /**
          * @example {
@@ -5842,7 +5977,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description User registered successfully */
+            /** @description User registered and signed in. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth). */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -5853,8 +5988,7 @@ export interface operations {
                      *       "user": {
                      *         "example": "example"
                      *       },
-                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                     *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                      *     }
                      */
                     "application/json": components["schemas"]["AuthResponseDto"];
@@ -5896,7 +6030,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Login tokens, or an email-code challenge when two-factor authentication is enabled */
+            /** @description The session, or an email-code challenge when two-factor authentication is enabled. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth). */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5908,7 +6042,6 @@ export interface operations {
                      *         "example": "example"
                      *       },
                      *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                     *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
                      *       "twoFactorRequired": true,
                      *       "challengeToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
                      *       "expiresInSeconds": 600
@@ -5945,7 +6078,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Login completed */
+            /** @description Login completed. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth). */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -5956,8 +6089,7 @@ export interface operations {
                      *       "user": {
                      *         "example": "example"
                      *       },
-                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                     *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                      *     }
                      */
                     "application/json": components["schemas"]["AuthResponseDto"];
@@ -6136,17 +6268,14 @@ export interface operations {
                 /**
                  * @example {
                  *       "provider": "google",
-                 *       "providerId": "123456789",
-                 *       "email": "user@example.com",
-                 *       "name": "John Doe",
-                 *       "avatarUrl": "https://example.com/avatar.jpg"
+                 *       "credential": "example"
                  *     }
                  */
                 "application/json": components["schemas"]["OAuthDto"];
             };
         };
         responses: {
-            /** @description OAuth authentication successful */
+            /** @description Google sign-in successful. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth). */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6157,8 +6286,7 @@ export interface operations {
                      *       "user": {
                      *         "example": "example"
                      *       },
-                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                     *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                      *     }
                      */
                     "application/json": components["schemas"]["AuthResponseDto"];
@@ -6166,6 +6294,20 @@ export interface operations {
             };
             /** @description Missing required fields */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid Google credential or unverified email */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Google sign-in is not configured on this server */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6184,7 +6326,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description SSO authentication successful */
+            /** @description SSO authentication successful. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth). */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -6195,8 +6337,7 @@ export interface operations {
                      *       "user": {
                      *         "example": "example"
                      *       },
-                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
-                     *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                      *     }
                      */
                     "application/json": components["schemas"]["AuthResponseDto"];
@@ -6218,7 +6359,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 /**
                  * @example {
@@ -6229,14 +6370,21 @@ export interface operations {
             };
         };
         responses: {
-            /** @description New access token */
+            /** @description New access token. Sets the httpOnly `thoughty_refresh_token` refresh token cookie (path /api/auth). */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AccessTokenResponseDto"];
+                };
             };
-            /** @description Invalid or expired refresh token */
+            /** @description Missing, invalid, expired, or reused refresh token */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -6252,16 +6400,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                /**
-                 * @example {
-                 *       "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-                 *     }
-                 */
-                "application/json": components["schemas"]["RefreshTokenDto"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Logged out successfully */
             200: {
@@ -6275,11 +6414,7 @@ export interface operations {
     AuthController_listSessions: {
         parameters: {
             query?: never;
-            header: {
-                "x-refresh-token": string;
-                /** @description Current refresh token for marking this session */
-                "X-Refresh-Token"?: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -6316,11 +6451,7 @@ export interface operations {
     AuthController_revokeOtherSessions: {
         parameters: {
             query?: never;
-            header: {
-                "x-refresh-token": string;
-                /** @description Current refresh token to keep active */
-                "X-Refresh-Token": string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -6333,7 +6464,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Current refresh token missing */
+            /** @description Refresh token cookie missing */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -6345,11 +6476,7 @@ export interface operations {
     AuthController_revokeSession: {
         parameters: {
             query?: never;
-            header: {
-                "x-refresh-token": string;
-                /** @description Current refresh token to protect it from revocation */
-                "X-Refresh-Token"?: string;
-            };
+            header?: never;
             path: {
                 id: number;
             };
@@ -6579,7 +6706,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Account deleted */
+            /** @description Account deleted; the refresh token cookie is cleared */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7744,7 +7871,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description User configuration */
+            /** @description User preferences (the keys POST /api/config accepts), as text */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -7760,10 +7887,55 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "theme": "light",
+                 *       "name": "Daily Journal",
+                 *       "bio": "example",
+                 *       "email": "user@example.com",
+                 *       "birthday": "example",
+                 *       "gender": "example",
+                 *       "avatarUrl": "https://thoughty.example.com/callback",
+                 *       "fontFamily": "system",
+                 *       "fontSize": "example",
+                 *       "fontColor": "#2A9D8F",
+                 *       "highContrast": "true",
+                 *       "ttsVoiceUri": "https://thoughty.example.com/callback",
+                 *       "language": "en",
+                 *       "entriesPerPage": "example",
+                 *       "maxPinnedEntries": "example",
+                 *       "defaultVisibility": "public",
+                 *       "readDates": "true",
+                 *       "openRouterModel": "example",
+                 *       "openRouterTagModel": "reflection",
+                 *       "openRouterWritingModel": "example",
+                 *       "openRouterChatModel": "example",
+                 *       "openRouterToneModel": "example",
+                 *       "openRouterSummaryModel": "example",
+                 *       "openRouterPromptModel": "example",
+                 *       "openRouterBookModel": "example",
+                 *       "autoTagMaxTags": "reflection",
+                 *       "tagMetadata": "reflection",
+                 *       "entryTemplates": "example",
+                 *       "subscriptionPlan": "free",
+                 *       "paymentMethodLabel": "example"
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateConfigDto"];
+            };
+        };
         responses: {
             /** @description Configuration updated */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown or reserved setting, or an invalid value */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -9176,6 +9348,13 @@ export interface operations {
         responses: {
             /** @description File content */
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description File missing or not owned by the caller */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

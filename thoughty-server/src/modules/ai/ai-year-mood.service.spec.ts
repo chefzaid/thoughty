@@ -34,7 +34,8 @@ describe('AiYearMoodService', () => {
     });
     const request = JSON.parse(fetchMock.mock.calls[0][1].body as string);
     expect(fetchMock.mock.calls[0][1].headers.Authorization).toBe('Bearer sk-server');
-    expect(request.messages[1].content).toContain('Month 2025-01\n- 2025-01-04: Snow day with the kids.');
+    expect(request.messages[1].content).toContain('Month 2025-01\n<journal_entries>\n- 2025-01-04: Snow day with the kids.');
+    expect(request.messages[0].content).toContain('untrusted source material');
     expect(usageService.recordResponse).toHaveBeenCalledWith(4, 'server', 'openai/gpt-4o-mini', expect.any(Object));
   });
 

@@ -16,6 +16,7 @@ import {
   TwoFactorStatusResponseDto,
 } from '../dto';
 import { EmailService } from './email.service';
+import { getTwoFactorSecret } from '../auth-secrets';
 
 type TwoFactorPurpose = 'login' | 'enable';
 
@@ -32,10 +33,7 @@ export class TwoFactorService {
     private readonly configService: ConfigService,
     private readonly emailService: EmailService,
   ) {
-    this.challengeSecret = this.configService.get<string>(
-      'TWO_FACTOR_SECRET',
-      `${this.configService.get<string>('JWT_SECRET', 'your-secret-key-change-in-production')}:two-factor`,
-    );
+    this.challengeSecret = getTwoFactorSecret(this.configService);
   }
 
   private tokenHash(token: string): string {

@@ -153,6 +153,18 @@
 - [x] Rate limiting and prevent DDOS from too much data sent
 - [x] Content Security Policy hardening (replace unsafe-inline with nonces)
 - [x] Entries can only be created in or imported into diaries the writer owns (any other diary answers 404)
+- [x] Google sign-in verifies the Google ID token on the server (signature, issuer, audience, expiry, verified email) instead of trusting the email sent by the browser
+- [x] Refresh tokens stored only as hashes, rotated on every refresh, and kept in an httpOnly cookie; the access token stays in memory instead of `localStorage`
+- [x] Login answers deleted and password-less accounts like a wrong password; production refuses missing or example signing secrets
+- [x] Attachment files served only to their owner, with safe content types and SVG and text as sandboxed downloads
+- [x] Settings API returns and accepts only user preferences, never cloud tokens or sync state; the data download leaves tokens out
+- [x] Rate limits keyed on the real client IP behind the ingress (`TRUST_PROXY`)
+- [x] Strict Content Security Policy and HSTS on the web app
+- [x] Deleted accounts erased with all their data and files after 30 days
+- [x] Every AI prompt treats journal text as untrusted data
+- [ ] Remove the body refresh-token upgrade path once tokens issued before the cookie change have expired (7 days after the release that added it)
+- [ ] Registration still reveals whether an email or username is taken; move to a verify-first sign-up to close it
+- [ ] Production alerts: add the `thoughty-alerts` rules to the platform's Prometheus, which has no Prometheus Operator to load the PrometheusRule component
 
 ## Tests
 

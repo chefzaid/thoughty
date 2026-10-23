@@ -8,6 +8,7 @@ import { AuthController } from './auth.controller';
 import { AuthService, EmailService, EmailVerificationService, TwoFactorService } from './services';
 import { JwtStrategy } from './strategies';
 import { JwtAuthGuard } from './guards';
+import { getSigningSecret } from './auth-secrets';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { JwtAuthGuard } from './guards';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService): JwtModuleOptions => ({
-        secret: configService.get<string>('JWT_SECRET', 'your-secret-key-change-in-production'),
+        secret: getSigningSecret(configService, 'JWT_SECRET'),
         signOptions: {
           expiresIn: configService.get<string>(
             'JWT_EXPIRES_IN',

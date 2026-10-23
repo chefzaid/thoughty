@@ -5,6 +5,7 @@ import {
   resolveOpenRouterCredential,
   type ResolvedOpenRouterCredential,
 } from './openrouter-credential.util';
+import { UNTRUSTED_CONTENT_INSTRUCTION, untrustedBlock } from './untrusted-content';
 
 type OpenRouterResponse = {
   choices?: Array<{
@@ -107,20 +108,23 @@ export class AiBookComposerService {
     if (!credential) {
       throw new BadRequestException('OpenRouter API key is not configured');
     }
-    const source = this.buildFramingSource(usableEntries);
+    const title = untrustedBlock('chapter_title', chapterTitle);
+    const framing = AiBookComposerService.FRAMING_INPUT_BUDGET - `${title}\n\n${untrustedBlock('journal_entries', '')}`.length;
+    const source = untrustedBlock('journal_entries', this.buildFramingSource(usableEntries, framing));
     const content = await this.requestCompletion(userId, credential, model, 0.3, [
       {
         role: 'system',
         content: [
           "You are a book editor framing a chapter built from a person's journal entries.",
-          `The chapter is titled "${chapterTitle}".`,
+          'The chapter title is the <chapter_title> block and its entries are the <journal_entries> block of the user message.',
           'Write a concise introduction of 2-3 sentences that invites the reader into the chapter themes.',
           'Write a concise summary of 3-5 sentences that recaps the key ideas, changes, and conclusions.',
           'Stay strictly grounded in the supplied entries. Never invent facts, events, feelings, or conclusions.',
           'Return only a JSON object with string fields "introduction" and "summary". Do not use markdown.',
+          UNTRUSTED_CONTENT_INSTRUCTION,
         ].join(' '),
       },
-      { role: 'user', content: source },
+      { role: 'user', content: `${title}\n\n${source}` },
     ]);
 
     return this.parseChapterFraming(content);
@@ -162,16 +166,14 @@ export class AiBookComposerService {
     return batches;
   }
 
-  private buildFramingSource(entries: Array<{ date: string; content: string }>): string {
+  private buildFramingSource(entries: Array<{ date: string; content: string }>, budget: number): string {
     const source = entries.map((entry) => `[${entry.date}]\n${entry.content}`).join('\n\n---\n\n');
-    if (source.length <= AiBookComposerService.FRAMING_INPUT_BUDGET) {
+    if (source.length <= budget) {
       return source;
     }
 
     const omission = '\n\n[Middle of chapter omitted for length]\n\n';
-    const excerptLength = Math.floor(
-      (AiBookComposerService.FRAMING_INPUT_BUDGET - omission.length) / 2,
-    );
+    const excerptLength = Math.floor((budget - omission.length) / 2);
     return `${source.slice(0, excerptLength)}${omission}${source.slice(-excerptLength)}`;
   }
 
@@ -239,19 +241,23 @@ export class AiBookComposerService {
     mode: BookWeavingMode,
     previousEnding?: string,
   ): Promise<string> {
-    const entriesText = entries
-      .map((entry) => `[${entry.date}]\n${entry.content}`)
-      .join('\n\n---\n\n');
+    const entriesText = untrustedBlock(
+      'journal_entries',
+      entries.map((entry) => `[${entry.date}]\n${entry.content}`).join('\n\n---\n\n'),
+    );
+    const title = untrustedBlock('chapter_title', chapterTitle);
 
     const userContent = previousEnding
       ? [
-          'Continue the same chapter seamlessly. It must flow on from this previous ending (do not repeat it):',
-          `"...${previousEnding}"`,
+          title,
+          '',
+          'Continue the same chapter seamlessly. It must flow on from the previous ending in the <previous_ending> block (do not repeat it):',
+          untrustedBlock('previous_ending', `...${previousEnding}`),
           '',
           'Next entries to weave in:',
           entriesText,
         ].join('\n')
-      : entriesText;
+      : `${title}\n\n${entriesText}`;
 
     const modeInstruction = MODE_INSTRUCTIONS[mode] ?? MODE_INSTRUCTIONS.strict;
     return this.requestCompletion(userId, credential, model, modeInstruction.temperature, [
@@ -259,11 +265,12 @@ export class AiBookComposerService {
         role: 'system',
         content: [
           "You are a book editor turning a person's dated journal entries into a chapter of their book.",
-          `The entries share the theme "${chapterTitle}".`,
+          'The entries share the theme in the <chapter_title> block and are the <journal_entries> block of the user message.',
           'Weave them into flowing, readable prose: connect related thoughts, smooth the grammar, and order ideas naturally.',
           modeInstruction.instruction,
           "Write in the author's first-person voice and keep their tone.",
           'Return only the chapter text as plain paragraphs separated by blank lines, with no markdown, headings, bullet points, titles, or commentary.',
+          UNTRUSTED_CONTENT_INSTRUCTION,
         ].join(' '),
       },
       {

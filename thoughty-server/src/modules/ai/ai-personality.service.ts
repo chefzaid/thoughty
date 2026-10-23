@@ -8,6 +8,7 @@ import {
 } from './personality-analysis';
 import { AiUsageService } from './ai-usage.service';
 import { resolveOpenRouterCredential } from './openrouter-credential.util';
+import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
 
 interface OpenRouterResponse {
   choices?: Array<{ message?: { content?: string } }>;
@@ -57,6 +58,8 @@ export class AiPersonalityService {
                 'Return only JSON with a traits array and summary.',
                 'Each trait must contain label, score from 0 to 100, and one concise evidence sentence.',
                 'Return three to five distinct traits and write in the predominant language of the aggregate words and subjects.',
+                'The user message is JSON source material.',
+                UNTRUSTED_CONTENT_INSTRUCTION,
               ].join(' '),
             },
             {

@@ -1579,7 +1579,7 @@ export const translations: Translations = {
       "Thoughty stores account details, profile settings, diaries, entries, tags, attachments, the people you follow, your comments and likes, sync preferences, and subscription records needed to provide the service.",
     privacyControlTitle: "Your controls",
     privacyControlBody:
-      "You can edit or delete entries, download your user data, export journals in portable formats, change visibility, and delete your account from the app.",
+      "You can edit or delete entries, download your user data, export journals in portable formats, change visibility, and delete your account from the app. A deleted account and all its data are permanently removed within 30 days.",
     privacySecurityTitle: "Security and providers",
     privacySecurityBody:
       "Authentication, cloud sync, storage, payments, and AI features may rely on configured providers. Thoughty keeps those integrations limited to the feature you choose to use.",
@@ -1785,7 +1785,7 @@ export const translations: Translations = {
     deleteAccountDescription:
       "Permanently delete your account and all associated data",
     deleteAccountWarning:
-      "This action cannot be undone. All your data will be permanently deleted.",
+      "This action cannot be undone. You will be signed out right away, and your account, entries, attachments, and all other data will be permanently deleted within 30 days.",
     typeDeleteToConfirm: "Type DELETE to confirm",
     enterYourPassword: "Enter your password",
     confirmDelete: "Confirm Delete",
@@ -2670,7 +2670,7 @@ export const translations: Translations = {
       "Thoughty stocke les informations de compte, réglages de profil, journaux, entrées, tags, pièces jointes, personnes que vous suivez, vos commentaires et j'aime, préférences de synchronisation et éléments d’abonnement nécessaires au service.",
     privacyControlTitle: "Vos contrôles",
     privacyControlBody:
-      "Vous pouvez modifier ou supprimer des entrées, télécharger vos données, exporter vos journaux dans des formats portables, changer la visibilité et supprimer votre compte.",
+      "Vous pouvez modifier ou supprimer des entrées, télécharger vos données, exporter vos journaux dans des formats portables, changer la visibilité et supprimer votre compte. Un compte supprimé et toutes ses données sont effacés définitivement sous 30 jours.",
     privacySecurityTitle: "Sécurité et fournisseurs",
     privacySecurityBody:
       "L’authentification, la synchronisation cloud, le stockage, les paiements et les fonctions IA peuvent utiliser des fournisseurs configurés. Thoughty limite ces intégrations à la fonction choisie.",
@@ -2881,7 +2881,7 @@ export const translations: Translations = {
     deleteAccountDescription:
       "Supprimer définitivement votre compte et toutes les données associées",
     deleteAccountWarning:
-      "Cette action est irréversible. Toutes vos données seront supprimées définitivement.",
+      "Cette action est irréversible. Vous serez déconnecté immédiatement, et votre compte, vos entrées, vos pièces jointes et toutes vos autres données seront supprimés définitivement sous 30 jours.",
     typeDeleteToConfirm: "Tapez DELETE pour confirmer",
     enterYourPassword: "Entrez votre mot de passe",
     confirmDelete: "Confirmer la suppression",

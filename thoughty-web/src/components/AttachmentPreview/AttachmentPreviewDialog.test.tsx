@@ -54,7 +54,11 @@ describe('AttachmentPreviewDialog', () => {
       />,
     );
 
-    expect(screen.getByRole('link', { name: 'downloadAttachment' })).toHaveAttribute('href', '/api/attachments/file/uuid-guide.pdf');
+    const link = screen.getByRole('link', { name: 'downloadAttachment' });
+    expect(link).toHaveAttribute('href', '/api/attachments/file/uuid-guide.pdf');
+    // Downloads rather than opening the file as a page, so an SVG blob never runs in the app origin.
+    expect(link).toHaveAttribute('download', 'guide.pdf');
+    expect(link).not.toHaveAttribute('target');
   });
 
   it('calls onClose from the close button and cancel event', () => {

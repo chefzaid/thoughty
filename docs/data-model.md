@@ -43,11 +43,11 @@ Uniqueness rules worth knowing: diary names per user, one setting per key, one A
 
 ## Ownership and Deletion Rules
 
-Every table except `users` references a user, and those foreign keys cascade. Accounts are soft-deleted (`users.deleted_at`), so the user cascades run only when an operator hard-deletes a user row.
+Every table except `users` references a user, and those foreign keys cascade. Accounts are first soft-deleted (`users.deleted_at`). The worker hard-deletes the user row after `ACCOUNT_PURGE_AFTER_DAYS` (default 30), after removing the account's files from object storage, and the cascades remove the rest. A new table that references users must cascade too; `account-purge.integration.spec.ts` checks every foreign key to `users`.
 
 | Entity | Deletion behavior |
 |---|---|
-| `User` | Deleting an account sets `deleted_at` and removes refresh tokens. Deleted users cannot sign in, and their content leaves the feed, follows, comments, likes, and counts. |
+| `User` | Deleting an account sets `deleted_at` and removes refresh tokens. Deleted users cannot sign in, and their content leaves the feed, follows, comments, likes, and counts. The account and everything it owns or wrote is erased after the grace period. |
 | `Diary` | The default diary cannot be deleted. Deleting another first moves its entries, including those in the recycle bin, to the default diary. `entries.diary_id` is `ON DELETE SET NULL` as a safety net. |
 | `Entry` | Deleting moves it to the [recycle bin](#recycle-bin). Purging it hard-deletes the row, which cascades revisions, attachment rows, AI chat, comments, likes, and the memoir answer. |
 | `EntryRevision`, `AiChatHistory`, `EntryComment`, `EntryLike`, `CommentLike` | Deleted with their entry (or comment). Comments and likes also go with their author. A comment can be removed by its author or the entry owner. |

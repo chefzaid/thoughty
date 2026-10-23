@@ -1,4 +1,5 @@
 import { extractJsonCandidate } from '@/common/utils/json-content.util';
+import { UNTRUSTED_CONTENT_INSTRUCTION, untrustedBlock } from './untrusted-content';
 
 export interface YearMoodSampleEntry {
   date: string;
@@ -34,11 +35,16 @@ export const YEAR_MOOD_INSTRUCTIONS = [
   'summary is at most two short sentences on how the year moved, with no markdown.',
   'Ground every mood in the entries. Do not diagnose, label conditions, or give advice.',
   'Write moods and the summary in the predominant language of the entries.',
+  'Each month\'s entries are the <journal_entries> block after its "Month YYYY-MM" line.',
+  UNTRUSTED_CONTENT_INSTRUCTION,
 ].join(' ');
 
 export function buildYearMoodPrompt(samples: YearMoodSample[]): string {
   return samples
-    .map((sample) => [`Month ${sample.month}`, ...sample.entries.map((entry) => `- ${entry.date}: ${entry.text}`)].join('\n'))
+    .map((sample) => [
+      `Month ${sample.month}`,
+      untrustedBlock('journal_entries', sample.entries.map((entry) => `- ${entry.date}: ${entry.text}`).join('\n')),
+    ].join('\n'))
     .join('\n\n');
 }
 

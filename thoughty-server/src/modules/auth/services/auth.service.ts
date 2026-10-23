@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -29,6 +30,9 @@ import {
 } from '../dto';
 import { assertHumanAuthAttempt } from './auth-bot-protection';
 import { TwoFactorService } from './two-factor.service';
+import { JwksKeyStore } from './jwks-key-store';
+import { getSigningSecret } from '../auth-secrets';
+import { REFRESH_TOKEN_TTL_MS } from '../refresh-token-cookie';
 
 interface KeycloakTokenClaims {
   sub?: string;
@@ -37,9 +41,39 @@ interface KeycloakTokenClaims {
   preferred_username?: string;
 }
 
-interface KeycloakJwk extends crypto.JsonWebKey {
-  kid?: string;
-  use?: string;
+interface GoogleIdTokenClaims {
+  sub?: string;
+  email?: string;
+  email_verified?: boolean;
+  name?: string;
+  picture?: string;
+}
+
+/** A newly issued session; the controller moves `refreshToken` into an httpOnly cookie. */
+export interface IssuedSession extends AuthResponseDto {
+  refreshToken: string;
+}
+
+export interface RotatedTokens {
+  accessToken: string;
+  refreshToken: string;
+}
+
+const GOOGLE_ISSUERS: [string, string] = ['accounts.google.com', 'https://accounts.google.com'];
+const GOOGLE_JWKS_URI = 'https://www.googleapis.com/oauth2/v3/certs';
+const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
+const DELETED_ACCOUNT_MESSAGE =
+  'This account has been deleted. Please contact support if you believe this is a mistake.';
+/**
+ * A bcrypt hash (cost 12, like real password hashes) of a random throwaway password. It is
+ * compared when an account has no usable password hash, so unknown, deleted, and password-less
+ * accounts take as long to reject as a wrong password.
+ */
+const TIMING_EQUALIZER_HASH = '$2b$12$HlgReIVskPRRIFDGvS47oeqqKbNUqNQAzAUD8AR1l9NSG1SKXl7Mq';
+
+/** Refresh tokens are looked up by the SHA-256 hex of the token; the token is never stored. */
+export function hashRefreshToken(refreshToken: string): string {
+  return crypto.createHash('sha256').update(refreshToken).digest('hex');
 }
 
 @Injectable()
@@ -48,8 +82,9 @@ export class AuthService {
   private readonly refreshSecret: string;
   private readonly keycloakIssuer: string;
   private readonly keycloakAudience: string;
-  private readonly keycloakJwksUri: string;
-  private keycloakKeys: { expiresAt: number; keys: KeycloakJwk[] } | null = null;
+  private readonly keycloakKeys: JwksKeyStore;
+  private readonly googleKeys = new JwksKeyStore('Google', GOOGLE_JWKS_URI);
+  private readonly googleClientId: string;
 
   constructor(
     @InjectRepository(User)
@@ -63,22 +98,20 @@ export class AuthService {
     private readonly emailService: EmailService,
     private readonly twoFactorService: TwoFactorService,
   ) {
-    this.refreshSecret = this.configService.get<string>(
-      'REFRESH_SECRET',
-      'refresh-secret-change-in-production',
-    );
+    this.refreshSecret = getSigningSecret(this.configService, 'REFRESH_SECRET');
     this.keycloakIssuer = this.configService.get<string>(
       'KEYCLOAK_ISSUER',
       'https://keycloak.swirlit.dev/auth/realms/swirlit',
     );
-    this.keycloakAudience = this.configService.get<string>(
-      'KEYCLOAK_AUDIENCE',
-      'oauth2-proxy',
+    this.keycloakAudience = this.configService.get<string>('KEYCLOAK_AUDIENCE', 'oauth2-proxy');
+    this.keycloakKeys = new JwksKeyStore(
+      'Keycloak',
+      this.configService.get<string>(
+        'KEYCLOAK_JWKS_URI',
+        `${this.keycloakIssuer}/protocol/openid-connect/certs`,
+      ),
     );
-    this.keycloakJwksUri = this.configService.get<string>(
-      'KEYCLOAK_JWKS_URI',
-      `${this.keycloakIssuer}/protocol/openid-connect/certs`,
-    );
+    this.googleClientId = (this.configService.get<string>('GOOGLE_CLIENT_ID') ?? '').trim();
   }
 
   private generateAccessToken(user: { id: number; email: string; username: string }): string {
@@ -86,19 +119,20 @@ export class AuthService {
   }
 
   private generateRefreshToken(user: { id: number }): string {
+    // The random id keeps two tokens issued in the same second for one user distinct.
     return this.jwtService.sign(
-      { userId: user.id },
+      { userId: user.id, jti: crypto.randomUUID() },
       { secret: this.refreshSecret, expiresIn: '7d' },
     );
   }
 
-  private async createSession(user: User, isNewUser?: boolean): Promise<AuthResponseDto> {
+  private async createSession(user: User, isNewUser?: boolean): Promise<IssuedSession> {
     const accessToken = this.generateAccessToken(user);
     const refreshToken = this.generateRefreshToken(user);
     await this.refreshTokenRepository.save({
       userId: user.id,
-      token: refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      tokenHash: hashRefreshToken(refreshToken),
+      expiresAt: new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
     });
 
     return {
@@ -116,7 +150,7 @@ export class AuthService {
     };
   }
 
-  async register(dto: RegisterDto): Promise<AuthResponseDto> {
+  async register(dto: RegisterDto): Promise<IssuedSession> {
     assertHumanAuthAttempt(dto.website);
 
     const sanitizedUsername = dto.username
@@ -169,7 +203,7 @@ export class AuthService {
     return this.createSession(user);
   }
 
-  async login(dto: LoginDto): Promise<AuthResponseDto | TwoFactorChallengeResponseDto> {
+  async login(dto: LoginDto): Promise<IssuedSession | TwoFactorChallengeResponseDto> {
     assertHumanAuthAttempt(dto.website);
 
     const identifier = sanitizeString(dto.identifier.trim()).toLowerCase();
@@ -182,25 +216,12 @@ export class AuthService {
       })
       .getOne();
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
-
-    if (user.deletedAt) {
-      throw new ForbiddenException(
-        'This account has been deleted. Please contact support if you believe this is a mistake.',
-      );
-    }
-
-    if (user.authProvider !== 'local' && !user.passwordHash) {
-      throw new UnauthorizedException(
-        `This account uses ${user.authProvider} login. Please sign in with ${user.authProvider}.`,
-      );
-    }
-
-    const validPassword = await bcrypt.compare(dto.password, user.passwordHash || '');
-    if (!validPassword) {
-      throw new UnauthorizedException('Invalid email or password');
+    // Unknown, deleted, and password-less accounts are rejected exactly like a wrong password,
+    // after the same bcrypt work, so the response does not reveal which accounts exist.
+    const usableHash = user && !user.deletedAt && user.passwordHash ? user.passwordHash : null;
+    const validPassword = await bcrypt.compare(dto.password, usableHash ?? TIMING_EQUALIZER_HASH);
+    if (!user || !usableHash || !validPassword) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
     }
 
     if (user.twoFactorEnabled) {
@@ -210,52 +231,50 @@ export class AuthService {
     return this.createSession(user);
   }
 
-  async verifyTwoFactorLogin(dto: TwoFactorCodeDto): Promise<AuthResponseDto> {
+  async verifyTwoFactorLogin(dto: TwoFactorCodeDto): Promise<IssuedSession> {
     return this.createSession(await this.twoFactorService.consumeLogin(dto));
   }
 
-  async oauthLogin(dto: OAuthDto): Promise<AuthResponseDto> {
+  async oauthLogin(dto: OAuthDto): Promise<IssuedSession> {
+    const identity = await this.verifyGoogleCredential(dto.credential);
+
     let user = await this.userRepository.findOne({
-      where: { authProvider: dto.provider, providerId: dto.providerId },
+      where: { authProvider: 'google', providerId: identity.sub },
     });
 
     let isNewUser = false;
 
     if (user) {
       if (user.deletedAt) {
-        throw new ForbiddenException(
-          'This account has been deleted. Please contact support if you believe this is a mistake.',
-        );
+        throw new ForbiddenException(DELETED_ACCOUNT_MESSAGE);
       }
     } else {
-      // Check if email exists with different auth method
+      // Google verified this address, so an account registered with it is linked
       const existingUser = await this.userRepository.findOne({
-        where: { email: dto.email.toLowerCase() },
+        where: { email: identity.email },
       });
 
       if (existingUser) {
         if (existingUser.deletedAt) {
-          throw new ForbiddenException(
-            'This account has been deleted. Please contact support if you believe this is a mistake.',
-          );
+          throw new ForbiddenException(DELETED_ACCOUNT_MESSAGE);
         }
 
-        // Link OAuth to existing account
-        existingUser.authProvider = dto.provider;
-        existingUser.providerId = dto.providerId;
-        existingUser.avatarUrl = dto.avatarUrl || existingUser.avatarUrl;
+        existingUser.authProvider = 'google';
+        existingUser.providerId = identity.sub;
+        existingUser.avatarUrl = identity.picture || existingUser.avatarUrl;
         existingUser.emailVerified = true;
         user = await this.userRepository.save(existingUser);
       } else {
         // Create new user
         isNewUser = true;
-        const username = dto.name || dto.email.split('@')[0];
+        const emailName = identity.email.split('@')[0].substring(0, 50);
+        const username = sanitizeString((identity.name || '').trim()).substring(0, 50);
         user = await this.userRepository.save({
-          username,
-          email: dto.email.toLowerCase(),
-          authProvider: dto.provider,
-          providerId: dto.providerId,
-          avatarUrl: dto.avatarUrl,
+          username: username || emailName,
+          email: identity.email,
+          authProvider: 'google',
+          providerId: identity.sub,
+          avatarUrl: identity.picture,
           emailVerified: true,
         });
 
@@ -274,30 +293,88 @@ export class AuthService {
     return this.createSession(user, isNewUser);
   }
 
-  async keycloakLogin(accessToken?: string): Promise<AuthResponseDto> {
+  /**
+   * Verifies a Google Identity Services credential (an ID token): its RS256 signature against
+   * Google's published keys, issuer, audience (this server's Google client ID), and expiry. The
+   * identity is taken only from the verified claims, and only a Google-verified email is accepted.
+   */
+  private async verifyGoogleCredential(
+    credential: string,
+  ): Promise<{ sub: string; email: string; name?: string; picture?: string }> {
+    if (!this.googleClientId) {
+      throw new ServiceUnavailableException('Google sign-in is not configured on this server');
+    }
+
+    let claims: GoogleIdTokenClaims;
+    try {
+      claims = await this.verifyRs256Token<GoogleIdTokenClaims>(credential, this.googleKeys, {
+        issuer: GOOGLE_ISSUERS,
+        audience: this.googleClientId,
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Rejected Google credential: ${error instanceof Error ? error.message : 'verification failed'}`,
+      );
+      throw new UnauthorizedException('Invalid Google credential');
+    }
+
+    const sub = typeof claims.sub === 'string' ? claims.sub : '';
+    const email = typeof claims.email === 'string' ? claims.email.trim().toLowerCase() : '';
+    if (!sub || !email || claims.email_verified !== true) {
+      throw new UnauthorizedException('Google account email is missing or unverified');
+    }
+
+    return {
+      sub,
+      email,
+      name: typeof claims.name === 'string' ? claims.name : undefined,
+      picture: typeof claims.picture === 'string' ? claims.picture : undefined,
+    };
+  }
+
+  /** Verifies an RS256 JWT signed with a key from `keys`; throws on any failure. */
+  private async verifyRs256Token<T extends object>(
+    token: string,
+    keys: JwksKeyStore,
+    options: { issuer: string | [string, ...string[]]; audience: string },
+  ): Promise<T> {
+    const keyId = this.readKeyId(token);
+    if (!keyId) {
+      throw new Error('Token has no signing key id');
+    }
+    const publicKey = await keys.getPublicKeyPem(keyId);
+    return this.jwtService.verifyAsync<T>(token, {
+      // JwtService prefers its module-level HMAC secret over an invocation-level
+      // `publicKey`. Supplying this verification key as `secret` explicitly
+      // overrides that default while jsonwebtoken still validates it as an
+      // asymmetric public key for RS256.
+      secret: publicKey,
+      algorithms: ['RS256'],
+      issuer: options.issuer,
+      audience: options.audience,
+    });
+  }
+
+  private readKeyId(token: string): string | undefined {
+    const decoded = this.jwtService.decode<{ header?: { kid?: unknown } } | null>(token, {
+      complete: true,
+    });
+    const keyId = decoded?.header?.kid;
+    return typeof keyId === 'string' && keyId ? keyId : undefined;
+  }
+
+  async keycloakLogin(accessToken?: string): Promise<IssuedSession> {
     if (!accessToken) {
       throw new UnauthorizedException('Keycloak access token is missing');
     }
 
-    const decoded = this.jwtService.decode(accessToken, { complete: true });
-    const keyId = decoded?.header.kid;
-    if (!keyId) {
+    if (!this.readKeyId(accessToken)) {
       throw new UnauthorizedException('Keycloak access token has no signing key');
     }
 
     let claims: KeycloakTokenClaims;
     try {
-      const signingKey = await this.getKeycloakSigningKey(keyId);
-      const publicKey = crypto
-        .createPublicKey({ key: signingKey, format: 'jwk' })
-        .export({ type: 'spki', format: 'pem' });
-      claims = await this.jwtService.verifyAsync<KeycloakTokenClaims>(accessToken, {
-        // JwtService prefers its module-level HMAC secret over an invocation-level
-        // `publicKey`. Supplying this verification key as `secret` explicitly
-        // overrides that default while jsonwebtoken still validates it as an
-        // asymmetric public key for RS256.
-        secret: publicKey,
-        algorithms: ['RS256'],
+      claims = await this.verifyRs256Token<KeycloakTokenClaims>(accessToken, this.keycloakKeys, {
         issuer: this.keycloakIssuer,
         audience: this.keycloakAudience,
       });
@@ -323,9 +400,7 @@ export class AuthService {
 
     user ??= await this.userRepository.findOne({ where: { email } });
     if (user?.deletedAt) {
-      throw new ForbiddenException(
-        'This account has been deleted. Please contact support if you believe this is a mistake.',
-      );
+      throw new ForbiddenException(DELETED_ACCOUNT_MESSAGE);
     }
 
     if (user) {
@@ -355,72 +430,50 @@ export class AuthService {
     return this.createSession(user, isNewUser);
   }
 
-  private async getKeycloakSigningKey(keyId: string): Promise<KeycloakJwk> {
-    if (!this.keycloakKeys || this.keycloakKeys.expiresAt <= Date.now()) {
-      await this.refreshKeycloakKeys();
+  /**
+   * Rotates a refresh token. The presented token's row is deleted and returned in one statement,
+   * so each token works once: a replayed or concurrently reused token finds no row. A new access
+   * token and refresh token are issued in its place.
+   */
+  async refreshToken(refreshToken?: string): Promise<RotatedTokens> {
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is missing');
     }
-    let signingKey = this.keycloakKeys?.keys.find(
-      (key) => key.kid === keyId && (key.use === undefined || key.use === 'sig'),
-    );
-    if (!signingKey) {
-      await this.refreshKeycloakKeys();
-      signingKey = this.keycloakKeys?.keys.find(
-        (key) => key.kid === keyId && (key.use === undefined || key.use === 'sig'),
-      );
-    }
-    if (!signingKey) {
-      throw new Error('Keycloak signing key is unavailable');
-    }
-    return signingKey;
-  }
 
-  private async refreshKeycloakKeys(): Promise<void> {
-    const response = await fetch(this.keycloakJwksUri, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (!response.ok) {
-      throw new Error(`Keycloak JWKS request failed with ${response.status}`);
-    }
-    const body = (await response.json()) as { keys?: KeycloakJwk[] };
-    if (!Array.isArray(body.keys) || body.keys.length === 0) {
-      throw new Error('Keycloak JWKS response has no keys');
-    }
-    this.keycloakKeys = {
-      keys: body.keys,
-      expiresAt: Date.now() + 5 * 60 * 1_000,
-    };
-  }
-
-  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
     try {
       this.jwtService.verify(refreshToken, { secret: this.refreshSecret });
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const tokenRecord = await this.refreshTokenRepository.findOne({
-      where: { token: refreshToken, expiresAt: MoreThan(new Date()) },
-      relations: ['user'],
-    });
+    const claimed = await this.refreshTokenRepository
+      .createQueryBuilder()
+      .delete()
+      .where('token_hash = :tokenHash', { tokenHash: hashRefreshToken(refreshToken) })
+      .andWhere('expires_at > :now', { now: new Date() })
+      .returning('user_id')
+      .execute();
+    const userId = (claimed.raw as Array<{ user_id?: number }> | undefined)?.[0]?.user_id;
 
-    if (!tokenRecord) {
+    if (!userId) {
       throw new UnauthorizedException('Refresh token expired or revoked');
     }
 
-    if (tokenRecord.user.deletedAt) {
-      await this.refreshTokenRepository.delete({ token: refreshToken });
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('Refresh token expired or revoked');
+    }
+    if (user.deletedAt) {
       throw new ForbiddenException('This account has been deleted.');
     }
 
-    const accessToken = this.generateAccessToken(tokenRecord.user);
-
-    return { accessToken };
+    const { accessToken, refreshToken: rotatedRefreshToken } = await this.createSession(user);
+    return { accessToken, refreshToken: rotatedRefreshToken };
   }
 
   async logout(refreshToken?: string): Promise<{ success: boolean }> {
     if (refreshToken) {
-      await this.refreshTokenRepository.delete({ token: refreshToken });
+      await this.refreshTokenRepository.delete({ tokenHash: hashRefreshToken(refreshToken) });
     }
     return { success: true };
   }
@@ -430,10 +483,11 @@ export class AuthService {
       where: { userId, expiresAt: MoreThan(new Date()) },
       order: { createdAt: 'DESC' },
     });
+    const currentTokenHash = currentRefreshToken ? hashRefreshToken(currentRefreshToken) : null;
 
     return sessions.map((session) => ({
       id: session.id,
-      current: Boolean(currentRefreshToken && session.token === currentRefreshToken),
+      current: session.tokenHash === currentTokenHash,
       createdAt: session.createdAt,
       expiresAt: session.expiresAt,
     }));
@@ -452,7 +506,7 @@ export class AuthService {
       throw new NotFoundException('Session not found');
     }
 
-    if (currentRefreshToken && session.token === currentRefreshToken) {
+    if (currentRefreshToken && session.tokenHash === hashRefreshToken(currentRefreshToken)) {
       throw new BadRequestException('Use logout to end the current session');
     }
 
@@ -472,7 +526,9 @@ export class AuthService {
       .createQueryBuilder()
       .delete()
       .where('user_id = :userId', { userId })
-      .andWhere('token <> :currentRefreshToken', { currentRefreshToken })
+      .andWhere('token_hash <> :currentTokenHash', {
+        currentTokenHash: hashRefreshToken(currentRefreshToken),
+      })
       .execute();
 
     return { success: true };
@@ -535,7 +591,7 @@ export class AuthService {
     // Always return success to prevent email enumeration
     const successMessage = 'If an account exists with this email, a reset link will be sent.';
 
-    if (user?.authProvider !== 'local') {
+    if (user?.authProvider !== 'local' || user.deletedAt) {
       return { success: true, message: successMessage };
     }
 
@@ -551,15 +607,15 @@ export class AuthService {
     const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:5173');
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
 
-    try {
-      await this.emailService.sendPasswordResetEmail(user.email, resetUrl);
-    } catch (error) {
+    // Not awaited: waiting on the mail server would make existing accounts answer measurably
+    // slower than unknown addresses.
+    void this.emailService.sendPasswordResetEmail(user.email, resetUrl).catch((error: unknown) => {
       this.logger.warn('Password reset email not sent', {
         errorName: error instanceof Error ? error.name : 'UnknownError',
         errorMessage: error instanceof Error ? error.message : 'Unknown email provider error',
         userId: user.id,
       });
-    }
+    });
 
     return { success: true, message: successMessage };
   }

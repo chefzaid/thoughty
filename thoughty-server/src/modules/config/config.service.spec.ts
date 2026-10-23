@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConfigService } from './config.service';
 import { Setting } from '@/database/entities';
@@ -78,7 +79,7 @@ describe('ConfigService', () => {
         { key: 'highContrast', value: 'true' },
         { key: 'entriesPerPage', value: '20' },
         { key: 'defaultVisibility', value: 'public' },
-        { key: 'language', value: 'es' },
+        { key: 'language', value: 'fr' },
         { key: 'autoTagMaxTags', value: '4' },
       ]);
 
@@ -93,20 +94,46 @@ describe('ConfigService', () => {
         entriesPerPage: '20',
         maxPinnedEntries: '3',
         defaultVisibility: 'public',
-        language: 'es',
+        language: 'fr',
         autoTagMaxTags: '4',
         subscriptionPlan: 'free',
         paymentMethodLabel: '',
       });
     });
 
-    it('should handle custom settings not in defaults', async () => {
-      settingRepository.find.mockResolvedValue([{ key: 'customSetting', value: 'customValue' }]);
+    it('returns only user preferences, never cloud tokens, sync state, or unknown keys', async () => {
+      settingRepository.find.mockResolvedValue([
+        { key: 'theme', value: 'light' },
+        { key: 'tagMetadata', value: '{"work":{"color":"#ff0000"}}' },
+        { key: 'customSetting', value: 'customValue' },
+        { key: 'cloud_google_drive_access_token', value: 'iv:tag:ciphertext' },
+        { key: 'cloud_google_drive_refresh_token', value: 'iv:tag:ciphertext' },
+        { key: 'cloud_dropbox_last_sync_hash', value: 'abc' },
+        { key: 'cloud_onedrive_sync_enabled', value: 'true' },
+        { key: 'io_dateFormat', value: 'YYYY-MM-DD' },
+      ]);
 
       const result = await service.getConfig(1);
 
-      expect(result.customSetting).toBe('customValue');
-      expect(result.theme).toBe('dark'); // default still present
+      expect(result.theme).toBe('light');
+      expect(result.tagMetadata).toBe('{"work":{"color":"#ff0000"}}');
+      expect(Object.keys(result).filter((key) => /^(cloud_|io_|custom)/.test(key))).toEqual([]);
+    });
+
+    it('falls back to defaults for stored values the preferences form would refuse', async () => {
+      settingRepository.find.mockResolvedValue([
+        { key: 'theme', value: 'purple' },
+        { key: 'language', value: 'es' },
+        { key: 'fontColor', value: 'red' },
+        { key: 'name', value: 'Kept' },
+      ]);
+
+      const result = await service.getConfig(1);
+
+      expect(result.theme).toBe('dark');
+      expect(result.language).toBe('en');
+      expect(result.fontColor).toBeUndefined();
+      expect(result.name).toBe('Kept');
     });
 
     it('never exposes encrypted credentials in general configuration', async () => {
@@ -168,17 +195,20 @@ describe('ConfigService', () => {
       expect(settingRepository.upsert).not.toHaveBeenCalled();
     });
 
-    it('ignores attempts to write credentials through the general config endpoint', async () => {
-      await service.updateConfig(1, {
-        theme: 'light',
-        openRouterApiKey: 'plaintext-secret',
-      });
+    it.each(['openRouterApiKey', 'cloud_google_drive_access_token', 'io_dateFormat', 'customSetting'])(
+      'refuses to write the reserved or unknown setting %s and writes nothing',
+      async (key) => {
+        await expect(
+          service.updateConfig(1, { theme: 'light', [key]: 'value' } as never),
+        ).rejects.toThrow(BadRequestException);
+        expect(settingRepository.upsert).not.toHaveBeenCalled();
+      },
+    );
+
+    it('skips preferences left undefined', async () => {
+      await service.updateConfig(1, { theme: 'light', name: undefined });
 
       expect(settingRepository.upsert).toHaveBeenCalledTimes(1);
-      expect(settingRepository.upsert).toHaveBeenCalledWith(
-        { userId: 1, key: 'theme', value: 'light' },
-        ['userId', 'key'],
-      );
     });
   });
 

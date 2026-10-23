@@ -42,7 +42,6 @@ describe('ActiveSessionsSection', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    localStorage.setItem('refreshToken', 'current-refresh-token');
     authFetch.mockResolvedValue(createJsonResponse(sessions));
     mockedUseAuth.mockReturnValue({
       authFetch,
@@ -54,9 +53,8 @@ describe('ActiveSessionsSection', () => {
 
     expect(await screen.findByText('currentSession')).toBeInTheDocument();
     expect(screen.getByText('sessionNumber 2')).toBeInTheDocument();
-    expect(authFetch).toHaveBeenCalledWith('/api/auth/sessions', {
-      headers: { 'X-Refresh-Token': 'current-refresh-token' },
-    });
+    // The refresh token is an httpOnly cookie the browser sends; the page never reads it
+    expect(authFetch).toHaveBeenCalledWith('/api/auth/sessions');
   });
 
   it('disables revocation for the current session', async () => {
@@ -84,7 +82,6 @@ describe('ActiveSessionsSection', () => {
     await waitFor(() => {
       expect(authFetch).toHaveBeenCalledWith('/api/auth/sessions/2', {
         method: 'DELETE',
-        headers: { 'X-Refresh-Token': 'current-refresh-token' },
       });
     });
     expect(await screen.findByText('sessionRevoked')).toBeInTheDocument();
@@ -105,7 +102,6 @@ describe('ActiveSessionsSection', () => {
     await waitFor(() => {
       expect(authFetch).toHaveBeenCalledWith('/api/auth/sessions', {
         method: 'DELETE',
-        headers: { 'X-Refresh-Token': 'current-refresh-token' },
       });
     });
     expect(await screen.findByText('otherSessionsRevoked')).toBeInTheDocument();

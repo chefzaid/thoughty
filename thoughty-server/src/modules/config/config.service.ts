@@ -1,11 +1,26 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto';
+import { plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
 import { Setting } from '@/database/entities';
+import { UpdateConfigDto, USER_CONFIG_KEYS } from './dto/config.dto';
 
 export const OPENROUTER_API_KEY_SETTING = 'openRouterApiKey';
 export const SENSITIVE_CONFIG_KEYS = new Set([OPENROUTER_API_KEY_SETTING]);
+
+/**
+ * Cloud sync settings a personal data export may list: whether and when a provider was connected
+ * and how syncing is set up. Its tokens, token expiry, and last content hash never leave the server.
+ */
+const EXPORTABLE_CLOUD_SETTING =
+  /^cloud_(google_drive|onedrive|dropbox)_(connected_at|sync_enabled|sync_frequency|sync_format|sync_diary_id|sync_include_visibility|last_sync_at)$/;
+
+/** Settings a personal data export includes: preferences, export format, and cloud sync setup. */
+export function isExportableSettingKey(key: string): boolean {
+  return USER_CONFIG_KEYS.has(key) || key.startsWith('io_') || EXPORTABLE_CLOUD_SETTING.test(key);
+}
 
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
 
@@ -46,10 +61,21 @@ export class ConfigService {
       where: { userId },
     });
 
-    const config = { ...DEFAULT_SETTINGS };
+    const config: Record<string, string> = { ...DEFAULT_SETTINGS };
     for (const setting of settings) {
-      if (SENSITIVE_CONFIG_KEYS.has(setting.key)) continue;
+      // Credentials, cloud tokens, and sync state are internal; only preferences are returned
+      if (!USER_CONFIG_KEYS.has(setting.key)) continue;
       config[setting.key] = setting.value;
+    }
+
+    // A value stored before preferences were validated falls back to its default, so the web
+    // can always send the configuration it was given back unchanged.
+    for (const error of validateSync(plainToInstance(UpdateConfigDto, config))) {
+      if (error.property in DEFAULT_SETTINGS) {
+        config[error.property] = DEFAULT_SETTINGS[error.property];
+      } else {
+        delete config[error.property];
+      }
     }
 
     return config;
@@ -77,12 +103,14 @@ export class ConfigService {
     await this.settingRepository.delete({ userId, key });
   }
 
-  async updateConfig(
-    userId: number,
-    newConfig: Record<string, string>,
-  ): Promise<{ success: boolean }> {
-    for (const [key, value] of Object.entries(newConfig)) {
-      if (SENSITIVE_CONFIG_KEYS.has(key)) continue;
+  async updateConfig(userId: number, newConfig: UpdateConfigDto): Promise<{ success: boolean }> {
+    const entries = Object.entries(newConfig).filter(([, value]) => value !== undefined);
+    const reserved = entries.map(([key]) => key).filter((key) => !USER_CONFIG_KEYS.has(key));
+    if (reserved.length > 0) {
+      throw new BadRequestException(`Settings cannot be changed here: ${reserved.join(', ')}`);
+    }
+
+    for (const [key, value] of entries) {
       await this.settingRepository.upsert(
         {
           userId,

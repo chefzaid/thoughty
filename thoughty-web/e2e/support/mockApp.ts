@@ -5,17 +5,8 @@ import { createMockAppState, type SetupMockAppOptions } from './mockApp.shared';
 export async function setupMockApp(page: Page, options: SetupMockAppOptions = {}) {
   const state = createMockAppState(options);
 
-  await page.addInitScript((authenticated: boolean) => {
-    if (authenticated) {
-      localStorage.setItem('accessToken', 'test-access-token');
-      localStorage.setItem('refreshToken', 'test-refresh-token');
-      return;
-    }
-
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-  }, state.authenticated);
-
+  // No tokens are seeded in the page: like the real httpOnly refresh cookie, the mock API's
+  // `state.authenticated` decides whether POST /api/auth/refresh returns an access token.
   await registerMockAppRoutes(page, state);
 
   return {

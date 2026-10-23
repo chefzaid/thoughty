@@ -15,8 +15,6 @@ interface ActiveSessionsSectionProps {
   t: TranslationFunction;
 }
 
-const getRefreshToken = (): string => localStorage.getItem('refreshToken') ?? '';
-
 function formatSessionDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -27,11 +25,6 @@ function formatSessionDate(value: string): string {
     dateStyle: 'medium',
     timeStyle: 'short',
   }).format(date);
-}
-
-function buildRefreshTokenHeaders(): HeadersInit {
-  const refreshToken = getRefreshToken();
-  return refreshToken ? { 'X-Refresh-Token': refreshToken } : {};
 }
 
 function ActiveSessionsSection({ isDark, t }: Readonly<ActiveSessionsSectionProps>) {
@@ -45,9 +38,8 @@ function ActiveSessionsSection({ isDark, t }: Readonly<ActiveSessionsSectionProp
   const loadSessions = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await authFetch('/api/auth/sessions', {
-        headers: buildRefreshTokenHeaders(),
-      });
+      // The server marks the current session from the httpOnly refresh token cookie.
+      const response = await authFetch('/api/auth/sessions');
       const data = await safeJsonParse<ActiveSession[]>(response);
       if (!response.ok || !Array.isArray(data)) {
         throw new Error('Unexpected sessions response');
@@ -70,7 +62,7 @@ function ActiveSessionsSection({ isDark, t }: Readonly<ActiveSessionsSectionProp
     setBusySessionId(target);
     try {
       const url = target === 'others' ? '/api/auth/sessions' : `/api/auth/sessions/${target}`;
-      const response = await authFetch(url, { method: 'DELETE', headers: buildRefreshTokenHeaders() });
+      const response = await authFetch(url, { method: 'DELETE' });
       if (!response.ok) {
         throw new Error('Session revocation failed');
       }

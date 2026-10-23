@@ -120,7 +120,14 @@ describePostgres('PostgreSQL entry moods', () => {
   it('rolls back to entries without moods and applies again', async () => {
     await write({ mood: 3, feelings: ['calm'] });
 
-    await dataSource.undoLastMigration({ transaction: 'all' });
+    // Later migrations are undone first, down to the one that added moods
+    const executed = (await dataSource.query('SELECT name FROM migrations ORDER BY id DESC')) as Array<{
+      name: string;
+    }>;
+    for (const { name } of executed) {
+      await dataSource.undoLastMigration({ transaction: 'all' });
+      if (name === 'EntryMood1786147200000') break;
+    }
     const columns = (await dataSource.query(
       `SELECT table_name, column_name FROM information_schema.columns
         WHERE table_name IN ('entries', 'entry_revisions') AND column_name IN ('mood', 'feelings')`,

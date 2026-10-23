@@ -30,7 +30,7 @@ kubectl logs deployment/<thoughty-server|thoughty-web|thoughty-cloud-sync-worker
 
 API and worker logs are JSON lines. Request logs carry `requestId` (also the `x-request-id` response header), `method`, `path`, `statusCode`, `latencyMs`, and `userId`. They never contain bodies, auth headers, journal content, AI text, or tokens. The Kibana dashboard is imported by the `thoughty-kibana-bootstrap` hook.
 
-`/api/metrics` exports request counts and latency, `thoughty_database_up`, `thoughty_cloud_sync_jobs{status}`, `thoughty_cloud_sync_stuck_jobs` (locked over 15 minutes), `thoughty_feature_usage_total` (no user data), and process memory and uptime. Prometheus scrapes the API pods by annotation. The optional `infra/k8s/components/monitoring` component adds the `thoughty-alerts` PrometheusRule ([ADR 0015](./adr/0015-observability-baseline.md)). No overlay includes it, and its expressions select `namespace="thoughty"`: change that to `apps` for production.
+`/api/metrics` exports request counts and latency, `thoughty_database_up`, `thoughty_cloud_sync_jobs{status}`, `thoughty_cloud_sync_stuck_jobs` (locked over 15 minutes), `thoughty_feature_usage_total` (no user data), and process memory and uptime. Prometheus scrapes the API pods by annotation. The optional `infra/k8s/components/monitoring` component holds the `thoughty-alerts` PrometheusRule ([ADR 0015](./adr/0015-observability-baseline.md)). Its expressions match the Thoughty pods and Deployments by name, not by namespace, so they work in any namespace. No overlay includes it, because swirl-cloud runs a plain Prometheus without the Prometheus Operator and Argo CD would reject the unknown resource. To alert in production, add the same rules to the platform's Prometheus configuration; on a cluster with the Operator, add the component to the overlay and make sure the API pods are scraped.
 
 ## Migrations
 
@@ -84,13 +84,14 @@ Read the [canary limits](./deployment.md#canary-infrak8soverlaysswirl-cloud-cana
 | AI or cloud provider errors | `OPENROUTER_API_KEY`; OAuth client IDs, secrets, and redirect URIs. |
 | SSO fails | `oauth2-proxy`, the `thoughty-sso` Middleware, and the `KEYCLOAK_*` values. Never trust identity headers alone. |
 
-The worker runs three loops, never in API pods:
+The worker runs four loops, never in API pods:
 
 | Loop | Interval | Error log |
 |---|---|---|
 | Cloud sync | 60s scan, 5s poll | `Failed to process queued cloud sync jobs` |
 | Weekly memoir questions and email | 60s | `Weekly memoir email for user <id> failed` (not retried) |
 | Recycle-bin purge (deleted over 30 days, with files) | hourly | `Failed to empty expired recycle bin entries` |
+| Account purge (accounts deleted over `ACCOUNT_PURGE_AFTER_DAYS`, default 30) | hourly | `Failed to purge deleted account <id>` (retried next run) |
 
 A sync lease older than 15 minutes is requeued on the next scan, or failed after 3 attempts. Inspect before changing data:
 

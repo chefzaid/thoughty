@@ -10,19 +10,32 @@ import {
   Headers,
   Param,
   ParseIntPipe,
+  Req,
+  Res,
+  UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiHeader,
+  ApiBody,
+  ApiCookieAuth,
   ApiExtraModels,
   getSchemaPath,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { AuthService } from './services/auth.service';
+import type { Request, Response } from 'express';
+import { AuthService, type IssuedSession } from './services/auth.service';
 import {
+  REFRESH_TOKEN_COOKIE,
+  clearRefreshTokenCookie,
+  readRefreshTokenCookie,
+  setRefreshTokenCookie,
+} from './refresh-token-cookie';
+import {
+  AccessTokenResponseDto,
   RegisterDto,
   LoginDto,
   OAuthDto,
@@ -46,6 +59,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public, CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { RATE_LIMITS, throttleDefault } from '@/common';
 
+const REFRESH_COOKIE_NOTE = `Sets the httpOnly \`${REFRESH_TOKEN_COOKIE}\` refresh token cookie (path /api/auth).`;
+
 @ApiTags('Authentication')
 @ApiExtraModels(AuthResponseDto, TwoFactorChallengeResponseDto)
 @Controller('auth')
@@ -56,17 +71,31 @@ export class AuthController {
     private readonly twoFactorService: TwoFactorService,
   ) {}
 
+  /** Moves a new session's refresh token into its cookie and returns the rest. */
+  private startSession(res: Response, session: IssuedSession): AuthResponseDto {
+    const { refreshToken, ...response } = session;
+    setRefreshTokenCookie(res, refreshToken);
+    return response;
+  }
+
   @Public()
   @Post('register')
   @Throttle(throttleDefault(RATE_LIMITS.authAttempt))
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User registered successfully', type: AuthResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: `User registered and signed in. ${REFRESH_COOKIE_NOTE}`,
+    type: AuthResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 409, description: 'Email already registered' })
-  async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponseDto> {
     const result = await this.authService.register(dto);
     await this.emailVerificationService.sendVerificationEmail(result.user.id);
-    return result;
+    return this.startSession(res, result);
   }
 
   @Public()
@@ -76,8 +105,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Login with email/username and password' })
   @ApiResponse({
     status: 200,
-    description:
-      'Login tokens, or an email-code challenge when two-factor authentication is enabled',
+    description: `The session, or an email-code challenge when two-factor authentication is enabled. ${REFRESH_COOKIE_NOTE}`,
     schema: {
       oneOf: [
         { $ref: getSchemaPath(AuthResponseDto) },
@@ -86,8 +114,12 @@ export class AuthController {
     },
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() dto: LoginDto): Promise<AuthResponseDto | TwoFactorChallengeResponseDto> {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponseDto | TwoFactorChallengeResponseDto> {
+    const result = await this.authService.login(dto);
+    return 'refreshToken' in result ? this.startSession(res, result) : result;
   }
 
   @Public()
@@ -95,10 +127,17 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.authAttempt))
   @ApiOperation({ summary: 'Verify an email code and finish password login' })
-  @ApiResponse({ status: 200, description: 'Login completed', type: AuthResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: `Login completed. ${REFRESH_COOKIE_NOTE}`,
+    type: AuthResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Invalid, expired, or already-used challenge' })
-  async verifyTwoFactor(@Body() dto: TwoFactorCodeDto): Promise<AuthResponseDto> {
-    return this.authService.verifyTwoFactorLogin(dto);
+  async verifyTwoFactor(
+    @Body() dto: TwoFactorCodeDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponseDto> {
+    return this.startSession(res, await this.authService.verifyTwoFactorLogin(dto));
   }
 
   @Public()
@@ -179,64 +218,105 @@ export class AuthController {
   @Post('oauth')
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.authAttempt))
-  @ApiOperation({ summary: 'Authenticate with OAuth provider' })
+  @ApiOperation({ summary: 'Sign in with a verified Google ID token' })
   @ApiResponse({
     status: 200,
-    description: 'OAuth authentication successful',
+    description: `Google sign-in successful. ${REFRESH_COOKIE_NOTE}`,
     type: AuthResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Missing required fields' })
-  async oauth(@Body() dto: OAuthDto): Promise<AuthResponseDto> {
-    return this.authService.oauthLogin(dto);
+  @ApiResponse({ status: 401, description: 'Invalid Google credential or unverified email' })
+  @ApiResponse({ status: 503, description: 'Google sign-in is not configured on this server' })
+  async oauth(
+    @Body() dto: OAuthDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponseDto> {
+    return this.startSession(res, await this.authService.oauthLogin(dto));
   }
 
   @Public()
   @Get('sso')
   @ApiOperation({ summary: 'Exchange the ingress-validated Keycloak identity for an app session' })
-  @ApiResponse({ status: 200, description: 'SSO authentication successful', type: AuthResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: `SSO authentication successful. ${REFRESH_COOKIE_NOTE}`,
+    type: AuthResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Missing or invalid Keycloak identity' })
   async sso(
+    @Res({ passthrough: true }) res: Response,
     @Headers('x-auth-request-access-token') accessToken?: string,
   ): Promise<AuthResponseDto> {
-    return this.authService.keycloakLogin(accessToken);
+    return this.startSession(res, await this.authService.keycloakLogin(accessToken));
   }
 
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.tokenRefresh))
-  @ApiOperation({ summary: 'Refresh access token' })
-  @ApiResponse({ status: 200, description: 'New access token' })
-  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
-  async refresh(@Body() dto: RefreshTokenDto): Promise<{ accessToken: string }> {
-    return this.authService.refreshToken(dto.refreshToken);
+  @ApiCookieAuth(REFRESH_TOKEN_COOKIE)
+  @ApiOperation({
+    summary: 'Exchange the refresh token cookie for a new access token',
+    description:
+      'Each refresh token works once: it is replaced by a new one in the cookie, and reusing ' +
+      'the old one fails.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: `New access token. ${REFRESH_COOKIE_NOTE}`,
+    type: AccessTokenResponseDto,
+  })
+  @ApiBody({ type: RefreshTokenDto, required: false })
+  @ApiResponse({ status: 401, description: 'Missing, invalid, expired, or reused refresh token' })
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+    @Body() dto: RefreshTokenDto,
+  ): Promise<AccessTokenResponseDto> {
+    try {
+      const { accessToken, refreshToken } = await this.authService.refreshToken(
+        readRefreshTokenCookie(req) ?? dto?.refreshToken,
+      );
+      setRefreshTokenCookie(res, refreshToken);
+      return { accessToken };
+    } catch (error) {
+      // A rejected token is dropped; a transient failure keeps the cookie for a retry.
+      if (error instanceof UnauthorizedException || error instanceof ForbiddenException) {
+        clearRefreshTokenCookie(res);
+      }
+      throw error;
+    }
   }
 
   @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Logout and invalidate refresh token' })
+  @ApiCookieAuth(REFRESH_TOKEN_COOKIE)
+  @ApiOperation({ summary: 'Logout, revoke the refresh token, and clear its cookie' })
   @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  async logout(@Body() dto: RefreshTokenDto): Promise<{ success: boolean }> {
-    return this.authService.logout(dto.refreshToken);
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<{ success: boolean }> {
+    clearRefreshTokenCookie(res);
+    return this.authService.logout(readRefreshTokenCookie(req));
   }
 
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiHeader({
-    name: 'X-Refresh-Token',
-    required: false,
-    description: 'Current refresh token for marking this session',
+  @ApiCookieAuth(REFRESH_TOKEN_COOKIE)
+  @ApiOperation({
+    summary: 'List active sessions for the current user',
+    description: 'The session of the refresh token cookie is marked current.',
   })
-  @ApiOperation({ summary: 'List active sessions for the current user' })
   @ApiResponse({ status: 200, description: 'Active sessions', type: [SessionResponseDto] })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async listSessions(
     @CurrentUser() user: AuthenticatedUser,
-    @Headers('x-refresh-token') currentRefreshToken?: string,
+    @Req() req: Request,
   ): Promise<SessionResponseDto[]> {
-    return this.authService.listSessions(user.userId, currentRefreshToken);
+    return this.authService.listSessions(user.userId, readRefreshTokenCookie(req));
   }
 
   @Delete('sessions')
@@ -244,19 +324,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiBearerAuth()
-  @ApiHeader({
-    name: 'X-Refresh-Token',
-    required: true,
-    description: 'Current refresh token to keep active',
+  @ApiCookieAuth(REFRESH_TOKEN_COOKIE)
+  @ApiOperation({
+    summary: 'Revoke all other active sessions',
+    description: 'The session of the refresh token cookie is kept.',
   })
-  @ApiOperation({ summary: 'Revoke all other active sessions' })
   @ApiResponse({ status: 200, description: 'Other sessions revoked' })
-  @ApiResponse({ status: 400, description: 'Current refresh token missing' })
+  @ApiResponse({ status: 400, description: 'Refresh token cookie missing' })
   async revokeOtherSessions(
     @CurrentUser() user: AuthenticatedUser,
-    @Headers('x-refresh-token') currentRefreshToken?: string,
+    @Req() req: Request,
   ): Promise<{ success: boolean }> {
-    return this.authService.revokeOtherSessions(user.userId, currentRefreshToken);
+    return this.authService.revokeOtherSessions(user.userId, readRefreshTokenCookie(req));
   }
 
   @Delete('sessions/:id')
@@ -264,20 +343,19 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiBearerAuth()
-  @ApiHeader({
-    name: 'X-Refresh-Token',
-    required: false,
-    description: 'Current refresh token to protect it from revocation',
+  @ApiCookieAuth(REFRESH_TOKEN_COOKIE)
+  @ApiOperation({
+    summary: 'Revoke one active session',
+    description: 'The session of the refresh token cookie cannot be revoked here; use logout.',
   })
-  @ApiOperation({ summary: 'Revoke one active session' })
   @ApiResponse({ status: 200, description: 'Session revoked' })
   @ApiResponse({ status: 404, description: 'Session not found' })
   async revokeSession(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) sessionId: number,
-    @Headers('x-refresh-token') currentRefreshToken?: string,
+    @Req() req: Request,
   ): Promise<{ success: boolean }> {
-    return this.authService.revokeSession(user.userId, sessionId, currentRefreshToken);
+    return this.authService.revokeSession(user.userId, sessionId, readRefreshTokenCookie(req));
   }
 
   @Get('me')
@@ -360,12 +438,15 @@ export class AuthController {
   @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete user account' })
-  @ApiResponse({ status: 200, description: 'Account deleted' })
+  @ApiResponse({ status: 200, description: 'Account deleted; the refresh token cookie is cleared' })
   @ApiResponse({ status: 401, description: 'Invalid password' })
   async deleteAccount(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: DeleteAccountDto,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<{ success: boolean; message: string }> {
-    return this.authService.deleteAccount(user.userId, dto.password);
+    const result = await this.authService.deleteAccount(user.userId, dto.password);
+    clearRefreshTokenCookie(res);
+    return result;
   }
 }

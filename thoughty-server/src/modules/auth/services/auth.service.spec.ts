@@ -8,10 +8,11 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
 import { generateKeyPairSync } from 'node:crypto';
-import { AuthService } from './auth.service';
+import { AuthService, hashRefreshToken } from './auth.service';
 import { EmailService } from './email.service';
 import { TwoFactorService } from './two-factor.service';
 import { User, RefreshToken, Diary } from '@/database/entities';
@@ -45,7 +46,7 @@ describe('AuthService', () => {
   const mockRefreshToken = {
     id: 1,
     userId: 1,
-    token: 'refresh_token',
+    tokenHash: hashRefreshToken('refresh_token'),
     expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     user: mockUser,
   };
@@ -64,6 +65,7 @@ describe('AuthService', () => {
       findOne: jest.fn(),
       save: jest.fn(),
       delete: jest.fn(),
+      createQueryBuilder: jest.fn(),
     };
 
     diaryRepository = {
@@ -122,6 +124,10 @@ describe('AuthService', () => {
 
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
+      expect(refreshTokenRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 1, tokenHash: hashRefreshToken(result.refreshToken) }),
+      );
+      expect(refreshTokenRepository.save.mock.calls[0][0]).not.toHaveProperty('token');
       expect('user' in result).toBe(true);
       if ('user' in result) {
         expect(result.user.email).toBe('test@example.com');
@@ -237,51 +243,52 @@ describe('AuthService', () => {
       expect(refreshTokenRepository.save).toHaveBeenCalledTimes(1);
     });
 
-    it('should throw UnauthorizedException for non-existent user', async () => {
-      const mockQueryBuilder = {
+    const loginFailure = async (user: unknown, passwordMatches: boolean) => {
+      userRepository.createQueryBuilder.mockReturnValue({
         where: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(null),
-      };
-      userRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+        getOne: jest.fn().mockResolvedValue(user),
+      });
+      (bcrypt.compare as jest.Mock).mockResolvedValue(passwordMatches);
+      const error = await service
+        .login({ identifier: 'test@example.com', password: 'password123' })
+        .catch((caught: unknown) => caught);
+      return error as UnauthorizedException;
+    };
 
-      await expect(
-        service.login({
-          identifier: 'nonexistent@example.com',
-          password: 'password123',
-        }),
-      ).rejects.toThrow(UnauthorizedException);
+    it('should throw UnauthorizedException for non-existent user after bcrypt work', async () => {
+      const error = await loginFailure(null, false);
+
+      expect(error).toBeInstanceOf(UnauthorizedException);
+      expect(error.message).toBe('Invalid email or password');
+      expect(bcrypt.compare).toHaveBeenCalledWith(
+        'password123',
+        expect.stringMatching(/^\$2[aby]\$12\$/),
+      );
     });
 
-    it('should throw ForbiddenException for deleted user', async () => {
-      const deletedUser = { ...mockUser, deletedAt: new Date() };
-      const mockQueryBuilder = {
-        where: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(deletedUser),
-      };
-      userRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+    it('answers a deleted account exactly like wrong credentials', async () => {
+      const wrongPassword = await loginFailure(mockUser, false);
+      (bcrypt.compare as jest.Mock).mockClear();
+      const deleted = await loginFailure({ ...mockUser, deletedAt: new Date() }, true);
 
-      await expect(
-        service.login({
-          identifier: 'test@example.com',
-          password: 'password123',
-        }),
-      ).rejects.toThrow(ForbiddenException);
+      expect(deleted).toBeInstanceOf(UnauthorizedException);
+      expect(deleted.getStatus()).toBe(wrongPassword.getStatus());
+      expect(deleted.getResponse()).toEqual(wrongPassword.getResponse());
+      // bcrypt still runs, against a throwaway hash rather than the deleted account's own
+      expect(bcrypt.compare).toHaveBeenCalledTimes(1);
+      expect(bcrypt.compare).not.toHaveBeenCalledWith('password123', mockUser.passwordHash);
+      expect(refreshTokenRepository.save).not.toHaveBeenCalled();
     });
 
-    it('should throw UnauthorizedException for OAuth user without password', async () => {
-      const oauthUser = { ...mockUser, authProvider: 'google', passwordHash: null };
-      const mockQueryBuilder = {
-        where: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(oauthUser),
-      };
-      userRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
+    it('does not reveal that an account signs in with another provider', async () => {
+      const error = await loginFailure(
+        { ...mockUser, authProvider: 'google', passwordHash: null },
+        true,
+      );
 
-      await expect(
-        service.login({
-          identifier: 'test@example.com',
-          password: 'password123',
-        }),
-      ).rejects.toThrow(UnauthorizedException);
+      expect(error).toBeInstanceOf(UnauthorizedException);
+      expect(error.message).toBe('Invalid email or password');
+      expect(bcrypt.compare).toHaveBeenCalledTimes(1);
     });
 
     it('should throw UnauthorizedException for wrong password', async () => {
@@ -302,81 +309,166 @@ describe('AuthService', () => {
   });
 
   describe('oauthLogin', () => {
-    it('should login existing OAuth user', async () => {
-      userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'google' });
+    const GOOGLE_CLIENT_ID = 'google-client-id.apps.googleusercontent.com';
+    const { privateKey, publicKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
+    const googleJwk = { ...publicKey.export({ format: 'jwk' }), kid: 'google-key', use: 'sig' };
+
+    const googleCredential = (
+      claims: Record<string, unknown> = {},
+      options: { audience?: string; issuer?: string; expiresIn?: number; key?: string } = {},
+    ) =>
+      new JwtService().sign(
+        {
+          sub: 'google-sub-123',
+          email: 'Test@Example.com',
+          email_verified: true,
+          name: 'New User',
+          picture: 'https://lh3.googleusercontent.com/avatar',
+          ...claims,
+        },
+        {
+          privateKey: options.key ?? privateKey.export({ format: 'pem', type: 'pkcs8' }),
+          algorithm: 'RS256',
+          keyid: 'google-key',
+          issuer: options.issuer ?? 'https://accounts.google.com',
+          audience: options.audience ?? GOOGLE_CLIENT_ID,
+          expiresIn: options.expiresIn ?? 300,
+        },
+      );
+
+    const oauth = (credential: string) => service.oauthLogin({ provider: 'google', credential });
+
+    beforeEach(() => {
+      // A real JwtService with an unrelated HMAC secret, as in the running app
+      (service as any).jwtService = new JwtService({ secret: 'application-hmac-secret' });
+      (service as any).googleClientId = GOOGLE_CLIENT_ID;
+      jest.spyOn((service as any).googleKeys, 'getSigningKey').mockResolvedValue(googleJwk);
       refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
+    });
 
-      const result = await service.oauthLogin({
-        provider: 'google',
-        providerId: 'google123',
-        email: 'test@example.com',
+    it('logs in the user linked to the verified Google subject', async () => {
+      userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'google' });
+
+      const result = await oauth(googleCredential());
+
+      expect(userRepository.findOne).toHaveBeenCalledWith({
+        where: { authProvider: 'google', providerId: 'google-sub-123' },
       });
-
-      expect(result).toHaveProperty('accessToken');
+      expect(result.accessToken).toBeTruthy();
       expect(result.user.authProvider).toBe('google');
     });
 
-    it('should throw ForbiddenException for deleted OAuth user', async () => {
-      const deletedUser = { ...mockUser, deletedAt: new Date() };
-      userRepository.findOne.mockResolvedValue(deletedUser);
+    it('accepts the bare accounts.google.com issuer', async () => {
+      userRepository.findOne.mockResolvedValue({ ...mockUser, authProvider: 'google' });
 
       await expect(
-        service.oauthLogin({
-          provider: 'google',
-          providerId: 'google123',
-          email: 'test@example.com',
-        }),
-      ).rejects.toThrow(ForbiddenException);
+        oauth(googleCredential({}, { issuer: 'accounts.google.com' })),
+      ).resolves.toHaveProperty('accessToken');
     });
 
-    it('should link OAuth to existing email account', async () => {
+    it('should throw ForbiddenException for deleted OAuth user', async () => {
+      userRepository.findOne.mockResolvedValue({ ...mockUser, deletedAt: new Date() });
+
+      await expect(oauth(googleCredential())).rejects.toThrow(ForbiddenException);
+    });
+
+    it('links a verified Google identity to the account with that email', async () => {
       const existingUser = { ...mockUser };
-      userRepository.findOne
-        .mockResolvedValueOnce(null) // First call for OAuth lookup
-        .mockResolvedValueOnce(existingUser); // Second call for email lookup
-      userRepository.save.mockResolvedValue({
-        ...existingUser,
-        authProvider: 'google',
-        emailVerified: true,
-      });
-      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(existingUser);
+      userRepository.save.mockImplementation((user: any) => Promise.resolve(user));
 
-      const result = await service.oauthLogin({
-        provider: 'google',
-        providerId: 'google123',
-        email: 'test@example.com',
-        avatarUrl: 'https://example.com/avatar.jpg',
-      });
+      const result = await oauth(googleCredential());
 
-      expect(result).toHaveProperty('accessToken');
+      expect(userRepository.findOne).toHaveBeenLastCalledWith({
+        where: { email: 'test@example.com' },
+      });
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          authProvider: 'google',
+          providerId: 'google-sub-123',
+          avatarUrl: 'https://lh3.googleusercontent.com/avatar',
+          emailVerified: true,
+        }),
+      );
       expect(result.user.emailVerified).toBe(true);
     });
 
-    it('should create new user for OAuth login', async () => {
+    it('creates a new user from the verified claims only', async () => {
       userRepository.findOne.mockResolvedValue(null);
-      userRepository.save.mockResolvedValue({
-        ...mockUser,
-        id: 1,
-        authProvider: 'google',
-        emailVerified: true,
-      });
+      userRepository.save.mockImplementation((user: any) =>
+        Promise.resolve({ ...user, id: 1, deletedAt: null, twoFactorEnabled: false }),
+      );
       diaryRepository.save.mockResolvedValue({ id: 1 });
-      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
 
-      const result = await service.oauthLogin({
-        provider: 'google',
-        providerId: 'google123',
-        email: 'new@example.com',
-        name: 'New User',
-      });
+      const result = await oauth(googleCredential());
 
       expect(result.user.isNewUser).toBe(true);
       expect(result.user.emailVerified).toBe(true);
+      expect(userRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          username: 'New User',
+          email: 'test@example.com',
+          providerId: 'google-sub-123',
+          avatarUrl: 'https://lh3.googleusercontent.com/avatar',
+        }),
+      );
       expect(diaryRepository.save).toHaveBeenCalledWith(
         expect.objectContaining({
           color: '#E76F51',
         }),
       );
+    });
+
+    it.each([
+      ['an unverified email', googleCredential({ email_verified: false })],
+      ['a missing email_verified claim', googleCredential({ email_verified: undefined })],
+      ['a string email_verified claim', googleCredential({ email_verified: 'true' })],
+      ['a missing email', googleCredential({ email: undefined })],
+    ])('refuses a credential with %s', async (_case, credential) => {
+      await expect(oauth(credential)).rejects.toThrow(UnauthorizedException);
+      expect(userRepository.findOne).not.toHaveBeenCalled();
+      expect(refreshTokenRepository.save).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['another audience', () => googleCredential({}, { audience: 'other-client-id' })],
+      ['another issuer', () => googleCredential({}, { issuer: 'https://evil.example' })],
+      ['an expired token', () => googleCredential({}, { expiresIn: -60 })],
+      [
+        'a signature from another key',
+        () =>
+          googleCredential(
+            {},
+            {
+              key: generateKeyPairSync('rsa', { modulusLength: 2048 })
+                .privateKey.export({ format: 'pem', type: 'pkcs8' })
+                .toString(),
+            },
+          ),
+      ],
+      [
+        'a client-forged unsigned token',
+        () =>
+          [
+            Buffer.from(JSON.stringify({ alg: 'none', kid: 'google-key' })).toString('base64url'),
+            Buffer.from(
+              JSON.stringify({ sub: 'victim', email: 'test@example.com', email_verified: true }),
+            ).toString('base64url'),
+            '',
+          ].join('.'),
+      ],
+      ['a malformed token', () => 'not-a-jwt'],
+    ])('rejects %s', async (_case, credential) => {
+      await expect(oauth(credential())).rejects.toThrow('Invalid Google credential');
+      expect(userRepository.findOne).not.toHaveBeenCalled();
+      expect(refreshTokenRepository.save).not.toHaveBeenCalled();
+    });
+
+    it('refuses Google sign-in when no Google client ID is configured', async () => {
+      (service as any).googleClientId = '';
+
+      await expect(oauth(googleCredential())).rejects.toThrow(ServiceUnavailableException);
+      expect(userRepository.findOne).not.toHaveBeenCalled();
     });
   });
 
@@ -395,14 +487,12 @@ describe('AuthService', () => {
         preferred_username: 'testuser',
         ...claims,
       });
-      jest.spyOn(service as any, 'getKeycloakSigningKey').mockResolvedValue(signingKey());
+      jest.spyOn((service as any).keycloakKeys, 'getSigningKey').mockResolvedValue(signingKey());
     };
 
     it('verifies and links a Keycloak identity before creating a local session', async () => {
       mockVerifiedIdentity();
-      userRepository.findOne
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({ ...mockUser });
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...mockUser });
       userRepository.save.mockImplementation((user: any) => Promise.resolve(user));
       refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
 
@@ -446,14 +536,12 @@ describe('AuthService', () => {
         },
       );
       (service as any).jwtService = new JwtService({ secret: 'application-hmac-secret' });
-      jest.spyOn(service as any, 'getKeycloakSigningKey').mockResolvedValue({
+      jest.spyOn((service as any).keycloakKeys, 'getSigningKey').mockResolvedValue({
         ...publicKey.export({ format: 'jwk' }),
         kid: 'key-1',
         use: 'sig',
       });
-      userRepository.findOne
-        .mockResolvedValueOnce(null)
-        .mockResolvedValueOnce({ ...mockUser });
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ ...mockUser });
       userRepository.save.mockImplementation((user: any) => Promise.resolve(user));
       refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
 
@@ -524,45 +612,88 @@ describe('AuthService', () => {
     it('uses cached keys and refreshes after key rotation', async () => {
       const cachedKey = { kid: 'cached', use: 'sig', kty: 'RSA' };
       const rotatedKey = { kid: 'rotated', use: 'sig', kty: 'RSA' };
-      (service as any).keycloakKeys = {
+      const keycloakKeys = (service as any).keycloakKeys;
+      keycloakKeys.cache = {
         expiresAt: Date.now() + 60_000,
         keys: [cachedKey],
       };
-      await expect((service as any).getKeycloakSigningKey('cached')).resolves.toBe(cachedKey);
+      await expect(keycloakKeys.getSigningKey('cached')).resolves.toBe(cachedKey);
 
       jest.spyOn(global, 'fetch').mockResolvedValue({
         ok: true,
         json: async () => ({ keys: [rotatedKey] }),
       } as Response);
-      await expect((service as any).getKeycloakSigningKey('rotated')).resolves.toEqual(rotatedKey);
+      await expect(keycloakKeys.getSigningKey('rotated')).resolves.toEqual(rotatedKey);
     });
 
     it('rejects failed, empty, and keyless JWKS responses', async () => {
+      const keycloakKeys = (service as any).keycloakKeys;
       const fetchSpy = jest.spyOn(global, 'fetch');
       fetchSpy.mockResolvedValueOnce({ ok: false, status: 503 } as Response);
-      await expect((service as any).refreshKeycloakKeys()).rejects.toThrow(
-        'Keycloak JWKS request failed with 503',
-      );
+      await expect(keycloakKeys.refresh()).rejects.toThrow('Keycloak JWKS request failed with 503');
 
       fetchSpy.mockResolvedValueOnce({ ok: true, json: async () => ({ keys: [] }) } as Response);
-      await expect((service as any).refreshKeycloakKeys()).rejects.toThrow(
-        'Keycloak JWKS response has no keys',
-      );
+      await expect(keycloakKeys.refresh()).rejects.toThrow('Keycloak JWKS response has no keys');
 
       fetchSpy.mockResolvedValue({ ok: true, json: async () => ({ keys: [] }) } as Response);
-      (service as any).keycloakKeys = null;
-      await expect((service as any).getKeycloakSigningKey('missing')).rejects.toThrow();
+      keycloakKeys.cache = null;
+      await expect(keycloakKeys.getSigningKey('missing')).rejects.toThrow();
     });
   });
 
   describe('refreshToken', () => {
-    it('should refresh token successfully', async () => {
+    const claimRows = (rows: Array<{ user_id: number }>) => {
+      const builder = {
+        delete: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({ raw: rows, affected: rows.length }),
+      };
+      refreshTokenRepository.createQueryBuilder.mockReturnValue(builder);
+      return builder;
+    };
+
+    it('rotates the refresh token: deletes the presented one and issues a new pair', async () => {
       jwtService.verify.mockReturnValue({ userId: 1 });
-      refreshTokenRepository.findOne.mockResolvedValue(mockRefreshToken);
+      jwtService.sign.mockReturnValueOnce('new_access').mockReturnValueOnce('new_refresh');
+      const builder = claimRows([{ user_id: 1 }]);
+      userRepository.findOne.mockResolvedValue(mockUser);
+      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
 
       const result = await service.refreshToken('valid_refresh_token');
 
-      expect(result).toHaveProperty('accessToken');
+      expect(result).toEqual({ accessToken: 'new_access', refreshToken: 'new_refresh' });
+      expect(builder.where).toHaveBeenCalledWith('token_hash = :tokenHash', {
+        tokenHash: hashRefreshToken('valid_refresh_token'),
+      });
+      expect(builder.returning).toHaveBeenCalledWith('user_id');
+      expect(refreshTokenRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 1, tokenHash: hashRefreshToken('new_refresh') }),
+      );
+      expect(jwtService.sign).toHaveBeenLastCalledWith(
+        { userId: 1, jti: expect.any(String) },
+        expect.objectContaining({ expiresIn: '7d' }),
+      );
+    });
+
+    it('rejects a refresh token that was already used', async () => {
+      jwtService.verify.mockReturnValue({ userId: 1 });
+      claimRows([{ user_id: 1 }]);
+      userRepository.findOne.mockResolvedValue(mockUser);
+      refreshTokenRepository.save.mockResolvedValue(mockRefreshToken);
+      await service.refreshToken('valid_refresh_token');
+
+      claimRows([]);
+      await expect(service.refreshToken('valid_refresh_token')).rejects.toThrow(
+        'Refresh token expired or revoked',
+      );
+      expect(refreshTokenRepository.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects a missing refresh token', async () => {
+      await expect(service.refreshToken(undefined)).rejects.toThrow(UnauthorizedException);
+      expect(refreshTokenRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException for invalid token', async () => {
@@ -571,23 +702,23 @@ describe('AuthService', () => {
       });
 
       await expect(service.refreshToken('invalid_token')).rejects.toThrow(UnauthorizedException);
+      expect(refreshTokenRepository.createQueryBuilder).not.toHaveBeenCalled();
     });
 
     it('should throw UnauthorizedException for expired/revoked token', async () => {
       jwtService.verify.mockReturnValue({ userId: 1 });
-      refreshTokenRepository.findOne.mockResolvedValue(null);
+      claimRows([]);
 
       await expect(service.refreshToken('expired_token')).rejects.toThrow(UnauthorizedException);
     });
 
     it('should throw ForbiddenException for deleted user token', async () => {
       jwtService.verify.mockReturnValue({ userId: 1 });
-      refreshTokenRepository.findOne.mockResolvedValue({
-        ...mockRefreshToken,
-        user: { ...mockUser, deletedAt: new Date() },
-      });
+      claimRows([{ user_id: 1 }]);
+      userRepository.findOne.mockResolvedValue({ ...mockUser, deletedAt: new Date() });
 
       await expect(service.refreshToken('valid_token')).rejects.toThrow(ForbiddenException);
+      expect(refreshTokenRepository.save).not.toHaveBeenCalled();
     });
   });
 
@@ -598,7 +729,9 @@ describe('AuthService', () => {
       const result = await service.logout('refresh_token');
 
       expect(result).toEqual({ success: true });
-      expect(refreshTokenRepository.delete).toHaveBeenCalledWith({ token: 'refresh_token' });
+      expect(refreshTokenRepository.delete).toHaveBeenCalledWith({
+        tokenHash: hashRefreshToken('refresh_token'),
+      });
     });
 
     it('should logout successfully without refresh token', async () => {
@@ -702,6 +835,33 @@ describe('AuthService', () => {
       const result = await service.forgotPassword('nonexistent@example.com');
 
       expect(result.success).toBe(true);
+    });
+
+    it('does not send a reset link for a deleted account', async () => {
+      userRepository.findOne.mockResolvedValue({ ...mockUser, deletedAt: new Date() });
+
+      const result = await service.forgotPassword('test@example.com');
+
+      expect(result).toEqual({
+        success: true,
+        message: 'If an account exists with this email, a reset link will be sent.',
+      });
+      expect(userRepository.save).not.toHaveBeenCalled();
+      expect(emailService.sendPasswordResetEmail).not.toHaveBeenCalled();
+    });
+
+    it('answers before the mail server does, like for an unknown address', async () => {
+      userRepository.findOne.mockResolvedValue(mockUser);
+      userRepository.save.mockResolvedValue(mockUser);
+      emailService.sendPasswordResetEmail.mockReturnValue(new Promise(() => undefined));
+
+      const result = await service.forgotPassword('test@example.com');
+
+      expect(result.success).toBe(true);
+      expect(emailService.sendPasswordResetEmail).toHaveBeenCalledWith(
+        'test@example.com',
+        expect.stringContaining('/reset-password?token='),
+      );
     });
 
     it('should return success for OAuth user without sending email', async () => {

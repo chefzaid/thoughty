@@ -1,4 +1,5 @@
 import { AiService } from './ai.service';
+import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
 
 describe('AiService journal analysis', () => {
   const fetchMock = jest.fn();
@@ -73,6 +74,11 @@ describe('AiService journal analysis', () => {
     });
     const requestBody = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
     expect(requestBody.messages[0].content).toContain('subjectBreakdown');
+    expect(requestBody.messages[0].content).toContain(UNTRUSTED_CONTENT_INSTRUCTION);
+    expect(requestBody.messages[1].content).toBe([
+      '<journal_entry>\nEntry 1\nDate: 2024-01-01\nTags: reflection\nContent: Today I felt thoughtful.\n</journal_entry>',
+      '<journal_entry>\nEntry 2\nDate: 2024-01-02\nTags: calm\nContent: I am calmer now.\n</journal_entry>',
+    ].join('\n\n'));
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

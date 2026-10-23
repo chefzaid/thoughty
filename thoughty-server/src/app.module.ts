@@ -19,6 +19,7 @@ import { SocialModule } from './modules/social';
 import { MemoirModule } from './modules/memoir';
 import { ReviewModule } from './modules/review';
 import { RecycleBinModule } from './modules/recycle-bin';
+import { AccountPurgeModule } from './modules/account-purge';
 import { HealthController } from './health.controller';
 import {
   createThrottlerModuleOptions,
@@ -59,6 +60,7 @@ import {
     MemoirModule,
     ReviewModule,
     RecycleBinModule,
+    AccountPurgeModule,
   ],
   providers: [
     // Global JWT Auth Guard

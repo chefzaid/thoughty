@@ -4,7 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Diary, RefreshToken, User } from '@/database/entities';
-import { AuthService } from './auth.service';
+import { AuthService, hashRefreshToken } from './auth.service';
 import { EmailService } from './email.service';
 import { TwoFactorService } from './two-factor.service';
 
@@ -54,14 +54,14 @@ describe('AuthService sessions', () => {
     const olderSession = {
       id: 1,
       userId: 1,
-      token: 'old_refresh_token',
+      tokenHash: hashRefreshToken('old_refresh_token'),
       createdAt: new Date('2026-06-20T10:00:00.000Z'),
       expiresAt: new Date('2026-06-27T10:00:00.000Z'),
     };
     const currentSession = {
       id: 2,
       userId: 1,
-      token: 'current_refresh_token',
+      tokenHash: hashRefreshToken('current_refresh_token'),
       createdAt: new Date('2026-06-21T10:00:00.000Z'),
       expiresAt: new Date('2026-06-28T10:00:00.000Z'),
     };
@@ -90,13 +90,32 @@ describe('AuthService sessions', () => {
     expect(result).not.toEqual(
       expect.arrayContaining([expect.objectContaining({ token: expect.any(String) })]),
     );
+    expect(result).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ tokenHash: expect.any(String) })]),
+    );
+  });
+
+  it('marks no session current without a presented refresh token', async () => {
+    refreshTokenRepository.find.mockResolvedValue([
+      {
+        id: 1,
+        userId: 1,
+        tokenHash: hashRefreshToken('a'),
+        createdAt: new Date(),
+        expiresAt: new Date(),
+      },
+    ]);
+
+    const result = await service.listSessions(1);
+
+    expect(result[0].current).toBe(false);
   });
 
   it('revokes a non-current session owned by the user', async () => {
     refreshTokenRepository.findOne.mockResolvedValue({
       id: 2,
       userId: 1,
-      token: 'other_refresh_token',
+      tokenHash: hashRefreshToken('other_refresh_token'),
     });
     refreshTokenRepository.delete.mockResolvedValue({ affected: 1 });
 
@@ -111,7 +130,7 @@ describe('AuthService sessions', () => {
     refreshTokenRepository.findOne.mockResolvedValue({
       id: 2,
       userId: 1,
-      token: 'current_refresh_token',
+      tokenHash: hashRefreshToken('current_refresh_token'),
     });
 
     await expect(service.revokeSession(1, 2, 'current_refresh_token')).rejects.toThrow(
@@ -139,8 +158,8 @@ describe('AuthService sessions', () => {
 
     expect(result).toEqual({ success: true });
     expect(where).toHaveBeenCalledWith('user_id = :userId', { userId: 1 });
-    expect(andWhere).toHaveBeenCalledWith('token <> :currentRefreshToken', {
-      currentRefreshToken: 'current_refresh_token',
+    expect(andWhere).toHaveBeenCalledWith('token_hash <> :currentTokenHash', {
+      currentTokenHash: hashRefreshToken('current_refresh_token'),
     });
     expect(execute).toHaveBeenCalled();
   });

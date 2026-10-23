@@ -54,6 +54,7 @@ flowchart TD
 | `config` | user preferences and profile, encrypted settings, data export, the feature-flag endpoint (no feature reads flags yet) |
 | `feature-requests` | community idea board and votes |
 | `social` | public feed, follows, comments, likes, leaderboard, achievements (karma and badges) |
+| `account-purge` | permanent deletion of deleted accounts after the grace period |
 | `memoir` | guided memoir: question catalogue, program settings, answers as entries, weekly delivery and email |
 | `metrics` | Prometheus metrics (the health endpoint is `HealthController` in `AppModule`) |
 
@@ -61,13 +62,14 @@ Cross-cutting runtime code goes in `src/common`, entities and migrations in `src
 
 ### Background Worker
 
-`thoughty-server/src/cloud-sync-worker.ts` boots `AppModule` as a Nest application context without HTTP and starts three loops that API replicas never run. The worker stays at one replica ([ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)). Manual uploads, downloads, and "sync now" run inline in the API request, not through the queue.
+`thoughty-server/src/cloud-sync-worker.ts` boots `AppModule` as a Nest application context without HTTP and starts four loops that API replicas never run. The worker stays at one replica ([ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)). Manual uploads, downloads, and "sync now" run inline in the API request, not through the queue.
 
 | Service | Interval | Work |
 |---|---|---|
 | `CloudSyncWorkerService` | jobs every 5 s, schedules every 60 s | turns due sync schedules (stored in `settings`) into `cloud_sync_jobs` rows, claims them with `FOR UPDATE SKIP LOCKED`, runs the sync, retries, and recovers stale jobs |
 | `MemoirDeliveryWorkerService` | every 60 s | moves due `memoir_programs` to their next question and sends the weekly email |
 | `RecycleBinPurgeWorkerService` | hourly | hard-deletes entries in the recycle bin for over 30 days and removes their files |
+| `AccountPurgeWorkerService` | hourly | permanently deletes accounts deleted more than `ACCOUNT_PURGE_AFTER_DAYS` (default 30) ago: their stored files, then the user row and everything that cascades from it |
 
 ## Frontend Architecture
 

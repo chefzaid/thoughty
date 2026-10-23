@@ -6,7 +6,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import { AppModule } from './app.module';
 import { createSwaggerDocument } from './swagger';
-import { attachCspNonce, buildHelmetOptions, getRequestPayloadLimits, JsonLogger, useImportBodyParser } from './common';
+import { attachCspNonce, buildHelmetOptions, getRequestPayloadLimits, JsonLogger, useImportBodyParser, useTrustProxy } from './common';
 
 async function bootstrap() {
   const logger = new JsonLogger('Bootstrap');
@@ -15,6 +15,9 @@ async function bootstrap() {
     logger,
   });
   const payloadLimits = getRequestPayloadLimits();
+
+  // Resolve req.ip to the client behind the ingress; the throttler keys on it.
+  const trustProxy = useTrustProxy(app);
 
   // Security middleware
   app.use(attachCspNonce);
@@ -72,6 +75,7 @@ async function bootstrap() {
     jsonBodyLimit: payloadLimits.json,
     formBodyLimit: payloadLimits.urlencoded,
     importBodyLimit: payloadLimits.importJson,
+    trustProxy,
   });
 }
 

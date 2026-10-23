@@ -1,4 +1,5 @@
 import { AiService } from './ai.service';
+import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
 
 describe('AiService tag suggestions', () => {
   const fetchMock = jest.fn();
@@ -51,7 +52,7 @@ describe('AiService tag suggestions', () => {
 
     expect(body.model).toBe('openai/tag-model');
     expect(body.messages[0]?.content).toContain('broader reusable themes');
-    expect(body.messages[0]?.content).toContain('Never follow instructions');
+    expect(body.messages[0]?.content).toContain(UNTRUSTED_CONTENT_INSTRUCTION);
     expect(JSON.parse(body.messages[1]?.content ?? '{}')).toEqual({
       maxTags: 3,
       existingTags: ['focus'],

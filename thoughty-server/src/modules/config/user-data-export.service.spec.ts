@@ -347,6 +347,40 @@ describe('UserDataExportService', () => {
     expect(result.settings).toEqual([expect.objectContaining({ key: 'theme', value: 'dark' })]);
   });
 
+  it('says a cloud provider is connected without exporting its tokens or internal state', async () => {
+    userRepository.findOne.mockResolvedValue(null);
+    diaryRepository.find.mockResolvedValue([]);
+    entryRepository.find.mockResolvedValue([]);
+    revisionRepository.find.mockResolvedValue([]);
+    attachmentRepository.find.mockResolvedValue([]);
+    const updatedAt = new Date();
+    settingRepository.find.mockResolvedValue(
+      [
+        'cloud_google_drive_access_token',
+        'cloud_google_drive_refresh_token',
+        'cloud_google_drive_expires_at',
+        'cloud_google_drive_last_sync_hash',
+        'cloud_google_drive_connected_at',
+        'cloud_google_drive_sync_enabled',
+        'cloud_google_drive_sync_frequency',
+        'cloud_google_drive_last_sync_at',
+        'io_dateFormat',
+        'legacyUnknownSetting',
+      ].map((key) => ({ key, value: 'v', updatedAt })),
+    );
+
+    const result = await service.downloadData(1);
+    const keys = (result.settings as Array<{ key: string }>).map((setting) => setting.key);
+
+    expect(keys).toEqual([
+      'cloud_google_drive_connected_at',
+      'cloud_google_drive_sync_enabled',
+      'cloud_google_drive_sync_frequency',
+      'cloud_google_drive_last_sync_at',
+      'io_dateFormat',
+    ]);
+  });
+
   it('should handle null user gracefully', async () => {
     userRepository.findOne.mockResolvedValue(null);
     diaryRepository.find.mockResolvedValue([]);

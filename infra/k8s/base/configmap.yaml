@@ -29,6 +29,10 @@ data:
   POSTGRES_BACKUP_REGION: "us-east-1"
   POSTGRES_BACKUP_BASE_PREFIX: "base"
   POSTGRES_BACKUP_WAL_PREFIX: "wal"
+  # Proxies whose X-Forwarded-For the API trusts, so rate limits key on the client IP
+  # (Express "trust proxy" syntax). Traefik replaces X-Forwarded-For from untrusted peers,
+  # and pods only receive traffic from in-cluster (private-network) proxies.
+  TRUST_PROXY: "loopback, linklocal, uniquelocal"
   # Shared throttling storage for multi-replica API deployments.
   REDIS_HOST: "redis"
   REDIS_PORT: "6379"

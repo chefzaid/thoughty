@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, UseGuards, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
 import { UserDataExportService } from './user-data-export.service';
+import { UpdateConfigDto } from './dto/config.dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { Response } from 'express';
@@ -20,17 +21,26 @@ export class ConfigController {
 
   @Get()
   @ApiOperation({ summary: 'Get user configuration' })
-  @ApiResponse({ status: 200, description: 'User configuration' })
+  @ApiResponse({
+    status: 200,
+    description: 'User preferences (the keys POST /api/config accepts), as text',
+  })
   async getConfig(@CurrentUser() user: AuthenticatedUser): Promise<Record<string, string>> {
     return this.configService.getConfig(user.userId);
   }
 
   @Post()
-  @ApiOperation({ summary: 'Update user configuration' })
+  @ApiOperation({
+    summary: 'Update user configuration',
+    description:
+      'Saves the given preferences. Credentials, cloud connections, sync state, and export ' +
+      'format have their own endpoints and cannot be set here.',
+  })
   @ApiResponse({ status: 200, description: 'Configuration updated' })
+  @ApiResponse({ status: 400, description: 'Unknown or reserved setting, or an invalid value' })
   async updateConfig(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() newConfig: Record<string, string>,
+    @Body() newConfig: UpdateConfigDto,
   ): Promise<{ success: boolean }> {
     return this.configService.updateConfig(user.userId, newConfig);
   }

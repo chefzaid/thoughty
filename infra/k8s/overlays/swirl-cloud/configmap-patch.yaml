@@ -10,6 +10,11 @@ data:
   REDIS_HOST: redis.swirlit.internal
   CORS_ORIGIN: https://thoughty.swirlit.dev
   FRONTEND_URL: https://thoughty.swirlit.dev
+  # Two proxies precede the API: Cloudflare (an edge address, or the HA tunnel connector on
+  # loopback) and Traefik. Trusting only private ranges would key rate limits on the shared
+  # Cloudflare edge address. Traefik drops X-Forwarded-For from peers outside its trusted edge
+  # ranges, so counting hops cannot be spoofed by requests that bypass Cloudflare.
+  TRUST_PROXY: "2"
   KEYCLOAK_ISSUER: https://keycloak.swirlit.dev/auth/realms/swirlit
   KEYCLOAK_JWKS_URI: http://keycloak.swirlit.internal:8080/auth/realms/swirlit/protocol/openid-connect/certs
   KEYCLOAK_AUDIENCE: oauth2-proxy

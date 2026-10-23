@@ -23,6 +23,7 @@ describe('cloud-sync-worker bootstrap', () => {
     const FakeWorkerService = class {};
     const FakeMemoirWorkerService = class {};
     const FakeRecycleBinWorkerService = class {};
+    const FakeAccountPurgeWorkerService = class {};
 
     jest.spyOn(process, 'once').mockImplementation(((signal: string, handler: () => void) => {
       handlers[signal] = handler;
@@ -40,6 +41,9 @@ describe('cloud-sync-worker bootstrap', () => {
     jest.doMock('./modules/recycle-bin/recycle-bin-purge-worker.service', () => ({
       RecycleBinPurgeWorkerService: FakeRecycleBinWorkerService,
     }));
+    jest.doMock('./modules/account-purge/account-purge-worker.service', () => ({
+      AccountPurgeWorkerService: FakeAccountPurgeWorkerService,
+    }));
 
     await import('./cloud-sync-worker');
     await flushBootstrap();
@@ -51,7 +55,8 @@ describe('cloud-sync-worker bootstrap', () => {
     expect(app.get).toHaveBeenCalledWith(FakeWorkerService);
     expect(app.get).toHaveBeenCalledWith(FakeMemoirWorkerService);
     expect(app.get).toHaveBeenCalledWith(FakeRecycleBinWorkerService);
-    expect(start).toHaveBeenCalledTimes(3);
+    expect(app.get).toHaveBeenCalledWith(FakeAccountPurgeWorkerService);
+    expect(start).toHaveBeenCalledTimes(4);
     expect(typeof handlers.SIGINT).toBe('function');
     expect(typeof handlers.SIGTERM).toBe('function');
 
@@ -75,6 +80,7 @@ describe('cloud-sync-worker bootstrap', () => {
     jest.doMock('./modules/cloud-sync/cloud-sync-worker.service', () => ({ CloudSyncWorkerService: class {} }));
     jest.doMock('./modules/memoir/memoir-delivery-worker.service', () => ({ MemoirDeliveryWorkerService: class {} }));
     jest.doMock('./modules/recycle-bin/recycle-bin-purge-worker.service', () => ({ RecycleBinPurgeWorkerService: class {} }));
+    jest.doMock('./modules/account-purge/account-purge-worker.service', () => ({ AccountPurgeWorkerService: class {} }));
 
     await import('./cloud-sync-worker');
     await flushBootstrap();

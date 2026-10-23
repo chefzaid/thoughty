@@ -16,8 +16,9 @@ export class RefreshToken {
   @Column({ name: 'user_id', type: 'integer' })
   userId: number;
 
-  @Column({ type: 'varchar', length: 255 })
-  token: string;
+  /** SHA-256 (hex) of the refresh token; the token itself is never stored. */
+  @Column({ name: 'token_hash', type: 'varchar', length: 64 })
+  tokenHash: string;
 
   @Column({ name: 'expires_at', type: 'timestamp' })
   expiresAt: Date;

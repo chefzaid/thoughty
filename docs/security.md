@@ -6,19 +6,22 @@ Thoughty stores private journals, attachments, sessions, and encrypted third-par
 
 - Every API route needs an access token unless marked `@Public()`.
 - The global `ValidationPipe` whitelists DTO fields and rejects unknown ones.
-- Every query is scoped to the authenticated user. A diary or entry the caller does not own answers `404`, including the target diary when creating, moving, or importing entries.
+- Every query is scoped to the authenticated user. A diary, entry, or attachment the caller does not own answers `404`, including the target diary when creating, moving, or importing entries.
 - Passwords use bcrypt. Reset, verification, and 2FA challenge tokens are stored only as SHA-256 hashes.
-- In production, API responses carry a per-response nonce CSP with no `unsafe-inline` (`common/security/csp.ts`), and served HTML such as Swagger UI gets the nonce. Do not add `unsafe-inline`. The web NGINX config sets `X-Frame-Options`, `X-Content-Type-Options`, and `Referrer-Policy`, but no CSP.
+- In production, API responses carry a per-response nonce CSP with no `unsafe-inline` (`common/security/csp.ts`), and served HTML such as Swagger UI gets the nonce. Do not add `unsafe-inline`.
+- The web NGINX config (`thoughty-web/nginx-security-headers.conf`, included for every response including `/assets/`) sends a strict CSP: scripts, styles, fonts, and connections from `'self'` only, images from `'self'`, `data:`, `blob:`, and Google profile pictures, media and frames from `blob:` for attachment previews, `object-src 'none'`, and `frame-ancestors 'none'`. Only style attributes are allowed inline, because the browser's own PDF and text viewers need them. External images in Markdown entries are therefore blocked. It also sends HSTS, `X-Frame-Options: DENY`, and a `Permissions-Policy` that allows only the microphone (memoir recordings). A build with `VITE_GOOGLE_CLIENT_ID` set would also need the Google Identity Services origins added to the CSP.
 
 ## Authentication and Sessions
 
-In production, the ingress sends every `/api` request through the platform's Keycloak OAuth2 Proxy, which forwards the Keycloak access token to `GET /api/auth/sso`. The API verifies its RS256 signature against Keycloak's JWKS, plus issuer, expiry, and the `oauth2-proxy` audience, and requires a verified email. It then links or creates the local user and issues Thoughty's own tokens. Identity headers are never trusted unverified. Local development uses email or username with a password, and optional Google sign-in.
+In production, the ingress sends every `/api` request through the platform's Keycloak OAuth2 Proxy, which forwards the Keycloak access token to `GET /api/auth/sso`. The API verifies its RS256 signature against Keycloak's JWKS, plus issuer, expiry, and the `oauth2-proxy` audience, and requires a verified email. It then links or creates the local user and issues Thoughty's own tokens. Identity headers are never trusted unverified. Local development uses email or username with a password, and optional Google sign-in: the browser sends the Google ID token and the API verifies its RS256 signature against Google's keys, the issuer, the audience (`GOOGLE_CLIENT_ID`, which must match the web's `VITE_GOOGLE_CLIENT_ID`), and expiry, and requires a verified email before it links or creates the account. Without `GOOGLE_CLIENT_ID` Google sign-in answers `503`. Both flows share `auth/services/jwks-key-store.ts`.
 
 - **Access token:** JWT signed with `JWT_SECRET`, 15 minutes by default (`JWT_EXPIRES_IN`).
-- **Refresh token:** JWT signed with `REFRESH_SECRET`, valid 7 days, and stored in `refresh_tokens`. Each stored token is a session. Refresh needs a matching row and does not rotate the token.
-- The web app keeps both tokens in `localStorage`.
+- **Refresh token:** JWT signed with `REFRESH_SECRET`, valid 7 days. Only its SHA-256 hash is stored, in `refresh_tokens`; each row is a session. Every refresh deletes the presented row and issues a new token, so a token works once and a replayed one answers `401`.
+- **Where tokens live:** the refresh token travels only in the `thoughty_refresh_token` cookie (httpOnly, `SameSite=Strict`, `Secure` in production, path `/api/auth`), set by every endpoint that signs in and cleared on logout, account deletion, and a rejected refresh. No response body contains it. The web app keeps the access token in memory and calls refresh on page load. It never uses `localStorage` for tokens and removes keys left there by older versions.
+- **Upgrade path:** for a refresh token issued before cookies, refresh still accepts it once in the request body when no cookie is present, then switches the browser to the cookie. This can be removed once those tokens have expired (7 days after the release).
 - Users can list sessions (token values are never returned) and revoke one or all others. Logout deletes the presented token. Password change, password reset, and account deletion delete all of them.
-- Account deletion is a soft delete (local accounts confirm the password). The account can no longer sign in; its content stays in the database.
+- Login answers an unknown, deleted, or password-less account exactly like a wrong password, after the same bcrypt work. Forgot-password returns the same message for every address and does not wait for the mail server. Registration still reports a taken email or username.
+- Account deletion signs the writer out at once (local accounts confirm the password). A worker job erases the account and everything it owns after `ACCOUNT_PURGE_AFTER_DAYS` (default 30), see [Data Protection](#data-protection).
 
 **Email verification and 2FA.** Verification tokens last 24 hours. Verified password accounts can enable email 2FA. Login then returns an opaque challenge until the six-digit code is confirmed. Codes are HMAC-SHA-256 values keyed by `TWO_FACTOR_SECRET` (derived from `JWT_SECRET` if unset; use one value across replicas). Challenges expire after 10 minutes and are cleared atomically on success. Disabling 2FA needs the password.
 
@@ -50,7 +53,7 @@ Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):
 | Import writes | 300 per 15 min | app-import batches (`/api/io/import/entries`, `/api/io/import/attachments`) |
 
 - Counters use Redis when `REDIS_URL` or `REDIS_HOST` is set, and fall back to in-process counters if Redis fails.
-- Counters key on the client IP. Behind an ingress, check the trusted-proxy and client-IP path before relying on per-client limits.
+- Counters key on the client IP (`req.ip`), so Express must trust exactly the proxies in front of the API (`TRUST_PROXY`, `common/security/trust-proxy.ts`). swirl-cloud sets `2` (Cloudflare or the HA tunnel, then Traefik, which rewrites `X-Forwarded-For` from anyone else). Unset, production trusts private-network proxies and other environments trust none. If a proxy is added or removed in front of the API, change `TRUST_PROXY`: too few hops makes every client share one counter, too many lets clients choose their own IP.
 - Register and login reject requests that fill the hidden `website` bot-trap field.
 - Body limits (`common/security/request-payload-limits.ts`): JSON `1mb` and forms `256kb`, set with `REQUEST_BODY_LIMIT`, `REQUEST_JSON_BODY_LIMIT`, and `REQUEST_FORM_BODY_LIMIT`. Only `/api/io/preview` and `/api/io/import/*` accept JSON up to `8mb` (`REQUEST_IMPORT_BODY_LIMIT`), so a 5 MB text import fits once escaped. The ingress caps bodies at 10 MiB.
 - Uploads take one file of at most 5 MB and one scalar field, with no nested field names (`common/multipart-limits.ts`). App-import file batches take up to 8 files.
@@ -65,14 +68,16 @@ Production secrets live in Vault and reach the cluster through External Secrets 
 - `CONFIG_ENCRYPTION_SECRET`: the most sensitive value. Leaking it exposes stored provider tokens and AI keys; losing it makes them unreadable.
 - PostgreSQL and backup credentials, S3 keys, the optional shared `OPENROUTER_API_KEY`, cloud-provider OAuth client secrets, and SMTP credentials
 
-The signing secrets have development defaults in code. Only `CONFIG_ENCRYPTION_SECRET` is enforced at production startup, so set every value.
+In production the API and worker refuse to start without `CONFIG_ENCRYPTION_SECRET`, or when `JWT_SECRET` or `REFRESH_SECRET` (and `TWO_FACTOR_SECRET`, when set) is missing, an example value, or shorter than 32 characters (`auth/auth-secrets.ts`). Development keeps working defaults.
 
 ## Data Protection
 
-- **Encryption at rest:** personal OpenRouter keys and cloud-provider tokens are encrypted with AES-256-GCM using `CONFIG_ENCRYPTION_SECRET`. Other settings are plain text. Personal keys are checked with OpenRouter before storage, shown only as their last five characters, and left out of `GET /api/config` and the data download. Cloud tokens appear in both as ciphertext.
-- **Attachments:** a MIME allowlist (images including SVG, PDF, text, audio) and the 5 MB limit are checked before storage. Objects use random UUID keys in private buckets. The file route needs a session but does not check ownership; it relies on the unguessable key.
+- **Encryption at rest:** personal OpenRouter keys and cloud-provider tokens are encrypted with AES-256-GCM using `CONFIG_ENCRYPTION_SECRET`. Other settings are plain text. Personal keys are checked with OpenRouter before storage and shown only as their last five characters.
+- **Settings API:** `GET /api/config` returns only user preferences, and `POST /api/config` accepts only an allowlist of preference keys with validated values (`config/dto/config.dto.ts`); credentials, cloud tokens, and sync state cannot be read or written through it.
+- **Attachments:** a MIME allowlist (images including SVG, PDF, text, audio) and the 5 MB limit are checked before storage. Objects use random UUID keys in private buckets. The file route serves a file only to the owner of its attachment (anyone else gets `404`), with the stored type from the allowlist, `X-Content-Type-Options: nosniff`, and a safe `Content-Disposition`. Only raster images, audio, and PDF are shown inline; SVG and text are downloads with a sandboxing CSP.
 - **Recycle bin:** deleted entries are hidden from every other feature for 30 days, then purged with their revisions, attachments, chat, comments, and likes. Deleting forever purges at once. Storage failures are logged by key and do not stop the purge.
-- **Data download:** includes recycle-bin entries, revisions, attachment metadata, settings, social and memoir data, and stored mood readings. It leaves out the password hash, session tokens, the personal AI key, and AI chat history.
+- **Deleted accounts:** an hourly worker job permanently deletes accounts deleted more than `ACCOUNT_PURGE_AFTER_DAYS` ago: first their files in object storage, then the user row, whose foreign keys cascade to everything they own or wrote, including their comments, likes, follows, and feature requests. If any file cannot be deleted, the account is kept and retried on the next run.
+- **Data download:** includes recycle-bin entries, revisions, attachment metadata, settings, social and memoir data, and stored mood readings. It leaves out the password hash, session tokens, the personal AI key, cloud tokens and sync internals, and AI chat history.
 - **App imports:** Day One and Journey exports are parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)). Journey HTML goes through an inert `DOMParser` that keeps only text, basic formatting, and `http`, `https`, or `mailto` links. Imported entries are private and go only to the writer's own diaries. A batch holds at most 200 entries and is saved in one transaction. Every file is checked before any is stored.
 - **Markdown export:** streams one attachment at a time, re-checks the 5 MB limit, and builds paths from sanitized names.
 - **Memoir:** answers are private entries. Weekly emails go only to verified addresses of live accounts and contain the question and a link, never journal text.
@@ -99,7 +104,7 @@ AI is optional and uses OpenRouter. A user's personal key, when set, replaces th
 | Book chapter framing | when chosen: each chapter's dates and text, cut to 20,000 characters, for the introduction and summary |
 | Audio transcription | the one selected audio attachment, up to 5 MB |
 
-- Auto Tag, summary, Get Inspired, duplicate review, and tag organization tell the model to ignore instructions in entry text or tags. The other prompts do not yet. New prompts must.
+- Every prompt treats journal text as untrusted data: it is wrapped in tagged blocks (`ai/untrusted-content.ts`, which escapes a closing tag inside the text) and the system prompt tells the model to ignore instructions inside them. New prompts must use the same helper.
 - Mood readings with clinical labels are discarded. Applying a tag plan does not call the provider again.
 - Usage rows store metadata only (model, tokens, cost, time), never prompts or completions.
 
