@@ -3,12 +3,14 @@ import { EntriesService } from './entries.service';
 import { EntriesQueryService } from './entries-query.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
+import { EntryTaskListService } from './entry-task-list.service';
 
 describe('EntriesService', () => {
   let service: EntriesService;
   let entriesQueryService: Record<string, jest.Mock>;
   let entriesCommandService: Record<string, jest.Mock>;
   let entryListCacheService: Record<string, jest.Mock>;
+  let entryTaskListService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
     entriesQueryService = {
@@ -43,12 +45,17 @@ describe('EntriesService', () => {
       invalidateUser: jest.fn(),
     };
 
+    entryTaskListService = {
+      setTask: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EntriesService,
         { provide: EntriesQueryService, useValue: entriesQueryService },
         { provide: EntriesCommandService, useValue: entriesCommandService },
         { provide: EntryListCacheService, useValue: entryListCacheService },
+        { provide: EntryTaskListService, useValue: entryTaskListService },
       ],
     }).compile();
 
@@ -162,6 +169,17 @@ describe('EntriesService', () => {
     const result = await service.update(1, 1, dto as never);
 
     expect(entriesCommandService.update).toHaveBeenCalledWith(1, 1, dto);
+    expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
+    expect(result).toBe(expected);
+  });
+
+  it('ticks a task through EntryTaskListService and clears the cached lists', async () => {
+    const expected = { success: true, entry: { id: 1, content: '- [x] Call' } };
+    entryTaskListService.setTask.mockResolvedValue(expected);
+
+    const result = await service.setTask(1, 4, { line: 0, checked: true });
+
+    expect(entryTaskListService.setTask).toHaveBeenCalledWith(1, 4, { line: 0, checked: true });
     expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
     expect(result).toBe(expected);
   });

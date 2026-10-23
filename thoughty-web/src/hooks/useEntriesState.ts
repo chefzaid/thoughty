@@ -5,6 +5,7 @@ import { useApiServices } from './useApiServices';
 import type { SemanticSearchResponse } from '../services/api/aiService';
 import { compareSameDayEntries, reassignSameDayIndexes } from '../utils/entryTime';
 import type { MoodFilter } from '../utils/entryMood';
+import { setTaskLine } from '../utils/taskList';
 
 export type EntrySearchMode = 'keyword' | 'semantic';
 export type SemanticSearchStatus = 'idle' | 'loading' | 'complete' | 'error';
@@ -38,6 +39,9 @@ export const useEntries = (
   const [semanticSearchStatus, setSemanticSearchStatus] = useState<SemanticSearchStatus>('idle');
   const [semanticSearchResult, setSemanticSearchResult] = useState<SemanticSearchResponse | null>(null);
   const semanticRequestIdRef = useRef(0);
+  // Ticks not sent yet, by entry and line: a line ticked again before its request leaves sends only its last state.
+  const pendingTasksRef = useRef(new Map<number, Map<number, boolean>>());
+  const sendingTasksRef = useRef(new Set<number>());
   const [filterTags, setFilterTags] = useState<string[]>([]);
   const [filterDateObj, setFilterDateObj] = useState<Date | null>(null);
   const [filterVisibility, setFilterVisibility] = useState<'all' | 'public' | 'private'>('all');
@@ -239,6 +243,53 @@ export const useEntries = (
     }
   }, [entriesService, refreshEntryQueries]);
 
+  /** Sends an entry's waiting ticks one after the other, so the server applies them in order. */
+  const sendEntryTasks = useCallback(async (entryId: number) => {
+    if (sendingTasksRef.current.has(entryId)) {
+      return;
+    }
+    sendingTasksRef.current.add(entryId);
+
+    let failure: { error?: string } | null = null;
+    try {
+      const pending = pendingTasksRef.current.get(entryId);
+      while (pending && pending.size > 0 && !failure) {
+        const [line, checked] = pending.entries().next().value as [number, boolean];
+        pending.delete(line);
+        const result = await entriesService.setEntryTask(entryId, line, checked);
+        if (!result.success) {
+          failure = result;
+        }
+      }
+    } finally {
+      pendingTasksRef.current.delete(entryId);
+      sendingTasksRef.current.delete(entryId);
+    }
+
+    if (failure) {
+      // Back to what the server holds, for this list and every other one
+      await refreshEntryQueries();
+      alert(failure.error || 'Failed to update the task.');
+      return;
+    }
+
+    // This list already shows the ticks; the others read the entry again when they are next shown
+    await queryClient.invalidateQueries({ queryKey: ['app', ENTRIES_QUERY_KEY], refetchType: 'none' });
+  }, [entriesService, queryClient, refreshEntryQueries]);
+
+  /** Ticks or unticks a task list item of a Markdown entry at once, and saves it in the background. */
+  const setEntryTask = useCallback((entry: Entry, line: number, checked: boolean) => {
+    setEntries((previous) => previous.map((current) => {
+      const content = current.id === entry.id ? setTaskLine(current.content, line, checked) : null;
+      return content === null ? current : { ...current, content };
+    }));
+
+    const pending = pendingTasksRef.current.get(entry.id) ?? new Map<number, boolean>();
+    pending.set(line, checked);
+    pendingTasksRef.current.set(entry.id, pending);
+    void sendEntryTasks(entry.id);
+  }, [sendEntryTasks, setEntries]);
+
   const fetchEntryHistory = useCallback(async (entryId: number) => {
     return entriesService.fetchEntryHistory(entryId);
   }, [entriesService]);
@@ -384,6 +435,7 @@ export const useEntries = (
     toggleFavorite,
     toggleArchived,
     togglePinned,
+    setEntryTask,
     fetchEntryHistory,
     fetchEntryBacklinks,
     deleteRevision,

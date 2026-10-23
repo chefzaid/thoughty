@@ -213,6 +213,7 @@ describe('useAppShellModel', () => {
       toggleArchived: vi.fn(),
       toggleFavorite: vi.fn(),
       togglePinned: vi.fn(),
+      setEntryTask: vi.fn(),
       toggleVisibility: vi.fn(),
       totalPages: 8,
     });

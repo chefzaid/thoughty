@@ -33,6 +33,7 @@ vi.mock("../services/api", () => ({
     toggleFavorite: vi.fn(),
     toggleArchived: vi.fn(),
     togglePinned: vi.fn(),
+    setEntryTask: vi.fn(),
     bulkOperation: vi.fn(),
     navigateToFirst: vi.fn(),
     navigateByDate: vi.fn(),
@@ -408,6 +409,7 @@ describe("useAppState Hooks", () => {
         toggleFavorite: vi.fn(),
         toggleArchived: vi.fn(),
         togglePinned: vi.fn(),
+        setEntryTask: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
@@ -488,6 +490,7 @@ describe("useAppState Hooks", () => {
         toggleFavorite: vi.fn(),
         toggleArchived: vi.fn(),
         togglePinned: vi.fn(),
+        setEntryTask: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
@@ -577,6 +580,7 @@ describe("useAppState Hooks", () => {
         toggleFavorite: vi.fn(),
         toggleArchived: vi.fn(),
         togglePinned: vi.fn(),
+        setEntryTask: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
         navigateByDate: vi.fn(),
@@ -609,6 +613,91 @@ describe("useAppState Hooks", () => {
           2, 1, 3,
         ]);
       });
+    });
+
+    const mockTaskEntriesService = async (
+      setEntryTask: (id: number, line: number, checked: boolean) => Promise<{ success: boolean; error?: string }>,
+      fetchEntries = vi.fn(),
+    ) => {
+      fetchEntries.mockResolvedValue({
+        entries: [
+          { id: 7, date: "2024-01-15", index: 1, content: "- [ ] One\n- [ ] Two", tags: [], format: "markdown" },
+        ],
+        totalPages: 1,
+        allTags: [],
+      });
+      const { createEntriesService } = await import("../services/api");
+      vi.mocked(createEntriesService).mockReturnValue({
+        fetchEntries,
+        fetchEntryDates: vi.fn().mockResolvedValue([]),
+        fetchYearsMonths: vi.fn().mockResolvedValue({ years: [], months: [] }),
+        createEntry: vi.fn(),
+        updateEntry: vi.fn(),
+        deleteEntry: vi.fn(),
+        toggleVisibility: vi.fn(),
+        toggleFavorite: vi.fn(),
+        toggleArchived: vi.fn(),
+        togglePinned: vi.fn(),
+        setEntryTask,
+        bulkOperation: vi.fn(),
+        navigateToFirst: vi.fn(),
+        navigateByDate: vi.fn(),
+        navigateById: vi.fn(),
+        fetchEntryHistory: vi.fn(),
+        fetchEntryBacklinks: vi.fn(),
+        deleteRevision: vi.fn(),
+        reorderEntries: vi.fn(),
+        renameTag: vi.fn(),
+        fetchTagUsage: vi.fn(),
+        deleteTag: vi.fn(),
+      });
+      return fetchEntries;
+    };
+
+    it("ticks a task at once and sends ticks one after the other, only the last state of a line ticked again", async () => {
+      let releaseFirst: (value: { success: boolean }) => void = () => {};
+      const setEntryTask = vi.fn()
+        .mockImplementationOnce(() => new Promise((resolve) => { releaseFirst = resolve; }))
+        .mockResolvedValue({ success: true });
+      const fetchEntries = await mockTaskEntriesService(setEntryTask);
+
+      const { result } = renderHook(() => useEntries(true, mockConfig, null));
+      await waitFor(() => expect(result.current.entries).toHaveLength(1));
+      const entry = result.current.entries[0]!;
+
+      act(() => {
+        result.current.setEntryTask(entry, 0, true);
+        result.current.setEntryTask(entry, 1, true);
+        result.current.setEntryTask(entry, 1, false);
+        result.current.setEntryTask(entry, 1, true);
+      });
+
+      await waitFor(() => expect(result.current.entries[0]?.content).toBe("- [x] One\n- [x] Two"));
+      expect(setEntryTask).toHaveBeenCalledTimes(1);
+      await act(async () => { releaseFirst({ success: true }); });
+
+      await waitFor(() => expect(setEntryTask).toHaveBeenCalledTimes(2));
+      expect(setEntryTask.mock.calls).toEqual([[7, 0, true], [7, 1, true]]);
+      expect(fetchEntries).toHaveBeenCalledTimes(1);
+      expect(result.current.entries[0]?.content).toBe("- [x] One\n- [x] Two");
+    });
+
+    it("goes back to the saved entry and says why when a tick fails", async () => {
+      const alertSpy = vi.spyOn(globalThis, "alert").mockImplementation(() => {});
+      const setEntryTask = vi.fn().mockResolvedValue({ success: false, error: "That line is no longer a task." });
+      const fetchEntries = await mockTaskEntriesService(setEntryTask);
+
+      const { result } = renderHook(() => useEntries(true, mockConfig, null));
+      await waitFor(() => expect(result.current.entries).toHaveLength(1));
+
+      act(() => {
+        result.current.setEntryTask(result.current.entries[0]!, 0, true);
+      });
+
+      await waitFor(() => expect(alertSpy).toHaveBeenCalledWith("That line is no longer a task."));
+      expect(fetchEntries).toHaveBeenCalledTimes(2);
+      await waitFor(() => expect(result.current.entries[0]?.content).toBe("- [ ] One\n- [ ] Two"));
+      alertSpy.mockRestore();
     });
 
     it("exposes entry actions", () => {

@@ -33,6 +33,7 @@ interface EntryViewModeProps {
     onToggleFavorite: (entry: Entry) => void;
     onToggleArchived: (entry: Entry) => void;
     onTogglePinned: (entry: Entry) => void;
+    onToggleTask?: (entry: Entry, line: number, checked: boolean) => void;
     onEdit: (entry: Entry) => void;
     onDelete: (id: number) => void;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
@@ -66,6 +67,7 @@ export default function EntryViewMode({
     onToggleFavorite,
     onToggleArchived,
     onTogglePinned,
+    onToggleTask,
     onEdit,
     onDelete,
     onNavigateToEntry,
@@ -219,6 +221,7 @@ export default function EntryViewMode({
                 theme={config.theme}
                 fontColor={config.fontColor}
                 onNavigateToEntry={onNavigateToEntry}
+                onToggleTask={onToggleTask ? (line, checked) => onToggleTask(entry, line, checked) : undefined}
                 searchTerm={searchTerm}
                 showHistory={showHistory}
                 backlinks={backlinks}

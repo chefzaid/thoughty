@@ -242,6 +242,7 @@ describe('EntriesList.helpers', () => {
 
         fireEvent.click(await screen.findByTestId('md-editor'));
         expect(setEditText).toHaveBeenCalledWith('markdown edit');
+        expect(screen.getByText('markdownHelpSummary')).toBeInTheDocument();
     });
 
     it('hides the bulk action bar when nothing is selected', () => {

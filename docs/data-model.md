@@ -242,6 +242,10 @@ The partial index `idx_entries_user_mood_date` on `(user_id, mood, date) WHERE m
 
 `EntryMood1786147200000` adds the columns, checks, and index. Both columns have constant defaults, so no existing row is rewritten; rolling back drops them with what was recorded.
 
+## Task List Ticks
+
+Markdown task list items (`- [ ]` and `- [x]`) are plain text in `entries.content`; nothing else stores them. `PATCH /api/entries/:id/tasks` sets the box on one line of the content (counted from 0) and changes nothing else (`EntryTaskListService`). It locks the entry row (`FOR UPDATE`) for the change, so ticks sent at the same time are applied one after the other, and answers `409` when the line is no longer a task, for example after an edit on another device. Like any edit it first saves the entry as it was to `entry_revisions`, except when the latest revision is under ten minutes old and the entry differs from it only in its ticks (`revisionCoversTicks`): that revision already holds the version from before the ticking began, so a run of ticks keeps one revision. Plain-text entries are refused, and entries in the recycle bin are not found. No migration was needed.
+
 ## Recycle Bin
 
 Deleting an entry sets `entries.deleted_at` (`TIMESTAMPTZ`, a TypeORM delete date column) instead of removing the row. TypeORM leaves these rows out of every entity query and join, and the raw SQL reads (tag usage, achievements, the public feed) filter `deleted_at IS NULL` themselves, so an entry in the bin is invisible everywhere except the recycle bin endpoints (`/api/recycle-bin`). Its revisions, attachments, AI chat, comments, likes, and memoir answer row stay in place. Live entries on the same day are renumbered when one is deleted; a restored entry goes back at the end of its day, into its diary or into the default diary when that diary no longer exists. The partial index `idx_entries_user_deleted_at` on `(user_id, deleted_at)` serves the bin listing and the purge.

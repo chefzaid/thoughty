@@ -15,8 +15,9 @@ import { aiActionButtonClass } from './aiActionButton';
 import EntryTimeField from './EntryTimeField';
 import EntryMoodField from './EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
+import MarkdownHelp from '../MarkdownEditor/MarkdownHelp';
 
-const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
+const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
 interface EntryFormProps {
     readonly newEntryText: string;
@@ -265,8 +266,10 @@ function EntryForm({
                                         title: t('entryReferenceHint'),
                                         style: { color: writingTextColor },
                                     }}
+                                    t={t}
                                 />
                             </div>
+                            <MarkdownHelp theme={theme} t={t} />
                         </Suspense>
                     ) : (
                         <textarea

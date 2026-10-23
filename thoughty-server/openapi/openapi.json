@@ -1800,6 +1800,111 @@
         ]
       }
     },
+    "/api/entries/{id}/tasks": {
+      "patch": {
+        "description": "Sets the task on one line of the entry text (`- [ ]` or `- [x]`) as done or not, and changes nothing else. The previous version goes to the revision history, except when the latest revision is under ten minutes old and the entry has changed since only in its ticks, so a run of ticks keeps one revision.",
+        "operationId": "EntriesController_setTask",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEntryTaskDto"
+              },
+              "example": {
+                "line": 2,
+                "checked": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryMutationResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "entry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1,
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The entry is not Markdown"
+          },
+          "404": {
+            "description": "Entry not found"
+          },
+          "409": {
+            "description": "The line is not a task list item (the entry changed elsewhere)"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Tick or untick a task list item of a Markdown entry",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
     "/api/entries/{id}/visibility": {
       "patch": {
         "operationId": "EntriesController_updateVisibility",
@@ -8884,6 +8989,30 @@
               "swimming"
             ]
           }
+        }
+      },
+      "UpdateEntryTaskDto": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "number",
+            "description": "Line of the entry text holding the task list item (`- [ ]` or `- [x]`), counted from 0. Only Markdown entries have task lists.",
+            "minimum": 0,
+            "example": 2
+          },
+          "checked": {
+            "type": "boolean",
+            "description": "Whether the task is done",
+            "example": true
+          }
+        },
+        "required": [
+          "line",
+          "checked"
+        ],
+        "example": {
+          "line": 2,
+          "checked": true
         }
       },
       "UpdateVisibilityDto": {

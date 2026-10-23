@@ -11,3 +11,4 @@ export * from './zip-writer.util';
 export * from './markdown-archive.util';
 export * from './entry-order.util';
 export * from './entry-mood.util';
+export * from './entry-task-list.util';

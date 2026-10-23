@@ -535,4 +535,81 @@ describe('EntryContentRenderer', () => {
             });
         });
     });
+
+    describe('Markdown task lists', () => {
+        const tasks = '# Errands\n\n- [ ] Call the bank\n- [x] Post the **letter**\n  - [ ] Nested';
+
+        it('shows read-only task boxes named after their item when nothing can tick them', async () => {
+            render(<EntryContentRenderer content={tasks} format="markdown" />);
+
+            const call = await screen.findByRole('checkbox', { name: 'Call the bank' });
+            const post = screen.getByRole('checkbox', { name: 'Post the letter' });
+            expect(call).toBeDisabled();
+            expect(call).not.toBeChecked();
+            expect(post).toBeChecked();
+            expect(screen.getByRole('checkbox', { name: 'Nested' })).toBeDisabled();
+        });
+
+        it('ticks a task by its line in the entry, without reaching the card', async () => {
+            const user = userEvent.setup();
+            const onToggleTask = vi.fn();
+            const onCardClick = vi.fn();
+            render(
+                <div onClick={onCardClick}>
+                    <EntryContentRenderer content={tasks} format="markdown" onToggleTask={onToggleTask} />
+                </div>
+            );
+
+            await user.click(await screen.findByRole('checkbox', { name: 'Call the bank' }));
+            await user.click(screen.getByRole('checkbox', { name: 'Post the letter' }));
+            await user.click(screen.getByRole('checkbox', { name: 'Nested' }));
+
+            expect(onToggleTask.mock.calls).toEqual([[2, true], [3, false], [4, true]]);
+            expect(onCardClick).not.toHaveBeenCalled();
+        });
+
+        it('keeps the box focused when the tick changes the content', async () => {
+            const user = userEvent.setup();
+            const { rerender } = render(<EntryContentRenderer content="- [ ] One" format="markdown" onToggleTask={vi.fn()} />);
+
+            const box = await screen.findByRole('checkbox', { name: 'One' });
+            await user.click(box);
+            rerender(<EntryContentRenderer content="- [x] One" format="markdown" onToggleTask={vi.fn()} />);
+
+            await waitFor(() => expect(screen.getByRole('checkbox', { name: 'One' })).toBeChecked());
+            expect(screen.getByRole('checkbox', { name: 'One' })).toBe(box);
+            expect(box).toHaveFocus();
+        });
+
+        it('counts lines across cross-references and leaves a task that starts mid-line as it is', async () => {
+            const onToggleTask = vi.fn();
+            const user = userEvent.setup();
+            render(
+                <EntryContentRenderer
+                    content={'See [[2024-01-15]]\n- [ ] After the link\n\nAlso [[2024-01-16]] - [ ] mid-line'}
+                    format="markdown"
+                    onNavigateToEntry={mockOnNavigateToEntry}
+                    onToggleTask={onToggleTask}
+                />
+            );
+
+            await user.click(await screen.findByRole('checkbox', { name: 'After the link' }));
+            expect(onToggleTask).toHaveBeenCalledWith(1, true);
+            expect(screen.getByRole('checkbox', { name: 'mid-line' })).toBeDisabled();
+        });
+
+        it('keeps task boxes while search matches are highlighted', async () => {
+            render(<EntryContentRenderer content="- [ ] Call the bank" format="markdown" searchTerm="bank" onToggleTask={vi.fn()} />);
+
+            expect(await screen.findByRole('checkbox', { name: 'Call the bank' })).toBeEnabled();
+            expect(screen.getByText('bank').tagName).toBe('MARK');
+        });
+
+        it('leaves plain-text entries as text', () => {
+            render(<EntryContentRenderer content="- [ ] Call the bank" format="plain" onToggleTask={vi.fn()} />);
+
+            expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+            expect(screen.getByText('- [ ] Call the bank')).toBeInTheDocument();
+        });
+    });
 });

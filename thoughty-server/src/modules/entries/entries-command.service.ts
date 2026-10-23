@@ -20,6 +20,23 @@ export function resolveMaxPinnedEntries(setting?: string | null): number {
   return Math.min(parsedLimit, 20);
 }
 
+/** The entry as it is now, to keep in its history before it changes. */
+export function entryRevisionSnapshot(entry: Entry): Partial<EntryRevision> {
+  return {
+    entryId: entry.id,
+    userId: entry.userId,
+    content: entry.content,
+    title: entry.title,
+    timeOfDay: entry.timeOfDay,
+    mood: entry.mood,
+    feelings: entry.feelings ?? [],
+    tags: entry.tags,
+    date: entry.date,
+    format: entry.format,
+    visibility: entry.visibility,
+  };
+}
+
 function countOutsideBin(entries: Entry[]): number {
   return entries.filter((entry) => !entry.deletedAt).length;
 }
@@ -97,19 +114,7 @@ export class EntriesCommandService {
       throw new NotFoundException('Entry not found');
     }
 
-    await this.revisionRepository.save({
-      entryId: entry.id,
-      userId: entry.userId,
-      content: entry.content,
-      title: entry.title,
-      timeOfDay: entry.timeOfDay,
-      mood: entry.mood,
-      feelings: entry.feelings ?? [],
-      tags: entry.tags,
-      date: entry.date,
-      format: entry.format,
-      visibility: entry.visibility,
-    });
+    await this.revisionRepository.save(entryRevisionSnapshot(entry));
 
     const resolvedTags = await this.entryTaggingService.resolveSavedTags(userId, dto.text, dto.tags);
     const oldDate = entry.date;

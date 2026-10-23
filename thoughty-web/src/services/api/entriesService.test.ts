@@ -602,6 +602,37 @@ describe('entriesService', () => {
     });
   });
 
+  describe('setEntryTask', () => {
+    it('sends the line and its state to the tasks route', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ success: true }) });
+
+      const result = await service.setEntryTask(4, 2, true);
+
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries/4/tasks', {
+        method: 'PATCH',
+        body: JSON.stringify({ line: 2, checked: true }),
+      });
+      expect(result).toEqual({ success: true });
+    });
+
+    it('returns the server message when the line is no longer a task', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: false,
+        text: () => Promise.resolve(JSON.stringify({ message: 'That line is no longer a task.' })),
+      });
+
+      await expect(service.setEntryTask(4, 2, false)).resolves.toEqual({ success: false, error: 'That line is no longer a task.' });
+    });
+
+    it('reports a failed request without an error message', async () => {
+      mockAuthFetch.mockRejectedValue(new Error('offline'));
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      await expect(service.setEntryTask(4, 2, false)).resolves.toEqual({ success: false });
+      consoleError.mockRestore();
+    });
+  });
+
   describe('fetchEntries with favorites filter', () => {
     const baseParams = {
       page: 1,

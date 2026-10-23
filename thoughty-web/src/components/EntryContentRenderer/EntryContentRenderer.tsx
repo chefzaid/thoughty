@@ -1,6 +1,8 @@
 import React, { Suspense, lazy, useMemo } from 'react';
 import type { Components } from 'react-markdown';
 import { buildSearchHighlightPattern, splitSearchHighlights } from '../../utils/searchHighlight';
+import { countLinesBefore, findTaskLines } from '../../utils/taskList';
+import type { MarkdownTaskList } from './MarkdownRenderer';
 
 const BRACKET_REFERENCE_PATTERN = /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]/i;
 const LEGACY_REFERENCE_PATTERN = /entry\s*\((\d{4}-\d{2}-\d{2})(?:--(\d+))?\)/i;
@@ -14,6 +16,8 @@ interface SourceEntryInfo {
 interface TextContentPart {
     type: 'text';
     content?: string;
+    /** Where the part starts in the content. */
+    start: number;
     key: string;
 }
 
@@ -44,6 +48,11 @@ interface EntryContentRendererProps {
     readonly searchTerm?: string;
     /** The words and phrases of this entry that matched the search, from the server. */
     readonly searchMatches?: readonly string[];
+    /**
+     * Ticks a task list item of a Markdown entry, by its line in the content (counted from 0). Without
+     * it, as in the feed and other read-only views, task list items show as checkboxes that cannot change.
+     */
+    readonly onToggleTask?: (line: number, checked: boolean) => void;
 }
 
 const LazyMarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
@@ -131,6 +140,7 @@ function parseContentParts(content: string): ContentPart[] | null {
             parts.push({
                 type: 'text',
                 content: content.slice(currentIndex, nextReference.startIndex),
+                start: currentIndex,
                 key: `text-${partIndex++}`
             });
         }
@@ -150,6 +160,7 @@ function parseContentParts(content: string): ContentPart[] | null {
         parts.push({
             type: 'text',
             content: content.slice(currentIndex),
+            start: currentIndex,
             key: `text-${partIndex++}`
         });
     }
@@ -172,7 +183,8 @@ function EntryContentRenderer({
     sourceEntry,
     maxLength,
     searchTerm,
-    searchMatches
+    searchMatches,
+    onToggleTask
 }: Readonly<EntryContentRendererProps>) {
     const highlightPattern = useMemo(
         () => buildSearchHighlightPattern(searchTerm, searchMatches),
@@ -190,6 +202,13 @@ function EntryContentRenderer({
     ), [content, maxLength]);
 
     const parts = useMemo(() => parseContentParts(displayContent), [displayContent]);
+    const taskLines = useMemo(
+        () => (format === 'markdown' && onToggleTask ? findTaskLines(content) : null),
+        [content, format, onToggleTask]
+    );
+    const taskListFrom = (start: number): MarkdownTaskList | undefined => (taskLines && onToggleTask
+        ? { lineOffset: countLinesBefore(displayContent, start), taskLines, onToggle: onToggleTask }
+        : undefined);
 
     // Without a navigation handler (previews, the public feed) a reference is plain styled text,
     // so it never becomes a dead button or a button nested inside a clickable card.
@@ -222,7 +241,7 @@ function EntryContentRenderer({
         if (!parts || parts.length === 0) {
             return (
                 <Suspense fallback={<span className="markdown-content">{displayContent}</span>}>
-                    <LazyMarkdownRenderer content={displayContent} components={markdownComponents} />
+                    <LazyMarkdownRenderer content={displayContent} components={markdownComponents} taskList={taskListFrom(0)} />
                 </Suspense>
             );
         }
@@ -233,7 +252,7 @@ function EntryContentRenderer({
                     if (part.type === 'text') {
                         return (
                             <Suspense key={part.key} fallback={<span className="markdown-content">{part.content || ''}</span>}>
-                                <LazyMarkdownRenderer content={part.content || ''} components={markdownComponents} />
+                                <LazyMarkdownRenderer content={part.content || ''} components={markdownComponents} taskList={taskListFrom(part.start)} />
                             </Suspense>
                         );
                     }

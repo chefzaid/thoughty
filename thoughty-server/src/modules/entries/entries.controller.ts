@@ -16,6 +16,7 @@ import { EntriesService } from './entries.service';
 import {
   CreateEntryDto,
   UpdateEntryDto,
+  UpdateEntryTaskDto,
   UpdateVisibilityDto,
   UpdateFavoriteDto,
   UpdateArchivedDto,
@@ -182,6 +183,27 @@ export class EntriesController {
     @Body() dto: UpdateEntryDto,
   ) {
     return this.entriesService.update(user.userId, id, dto);
+  }
+
+  @Patch(':id/tasks')
+  @ApiOperation({
+    summary: 'Tick or untick a task list item of a Markdown entry',
+    description:
+      'Sets the task on one line of the entry text (`- [ ]` or `- [x]`) as done or not, and changes nothing ' +
+      'else. The previous version goes to the revision history, except when the latest revision is under ten ' +
+      'minutes old and the entry has changed since only in its ticks, so a run of ticks keeps one revision.',
+  })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 200, description: 'Task updated', type: EntryMutationResponseDto })
+  @ApiResponse({ status: 400, description: 'The entry is not Markdown' })
+  @ApiResponse({ status: 404, description: 'Entry not found' })
+  @ApiResponse({ status: 409, description: 'The line is not a task list item (the entry changed elsewhere)' })
+  async setTask(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateEntryTaskDto,
+  ) {
+    return this.entriesService.setTask(user.userId, id, dto);
   }
 
   @Patch(':id/visibility')

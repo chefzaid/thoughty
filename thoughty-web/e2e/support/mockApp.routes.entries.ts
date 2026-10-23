@@ -8,6 +8,13 @@ import {
 import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
 import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 
+const TASK_LINE = /^((?:[\t ]*>)*[\t ]*(?:[*+-]|\d{1,9}[.)])[\t ]+\[)([ xX])(\](?:[\t \r]|$)[^\n]*)$/;
+
+const withoutTicks = (content: string): string => content
+  .split('\n')
+  .map((line) => line.replace(TASK_LINE, '$1 $3'))
+  .join('\n');
+
 function getAutoTagLimit(state: MockAppState): number {
   return Number.parseInt(String(state.config.autoTagMaxTags ?? '0'), 10);
 }
@@ -326,6 +333,44 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
     const entryId = Number(updateMatch[1]);
     moveToTrash(state, (entry) => entry.id === entryId);
     await fulfillJson(route, { success: true });
+    return true;
+  }
+
+  const taskMatch = /^\/api\/entries\/(\d+)\/tasks$/.exec(pathname);
+  if (taskMatch && request.method() === 'PATCH') {
+    const entryId = Number(taskMatch[1]);
+    const payload = request.postDataJSON() as { line: number; checked: boolean };
+    state.taskRequests.push({ entryId, ...payload });
+    const entry = state.entries.find((candidate) => candidate.id === entryId);
+    const lines = entry?.content.split('\n') ?? [];
+    const match = TASK_LINE.exec(lines[payload.line] ?? '');
+    if (!entry || !match) {
+      await fulfillJson(route, { message: 'That line is no longer a task. Reload the entry and try again.' }, { status: 409 });
+      return true;
+    }
+
+    lines[payload.line] = `${match[1]}${payload.checked ? 'x' : ' '}${match[3]}`;
+    const content = lines.join('\n');
+    // Like the server, a run of ticks keeps one revision: the version from before the first tick
+    const latest = state.revisions[entryId]?.at(-1);
+    if (content !== entry.content && (!latest || withoutTicks(latest.content) !== withoutTicks(entry.content))) {
+      state.revisions[entryId] = [...(state.revisions[entryId] || []), {
+        id: Date.now(),
+        entryId,
+        content: entry.content,
+        title: entry.title ?? null,
+        timeOfDay: entry.time_of_day ?? null,
+        mood: entry.mood ?? null,
+        feelings: entry.feelings ?? [],
+        tags: entry.tags,
+        date: entry.date,
+        visibility: entry.visibility,
+        format: entry.format || 'plain',
+        createdAt: new Date().toISOString(),
+      }];
+    }
+    state.entries = state.entries.map((candidate) => (candidate.id === entryId ? { ...candidate, content } : candidate));
+    await fulfillJson(route, { success: true, entry: { ...entry, content } });
     return true;
   }
 

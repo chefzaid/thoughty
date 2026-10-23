@@ -225,6 +225,23 @@ export class UpdatePinnedDto {
   isPinned: boolean;
 }
 
+export class UpdateEntryTaskDto {
+  @ApiProperty({
+    description:
+      'Line of the entry text holding the task list item (`- [ ]` or `- [x]`), counted from 0. Only Markdown ' +
+      'entries have task lists.',
+    minimum: 0,
+    example: 2,
+  })
+  @IsInt({ message: 'Line must be a whole number' })
+  @Min(0)
+  line: number;
+
+  @ApiProperty({ description: 'Whether the task is done', example: true })
+  @IsBoolean()
+  checked: boolean;
+}
+
 export class GetEntriesQueryDto {
   @ApiPropertyOptional({
     description:

@@ -228,6 +228,7 @@ export function EntryBodySection({
     theme,
     fontColor,
     onNavigateToEntry,
+    onToggleTask,
     searchTerm,
     backlinks,
     showHistory,
@@ -243,6 +244,7 @@ export function EntryBodySection({
     theme: Config['theme'];
     fontColor?: string;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
+    onToggleTask?: (line: number, checked: boolean) => void;
     searchTerm?: string;
     backlinks: EntryBacklink[];
     showHistory: boolean;
@@ -284,6 +286,7 @@ export function EntryBodySection({
                     }}
                     searchTerm={searchTerm}
                     searchMatches={entry.search_matches}
+                    onToggleTask={onToggleTask}
                 />
             </div>
             <div className={`mt-3 flex flex-wrap gap-2 text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>

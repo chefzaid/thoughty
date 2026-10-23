@@ -12,8 +12,9 @@ import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 import EntryTimeField from '../EntryForm/EntryTimeField';
 import EntryMoodField from '../EntryForm/EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
+import MarkdownHelp from '../MarkdownEditor/MarkdownHelp';
 
-const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
+const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
 export type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase';
 
@@ -251,8 +252,10 @@ export function EditForm({
                                 preview="edit"
                                 height={200}
                                 textareaProps={{ style: { color: writingTextColor } }}
+                                t={t}
                             />
                         </div>
+                        <MarkdownHelp theme={config.theme} t={t} />
                     </Suspense>
                 ) : (
                     <textarea

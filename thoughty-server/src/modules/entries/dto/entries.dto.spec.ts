@@ -1,6 +1,6 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { CreateEntryDto, GetEntriesQueryDto, UpdateEntryDto } from './entries.dto';
+import { CreateEntryDto, GetEntriesQueryDto, UpdateEntryDto, UpdateEntryTaskDto } from './entries.dto';
 
 async function invalidProperties(dto: object): Promise<string[]> {
   return (await validate(dto)).map((error) => error.property);
@@ -66,5 +66,19 @@ describe('entry mood check-in', () => {
     for (const mood of ['0', '6', 'good', '1,,2', '1;2']) {
       await expect(invalidProperties(plainToInstance(GetEntriesQueryDto, { mood }))).resolves.toEqual(['mood']);
     }
+  });
+});
+
+describe('UpdateEntryTaskDto', () => {
+  it('accepts a line counted from 0 and whether the task is done', async () => {
+    await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: 0, checked: true }))).resolves.toEqual([]);
+    await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: 12, checked: false }))).resolves.toEqual([]);
+  });
+
+  it('rejects a negative or fractional line and a missing or textual state', async () => {
+    await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: -1, checked: true }))).resolves.toEqual(['line']);
+    await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: 1.5, checked: true }))).resolves.toEqual(['line']);
+    await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: 1, checked: 'true' }))).resolves.toEqual(['checked']);
+    await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: 1 }))).resolves.toEqual(['checked']);
   });
 });

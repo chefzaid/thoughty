@@ -3,6 +3,7 @@ import { Entry, EntryRevision } from '@/database/entities';
 import {
   CreateEntryDto,
   UpdateEntryDto,
+  UpdateEntryTaskDto,
   GetEntriesQueryDto,
   GetFirstEntryQueryDto,
   GetEntryByDateQueryDto,
@@ -14,6 +15,7 @@ import {
 import { EntriesQueryService } from './entries-query.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
+import { EntryTaskListService } from './entry-task-list.service';
 
 @Injectable()
 export class EntriesService {
@@ -21,6 +23,7 @@ export class EntriesService {
     private readonly entriesQueryService: EntriesQueryService,
     private readonly entriesCommandService: EntriesCommandService,
     private readonly entryListCacheService: EntryListCacheService,
+    private readonly entryTaskListService: EntryTaskListService,
   ) {}
 
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
@@ -80,6 +83,16 @@ export class EntriesService {
     dto: UpdateEntryDto,
   ): Promise<{ success: boolean; entry: Entry }> {
     const result = await this.entriesCommandService.update(userId, id, dto);
+    this.entryListCacheService.invalidateUser(userId);
+    return result;
+  }
+
+  async setTask(
+    userId: number,
+    id: number,
+    dto: UpdateEntryTaskDto,
+  ): Promise<{ success: boolean; entry: Entry }> {
+    const result = await this.entryTaskListService.setTask(userId, id, dto);
     this.entryListCacheService.invalidateUser(userId);
     return result;
   }

@@ -36,6 +36,7 @@ vi.mock("../services/api", () => ({
     toggleFavorite: vi.fn(),
     toggleArchived: vi.fn(),
     togglePinned: vi.fn(),
+    setEntryTask: vi.fn(),
     fetchEntryHistory: vi.fn(),
     fetchEntryBacklinks: vi.fn(),
   })),

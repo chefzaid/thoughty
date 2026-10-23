@@ -19,6 +19,7 @@ describe('EntriesController', () => {
       create: jest.fn(),
       update: jest.fn(),
       updateVisibility: jest.fn(),
+      setTask: jest.fn(),
       deleteAll: jest.fn(),
       delete: jest.fn(),
       bulkOperation: jest.fn(),
@@ -157,6 +158,18 @@ describe('EntriesController', () => {
 
       const result = await controller.updateVisibility(mockUser as any, 5, dto);
       expect(entriesService.updateVisibility).toHaveBeenCalledWith(1, 5, 'public');
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('setTask', () => {
+    it('delegates the line and state to entriesService.setTask', async () => {
+      const dto = { line: 3, checked: true };
+      const expected = { success: true, entry: { id: 5 } };
+      entriesService.setTask!.mockResolvedValue(expected);
+
+      const result = await controller.setTask(mockUser as any, 5, dto);
+      expect(entriesService.setTask).toHaveBeenCalledWith(1, 5, dto);
       expect(result).toBe(expected);
     });
   });

@@ -569,6 +569,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/entries/{id}/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Tick or untick a task list item of a Markdown entry
+         * @description Sets the task on one line of the entry text (`- [ ]` or `- [x]`) as done or not, and changes nothing else. The previous version goes to the revision history, except when the latest revision is under ten minutes old and the entry has changed since only in its ticks, so a run of ticks keeps one revision.
+         */
+        patch: operations["EntriesController_setTask"];
+        trace?: never;
+    };
     "/api/entries/{id}/visibility": {
         parameters: {
             query?: never;
@@ -2743,6 +2763,24 @@ export interface components {
         EntryMutationResponseDto: {
             success: boolean;
             entry: components["schemas"]["EntryResponseDto"];
+        };
+        /**
+         * @example {
+         *       "line": 2,
+         *       "checked": true
+         *     }
+         */
+        UpdateEntryTaskDto: {
+            /**
+             * @description Line of the entry text holding the task list item (`- [ ]` or `- [x]`), counted from 0. Only Markdown entries have task lists.
+             * @example 2
+             */
+            line: number;
+            /**
+             * @description Whether the task is done
+             * @example true
+             */
+            checked: boolean;
         };
         /**
          * @example {
@@ -7205,6 +7243,106 @@ export interface operations {
                      */
                     "application/json": components["schemas"]["SuccessResponseDto"];
                 };
+            };
+        };
+    };
+    EntriesController_setTask: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "line": 2,
+                 *       "checked": true
+                 *     }
+                 */
+                "application/json": components["schemas"]["UpdateEntryTaskDto"];
+            };
+        };
+        responses: {
+            /** @description Task updated */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "entry": {
+                     *         "id": 1,
+                     *         "user_id": 1,
+                     *         "diary_id": 1,
+                     *         "date": "2026-06-24",
+                     *         "index": 1,
+                     *         "title": "Morning walk by the river",
+                     *         "time_of_day": "08:30",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm",
+                     *           "grateful"
+                     *         ],
+                     *         "tags": [
+                     *           "reflection"
+                     *         ],
+                     *         "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                     *         "format": "plain",
+                     *         "visibility": "private",
+                     *         "is_favorite": true,
+                     *         "is_archived": true,
+                     *         "is_pinned": true,
+                     *         "diary_name": "Daily Journal",
+                     *         "diary_icon": "journal",
+                     *         "diary_color": "#2A9D8F",
+                     *         "attachments": [
+                     *           {
+                     *             "id": 1,
+                     *             "original_filename": "Daily Journal",
+                     *             "stored_filename": "Daily Journal",
+                     *             "mimetype": "example",
+                     *             "size": 1,
+                     *             "transcript": "example",
+                     *             "transcribed_at": "2026-06-24T10:00:00.000Z"
+                     *           }
+                     *         ],
+                     *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "search_matches": [
+                     *           "morning run",
+                     *           "swimming"
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryMutationResponseDto"];
+                };
+            };
+            /** @description The entry is not Markdown */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Entry not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The line is not a task list item (the entry changed elsewhere) */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

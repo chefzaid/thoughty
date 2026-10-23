@@ -4,6 +4,7 @@ import type { components, paths } from '../../generated/openapi';
 
 type CreateEntryRequestDto = components['schemas']['CreateEntryDto'];
 type UpdateEntryRequestDto = components['schemas']['UpdateEntryDto'];
+type UpdateEntryTaskRequestDto = components['schemas']['UpdateEntryTaskDto'];
 type BulkOperationRequestDto = components['schemas']['BulkOperationDto'];
 type EntriesListApiResponse = paths['/api/entries']['get']['responses'][200]['content']['application/json'];
 type EntryDatesApiResponse = paths['/api/entries/dates']['get']['responses'][200]['content']['application/json'];
@@ -346,6 +347,28 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   };
 
   /**
+   * Tick or untick the task list item on one line of a Markdown entry
+   */
+  const setEntryTask = async (id: number, line: number, checked: boolean): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const body: UpdateEntryTaskRequestDto = { line, checked };
+      const response = await authFetch(`/api/entries/${id}/tasks`, {
+        method: 'PATCH',
+        body: JSON.stringify(body)
+      });
+
+      if (response.ok) {
+        return { success: true };
+      }
+
+      return { success: false, error: await readApiErrorMessage(response, 'Failed to update the task') };
+    } catch (error) {
+      console.error('Error updating task:', error);
+      return { success: false };
+    }
+  };
+
+  /**
    * Fetch revision history for an entry
    */
   const fetchEntryHistory = async (id: number): Promise<EntryRevision[]> => {
@@ -458,6 +481,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     toggleFavorite,
     toggleArchived,
     togglePinned,
+    setEntryTask,
     bulkOperation,
     renameTag,
     fetchTagUsage,

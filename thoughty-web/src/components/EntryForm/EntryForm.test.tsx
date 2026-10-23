@@ -130,6 +130,12 @@ describe('EntryForm', () => {
             expect(editorWrapper).toBeInTheDocument();
         });
 
+        it('offers the Markdown help under the editor', async () => {
+            render(<EntryForm {...defaultProps} format="markdown" />);
+
+            expect(await screen.findByText('markdownHelpSummary')).toBeInTheDocument();
+        });
+
         it('uses MDEditor component when markdown is active', () => {
             render(<EntryForm {...defaultProps} format="markdown" />);
 

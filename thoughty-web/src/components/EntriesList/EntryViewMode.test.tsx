@@ -46,6 +46,23 @@ describe('EntryViewMode', () => {
         expect(screen.getByText('1 min read')).toBeInTheDocument();
     });
 
+    it('ticks a task list item of a Markdown entry with the entry and its line', async () => {
+        const user = userEvent.setup();
+        const onToggleTask = vi.fn();
+        const entry = { ...mockEntries[0], format: 'markdown' as const, content: 'Errands\n\n- [ ] Call the bank' };
+        renderEntryViewMode({ entry, onToggleTask });
+
+        await user.click(await screen.findByRole('checkbox', { name: 'Call the bank' }));
+
+        expect(onToggleTask).toHaveBeenCalledWith(entry, 2, true);
+    });
+
+    it('shows task boxes that cannot change when the journal cannot tick them', async () => {
+        renderEntryViewMode({ entry: { ...mockEntries[0], format: 'markdown', content: '- [x] Done' } });
+
+        expect(await screen.findByRole('checkbox', { name: 'Done' })).toBeDisabled();
+    });
+
     it('shows the title as a heading with its search matches marked, and the time next to the date', () => {
         renderEntryViewMode({
             entry: { ...mockEntries[0], title: 'Harbour at dawn', time_of_day: '18:45', search_matches: ['harbour'] },

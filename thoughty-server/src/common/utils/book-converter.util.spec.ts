@@ -240,6 +240,10 @@ describe('book-converter.util', () => {
     it('should normalize list markers and remove code fences and quotes', () => {
       expect(stripMarkdown('```js\ncode\n```\n* item\n> quote')).toBe('code\n- item\nquote');
     });
+
+    it('should keep task list boxes in their text form', () => {
+      expect(stripMarkdown('* [ ] Call the bank\n- [x] Post the **letter**')).toBe('- [ ] Call the bank\n- [x] Post the letter');
+    });
   });
 
   describe('renderBookMarkdown', () => {

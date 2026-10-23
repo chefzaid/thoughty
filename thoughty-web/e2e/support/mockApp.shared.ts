@@ -228,6 +228,8 @@ export interface MockAppState {
   lastOpenRouterKeyPayload: unknown;
   lastBulkPayload: unknown;
   lastReorderPayload: unknown;
+  /** Every task tick sent, in order. */
+  taskRequests: Array<{ entryId: number; line: number; checked: boolean }>;
   lastCloudFilesRequestUrl: URL | null;
   lastCloudUploadPayload: unknown;
   lastCloudDownloadPayload: unknown;
@@ -522,6 +524,7 @@ export function createMockAppState(
     lastOpenRouterKeyPayload: null,
     lastBulkPayload: null,
     lastReorderPayload: null,
+    taskRequests: [],
     lastCloudFilesRequestUrl: null,
     lastCloudUploadPayload: null,
     lastCloudDownloadPayload: null,

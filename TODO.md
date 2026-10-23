@@ -358,7 +358,7 @@ Concrete product features that build on what exists. Each one fills a gap visibl
 - [ ] Time capsules: an entry sealed until a chosen date, then delivered by email and shown in Highlights. The "letter to my future self" template exists, but nothing delivers the letter yet.
 - [ ] Inline images: place an attachment inside the Markdown text instead of only below the entry, carried through to exports and books.
 - [ ] Video attachments with a size limit and a poster frame. The Day One and Journey importers currently leave videos out.
-- [ ] Markdown task lists that render as checkboxes and can be ticked from the journal view.
+- [x] Markdown task lists: `- [ ]` and `- [x]` items in Markdown entries render as labelled checkboxes that can be ticked from the journal view, by mouse or keyboard. Each tick is saved through `PATCH /api/entries/:id/tasks`, which changes only that line under a row lock and keeps one revision for a run of ticks within ten minutes. Read-only views (feed, highlights) show static boxes, books and document exports keep the text form, and the formatting toolbar and a new inline Markdown help offer task lists in English and French. Plain-text entries are unaffected.
 - [ ] Live dictation in the composer. Transcription currently works only on attached audio files.
 
 ### Search and Revisit

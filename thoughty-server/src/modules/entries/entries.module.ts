@@ -10,6 +10,7 @@ import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntrySearchService } from './entry-search.service';
 import { EntryTaggingService } from './entry-tagging.service';
+import { EntryTaskListService } from './entry-task-list.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary]), UserConfigModule, AiModule],
@@ -21,6 +22,7 @@ import { EntryTaggingService } from './entry-tagging.service';
     EntryListCacheService,
     EntrySearchService,
     EntryTaggingService,
+    EntryTaskListService,
   ],
   exports: [EntriesService, EntryListCacheService],
 })
