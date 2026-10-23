@@ -342,3 +342,51 @@ The market splits three ways, and no product spans all of them. Everyday journal
 
 - [ ] Book design themes (typography, margins, chapter openers, photo layouts) previewed before printing, so the printed book feels designed rather than exported.
 - [ ] Order more copies of any saved book version for family, with one shipping address per copy.
+
+## Feature Roadmap (added 2026-10-23)
+
+Concrete product features that build on what exists. Each one fills a gap visible in the current code or in what writers coming from Day One and Journey expect.
+
+### Writing
+
+- [ ] Recycle bin: deleted entries, diaries and attachments are kept for 30 days and can be restored. Deletion is immediate today, which is risky with bulk delete and "delete all entries".
+- [ ] Optional entry title and time of day. Entries only carry a date and a same-day index. Titles would show in lists, exports and book section headings, and times would order same-day entries automatically. Day One and Journey exports already include both.
+- [ ] Mood check-in on each entry: a five-point scale with optional feeling words, stored as data rather than guessed by AI. It feeds stats and the year in review mood arc without spending tokens, and later the Life ERP metrics.
+- [ ] Server-side draft autosave, so a draft started on one device continues on another, with a warning before leaving unsaved text.
+- [ ] Focus mode: full-screen composer with typewriter scrolling and an optional word goal for the session.
+- [ ] Writing goals per diary (entries per week or words per day), shown on the activity heatmap and in stats.
+- [ ] Time capsules: an entry sealed until a chosen date, then delivered by email and shown in Highlights. The "letter to my future self" template exists, but nothing delivers the letter yet.
+- [ ] Inline images: place an attachment inside the Markdown text instead of only below the entry, carried through to exports and books.
+- [ ] Video attachments with a size limit and a poster frame. The Day One and Journey importers currently leave videos out.
+- [ ] Markdown task lists that render as checkboxes and can be ticked from the journal view.
+- [ ] Live dictation in the composer. Transcription currently works only on attached audio files.
+
+### Search and Revisit
+
+- [ ] Full-text search: replace the `ILIKE` match in `entries-query.service.ts` with PostgreSQL full-text search (a `tsvector` column with a GIN index and English and French stemming). Add exact-phrase and exclusion operators and ranked results, so search stays fast on journals that span decades.
+- [ ] Saved searches: save any combination of filters (for example favorites tagged "family" in 2019) as a named view in the journal.
+- [ ] Calendar view: a month grid with the entries of each day, next to the list view.
+- [ ] Life eras: named date ranges ("University", "The Paris years") usable as filters, as book chapters, and as context for memoir answers.
+- [ ] People: mention someone with `@name` in an entry, then see every entry about that person. This is a light first step toward the Life ERP relationship tracker.
+- [ ] On This Day by email (opt-in), since Highlights only exists inside the app.
+
+### Organization and Sharing
+
+- [ ] Per-diary settings: a default template, a reminder schedule, and an optional PIN lock as a first step before full end-to-end encryption.
+- [ ] Private share links for a single entry or a book version: a link with an expiry date that can be revoked, so one person can read an entry without making it public in the feed.
+- [ ] Share an entry as an image card (quote, date and theme colors) for people who post outside the app.
+
+### Books
+
+- [ ] Book from hand-picked entries or a saved search, not only from tags or years.
+- [ ] Book preview in the browser, page by page, before downloading or printing.
+
+### AI
+
+- [ ] Weekly reflection (opt-in): a private summary of the past week's entries with recurring themes and one question for the week ahead, using the same consent rules as the other AI features.
+- [ ] Chat across entries: discuss a set of entries (a tag, an era, a date range) instead of a single one, with citations back to each source entry.
+
+### Integrations
+
+- [ ] Calendar import (ICS or Google Calendar) to show the day's events next to an entry and to suggest what to write about.
+- [ ] Personal access tokens with scopes for a small public API, so power users can create entries from iOS Shortcuts, Zapier or scripts.
