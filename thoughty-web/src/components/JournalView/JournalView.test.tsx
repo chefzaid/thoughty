@@ -6,6 +6,8 @@ import type { Config, Entry, Diary, GroupedEntries } from '../../types';
 
 type SubmitEvent = Parameters<NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>>[0];
 
+const focusModeTrigger = vi.hoisted(() => vi.fn());
+
 // Mock all child components
 vi.mock('../DiaryTabs/DiaryTabs', () => ({
   default: ({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, theme, t }: {
@@ -53,6 +55,7 @@ vi.mock('../EntryForm/EntryForm', () => ({
       <span data-testid="form-error">{props.formError}</span>
       <span data-testid="entry-tags">{props.tags.join(',')}</span>
       <span data-testid="entry-visibility">{props.visibility}</span>
+      <button type="button" data-focus-mode-trigger="" onClick={focusModeTrigger}>Focus mode</button>
       <button type="submit">Submit</button>
     </form>
   )
@@ -403,6 +406,15 @@ describe('JournalView', () => {
     fireEvent.keyDown(document, { key: 'n', ctrlKey: true });
 
     expect(screen.getByTestId('entry-text')).toHaveFocus();
+  });
+
+  it('opens focus mode for the composer with Ctrl+Shift+F', () => {
+    render(<JournalView {...defaultProps} />);
+
+    const event = fireEvent.keyDown(document, { key: 'F', ctrlKey: true, shiftKey: true });
+
+    expect(focusModeTrigger).toHaveBeenCalledTimes(1);
+    expect(event).toBe(false);
   });
 
   it('focuses journal search with Ctrl+/', () => {

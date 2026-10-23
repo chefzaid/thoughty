@@ -16,6 +16,8 @@ import EntryTimeField from './EntryTimeField';
 import EntryMoodField from './EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 import MarkdownHelp from '../MarkdownEditor/MarkdownHelp';
+import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
+import type { FontFamilyPreference } from '../../types';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -58,6 +60,10 @@ interface EntryFormProps {
     readonly onRemovePendingFile?: (index: number) => void;
     readonly onRemoveUploadedAttachment?: (id: number) => void;
     readonly fontColor?: string;
+    /** The writer's font settings and language, used by focus mode. */
+    readonly fontFamily?: FontFamilyPreference;
+    readonly fontSize?: string | number;
+    readonly language?: string;
     readonly entryTemplates?: EntryTemplate[];
     readonly onSaveTemplate?: (template: EntryTemplateDraft) => Promise<void> | void;
     readonly onDeleteTemplate?: (templateId: string) => Promise<void> | void;
@@ -117,6 +123,9 @@ function EntryForm({
     onRemovePendingFile,
     onRemoveUploadedAttachment,
     fontColor,
+    fontFamily,
+    fontSize,
+    language,
     entryTemplates = [],
     onSaveTemplate,
     onDeleteTemplate
@@ -173,7 +182,7 @@ function EntryForm({
     };
 
     return (
-        <div className={containerClass}>
+        <div className={containerClass} data-focus-mode-scope="">
             <form onSubmit={onSubmit} className="space-y-4 overflow-visible">
                 {(entryTemplates.length > 0 || onSaveTemplate) && (
                     <div className="flex flex-wrap items-center gap-2">
@@ -373,6 +382,17 @@ function EntryForm({
                     >
                         <span className="text-sm font-bold" style={{ fontFamily: 'monospace' }}>MD</span>
                     </button>
+                    <FocusModeLauncher
+                        text={newEntryText}
+                        onTextChange={setNewEntryText}
+                        theme={theme}
+                        fontColor={fontColor}
+                        fontFamily={fontFamily}
+                        fontSize={fontSize}
+                        language={language}
+                        placeholder={t('whatsOnYourMind')}
+                        t={t}
+                    />
                     {onAddFile && (
                         <AttachmentUpload
                             pendingFiles={pendingFiles || []}

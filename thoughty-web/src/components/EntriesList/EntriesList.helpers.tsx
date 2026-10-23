@@ -13,6 +13,7 @@ import EntryTimeField from '../EntryForm/EntryTimeField';
 import EntryMoodField from '../EntryForm/EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 import MarkdownHelp from '../MarkdownEditor/MarkdownHelp';
+import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -214,7 +215,7 @@ export function EditForm({
     const fieldId = `edit-entry-${entryId ?? 'draft'}`;
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4" data-focus-mode-scope="">
             {setEditTitle && (
                 <div>
                     <label htmlFor={`${fieldId}-title`} className="sr-only">{t('entryTitleLabel')}</label>
@@ -317,6 +318,16 @@ export function EditForm({
                 >
                     <span className="text-sm font-bold" style={{ fontFamily: 'monospace' }}>MD</span>
                 </button>
+                <FocusModeLauncher
+                    text={editText}
+                    onTextChange={setEditText}
+                    theme={config.theme}
+                    fontColor={config.fontColor}
+                    fontFamily={config.fontFamily}
+                    fontSize={config.fontSize}
+                    language={config.language}
+                    t={t}
+                />
                 {onAddEditFile && (
                     <AttachmentUpload
                         pendingFiles={editPendingFiles || []}

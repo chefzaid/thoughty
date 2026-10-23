@@ -243,6 +243,8 @@ describe('EntriesList.helpers', () => {
         fireEvent.click(await screen.findByTestId('md-editor'));
         expect(setEditText).toHaveBeenCalledWith('markdown edit');
         expect(screen.getByText('markdownHelpSummary')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'focusModeOpen' }));
+        expect(screen.getByRole('textbox', { name: 'focusModeTextLabel' })).toHaveValue('Markdown text');
     });
 
     it('hides the bulk action bar when nothing is selected', () => {

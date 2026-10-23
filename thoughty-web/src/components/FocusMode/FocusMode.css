@@ -1,0 +1,182 @@
+.focus-mode {
+  --focus-mode-bg: #0b1120;
+  --focus-mode-muted: #9ca3af;
+  --focus-mode-line: #1f2937;
+  --focus-mode-field-bg: #111827;
+  --focus-mode-field-border: #374151;
+  --focus-mode-accent: #60a5fa;
+  --focus-mode-placeholder: #9ca3af;
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--focus-mode-bg);
+  color: var(--focus-mode-muted);
+}
+
+.focus-mode.light {
+  --focus-mode-bg: #fdfcf8;
+  --focus-mode-muted: #4b5563;
+  --focus-mode-line: #e5e7eb;
+  --focus-mode-field-bg: #ffffff;
+  --focus-mode-field-border: #d1d5db;
+  --focus-mode-accent: #2563eb;
+  --focus-mode-placeholder: #6b7280;
+}
+
+body.high-contrast-mode .focus-mode {
+  --focus-mode-bg: #000000;
+  --focus-mode-muted: #ffffff;
+  --focus-mode-line: #ffffff;
+  --focus-mode-field-bg: #000000;
+  --focus-mode-field-border: #ffffff;
+  --focus-mode-accent: #ffff00;
+  --focus-mode-placeholder: #ffffff;
+}
+
+.focus-mode-bar,
+.focus-mode-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+
+.focus-mode-bar {
+  border-bottom: 1px solid var(--focus-mode-line);
+}
+
+.focus-mode-footer {
+  border-top: 1px solid var(--focus-mode-line);
+}
+
+.focus-mode-title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.focus-mode-count {
+  margin: 0 auto 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-mode-goal {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.focus-mode-goal input {
+  width: 6.5rem;
+  border: 1px solid var(--focus-mode-field-border);
+  border-radius: 0.375rem;
+  background: var(--focus-mode-field-bg);
+  color: inherit;
+  padding: 0.25rem 0.5rem;
+}
+
+.focus-mode-goal input::placeholder {
+  color: var(--focus-mode-placeholder);
+  opacity: 1;
+}
+
+.focus-mode-done {
+  border: 1px solid var(--focus-mode-field-border);
+  border-radius: 0.375rem;
+  background: transparent;
+  color: inherit;
+  padding: 0.3rem 0.9rem;
+  font-weight: 600;
+}
+
+.focus-mode-done:hover {
+  border-color: var(--focus-mode-accent);
+}
+
+.focus-mode-done:focus-visible,
+.focus-mode-goal input:focus-visible {
+  outline: 2px solid var(--focus-mode-accent);
+  outline-offset: 2px;
+}
+
+.focus-mode-text {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 46rem;
+  height: 100%;
+  margin: 0 auto;
+  /* Room above and below, so the first and last lines can also sit in the middle of the screen */
+  padding: 38vh 1.5rem;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: transparent;
+  line-height: 1.7;
+  caret-color: var(--focus-mode-accent);
+}
+
+.focus-mode-text::placeholder {
+  color: var(--focus-mode-placeholder);
+  opacity: 1;
+}
+
+.focus-mode-text:focus-visible {
+  outline: none;
+}
+
+.focus-mode-hint {
+  margin: 0 auto 0 0;
+}
+
+.focus-mode-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.focus-mode-progress-track {
+  width: 8rem;
+  height: 0.25rem;
+  overflow: hidden;
+  border-radius: 9999px;
+  background: var(--focus-mode-line);
+}
+
+body.high-contrast-mode .focus-mode-progress-track {
+  outline: 1px solid #ffffff;
+}
+
+.focus-mode-progress-fill {
+  height: 100%;
+  background: var(--focus-mode-accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .focus-mode-progress-fill {
+    transition: width 0.3s ease;
+  }
+}
+
+.focus-mode-progress-text {
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-mode-reached {
+  margin: 0;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .focus-mode-text {
+    padding-inline: 1rem;
+  }
+
+  .focus-mode-progress-track {
+    width: 5rem;
+  }
+}

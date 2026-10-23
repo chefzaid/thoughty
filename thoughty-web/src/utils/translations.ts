@@ -6,6 +6,7 @@ import { searchTranslations, type SearchTranslationKey } from "./translations.se
 import { entryTitleTimeTranslations, type EntryTitleTimeTranslationKey } from "./translations.entryTitleTime";
 import { moodTranslations, type MoodTranslationKey } from "./translations.mood";
 import { taskListTranslations, type TaskListTranslationKey } from "./translations.taskList";
+import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 
 type CoreTranslationKey =
   | "journal"
@@ -936,7 +937,7 @@ type CoreTranslationKey =
   | "subscriptionIncluded"
   | "subscriptionPreviousCycle";
 
-export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey | MoodTranslationKey | TaskListTranslationKey;
+export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey | MoodTranslationKey | TaskListTranslationKey | FocusModeTranslationKey;
 
 export type Language = "en" | "fr";
 
@@ -954,6 +955,7 @@ export const translations: Translations = {
     ...entryTitleTimeTranslations.en,
     ...moodTranslations.en,
     ...taskListTranslations.en,
+    ...focusModeTranslations.en,
     // App
     journal: "Journal",
     feed: "Feed",
@@ -2026,6 +2028,7 @@ export const translations: Translations = {
     ...entryTitleTimeTranslations.fr,
     ...moodTranslations.fr,
     ...taskListTranslations.fr,
+    ...focusModeTranslations.fr,
     // App
     journal: "Journal",
     feed: "Fil public",

@@ -486,6 +486,24 @@ describe('EntryForm', () => {
         });
     });
 
+    describe('Focus mode', () => {
+        it('opens focus mode on the draft, in the font settings, and writes into the composer', async () => {
+            const user = userEvent.setup();
+            const setNewEntryText = vi.fn();
+            render(<EntryForm {...defaultProps} newEntryText="Draft" setNewEntryText={setNewEntryText} fontFamily="mono" fontSize={16} />);
+
+            await user.click(screen.getByRole('button', { name: 'focusModeOpen' }));
+            const text = screen.getByRole('textbox', { name: 'focusModeTextLabel' });
+            expect(text).toHaveValue('Draft');
+            expect(text).toHaveStyle({ fontSize: '20px' });
+            await user.type(text, '!');
+
+            expect(setNewEntryText).toHaveBeenCalledWith('Draft!');
+            await user.keyboard('{Escape}');
+            expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        });
+    });
+
     describe('Error display', () => {
         it('shows form error when provided', () => {
             render(<EntryForm {...defaultProps} formError="Content is required" />);

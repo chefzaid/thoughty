@@ -1,4 +1,5 @@
 import { useEffect, type RefObject } from 'react';
+import { isFocusModeShortcut, openFocusModeFrom } from '../FocusMode/focusModeShortcut';
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
@@ -48,6 +49,14 @@ export function useJournalKeyboardShortcuts({
       if (isCtrlOrMeta && key === 'n') {
         event.preventDefault();
         focusFirstField(entryFormRef.current);
+        return;
+      }
+
+      // Focus mode for the entry being edited when the focus is in its editor, otherwise for the composer
+      if (isFocusModeShortcut(event) && !event.defaultPrevented) {
+        if (openFocusModeFrom(document.activeElement, entryFormRef.current)) {
+          event.preventDefault();
+        }
         return;
       }
 
