@@ -42,7 +42,10 @@ function ProductScene({ t }: Readonly<Pick<IntroPageProps, 't'>>) {
         <span />
       </div>
       <div className="scene-sidebar">
-        <strong>Thoughty</strong>
+        <strong>
+          <img src="/thoughty-logo.svg" alt="" className="scene-logo" />
+          Thoughty
+        </strong>
         <span>{t('journal')}</span>
         <span>{t('stats')}</span>
         <span>{t('importExport')}</span>
@@ -111,6 +114,7 @@ function IntroPage({ theme, t, onSignIn, onSignUp }: IntroPageProps) {
       <section className="landing-hero">
         <ProductScene t={t} />
         <div className="hero-copy">
+          <img src="/thoughty-logo.svg" alt="" className="hero-logo" />
           <p className="intro-eyebrow">{t('landingEyebrow')}</p>
           <h1>Thoughty</h1>
           <p className="intro-subtitle">{t('landingSubtitle')}</p>

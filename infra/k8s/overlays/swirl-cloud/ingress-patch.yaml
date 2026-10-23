@@ -18,7 +18,7 @@
   value: https://thoughty.swirlit.dev
 - op: add
   path: /metadata/annotations/gethomepage.dev~1icon
-  value: mdi-lightbulb-on-outline
+  value: https://thoughty.swirlit.dev/thoughty-logo.svg
 - op: add
   path: /metadata/annotations/gethomepage.dev~1name
   value: Thoughty

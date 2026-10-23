@@ -61,6 +61,13 @@
     letter-spacing: 0;
 }
 
+.hero-logo {
+    display: block;
+    width: 4.5rem;
+    height: 4.5rem;
+    margin-bottom: 1rem;
+}
+
 .intro-subtitle {
     max-width: 34rem;
     margin: 1.35rem 0 0;
@@ -182,9 +189,17 @@
 }
 
 .scene-sidebar strong {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     margin-bottom: 0.4rem;
     font-family: Baskerville, Georgia, serif;
     font-size: 1.5rem;
+}
+
+.scene-logo {
+    width: 1.4rem;
+    height: 1.4rem;
 }
 
 .scene-sidebar span {

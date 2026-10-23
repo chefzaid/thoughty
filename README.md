@@ -1,3 +1,5 @@
+<p align="center"><img src="./thoughty-web/public/thoughty-logo.svg" alt="Thoughty logo" width="96" height="96"></p>
+
 # Thoughty
 
 Thoughty is a privacy-focused journal. Write dated entries in plain text or Markdown, with an optional title, time, and mood, and organize them with tags and separate diaries. Search, highlights, stats, and a yearly review help you revisit what you wrote. A guided memoir asks one life-story question a week and collects the answers, written or spoken, into a book. AI help (tagging, rephrasing, summaries, inspiration) is optional. Your journal stays portable: import from Day One or Journey, export to Markdown, PDF, or EPUB, and sync to Google Drive, OneDrive, or Dropbox.
