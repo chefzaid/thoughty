@@ -293,3 +293,52 @@ Differentiators, each covered below:
 - [x] Importers from other journaling apps (Day One and Journey exports), and a full export as a Markdown folder with attachments.
 - [ ] Opt-in lifecycle emails (welcome, trial ending, writing streaks, year in review) that respect notification preferences.
 - [ ] Help center and support tickets with response targets per plan; a status page for paid users.
+
+## Market and Growth (added 2026-10-23)
+
+The market splits three ways, and no product spans all of them. Everyday journals (Day One, Journey, Diarium) are strong on capture, sync and media but stop at a bookshelf of entries. AI journals (Rosebud, Reflection, Mindsera, Life Note) sell coaching and insight, send everything to a cloud model, and rarely end in anything tangible. Life-story services (Storyworth, Remento, Storii) are bought as gifts around $99 a year for weekly questions and one hardcover, but they are a one-year project with no journal before or after it. Thoughty already holds all three in one record (journal, guided memoir, book converter), so the job now is to sell that combination clearly, close the capture gaps that make people stay with Day One, and make the memoir usable by the older people it is often bought for.
+
+### Positioning and Go-to-Market
+
+- [ ] One-line positioning used on the landing page, store listings and emails ("a private journal that becomes your life story"), with the landing page reorganized around the three entry points: journal, memoir, and gift.
+- [ ] Comparison pages against Day One, Storyworth and Rosebud that are factual and kept current (privacy, AI handling, export, printed book, price), each ending in the matching importer or the memoir start page.
+- [ ] Pricing anchored to the market: premium journal near Day One Premium's yearly price, and a memoir gift that includes a year of questions and one printed book near Storyworth and Remento, so the gift is an easy like-for-like choice with a lifelong journal on top.
+- [ ] Launch market decision: start with France and the EU (French and English already done, EU hosting and GDPR as a selling point, HDS matters there for the practitioner tier), then pick the next language by demand rather than adding several at once.
+- [ ] Decide the role of the public feed. Followers, likes, a leaderboard and karma pull against the "private by construction" message; options are to keep it opt-in and hidden for new accounts, or to reposition sharing toward family and chosen people (see "Show thoughts to a selected few users"). Record the decision in an ADR.
+- [ ] Seasonal gift campaigns (Mother's Day, Father's Day, Christmas) with a scheduled delivery date for the gift invitation, since memoir gifts sell around those dates.
+- [ ] Referral and gift-back loop: a memoir writer who finishes a book can offer a discounted program to someone else; a journal user gets a free month for each paying referral.
+- [ ] Public, indexable pages for the memoir questions and the built-in templates (for example "52 questions to ask your parents"), linking into sign-up, to grow organic traffic beyond the blog.
+
+### Activation and Retention
+
+- [ ] First-run onboarding that asks what the writer is here for (daily journal, life story, a gift, coming from another app) and lands them in the right place: a first template, the memoir start page, the gift flow, or the Day One or Journey importer.
+- [ ] Define and track a north-star metric (weekly writing days per active writer) plus the funnel from sign-up to first entry, to fifth entry, to week four, using the existing telemetry, with privacy-safe counts only and no entry text.
+- [ ] Reminders that work on the web today: installable PWA with web push and an optional email nudge at a chosen time, so reminders do not wait for the native apps.
+- [ ] Gentle streaks and a "pick up where you left off" prompt after a gap, without guilt-driven copy; streaks already exist as badges and can feed this.
+- [ ] Monthly private recap email (opt-in): entries written, a memory from that month in past years, and a link back, as the low-cost sibling of the year in review.
+
+### Capture
+
+- [ ] PWA with offline drafts and a share target (share text, links and photos from the phone into a new entry), as the fast path to mobile before native apps.
+- [ ] Write by email: a private address per user (or reply to a memoir question email) that turns the message and its attachments into an entry; this is how many older memoir writers will answer.
+- [ ] Optional location and weather on entries, with a map view of where entries were written; off by default and stripped from exports and books unless chosen. Day One and Journey users expect it and their imports already carry it.
+- [ ] Shared diaries with co-writers (a couple's or family diary), each entry keeping its author, separate from public visibility and from the memoir family contributions.
+
+### Memoir for Older Writers
+
+- [ ] Phone answering: the writer calls a number or receives a scheduled call, hears the question and records the answer, which becomes a transcribed entry with the recording attached. Voice-first is the main reason families choose Remento and Storyworth's call-in option.
+- [ ] Simple memoir mode: a large-text, single-question screen with one record button and no journal chrome, usable by someone who will never open the rest of the app.
+- [ ] Custom questions from the gift giver or family, mixed into the weekly schedule, and a larger question bank by theme (migration, careers, faith, war and history, parenthood).
+- [ ] Photo prompts: upload an old photo and answer "what is happening here?", with the photo placed next to the answer in the book.
+- [ ] Voice in the printed book: a QR code beside each spoken answer that plays the original recording from a private, long-lived link, tied to the legacy settings.
+
+### AI That Fits the Privacy Promise
+
+- [ ] Whole-journal semantic index (embeddings stored per user, for example with pgvector) so meaning search, duplicates and insights cover every entry instead of the newest 100 or 40, and so "ask your journal" questions can cite the entries they draw on.
+- [ ] Safety guidance: when entries or chats contain signs of crisis or self-harm, show local support resources and never let the AI act as a therapist; required before the practitioner tier and expected of any AI journal.
+- [ ] Clear AI cost model per plan: measure cost per active user per feature from the usage data already collected, and use it to set quotas and to choose the default per-task models.
+
+### Books
+
+- [ ] Book design themes (typography, margins, chapter openers, photo layouts) previewed before printing, so the printed book feels designed rather than exported.
+- [ ] Order more copies of any saved book version for family, with one shipping address per copy.
