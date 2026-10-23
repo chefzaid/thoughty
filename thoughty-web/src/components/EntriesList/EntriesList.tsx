@@ -5,6 +5,7 @@ import type { RephraseMode, SummaryGuidance } from '../../services/api/aiService
 import type { Attachment, Config, Diary, Entry, EntryBacklink, EntryRevision, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import EntryViewMode from './EntryViewMode';
+import { isManuallyOrdered } from '../../utils/entryTime';
 import {
     type BulkAction,
     type BulkActionOptions,
@@ -38,6 +39,10 @@ interface EntriesListProps {
     editingEntry: Entry | null;
     editText: string;
     setEditText: Dispatch<SetStateAction<string>>;
+    editTitle?: string;
+    setEditTitle?: Dispatch<SetStateAction<string>>;
+    editTimeOfDay?: string;
+    setEditTimeOfDay?: Dispatch<SetStateAction<string>>;
     editTags: string[];
     setEditTags: Dispatch<SetStateAction<string[]>>;
     editDate: Date | null;
@@ -96,6 +101,10 @@ function EntriesList({
     editingEntry,
     editText,
     setEditText,
+    editTitle,
+    setEditTitle,
+    editTimeOfDay,
+    setEditTimeOfDay,
     editTags,
     setEditTags,
     editDate,
@@ -171,7 +180,8 @@ function EntriesList({
             return;
         }
 
-        const dayEntries = groupedEntries[date] ?? [];
+        // Entries with a time follow it, so only the others are reordered among themselves
+        const dayEntries = (groupedEntries[date] ?? []).filter(isManuallyOrdered);
         const ids = dayEntries.map((entry) => entry.id);
         const fromIdx = ids.indexOf(fromId);
         const toIdx = ids.indexOf(toId);
@@ -354,7 +364,8 @@ function EntriesList({
                         <div className="space-y-4">
                             {group.entries.map((entry) => {
                                 const date = group.date ?? extractDate(entry.date);
-                                const isDraggable = group.date !== null && !bulkMode && !isEditing(entry) && !!onReorderEntries && group.entries.length > 1;
+                                const isDraggable = group.date !== null && !bulkMode && !isEditing(entry) && !!onReorderEntries
+                                    && isManuallyOrdered(entry) && group.entries.filter(isManuallyOrdered).length > 1;
                                 const isDraggedEntry = dragEntryId === entry.id && dragDate === date;
                                 const isDropTarget = dragOverId === entry.id && dragDate === date && dragEntryId !== entry.id;
                                 const dragHighlightClass = getEntryDragHighlightClass(isDark, isDraggedEntry, isDropTarget);
@@ -397,8 +408,13 @@ function EntriesList({
                                             {isEditing(entry) ? (
                                                 <EditForm
                                                     config={config}
+                                                    entryId={entry.id}
                                                     editText={editText}
                                                     setEditText={setEditText}
+                                                    editTitle={editTitle}
+                                                    setEditTitle={setEditTitle}
+                                                    editTimeOfDay={editTimeOfDay}
+                                                    setEditTimeOfDay={setEditTimeOfDay}
                                                     editDate={editDate}
                                                     setEditDate={setEditDate}
                                                     allTags={allTags}

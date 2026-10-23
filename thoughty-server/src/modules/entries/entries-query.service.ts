@@ -10,6 +10,7 @@ import {
   EntriesListResponseDto,
   EntryBacklinksResponseDto,
 } from './dto';
+import { addSameDayOrder } from '@/common/utils';
 import { entryContentReferencesTarget } from './entry-references.util';
 import { escapeLikePattern } from './entry-search-query';
 import { EntrySearchService, type PreparedEntrySearch } from './entry-search.service';
@@ -70,7 +71,7 @@ export class EntriesQueryService {
 
     const prepared = search ? await this.entrySearch.prepare(search) : null;
     if (prepared?.kind === 'text') {
-      // Tags are part of the search vector; an exact tag name still matches when it holds
+      // Titles and tags are part of the search vector; an exact tag name still matches when it holds
       // nothing PostgreSQL reads as a word.
       qb.andWhere('(e.search_vector @@ CAST(:searchQuery AS tsquery) OR e.tags @> :searchTags)', {
         searchQuery: prepared.matchQuery,
@@ -81,7 +82,7 @@ export class EntriesQueryService {
         qb.setParameter('exactQuery', prepared.exactQuery);
       }
     } else if (prepared?.kind === 'literal') {
-      qb.andWhere('(e.content ILIKE :searchPattern OR e.tags @> :searchTags)', {
+      qb.andWhere('(e.content ILIKE :searchPattern OR e.title ILIKE :searchPattern OR e.tags @> :searchTags)', {
         searchPattern: `%${escapeLikePattern(prepared.text)}%`,
         searchTags: [prepared.text],
       });
@@ -124,9 +125,9 @@ export class EntriesQueryService {
     if (entryIds.length > 0) {
       qb.orderBy('semantic_rank', 'ASC');
     } else if (prepared?.kind === 'text' && sort !== 'date') {
-      qb.orderBy('search_rank', 'DESC').addOrderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
+      addSameDayOrder(qb.orderBy('search_rank', 'DESC').addOrderBy('e.date', 'DESC'), 'e');
     } else {
-      qb.orderBy('e.isPinned', 'DESC').addOrderBy('e.date', 'DESC').addOrderBy('e.index', 'ASC');
+      addSameDayOrder(qb.orderBy('e.isPinned', 'DESC').addOrderBy('e.date', 'DESC'), 'e');
     }
     qb.skip((page - 1) * limit).take(limit);
 
@@ -163,6 +164,8 @@ export class EntriesQueryService {
         diary_id: entry.diaryId,
         date: entry.date,
         index: entry.index,
+        title: entry.title ?? null,
+        time_of_day: entry.timeOfDay ?? null,
         tags: entry.tags,
         content: entry.content,
         format: entry.format,
@@ -269,13 +272,14 @@ export class EntriesQueryService {
 
     const firstDate = firstEntryResult.first_date;
 
-    let firstEntryIdQb = this.entryRepository
-      .createQueryBuilder('e')
-      .select('e.id')
-      .where('e.user_id = :userId', { userId })
-      .orderBy('e.date', 'ASC')
-      .addOrderBy('e.index', 'ASC')
-      .limit(1);
+    let firstEntryIdQb = addSameDayOrder(
+      this.entryRepository
+        .createQueryBuilder('e')
+        .select('e.id')
+        .where('e.user_id = :userId', { userId })
+        .orderBy('e.date', 'ASC'),
+      'e',
+    ).limit(1);
 
     if (month) {
       const monthStr = String(month).padStart(2, '0');
@@ -349,23 +353,24 @@ export class EntriesQueryService {
     const targetDate = this.normalizeEntryDate(targetEntry.date);
     const targetIndex = targetEntry.index || 1;
 
-    const candidates = await this.entryRepository
+    const candidates = this.entryRepository
       .createQueryBuilder('e')
       .leftJoinAndSelect('e.diary', 'd')
       .where('e.user_id = :userId', { userId })
       .andWhere('e.id != :entryId', { entryId })
       .andWhere('e.content ILIKE :targetDate', { targetDate: `%${targetDate}%` })
-      .orderBy('e.date', 'DESC')
-      .addOrderBy('e.index', 'ASC')
-      .getMany();
+      .orderBy('e.date', 'DESC');
+    addSameDayOrder(candidates, 'e');
 
     return {
-      backlinks: candidates
+      backlinks: (await candidates.getMany())
         .filter((entry) => entryContentReferencesTarget(entry.content, targetDate, targetIndex))
         .map((entry) => ({
           id: entry.id,
           date: entry.date,
           index: entry.index,
+          title: entry.title ?? null,
+          time_of_day: entry.timeOfDay ?? null,
           tags: entry.tags,
           content: entry.content,
           format: entry.format,
@@ -458,27 +463,26 @@ export class EntriesQueryService {
     });
   }
 
+  /** Entries listed before this one in the journal: pinned ones first, then newest day first, then the day's order. */
   private countEntriesBefore(entry: Entry): Promise<number> {
+    const earlierInDay =
+      '(e.date > :date OR (e.date = :date AND ' +
+      "(e.time_of_day IS NOT NULL, COALESCE(e.time_of_day, TIME '00:00'), e.index) < " +
+      "(CAST(:hasTime AS boolean), COALESCE(CAST(:timeOfDay AS time), TIME '00:00'), CAST(:index AS integer))))";
+    const params = {
+      date: entry.date,
+      hasTime: entry.timeOfDay !== null && entry.timeOfDay !== undefined,
+      timeOfDay: entry.timeOfDay ?? null,
+      index: entry.index,
+    };
     const qb = this.entryRepository
       .createQueryBuilder('e')
       .where('e.user_id = :userId', { userId: entry.userId });
 
     if (entry.isPinned) {
-      qb.andWhere('e.is_pinned = true').andWhere(
-        '(e.date > :date OR (e.date = :date AND e.index < :index))',
-        {
-          date: entry.date,
-          index: entry.index,
-        },
-      );
+      qb.andWhere('e.is_pinned = true').andWhere(earlierInDay, params);
     } else {
-      qb.andWhere(
-        '(e.is_pinned = true OR (e.is_pinned = false AND (e.date > :date OR (e.date = :date AND e.index < :index))))',
-        {
-          date: entry.date,
-          index: entry.index,
-        },
-      );
+      qb.andWhere(`(e.is_pinned = true OR (e.is_pinned = false AND ${earlierInDay}))`, params);
     }
 
     return qb.getCount();

@@ -17,6 +17,9 @@ export type TagUsage = components['schemas']['TagUsageDto'];
 
 interface CreateEntryInput {
   text: string;
+  /** Sent only when set. */
+  title?: string | null;
+  timeOfDay?: string | null;
   tags: string[];
   date: string;
   visibility: CreateEntryRequestDto['visibility'] | null;
@@ -108,6 +111,8 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     try {
       const payload: CreateEntryRequestDto = {
         text: entry.text,
+        ...(entry.title ? { title: entry.title } : {}),
+        ...(entry.timeOfDay ? { timeOfDay: entry.timeOfDay } : {}),
         tags: entry.tags,
         date: entry.date,
         visibility: entry.visibility ?? 'private',

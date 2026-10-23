@@ -1,4 +1,5 @@
 import {
+  bookEntryHeading,
   buildBook,
   buildJournalDocument,
   stripMarkdown,
@@ -376,6 +377,39 @@ describe('book-converter.util', () => {
       expect(output).toContain('alt="&lt;day&gt;.png"');
       expect(output).toContain('2024-01-10 - &lt;day&gt;.png');
       expect(output).toContain('Woven prose');
+    });
+  });
+  describe('entry titles and times', () => {
+    const day = [
+      { date: '2024-04-02', index: 1, timeOfDay: '21:30', title: 'Night <walk>', tags: ['walks'], content: 'Stars', format: 'plain' as const },
+      { date: '2024-04-02', index: 2, tags: ['walks'], content: 'Untimed', format: 'plain' as const },
+      { date: '2024-04-02', index: 3, timeOfDay: '07:05', tags: ['walks'], content: 'Dawn', format: 'plain' as const },
+    ];
+
+    it('orders a day by time, entries without one first', () => {
+      const [chapter] = buildBook(day, { title: 'Walks' }).chapters;
+
+      expect(chapter.entries.map((entry) => entry.content)).toEqual(['Untimed', 'Dawn', 'Stars']);
+      expect(buildJournalDocument(day, { title: 'Journal' }).chapters[0].entries.map((entry) => entry.content))
+        .toEqual(['Untimed', 'Dawn', 'Stars']);
+    });
+
+    it('heads each entry with its date, time, and title', () => {
+      const book = buildBook(day, { title: 'Walks' });
+      const markdown = renderBookMarkdown(book);
+      const html = renderBookHtml(book);
+
+      expect(markdown).toContain('### 2024-04-02 21:30 · Night <walk>');
+      expect(markdown).toContain('### 2024-04-02 07:05\n');
+      expect(markdown).toContain('### 2024-04-02\n\nUntimed');
+      expect(html).toContain('<div class="entry-date">2024-04-02 21:30</div>');
+      expect(html).toContain('<h3 class="entry-title">Night &lt;walk&gt;</h3>');
+      expect(renderBookMarkdown(book, { includeDates: false })).toContain('### Night <walk>');
+    });
+
+    it('leaves the heading out without dates or a title', () => {
+      expect(bookEntryHeading({ date: '2024-04-02', timeOfDay: null, title: null }, false)).toBeNull();
+      expect(bookEntryHeading({ date: '2024-04-02', timeOfDay: '07:05', title: 'Dawn' }, true)).toBe('2024-04-02 07:05 · Dawn');
     });
   });
 });

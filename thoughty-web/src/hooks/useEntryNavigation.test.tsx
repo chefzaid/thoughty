@@ -99,6 +99,28 @@ describe('useEntryNavigation', () => {
     });
   });
 
+  it('shares a titled entry under its title', async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(globalThis.navigator, 'share', { value: share, configurable: true });
+
+    const { result } = renderHook(() => useEntryNavigation(createParams()));
+
+    await result.current.handleShareEntry({
+      id: 5,
+      title: 'Harbor at dawn',
+      content: 'Entry',
+      tags: [],
+      date: '2024-01-15',
+      visibility: 'private',
+    });
+
+    expect(share).toHaveBeenCalledWith({
+      title: 'Harbor at dawn',
+      text: 'Harbor at dawn',
+      url: expect.stringContaining('/journal?entry=5'),
+    });
+  });
+
   it('returns false when native share is aborted or clipboard sharing is unavailable', async () => {
     Object.defineProperty(globalThis.navigator, 'share', {
       value: vi.fn().mockRejectedValue(new DOMException('cancelled', 'AbortError')),

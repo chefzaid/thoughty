@@ -1013,6 +1013,8 @@
                       "diary_id": 1,
                       "date": "2026-06-24",
                       "index": 1,
+                      "title": "Morning walk by the river",
+                      "time_of_day": "08:30",
                       "tags": [
                         "reflection"
                       ],
@@ -1075,6 +1077,8 @@
                 "$ref": "#/components/schemas/CreateEntryDto"
               },
               "example": {
+                "title": "Morning walk by the river",
+                "timeOfDay": "08:30",
                 "text": "example",
                 "tags": [
                   "reflection"
@@ -1270,6 +1274,8 @@
                     "diary_id": 1,
                     "date": "2026-06-24",
                     "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
                     "tags": [
                       "reflection"
                     ],
@@ -1449,6 +1455,8 @@
                       "id": 1,
                       "date": "2026-06-24",
                       "index": 1,
+                      "title": "Morning walk by the river",
+                      "time_of_day": "08:30",
                       "tags": [
                         "reflection"
                       ],
@@ -1644,6 +1652,8 @@
                 "$ref": "#/components/schemas/UpdateEntryDto"
               },
               "example": {
+                "title": "Morning walk by the river",
+                "timeOfDay": "08:30",
                 "text": "example",
                 "tags": [
                   "reflection"
@@ -1671,6 +1681,8 @@
                     "diary_id": 1,
                     "date": "2026-06-24",
                     "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
                     "tags": [
                       "reflection"
                     ],
@@ -1795,6 +1807,8 @@
                     "diary_id": 1,
                     "date": "2026-06-24",
                     "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
                     "tags": [
                       "reflection"
                     ],
@@ -1882,6 +1896,8 @@
                     "diary_id": 1,
                     "date": "2026-06-24",
                     "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
                     "tags": [
                       "reflection"
                     ],
@@ -1969,6 +1985,8 @@
                     "diary_id": 1,
                     "date": "2026-06-24",
                     "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
                     "tags": [
                       "reflection"
                     ],
@@ -2056,6 +2074,8 @@
                     "diary_id": 1,
                     "date": "2026-06-24",
                     "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
                     "tags": [
                       "reflection"
                     ],
@@ -3458,7 +3478,8 @@
                 "dateFormat": "2026-06-24",
                 "tagOpenBracket": "reflection",
                 "tagCloseBracket": "reflection",
-                "tagSeparator": "reflection"
+                "tagSeparator": "reflection",
+                "titlePlacement": "header"
               }
             }
           }
@@ -3655,6 +3676,8 @@
                   {
                     "sourceId": "example",
                     "date": "2024-03-05",
+                    "timeOfDay": "08:30",
+                    "title": "Morning walk by the river",
                     "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                     "tags": [
                       "reflection"
@@ -5853,6 +5876,8 @@
                       "id": 1,
                       "date": "2026-06-24",
                       "index": 1,
+                      "title": "Morning walk by the river",
+                      "timeOfDay": "08:30",
                       "tags": [
                         "reflection"
                       ],
@@ -7121,6 +7146,8 @@
                     {
                       "id": 12,
                       "date": "2026-10-21",
+                      "title": "Morning walk by the river",
+                      "timeOfDay": "08:30",
                       "content": "Walked by the river before work and finally felt rested.",
                       "format": "plain",
                       "tags": [
@@ -7811,6 +7838,17 @@
           "index": {
             "type": "number"
           },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Morning walk by the river"
+          },
+          "time_of_day": {
+            "type": "string",
+            "nullable": true,
+            "description": "Time of day (HH:MM), or null",
+            "example": "08:30"
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -7859,7 +7897,7 @@
             "type": "string"
           },
           "search_matches": {
-            "description": "With a search: the words and phrases of this entry that match it, as written in the entry, longest first, for highlighting. Empty when only a tag matched.",
+            "description": "With a search: the words and phrases of this entry's title and text that match it, as written, longest first, for highlighting. Empty when only a tag matched.",
             "example": [
               "morning run",
               "swimming"
@@ -7875,6 +7913,8 @@
           "user_id",
           "date",
           "index",
+          "title",
+          "time_of_day",
           "tags",
           "content",
           "format",
@@ -7890,6 +7930,8 @@
           "diary_id": 1,
           "date": "2026-06-24",
           "index": 1,
+          "title": "Morning walk by the river",
+          "time_of_day": "08:30",
           "tags": [
             "reflection"
           ],
@@ -7960,6 +8002,8 @@
               "diary_id": 1,
               "date": "2026-06-24",
               "index": 1,
+              "title": "Morning walk by the river",
+              "time_of_day": "08:30",
               "tags": [
                 "reflection"
               ],
@@ -8090,6 +8134,8 @@
             "diary_id": 1,
             "date": "2026-06-24",
             "index": 1,
+            "title": "Morning walk by the river",
+            "time_of_day": "08:30",
             "tags": [
               "reflection"
             ],
@@ -8178,6 +8224,17 @@
           "index": {
             "type": "number"
           },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Morning walk by the river"
+          },
+          "time_of_day": {
+            "type": "string",
+            "nullable": true,
+            "description": "Time of day (HH:MM), or null",
+            "example": "08:30"
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -8220,6 +8277,8 @@
           "id",
           "date",
           "index",
+          "title",
+          "time_of_day",
           "tags",
           "content",
           "format",
@@ -8232,6 +8291,8 @@
           "id": 1,
           "date": "2026-06-24",
           "index": 1,
+          "title": "Morning walk by the river",
+          "time_of_day": "08:30",
           "tags": [
             "reflection"
           ],
@@ -8265,6 +8326,8 @@
               "id": 1,
               "date": "2026-06-24",
               "index": 1,
+              "title": "Morning walk by the river",
+              "time_of_day": "08:30",
               "tags": [
                 "reflection"
               ],
@@ -8284,6 +8347,19 @@
       "CreateEntryDto": {
         "type": "object",
         "properties": {
+          "title": {
+            "type": "string",
+            "description": "Optional one-line title; empty or null removes it",
+            "nullable": true,
+            "maxLength": 200,
+            "example": "Morning walk by the river"
+          },
+          "timeOfDay": {
+            "type": "string",
+            "description": "Optional time of day on a 24-hour clock (HH:MM); null removes it. Same-day entries without a time come first in their manual order, then those with one, earliest first. It never changes the same-day index that cross-references use.",
+            "nullable": true,
+            "example": "08:30"
+          },
           "text": {
             "type": "string",
             "description": "Entry content"
@@ -8325,6 +8401,8 @@
           "tags"
         ],
         "example": {
+          "title": "Morning walk by the river",
+          "timeOfDay": "08:30",
           "text": "example",
           "tags": [
             "reflection"
@@ -8463,7 +8541,7 @@
             "description": "Date of the entries to reorder (YYYY-MM-DD)"
           },
           "orderedIds": {
-            "description": "Entry IDs in the desired order",
+            "description": "Entry IDs in the desired order: all of the day's entries, or some of them (such as those without a time), which then trade the same-day indexes they hold among themselves",
             "type": "array",
             "items": {
               "type": "number"
@@ -8498,6 +8576,19 @@
       "UpdateEntryDto": {
         "type": "object",
         "properties": {
+          "title": {
+            "type": "string",
+            "description": "Optional one-line title; empty or null removes it",
+            "nullable": true,
+            "maxLength": 200,
+            "example": "Morning walk by the river"
+          },
+          "timeOfDay": {
+            "type": "string",
+            "description": "Optional time of day on a 24-hour clock (HH:MM); null removes it. Same-day entries without a time come first in their manual order, then those with one, earliest first. It never changes the same-day index that cross-references use.",
+            "nullable": true,
+            "example": "08:30"
+          },
           "text": {
             "type": "string",
             "description": "Entry content"
@@ -8535,6 +8626,8 @@
           "date"
         ],
         "example": {
+          "title": "Morning walk by the river",
+          "timeOfDay": "08:30",
           "text": "example",
           "tags": [
             "reflection"
@@ -8566,6 +8659,8 @@
             "diary_id": 1,
             "date": "2026-06-24",
             "index": 1,
+            "title": "Morning walk by the river",
+            "time_of_day": "08:30",
             "tags": [
               "reflection"
             ],
@@ -10328,6 +10423,15 @@
           },
           "tagSeparator": {
             "type": "string"
+          },
+          "titlePlacement": {
+            "type": "string",
+            "description": "Where TXT files keep entry titles: on the header line as --{title:...}, or as the first line under the header (empty when the entry has none)",
+            "enum": [
+              "header",
+              "firstLine"
+            ],
+            "default": "header"
           }
         },
         "example": {
@@ -10338,7 +10442,8 @@
           "dateFormat": "2026-06-24",
           "tagOpenBracket": "reflection",
           "tagCloseBracket": "reflection",
-          "tagSeparator": "reflection"
+          "tagSeparator": "reflection",
+          "titlePlacement": "header"
         }
       },
       "PreviewImportDto": {
@@ -10467,6 +10572,16 @@
             "description": "Local day the entry was written",
             "example": "2024-03-05"
           },
+          "timeOfDay": {
+            "type": "string",
+            "description": "Local time of day the entry was written (HH:MM)",
+            "example": "08:30"
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the entry in the source app",
+            "example": "Morning walk by the river"
+          },
           "content": {
             "type": "string",
             "description": "Entry text as Markdown; may be empty when the entry holds only photos"
@@ -10494,6 +10609,8 @@
         "example": {
           "sourceId": "example",
           "date": "2024-03-05",
+          "timeOfDay": "08:30",
+          "title": "Morning walk by the river",
           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
           "tags": [
             "reflection"
@@ -10537,6 +10654,8 @@
             {
               "sourceId": "example",
               "date": "2024-03-05",
+              "timeOfDay": "08:30",
+              "title": "Morning walk by the river",
               "content": "Today I wrote a thoughtful journal entry about focus and calm.",
               "tags": [
                 "reflection"
@@ -11312,6 +11431,17 @@
           "index": {
             "type": "number"
           },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Morning walk by the river"
+          },
+          "timeOfDay": {
+            "type": "string",
+            "nullable": true,
+            "description": "Time of day the author gave the entry (HH:MM)",
+            "example": "08:30"
+          },
           "tags": {
             "type": "array",
             "items": {
@@ -11352,6 +11482,8 @@
           "id",
           "date",
           "index",
+          "title",
+          "timeOfDay",
           "tags",
           "content",
           "format",
@@ -11365,6 +11497,8 @@
           "id": 1,
           "date": "2026-06-24",
           "index": 1,
+          "title": "Morning walk by the river",
+          "timeOfDay": "08:30",
           "tags": [
             "reflection"
           ],
@@ -11417,6 +11551,8 @@
               "id": 1,
               "date": "2026-06-24",
               "index": 1,
+              "title": "Morning walk by the river",
+              "timeOfDay": "08:30",
               "tags": [
                 "reflection"
               ],
@@ -12940,6 +13076,17 @@
             "example": "2026-10-21",
             "format": "date"
           },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Morning walk by the river"
+          },
+          "timeOfDay": {
+            "type": "string",
+            "nullable": true,
+            "example": "08:30",
+            "description": "Time of day (HH:MM), or null"
+          },
           "content": {
             "type": "string",
             "example": "Walked by the river before work and finally felt rested."
@@ -13002,6 +13149,8 @@
         "required": [
           "id",
           "date",
+          "title",
+          "timeOfDay",
           "content",
           "format",
           "tags",
@@ -13016,6 +13165,8 @@
         "example": {
           "id": 12,
           "date": "2026-10-21",
+          "title": "Morning walk by the river",
+          "timeOfDay": "08:30",
           "content": "Walked by the river before work and finally felt rested.",
           "format": "plain",
           "tags": [
@@ -13068,6 +13219,8 @@
             {
               "id": 12,
               "date": "2026-10-21",
+              "title": "Morning walk by the river",
+              "timeOfDay": "08:30",
               "content": "Walked by the river before work and finally felt rested.",
               "format": "plain",
               "tags": [

@@ -9,6 +9,7 @@ import {
   normalizeEmbeddedBookImages,
 } from './book-image.util';
 import { escapeHtml } from './sanitize.util';
+import { compareSameDayEntries, normalizeEntryTitle, normalizeTimeOfDay } from './entry-order.util';
 
 export type ChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type TagScope = 'all' | 'first';
@@ -20,6 +21,8 @@ export interface BookEntry {
   id?: number;
   date: string;
   index: number;
+  title?: string | null;
+  timeOfDay?: string | null;
   tags: string[];
   content: string;
   format: 'plain' | 'markdown';
@@ -59,6 +62,8 @@ interface BookEntryInput {
   id?: number;
   date: string | Date;
   index: number;
+  title?: string | null;
+  timeOfDay?: string | null;
   tags: string[];
   content: string;
   format?: 'plain' | 'markdown';
@@ -78,7 +83,7 @@ function normalizeDate(date: string | Date): string {
 function sortChronologically(entries: BookEntry[]): BookEntry[] {
   return [...entries].sort((a, b) => {
     const dateCompare = a.date.localeCompare(b.date);
-    return dateCompare === 0 ? a.index - b.index : dateCompare;
+    return dateCompare === 0 ? compareSameDayEntries(a, b) : dateCompare;
   });
 }
 
@@ -87,6 +92,8 @@ function normalizeBookEntry(input: BookEntryInput): BookEntry {
     id: input.id,
     date: normalizeDate(input.date),
     index: input.index,
+    title: normalizeEntryTitle(input.title),
+    timeOfDay: normalizeTimeOfDay(input.timeOfDay),
     tags: input.tags || [],
     content: input.content || '',
     format: input.format === 'markdown' ? 'markdown' : 'plain',
@@ -261,6 +268,20 @@ export function buildJournalDocument(
   };
 }
 
+/** The entry's date followed by its time of day when it has one, as books and documents print it. */
+export function formatBookEntryDate(entry: Pick<BookEntry, 'date' | 'timeOfDay'>): string {
+  return entry.timeOfDay ? `${entry.date} ${entry.timeOfDay}` : entry.date;
+}
+
+/**
+ * An entry's section heading in a book: its date and time when dates are printed, then its title.
+ * Null when dates are left out and the entry has no title.
+ */
+export function bookEntryHeading(entry: Pick<BookEntry, 'date' | 'timeOfDay' | 'title'>, includeDates: boolean): string | null {
+  const parts = [includeDates ? formatBookEntryDate(entry) : null, entry.title || null].filter(Boolean);
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
 /**
  * Strip common Markdown syntax so entry content renders cleanly as plain text (e.g. in PDFs).
  */
@@ -368,6 +389,7 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     '.chapter-summary{border-top:1px solid #ccc;padding-top:1em}',
     '.entry{margin-bottom:1.6em}',
     '.entry-date{color:#888;font-size:0.85em;margin-bottom:0.3em}',
+    '.entry-title{font-size:1.15em;margin:0 0 0.4em}',
     '.entry-content{white-space:pre-wrap}',
     '.entry-image{margin:1.2em 0;text-align:center}',
     '.entry-image img{display:block;max-width:100%;max-height:34em;margin:0 auto;object-fit:contain}',
@@ -430,8 +452,9 @@ function renderMarkdownChapter(lines: string[], chapter: BookChapter, index: num
     }
   } else {
     for (const entry of chapter.entries) {
-      if (includeDates) {
-        lines.push(`### ${entry.date}`, '');
+      const heading = bookEntryHeading(entry, includeDates);
+      if (heading) {
+        lines.push(`### ${heading}`, '');
       }
       lines.push(entry.content, '');
       renderMarkdownEntryImages(lines, entry);
@@ -465,7 +488,10 @@ function renderHtmlChapter(parts: string[], chapter: BookChapter, index: number,
     for (const entry of chapter.entries) {
       parts.push('<article class="entry">');
       if (includeDates) {
-        parts.push(`<div class="entry-date">${escapeHtml(entry.date)}</div>`);
+        parts.push(`<div class="entry-date">${escapeHtml(formatBookEntryDate(entry))}</div>`);
+      }
+      if (entry.title) {
+        parts.push(`<h3 class="entry-title">${escapeHtml(entry.title)}</h3>`);
       }
       parts.push(`<div class="entry-content">${escapeHtml(entry.content)}</div>`, '</article>');
       renderHtmlEntryImages(parts, entry);

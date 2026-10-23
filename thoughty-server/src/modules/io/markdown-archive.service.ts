@@ -101,7 +101,8 @@ export class MarkdownArchiveService {
     for (const entry of entries) {
       const date = entryDate(entry.date);
       const yearFolder = `${folderFor(entry.diaryId)}/${date.slice(0, 4)}`;
-      const markdownPath = paths.allocate(`${yearFolder}/${date}`, '.md');
+      const fileName = entry.title ? `${date} ${safeArchiveName(entry.title, '')}`.trim() : date;
+      const markdownPath = paths.allocate(`${yearFolder}/${fileName}`, '.md');
       const links: ArchiveLink[] = [];
 
       for (const attachment of entry.attachments ?? []) {

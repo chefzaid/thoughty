@@ -42,6 +42,17 @@ export class FormatConfigDto {
   @IsOptional()
   @IsString()
   tagSeparator?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Where TXT files keep entry titles: on the header line as --{title:...}, or as the first line under ' +
+      'the header (empty when the entry has none)',
+    enum: ['header', 'firstLine'],
+    default: 'header',
+  })
+  @IsOptional()
+  @IsIn(['header', 'firstLine'])
+  titlePlacement?: 'header' | 'firstLine';
 }
 
 export class ExportQueryDto {
@@ -101,6 +112,8 @@ export class PreviewResponseDto {
   entries: Array<{
     date: string;
     index: number;
+    title?: string;
+    timeOfDay?: string;
     tags: string[];
     content: string;
   }>;

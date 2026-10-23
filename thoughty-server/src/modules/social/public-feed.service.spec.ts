@@ -49,6 +49,8 @@ describe('PublicFeedService', () => {
         id: 8,
         date: '2026-08-01',
         index: 1,
+        title: 'What I learned',
+        timeOfDay: '21:15',
         tags: ['growth'],
         content: 'A public reflection',
         format: 'markdown',
@@ -69,6 +71,8 @@ describe('PublicFeedService', () => {
           id: 8,
           date: '2026-08-01',
           index: 1,
+          title: 'What I learned',
+          timeOfDay: '21:15',
           tags: ['growth'],
           content: 'A public reflection',
           format: 'markdown',
@@ -85,7 +89,7 @@ describe('PublicFeedService', () => {
       hasMore: true,
     });
     expect(qb.select).toHaveBeenCalledWith(
-      expect.arrayContaining(['e.content', 'u.id', 'u.username', 'u.avatarUrl']),
+      expect.arrayContaining(['e.title', 'e.timeOfDay', 'e.content', 'u.id', 'u.username', 'u.avatarUrl']),
     );
     expect(qb.andWhere).toHaveBeenCalledWith('e.moderation_status = :moderationStatus', {
       moderationStatus: 'visible',

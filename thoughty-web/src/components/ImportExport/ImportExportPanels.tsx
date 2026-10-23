@@ -217,6 +217,13 @@ export function FormatSection({
                         </div>
                     ))}
                     <div className="format-field format-field--compact">
+                        <label htmlFor="format-titlePlacement">{t('titlePlacement')}</label>
+                        <select id="format-titlePlacement" value={formatConfig.titlePlacement ?? 'header'} onChange={(event) => onInputChange('titlePlacement', event.target.value)}>
+                            <option value="header">{t('titlePlacementHeader')}</option>
+                            <option value="firstLine">{t('titlePlacementFirstLine')}</option>
+                        </select>
+                    </div>
+                    <div className="format-field format-field--compact">
                         <label htmlFor="format-dateFormat">{t('dateFormat')}</label>
                         <select id="format-dateFormat" value={formatConfig.dateFormat} onChange={(event) => onInputChange('dateFormat', event.target.value)}>
                             {DATE_FORMAT_OPTIONS.map((option) => (

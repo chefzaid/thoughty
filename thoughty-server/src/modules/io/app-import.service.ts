@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Attachment, Diary, Entry } from '@/database/entities';
-import { sanitizeString } from '@/common/utils';
+import { normalizeEntryTitle, normalizeTimeOfDay, sanitizeString } from '@/common/utils';
 import { AttachmentsService } from '@/modules/attachments';
 import { DiariesService } from '@/modules/diaries';
 import {
@@ -69,6 +69,8 @@ export class AppImportService {
         diaryId: (entry.journal && journals.ids.get(journalKey(entry.journal))) || fallbackDiaryId || null,
         date: entry.date,
         index,
+        title: normalizeEntryTitle(entry.title),
+        timeOfDay: normalizeTimeOfDay(entry.timeOfDay),
         tags: cleanTags(entry.tags),
         content: entry.content,
         format: 'markdown',

@@ -9,6 +9,8 @@ describe('EntryListCacheService', () => {
       diary_id: null,
       date: '2024-01-15',
       index: 1,
+      title: null,
+      time_of_day: null,
       tags: ['focus'],
       content: 'Cached entry',
       format: 'plain',

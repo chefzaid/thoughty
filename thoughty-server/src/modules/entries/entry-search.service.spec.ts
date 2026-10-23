@@ -59,7 +59,8 @@ describe('EntrySearchService', () => {
     expect(matches).toEqual(new Map([[4, ['quick brown', 'running', 'run']], [5, []]]));
     const [sql, params] = query.mock.calls[0] as [string, unknown[]];
     expect(sql).toContain('e.user_id = $2 AND e.deleted_at IS NULL');
-    expect(sql).toContain('ts_headline(terms.config, e.content, terms.query, $6)');
+    expect(sql).toContain('unnest(ARRAY[e.title, e.content]) AS field(text)');
+    expect(sql).toContain('ts_headline(terms.config, field.text, terms.query, $6)');
     expect(sql).toContain('to_tsvector(terms.config, run.text) @@ terms.query');
     expect(params.slice(0, 5)).toEqual([[4, 5, 6], 7, ['quick brown', 'run'], [false, true], ['thoughty_en', 'thoughty_fr']]);
   });

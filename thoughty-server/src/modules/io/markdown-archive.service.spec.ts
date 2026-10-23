@@ -107,6 +107,18 @@ describe('MarkdownArchiveService', () => {
     await expect(zip.file('No diary/2024/2024-04-01.md')!.async('string')).resolves.not.toContain('diary:');
   });
 
+  it('names an entry\'s file after its date and title and keeps the time in the front matter', async () => {
+    entries = [
+      { ...baseEntry, id: 1, diaryId: 1, date: '2024-05-01', index: 1, title: 'May Day: picnic?', timeOfDay: '12:30', content: 'Sun.' },
+    ];
+
+    const { zip } = await buildArchive();
+
+    expect(Object.keys(zip.files)).toContain('Journal/2024/2024-05-01 May Day- picnic-.md');
+    const markdown = await zip.file('Journal/2024/2024-05-01 May Day- picnic-.md')!.async('string');
+    expect(markdown).toContain('title: "May Day: picnic?"\ndate: 2024-05-01\ntime: "12:30"');
+  });
+
   it('exports one diary under its own name', async () => {
     entries = [{ ...baseEntry, id: 2, diaryId: 2, date: '2024-03-05', index: 1, content: 'Arrived.' }];
 

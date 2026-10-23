@@ -126,7 +126,7 @@ describe('IoService', () => {
         tagCloseBracket: ')',
       });
 
-      expect(settingRepository.upsert).toHaveBeenCalledTimes(8); // All config keys
+      expect(settingRepository.upsert).toHaveBeenCalledTimes(9); // All config keys
     });
   });
 
@@ -432,6 +432,22 @@ Test entry content
       expect(result).toHaveProperty('importedCount');
       expect(result).toHaveProperty('skippedCount');
       expect(result).toHaveProperty('totalProcessed');
+    });
+
+    it('keeps titles and times from the file, reading titles from the first line when the writer chose that', async () => {
+      settingRepository.find.mockResolvedValue([{ key: 'io_titlePlacement', value: 'firstLine' }]);
+      diaryRepository.findOne.mockResolvedValue(mockDiary);
+      entryRepository.count.mockResolvedValue(0);
+      entryRepository.save.mockResolvedValue(mockEntry);
+      entryRepository.createQueryBuilder().getMany.mockResolvedValue([]);
+
+      await service.import(1, { content: '---2024-01-15 21:05--[tag1]\nEvening notes\nTest entry content\n' });
+
+      expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+        title: 'Evening notes',
+        timeOfDay: '21:05',
+        content: 'Test entry content',
+      }));
     });
 
     it('should throw BadRequestException for empty content', async () => {

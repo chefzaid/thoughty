@@ -122,6 +122,68 @@ describe('EntriesList', () => {
         expect(onReorderEntries).toHaveBeenCalledWith('2024-01-15', [2, 1]);
     });
 
+    it('lets only entries without a time be dragged, and reorders them among themselves', () => {
+        const onReorderEntries = vi.fn();
+        const day = [
+            { ...mockEntries[0], id: 1, index: 1 },
+            { ...mockEntries[1], id: 3, index: 3 },
+            { ...mockEntries[1], id: 2, index: 2, content: 'Timed entry', time_of_day: '08:15' },
+        ];
+        render(<EntriesList {...createEntriesListProps({ onReorderEntries, entries: day, groupedEntries: { '2024-01-15': day } })} />);
+
+        const dragHandles = screen.getAllByTitle('Drag to reorder');
+        expect(dragHandles).toHaveLength(2);
+        const timedCard = document.getElementById('entry-2');
+        expect(timedCard?.querySelector('[title="Drag to reorder"]')).toBeNull();
+
+        fireEvent.pointerDown(dragHandles[0]!, { button: 0, pointerType: 'mouse' });
+        const targetDropZone = document.getElementById('entry-3')?.querySelector('button.absolute');
+        if (!targetDropZone) {
+            throw new Error('Expected target drop zone to exist');
+        }
+        fireEvent.pointerEnter(targetDropZone, { pointerType: 'mouse' });
+        fireEvent.pointerUp(targetDropZone, { pointerType: 'mouse' });
+
+        expect(onReorderEntries).toHaveBeenCalledWith('2024-01-15', [3, 1]);
+    });
+
+    it('offers no dragging on a day with a single entry without a time', () => {
+        const day = [
+            { ...mockEntries[0], id: 1, index: 1 },
+            { ...mockEntries[1], id: 2, index: 2, time_of_day: '08:15' },
+        ];
+        render(<EntriesList {...createEntriesListProps({ onReorderEntries: vi.fn(), entries: day, groupedEntries: { '2024-01-15': day } })} />);
+
+        expect(screen.queryByTitle('Drag to reorder')).not.toBeInTheDocument();
+    });
+
+    it('edits the title and time of day of the entry being edited', async () => {
+        const setEditTitle = vi.fn();
+        const setEditTimeOfDay = vi.fn();
+        const user = userEvent.setup();
+        render(
+            <EntriesList
+                {...createEntriesListProps({
+                    editingEntry: mockEntries[0],
+                    editText: 'Edited content',
+                    editTags: ['work'],
+                    editDate: new Date('2024-01-15'),
+                    editTitle: 'Old title',
+                    setEditTitle,
+                    editTimeOfDay: '09:30',
+                    setEditTimeOfDay,
+                })}
+            />,
+        );
+
+        const title = screen.getByDisplayValue('Old title');
+        fireEvent.change(title, { target: { value: 'New title' } });
+        expect(setEditTitle).toHaveBeenCalledWith('New title');
+        expect(screen.getByDisplayValue('09:30')).toHaveAttribute('type', 'time');
+        await user.click(screen.getByRole('button', { name: 'entryTimeClear' }));
+        expect(setEditTimeOfDay).toHaveBeenCalledWith('');
+    });
+
     it('renders edit mode for the active entry and keeps others in view mode', () => {
         render(
             <EntriesList

@@ -14,7 +14,10 @@ export interface ImportedMedia {
 export interface ImportedEntry {
   readonly sourceId: string;
   readonly date: string;
+  /** Local time of day it was written (`HH:MM`), in the entry's own time zone. */
+  readonly timeOfDay?: string;
   readonly timestamp: number;
+  readonly title?: string;
   readonly content: string;
   readonly tags: string[];
   readonly favorite: boolean;

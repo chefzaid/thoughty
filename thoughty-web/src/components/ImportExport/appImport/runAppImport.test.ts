@@ -101,6 +101,23 @@ describe('runAppImport', () => {
     expect(onProgress).toHaveBeenLastCalledWith({ phase: 'files', done: 3, total: 3 });
   });
 
+  it('sends the title and time of day only when the entry has them', async () => {
+    acceptEntries();
+
+    await runAppImport(
+      exportOf([entry('A', { title: 'Harbour', timeOfDay: '07:45' }), entry('B')]),
+      { diaryId: 4, journalsAsDiaries: false },
+      service,
+      onProgress,
+      new AbortController().signal,
+    );
+
+    expect(importEntries.mock.calls[0]![0].entries).toEqual([
+      { sourceId: 'A', date: '2024-03-05', timeOfDay: '07:45', title: 'Harbour', content: 'Entry A', tags: [], favorite: false },
+      { sourceId: 'B', date: '2024-03-05', content: 'Entry B', tags: [], favorite: false },
+    ]);
+  });
+
   it('sends journal names only when journals become diaries', async () => {
     acceptEntries();
 

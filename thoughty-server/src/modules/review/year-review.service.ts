@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { Attachment, Diary, Entry, YearReviewMood } from '@/database/entities';
+import { addSameDayOrder } from '@/common/utils';
 import { AiCredentialsService } from '@/modules/ai';
 import type {
   YearReviewComparisonDto,
@@ -65,14 +66,16 @@ export class YearReviewService {
   /** The year's entries, oldest first, with word counts. */
   async loadYearEntries(userId: number, year: number, diaryId?: number): Promise<YearEntry[]> {
     const { from, to } = yearRange(year);
-    const query = this.entryRepository
-      .createQueryBuilder('e')
-      .select(['e.id', 'e.index', 'e.content', 'e.tags', 'e.isFavorite', 'e.isArchived'])
-      .addSelect(`to_char(e.date, 'YYYY-MM-DD')`, 'day')
-      .where('e.user_id = :userId', { userId })
-      .andWhere('e.date BETWEEN :from AND :to', { from, to })
-      .orderBy('e.date', 'ASC')
-      .addOrderBy('e.index', 'ASC');
+    const query = addSameDayOrder(
+      this.entryRepository
+        .createQueryBuilder('e')
+        .select(['e.id', 'e.index', 'e.content', 'e.tags', 'e.isFavorite', 'e.isArchived'])
+        .addSelect(`to_char(e.date, 'YYYY-MM-DD')`, 'day')
+        .where('e.user_id = :userId', { userId })
+        .andWhere('e.date BETWEEN :from AND :to', { from, to })
+        .orderBy('e.date', 'ASC'),
+      'e',
+    );
     if (diaryId) {
       query.andWhere('e.diary_id = :diaryId', { diaryId });
     }

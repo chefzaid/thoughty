@@ -57,6 +57,12 @@ describe('EntryForm', () => {
                 saveEntryTemplate: 'Save template',
                 deleteEntryTemplate: 'Delete template',
                 templateNamePrompt: 'Template name',
+                entryTitleLabel: 'Title (optional)',
+                entryTitlePlaceholder: 'Title (optional)',
+                entryTimeLabel: 'Time of day (optional)',
+                entryTimeNow: 'Now',
+                entryTimeNowLabel: 'Set the time of day to now',
+                entryTimeClear: 'Remove the time of day',
             };
             return translations[key] || key;
         },
@@ -400,6 +406,54 @@ describe('EntryForm', () => {
 
             expect(setVisibility).toHaveBeenCalledTimes(1);
             expect(setVisibility.mock.calls[0]?.[0](null)).toBe('private');
+        });
+    });
+
+    describe('Title and time of day', () => {
+        it('shows neither field when the composer does not handle them', () => {
+            render(<EntryForm {...defaultProps} />);
+
+            expect(screen.queryByLabelText('Title (optional)')).not.toBeInTheDocument();
+            expect(screen.queryByLabelText('Time of day (optional)')).not.toBeInTheDocument();
+        });
+
+        it('edits the optional title', () => {
+            const setTitle = vi.fn();
+            render(<EntryForm {...defaultProps} title="" setTitle={setTitle} />);
+
+            const input = screen.getByLabelText('Title (optional)');
+            expect(input).toHaveValue('');
+            expect(input).toHaveAttribute('maxLength', '200');
+            fireEvent.change(input, { target: { value: 'Harbour' } });
+
+            expect(setTitle).toHaveBeenCalledWith('Harbour');
+        });
+
+        it('starts without a time and sets the current time with Now', async () => {
+            vi.useFakeTimers({ toFake: ['Date'] });
+            vi.setSystemTime(new Date(2024, 0, 15, 7, 42));
+            const setTimeOfDay = vi.fn();
+            render(<EntryForm {...defaultProps} timeOfDay="" setTimeOfDay={setTimeOfDay} />);
+
+            expect(screen.getByLabelText('Time of day (optional)')).toHaveValue('');
+            await userEvent.click(screen.getByRole('button', { name: 'Now' }));
+
+            expect(setTimeOfDay).toHaveBeenCalledWith('07:42');
+            vi.useRealTimers();
+        });
+
+        it('takes a typed time and removes it again', async () => {
+            const setTimeOfDay = vi.fn();
+            const { rerender } = render(<EntryForm {...defaultProps} timeOfDay="" setTimeOfDay={setTimeOfDay} />);
+
+            fireEvent.change(screen.getByLabelText('Time of day (optional)'), { target: { value: '21:15' } });
+            expect(setTimeOfDay).toHaveBeenCalledWith('21:15');
+
+            rerender(<EntryForm {...defaultProps} timeOfDay="21:15" setTimeOfDay={setTimeOfDay} />);
+            expect(screen.queryByRole('button', { name: 'Now' })).not.toBeInTheDocument();
+            await userEvent.click(screen.getByRole('button', { name: 'Remove the time of day' }));
+
+            expect(setTimeOfDay).toHaveBeenLastCalledWith('');
         });
     });
 

@@ -135,7 +135,11 @@ export interface FormatConfig {
     tagOpenBracket: string;
     tagCloseBracket: string;
     tagSeparator: string;
+    /** Where TXT files keep entry titles: on the header line, or as the entry's first line. */
+    titlePlacement: TitlePlacement;
 }
+
+export type TitlePlacement = 'header' | 'firstLine';
 
 export interface PreviewData {
     totalCount: number;
@@ -176,4 +180,5 @@ export const DEFAULT_FORMAT_CONFIG: FormatConfig = {
     tagOpenBracket: '[',
     tagCloseBracket: ']',
     tagSeparator: ',',
+    titlePlacement: 'header',
 };

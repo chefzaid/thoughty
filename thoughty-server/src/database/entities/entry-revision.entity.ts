@@ -6,7 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
 } from 'typeorm';
-import { Entry } from './entry.entity';
+import { Entry, TIME_OF_DAY_TRANSFORMER } from './entry.entity';
 
 @Entity('entry_revisions')
 export class EntryRevision {
@@ -27,6 +27,12 @@ export class EntryRevision {
 
   @Column({ type: 'varchar', length: 10 })
   date: string;
+
+  @Column({ name: 'time_of_day', type: 'time', precision: 0, nullable: true, transformer: TIME_OF_DAY_TRANSFORMER })
+  timeOfDay: string | null;
+
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  title: string | null;
 
   @Column({ type: 'varchar', length: 20, default: 'plaintext' })
   format: string;

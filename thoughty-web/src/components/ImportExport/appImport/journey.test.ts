@@ -55,6 +55,7 @@ describe('parseJourneyEntry', () => {
       entry: {
         sourceId: '1588325160000-ab',
         date: '2020-05-01',
+        timeOfDay: '05:26',
         timestamp: data.date_journal,
         content: 'Morning run.',
         tags: ['health'],
@@ -70,6 +71,16 @@ describe('parseJourneyEntry', () => {
     const { entry } = parseJourneyEntry({ date_journal: 0, text: '  **Bold** start  ' }, 'entry 12', () => undefined);
 
     expect(entry).toEqual(expect.objectContaining({ sourceId: 'entry_12', content: '**Bold** start', favorite: false, tags: [], media: [] }));
+  });
+
+  it('keeps the Journey title and the time in the entry time zone', () => {
+    const { entry } = parseJourneyEntry(
+      { id: 'x', date_journal: Date.parse('2020-05-01T22:15:00Z'), timezone: 'Asia/Tokyo', title: ' Night\nshift ', text: 'Busy.' },
+      'x',
+      () => undefined,
+    );
+
+    expect(entry).toEqual(expect.objectContaining({ date: '2020-05-02', timeOfDay: '07:15', title: 'Night shift', content: 'Busy.' }));
   });
 
   it('recognizes Journey entries', () => {

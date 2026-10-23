@@ -1,3 +1,12 @@
+import { normalizeEntryTitle, normalizeTimeOfDay } from './entry-order.util';
+
+/**
+ * Where TXT files keep entry titles: on the header line as `--{title:…}` (the default, which
+ * leaves files without titles exactly as before), or as the first line under the header (an
+ * empty line when the entry has none), for plain-text journals that start each entry with one.
+ */
+export type TitlePlacement = 'header' | 'firstLine';
+
 export interface FormatConfig {
   entrySeparator: string;
   sameDaySeparator: string;
@@ -7,6 +16,7 @@ export interface FormatConfig {
   tagOpenBracket: string;
   tagCloseBracket: string;
   tagSeparator: string;
+  titlePlacement: TitlePlacement;
 }
 
 export const DEFAULT_FORMAT: FormatConfig = {
@@ -20,6 +30,7 @@ export const DEFAULT_FORMAT: FormatConfig = {
   tagOpenBracket: '[',
   tagCloseBracket: ']',
   tagSeparator: ',',
+  titlePlacement: 'header',
 };
 
 /**
@@ -35,6 +46,7 @@ export function validateFormatConfig(config: Partial<FormatConfig> = {}): Format
     tagOpenBracket: config.tagOpenBracket ?? DEFAULT_FORMAT.tagOpenBracket,
     tagCloseBracket: config.tagCloseBracket ?? DEFAULT_FORMAT.tagCloseBracket,
     tagSeparator: config.tagSeparator ?? DEFAULT_FORMAT.tagSeparator,
+    titlePlacement: config.titlePlacement === 'firstLine' ? 'firstLine' : DEFAULT_FORMAT.titlePlacement,
   };
 }
 
@@ -75,6 +87,8 @@ function escapeRegex(str: string): string {
 export interface ParsedEntry {
   date: string;
   index: number;
+  title?: string;
+  timeOfDay?: string;
   tags: string[];
   content: string;
   format: EntryFormat;
@@ -88,6 +102,8 @@ export type EntryVisibility = 'public' | 'private';
 interface EntryData {
   date: string | Date;
   index: number;
+  title?: string | null;
+  timeOfDay?: string | null;
   tags: string[];
   content: string;
   format?: EntryFormat;
@@ -98,6 +114,8 @@ interface EntryData {
 interface MarkdownParseState {
   currentDate: string | null;
   currentIndex: number;
+  currentTitle?: string;
+  currentTime?: string;
   currentTags: string[];
   currentVisibility?: EntryVisibility;
   currentDiaryName?: string;
@@ -106,6 +124,8 @@ interface MarkdownParseState {
 }
 
 interface MarkdownMetadata {
+  title?: string;
+  timeOfDay?: string;
   tags: string[];
   visibility?: EntryVisibility;
   diaryName?: string;
@@ -117,6 +137,11 @@ function normalizeEntryDate(date: string | Date): string {
     : String(date).split('T')[0];
 }
 
+/**
+ * Oldest day first and each day in its numbered order, so importing the file into an empty journal
+ * numbers the entries as before and cross-references still point at the same entries. Times are
+ * written with each entry and order the day again once it is imported.
+ */
 function sortEntries(entries: EntryData[]): EntryData[] {
   return [...entries].sort((a, b) => {
     const dateCompare = new Date(a.date).getTime() - new Date(b.date).getTime();
@@ -147,27 +172,23 @@ function buildTextEntryHeader(
     ? `--${config.tagOpenBracket}${entry.visibility || 'private'}${config.tagCloseBracket}`
     : '';
   const diaryStr = entry.diaryName ? `--{diary:${entry.diaryName}}` : '';
+  const time = normalizeTimeOfDay(entry.timeOfDay);
+  const timeStr = time ? ` ${time}` : '';
+  const title = normalizeEntryTitle(entry.title);
+  const titleStr = title && config.titlePlacement === 'header' ? `--{title:${title}}` : '';
+  const metadata = `${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}${titleStr}`;
+  const titleLine = config.titlePlacement === 'firstLine' ? [title ?? ''] : [];
 
   if (entryDate !== currentDate) {
-    const formattedDate = formatDate(entryDate, config.dateFormat);
+    const header = `${config.datePrefix}${formatDate(entryDate, config.dateFormat)}${timeStr}${metadata}`;
     if (currentDate === null) {
-      return ['', `${config.datePrefix}${formattedDate}${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}`];
+      return ['', header, ...titleLine];
     }
 
-    return [
-      '',
-      config.entrySeparator,
-      '',
-      `${config.datePrefix}${formattedDate}${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}`,
-    ];
+    return ['', config.entrySeparator, '', header, ...titleLine];
   }
 
-  return [
-    '',
-    config.sameDaySeparator,
-    '',
-    `${config.datePrefix}${entry.index}${config.dateSuffix}${tagsStr}${visibilityStr}${diaryStr}${formatFlag}`,
-  ];
+  return ['', config.sameDaySeparator, '', `${config.datePrefix}${entry.index}${timeStr}${metadata}`, ...titleLine];
 }
 
 function createParsedTextEntry(
@@ -176,14 +197,18 @@ function createParsedTextEntry(
   index: number,
   config: FormatConfig,
 ): ParsedEntry {
-  const visibility = match[3] as EntryVisibility | undefined;
-  const diaryName = match[4] || undefined;
-  const format: EntryFormat = match[5] ? 'markdown' : 'plain';
+  const timeOfDay = normalizeTimeOfDay(match[2]);
+  const visibility = match[4] as EntryVisibility | undefined;
+  const diaryName = match[5] || undefined;
+  const format: EntryFormat = match[6] ? 'markdown' : 'plain';
+  const title = normalizeEntryTitle(match[7]);
 
   return {
     date,
     index,
-    tags: parseTagList(match[2], config.tagSeparator),
+    ...(title && { title }),
+    ...(timeOfDay && { timeOfDay }),
+    tags: parseTagList(match[3], config.tagSeparator),
     content: '',
     format,
     ...(visibility && { visibility }),
@@ -226,11 +251,15 @@ function parseTextHeader(
 }
 
 function buildMarkdownMetaLines(entry: EntryData, includeVisibility: boolean): string[] {
+  const time = normalizeTimeOfDay(entry.timeOfDay);
+  const title = normalizeEntryTitle(entry.title);
   const tagLabels = (entry.tags || []).map((tag) => `\`${tag}\``).join(', ');
+  const timeStr = time ? `**Time:** ${time}` : '';
+  const titleStr = title ? `**Title:** ${title}` : '';
   const tagsStr = tagLabels ? `**Tags:** ${tagLabels}` : '';
   const visStr = includeVisibility ? `**Visibility:** ${entry.visibility || 'private'}` : '';
   const diaryStr = entry.diaryName ? `**Diary:** ${entry.diaryName}` : '';
-  const meta = [tagsStr, visStr, diaryStr].filter(Boolean).join(' | ');
+  const meta = [timeStr, titleStr, tagsStr, visStr, diaryStr].filter(Boolean).join(' | ');
 
   return meta ? [meta, ''] : [];
 }
@@ -239,6 +268,8 @@ function createMarkdownParseState(): MarkdownParseState {
   return {
     currentDate: null,
     currentIndex: 0,
+    currentTitle: undefined,
+    currentTime: undefined,
     currentTags: [],
     currentVisibility: undefined,
     currentDiaryName: undefined,
@@ -254,6 +285,8 @@ function finalizeMarkdownEntry(entries: ParsedEntry[], state: MarkdownParseState
       entries.push({
         date: state.currentDate,
         index: state.currentIndex,
+        ...(state.currentTitle && { title: state.currentTitle }),
+        ...(state.currentTime && { timeOfDay: state.currentTime }),
         tags: state.currentTags,
         content,
         format: 'markdown',
@@ -265,6 +298,8 @@ function finalizeMarkdownEntry(entries: ParsedEntry[], state: MarkdownParseState
 
   return {
     ...state,
+    currentTitle: undefined,
+    currentTime: undefined,
     currentTags: [],
     currentVisibility: undefined,
     currentDiaryName: undefined,
@@ -279,7 +314,7 @@ function parseMarkdownTag(tag: string): string {
 
 function parseMarkdownMetadataLine(trimmed: string): MarkdownMetadata | null {
   // Split only known metadata boundaries; diary names can contain ordinary pipes.
-  const sections = trimmed.split(/\|(?=[ \t]*\*\*(?:Visibility|Diary):\*\*)/).map((part) => part.trim());
+  const sections = trimmed.split(/\|(?=[ \t]*\*\*(?:Time|Title|Tags|Visibility|Diary):\*\*)/).map((part) => part.trim());
   const result: MarkdownMetadata = { tags: [] };
   for (const section of sections) {
     if (!applyMarkdownMetadataSection(section, result)) return null;
@@ -288,7 +323,15 @@ function parseMarkdownMetadataLine(trimmed: string): MarkdownMetadata | null {
 }
 
 function applyMarkdownMetadataSection(section: string, result: MarkdownMetadata): boolean {
-  if (section.startsWith('**Tags:**')) {
+  if (section.startsWith('**Time:**')) {
+    const time = normalizeTimeOfDay(section.slice('**Time:**'.length));
+    if (!time) return false;
+    result.timeOfDay = time;
+  } else if (section.startsWith('**Title:**')) {
+    const title = normalizeEntryTitle(section.slice('**Title:**'.length));
+    if (!title) return false;
+    result.title = title;
+  } else if (section.startsWith('**Tags:**')) {
     const tags = section.slice('**Tags:**'.length).trim();
     if (!tags) return false;
     result.tags = tags.split(',').map(parseMarkdownTag).filter(Boolean);
@@ -353,13 +396,12 @@ export function parseTextFile(
   const escapedTagOpen = escapeRegex(config.tagOpenBracket);
   const escapedTagClose = escapeRegex(config.tagCloseBracket);
 
-  const datePattern = new RegExp(
-    String.raw`^${escapedPrefix}(\d{4}[-./]\d{2}[-./]\d{2})${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}(?:--${escapedTagOpen}(public|private)${escapedTagClose})?(?:--\{diary:([^}]+)\})?(\{md\})?$`,
-  );
-
-  const indexPattern = new RegExp(
-    String.raw`^${escapedPrefix}(\d+)${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}(?:--${escapedTagOpen}(public|private)${escapedTagClose})?(?:--\{diary:([^}]+)\})?(\{md\})?$`,
-  );
+  // A header holds the date (or the same-day number), an optional time, the tags, and the optional
+  // visibility, diary, Markdown flag, and title, in that order
+  const metadataPattern = String.raw`(?: (\d{1,2}:\d{2}))?${escapedSuffix}${escapedTagOpen}([^\]]*?)${escapedTagClose}(?:--${escapedTagOpen}(public|private)${escapedTagClose})?(?:--\{diary:([^}]+)\})?(\{md\})?(?:--\{title:(.*)\})?$`;
+  const datePattern = new RegExp(String.raw`^${escapedPrefix}(\d{4}[-./]\d{2}[-./]\d{2})${metadataPattern}`);
+  const indexPattern = new RegExp(String.raw`^${escapedPrefix}(\d+)${metadataPattern}`);
+  let awaitingTitleLine = false;
 
   function saveCurrentEntry(): void {
     if (currentEntry) {
@@ -377,6 +419,7 @@ export function parseTextFile(
 
     if (trimmedLine === config.entrySeparator || trimmedLine === config.sameDaySeparator) {
       saveCurrentEntry();
+      awaitingTitleLine = false;
       continue;
     }
 
@@ -385,6 +428,16 @@ export function parseTextFile(
       saveCurrentEntry();
       currentDate = parsedHeader.nextDate;
       currentEntry = parsedHeader.entry;
+      awaitingTitleLine = config.titlePlacement === 'firstLine' && !currentEntry.title;
+      continue;
+    }
+
+    if (currentEntry && awaitingTitleLine) {
+      awaitingTitleLine = false;
+      const title = normalizeEntryTitle(line);
+      if (title) {
+        currentEntry.title = title;
+      }
       continue;
     }
 
@@ -433,9 +486,13 @@ export function generateJsonFile(entries: EntryData[], includeVisibility = false
   const sorted = sortEntries(entries);
 
   const exportEntries = sorted.map((entry) => {
+    const title = normalizeEntryTitle(entry.title);
+    const time = normalizeTimeOfDay(entry.timeOfDay);
     const obj: Record<string, unknown> = {
       date: normalizeEntryDate(entry.date),
       index: entry.index,
+      ...(time && { time }),
+      ...(title && { title }),
       tags: entry.tags || [],
       content: entry.content || '',
       format: entry.format || 'plain',
@@ -472,6 +529,8 @@ export function generateCsvFile(entries: EntryData[], includeVisibility = false)
   const headers = [
     'date',
     'index',
+    'time',
+    'title',
     'diary',
     'tags',
     ...(includeVisibility ? ['visibility'] : []),
@@ -488,6 +547,8 @@ export function generateCsvFile(entries: EntryData[], includeVisibility = false)
     return [
       normalizeEntryDate(entry.date),
       entry.index,
+      normalizeTimeOfDay(entry.timeOfDay) ?? undefined,
+      normalizeEntryTitle(entry.title) ?? undefined,
       entry.diaryName,
       (entry.tags || []).join(';'),
       ...(includeVisibility ? [entry.visibility || 'private'] : []),
@@ -524,6 +585,14 @@ export function parseJsonFile(content: string): ParsedEntry[] {
         content: e.content.trim(),
         format: e.format === 'markdown' ? 'markdown' : 'plain',
       };
+      const title = typeof e.title === 'string' ? normalizeEntryTitle(e.title) : null;
+      if (title) {
+        entry.title = title;
+      }
+      const time = typeof e.time === 'string' ? normalizeTimeOfDay(e.time) : null;
+      if (time) {
+        entry.timeOfDay = time;
+      }
       if (e.visibility === 'public' || e.visibility === 'private') {
         entry.visibility = e.visibility;
       }
@@ -594,6 +663,8 @@ export function parseMarkdownFile(content: string): ParsedEntry[] {
     if (metadata) {
       state = {
         ...state,
+        currentTitle: metadata.title,
+        currentTime: metadata.timeOfDay,
         currentTags: metadata.tags,
         currentVisibility: metadata.visibility,
         currentDiaryName: metadata.diaryName,

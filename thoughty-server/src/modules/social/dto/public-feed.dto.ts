@@ -51,6 +51,12 @@ export class PublicFeedEntryDto {
   @ApiProperty()
   index: number;
 
+  @ApiProperty({ type: String, nullable: true, example: 'Morning walk by the river' })
+  title: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Time of day the author gave the entry (HH:MM)', example: '08:30' })
+  timeOfDay: string | null;
+
   @ApiProperty({ type: [String] })
   tags: string[];
 

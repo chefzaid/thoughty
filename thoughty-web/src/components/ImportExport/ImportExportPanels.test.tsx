@@ -13,6 +13,7 @@ const mockFormatConfig = {
     tagOpenBracket: '(',
     tagCloseBracket: ')',
     tagSeparator: ',',
+    titlePlacement: 'header' as const,
 };
 
 describe('ImportExportPanels', () => {
@@ -101,8 +102,10 @@ describe('ImportExportPanels', () => {
 
         fireEvent.change(screen.getByDisplayValue('---'), { target: { value: '===' } });
         fireEvent.change(screen.getByDisplayValue('YYYY-MM-DD'), { target: { value: 'DD/MM/YYYY' } });
+        fireEvent.change(screen.getByLabelText('titlePlacement'), { target: { value: 'firstLine' } });
         fireEvent.click(screen.getByText('saveFormat'));
 
+        expect(onInputChange).toHaveBeenCalledWith('titlePlacement', 'firstLine');
         expect(onInputChange).toHaveBeenCalledWith('entrySeparator', '===');
         expect(onInputChange).toHaveBeenCalledWith('dateFormat', 'DD/MM/YYYY');
         expect(onSave).toHaveBeenCalledTimes(1);

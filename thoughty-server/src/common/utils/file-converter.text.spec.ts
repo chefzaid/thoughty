@@ -3,6 +3,7 @@ import {
   findDuplicates,
   generateTextFile,
   parseTextFile,
+  validateFormatConfig,
 } from './file-converter.util';
 import { createEntry } from './file-converter.test-helpers';
 
@@ -210,6 +211,77 @@ Line 3
         visibility: 'private',
       });
       expect(imported[1].content).toContain('Just a plain note');
+    });
+  });
+
+  describe('titles and times', () => {
+    const dayWithTimes = [
+      createEntry({ tags: ['walks'], content: 'River walk', title: 'Before work {early}', timeOfDay: '07:10' }),
+      createEntry({ index: 2, tags: ['notes'], content: 'Untimed thought' }),
+      createEntry({ date: '2024-01-16', content: 'Late', timeOfDay: '23:55' }),
+    ];
+
+    it('puts the time after the date or same-day number and the title last on the header line', () => {
+      const exported = generateTextFile(dayWithTimes);
+
+      expect(exported).toContain('---2024-01-15 07:10--[walks]--{title:Before work {early}}\r\nRiver walk');
+      expect(exported).toContain('---2--[notes]\r\nUntimed thought');
+      expect(exported).toContain('---2024-01-16 23:55--[]\r\nLate');
+    });
+
+    it('roundtrips titles and times written on the header line', () => {
+      const imported = parseTextFile(generateTextFile(dayWithTimes, undefined, true));
+
+      expect(imported).toHaveLength(3);
+      expect(imported[0]).toMatchObject({ index: 1, title: 'Before work {early}', timeOfDay: '07:10', content: 'River walk' });
+      expect(imported[1]).toMatchObject({ index: 2, content: 'Untimed thought' });
+      expect(imported[1].title).toBeUndefined();
+      expect(imported[1].timeOfDay).toBeUndefined();
+      expect(imported[2]).toMatchObject({ date: '2024-01-16', timeOfDay: '23:55', content: 'Late' });
+    });
+
+    it('reads a file written before titles and times exactly as before', () => {
+      const legacy = `---2024-01-15--[tag1]--[public]{md}
+Title: not a title
+Body
+
+********************************************************************************
+
+---2--[tag2]
+Second
+`;
+
+      expect(parseTextFile(legacy)).toEqual([
+        { date: '2024-01-15', index: 1, tags: ['tag1'], content: 'Title: not a title\nBody', format: 'markdown', visibility: 'public' },
+        { date: '2024-01-15', index: 2, tags: ['tag2'], content: 'Second', format: 'plain' },
+      ]);
+    });
+
+    it('can keep titles on the first line under the header instead, with an empty line for untitled entries', () => {
+      const config = { titlePlacement: 'firstLine' as const };
+      const exported = generateTextFile(dayWithTimes, config);
+
+      expect(exported).toContain('---2024-01-15 07:10--[walks]\r\nBefore work {early}\r\nRiver walk');
+      expect(exported).toContain('---2--[notes]\r\n\r\nUntimed thought');
+      expect(exported).not.toContain('{title:');
+
+      const imported = parseTextFile(exported, config);
+      expect(imported.map(({ title, content }) => ({ title, content }))).toEqual([
+        { title: 'Before work {early}', content: 'River walk' },
+        { title: undefined, content: 'Untimed thought' },
+        { title: undefined, content: 'Late' },
+      ]);
+    });
+
+    it('treats the first line of each entry as its title when importing plain text that way', () => {
+      const [entry] = parseTextFile('---2024-01-15--[]\nA long day\nIt rained.\n', { titlePlacement: 'firstLine' });
+
+      expect(entry).toMatchObject({ title: 'A long day', content: 'It rained.' });
+    });
+
+    it('falls back to the header title placement for unknown settings', () => {
+      expect(validateFormatConfig({ titlePlacement: 'sideways' as never }).titlePlacement).toBe('header');
+      expect(DEFAULT_FORMAT.titlePlacement).toBe('header');
     });
   });
 

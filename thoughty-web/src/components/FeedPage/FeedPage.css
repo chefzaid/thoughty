@@ -242,6 +242,14 @@
   color: #6b7280;
 }
 
+.feed-entry-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
 .feed-content {
   overflow-wrap: anywhere;
   line-height: 1.65;

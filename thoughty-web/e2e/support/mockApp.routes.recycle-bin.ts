@@ -8,6 +8,8 @@ function toTrashedEntryResponse(entry: MockTrashedEntry, state: MockAppState) {
   return {
     id: entry.id,
     date: entry.date,
+    title: entry.title ?? null,
+    timeOfDay: entry.time_of_day ?? null,
     content: entry.content,
     format: entry.format ?? 'plain',
     tags: entry.tags,

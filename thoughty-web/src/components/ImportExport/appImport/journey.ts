@@ -1,5 +1,5 @@
 import type { ZipEntry } from '../../../utils/zipReader';
-import { attachmentTypeFor, cleanSourceId, cleanTags, localDate } from './appImportMedia';
+import { attachmentTypeFor, cleanSourceId, cleanTags, cleanTitle, localDate, localTime } from './appImportMedia';
 import type { ImportedEntry, ImportedMedia } from './appImportTypes';
 import { htmlToMarkdown, looksLikeHtml } from './htmlToMarkdown';
 
@@ -7,6 +7,7 @@ interface JourneyEntry {
   id?: unknown;
   date_journal?: unknown;
   timezone?: unknown;
+  title?: unknown;
   text?: unknown;
   type?: unknown;
   tags?: unknown;
@@ -32,6 +33,8 @@ export function parseJourneyEntry(
   lookup: JourneyMediaLookup,
 ): { entry: ImportedEntry; skippedMedia: number } {
   const timestamp = data.date_journal as number;
+  const timeZone = typeof data.timezone === 'string' ? data.timezone : undefined;
+  const title = cleanTitle(data.title);
   const text = data.text as string;
   const media: ImportedMedia[] = [];
   let skippedMedia = 0;
@@ -49,8 +52,10 @@ export function parseJourneyEntry(
   return {
     entry: {
       sourceId: cleanSourceId(typeof data.id === 'string' && data.id ? data.id : fallbackId),
-      date: localDate(timestamp, typeof data.timezone === 'string' ? data.timezone : undefined),
+      date: localDate(timestamp, timeZone),
+      timeOfDay: localTime(timestamp, timeZone),
       timestamp,
+      ...(title ? { title } : {}),
       content: data.type === 'html' || looksLikeHtml(text) ? htmlToMarkdown(text) : text.trim(),
       tags: cleanTags(data.tags),
       favorite: data.favourite === true,

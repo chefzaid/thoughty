@@ -247,6 +247,8 @@ export class RecycleBinService {
     return {
       id: entry.id,
       date: entry.date,
+      title: entry.title ?? null,
+      timeOfDay: entry.timeOfDay ?? null,
       content: entry.content,
       format: entry.format,
       tags: entry.tags,

@@ -2160,6 +2160,8 @@ export interface components {
          *       "diary_id": 1,
          *       "date": "2026-06-24",
          *       "index": 1,
+         *       "title": "Morning walk by the river",
+         *       "time_of_day": "08:30",
          *       "tags": [
          *         "reflection"
          *       ],
@@ -2196,6 +2198,13 @@ export interface components {
             diary_id?: number | null;
             date: string;
             index: number;
+            /** @example Morning walk by the river */
+            title: string | null;
+            /**
+             * @description Time of day (HH:MM), or null
+             * @example 08:30
+             */
+            time_of_day: string | null;
             tags: string[];
             content: string;
             /** @enum {string} */
@@ -2211,7 +2220,7 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             /**
-             * @description With a search: the words and phrases of this entry that match it, as written in the entry, longest first, for highlighting. Empty when only a tag matched.
+             * @description With a search: the words and phrases of this entry's title and text that match it, as written, longest first, for highlighting. Empty when only a tag matched.
              * @example [
              *       "morning run",
              *       "swimming"
@@ -2228,6 +2237,8 @@ export interface components {
          *           "diary_id": 1,
          *           "date": "2026-06-24",
          *           "index": 1,
+         *           "title": "Morning walk by the river",
+         *           "time_of_day": "08:30",
          *           "tags": [
          *             "reflection"
          *           ],
@@ -2312,6 +2323,8 @@ export interface components {
          *         "diary_id": 1,
          *         "date": "2026-06-24",
          *         "index": 1,
+         *         "title": "Morning walk by the river",
+         *         "time_of_day": "08:30",
          *         "tags": [
          *           "reflection"
          *         ],
@@ -2382,6 +2395,8 @@ export interface components {
          *       "id": 1,
          *       "date": "2026-06-24",
          *       "index": 1,
+         *       "title": "Morning walk by the river",
+         *       "time_of_day": "08:30",
          *       "tags": [
          *         "reflection"
          *       ],
@@ -2400,6 +2415,13 @@ export interface components {
             id: number;
             date: string;
             index: number;
+            /** @example Morning walk by the river */
+            title: string | null;
+            /**
+             * @description Time of day (HH:MM), or null
+             * @example 08:30
+             */
+            time_of_day: string | null;
             tags: string[];
             content: string;
             /** @enum {string} */
@@ -2419,6 +2441,8 @@ export interface components {
          *           "id": 1,
          *           "date": "2026-06-24",
          *           "index": 1,
+         *           "title": "Morning walk by the river",
+         *           "time_of_day": "08:30",
          *           "tags": [
          *             "reflection"
          *           ],
@@ -2440,6 +2464,8 @@ export interface components {
         };
         /**
          * @example {
+         *       "title": "Morning walk by the river",
+         *       "timeOfDay": "08:30",
          *       "text": "example",
          *       "tags": [
          *         "reflection"
@@ -2451,6 +2477,16 @@ export interface components {
          *     }
          */
         CreateEntryDto: {
+            /**
+             * @description Optional one-line title; empty or null removes it
+             * @example Morning walk by the river
+             */
+            title?: string | null;
+            /**
+             * @description Optional time of day on a 24-hour clock (HH:MM); null removes it. Same-day entries without a time come first in their manual order, then those with one, earliest first. It never changes the same-day index that cross-references use.
+             * @example 08:30
+             */
+            timeOfDay?: string | null;
             /** @description Entry content */
             text: string;
             /** @description Tags for the entry */
@@ -2544,7 +2580,7 @@ export interface components {
         ReorderEntriesDto: {
             /** @description Date of the entries to reorder (YYYY-MM-DD) */
             date: string;
-            /** @description Entry IDs in the desired order */
+            /** @description Entry IDs in the desired order: all of the day's entries, or some of them (such as those without a time), which then trade the same-day indexes they hold among themselves */
             orderedIds: number[];
         };
         /**
@@ -2557,6 +2593,8 @@ export interface components {
         };
         /**
          * @example {
+         *       "title": "Morning walk by the river",
+         *       "timeOfDay": "08:30",
          *       "text": "example",
          *       "tags": [
          *         "reflection"
@@ -2567,6 +2605,16 @@ export interface components {
          *     }
          */
         UpdateEntryDto: {
+            /**
+             * @description Optional one-line title; empty or null removes it
+             * @example Morning walk by the river
+             */
+            title?: string | null;
+            /**
+             * @description Optional time of day on a 24-hour clock (HH:MM); null removes it. Same-day entries without a time come first in their manual order, then those with one, earliest first. It never changes the same-day index that cross-references use.
+             * @example 08:30
+             */
+            timeOfDay?: string | null;
             /** @description Entry content */
             text: string;
             /** @description Tags for the entry */
@@ -2590,6 +2638,8 @@ export interface components {
          *         "diary_id": 1,
          *         "date": "2026-06-24",
          *         "index": 1,
+         *         "title": "Morning walk by the river",
+         *         "time_of_day": "08:30",
          *         "tags": [
          *           "reflection"
          *         ],
@@ -3671,7 +3721,8 @@ export interface components {
          *       "dateFormat": "2026-06-24",
          *       "tagOpenBracket": "reflection",
          *       "tagCloseBracket": "reflection",
-         *       "tagSeparator": "reflection"
+         *       "tagSeparator": "reflection",
+         *       "titlePlacement": "header"
          *     }
          */
         FormatConfigDto: {
@@ -3683,6 +3734,12 @@ export interface components {
             tagOpenBracket?: string;
             tagCloseBracket?: string;
             tagSeparator?: string;
+            /**
+             * @description Where TXT files keep entry titles: on the header line as --{title:...}, or as the first line under the header (empty when the entry has none)
+             * @default header
+             * @enum {string}
+             */
+            titlePlacement: "header" | "firstLine";
         };
         /**
          * @example {
@@ -3750,6 +3807,8 @@ export interface components {
          * @example {
          *       "sourceId": "example",
          *       "date": "2024-03-05",
+         *       "timeOfDay": "08:30",
+         *       "title": "Morning walk by the river",
          *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *       "tags": [
          *         "reflection"
@@ -3766,6 +3825,16 @@ export interface components {
              * @example 2024-03-05
              */
             date: string;
+            /**
+             * @description Local time of day the entry was written (HH:MM)
+             * @example 08:30
+             */
+            timeOfDay?: string;
+            /**
+             * @description Title of the entry in the source app
+             * @example Morning walk by the river
+             */
+            title?: string;
             /** @description Entry text as Markdown; may be empty when the entry holds only photos */
             content: string;
             tags: string[];
@@ -3780,6 +3849,8 @@ export interface components {
          *         {
          *           "sourceId": "example",
          *           "date": "2024-03-05",
+         *           "timeOfDay": "08:30",
+         *           "title": "Morning walk by the river",
          *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *           "tags": [
          *             "reflection"
@@ -4226,6 +4297,8 @@ export interface components {
          *       "id": 1,
          *       "date": "2026-06-24",
          *       "index": 1,
+         *       "title": "Morning walk by the river",
+         *       "timeOfDay": "08:30",
          *       "tags": [
          *         "reflection"
          *       ],
@@ -4247,6 +4320,13 @@ export interface components {
             id: number;
             date: string;
             index: number;
+            /** @example Morning walk by the river */
+            title: string | null;
+            /**
+             * @description Time of day the author gave the entry (HH:MM)
+             * @example 08:30
+             */
+            timeOfDay: string | null;
             tags: string[];
             content: string;
             /** @enum {string} */
@@ -4268,6 +4348,8 @@ export interface components {
          *           "id": 1,
          *           "date": "2026-06-24",
          *           "index": 1,
+         *           "title": "Morning walk by the river",
+         *           "timeOfDay": "08:30",
          *           "tags": [
          *             "reflection"
          *           ],
@@ -5205,6 +5287,8 @@ export interface components {
          * @example {
          *       "id": 12,
          *       "date": "2026-10-21",
+         *       "title": "Morning walk by the river",
+         *       "timeOfDay": "08:30",
          *       "content": "Walked by the river before work and finally felt rested.",
          *       "format": "plain",
          *       "tags": [
@@ -5227,6 +5311,13 @@ export interface components {
              * @example 2026-10-21
              */
             date: string;
+            /** @example Morning walk by the river */
+            title: string | null;
+            /**
+             * @description Time of day (HH:MM), or null
+             * @example 08:30
+             */
+            timeOfDay: string | null;
             /** @example Walked by the river before work and finally felt rested. */
             content: string;
             /**
@@ -5274,6 +5365,8 @@ export interface components {
          *         {
          *           "id": 12,
          *           "date": "2026-10-21",
+         *           "title": "Morning walk by the river",
+         *           "timeOfDay": "08:30",
          *           "content": "Walked by the river before work and finally felt rested.",
          *           "format": "plain",
          *           "tags": [
@@ -6206,6 +6299,8 @@ export interface operations {
                      *           "diary_id": 1,
                      *           "date": "2026-06-24",
                      *           "index": 1,
+                     *           "title": "Morning walk by the river",
+                     *           "time_of_day": "08:30",
                      *           "tags": [
                      *             "reflection"
                      *           ],
@@ -6260,6 +6355,8 @@ export interface operations {
             content: {
                 /**
                  * @example {
+                 *       "title": "Morning walk by the river",
+                 *       "timeOfDay": "08:30",
                  *       "text": "example",
                  *       "tags": [
                  *         "reflection"
@@ -6389,6 +6486,8 @@ export interface operations {
                      *         "diary_id": 1,
                      *         "date": "2026-06-24",
                      *         "index": 1,
+                     *         "title": "Morning walk by the river",
+                     *         "time_of_day": "08:30",
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -6532,6 +6631,8 @@ export interface operations {
                      *           "id": 1,
                      *           "date": "2026-06-24",
                      *           "index": 1,
+                     *           "title": "Morning walk by the river",
+                     *           "time_of_day": "08:30",
                      *           "tags": [
                      *             "reflection"
                      *           ],
@@ -6683,6 +6784,8 @@ export interface operations {
             content: {
                 /**
                  * @example {
+                 *       "title": "Morning walk by the river",
+                 *       "timeOfDay": "08:30",
                  *       "text": "example",
                  *       "tags": [
                  *         "reflection"
@@ -6711,6 +6814,8 @@ export interface operations {
                      *         "diary_id": 1,
                      *         "date": "2026-06-24",
                      *         "index": 1,
+                     *         "title": "Morning walk by the river",
+                     *         "time_of_day": "08:30",
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -6809,6 +6914,8 @@ export interface operations {
                      *         "diary_id": 1,
                      *         "date": "2026-06-24",
                      *         "index": 1,
+                     *         "title": "Morning walk by the river",
+                     *         "time_of_day": "08:30",
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -6880,6 +6987,8 @@ export interface operations {
                      *         "diary_id": 1,
                      *         "date": "2026-06-24",
                      *         "index": 1,
+                     *         "title": "Morning walk by the river",
+                     *         "time_of_day": "08:30",
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -6951,6 +7060,8 @@ export interface operations {
                      *         "diary_id": 1,
                      *         "date": "2026-06-24",
                      *         "index": 1,
+                     *         "title": "Morning walk by the river",
+                     *         "time_of_day": "08:30",
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -7022,6 +7133,8 @@ export interface operations {
                      *         "diary_id": 1,
                      *         "date": "2026-06-24",
                      *         "index": 1,
+                     *         "title": "Morning walk by the river",
+                     *         "time_of_day": "08:30",
                      *         "tags": [
                      *           "reflection"
                      *         ],
@@ -8206,7 +8319,8 @@ export interface operations {
                  *       "dateFormat": "2026-06-24",
                  *       "tagOpenBracket": "reflection",
                  *       "tagCloseBracket": "reflection",
-                 *       "tagSeparator": "reflection"
+                 *       "tagSeparator": "reflection",
+                 *       "titlePlacement": "header"
                  *     }
                  */
                 "application/json": components["schemas"]["FormatConfigDto"];
@@ -8344,6 +8458,8 @@ export interface operations {
                  *         {
                  *           "sourceId": "example",
                  *           "date": "2024-03-05",
+                 *           "timeOfDay": "08:30",
+                 *           "title": "Morning walk by the river",
                  *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                  *           "tags": [
                  *             "reflection"
@@ -9415,6 +9531,8 @@ export interface operations {
                      *           "id": 1,
                      *           "date": "2026-06-24",
                      *           "index": 1,
+                     *           "title": "Morning walk by the river",
+                     *           "timeOfDay": "08:30",
                      *           "tags": [
                      *             "reflection"
                      *           ],
@@ -10526,6 +10644,8 @@ export interface operations {
                      *         {
                      *           "id": 12,
                      *           "date": "2026-10-21",
+                     *           "title": "Morning walk by the river",
+                     *           "timeOfDay": "08:30",
                      *           "content": "Walked by the river before work and finally felt rested.",
                      *           "format": "plain",
                      *           "tags": [

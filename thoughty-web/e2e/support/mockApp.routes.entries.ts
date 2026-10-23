@@ -110,6 +110,8 @@ async function handleEntriesCollectionRoute({ route, request, pathname, searchPa
 
   const payload = request.postDataJSON() as {
     text: string;
+    title?: string | null;
+    timeOfDay?: string | null;
     tags: string[];
     date: string;
     visibility?: 'public' | 'private' | null;
@@ -121,6 +123,8 @@ async function handleEntriesCollectionRoute({ route, request, pathname, searchPa
     id: state.nextEntryId++,
     date: payload.date,
     index: sameDayEntries.length + 1,
+    title: payload.title?.trim() || null,
+    time_of_day: payload.timeOfDay || null,
     content: payload.text,
     tags: resolveTags(state, payload.tags),
     visibility: payload.visibility || 'private',
@@ -146,7 +150,13 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
   if (pathname === '/api/entries/reorder' && request.method() === 'PATCH') {
     const payload = request.postDataJSON() as { date: string; orderedIds: number[] };
     state.lastReorderPayload = payload;
-    const order = new Map(payload.orderedIds.map((id, position) => [id, position + 1]));
+    // The listed entries trade the indexes they hold, so the rest of the day keeps its numbers.
+    const dayEntries = state.entries.filter((entry) => entry.date === payload.date);
+    const listed = [...new Set(payload.orderedIds)].filter((id) => dayEntries.some((entry) => entry.id === id));
+    const indexes = listed
+      .map((id) => dayEntries.find((entry) => entry.id === id)!.index)
+      .sort((left, right) => left - right);
+    const order = new Map(listed.map((id, position) => [id, indexes[position]!]));
     state.entries = sortEntries(state.entries.map((entry) => (
       entry.date === payload.date && order.has(entry.id)
         ? { ...entry, index: order.get(entry.id) ?? entry.index }
@@ -247,6 +257,8 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
     const entryId = Number(updateMatch[1]);
     const payload = request.postDataJSON() as {
       text: string;
+      title?: string | null;
+      timeOfDay?: string | null;
       tags: string[];
       date: string;
       visibility: 'public' | 'private';
@@ -264,6 +276,8 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
           id: Date.now(),
           entryId,
           content: entry.content,
+          title: entry.title ?? null,
+          timeOfDay: entry.time_of_day ?? null,
           tags: entry.tags,
           date: entry.date,
           visibility: entry.visibility,
@@ -274,6 +288,8 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
 
       return {
         ...entry,
+        ...(payload.title === undefined ? {} : { title: payload.title?.trim() || null }),
+        ...(payload.timeOfDay === undefined ? {} : { time_of_day: payload.timeOfDay || null }),
         content: payload.text,
         tags: resolveTags(state, payload.tags),
         date: payload.date,

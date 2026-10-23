@@ -9,6 +9,8 @@ import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getEditFormatButtonClass, getVisibilityButtonClass } from './EntriesList.utils';
 import { resolveFontColor } from '../../types/config';
 import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
+import EntryTimeField from '../EntryForm/EntryTimeField';
+import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
@@ -135,8 +137,14 @@ export function EntryReorderControls({
 
 interface EditFormProps {
     config: Config;
+    /** The entry being edited, so its fields get ids of their own. */
+    entryId?: number;
     editText: string;
     setEditText: Dispatch<SetStateAction<string>>;
+    editTitle?: string;
+    setEditTitle?: Dispatch<SetStateAction<string>>;
+    editTimeOfDay?: string;
+    setEditTimeOfDay?: Dispatch<SetStateAction<string>>;
     editDate: Date | null;
     setEditDate: Dispatch<SetStateAction<Date | null>>;
     allTags: string[];
@@ -159,8 +167,13 @@ interface EditFormProps {
 
 export function EditForm({
     config,
+    entryId,
     editText,
     setEditText,
+    editTitle = '',
+    setEditTitle,
+    editTimeOfDay = '',
+    setEditTimeOfDay,
     editDate,
     setEditDate,
     allTags,
@@ -188,8 +201,25 @@ export function EditForm({
     const editFormatButtonClass = getEditFormatButtonClass(editFormat, config.theme);
     const editArea = useAutoGrowTextarea(editText);
 
+    const fieldId = `edit-entry-${entryId ?? 'draft'}`;
+
     return (
         <div className="space-y-4">
+            {setEditTitle && (
+                <div>
+                    <label htmlFor={`${fieldId}-title`} className="sr-only">{t('entryTitleLabel')}</label>
+                    <input
+                        id={`${fieldId}-title`}
+                        type="text"
+                        value={editTitle}
+                        onChange={(event) => setEditTitle(event.target.value)}
+                        maxLength={MAX_ENTRY_TITLE_LENGTH}
+                        placeholder={t('entryTitlePlaceholder')}
+                        className={`w-full border rounded-lg px-3 py-2 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none ${inputClass}`}
+                        style={{ color: writingTextColor }}
+                    />
+                </div>
+            )}
             <div>
                 {editFormat === 'markdown' ? (
                     <Suspense
@@ -236,6 +266,16 @@ export function EditForm({
                         dateFormat="yyyy-MM-dd"
                     />
                 </div>
+                {setEditTimeOfDay && (
+                    <EntryTimeField
+                        id={`${fieldId}-time`}
+                        value={editTimeOfDay}
+                        onChange={setEditTimeOfDay}
+                        inputClass={`border rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${inputClass}`}
+                        theme={config.theme}
+                        t={t}
+                    />
+                )}
                 <div className="flex-1">
                     <TagPicker
                         availableTags={allTags}

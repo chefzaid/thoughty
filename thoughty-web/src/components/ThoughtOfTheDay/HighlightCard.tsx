@@ -5,6 +5,7 @@ import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 interface HighlightCardProps {
     readonly entry: {
         readonly date: string;
+        readonly title?: string | null;
         readonly content: string;
         readonly format?: 'plain' | 'markdown';
         readonly diary_name?: string;
@@ -45,6 +46,7 @@ function HighlightCard({ entry, formattedDate, maxLength, compact = false, onOpe
                 )}
             </div>
             <div id={contentId} className="entry-content">
+                {entry.title && <p className="entry-title">{entry.title}</p>}
                 <EntryContentRenderer content={entry.content} format={entry.format} maxLength={maxLength} />
             </div>
             {children}

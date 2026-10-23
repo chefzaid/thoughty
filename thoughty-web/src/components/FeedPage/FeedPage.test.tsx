@@ -65,6 +65,22 @@ describe('FeedPage', () => {
     expect(screen.getByText('2 of 2')).toBeInTheDocument();
   });
 
+  it('shows the entry title and the time of day next to the date', async () => {
+    fetchPublicFeed.mockResolvedValueOnce({
+      data: {
+        entries: [{ ...createEntry(1, 'Ada'), title: 'Harbour at dawn', timeOfDay: '06:40' }, { ...createEntry(2, 'Lin'), title: null, timeOfDay: null }],
+        total: 2, page: 1, totalPages: 1, hasMore: false,
+      },
+      error: null,
+    });
+
+    render(<FeedPage t={t} />);
+
+    expect(await screen.findByRole('heading', { name: 'Harbour at dawn' })).toBeInTheDocument();
+    expect(screen.getByText('2026-08-01 · 06:40')).toHaveAttribute('dateTime', '2026-08-01T06:40');
+    expect(screen.getAllByRole('heading', { level: 2 }).filter((heading) => heading.classList.contains('feed-entry-title'))).toHaveLength(1);
+  });
+
   it('replaces community entries when switching to the own-public preview', async () => {
     fetchPublicFeed
       .mockResolvedValueOnce({

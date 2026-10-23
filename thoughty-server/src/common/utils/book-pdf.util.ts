@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit';
 import {
   Book,
+  formatBookEntryDate,
   RenderBookOptions,
   stripMarkdown,
 } from './book-converter.util';
@@ -11,6 +12,7 @@ const TITLE_FONT_SIZE = 28;
 const CHAPTER_FONT_SIZE = 20;
 const DATE_FONT_SIZE = 9;
 const BODY_FONT_SIZE = 11;
+const ENTRY_TITLE_FONT_SIZE = 12;
 const FOOTER_OFFSET = 40;
 const TOC_LINE_GAP = 6;
 const TOC_PAGE_NUM_WIDTH = 40;
@@ -113,7 +115,11 @@ function renderChapterBody(
 
   for (const entry of chapter.entries) {
     if (includeDates) {
-      doc.font('Helvetica-Oblique').fontSize(DATE_FONT_SIZE).fillColor('#888888').text(entry.date);
+      doc.font('Helvetica-Oblique').fontSize(DATE_FONT_SIZE).fillColor('#888888').text(formatBookEntryDate(entry));
+      doc.moveDown(0.3);
+    }
+    if (entry.title) {
+      doc.font('Helvetica-Bold').fontSize(ENTRY_TITLE_FONT_SIZE).fillColor('#000000').text(entry.title);
       doc.moveDown(0.3);
     }
     const content = entry.format === 'markdown' ? stripMarkdown(entry.content) : entry.content;

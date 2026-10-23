@@ -46,6 +46,27 @@ describe('EntryViewMode', () => {
         expect(screen.getByText('1 min read')).toBeInTheDocument();
     });
 
+    it('shows the title as a heading with its search matches marked, and the time next to the date', () => {
+        renderEntryViewMode({
+            entry: { ...mockEntries[0], title: 'Harbour at dawn', time_of_day: '18:45', search_matches: ['harbour'] },
+            searchTerm: 'harbour',
+        });
+
+        const heading = screen.getByRole('heading', { name: 'Harbour at dawn' });
+        expect(heading.querySelector('mark')).toHaveTextContent('Harbour');
+        const time = screen.getByTitle('entryTimeOrderHint');
+        expect(time).toHaveAttribute('dateTime', '18:45');
+        expect(time).toHaveTextContent(/6:45\sPM/);
+    });
+
+    it('explains the stable link number and shows no title or time when the entry has none', () => {
+        renderEntryViewMode({ entry: { ...mockEntries[1], title: null, time_of_day: null } });
+
+        expect(screen.getByText('#2')).toHaveAttribute('title', 'entryLinkNumberHint');
+        expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+        expect(screen.queryByTitle('entryTimeOrderHint')).not.toBeInTheDocument();
+    });
+
     it('applies the saved font color only to the entry reading surface', () => {
         renderEntryViewMode({
             config: { theme: 'dark', fontColor: '#123456' },

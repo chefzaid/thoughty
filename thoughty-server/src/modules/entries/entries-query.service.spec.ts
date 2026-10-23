@@ -74,6 +74,8 @@ describe('EntriesQueryService', () => {
       diaryId: 8,
       date: '2024-01-15',
       index: 1,
+      title: 'Planning day',
+      timeOfDay: '08:30',
       tags: ['work'],
       content: 'First entry',
       format: 'markdown',
@@ -136,6 +138,7 @@ describe('EntriesQueryService', () => {
     expect(entriesQb.andWhere).toHaveBeenCalledWith('e.is_archived = false');
     expect(entriesQb.orderBy).toHaveBeenCalledWith('search_rank', 'DESC');
     expect(entriesQb.addOrderBy).toHaveBeenCalledWith('e.date', 'DESC');
+    expect(entriesQb.addOrderBy).toHaveBeenCalledWith('e.timeOfDay', 'ASC', 'NULLS FIRST');
     expect(entriesQb.addOrderBy).toHaveBeenCalledWith('e.index', 'ASC');
     expect(entriesQb.skip).toHaveBeenCalledWith(5);
     expect(entriesQb.take).toHaveBeenCalledWith(5);
@@ -147,6 +150,8 @@ describe('EntriesQueryService', () => {
           diary_id: 8,
           date: '2024-01-15',
           index: 1,
+          title: 'Planning day',
+          time_of_day: '08:30',
           tags: ['work'],
           content: 'First entry',
           format: 'markdown',
@@ -206,7 +211,7 @@ describe('EntriesQueryService', () => {
     const result = await service.getEntries(4, { search: '100%_🎉' });
 
     expect(entriesQb.andWhere).toHaveBeenCalledWith(
-      '(e.content ILIKE :searchPattern OR e.tags @> :searchTags)',
+      '(e.content ILIKE :searchPattern OR e.title ILIKE :searchPattern OR e.tags @> :searchTags)',
       { searchPattern: String.raw`%100\%\_🎉%`, searchTags: ['100%_🎉'] },
     );
     expect(entriesQb.orderBy).toHaveBeenCalledWith('e.isPinned', 'DESC');
@@ -287,8 +292,8 @@ describe('EntriesQueryService', () => {
 
     expect(entryRepository.findOne).toHaveBeenCalledWith({ where: { userId: 3, id: 7 } });
     expect(countBeforeQb.andWhere).toHaveBeenCalledWith(
-      '(e.is_pinned = true OR (e.is_pinned = false AND (e.date > :date OR (e.date = :date AND e.index < :index))))',
-      { date: '2024-01-20', index: 4 },
+      "(e.is_pinned = true OR (e.is_pinned = false AND (e.date > :date OR (e.date = :date AND (e.time_of_day IS NOT NULL, COALESCE(e.time_of_day, TIME '00:00'), e.index) < (CAST(:hasTime AS boolean), COALESCE(CAST(:timeOfDay AS time), TIME '00:00'), CAST(:index AS integer))))))",
+      { date: '2024-01-20', hasTime: false, timeOfDay: null, index: 4 },
     );
     expect(result).toEqual({
       found: true,
@@ -377,6 +382,8 @@ describe('EntriesQueryService', () => {
           id: 12,
           date: '2024-02-01',
           index: 1,
+          title: null,
+          time_of_day: null,
           tags: ['research'],
           content: 'This references [[2024-01-20#2]] directly.',
           format: 'markdown',
@@ -392,6 +399,8 @@ describe('EntriesQueryService', () => {
           id: 13,
           date: '2024-02-01',
           index: 1,
+          title: null,
+          time_of_day: null,
           tags: ['research'],
           content: 'Legacy reference entry (2024-01-20--2).',
           format: 'markdown',

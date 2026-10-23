@@ -79,6 +79,12 @@ describe('renderArchiveEntry', () => {
     );
   });
 
+  it('puts the title first and the quoted time after the date', () => {
+    const markdown = renderArchiveEntry({ ...entry, title: 'Sea "day"', timeOfDay: '08:30' }, null, []);
+
+    expect(markdown.startsWith('---\ntitle: "Sea \\"day\\""\ndate: 2024-03-05\ntime: "08:30"\ntags:')).toBe(true);
+  });
+
   it('marks favorites and archived entries and omits a missing diary', () => {
     const markdown = renderArchiveEntry({ ...entry, isFavorite: true, isArchived: true }, null, []);
 

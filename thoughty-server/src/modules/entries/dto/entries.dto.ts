@@ -12,11 +12,34 @@ import {
   ArrayMinSize,
   IsBoolean,
   Matches,
+  ValidateIf,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
+import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
 
-export class CreateEntryDto {
+const TITLE_DESCRIPTION = 'Optional one-line title; empty or null removes it';
+const TIME_OF_DAY_DESCRIPTION =
+  'Optional time of day on a 24-hour clock (HH:MM); null removes it. Same-day entries without a time ' +
+  'come first in their manual order, then those with one, earliest first. It never changes the ' +
+  'same-day index that cross-references use.';
+
+/** Title and time of day, shared by creating and editing; left out of an edit, they stay as they are. */
+class EntryTitleAndTimeDto {
+  @ApiPropertyOptional({ description: TITLE_DESCRIPTION, type: String, nullable: true, maxLength: MAX_ENTRY_TITLE_LENGTH, example: 'Morning walk by the river' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(MAX_ENTRY_TITLE_LENGTH, { message: `Title exceeds maximum length of ${MAX_ENTRY_TITLE_LENGTH} characters` })
+  @Matches(/^[^\r\n]*$/, { message: 'Title must be one line' })
+  title?: string | null;
+
+  @ApiPropertyOptional({ description: TIME_OF_DAY_DESCRIPTION, type: String, nullable: true, example: '08:30' })
+  @ValidateIf((_, value) => value !== null && value !== undefined && value !== '')
+  @Matches(TIME_OF_DAY_PATTERN, { message: 'Time of day must be HH:MM' })
+  timeOfDay?: string | null;
+}
+
+export class CreateEntryDto extends EntryTitleAndTimeDto {
   @ApiProperty({ description: 'Entry content' })
   @IsString()
   @MaxLength(50000, { message: 'Content exceeds maximum length of 50000 characters' })
@@ -51,7 +74,7 @@ export class CreateEntryDto {
   format?: 'plain' | 'markdown';
 }
 
-export class UpdateEntryDto {
+export class UpdateEntryDto extends EntryTitleAndTimeDto {
   @ApiProperty({ description: 'Entry content' })
   @IsString()
   @MaxLength(50000)
@@ -331,7 +354,12 @@ export class ReorderEntriesDto {
   @IsDateString()
   date: string;
 
-  @ApiProperty({ description: 'Entry IDs in the desired order', type: [Number] })
+  @ApiProperty({
+    description:
+      'Entry IDs in the desired order: all of the day\'s entries, or some of them (such as those without a ' +
+      'time), which then trade the same-day indexes they hold among themselves',
+    type: [Number],
+  })
   @IsArray()
   @ArrayMinSize(1, { message: 'At least one entry ID is required' })
   @IsInt({ each: true })
@@ -362,6 +390,12 @@ export class EntryResponseDto {
 
   @ApiProperty()
   index: number;
+
+  @ApiProperty({ type: String, nullable: true, example: 'Morning walk by the river' })
+  title: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Time of day (HH:MM), or null', example: '08:30' })
+  time_of_day: string | null;
 
   @ApiProperty({ type: [String] })
   tags: string[];
@@ -402,7 +436,7 @@ export class EntryResponseDto {
   @ApiPropertyOptional({
     type: [String],
     description:
-      'With a search: the words and phrases of this entry that match it, as written in the entry, ' +
+      'With a search: the words and phrases of this entry\'s title and text that match it, as written, ' +
       'longest first, for highlighting. Empty when only a tag matched.',
     example: ['morning run', 'swimming'],
   })
@@ -435,6 +469,12 @@ export class EntryBacklinkDto {
 
   @ApiProperty()
   index: number;
+
+  @ApiProperty({ type: String, nullable: true, example: 'Morning walk by the river' })
+  title: string | null;
+
+  @ApiProperty({ type: String, nullable: true, description: 'Time of day (HH:MM), or null', example: '08:30' })
+  time_of_day: string | null;
 
   @ApiProperty({ type: [String] })
   tags: string[];

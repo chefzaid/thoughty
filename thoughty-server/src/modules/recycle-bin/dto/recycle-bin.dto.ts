@@ -41,6 +41,12 @@ export class TrashedEntryDto {
   @ApiProperty({ example: '2026-10-21', format: 'date' })
   date!: string;
 
+  @ApiProperty({ type: String, nullable: true, example: 'Morning walk by the river' })
+  title!: string | null;
+
+  @ApiProperty({ type: String, nullable: true, example: '08:30', description: 'Time of day (HH:MM), or null' })
+  timeOfDay!: string | null;
+
   @ApiProperty({ example: 'Walked by the river before work and finally felt rested.' })
   content!: string;
 

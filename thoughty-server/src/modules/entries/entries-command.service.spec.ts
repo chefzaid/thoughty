@@ -179,6 +179,67 @@ describe('EntriesCommandService', () => {
     expect(result).toEqual({ success: true, entry: expect.objectContaining({ content: 'New text', date: '2024-01-11', index: 2 }) });
   });
 
+  it('numbers a new entry after the day whatever its time, and keeps its title on one line', async () => {
+    diaryRepository.findOne.mockResolvedValue({ id: 42 });
+    entryRepository.count.mockResolvedValue(2);
+    entryRepository.save.mockResolvedValue({ id: 8 });
+
+    await service.create(5, {
+      text: 'Early swim',
+      tags: ['swim'],
+      date: '2024-01-15',
+      title: '  Before\nsunrise ',
+      timeOfDay: '06:15',
+    });
+
+    expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({
+      index: 3,
+      title: 'Before sunrise',
+      timeOfDay: '06:15',
+    }));
+  });
+
+  it('stores no title or time when they are empty', async () => {
+    diaryRepository.findOne.mockResolvedValue({ id: 42 });
+    entryRepository.count.mockResolvedValue(0);
+    entryRepository.save.mockResolvedValue({ id: 8 });
+
+    await service.create(5, { text: 'Plain', tags: ['a'], title: ' ', timeOfDay: '' });
+
+    expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ title: null, timeOfDay: null }));
+  });
+
+  it('keeps the title and time in the revision and leaves them alone when an edit omits them', async () => {
+    const existingEntry = {
+      id: 3,
+      userId: 8,
+      content: 'Old text',
+      title: 'Old title',
+      timeOfDay: '09:00',
+      tags: ['old'],
+      date: '2024-01-10',
+      format: 'plain',
+      visibility: 'private',
+      index: 2,
+    };
+    entryRepository.findOne.mockResolvedValue({ ...existingEntry });
+    entryRepository.save.mockImplementation(async (entry) => entry);
+
+    const kept = await service.update(8, 3, { text: 'Rephrased', tags: ['old'], date: '2024-01-10' });
+
+    expect(revisionRepository.save).toHaveBeenCalledWith(expect.objectContaining({ title: 'Old title', timeOfDay: '09:00' }));
+    expect(kept.entry).toMatchObject({ content: 'Rephrased', title: 'Old title', timeOfDay: '09:00', index: 2 });
+
+    entryRepository.findOne.mockResolvedValue({ ...existingEntry });
+    const changed = await service.update(8, 3, { text: 'Old text', tags: ['old'], date: '2024-01-10', title: 'New title', timeOfDay: '17:20' });
+    expect(changed.entry).toMatchObject({ title: 'New title', timeOfDay: '17:20', index: 2 });
+
+    entryRepository.findOne.mockResolvedValue({ ...existingEntry });
+    const cleared = await service.update(8, 3, { text: 'Old text', tags: ['old'], date: '2024-01-10', title: null, timeOfDay: null });
+    expect(cleared.entry).toMatchObject({ title: null, timeOfDay: null, index: 2 });
+    expect(entryRepository.find).not.toHaveBeenCalled();
+  });
+
   it('throws when updating a missing entry', async () => {
     entryRepository.findOne.mockResolvedValue(null);
 
@@ -372,6 +433,22 @@ describe('EntriesCommandService', () => {
     expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 2, index: 1 }));
     expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 1, index: 2 }));
     expect(result).toEqual({ success: true });
+  });
+
+  it('reorders some of a day\'s entries over the indexes they hold, leaving the others alone', async () => {
+    entryRepository.find.mockResolvedValue([
+      { id: 1, index: 1, timeOfDay: '08:00' },
+      { id: 2, index: 2, timeOfDay: null },
+      { id: 3, index: 3, timeOfDay: '12:00' },
+      { id: 4, index: 4, timeOfDay: null },
+    ]);
+    entryRepository.save.mockResolvedValue({});
+
+    await service.reorderEntries(7, '2024-01-15', [4, 2]);
+
+    expect(entryRepository.save).toHaveBeenCalledTimes(2);
+    expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 4, index: 2 }));
+    expect(entryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ id: 2, index: 4 }));
   });
 
   it('deletes a revision when it exists and throws when it does not', async () => {

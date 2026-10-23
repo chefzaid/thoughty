@@ -107,6 +107,17 @@ describe('AppImportService', () => {
       });
     });
 
+    it('keeps the title and time of day the source app gave each entry', async () => {
+      await service.importEntries(7, batch([
+        entry({ sourceId: 'T1', title: '  By the   sea ', timeOfDay: '19:45' }),
+        entry({ sourceId: 'T2' }),
+      ]));
+
+      const [rows] = entryRepository.save.mock.calls[0];
+      expect(rows[0]).toEqual(expect.objectContaining({ title: 'By the sea', timeOfDay: '19:45' }));
+      expect(rows[1]).toEqual(expect.objectContaining({ title: null, timeOfDay: null }));
+    });
+
     it('skips entries an earlier import brought in and lists the files they already have', async () => {
       entryRepository.find.mockResolvedValue([{ id: 40, importRef: 'journey:J1' }]);
       attachmentRepository.find.mockResolvedValue([

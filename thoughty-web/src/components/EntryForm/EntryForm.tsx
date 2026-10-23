@@ -12,12 +12,20 @@ import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
 import GetInspiredMenu from './GetInspiredMenu';
 import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 import { aiActionButtonClass } from './aiActionButton';
+import EntryTimeField from './EntryTimeField';
+import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 
 const LazyMDEditor = lazy(() => import('@uiw/react-md-editor/nohighlight'));
 
 interface EntryFormProps {
     readonly newEntryText: string;
     readonly setNewEntryText: Dispatch<SetStateAction<string>>;
+    /** Optional title; empty when the entry has none. */
+    readonly title?: string;
+    readonly setTitle?: Dispatch<SetStateAction<string>>;
+    /** Optional time of day (`HH:MM`); empty when the entry has none. */
+    readonly timeOfDay?: string;
+    readonly setTimeOfDay?: Dispatch<SetStateAction<string>>;
     readonly selectedDate: Date;
     readonly setSelectedDate: Dispatch<SetStateAction<Date>>;
     readonly tags: string[];
@@ -69,6 +77,10 @@ function entryFormClasses({ theme, format, visibility }: Pick<EntryFormProps, 't
 function EntryForm({
     newEntryText,
     setNewEntryText,
+    title = '',
+    setTitle,
+    timeOfDay = '',
+    setTimeOfDay,
     selectedDate,
     setSelectedDate,
     tags,
@@ -197,6 +209,21 @@ function EntryForm({
                         )}
                     </div>
                 )}
+                {setTitle && (
+                    <div>
+                        <label htmlFor="composer-title" className="sr-only">{t('entryTitleLabel')}</label>
+                        <input
+                            id="composer-title"
+                            type="text"
+                            value={title}
+                            onChange={(event) => setTitle(event.target.value)}
+                            maxLength={MAX_ENTRY_TITLE_LENGTH}
+                            placeholder={t('entryTitlePlaceholder')}
+                            className={`${inputClass} font-semibold`}
+                            style={{ color: writingTextColor }}
+                        />
+                    </div>
+                )}
                 <div>
                     {format === 'markdown' ? (
                         <Suspense
@@ -257,6 +284,16 @@ function EntryForm({
                             dateFormat="yyyy-MM-dd"
                         />
                     </div>
+                    {setTimeOfDay && (
+                        <EntryTimeField
+                            id="composer-time"
+                            value={timeOfDay}
+                            onChange={setTimeOfDay}
+                            inputClass={inputClass}
+                            theme={theme}
+                            t={t}
+                        />
+                    )}
                     <div className="flex-1 relative z-20">
                         <TagPicker
                             availableTags={allTags}

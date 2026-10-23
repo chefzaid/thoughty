@@ -1,5 +1,5 @@
 import type { ZipEntry } from '../../../utils/zipReader';
-import { attachmentTypeFor, cleanSourceId, cleanTags, fileExtension, localDate } from './appImportMedia';
+import { attachmentTypeFor, cleanSourceId, cleanTags, cleanTitle, fileExtension, localDate, localTime } from './appImportMedia';
 import type { ImportedEntry, ImportedMedia } from './appImportTypes';
 
 interface DayOneMedia {
@@ -12,6 +12,7 @@ interface DayOneEntry {
   uuid?: unknown;
   creationDate?: unknown;
   timeZone?: unknown;
+  title?: unknown;
   text?: unknown;
   tags?: unknown;
   starred?: unknown;
@@ -66,6 +67,19 @@ export function unescapeDayOneMarkdown(text: string): string {
   });
 }
 
+/**
+ * Day One shows an entry's first line as its title, and exports a titled entry with that line
+ * as a Markdown heading. A heading on the first line becomes the title; other text is kept whole.
+ */
+export function splitDayOneTitle(text: string): { title?: string; content: string } {
+  const match = /^#{1,6}[ \t]+(.+?)[ \t#]*(?:\n|$)/.exec(text);
+  const title = match ? cleanTitle(unescapeDayOneMarkdown(match[1] ?? '')) : undefined;
+  if (!match || !title) {
+    return { content: text };
+  }
+  return { title, content: text.slice(match[0].length).trim() };
+}
+
 export function cleanDayOneText(text: string): string {
   return unescapeDayOneMarkdown(text.replaceAll(MOMENT_REFERENCE, ''))
     .replaceAll(/[ \t]+$/gm, '')
@@ -111,11 +125,17 @@ export function parseDayOneJournal(
     const { media, skipped } = entryMedia(entry, lookup);
     skippedMedia += skipped;
     const sourceId = typeof entry.uuid === 'string' && entry.uuid ? entry.uuid : (entry.creationDate as string);
+    const timeZone = typeof entry.timeZone === 'string' ? entry.timeZone : undefined;
+    const text = typeof entry.text === 'string' ? cleanDayOneText(entry.text) : '';
+    const explicitTitle = cleanTitle(entry.title);
+    const { title, content } = explicitTitle ? { title: explicitTitle, content: text } : splitDayOneTitle(text);
     entries.push({
       sourceId: cleanSourceId(sourceId),
-      date: localDate(timestamp, typeof entry.timeZone === 'string' ? entry.timeZone : undefined),
+      date: localDate(timestamp, timeZone),
+      timeOfDay: localTime(timestamp, timeZone),
       timestamp,
-      content: typeof entry.text === 'string' ? cleanDayOneText(entry.text) : '',
+      ...(title ? { title } : {}),
+      content,
       tags: cleanTags(entry.tags),
       favorite: entry.starred === true,
       journal,

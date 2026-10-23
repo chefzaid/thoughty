@@ -69,6 +69,8 @@ erDiagram
         int diaryId
         date date
         int index
+        time timeOfDay
+        string title
         string tags
         text content
         string format
@@ -85,6 +87,8 @@ erDiagram
         int entryId
         int userId
         text content
+        string title
+        time timeOfDay
         string tags
         string date
         string format
@@ -273,7 +277,11 @@ Entries are not only identified by database `id`. The user-facing journal model 
 - `date` is a journal date, not just the date part of `created_at`.
 - `index` distinguishes multiple entries on the same date.
 - Entry permalinks use stable IDs, while cross-reference text can use date-plus-index forms such as `[[2024-01-15]]` and `[[2024-01-15#2]]`.
-- Same-day drag reordering should preserve the date group and update indices consistently.
+- `time_of_day` (`TIME(0)`, nullable, served as `HH:MM`) and `title` (`VARCHAR(200)`, nullable, one line) are optional; revisions keep both.
+- `index` is the link number and stays stable: a new entry takes the next number of its day, and times never renumber anything, so `[[date#n]]` keeps resolving to the same entry. Deleting an entry still closes the gap in its day.
+- A day is listed by `time_of_day ASC NULLS FIRST, index ASC` (`addSameDayOrder`): entries without a time in their manual order, then entries with a time, earliest first. The journal, the entry-page lookup behind `[[date#n]]` links (a row comparison over the same three keys), backlinks, books, PDF/HTML/EPUB documents, and the year in review use this order.
+- Drag reordering applies to entries without a time. `PATCH /api/entries/reorder` gives the listed entries the indexes they already hold, sorted, in the new order, so entries left out of the list (the timed ones) keep their numbers.
+- Text exports (TXT, JSON, Markdown, CSV, the Markdown folder) list a day by `index`, because an import numbers a day's entries in file order: a file imported into an empty journal gives every entry its number back.
 
 ## Diary Rules
 
@@ -295,7 +303,7 @@ There is no tag table. Tags are strings in the `entries.tags` PostgreSQL text ar
 
 ## Full-Text Search
 
-`entries.search_vector` is a stored generated `tsvector` (`GENERATED ALWAYS AS (entry_search_vector(content, tags)) STORED`), so PostgreSQL recomputes it on every insert and update and the application never writes or loads it (the entity column is `select`, `insert`, and `update` false). Tags are weighted `A` and content `B`. The GIN index `idx_entries_user_search_vector` covers `(user_id, search_vector)` through the `btree_gin` extension, so a search reads only the searching writer's matching entries rather than every writer's. The `tags` GIN index still serves the exact tag-name match that runs alongside, which keeps tags such as `c++` findable when PostgreSQL reads no word in them.
+`entries.search_vector` is a stored generated `tsvector` (`GENERATED ALWAYS AS (entry_search_vector(title, content, tags)) STORED`), so PostgreSQL recomputes it on every insert and update and the application never writes or loads it (the entity column is `select`, `insert`, and `update` false). Titles and tags are weighted `A` and content `B`. The GIN index `idx_entries_user_search_vector` covers `(user_id, search_vector)` through the `btree_gin` extension, so a search reads only the searching writer's matching entries rather than every writer's. The `tags` GIN index still serves the exact tag-name match that runs alongside, which keeps tags such as `c++` findable when PostgreSQL reads no word in them.
 
 **Language configuration.** Each entry is indexed twice, with `thoughty_en` and `thoughty_fr`: copies of PostgreSQL's `english` and `french` configurations that pass words through `unaccent` before the Snowball stemmer, so `ete` finds "été" and `walk` finds "walking". Searches are read with both and either may match. This beats the alternatives for this product:
 
@@ -307,9 +315,9 @@ The costs are accepted: the vector is about twice the size of a single-language 
 
 **Queries.** The search is parsed by `websearch_to_tsquery` in both configurations, joined with `||`. It supports `"exact phrases"`, a leading `-` to exclude a word or phrase, and `or` (in any case), and it never raises a syntax error on user input. The last word, when it is a bare word of at least two letters or digits outside quotes, also matches the longer words it starts (`to_tsquery('word:*')`), joined with the rest of the search by `&&`, or by `||` after `or`. A search in which PostgreSQL reads no word at all (only symbols or emoji) falls back to a literal `ILIKE` with its wildcards escaped. Every other filter, the diary scope, and the recycle-bin exclusion combine with the search as before.
 
-**Ranking and highlights.** With a search, results are ordered by `ts_rank(search_vector, query, 1)` (normalized by entry length) plus the rank of the search without the prefix, so entries holding the whole word come before those that only hold a longer word, then by date; `sort=date` keeps the usual pinned and date order. For each page, `ts_headline` marks every word and phrase that was not excluded, in both configurations; adjacent marked words are joined and a run is kept only when it matches its term by itself, so a quoted phrase is highlighted where the phrase appears and not wherever one of its words does. The runs come back as `search_matches`, as written in the entry, and the web app highlights exactly those, as whole words.
+**Ranking and highlights.** With a search, results are ordered by `ts_rank(search_vector, query, 1)` (normalized by entry length) plus the rank of the search without the prefix, so entries holding the whole word come before those that only hold a longer word, then by date; `sort=date` keeps the usual pinned and date order. For each page, `ts_headline` marks every word and phrase that was not excluded, in both configurations; adjacent marked words are joined and a run is kept only when it matches its term by itself, so a quoted phrase is highlighted where the phrase appears and not wherever one of its words does. The title and the text are marked separately, so a phrase never spans the two. The runs come back as `search_matches`, as written in the entry, and the web app highlights exactly those, as whole words.
 
-**Migration and operations.** `EntryFullTextSearch1785974400000` installs `unaccent` and `btree_gin` (trusted contrib extensions since PostgreSQL 13, so the database owner can install them; both ship with the official images) and leaves them installed on rollback. `entry_search_vector` is `IMMUTABLE` and sets `search_path FROM CURRENT`, so the column can still be computed while `pg_restore` runs with an empty search path. Adding the column rewrites `entries` once: about 17 s for 107,000 entries locally.
+**Migration and operations.** `EntryFullTextSearch1785974400000` installs `unaccent` and `btree_gin` (trusted contrib extensions since PostgreSQL 13, so the database owner can install them; both ship with the official images) and leaves them installed on rollback. `entry_search_vector` is `IMMUTABLE` and sets `search_path FROM CURRENT`, so the column can still be computed while `pg_restore` runs with an empty search path. Adding the column rewrites `entries` once: about 17 s for 107,000 entries locally. `EntryTitleAndTime1786060800000` adds `title` and `time_of_day` to `entries` and `entry_revisions`, replaces the function with the three-argument `entry_search_vector(title, content, tags)`, and rebuilds the generated column and its index, which rewrites `entries` once more; rolling it back restores the two-argument vector before dropping the columns. The literal fallback for searches without words also matches titles.
 
 ### Search Performance on a Large Journal
 

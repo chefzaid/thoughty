@@ -19,6 +19,8 @@ export function FeedAvatar({ author }: FeedAvatarProps) {
 interface FeedAuthorProps {
   readonly author: PublicFeedAuthor;
   readonly date: string;
+  /** The time of day the author gave the entry (`HH:MM`), if any. */
+  readonly time?: string | null;
   readonly t: Translate;
   /** Omitted for the user's own entries, which cannot be followed. */
   readonly follow?: {
@@ -28,13 +30,13 @@ interface FeedAuthorProps {
   };
 }
 
-function FeedAuthor({ author, date, t, follow }: FeedAuthorProps) {
+function FeedAuthor({ author, date, time, t, follow }: FeedAuthorProps) {
   return (
     <div className="feed-author">
       <FeedAvatar author={author} />
       <div className="feed-author-details">
         <strong>{author.username}</strong>
-        <time dateTime={date}>{date}</time>
+        <time dateTime={time ? `${date}T${time}` : date}>{time ? `${date} · ${time}` : date}</time>
       </div>
       {follow && (
         <button

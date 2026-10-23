@@ -24,6 +24,8 @@ const t = (key: string, params?: Record<string, string | number>) =>
 const trashed = (overrides: Partial<TrashedEntry> = {}): TrashedEntry => ({
   id: 12,
   date: '2026-10-21',
+  title: null,
+  timeOfDay: null,
   content: '## Harbor\n\nWalked by the **harbor** before work.',
   format: 'markdown',
   tags: ['walks'],
@@ -87,6 +89,17 @@ describe('RecycleBinPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'recycleBinBack' }));
     expect(onBack).toHaveBeenCalled();
+  });
+
+  it('shows the title and time of an entry that has them', async () => {
+    recycleBinService.fetchPage.mockResolvedValue({
+      data: binPage({ entries: [trashed({ title: 'Harbor at dawn', timeOfDay: '06:45' })], total: 1 }),
+      error: null,
+    });
+    renderPage();
+
+    const entry = await screen.findByRole('article', { name: 'October 21, 2026 · 6:45 AM' });
+    expect(within(entry).getByText('Harbor at dawn')).toBeInTheDocument();
   });
 
   it('restores one entry and says where entries without a diary went', async () => {

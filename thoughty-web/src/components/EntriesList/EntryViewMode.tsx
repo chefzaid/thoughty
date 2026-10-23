@@ -112,6 +112,7 @@ export default function EntryViewMode({
                     showDiaryLabel={showDiaryLabel}
                     isDark={isDark}
                     theme={config.theme}
+                    language={config.language}
                     tagMetadata={tagMetadata}
                     t={t}
                 />
@@ -123,7 +124,12 @@ export default function EntryViewMode({
                         onBackToSource={onBackToSource}
                         t={t}
                     />
-                    <span className="text-xs text-gray-500 font-mono">#{entry.index}</span>
+                    <span
+                        className="text-xs text-gray-500 font-mono"
+                        title={t('entryLinkNumberHint', { reference: `[[${extractDate(entry.date)}#${entry.index ?? 1}]]` })}
+                    >
+                        #{entry.index}
+                    </span>
                     <IconActionButton
                         onClick={() => onToggleVisibility(entry)}
                         className={`p-1 ${entry.visibility === 'public' ? 'text-green-500 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}

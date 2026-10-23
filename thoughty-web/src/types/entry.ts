@@ -14,6 +14,10 @@ export interface Attachment {
 
 export interface Entry {
   id: number;
+  /** Optional one-line title. */
+  title?: string | null;
+  /** Optional time of day (`HH:MM`); it orders the day without renumbering it. */
+  time_of_day?: string | null;
   content: string;
   tags: string[];
   date: string;
@@ -57,6 +61,8 @@ export interface EntriesResponse {
 export interface EntryRevision {
   id: number;
   entryId: number;
+  title?: string | null;
+  timeOfDay?: string | null;
   content: string;
   tags: string[];
   date: string;
@@ -67,6 +73,8 @@ export interface EntryRevision {
 
 export interface EntryBacklink {
   id: number;
+  title?: string | null;
+  time_of_day?: string | null;
   content: string;
   tags: string[];
   date: string;

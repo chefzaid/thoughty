@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
+import HighlightedText from '../EntryContentRenderer/HighlightedText';
 import AttachmentDisplay from '../AttachmentDisplay/AttachmentDisplay';
 import TagBadge from '../TagBadge/TagBadge';
 import type {
@@ -12,6 +13,7 @@ import type {
 } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getEntryMetrics } from '../../utils/entryMetrics';
+import { formatTimeOfDay } from '../../utils/entryTime';
 import { resolveFontColor } from '../../types/config';
 import {
     extractDate,
@@ -77,6 +79,11 @@ export function EntryHistorySection({
                                 )}
                             </div>
                         </div>
+                        {(rev.title || rev.timeOfDay) && (
+                            <p className={`mb-1 text-xs font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                                {[rev.timeOfDay, rev.title ? t('revisionTitle', { title: rev.title }) : null].filter(Boolean).join(' · ')}
+                            </p>
+                        )}
                         <div className={`whitespace-pre-wrap ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                             {rev.content}
                         </div>
@@ -114,6 +121,7 @@ export function EntryHeaderBadges({
     showDiaryLabel,
     isDark,
     theme,
+    language,
     tagMetadata,
     t,
 }: Readonly<{
@@ -121,11 +129,24 @@ export function EntryHeaderBadges({
     showDiaryLabel: boolean;
     isDark: boolean;
     theme: Config['theme'];
+    language?: string;
     tagMetadata: TagMetadataMap;
     t: TranslationFn;
 }>) {
+    const timeLabel = entry.time_of_day ? formatTimeOfDay(entry.time_of_day, language) : null;
+
     return (
         <div className="flex gap-2 flex-wrap items-center">
+            {entry.time_of_day && (
+                <time
+                    dateTime={entry.time_of_day}
+                    className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium tabular-nums ${isDark ? 'border-gray-600 text-gray-300' : 'border-gray-300 text-gray-600'}`}
+                    title={t('entryTimeOrderHint')}
+                >
+                    <span className="codicon codicon-clock" aria-hidden="true" />
+                    {timeLabel}
+                </time>
+            )}
             {showDiaryLabel && entry.diary_name && (
                 <span
                     className="inline-flex items-center gap-2 text-xs px-2.5 py-1 rounded-full border font-medium"
@@ -151,7 +172,7 @@ export function EntryHeaderBadges({
             )}
             {entry.is_pinned && (
                 <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${isDark ? 'border-rose-400/35 bg-rose-500/10 text-rose-300' : 'border-rose-300 bg-rose-50 text-rose-700'}`}>
-                    {t('pinned')} · {extractDate(entry.date)}
+                    {t('pinned')} · {extractDate(entry.date)}{timeLabel ? ` · ${timeLabel}` : ''}
                 </span>
             )}
         </div>
@@ -197,6 +218,14 @@ export function EntryBodySection({
 
     return (
         <>
+            {entry.title && (
+                <h3
+                    className={`mb-2 text-lg font-semibold leading-snug break-words ${isDark ? 'text-gray-100' : 'text-gray-900'}`}
+                    style={{ color: readingTextColor }}
+                >
+                    <HighlightedText text={entry.title} searchTerm={searchTerm} searchMatches={entry.search_matches} />
+                </h3>
+            )}
             <div
                 className={`leading-relaxed text-sm ${entry.format === 'markdown' ? '' : 'whitespace-pre-wrap'} ${isDark ? 'text-gray-300' : 'text-gray-700'}`}
                 style={{ color: readingTextColor }}
@@ -299,8 +328,11 @@ export function EntryBacklinksSection({
                         >
                             <div className="mb-1 flex flex-wrap items-center gap-2">
                                 <span className={`text-xs font-mono font-semibold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
-                                    {backlinkDate}{backlinkIndex > 1 ? ` #${backlinkIndex}` : ''}
+                                    {backlinkDate}{backlinkIndex > 1 ? ` #${backlinkIndex}` : ''}{backlink.time_of_day ? ` ${backlink.time_of_day}` : ''}
                                 </span>
+                                {backlink.title && (
+                                    <span className={`text-xs font-semibold ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>{backlink.title}</span>
+                                )}
                                 {backlink.diary_name && (
                                     <span className={`rounded-full px-2 py-0.5 text-[11px] ${isDark ? 'bg-gray-800 text-gray-300' : 'bg-gray-100 text-gray-600'}`}>
                                         {backlink.diary_icon ? `${backlink.diary_icon} ` : ''}{backlink.diary_name}

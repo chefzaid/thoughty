@@ -16,11 +16,15 @@ describe('file-converter.util structured formats', () => {
           content: 'First entry with five words',
           visibility: 'public',
           diaryName: 'Work',
+          timeOfDay: '07:45',
+          title: 'Early start, again',
         }),
+        createEntry({ date: '2024-01-16', content: 'No title or time' }),
       ], true);
 
-      expect(exported).toContain('date,index,diary,tags,visibility,format,word_count,reading_time_minutes,content');
-      expect(exported).toContain('2024-01-15,1,Work,journal;work,public,plain,5,1,First entry with five words');
+      expect(exported).toContain('date,index,time,title,diary,tags,visibility,format,word_count,reading_time_minutes,content');
+      expect(exported).toContain('2024-01-15,1,07:45,"Early start, again",Work,journal;work,public,plain,5,1,First entry with five words');
+      expect(exported).toContain('2024-01-16,1,,,,,private,plain,4,1,No title or time');
     });
 
     it('escapes commas, quotes, and newlines for spreadsheet imports', () => {
@@ -130,6 +134,56 @@ describe('file-converter.util structured formats', () => {
       expect(imported).toHaveLength(2);
       expect(imported[0]).toMatchObject({ format: 'markdown', visibility: 'public' });
       expect(imported[1]).toMatchObject({ format: 'plain', visibility: 'private' });
+    });
+  });
+
+  describe('titles and times', () => {
+    it('roundtrips titles and times through JSON, leaving them out of entries without them', () => {
+      const exported = generateJsonFile([
+        createEntry({ content: 'Morning', title: 'Sunrise run', timeOfDay: '06:05' }),
+        createEntry({ index: 2, content: 'Untitled' }),
+      ]);
+
+      expect(JSON.parse(exported).entries[0]).toMatchObject({ time: '06:05', title: 'Sunrise run' });
+      expect(JSON.parse(exported).entries[1]).not.toHaveProperty('title');
+      expect(JSON.parse(exported).entries[1]).not.toHaveProperty('time');
+      const imported = parseJsonFile(exported);
+      expect(imported[0]).toMatchObject({ title: 'Sunrise run', timeOfDay: '06:05' });
+      expect(imported[1].title).toBeUndefined();
+      expect(imported[1].timeOfDay).toBeUndefined();
+    });
+
+    it('ignores blank titles and invalid times in JSON', () => {
+      const [entry] = parseJsonFile(JSON.stringify([{ date: '2024-01-15', content: 'Text', title: '  ', time: '25:00' }]));
+
+      expect(entry.title).toBeUndefined();
+      expect(entry.timeOfDay).toBeUndefined();
+    });
+
+    it('writes time and title first in the Markdown metadata line and reads them back', () => {
+      const exported = generateMarkdownFile([
+        createEntry({ tags: ['walks'], content: 'By the river', title: 'Rain | then sun', timeOfDay: '18:40', diaryName: 'Work' }),
+        createEntry({ index: 2, content: 'Second' }),
+      ]);
+
+      expect(exported).toContain('**Time:** 18:40 | **Title:** Rain | then sun | **Tags:** `walks` | **Diary:** Work');
+      const imported = parseMarkdownFile(exported);
+      expect(imported[0]).toMatchObject({
+        title: 'Rain | then sun',
+        timeOfDay: '18:40',
+        tags: ['walks'],
+        diaryName: 'Work',
+        content: 'By the river',
+      });
+      expect(imported[1]).toMatchObject({ content: 'Second' });
+      expect(imported[1].title).toBeUndefined();
+    });
+
+    it('keeps a Markdown line that only looks like metadata as text', () => {
+      const [entry] = parseMarkdownFile('# 2024-01-15\n\n**Time:** after lunch\n\nText');
+
+      expect(entry.timeOfDay).toBeUndefined();
+      expect(entry.content).toBe('**Time:** after lunch\n\nText');
     });
   });
 

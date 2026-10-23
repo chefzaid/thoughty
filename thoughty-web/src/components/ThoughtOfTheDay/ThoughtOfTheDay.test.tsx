@@ -45,7 +45,7 @@ describe('ThoughtOfTheDay', () => {
                 },
                 onThisDay: {
                     '1': [
-                        { id: 2, date: '2023-01-01', content: 'Past', diary_name: 'Work', diary_icon: '💼', index: 1 }
+                        { id: 2, date: '2023-01-01', content: 'Past', diary_name: 'Work', diary_icon: '💼', index: 1, title: 'New Year walk' }
                     ]
                 }
             })
@@ -58,6 +58,7 @@ describe('ThoughtOfTheDay', () => {
             expect(screen.getByText('onThisDay')).toBeInTheDocument();
             expect(screen.getByText('Hello')).toBeInTheDocument();
         });
+        expect(screen.getByText('New Year walk')).toHaveClass('entry-title');
     });
 
     it('shows empty state when no highlights', async () => {

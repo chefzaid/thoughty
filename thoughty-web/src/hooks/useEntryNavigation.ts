@@ -259,8 +259,10 @@ export function useEntryNavigation({
 
     try {
       if (typeof globalThis.navigator.share === 'function') {
+        // A titled entry is shared under its title, so the link reads as the entry it opens
         await globalThis.navigator.share({
-          title: t('shareEntry'),
+          title: entry.title || t('shareEntry'),
+          ...(entry.title ? { text: entry.title } : {}),
           url,
         });
         return true;

@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { randomUUID } from 'node:crypto';
-import { Book, RenderBookOptions } from './book-converter.util';
+import { Book, RenderBookOptions, formatBookEntryDate } from './book-converter.util';
 import { BOOK_COVER_PALETTES } from './book-cover-style.util';
 import {
   bookImageExtension,
@@ -39,6 +39,7 @@ const EPUB_STYLES = [
   '.cover-image{display:block;max-width:100%;max-height:55vh;margin:0 auto 2em;object-fit:contain}',
   '.entry{margin-bottom:1.5em}',
   '.entry-date{color:#888;font-size:0.85em}',
+  '.entry-title{font-size:1.15em;margin:0 0 0.4em}',
   '.entry-content{white-space:pre-wrap}',
   '.entry-image{margin:1.2em 0;text-align:center}',
   '.entry-image img{display:block;max-width:100%;max-height:70vh;margin:0 auto;object-fit:contain}',
@@ -88,7 +89,10 @@ function buildChapterPage(
     for (const entry of chapter.entries) {
       parts.push('<div class="entry">');
       if (includeDates) {
-        parts.push(`<p class="entry-date">${escapeXml(entry.date)}</p>`);
+        parts.push(`<p class="entry-date">${escapeXml(formatBookEntryDate(entry))}</p>`);
+      }
+      if (entry.title) {
+        parts.push(`<h3 class="entry-title">${escapeXml(entry.title)}</h3>`);
       }
       parts.push(`<div class="entry-content">${escapeXml(entry.content)}</div>`);
       renderEntryImages(parts, entry);

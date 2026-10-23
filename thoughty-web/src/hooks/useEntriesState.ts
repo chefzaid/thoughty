@@ -3,6 +3,7 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import type { ArchiveStatusFilter, Config, Entry, EntryBacklink, EntrySearchSort, GroupedEntries, SourceEntryInfo } from '../types';
 import { useApiServices } from './useApiServices';
 import type { SemanticSearchResponse } from '../services/api/aiService';
+import { compareSameDayEntries, reassignSameDayIndexes } from '../utils/entryTime';
 
 export type EntrySearchMode = 'keyword' | 'semantic';
 export type SemanticSearchStatus = 'idle' | 'loading' | 'complete' | 'error';
@@ -248,15 +249,15 @@ export const useEntries = (
 
   const reorderEntries = useCallback(async (date: string, orderedIds: number[]) => {
     setEntries(prev => {
-      const indexMap = new Map(orderedIds.map((id, index) => [id, index + 1]));
+      const dayEntries = prev.filter((entry) => normalizeEntryDate(entry.date) === date);
+      const indexMap = reassignSameDayIndexes(dayEntries, orderedIds);
 
-      const reorderedDateEntries = prev
-        .filter((entry) => normalizeEntryDate(entry.date) === date)
+      const reorderedDateEntries = dayEntries
         .map((entry) => ({
           ...entry,
           index: indexMap.get(entry.id) ?? entry.index,
         }))
-        .sort((left, right) => (left.index || 0) - (right.index || 0));
+        .sort(compareSameDayEntries);
 
       if (reorderedDateEntries.length === 0) {
         return prev;
@@ -295,7 +296,7 @@ export const useEntries = (
     }, {});
 
     Object.keys(grouped).forEach(date => {
-      grouped[date]?.sort((a, b) => (a.index || 0) - (b.index || 0));
+      grouped[date]?.sort(compareSameDayEntries);
     });
 
     return grouped;

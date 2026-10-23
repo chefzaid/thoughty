@@ -156,6 +156,7 @@ function FeedPage({ theme = 'dark', onOpenLeaderboard, t }: Readonly<FeedPagePro
             <FeedAuthor
               author={entry.author}
               date={entry.date}
+              time={entry.timeOfDay}
               t={t}
               follow={scope === 'mine' ? undefined : {
                 followed: follows.isFollowed(entry.author),
@@ -163,6 +164,7 @@ function FeedPage({ theme = 'dark', onOpenLeaderboard, t }: Readonly<FeedPagePro
                 onToggle: () => void follows.setFollow(entry.author, !follows.isFollowed(entry.author)),
               }}
             />
+            {entry.title && <h2 className="feed-entry-title">{entry.title}</h2>}
             <div className="feed-content">
               <EntryContentRenderer content={entry.content} format={entry.format} />
             </div>

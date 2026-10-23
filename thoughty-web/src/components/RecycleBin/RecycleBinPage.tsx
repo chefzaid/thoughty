@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import type { RecycleBinRestoreResult, ServiceResult, TrashedEntry } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
+import { formatTimeOfDay } from '../../utils/entryTime';
 import { resolveLanguage } from '../../utils/language';
 import type { Language } from '../../utils/translations';
 import {
@@ -42,7 +43,9 @@ interface TrashedEntryCardProps {
 }
 
 function TrashedEntryCard({ entry, defaultDiaryName, language, busy, onRestore, onDelete, t }: TrashedEntryCardProps) {
-  const date = formatBinDate(entry.date, language);
+  const date = entry.timeOfDay
+    ? `${formatBinDate(entry.date, language)} · ${formatTimeOfDay(entry.timeOfDay, language)}`
+    : formatBinDate(entry.date, language);
   const daysLeft = daysUntilPurge(entry.purgeAt);
   const headingId = `recycle-bin-entry-${entry.id}`;
 
@@ -60,6 +63,7 @@ function TrashedEntryCard({ entry, defaultDiaryName, language, busy, onRestore, 
               : t('recycleBinReturnsToDefault', { diary: defaultDiaryName })}
           </span>
         </header>
+        {entry.title && <p className="recycle-bin-title">{entry.title}</p>}
         <p className="recycle-bin-excerpt">{binExcerpt(entry.content)}</p>
         <p className="recycle-bin-meta">
           <span>{t('recycleBinDeletedOn', { date: formatDeletedOn(entry.deletedAt, language) })}</span>

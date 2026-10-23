@@ -129,6 +129,8 @@ function toRequestEntry(entry: ImportedEntry, journalsAsDiaries: boolean): AppIm
   return {
     sourceId: entry.sourceId,
     date: entry.date,
+    ...(entry.timeOfDay ? { timeOfDay: entry.timeOfDay } : {}),
+    ...(entry.title ? { title: entry.title } : {}),
     content: entry.content,
     tags: entry.tags,
     favorite: entry.favorite,

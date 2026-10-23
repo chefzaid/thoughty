@@ -48,6 +48,8 @@ async function handlePublicFeedRoute({ route, request, pathname, searchParams, s
       id: entry.id,
       date: entry.date,
       index: entry.index,
+      title: entry.title ?? null,
+      timeOfDay: entry.time_of_day ?? null,
       tags: entry.tags,
       content: entry.content,
       format: entry.format || 'plain',

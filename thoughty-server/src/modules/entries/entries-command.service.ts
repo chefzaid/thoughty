@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Entry, EntryRevision, Diary } from '@/database/entities';
-import { sanitizeString } from '@/common/utils';
+import { normalizeEntryTitle, normalizeTimeOfDay, sanitizeString } from '@/common/utils';
 import { ConfigService } from '@/modules/config';
 import { CreateEntryDto, UpdateEntryDto, BulkOperationDto } from './dto';
 import { EntryTaggingService } from './entry-tagging.service';
@@ -51,10 +51,13 @@ export class EntriesCommandService {
     });
     const nextIndex = countResult + 1;
 
+    // A new entry is numbered after the day's entries whatever its time, so existing links keep their targets
     const entry = await this.entryRepository.save({
       userId,
       date: dateStr,
       index: nextIndex,
+      title: normalizeEntryTitle(dto.title),
+      timeOfDay: normalizeTimeOfDay(dto.timeOfDay),
       tags: resolvedTags,
       content: dto.text,
       format: dto.format || 'plain',
@@ -96,6 +99,8 @@ export class EntriesCommandService {
       entryId: entry.id,
       userId: entry.userId,
       content: entry.content,
+      title: entry.title,
+      timeOfDay: entry.timeOfDay,
       tags: entry.tags,
       date: entry.date,
       format: entry.format,
@@ -114,6 +119,12 @@ export class EntriesCommandService {
     }
 
     entry.content = dto.text;
+    if (dto.title !== undefined) {
+      entry.title = normalizeEntryTitle(dto.title);
+    }
+    if (dto.timeOfDay !== undefined) {
+      entry.timeOfDay = normalizeTimeOfDay(dto.timeOfDay);
+    }
     entry.tags = resolvedTags;
     entry.date = dto.date;
     entry.format = dto.format || entry.format;
@@ -313,6 +324,11 @@ export class EntriesCommandService {
     return { success: true, affectedCount: countOutsideBin(entries) };
   }
 
+  /**
+   * Puts the listed entries of a day in the given order. They trade the same-day indexes they
+   * already hold, so listing only some of the day's entries (those without a time, whose order is
+   * manual) leaves the others' indexes alone. Entries with a time still show in time order.
+   */
   async reorderEntries(userId: number, date: string, orderedIds: number[]): Promise<{ success: boolean }> {
     const entries = await this.entryRepository.find({
       where: { userId, date },
@@ -320,17 +336,20 @@ export class EntriesCommandService {
     });
 
     const entryMap = new Map(entries.map((entry) => [entry.id, entry]));
+    const uniqueIds = [...new Set(orderedIds)];
 
-    for (const id of orderedIds) {
+    for (const id of uniqueIds) {
       if (!entryMap.has(id)) {
         throw new BadRequestException(`Entry ${id} not found for this date`);
       }
     }
 
-    for (let index = 0; index < orderedIds.length; index++) {
-      const entry = entryMap.get(orderedIds[index]);
-      if (entry && entry.index !== index + 1) {
-        entry.index = index + 1;
+    const reordered = uniqueIds.map((id) => entryMap.get(id) as Entry);
+    const indexes = reordered.map((entry) => entry.index).sort((left, right) => left - right);
+
+    for (const [position, entry] of reordered.entries()) {
+      if (entry.index !== indexes[position]) {
+        entry.index = indexes[position];
         await this.entryRepository.save(entry);
       }
     }

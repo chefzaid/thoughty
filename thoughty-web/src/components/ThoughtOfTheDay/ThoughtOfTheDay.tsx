@@ -6,6 +6,7 @@ import { useDialogFocus } from '../../hooks/useDialogFocus';
 
 interface Entry {
     id: number;
+    title?: string | null;
     content: string;
     date: string;
     index?: number;

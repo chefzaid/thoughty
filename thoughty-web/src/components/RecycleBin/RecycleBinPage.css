@@ -202,6 +202,12 @@
   border-color: #d1d5db;
 }
 
+.recycle-bin-title {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
 .recycle-bin-excerpt {
   margin: 0;
   overflow-wrap: anywhere;

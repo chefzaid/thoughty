@@ -77,8 +77,9 @@ export class EntrySearchService {
   }
 
   /**
-   * The words and phrases of each entry that match the search, as written in the entry, for
-   * highlighting. PostgreSQL marks them with `ts_headline` in both languages; adjacent marked
+   * The words and phrases of each entry's title and text that match the search, as written in the
+   * entry, for highlighting. PostgreSQL marks them with `ts_headline` in both languages, in the title
+   * and the text separately so a match never runs from one into the other; adjacent marked
    * words are joined into one match and kept only when they match a typed term on their own,
    * so a quoted phrase is highlighted where the phrase appears, not wherever one of its words does.
    */
@@ -105,7 +106,8 @@ export class EntrySearchService {
        SELECT e.id AS id, array_agg(DISTINCT run.text) AS matches
          FROM entries e
          JOIN terms ON numnode(terms.query) > 0
-        CROSS JOIN LATERAL regexp_matches(ts_headline(terms.config, e.content, terms.query, $6), $7, 'g') AS marked(parts)
+        CROSS JOIN LATERAL unnest(ARRAY[e.title, e.content]) AS field(text)
+        CROSS JOIN LATERAL regexp_matches(ts_headline(terms.config, field.text, terms.query, $6), $7, 'g') AS marked(parts)
         CROSS JOIN LATERAL (SELECT translate(marked.parts[1], $8, '') AS text) AS run
         WHERE e.id = ANY($1::int[]) AND e.user_id = $2 AND e.deleted_at IS NULL
           AND to_tsvector(terms.config, run.text) @@ terms.query

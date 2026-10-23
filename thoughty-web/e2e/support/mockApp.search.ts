@@ -50,7 +50,9 @@ export function matchMockSearch(entry: MockEntry, search: string): MockSearchRes
   const groups = parseSearch(search);
   const tagMatch = entry.tags.includes(search.trim());
   const matchingGroups = groups.filter((group) => group.every((term) => {
-    const found = termPattern(term).test(entry.content) || entry.tags.some((tag) => termPattern(term).test(tag));
+    const found = termPattern(term).test(entry.content)
+      || termPattern(term).test(entry.title ?? '')
+      || entry.tags.some((tag) => termPattern(term).test(tag));
     return term.negated ? !found : found;
   }));
   if (matchingGroups.length === 0 && !tagMatch) {
@@ -60,6 +62,6 @@ export function matchMockSearch(entry: MockEntry, search: string): MockSearchRes
   const matches = matchingGroups
     .flat()
     .filter((term) => !term.negated)
-    .flatMap((term) => entry.content.match(termPattern(term)) ?? []);
+    .flatMap((term) => [...((entry.title ?? '').match(termPattern(term)) ?? []), ...(entry.content.match(termPattern(term)) ?? [])]);
   return { score: matches.length, matches: [...new Set(matches)] };
 }

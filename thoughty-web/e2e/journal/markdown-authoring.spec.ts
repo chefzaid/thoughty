@@ -10,8 +10,8 @@ test.describe('Journal Markdown authoring', () => {
     const entryForm = page.locator('form').first();
     await page.getByTitle('Plain text - click to enable Markdown formatting').click();
     await page.getByPlaceholder("What's on your mind?").fill('## Markdown memory\n\nA **bold** backdated note.');
-    await entryForm.locator('input').first().fill('2024-02-20');
-    await entryForm.locator('input').first().press('Tab');
+    await entryForm.locator('.react-datepicker__input-container input').fill('2024-02-20');
+    await entryForm.locator('.react-datepicker__input-container input').press('Tab');
     await entryForm.locator('input[placeholder="tags..."]').fill('markdown');
     await entryForm.locator('input[placeholder="tags..."]').press('Enter');
     await page.getByRole('button', { name: 'Save', exact: true }).click();

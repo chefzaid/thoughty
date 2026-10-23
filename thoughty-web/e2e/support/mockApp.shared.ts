@@ -43,6 +43,10 @@ export interface MockEntry {
   authorAvatarUrl?: string | null;
   date: string;
   index: number;
+  /** Optional one-line title. */
+  title?: string | null;
+  /** Optional time of day, `HH:MM`. */
+  time_of_day?: string | null;
   content: string;
   tags: string[];
   visibility: "public" | "private";
@@ -74,6 +78,8 @@ export interface MockEntryRevision {
   id: number;
   entryId: number;
   content: string;
+  title?: string | null;
+  timeOfDay?: string | null;
   tags: string[];
   date: string;
   format: "plain" | "markdown";
@@ -316,10 +322,21 @@ const DEFAULT_FEATURE_REQUESTS: MockFeatureRequest[] = [
   },
 ];
 
+/**
+ * Newest day first; within a day, entries without a time in index order, then entries with a
+ * time, earliest first, as the API lists them.
+ */
 export function sortEntries(entries: MockEntry[]): MockEntry[] {
   return [...entries].sort((left, right) => {
     if (left.date !== right.date) {
       return right.date.localeCompare(left.date);
+    }
+    const leftTime = left.time_of_day || null;
+    const rightTime = right.time_of_day || null;
+    if (leftTime !== rightTime) {
+      if (leftTime === null) return -1;
+      if (rightTime === null) return 1;
+      return leftTime.localeCompare(rightTime);
     }
     return left.index - right.index;
   });
@@ -330,13 +347,16 @@ export function moveToTrash(state: MockAppState, isTrashed: (entry: MockEntry) =
   const deletedAt = new Date().toISOString();
   const trashed = state.entries.filter(isTrashed);
   state.trash.push(...trashed.map((entry) => ({ ...entry, deletedAt })));
-  const remaining = sortEntries(state.entries.filter((entry) => !isTrashed(entry)));
+  // Gaps close in index order, whatever times the entries have.
+  const remaining = state.entries
+    .filter((entry) => !isTrashed(entry))
+    .sort((left, right) => left.date.localeCompare(right.date) || left.index - right.index);
   const dayCounts = new Map<string, number>();
-  state.entries = remaining.map((entry) => {
+  state.entries = sortEntries(remaining.map((entry) => {
     const index = (dayCounts.get(entry.date) ?? 0) + 1;
     dayCounts.set(entry.date, index);
     return { ...entry, index };
-  });
+  }));
   return trashed.length;
 }
 

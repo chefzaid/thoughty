@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { ZipEntry } from '../../../utils/zipReader';
-import { cleanDayOneText, isDayOneJournal, parseDayOneJournal, unescapeDayOneMarkdown } from './dayOne';
+import { cleanDayOneText, isDayOneJournal, parseDayOneJournal, splitDayOneTitle, unescapeDayOneMarkdown } from './dayOne';
 
 const zipEntry = (name: string): ZipEntry => ({ name, size: 10, compressedSize: 10, method: 0, encrypted: false, localHeaderOffset: 0 });
 
@@ -28,6 +28,18 @@ describe('cleanDayOneText', () => {
   it('removes inline photo and recording references and the gaps they leave', () => {
     expect(cleanDayOneText('Beach day\n\n![](dayone-moment://F1A2)\n\n\n![](dayone-moment:/audio/AB12)  \nSwam twice\\.'))
       .toBe('Beach day\n\nSwam twice.');
+  });
+});
+
+describe('splitDayOneTitle', () => {
+  it('takes a first-line heading as the title', () => {
+    expect(splitDayOneTitle('# Trip to Lyon \\#2 ##\n\nTrain at 8.')).toEqual({ title: 'Trip to Lyon #2', content: 'Train at 8.' });
+    expect(splitDayOneTitle('### Short')).toEqual({ title: 'Short', content: '' });
+  });
+
+  it('keeps text without a leading heading whole', () => {
+    expect(splitDayOneTitle('Plain start\n# Later heading')).toEqual({ content: 'Plain start\n# Later heading' });
+    expect(splitDayOneTitle('#hashtag start')).toEqual({ content: '#hashtag start' });
   });
 });
 
@@ -75,6 +87,7 @@ describe('parseDayOneJournal', () => {
       {
         sourceId: '4F5E6A',
         date: '2021-03-02',
+        timeOfDay: '00:30',
         timestamp: Date.parse('2021-03-01T23:30:00Z'),
         content: 'Late night in Paris.',
         tags: ['travel', 'night'],
@@ -88,6 +101,27 @@ describe('parseDayOneJournal', () => {
       },
     ]);
     expect(skippedMedia).toBe(2);
+  });
+
+  it('maps titles from the title field or a first-line heading, and the local time', () => {
+    const { entries } = parseDayOneJournal(
+      {
+        entries: [
+          { uuid: 'A', creationDate: '2022-06-01T07:05:00Z', timeZone: 'UTC', title: '  Morning   pages ', text: '# Not taken\n\nBody' },
+          { uuid: 'B', creationDate: '2022-06-01T18:40:00Z', timeZone: 'UTC', text: '# Evening walk\n\nAlong the river\\.' },
+          { uuid: 'C', creationDate: '2022-06-01T20:00:00Z', timeZone: 'UTC', text: 'No heading here' },
+        ],
+      },
+      'Journal',
+      lookup,
+    );
+
+    expect(entries.map(({ title, timeOfDay, content }) => ({ title, timeOfDay, content }))).toEqual([
+      { title: 'Morning pages', timeOfDay: '07:05', content: '# Not taken\n\nBody' },
+      { title: 'Evening walk', timeOfDay: '18:40', content: 'Along the river.' },
+      { title: undefined, timeOfDay: '20:00', content: 'No heading here' },
+    ]);
+    expect(entries[2]).not.toHaveProperty('title');
   });
 
   it('skips entries without a usable date and falls back to the date for a missing ID', () => {

@@ -3,6 +3,7 @@ import { memoirTranslations, type MemoirTranslationKey } from "./translations.me
 import { reviewTranslations, type ReviewTranslationKey } from "./translations.review";
 import { recycleBinTranslations, type RecycleBinTranslationKey } from "./translations.recycleBin";
 import { searchTranslations, type SearchTranslationKey } from "./translations.search";
+import { entryTitleTimeTranslations, type EntryTitleTimeTranslationKey } from "./translations.entryTitleTime";
 
 type CoreTranslationKey =
   | "journal"
@@ -933,7 +934,7 @@ type CoreTranslationKey =
   | "subscriptionIncluded"
   | "subscriptionPreviousCycle";
 
-export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey;
+export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey;
 
 export type Language = "en" | "fr";
 
@@ -948,6 +949,7 @@ export const translations: Translations = {
     ...reviewTranslations.en,
     ...recycleBinTranslations.en,
     ...searchTranslations.en,
+    ...entryTitleTimeTranslations.en,
     // App
     journal: "Journal",
     feed: "Feed",
@@ -2017,6 +2019,7 @@ export const translations: Translations = {
     ...reviewTranslations.fr,
     ...recycleBinTranslations.fr,
     ...searchTranslations.fr,
+    ...entryTitleTimeTranslations.fr,
     // App
     journal: "Journal",
     feed: "Fil public",

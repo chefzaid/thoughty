@@ -177,6 +177,8 @@ export class IoService {
       userId,
       date: entry.date,
       index: nextIndex,
+      title: entry.title ?? null,
+      timeOfDay: entry.timeOfDay ?? null,
       tags: entry.tags,
       content: entry.content,
       format: entry.format || 'plain',

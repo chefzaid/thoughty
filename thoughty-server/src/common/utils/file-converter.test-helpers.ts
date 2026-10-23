@@ -1,6 +1,8 @@
 export type ConverterTestEntry = {
   date: string;
   index: number;
+  title?: string;
+  timeOfDay?: string;
   tags: string[];
   content: string;
   format: 'plain' | 'markdown';

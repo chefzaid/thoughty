@@ -50,6 +50,30 @@ export function cleanTags(tags: unknown): string[] {
   return [...new Set(names)].slice(0, 20);
 }
 
+/** The time of day of `timestamp` (`HH:MM`) where it was written, falling back to the browser's zone. */
+export function localTime(timestamp: number, timeZone?: string): string {
+  const format = (zone?: string) => {
+    const parts = new Intl.DateTimeFormat('en-GB', { timeZone: zone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+      .formatToParts(timestamp);
+    const part = (type: string) => parts.find((item) => item.type === type)?.value ?? '00';
+    return `${part('hour')}:${part('minute')}`;
+  };
+  try {
+    return format(timeZone || undefined);
+  } catch {
+    return format();
+  }
+}
+
+/** A title from the source app, on one line and within Thoughty's length, or undefined. */
+export function cleanTitle(title: unknown): string | undefined {
+  if (typeof title !== 'string') {
+    return undefined;
+  }
+  const cleaned = title.replaceAll(/\s+/g, ' ').trim().slice(0, 200);
+  return cleaned || undefined;
+}
+
 /** The calendar day of `timestamp` where it was written, falling back to the browser's zone. */
 export function localDate(timestamp: number, timeZone?: string): string {
   const format = (zone?: string) => {

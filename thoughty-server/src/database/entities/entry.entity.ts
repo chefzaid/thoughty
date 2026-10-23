@@ -8,10 +8,20 @@ import {
   OneToMany,
   JoinColumn,
   Index,
+  type ValueTransformer,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Diary } from './diary.entity';
 import { Attachment } from './attachment.entity';
+
+/**
+ * PostgreSQL returns a `TIME(0)` as `08:30:00`; entries keep and expose it as `08:30`.
+ * Exported for the entry revisions, which store the time the same way.
+ */
+export const TIME_OF_DAY_TRANSFORMER: ValueTransformer = {
+  to: (value?: string | null) => value,
+  from: (value?: string | null) => (typeof value === 'string' ? value.slice(0, 5) : null),
+};
 
 @Entity('entries')
 @Index('idx_entries_user_pinned_date_index', ['userId', 'isPinned', 'date', 'index'])
@@ -40,6 +50,18 @@ export class Entry {
 
   @Column({ type: 'integer', default: 1 })
   index: number;
+
+  /**
+   * Optional time of day (`HH:MM`). Same-day entries without one come first in their manual
+   * order, then those with one, earliest first; it never changes `index`, which cross-references
+   * such as `[[2024-01-15#2]]` point at.
+   */
+  @Column({ name: 'time_of_day', type: 'time', precision: 0, nullable: true, transformer: TIME_OF_DAY_TRANSFORMER })
+  timeOfDay: string | null;
+
+  /** Optional one-line title shown above the text, searched with the tags' weight. */
+  @Column({ type: 'varchar', length: 200, nullable: true })
+  title: string | null;
 
   @Column('text', { array: true, default: [] })
   tags: string[];
@@ -73,8 +95,8 @@ export class Entry {
   createdAt: Date;
 
   /**
-   * Content and tags as English and French search terms: a stored column PostgreSQL generates
-   * with `entry_search_vector(content, tags)`. It is never written by the application and never
+   * Title, content, and tags as English and French search terms: a stored column PostgreSQL
+   * generates with `entry_search_vector(title, content, tags)`. It is never written by the application and never
    * loaded with the entry; it is not declared as generated so that saves do not read it back.
    */
   @Column({

@@ -281,6 +281,50 @@ describe("useEntryActions", () => {
       expect(result.current.tags).toEqual([]);
     });
 
+    it("handleSubmit sends the cleaned title and the time of day, then clears them", async () => {
+      const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
+      await createEntriesServiceMock({ createEntry });
+      const { result } = renderHook(() =>
+        useEntryForm({ defaultVisibility: "private", entriesPerPage: 10 }, 1, mockOnSuccess),
+      );
+
+      expect(result.current.title).toBe("");
+      expect(result.current.timeOfDay).toBe("");
+      act(() => {
+        result.current.setNewEntryText("Test entry");
+        result.current.setTags(["tag1"]);
+        result.current.setTitle("  Harbour   walk ");
+        result.current.setTimeOfDay("07:30");
+      });
+
+      await act(async () => {
+        await result.current.handleSubmit(mockEvent);
+      });
+
+      expect(createEntry).toHaveBeenCalledWith(expect.objectContaining({ title: "Harbour walk", timeOfDay: "07:30" }));
+      expect(result.current.title).toBe("");
+      expect(result.current.timeOfDay).toBe("");
+    });
+
+    it("handleSubmit sends no title or time when they are left empty", async () => {
+      const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
+      await createEntriesServiceMock({ createEntry });
+      const { result } = renderHook(() =>
+        useEntryForm({ defaultVisibility: "private", entriesPerPage: 10 }, 1, mockOnSuccess),
+      );
+
+      act(() => {
+        result.current.setNewEntryText("Test entry");
+        result.current.setTags(["tag1"]);
+        result.current.setTitle("   ");
+      });
+      await act(async () => {
+        await result.current.handleSubmit(mockEvent);
+      });
+
+      expect(createEntry).toHaveBeenCalledWith(expect.objectContaining({ title: null, timeOfDay: null }));
+    });
+
     it("handleSubmit uploads pending files and links unattached uploads after save", async () => {
       await createEntriesServiceMock({
         createEntry: vi.fn().mockResolvedValue({ success: true, entryId: 42 }),
@@ -764,6 +808,39 @@ describe("useEntryActions", () => {
       });
 
       expect(result.current.editingEntry).toBeNull();
+    });
+
+    it("edits the title and time of day and clears them on save", async () => {
+      const updateEntry = vi.fn().mockResolvedValue(true);
+      await createEntriesServiceMock({ updateEntry });
+      const { result } = renderHook(() =>
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+      );
+      const entry = {
+        id: 1,
+        content: "Original",
+        title: "Harbour",
+        time_of_day: "07:30",
+        tags: ["tag1"],
+        date: "2024-01-01",
+        visibility: "private" as const,
+      };
+
+      act(() => {
+        result.current.handleEdit(entry);
+      });
+      expect(result.current.editTitle).toBe("Harbour");
+      expect(result.current.editTimeOfDay).toBe("07:30");
+
+      act(() => {
+        result.current.setEditTitle("");
+        result.current.setEditTimeOfDay("");
+      });
+      await act(async () => {
+        await result.current.handleSaveEdit();
+      });
+
+      expect(updateEntry).toHaveBeenCalledWith(1, expect.objectContaining({ title: null, timeOfDay: null }));
     });
 
     it("returns early when there is no edit date or entry to save", async () => {

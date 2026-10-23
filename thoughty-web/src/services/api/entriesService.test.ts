@@ -171,6 +171,16 @@ describe('entriesService', () => {
       expect(JSON.parse(String(requestOptions?.body))).toEqual({ ...newEntry, format: 'plain' });
     });
 
+    it('sends the title and time of day only when they are set', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ success: true, entryId: 43 }) });
+
+      await service.createEntry({ ...newEntry, title: 'Harbour', timeOfDay: '07:30' });
+      await service.createEntry({ ...newEntry, title: null, timeOfDay: null });
+
+      expect(JSON.parse(String(mockAuthFetch.mock.calls[0]?.[1]?.body))).toEqual({ ...newEntry, title: 'Harbour', timeOfDay: '07:30', format: 'plain' });
+      expect(JSON.parse(String(mockAuthFetch.mock.calls[1]?.[1]?.body))).toEqual({ ...newEntry, format: 'plain' });
+    });
+
     it('returns false when response is not ok', async () => {
       mockAuthFetch.mockResolvedValue({ ok: false });
 

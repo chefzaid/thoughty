@@ -102,6 +102,8 @@ export class UserDataExportService {
         diaryId: entry.diaryId,
         date: entry.date,
         index: entry.index,
+        timeOfDay: entry.timeOfDay,
+        title: entry.title,
         content: entry.content,
         tags: entry.tags,
         format: entry.format,
@@ -113,6 +115,8 @@ export class UserDataExportService {
       revisions: revisions.map((revision) => ({
         id: revision.id,
         entryId: revision.entryId,
+        title: revision.title,
+        timeOfDay: revision.timeOfDay,
         content: revision.content,
         tags: revision.tags,
         date: revision.date,

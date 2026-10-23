@@ -344,6 +344,11 @@
     color: #e2e8f0;
 }
 
+.thought-of-day-modal .entry-content .entry-title {
+    margin: 0 0 0.35rem;
+    font-weight: 600;
+}
+
 .thought-of-day-modal .entry-content {
     font-size: 0.9375rem;
     line-height: 1.7;

@@ -15,6 +15,7 @@ import {
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
 
 export const APP_IMPORT_SOURCES = ['dayone', 'journey'] as const;
 export type AppImportSource = (typeof APP_IMPORT_SOURCES)[number];
@@ -31,6 +32,17 @@ export class AppImportEntryDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
   @IsISO8601({ strict: true })
   date: string;
+
+  @ApiPropertyOptional({ description: 'Local time of day the entry was written (HH:MM)', example: '08:30' })
+  @IsOptional()
+  @Matches(TIME_OF_DAY_PATTERN)
+  timeOfDay?: string;
+
+  @ApiPropertyOptional({ description: 'Title of the entry in the source app', example: 'Morning walk by the river' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(MAX_ENTRY_TITLE_LENGTH)
+  title?: string;
 
   @ApiProperty({ description: 'Entry text as Markdown; may be empty when the entry holds only photos' })
   @IsString()

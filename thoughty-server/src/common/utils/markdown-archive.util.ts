@@ -2,6 +2,8 @@ export type ArchiveLanguage = 'en' | 'fr';
 
 export interface ArchiveEntry {
   date: string;
+  title?: string | null;
+  timeOfDay?: string | null;
   content: string;
   tags: string[];
   format: 'plain' | 'markdown';
@@ -64,7 +66,15 @@ function escapeLinkText(text: string): string {
 
 /** One entry as Markdown with YAML front matter, followed by links to its attachments. */
 export function renderArchiveEntry(entry: ArchiveEntry, diaryName: string | null, links: ArchiveLink[]): string {
-  const frontMatter = ['---', `date: ${entry.date}`];
+  const frontMatter = ['---'];
+  if (entry.title) {
+    frontMatter.push(`title: ${JSON.stringify(entry.title)}`);
+  }
+  frontMatter.push(`date: ${entry.date}`);
+  if (entry.timeOfDay) {
+    // Quoted: YAML 1.1 readers take an unquoted 08:30 for a number of minutes
+    frontMatter.push(`time: ${JSON.stringify(entry.timeOfDay)}`);
+  }
   if (diaryName) {
     frontMatter.push(`diary: ${JSON.stringify(diaryName)}`);
   }
@@ -95,13 +105,13 @@ const README_TEXT: Record<ArchiveLanguage, { title: string; summary: (entries: n
     title: 'Thoughty export',
     summary: (entries, diaries, date) => `Exported on ${date}: ${entries} ${entries === 1 ? 'entry' : 'entries'} in ${diaries} ${diaries === 1 ? 'diary' : 'diaries'}.`,
     layout:
-      'Each diary is a folder with one folder per year. Every entry is a Markdown file named after its date, starting with YAML front matter (date, diary, tags, visibility, format, favorite, archived). Photos, recordings, and other attachments are in the year’s `attachments` folder and linked from their entry, so the folder opens as it is in Markdown editors such as Obsidian.',
+      'Each diary is a folder with one folder per year. Every entry is a Markdown file named after its date and title, starting with YAML front matter (title, date, time, diary, tags, visibility, format, favorite, archived). Photos, recordings, and other attachments are in the year’s `attachments` folder and linked from their entry, so the folder opens as it is in Markdown editors such as Obsidian.',
   },
   fr: {
     title: 'Export Thoughty',
     summary: (entries, diaries, date) => `Exporté le ${date} : ${entries} ${entries === 1 ? 'entrée' : 'entrées'} dans ${diaries} ${diaries === 1 ? 'journal' : 'journaux'}.`,
     layout:
-      'Chaque journal est un dossier, avec un dossier par année. Chaque entrée est un fichier Markdown nommé d’après sa date, qui commence par un en-tête YAML (date, journal, tags, visibilité, format, favori, archivé). Les photos, enregistrements et autres pièces jointes sont dans le dossier `attachments` de l’année et liés depuis leur entrée : le dossier s’ouvre tel quel dans les éditeurs Markdown comme Obsidian.',
+      'Chaque journal est un dossier, avec un dossier par année. Chaque entrée est un fichier Markdown nommé d’après sa date et son titre, qui commence par un en-tête YAML (titre, date, heure, journal, tags, visibilité, format, favori, archivé). Les photos, enregistrements et autres pièces jointes sont dans le dossier `attachments` de l’année et liés depuis leur entrée : le dossier s’ouvre tel quel dans les éditeurs Markdown comme Obsidian.',
   },
 };
 
