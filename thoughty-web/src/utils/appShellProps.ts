@@ -40,8 +40,9 @@ type EntryFormState = ReturnType<typeof import('../hooks/useAppState').useEntryF
 
 interface BuildPublicShellPropsParams {
   configTheme?: 'light' | 'dark';
+  isAuthenticated?: boolean;
   publicView: PublicViewType | null;
-  routingState: Pick<AppShellRoutingState, 'handleAuthSuccess' | 'handlePublicViewChange'>;
+  routingState: Pick<AppShellRoutingState, 'handleAuthSuccess' | 'handlePublicViewChange' | 'handleViewChange'>;
   t: TranslationFunction;
 }
 
@@ -95,6 +96,7 @@ interface BuildAuthenticatedRoutesPropsParams {
 
 export function buildPublicShellProps({
   configTheme,
+  isAuthenticated,
   publicView,
   routingState,
   t,
@@ -104,6 +106,8 @@ export function buildPublicShellProps({
   const introPageProps: IntroPageProps = {
     theme,
     t,
+    isAuthenticated,
+    onOpenJournal: () => routingState.handleViewChange('journal'),
     onSignIn: () => routingState.handlePublicViewChange('login'),
     onSignUp: () => routingState.handlePublicViewChange('register'),
   };

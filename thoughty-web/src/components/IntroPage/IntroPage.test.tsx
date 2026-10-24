@@ -12,6 +12,7 @@ describe('IntroPage', () => {
     render(
       <IntroPage
         t={t}
+        onOpenJournal={vi.fn()}
         onSignIn={vi.fn()}
         onSignUp={vi.fn()}
       />,
@@ -35,6 +36,7 @@ describe('IntroPage', () => {
     render(
       <IntroPage
         t={t}
+        onOpenJournal={vi.fn()}
         onSignIn={onSignIn}
         onSignUp={onSignUp}
       />,
@@ -50,5 +52,29 @@ describe('IntroPage', () => {
 
     expect(onSignUp).toHaveBeenCalledTimes(1);
     expect(onSignIn).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers signed-in visitors their journal instead of the sign-up and sign-in buttons', async () => {
+    const user = userEvent.setup();
+    const onOpenJournal = vi.fn();
+
+    render(
+      <IntroPage
+        t={t}
+        isAuthenticated
+        onOpenJournal={onOpenJournal}
+        onSignIn={vi.fn()}
+        onSignUp={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: 'Sign Up' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sign In' })).not.toBeInTheDocument();
+    const openJournalButtons = screen.getAllByRole('button', { name: 'Open your journal' });
+    expect(openJournalButtons).toHaveLength(2);
+
+    await user.click(openJournalButtons[0] as HTMLElement);
+
+    expect(onOpenJournal).toHaveBeenCalledTimes(1);
   });
 });

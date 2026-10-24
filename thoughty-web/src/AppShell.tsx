@@ -34,7 +34,6 @@ function AppShell() {
     authLoading,
     isAuthenticated,
     currentView,
-    pathname,
     publicView,
     authPageProps,
     aboutPageProps,
@@ -76,20 +75,17 @@ function AppShell() {
     return renderPublic(renderLazy(<VerifyEmailPage {...verifyEmailPageProps} />), verifyEmailPageProps.t);
   }
 
+  // The presentation page stays the entry point for everyone; signed-in visitors open the journal from it.
+  if (publicView === 'intro') {
+    return renderPublic(<IntroPage {...introPageProps} />, introPageProps.t);
+  }
+
   if (!isAuthenticated) {
     if (!publicView) {
       return <Navigate to={getPublicPathForView('intro')} replace />;
     }
 
-    if (publicView === 'intro') {
-      return renderPublic(<IntroPage {...introPageProps} />, introPageProps.t);
-    }
-
     return renderPublic(renderLazy(<AuthPage {...authPageProps} />), authPageProps.t);
-  }
-
-  if (pathname === '/') {
-    return <Navigate to={getPathForView('journal')} replace />;
   }
 
   if (!currentView) {

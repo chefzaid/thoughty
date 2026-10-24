@@ -197,7 +197,7 @@ export function setMockAuthState(overrides: Partial<MockAuthState>) {
 export function resetAppTestHarness() {
   vi.clearAllMocks();
   localStorage.clear();
-  globalThis.history.replaceState({}, '', '/');
+  globalThis.history.replaceState({}, '', '/journal');
   document.body.classList.remove('light-mode', 'dark-mode');
   HTMLElement.prototype.scrollIntoView = vi.fn();
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});

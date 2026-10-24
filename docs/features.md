@@ -136,7 +136,7 @@ All AI features are optional and run through OpenRouter. A deployment can provid
 - Every control works with the keyboard, including diary and entry reordering.
 - The same features on desktop and phone, with controls that wrap instead of scrolling off-screen.
 - Destructive actions ask for confirmation, and long operations show progress.
-- Signed-out visitors see a landing page plus About, Blog, Privacy, Terms, Contact, and Feedback pages.
+- Every visitor, signed in or not, lands on the presentation page at `/`: **Sign Up** and **Sign In** when signed out, **Open your journal** when signed in. About, Blog, Privacy, Terms, Contact, and Feedback pages are public too.
 
 ## Future Direction: Life ERP
 

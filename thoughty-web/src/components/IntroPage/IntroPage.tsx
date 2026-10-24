@@ -4,6 +4,8 @@ import './IntroPageAccessibility.css';
 interface IntroPageProps {
   readonly theme?: 'light' | 'dark';
   readonly t: (key: string, params?: Record<string, string | number>) => string;
+  readonly isAuthenticated?: boolean;
+  readonly onOpenJournal: () => void;
   readonly onSignIn: () => void;
   readonly onSignUp: () => void;
 }
@@ -106,7 +108,36 @@ function ScreenshotPreview({
   );
 }
 
-function IntroPage({ theme, t, onSignIn, onSignUp }: IntroPageProps) {
+function IntroActions({
+  compact,
+  isAuthenticated,
+  onOpenJournal,
+  onSignIn,
+  onSignUp,
+  t,
+}: Readonly<Omit<IntroPageProps, 'theme'> & { compact?: boolean }>) {
+  return (
+    <div className={`intro-actions${compact ? ' compact' : ''}`}>
+      {isAuthenticated ? (
+        <button type="button" className="intro-btn primary" onClick={onOpenJournal}>
+          {t('landingOpenJournal')}
+        </button>
+      ) : (
+        <>
+          <button type="button" className="intro-btn primary" onClick={onSignUp}>
+            {t('signUp')}
+          </button>
+          <button type="button" className="intro-btn secondary" onClick={onSignIn}>
+            {t('signIn')}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+function IntroPage({ theme, ...actionProps }: IntroPageProps) {
+  const { t } = actionProps;
   const isLight = theme === 'light';
 
   return (
@@ -118,14 +149,7 @@ function IntroPage({ theme, t, onSignIn, onSignUp }: IntroPageProps) {
           <p className="intro-eyebrow">{t('landingEyebrow')}</p>
           <h1>Thoughty</h1>
           <p className="intro-subtitle">{t('landingSubtitle')}</p>
-          <div className="intro-actions">
-            <button type="button" className="intro-btn primary" onClick={onSignUp}>
-              {t('signUp')}
-            </button>
-            <button type="button" className="intro-btn secondary" onClick={onSignIn}>
-              {t('signIn')}
-            </button>
-          </div>
+          <IntroActions {...actionProps} />
         </div>
       </section>
 
@@ -185,14 +209,7 @@ function IntroPage({ theme, t, onSignIn, onSignUp }: IntroPageProps) {
         <p className="section-kicker">{t('landingCtaKicker')}</p>
         <h2>{t('landingCtaTitle')}</h2>
         <p>{t('landingCtaBody')}</p>
-        <div className="intro-actions compact">
-          <button type="button" className="intro-btn primary" onClick={onSignUp}>
-            {t('signUp')}
-          </button>
-          <button type="button" className="intro-btn secondary" onClick={onSignIn}>
-            {t('signIn')}
-          </button>
-        </div>
+        <IntroActions {...actionProps} compact />
       </section>
     </main>
   );

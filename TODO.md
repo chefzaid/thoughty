@@ -82,6 +82,7 @@
 - [x] Intro page showcasing the app features with links to login / sign up
 - [x] Footer with Privacy, Terms, and Contact entry points, responsive layout, and a back-to-top control
 - [x] More detailed landing page with features presentation, screenshots, and sign up call to action
+- [x] Presentation page as the main entry: `https://thoughty.swirlit.dev` (the platform Homepage tile, the README, and the GitLab environment link) opens the presentation page for every visitor instead of the journal. Signed-in users get an **Open your journal** button there.
 - [x] About page with the story behind Thoughty, the mission, and the team
 - [x] Terms of Service and Privacy Policy pages
 - [x] Contact and support page with a form to submit inquiries and a How To guides / FAQ section

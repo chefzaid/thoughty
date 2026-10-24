@@ -39,7 +39,6 @@ interface AppShellModel {
   authLoading: boolean;
   isAuthenticated: boolean;
   currentView: ViewType | null;
-  pathname: string;
   publicView: PublicViewType | null;
   authPageProps: AuthPageProps;
   aboutPageProps: AboutPageProps;
@@ -57,7 +56,6 @@ export function useAppShellModel(): AppShellModel {
   const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
   const navigate = useNavigate();
   const {
-    location,
     searchParams,
     currentView,
     publicView,
@@ -263,6 +261,7 @@ export function useAppShellModel(): AppShellModel {
     verifyEmailPageProps,
   } = buildPublicShellProps({
     configTheme: config.theme,
+    isAuthenticated,
     publicView,
     routingState,
     t,
@@ -320,7 +319,6 @@ export function useAppShellModel(): AppShellModel {
     authLoading,
     isAuthenticated,
     currentView,
-    pathname: location.pathname,
     publicView,
     authPageProps,
     aboutPageProps,

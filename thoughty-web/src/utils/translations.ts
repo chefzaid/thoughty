@@ -516,6 +516,7 @@ type CoreTranslationKey =
   | "landingCtaKicker"
   | "landingCtaTitle"
   | "landingCtaBody"
+  | "landingOpenJournal"
   | "aboutEyebrow"
   | "aboutTitle"
   | "aboutSubtitle"
@@ -1539,6 +1540,7 @@ export const translations: Translations = {
     landingCtaTitle: "Open a journal you can keep using years from now.",
     landingCtaBody:
       "Create an account, write privately by default, and export your work whenever you want to leave with everything intact.",
+    landingOpenJournal: "Open your journal",
     aboutEyebrow: "About Thoughty",
     aboutTitle: "A quieter home for the thoughts worth keeping.",
     aboutSubtitle:
@@ -2631,6 +2633,7 @@ export const translations: Translations = {
       "Ouvrez un journal que vous pourrez garder pendant des années.",
     landingCtaBody:
       "Créez un compte, écrivez en privé par défaut et exportez votre travail quand vous voulez repartir avec tout intact.",
+    landingOpenJournal: "Ouvrir votre journal",
     aboutEyebrow: "À propos de Thoughty",
     aboutTitle: "Un lieu plus calme pour les pensées qui méritent de rester.",
     aboutSubtitle:

@@ -227,10 +227,13 @@ describe('appShellProps', () => {
     });
 
     expect(introPageProps.theme).toBe('light');
+    expect(introPageProps.isAuthenticated).toBeUndefined();
     introPageProps.onSignIn();
     introPageProps.onSignUp();
+    introPageProps.onOpenJournal();
     expect(routingState.handlePublicViewChange).toHaveBeenCalledWith('login');
     expect(routingState.handlePublicViewChange).toHaveBeenCalledWith('register');
+    expect(routingState.handleViewChange).toHaveBeenCalledWith('journal');
 
     expect(authPageProps.mode).toBe('register');
     expect(authPageProps.onBack).toBeDefined();

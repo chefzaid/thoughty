@@ -318,11 +318,10 @@ describe('useAppShellModel', () => {
       tagMetadata: { current: { color: '#fff' } },
       updateConfig,
     }));
-    expect(result.current.pathname).toBe('/journal');
     expect(result.current.authLoading).toBe(false);
     expect(result.current.isAuthenticated).toBe(true);
     expect(result.current.authPageProps).toMatchObject({ kind: 'auth', publicView: 'login' });
-    expect(result.current.introPageProps).toMatchObject({ kind: 'intro', publicView: 'login' });
+    expect(result.current.introPageProps).toMatchObject({ kind: 'intro', isAuthenticated: true, publicView: 'login' });
     expect(result.current.authenticatedLayoutProps).toMatchObject({
       kind: 'layout',
       userName: 'Config Name',

@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 
 import { cleanupAppTestHarness, renderApp, resetAppTestHarness } from './test/appTestHarness';
 
@@ -8,12 +9,21 @@ describe('App entrypoint', () => {
   beforeEach(resetAppTestHarness);
   afterEach(cleanupAppTestHarness);
 
-  it('mounts the router and renders the authenticated shell from the root path', async () => {
+  it('mounts the router and renders the presentation page from the root path for signed-in users', async () => {
+    globalThis.history.replaceState({}, '', '/');
+    const user = userEvent.setup();
+
     renderApp();
+
+    expect(globalThis.location.pathname).toBe('/');
+    expect(screen.getByRole('heading', { name: 'Thoughty' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sign In' })).not.toBeInTheDocument();
+
+    await user.click(screen.getAllByRole('button', { name: 'Open your journal' })[0] as HTMLElement);
 
     await waitFor(() => {
       expect(globalThis.location.pathname).toBe('/journal');
-      expect(screen.getByText('Thoughty')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("What's on your mind?")).toBeInTheDocument();
     });
   });
 
