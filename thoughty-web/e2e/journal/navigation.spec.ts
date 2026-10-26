@@ -41,7 +41,7 @@ test.describe('Journal navigation', () => {
     await page.getByTitle('Work').click();
 
     await expect(page).toHaveURL(/\/journal\?diary=1$/);
-    await expect(page.getByText('Work source entry with')).toBeVisible();
+    await expect(page.locator('#entry-101').getByText('Work source entry with')).toBeVisible();
   });
 
   test('switches between diary tabs without blanking the journal view', async ({ page }) => {

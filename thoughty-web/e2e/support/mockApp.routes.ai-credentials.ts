@@ -1,5 +1,12 @@
 import { fulfillJson, type RouteContext } from "./mockApp.route-utils";
 
+// A few of the models OpenRouter lists; the API passes them on as `{ id, name }`, sorted by name.
+const OPENROUTER_MODELS = [
+  { id: "openai/gpt-4o-mini", name: "OpenAI: GPT-4o-mini" },
+  { id: "anthropic/claude-3.5-haiku", name: "Anthropic: Claude 3.5 Haiku" },
+  { id: "mistralai/mistral-small-3.1-24b-instruct", name: "Mistral: Mistral Small 3.1 24B" },
+];
+
 export async function handleAiCredentialRoutes({
   route,
   request,
@@ -38,6 +45,15 @@ export async function handleAiCredentialRoutes({
             source: "server",
             aiAvailable: true,
           },
+    );
+    return true;
+  }
+
+  // The mock always has a server key to fall back on, so the model list is always there.
+  if (pathname === "/api/ai/models" && request.method() === "GET") {
+    await fulfillJson(
+      route,
+      [...OPENROUTER_MODELS].sort((left, right) => left.name.localeCompare(right.name)),
     );
     return true;
   }

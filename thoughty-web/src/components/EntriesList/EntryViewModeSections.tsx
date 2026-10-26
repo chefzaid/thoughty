@@ -354,7 +354,7 @@ export function EntryBacklinksSection({
                 <h4 className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     {t('backlinks')}
                 </h4>
-                <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     {t('backlinksCount', { count: backlinks.length })}
                 </span>
             </div>

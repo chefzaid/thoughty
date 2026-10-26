@@ -7,6 +7,7 @@ import {
 } from './mockApp.shared';
 import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
 import { matchMockSearch, type MockSearchResult } from './mockApp.search';
+import { getMockBacklinks } from './mockApp.backlinks';
 
 const TASK_LINE = /^((?:[\t ]*>)*[\t ]*(?:[*+-]|\d{1,9}[.)])[\t ]+\[)([ xX])(\](?:[\t \r]|$)[^\n]*)$/;
 
@@ -407,6 +408,17 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
       entry.id === entryId ? { ...entry, is_archived: payload.isArchived } : entry,
     );
     await fulfillJson(route, { success: true });
+    return true;
+  }
+
+  const backlinksMatch = /^\/api\/entries\/(\d+)\/backlinks$/.exec(pathname);
+  if (backlinksMatch && request.method() === 'GET') {
+    const backlinks = getMockBacklinks(state, Number(backlinksMatch[1]));
+    await fulfillJson(
+      route,
+      backlinks ?? { message: 'Entry not found', statusCode: 404 },
+      { status: backlinks ? 200 : 404 },
+    );
     return true;
   }
 
