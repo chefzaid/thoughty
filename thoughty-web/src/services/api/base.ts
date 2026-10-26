@@ -47,9 +47,48 @@ export const safeJsonParse = async <T = unknown>(response: Response | undefined 
   }
 };
 
+/** The message of a parsed JSON error body: NestJS's `message` (a string or a list), then `error`, then `details`. */
+const messageFromPayload = (payload: unknown): string | null => {
+  if (typeof payload === 'string') {
+    return messageFromUnknown(payload);
+  }
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return null;
+  }
+
+  const { message, error, details } = payload as ApiErrorPayload;
+  return messageFromUnknown(message) || messageFromUnknown(error) || messageFromUnknown(details);
+};
+
+const isJsonText = (text: string): boolean => {
+  try {
+    JSON.parse(text);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/** A page from a proxy or server error handler rather than a message meant for the user. */
+const isMarkup = (text: string, response: Response): boolean => {
+  const contentType = response.headers?.get?.('content-type') ?? '';
+  return /html|xml/i.test(contentType) || text.startsWith('<');
+};
+
+const readBodyText = async (response: Response): Promise<string> => {
+  try {
+    const textResponse = typeof response.clone === 'function' ? response.clone() : response;
+    return typeof textResponse.text === 'function' ? (await textResponse.text()).trim() : '';
+  } catch {
+    return '';
+  }
+};
+
 /**
  * The API's error message, or `fallback` when it sent none. A fallback the screen shows is a translation key,
  * and the screen translates the result with `t`, which passes the API's own message through unchanged.
+ * JSON bodies without a usable message, empty bodies and HTML pages all give the fallback; only a plain-text
+ * body is shown as written.
  */
 export const readApiErrorMessage = async (
   response: Response | undefined | null,
@@ -60,22 +99,16 @@ export const readApiErrorMessage = async (
   }
 
   const jsonResponse = typeof response.clone === 'function' ? response.clone() : response;
-  const payload = await safeJsonParse<ApiErrorPayload>(jsonResponse);
-  const structuredMessage = messageFromUnknown(payload?.error)
-    || messageFromUnknown(payload?.message)
-    || messageFromUnknown(payload?.details);
-
-  if (structuredMessage) {
-    return structuredMessage;
+  const payload = await safeJsonParse<unknown>(jsonResponse);
+  if (payload !== null) {
+    return messageFromPayload(payload) || fallback;
   }
 
-  try {
-    const textResponse = typeof response.clone === 'function' ? response.clone() : response;
-    const text = await textResponse.text();
-    return text.trim() || fallback;
-  } catch {
+  const text = await readBodyText(response);
+  if (!text || isMarkup(text, response) || isJsonText(text)) {
     return fallback;
   }
+  return text;
 };
 
 /**

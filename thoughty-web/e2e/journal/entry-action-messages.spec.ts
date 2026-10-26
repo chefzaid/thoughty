@@ -69,10 +69,23 @@ test.describe('Entry action messages', () => {
     await expect(task).not.toBeChecked();
   });
 
+  test('reports a task tick the API answered without a message in a toast, in English', async ({ page }) => {
+    const errands = { ...entry, id: 12, content: '- [ ] Water the plants', format: 'markdown' as const };
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: [errands] });
+    await failEntryRequests(page, `/api/entries/${errands.id}/tasks`);
+
+    await page.goto('/journal');
+    const task = page.locator('#entry-12').getByRole('checkbox', { name: 'Water the plants' });
+    await task.click();
+
+    await expect(page.getByRole('alert')).toHaveText('Failed to update the task.');
+    await expect(task).not.toBeChecked();
+  });
+
   test('reports why pinning failed in a toast, in English', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, initialEntries: [entry] });
     await page.route(`http://localhost:5173/api/entries/${entry.id}/pinned`, (route) =>
-      route.fulfill({ status: 400, json: { message: 'You can pin at most 3 entries.' } }));
+      route.fulfill({ status: 400, json: { statusCode: 400, message: 'You can pin at most 3 entries.', error: 'Bad Request' } }));
 
     await page.goto('/journal');
     await page.locator('#entry-10').getByTitle('Pin entry').click();

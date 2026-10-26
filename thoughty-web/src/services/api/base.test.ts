@@ -82,6 +82,87 @@ describe('readApiErrorMessage', () => {
 
     await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Fallback');
   });
+
+  it('prefers the NestJS message over its status name', async () => {
+    const response = new Response(
+      JSON.stringify({ statusCode: 404, message: 'Feature request not found', error: 'Not Found' }),
+      { status: 404, headers: { 'Content-Type': 'application/json' } }
+    );
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Feature request not found');
+  });
+
+  it.each([
+    ['an empty object', '{}'],
+    ['only a status code', '{"statusCode":503}'],
+    ['a blank message', '{"message":"   "}'],
+    ['an empty message list', '{"message":[]}'],
+    ['a message list without text', '{"message":[null, 4, ""]}'],
+    ['a numeric message', '{"message":503}'],
+    ['a top-level array', '["x"]'],
+    ['JSON null', 'null'],
+    ['a JSON number', '503'],
+  ])('falls back when a JSON body has %s', async (_shape, body) => {
+    const response = new Response(body, { status: 503, headers: { 'Content-Type': 'application/json' } });
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Fallback');
+  });
+
+  it('reads a JSON string body as the message', async () => {
+    const response = new Response(JSON.stringify('Too many requests'), { status: 429 });
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Too many requests');
+  });
+
+  it('falls back on a whitespace-only body', async () => {
+    await expect(readApiErrorMessage(new Response('  \n ', { status: 502 }), 'Fallback')).resolves.toBe('Fallback');
+  });
+
+  it('falls back on an HTML error page', async () => {
+    const response = new Response('<html><body><h1>502 Bad Gateway</h1></body></html>', {
+      status: 502,
+      headers: { 'Content-Type': 'text/html' },
+    });
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Fallback');
+  });
+
+  it('falls back on markup even without an HTML content type', async () => {
+    const response = new Response('<!DOCTYPE html><title>Error</title>', { status: 500 });
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Fallback');
+  });
+
+  it('falls back on text sent with an HTML content type', async () => {
+    const response = new Response('Service Unavailable', { status: 503, headers: { 'Content-Type': 'text/html' } });
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Fallback');
+  });
+
+  it('falls back for a missing response', async () => {
+    await expect(readApiErrorMessage(null, 'Fallback')).resolves.toBe('Fallback');
+  });
+
+  it('reads a response stand-in that only offers json()', async () => {
+    const response = { json: () => Promise.resolve({}) } as unknown as Response;
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Fallback');
+  });
+
+  it('falls back when a stand-in has neither JSON nor text', async () => {
+    const response = { json: () => Promise.reject(new Error('no body')) } as unknown as Response;
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Fallback');
+  });
+
+  it('falls back when reading the text fails', async () => {
+    const response = {
+      json: () => Promise.reject(new Error('not json')),
+      text: () => Promise.reject(new Error('stream broken')),
+    } as unknown as Response;
+
+    await expect(readApiErrorMessage(response, 'Fallback')).resolves.toBe('Fallback');
+  });
 });
 
 describe('createAuthFetch', () => {
