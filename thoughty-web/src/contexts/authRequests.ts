@@ -1,7 +1,7 @@
 import { readApiErrorMessage, safeJsonParse } from '../services/api/base';
-import type { LoginResponse, TokenResponse, TwoFactorChallengeResponse } from './authTypes';
+import type { AuthResult, LoginResponse, TokenResponse, TwoFactorChallengeResponse } from './authTypes';
 
-const API_BASE = '/api/auth';
+export const API_BASE = '/api/auth';
 
 interface RegisterRequest {
   email: string;
@@ -58,4 +58,15 @@ export function resendTwoFactorChallenge(challengeToken: string): Promise<TwoFac
     { challengeToken },
     'twoFactorResendFailed',
   ) as Promise<TwoFactorChallengeResponse>;
+}
+
+/** Records a failed auth call's message (or the fallback key) as the context error and returns it. */
+export function authFailure(
+  err: unknown,
+  fallback: string,
+  setError: (message: string) => void,
+): AuthResult {
+  const message = err instanceof Error ? err.message : fallback;
+  setError(message);
+  return { success: false, error: message };
 }

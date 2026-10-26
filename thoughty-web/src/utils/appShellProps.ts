@@ -2,15 +2,7 @@ import type { ComponentProps } from 'react';
 
 import type { TransientMessage } from '../hooks/useTransientMessage';
 
-import type AboutPage from '../components/AboutPage/AboutPage';
-import type AuthPage from '../components/AuthPage/AuthPage';
-import type BlogPage from '../components/BlogPage/BlogPage';
-import type ContactPage from '../components/ContactPage/ContactPage';
-import type FeedbackPage from '../components/FeedbackPage/FeedbackPage';
-import type IntroPage from '../components/IntroPage/IntroPage';
-import type LegalPage from '../components/LegalPage/LegalPage';
-import type VerifyEmailPage from '../components/VerifyEmailPage/VerifyEmailPage';
-import type { Config, Entry, ImportExportFormat, ImportExportSection, PublicViewType, TranslationFunction, ViewType } from '../types';
+import type { Config, Entry, ImportExportFormat, ImportExportSection, TranslationFunction, ViewType } from '../types';
 import type AuthenticatedAppLayout from '../routes/AuthenticatedAppLayout';
 import type AuthenticatedRoutes from '../routes/AuthenticatedRoutes';
 import type { DuplicateEntryScan, RephraseMode, SummaryGuidance } from '../services/api/aiService';
@@ -18,14 +10,18 @@ import { buildEntryPermalink } from './appRouting';
 import { createEntryTemplate, getEntryTemplates, serializeCustomEntryTemplates, type EntryTemplateDraft } from './entryTemplates';
 import { listKnownTags, type TagMetadataMap } from './tagMetadata';
 
-export type IntroPageProps = ComponentProps<typeof IntroPage>;
-export type AboutPageProps = ComponentProps<typeof AboutPage>;
-export type BlogPageProps = ComponentProps<typeof BlogPage>;
-export type ContactPageProps = ComponentProps<typeof ContactPage>;
-export type FeedbackPageProps = ComponentProps<typeof FeedbackPage>;
-export type AuthPageProps = ComponentProps<typeof AuthPage>;
-export type LegalPageProps = ComponentProps<typeof LegalPage>;
-export type VerifyEmailPageProps = ComponentProps<typeof VerifyEmailPage>;
+export {
+  buildPublicShellProps,
+  type AboutPageProps,
+  type AuthPageProps,
+  type BlogPageProps,
+  type ContactPageProps,
+  type FeedbackPageProps,
+  type IntroPageProps,
+  type LegalPageProps,
+  type VerifyEmailPageProps,
+} from './publicShellProps';
+
 export type AuthenticatedLayoutProps = Omit<ComponentProps<typeof AuthenticatedAppLayout>, 'children'>;
 export type AuthenticatedRoutesProps = ComponentProps<typeof AuthenticatedRoutes>;
 
@@ -37,14 +33,6 @@ type DiariesState = ReturnType<typeof import('../hooks/useAppState').useDiaries>
 type EntriesState = ReturnType<typeof import('../hooks/useAppState').useEntries>;
 type EntryEditState = ReturnType<typeof import('../hooks/useAppState').useEntryEdit>;
 type EntryFormState = ReturnType<typeof import('../hooks/useAppState').useEntryForm>;
-
-interface BuildPublicShellPropsParams {
-  configTheme?: 'light' | 'dark';
-  isAuthenticated?: boolean;
-  publicView: PublicViewType | null;
-  routingState: Pick<AppShellRoutingState, 'handleAuthSuccess' | 'handlePublicViewChange' | 'handleViewChange'>;
-  t: TranslationFunction;
-}
 
 interface BuildAuthenticatedLayoutPropsParams {
   avatarUrl?: string;
@@ -92,83 +80,6 @@ interface BuildAuthenticatedRoutesPropsParams {
   t: TranslationFunction;
   tagMetadata: TagMetadataMap;
   updateConfig: (newConfig: Config) => Promise<void>;
-}
-
-export function buildPublicShellProps({
-  configTheme,
-  isAuthenticated,
-  publicView,
-  routingState,
-  t,
-}: Readonly<BuildPublicShellPropsParams>) {
-  const theme = configTheme || 'dark';
-
-  const introPageProps: IntroPageProps = {
-    theme,
-    t,
-    isAuthenticated,
-    onOpenJournal: () => routingState.handleViewChange('journal'),
-    onSignIn: () => routingState.handlePublicViewChange('login'),
-    onSignUp: () => routingState.handlePublicViewChange('register'),
-  };
-
-  const aboutPageProps: AboutPageProps = {
-    theme,
-    t,
-    onBackHome: () => routingState.handlePublicViewChange('intro'),
-    onSignUp: () => routingState.handlePublicViewChange('register'),
-  };
-
-  const blogPageProps: BlogPageProps = {
-    theme,
-    t,
-    onBackHome: () => routingState.handlePublicViewChange('intro'),
-  };
-
-  const contactPageProps: ContactPageProps = {
-    theme,
-    t,
-    onBackHome: () => routingState.handlePublicViewChange('intro'),
-  };
-
-  const feedbackPageProps: FeedbackPageProps = {
-    theme,
-    t,
-    onBackHome: () => routingState.handlePublicViewChange('intro'),
-    onSignIn: () => routingState.handlePublicViewChange('login'),
-  };
-
-  const legalPageProps: Omit<LegalPageProps, 'page'> = {
-    theme,
-    t,
-    onBackHome: () => routingState.handlePublicViewChange('intro'),
-  };
-
-  const authPageProps: AuthPageProps = {
-    t,
-    theme,
-    mode: publicView === 'register' ? 'register' : 'login',
-    onAuthSuccess: routingState.handleAuthSuccess,
-    onModeChange: routingState.handlePublicViewChange,
-    onBack: () => routingState.handlePublicViewChange('intro'),
-  };
-
-  const verifyEmailPageProps: VerifyEmailPageProps = {
-    t,
-    theme,
-    onContinue: () => routingState.handlePublicViewChange('login'),
-  };
-
-  return {
-    introPageProps,
-    aboutPageProps,
-    blogPageProps,
-    contactPageProps,
-    feedbackPageProps,
-    legalPageProps,
-    authPageProps,
-    verifyEmailPageProps,
-  };
 }
 
 export function buildAuthenticatedLayoutProps({
