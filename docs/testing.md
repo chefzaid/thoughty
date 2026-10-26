@@ -71,6 +71,8 @@ A new spec wraps its suite in `describePostgres`, calls `createPostgresTestDatab
 
 Vitest uses `jsdom` with `src/test/setup.ts` and runs each file in its own thread, so mocks and DOM never leak between files. Helpers live in `src/test/`. Tests that need real `Blob` streams or `CompressionStream` add `// @vitest-environment node`. Unit tests usually pass an identity translator (`t = (key) => key`), so assert on translation keys, not English text.
 
+A message that hides itself after a while should be tested with fake timers, not by waiting: a real timer only fires if the test lives long enough, which makes coverage move between identical runs. Plain `vi.useFakeTimers()` also fakes `setImmediate`, which React's scheduler runs effects on, and Testing Library's `findBy*`/`waitFor` wait on `setTimeout`, so both stall under it. For a component that loads data before the message appears, fake only `setTimeout`/`setInterval` with `shouldAdvanceTime: true`, wait for one real `setImmediate` after the message shows so its countdown has started, and leave a margin for the wall-clock drift (`ImportExport.importMessage.test.tsx`). A component that renders at once can use plain fake timers (`AutoDismiss.test.tsx`).
+
 ## Browser Tests
 
 Playwright starts the Vite dev server on port `5173` (or reuses a running one) and runs headless Chromium. There are no named projects, so do not pass `--project`. Traces and screenshots are kept on failure, and CI retries a failed test twice.

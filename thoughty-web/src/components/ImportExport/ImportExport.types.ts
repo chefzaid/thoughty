@@ -149,6 +149,8 @@ export interface PreviewData {
 export interface MessageState {
     type: 'success' | 'error';
     text: string;
+    /** How long the message stays on screen before `AutoDismiss` hides it; without one it stays. */
+    durationMs?: number;
 }
 
 export interface ImportExportRouteState {

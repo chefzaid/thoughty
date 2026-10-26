@@ -7,6 +7,8 @@ import { DangerZoneSection, ExportSection, FormatSection, ImportSection, RouteAc
 import { ImportExportBookPanel } from './ImportExportBookPanel';
 import { AppImportPanel } from './appImport/AppImportPanel';
 import { useImportExportCloud } from './useImportExportCloud';
+import AutoDismiss from '../AutoDismiss/AutoDismiss';
+import { useTransientMessage } from '../../hooks/useTransientMessage';
 import { downloadBlob } from '../../utils/downloadFile';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import {
@@ -37,6 +39,7 @@ function ImportExport({
     const [preview, setPreview] = useState<PreviewData | null>(null);
     const [fileContent, setFileContent] = useState('');
     const [message, setMessage] = useState<MessageState | null>(null);
+    const messageToast = useTransientMessage();
     const [skipDuplicates, setSkipDuplicates] = useState(true);
     const [includeVisibility, setIncludeVisibility] = useState(initialIncludeVisibility);
     const [exportFormat, setExportFormat] = useState<ImportExportFormat>(initialExportFormat);
@@ -48,9 +51,16 @@ function ImportExport({
     const bookSectionRef = useRef<HTMLElement | null>(null);
     const isLight = theme === 'light';
 
-    function showMessage(type: MessageState['type'], text: string, duration = 4000): void {
-        setMessage({ type, text });
-        globalThis.setTimeout(() => setMessage(null), duration);
+    function showMessage(type: MessageState['type'], text: string, durationMs = 4000): void {
+        setMessage({ type, text, durationMs });
+        messageToast.show();
+    }
+
+    /** A message with a duration hides itself after it; one without (the import summary) stays until the next. */
+    function renderMessage({ type, text, durationMs }: MessageState) {
+        const banner = <div className={`message ${type}`}>{text}</div>;
+        if (durationMs === undefined) return banner;
+        return <AutoDismiss message={messageToast} durationMs={durationMs}>{banner}</AutoDismiss>;
     }
 
     function emitRouteState(nextState: Partial<ImportExportRouteState> = {}): void {
@@ -271,7 +281,7 @@ function ImportExport({
                 t={t}
             />
 
-            {message && <div className={`message ${message.type}`}>{message.text}</div>}
+            {message && renderMessage(message)}
 
             <div className="io-grid">
                 <ExportSection
