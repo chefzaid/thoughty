@@ -1,5 +1,9 @@
 import { useMemo } from 'react';
 
+import { monthName, weekdayName } from '../../utils/calendarNames';
+import { pluralPhrase } from '../../utils/pluralPhrase';
+import type { Language } from '../../utils/translations';
+
 interface HeatmapCell {
     date: Date;
     dateKey: string;
@@ -11,31 +15,18 @@ interface HeatmapCell {
 interface StatsActivityHeatmapProps {
     readonly thoughtsPerDay: Record<string, number>;
     readonly themeClass: 'light' | 'dark';
+    readonly language: Language;
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly onOpenJournalDay?: (date: string) => void | Promise<void>;
 }
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const MONTH_FORMATTER = new Intl.DateTimeFormat(undefined, { month: 'short', timeZone: 'UTC' });
-const WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
-const FULL_DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-});
+/** Weekdays labelled down the side of the grid (0 = Sunday), every other row. */
+const LABELLED_WEEKDAYS = new Set([1, 3, 5]);
 
 function addUtcDays(date: Date, days: number): Date {
     return new Date(date.getTime() + days * DAY_IN_MS);
 }
-
-const WEEKDAY_LABELS = Array.from({ length: 7 }, (_, index) => {
-    if (![1, 3, 5].includes(index)) {
-        return '';
-    }
-
-    return WEEKDAY_FORMATTER.format(addUtcDays(new Date(Date.UTC(2024, 0, 7)), index));
-});
 
 function toUtcDateOnly(date: Date): Date {
     return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -97,10 +88,23 @@ function buildHeatmapWeeks(thoughtsPerDay: Record<string, number>): HeatmapCell[
 export default function StatsActivityHeatmap({
     thoughtsPerDay,
     themeClass,
+    language,
     t,
     onOpenJournalDay,
 }: Readonly<StatsActivityHeatmapProps>) {
     const heatmapWeeks = useMemo(() => buildHeatmapWeeks(thoughtsPerDay), [thoughtsPerDay]);
+    const weekdayLabels = useMemo(
+        () => Array.from({ length: 7 }, (_, index) => (
+            LABELLED_WEEKDAYS.has(index) ? weekdayName(index, language, 'short') : ''
+        )),
+        [language],
+    );
+    const fullDateFormatter = useMemo(() => new Intl.DateTimeFormat(language, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        timeZone: 'UTC',
+    }), [language]);
     const monthLabels = useMemo(() => heatmapWeeks.map((week, index) => {
         const labelDate = week.find((cell) => cell.inRange)?.date ?? week[0]?.date;
         const previousDate = index > 0
@@ -117,8 +121,8 @@ export default function StatsActivityHeatmap({
             return '';
         }
 
-        return MONTH_FORMATTER.format(labelDate);
-    }), [heatmapWeeks]);
+        return monthName(labelDate.getUTCMonth() + 1, language, 'short');
+    }), [heatmapWeeks, language]);
 
     return (
         <section className={`chart-card heatmap-card ${themeClass}`} aria-labelledby="journal-activity-heading">
@@ -149,7 +153,7 @@ export default function StatsActivityHeatmap({
                             ))}
                         </div>
                         <div className="heatmap-weekday-column" aria-hidden="true">
-                            {WEEKDAY_LABELS.map((label, index) => (
+                            {weekdayLabels.map((label, index) => (
                                 <span key={`${label || 'weekday'}-${index}`} className="heatmap-weekday-label">
                                     {label}
                                 </span>
@@ -169,8 +173,9 @@ export default function StatsActivityHeatmap({
                                             );
                                         }
 
-                                        const entryCountLabel = cell.count === 1 ? '1 entry' : `${cell.count} entries`;
-                                        const fullDateLabel = FULL_DATE_FORMATTER.format(cell.date);
+                                        const dayLabel = pluralPhrase(t, 'statsHeatmapDay', cell.count, language, {
+                                            date: fullDateFormatter.format(cell.date),
+                                        });
 
                                         return (
                                             <button
@@ -178,8 +183,8 @@ export default function StatsActivityHeatmap({
                                                 key={cell.dateKey}
                                                 onClick={() => void onOpenJournalDay?.(cell.dateKey)}
                                                 className={`heatmap-cell ${themeClass} level-${cell.level}`}
-                                                aria-label={`${entryCountLabel} on ${fullDateLabel}`}
-                                                title={`${entryCountLabel} on ${fullDateLabel}`}
+                                                aria-label={dayLabel}
+                                                title={dayLabel}
                                                 disabled={!onOpenJournalDay}
                                             />
                                         );

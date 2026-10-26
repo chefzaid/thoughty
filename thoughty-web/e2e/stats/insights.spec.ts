@@ -44,6 +44,12 @@ test.describe("Stats insight surfaces", () => {
       page.getByRole("heading", { name: "Journal Activity" }),
     ).toBeVisible();
     await expect(
+      page.getByRole("button", { name: "1 entry on Apr 18, 2024", exact: true }),
+    ).toHaveAttribute("title", "1 entry on Apr 18, 2024");
+    await expect(
+      page.getByRole("button", { name: "0 entries on Apr 17, 2024", exact: true }),
+    ).toBeVisible();
+    await expect(
       page.getByRole("heading", { name: "Subjects Discussed" }),
     ).toBeVisible();
     await expect(
@@ -108,5 +114,27 @@ test.describe("Stats insight surfaces", () => {
     await expect(
       page.getByText("A quiet morning reflection about focus"),
     ).toBeVisible();
+  });
+
+  test("labels the activity heatmap in French", async ({ page }) => {
+    const day = { tags: [], visibility: "private" as const, diaryId: 1 };
+    await setupMockApp(page, {
+      startAuthenticated: true,
+      config: { language: "fr" },
+      initialEntries: [
+        { ...day, id: 20, date: "2024-04-18", index: 1, content: "Matin calme" },
+        { ...day, id: 21, date: "2024-04-18", index: 2, content: "Soir de pluie" },
+        { ...day, id: 22, date: "2024-04-19", index: 1, content: "Promenade au parc" },
+      ],
+    });
+
+    await page.goto("/stats");
+
+    const heatmap = page.getByRole("region", { name: "Activité du journal par jour" });
+    for (const label of ["2 entrées le 18 avr. 2024", "1 entrée le 19 avr. 2024", "0 entrée le 17 avr. 2024"]) {
+      await expect(heatmap.getByRole("button", { name: label, exact: true })).toHaveAttribute("title", label);
+    }
+    await expect(heatmap.getByText("févr.", { exact: true })).toBeVisible();
+    await expect(heatmap.getByText("mer.", { exact: true })).toBeVisible();
   });
 });

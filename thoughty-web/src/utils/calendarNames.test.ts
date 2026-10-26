@@ -12,5 +12,7 @@ describe('calendarNames', () => {
   it('names weekdays from Sunday as 0', () => {
     expect(weekdayName(0, 'en')).toBe('Sunday');
     expect(weekdayName(1, 'fr')).toBe('lundi');
+    expect(weekdayName(1, 'en', 'short')).toBe('Mon');
+    expect(weekdayName(3, 'fr', 'short')).toBe('mer.');
   });
 });

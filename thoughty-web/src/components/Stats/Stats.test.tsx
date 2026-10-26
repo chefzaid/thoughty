@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createElement } from 'react';
 import Stats from './Stats';
+import { getTranslation } from '../../utils/translations';
 
 function MockBar(props: { data: unknown }) {
     return createElement('div', { 'data-testid': 'mock-bar-chart' }, JSON.stringify(props.data));
@@ -266,20 +267,35 @@ describe('Stats Component', () => {
         expect(screen.getByText('Wellbeing')).toBeInTheDocument();
     });
 
+    const englishT = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
+
+    it('labels the heatmap days in French with the profile language', async () => {
+        (globalThis.fetch as Mock).mockResolvedValue({
+            ok: true,
+            json: async () => mockStatsData
+        });
+
+        render(<Stats {...defaultProps} t={(key, params) => getTranslation('fr', key, params)} language="fr" />);
+
+        expect(await screen.findByLabelText('4 entrées le 18 janv. 2024')).toBeInTheDocument();
+        expect(screen.getByLabelText('1 entrée le 16 janv. 2024')).toBeInTheDocument();
+    });
+
     it('renders the journaling heatmap when daily activity is available', async () => {
         (globalThis.fetch as Mock).mockResolvedValue({
             ok: true,
             json: async () => mockStatsData
         });
 
-        const { container } = render(<Stats {...defaultProps} />);
+        const { container } = render(<Stats {...defaultProps} t={englishT} language="en" />);
 
         await waitFor(() => {
-            expect(screen.getByRole('heading', { name: 'Journal Activity' })).toBeInTheDocument();
+            expect(screen.getByRole('heading', { name: 'Journal Activity by Day' })).toBeInTheDocument();
         });
 
         expect(container.querySelectorAll('.heatmap-week').length).toBeGreaterThan(0);
         expect(screen.getByLabelText('4 entries on Jan 18, 2024')).toBeInTheDocument();
+        expect(screen.getByLabelText('1 entry on Jan 16, 2024')).toBeInTheDocument();
     });
 
     it('opens the journal for the selected day when a heatmap cell is clicked', async () => {
@@ -290,10 +306,10 @@ describe('Stats Component', () => {
             json: async () => mockStatsData
         });
 
-        render(<Stats {...defaultProps} onOpenJournalDay={onOpenJournalDay} />);
+        render(<Stats {...defaultProps} t={englishT} language="en" onOpenJournalDay={onOpenJournalDay} />);
 
         await waitFor(() => {
-            expect(screen.getByRole('heading', { name: 'Journal Activity' })).toBeInTheDocument();
+            expect(screen.getByRole('heading', { name: 'Journal Activity by Day' })).toBeInTheDocument();
         });
 
         await user.click(screen.getByRole('button', { name: '4 entries on Jan 18, 2024' }));

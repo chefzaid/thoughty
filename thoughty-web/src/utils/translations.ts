@@ -360,6 +360,8 @@ type CoreTranslationKey =
   | "lessActivity"
   | "moreActivity"
   | "noJournalActivity"
+  | "statsHeatmapDay_one"
+  | "statsHeatmapDay_other"
   | "importExport"
   | "import"
   | "export"
@@ -1326,6 +1328,8 @@ export const translations: Translations = {
     lessActivity: "Less",
     moreActivity: "More",
     noJournalActivity: "No journaling activity yet.",
+    statsHeatmapDay_one: "{count} entry on {date}",
+    statsHeatmapDay_other: "{count} entries on {date}",
 
     // Import/Export
     importExport: "Import/Export",
@@ -2370,6 +2374,8 @@ export const translations: Translations = {
     lessActivity: "Moins",
     moreActivity: "Plus",
     noJournalActivity: "Aucune activité de journal pour le moment.",
+    statsHeatmapDay_one: "{count} entrée le {date}",
+    statsHeatmapDay_other: "{count} entrées le {date}",
 
     // Import/Export
     importExport: "Import/Export",

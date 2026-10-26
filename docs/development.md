@@ -98,3 +98,5 @@ TypeORM `synchronize` is off, so each schema change needs a new migration in `th
 ## Adding Text to the UI
 
 User-facing strings go through `t('key')`. Add each key to its key type and to the English and French maps. Core keys are in `thoughty-web/src/utils/translations.ts`. Feature keys are in files beside it, such as `translations.mood.ts`, which `translations.ts` merges into `TranslationKey`. The type checker rejects a key missing from either language.
+
+For text with a count, add `<key>_one` and `<key>_other` and call `pluralPhrase(t, '<key>', count, language)` from `thoughty-web/src/utils/pluralPhrase.ts`. It picks the form by each language's plural rules (French counts 0 as singular) and writes the count in the reader's number format. Dates and month or weekday names follow the profile language, not the browser's (`calendarNames.ts`, or `Intl.DateTimeFormat(language, ...)`).

@@ -52,7 +52,7 @@ flowchart LR
 ## Highlights and Insights
 
 - **Highlights.** A random entry to rediscover, and **On This Day** entries from past years.
-- **Stats.** Totals and averages, entries per year and month, top tags overall and per year, and an activity heatmap. Everything follows the selected diary.
+- **Stats.** Totals and averages, entries per year and month, top tags overall and per year, and an activity heatmap whose days give their entry count and date in the interface language. Everything follows the selected diary.
 - **Moods.** Average mood over time and by weekday, and the feelings you name most, computed from the moods you recorded, without AI.
 - **Connections graph.** The strongest links between entries and between tags, based on shared tags and computed without AI.
 - **AI insights.** Mood, tone, and recurring subjects, and a writing-tendency analysis (see [AI Assistance](#ai-assistance)).

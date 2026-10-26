@@ -115,6 +115,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
     }, [fetchStats]);
 
     const themeClass = theme === 'light' ? 'light' : 'dark';
+    const uiLanguage = resolveLanguage(language);
     const textColor = theme === 'light' ? '#374151' : '#e5e7eb';
     const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
     const effectiveStats = stats ?? EMPTY_STATS;
@@ -317,7 +318,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
                         <StatsMoodPanel
                             moods={stats.moods ?? EMPTY_STATS.moods}
                             themeClass={themeClass}
-                            language={resolveLanguage(language)}
+                            language={uiLanguage}
                             t={t}
                         />
                         <StatsPersonalityPanel
@@ -337,6 +338,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
                 <StatsActivityHeatmap
                     thoughtsPerDay={thoughtsPerDay}
                     themeClass={themeClass}
+                    language={uiLanguage}
                     t={t}
                     onOpenJournalDay={onOpenJournalDay}
                 />
