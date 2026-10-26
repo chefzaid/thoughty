@@ -1,5 +1,18 @@
 # Feature Backlog
 
+Worked through with the [coding agent loop](https://github.com/chefzaid/agents/blob/main/CODING_AGENT.md): open bugs first, then answered questions, then the simplest open task.
+
+## Bugs to fix
+
+Bugs, failing checks, security findings and code smells found while working on another task. Each entry names the file or area, what is wrong, and how to reproduce it.
+
+- [ ] Flaky e2e test `thoughty-web/e2e/navigation/routes.spec.ts` › "supports authenticated deep links and browser history across app views" fails about 1 run in 10, on `main` before any change too: after clicking **Tags**, `getByRole('heading', { name: /Tags/i })` also matches the Stats page's "Top Tags" and "Top Tags by Year" headings while Stats is still on screen (strict mode violation). Reproduce: `npx playwright test e2e/navigation/routes.spec.ts -g "across app views" --repeat-each 20`. *(found by: Coding Agent)*
+- [ ] Flaky e2e test `thoughty-web/e2e/navigation/routes.spec.ts` › "shows a toast for a missing journal permalink" fails about 1 run in 50: the "Entry not found" alert is not found within 10 seconds while the journal is shown. Reproduce: `npx playwright test e2e/navigation/routes.spec.ts e2e/auth --repeat-each 4` a few times. *(found by: Coding Agent)*
+
+## Needs Input
+
+Parts of tasks that cannot advance without the owner's decision or information. Only the part needing input is set aside here; the rest of the task keeps moving. Answer under the item, and the next agent run applies the answer and removes the entry.
+
 ## Core Journaling
 
 - [x] Create, edit, and delete entries, with a date picker that also accepts manual input and defaults to today
