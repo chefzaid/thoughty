@@ -71,6 +71,7 @@ export function useAppShellModel(): AppShellModel {
 
   const {
     config,
+    configLoaded,
     profileStats,
     fetchConfig,
     fetchProfileStats,
@@ -107,6 +108,7 @@ export function useAppShellModel(): AppShellModel {
   }, [entriesState]);
 
   const entryNavigationState = useEntryNavigation({
+    configLoaded,
     currentDiaryId,
     currentView,
     entries: entriesState.entries,

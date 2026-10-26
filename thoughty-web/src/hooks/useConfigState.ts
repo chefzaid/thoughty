@@ -30,6 +30,8 @@ export const useConfig = (isAuthenticated: boolean) => {
   });
 
   const config = configQuery.data ?? {};
+  /** True once the profile config has arrived (or failed to), so page-size based lookups use the user's setting. */
+  const configLoaded = !configQuery.isPending;
   const profileStats = profileStatsQuery.data ?? null;
 
   const fetchConfig = useCallback(async () => {
@@ -75,6 +77,7 @@ export const useConfig = (isAuthenticated: boolean) => {
 
   return {
     config,
+    configLoaded,
     setConfig,
     profileStats,
     fetchConfig,

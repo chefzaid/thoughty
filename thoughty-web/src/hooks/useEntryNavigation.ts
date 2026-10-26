@@ -10,6 +10,8 @@ import { buildEntryPermalink, ENTRY_PERMALINK_PARAM, toSearchString } from '../u
 type EntriesState = ReturnType<typeof useEntries>;
 
 interface UseEntryNavigationParams {
+  /** Whether the profile config (and so the user's page size) has loaded; permalinks wait for it. */
+  configLoaded: boolean;
   currentDiaryId: number | null;
   currentView: ViewType | null;
   entries: EntriesState['entries'];
@@ -54,6 +56,7 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
 }
 
 export function useEntryNavigation({
+  configLoaded,
   currentDiaryId,
   currentView,
   entries,
@@ -347,7 +350,8 @@ export function useEntryNavigation({
       return;
     }
 
-    if (!isAuthenticated) {
+    // Once the permalink has landed, the page it moved to and later filter changes are left alone
+    if (!isAuthenticated || handledPermalinkEntryId === routeEntryId) {
       return;
     }
 
@@ -356,7 +360,9 @@ export function useEntryNavigation({
       return;
     }
 
-    if (handledPermalinkEntryId === routeEntryId) {
+    // The page an entry is on depends on the page size, so the lookup waits for the user's
+    // config instead of asking with the default size and asking again once it arrives.
+    if (!configLoaded) {
       return;
     }
 
@@ -385,7 +391,7 @@ export function useEntryNavigation({
     return () => {
       cancelled = true;
     };
-  }, [entriesService, getLimit, handledPermalinkEntryId, isAuthenticated, needsJournalResetForPermalink, resetJournalFiltersForPermalink, routeEntryId, setActiveTargetId, setPage, setSourceEntry, setTargetEntryId, showEntryNotFoundToast]);
+  }, [configLoaded, entriesService, getLimit, handledPermalinkEntryId, isAuthenticated, needsJournalResetForPermalink, resetJournalFiltersForPermalink, routeEntryId, setActiveTargetId, setPage, setSourceEntry, setTargetEntryId, showEntryNotFoundToast]);
 
   return {
     entryToast,

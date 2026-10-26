@@ -20,7 +20,7 @@ flowchart LR
 - **Task lists.** In Markdown entries, `- [ ]` and `- [x]` items show as checkboxes you can tick from the journal without opening the editor.
 - **Several entries per day.** Entries are numbered within their day. Untimed entries come first in the order you set by dragging, then timed entries by time. Adding or changing a time never renumbers an entry, so links stay valid.
 - **Cross-references.** `[[2024-01-15]]` or `[[2024-01-15#2]]` links to another entry. Each entry lists the entries that link to it (backlinks).
-- **Entry actions.** Edit, favorite, pin, change visibility, listen, chat, rephrase, summarize, view history, archive, share, and delete. Sharing uses the browser share sheet or copies a permalink.
+- **Entry actions.** Edit, favorite, pin, change visibility, listen, chat, rephrase, summarize, view history, archive, share, and delete. Sharing uses the browser share sheet or copies a permalink. Opening a permalink (`/journal?entry=<id>`) clears the journal filters and opens the page that holds the entry at your page size, or shows a notice when the entry no longer exists.
 - **Entry states.** Public or private visibility, favorites, archive, and pinned entries kept at the top (up to a limit you set).
 - **Revision history.** Every edit keeps the previous version, which you can view or delete.
 - **Attachments.** Images, audio, PDFs, and text files up to 5 MB each, stored in S3-compatible storage and previewed inline. Audio notes can be transcribed with AI.

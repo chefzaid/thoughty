@@ -38,6 +38,30 @@ test.describe('Route navigation', () => {
     await expect(page.getByLabel('Open entry permalink')).toHaveAttribute('href', /\/journal\?entry=7$/);
   });
 
+  test('lands a permalink on its page with one lookup at the configured page size', async ({ page }) => {
+    await setupMockApp(page, {
+      startAuthenticated: true,
+      config: { entriesPerPage: 2 },
+      initialEntries: [
+        { id: 31, date: '2024-03-03', index: 1, content: 'Newest entry', tags: [], visibility: 'private', diaryId: 1 },
+        { id: 32, date: '2024-03-02', index: 1, content: 'Middle entry', tags: [], visibility: 'private', diaryId: 1 },
+        { id: 33, date: '2024-03-01', index: 1, content: 'Oldest permalink entry', tags: [], visibility: 'private', diaryId: 1 },
+      ],
+    });
+    const lookupLimits: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().includes('/api/entries/by-date?id=33')) {
+        lookupLimits.push(new URL(request.url()).searchParams.get('limit') ?? '');
+      }
+    });
+
+    await page.goto('/journal?entry=33');
+
+    await expect(page.getByText('Oldest permalink entry')).toBeVisible();
+    await expect(page.getByText('Newest entry')).toHaveCount(0);
+    expect(lookupLimits).toEqual(['2']);
+  });
+
   test('shows a toast for a missing journal permalink', async ({ page }) => {
     await page.clock.install();
     await setupMockApp(page, {
@@ -45,8 +69,7 @@ test.describe('Route navigation', () => {
       initialEntries: statsEntries,
     });
     // Hold the lookups so time can be frozen before the toast's countdown starts. The journal
-    // can look the entry up more than once (it repeats the lookup when the profile's page size
-    // arrives and drops the earlier answer), so every lookup is held, then all are answered.
+    // sends one lookup, but every lookup is held and then answered so a repeat could never hang.
     const heldLookups: Array<() => void> = [];
     let lookupsReleased = false;
     let markLookupRequested: () => void = () => undefined;

@@ -13,6 +13,7 @@ function createSetterSpy<T>() {
 
 function createParams(overrides: Partial<UseEntryNavigationParams> = {}): UseEntryNavigationParams {
   return {
+    configLoaded: true,
     currentDiaryId: null,
     currentView: 'journal',
     entries: [],
@@ -205,6 +206,60 @@ describe('useEntryNavigation', () => {
     expect(setPage).toHaveBeenCalledWith(2);
     expect(setTargetEntryId).toHaveBeenCalledWith(9);
     expect(setActiveTargetId).toHaveBeenCalledWith(9);
+  });
+
+  it('looks a permalink up once, with the page size from the loaded config', async () => {
+    const navigateById = vi.fn().mockResolvedValue({ found: true, page: 3, entryId: 7 });
+    const setPage = createSetterSpy<number>();
+    const entriesService = {
+      navigateByDate: vi.fn(),
+      navigateById,
+    } as unknown as UseEntryNavigationParams['entriesService'];
+    const initialProps = createParams({
+      configLoaded: false,
+      entriesService,
+      getLimit: () => 10,
+      routeEntryId: 7,
+      searchParams: new URLSearchParams('entry=7&diary=all'),
+      setPage,
+    });
+    const { rerender } = renderHook((props: UseEntryNavigationParams) => useEntryNavigation(props), { initialProps });
+
+    expect(navigateById).not.toHaveBeenCalled();
+
+    // The config arrives: the page size callback changes along with the loaded flag
+    rerender({ ...initialProps, configLoaded: true, getLimit: () => 25 });
+
+    await waitFor(() => {
+      expect(setPage).toHaveBeenCalledWith(3);
+    });
+    expect(navigateById).toHaveBeenCalledTimes(1);
+    expect(navigateById).toHaveBeenCalledWith(7, 25);
+
+    // Once landed, the permalink keeps its page and a later page size change does not repeat it
+    rerender({ ...initialProps, configLoaded: true, getLimit: () => 50, page: 3 });
+    expect(navigateById).toHaveBeenCalledTimes(1);
+    expect(setPage).not.toHaveBeenCalledWith(1);
+  });
+
+  it('resets journal filters for a permalink before the config has loaded', () => {
+    const navigateById = vi.fn();
+    const setFilterArchiveStatus = createSetterSpy<'all' | 'active' | 'archived'>();
+
+    renderHook(() => useEntryNavigation(createParams({
+      configLoaded: false,
+      entriesService: {
+        navigateByDate: vi.fn(),
+        navigateById,
+      } as unknown as UseEntryNavigationParams['entriesService'],
+      filterArchiveStatus: 'active',
+      routeEntryId: 7,
+      searchParams: new URLSearchParams('entry=7&diary=all'),
+      setFilterArchiveStatus,
+    })));
+
+    expect(setFilterArchiveStatus).toHaveBeenCalledWith('all');
+    expect(navigateById).not.toHaveBeenCalled();
   });
 
   it('clears active permalinks before navigating to a cross-reference target', async () => {
