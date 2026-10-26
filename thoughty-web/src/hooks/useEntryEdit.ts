@@ -4,8 +4,9 @@ import { getAutoTagLimit } from '../utils/autoTagLimit';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
 import { useApiServices } from './useApiServices';
+import type { Notifier } from './useAppNotice';
 
-export const useEntryEdit = (config: Config, onSave: () => void) => {
+export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: Notifier) => {
   const { entriesService, attachmentsService } = useApiServices();
   const autoTagLimit = getAutoTagLimit(config.autoTagMaxTags);
 
@@ -59,7 +60,7 @@ export const useEntryEdit = (config: Config, onSave: () => void) => {
 
   const handleSaveEdit = useCallback(async () => {
     if (!editText.trim() || (editTags.length === 0 && autoTagLimit === 0)) {
-      alert('Text and at least one tag are required');
+      notify(t('entryEditRequired'));
       return;
     }
     if (!editDate || !editingEntry) {
@@ -79,7 +80,7 @@ export const useEntryEdit = (config: Config, onSave: () => void) => {
     });
 
     if (!success) {
-      alert('Failed to update entry.');
+      notify(t('entryUpdateFailed'));
       return;
     }
 
@@ -97,7 +98,7 @@ export const useEntryEdit = (config: Config, onSave: () => void) => {
 
     handleCancelEdit();
     onSave();
-  }, [attachmentsService, autoTagLimit, editDate, editExistingAttachments, editFeelings, editFormat, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, onSave]);
+  }, [attachmentsService, autoTagLimit, editDate, editExistingAttachments, editFeelings, editFormat, editMood, editPendingFiles, editTags, editText, editTimeOfDay, editTitle, editVisibility, editingEntry, entriesService, handleCancelEdit, notify, onSave, t]);
 
   const addEditPendingFile = useCallback((file: File) => {
     setEditPendingFiles((prev) => [...prev, file]);

@@ -27,6 +27,7 @@ function createLayoutParams(
   overrides: Partial<BuildAuthenticatedLayoutPropsParams> = {},
 ): BuildAuthenticatedLayoutPropsParams {
   return {
+    appNotice: { text: '', toast: { visible: false, showCount: 0, show: vi.fn(), hide: vi.fn() } },
     avatarUrl: 'https://example.com/avatar.png',
     bulkSelectState: {
       bulkModalOpen: false,
@@ -266,6 +267,8 @@ describe('appShellProps', () => {
     expect(props.userName).toBe('Zaid');
     expect(props.isEmailVerified).toBe(true);
     expect(props.selectedCount).toBe(2);
+    expect(props.noticeText).toBe('');
+    expect(props.notice).toMatchObject({ visible: false });
     expect(props.onViewChange).toBe(handleViewChange);
     expect(props.onLogout).toBe(handleLogout);
     expect(props.onSendChat).toBe(handleAiChat);

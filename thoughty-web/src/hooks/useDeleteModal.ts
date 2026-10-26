@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useApiServices } from './useApiServices';
+import type { Notifier } from './useAppNotice';
 
-export const useDeleteModal = (onDelete: () => void) => {
+export const useDeleteModal = (onDelete: () => void, { notify, t }: Notifier) => {
   const { entriesService } = useApiServices();
 
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
@@ -21,12 +22,12 @@ export const useDeleteModal = (onDelete: () => void) => {
     if (success) {
       onDelete();
     } else {
-      alert('Failed to delete entry.');
+      notify(t('entryDeleteFailed'));
     }
 
     setDeleteModalOpen(false);
     setEntryToDelete(null);
-  }, [entriesService, entryToDelete, onDelete]);
+  }, [entriesService, entryToDelete, notify, onDelete, t]);
 
   const cancelDelete = useCallback(() => {
     setDeleteModalOpen(false);

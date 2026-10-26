@@ -426,8 +426,8 @@ function EntryForm({
                 </div>
             </form>
             {formError && (
-                <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                    {formError}
+                <div role="alert" className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                    {t(formError)}
                 </div>
             )}
         </div>

@@ -22,6 +22,7 @@ export const useEntryForm = (
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [visibility, setVisibility] = useState<'public' | 'private' | null>(null);
   const [format, setFormat] = useState<'plain' | 'markdown'>('plain');
+  /** A translation key, which the form shows with `t`. */
   const [formError, setFormError] = useState<string>('');
   const [fixingWriting, setFixingWriting] = useState<boolean>(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -44,10 +45,10 @@ export const useEntryForm = (
 
   const validateEntryForm = useCallback(() => {
     if (!newEntryText.trim()) {
-      return 'Please enter some text';
+      return 'entryTextRequired';
     }
     if ((!tags || tags.length === 0) && autoTagLimit === 0) {
-      return 'Please add at least one tag';
+      return 'entryTagRequired';
     }
     return '';
   }, [newEntryText, tags, autoTagLimit]);
@@ -82,7 +83,7 @@ export const useEntryForm = (
     });
 
     if (!result.success || !result.entryId) {
-      setFormError('Failed to save entry. Please try again.');
+      setFormError('entrySaveFailed');
       return;
     }
 
@@ -119,7 +120,7 @@ export const useEntryForm = (
 
   const handleFixWriting = useCallback(async () => {
     if (!newEntryText.trim()) {
-      setFormError('Write a thought before asking for writing fixes');
+      setFormError('fixWritingNeedsText');
       return false;
     }
 
@@ -129,11 +130,11 @@ export const useEntryForm = (
     setFixingWriting(false);
 
     if (corrected === null) {
-      setFormError('Unable to fix writing. Check your OpenRouter API key and try again.');
+      setFormError('fixWritingFailed');
       return false;
     }
     if (corrected === newEntryText) {
-      setFormError('No corrections were needed.');
+      setFormError('fixWritingNoChanges');
       return false;
     }
 

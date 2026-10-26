@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../contexts/AuthContext';
+import { useAppNotice } from './useAppNotice';
 import { useAppRouteState } from './useAppRouteState';
 import { useAppShellEffects } from './useAppShellEffects';
 import { useAppShellRouting } from './useAppShellRouting';
@@ -16,6 +17,7 @@ import {
   useEntryEdit,
   useEntryForm,
 } from './useAppState';
+import { resolveLanguage } from '../utils/language';
 import { parseTagMetadata, serializeTagMetadata } from '../utils/tagMetadata';
 import {
   buildAuthenticatedLayoutProps,
@@ -79,6 +81,8 @@ export function useAppShellModel(): AppShellModel {
     downloadUserData,
     t,
   } = useConfig(isAuthenticated);
+  const appNotice = useAppNotice(t, resolveLanguage(config.language));
+  const { notifier } = appNotice;
 
   const diariesState = useDiaries(isAuthenticated, routeEntryId !== undefined || routeDiaryId !== undefined);
   const { currentDiaryId, setCurrentDiaryId, fetchDiaries, diarySelectionReady } = diariesState;
@@ -96,11 +100,11 @@ export function useAppShellModel(): AppShellModel {
     entriesState.fetchEntryDates();
   });
 
-  const entryEditState = useEntryEdit(config, entriesState.fetchEntries);
+  const entryEditState = useEntryEdit(config, entriesState.fetchEntries, notifier);
 
-  const deleteModalState = useDeleteModal(entriesState.fetchEntries);
+  const deleteModalState = useDeleteModal(entriesState.fetchEntries, notifier);
 
-  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries);
+  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier);
 
   const handleNavigateToFirst = useCallback(async (year: number, month: number | null) => {
     const data = await entriesState.entriesService.navigateToFirst(year, month, entriesState.getLimit());
@@ -176,13 +180,13 @@ export function useAppShellModel(): AppShellModel {
     const rewritten = await aiService.fixWriting(entry.content, mode);
 
     if (rewritten === null) {
-      alert('Unable to rephrase entry. Check your OpenRouter API key and try again.');
+      notifier.notify(t('rephraseEntryFailed'));
       return;
     }
 
     entryEditState.handleEdit(entry);
     entryEditState.setEditText(rewritten);
-  }, [aiService, entryEditState]);
+  }, [aiService, entryEditState, notifier, t]);
 
   const handleSummarize = useCallback(async (entryId: number, guidance: SummaryGuidance) => {
     return aiService.summarizeEntry(entryId, guidance);
@@ -314,6 +318,7 @@ export function useAppShellModel(): AppShellModel {
     config,
     currentView,
     deleteModalState,
+    appNotice,
     entryToast: entryNavigationState.entryToast,
     handleAiChat,
     handleLoadAiChatHistory,

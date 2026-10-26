@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
 import type { Entry } from '../types';
 import type { RephraseMode } from '../services/api/aiService';
+import { pluralPhrase } from '../utils/pluralPhrase';
 import { useApiServices } from './useApiServices';
+import type { Notifier } from './useAppNotice';
 
 type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase';
 type BulkOptions = { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean; mode?: RephraseMode };
@@ -42,7 +44,7 @@ const rephraseSelectedEntry = async (
   return success ? 'updated' : 'failed';
 };
 
-export const useBulkSelect = (onComplete: () => void, entries: Entry[] = []) => {
+export const useBulkSelect = (onComplete: () => void, entries: Entry[], { notify, t, language }: Notifier) => {
   const { entriesService, aiService } = useApiServices();
 
   const [bulkMode, setBulkMode] = useState(false);
@@ -86,7 +88,7 @@ export const useBulkSelect = (onComplete: () => void, entries: Entry[] = []) => 
       .filter((entry): entry is Entry => Boolean(entry));
 
     if (selectedEntries.length === 0) {
-      alert('No selected entries are available to rephrase.');
+      notify(t('bulkRephraseNoEntries'));
       return;
     }
 
@@ -117,18 +119,22 @@ export const useBulkSelect = (onComplete: () => void, entries: Entry[] = []) => 
       onComplete();
 
       if (failedCount > 0 || unchangedCount > 0) {
-        alert(`Bulk rephrase completed: ${updatedCount} updated, ${unchangedCount} unchanged, ${failedCount} failed.`);
+        notify(t('bulkRephraseSummary', {
+          updated: pluralPhrase(t, 'bulkRephraseUpdated', updatedCount, language),
+          unchanged: pluralPhrase(t, 'bulkRephraseUnchanged', unchangedCount, language),
+          failed: pluralPhrase(t, 'bulkRephraseFailedCount', failedCount, language),
+        }));
       }
       return;
     }
 
     if (unchangedCount > 0 && failedCount === 0) {
-      alert('No selected entries needed rephrasing.');
+      notify(t('bulkRephraseNothingToChange'));
       return;
     }
 
-    alert('Bulk rephrase failed.');
-  }, [aiService, entries, entriesService, onComplete, selectedIds]);
+    notify(t('bulkRephraseError'));
+  }, [aiService, entries, entriesService, language, notify, onComplete, selectedIds, t]);
 
   const executeBulkAction = useCallback(async (action: BulkAction, options?: BulkOptions) => {
     if (action === 'rephrase') {
@@ -143,9 +149,9 @@ export const useBulkSelect = (onComplete: () => void, entries: Entry[] = []) => 
       setBulkMode(false);
       onComplete();
     } else {
-      alert('Bulk operation failed.');
+      notify(t('bulkOperationFailed'));
     }
-  }, [entriesService, executeBulkRephrase, onComplete, selectedIds]);
+  }, [entriesService, executeBulkRephrase, notify, onComplete, selectedIds, t]);
 
   const requestBulkAction = useCallback((action: BulkAction, options?: BulkOptions) => {
     if (selectedIds.size === 0) {

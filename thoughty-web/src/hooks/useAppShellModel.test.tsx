@@ -461,9 +461,8 @@ describe('useAppShellModel', () => {
     expect(setTargetEntryId).not.toHaveBeenCalled();
   });
 
-  it('alerts and skips edit state updates when rephrasing returns null', async () => {
+  it('shows a notice and skips edit state updates when rephrasing returns null', async () => {
     fixWriting.mockResolvedValueOnce(null);
-    const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => undefined);
     const { result } = renderHook(() => useAppShellModel());
     const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
 
@@ -472,8 +471,19 @@ describe('useAppShellModel', () => {
     });
 
     expect(fixWriting).toHaveBeenCalledWith('Needs help', 'rewrite');
-    expect(alertSpy).toHaveBeenCalledWith('Unable to rephrase entry. Check your OpenRouter API key and try again.');
+    expect(result.current.authenticatedLayoutProps).toMatchObject({
+      appNotice: { text: 'rephraseEntryFailed', toast: expect.objectContaining({ visible: true }) },
+    });
     expect(handleEdit).not.toHaveBeenCalled();
     expect(setEditText).not.toHaveBeenCalled();
+  });
+
+  it('hands the notifier to the entry hooks', () => {
+    renderHook(() => useAppShellModel());
+
+    const notifier = expect.objectContaining({ notify: expect.any(Function), t, language: 'en' });
+    expect(mocks.useEntryEdit).toHaveBeenCalledWith(expect.anything(), expect.any(Function), notifier);
+    expect(mocks.useDeleteModal).toHaveBeenCalledWith(expect.any(Function), notifier);
+    expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier);
   });
 });

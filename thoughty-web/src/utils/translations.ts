@@ -10,6 +10,7 @@ import { focusModeTranslations, type FocusModeTranslationKey } from "./translati
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
 import { landingTranslations, type LandingTranslationKey } from "./translations.landing";
 import { aiChatTranslations, type AiChatTranslationKey } from "./translations.aiChat";
+import { entryActionsTranslations, type EntryActionsTranslationKey } from "./translations.entryActions";
 
 type CoreTranslationKey =
   | "journal"
@@ -958,7 +959,7 @@ type CoreTranslationKey =
   | "subscriptionIncluded"
   | "subscriptionPreviousCycle";
 
-export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey | MoodTranslationKey | TaskListTranslationKey | FocusModeTranslationKey | MarkdownToolbarTranslationKey | LandingTranslationKey | AiChatTranslationKey;
+export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey | MoodTranslationKey | TaskListTranslationKey | FocusModeTranslationKey | MarkdownToolbarTranslationKey | LandingTranslationKey | AiChatTranslationKey | EntryActionsTranslationKey;
 
 export type Language = "en" | "fr";
 
@@ -980,6 +981,7 @@ export const translations: Translations = {
     ...markdownToolbarTranslations.en,
     ...landingTranslations.en,
     ...aiChatTranslations.en,
+    ...entryActionsTranslations.en,
     // App
     journal: "Journal",
     feed: "Feed",
@@ -2059,6 +2061,7 @@ export const translations: Translations = {
     ...markdownToolbarTranslations.fr,
     ...landingTranslations.fr,
     ...aiChatTranslations.fr,
+    ...entryActionsTranslations.fr,
     // App
     journal: "Journal",
     feed: "Fil public",

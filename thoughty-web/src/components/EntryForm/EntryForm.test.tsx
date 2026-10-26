@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EntryForm from './EntryForm';
+import { getTranslation } from '../../utils/translations';
 
 const formatDate = (date: Date): string => {
     const year = date.getFullYear();
@@ -517,6 +518,23 @@ describe('EntryForm', () => {
             render(<EntryForm {...defaultProps} formError="Content is required" />);
 
             expect(screen.getByText('Content is required')).toBeInTheDocument();
+        });
+
+        it.each([
+            ['en', 'entryTextRequired', 'Please enter some text'],
+            ['fr', 'entryTextRequired', 'Veuillez saisir du texte'],
+            ['en', 'suggestTagsFailed', 'Unable to suggest tags. Check your OpenRouter API key and try again.'],
+            ['fr', 'fixWritingNoChanges', 'Aucune correction n’était nécessaire.'],
+        ] as const)('announces the %s form error %s in the reader\'s language', (language, key, expected) => {
+            render(
+                <EntryForm
+                    {...defaultProps}
+                    t={(text: string, params?: Record<string, string | number>) => getTranslation(language, text, params)}
+                    formError={key}
+                />,
+            );
+
+            expect(screen.getByText(expected)).toHaveAttribute('role', 'alert');
         });
 
         it('does not show error when empty', () => {

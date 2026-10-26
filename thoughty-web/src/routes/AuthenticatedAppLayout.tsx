@@ -29,6 +29,9 @@ interface AuthenticatedAppLayoutProps {
   readonly onConfirmBulkDelete: () => void;
   readonly selectedCount: number;
   readonly entryToast: TransientMessage;
+  /** The outcome of an entry action, such as a failed save or a bulk summary. */
+  readonly notice: TransientMessage;
+  readonly noticeText: string;
   readonly chatEntry: Entry | null;
   readonly onCloseChat: () => void;
   readonly onLoadChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
@@ -53,6 +56,8 @@ function AuthenticatedAppLayout({
   onConfirmBulkDelete,
   selectedCount,
   entryToast,
+  notice,
+  noticeText,
   chatEntry,
   onCloseChat,
   onLoadChatHistory,
@@ -65,6 +70,9 @@ function AuthenticatedAppLayout({
   };
 
   useRouteChangeFocus(currentView, mainContentRef);
+  const isLight = config.theme === 'light';
+  const toastClassName = `pointer-events-auto rounded-xl border px-4 py-3 shadow-xl backdrop-blur ${isLight ? 'border-amber-200 bg-white/95 text-gray-900' : 'border-amber-400/30 bg-gray-800/95 text-gray-100'}`;
+  const toastTextClassName = isLight ? 'text-gray-600' : 'text-gray-300';
 
   const focusMainContent = () => {
     document.getElementById('main-content')?.focus();
@@ -110,18 +118,19 @@ function AuthenticatedAppLayout({
           t={t}
         />
 
-        <AutoDismiss message={entryToast} durationMs={4000}>
-          <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 w-full max-w-sm -translate-x-1/2 px-4">
-            <div
-              role="alert"
-              aria-live="assertive"
-              className={`pointer-events-auto rounded-xl border px-4 py-3 shadow-xl backdrop-blur ${config.theme === 'light' ? 'border-amber-200 bg-white/95 text-gray-900' : 'border-amber-400/30 bg-gray-800/95 text-gray-100'}`}
-            >
+        <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4">
+          <AutoDismiss message={entryToast} durationMs={4000}>
+            <div role="alert" aria-live="assertive" className={toastClassName}>
               <p className="text-sm font-semibold text-amber-500">{t('entryNotFound')}</p>
-              <p className={`mt-1 text-sm ${config.theme === 'light' ? 'text-gray-600' : 'text-gray-300'}`}>{t('entryNotFoundMessage')}</p>
+              <p className={`mt-1 text-sm ${toastTextClassName}`}>{t('entryNotFoundMessage')}</p>
             </div>
-          </div>
-        </AutoDismiss>
+          </AutoDismiss>
+          <AutoDismiss message={notice} durationMs={6000}>
+            <div role="alert" aria-live="assertive" className={toastClassName}>
+              <p className="text-sm font-medium">{noticeText}</p>
+            </div>
+          </AutoDismiss>
+        </div>
 
         {chatEntry && (
           <AiChatModal

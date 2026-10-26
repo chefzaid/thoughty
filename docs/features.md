@@ -24,7 +24,7 @@ flowchart LR
 - **Entry states.** Public or private visibility, favorites, archive, and pinned entries kept at the top (up to a limit you set).
 - **Revision history.** Every edit keeps the previous version, which you can view or delete.
 - **Attachments.** Images, audio, PDFs, and text files up to 5 MB each, stored in S3-compatible storage and previewed inline. Audio notes can be transcribed with AI.
-- **Bulk mode.** Select many entries to delete, archive, change visibility, add tags, move to another diary, or rephrase with AI.
+- **Bulk mode.** Select many entries to delete, archive, change visibility, add tags, move to another diary, or rephrase with AI. A bulk rephrase that leaves some entries unchanged or fails on some ends with a notice that counts each. A failed save, delete, or bulk action shows a notice in the profile language.
 - **Recycle bin.** Deleted entries stay in the recycle bin for 30 days, hidden from everything else. Restore them to their diary with their revisions and files, or delete them forever. After 30 days they are removed for good.
 - **Reading aids.** Word count and reading time on each entry, and text-to-speech with a choice of voice.
 - **Navigation.** Pagination with a configurable page size, a year and month jump control, and keyboard shortcuts:

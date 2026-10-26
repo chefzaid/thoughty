@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react';
 
+import type { AppNotice } from '../hooks/useAppNotice';
 import type { TransientMessage } from '../hooks/useTransientMessage';
 
 import type { Config, Entry, ImportExportFormat, ImportExportSection, TranslationFunction, ViewType } from '../types';
@@ -35,6 +36,7 @@ type EntryEditState = ReturnType<typeof import('../hooks/useAppState').useEntryE
 type EntryFormState = ReturnType<typeof import('../hooks/useAppState').useEntryForm>;
 
 interface BuildAuthenticatedLayoutPropsParams {
+  appNotice: Pick<AppNotice, 'text' | 'toast'>;
   avatarUrl?: string;
   bulkSelectState: Pick<BulkSelectState, 'bulkModalOpen' | 'cancelBulkModal' | 'confirmBulkDelete' | 'selectedIds'>;
   chatEntry: Entry | null;
@@ -83,6 +85,7 @@ interface BuildAuthenticatedRoutesPropsParams {
 }
 
 export function buildAuthenticatedLayoutProps({
+  appNotice,
   avatarUrl,
   bulkSelectState,
   chatEntry,
@@ -115,6 +118,8 @@ export function buildAuthenticatedLayoutProps({
     onConfirmBulkDelete: bulkSelectState.confirmBulkDelete,
     selectedCount: bulkSelectState.selectedIds.size,
     entryToast,
+    notice: appNotice.toast,
+    noticeText: appNotice.text,
     chatEntry,
     onCloseChat: () => setChatEntry(null),
     onLoadChatHistory: handleLoadAiChatHistory,

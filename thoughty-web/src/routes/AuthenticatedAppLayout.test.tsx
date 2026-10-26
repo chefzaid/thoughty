@@ -19,6 +19,8 @@ const defaultProps = {
   onConfirmBulkDelete: vi.fn(),
   selectedCount: 0,
   entryToast: { visible: false, showCount: 0, show: vi.fn(), hide: vi.fn() },
+  notice: { visible: false, showCount: 0, show: vi.fn(), hide: vi.fn() },
+  noticeText: '',
   chatEntry: null,
   onCloseChat: vi.fn(),
   onLoadChatHistory: vi.fn().mockResolvedValue([]),
@@ -93,5 +95,34 @@ describe('AuthenticatedAppLayout', () => {
     );
 
     expect(screen.getByText(expected)).toBeInTheDocument();
+  });
+
+  it('announces the notice of an entry action and hides it after a while', () => {
+    vi.useFakeTimers();
+    const hide = vi.fn();
+    render(
+      <AuthenticatedAppLayout
+        {...defaultProps}
+        notice={{ visible: true, showCount: 1, show: vi.fn(), hide }}
+        noticeText="Impossible de supprimer l’entrée."
+      >
+        <div>Journal content</div>
+      </AuthenticatedAppLayout>,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Impossible de supprimer l’entrée.');
+    vi.advanceTimersByTime(6000);
+    expect(hide).toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
+  it('shows no notice until an entry action reports one', () => {
+    render(
+      <AuthenticatedAppLayout {...defaultProps}>
+        <div>Journal content</div>
+      </AuthenticatedAppLayout>,
+    );
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

@@ -7,6 +7,7 @@ import {
   useEntryEdit,
   useEntryForm,
 } from "./useEntryActions";
+import { getTranslation } from "../utils/translations";
 
 const mockAuthFetch = vi.fn();
 const mockGetAccessToken = vi.fn(() => "test-token");
@@ -96,7 +97,12 @@ vi.mock("../services/api", () => ({
   })),
 }));
 
-globalThis.alert = vi.fn();
+const mockNotify = vi.fn();
+const notifier = {
+  notify: mockNotify,
+  t: (key: string, params?: Record<string, string | number>) => getTranslation("en", key, params),
+  language: "en" as const,
+};
 
 const createEntriesServiceMock = async (
   overrides: Record<string, unknown> = {},
@@ -216,7 +222,7 @@ describe("useEntryActions", () => {
         await result.current.handleSubmit(mockEvent);
       });
 
-      expect(result.current.formError).toBe("Please enter some text");
+      expect(result.current.formError).toBe("entryTextRequired");
     });
 
     it("handleSubmit sets error when no tags", async () => {
@@ -232,7 +238,7 @@ describe("useEntryActions", () => {
         await result.current.handleSubmit(mockEvent);
       });
 
-      expect(result.current.formError).toBe("Please add at least one tag");
+      expect(result.current.formError).toBe("entryTagRequired");
     });
 
     it("handleSubmit allows empty tags when automatic tagging is enabled", async () => {
@@ -426,7 +432,7 @@ describe("useEntryActions", () => {
       });
 
       expect(result.current.formError).toBe(
-        "Failed to save entry. Please try again.",
+        "entrySaveFailed",
       );
     });
 
@@ -512,7 +518,7 @@ describe("useEntryActions", () => {
       });
 
       expect(result.current.formError).toBe(
-        "Unable to suggest tags. Check your OpenRouter API key and try again.",
+        "suggestTagsFailed",
       );
     });
 
@@ -548,7 +554,7 @@ describe("useEntryActions", () => {
         await result.current.handleSuggestTags();
       });
       expect(result.current.formError).toBe(
-        "Write a thought before asking for tag suggestions",
+        "suggestTagsNeedsText",
       );
 
       act(() => {
@@ -559,7 +565,7 @@ describe("useEntryActions", () => {
         await result.current.handleSuggestTags();
       });
       expect(result.current.formError).toBe(
-        "No tag suggestions were returned. Try adding more detail.",
+        "suggestTagsEmpty",
       );
     });
 
@@ -600,7 +606,7 @@ describe("useEntryActions", () => {
         await result.current.handleFixWriting();
       });
       expect(result.current.formError).toBe(
-        "Write a thought before asking for writing fixes",
+        "fixWritingNeedsText",
       );
 
       act(() => {
@@ -611,13 +617,13 @@ describe("useEntryActions", () => {
         await result.current.handleFixWriting();
       });
       expect(result.current.formError).toBe(
-        "Unable to fix writing. Check your OpenRouter API key and try again.",
+        "fixWritingFailed",
       );
 
       await act(async () => {
         await result.current.handleFixWriting();
       });
-      expect(result.current.formError).toBe("No corrections were needed.");
+      expect(result.current.formError).toBe("fixWritingNoChanges");
 
       await act(async () => {
         await result.current.handleFixWriting();
@@ -660,7 +666,7 @@ describe("useEntryActions", () => {
 
     it("initializes with null editingEntry", () => {
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
 
       expect(result.current.editingEntry).toBeNull();
@@ -671,7 +677,7 @@ describe("useEntryActions", () => {
 
     it("handleEdit sets editing state", () => {
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
       const mockEntry = {
         id: 1,
@@ -694,7 +700,7 @@ describe("useEntryActions", () => {
 
     it("handleEdit handles date with T separator", () => {
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
       const mockEntry = {
         id: 1,
@@ -714,7 +720,7 @@ describe("useEntryActions", () => {
 
     it("handleCancelEdit clears editing state", () => {
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
       const mockEntry = {
         id: 1,
@@ -737,9 +743,9 @@ describe("useEntryActions", () => {
       expect(result.current.editTags).toEqual([]);
     });
 
-    it("handleSaveEdit shows alert when text empty", async () => {
+    it("handleSaveEdit notifies when text empty", async () => {
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
       const mockEntry = {
         id: 1,
@@ -759,14 +765,14 @@ describe("useEntryActions", () => {
         await result.current.handleSaveEdit();
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith(
+      expect(mockNotify).toHaveBeenCalledWith(
         "Text and at least one tag are required",
       );
     });
 
-    it("handleSaveEdit shows alert when no tags", async () => {
+    it("handleSaveEdit notifies when no tags", async () => {
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
       const mockEntry = {
         id: 1,
@@ -786,14 +792,14 @@ describe("useEntryActions", () => {
         await result.current.handleSaveEdit();
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith(
+      expect(mockNotify).toHaveBeenCalledWith(
         "Text and at least one tag are required",
       );
     });
 
     it("provides setters for edit state", () => {
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
       const newDate = new Date("2024-06-15");
 
@@ -815,7 +821,7 @@ describe("useEntryActions", () => {
         updateEntry: vi.fn().mockResolvedValue(true),
       });
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
       const entry = {
         id: 1,
@@ -841,7 +847,7 @@ describe("useEntryActions", () => {
       const updateEntry = vi.fn().mockResolvedValue(true);
       await createEntriesServiceMock({ updateEntry });
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
       const entry = {
         id: 1,
@@ -874,7 +880,7 @@ describe("useEntryActions", () => {
       const updateEntry = vi.fn().mockResolvedValue(true);
       await createEntriesServiceMock({ updateEntry });
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
 
       act(() => {
@@ -905,7 +911,7 @@ describe("useEntryActions", () => {
 
     it("returns early when there is no edit date or entry to save", async () => {
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "1" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "1" }, mockOnSave, notifier),
       );
 
       act(() => {
@@ -917,15 +923,15 @@ describe("useEntryActions", () => {
         await result.current.handleSaveEdit();
       });
 
-      expect(globalThis.alert).not.toHaveBeenCalled();
+      expect(mockNotify).not.toHaveBeenCalled();
     });
 
-    it("alerts when saving entry changes fails", async () => {
+    it("notifies when saving entry changes fails", async () => {
       await createEntriesServiceMock({
         updateEntry: vi.fn().mockResolvedValue(false),
       });
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
       const entry = {
         id: 1,
@@ -944,7 +950,7 @@ describe("useEntryActions", () => {
         await result.current.handleSaveEdit();
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith("Failed to update entry.");
+      expect(mockNotify).toHaveBeenCalledWith("Failed to update entry.");
     });
 
     it("uploads new edit files and deletes removed attachments after a successful save", async () => {
@@ -962,7 +968,7 @@ describe("useEntryActions", () => {
       });
 
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "1" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "1" }, mockOnSave, notifier),
       );
       const entry = {
         id: 1,
@@ -991,7 +997,7 @@ describe("useEntryActions", () => {
 
     it("manages edit pending files and attachments locally", () => {
       const { result } = renderHook(() =>
-        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave),
+        useEntryEdit({ autoTagMaxTags: "0" }, mockOnSave, notifier),
       );
       const firstFile = new File(["a"], "a.txt");
       const secondFile = new File(["b"], "b.txt");
@@ -1010,14 +1016,14 @@ describe("useEntryActions", () => {
     const mockOnDelete = vi.fn();
 
     it("initializes with modal closed", () => {
-      const { result } = renderHook(() => useDeleteModal(mockOnDelete));
+      const { result } = renderHook(() => useDeleteModal(mockOnDelete, notifier));
 
       expect(result.current.deleteModalOpen).toBe(false);
       expect(result.current.entryToDelete).toBeNull();
     });
 
     it("handleDelete opens modal and sets entry", () => {
-      const { result } = renderHook(() => useDeleteModal(mockOnDelete));
+      const { result } = renderHook(() => useDeleteModal(mockOnDelete, notifier));
 
       act(() => {
         result.current.handleDelete(123);
@@ -1028,7 +1034,7 @@ describe("useEntryActions", () => {
     });
 
     it("cancelDelete closes modal and clears entry", () => {
-      const { result } = renderHook(() => useDeleteModal(mockOnDelete));
+      const { result } = renderHook(() => useDeleteModal(mockOnDelete, notifier));
 
       act(() => {
         result.current.handleDelete(123);
@@ -1042,7 +1048,7 @@ describe("useEntryActions", () => {
     });
 
     it("confirmDelete returns early if no entry to delete", async () => {
-      const { result } = renderHook(() => useDeleteModal(mockOnDelete));
+      const { result } = renderHook(() => useDeleteModal(mockOnDelete, notifier));
 
       await act(async () => {
         await result.current.confirmDelete();
@@ -1056,7 +1062,7 @@ describe("useEntryActions", () => {
         deleteEntry: vi.fn().mockResolvedValue(true),
       });
       const onDeleteMock = vi.fn();
-      const { result } = renderHook(() => useDeleteModal(onDeleteMock));
+      const { result } = renderHook(() => useDeleteModal(onDeleteMock, notifier));
 
       act(() => {
         result.current.handleDelete(123);
@@ -1071,11 +1077,11 @@ describe("useEntryActions", () => {
       expect(result.current.entryToDelete).toBeNull();
     });
 
-    it("confirmDelete shows alert on failure", async () => {
+    it("confirmDelete notifies on failure", async () => {
       await createEntriesServiceMock({
         deleteEntry: vi.fn().mockResolvedValue(false),
       });
-      const { result } = renderHook(() => useDeleteModal(vi.fn()));
+      const { result } = renderHook(() => useDeleteModal(vi.fn(), notifier));
 
       act(() => {
         result.current.handleDelete(456);
@@ -1085,7 +1091,7 @@ describe("useEntryActions", () => {
         await result.current.confirmDelete();
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith("Failed to delete entry.");
+      expect(mockNotify).toHaveBeenCalledWith("Failed to delete entry.");
     });
   });
 
@@ -1093,7 +1099,7 @@ describe("useEntryActions", () => {
     const mockOnComplete = vi.fn();
 
     it("initializes with default state", () => {
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 
       expect(result.current.bulkMode).toBe(false);
       expect(result.current.selectedIds.size).toBe(0);
@@ -1102,7 +1108,7 @@ describe("useEntryActions", () => {
     });
 
     it("toggleBulkMode enables and disables bulk mode", () => {
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 
       act(() => {
         result.current.toggleBulkMode();
@@ -1116,7 +1122,7 @@ describe("useEntryActions", () => {
     });
 
     it("clears selection when exiting bulk mode", () => {
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 
       act(() => {
         result.current.toggleBulkMode();
@@ -1132,7 +1138,7 @@ describe("useEntryActions", () => {
     });
 
     it("toggleSelect adds and removes entries", () => {
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 
       act(() => {
         result.current.toggleSelect(1);
@@ -1146,7 +1152,7 @@ describe("useEntryActions", () => {
     });
 
     it("selectAll sets all provided ids", () => {
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 
       act(() => {
         result.current.selectAll([1, 2, 3]);
@@ -1159,7 +1165,7 @@ describe("useEntryActions", () => {
     });
 
     it("clearSelection empties the selection set", () => {
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 
       act(() => {
         result.current.selectAll([1, 2, 3]);
@@ -1170,7 +1176,7 @@ describe("useEntryActions", () => {
     });
 
     it("requestBulkAction with delete opens confirm modal", () => {
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 
       act(() => {
         result.current.toggleSelect(1);
@@ -1185,7 +1191,7 @@ describe("useEntryActions", () => {
     });
 
     it("requestBulkAction does nothing when no entries selected", async () => {
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 
       await act(async () => {
         result.current.requestBulkAction("delete");
@@ -1201,7 +1207,7 @@ describe("useEntryActions", () => {
       await createEntriesServiceMock({ bulkOperation: mockBulkOperation });
 
       const onComplete = vi.fn();
-      const { result } = renderHook(() => useBulkSelect(onComplete));
+      const { result } = renderHook(() => useBulkSelect(onComplete, [], notifier));
 
       act(() => {
         result.current.toggleSelect(1);
@@ -1220,7 +1226,7 @@ describe("useEntryActions", () => {
     });
 
     it("cancelBulkModal closes modal and clears pending action", () => {
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 
       act(() => {
         result.current.toggleSelect(1);
@@ -1246,7 +1252,7 @@ describe("useEntryActions", () => {
       await createEntriesServiceMock({ bulkOperation: mockBulkOperation });
 
       const onComplete = vi.fn();
-      const { result } = renderHook(() => useBulkSelect(onComplete));
+      const { result } = renderHook(() => useBulkSelect(onComplete, [], notifier));
 
       act(() => {
         result.current.toggleSelect(1);
@@ -1269,11 +1275,11 @@ describe("useEntryActions", () => {
       expect(onComplete).toHaveBeenCalled();
     });
 
-    it("executeBulkAction shows alert on failure", async () => {
+    it("executeBulkAction notifies on failure", async () => {
       await createEntriesServiceMock({
         bulkOperation: vi.fn().mockResolvedValue(null),
       });
-      const { result } = renderHook(() => useBulkSelect(mockOnComplete));
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 
       act(() => {
         result.current.toggleSelect(1);
@@ -1283,7 +1289,7 @@ describe("useEntryActions", () => {
         await result.current.executeBulkAction("delete");
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith("Bulk operation failed.");
+      expect(mockNotify).toHaveBeenCalledWith("Bulk operation failed.");
     });
 
     it("bulk rephrases selected entries and preserves metadata", async () => {
@@ -1304,7 +1310,7 @@ describe("useEntryActions", () => {
       ];
 
       const onComplete = vi.fn();
-      const { result } = renderHook(() => useBulkSelect(onComplete, entries));
+      const { result } = renderHook(() => useBulkSelect(onComplete, entries, notifier));
 
       act(() => {
         result.current.toggleSelect(1);
@@ -1343,7 +1349,7 @@ describe("useEntryActions", () => {
       ];
 
       const { result } = renderHook(() =>
-        useBulkSelect(mockOnComplete, entries),
+        useBulkSelect(mockOnComplete, entries, notifier),
       );
 
       act(() => {
@@ -1354,7 +1360,7 @@ describe("useEntryActions", () => {
         await result.current.executeBulkAction("rephrase", { mode: "grammar" });
       });
 
-      expect(globalThis.alert).toHaveBeenCalledWith(
+      expect(mockNotify).toHaveBeenCalledWith(
         "No selected entries needed rephrasing.",
       );
     });

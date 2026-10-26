@@ -15,7 +15,7 @@ export const useEntryTagSuggestions = (
 
   const handleSuggestTags = useCallback(async () => {
     if (!content.trim()) {
-      setFormError('Write a thought before asking for tag suggestions');
+      setFormError('suggestTagsNeedsText');
       return false;
     }
 
@@ -25,11 +25,11 @@ export const useEntryTagSuggestions = (
     setSuggestingTags(false);
 
     if (suggestedTags === null) {
-      setFormError('Unable to suggest tags. Check your OpenRouter API key and try again.');
+      setFormError('suggestTagsFailed');
       return false;
     }
     if (suggestedTags.length === 0) {
-      setFormError('No tag suggestions were returned. Try adding more detail.');
+      setFormError('suggestTagsEmpty');
       return false;
     }
 
