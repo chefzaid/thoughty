@@ -1,5 +1,15 @@
+import Footer from '../Footer/Footer';
+import {
+  BookVisual,
+  HeroCollage,
+  LandingIcon,
+  LookBackVisual,
+  MemoirVisual,
+  WritingVisual,
+  type LandingIconName,
+} from './IntroVisuals';
 import './IntroPage.css';
-import './IntroPageAccessibility.css';
+import './IntroLanding.css';
 
 interface IntroPageProps {
   readonly theme?: 'light' | 'dark';
@@ -10,208 +20,260 @@ interface IntroPageProps {
   readonly onSignUp: () => void;
 }
 
-const FEATURE_ITEMS = [
-  ['landingFeaturePrivateTitle', 'landingFeaturePrivateBody'],
-  ['landingFeatureOrganizeTitle', 'landingFeatureOrganizeBody'],
-  ['landingFeatureExportTitle', 'landingFeatureExportBody'],
-  ['landingFeatureInsightTitle', 'landingFeatureInsightBody'],
+type ActionProps = Omit<IntroPageProps, 'theme'>;
+
+const PROOF_ITEMS: readonly (readonly [LandingIconName, string, string])[] = [
+  ['lock', 'landingProofPrivateTitle', 'landingProofPrivateBody'],
+  ['sparkles', 'landingProofAiTitle', 'landingProofAiBody'],
+  ['export', 'landingProofExportTitle', 'landingProofExportBody'],
+  ['access', 'landingProofAccessTitle', 'landingProofAccessBody'],
+];
+
+const PATH_ITEMS: readonly (readonly [LandingIconName, string, string, string])[] = [
+  ['pen', 'landingPathJournalLabel', 'landingPathJournalTitle', 'landingPathJournalBody'],
+  ['mic', 'landingPathMemoirLabel', 'landingPathMemoirTitle', 'landingPathMemoirBody'],
+  ['book', 'landingPathBookLabel', 'landingPathBookTitle', 'landingPathBookBody'],
+];
+
+const SPOTLIGHTS = [
+  {
+    id: 'writing',
+    kicker: 'landingWritingKicker',
+    title: 'landingWritingTitle',
+    body: 'landingWritingBody',
+    points: ['landingWritingPoint1', 'landingWritingPoint2', 'landingWritingPoint3'],
+    Visual: WritingVisual,
+  },
+  {
+    id: 'memoir',
+    kicker: 'landingMemoirKicker',
+    title: 'landingMemoirTitle',
+    body: 'landingMemoirBody',
+    points: ['landingMemoirPoint1', 'landingMemoirPoint2', 'landingMemoirPoint3'],
+    Visual: MemoirVisual,
+  },
+  {
+    id: 'look-back',
+    kicker: 'landingLookBackKicker',
+    title: 'landingLookBackTitle',
+    body: 'landingLookBackBody',
+    points: ['landingLookBackPoint1', 'landingLookBackPoint2', 'landingLookBackPoint3'],
+    Visual: LookBackVisual,
+  },
+  {
+    id: 'books',
+    kicker: 'landingBooksKicker',
+    title: 'landingBooksTitle',
+    body: 'landingBooksBody',
+    points: ['landingBooksPoint1', 'landingBooksPoint2', 'landingBooksPoint3'],
+    Visual: BookVisual,
+  },
 ] as const;
 
-const SCREENSHOT_ITEMS = [
-  {
-    label: 'landingScreenshotJournalTitle',
-    body: 'landingScreenshotJournalBody',
-    className: 'journal-shot',
-  },
-  {
-    label: 'landingScreenshotStatsTitle',
-    body: 'landingScreenshotStatsBody',
-    className: 'stats-shot',
-  },
-  {
-    label: 'landingScreenshotExportTitle',
-    body: 'landingScreenshotExportBody',
-    className: 'export-shot',
-  },
-] as const;
+const PRIVACY_ITEMS: readonly (readonly [LandingIconName, string, string])[] = [
+  ['lock', 'landingPrivacyEntriesTitle', 'landingPrivacyEntriesBody'],
+  ['sparkles', 'landingPrivacyAiTitle', 'landingPrivacyAiBody'],
+  ['export', 'landingPrivacyExportTitle', 'landingPrivacyExportBody'],
+];
 
-function ProductScene({ t }: Readonly<Pick<IntroPageProps, 't'>>) {
-  return (
-    <div className="intro-product-scene" aria-label={t('landingScreenshotAlt')} role="img">
-      <div className="scene-topbar">
-        <span />
-        <span />
-        <span />
-      </div>
-      <div className="scene-sidebar">
-        <strong>
-          <img src="/thoughty-logo.svg" alt="" className="scene-logo" />
-          Thoughty
-        </strong>
-        <span>{t('journal')}</span>
-        <span>{t('stats')}</span>
-        <span>{t('importExport')}</span>
-      </div>
-      <div className="scene-entry">
-        <div className="scene-entry-date">2026-06-14</div>
-        <div className="scene-entry-title">{t('landingSceneEntryTitle')}</div>
-        <p>{t('landingSceneEntryBody')}</p>
-        <div className="scene-tags">
-          <span>reflection</span>
-          <span>work</span>
-          <span>{t('private')}</span>
-        </div>
-      </div>
-      <div className="scene-stats">
-        <span>{t('landingSceneStatsLabel')}</span>
-        <strong>184</strong>
-        <small>{t('avgWordsPerEntry')}</small>
-      </div>
-    </div>
+const MORE_ITEMS: readonly (readonly [LandingIconName, string, string])[] = [
+  ['diaries', 'landingMoreDiariesTitle', 'landingMoreDiariesBody'],
+  ['search', 'landingMoreSearchTitle', 'landingMoreSearchBody'],
+  ['link', 'landingMoreLinksTitle', 'landingMoreLinksBody'],
+  ['mic', 'landingMoreMediaTitle', 'landingMoreMediaBody'],
+  ['cloud', 'landingMoreCloudTitle', 'landingMoreCloudBody'],
+  ['history', 'landingMoreHistoryTitle', 'landingMoreHistoryBody'],
+  ['access', 'landingMoreAccessTitle', 'landingMoreAccessBody'],
+  ['globe', 'landingMoreLanguageTitle', 'landingMoreLanguageBody'],
+];
+
+// Signed-out visitors start a journal; signed-in visitors go back to theirs.
+function PrimaryAction({ isAuthenticated, onOpenJournal, onSignUp, t }: Readonly<ActionProps>) {
+  return isAuthenticated ? (
+    <button type="button" className="intro-btn primary" onClick={onOpenJournal}>
+      {t('landingOpenJournal')}
+    </button>
+  ) : (
+    <button type="button" className="intro-btn primary" onClick={onSignUp}>
+      {t('landingStart')}
+    </button>
   );
 }
 
-function ScreenshotPreview({
-  className,
-  label,
-  body,
-  t,
-}: Readonly<{
-  className: string;
-  label: string;
-  body: string;
-  t: IntroPageProps['t'];
-}>) {
-  return (
-    <article className={`landing-screenshot ${className}`}>
-      <div className="screenshot-frame" aria-hidden="true">
-        <div className="screenshot-toolbar">
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className="screenshot-content">
-          <span className="line strong" />
-          <span className="line" />
-          <span className="line short" />
-          <div className="mini-grid">
-            <span />
-            <span />
-            <span />
-            <span />
-          </div>
-        </div>
-      </div>
-      <h3>{t(label)}</h3>
-      <p>{t(body)}</p>
-    </article>
-  );
-}
+function LandingHeader(props: Readonly<ActionProps>) {
+  const { isAuthenticated, onOpenJournal, onSignIn, onSignUp, t } = props;
 
-function IntroActions({
-  compact,
-  isAuthenticated,
-  onOpenJournal,
-  onSignIn,
-  onSignUp,
-  t,
-}: Readonly<Omit<IntroPageProps, 'theme'> & { compact?: boolean }>) {
   return (
-    <div className={`intro-actions${compact ? ' compact' : ''}`}>
-      {isAuthenticated ? (
-        <button type="button" className="intro-btn primary" onClick={onOpenJournal}>
-          {t('landingOpenJournal')}
-        </button>
-      ) : (
-        <>
-          <button type="button" className="intro-btn primary" onClick={onSignUp}>
-            {t('signUp')}
+    <header className="landing-header">
+      <span className="landing-brand">
+        <img src="/thoughty-logo.svg" alt="" />
+        <span className="landing-brand-name">Thoughty</span>
+      </span>
+      <nav className="landing-nav" aria-label={t('landingNavLabel')}>
+        <a href="#features">{t('landingNavFeatures')}</a>
+        <a href="#memoir">{t('landingNavMemoir')}</a>
+        <a href="#privacy">{t('landingNavPrivacy')}</a>
+        <a href="/blog">{t('landingNavBlog')}</a>
+      </nav>
+      <div className="landing-header-actions">
+        {isAuthenticated ? (
+          <button type="button" className="intro-btn primary" onClick={onOpenJournal}>
+            {t('landingOpenJournal')}
           </button>
-          <button type="button" className="intro-btn secondary" onClick={onSignIn}>
-            {t('signIn')}
-          </button>
-        </>
-      )}
-    </div>
+        ) : (
+          <>
+            <button type="button" className="intro-btn ghost" onClick={onSignIn}>
+              {t('signIn')}
+            </button>
+            <button type="button" className="intro-btn primary" onClick={onSignUp}>
+              {t('signUp')}
+            </button>
+          </>
+        )}
+      </div>
+    </header>
   );
 }
 
 function IntroPage({ theme, ...actionProps }: IntroPageProps) {
-  const { t } = actionProps;
+  const { isAuthenticated, onSignIn, t } = actionProps;
   const isLight = theme === 'light';
 
   return (
-    <main className={`intro-page ${isLight ? 'light' : 'dark'}`}>
-      <section className="landing-hero">
-        <ProductScene t={t} />
-        <div className="hero-copy">
-          <img src="/thoughty-logo.svg" alt="" className="hero-logo" />
-          <p className="intro-eyebrow">{t('landingEyebrow')}</p>
-          <h1>Thoughty</h1>
-          <p className="intro-subtitle">{t('landingSubtitle')}</p>
-          <IntroActions {...actionProps} />
-        </div>
-      </section>
+    <div className={`intro-page landing-page ${isLight ? 'light' : 'dark'}`}>
+      <LandingHeader {...actionProps} />
 
-      <section className="landing-proof">
-        <div>
-          <span>{t('landingProofPrivacyMetric')}</span>
-          <strong>{t('landingProofPrivacyLabel')}</strong>
-        </div>
-        <div>
-          <span>{t('landingProofExportMetric')}</span>
-          <strong>{t('landingProofExportLabel')}</strong>
-        </div>
-        <div>
-          <span>{t('landingProofInsightMetric')}</span>
-          <strong>{t('landingProofInsightLabel')}</strong>
-        </div>
-      </section>
+      <main>
+        <section className="landing-hero" aria-labelledby="landing-title">
+          <div className="landing-hero-copy">
+            <p className="intro-eyebrow">{t('landingEyebrow')}</p>
+            <h1 id="landing-title">
+              {t('landingHeroTitle')}{' '}
+              <span className="landing-gradient-text">{t('landingHeroTitleAccent')}</span>
+            </h1>
+            <p className="intro-subtitle">{t('landingSubtitle')}</p>
+            <div className="intro-actions">
+              <PrimaryAction {...actionProps} />
+              <a className="intro-btn secondary" href="#features">
+                {t('landingExplore')}
+              </a>
+            </div>
+            <p className="landing-hero-note">{t('landingHeroNote')}</p>
+          </div>
+          <HeroCollage t={t} />
+        </section>
 
-      <section className="landing-section">
-        <div className="section-heading">
-          <p className="section-kicker">{t('landingFeatureSection')}</p>
-          <h2>{t('landingFeatureHeading')}</h2>
-        </div>
-        <div className="feature-list">
-          <article className="feature-item feature-highlight">
-            <h3>{t('landingFeatureMemoirTitle')}</h3>
-            <p>{t('landingFeatureMemoirBody')}</p>
-          </article>
-          {FEATURE_ITEMS.map(([titleKey, bodyKey]) => (
-            <article className="feature-item" key={titleKey}>
-              <h3>{t(titleKey)}</h3>
-              <p>{t(bodyKey)}</p>
-            </article>
+        <ul className="landing-proof">
+          {PROOF_ITEMS.map(([icon, titleKey, bodyKey]) => (
+            <li key={titleKey}>
+              <LandingIcon name={icon} />
+              <span className="landing-proof-text">
+                <strong>{t(titleKey)}</strong>
+                <span>{t(bodyKey)}</span>
+              </span>
+            </li>
           ))}
-        </div>
-      </section>
+        </ul>
 
-      <section className="landing-section screenshots-section">
-        <div className="section-heading">
-          <p className="section-kicker">{t('landingScreenshotsKicker')}</p>
-          <h2>{t('landingScreenshotsHeading')}</h2>
-        </div>
-        <div className="screenshot-grid">
-          {SCREENSHOT_ITEMS.map((item) => (
-            <ScreenshotPreview
-              key={item.label}
-              label={item.label}
-              body={item.body}
-              className={item.className}
-              t={t}
-            />
-          ))}
-        </div>
-      </section>
+        <section id="features" className="landing-section landing-paths" aria-labelledby="landing-paths-title">
+          <div className="section-heading">
+            <p className="section-kicker">{t('landingPathsKicker')}</p>
+            <h2 id="landing-paths-title">{t('landingPathsHeading')}</h2>
+          </div>
+          <div className="landing-path-grid">
+            {PATH_ITEMS.map(([icon, labelKey, titleKey, bodyKey]) => (
+              <article className="landing-path" key={titleKey}>
+                <span className="landing-path-icon"><LandingIcon name={icon} /></span>
+                <p className="landing-path-label">{t(labelKey)}</p>
+                <h3>{t(titleKey)}</h3>
+                <p>{t(bodyKey)}</p>
+              </article>
+            ))}
+          </div>
+        </section>
 
-      <section className="landing-cta">
-        <p className="section-kicker">{t('landingCtaKicker')}</p>
-        <h2>{t('landingCtaTitle')}</h2>
-        <p>{t('landingCtaBody')}</p>
-        <IntroActions {...actionProps} compact />
-      </section>
-    </main>
+        {SPOTLIGHTS.map(({ id, kicker, title, body, points, Visual }, index) => (
+          <section
+            key={kicker}
+            id={id}
+            className={`landing-spotlight${index % 2 === 1 ? ' reverse' : ''}`}
+            aria-labelledby={`landing-${id}-title`}
+          >
+            <div className="landing-spotlight-copy">
+              <p className="section-kicker">{t(kicker)}</p>
+              <h2 id={`landing-${id}-title`}>{t(title)}</h2>
+              <p>{t(body)}</p>
+              <ul className="landing-points">
+                {points.map((point) => (
+                  <li key={point}>
+                    <LandingIcon name="check" />
+                    {t(point)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <Visual t={t} />
+          </section>
+        ))}
+
+        <section id="privacy" className="landing-privacy" aria-labelledby="landing-privacy-title">
+          <div className="section-heading">
+            <p className="section-kicker">{t('landingPrivacyKicker')}</p>
+            <h2 id="landing-privacy-title">{t('landingPrivacyTitle')}</h2>
+          </div>
+          <div className="landing-privacy-grid">
+            {PRIVACY_ITEMS.map(([icon, titleKey, bodyKey]) => (
+              <article key={titleKey}>
+                <LandingIcon name={icon} />
+                <h3>{t(titleKey)}</h3>
+                <p>{t(bodyKey)}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="landing-import" aria-labelledby="landing-import-title">
+          <span className="landing-import-icon"><LandingIcon name="import" /></span>
+          <div>
+            <h2 id="landing-import-title">{t('landingImportTitle')}</h2>
+            <p>{t('landingImportBody')}</p>
+          </div>
+          <PrimaryAction {...actionProps} />
+        </section>
+
+        <section className="landing-section landing-more" aria-labelledby="landing-more-title">
+          <div className="section-heading">
+            <p className="section-kicker">{t('landingMoreKicker')}</p>
+            <h2 id="landing-more-title">{t('landingMoreHeading')}</h2>
+          </div>
+          <div className="landing-more-grid">
+            {MORE_ITEMS.map(([icon, titleKey, bodyKey]) => (
+              <article key={titleKey}>
+                <LandingIcon name={icon} />
+                <h3>{t(titleKey)}</h3>
+                <p>{t(bodyKey)}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="landing-cta" aria-labelledby="landing-cta-title">
+          <p className="section-kicker">{t('landingCtaKicker')}</p>
+          <h2 id="landing-cta-title">{t('landingCtaTitle')}</h2>
+          <p>{t('landingCtaBody')}</p>
+          <div className="intro-actions compact">
+            <PrimaryAction {...actionProps} />
+            {!isAuthenticated && (
+              <button type="button" className="intro-btn secondary" onClick={onSignIn}>
+                {t('signIn')}
+              </button>
+            )}
+          </div>
+        </section>
+      </main>
+
+      <Footer t={t} theme={isLight ? 'light' : 'dark'} />
+    </div>
   );
 }
 

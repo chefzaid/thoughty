@@ -83,6 +83,7 @@
 - [x] Footer with Privacy, Terms, and Contact entry points, responsive layout, and a back-to-top control
 - [x] More detailed landing page with features presentation, screenshots, and sign up call to action
 - [x] Presentation page as the main entry: `https://thoughty.swirlit.dev` (the platform Homepage tile, the README, and the GitLab environment link) opens the presentation page for every visitor instead of the journal. Signed-in users get an **Open your journal** button there.
+- [x] Presentation page rewritten around the positioning ("a private journal that becomes your life story") and today's features: journal, guided memoir, books, look back, privacy and AI, Day One and Journey imports, with product illustrations in both themes and languages, a section navigation, and the footer links; the public pages now use the logo's violet palette. *(2026-10-26)*
 - [x] About page with the story behind Thoughty, the mission, and the team
 - [x] Terms of Service and Privacy Policy pages
 - [x] Contact and support page with a form to submit inquiries and a How To guides / FAQ section
@@ -305,7 +306,7 @@ The market splits three ways, and no product spans all of them. Everyday journal
 
 ### Positioning and Go-to-Market
 
-- [ ] One-line positioning used on the landing page, store listings and emails ("a private journal that becomes your life story"), with the landing page reorganized around the three entry points: journal, memoir, and gift.
+- [ ] One-line positioning used on the landing page, store listings and emails ("a private journal that becomes your life story"), with the landing page reorganized around the three entry points: journal, memoir, and gift. The landing page uses it since 2026-10-26, organized around journal, memoir, and book; store listings, emails, and a gift entry point (once the gift flow exists) remain.
 - [ ] Comparison pages against Day One, Storyworth and Rosebud that are factual and kept current (privacy, AI handling, export, printed book, price), each ending in the matching importer or the memoir start page.
 - [ ] Pricing anchored to the market: premium journal near Day One Premium's yearly price, and a memoir gift that includes a year of questions and one printed book near Storyworth and Remento, so the gift is an easy like-for-like choice with a lifelong journal on top.
 - [ ] Launch market decision: start with France and the EU (French and English already done, EU hosting and GDPR as a selling point, HDS matters there for the practitioner tier), then pick the next language by demand rather than adding several at once.

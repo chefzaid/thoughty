@@ -67,9 +67,7 @@ export type MemoirTranslationKey =
   | 'memoirResume'
   | 'memoirLeave'
   | 'memoirLeaveTitle'
-  | 'memoirLeaveMessage'
-  | 'landingFeatureMemoirTitle'
-  | 'landingFeatureMemoirBody';
+  | 'memoirLeaveMessage';
 
 export const memoirTranslations: Record<Language, Record<MemoirTranslationKey, string>> = {
   en: {
@@ -142,9 +140,6 @@ export const memoirTranslations: Record<Language, Record<MemoirTranslationKey, s
     memoirLeaveTitle: 'Stop the guided memoir?',
     memoirLeaveMessage:
       'Weekly questions and emails stop. Your answers stay in your journal, and they count again if you start the memoir later.',
-    landingFeatureMemoirTitle: 'A guided memoir, one question a week',
-    landingFeatureMemoirBody:
-      'Fifty-two questions about childhood, family, love, work, places, and the lessons of a life. Answer by writing or by voice, and your answers become the chapters of a book to keep or to pass on.',
   },
   fr: {
     memoir: 'Mémoires',
@@ -216,8 +211,5 @@ export const memoirTranslations: Record<Language, Record<MemoirTranslationKey, s
     memoirLeaveTitle: 'Arrêter les mémoires guidées ?',
     memoirLeaveMessage:
       'Les questions et les e-mails hebdomadaires s’arrêtent. Vos réponses restent dans votre journal et comptent à nouveau si vous reprenez les mémoires plus tard.',
-    landingFeatureMemoirTitle: 'Des mémoires guidées, une question par semaine',
-    landingFeatureMemoirBody:
-      'Cinquante-deux questions sur l’enfance, la famille, l’amour, le travail, les lieux et les leçons d’une vie. Répondez par écrit ou à voix haute : vos réponses deviennent les chapitres d’un livre à garder ou à transmettre.',
   },
 };

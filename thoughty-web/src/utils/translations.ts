@@ -8,6 +8,7 @@ import { moodTranslations, type MoodTranslationKey } from "./translations.mood";
 import { taskListTranslations, type TaskListTranslationKey } from "./translations.taskList";
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
+import { landingTranslations, type LandingTranslationKey } from "./translations.landing";
 
 type CoreTranslationKey =
   | "journal"
@@ -483,40 +484,6 @@ type CoreTranslationKey =
   | "logout"
   | "profile"
   | "back"
-  | "landingEyebrow"
-  | "landingSubtitle"
-  | "landingFeatureSection"
-  | "landingFeatureHeading"
-  | "landingFeaturePrivateTitle"
-  | "landingFeaturePrivateBody"
-  | "landingFeatureOrganizeTitle"
-  | "landingFeatureOrganizeBody"
-  | "landingFeatureExportTitle"
-  | "landingFeatureExportBody"
-  | "landingFeatureInsightTitle"
-  | "landingFeatureInsightBody"
-  | "landingProofPrivacyMetric"
-  | "landingProofPrivacyLabel"
-  | "landingProofExportMetric"
-  | "landingProofExportLabel"
-  | "landingProofInsightMetric"
-  | "landingProofInsightLabel"
-  | "landingScreenshotsKicker"
-  | "landingScreenshotsHeading"
-  | "landingScreenshotAlt"
-  | "landingSceneEntryTitle"
-  | "landingSceneEntryBody"
-  | "landingSceneStatsLabel"
-  | "landingScreenshotJournalTitle"
-  | "landingScreenshotJournalBody"
-  | "landingScreenshotStatsTitle"
-  | "landingScreenshotStatsBody"
-  | "landingScreenshotExportTitle"
-  | "landingScreenshotExportBody"
-  | "landingCtaKicker"
-  | "landingCtaTitle"
-  | "landingCtaBody"
-  | "landingOpenJournal"
   | "aboutEyebrow"
   | "aboutTitle"
   | "aboutSubtitle"
@@ -940,7 +907,7 @@ type CoreTranslationKey =
   | "subscriptionIncluded"
   | "subscriptionPreviousCycle";
 
-export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey | MoodTranslationKey | TaskListTranslationKey | FocusModeTranslationKey | MarkdownToolbarTranslationKey;
+export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey | MoodTranslationKey | TaskListTranslationKey | FocusModeTranslationKey | MarkdownToolbarTranslationKey | LandingTranslationKey;
 
 export type Language = "en" | "fr";
 
@@ -960,6 +927,7 @@ export const translations: Translations = {
     ...taskListTranslations.en,
     ...focusModeTranslations.en,
     ...markdownToolbarTranslations.en,
+    ...landingTranslations.en,
     // App
     journal: "Journal",
     feed: "Feed",
@@ -1495,52 +1463,6 @@ export const translations: Translations = {
     logout: "Logout",
     profile: "Profile",
     back: "Back",
-    landingEyebrow: "Private writing, built to stay useful",
-    landingSubtitle:
-      "Thoughty gives you structured diaries, fast import and export, rich entries, and privacy-first controls without turning journaling into admin work.",
-    landingFeatureSection: "Thoughty feature highlights",
-    landingFeatureHeading: "Capture the day, then keep finding what matters.",
-    landingFeaturePrivateTitle: "Private by default",
-    landingFeaturePrivateBody:
-      "Write freely, control visibility per entry, and download your personal data whenever you need a full export.",
-    landingFeatureOrganizeTitle: "Organized across diaries",
-    landingFeatureOrganizeBody:
-      "Split life into focused diaries, reorder them, mark favorites, and still browse everything together in All Diaries view.",
-    landingFeatureExportTitle: "Portable import and export",
-    landingFeatureExportBody:
-      "Move between TXT, JSON, and Markdown formats, preserve metadata, and keep diary names attached when exporting from All Diaries.",
-    landingFeatureInsightTitle: "Useful after the writing",
-    landingFeatureInsightBody:
-      "Search quickly, filter by tags and visibility, revisit highlights, and use the stats view to spot patterns over time.",
-    landingProofPrivacyMetric: "Private first",
-    landingProofPrivacyLabel: "Every entry starts under your control",
-    landingProofExportMetric: "7 export formats",
-    landingProofExportLabel: "TXT, JSON, Markdown, CSV, PDF, EPUB, and HTML",
-    landingProofInsightMetric: "Diary-aware",
-    landingProofInsightLabel:
-      "Structure, stats, imports, and exports respect each journal",
-    landingScreenshotsKicker: "Product screenshots",
-    landingScreenshotsHeading:
-      "The main workflows are visible before you sign up.",
-    landingScreenshotAlt: "Thoughty journal interface preview",
-    landingSceneEntryTitle: "Morning planning",
-    landingSceneEntryBody:
-      "Two decisions to remember, one question to revisit, and a cleaner way to end the week.",
-    landingSceneStatsLabel: "Average words",
-    landingScreenshotJournalTitle: "A focused journal surface",
-    landingScreenshotJournalBody:
-      "Entries support tags, visibility, attachments, references, templates, pinned notes, and rich Markdown when you need it.",
-    landingScreenshotStatsTitle: "Stats that stay close to the writing",
-    landingScreenshotStatsBody:
-      "Activity, tag trends, word counts, reading time, and tone analysis help you review without turning reflection into reporting.",
-    landingScreenshotExportTitle: "Import/export that respects ownership",
-    landingScreenshotExportBody:
-      "Preview imports, skip duplicates, export by diary, and keep portable formats ready for spreadsheets, books, or backups.",
-    landingCtaKicker: "Start quietly",
-    landingCtaTitle: "Open a journal you can keep using years from now.",
-    landingCtaBody:
-      "Create an account, write privately by default, and export your work whenever you want to leave with everything intact.",
-    landingOpenJournal: "Open your journal",
     aboutEyebrow: "About Thoughty",
     aboutTitle: "A quieter home for the thoughts worth keeping.",
     aboutSubtitle:
@@ -2036,6 +1958,7 @@ export const translations: Translations = {
     ...taskListTranslations.fr,
     ...focusModeTranslations.fr,
     ...markdownToolbarTranslations.fr,
+    ...landingTranslations.fr,
     // App
     journal: "Journal",
     feed: "Fil public",
@@ -2587,53 +2510,6 @@ export const translations: Translations = {
     logout: "Déconnexion",
     profile: "Profil",
     back: "Retour",
-    landingEyebrow: "Une écriture privée, pensée pour rester utile",
-    landingSubtitle:
-      "Thoughty combine journaux structurés, import et export rapides, entrées riches et contrôle de la confidentialité sans transformer l'écriture en corvée.",
-    landingFeatureSection: "Points forts de Thoughty",
-    landingFeatureHeading: "Notez la journée, puis retrouvez ce qui compte.",
-    landingFeaturePrivateTitle: "Privé par défaut",
-    landingFeaturePrivateBody:
-      "Écrivez librement, contrôlez la visibilité de chaque entrée et téléchargez vos données personnelles quand vous le souhaitez.",
-    landingFeatureOrganizeTitle: "Organisé par journaux",
-    landingFeatureOrganizeBody:
-      "Séparez les sujets par journal, réorganisez-les, marquez vos favoris et conservez une vue unifiée avec Tous les journaux.",
-    landingFeatureExportTitle: "Import et export portables",
-    landingFeatureExportBody:
-      "Passez du TXT au JSON ou au Markdown, préservez les métadonnées et gardez le nom du journal lors des exports Tous les journaux.",
-    landingFeatureInsightTitle: "Utile après l'écriture",
-    landingFeatureInsightBody:
-      "Recherchez vite, filtrez par tags et visibilité, retrouvez les temps forts et observez vos tendances dans les statistiques.",
-    landingProofPrivacyMetric: "Privé d'abord",
-    landingProofPrivacyLabel: "Chaque entrée reste sous votre contrôle",
-    landingProofExportMetric: "7 formats d'export",
-    landingProofExportLabel: "TXT, JSON, Markdown, CSV, PDF, EPUB et HTML",
-    landingProofInsightMetric: "Par journal",
-    landingProofInsightLabel:
-      "Structure, stats, imports et exports respectent chaque journal",
-    landingScreenshotsKicker: "Aperçus du produit",
-    landingScreenshotsHeading:
-      "Les principaux usages sont visibles avant l'inscription.",
-    landingScreenshotAlt: "Aperçu de l'interface du journal Thoughty",
-    landingSceneEntryTitle: "Plan du matin",
-    landingSceneEntryBody:
-      "Deux décisions à garder, une question à reprendre, et une meilleure façon de finir la semaine.",
-    landingSceneStatsLabel: "Moyenne de mots",
-    landingScreenshotJournalTitle: "Une surface d'écriture concentrée",
-    landingScreenshotJournalBody:
-      "Les entrées prennent en charge tags, visibilité, pièces jointes, références, modèles, notes épinglées et Markdown riche.",
-    landingScreenshotStatsTitle: "Des stats proches de l'écriture",
-    landingScreenshotStatsBody:
-      "Activité, tendances par tag, mots, temps de lecture et analyse de ton aident à relire sans transformer la réflexion en rapport.",
-    landingScreenshotExportTitle: "Import/export fidèle à vos données",
-    landingScreenshotExportBody:
-      "Prévisualisez les imports, ignorez les doublons, exportez par journal et gardez des formats prêts pour tableurs, livres ou sauvegardes.",
-    landingCtaKicker: "Commencer calmement",
-    landingCtaTitle:
-      "Ouvrez un journal que vous pourrez garder pendant des années.",
-    landingCtaBody:
-      "Créez un compte, écrivez en privé par défaut et exportez votre travail quand vous voulez repartir avec tout intact.",
-    landingOpenJournal: "Ouvrir votre journal",
     aboutEyebrow: "À propos de Thoughty",
     aboutTitle: "Un lieu plus calme pour les pensées qui méritent de rester.",
     aboutSubtitle:

@@ -5,7 +5,7 @@ test.describe('Public Intro Page', () => {
   test('shows the landing page and transitions into sign in and sign up flows', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page.getByText('Thoughty gives you structured diaries, fast import and export')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'A private journal that becomes your life story.' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Sign In' }).first().click();
     await expect(page.locator('#identifier')).toBeVisible();
@@ -22,7 +22,7 @@ test.describe('Public Intro Page', () => {
 
     await page.goto('/');
 
-    await expect(page.getByText('Thoughty gives you structured diaries, fast import and export')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'A private journal that becomes your life story.' })).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('button', { name: 'Sign In' })).toHaveCount(0);
 

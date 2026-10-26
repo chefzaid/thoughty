@@ -44,13 +44,13 @@
     gap: 1rem;
     border-radius: 8px;
     border: 1px solid rgba(23, 33, 43, 0.12);
-    background: #fffdf7;
+    background: var(--pub-surface);
     padding: 1.4rem;
     box-shadow: 0 22px 50px rgba(39, 55, 77, 0.16);
 }
 
 .intro-page.dark .feedback-form {
-    background: #232721;
+    background: var(--pub-surface);
     border-color: rgba(247, 245, 237, 0.12);
     box-shadow: 0 22px 50px rgba(0, 0, 0, 0.28);
 }
@@ -87,7 +87,7 @@
 .intro-page.dark .feedback-form input,
 .intro-page.dark .feedback-form textarea {
     border-color: rgba(247, 245, 237, 0.18);
-    background: #151716;
+    background: var(--pub-bg);
     color: #f7f5ed;
 }
 
@@ -145,21 +145,21 @@
 }
 
 .intro-page.dark .feedback-idea {
-    background: #232721;
+    background: var(--pub-surface);
     border-color: rgba(247, 245, 237, 0.12);
 }
 
 .feedback-status {
     display: inline-block;
     margin-bottom: 0.55rem;
-    color: #2d7d65;
+    color: var(--pub-green);
     font-size: 0.8rem;
     font-weight: 900;
     text-transform: uppercase;
 }
 
 .intro-page.dark .feedback-status {
-    color: #5fba9d;
+    color: var(--pub-green);
 }
 
 .feedback-idea h3 {
@@ -181,14 +181,14 @@
     min-height: 5.5rem;
     border-radius: 8px;
     border: 1px solid rgba(23, 33, 43, 0.12);
-    background: #f8f0e3;
+    background: var(--pub-surface-soft);
     color: #17212b;
     cursor: pointer;
 }
 
 .intro-page.dark .feedback-vote {
     border-color: rgba(247, 245, 237, 0.16);
-    background: #2d2c25;
+    background: var(--pub-surface-soft);
     color: #f7f5ed;
 }
 

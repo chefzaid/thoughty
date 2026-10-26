@@ -136,7 +136,7 @@ All AI features are optional and run through OpenRouter. A deployment can provid
 - Every control works with the keyboard, including diary and entry reordering.
 - The same features on desktop and phone, with controls that wrap instead of scrolling off-screen.
 - Destructive actions ask for confirmation, and long operations show progress.
-- Every visitor, signed in or not, lands on the presentation page at `/`: **Sign Up** and **Sign In** when signed out, **Open your journal** when signed in. About, Blog, Privacy, Terms, Contact, and Feedback pages are public too.
+- Every visitor, signed in or not, lands on the presentation page at `/`. It presents the journal, the guided memoir, books, the look back (stats, moods, year in review), privacy and AI, imports, and the other features in English and French, with **Start your journal**, **Sign Up**, and **Sign In** when signed out and **Open your journal** when signed in. About, Blog, Privacy, Terms, Contact, and Feedback pages are public too and share its colors.
 
 ## Future Direction: Life ERP
 

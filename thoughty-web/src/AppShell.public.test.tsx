@@ -19,9 +19,10 @@ describe('AppShell public flows', () => {
 
     renderAppShell();
 
-    expect(screen.getByRole('heading', { name: 'Thoughty' })).toBeInTheDocument();
-    expect(screen.getByText('Private writing, built to stay useful')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Sign Up' })).toHaveLength(2);
+    expect(screen.getByRole('heading', { level: 1, name: 'A private journal that becomes your life story.' })).toBeInTheDocument();
+    expect(screen.getByText('Private journal · Guided memoir · Your own book')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Start your journal' })).toHaveLength(3);
+    expect(screen.getAllByRole('button', { name: 'Sign Up' })).toHaveLength(1);
     expect(screen.getAllByRole('button', { name: 'Sign In' })).toHaveLength(2);
   });
 
@@ -124,7 +125,7 @@ describe('AppShell public flows', () => {
     await user.click(screen.getByRole('button', { name: 'Back' }));
 
     expect(globalThis.location.pathname).toBe('/');
-    expect(screen.getByRole('heading', { name: 'Thoughty' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'A private journal that becomes your life story.' })).toBeInTheDocument();
   });
 
   it('shows loading spinner when auth is loading', () => {

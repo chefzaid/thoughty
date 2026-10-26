@@ -16,7 +16,7 @@ describe('App entrypoint', () => {
     renderApp();
 
     expect(globalThis.location.pathname).toBe('/');
-    expect(screen.getByRole('heading', { name: 'Thoughty' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'A private journal that becomes your life story.' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign In' })).not.toBeInTheDocument();
 
     await user.click(screen.getAllByRole('button', { name: 'Open your journal' })[0] as HTMLElement);
