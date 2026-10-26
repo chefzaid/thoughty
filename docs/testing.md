@@ -75,7 +75,7 @@ The mock app in `e2e/support` answers every `/api` call, so you need no API serv
 
 ### Accessibility
 
-`e2e/accessibility/` runs axe (`@axe-core/playwright`) with the WCAG 2.0, 2.1, and 2.2 A and AA tags. `routes.spec.ts` scans every route in both themes and checks skip links, focus on route change, and key dialogs. `journal.spec.ts` scans the journal, search, filters, revision history (empty and with revisions), composer, and editor in both themes and with high contrast. Feature specs such as `journal/focus-mode.spec.ts` scan their own surfaces. Give a new page or dialog a scan with the same tags.
+`e2e/accessibility/` runs axe (`@axe-core/playwright`) with the WCAG 2.0, 2.1, and 2.2 A and AA tags. `routes.spec.ts` scans every route in both themes and checks skip links, focus on route change, and key dialogs. `journal.spec.ts` scans the journal, search, filters, revision history (empty and with revisions), composer, and editor in both themes and with high contrast. Feature specs such as `journal/focus-mode.spec.ts` scan their own surfaces, and `journal/attachment-upload-errors.spec.ts` scans the composer with a pending attachment card in both themes and with high contrast. Give a new page or dialog a scan with the same tags.
 
 ### Mock API
 

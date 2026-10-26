@@ -226,6 +226,15 @@ describe('AttachmentUpload', () => {
     expect(screen.getByTitle('attachFiles')).toBeInTheDocument();
   });
 
+  it.each([
+    ['dark', 'text-gray-400'],
+    ['light', 'text-gray-600'],
+  ] as const)('shows the kind and size of a pending file in the %s theme muted text color', (theme, colorClass) => {
+    const file = new File(['hello world!'], 'note.txt', { type: 'text/plain' });
+    render(<AttachmentUpload {...defaultProps} theme={theme} pendingFiles={[file]} />);
+    expect(screen.getByText('Text · 12 B')).toHaveClass(colorClass);
+  });
+
   it('does not show attachment list when there are no files', () => {
     const { container } = render(<AttachmentUpload {...defaultProps} />);
     // Only the button row should be present, no file grid

@@ -21,3 +21,11 @@ export type Tint = keyof typeof TINTED_TEXT;
 export function tintedTextClass(tint: Tint, theme?: 'light' | 'dark'): string {
     return TINTED_TEXT[tint][theme === 'light' ? 'light' : 'dark'];
 }
+
+/**
+ * Secondary text (counts, timestamps, file sizes, empty states) at WCAG AA contrast on the card and
+ * panel backgrounds of both themes, light gray-50/100 surfaces included: the gray tint's shades.
+ */
+export function mutedTextClass(isDark: boolean): string {
+    return tintedTextClass('gray', isDark ? 'dark' : 'light');
+}

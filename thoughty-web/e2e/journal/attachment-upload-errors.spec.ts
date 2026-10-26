@@ -38,6 +38,24 @@ test.describe('Attachment upload errors', () => {
     expect(dialogs).toEqual([]);
   });
 
+  for (const theme of ['dark', 'light'] as const) {
+    for (const highContrast of [false, true]) {
+      test(`passes an accessibility scan with a pending file attached, ${theme}${highContrast ? ' high contrast' : ''}`, async ({ page }) => {
+        await setupMockApp(page, { startAuthenticated: true, config: { theme, highContrast } });
+        await page.goto('/journal');
+
+        await page.locator('input[type="file"]').first().setInputFiles([note]);
+        await expect(page.getByText('note.txt')).toBeVisible();
+        await expect(page.getByText('Text · 12 B')).toBeVisible();
+
+        const results = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+          .analyze();
+        expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) }))).toEqual([]);
+      });
+    }
+  }
+
   test('says which file is too large, in French', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr' } });
     await page.goto('/journal');

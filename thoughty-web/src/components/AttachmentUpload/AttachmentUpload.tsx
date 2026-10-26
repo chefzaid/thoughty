@@ -6,6 +6,7 @@ import {
     getAttachmentKindLabel,
     hasInlineAttachmentPreview,
 } from '../../utils/attachments';
+import { mutedTextClass } from '../../utils/tintedText';
 import AttachmentPreviewContent from '../AttachmentPreview/AttachmentPreviewContent';
 import AttachmentPreviewDialog from '../AttachmentPreview/AttachmentPreviewDialog';
 import { usePendingAttachmentPreviewUrl } from '../AttachmentPreview/usePendingAttachmentPreviewUrl';
@@ -71,7 +72,7 @@ function AttachmentCard({
                 <p className={`text-sm font-medium truncate ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
                     {name}
                 </p>
-                <p className="text-xs text-gray-500">{kind} · {formatAttachmentSize(size)}</p>
+                <p className={`text-xs ${mutedTextClass(isDark)}`}>{kind} · {formatAttachmentSize(size)}</p>
             </div>
             {action && <div>{action}</div>}
             <button

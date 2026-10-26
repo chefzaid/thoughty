@@ -18,14 +18,13 @@ import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
 import { describeMood, feelingLabel, isMoodLevel, moodEmoji, moodLabelKey } from '../../utils/entryMood';
 import { resolveFontColor } from '../../types/config';
+import { mutedTextClass } from '../../utils/tintedText';
 import {
     extractDate,
     getEntryDiaryBadgeStyle,
 } from './EntriesList.utils';
 import { IconActionButton } from './EntryActionPrimitives';
 
-/** Secondary text (counts, timestamps, empty states) at WCAG AA contrast on the card and panel backgrounds of both themes. */
-const mutedTextClass = (isDark: boolean) => (isDark ? 'text-gray-400' : 'text-gray-500');
 
 export function EntryHistorySection({
     isVisible,

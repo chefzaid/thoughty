@@ -387,7 +387,7 @@ describe('EntryViewMode', () => {
 
     it.each([
         ['dark', 'text-gray-400'],
-        ['light', 'text-gray-500'],
+        ['light', 'text-gray-600'],
     ] as const)('shows the empty history and revision times in the %s theme muted text color', async (theme, colorClass) => {
         const onFetchHistory = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce(mockRevisions);
         const user = userEvent.setup();
