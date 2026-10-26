@@ -30,6 +30,8 @@ Argo CD syncs `infra/k8s/overlays/swirl-cloud` from `main` of `swirlit/thoughty`
 4. Wave `1`: API, web, and worker Deployments.
 5. PostSync: `thoughty-kibana-bootstrap` imports the log dashboard.
 
+The setup hook and the `postgres-backup` CronJob run the PostgreSQL client image set under `images:` in the overlay's `kustomization.yaml`: `docker.io/library/postgres:18.6-alpine3.24`, pinned by its multi-arch index digest (amd64 and arm64 among others), not a single-platform manifest. Its major version must be at least the platform server's (PostgreSQL 18), or `pg_dump` refuses to dump. To update it, take the tag's index digest (the `Docker-Content-Digest` of the tag's manifest, or `digest` from `https://hub.docker.com/v2/repositories/library/postgres/tags/<tag>`), scan it as in [Security](./security.md#container-images), and change `newTag` and `digest` together.
+
 The UI and `/api` are public, so local accounts can register and sign in. Only `/api/auth/sso` (`overlays/swirl-cloud/sso-ingress.yaml`, and the matching canary routes) goes through the `thoughty-sso` ForwardAuth Middleware and the shared Keycloak OAuth2 Proxy; as the longer path it wins over `/api` (see [Security](./security.md#authentication-and-sessions)). Every route caps request bodies at 10 MiB.
 
 ## Configuration and Secrets

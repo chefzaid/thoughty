@@ -109,6 +109,17 @@ AI is optional and uses OpenRouter. A user's personal key, when set, replaces th
 - Mood readings with clinical labels are discarded. Applying a tag plan does not call the provider again.
 - Usage rows store metadata only (model, tokens, cost, time), never prompts or completions.
 
+## Container Images
+
+The production PostgreSQL client image (setup hook and backup CronJob, see [Deployment](./deployment.md#production-desired-state)) is `postgres:18.6-alpine3.24@sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5`, built 2026-10-21. It replaced `18.6-bookworm`, whose Debian 12 packages carry critical findings with no Debian fix (zlib minizip CVE-2023-45853, SQLite CVE-2025-7458, libxml2 CVE-2026-6653) and a Perl finding (CVE-2026-9538); `18.6-trixie` still has the libxml2 one. The Alpine image has no Perl, and its zlib and libxml2 are not affected.
+
+Trivy 0.74.0 (database of 2026-10-26, `--severity CRITICAL,HIGH`, amd64 and arm64) found in it:
+
+- Alpine packages: no critical findings; two high ones fixed in newer Alpine packages (brotli-libs CVE-2026-111497, libcurl CVE-2026-92392), which the next upstream rebuild picks up. Neither the setup hook nor `pg_dump` uses brotli or curl.
+- `/usr/local/bin/gosu` (the official image's entrypoint helper, gosu 1.19 built with Go 1.24.6): one critical Go standard library finding (CVE-2025-68121, `crypto/tls` session resumption) and 24 high ones, fixed in newer Go releases. Every official `postgres` variant ships the same binary. Both jobs replace the entrypoint with `/bin/sh` and run as UID 65534, so gosu never runs. Whether to accept this until upstream rebuilds gosu is open in TODO.md (Needs Input).
+
+Recheck before moving the digest: `trivy image --severity CRITICAL,HIGH --platform linux/amd64 docker.io/library/postgres:<tag>@<index digest>` (and `linux/arm64`), or the platform's Grafana **Trivy Security Reports** dashboard. `mirror.gcr.io/library/postgres@<index digest>` serves the same content when Docker Hub's anonymous pull limit is reached.
+
 ## Review Checklist
 
 Runtime hardening and scanning are in [Deployment](./deployment.md#delivery-pipeline). For security-sensitive changes, check:

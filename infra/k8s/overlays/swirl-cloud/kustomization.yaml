@@ -35,7 +35,9 @@ images:
   - name: thoughty-web
     newName: registry.swirlit.dev/swirlit/thoughty/thoughty-web
     newTag: 1.10.6
+  # Client for the db-setup hook and the backup CronJob: the multi-arch index digest
+  # (Alpine 3.24, built 2026-10-21); see docs/security.md (Container Images).
   - name: postgres
     newName: docker.io/library/postgres
-    newTag: 18.6-bookworm
-    digest: sha256:b939b3851e2cccb017dc4497af63b15e34efa57fba036548773c53b2f16a8871
+    newTag: 18.6-alpine3.24
+    digest: sha256:10a5c69a83035ab5239f5620d708520e8b28f5aa1f2b20143e6024532edadfb5
