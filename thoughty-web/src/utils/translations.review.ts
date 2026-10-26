@@ -25,7 +25,8 @@ export type ReviewTranslationKey =
   | 'reviewDays_one'
   | 'reviewDays_other'
   | 'reviewCompared'
-  | 'reviewAverageWords'
+  | 'reviewAverageWords_one'
+  | 'reviewAverageWords_other'
   | 'reviewMonthsTitle'
   | 'reviewBusiestMonth'
   | 'reviewMonthBar'
@@ -92,7 +93,8 @@ export const reviewTranslations: Record<Language, Record<ReviewTranslationKey, s
     reviewDays_one: '{count} day',
     reviewDays_other: '{count} days',
     reviewCompared: '{change} vs {year}',
-    reviewAverageWords: 'Average entry length: {count} words',
+    reviewAverageWords_one: 'Average entry length: {count} word',
+    reviewAverageWords_other: 'Average entry length: {count} words',
     reviewMonthsTitle: 'Month by month',
     reviewBusiestMonth: 'Your busiest month was {month}, with {entries}.',
     reviewMonthBar: '{month}: {entries}, {words}',
@@ -158,7 +160,8 @@ export const reviewTranslations: Record<Language, Record<ReviewTranslationKey, s
     reviewDays_one: '{count} jour',
     reviewDays_other: '{count} jours',
     reviewCompared: '{change} par rapport à {year}',
-    reviewAverageWords: 'Longueur moyenne d’une entrée : {count} mots',
+    reviewAverageWords_one: 'Longueur moyenne d’une entrée : {count} mot',
+    reviewAverageWords_other: 'Longueur moyenne d’une entrée : {count} mots',
     reviewMonthsTitle: 'Mois par mois',
     reviewBusiestMonth: 'Votre mois le plus riche : {month}, avec {entries}.',
     reviewMonthBar: '{month} : {entries}, {words}',

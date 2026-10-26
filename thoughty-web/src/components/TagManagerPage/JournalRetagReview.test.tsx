@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getTranslation } from "../../utils/translations";
 import JournalRetagReview from "./JournalRetagReview";
 
 const previewJournalRetag = vi.fn();
@@ -52,14 +53,14 @@ describe("JournalRetagReview", () => {
       error: null,
     });
 
-    render(<JournalRetagReview isDark={false} onApplied={onApplied} t={t} />);
+    render(<JournalRetagReview isDark={false} language="en" onApplied={onApplied} t={t} />);
 
     await user.click(
       screen.getByRole("button", { name: "organizeJournalTags" }),
     );
 
     expect(await screen.findByText("#growth")).toBeVisible();
-    expect(screen.getByText("journalRetagScanCount:2/350")).toBeVisible();
+    expect(screen.getByText("journalRetagScanCount_other:2/350")).toBeVisible();
     expect(screen.getByText("journalRetagLimited")).toBeVisible();
     expect(screen.getByRole("dialog")).toHaveClass("light");
     expect(screen.getByRole("button", { name: "close" })).toHaveFocus();
@@ -79,7 +80,7 @@ describe("JournalRetagReview", () => {
       { entryId: 11, tags: ["growth"] },
       { entryId: 12, tags: ["work"] },
     ]);
-    expect(await screen.findByText("journalRetagApplied:2")).toBeVisible();
+    expect(await screen.findByText("journalRetagApplied_other:2")).toBeVisible();
     expect(onApplied).toHaveBeenCalledTimes(1);
   });
 
@@ -101,6 +102,7 @@ describe("JournalRetagReview", () => {
     render(
       <JournalRetagReview
         isDark
+        language="en"
         onApplied={vi.fn().mockResolvedValue(undefined)}
         t={t}
       />,
@@ -120,5 +122,23 @@ describe("JournalRetagReview", () => {
     expect(
       screen.getByRole("button", { name: "organizeJournalTags" }),
     ).toHaveFocus();
+  });
+
+  it.each([
+    ["en", "Analyzed 1 of 1 entry.", "1 entry selected", "Updated 1 entry."],
+    ["fr", "1 sur 1 entrée analysée.", "1 entrée sélectionnée", "1 entrée mise à jour."],
+  ] as const)("writes single counts in %s", async (language, scanned, selected, applied) => {
+    const user = userEvent.setup();
+    previewJournalRetag.mockResolvedValue({ data: { ...plan, analyzedEntries: 1, totalEntries: 1 }, error: null });
+    applyJournalRetag.mockResolvedValue({ data: { success: true, affectedEntries: 1 }, error: null });
+    const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+
+    render(<JournalRetagReview isDark language={language} onApplied={vi.fn().mockResolvedValue(undefined)} t={translate} />);
+    await user.click(screen.getByRole("button", { name: translate("organizeJournalTags") }));
+
+    expect(await screen.findByText(scanned)).toBeVisible();
+    expect(screen.getByText(selected)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: translate("applyJournalRetag") }));
+    expect(await screen.findByText(applied)).toBeVisible();
   });
 });

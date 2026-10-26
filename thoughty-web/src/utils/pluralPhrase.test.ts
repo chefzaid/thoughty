@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { pluralPhrase } from './pluralPhrase';
-import { getTranslation } from './translations';
+import { getTranslation, translations } from './translations';
 
 describe('pluralPhrase', () => {
   it.each([
@@ -22,5 +22,15 @@ describe('pluralPhrase', () => {
     const t = (key: string, params?: Record<string, string | number>) => `${key}:${params?.count}`;
 
     expect(pluralPhrase(t, 'statsHeatmapDay', 1200, 'fr')).toBe(`statsHeatmapDay_other:${(1200).toLocaleString('fr')}`);
+  });
+
+  it.each(['en', 'fr'] as const)('finds both forms for every count in %s and no other plural scheme', (language) => {
+    const keys = Object.keys(translations[language]);
+    const oneKeys = keys.filter((key) => key.endsWith('_one'));
+    const otherKeys = keys.filter((key) => key.endsWith('_other'));
+
+    expect(oneKeys.length).toBeGreaterThan(0);
+    expect(oneKeys.map((key) => key.replace(/_one$/, '')).sort()).toEqual(otherKeys.map((key) => key.replace(/_other$/, '')).sort());
+    expect(keys.filter((key) => /[a-z]One$/.test(key))).toEqual([]);
   });
 });

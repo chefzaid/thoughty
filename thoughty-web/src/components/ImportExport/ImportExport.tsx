@@ -8,6 +8,7 @@ import { ImportExportBookPanel } from './ImportExportBookPanel';
 import { AppImportPanel } from './appImport/AppImportPanel';
 import { useImportExportCloud } from './useImportExportCloud';
 import { downloadBlob } from '../../utils/downloadFile';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 import {
     DEFAULT_FORMAT_CONFIG,
     type FormatConfig,
@@ -200,9 +201,8 @@ function ImportExport({
                 const data = await response.json();
                 setMessage({
                     type: 'success',
-                    text: t('importSuccess', {
-                        imported: data.importedCount,
-                        skipped: data.skippedCount,
+                    text: pluralPhrase(t, 'importSuccess', data.importedCount, language, {
+                        skipped: pluralPhrase(t, 'importDuplicatesSkipped', data.skippedCount, language),
                     }),
                 });
                 setPreview(null);
@@ -323,6 +323,7 @@ function ImportExport({
                 diaryId={diaryId}
                 authFetch={authFetch}
                 connectedProviders={cloud.connectedProviders}
+                language={language}
                 showMessage={showMessage}
                 t={t}
             />

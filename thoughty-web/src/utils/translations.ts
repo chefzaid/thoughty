@@ -19,7 +19,8 @@ type CoreTranslationKey =
   | "feedEmptyCommunity"
   | "feedEmptyMine"
   | "feedLoadError"
-  | "feedCount"
+  | "feedCount_one"
+  | "feedCount_other"
   | "feedEnd"
   | "feedFollowing"
   | "feedEmptyFollowing"
@@ -186,8 +187,10 @@ type CoreTranslationKey =
   | "scanningJournalTags"
   | "journalRetagError"
   | "journalRetagApplyError"
-  | "journalRetagApplied"
-  | "journalRetagScanCount"
+  | "journalRetagApplied_one"
+  | "journalRetagApplied_other"
+  | "journalRetagScanCount_one"
+  | "journalRetagScanCount_other"
   | "journalRetagLimited"
   | "journalTagsFound"
   | "journalRetagEmpty"
@@ -199,7 +202,8 @@ type CoreTranslationKey =
   | "suggestedTags"
   | "noTags"
   | "noMatchingTag"
-  | "journalRetagSelected"
+  | "journalRetagSelected_one"
+  | "journalRetagSelected_other"
   | "applyingJournalRetag"
   | "applyJournalRetag"
   | "tagCategory"
@@ -234,10 +238,11 @@ type CoreTranslationKey =
   | "addTag"
   | "tagAlreadyExists"
   | "deleteTag"
-  | "deleteTagConfirm"
+  | "deleteTagConfirm_one"
+  | "deleteTagConfirm_other"
   | "deleteTagFailed"
-  | "tagUsageCount"
-  | "tagUsageCountOne"
+  | "tagUsageCount_one"
+  | "tagUsageCount_other"
   | "tagUnused"
   | "security"
   | "currentPassword"
@@ -302,8 +307,8 @@ type CoreTranslationKey =
   | "delete"
   | "noEntriesFound"
   | "edit"
-  | "entryWordCount"
-  | "entryWordCountOne"
+  | "entryWordCount_one"
+  | "entryWordCount_other"
   | "entryReadingTimeMinutes"
   | "entryReadingTimeLessThanMinute"
   | "entryTemplate"
@@ -326,11 +331,13 @@ type CoreTranslationKey =
   | "journalActivityByDay"
   | "correlationGraph"
   | "correlationGraphDescription"
-  | "correlationEntriesAnalyzed"
+  | "correlationEntriesAnalyzed_one"
+  | "correlationEntriesAnalyzed_other"
   | "entryConnections"
   | "tagConnections"
   | "connectionStrength"
-  | "sharedEntryCount"
+  | "sharedEntryCount_one"
+  | "sharedEntryCount_other"
   | "noEntryConnections"
   | "noTagConnections"
   | "openConnectedEntry"
@@ -382,7 +389,10 @@ type CoreTranslationKey =
   | "skipDuplicates"
   | "confirmImport"
   | "importing"
-  | "importSuccess"
+  | "importSuccess_one"
+  | "importSuccess_other"
+  | "importDuplicatesSkipped_one"
+  | "importDuplicatesSkipped_other"
   | "importError"
   | "exportSuccess"
   | "exportError"
@@ -452,7 +462,15 @@ type CoreTranslationKey =
   | "bookVersionEmpty"
   | "bookVersionNumber"
   | "bookVersionCounts"
+  | "bookVersionChapters_one"
+  | "bookVersionChapters_other"
+  | "bookVersionEntries_one"
+  | "bookVersionEntries_other"
   | "bookVersionChanges"
+  | "bookVersionNewEntries_one"
+  | "bookVersionNewEntries_other"
+  | "bookVersionNewChapters_one"
+  | "bookVersionNewChapters_other"
   | "bookVersionSaved"
   | "bookVersionSaveError"
   | "downloadBookVersion"
@@ -642,7 +660,8 @@ type CoreTranslationKey =
   | "scanningDuplicates"
   | "duplicateScanError"
   | "noDuplicatesFound"
-  | "duplicateScanCount"
+  | "duplicateScanCount_one"
+  | "duplicateScanCount_other"
   | "duplicateScanLimited"
   | "duplicateConfidence"
   | "openDuplicateEntry"
@@ -705,8 +724,8 @@ type CoreTranslationKey =
   | "passwordRequired"
   | "backToSource"
   | "backlinks"
-  | "backlinksCount"
-  | "backlinksCountOne"
+  | "backlinksCount_one"
+  | "backlinksCount_other"
   | "entryNotFound"
   | "entryNotFoundMessage"
   | "entryReferenceHint"
@@ -745,7 +764,8 @@ type CoreTranslationKey =
   | "selectAll"
   | "bulkModeEnter"
   | "bulkModeExit"
-  | "bulkSelected"
+  | "bulkSelected_one"
+  | "bulkSelected_other"
   | "bulkDelete"
   | "bulkMakePublic"
   | "bulkMakePrivate"
@@ -754,7 +774,8 @@ type CoreTranslationKey =
   | "bulkMove"
   | "bulkClearSelection"
   | "bulkDeleteTitle"
-  | "bulkDeleteMessage"
+  | "bulkDeleteMessage_one"
+  | "bulkDeleteMessage_other"
   | "selectTags"
   | "apply"
   | "attachFiles"
@@ -941,7 +962,8 @@ export const translations: Translations = {
     feedEmptyCommunity: "No public entries from the community yet.",
     feedEmptyMine: "You do not have any public entries yet.",
     feedLoadError: "The public feed could not be loaded.",
-    feedCount: "Showing {count} of {total}",
+    feedCount_one: "Showing {count} of {total}",
+    feedCount_other: "Showing {count} of {total}",
     feedEnd: "You are all caught up.",
     feedFollowing: "Following",
     feedEmptyFollowing: "No public entries from people you follow yet. Follow writers from the Community feed to see them here.",
@@ -1127,8 +1149,10 @@ export const translations: Translations = {
     scanningJournalTags: "Analyzing your journal...",
     journalRetagError: "Could not analyze the journal.",
     journalRetagApplyError: "Could not apply the selected tag changes.",
-    journalRetagApplied: "Updated {count} entries.",
-    journalRetagScanCount: "Analyzed {analyzed} of {total} entries.",
+    journalRetagApplied_one: "Updated {count} entry.",
+    journalRetagApplied_other: "Updated {count} entries.",
+    journalRetagScanCount_one: "Analyzed {analyzed} of {count} entry.",
+    journalRetagScanCount_other: "Analyzed {analyzed} of {count} entries.",
     journalRetagLimited: "Only the 300 most recent entries were analyzed.",
     journalTagsFound: "Tags proposed",
     journalRetagEmpty: "Write an entry before organizing journal tags.",
@@ -1140,7 +1164,8 @@ export const translations: Translations = {
     suggestedTags: "Suggested tags",
     noTags: "No tags",
     noMatchingTag: "No matching tag",
-    journalRetagSelected: "{count} entries selected",
+    journalRetagSelected_one: "{count} entry selected",
+    journalRetagSelected_other: "{count} entries selected",
     applyingJournalRetag: "Applying changes...",
     applyJournalRetag: "Apply selected changes",
     tagCategory: "Category",
@@ -1176,11 +1201,11 @@ export const translations: Translations = {
     addTag: "Add tag",
     tagAlreadyExists: "That tag already exists.",
     deleteTag: "Delete tag",
-    deleteTagConfirm:
-      "Delete #{tag}? It will be removed from {count} entries. The entries themselves are kept.",
+    deleteTagConfirm_one: "Delete #{tag}? It will be removed from {count} entry. The entry itself is kept.",
+    deleteTagConfirm_other: "Delete #{tag}? It will be removed from {count} entries. The entries themselves are kept.",
     deleteTagFailed: "Unable to delete the tag. Please try again.",
-    tagUsageCount: "{count} entries",
-    tagUsageCountOne: "1 entry",
+    tagUsageCount_one: "{count} entry",
+    tagUsageCount_other: "{count} entries",
     tagUnused: "Unused",
 
     // Security
@@ -1259,8 +1284,8 @@ export const translations: Translations = {
     // Entries List
     noEntriesFound: "No entries found",
     edit: "Edit",
-    entryWordCount: "{count} words",
-    entryWordCountOne: "1 word",
+    entryWordCount_one: "{count} word",
+    entryWordCount_other: "{count} words",
     entryReadingTimeMinutes: "{minutes} min read",
     entryReadingTimeLessThanMinute: "<1 min read",
     entryTemplate: "Entry template",
@@ -1286,11 +1311,13 @@ export const translations: Translations = {
     correlationGraph: "Connections",
     correlationGraphDescription:
       "Explore the strongest links between entries and tags across this journal scope.",
-    correlationEntriesAnalyzed: "{count} entries analyzed",
+    correlationEntriesAnalyzed_one: "{count} entry analyzed",
+    correlationEntriesAnalyzed_other: "{count} entries analyzed",
     entryConnections: "Related entries",
     tagConnections: "Tag network",
     connectionStrength: "Connection strength: {score}%",
-    sharedEntryCount: "{count} shared entries",
+    sharedEntryCount_one: "{count} shared entry",
+    sharedEntryCount_other: "{count} shared entries",
     noEntryConnections:
       "Add shared tags to more entries to reveal connections.",
     noTagConnections: "Use tags together on entries to reveal a tag network.",
@@ -1353,8 +1380,10 @@ export const translations: Translations = {
     skipDuplicates: "Skip duplicate entries",
     confirmImport: "Import Entries",
     importing: "Importing...",
-    importSuccess:
-      "Successfully imported {imported} entries ({skipped} duplicates skipped)",
+    importSuccess_one: "Successfully imported {count} entry ({skipped})",
+    importSuccess_other: "Successfully imported {count} entries ({skipped})",
+    importDuplicatesSkipped_one: "{count} duplicate skipped",
+    importDuplicatesSkipped_other: "{count} duplicates skipped",
     importError: "Failed to import entries",
     exportSuccess: "Export downloaded successfully",
     exportError: "Failed to export entries",
@@ -1429,8 +1458,16 @@ export const translations: Translations = {
     bookVersionEmpty:
       "Save a version to preserve this book and track future updates.",
     bookVersionNumber: "Version {version}",
-    bookVersionCounts: "{chapters} chapters · {entries} entries",
-    bookVersionChanges: "{entries} new entries · {chapters} new chapters",
+    bookVersionCounts: "{chapters} · {entries}",
+    bookVersionChapters_one: "{count} chapter",
+    bookVersionChapters_other: "{count} chapters",
+    bookVersionEntries_one: "{count} entry",
+    bookVersionEntries_other: "{count} entries",
+    bookVersionChanges: "{entries} · {chapters}",
+    bookVersionNewEntries_one: "{count} new entry",
+    bookVersionNewEntries_other: "{count} new entries",
+    bookVersionNewChapters_one: "{count} new chapter",
+    bookVersionNewChapters_other: "{count} new chapters",
     bookVersionSaved: "Book version {version} saved",
     bookVersionSaveError: "Failed to save book version",
     downloadBookVersion: "Download version {version}",
@@ -1663,7 +1700,8 @@ export const translations: Translations = {
     duplicateScanError:
       "Unable to compare entries. Check your OpenRouter API key and try again.",
     noDuplicatesFound: "No high-confidence duplicates were found.",
-    duplicateScanCount: "Analyzed {analyzed} of {total} entries.",
+    duplicateScanCount_one: "Analyzed {analyzed} of {count} entry.",
+    duplicateScanCount_other: "Analyzed {analyzed} of {count} entries.",
     duplicateScanLimited:
       "Only the 40 newest entries were analyzed. Select a diary to narrow the scan.",
     duplicateConfidence: "{confidence}% confidence",
@@ -1728,8 +1766,8 @@ export const translations: Translations = {
     // Entry Cross-References
     backToSource: "Back to source entry",
     backlinks: "Backlinks",
-    backlinksCount: "{count} links",
-    backlinksCountOne: "1 link",
+    backlinksCount_one: "{count} link",
+    backlinksCount_other: "{count} links",
     entryNotFound: "Entry not found",
     entryNotFoundMessage:
       "This entry may have been deleted, or the link is no longer valid.",
@@ -1777,7 +1815,8 @@ export const translations: Translations = {
     selectAll: "Select all",
     bulkModeEnter: "Select",
     bulkModeExit: "Cancel selection",
-    bulkSelected: "{count} selected",
+    bulkSelected_one: "{count} selected",
+    bulkSelected_other: "{count} selected",
     bulkDelete: "Delete",
     bulkMakePublic: "Make public",
     bulkMakePrivate: "Make private",
@@ -1786,8 +1825,8 @@ export const translations: Translations = {
     bulkMove: "Move to diary",
     bulkClearSelection: "Clear",
     bulkDeleteTitle: "Delete entries",
-    bulkDeleteMessage:
-      "Move {count} entries to the recycle bin? You can restore them from there for 30 days.",
+    bulkDeleteMessage_one: "Move {count} entry to the recycle bin? You can restore it from there for 30 days.",
+    bulkDeleteMessage_other: "Move {count} entries to the recycle bin? You can restore them from there for 30 days.",
     selectTags: "Select tags...",
     apply: "Apply",
     attachFiles: "Attach files",
@@ -1976,7 +2015,8 @@ export const translations: Translations = {
     feedEmptyCommunity: "Aucune entrée publique de la communauté pour le moment.",
     feedEmptyMine: "Vous n'avez pas encore d'entrée publique.",
     feedLoadError: "Le fil public n'a pas pu être chargé.",
-    feedCount: "{count} entrées affichées sur {total}",
+    feedCount_one: "{count} entrée affichée sur {total}",
+    feedCount_other: "{count} entrées affichées sur {total}",
     feedEnd: "Vous êtes à jour.",
     feedFollowing: "Abonnements",
     feedEmptyFollowing: "Aucune entrée publique des personnes que vous suivez pour le moment. Suivez des auteurs depuis le fil Communauté pour les voir ici.",
@@ -2166,8 +2206,10 @@ export const translations: Translations = {
     scanningJournalTags: "Analyse de votre journal...",
     journalRetagError: "Impossible d'analyser le journal.",
     journalRetagApplyError: "Impossible d'appliquer les changements de tags sélectionnés.",
-    journalRetagApplied: "{count} entrées mises à jour.",
-    journalRetagScanCount: "{analyzed} entrées analysées sur {total}.",
+    journalRetagApplied_one: "{count} entrée mise à jour.",
+    journalRetagApplied_other: "{count} entrées mises à jour.",
+    journalRetagScanCount_one: "{analyzed} sur {count} entrée analysée.",
+    journalRetagScanCount_other: "{analyzed} sur {count} entrées analysées.",
     journalRetagLimited:
       "Seules les 300 entrées les plus récentes ont été analysées.",
     journalTagsFound: "Tags proposés",
@@ -2180,7 +2222,8 @@ export const translations: Translations = {
     suggestedTags: "Tags suggérés",
     noTags: "Aucun tag",
     noMatchingTag: "Aucun tag correspondant",
-    journalRetagSelected: "{count} entrées sélectionnées",
+    journalRetagSelected_one: "{count} entrée sélectionnée",
+    journalRetagSelected_other: "{count} entrées sélectionnées",
     applyingJournalRetag: "Application des changements...",
     applyJournalRetag: "Appliquer les changements sélectionnés",
     tagCategory: "Catégorie",
@@ -2216,11 +2259,11 @@ export const translations: Translations = {
     addTag: "Ajouter le tag",
     tagAlreadyExists: "Ce tag existe déjà.",
     deleteTag: "Supprimer le tag",
-    deleteTagConfirm:
-      "Supprimer #{tag} ? Il sera retiré de {count} entrées. Les entrées elles-mêmes sont conservées.",
+    deleteTagConfirm_one: "Supprimer #{tag} ? Il sera retiré de {count} entrée. L'entrée elle-même est conservée.",
+    deleteTagConfirm_other: "Supprimer #{tag} ? Il sera retiré de {count} entrées. Les entrées elles-mêmes sont conservées.",
     deleteTagFailed: "Impossible de supprimer le tag. Veuillez réessayer.",
-    tagUsageCount: "{count} entrées",
-    tagUsageCountOne: "1 entrée",
+    tagUsageCount_one: "{count} entrée",
+    tagUsageCount_other: "{count} entrées",
     tagUnused: "Inutilisé",
 
     // Security
@@ -2302,8 +2345,8 @@ export const translations: Translations = {
     // Entries List
     noEntriesFound: "Aucune entrée trouvée",
     edit: "Modifier",
-    entryWordCount: "{count} mots",
-    entryWordCountOne: "1 mot",
+    entryWordCount_one: "{count} mot",
+    entryWordCount_other: "{count} mots",
     entryReadingTimeMinutes: "{minutes} min de lecture",
     entryReadingTimeLessThanMinute: "<1 min de lecture",
     entryTemplate: "Modèle d'entrée",
@@ -2329,11 +2372,13 @@ export const translations: Translations = {
     correlationGraph: "Connexions",
     correlationGraphDescription:
       "Explorez les liens les plus forts entre les entrées et les tags de ce journal.",
-    correlationEntriesAnalyzed: "{count} entrées analysées",
+    correlationEntriesAnalyzed_one: "{count} entrée analysée",
+    correlationEntriesAnalyzed_other: "{count} entrées analysées",
     entryConnections: "Entrées liées",
     tagConnections: "Réseau de tags",
     connectionStrength: "Force de la connexion : {score} %",
-    sharedEntryCount: "{count} entrées partagées",
+    sharedEntryCount_one: "{count} entrée partagée",
+    sharedEntryCount_other: "{count} entrées partagées",
     noEntryConnections:
       "Ajoutez des tags communs à plusieurs entrées pour révéler leurs liens.",
     noTagConnections:
@@ -2400,8 +2445,10 @@ export const translations: Translations = {
     skipDuplicates: "Ignorer les entrées en double",
     confirmImport: "Importer les entrées",
     importing: "Importation...",
-    importSuccess:
-      "{imported} entrées importées avec succès ({skipped} doublons ignorés)",
+    importSuccess_one: "{count} entrée importée avec succès ({skipped})",
+    importSuccess_other: "{count} entrées importées avec succès ({skipped})",
+    importDuplicatesSkipped_one: "{count} doublon ignoré",
+    importDuplicatesSkipped_other: "{count} doublons ignorés",
     importError: "Échec de l'importation des entrées",
     exportSuccess: "Export téléchargé avec succès",
     exportError: "Échec de l'exportation des entrées",
@@ -2477,9 +2524,16 @@ export const translations: Translations = {
     bookVersionEmpty:
       "Enregistrez une version pour conserver ce livre et suivre ses futures mises à jour.",
     bookVersionNumber: "Version {version}",
-    bookVersionCounts: "{chapters} chapitres · {entries} entrées",
-    bookVersionChanges:
-      "{entries} nouvelles entrées · {chapters} nouveaux chapitres",
+    bookVersionCounts: "{chapters} · {entries}",
+    bookVersionChapters_one: "{count} chapitre",
+    bookVersionChapters_other: "{count} chapitres",
+    bookVersionEntries_one: "{count} entrée",
+    bookVersionEntries_other: "{count} entrées",
+    bookVersionChanges: "{entries} · {chapters}",
+    bookVersionNewEntries_one: "{count} nouvelle entrée",
+    bookVersionNewEntries_other: "{count} nouvelles entrées",
+    bookVersionNewChapters_one: "{count} nouveau chapitre",
+    bookVersionNewChapters_other: "{count} nouveaux chapitres",
     bookVersionSaved: "Version {version} du livre enregistrée",
     bookVersionSaveError: "Échec de l'enregistrement de la version du livre",
     downloadBookVersion: "Télécharger la version {version}",
@@ -2718,7 +2772,8 @@ export const translations: Translations = {
     duplicateScanError:
       "Impossible de comparer les entrées. Vérifiez votre clé API OpenRouter et réessayez.",
     noDuplicatesFound: "Aucun doublon suffisamment fiable n’a été trouvé.",
-    duplicateScanCount: "{analyzed} entrées analysées sur {total}.",
+    duplicateScanCount_one: "{analyzed} sur {count} entrée analysée.",
+    duplicateScanCount_other: "{analyzed} sur {count} entrées analysées.",
     duplicateScanLimited:
       "Seules les 40 entrées les plus récentes ont été analysées. Sélectionnez un journal pour affiner la recherche.",
     duplicateConfidence: "Confiance : {confidence} %",
@@ -2785,8 +2840,8 @@ export const translations: Translations = {
     // Entry Cross-References
     backToSource: "Retour à l'entrée source",
     backlinks: "Rétroliens",
-    backlinksCount: "{count} liens",
-    backlinksCountOne: "1 lien",
+    backlinksCount_one: "{count} lien",
+    backlinksCount_other: "{count} liens",
     entryNotFound: "Entrée non trouvée",
     entryNotFoundMessage:
       "Cette entrée a peut-être été supprimée, ou le lien n'est plus valide.",
@@ -2835,7 +2890,8 @@ export const translations: Translations = {
     selectAll: "Tout sélectionner",
     bulkModeEnter: "Sélectionner",
     bulkModeExit: "Annuler la sélection",
-    bulkSelected: "{count} sélectionné(s)",
+    bulkSelected_one: "{count} sélectionnée",
+    bulkSelected_other: "{count} sélectionnées",
     bulkDelete: "Supprimer",
     bulkMakePublic: "Rendre public",
     bulkMakePrivate: "Rendre privé",
@@ -2844,8 +2900,8 @@ export const translations: Translations = {
     bulkMove: "Déplacer vers le journal",
     bulkClearSelection: "Effacer",
     bulkDeleteTitle: "Supprimer les entrées",
-    bulkDeleteMessage:
-      "Placer {count} entrées dans la corbeille ? Vous pourrez les y restaurer pendant 30 jours.",
+    bulkDeleteMessage_one: "Placer {count} entrée dans la corbeille ? Vous pourrez l'y restaurer pendant 30 jours.",
+    bulkDeleteMessage_other: "Placer {count} entrées dans la corbeille ? Vous pourrez les y restaurer pendant 30 jours.",
     selectTags: "Sélectionner des tags...",
     apply: "Appliquer",
     attachFiles: "Joindre des fichiers",

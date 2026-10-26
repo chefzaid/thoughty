@@ -1,5 +1,7 @@
 import { useState } from "react";
 import type { components } from "../../generated/openapi";
+import { pluralPhrase } from "../../utils/pluralPhrase";
+import type { Language } from "../../utils/translations";
 import "./StatsCorrelationGraph.css";
 
 type StatsCorrelations = components["schemas"]["StatsCorrelationsDto"];
@@ -7,6 +9,7 @@ type StatsCorrelations = components["schemas"]["StatsCorrelationsDto"];
 interface StatsCorrelationGraphProps {
   readonly correlations: StatsCorrelations;
   readonly themeClass: "light" | "dark";
+  readonly language: Language;
   readonly t: (key: string, params?: Record<string, string | number>) => string;
   readonly onOpenJournalDay?: (date: string) => void | Promise<void>;
 }
@@ -16,6 +19,7 @@ type CorrelationMode = "entries" | "tags";
 export default function StatsCorrelationGraph({
   correlations,
   themeClass,
+  language,
   t,
   onOpenJournalDay,
 }: Readonly<StatsCorrelationGraphProps>) {
@@ -49,9 +53,7 @@ export default function StatsCorrelationGraph({
           <p>{t("correlationGraphDescription")}</p>
         </div>
         <span className="correlation-sample">
-          {t("correlationEntriesAnalyzed", {
-            count: correlations.analyzedEntries,
-          })}
+          {pluralPhrase(t, "correlationEntriesAnalyzed", correlations.analyzedEntries, language)}
         </span>
       </div>
 
@@ -141,9 +143,7 @@ export default function StatsCorrelationGraph({
                       />
                       <strong>{connection.strength}%</strong>
                       <span>
-                        {t("sharedEntryCount", {
-                          count: connection.sharedEntries,
-                        })}
+                        {pluralPhrase(t, "sharedEntryCount", connection.sharedEntries, language)}
                       </span>
                     </div>
                     <span className="correlation-node">

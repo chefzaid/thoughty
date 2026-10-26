@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { components } from '../../generated/openapi';
 import { monthName, weekdayName } from '../../utils/calendarNames';
 import { feelingLabel, moodEmoji, moodLabelKey, nearestMoodLevel, MOOD_LEVELS } from '../../utils/entryMood';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
 
 type StatsMood = components['schemas']['StatsMoodDto'];
@@ -59,11 +60,10 @@ function MoodOverTime({ months, language, t, themeClass }: Readonly<{ months: Mo
     const shown = months.slice(Math.max(0, end - MONTHS_PER_PAGE), end);
     const step = WIDTH / Math.max(1, shown.length);
     const points = shown.map((month, index) => ({ ...month, x: step * index + step / 2, y: yFor(month.average) }));
-    const describe = (month: MoodMonth) => t('statsMoodMonthPoint', {
+    const describe = (month: MoodMonth) => pluralPhrase(t, 'statsMoodMonthPoint', month.entries, language, {
         month: monthLabel(month.month, language),
         average: formatAverage(month.average, language),
         label: t(moodLabelKey(nearestMoodLevel(month.average))),
-        entries: month.entries,
     });
 
     return (
@@ -206,7 +206,7 @@ function StatsMoodPanel({ moods, themeClass, language, t }: StatsMoodPanelProps)
                                                 <span className="sr-only">
                                                     {weekday.average === null
                                                         ? t('statsMoodWeekdayEmpty', { weekday: name })
-                                                        : t('statsMoodWeekdayRow', { weekday: name, average: formatAverage(weekday.average, language), entries: weekday.entries })}
+                                                        : pluralPhrase(t, 'statsMoodWeekdayRow', weekday.entries, language, { weekday: name, average: formatAverage(weekday.average, language) })}
                                                 </span>
                                                 <span className="tone-mood-bar-track" aria-hidden="true">
                                                     <span className="tone-mood-bar-fill recorded-mood" style={{ width: `${((weekday.average ?? 0) / 5) * 100}%` }} />
@@ -229,7 +229,7 @@ function StatsMoodPanel({ moods, themeClass, language, t }: StatsMoodPanelProps)
                                                     <span>{label}</span>
                                                     <span aria-hidden="true">{feeling.count.toLocaleString(language)}</span>
                                                 </div>
-                                                <span className="sr-only">{t('statsFeelingRow', { feeling: label, count: feeling.count })}</span>
+                                                <span className="sr-only">{pluralPhrase(t, 'statsFeelingRow', feeling.count, language, { feeling: label })}</span>
                                                 <span className="tone-mood-bar-track" aria-hidden="true">
                                                     <span className="tone-mood-bar-fill recorded-feeling" style={{ width: `${(feeling.count / maxFeeling) * 100}%` }} />
                                                 </span>

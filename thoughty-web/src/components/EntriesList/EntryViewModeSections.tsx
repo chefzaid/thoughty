@@ -14,6 +14,8 @@ import type {
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { getEntryMetrics } from '../../utils/entryMetrics';
 import { formatTimeOfDay } from '../../utils/entryTime';
+import { pluralPhrase } from '../../utils/pluralPhrase';
+import type { Language } from '../../utils/translations';
 import { describeMood, feelingLabel, isMoodLevel, moodEmoji, moodLabelKey } from '../../utils/entryMood';
 import { resolveFontColor } from '../../types/config';
 import {
@@ -230,6 +232,7 @@ export function EntryBodySection({
     isDark,
     theme,
     fontColor,
+    language,
     onNavigateToEntry,
     onToggleTask,
     searchTerm,
@@ -246,6 +249,7 @@ export function EntryBodySection({
     isDark: boolean;
     theme: Config['theme'];
     fontColor?: string;
+    language: Language;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     onToggleTask?: (line: number, checked: boolean) => void;
     searchTerm?: string;
@@ -294,9 +298,7 @@ export function EntryBodySection({
             </div>
             <div className={`mt-3 flex flex-wrap gap-2 text-xs ${mutedTextClass(isDark)}`}>
                 <span>
-                    {wordCount === 1
-                        ? t('entryWordCountOne')
-                        : t('entryWordCount', { count: wordCount })}
+                    {pluralPhrase(t, 'entryWordCount', wordCount, language)}
                 </span>
                 <span aria-hidden="true">/</span>
                 <span>{readingTimeLabel}</span>
@@ -305,6 +307,7 @@ export function EntryBodySection({
                 entry={entry}
                 backlinks={backlinks}
                 isDark={isDark}
+                language={language}
                 onNavigateToEntry={onNavigateToEntry}
                 tagMetadata={tagMetadata}
                 t={t}
@@ -334,6 +337,7 @@ export function EntryBacklinksSection({
     entry,
     backlinks,
     isDark,
+    language,
     onNavigateToEntry,
     tagMetadata,
     t,
@@ -341,6 +345,7 @@ export function EntryBacklinksSection({
     entry: Entry;
     backlinks: EntryBacklink[];
     isDark: boolean;
+    language: Language;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
     tagMetadata: TagMetadataMap;
     t: TranslationFn;
@@ -362,9 +367,7 @@ export function EntryBacklinksSection({
                     {t('backlinks')}
                 </h4>
                 <span className={`text-xs ${mutedTextClass(isDark)}`}>
-                    {backlinks.length === 1
-                        ? t('backlinksCountOne')
-                        : t('backlinksCount', { count: backlinks.length })}
+                    {pluralPhrase(t, 'backlinksCount', backlinks.length, language)}
                 </span>
             </div>
             <div className="space-y-2">

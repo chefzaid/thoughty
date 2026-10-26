@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { getTranslation } from '../../../utils/translations';
 import type { ZipEntry } from '../../../utils/zipReader';
 import { AppImportPanel } from './AppImportPanel';
 import type { AppExport, ImportedEntry } from './appImportTypes';
@@ -49,8 +50,8 @@ const summary: AppImportSummary = {
   stopped: false,
 };
 
-function chooseExport(name = 'export.zip') {
-  const input = screen.getByLabelText('appImportChoose');
+function chooseExport(name = 'export.zip', label = 'appImportChoose') {
+  const input = screen.getByLabelText(label);
   fireEvent.change(input, { target: { files: [new File(['zip'], name)] } });
 }
 
@@ -140,7 +141,24 @@ describe('AppImportPanel', () => {
 
     expect(await screen.findByText('clip0.heic (appImportReasonTooLarge)')).toBeInTheDocument();
     expect(screen.getAllByRole('listitem')).toHaveLength(10);
-    expect(screen.getByText('appImportMoreFailed 2')).toBeInTheDocument();
+    expect(screen.getByText('appImportMoreFailed_other 2')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['en', '…and 1 more'],
+    ['fr', '…et 1 autre'],
+  ] as const)('counts one more failed file in %s', async (language, expected) => {
+    vi.mocked(readAppExport).mockResolvedValue(dayOneExport);
+    vi.mocked(runAppImport).mockResolvedValue({
+      ...summary,
+      failedFiles: Array.from({ length: 11 }, (_, index) => ({ name: `clip${index}.heic`, reason: 'unreadable' as const })),
+    });
+    const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+    render(<AppImportPanel language={language} t={translate} />);
+    chooseExport('export.zip', translate('appImportChoose'));
+
+    fireEvent.click(await screen.findByRole('button', { name: translate('appImportStart') }));
+    expect(await screen.findByText(expected)).toBeInTheDocument();
   });
 
   it('shows why an import failed', async () => {

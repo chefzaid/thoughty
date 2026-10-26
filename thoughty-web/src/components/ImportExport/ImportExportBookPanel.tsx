@@ -1,6 +1,7 @@
 import type { RefObject } from 'react';
 import type { CloudProviderType } from '../../services/api/cloudSyncService';
 import type { ImportExportSection, TranslationFunction } from '../../types';
+import type { Language } from '../../utils/translations';
 import { BookSection } from './ImportExportBookSection';
 import type { MessageState } from './ImportExport.types';
 import { useImportExportBook } from './useImportExportBook';
@@ -11,6 +12,7 @@ export function ImportExportBookPanel({
     connectedProviders,
     diaryId,
     diaryName,
+    language,
     sectionRef,
     showMessage,
     t,
@@ -20,6 +22,7 @@ export function ImportExportBookPanel({
     connectedProviders: CloudProviderType[];
     diaryId?: number | null;
     diaryName?: string;
+    language: Language;
     sectionRef: RefObject<HTMLElement | null>;
     showMessage: (type: MessageState['type'], text: string, duration?: number) => void;
     t: TranslationFunction;
@@ -53,6 +56,7 @@ export function ImportExportBookPanel({
             onUpload={book.handleUpload}
             onCreateVersion={book.handleCreateVersion}
             onVersionDownload={book.handleVersionDownload}
+            language={language}
             t={t}
         />
     );

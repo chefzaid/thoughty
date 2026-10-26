@@ -6,10 +6,13 @@ import type {
   JournalRetagPlan,
 } from "../../services/api/aiService";
 import type { TranslationFunction } from "../ProfilePage/types";
+import { pluralPhrase } from "../../utils/pluralPhrase";
+import type { Language } from "../../utils/translations";
 import "./JournalRetagReview.css";
 
 interface JournalRetagReviewProps {
   readonly isDark: boolean;
+  readonly language: Language;
   readonly onApplied: () => Promise<void>;
   readonly t: TranslationFunction;
 }
@@ -21,7 +24,7 @@ function tagsMatch(left: string[], right: string[]): boolean {
   );
 }
 
-function JournalRetagReview({ isDark, onApplied, t }: JournalRetagReviewProps) {
+function JournalRetagReview({ isDark, language, onApplied, t }: JournalRetagReviewProps) {
   const { aiService } = useApiServices();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -195,16 +198,15 @@ function JournalRetagReview({ isDark, onApplied, t }: JournalRetagReviewProps) {
                       className="codicon codicon-check"
                       aria-hidden="true"
                     />
-                    <p>{t("journalRetagApplied", { count: appliedCount })}</p>
+                    <p>{pluralPhrase(t, "journalRetagApplied", appliedCount, language)}</p>
                   </div>
                 )}
                 {plan && appliedCount === null && (
                   <>
                     <div className="journal-retag-summary">
                       <p>
-                        {t("journalRetagScanCount", {
-                          analyzed: plan.analyzedEntries,
-                          total: plan.totalEntries,
+                        {pluralPhrase(t, "journalRetagScanCount", plan.totalEntries, language, {
+                          analyzed: plan.analyzedEntries.toLocaleString(language),
                         })}
                       </p>
                       {plan.truncated && (
@@ -312,7 +314,7 @@ function JournalRetagReview({ isDark, onApplied, t }: JournalRetagReviewProps) {
               {plan && plan.entries.length > 0 && appliedCount === null && (
                 <footer className="journal-retag-footer">
                   <span>
-                    {t("journalRetagSelected", { count: selectedIds.size })}
+                    {pluralPhrase(t, "journalRetagSelected", selectedIds.size, language)}
                   </span>
                   <button
                     type="button"

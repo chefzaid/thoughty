@@ -1,4 +1,6 @@
 import type { TranslationFunction } from '../../types';
+import { resolveLanguage } from '../../utils/language';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 
 const GOAL_STORAGE_KEY = 'thoughty.focusModeGoal';
 export const MAX_WORD_GOAL = 100_000;
@@ -32,7 +34,5 @@ export function parseWordGoal(value: string): number | null {
 
 /** "1 word", "3 words", and in French "0 mot", which counts zero as singular. */
 export function wordsPhrase(t: TranslationFunction, count: number, language: string): string {
-    const locale = language === 'fr' ? 'fr' : 'en';
-    const form = new Intl.PluralRules(locale).select(count) === 'one' ? 'one' : 'other';
-    return t(`focusModeWords_${form}`, { count: count.toLocaleString(locale) });
+    return pluralPhrase(t, 'focusModeWords', count, resolveLanguage(language));
 }

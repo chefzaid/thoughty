@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useFeedService } from '../../hooks/useFeedService';
 import type { PublicFeedEntry, PublicFeedScope } from '../../services/api';
+import { resolveLanguage } from '../../utils/language';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import EntryComments from './EntryComments';
 import LikeButton from './LikeButton';
@@ -21,11 +23,13 @@ const SCOPES: ReadonlyArray<{ scope: PublicFeedScope; icon: string; label: strin
 
 interface FeedPageProps {
   readonly theme?: 'light' | 'dark';
+  readonly language?: string;
   readonly onOpenLeaderboard?: () => void;
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function FeedPage({ theme = 'dark', onOpenLeaderboard, t }: Readonly<FeedPageProps>) {
+function FeedPage({ theme = 'dark', language, onOpenLeaderboard, t }: Readonly<FeedPageProps>) {
+  const uiLanguage = resolveLanguage(language);
   const feedService = useFeedService();
   const currentUserId = useAuth().user?.id;
   const follows = useFollows(feedService);
@@ -147,7 +151,7 @@ function FeedPage({ theme = 'dark', onOpenLeaderboard, t }: Readonly<FeedPagePro
       {follows.updateError && <p className="feed-follow-error" role="alert">{t('followUpdateError')}</p>}
 
       <p className="feed-count" aria-live="polite">
-        {entries.length > 0 ? t('feedCount', { count: entries.length, total }) : ''}
+        {entries.length > 0 ? pluralPhrase(t, 'feedCount', entries.length, uiLanguage, { total: total.toLocaleString(uiLanguage) }) : ''}
       </p>
 
       <div className="feed-list">

@@ -32,12 +32,12 @@ test.describe('Recorded moods', () => {
     await expect(panel.locator('.tone-mood-highlight', { hasText: 'Average mood' })).toContainText('3.7 out of 5 · Good');
     await expect(panel.locator('.tone-mood-highlight', { hasText: 'Entries with a mood' })).toContainText('3');
     await expect(panel.getByRole('img', { name: /March 2025: average 3\.0 out of 5 \(Okay\) from 2 entries; April 2025: average 5\.0/ })).toBeVisible();
-    await expect(panel.getByText('Monday: average 2.0 out of 5 from 1 entries')).toBeAttached();
+    await expect(panel.getByText('Monday: average 2.0 out of 5 from 1 entry')).toBeAttached();
     await expect(panel.getByText('calm: 2 entries')).toBeAttached();
 
     await page.goto('/stats?diary=2');
     await expect(page.getByRole('region', { name: 'Recorded moods' }).locator('.tone-mood-highlight', { hasText: 'Entries with a mood' })).toContainText('1');
-    await expect(page.getByRole('region', { name: 'Recorded moods' }).getByText('joyful: 1 entries')).toBeAttached();
+    await expect(page.getByRole('region', { name: 'Recorded moods' }).getByText('joyful: 1 entry')).toBeAttached();
   });
 
   test('draws the year in review mood arc from recorded moods, without AI', async ({ page }) => {

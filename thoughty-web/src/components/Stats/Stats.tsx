@@ -329,6 +329,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
                         <StatsCorrelationGraph
                             correlations={stats.correlations ?? EMPTY_STATS.correlations}
                             themeClass={themeClass}
+                            language={uiLanguage}
                             t={t}
                             onOpenJournalDay={onOpenJournalDay}
                         />

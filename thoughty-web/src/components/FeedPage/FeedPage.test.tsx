@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { getTranslation } from '../../utils/translations';
 import FeedPage from './FeedPage';
 
 const fetchPublicFeed = vi.fn();
@@ -19,7 +20,7 @@ vi.mock('../../contexts/AuthContext', () => ({
 }));
 
 const t = (key: string, params?: Record<string, string | number>) => {
-  if (key === 'feedCount') return `${params?.count} of ${params?.total}`;
+  if (key.startsWith('feedCount_')) return `${params?.count} of ${params?.total}`;
   if (params) return `${key} ${Object.values(params).join(' ')}`;
   return key;
 };
@@ -63,6 +64,20 @@ describe('FeedPage', () => {
     expect(fetchPublicFeed).toHaveBeenNthCalledWith(1, 'community', 1, 10);
     expect(fetchPublicFeed).toHaveBeenNthCalledWith(2, 'community', 2, 10);
     expect(screen.getByText('2 of 2')).toBeInTheDocument();
+  });
+
+  it.each([
+    ['en', 1200, 'Showing 1 of 1,200'],
+    ['fr', 12, '1 entrée affichée sur 12'],
+  ] as const)('counts the shown entries in %s', async (language, total, expected) => {
+    fetchPublicFeed.mockResolvedValueOnce({
+      data: { entries: [createEntry(1, 'Ada')], total, page: 1, totalPages: 2, hasMore: true },
+      error: null,
+    });
+
+    render(<FeedPage language={language} t={(key, params) => getTranslation(language, key, params)} />);
+
+    expect(await screen.findByText(expected)).toBeInTheDocument();
   });
 
   it('shows the entry title and the time of day next to the date', async () => {

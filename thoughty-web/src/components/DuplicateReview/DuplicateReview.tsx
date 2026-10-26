@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { DuplicateEntryScan } from '../../services/api/aiService';
 import type { TranslationFunction } from '../../types';
+import { pluralPhrase } from '../../utils/pluralPhrase';
+import type { Language } from '../../utils/translations';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import './DuplicateReview.css';
 
 interface DuplicateReviewProps {
   readonly diaryId: number | null;
   readonly theme?: 'light' | 'dark';
+  readonly language: Language;
   readonly t: TranslationFunction;
   readonly onFindDuplicates: (diaryId?: number) => Promise<DuplicateEntryScan | null>;
   readonly onDelete: (entryId: number) => void;
@@ -16,6 +19,7 @@ interface DuplicateReviewProps {
 function DuplicateReview({
   diaryId,
   theme,
+  language,
   t,
   onFindDuplicates,
   onDelete,
@@ -116,9 +120,8 @@ function DuplicateReview({
               {scan && (
                 <>
                   <p className="duplicate-scan-count">
-                    {t('duplicateScanCount', {
-                      analyzed: scan.analyzedEntries,
-                      total: scan.totalEntries,
+                    {pluralPhrase(t, 'duplicateScanCount', scan.totalEntries, language, {
+                      analyzed: scan.analyzedEntries.toLocaleString(language),
                     })}
                   </p>
                   {scan.truncated && <p className="duplicate-scan-limit">{t('duplicateScanLimited')}</p>}

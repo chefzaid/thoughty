@@ -9,6 +9,7 @@ import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
 import DuplicateReview from '../DuplicateReview/DuplicateReview';
 import type { Config, TranslationFunction } from '../../types';
+import { resolveLanguage } from '../../utils/language';
 import { useJournalKeyboardShortcuts } from './useJournalKeyboardShortcuts';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
@@ -23,7 +24,7 @@ type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' |
 type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' | 'searchTerm'>;
 type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage'>;
 type YearMonthNavigatorProps = Pick<ComponentProps<typeof YearMonthNavigator>, 'availableYears' | 'availableMonths' | 'onNavigate'>;
-type DuplicateReviewProps = Omit<ComponentProps<typeof DuplicateReview>, 'theme' | 't'>;
+type DuplicateReviewProps = Omit<ComponentProps<typeof DuplicateReview>, 'theme' | 'language' | 't'>;
 
 interface JournalViewProps {
   diaryTabs: DiaryTabsProps;
@@ -111,6 +112,7 @@ function JournalView({
               <DuplicateReview
                 {...duplicateReview}
                 theme={config.theme}
+                language={resolveLanguage(config.language)}
                 t={t}
               />
               <button

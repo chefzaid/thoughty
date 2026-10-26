@@ -1,13 +1,13 @@
 import type { YearReview } from '../../services/api';
 import type { TranslationFunction } from '../../types';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
 
 export type CountKey = 'reviewEntries' | 'reviewWords' | 'reviewDays';
 
 /** "1 entry", "214 entries", "0 entrée" in French, which counts zero as singular. */
 export function countPhrase(t: TranslationFunction, key: CountKey, count: number, language: Language): string {
-  const form = new Intl.PluralRules(language).select(count) === 'one' ? 'one' : 'other';
-  return t(`${key}_${form}`, { count: count.toLocaleString(language) });
+  return pluralPhrase(t, key, count, language);
 }
 
 /** "+12", "−3", or "±0". */

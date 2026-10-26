@@ -50,7 +50,7 @@ test.describe("Journal theme organization", () => {
       .getByRole("button", { name: "Apply selected changes" })
       .click();
 
-    await expect(dialog.getByText("Updated 1 entries.")).toBeVisible();
+    await expect(dialog.getByText("Updated 1 entry.")).toBeVisible();
     await expect
       .poll(() => state.lastAiJournalRetagPayload)
       .toEqual({

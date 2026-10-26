@@ -244,10 +244,7 @@ export function buildAuthenticatedRoutesProps({
   const knownTags = listKnownTags(entriesState.allTags, tagMetadata);
 
   return {
-    feedRouteProps: {
-      theme: config.theme,
-      t,
-    },
+    feedRouteProps: { theme: config.theme, language: config.language, t },
     memoirRouteProps: {
       theme: config.theme,
       language: config.language,

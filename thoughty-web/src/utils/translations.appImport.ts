@@ -35,7 +35,8 @@ export type AppImportTranslationKey =
   | 'appImportReasonTooLarge'
   | 'appImportReasonUnreadable'
   | 'appImportReasonRejected'
-  | 'appImportMoreFailed'
+  | 'appImportMoreFailed_one'
+  | 'appImportMoreFailed_other'
   | 'appImportAnother'
   | 'formatMarkdownFolder';
 
@@ -76,7 +77,8 @@ export const appImportTranslations: Record<Language, Record<AppImportTranslation
     appImportReasonTooLarge: 'larger than 5 MB',
     appImportReasonUnreadable: 'a format this browser cannot read',
     appImportReasonRejected: 'refused by the server',
-    appImportMoreFailed: '…and {count} more',
+    appImportMoreFailed_one: '…and {count} more',
+    appImportMoreFailed_other: '…and {count} more',
     appImportAnother: 'Import another export',
     formatMarkdownFolder: 'Markdown folder with attachments (.zip)',
   },
@@ -116,7 +118,8 @@ export const appImportTranslations: Record<Language, Record<AppImportTranslation
     appImportReasonTooLarge: 'plus de 5 Mo',
     appImportReasonUnreadable: 'un format illisible par ce navigateur',
     appImportReasonRejected: 'refusé par le serveur',
-    appImportMoreFailed: '…et {count} autres',
+    appImportMoreFailed_one: '…et {count} autre',
+    appImportMoreFailed_other: '…et {count} autres',
     appImportAnother: 'Importer un autre export',
     formatMarkdownFolder: 'Dossier Markdown avec pièces jointes (.zip)',
   },

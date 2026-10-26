@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { getTranslation } from '../../utils/translations';
 import DuplicateReview from './DuplicateReview';
 
 const scanResult = {
@@ -40,6 +41,7 @@ describe('DuplicateReview', () => {
     render(
       <DuplicateReview
         diaryId={4}
+        language="en"
         theme="dark"
         t={t}
         onFindDuplicates={onFindDuplicates}
@@ -53,7 +55,7 @@ describe('DuplicateReview', () => {
 
     expect(onFindDuplicates).toHaveBeenCalledWith(4);
     expect(await screen.findByText(scanResult.groups[0]!.reason)).toBeVisible();
-    expect(screen.getByText('duplicateScanCount:2/45')).toBeVisible();
+    expect(screen.getByText('duplicateScanCount_other:2/45')).toBeVisible();
     expect(screen.getByText('duplicateScanLimited')).toBeVisible();
     expect(screen.getByRole('button', { name: 'close' })).toHaveFocus();
 
@@ -70,6 +72,7 @@ describe('DuplicateReview', () => {
     render(
       <DuplicateReview
         diaryId={null}
+        language="en"
         t={t}
         onFindDuplicates={vi.fn().mockResolvedValue(scanResult)}
         onDelete={vi.fn()}
@@ -97,6 +100,7 @@ describe('DuplicateReview', () => {
     render(
       <DuplicateReview
         diaryId={1}
+        language="en"
         t={t}
         onFindDuplicates={onFindDuplicates}
         onDelete={vi.fn()}
@@ -121,6 +125,7 @@ describe('DuplicateReview', () => {
     render(
       <DuplicateReview
         diaryId={null}
+        language="en"
         theme="light"
         t={t}
         onFindDuplicates={vi.fn().mockReturnValue(pendingScan)}
@@ -146,5 +151,26 @@ describe('DuplicateReview', () => {
 
     await user.click(document.querySelector('.duplicate-review-backdrop')!);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['en', 'Analyzed 1 of 1 entry.'],
+    ['fr', '1 sur 1 entrée analysée.'],
+  ] as const)('writes a single scanned entry in %s', async (language, expected) => {
+    const user = userEvent.setup();
+    const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+    render(
+      <DuplicateReview
+        diaryId={1}
+        language={language}
+        t={translate}
+        onFindDuplicates={vi.fn().mockResolvedValue({ analyzedEntries: 1, totalEntries: 1, truncated: false, groups: [] })}
+        onDelete={vi.fn()}
+        onNavigateToEntry={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: translate('findDuplicates') }));
+    expect(await screen.findByText(expected)).toBeVisible();
   });
 });

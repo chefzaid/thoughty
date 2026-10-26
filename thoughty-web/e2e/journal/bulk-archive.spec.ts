@@ -48,4 +48,23 @@ test.describe('Journal bulk archive actions', () => {
     await expect(page.getByText('Private focus reflection for filtering')).toBeVisible();
     await expect(page.getByText('Public work planning note')).toBeVisible();
   });
+
+  test('counts a single selected entry in French', async ({ page }) => {
+    await setupMockApp(page, {
+      startAuthenticated: true,
+      config: { language: 'fr' },
+      initialEntries: [
+        { id: 101, date: '2024-04-18', index: 1, content: 'Une seule entrée choisie', tags: [], visibility: 'private', diaryId: 1 },
+        { id: 103, date: '2024-04-17', index: 1, content: 'Une autre entrée', tags: [], visibility: 'private', diaryId: 1 },
+      ],
+    });
+
+    await page.goto('/journal?diary=all');
+    await page.getByRole('button', { name: 'Sélectionner', exact: true }).click();
+    await page.locator('#entry-101 input[type="checkbox"]').check();
+
+    await expect(page.getByText('1 sélectionnée', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Supprimer', exact: true }).click();
+    await expect(page.getByText("Placer 1 entrée dans la corbeille ? Vous pourrez l'y restaurer pendant 30 jours.")).toBeVisible();
+  });
 });

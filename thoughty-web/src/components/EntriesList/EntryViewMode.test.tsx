@@ -229,6 +229,7 @@ describe('EntryViewMode', () => {
         );
         renderEntryViewMode({
             onFetchBacklinks,
+            config: { theme: 'dark', language: lang },
             t: (key, params) => getTranslation(lang, key, params),
         });
 
@@ -242,9 +243,12 @@ describe('EntryViewMode', () => {
         ['fr', 'Pluie', '1 mot'],
         ['fr', 'Pluie encore', '2 mots'],
         ['fr', 'Pluie toute journée', '3 mots'],
+        ['en', '', '0 words'],
+        ['fr', '', '0 mot'],
     ])('counts words in the singular or plural in %s (%s)', (lang, content, label) => {
         renderEntryViewMode({
             entry: { ...mockEntries[0], content },
+            config: { theme: 'dark', language: lang },
             t: (key, params) => getTranslation(lang, key, params),
         });
 

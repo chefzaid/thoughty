@@ -50,14 +50,17 @@ export type MoodTranslationKey =
   | 'statsMoodAverage'
   | 'statsMoodRecorded'
   | 'statsMoodOverTime'
-  | 'statsMoodMonthPoint'
+  | 'statsMoodMonthPoint_one'
+  | 'statsMoodMonthPoint_other'
   | 'statsMoodChartLabel'
   | 'statsMoodByWeekday'
-  | 'statsMoodWeekdayRow'
+  | 'statsMoodWeekdayRow_one'
+  | 'statsMoodWeekdayRow_other'
   | 'statsMoodWeekdayEmpty'
   | 'statsTopFeelings'
   | 'statsTopFeelingsEmpty'
-  | 'statsFeelingRow'
+  | 'statsFeelingRow_one'
+  | 'statsFeelingRow_other'
   | 'statsMoodEarlier'
   | 'statsMoodLater'
   | 'reviewMoodRecordedSource'
@@ -118,14 +121,17 @@ export const moodTranslations: Record<Language, Record<MoodTranslationKey, strin
     statsMoodAverage: 'Average mood',
     statsMoodRecorded: 'Entries with a mood',
     statsMoodOverTime: 'Mood over time',
-    statsMoodMonthPoint: '{month}: average {average} out of 5 ({label}) from {entries} entries',
+    statsMoodMonthPoint_one: '{month}: average {average} out of 5 ({label}) from {count} entry',
+    statsMoodMonthPoint_other: '{month}: average {average} out of 5 ({label}) from {count} entries',
     statsMoodChartLabel: 'Average mood by month, from 1 (very low) to 5 (very good): {months}',
     statsMoodByWeekday: 'Mood by weekday',
-    statsMoodWeekdayRow: '{weekday}: average {average} out of 5 from {entries} entries',
+    statsMoodWeekdayRow_one: '{weekday}: average {average} out of 5 from {count} entry',
+    statsMoodWeekdayRow_other: '{weekday}: average {average} out of 5 from {count} entries',
     statsMoodWeekdayEmpty: '{weekday}: no mood recorded',
     statsTopFeelings: 'Most frequent feelings',
     statsTopFeelingsEmpty: 'Name a feeling with your entries to see the ones you come back to.',
-    statsFeelingRow: '{feeling}: {count} entries',
+    statsFeelingRow_one: '{feeling}: {count} entry',
+    statsFeelingRow_other: '{feeling}: {count} entries',
     statsMoodEarlier: 'Earlier months',
     statsMoodLater: 'Later months',
     reviewMoodRecordedSource: 'From the moods you recorded, without AI',
@@ -185,14 +191,17 @@ export const moodTranslations: Record<Language, Record<MoodTranslationKey, strin
     statsMoodAverage: 'Humeur moyenne',
     statsMoodRecorded: 'Entrées avec une humeur',
     statsMoodOverTime: 'Humeur au fil du temps',
-    statsMoodMonthPoint: '{month} : moyenne de {average} sur 5 ({label}) sur {entries} entrées',
+    statsMoodMonthPoint_one: '{month} : moyenne de {average} sur 5 ({label}) sur {count} entrée',
+    statsMoodMonthPoint_other: '{month} : moyenne de {average} sur 5 ({label}) sur {count} entrées',
     statsMoodChartLabel: 'Humeur moyenne par mois, de 1 (très basse) à 5 (très bonne) : {months}',
     statsMoodByWeekday: 'Humeur par jour de la semaine',
-    statsMoodWeekdayRow: '{weekday} : moyenne de {average} sur 5 sur {entries} entrées',
+    statsMoodWeekdayRow_one: '{weekday} : moyenne de {average} sur 5 sur {count} entrée',
+    statsMoodWeekdayRow_other: '{weekday} : moyenne de {average} sur 5 sur {count} entrées',
     statsMoodWeekdayEmpty: '{weekday} : aucune humeur notée',
     statsTopFeelings: 'Ressentis les plus fréquents',
     statsTopFeelingsEmpty: 'Nommez un ressenti avec vos entrées pour voir ceux qui reviennent.',
-    statsFeelingRow: '{feeling} : {count} entrées',
+    statsFeelingRow_one: '{feeling} : {count} entrée',
+    statsFeelingRow_other: '{feeling} : {count} entrées',
     statsMoodEarlier: 'Mois précédents',
     statsMoodLater: 'Mois suivants',
     reviewMoodRecordedSource: 'D’après les humeurs que vous avez notées, sans IA',

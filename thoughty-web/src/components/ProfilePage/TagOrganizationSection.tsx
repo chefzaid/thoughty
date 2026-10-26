@@ -1,6 +1,8 @@
 import { useMemo, type Dispatch, type SetStateAction } from 'react';
 import TagBadge from '../TagBadge/TagBadge';
 import type { ProfileConfig, TranslationFunction } from './types';
+import { resolveLanguage } from '../../utils/language';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 import {
   getDefaultTagColor,
   listKnownTags,
@@ -100,9 +102,9 @@ function TagOrganizationSection({
                       />
                     </div>
                     <span className="tag-manager-usage">
-                      {usageCount === 0 && t('tagUnused')}
-                      {usageCount === 1 && t('tagUsageCountOne')}
-                      {usageCount > 1 && t('tagUsageCount', { count: usageCount })}
+                      {usageCount === 0
+                        ? t('tagUnused')
+                        : pluralPhrase(t, 'tagUsageCount', usageCount, resolveLanguage(localConfig.language))}
                     </span>
                   </div>
                   <div className="tag-manager-fields">

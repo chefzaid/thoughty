@@ -70,7 +70,7 @@ test.describe('Cloud sync management', () => {
     await expect(page.getByText('Preview Summary')).toBeVisible();
 
     await page.getByRole('button', { name: 'Import Entries' }).click();
-    await expect(page.getByText('Successfully imported 1 entries (0 duplicates skipped)')).toBeVisible();
+    await expect(page.getByText('Successfully imported 1 entry (0 duplicates skipped)')).toBeVisible();
     await expect.poll(() => state.entries.some((entry) => entry.content === 'Cloud restored entry')).toBe(true);
 
     await googleDriveCard.getByRole('button', { name: 'Disable Schedule' }).click();

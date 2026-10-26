@@ -15,6 +15,8 @@ import {
 import JournalRetagReview from './JournalRetagReview';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
+import { resolveLanguage } from '../../utils/language';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 
 const MAX_TAG_LENGTH = 50;
 
@@ -153,7 +155,7 @@ function TagManagerPage({
           <p className="profile-page-subtitle">{t('tagOrganizationDescription')}</p>
         </div>
         <div className="tag-manager-header-actions">
-          <JournalRetagReview isDark={isDark} onApplied={onRetagApplied} t={t} />
+          <JournalRetagReview isDark={isDark} language={resolveLanguage(config.language)} onApplied={onRetagApplied} t={t} />
           <button type="button" onClick={handleSave} className="btn-save">
             {t('saveSettings')}
           </button>
@@ -199,10 +201,13 @@ function TagManagerPage({
         onClose={() => setTagPendingDelete(null)}
         onConfirm={confirmDeleteTag}
         title={t('deleteTag')}
-        message={t('deleteTagConfirm', {
-          tag: tagPendingDelete ?? '',
-          count: tagPendingDelete ? tagUsage[tagPendingDelete] ?? 0 : 0,
-        })}
+        message={pluralPhrase(
+          t,
+          'deleteTagConfirm',
+          tagPendingDelete ? tagUsage[tagPendingDelete] ?? 0 : 0,
+          resolveLanguage(config.language),
+          { tag: tagPendingDelete ?? '' },
+        )}
         theme={isDark ? 'dark' : 'light'}
         t={t}
       />

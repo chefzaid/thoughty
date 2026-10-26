@@ -1,4 +1,5 @@
 import type { TranslationFunction } from '../../types';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -8,8 +9,7 @@ export type RecycleBinCountKey = 'recycleBinEntries' | 'recycleBinDaysLeft' | 'r
 
 /** "1 entry", "3 entries", and in French "0 entrée", which counts zero as singular. */
 export function binCountPhrase(t: TranslationFunction, key: RecycleBinCountKey, count: number, language: Language): string {
-  const form = new Intl.PluralRules(language).select(count) === 'one' ? 'one' : 'other';
-  return t(`${key}_${form}`, { count: count.toLocaleString(language) });
+  return pluralPhrase(t, key, count, language);
 }
 
 /** Whole days left before the purge, rounded up so an entry never reads as gone early. */

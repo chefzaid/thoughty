@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { getTranslation } from '../utils/translations';
 import AuthenticatedAppLayout from './AuthenticatedAppLayout';
 
 const defaultProps = {
@@ -71,5 +72,26 @@ describe('AuthenticatedAppLayout', () => {
     );
 
     expect(main).toHaveFocus();
+  });
+
+  it.each([
+    ['en', 1, 'Move 1 entry to the recycle bin? You can restore it from there for 30 days.'],
+    ['en', 2, 'Move 2 entries to the recycle bin? You can restore them from there for 30 days.'],
+    ['fr', 1, "Placer 1 entrée dans la corbeille ? Vous pourrez l'y restaurer pendant 30 jours."],
+    ['fr', 2, 'Placer 2 entrées dans la corbeille ? Vous pourrez les y restaurer pendant 30 jours.'],
+  ] as const)('asks before moving the selected entries to the recycle bin in %s (%i)', (language, count, expected) => {
+    render(
+      <AuthenticatedAppLayout
+        {...defaultProps}
+        config={{ theme: 'dark', language }}
+        t={(key, params) => getTranslation(language, key, params)}
+        bulkModalOpen
+        selectedCount={count}
+      >
+        <div>Journal content</div>
+      </AuthenticatedAppLayout>,
+    );
+
+    expect(screen.getByText(expected)).toBeInTheDocument();
   });
 });

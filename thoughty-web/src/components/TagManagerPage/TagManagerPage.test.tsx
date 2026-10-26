@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { parseTagMetadata, serializeTagMetadata } from '../../utils/tagMetadata';
+import { getTranslation } from '../../utils/translations';
 import TagManagerPage from './TagManagerPage';
 
 vi.mock('../ProfilePage/TagOrganizationSection', () => ({
@@ -161,6 +162,22 @@ describe('TagManagerPage', () => {
       return props;
     };
 
+    it.each([
+      ['en', 'Delete #focus? It will be removed from 1 entry. The entry itself is kept.'],
+      ['fr', "Supprimer #focus ? Il sera retiré de 1 entrée. L'entrée elle-même est conservée."],
+    ] as const)('asks before deleting a tag used once in %s', async (language, expected) => {
+      const user = userEvent.setup();
+      renderPage({
+        config: { ...configWithDraft, language },
+        onLoadTagUsage: vi.fn().mockResolvedValue([{ tag: 'focus', count: 1 }]),
+        t: (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params),
+      });
+      await screen.findByText('1');
+
+      await user.click(screen.getByRole('button', { name: 'mock-delete-focus' }));
+      expect(screen.getByText(expected)).toBeInTheDocument();
+    });
+
     it('loads tag usage counts', async () => {
       renderPage();
 
@@ -197,7 +214,7 @@ describe('TagManagerPage', () => {
       await screen.findByText('3');
 
       await user.click(screen.getByRole('button', { name: 'mock-delete-focus' }));
-      expect(screen.getByText('deleteTagConfirm:{"tag":"focus","count":3}')).toBeInTheDocument();
+      expect(screen.getByText('deleteTagConfirm_other:{"tag":"focus","count":"3"}')).toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: 'delete' }));
 
       await waitFor(() => expect(props.onUpdateConfig).toHaveBeenCalledTimes(1));

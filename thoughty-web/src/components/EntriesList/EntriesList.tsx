@@ -5,14 +5,10 @@ import type { RephraseMode, SummaryGuidance } from '../../services/api/aiService
 import type { Attachment, Config, Diary, Entry, EntryBacklink, EntryRevision, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import EntryViewMode from './EntryViewMode';
+import { resolveLanguage } from '../../utils/language';
 import { isManuallyOrdered } from '../../utils/entryTime';
-import {
-    type BulkAction,
-    type BulkActionOptions,
-    BulkActionBar,
-    EditForm,
-    EntryReorderControls,
-} from './EntriesList.helpers';
+import { type BulkAction, type BulkActionOptions, BulkActionBar } from './BulkActionBar';
+import { EditForm, EntryReorderControls } from './EntriesList.helpers';
 import {
     extractDate,
     getBulkModeButtonClass,
@@ -360,6 +356,7 @@ function EntriesList({
                     tagMetadata={tagMetadata}
                     diaries={diaries || []}
                     isDark={isDark}
+                    language={resolveLanguage(config.language)}
                     onBulkAction={onBulkAction}
                     onClearSelection={onClearSelection}
                     t={t}

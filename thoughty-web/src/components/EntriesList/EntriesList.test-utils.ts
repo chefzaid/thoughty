@@ -50,8 +50,8 @@ const translations: Record<string, string> = {
     loadingEntries: 'Loading entries...',
     noEntriesFound: 'No entries found.',
     edit: 'Edit',
-    entryWordCount: '{count} words',
-    entryWordCountOne: '1 word',
+    entryWordCount_one: '{count} word',
+    entryWordCount_other: '{count} words',
     entryReadingTimeMinutes: '{minutes} min read',
     entryReadingTimeLessThanMinute: '<1 min read',
     delete: 'Delete',
@@ -76,8 +76,8 @@ const translations: Record<string, string> = {
     unarchive: 'Unarchive',
     backToSource: 'Back to source',
     backlinks: 'Backlinks',
-    backlinksCount: '{count} links',
-    backlinksCountOne: '1 link',
+    backlinksCount_one: '{count} link',
+    backlinksCount_other: '{count} links',
     loadingBacklinks: 'Loading backlinks...',
     noBacklinks: 'No backlinks yet',
     history: 'History',
@@ -137,7 +137,7 @@ export const t = (key: string, params?: Record<string, string | number>): string
     if (key === 'filterTagsPlaceholder') {
         return 'Filter by tags...';
     }
-    if (key === 'bulkSelected') {
+    if (key.startsWith('bulkSelected_')) {
         return `Selected: ${params?.count ?? 0}`;
     }
     let value = translations[key] || key;

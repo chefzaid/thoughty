@@ -51,6 +51,6 @@ test.describe('Import/Export Feature', () => {
       const payload = state.lastImportPayload as { content?: string } | null;
       return Boolean(payload?.content?.includes('"diary":"Work"'));
     }).toBe(true);
-    await expect(page.getByText('Successfully imported 1 entries (0 duplicates skipped)')).toBeVisible();
+    await expect(page.getByText('Successfully imported 1 entry (0 duplicates skipped)')).toBeVisible();
   });
 });

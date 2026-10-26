@@ -3,6 +3,7 @@ import ListenButton from '../ListenButton/ListenButton';
 import type { SpeechEntry } from '../../hooks/useSpeech';
 import type { RephraseMode, SummaryGuidance } from '../../services/api/aiService';
 import type { Config, Entry, EntryBacklink, EntryRevision, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
+import { resolveLanguage } from '../../utils/language';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
 import { extractDate } from './EntriesList.utils';
@@ -220,6 +221,7 @@ export default function EntryViewMode({
                 isDark={isDark}
                 theme={config.theme}
                 fontColor={config.fontColor}
+                language={resolveLanguage(config.language)}
                 onNavigateToEntry={onNavigateToEntry}
                 onToggleTask={onToggleTask ? (line, checked) => onToggleTask(entry, line, checked) : undefined}
                 searchTerm={searchTerm}

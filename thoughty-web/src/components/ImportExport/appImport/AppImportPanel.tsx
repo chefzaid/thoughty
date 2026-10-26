@@ -3,6 +3,7 @@ import { useState, type ChangeEvent } from 'react';
 import { useAuthenticatedService } from '../../../hooks/useAuthenticatedService';
 import { createAppImportService } from '../../../services/api/appImportService';
 import type { TranslationFunction } from '../../../types';
+import { pluralPhrase } from '../../../utils/pluralPhrase';
 import type { Language } from '../../../utils/translations';
 import type { AppExport, AppImportSource } from './appImportTypes';
 import type { AppImportProgress, AppImportSummary, FailedFileReason } from './runAppImport';
@@ -143,7 +144,7 @@ function ImportResult({
               <li key={`${file.name}-${index}`}>{`${file.name} (${t(FAILURE_KEYS[file.reason])})`}</li>
             ))}
           </ul>
-          {failed.length > LISTED_FAILURES && <p className="app-import-note">{t('appImportMoreFailed', { count: failed.length - LISTED_FAILURES })}</p>}
+          {failed.length > LISTED_FAILURES && <p className="app-import-note">{pluralPhrase(t, 'appImportMoreFailed', failed.length - LISTED_FAILURES, language)}</p>}
         </>
       )}
       <div className="app-import-actions">

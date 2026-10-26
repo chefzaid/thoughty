@@ -1,5 +1,6 @@
 import type { YearReview } from '../../services/api';
 import type { TranslationFunction } from '../../types';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { Language } from '../../utils/translations';
 import { formatChange } from './yearReviewFormat';
 
@@ -36,7 +37,7 @@ function YearReviewHero({ review, language, t }: YearReviewHeroProps) {
           </div>
         ))}
       </dl>
-      <p className="review-note">{t('reviewAverageWords', { count: totals.averageWords.toLocaleString(language) })}</p>
+      <p className="review-note">{pluralPhrase(t, 'reviewAverageWords', totals.averageWords, language)}</p>
     </section>
   );
 }

@@ -7,6 +7,8 @@ import AiChatModal from '../components/AiChatModal/AiChatModal';
 import type { ViewType, Config, Entry } from '../types';
 import { normalizeFontSize, resolveFontFamily } from '../types/config';
 import { useRouteChangeFocus } from '../hooks/useRouteChangeFocus';
+import { resolveLanguage } from '../utils/language';
+import { pluralPhrase } from '../utils/pluralPhrase';
 import type { TransientMessage } from '../hooks/useTransientMessage';
 
 interface AuthenticatedAppLayoutProps {
@@ -102,7 +104,7 @@ function AuthenticatedAppLayout({
           onClose={onCloseBulkModal}
           onConfirm={onConfirmBulkDelete}
           title={t('bulkDeleteTitle')}
-          message={t('bulkDeleteMessage', { count: selectedCount })}
+          message={pluralPhrase(t, 'bulkDeleteMessage', selectedCount, resolveLanguage(config.language))}
           theme={config.theme}
         />
 

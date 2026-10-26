@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { components } from "../../generated/openapi";
+import { getTranslation } from "../../utils/translations";
 import StatsCorrelationGraph from "./StatsCorrelationGraph";
 
 type StatsCorrelations = components["schemas"]["StatsCorrelationsDto"];
@@ -9,11 +10,11 @@ type StatsCorrelations = components["schemas"]["StatsCorrelationsDto"];
 const translations: Record<string, string> = {
   correlationGraph: "Connections",
   correlationGraphDescription: "Explore journal connections.",
-  correlationEntriesAnalyzed: "{count} entries analyzed",
+  correlationEntriesAnalyzed_other: "{count} entries analyzed",
   entryConnections: "Related entries",
   tagConnections: "Tag network",
   connectionStrength: "Connection strength: {score}%",
-  sharedEntryCount: "{count} shared entries",
+  sharedEntryCount_other: "{count} shared entries",
   noEntryConnections: "No related entries yet.",
   noTagConnections: "No tag network yet.",
   openConnectedEntry: "Open entry {index} from {date}",
@@ -58,6 +59,7 @@ describe("StatsCorrelationGraph", () => {
       <StatsCorrelationGraph
         correlations={correlations}
         themeClass="dark"
+        language="en"
         t={t}
         onOpenJournalDay={onOpenJournalDay}
       />,
@@ -92,6 +94,7 @@ describe("StatsCorrelationGraph", () => {
           tagConnections: [],
         }}
         themeClass="light"
+        language="en"
         t={t}
       />,
     );
@@ -99,5 +102,25 @@ describe("StatsCorrelationGraph", () => {
     expect(screen.getByText("No related entries yet.")).toBeInTheDocument();
     await user.click(screen.getByRole("tab", { name: "Tag network" }));
     expect(screen.getByText("No tag network yet.")).toBeInTheDocument();
+  });
+
+  it.each([
+    ["en", "1 entry analyzed", "Tag network", "1 shared entry"],
+    ["fr", "1 entrée analysée", "Réseau de tags", "1 entrée partagée"],
+  ] as const)("writes single counts in %s", async (language, analyzed, tagTab, shared) => {
+    const user = userEvent.setup();
+    const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+    render(
+      <StatsCorrelationGraph
+        correlations={{ ...correlations, analyzedEntries: 1, tagConnections: [{ ...correlations.tagConnections[0]!, sharedEntries: 1 }] }}
+        themeClass="dark"
+        language={language}
+        t={translate}
+      />,
+    );
+
+    expect(screen.getByText(analyzed)).toBeInTheDocument();
+    await user.click(screen.getByRole("tab", { name: tagTab }));
+    expect(screen.getByText(shared)).toBeInTheDocument();
   });
 });

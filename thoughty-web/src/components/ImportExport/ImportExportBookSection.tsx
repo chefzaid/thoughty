@@ -1,6 +1,8 @@
 import type { RefObject } from 'react';
 import type { ImportExportSection, TranslationFunction } from '../../types';
 import type { CloudProviderType } from '../../services/api/cloudSyncService';
+import { pluralPhrase } from '../../utils/pluralPhrase';
+import type { Language } from '../../utils/translations';
 import { CLOUD_PROVIDER_NAMES } from '../CloudProviderIcons';
 import './ImportExportBookSection.css';
 import {
@@ -54,6 +56,7 @@ export function BookSection({
     onUpload,
     onCreateVersion,
     onVersionDownload,
+    language,
     t,
 }: Readonly<{
     activeSection: ImportExportSection;
@@ -75,6 +78,7 @@ export function BookSection({
     onUpload: () => void;
     onCreateVersion: () => void;
     onVersionDownload: (version: BookVersionData) => void;
+    language: Language;
     t: TranslationFunction;
 }>) {
     const generatingLabel = t(uploading ? 'uploadingBook' : 'generatingBook');
@@ -272,14 +276,14 @@ export function BookSection({
                                     <span className="book-version-item__meta">
                                         {version.format.toUpperCase()} · {version.createdAt.slice(0, 10)} · {' '}
                                         {t('bookVersionCounts', {
-                                            chapters: version.chapterCount,
-                                            entries: version.entryCount,
+                                            chapters: pluralPhrase(t, 'bookVersionChapters', version.chapterCount, language),
+                                            entries: pluralPhrase(t, 'bookVersionEntries', version.entryCount, language),
                                         })}
                                     </span>
                                     <span className="book-version-item__changes">
                                         {t('bookVersionChanges', {
-                                            entries: version.addedEntryCount,
-                                            chapters: version.addedChapterTitles.length,
+                                            entries: pluralPhrase(t, 'bookVersionNewEntries', version.addedEntryCount, language),
+                                            chapters: pluralPhrase(t, 'bookVersionNewChapters', version.addedChapterTitles.length, language),
                                         })}
                                         {version.addedChapterTitles.length > 0 && `: ${version.addedChapterTitles.join(', ')}`}
                                     </span>

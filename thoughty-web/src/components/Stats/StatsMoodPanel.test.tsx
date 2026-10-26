@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import StatsMoodPanel from './StatsMoodPanel';
 import { moodTranslations } from '../../utils/translations.mood';
+import { getTranslation } from '../../utils/translations';
 
 const t = (key: string, params?: Record<string, string | number>) => {
     let text: string = moodTranslations.en[key as keyof typeof moodTranslations.en] ?? key;
@@ -62,7 +63,21 @@ describe('StatsMoodPanel', () => {
         expect(screen.getByText('mardi: no mood recorded')).toBeInTheDocument();
         expect(screen.getByText('samedi: average 5,0 out of 5 from 2 entries')).toBeInTheDocument();
         expect(screen.getByText('calm: 4 entries')).toBeInTheDocument();
-        expect(screen.getByText('nostalgic: 1 entries')).toBeInTheDocument();
+        expect(screen.getByText('mercredi: average 2,0 out of 5 from 1 entry')).toBeInTheDocument();
+        expect(screen.getByText('nostalgic: 1 entry')).toBeInTheDocument();
+    });
+
+    it.each([
+        ['en', 'January 2025: average 3.0 out of 5 (Okay) from 1 entry', 'Wednesday: average 2.0 out of 5 from 1 entry', 'nostalgic: 1 entry'],
+        ['fr', 'janvier 2025 : moyenne de 3,0 sur 5 (Moyenne) sur 1 entrée', 'mercredi : moyenne de 2,0 sur 5 sur 1 entrée', 'nostalgic : 1 entrée'],
+    ] as const)('writes single counts in %s', (language, month, weekday, feeling) => {
+        const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+        const single = { ...moods, months: [{ month: '2025-01', average: 3, entries: 1 }] };
+        render(<StatsMoodPanel moods={single} themeClass="dark" language={language} t={translate} />);
+
+        expect(screen.getByTitle(month)).toBeInTheDocument();
+        expect(screen.getByText(weekday)).toBeInTheDocument();
+        expect(screen.getByText(feeling)).toBeInTheDocument();
     });
 
     it('pages back through older months, the latest first', async () => {
