@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { Attachment, Diary, Entry, YearReviewMood } from '@/database/entities';
@@ -103,7 +104,7 @@ export class YearReviewService {
 
   async assertOwnedDiary(userId: number, diaryId?: number): Promise<void> {
     if (diaryId && !(await this.diaryRepository.exists({ where: { id: diaryId, userId } }))) {
-      throw new NotFoundException('Diary not found');
+      throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
     }
   }
 

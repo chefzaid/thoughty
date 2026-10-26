@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MemoirAnswer, MemoirProgram } from '@/database/entities';
@@ -26,20 +27,20 @@ export class MemoirAnswersService {
     const question = findMemoirQuestion(dto.questionId);
     const chapter = question ? findMemoirChapter(question.chapterId) : undefined;
     if (!question || !chapter) {
-      throw new NotFoundException('Unknown memoir question');
+      throw apiError(NotFoundException, 'MEMOIR_UNKNOWN_QUESTION');
     }
 
     const program = await this.programRepository.findOne({ where: { userId } });
     if (!program) {
-      throw new NotFoundException('The guided memoir has not been started');
+      throw apiError(NotFoundException, 'MEMOIR_NOT_STARTED');
     }
     if (!program.diaryId) {
-      throw new ConflictException('Choose a diary for your memoir first');
+      throw apiError(ConflictException, 'MEMOIR_DIARY_REQUIRED');
     }
 
     const attachmentIds = [...new Set(dto.attachmentIds ?? [])];
     if (!dto.text && attachmentIds.length === 0) {
-      throw new BadRequestException('Write an answer or attach a recording');
+      throw apiError(BadRequestException, 'MEMOIR_ANSWER_EMPTY');
     }
     // An answer whose entry is in the recycle bin no longer counts, so the question can be answered again
     const previous = await this.answerRepository.findOne({
@@ -48,7 +49,7 @@ export class MemoirAnswersService {
       select: { questionId: true, entryId: true, entry: { id: true } },
     });
     if (previous?.entry) {
-      throw new ConflictException('This question already has an answer');
+      throw apiError(ConflictException, 'MEMOIR_ALREADY_ANSWERED');
     }
     for (const attachmentId of attachmentIds) {
       await this.attachmentsService.getOwnedAttachment(userId, attachmentId);
@@ -74,7 +75,7 @@ export class MemoirAnswersService {
       // A concurrent answer won the race: keep the journal free of the duplicate entry.
       await this.entriesService.delete(userId, entryId);
       if ((error as { code?: string }).code === '23505') {
-        throw new ConflictException('This question already has an answer');
+        throw apiError(ConflictException, 'MEMOIR_ALREADY_ANSWERED');
       }
       throw error;
     }

@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { MemoirAnswersService } from './memoir-answers.service';
 
 describe('MemoirAnswersService', () => {
@@ -74,7 +75,7 @@ describe('MemoirAnswersService', () => {
   });
 
   it('rejects unknown questions, unstarted programs, missing diaries, and empty answers', async () => {
-    await expect(service.answer(3, { questionId: 'missing', text: 'x' })).rejects.toThrow(NotFoundException);
+    await expectApiError(service.answer(3, { questionId: 'missing', text: 'x' }), NotFoundException, 'MEMOIR_UNKNOWN_QUESTION');
 
     programRepository.findOne.mockResolvedValueOnce(null);
     await expect(service.answer(3, { questionId: 'love-first', text: 'x' })).rejects.toThrow(NotFoundException);
@@ -82,7 +83,7 @@ describe('MemoirAnswersService', () => {
     programRepository.findOne.mockResolvedValueOnce({ userId: 3, diaryId: null, timeZone: 'UTC' });
     await expect(service.answer(3, { questionId: 'love-first', text: 'x' })).rejects.toThrow(ConflictException);
 
-    await expect(service.answer(3, { questionId: 'love-first', text: '' })).rejects.toThrow(BadRequestException);
+    await expectApiError(service.answer(3, { questionId: 'love-first', text: '' }), BadRequestException, 'MEMOIR_ANSWER_EMPTY');
     expect(entriesService.create).not.toHaveBeenCalled();
   });
 

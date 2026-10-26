@@ -12,6 +12,7 @@ import {
   Res,
   NotFoundException,
 } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -93,7 +94,7 @@ export class AttachmentsController {
     @Body() dto: LinkAttachmentDto,
   ) {
     if (!dto.entryId) {
-      throw new NotFoundException('entryId is required');
+      throw apiError(NotFoundException, 'VALIDATION_FAILED', 'entryId is required');
     }
     const attachment = await this.attachmentsService.linkToEntry(user.userId, id, dto.entryId);
     return {
@@ -152,7 +153,7 @@ export class AttachmentsController {
     try {
       file = await this.attachmentsService.getOwnedFile(user.userId, sanitized);
     } catch {
-      throw new NotFoundException('File not found');
+      throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
     }
 
     res.setHeader('Content-Type', file.contentType);

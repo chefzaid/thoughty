@@ -23,6 +23,7 @@ import { AccountPurgeModule } from './modules/account-purge';
 import { HealthController } from './health.controller';
 import {
   createThrottlerModuleOptions,
+  ApiErrorCodeFilter,
   DatabaseInputExceptionFilter,
   JsonLogger,
   RequestLoggingMiddleware,
@@ -77,6 +78,11 @@ import {
     {
       provide: APP_FILTER,
       useClass: DatabaseInputExceptionFilter,
+    },
+    // Every HTTP error carries a machine-readable `code` the web app translates
+    {
+      provide: APP_FILTER,
+      useClass: ApiErrorCodeFilter,
     },
     {
       provide: JsonLogger,

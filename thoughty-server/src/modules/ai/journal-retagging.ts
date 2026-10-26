@@ -1,5 +1,6 @@
 import { extractJsonCandidate, trimCharacters } from '@/common/utils/json-content.util';
 import { BadGatewayException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import type { OpenRouterUsageReporter } from './ai-usage.service';
 import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
 
@@ -128,18 +129,18 @@ export async function requestJournalRetagPlan({
       ],
     }),
   }).catch(() => {
-    throw new BadGatewayException('OpenRouter request failed');
+    throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED');
   });
 
   if (!response.ok) {
-    throw new BadGatewayException('OpenRouter request failed');
+    throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED');
   }
 
   let data: OpenRouterResponse;
   try {
     data = (await response.json()) as OpenRouterResponse;
   } catch {
-    throw new BadGatewayException('OpenRouter returned an invalid response');
+    throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'OpenRouter returned an invalid response');
   }
   await onUsage?.(data, model);
   return parseJournalRetagPlan(

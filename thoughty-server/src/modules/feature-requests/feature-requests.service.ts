@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { FeatureRequest, FeatureRequestVote, type FeatureRequestStatus } from '@/database/entities';
@@ -108,7 +109,7 @@ export class FeatureRequestsService {
       select: { id: true },
     });
     if (!request) {
-      throw new NotFoundException('Feature request not found');
+      throw apiError(NotFoundException, 'FEATURE_REQUEST_NOT_FOUND');
     }
 
     await this.voteRepository

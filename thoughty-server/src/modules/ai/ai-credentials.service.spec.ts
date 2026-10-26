@@ -1,4 +1,5 @@
 import { BadGatewayException, BadRequestException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { AiCredentialsService } from './ai-credentials.service';
 
 describe('AiCredentialsService', () => {
@@ -75,7 +76,7 @@ describe('AiCredentialsService', () => {
   it('does not store rejected credentials', async () => {
     fetchMock.mockResolvedValue({ ok: false, status: 401 });
 
-    await expect(service.save(2, 'sk-or-v1-invalid-secret')).rejects.toThrow(BadRequestException);
+    await expectApiError(service.save(2, 'sk-or-v1-invalid-secret'), BadRequestException, 'AI_KEY_REJECTED');
     expect(configService.setEncryptedConfig).not.toHaveBeenCalled();
   });
 
@@ -127,7 +128,7 @@ describe('AiCredentialsService', () => {
   });
 
   it('requires a personal key for usage and removes it by user scope', async () => {
-    await expect(service.getUsage(2)).rejects.toThrow(BadRequestException);
+    await expectApiError(service.getUsage(2), BadRequestException, 'AI_PERSONAL_KEY_REQUIRED');
 
     process.env.OPENROUTER_API_KEY = 'sk-or-v1-server';
     await service.remove(2);

@@ -1,4 +1,5 @@
 import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
@@ -45,7 +46,7 @@ export class AiJournalRetagService {
 
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
-      throw new BadRequestException('OpenRouter API key is not configured');
+      throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');
     }
     const model = await resolveAiModel(
       this.configService,
@@ -60,7 +61,7 @@ export class AiJournalRetagService {
       onUsage: this.usageService.reporter(userId, credential.source),
     });
     if (plan.themes.length === 0 || plan.assignments.length === 0) {
-      throw new BadGatewayException('OpenRouter returned an invalid journal retag plan');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'OpenRouter returned an invalid journal retag plan');
     }
 
     const assignments = new Map(
@@ -87,14 +88,14 @@ export class AiJournalRetagService {
       dto.assignments.map((assignment) => [assignment.entryId, assignment.tags]),
     );
     if (uniqueAssignments.size === 0) {
-      throw new BadRequestException('At least one retag assignment is required');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'At least one retag assignment is required');
     }
 
     const entries = await this.entryRepository.find({
       where: { userId, id: In([...uniqueAssignments.keys()]) },
     });
     if (entries.length !== uniqueAssignments.size) {
-      throw new BadRequestException('One or more entries are unavailable');
+      throw apiError(BadRequestException, 'ENTRIES_NOT_FOUND', 'One or more entries are unavailable');
     }
 
     for (const entry of entries) {

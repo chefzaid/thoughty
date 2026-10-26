@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, EntryRevision } from '@/database/entities';
@@ -294,7 +295,7 @@ export class EntriesQueryService {
     });
 
     if (!entry) {
-      throw new NotFoundException('Entry not found');
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
 
     return this.revisionRepository.find({

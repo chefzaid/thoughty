@@ -1,5 +1,6 @@
 import { trimCharacters } from '@/common/utils/json-content.util';
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
@@ -152,7 +153,7 @@ export class StatsPersonalityAnalysisService {
     options: PersonalityAnalysisOptions,
   ): Promise<PersonalityAnalysisResult | null> {
     if (options.fromDate && options.toDate && options.fromDate > options.toDate) {
-      throw new BadRequestException('The start date must be before or equal to the end date');
+      throw apiError(BadRequestException, 'STATS_INVALID_DATE_RANGE');
     }
 
     const accumulator: ProfileAccumulator = {

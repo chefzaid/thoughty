@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, EntryComment } from '@/database/entities';
@@ -87,7 +88,7 @@ export class CommentsService {
       relations: { entry: true },
     });
     if (!comment || (comment.userId !== userId && comment.entry.userId !== userId)) {
-      throw new NotFoundException('Comment not found');
+      throw apiError(NotFoundException, 'COMMENT_NOT_FOUND');
     }
 
     await this.commentRepository.delete({ id: commentId });

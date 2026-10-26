@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BookVersion, type BookVersionManifest } from '@/database/entities';
 import { Repository } from 'typeorm';
@@ -48,7 +49,7 @@ export class BookVersionsService {
       ? file.content
       : Buffer.from(file.content, 'utf8');
     if (content.length > MAX_VERSION_ARTIFACT_SIZE) {
-      throw new BadRequestException('Generated book is too large to save as a version.');
+      throw apiError(BadRequestException, 'BOOK_TOO_LARGE_FOR_VERSION');
     }
     return content;
   }
@@ -125,7 +126,7 @@ export class BookVersionsService {
       .andWhere('version.user_id = :userId', { userId })
       .getOne();
     if (!version) {
-      throw new NotFoundException('Book version not found');
+      throw apiError(NotFoundException, 'BOOK_VERSION_NOT_FOUND');
     }
     return {
       content: version.content,

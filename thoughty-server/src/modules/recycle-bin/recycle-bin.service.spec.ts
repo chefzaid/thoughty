@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { Diary, Entry } from '@/database/entities';
 import { purgeDateFor, RecycleBinService } from './recycle-bin.service';
 
@@ -179,7 +180,7 @@ describe('RecycleBinService', () => {
     it('refuses when none of the entries are in the bin', async () => {
       managerEntries.createQueryBuilder.mockReturnValueOnce(queryBuilder());
 
-      await expect(service.restore(7, [40])).rejects.toThrow(NotFoundException);
+      await expectApiError(service.restore(7, [40]), NotFoundException, 'RECYCLE_BIN_ENTRIES_NOT_FOUND');
       expect(managerEntries.update).not.toHaveBeenCalled();
       expect(cache.invalidateUser).not.toHaveBeenCalled();
     });

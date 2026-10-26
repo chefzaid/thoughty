@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { DiariesService } from './diaries.service';
 import { Diary } from '@/database/entities';
 import { DiaryEntryTransferService } from './diary-entry-transfer.service';
@@ -152,11 +153,9 @@ describe('DiariesService', () => {
     it('should throw ConflictException for duplicate name', async () => {
       diaryRepository.save.mockRejectedValue({ code: '23505' });
 
-      await expect(
-        service.create(1, {
+      await expectApiError(service.create(1, {
           name: 'Duplicate Diary',
-        }),
-      ).rejects.toThrow(ConflictException);
+        }), ConflictException, 'DIARY_NAME_TAKEN');
     });
 
     it('should rethrow other errors', async () => {
@@ -279,7 +278,7 @@ describe('DiariesService', () => {
     it('should throw BadRequestException when deleting default diary', async () => {
       diaryRepository.findOne.mockResolvedValue(mockDefaultDiary);
 
-      await expect(service.delete(1, 2)).rejects.toThrow(BadRequestException);
+      await expectApiError(service.delete(1, 2), BadRequestException, 'DIARY_DEFAULT_NOT_DELETABLE');
     });
 
     it('should handle case when no default diary exists', async () => {

@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { IoService } from './io.service';
 import { createIoServiceTestBed, mockDiary, mockEntry } from './io.test-helpers';
 
@@ -64,9 +65,7 @@ Test entry content
     it('should throw PayloadTooLargeException for large content', async () => {
       const largeContent = 'x'.repeat(6 * 1024 * 1024); // 6MB
 
-      await expect(service.preview(1, { content: largeContent })).rejects.toThrow(
-        PayloadTooLargeException,
-      );
+      await expectApiError(service.preview(1, { content: largeContent }), PayloadTooLargeException, 'IMPORT_FILE_TOO_LARGE');
     });
 
     it('should detect duplicates', async () => {
@@ -158,7 +157,7 @@ Test entry content
     });
 
     it('should throw BadRequestException for empty content', async () => {
-      await expect(service.import(1, { content: '' })).rejects.toThrow(BadRequestException);
+      await expectApiError(service.import(1, { content: '' }), BadRequestException, 'IMPORT_CONTENT_REQUIRED');
     });
 
     it('should skip duplicates when skipDuplicates is true', async () => {

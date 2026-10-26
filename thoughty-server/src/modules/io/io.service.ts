@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, Setting, Diary, User } from '@/database/entities';
@@ -67,7 +68,7 @@ export class IoService {
     if (providedDiaryId) {
       const diary = await this.diaryRepository.findOne({ where: { id: providedDiaryId, userId } });
       if (!diary) {
-        throw new NotFoundException('Diary not found');
+        throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
       }
       return diary.id;
     }
@@ -81,13 +82,15 @@ export class IoService {
 
   private validateImportContent(content: string): void {
     if (!content) {
-      throw new BadRequestException('File content is required');
+      throw apiError(BadRequestException, 'IMPORT_CONTENT_REQUIRED');
     }
     if (typeof content !== 'string') {
-      throw new BadRequestException('Content must be a string');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Content must be a string');
     }
     if (content.length > MAX_IMPORT_SIZE) {
-      throw new PayloadTooLargeException(
+      throw apiError(
+        PayloadTooLargeException,
+        'IMPORT_FILE_TOO_LARGE',
         `File too large. Maximum size is ${MAX_IMPORT_SIZE / 1024 / 1024}MB`,
       );
     }
@@ -380,7 +383,9 @@ export class IoService {
     const parsedEntries = this.parseContent(dto.content, formatConfig);
 
     if (parsedEntries.length > MAX_ENTRIES_PER_IMPORT) {
-      throw new BadRequestException(
+      throw apiError(
+        BadRequestException,
+        'IMPORT_TOO_MANY_ENTRIES',
         `Too many entries. Maximum ${MAX_ENTRIES_PER_IMPORT} entries per import. Found ${parsedEntries.length}.`,
       );
     }

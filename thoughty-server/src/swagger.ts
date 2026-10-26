@@ -1,6 +1,8 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { enrichOpenApiExamples } from './swagger.examples';
+import { attachErrorResponseSchema } from './swagger.errors';
+import { ApiErrorResponse } from './common/errors/api-error-response.dto';
 import { REFRESH_TOKEN_COOKIE } from './modules/auth/refresh-token-cookie';
 
 export function createSwaggerConfig() {
@@ -31,5 +33,6 @@ export function createSwaggerConfig() {
 }
 
 export function createSwaggerDocument(app: INestApplication) {
-  return enrichOpenApiExamples(SwaggerModule.createDocument(app, createSwaggerConfig()));
+  const document = SwaggerModule.createDocument(app, createSwaggerConfig(), { extraModels: [ApiErrorResponse] });
+  return enrichOpenApiExamples(attachErrorResponseSchema(document));
 }

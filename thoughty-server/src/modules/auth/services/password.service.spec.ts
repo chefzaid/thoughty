@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import * as bcrypt from 'bcryptjs';
 import { PasswordService } from './password.service';
 import {
@@ -76,12 +77,10 @@ describe('PasswordService', () => {
       userRepository.findOne.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(
-        service.changePassword(1, {
+      await expectApiError(service.changePassword(1, {
           currentPassword: 'wrongpassword',
           newPassword: 'newpassword',
-        }),
-      ).rejects.toThrow(UnauthorizedException);
+        }), UnauthorizedException, 'AUTH_CURRENT_PASSWORD_INCORRECT');
     });
   });
 
@@ -177,9 +176,7 @@ describe('PasswordService', () => {
     it('should throw BadRequestException for invalid token', async () => {
       userRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.resetPassword('invalid_token', 'newpassword')).rejects.toThrow(
-        BadRequestException,
-      );
+      await expectApiError(service.resetPassword('invalid_token', 'newpassword'), BadRequestException, 'AUTH_INVALID_RESET_TOKEN');
     });
   });
 });

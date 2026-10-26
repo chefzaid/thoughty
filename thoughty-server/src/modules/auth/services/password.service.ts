@@ -5,6 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
@@ -38,18 +39,16 @@ export class PasswordService {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw apiError(NotFoundException, 'USER_NOT_FOUND');
     }
 
     if (!user.passwordHash) {
-      throw new BadRequestException(
-        'Cannot change password for OAuth accounts without existing password',
-      );
+      throw apiError(BadRequestException, 'AUTH_PASSWORD_NOT_SET');
     }
 
     const validPassword = await bcrypt.compare(dto.currentPassword, user.passwordHash);
     if (!validPassword) {
-      throw new UnauthorizedException('Current password is incorrect');
+      throw apiError(UnauthorizedException, 'AUTH_CURRENT_PASSWORD_INCORRECT');
     }
 
     user.passwordHash = await bcrypt.hash(dto.newPassword, 12);
@@ -112,7 +111,7 @@ export class PasswordService {
     });
 
     if (!user) {
-      throw new BadRequestException('Invalid or expired reset token');
+      throw apiError(BadRequestException, 'AUTH_INVALID_RESET_TOKEN');
     }
 
     user.passwordHash = await bcrypt.hash(newPassword, 12);

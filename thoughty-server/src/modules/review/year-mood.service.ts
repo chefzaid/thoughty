@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { DataSource, IsNull } from 'typeorm';
 import { YearReviewMood } from '@/database/entities';
 import { AiYearMoodService, type YearMoodSample } from '@/modules/ai';
@@ -41,12 +42,12 @@ export class YearMoodService {
     await this.yearReviewService.assertOwnedDiary(userId, diaryId);
     const { samples, analyzedEntries } = await this.sampleYear(userId, year, diaryId);
     if (samples.length === 0) {
-      throw new BadRequestException('There are no entries to read in this year');
+      throw apiError(BadRequestException, 'REVIEW_YEAR_EMPTY');
     }
 
     const reading = await this.aiYearMoodService.read(userId, samples);
     if (!reading) {
-      throw new ServiceUnavailableException('The mood of the year could not be read right now');
+      throw apiError(ServiceUnavailableException, 'REVIEW_MOOD_UNAVAILABLE');
     }
 
     const saved = await this.dataSource.transaction(async (manager) => {

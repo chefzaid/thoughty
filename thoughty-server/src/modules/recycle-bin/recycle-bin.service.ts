@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, IsNull, Not, Repository, type EntityManager, type SelectQueryBuilder } from 'typeorm';
 import { Attachment, Diary, Entry } from '@/database/entities';
@@ -84,7 +85,7 @@ export class RecycleBinService {
 
       const trashed = await qb.getMany();
       if (trashed.length === 0) {
-        throw new NotFoundException('No matching entries in the recycle bin');
+        throw apiError(NotFoundException, 'RECYCLE_BIN_ENTRIES_NOT_FOUND');
       }
       return this.putBack(manager, userId, trashed);
     });
@@ -101,7 +102,7 @@ export class RecycleBinService {
     });
 
     if (ids && deletedCount === 0) {
-      throw new NotFoundException('No matching entries in the recycle bin');
+      throw apiError(NotFoundException, 'RECYCLE_BIN_ENTRIES_NOT_FOUND');
     }
     return deletedCount;
   }

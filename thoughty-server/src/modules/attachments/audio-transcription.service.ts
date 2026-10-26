@@ -1,4 +1,5 @@
 import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { ConfigService } from '@/modules/config';
 import { AiUsageService } from '@/modules/ai/ai-usage.service';
 import { resolveOpenRouterCredential } from '@/modules/ai/openrouter-credential.util';
@@ -39,7 +40,7 @@ export class AudioTranscriptionService {
     const attachment = await this.attachmentsService.getOwnedAttachment(userId, attachmentId);
     const format = AUDIO_FORMATS[attachment.mimetype];
     if (!format) {
-      throw new BadRequestException('Only audio attachments can be transcribed');
+      throw apiError(BadRequestException, 'ATTACHMENT_NOT_AUDIO');
     }
 
     if (attachment.transcript && attachment.transcribedAt) {
@@ -52,7 +53,7 @@ export class AudioTranscriptionService {
 
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
-      throw new BadRequestException('OpenRouter API key is not configured');
+      throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');
     }
 
     const audio = await this.attachmentsService.getFileBuffer(
@@ -71,19 +72,19 @@ export class AudioTranscriptionService {
       }),
       signal: AbortSignal.timeout(60_000),
     }).catch(() => {
-      throw new BadGatewayException('Audio transcription provider is unavailable');
+      throw apiError(BadGatewayException, 'TRANSCRIPTION_FAILED', 'Audio transcription provider is unavailable');
     });
 
     if (!response.ok) {
-      throw new BadGatewayException('Audio transcription request failed');
+      throw apiError(BadGatewayException, 'TRANSCRIPTION_FAILED');
     }
 
     const payload = (await response.json().catch(() => {
-      throw new BadGatewayException('Audio transcription returned an invalid response');
+      throw apiError(BadGatewayException, 'TRANSCRIPTION_FAILED', 'Audio transcription returned an invalid response');
     })) as OpenRouterTranscriptionResponse;
     const transcript = typeof payload.text === 'string' ? payload.text.trim() : '';
     if (!transcript) {
-      throw new BadGatewayException('Audio transcription returned no text');
+      throw apiError(BadGatewayException, 'TRANSCRIPTION_FAILED', 'Audio transcription returned no text');
     }
 
     await this.usageService.recordResponse(userId, credential.source, TRANSCRIPTION_MODEL, payload);

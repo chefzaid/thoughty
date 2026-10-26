@@ -1,4 +1,5 @@
 import { UnauthorizedException, ConflictException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import * as bcrypt from 'bcryptjs';
 import { AuthService } from './auth.service';
 import { hashRefreshToken } from './auth-session.service';
@@ -223,12 +224,10 @@ describe('AuthService', () => {
       userRepository.createQueryBuilder.mockReturnValue(mockQueryBuilder);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(
-        service.login({
+      await expectApiError(service.login({
           identifier: 'test@example.com',
           password: 'wrongpassword',
-        }),
-      ).rejects.toThrow(UnauthorizedException);
+        }), UnauthorizedException, 'AUTH_INVALID_CREDENTIALS');
     });
   });
 });

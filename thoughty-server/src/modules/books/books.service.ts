@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, Diary, User } from '@/database/entities';
@@ -86,7 +87,7 @@ export class BooksService {
 
     const diary = await this.diaryRepository.findOne({ where: { id: diaryId, userId } });
     if (!diary) {
-      throw new NotFoundException('Diary not found');
+      throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
     }
     return diary;
   }
@@ -154,9 +155,7 @@ export class BooksService {
     mode: BookWeavingMode,
   ): Promise<void> {
     if (!(await this.aiBookComposer.isConfigured(userId))) {
-      throw new BadRequestException(
-        'AI narrative requires an OpenRouter API key on the server. Disable the AI narrative option to download a plain book.',
-      );
+      throw apiError(BadRequestException, 'BOOK_AI_NARRATIVE_KEY_REQUIRED');
     }
 
     for (const chapter of book.chapters) {
@@ -171,9 +170,7 @@ export class BooksService {
 
   private async composeChapterFraming(userId: number, book: Book): Promise<void> {
     if (!(await this.aiBookComposer.isConfigured(userId))) {
-      throw new BadRequestException(
-        'AI chapter framing requires an OpenRouter API key on the server. Disable chapter introductions and summaries to generate the book without them.',
-      );
+      throw apiError(BadRequestException, 'BOOK_AI_FRAMING_KEY_REQUIRED');
     }
 
     for (const chapter of book.chapters) {
@@ -287,7 +284,7 @@ export class BooksService {
           content = await renderBookPdf(book, renderOptions);
         } catch (error) {
           if (coverImage) {
-            throw new BadRequestException('Cover image could not be decoded.');
+            throw apiError(BadRequestException, 'BOOK_COVER_INVALID', 'Cover image could not be decoded.');
           }
           throw error;
         }

@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto';
@@ -107,7 +108,7 @@ export class ConfigService {
     const entries = Object.entries(newConfig).filter(([, value]) => value !== undefined);
     const reserved = entries.map(([key]) => key).filter((key) => !USER_CONFIG_KEYS.has(key));
     if (reserved.length > 0) {
-      throw new BadRequestException(`Settings cannot be changed here: ${reserved.join(', ')}`);
+      throw apiError(BadRequestException, 'SETTINGS_RESERVED', `Settings cannot be changed here: ${reserved.join(', ')}`);
     }
 
     for (const [key, value] of entries) {

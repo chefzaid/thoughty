@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as crypto from 'node:crypto';
@@ -27,7 +28,7 @@ export class EmailVerificationService {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw apiError(NotFoundException, 'USER_NOT_FOUND');
     }
 
     if (user.emailVerified) {
@@ -64,7 +65,7 @@ export class EmailVerificationService {
     });
 
     if (!user) {
-      throw new BadRequestException('Invalid or expired verification token');
+      throw apiError(BadRequestException, 'AUTH_INVALID_VERIFICATION_TOKEN');
     }
 
     user.emailVerified = true;

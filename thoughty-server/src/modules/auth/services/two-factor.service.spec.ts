@@ -1,4 +1,5 @@
 import { ServiceUnavailableException, UnauthorizedException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -154,9 +155,7 @@ describe('TwoFactorService', () => {
     const { result } = await issueChallenge(user, 'login');
     userRepository.findOne.mockResolvedValueOnce(user);
 
-    await expect(
-      service.consumeLogin({ challengeToken: result.challengeToken, code: '000000' }),
-    ).rejects.toThrow(UnauthorizedException);
+    await expectApiError(service.consumeLogin({ challengeToken: result.challengeToken, code: '000000' }), UnauthorizedException, 'AUTH_INVALID_2FA_CODE');
     expect(userRepository.update).not.toHaveBeenCalled();
 
     userRepository.findOne.mockResolvedValueOnce(null);
@@ -194,7 +193,7 @@ describe('TwoFactorService', () => {
     userRepository.findOne.mockResolvedValue(user);
     (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false).mockResolvedValueOnce(true);
 
-    await expect(service.disable(user.id, 'wrong')).rejects.toThrow(UnauthorizedException);
+    await expectApiError(service.disable(user.id, 'wrong'), UnauthorizedException, 'AUTH_INVALID_PASSWORD');
     await expect(service.disable(user.id, 'correct')).resolves.toEqual({ success: true });
     expect(user.twoFactorEnabled).toBe(false);
     expect(user.twoFactorChallengeCodeHash).toBeNull();

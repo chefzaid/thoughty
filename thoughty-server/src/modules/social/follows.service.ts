@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, UserFollow } from '@/database/entities';
@@ -50,7 +51,7 @@ export class FollowsService {
 
   async follow(userId: number, targetUserId: number): Promise<FollowStateDto> {
     if (userId === targetUserId) {
-      throw new BadRequestException('You cannot follow yourself');
+      throw apiError(BadRequestException, 'SOCIAL_CANNOT_FOLLOW_SELF');
     }
     // Only authors visible in the feed can be followed, so ids cannot be probed for private accounts.
     const isPublicAuthor = await applyPublicFeedVisibility(
@@ -60,7 +61,7 @@ export class FollowsService {
         .where('e.user_id = :targetUserId', { targetUserId }),
     ).getExists();
     if (!isPublicAuthor) {
-      throw new NotFoundException('User not found');
+      throw apiError(NotFoundException, 'USER_NOT_FOUND');
     }
 
     await this.followRepository

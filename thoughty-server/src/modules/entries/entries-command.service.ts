@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Entry, EntryRevision, Diary } from '@/database/entities';
@@ -92,7 +93,7 @@ export class EntriesCommandService {
     if (diaryId) {
       const diary = await this.diaryRepository.findOne({ where: { id: diaryId, userId } });
       if (!diary) {
-        throw new NotFoundException('Diary not found');
+        throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
       }
       return diary.id;
     }
@@ -111,7 +112,7 @@ export class EntriesCommandService {
     });
 
     if (!entry) {
-      throw new NotFoundException('Entry not found');
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
 
     await this.revisionRepository.save(entryRevisionSnapshot(entry));
@@ -170,7 +171,7 @@ export class EntriesCommandService {
   ): Promise<{ success: boolean; entry: Entry }> {
     const entry = await this.entryRepository.findOne({ where: { id, userId } });
     if (!entry) {
-      throw new NotFoundException('Entry not found');
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
 
     entry.visibility = visibility;
@@ -181,7 +182,7 @@ export class EntriesCommandService {
   async toggleFavorite(userId: number, id: number, isFavorite: boolean): Promise<{ success: boolean; entry: Entry }> {
     const entry = await this.entryRepository.findOne({ where: { id, userId } });
     if (!entry) {
-      throw new NotFoundException('Entry not found');
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
 
     entry.isFavorite = isFavorite;
@@ -192,7 +193,7 @@ export class EntriesCommandService {
   async toggleArchived(userId: number, id: number, isArchived: boolean): Promise<{ success: boolean; entry: Entry }> {
     const entry = await this.entryRepository.findOne({ where: { id, userId } });
     if (!entry) {
-      throw new NotFoundException('Entry not found');
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
 
     entry.isArchived = isArchived;
@@ -203,7 +204,7 @@ export class EntriesCommandService {
   async togglePinned(userId: number, id: number, isPinned: boolean): Promise<{ success: boolean; entry: Entry }> {
     const entry = await this.entryRepository.findOne({ where: { id, userId } });
     if (!entry) {
-      throw new NotFoundException('Entry not found');
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
 
     if (isPinned && !entry.isPinned) {
@@ -213,7 +214,7 @@ export class EntriesCommandService {
       });
 
       if (pinnedCount >= maxPinnedEntries) {
-        throw new BadRequestException(`Pinned entry limit reached (${maxPinnedEntries})`);
+        throw apiError(BadRequestException, 'ENTRY_PIN_LIMIT_REACHED', `Pinned entry limit reached (${maxPinnedEntries})`);
       }
     }
 
@@ -242,7 +243,7 @@ export class EntriesCommandService {
   async delete(userId: number, id: number): Promise<{ success: boolean }> {
     const entry = await this.entryRepository.findOne({ where: { id, userId } });
     if (!entry) {
-      throw new NotFoundException('Entry not found');
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
 
     const entryDate = entry.date;
@@ -265,7 +266,7 @@ export class EntriesCommandService {
     const entries = await this.entryRepository.find({ where: { userId, id: In(dto.ids) } });
 
     if (entries.length === 0) {
-      throw new NotFoundException('No matching entries found');
+      throw apiError(NotFoundException, 'ENTRIES_NOT_FOUND');
     }
 
     const validIds = entries.map((entry) => entry.id);
@@ -282,7 +283,7 @@ export class EntriesCommandService {
       case 'archive':
         return this.bulkUpdateArchived(userId, validIds, dto.isArchived);
       default:
-        throw new BadRequestException('Invalid action');
+        throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Invalid action');
     }
   }
 
@@ -291,11 +292,11 @@ export class EntriesCommandService {
     const targetTag = this.sanitizeTagName(newTag);
 
     if (!sourceTag || !targetTag) {
-      throw new BadRequestException('Both old and new tags are required');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Both old and new tags are required');
     }
 
     if (sourceTag === targetTag) {
-      throw new BadRequestException('New tag name must be different');
+      throw apiError(BadRequestException, 'TAG_RENAME_SAME_NAME');
     }
 
     // Entries in the recycle bin follow the rename too, so restoring one never brings the old tag back
@@ -307,7 +308,7 @@ export class EntriesCommandService {
       .getMany();
 
     if (entries.length === 0) {
-      throw new NotFoundException('No entries found with that tag');
+      throw apiError(NotFoundException, 'TAG_NOT_FOUND');
     }
 
     for (const entry of entries) {
@@ -321,7 +322,7 @@ export class EntriesCommandService {
   async deleteTag(userId: number, tag: string): Promise<{ success: boolean; affectedCount: number }> {
     const targetTag = this.sanitizeTagName(tag);
     if (!targetTag) {
-      throw new BadRequestException('Tag is required');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Tag is required');
     }
 
     const entries = await this.entryRepository
@@ -355,7 +356,7 @@ export class EntriesCommandService {
 
     for (const id of uniqueIds) {
       if (!entryMap.has(id)) {
-        throw new BadRequestException(`Entry ${id} not found for this date`);
+        throw apiError(BadRequestException, 'ENTRY_NOT_FOUND', `Entry ${id} not found for this date`);
       }
     }
 
@@ -378,7 +379,7 @@ export class EntriesCommandService {
     });
 
     if (!revision) {
-      throw new NotFoundException('Revision not found');
+      throw apiError(NotFoundException, 'ENTRY_REVISION_NOT_FOUND');
     }
 
     await this.revisionRepository.remove(revision);
@@ -414,7 +415,7 @@ export class EntriesCommandService {
     visibility?: 'public' | 'private',
   ): Promise<{ success: boolean; affectedCount: number }> {
     if (!visibility) {
-      throw new BadRequestException('Visibility value is required');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Visibility value is required');
     }
 
     await this.entryRepository.update({ id: In(validIds), userId }, { visibility });
@@ -423,7 +424,7 @@ export class EntriesCommandService {
 
   private async bulkAddTags(entries: Entry[], tags?: string[]): Promise<{ success: boolean; affectedCount: number }> {
     if (!tags) {
-      throw new BadRequestException('Tags are required');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Tags are required');
     }
 
     const sanitizedTags = tags.map((tag: string) => sanitizeString(tag.trim()).substring(0, 50));
@@ -443,12 +444,12 @@ export class EntriesCommandService {
     diaryId?: number,
   ): Promise<{ success: boolean; affectedCount: number }> {
     if (diaryId === undefined || diaryId === null) {
-      throw new BadRequestException('Diary ID is required');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Diary ID is required');
     }
 
     const diary = await this.diaryRepository.findOne({ where: { id: diaryId, userId } });
     if (!diary) {
-      throw new NotFoundException('Target diary not found');
+      throw apiError(NotFoundException, 'DIARY_NOT_FOUND', 'Target diary not found');
     }
 
     await this.entryRepository.update({ id: In(validIds), userId }, { diaryId });
@@ -461,7 +462,7 @@ export class EntriesCommandService {
     isArchived?: boolean,
   ): Promise<{ success: boolean; affectedCount: number }> {
     if (typeof isArchived !== 'boolean') {
-      throw new BadRequestException('Archive value is required');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Archive value is required');
     }
 
     await this.entryRepository.update({ id: In(validIds), userId }, { isArchived });

@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Attachment, Diary, Entry } from '@/database/entities';
@@ -89,7 +90,7 @@ export class AppImportService {
         }
       } catch (error) {
         if ((error as { code?: string }).code === '23505') {
-          throw new ConflictException('These entries are already being imported');
+          throw apiError(ConflictException, 'APP_IMPORT_IN_PROGRESS');
         }
         throw error;
       }
@@ -121,13 +122,13 @@ export class AppImportService {
   ): Promise<ImportAttachmentsResponseDto> {
     const entryIds = entryIdsField.split(',').map(Number);
     if (!files?.length || files.length !== entryIds.length) {
-      throw new BadRequestException('Send one entry ID for each file');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Send one entry ID for each file');
     }
 
     const uniqueIds = [...new Set(entryIds)];
     const owned = await this.entryRepository.count({ where: { userId, id: In(uniqueIds) } });
     if (owned !== uniqueIds.length) {
-      throw new NotFoundException('Entry not found');
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
     for (const file of files) {
       this.attachmentsService.assertUploadable(file);
@@ -150,7 +151,7 @@ export class AppImportService {
       where: diaryId ? { id: diaryId, userId } : { userId, isDefault: true },
     });
     if (diaryId && !diary) {
-      throw new NotFoundException('Diary not found');
+      throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
     }
     return diary?.id;
   }

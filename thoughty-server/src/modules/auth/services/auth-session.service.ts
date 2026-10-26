@@ -5,6 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -93,13 +94,13 @@ export class AuthSessionService {
    */
   async refreshToken(refreshToken?: string): Promise<RotatedTokens> {
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token is missing');
+      throw apiError(UnauthorizedException, 'AUTH_REFRESH_TOKEN_MISSING');
     }
 
     try {
       this.jwtService.verify(refreshToken, { secret: this.refreshSecret });
     } catch {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw apiError(UnauthorizedException, 'AUTH_REFRESH_TOKEN_INVALID');
     }
 
     const claimed = await this.refreshTokenRepository
@@ -112,15 +113,15 @@ export class AuthSessionService {
     const userId = (claimed.raw as Array<{ user_id?: number }> | undefined)?.[0]?.user_id;
 
     if (!userId) {
-      throw new UnauthorizedException('Refresh token expired or revoked');
+      throw apiError(UnauthorizedException, 'AUTH_REFRESH_TOKEN_EXPIRED');
     }
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new UnauthorizedException('Refresh token expired or revoked');
+      throw apiError(UnauthorizedException, 'AUTH_REFRESH_TOKEN_EXPIRED');
     }
     if (user.deletedAt) {
-      throw new ForbiddenException('This account has been deleted.');
+      throw apiError(ForbiddenException, 'AUTH_ACCOUNT_DELETED', 'This account has been deleted.');
     }
 
     const { accessToken, refreshToken: rotatedRefreshToken } = await this.createSession(user);
@@ -159,11 +160,11 @@ export class AuthSessionService {
     });
 
     if (!session) {
-      throw new NotFoundException('Session not found');
+      throw apiError(NotFoundException, 'AUTH_SESSION_NOT_FOUND');
     }
 
     if (currentRefreshToken && session.tokenHash === hashRefreshToken(currentRefreshToken)) {
-      throw new BadRequestException('Use logout to end the current session');
+      throw apiError(BadRequestException, 'AUTH_SESSION_IS_CURRENT');
     }
 
     await this.refreshTokenRepository.delete({ id: sessionId, userId });
@@ -175,7 +176,7 @@ export class AuthSessionService {
     currentRefreshToken?: string,
   ): Promise<{ success: boolean }> {
     if (!currentRefreshToken) {
-      throw new BadRequestException('Current refresh token is required');
+      throw apiError(BadRequestException, 'AUTH_CURRENT_REFRESH_TOKEN_REQUIRED');
     }
 
     await this.refreshTokenRepository

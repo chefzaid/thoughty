@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '@/database/entities';
@@ -110,7 +111,7 @@ export class CloudSyncService {
   private async getValidAccessToken(userId: number, provider: CloudProviderType): Promise<string> {
     const tokens = await this.getStoredTokens(userId, provider);
     if (!tokens) {
-      throw new BadRequestException(`Not connected to ${provider.replace('_', ' ')}`);
+      throw apiError(BadRequestException, 'CLOUD_NOT_CONNECTED', `Not connected to ${provider.replace('_', ' ')}`);
     }
 
     // If token is not expired, use it
@@ -129,14 +130,14 @@ export class CloudSyncService {
       checkCloudCancellation();
       this.logger.error(`Failed to refresh token for ${provider}:`, error);
       await this.clearTokens(userId, provider);
-      throw new BadRequestException(`${provider.replace('_', ' ')} connection expired. Please reconnect.`);
+      throw apiError(BadRequestException, 'CLOUD_CONNECTION_EXPIRED', `${provider.replace('_', ' ')} connection expired. Please reconnect.`);
     }
   }
 
   async getAuthUrl(provider: CloudProviderType, redirectUri: string, state: string): Promise<{ url: string }> {
     const providerImpl = this.providers[provider];
     if (!providerImpl) {
-      throw new BadRequestException(`Unknown provider: ${provider}`);
+      throw apiError(BadRequestException, 'CLOUD_UNKNOWN_PROVIDER', `Unknown provider: ${provider}`);
     }
     return { url: providerImpl.getAuthUrl(redirectUri, state) };
   }
@@ -144,7 +145,7 @@ export class CloudSyncService {
   async connect(userId: number, provider: CloudProviderType, code: string, redirectUri: string): Promise<{ success: boolean; connectedAt: string }> {
     const providerImpl = this.providers[provider];
     if (!providerImpl) {
-      throw new BadRequestException(`Unknown provider: ${provider}`);
+      throw apiError(BadRequestException, 'CLOUD_UNKNOWN_PROVIDER', `Unknown provider: ${provider}`);
     }
 
     const tokens = await providerImpl.exchangeCode(code, redirectUri);
@@ -284,7 +285,7 @@ export class CloudSyncService {
       where: { userId, key: this.settingKey(provider, 'access_token') },
     });
     if (!tokenSetting) {
-      throw new BadRequestException(`Not connected to ${provider.replace('_', ' ')}. Connect first before setting up a schedule.`);
+      throw apiError(BadRequestException, 'CLOUD_NOT_CONNECTED', `Not connected to ${provider.replace('_', ' ')}. Connect first before setting up a schedule.`);
     }
 
     await Promise.all([

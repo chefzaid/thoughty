@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import type { BookCover } from '@/common/utils/book-cover-style.util';
 import type { BookQueryDto } from './dto';
 import {
@@ -22,7 +23,9 @@ function validateImage(data: Buffer, mimeType: 'image/jpeg' | 'image/png'): void
       MAX_COVER_PIXELS,
     )
   ) {
-    throw new BadRequestException(
+    throw apiError(
+      BadRequestException,
+      'BOOK_COVER_INVALID',
       'Cover image is invalid or exceeds the maximum dimensions of 6000 pixels and 25 megapixels.',
     );
   }
@@ -46,7 +49,7 @@ export function createBookCover(
     file.size > MAX_BOOK_COVER_IMAGE_SIZE ||
     file.buffer.length !== file.size
   ) {
-    throw new BadRequestException('Cover image must be a PNG or JPEG file no larger than 2 MB.');
+    throw apiError(BadRequestException, 'BOOK_COVER_INVALID');
   }
 
   validateImage(file.buffer, file.mimetype as 'image/jpeg' | 'image/png');

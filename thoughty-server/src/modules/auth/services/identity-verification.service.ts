@@ -4,6 +4,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { JwksKeyStore } from './jwks-key-store';
@@ -80,7 +81,7 @@ export class IdentityVerificationService {
    */
   async verifyGoogleCredential(credential: string): Promise<GoogleIdentity> {
     if (!this.googleClientId) {
-      throw new ServiceUnavailableException('Google sign-in is not configured on this server');
+      throw apiError(ServiceUnavailableException, 'AUTH_GOOGLE_NOT_CONFIGURED');
     }
 
     let claims: GoogleIdTokenClaims;
@@ -93,13 +94,13 @@ export class IdentityVerificationService {
       this.logger.warn(
         `Rejected Google credential: ${error instanceof Error ? error.message : 'verification failed'}`,
       );
-      throw new UnauthorizedException('Invalid Google credential');
+      throw apiError(UnauthorizedException, 'AUTH_GOOGLE_INVALID_CREDENTIAL');
     }
 
     const sub = typeof claims.sub === 'string' ? claims.sub : '';
     const email = typeof claims.email === 'string' ? claims.email.trim().toLowerCase() : '';
     if (!sub || !email || claims.email_verified !== true) {
-      throw new UnauthorizedException('Google account email is missing or unverified');
+      throw apiError(UnauthorizedException, 'AUTH_GOOGLE_EMAIL_UNVERIFIED');
     }
 
     return {
@@ -116,11 +117,11 @@ export class IdentityVerificationService {
    */
   async verifyKeycloakAccessToken(accessToken?: string): Promise<KeycloakIdentity> {
     if (!accessToken) {
-      throw new UnauthorizedException('Keycloak access token is missing');
+      throw apiError(UnauthorizedException, 'AUTH_KEYCLOAK_TOKEN_MISSING');
     }
 
     if (!this.readKeyId(accessToken)) {
-      throw new UnauthorizedException('Keycloak access token has no signing key');
+      throw apiError(UnauthorizedException, 'AUTH_KEYCLOAK_TOKEN_INVALID', 'Keycloak access token has no signing key');
     }
 
     let claims: KeycloakTokenClaims;
@@ -133,7 +134,7 @@ export class IdentityVerificationService {
       this.logger.warn(
         `Rejected Keycloak SSO token: ${error instanceof Error ? error.message : 'verification failed'}`,
       );
-      throw new UnauthorizedException('Invalid Keycloak access token');
+      throw apiError(UnauthorizedException, 'AUTH_KEYCLOAK_TOKEN_INVALID');
     }
 
     const subject = typeof claims.sub === 'string' ? claims.sub : '';
@@ -141,7 +142,7 @@ export class IdentityVerificationService {
     const preferredUsername =
       typeof claims.preferred_username === 'string' ? claims.preferred_username : '';
     if (!subject || !email || !preferredUsername || claims.email_verified !== true) {
-      throw new UnauthorizedException('Keycloak identity is incomplete or unverified');
+      throw apiError(UnauthorizedException, 'AUTH_KEYCLOAK_IDENTITY_INCOMPLETE');
     }
 
     return { subject, email, preferredUsername };

@@ -1,4 +1,5 @@
 import { BadGatewayException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import type { OpenRouterUsageReporter } from './ai-usage.service';
 import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
 
@@ -111,7 +112,7 @@ export async function requestInspiration({
   });
 
   if (!response.ok) {
-    throw new BadGatewayException('OpenRouter request failed');
+    throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED');
   }
 
   const data = (await response.json()) as OpenRouterInspirationResponse;
@@ -119,7 +120,7 @@ export async function requestInspiration({
   const question = parseQuestion(data.choices?.[0]?.message?.content ?? '');
 
   if (!question) {
-    throw new BadGatewayException('No question received from OpenRouter');
+    throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'No question received from OpenRouter');
   }
 
   return question;

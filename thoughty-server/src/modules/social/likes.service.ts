@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { ObjectLiteral, Repository } from 'typeorm';
 import { CommentLike, Entry, EntryComment, EntryLike } from '@/database/entities';
@@ -31,7 +32,7 @@ export class LikesService {
   async setEntryLike(userId: number, entryId: number, like: boolean): Promise<LikeStateDto> {
     const entry = await findFeedVisibleEntry(this.entryRepository, entryId);
     if (like && entry.userId === userId) {
-      throw new BadRequestException('You cannot like your own entry');
+      throw apiError(BadRequestException, 'SOCIAL_CANNOT_LIKE_OWN_ENTRY');
     }
 
     if (like) {
@@ -64,10 +65,10 @@ export class LikesService {
       .andWhere('u.deleted_at IS NULL')
       .getOne();
     if (!comment) {
-      throw new NotFoundException('Comment not found');
+      throw apiError(NotFoundException, 'COMMENT_NOT_FOUND');
     }
     if (like && comment.userId === userId) {
-      throw new BadRequestException('You cannot like your own comment');
+      throw apiError(BadRequestException, 'SOCIAL_CANNOT_LIKE_OWN_COMMENT');
     }
 
     if (like) {

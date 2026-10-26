@@ -5,6 +5,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -29,7 +30,7 @@ export class AccountService {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw apiError(NotFoundException, 'USER_NOT_FOUND');
     }
 
     return {
@@ -51,18 +52,18 @@ export class AccountService {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
-      throw new NotFoundException('User not found');
+      throw apiError(NotFoundException, 'USER_NOT_FOUND');
     }
 
     // For local accounts, verify password
     if (user.authProvider === 'local') {
       if (!password) {
-        throw new BadRequestException('Password is required to delete account');
+        throw apiError(BadRequestException, 'AUTH_PASSWORD_REQUIRED');
       }
 
       const validPassword = await bcrypt.compare(password, user.passwordHash || '');
       if (!validPassword) {
-        throw new UnauthorizedException('Invalid password');
+        throw apiError(UnauthorizedException, 'AUTH_INVALID_PASSWORD');
       }
     }
 

@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { CloudSyncService } from './cloud-sync.service';
 import { createCloudSyncTestBed } from './cloud-sync.test-helpers';
 
@@ -36,9 +37,7 @@ describe('CloudSyncService', () => {
     });
 
     it('should throw BadRequestException for unknown provider', async () => {
-      await expect(
-        service.getAuthUrl('icloud' as any, 'http://localhost/callback', 'state'),
-      ).rejects.toThrow(BadRequestException);
+      await expectApiError(service.getAuthUrl('icloud' as any, 'http://localhost/callback', 'state'), BadRequestException, 'CLOUD_UNKNOWN_PROVIDER');
     });
   });
 
@@ -146,7 +145,7 @@ describe('CloudSyncService', () => {
       googleDriveProvider.refreshAccessToken.mockRejectedValue(new Error('invalid_grant'));
       settingRepository.delete.mockResolvedValue({});
 
-      await expect(service.listFiles(1, 'google_drive')).rejects.toThrow(BadRequestException);
+      await expectApiError(service.listFiles(1, 'google_drive'), BadRequestException, 'CLOUD_CONNECTION_EXPIRED');
       expect(settingRepository.delete).toHaveBeenCalled();
     });
   });

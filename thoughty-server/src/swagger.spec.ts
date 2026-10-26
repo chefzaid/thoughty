@@ -1,5 +1,6 @@
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { createSwaggerConfig, createSwaggerDocument } from './swagger';
+import { ApiErrorResponse } from './common/errors/api-error-response.dto';
 
 jest.mock('@nestjs/swagger', () => {
   const actual = jest.requireActual('@nestjs/swagger');
@@ -51,7 +52,7 @@ describe('swagger helpers', () => {
 
     const result = createSwaggerDocument(app as never);
 
-    expect(SwaggerModule.createDocument).toHaveBeenCalledWith(app, expect.any(Object));
+    expect(SwaggerModule.createDocument).toHaveBeenCalledWith(app, expect.any(Object), { extraModels: [ApiErrorResponse] });
     expect(result).toBe(expected);
   });
 });

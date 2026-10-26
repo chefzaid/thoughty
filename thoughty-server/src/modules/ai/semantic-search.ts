@@ -1,4 +1,5 @@
 import { BadGatewayException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import type { OpenRouterUsageReporter } from './ai-usage.service';
 
 interface EmbeddingResponseItem {
@@ -22,7 +23,7 @@ export function parseEmbeddingResponse(
   expectedCount: number,
 ): number[][] {
   if (!Array.isArray(response.data) || response.data.length !== expectedCount) {
-    throw new BadGatewayException('OpenRouter returned an incomplete embedding response');
+    throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'OpenRouter returned an incomplete embedding response');
   }
 
   const vectors: Array<number[] | undefined> = Array.from({ length: expectedCount });
@@ -30,7 +31,7 @@ export function parseEmbeddingResponse(
 
   for (const item of response.data) {
     if (!Number.isInteger(item.index) || item.index! < 0 || item.index! >= expectedCount) {
-      throw new BadGatewayException('OpenRouter returned an invalid embedding index');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'OpenRouter returned an invalid embedding index');
     }
     if (
       !Array.isArray(item.embedding) ||
@@ -38,13 +39,13 @@ export function parseEmbeddingResponse(
       item.embedding.length > MAX_VECTOR_DIMENSIONS ||
       item.embedding.some((value) => typeof value !== 'number' || !Number.isFinite(value))
     ) {
-      throw new BadGatewayException('OpenRouter returned an invalid embedding vector');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'OpenRouter returned an invalid embedding vector');
     }
     if (dimensions !== 0 && item.embedding.length !== dimensions) {
-      throw new BadGatewayException('OpenRouter returned inconsistent embedding dimensions');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'OpenRouter returned inconsistent embedding dimensions');
     }
     if (vectors[item.index!] !== undefined) {
-      throw new BadGatewayException('OpenRouter returned duplicate embedding indexes');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'OpenRouter returned duplicate embedding indexes');
     }
 
     dimensions = item.embedding.length;
@@ -52,7 +53,7 @@ export function parseEmbeddingResponse(
   }
 
   if (vectors.includes(undefined)) {
-    throw new BadGatewayException('OpenRouter returned an incomplete embedding response');
+    throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'OpenRouter returned an incomplete embedding response');
   }
   return vectors as number[][];
 }
@@ -108,7 +109,7 @@ export async function requestEmbeddings({
   });
 
   if (!response.ok) {
-    throw new BadGatewayException('OpenRouter embedding request failed');
+    throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'OpenRouter embedding request failed');
   }
 
   const data = (await response.json()) as EmbeddingResponse;

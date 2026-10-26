@@ -1,4 +1,5 @@
 import { BadGatewayException, BadRequestException, Injectable, Optional } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { ConfigService } from '@/modules/config';
 import { AiUsageService } from './ai-usage.service';
 import {
@@ -67,7 +68,7 @@ export class AiBookComposerService {
     const model = await this.getModel(userId);
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
-      throw new BadRequestException('OpenRouter API key is not configured');
+      throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');
     }
     const batches = this.batchEntriesByBudget(
       usableEntries,
@@ -106,7 +107,7 @@ export class AiBookComposerService {
     const model = await this.getModel(userId);
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
-      throw new BadRequestException('OpenRouter API key is not configured');
+      throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');
     }
     const title = untrustedBlock('chapter_title', chapterTitle);
     const framing = AiBookComposerService.FRAMING_INPUT_BUDGET - `${title}\n\n${untrustedBlock('journal_entries', '')}`.length;
@@ -194,7 +195,7 @@ export class AiBookComposerService {
       }
       return { introduction, summary };
     } catch {
-      throw new BadGatewayException('Invalid chapter framing response from OpenRouter');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'Invalid chapter framing response from OpenRouter');
     }
   }
 
@@ -220,14 +221,14 @@ export class AiBookComposerService {
     });
 
     if (!response.ok) {
-      throw new BadGatewayException('OpenRouter request failed');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED');
     }
 
     const data = (await response.json()) as OpenRouterResponse;
     await this.usageService?.recordResponse(userId, credential.source, model, data);
     const content = data.choices?.[0]?.message?.content?.trim();
     if (!content) {
-      throw new BadGatewayException('No response received from OpenRouter');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'No response received from OpenRouter');
     }
     return content;
   }

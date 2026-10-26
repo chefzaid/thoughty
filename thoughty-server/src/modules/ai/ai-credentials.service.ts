@@ -1,4 +1,5 @@
 import { BadGatewayException, BadRequestException, Injectable } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { ConfigService } from '@/modules/config';
 import { OPENROUTER_API_KEY_SETTING } from '@/modules/config/config.service';
 import { AiUsageService } from './ai-usage.service';
@@ -63,7 +64,7 @@ export class AiCredentialsService {
   async getUsage(userId: number): Promise<OpenRouterUsageDashboardDto> {
     const personalKey = await this.getPersonalKey(userId);
     if (!personalKey) {
-      throw new BadRequestException('Add a personal OpenRouter API key to view usage');
+      throw apiError(BadRequestException, 'AI_PERSONAL_KEY_REQUIRED');
     }
 
     const [provider, thoughty] = await Promise.all([
@@ -88,20 +89,20 @@ export class AiCredentialsService {
         signal: AbortSignal.timeout(10_000),
       });
     } catch {
-      throw new BadGatewayException('Could not reach OpenRouter');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'Could not reach OpenRouter');
     }
 
     if (!response.ok) {
       if (validating && (response.status === 401 || response.status === 403)) {
-        throw new BadRequestException('OpenRouter rejected this API key');
+        throw apiError(BadRequestException, 'AI_KEY_REJECTED');
       }
-      throw new BadGatewayException('Could not load OpenRouter key usage');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'Could not load OpenRouter key usage');
     }
 
     const payload = (await response.json()) as { data?: OpenRouterKeyData };
     const data = payload.data;
     if (!data || typeof data !== 'object') {
-      throw new BadGatewayException('OpenRouter returned invalid key usage data');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'OpenRouter returned invalid key usage data');
     }
 
     return {

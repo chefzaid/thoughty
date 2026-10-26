@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -126,6 +127,6 @@ describe('EmailVerificationService', () => {
   it('rejects invalid or expired verification tokens', async () => {
     userRepository.findOne.mockResolvedValue(null);
 
-    await expect(service.verifyEmail('bad-token')).rejects.toThrow(BadRequestException);
+    await expectApiError(service.verifyEmail('bad-token'), BadRequestException, 'AUTH_INVALID_VERIFICATION_TOKEN');
   });
 });

@@ -4,6 +4,7 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
@@ -21,9 +22,6 @@ import { TwoFactorService } from './two-factor.service';
 import { AuthSessionService, type IssuedSession } from './auth-session.service';
 import { IdentityVerificationService } from './identity-verification.service';
 
-const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
-const DELETED_ACCOUNT_MESSAGE =
-  'This account has been deleted. Please contact support if you believe this is a mistake.';
 /**
  * A bcrypt hash (cost 12, like real password hashes) of a random throwaway password. It is
  * compared when an account has no usable password hash, so unknown, deleted, and password-less
@@ -64,7 +62,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw apiError(ConflictException, 'AUTH_EMAIL_TAKEN');
     }
 
     // Check if username exists
@@ -73,7 +71,7 @@ export class AuthService {
     });
 
     if (existingUsername) {
-      throw new ConflictException('Username already taken');
+      throw apiError(ConflictException, 'AUTH_USERNAME_TAKEN');
     }
 
     // Hash password
@@ -111,7 +109,7 @@ export class AuthService {
     const usableHash = user && !user.deletedAt && user.passwordHash ? user.passwordHash : null;
     const validPassword = await bcrypt.compare(dto.password, usableHash ?? TIMING_EQUALIZER_HASH);
     if (!user || !usableHash || !validPassword) {
-      throw new UnauthorizedException(INVALID_CREDENTIALS_MESSAGE);
+      throw apiError(UnauthorizedException, 'AUTH_INVALID_CREDENTIALS');
     }
 
     if (user.twoFactorEnabled) {
@@ -136,7 +134,7 @@ export class AuthService {
 
     if (user) {
       if (user.deletedAt) {
-        throw new ForbiddenException(DELETED_ACCOUNT_MESSAGE);
+        throw apiError(ForbiddenException, 'AUTH_ACCOUNT_DELETED');
       }
     } else {
       // Google verified this address, so an account registered with it is linked
@@ -146,7 +144,7 @@ export class AuthService {
 
       if (existingUser) {
         if (existingUser.deletedAt) {
-          throw new ForbiddenException(DELETED_ACCOUNT_MESSAGE);
+          throw apiError(ForbiddenException, 'AUTH_ACCOUNT_DELETED');
         }
 
         existingUser.authProvider = 'google';
@@ -186,7 +184,7 @@ export class AuthService {
 
     user ??= await this.userRepository.findOne({ where: { email } });
     if (user?.deletedAt) {
-      throw new ForbiddenException(DELETED_ACCOUNT_MESSAGE);
+      throw apiError(ForbiddenException, 'AUTH_ACCOUNT_DELETED');
     }
 
     if (user) {

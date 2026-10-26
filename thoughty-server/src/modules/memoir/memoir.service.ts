@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Diary, MemoirAnswer, MemoirProgram, User } from '@/database/entities';
@@ -75,7 +76,7 @@ export class MemoirService {
 
   async start(userId: number, dto: StartMemoirDto): Promise<MemoirOverviewDto> {
     if (await this.programRepository.exists({ where: { userId } })) {
-      throw new ConflictException('The guided memoir is already started');
+      throw apiError(ConflictException, 'MEMOIR_ALREADY_STARTED');
     }
     this.assertTimeZone(dto.timeZone);
 
@@ -99,7 +100,7 @@ export class MemoirService {
       });
     } catch (error: unknown) {
       if ((error as { code?: string }).code === '23505') {
-        throw new ConflictException('The guided memoir is already started');
+        throw apiError(ConflictException, 'MEMOIR_ALREADY_STARTED');
       }
       throw error;
     }
@@ -167,21 +168,21 @@ export class MemoirService {
   private async requireProgram(userId: number): Promise<MemoirProgram> {
     const program = await this.programRepository.findOne({ where: { userId } });
     if (!program) {
-      throw new NotFoundException('The guided memoir has not been started');
+      throw apiError(NotFoundException, 'MEMOIR_NOT_STARTED');
     }
     return program;
   }
 
   private assertTimeZone(timeZone: string): void {
     if (!isValidTimeZone(timeZone)) {
-      throw new BadRequestException('Unknown time zone');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Unknown time zone');
     }
   }
 
   private async requireOwnedDiaryId(userId: number, diaryId: number): Promise<number> {
     const diary = await this.diaryRepository.findOne({ where: { id: diaryId, userId } });
     if (!diary) {
-      throw new NotFoundException('Diary not found');
+      throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
     }
     return diary.id;
   }

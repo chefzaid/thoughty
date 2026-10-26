@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { AttachmentsService } from './attachments.service';
 import { Attachment, Entry } from '@/database/entities';
 import { Readable } from 'node:stream';
@@ -133,12 +134,12 @@ describe('AttachmentsService', () => {
 
     it('throws BadRequestException for disallowed mimetype', async () => {
       const badFile = { ...mockFile, mimetype: 'application/exe' } as Express.Multer.File;
-      await expect(service.upload(1, badFile)).rejects.toThrow(BadRequestException);
+      await expectApiError(service.upload(1, badFile), BadRequestException, 'ATTACHMENT_TYPE_NOT_ALLOWED');
     });
 
     it('throws BadRequestException when file exceeds size limit', async () => {
       const bigFile = { ...mockFile, size: 10 * 1024 * 1024 } as Express.Multer.File;
-      await expect(service.upload(1, bigFile)).rejects.toThrow(BadRequestException);
+      await expectApiError(service.upload(1, bigFile), BadRequestException, 'ATTACHMENT_TOO_LARGE');
     });
 
     it('throws NotFoundException when entryId does not belong to user', async () => {

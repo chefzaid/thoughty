@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Optional,
 } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AiChatHistory, Entry } from '@/database/entities';
@@ -65,7 +66,7 @@ export class AiService {
   private async assertEntryOwnership(userId: number, entryId: number): Promise<Entry> {
     const entry = await this.entryRepository.findOne({ where: { id: entryId, userId } });
     if (!entry) {
-      throw new NotFoundException('Entry not found');
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
     return entry;
   }
@@ -132,13 +133,13 @@ export class AiService {
 
   async suggestTags(userId: number, dto: SuggestTagsDto): Promise<{ tags: string[] }> {
     if (!dto.content.trim()) {
-      throw new BadRequestException('Content is required for tag suggestions');
+      throw apiError(BadRequestException, 'AI_CONTENT_REQUIRED', 'Content is required for tag suggestions');
     }
 
     const model = await this.getModel(userId, 'tag');
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
-      throw new BadRequestException('OpenRouter API key is not configured');
+      throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');
     }
 
     const maxTags = Math.min(Math.max(dto.maxTags ?? 5, 1), 10);
@@ -188,13 +189,13 @@ export class AiService {
 
   async fixWriting(userId: number, dto: FixWritingDto): Promise<{ content: string }> {
     if (!dto.content.trim()) {
-      throw new BadRequestException('Content is required for writing fixes');
+      throw apiError(BadRequestException, 'AI_CONTENT_REQUIRED', 'Content is required for writing fixes');
     }
 
     const model = await this.getModel(userId, 'writing');
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
-      throw new BadRequestException('OpenRouter API key is not configured');
+      throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');
     }
     const response = await fetch(this.openRouterUrl, {
       method: 'POST',
@@ -220,7 +221,7 @@ export class AiService {
     });
 
     if (!response.ok) {
-      throw new BadGatewayException('OpenRouter request failed');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED');
     }
 
     const data = (await response.json()) as OpenRouterResponse;
@@ -233,11 +234,11 @@ export class AiService {
   async summarizeEntry(userId: number, dto: SummarizeEntryDto): Promise<{ summary: string }> {
     const entry = await this.assertEntryOwnership(userId, dto.entryId);
     if (!entry.content.trim()) {
-      throw new BadRequestException('Entry content is required');
+      throw apiError(BadRequestException, 'AI_CONTENT_REQUIRED');
     }
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
-      throw new BadRequestException('OpenRouter API key is not configured');
+      throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');
     }
 
     const model = await this.getModel(userId, 'summary');
@@ -263,11 +264,11 @@ export class AiService {
     });
     const { themes, recentThemes } = summarizeThemes(entries.map(({ tags }) => tags ?? []));
     if (themes.length === 0) {
-      throw new BadRequestException('Tagged entries are required for inspiration');
+      throw apiError(BadRequestException, 'AI_TAGGED_ENTRIES_REQUIRED');
     }
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
-      throw new BadRequestException('OpenRouter API key is not configured');
+      throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');
     }
 
     const model = await this.getModel(userId, 'prompt');
@@ -286,16 +287,16 @@ export class AiService {
     await this.assertEntryOwnership(userId, dto.entryId);
 
     if (!dto.entryContent.trim()) {
-      throw new BadRequestException('Entry content is required');
+      throw apiError(BadRequestException, 'AI_CONTENT_REQUIRED');
     }
 
     if (dto.messages.length === 0) {
-      throw new BadRequestException('At least one message is required');
+      throw apiError(BadRequestException, 'VALIDATION_FAILED', 'At least one message is required');
     }
 
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
-      throw new BadRequestException('OpenRouter API key is not configured');
+      throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');
     }
 
     const model = await this.getModel(userId, 'chat');
@@ -330,7 +331,7 @@ export class AiService {
     });
 
     if (!response.ok) {
-      throw new BadGatewayException('OpenRouter request failed');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED');
     }
 
     const data = (await response.json()) as OpenRouterResponse;
@@ -338,7 +339,7 @@ export class AiService {
     const reply = data.choices?.[0]?.message?.content?.trim();
 
     if (!reply) {
-      throw new BadGatewayException('No response received from OpenRouter');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'No response received from OpenRouter');
     }
 
     await this.saveChatHistory(userId, dto.entryId, [
@@ -352,7 +353,7 @@ export class AiService {
   async listModels(userId = 0): Promise<{ id: string; name: string }[]> {
     const credential = await resolveOpenRouterCredential(this.configService, userId);
     if (!credential) {
-      throw new BadRequestException('OpenRouter API key is not configured');
+      throw apiError(BadRequestException, 'AI_KEY_NOT_CONFIGURED');
     }
 
     const response = await fetch('https://openrouter.ai/api/v1/models', {
@@ -363,7 +364,7 @@ export class AiService {
     });
 
     if (!response.ok) {
-      throw new BadGatewayException('Failed to fetch models from OpenRouter');
+      throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED', 'Failed to fetch models from OpenRouter');
     }
 
     const data = (await response.json()) as { data?: Array<{ id?: string; name?: string }> };

@@ -1,4 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { EntriesCommandService } from './entries-command.service';
 import type { BulkOperationDto } from './dto';
 import { createEntriesCommandTestBed } from './entries-command.test-helpers';
@@ -47,7 +48,7 @@ describe('EntriesCommandService', () => {
     entryRepository.count.mockResolvedValue(3);
     configService.getConfig.mockResolvedValue({ maxPinnedEntries: '3' });
 
-    await expect(service.togglePinned(5, 1, true)).rejects.toThrow(BadRequestException);
+    await expectApiError(service.togglePinned(5, 1, true), BadRequestException, 'ENTRY_PIN_LIMIT_REACHED');
 
     expect(entryRepository.save).not.toHaveBeenCalled();
   });
@@ -132,6 +133,6 @@ describe('EntriesCommandService', () => {
   it('throws when bulk operation does not match any entries', async () => {
     entryRepository.find.mockResolvedValue([]);
 
-    await expect(service.bulkOperation(1, { ids: [1], action: 'delete' })).rejects.toThrow(NotFoundException);
+    await expectApiError(service.bulkOperation(1, { ids: [1], action: 'delete' }), NotFoundException, 'ENTRIES_NOT_FOUND');
   });
 });

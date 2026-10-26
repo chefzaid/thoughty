@@ -5,6 +5,7 @@ import {
   Logger,
   OnModuleInit,
 } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Attachment, Entry } from '@/database/entities';
@@ -112,17 +113,21 @@ export class AttachmentsService implements OnModuleInit {
   /** Rejects a missing file, a type outside the allowlist, or a file over the size limit. */
   assertUploadable(file: Express.Multer.File | undefined): asserts file is Express.Multer.File {
     if (!file) {
-      throw new BadRequestException('No file provided');
+      throw apiError(BadRequestException, 'ATTACHMENT_FILE_MISSING');
     }
 
     if (!ALLOWED_MIMETYPES.includes(file.mimetype)) {
-      throw new BadRequestException(
+      throw apiError(
+        BadRequestException,
+        'ATTACHMENT_TYPE_NOT_ALLOWED',
         `File type ${file.mimetype} is not allowed. Allowed types: ${ALLOWED_MIMETYPES.join(', ')}`,
       );
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      throw new BadRequestException(
+      throw apiError(
+        BadRequestException,
+        'ATTACHMENT_TOO_LARGE',
         `File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`,
       );
     }
@@ -136,7 +141,7 @@ export class AttachmentsService implements OnModuleInit {
         where: { id: entryId, userId },
       });
       if (!entry) {
-        throw new NotFoundException('Entry not found');
+        throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
       }
     }
 
@@ -169,14 +174,14 @@ export class AttachmentsService implements OnModuleInit {
       where: { id: attachmentId, userId },
     });
     if (!attachment) {
-      throw new NotFoundException('Attachment not found');
+      throw apiError(NotFoundException, 'ATTACHMENT_NOT_FOUND');
     }
 
     const entry = await this.entryRepository.findOne({
       where: { id: entryId, userId },
     });
     if (!entry) {
-      throw new NotFoundException('Entry not found');
+      throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
 
     attachment.entryId = entryId;
@@ -216,7 +221,7 @@ export class AttachmentsService implements OnModuleInit {
       where: { storedFilename, userId },
     });
     if (!attachment) {
-      throw new NotFoundException('File not found');
+      throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
     }
     const { stream } = await this.getFileStream(attachment.storedFilename);
     const contentType = ALLOWED_MIMETYPES.includes(attachment.mimetype)
@@ -235,7 +240,7 @@ export class AttachmentsService implements OnModuleInit {
       where: { id: attachmentId, userId },
     });
     if (!attachment) {
-      throw new NotFoundException('Attachment not found');
+      throw apiError(NotFoundException, 'ATTACHMENT_NOT_FOUND');
     }
     return attachment;
   }
@@ -254,7 +259,7 @@ export class AttachmentsService implements OnModuleInit {
       totalBytes += buffer.length;
       if (totalBytes > maxBytes) {
         stream.destroy();
-        throw new BadRequestException('Attachment exceeds the export size limit');
+        throw apiError(BadRequestException, 'ATTACHMENT_EXPORT_TOO_LARGE');
       }
       chunks.push(buffer);
     }
@@ -267,7 +272,7 @@ export class AttachmentsService implements OnModuleInit {
       where: { id: attachmentId, userId },
     });
     if (!attachment) {
-      throw new NotFoundException('Attachment not found');
+      throw apiError(NotFoundException, 'ATTACHMENT_NOT_FOUND');
     }
 
     try {

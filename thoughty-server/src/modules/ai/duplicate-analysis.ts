@@ -1,5 +1,6 @@
 import { extractJsonCandidate } from '@/common/utils/json-content.util';
 import { BadGatewayException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import type { OpenRouterUsageReporter } from './ai-usage.service';
 import { UNTRUSTED_CONTENT_INSTRUCTION } from './untrusted-content';
 
@@ -121,7 +122,7 @@ export async function requestDuplicateGroups({
   });
 
   if (!response.ok) {
-    throw new BadGatewayException('OpenRouter request failed');
+    throw apiError(BadGatewayException, 'AI_PROVIDER_FAILED');
   }
 
   const data = (await response.json()) as OpenRouterResponse;

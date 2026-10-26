@@ -4,6 +4,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThan, Repository } from 'typeorm';
@@ -54,21 +55,19 @@ export class TwoFactorService {
 
   private assertEligible(user: User, purpose: TwoFactorPurpose): void {
     if (user.authProvider !== 'local' || !user.passwordHash) {
-      throw new BadRequestException(
-        'Email two-factor authentication is available for password accounts only.',
-      );
+      throw apiError(BadRequestException, 'AUTH_2FA_PASSWORD_ACCOUNTS_ONLY');
     }
     if (!user.emailVerified) {
-      throw new BadRequestException('Verify your email before enabling two-factor authentication.');
+      throw apiError(BadRequestException, 'AUTH_2FA_EMAIL_NOT_VERIFIED');
     }
     if (purpose === 'enable' && user.twoFactorEnabled) {
-      throw new BadRequestException('Two-factor authentication is already enabled.');
+      throw apiError(BadRequestException, 'AUTH_2FA_ALREADY_ENABLED');
     }
     if (purpose === 'login' && !user.twoFactorEnabled) {
-      throw new BadRequestException('Two-factor authentication is not enabled.');
+      throw apiError(BadRequestException, 'AUTH_2FA_NOT_ENABLED');
     }
     if (!this.emailService.isConfigured()) {
-      throw new ServiceUnavailableException('Email delivery is not configured.');
+      throw apiError(ServiceUnavailableException, 'EMAIL_DELIVERY_NOT_CONFIGURED');
     }
   }
 
@@ -89,7 +88,7 @@ export class TwoFactorService {
       await this.emailService.sendTwoFactorCodeEmail(user.email, code, CHALLENGE_TTL_SECONDS / 60);
     } catch {
       await this.clearChallenge(user.id, user.twoFactorChallengeTokenHash);
-      throw new ServiceUnavailableException('Unable to send the verification code.');
+      throw apiError(ServiceUnavailableException, 'AUTH_2FA_CODE_NOT_SENT');
     }
 
     return {
@@ -102,7 +101,7 @@ export class TwoFactorService {
   async startSetup(userId: number): Promise<TwoFactorChallengeResponseDto> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw apiError(UnauthorizedException, 'USER_NOT_FOUND');
     }
     return this.startChallenge(user, 'enable');
   }
@@ -126,7 +125,7 @@ export class TwoFactorService {
       },
     });
     if (!user?.twoFactorChallengeCodeHash || !user.twoFactorChallengePurpose) {
-      throw new UnauthorizedException('Invalid or expired two-factor challenge.');
+      throw apiError(UnauthorizedException, 'AUTH_2FA_INVALID_CHALLENGE');
     }
     return user;
   }
@@ -158,10 +157,10 @@ export class TwoFactorService {
   ): Promise<User> {
     const user = await this.findChallenge(dto.challengeToken, purpose, userId);
     if (!this.codesMatch(dto.code, user.twoFactorChallengeCodeHash!)) {
-      throw new UnauthorizedException('Invalid or expired verification code.');
+      throw apiError(UnauthorizedException, 'AUTH_INVALID_2FA_CODE');
     }
     if (!(await this.clearChallenge(user.id, this.tokenHash(dto.challengeToken)))) {
-      throw new UnauthorizedException('Two-factor challenge has already been used.');
+      throw apiError(UnauthorizedException, 'AUTH_2FA_CHALLENGE_USED');
     }
     this.clearChallengeFields(user);
     return user;
@@ -170,7 +169,7 @@ export class TwoFactorService {
   async consumeLogin(dto: TwoFactorCodeDto): Promise<User> {
     const user = await this.consumeChallenge(dto, 'login');
     if (!user.twoFactorEnabled || user.deletedAt) {
-      throw new UnauthorizedException('Two-factor authentication is unavailable.');
+      throw apiError(UnauthorizedException, 'AUTH_2FA_UNAVAILABLE');
     }
     return user;
   }
@@ -185,7 +184,7 @@ export class TwoFactorService {
   async disable(userId: number, password: string): Promise<{ success: boolean }> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user?.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
-      throw new UnauthorizedException('Invalid password');
+      throw apiError(UnauthorizedException, 'AUTH_INVALID_PASSWORD');
     }
     user.twoFactorEnabled = false;
     user.twoFactorChallengeTokenHash = null;
@@ -199,7 +198,7 @@ export class TwoFactorService {
   async status(userId: number): Promise<TwoFactorStatusResponseDto> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw apiError(UnauthorizedException, 'USER_NOT_FOUND');
     }
     return {
       enabled: user.twoFactorEnabled,

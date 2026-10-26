@@ -1,4 +1,5 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { DataSource } from 'typeorm';
 import { Entry, EntryRevision } from '@/database/entities';
 import { setTaskListItem, withoutTaskStates } from '@/common/utils';
@@ -47,15 +48,15 @@ export class EntryTaskListService {
       const entries = manager.getRepository(Entry);
       const entry = await entries.findOne({ where: { id, userId }, lock: { mode: 'pessimistic_write' } });
       if (!entry) {
-        throw new NotFoundException('Entry not found');
+        throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
       }
       if (entry.format !== 'markdown') {
-        throw new BadRequestException('Only Markdown entries have task lists');
+        throw apiError(BadRequestException, 'ENTRY_TASKS_MARKDOWN_ONLY');
       }
 
       const content = setTaskListItem(entry.content, dto.line, dto.checked);
       if (content === null) {
-        throw new ConflictException('That line is no longer a task. Reload the entry and try again.');
+        throw apiError(ConflictException, 'ENTRY_TASK_CHANGED');
       }
       if (content === entry.content) {
         return { success: true, entry };

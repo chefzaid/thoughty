@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import type { ObjectLiteral, Repository, SelectQueryBuilder } from 'typeorm';
 import type { Entry } from '@/database/entities';
 
@@ -47,7 +48,7 @@ export async function findFeedVisibleEntry(
       .where('e.id = :entryId', { entryId }),
   ).getOne();
   if (!entry) {
-    throw new NotFoundException('Entry not found');
+    throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
   }
   return entry;
 }

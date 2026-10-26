@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Diary } from '@/database/entities';
@@ -43,7 +44,7 @@ export class DiariesService {
       });
     } catch (error: unknown) {
       if ((error as { code?: string }).code === '23505') {
-        throw new ConflictException('A diary with this name already exists');
+        throw apiError(ConflictException, 'DIARY_NAME_TAKEN');
       }
       throw error;
     }
@@ -55,7 +56,7 @@ export class DiariesService {
     });
 
     if (!diary) {
-      throw new NotFoundException('Diary not found');
+      throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
     }
 
     const sanitizedName = sanitizeString(dto.name.trim()).substring(0, 100);
@@ -74,7 +75,7 @@ export class DiariesService {
       return await this.diaryRepository.save(diary);
     } catch (error: unknown) {
       if ((error as { code?: string }).code === '23505') {
-        throw new ConflictException('A diary with this name already exists');
+        throw apiError(ConflictException, 'DIARY_NAME_TAKEN');
       }
       throw error;
     }
@@ -86,11 +87,11 @@ export class DiariesService {
     });
 
     if (!diary) {
-      throw new NotFoundException('Diary not found');
+      throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
     }
 
     if (diary.isDefault) {
-      throw new BadRequestException('Cannot delete the default diary');
+      throw apiError(BadRequestException, 'DIARY_DEFAULT_NOT_DELETABLE');
     }
 
     // Get default diary to move entries to
@@ -113,7 +114,7 @@ export class DiariesService {
     });
 
     if (!diary) {
-      throw new NotFoundException('Diary not found');
+      throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
     }
 
     // Unset all other defaults
@@ -134,7 +135,7 @@ export class DiariesService {
 
     for (const id of orderedIds) {
       if (!userDiaryIds.has(id)) {
-        throw new BadRequestException(`Diary ${id} not found`);
+        throw apiError(BadRequestException, 'DIARY_NOT_FOUND', `Diary ${id} not found`);
       }
     }
 

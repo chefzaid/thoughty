@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Diary, Entry } from '@/database/entities';
@@ -49,7 +50,7 @@ export class MarkdownArchiveService {
     const diaries = await this.diaryRepository.find({ where: { userId }, order: { position: 'ASC', id: 'ASC' } });
     const diary = diaryId ? diaries.find((candidate) => candidate.id === diaryId) : undefined;
     if (diaryId && !diary) {
-      throw new NotFoundException('Diary not found');
+      throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
     }
 
     const query = this.entryRepository

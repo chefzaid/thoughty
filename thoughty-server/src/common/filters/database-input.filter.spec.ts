@@ -22,6 +22,7 @@ describe('DatabaseInputExceptionFilter', () => {
     const [error] = baseCatch.mock.calls[0];
     expect(error).toBeInstanceOf(BadRequestException);
     expect((error as BadRequestException).message).toBe('Numeric value out of range');
+    expect((error as BadRequestException).getResponse()).toMatchObject({ code: 'VALIDATION_FAILED' });
   });
 
   it('passes other database errors through unchanged', () => {
