@@ -22,7 +22,6 @@ const defaultDiaries: Diary[] = [
 describe('DiaryManager', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
     });
 
     afterEach(() => {
@@ -132,12 +131,45 @@ describe('DiaryManager', () => {
         });
     });
 
-    it('deletes non-default diary', async () => {
-        render(<DiaryManager {...baseProps} />);
+    it('asks in a dialog before deleting a non-default diary', async () => {
+        const onDeleteDiary = vi.fn().mockResolvedValue({});
+        render(<DiaryManager {...baseProps} onDeleteDiary={onDeleteDiary} />);
         fireEvent.click(screen.getByTitle('delete'));
+
+        expect(screen.getByText('deleteDiaryMessage')).toBeInTheDocument();
+        expect(onDeleteDiary).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole('button', { name: 'delete' }));
+
         await waitFor(() => {
-            expect(baseProps.onDeleteDiary).toHaveBeenCalledWith(2);
+            expect(onDeleteDiary).toHaveBeenCalledWith(2);
         });
+        expect(screen.queryByText('deleteDiaryMessage')).not.toBeInTheDocument();
+    });
+
+    it('keeps the diary when the delete dialog is cancelled', () => {
+        const onDeleteDiary = vi.fn().mockResolvedValue({});
+        render(<DiaryManager {...baseProps} onDeleteDiary={onDeleteDiary} />);
+        fireEvent.click(screen.getByTitle('delete'));
+        fireEvent.click(screen.getByRole('button', { name: 'cancel' }));
+
+        expect(screen.queryByText('deleteDiaryMessage')).not.toBeInTheDocument();
+        expect(onDeleteDiary).not.toHaveBeenCalled();
+    });
+
+    it('names the diary in the French delete dialog and shows a failed delete', async () => {
+        const t = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
+        const onDeleteDiary = vi.fn().mockRejectedValue(new Error(''));
+        render(<DiaryManager {...baseProps} theme="light" t={t} onDeleteDiary={onDeleteDiary} />);
+        fireEvent.click(screen.getByTitle('Supprimer'));
+
+        expect(screen.getByRole('heading', { name: 'Supprimer le journal' })).toBeInTheDocument();
+        expect(screen.getByText('« Work » sera supprimé. Ses entrées seront déplacées vers votre journal par défaut.')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('button', { name: 'Supprimer' }));
+
+        await waitFor(() => {
+            expect(screen.getByText(getTranslation('fr', 'diaryDeleteFailed'))).toBeInTheDocument();
+        });
+        expect(onDeleteDiary).toHaveBeenCalledWith(2);
     });
 
     it('calls onBack when back button clicked', () => {

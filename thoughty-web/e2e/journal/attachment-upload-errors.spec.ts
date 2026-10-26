@@ -1,0 +1,49 @@
+import AxeBuilder from '@axe-core/playwright';
+import { test, expect } from '@playwright/test';
+import { setupMockApp } from '../support/mockApp';
+
+const tooLarge = { name: 'scan.pdf', mimeType: 'application/pdf', buffer: Buffer.alloc((5 * 1024 * 1024) + 1) };
+const program = { name: 'setup.exe', mimeType: 'application/x-msdownload', buffer: Buffer.from('MZ') };
+const note = { name: 'note.txt', mimeType: 'text/plain', buffer: Buffer.from('A short note') };
+
+test.describe('Attachment upload errors', () => {
+  test('says next to the attach button which files were turned away, without a browser dialog', async ({ page }) => {
+    const dialogs: string[] = [];
+    page.on('dialog', (dialog) => {
+      dialogs.push(dialog.message());
+      void dialog.dismiss();
+    });
+    await setupMockApp(page, { startAuthenticated: true });
+    await page.goto('/journal');
+
+    const attach = page.getByTitle('Attach files').first();
+    const fileInput = page.locator('input[type="file"]').first();
+    await fileInput.setInputFiles([program, tooLarge]);
+
+    const error = page.getByRole('alert');
+    await expect(error).toContainText('setup.exe: This file type is not allowed. Allowed: images, audio, PDF, plain text.');
+    await expect(error).toContainText('scan.pdf: File is too large. Maximum size is 5 MB.');
+    await expect(attach).toHaveAttribute('aria-describedby', (await error.getAttribute('id')) ?? '');
+
+    const results = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+      .analyze();
+    expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) }))).toEqual([]);
+
+    // A pick with nothing turned away clears the message and attaches the file
+    await fileInput.setInputFiles([note]);
+    await expect(error).toHaveCount(0);
+    await expect(attach).not.toHaveAttribute('aria-describedby');
+    await expect(page.getByText('note.txt')).toBeVisible();
+    expect(dialogs).toEqual([]);
+  });
+
+  test('says which file is too large, in French', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr' } });
+    await page.goto('/journal');
+
+    await page.locator('input[type="file"]').first().setInputFiles([tooLarge]);
+
+    await expect(page.getByRole('alert')).toHaveText('scan.pdf : Le fichier est trop volumineux. Taille maximale : 5 Mo.');
+  });
+});

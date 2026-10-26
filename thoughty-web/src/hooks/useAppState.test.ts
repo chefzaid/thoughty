@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act, waitFor } from "@testing-library/react";
 import { useConfig, useDiaries, useEntries } from "./useAppState";
 import { renderHook } from "./hookTestUtils";
+import type { Notifier } from "./useAppNotice";
+import { getTranslation, type Language } from "../utils/translations";
 
 const mockAuthFetch = vi.fn();
 const mockGetAccessToken = vi.fn(() => "test-token");
@@ -79,7 +81,13 @@ vi.mock("../services/api", () => ({
   })),
 }));
 
-globalThis.alert = vi.fn();
+const createNotifier = (language: Language = "en"): Notifier => ({
+  notify: vi.fn(),
+  t: (key, params) => getTranslation(language, key, params),
+  language,
+});
+
+const notifier = createNotifier();
 
 describe("useAppState Hooks", () => {
   beforeEach(() => {
@@ -326,7 +334,7 @@ describe("useAppState Hooks", () => {
     const mockConfig = { entriesPerPage: 10 };
 
     it("initializes with default state", () => {
-      const { result } = renderHook(() => useEntries(false, mockConfig, null));
+      const { result } = renderHook(() => useEntries(false, mockConfig, null, notifier));
 
       expect(result.current.entries).toEqual([]);
       expect(result.current.groupedEntries).toEqual({});
@@ -338,7 +346,7 @@ describe("useAppState Hooks", () => {
     });
 
     it("syncs inputPage with page changes", async () => {
-      const { result } = renderHook(() => useEntries(false, mockConfig, null));
+      const { result } = renderHook(() => useEntries(false, mockConfig, null, notifier));
 
       act(() => {
         result.current.setPage(3);
@@ -350,7 +358,7 @@ describe("useAppState Hooks", () => {
     });
 
     it("updates filter and navigation state", () => {
-      const { result } = renderHook(() => useEntries(false, mockConfig, null));
+      const { result } = renderHook(() => useEntries(false, mockConfig, null, notifier));
       const filterDate = new Date("2024-01-15");
 
       act(() => {
@@ -423,7 +431,7 @@ describe("useAppState Hooks", () => {
         deleteTag: vi.fn(),
       });
 
-      const { result } = renderHook(() => useEntries(true, mockConfig, null));
+      const { result } = renderHook(() => useEntries(true, mockConfig, null, notifier));
 
       await waitFor(() => {
         expect(result.current.groupedEntries).toEqual({
@@ -452,12 +460,12 @@ describe("useAppState Hooks", () => {
 
     it("calculates page limit from config", () => {
       const numeric = renderHook(() =>
-        useEntries(false, { entriesPerPage: 25 }, null),
+        useEntries(false, { entriesPerPage: 25 }, null, notifier),
       );
       const stringValue = renderHook(() =>
-        useEntries(false, { entriesPerPage: "7" }, null),
+        useEntries(false, { entriesPerPage: "7" }, null, notifier),
       );
-      const fallback = renderHook(() => useEntries(false, {}, null));
+      const fallback = renderHook(() => useEntries(false, {}, null, notifier));
 
       expect(numeric.result.current.getLimit()).toBe(25);
       expect(stringValue.result.current.getLimit()).toBe(7);
@@ -520,7 +528,7 @@ describe("useAppState Hooks", () => {
         previewJournalRetag: vi.fn(),
         applyJournalRetag: vi.fn(),
       });
-      const { result } = renderHook(() => useEntries(true, mockConfig, 4));
+      const { result } = renderHook(() => useEntries(true, mockConfig, 4, notifier));
 
       act(() => {
         result.current.setSearchMode("semantic");
@@ -594,7 +602,7 @@ describe("useAppState Hooks", () => {
         deleteTag: vi.fn(),
       });
 
-      const { result } = renderHook(() => useEntries(true, mockConfig, null));
+      const { result } = renderHook(() => useEntries(true, mockConfig, null, notifier));
 
       await waitFor(() => {
         expect(result.current.entries).toHaveLength(3);
@@ -618,6 +626,7 @@ describe("useAppState Hooks", () => {
     const mockTaskEntriesService = async (
       setEntryTask: (id: number, line: number, checked: boolean) => Promise<{ success: boolean; error?: string }>,
       fetchEntries = vi.fn(),
+      overrides: { togglePinned?: (id: number, pinned: boolean) => Promise<{ success: boolean; error?: string }> } = {},
     ) => {
       fetchEntries.mockResolvedValue({
         entries: [
@@ -650,6 +659,7 @@ describe("useAppState Hooks", () => {
         renameTag: vi.fn(),
         fetchTagUsage: vi.fn(),
         deleteTag: vi.fn(),
+        ...overrides,
       });
       return fetchEntries;
     };
@@ -661,7 +671,7 @@ describe("useAppState Hooks", () => {
         .mockResolvedValue({ success: true });
       const fetchEntries = await mockTaskEntriesService(setEntryTask);
 
-      const { result } = renderHook(() => useEntries(true, mockConfig, null));
+      const { result } = renderHook(() => useEntries(true, mockConfig, null, notifier));
       await waitFor(() => expect(result.current.entries).toHaveLength(1));
       const entry = result.current.entries[0]!;
 
@@ -686,26 +696,47 @@ describe("useAppState Hooks", () => {
       ["en", "That line is no longer a task.", "That line is no longer a task."],
       ["en", "taskUpdateFailed", "Failed to update the task."],
       ["fr", undefined, "Échec de la mise à jour de la tâche."],
-    ])("goes back to the saved entry and says why when a tick fails (%s, %s)", async (language, error, expected) => {
-      const alertSpy = vi.spyOn(globalThis, "alert").mockImplementation(() => {});
+    ] as const)("goes back to the saved entry and says why in the notice toast when a tick fails (%s, %s)", async (language, error, expected) => {
+      const languageNotifier = createNotifier(language);
       const setEntryTask = vi.fn().mockResolvedValue({ success: false, error });
       const fetchEntries = await mockTaskEntriesService(setEntryTask);
 
-      const { result } = renderHook(() => useEntries(true, { ...mockConfig, language }, null));
+      const { result } = renderHook(() => useEntries(true, { ...mockConfig, language }, null, languageNotifier));
       await waitFor(() => expect(result.current.entries).toHaveLength(1));
 
       act(() => {
         result.current.setEntryTask(result.current.entries[0]!, 0, true);
       });
 
-      await waitFor(() => expect(alertSpy).toHaveBeenCalledWith(expected));
+      await waitFor(() => expect(languageNotifier.notify).toHaveBeenCalledWith(expected));
+      expect(languageNotifier.notify).toHaveBeenCalledTimes(1);
       expect(fetchEntries).toHaveBeenCalledTimes(2);
       await waitFor(() => expect(result.current.entries[0]?.content).toBe("- [ ] One\n- [ ] Two"));
-      alertSpy.mockRestore();
+    });
+
+    it.each([
+      ["en", "Only five entries can be pinned.", "Only five entries can be pinned."],
+      ["en", "pinUpdateFailed", "Failed to update pinned state"],
+      ["fr", undefined, "Échec de la mise à jour de l'épinglage"],
+    ] as const)("says why in the notice toast when pinning fails (%s, %s)", async (language, error, expected) => {
+      const languageNotifier = createNotifier(language);
+      const togglePinned = vi.fn().mockResolvedValue({ success: false, error });
+      const fetchEntries = await mockTaskEntriesService(vi.fn(), vi.fn(), { togglePinned });
+
+      const { result } = renderHook(() => useEntries(true, { ...mockConfig, language }, null, languageNotifier));
+      await waitFor(() => expect(result.current.entries).toHaveLength(1));
+
+      await act(async () => {
+        await result.current.togglePinned(result.current.entries[0]!);
+      });
+
+      expect(togglePinned).toHaveBeenCalledWith(7, true);
+      expect(languageNotifier.notify).toHaveBeenCalledWith(expected);
+      expect(fetchEntries).toHaveBeenCalledTimes(1);
     });
 
     it("exposes entry actions", () => {
-      const { result } = renderHook(() => useEntries(false, mockConfig, null));
+      const { result } = renderHook(() => useEntries(false, mockConfig, null, notifier));
 
       expect(typeof result.current.fetchEntries).toBe("function");
       expect(typeof result.current.fetchEntryDates).toBe("function");

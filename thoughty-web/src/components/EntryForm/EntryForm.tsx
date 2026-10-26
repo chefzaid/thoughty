@@ -159,6 +159,7 @@ function EntryForm({
             return;
         }
 
+        // eslint-disable-next-line no-alert -- the template name field is logged in TODO.md › Bugs to fix
         const name = globalThis.prompt(t('templateNamePrompt'));
         if (!name?.trim()) {
             return;

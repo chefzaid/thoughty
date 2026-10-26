@@ -30,6 +30,8 @@ export default defineConfig([
       ...reactHooks.configs.recommended.rules,
       ...reactRefresh.configs.vite.rules,
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
+      // Messages go through the app's notice toast or an inline error, confirmations through ConfirmModal
+      'no-alert': 'error',
     },
   },
 ]);

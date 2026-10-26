@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AttachmentUpload from './AttachmentUpload';
 import type { Attachment } from '../../types';
+import { getTranslation } from '../../utils/translations';
 
 vi.mock('../AttachmentPreview/useAuthenticatedAttachmentUrl', () => ({
   useAuthenticatedAttachmentUrl: (storedFilename: string) => `blob:stored-${storedFilename}`,
@@ -242,10 +243,10 @@ describe('AttachmentUpload', () => {
     expect(clickSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('validates selected files and resets input value', () => {
+  it('validates selected files, says which were turned away next to the button and resets input value', () => {
     const onAddFile = vi.fn();
-    const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
-    const { container } = render(<AttachmentUpload {...defaultProps} onAddFile={onAddFile} />);
+    const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
+    const { container } = render(<AttachmentUpload {...defaultProps} onAddFile={onAddFile} t={t} />);
 
     const validFile = new File(['ok'], 'ok.txt', { type: 'text/plain' });
     const invalidTypeFile = new File(['bad'], 'bad.exe', { type: 'application/x-msdownload' });
@@ -258,18 +259,35 @@ describe('AttachmentUpload', () => {
       },
     });
 
-    expect(alertSpy).toHaveBeenCalledWith('attachmentTypeNotAllowed');
-    expect(alertSpy).toHaveBeenCalledWith('attachmentTooLarge');
+    const error = screen.getByRole('alert');
+    expect(error).toHaveTextContent('bad.exe: This file type is not allowed. Allowed: images, audio, PDF, plain text.');
+    expect(error).toHaveTextContent('huge.pdf: File is too large. Maximum size is 5 MB.');
+    expect(screen.getByTitle('Attach files')).toHaveAttribute('aria-describedby', error.id);
     expect(onAddFile).toHaveBeenCalledTimes(1);
     expect(onAddFile).toHaveBeenCalledWith(validFile);
     expect(fileInput.value).toBe('');
 
-    alertSpy.mockRestore();
+    fireEvent.change(fileInput, { target: { files: [validFile] } });
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByTitle('Attach files')).not.toHaveAttribute('aria-describedby');
+  });
+
+  it('says in French which file is too large', () => {
+    const t = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
+    const { container } = render(<AttachmentUpload {...defaultProps} theme="light" t={t} />);
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(fileInput, {
+      target: { files: [new File([new Uint8Array((5 * 1024 * 1024) + 1)], 'énorme.pdf', { type: 'application/pdf' })] },
+    });
+
+    expect(screen.getByRole('alert')).toHaveTextContent('énorme.pdf : Le fichier est trop volumineux. Taille maximale : 5 Mo.');
+    expect(screen.getByRole('alert')).toHaveClass('text-red-600');
   });
 
   it('accepts supported audio files', () => {
     const onAddFile = vi.fn();
-    const alertSpy = vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
     const { container } = render(<AttachmentUpload {...defaultProps} onAddFile={onAddFile} />);
 
     const audioFile = new File(['audio'], 'note.mp3', { type: 'audio/mpeg' });
@@ -282,9 +300,7 @@ describe('AttachmentUpload', () => {
     });
 
     expect(onAddFile).toHaveBeenCalledWith(audioFile);
-    expect(alertSpy).not.toHaveBeenCalled();
-
-    alertSpy.mockRestore();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('renders file size using MB when file is larger than 1 MB', () => {

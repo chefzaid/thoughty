@@ -54,4 +54,29 @@ test.describe('Entry action messages', () => {
     await expect(page.getByText(entry.content)).toBeVisible();
     expect(state.entries).toHaveLength(1);
   });
+
+  test('reports a failed task tick in a toast and unticks it again, in French', async ({ page }) => {
+    const errands = { ...entry, id: 11, content: '- [ ] Call the bank', format: 'markdown' as const };
+    await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr' }, initialEntries: [errands] });
+    // The API cannot be reached at all
+    await page.route(`http://localhost:5173/api/entries/${errands.id}/tasks`, (route) => route.abort('connectionrefused'));
+
+    await page.goto('/journal');
+    const task = page.locator('#entry-11').getByRole('checkbox', { name: 'Call the bank' });
+    await task.click();
+
+    await expect(page.getByRole('alert')).toHaveText('Échec de la mise à jour de la tâche.');
+    await expect(task).not.toBeChecked();
+  });
+
+  test('reports why pinning failed in a toast, in English', async ({ page }) => {
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: [entry] });
+    await page.route(`http://localhost:5173/api/entries/${entry.id}/pinned`, (route) =>
+      route.fulfill({ status: 400, json: { message: 'You can pin at most 3 entries.' } }));
+
+    await page.goto('/journal');
+    await page.locator('#entry-10').getByTitle('Pin entry').click();
+
+    await expect(page.getByRole('alert')).toHaveText('You can pin at most 3 entries.');
+  });
 });

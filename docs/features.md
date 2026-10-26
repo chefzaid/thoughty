@@ -23,7 +23,7 @@ flowchart LR
 - **Entry actions.** Edit, favorite, pin, change visibility, listen, chat, rephrase, summarize, view history, archive, share, and delete. Sharing uses the browser share sheet or copies a permalink. Opening a permalink (`/journal?entry=<id>`) clears the journal filters and opens the page that holds the entry at your page size, or shows a notice when the entry no longer exists.
 - **Entry states.** Public or private visibility, favorites, archive, and pinned entries kept at the top (up to a limit you set).
 - **Revision history.** Every edit keeps the previous version, which you can view or delete.
-- **Attachments.** Images, audio, PDFs, and text files up to 5 MB each, stored in S3-compatible storage and previewed inline. Audio notes can be transcribed with AI.
+- **Attachments.** Images, audio, PDFs, and text files up to 5 MB each, stored in S3-compatible storage and previewed inline. A file of another type or over the limit is not attached, and the form says which file and why next to the attach button. Audio notes can be transcribed with AI.
 - **Bulk mode.** Select many entries to delete, archive, change visibility, add tags, move to another diary, or rephrase with AI. A bulk rephrase that leaves some entries unchanged or fails on some ends with a notice that counts each. A failed save, delete, or bulk action shows a notice in the profile language.
 - **Recycle bin.** Deleted entries stay in the recycle bin for 30 days, hidden from everything else. Restore them to their diary with their revisions and files, or delete them forever. After 30 days they are removed for good.
 - **Reading aids.** Word count and reading time on each entry, and text-to-speech with a choice of voice.
@@ -39,7 +39,7 @@ flowchart LR
 - Separate diaries for different writing streams, each with a name, emoji, color, and default visibility.
 - An **All Diaries** view, and a default diary for quick capture.
 - The selected diary scopes the journal, stats, AI features, import and export, and books.
-- Deleting a diary moves its entries to the default diary. The default diary cannot be deleted.
+- Deleting a diary asks first in a dialog that names it, then moves its entries to the default diary. The default diary cannot be deleted.
 
 ## Tags, Search, and Filters
 

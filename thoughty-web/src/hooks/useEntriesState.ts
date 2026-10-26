@@ -6,8 +6,7 @@ import type { SemanticSearchResponse } from '../services/api/aiService';
 import { compareSameDayEntries, reassignSameDayIndexes } from '../utils/entryTime';
 import type { MoodFilter } from '../utils/entryMood';
 import { setTaskLine } from '../utils/taskList';
-import { resolveLanguage } from '../utils/language';
-import { getTranslation } from '../utils/translations';
+import type { Notifier } from './useAppNotice';
 
 export type EntrySearchMode = 'keyword' | 'semantic';
 export type SemanticSearchStatus = 'idle' | 'loading' | 'complete' | 'error';
@@ -37,11 +36,11 @@ export const useEntries = (
   isAuthenticated: boolean,
   config: Config,
   currentDiaryId: number | null,
+  { notify, t }: Notifier,
   { configLoaded = true, filtersReady = true, routeEntryId }: UseEntriesOptions = {},
 ) => {
   const { entriesService, aiService } = useApiServices();
   const queryClient = useQueryClient();
-  const language = resolveLanguage(config.language);
 
   const [page, setPage] = useState<number>(1);
   const [inputPage, setInputPage] = useState<string>('1');
@@ -258,10 +257,8 @@ export const useEntries = (
       return;
     }
 
-    if (result.error) {
-      alert(getTranslation(language, result.error));
-    }
-  }, [entriesService, language, refreshEntryQueries]);
+    notify(t(result.error || 'pinUpdateFailed'));
+  }, [entriesService, notify, refreshEntryQueries, t]);
 
   /** Sends an entry's waiting ticks one after the other, so the server applies them in order. */
   const sendEntryTasks = useCallback(async (entryId: number) => {
@@ -289,13 +286,13 @@ export const useEntries = (
     if (failure) {
       // Back to what the server holds, for this list and every other one
       await refreshEntryQueries();
-      alert(getTranslation(language, failure.error || 'taskUpdateFailed'));
+      notify(t(failure.error || 'taskUpdateFailed'));
       return;
     }
 
     // This list already shows the ticks; the others read the entry again when they are next shown
     await queryClient.invalidateQueries({ queryKey: ['app', ENTRIES_QUERY_KEY], refetchType: 'none' });
-  }, [entriesService, language, queryClient, refreshEntryQueries]);
+  }, [entriesService, notify, queryClient, refreshEntryQueries, t]);
 
   /** Ticks or unticks a task list item of a Markdown entry at once, and saves it in the background. */
   const setEntryTask = useCallback((entry: Entry, line: number, checked: boolean) => {

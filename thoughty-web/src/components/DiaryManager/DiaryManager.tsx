@@ -1,5 +1,6 @@
 import { useState, useRef, type ComponentPropsWithoutRef, type CSSProperties } from 'react';
 import './DiaryManager.css';
+import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import { DEFAULT_DIARY_COLORS, normalizeDiaryColor, resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 
 // Common emoji icons for diaries
@@ -85,6 +86,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     /** A translation key, or a message the API sent, which `t` passes through. */
     const [error, setError] = useState<string>('');
     const [showIconPicker, setShowIconPicker] = useState<'new' | number | null>(null);
+    const [diaryPendingDelete, setDiaryPendingDelete] = useState<Diary | null>(null);
     const dragItem = useRef<number | null>(null);
     const dragOverItem = useRef<number | null>(null);
 
@@ -147,17 +149,22 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         }
     };
 
-    const handleDelete = async (diary: Diary): Promise<void> => {
+    const handleDelete = (diary: Diary): void => {
         if (diary.is_default) {
             setError('diaryDefaultDeleteBlocked');
             return;
         }
-        if (globalThis.confirm(`${t('deleteDiary')}? ${t('deleteDiaryWarning')}`)) {
-            try {
-                await onDeleteDiary(diary.id);
-            } catch (err) {
-                setError((err as Error).message || 'diaryDeleteFailed');
-            }
+        setDiaryPendingDelete(diary);
+    };
+
+    const confirmDelete = async (): Promise<void> => {
+        if (!diaryPendingDelete) return;
+        const { id } = diaryPendingDelete;
+        setDiaryPendingDelete(null);
+        try {
+            await onDeleteDiary(id);
+        } catch (err) {
+            setError((err as Error).message || 'diaryDeleteFailed');
         }
     };
 
@@ -451,6 +458,15 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                     </ul>
                 )}
             </div>
+            <ConfirmModal
+                isOpen={diaryPendingDelete !== null}
+                onClose={() => setDiaryPendingDelete(null)}
+                onConfirm={confirmDelete}
+                title={t('deleteDiary')}
+                message={t('deleteDiaryMessage', { name: diaryPendingDelete?.name ?? '' })}
+                theme={isLight ? 'light' : 'dark'}
+                t={t}
+            />
         </div>
     );
 }

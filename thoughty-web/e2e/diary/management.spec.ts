@@ -18,8 +18,6 @@ test.describe('Diary management', () => {
       ],
     });
 
-    page.on('dialog', (dialog) => dialog.accept());
-
     await page.goto('/diaries?from=journal&diary=all');
     await page.getByPlaceholder('Diary Name').fill('Dreams');
     await page.getByRole('button', { name: 'Create Diary' }).click();
@@ -44,6 +42,8 @@ test.describe('Diary management', () => {
 
     const personalCard = page.locator('.diary-card', { hasText: 'Personal' });
     await personalCard.getByTitle('Delete').click();
+    await expect(page.getByText('“Personal” will be deleted. Its entries will be moved to your default diary.')).toBeVisible();
+    await page.locator('div.fixed.inset-0.z-50').getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(page.getByText('Personal')).toHaveCount(0);
     await expect.poll(() => state.entries.find((entry) => entry.id === 301)?.diaryId).toBe(3);
 

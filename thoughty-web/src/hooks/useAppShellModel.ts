@@ -87,7 +87,7 @@ export function useAppShellModel(): AppShellModel {
   const diariesState = useDiaries(isAuthenticated, routeEntryId !== undefined || routeDiaryId !== undefined);
   const { currentDiaryId, setCurrentDiaryId, fetchDiaries, diarySelectionReady } = diariesState;
 
-  const entriesState = useEntries(isAuthenticated, config, currentDiaryId, {
+  const entriesState = useEntries(isAuthenticated, config, currentDiaryId, notifier, {
     configLoaded,
     // A diary in the route is applied after the first render; the list waits for it
     filtersReady: diarySelectionReady && (routeDiaryId === undefined || routeDiaryId === currentDiaryId),

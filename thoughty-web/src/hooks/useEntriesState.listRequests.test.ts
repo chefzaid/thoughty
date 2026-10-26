@@ -27,6 +27,8 @@ vi.mock("../services/api", () => ({
   createCloudSyncService: vi.fn(() => ({})),
 }));
 
+const notifier = { notify: vi.fn(), t: (key: string) => key, language: "en" as const };
+
 interface ListInputs {
   config: Config;
   configLoaded: boolean;
@@ -37,7 +39,7 @@ interface ListInputs {
 /** Renders useEntries with inputs a test can change between renders, as the app shell does. */
 function renderEntries(initial: ListInputs) {
   let inputs = initial;
-  const hook = renderHook(() => useEntries(true, inputs.config, null, {
+  const hook = renderHook(() => useEntries(true, inputs.config, null, notifier, {
     configLoaded: inputs.configLoaded,
     filtersReady: inputs.filtersReady,
     routeEntryId: inputs.routeEntryId,

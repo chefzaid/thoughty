@@ -754,7 +754,7 @@ type CoreTranslationKey =
   | "setAsDefault"
   | "defaultDiary"
   | "deleteDiary"
-  | "deleteDiaryWarning"
+  | "deleteDiaryMessage"
   | "diaryNameRequired"
   | "diaryDefaultDeleteBlocked"
   | "diaryCreateFailed"
@@ -806,6 +806,7 @@ type CoreTranslationKey =
   | "removeAttachment"
   | "attachmentTypeNotAllowed"
   | "attachmentTooLarge"
+  | "attachmentRejected"
   | "previewAttachment"
   | "captionsUnavailable"
   | "downloadAttachment"
@@ -1827,7 +1828,7 @@ export const translations: Translations = {
     setAsDefault: "Set as Default",
     defaultDiary: "Default Diary",
     deleteDiary: "Delete Diary",
-    deleteDiaryWarning: "Entries will be moved to your default diary.",
+    deleteDiaryMessage: "“{name}” will be deleted. Its entries will be moved to your default diary.",
     diaryNameRequired: "Diary name is required",
     diaryDefaultDeleteBlocked: "Cannot delete the default diary",
     diaryCreateFailed: "Failed to create diary",
@@ -1885,6 +1886,7 @@ export const translations: Translations = {
     attachmentTypeNotAllowed:
       "This file type is not allowed. Allowed: images, audio, PDF, plain text.",
     attachmentTooLarge: "File is too large. Maximum size is 5 MB.",
+    attachmentRejected: "{name}: {reason}",
     previewAttachment: "Preview",
     captionsUnavailable: "No captions available",
     downloadAttachment: "Download attachment",
@@ -2928,8 +2930,8 @@ export const translations: Translations = {
     setAsDefault: "Définir par défaut",
     defaultDiary: "Journal par défaut",
     deleteDiary: "Supprimer le journal",
-    deleteDiaryWarning:
-      "Les entrées seront déplacées vers votre journal par défaut.",
+    deleteDiaryMessage:
+      "« {name} » sera supprimé. Ses entrées seront déplacées vers votre journal par défaut.",
     diaryNameRequired: "Le nom du journal est obligatoire",
     diaryDefaultDeleteBlocked: "Impossible de supprimer le journal par défaut",
     diaryCreateFailed: "Échec de la création du journal",
@@ -2988,6 +2990,7 @@ export const translations: Translations = {
       "Ce type de fichier n'est pas autorisé. Autorisés : images, audio, PDF, texte brut.",
     attachmentTooLarge:
       "Le fichier est trop volumineux. Taille maximale : 5 Mo.",
+    attachmentRejected: "{name} : {reason}",
     previewAttachment: "Aperçu",
     captionsUnavailable: "Aucun sous-titre disponible",
     downloadAttachment: "Télécharger la pièce jointe",

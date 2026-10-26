@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { useId, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
 import type { Attachment } from '../../types';
 import {
     ALLOWED_ATTACHMENT_TYPES,
@@ -20,7 +20,15 @@ interface AttachmentUploadProps {
     readonly onRemovePendingFile: (index: number) => void;
     readonly onRemoveUploadedAttachment: (id: number) => void;
     readonly theme?: 'light' | 'dark';
-    readonly t: (key: string) => string;
+    readonly t: (key: string, params?: Record<string, string | number>) => string;
+}
+
+/** Why a picked file cannot be attached, as a translation key, or null when it can. */
+function getRejectionReason(file: File): string | null {
+    if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type as (typeof ALLOWED_ATTACHMENT_TYPES)[number])) {
+        return 'attachmentTypeNotAllowed';
+    }
+    return file.size > MAX_FILE_SIZE ? 'attachmentTooLarge' : null;
 }
 
 interface ActiveUploadPreview {
@@ -210,23 +218,25 @@ function AttachmentUpload({
 }: AttachmentUploadProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [activePreview, setActivePreview] = useState<ActiveUploadPreview | null>(null);
+    // The files of the last pick that were turned away, one message each, shown under the button
+    const [rejections, setRejections] = useState<string[]>([]);
+    const errorId = useId();
     const isDark = theme !== 'light';
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files) return;
 
+        const rejected: string[] = [];
         for (const file of Array.from(files)) {
-            if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type as (typeof ALLOWED_ATTACHMENT_TYPES)[number])) {
-                alert(t('attachmentTypeNotAllowed'));
-                continue;
-            }
-            if (file.size > MAX_FILE_SIZE) {
-                alert(t('attachmentTooLarge'));
+            const reason = getRejectionReason(file);
+            if (reason) {
+                rejected.push(t('attachmentRejected', { reason: t(reason), name: file.name }));
                 continue;
             }
             onAddFile(file);
         }
+        setRejections(rejected);
 
         // Reset input
         if (fileInputRef.current) {
@@ -246,6 +256,7 @@ function AttachmentUpload({
                     : 'border-gray-300 bg-gray-50 text-gray-500 hover:border-gray-400 hover:text-gray-600'
                 }`}
                 title={t('attachFiles')}
+                aria-describedby={rejections.length > 0 ? errorId : undefined}
             >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -259,6 +270,14 @@ function AttachmentUpload({
                 onChange={handleFileChange}
                 className="hidden"
             />
+
+            {rejections.length > 0 && (
+                <div id={errorId} role="alert" className={`mt-2 max-w-xs text-sm ${isDark ? 'text-red-400' : 'text-red-600'}`}>
+                    {rejections.map((message, index) => (
+                        <p key={`${index}-${message}`}>{message}</p>
+                    ))}
+                </div>
+            )}
 
             {hasAttachments && (
                 <div className="mt-3 flex flex-wrap gap-3">

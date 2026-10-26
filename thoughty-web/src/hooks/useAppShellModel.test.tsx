@@ -312,7 +312,7 @@ describe('useAppShellModel', () => {
     const { result } = renderHook(() => useAppShellModel());
 
     // The list waits for the config, the route's diary and the permalink lookup
-    expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), 9, {
+    expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), 9, expect.anything(), {
       configLoaded: true,
       filtersReady: true,
       routeEntryId: 5,
@@ -351,7 +351,7 @@ describe('useAppShellModel', () => {
 
     renderHook(() => useAppShellModel());
 
-    expect(mocks.useEntries).toHaveBeenLastCalledWith(true, expect.anything(), null, expect.objectContaining({
+    expect(mocks.useEntries).toHaveBeenLastCalledWith(true, expect.anything(), null, expect.anything(), expect.objectContaining({
       filtersReady: false,
     }));
   });
@@ -482,6 +482,7 @@ describe('useAppShellModel', () => {
     renderHook(() => useAppShellModel());
 
     const notifier = expect.objectContaining({ notify: expect.any(Function), t, language: 'en' });
+    expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), expect.anything(), notifier, expect.anything());
     expect(mocks.useEntryEdit).toHaveBeenCalledWith(expect.anything(), expect.any(Function), notifier);
     expect(mocks.useDeleteModal).toHaveBeenCalledWith(expect.any(Function), notifier);
     expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier);
