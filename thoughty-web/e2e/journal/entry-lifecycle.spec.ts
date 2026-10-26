@@ -50,6 +50,14 @@ test.describe('Journal entry lifecycle', () => {
     await expect(page.getByText('Edited entry body')).toBeVisible();
     await expect(page.getByText(lifecycleEntry.content)).toHaveCount(0);
     await expect.poll(() => state.entries[0]?.content).toBe('Edited entry body');
+    await expect(firstEntry.getByText('3 words', { exact: true })).toBeVisible();
+
+    await firstEntry.getByRole('button', { name: 'Edit' }).click();
+    await firstEntry.locator('textarea').fill('Rewritten');
+    await firstEntry.getByRole('button', { name: 'Save' }).click();
+
+    await expect(firstEntry.getByText('Rewritten', { exact: true })).toBeVisible();
+    await expect(firstEntry.getByText('1 word', { exact: true })).toBeVisible();
   });
 
   test('deletes an existing journal entry after confirmation', async ({ page }) => {

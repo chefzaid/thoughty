@@ -51,6 +51,7 @@ const translations: Record<string, string> = {
     noEntriesFound: 'No entries found.',
     edit: 'Edit',
     entryWordCount: '{count} words',
+    entryWordCountOne: '1 word',
     entryReadingTimeMinutes: '{minutes} min read',
     entryReadingTimeLessThanMinute: '<1 min read',
     delete: 'Delete',

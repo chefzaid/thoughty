@@ -293,7 +293,11 @@ export function EntryBodySection({
                 />
             </div>
             <div className={`mt-3 flex flex-wrap gap-2 text-xs ${mutedTextClass(isDark)}`}>
-                <span>{t('entryWordCount', { count: wordCount })}</span>
+                <span>
+                    {wordCount === 1
+                        ? t('entryWordCountOne')
+                        : t('entryWordCount', { count: wordCount })}
+                </span>
                 <span aria-hidden="true">/</span>
                 <span>{readingTimeLabel}</span>
             </div>

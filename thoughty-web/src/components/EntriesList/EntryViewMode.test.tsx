@@ -235,6 +235,22 @@ describe('EntryViewMode', () => {
         expect(await screen.findByText(label)).toBeInTheDocument();
     });
 
+    it.each([
+        ['en', 'Rain', '1 word'],
+        ['en', 'Rain again', '2 words'],
+        ['en', 'Rain all day', '3 words'],
+        ['fr', 'Pluie', '1 mot'],
+        ['fr', 'Pluie encore', '2 mots'],
+        ['fr', 'Pluie toute journée', '3 mots'],
+    ])('counts words in the singular or plural in %s (%s)', (lang, content, label) => {
+        renderEntryViewMode({
+            entry: { ...mockEntries[0], content },
+            t: (key, params) => getTranslation(lang, key, params),
+        });
+
+        expect(screen.getByText(label)).toBeInTheDocument();
+    });
+
     it('renders secondary actions in the more actions menu', async () => {
         const onToggleArchived = vi.fn();
         const onDelete = vi.fn();

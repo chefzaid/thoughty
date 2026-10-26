@@ -303,6 +303,7 @@ type CoreTranslationKey =
   | "noEntriesFound"
   | "edit"
   | "entryWordCount"
+  | "entryWordCountOne"
   | "entryReadingTimeMinutes"
   | "entryReadingTimeLessThanMinute"
   | "entryTemplate"
@@ -1257,6 +1258,7 @@ export const translations: Translations = {
     noEntriesFound: "No entries found",
     edit: "Edit",
     entryWordCount: "{count} words",
+    entryWordCountOne: "1 word",
     entryReadingTimeMinutes: "{minutes} min read",
     entryReadingTimeLessThanMinute: "<1 min read",
     entryTemplate: "Entry template",
@@ -2297,6 +2299,7 @@ export const translations: Translations = {
     noEntriesFound: "Aucune entrée trouvée",
     edit: "Modifier",
     entryWordCount: "{count} mots",
+    entryWordCountOne: "1 mot",
     entryReadingTimeMinutes: "{minutes} min de lecture",
     entryReadingTimeLessThanMinute: "<1 min de lecture",
     entryTemplate: "Modèle d'entrée",
