@@ -13,6 +13,7 @@ import {
   EntryBacklinksResponseDto,
 } from './dto';
 import { EntriesQueryService } from './entries-query.service';
+import { EntryLookupService } from './entry-lookup.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
@@ -21,6 +22,7 @@ import { EntryTaskListService } from './entry-task-list.service';
 export class EntriesService {
   constructor(
     private readonly entriesQueryService: EntriesQueryService,
+    private readonly entryLookupService: EntryLookupService,
     private readonly entriesCommandService: EntriesCommandService,
     private readonly entryListCacheService: EntryListCacheService,
     private readonly entryTaskListService: EntryTaskListService,
@@ -51,7 +53,7 @@ export class EntriesService {
     years: number[];
     months: string[];
   }> {
-    return this.entriesQueryService.getFirstEntry(userId, query);
+    return this.entryLookupService.getFirstEntry(userId, query);
   }
 
   async getEntryByDate(
@@ -64,11 +66,11 @@ export class EntriesService {
     entryId?: number;
     error?: string;
   }> {
-    return this.entriesQueryService.getEntryByDate(userId, query);
+    return this.entryLookupService.getEntryByDate(userId, query);
   }
 
   async getBacklinks(userId: number, entryId: number): Promise<EntryBacklinksResponseDto> {
-    return this.entriesQueryService.getBacklinks(userId, entryId);
+    return this.entryLookupService.getBacklinks(userId, entryId);
   }
 
   async create(userId: number, dto: CreateEntryDto): Promise<{ success: boolean; entryId: number }> {

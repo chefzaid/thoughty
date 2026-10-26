@@ -8,12 +8,14 @@ import {
 import { Entry, EntryRevision, User } from '@/database/entities';
 import { EntriesQueryService } from './entries-query.service';
 import { EntrySearchService } from './entry-search.service';
+import { EntryLookupService } from './entry-lookup.service';
 
 describePostgres('PostgreSQL entry titles and times of day', () => {
   let database: PostgresTestDatabase;
   let dataSource: DataSource;
   let entries: Repository<Entry>;
   let queries: EntriesQueryService;
+  let lookup: EntryLookupService;
   let userId: number;
 
   beforeAll(async () => {
@@ -21,6 +23,7 @@ describePostgres('PostgreSQL entry titles and times of day', () => {
     dataSource = database.dataSource;
     entries = dataSource.getRepository(Entry);
     queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries));
+    lookup = new EntryLookupService(entries);
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
 
@@ -57,7 +60,7 @@ describePostgres('PostgreSQL entry titles and times of day', () => {
     await write({ date: '2024-01-16', index: 1, content: 'pinned', isPinned: true });
 
     const pageOf = async (date: string, index: number) =>
-      (await queries.getEntryByDate(userId, { date, index, limit: 1 })).page;
+      (await lookup.getEntryByDate(userId, { date, index, limit: 1 })).page;
 
     expect(await pageOf('2024-01-16', 1)).toBe(1);
     expect(await pageOf('2024-01-15', 2)).toBe(2);

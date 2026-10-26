@@ -27,7 +27,6 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
-import { AuthService, type IssuedSession } from './services/auth.service';
 import {
   REFRESH_TOKEN_COOKIE,
   clearRefreshTokenCookie,
@@ -54,7 +53,15 @@ import {
   DisableTwoFactorDto,
   TwoFactorStatusResponseDto,
 } from './dto';
-import { EmailVerificationService, TwoFactorService } from './services';
+import {
+  AccountService,
+  AuthService,
+  AuthSessionService,
+  EmailVerificationService,
+  type IssuedSession,
+  PasswordService,
+  TwoFactorService,
+} from './services';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public, CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { RATE_LIMITS, throttleDefault } from '@/common';
@@ -67,6 +74,9 @@ const REFRESH_COOKIE_NOTE = `Sets the httpOnly \`${REFRESH_TOKEN_COOKIE}\` refre
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
+    private readonly sessionService: AuthSessionService,
+    private readonly passwordService: PasswordService,
+    private readonly accountService: AccountService,
     private readonly emailVerificationService: EmailVerificationService,
     private readonly twoFactorService: TwoFactorService,
   ) {}
@@ -274,7 +284,7 @@ export class AuthController {
     @Body() dto: RefreshTokenDto,
   ): Promise<AccessTokenResponseDto> {
     try {
-      const { accessToken, refreshToken } = await this.authService.refreshToken(
+      const { accessToken, refreshToken } = await this.sessionService.refreshToken(
         readRefreshTokenCookie(req) ?? dto?.refreshToken,
       );
       setRefreshTokenCookie(res, refreshToken);
@@ -299,7 +309,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ success: boolean }> {
     clearRefreshTokenCookie(res);
-    return this.authService.logout(readRefreshTokenCookie(req));
+    return this.sessionService.logout(readRefreshTokenCookie(req));
   }
 
   @Get('sessions')
@@ -316,7 +326,7 @@ export class AuthController {
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ): Promise<SessionResponseDto[]> {
-    return this.authService.listSessions(user.userId, readRefreshTokenCookie(req));
+    return this.sessionService.listSessions(user.userId, readRefreshTokenCookie(req));
   }
 
   @Delete('sessions')
@@ -335,7 +345,7 @@ export class AuthController {
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
   ): Promise<{ success: boolean }> {
-    return this.authService.revokeOtherSessions(user.userId, readRefreshTokenCookie(req));
+    return this.sessionService.revokeOtherSessions(user.userId, readRefreshTokenCookie(req));
   }
 
   @Delete('sessions/:id')
@@ -355,7 +365,7 @@ export class AuthController {
     @Param('id', ParseIntPipe) sessionId: number,
     @Req() req: Request,
   ): Promise<{ success: boolean }> {
-    return this.authService.revokeSession(user.userId, sessionId, readRefreshTokenCookie(req));
+    return this.sessionService.revokeSession(user.userId, sessionId, readRefreshTokenCookie(req));
   }
 
   @Get('me')
@@ -365,7 +375,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Current user info', type: UserResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getMe(@CurrentUser() user: AuthenticatedUser): Promise<UserResponseDto> {
-    return this.authService.getMe(user.userId);
+    return this.accountService.getMe(user.userId);
   }
 
   @Post('change-password')
@@ -380,7 +390,7 @@ export class AuthController {
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChangePasswordDto,
   ): Promise<{ success: boolean; message: string }> {
-    return this.authService.changePassword(user.userId, dto);
+    return this.passwordService.changePassword(user.userId, dto);
   }
 
   @Public()
@@ -392,7 +402,7 @@ export class AuthController {
   async forgotPassword(
     @Body() dto: ForgotPasswordDto,
   ): Promise<{ success: boolean; message: string }> {
-    return this.authService.forgotPassword(dto.email);
+    return this.passwordService.forgotPassword(dto.email);
   }
 
   @Public()
@@ -405,7 +415,7 @@ export class AuthController {
   async resetPassword(
     @Body() dto: ResetPasswordDto,
   ): Promise<{ success: boolean; message: string }> {
-    return this.authService.resetPassword(dto.token, dto.newPassword);
+    return this.passwordService.resetPassword(dto.token, dto.newPassword);
   }
 
   @Public()
@@ -445,7 +455,7 @@ export class AuthController {
     @Body() dto: DeleteAccountDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ success: boolean; message: string }> {
-    const result = await this.authService.deleteAccount(user.userId, dto.password);
+    const result = await this.accountService.deleteAccount(user.userId, dto.password);
     clearRefreshTokenCookie(res);
     return result;
   }

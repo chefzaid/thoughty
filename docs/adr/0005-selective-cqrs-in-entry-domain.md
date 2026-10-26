@@ -25,7 +25,7 @@ At the same time, a full CQRS/event-sourcing stack would be excessive for the ac
 Use a selective CQRS style in the entries module.
 
 - Keep `EntriesService` as a thin facade.
-- Route read behavior to `EntriesQueryService`.
+- Route read behavior to `EntriesQueryService`, and finding a single entry (the first entry of a year or month, an entry by date or id with its page, backlinks) to `EntryLookupService` (split out on 2026-10-26 to keep each read service focused).
 - Route write behavior to `EntriesCommandService`.
 - Use this split only where the domain complexity justifies it.
 - Do not adopt full event sourcing, command buses, query buses, or the Nest CQRS package at this stage.

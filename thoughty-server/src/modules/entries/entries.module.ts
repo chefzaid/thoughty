@@ -7,6 +7,7 @@ import { EntriesController } from './entries.controller';
 import { EntriesService } from './entries.service';
 import { EntriesQueryService } from './entries-query.service';
 import { EntriesCommandService } from './entries-command.service';
+import { EntryLookupService } from './entry-lookup.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntrySearchService } from './entry-search.service';
 import { EntryTaggingService } from './entry-tagging.service';
@@ -18,6 +19,7 @@ import { EntryTaskListService } from './entry-task-list.service';
   providers: [
     EntriesService,
     EntriesQueryService,
+    EntryLookupService,
     EntriesCommandService,
     EntryListCacheService,
     EntrySearchService,

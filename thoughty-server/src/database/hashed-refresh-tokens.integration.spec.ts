@@ -1,10 +1,8 @@
 import { createHash } from 'node:crypto';
 import type { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { AuthService } from '@/modules/auth/services/auth.service';
-import type { EmailService } from '@/modules/auth/services/email.service';
-import type { TwoFactorService } from '@/modules/auth/services/two-factor.service';
-import { Diary, RefreshToken, User } from './entities';
+import { AuthSessionService } from '@/modules/auth/services/auth-session.service';
+import { RefreshToken, User } from './entities';
 import { HashedRefreshTokens1786233600000 } from './migrations/1786233600000-hashed-refresh-tokens';
 import {
   createPostgresTestDatabase,
@@ -51,23 +49,16 @@ describePostgres('HashedRefreshTokens1786233600000 on PostgreSQL', () => {
 
   it('rotates a refresh token once: the old token fails afterwards', async () => {
     const { dataSource } = database;
-    const service = new AuthService(
+    const service = new AuthSessionService(
       dataSource.getRepository(User),
       dataSource.getRepository(RefreshToken),
-      dataSource.getRepository(Diary),
       new JwtService({ secret: 'integration-access-secret' }),
       { get: () => undefined } as unknown as ConfigService,
-      {} as EmailService,
-      {} as TwoFactorService,
     );
     const user = await dataSource
       .getRepository(User)
       .save({ username: 'rotate', email: 'rotate@example.com', authProvider: 'local' });
-    const first = await (
-      service as unknown as {
-        createSession: (u: User) => Promise<{ refreshToken: string }>;
-      }
-    ).createSession(user);
+    const first = await service.createSession(user);
     const rotated = await service.refreshToken(first.refreshToken);
 
     expect(rotated.refreshToken).not.toBe(first.refreshToken);

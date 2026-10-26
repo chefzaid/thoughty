@@ -1,50 +1,15 @@
 import { BadRequestException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Diary, RefreshToken, User } from '@/database/entities';
 import { AuthService } from './auth.service';
-import { EmailService } from './email.service';
-import { TwoFactorService } from './two-factor.service';
+import { createAuthServiceMocks, createAuthServices } from './auth-services.test-helpers';
 
 describe('AuthService bot protection', () => {
   let service: AuthService;
   let userRepository: any;
 
   beforeEach(async () => {
-    userRepository = {
-      findOne: jest.fn(),
-      save: jest.fn(),
-      createQueryBuilder: jest.fn(),
-    };
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuthService,
-        { provide: getRepositoryToken(User), useValue: userRepository },
-        {
-          provide: getRepositoryToken(RefreshToken),
-          useValue: { save: jest.fn(), findOne: jest.fn() },
-        },
-        { provide: getRepositoryToken(Diary), useValue: { save: jest.fn() } },
-        { provide: JwtService, useValue: { sign: jest.fn(), verify: jest.fn() } },
-        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test-secret') } },
-        {
-          provide: EmailService,
-          useValue: {
-            sendPasswordResetEmail: jest.fn(),
-            sendAccountDeletionEmail: jest.fn(),
-          },
-        },
-        {
-          provide: TwoFactorService,
-          useValue: { startChallenge: jest.fn(), consumeLogin: jest.fn() },
-        },
-      ],
-    }).compile();
-
-    service = module.get<AuthService>(AuthService);
+    const mocks = createAuthServiceMocks();
+    userRepository = mocks.userRepository;
+    ({ auth: service } = await createAuthServices(mocks));
   });
 
   afterEach(() => {

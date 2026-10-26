@@ -5,7 +5,16 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User, RefreshToken, Diary } from '@/database/entities';
 import { AuthController } from './auth.controller';
-import { AuthService, EmailService, EmailVerificationService, TwoFactorService } from './services';
+import {
+  AccountService,
+  AuthService,
+  AuthSessionService,
+  EmailService,
+  EmailVerificationService,
+  IdentityVerificationService,
+  PasswordService,
+  TwoFactorService,
+} from './services';
 import { JwtStrategy } from './strategies';
 import { JwtAuthGuard } from './guards';
 import { getSigningSecret } from './auth-secrets';
@@ -31,6 +40,10 @@ import { getSigningSecret } from './auth-secrets';
   controllers: [AuthController],
   providers: [
     AuthService,
+    AuthSessionService,
+    IdentityVerificationService,
+    PasswordService,
+    AccountService,
     EmailService,
     EmailVerificationService,
     TwoFactorService,

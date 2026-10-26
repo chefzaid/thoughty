@@ -4,6 +4,9 @@ import type { Request, Response } from 'express';
 import { RATE_LIMITS } from '@/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './services/auth.service';
+import { AuthSessionService } from './services/auth-session.service';
+import { PasswordService } from './services/password.service';
+import { AccountService } from './services/account.service';
 import { EmailVerificationService } from './services/email-verification.service';
 import { TwoFactorService } from './services/two-factor.service';
 
@@ -23,46 +26,41 @@ const getThrottleMetadata = (handler: Function) => ({
   ttl: Reflect.getMetadata('THROTTLER:TTLdefault', handler),
 });
 
+const mockMethods = (...names: string[]) =>
+  Object.fromEntries(names.map((name) => [name, jest.fn()]));
+
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: any;
+  let sessionService: any;
+  let passwordService: any;
+  let accountService: any;
   let emailVerificationService: any;
   let twoFactorService: any;
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
   beforeEach(async () => {
-    authService = {
-      register: jest.fn(),
-      login: jest.fn(),
-      oauthLogin: jest.fn(),
-      refreshToken: jest.fn(),
-      logout: jest.fn(),
-      listSessions: jest.fn(),
-      revokeSession: jest.fn(),
-      revokeOtherSessions: jest.fn(),
-      getMe: jest.fn(),
-      changePassword: jest.fn(),
-      forgotPassword: jest.fn(),
-      resetPassword: jest.fn(),
-      deleteAccount: jest.fn(),
-    };
-    emailVerificationService = {
-      sendVerificationEmail: jest.fn(),
-      verifyEmail: jest.fn(),
-    };
-    twoFactorService = {
-      resend: jest.fn(),
-      status: jest.fn(),
-      startSetup: jest.fn(),
-      enable: jest.fn(),
-      disable: jest.fn(),
-    };
+    authService = mockMethods('register', 'login', 'oauthLogin');
+    sessionService = mockMethods(
+      'refreshToken',
+      'logout',
+      'listSessions',
+      'revokeSession',
+      'revokeOtherSessions',
+    );
+    passwordService = mockMethods('changePassword', 'forgotPassword', 'resetPassword');
+    accountService = mockMethods('getMe', 'deleteAccount');
+    emailVerificationService = mockMethods('sendVerificationEmail', 'verifyEmail');
+    twoFactorService = mockMethods('resend', 'status', 'startSetup', 'enable', 'disable');
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
       providers: [
         { provide: AuthService, useValue: authService },
+        { provide: AuthSessionService, useValue: sessionService },
+        { provide: PasswordService, useValue: passwordService },
+        { provide: AccountService, useValue: accountService },
         { provide: EmailVerificationService, useValue: emailVerificationService },
         { provide: TwoFactorService, useValue: twoFactorService },
       ],
@@ -287,7 +285,7 @@ describe('AuthController', () => {
 
   describe('refresh', () => {
     it('reads the cookie, rotates it, and returns only the access token', async () => {
-      authService.refreshToken!.mockResolvedValue({
+      sessionService.refreshToken!.mockResolvedValue({
         accessToken: 'new_token',
         refreshToken: 'new_rt',
       });
@@ -298,31 +296,31 @@ describe('AuthController', () => {
         res,
         {},
       );
-      expect(authService.refreshToken).toHaveBeenCalledWith('old_rt');
+      expect(sessionService.refreshToken).toHaveBeenCalledWith('old_rt');
       expect(result).toEqual({ accessToken: 'new_token' });
       expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'new_rt', expect.any(Object));
     });
 
     it('prefers the cookie over a legacy body token', async () => {
-      authService.refreshToken!.mockResolvedValue({ accessToken: 'a', refreshToken: 'b' });
+      sessionService.refreshToken!.mockResolvedValue({ accessToken: 'a', refreshToken: 'b' });
 
       await controller.refresh(requestWithCookie(`${COOKIE}=cookie_rt`), mockResponse(), {
         refreshToken: 'body_rt',
       });
-      expect(authService.refreshToken).toHaveBeenCalledWith('cookie_rt');
+      expect(sessionService.refreshToken).toHaveBeenCalledWith('cookie_rt');
     });
 
     it('exchanges a legacy body token for the cookie when no cookie is present', async () => {
-      authService.refreshToken!.mockResolvedValue({ accessToken: 'a', refreshToken: 'b' });
+      sessionService.refreshToken!.mockResolvedValue({ accessToken: 'a', refreshToken: 'b' });
       const res = mockResponse();
 
       await controller.refresh(requestWithCookie(), res, { refreshToken: 'legacy_rt' });
-      expect(authService.refreshToken).toHaveBeenCalledWith('legacy_rt');
+      expect(sessionService.refreshToken).toHaveBeenCalledWith('legacy_rt');
       expect(res.cookie).toHaveBeenCalledWith(COOKIE, 'b', expect.any(Object));
     });
 
     it('clears the cookie when the refresh token is rejected', async () => {
-      authService.refreshToken!.mockRejectedValue(new UnauthorizedException());
+      sessionService.refreshToken!.mockRejectedValue(new UnauthorizedException());
       const res = mockResponse();
 
       await expect(
@@ -333,7 +331,7 @@ describe('AuthController', () => {
     });
 
     it('keeps the cookie after a transient failure', async () => {
-      authService.refreshToken!.mockRejectedValue(new Error('database unavailable'));
+      sessionService.refreshToken!.mockRejectedValue(new Error('database unavailable'));
       const res = mockResponse();
 
       await expect(controller.refresh(requestWithCookie(`${COOKIE}=rt`), res, {})).rejects.toThrow(
@@ -345,11 +343,11 @@ describe('AuthController', () => {
 
   describe('logout', () => {
     it('revokes the cookie token and clears the cookie', async () => {
-      authService.logout!.mockResolvedValue({ success: true });
+      sessionService.logout!.mockResolvedValue({ success: true });
       const res = mockResponse();
 
       const result = await controller.logout(requestWithCookie(`${COOKIE}=rt`), res);
-      expect(authService.logout).toHaveBeenCalledWith('rt');
+      expect(sessionService.logout).toHaveBeenCalledWith('rt');
       expect(res.clearCookie).toHaveBeenCalledWith(COOKIE, COOKIE_OPTIONS);
       expect(result).toEqual({ success: true });
     });
@@ -358,20 +356,20 @@ describe('AuthController', () => {
   describe('sessions', () => {
     it('delegates session listing with the refresh token cookie', async () => {
       const expected = [{ id: 1, current: true }];
-      authService.listSessions.mockResolvedValue(expected);
+      sessionService.listSessions.mockResolvedValue(expected);
 
       const result = await controller.listSessions(
         mockUser as any,
         requestWithCookie(`${COOKIE}=rt`),
       );
 
-      expect(authService.listSessions).toHaveBeenCalledWith(1, 'rt');
+      expect(sessionService.listSessions).toHaveBeenCalledWith(1, 'rt');
       expect(result).toBe(expected);
     });
 
     it('delegates single-session revocation', async () => {
       const expected = { success: true };
-      authService.revokeSession.mockResolvedValue(expected);
+      sessionService.revokeSession.mockResolvedValue(expected);
 
       const result = await controller.revokeSession(
         mockUser as any,
@@ -379,75 +377,75 @@ describe('AuthController', () => {
         requestWithCookie(`${COOKIE}=rt`),
       );
 
-      expect(authService.revokeSession).toHaveBeenCalledWith(1, 2, 'rt');
+      expect(sessionService.revokeSession).toHaveBeenCalledWith(1, 2, 'rt');
       expect(result).toBe(expected);
     });
 
     it('delegates other-session revocation', async () => {
       const expected = { success: true };
-      authService.revokeOtherSessions.mockResolvedValue(expected);
+      sessionService.revokeOtherSessions.mockResolvedValue(expected);
 
       const result = await controller.revokeOtherSessions(
         mockUser as any,
         requestWithCookie(`${COOKIE}=rt`),
       );
 
-      expect(authService.revokeOtherSessions).toHaveBeenCalledWith(1, 'rt');
+      expect(sessionService.revokeOtherSessions).toHaveBeenCalledWith(1, 'rt');
       expect(result).toBe(expected);
     });
 
     it('passes no token when the cookie is absent', async () => {
-      authService.listSessions.mockResolvedValue([]);
+      sessionService.listSessions.mockResolvedValue([]);
 
       await controller.listSessions(mockUser as any, requestWithCookie('other=1'));
 
-      expect(authService.listSessions).toHaveBeenCalledWith(1, undefined);
+      expect(sessionService.listSessions).toHaveBeenCalledWith(1, undefined);
     });
   });
 
   describe('getMe', () => {
-    it('delegates to authService.getMe with userId', async () => {
+    it('delegates to accountService.getMe with userId', async () => {
       const expected = { id: 1, email: 'test@example.com' };
-      authService.getMe!.mockResolvedValue(expected as any);
+      accountService.getMe!.mockResolvedValue(expected as any);
 
       const result = await controller.getMe(mockUser as any);
-      expect(authService.getMe).toHaveBeenCalledWith(1);
+      expect(accountService.getMe).toHaveBeenCalledWith(1);
       expect(result).toBe(expected);
     });
   });
 
   describe('changePassword', () => {
-    it('delegates to authService.changePassword', async () => {
+    it('delegates to passwordService.changePassword', async () => {
       const dto = { currentPassword: 'old', newPassword: 'New123!@' };
       const expected = { success: true, message: 'Changed' };
-      authService.changePassword!.mockResolvedValue(expected);
+      passwordService.changePassword!.mockResolvedValue(expected);
 
       const result = await controller.changePassword(mockUser as any, dto);
-      expect(authService.changePassword).toHaveBeenCalledWith(1, dto);
+      expect(passwordService.changePassword).toHaveBeenCalledWith(1, dto);
       expect(result).toBe(expected);
     });
   });
 
   describe('forgotPassword', () => {
-    it('delegates to authService.forgotPassword', async () => {
+    it('delegates to passwordService.forgotPassword', async () => {
       const dto = { email: 'a@b.com' };
       const expected = { success: true, message: 'Sent' };
-      authService.forgotPassword!.mockResolvedValue(expected);
+      passwordService.forgotPassword!.mockResolvedValue(expected);
 
       const result = await controller.forgotPassword(dto);
-      expect(authService.forgotPassword).toHaveBeenCalledWith('a@b.com');
+      expect(passwordService.forgotPassword).toHaveBeenCalledWith('a@b.com');
       expect(result).toBe(expected);
     });
   });
 
   describe('resetPassword', () => {
-    it('delegates to authService.resetPassword', async () => {
+    it('delegates to passwordService.resetPassword', async () => {
       const dto = { token: 'reset_token', newPassword: 'New123!@' };
       const expected = { success: true, message: 'Reset' };
-      authService.resetPassword!.mockResolvedValue(expected);
+      passwordService.resetPassword!.mockResolvedValue(expected);
 
       const result = await controller.resetPassword(dto);
-      expect(authService.resetPassword).toHaveBeenCalledWith('reset_token', 'New123!@');
+      expect(passwordService.resetPassword).toHaveBeenCalledWith('reset_token', 'New123!@');
       expect(result).toBe(expected);
     });
   });
@@ -475,15 +473,15 @@ describe('AuthController', () => {
   });
 
   describe('deleteAccount', () => {
-    it('delegates to authService.deleteAccount', async () => {
+    it('delegates to accountService.deleteAccount', async () => {
       const dto = { password: 'Pass123!@' };
       const expected = { success: true, message: 'Deleted' };
-      authService.deleteAccount!.mockResolvedValue(expected);
+      accountService.deleteAccount!.mockResolvedValue(expected);
 
       const res = mockResponse();
 
       const result = await controller.deleteAccount(mockUser as any, dto, res);
-      expect(authService.deleteAccount).toHaveBeenCalledWith(1, 'Pass123!@');
+      expect(accountService.deleteAccount).toHaveBeenCalledWith(1, 'Pass123!@');
       expect(result).toBe(expected);
       expect(res.clearCookie).toHaveBeenCalledWith(COOKIE, COOKIE_OPTIONS);
     });

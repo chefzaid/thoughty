@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { EntriesService } from './entries.service';
 import { EntriesQueryService } from './entries-query.service';
+import { EntryLookupService } from './entry-lookup.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
@@ -8,6 +9,7 @@ import { EntryTaskListService } from './entry-task-list.service';
 describe('EntriesService', () => {
   let service: EntriesService;
   let entriesQueryService: Record<string, jest.Mock>;
+  let entryLookupService: Record<string, jest.Mock>;
   let entriesCommandService: Record<string, jest.Mock>;
   let entryListCacheService: Record<string, jest.Mock>;
   let entryTaskListService: Record<string, jest.Mock>;
@@ -16,11 +18,14 @@ describe('EntriesService', () => {
     entriesQueryService = {
       getEntries: jest.fn(),
       getDates: jest.fn(),
+      getHighlights: jest.fn(),
+      getRevisions: jest.fn(),
+    };
+
+    entryLookupService = {
       getFirstEntry: jest.fn(),
       getEntryByDate: jest.fn(),
       getBacklinks: jest.fn(),
-      getHighlights: jest.fn(),
-      getRevisions: jest.fn(),
     };
 
     entriesCommandService = {
@@ -53,6 +58,7 @@ describe('EntriesService', () => {
       providers: [
         EntriesService,
         { provide: EntriesQueryService, useValue: entriesQueryService },
+        { provide: EntryLookupService, useValue: entryLookupService },
         { provide: EntriesCommandService, useValue: entriesCommandService },
         { provide: EntryListCacheService, useValue: entryListCacheService },
         { provide: EntryTaskListService, useValue: entryTaskListService },
@@ -99,33 +105,33 @@ describe('EntriesService', () => {
     expect(result).toBe(expected);
   });
 
-  it('delegates getFirstEntry to EntriesQueryService', async () => {
+  it('delegates getFirstEntry to EntryLookupService', async () => {
     const expected = { page: 1, found: true, years: [2024], months: ['2024-01'] };
-    entriesQueryService.getFirstEntry.mockResolvedValue(expected);
+    entryLookupService.getFirstEntry.mockResolvedValue(expected);
 
     const result = await service.getFirstEntry(1, { year: 2024, limit: 10 });
 
-    expect(entriesQueryService.getFirstEntry).toHaveBeenCalledWith(1, { year: 2024, limit: 10 });
+    expect(entryLookupService.getFirstEntry).toHaveBeenCalledWith(1, { year: 2024, limit: 10 });
     expect(result).toBe(expected);
   });
 
-  it('delegates getEntryByDate to EntriesQueryService', async () => {
+  it('delegates getEntryByDate to EntryLookupService', async () => {
     const expected = { found: true, entryId: 1 };
-    entriesQueryService.getEntryByDate.mockResolvedValue(expected);
+    entryLookupService.getEntryByDate.mockResolvedValue(expected);
 
     const result = await service.getEntryByDate(1, { date: '2024-01-15', index: 1, limit: 10 });
 
-    expect(entriesQueryService.getEntryByDate).toHaveBeenCalledWith(1, { date: '2024-01-15', index: 1, limit: 10 });
+    expect(entryLookupService.getEntryByDate).toHaveBeenCalledWith(1, { date: '2024-01-15', index: 1, limit: 10 });
     expect(result).toBe(expected);
   });
 
-  it('delegates getBacklinks to EntriesQueryService', async () => {
+  it('delegates getBacklinks to EntryLookupService', async () => {
     const expected = { backlinks: [{ id: 2 }] };
-    entriesQueryService.getBacklinks.mockResolvedValue(expected);
+    entryLookupService.getBacklinks.mockResolvedValue(expected);
 
     const result = await service.getBacklinks(1, 5);
 
-    expect(entriesQueryService.getBacklinks).toHaveBeenCalledWith(1, 5);
+    expect(entryLookupService.getBacklinks).toHaveBeenCalledWith(1, 5);
     expect(result).toBe(expected);
   });
 
