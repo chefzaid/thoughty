@@ -15,7 +15,7 @@ flowchart LR
 
 - **Composer.** Write in plain text or Markdown, with a formatting toolbar, inline help, and live preview. The box grows with the text and can be resized. The date defaults to today and can be changed to backdate an entry.
 - **Optional details.** Each entry can have a one-line title (up to 200 characters), a time of day, a mood from 1 (very low) to 5 (very good), and up to ten feeling words, picked from a curated list or typed.
-- **Templates.** Thirteen built-in templates (gratitude, daily reflection, weekly review, decision notes, worry check, dream log, and others), plus your own templates saved from a draft.
+- **Templates.** Thirteen built-in templates (gratitude, daily reflection, weekly review, decision notes, worry check, dream log, and others), plus your own templates saved from a draft: **Save template** asks for a name in a small dialog (a blank name is refused) and keeps the draft's text, tags, visibility and format.
 - **Focus mode.** A full-screen, distraction-free editor (`Ctrl+Shift+F`) with typewriter scrolling, a live word count, and an optional word goal for the session.
 - **Task lists.** In Markdown entries, `- [ ]` and `- [x]` items show as checkboxes you can tick from the journal without opening the editor.
 - **Several entries per day.** Entries are numbered within their day. Untimed entries come first in the order you set by dragging, then timed entries by time. Adding or changing a time never renumbers an entry, so links stay valid.

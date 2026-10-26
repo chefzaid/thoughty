@@ -7,6 +7,7 @@ import { entryTitleTimeTranslations, type EntryTitleTimeTranslationKey } from ".
 import { moodTranslations, type MoodTranslationKey } from "./translations.mood";
 import { taskListTranslations, type TaskListTranslationKey } from "./translations.taskList";
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
+import { entryTemplatesTranslations, type EntryTemplatesTranslationKey } from "./translations.entryTemplates";
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
 import { landingTranslations, type LandingTranslationKey } from "./translations.landing";
 import { aiChatTranslations, type AiChatTranslationKey } from "./translations.aiChat";
@@ -328,7 +329,6 @@ type CoreTranslationKey =
   | "noEntryTemplate"
   | "saveEntryTemplate"
   | "deleteEntryTemplate"
-  | "templateNamePrompt"
   | "totalEntries"
   | "topTags"
   | "loadingStats"
@@ -961,7 +961,7 @@ type CoreTranslationKey =
   | "subscriptionIncluded"
   | "subscriptionPreviousCycle";
 
-export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey | MoodTranslationKey | TaskListTranslationKey | FocusModeTranslationKey | MarkdownToolbarTranslationKey | LandingTranslationKey | AiChatTranslationKey | EntryActionsTranslationKey;
+export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey | MoodTranslationKey | TaskListTranslationKey | FocusModeTranslationKey | MarkdownToolbarTranslationKey | LandingTranslationKey | AiChatTranslationKey | EntryActionsTranslationKey | EntryTemplatesTranslationKey;
 
 export type Language = "en" | "fr";
 
@@ -984,6 +984,7 @@ export const translations: Translations = {
     ...landingTranslations.en,
     ...aiChatTranslations.en,
     ...entryActionsTranslations.en,
+    ...entryTemplatesTranslations.en,
     // App
     journal: "Journal",
     feed: "Feed",
@@ -1333,7 +1334,6 @@ export const translations: Translations = {
     noEntryTemplate: "Choose a template",
     saveEntryTemplate: "Save template",
     deleteEntryTemplate: "Delete template",
-    templateNamePrompt: "Template name",
 
     // Stats
     totalEntries: "Total Entries",
@@ -2065,6 +2065,7 @@ export const translations: Translations = {
     ...landingTranslations.fr,
     ...aiChatTranslations.fr,
     ...entryActionsTranslations.fr,
+    ...entryTemplatesTranslations.fr,
     // App
     journal: "Journal",
     feed: "Fil public",
@@ -2422,7 +2423,6 @@ export const translations: Translations = {
     noEntryTemplate: "Choisir un modèle",
     saveEntryTemplate: "Enregistrer le modèle",
     deleteEntryTemplate: "Supprimer le modèle",
-    templateNamePrompt: "Nom du modèle",
 
     // Stats
     totalEntries: "Total des entrées",

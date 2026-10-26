@@ -18,6 +18,7 @@ import EntryMoodField from './EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 import MarkdownHelp from '../MarkdownEditor/MarkdownHelp';
 import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
+import TemplateNameDialog from './TemplateNameDialog';
 import type { FontFamilyPreference } from '../../types';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
@@ -133,6 +134,7 @@ function EntryForm({
 }: EntryFormProps) {
     const writingArea = useAutoGrowTextarea(newEntryText);
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
+    const [isNamingTemplate, setIsNamingTemplate] = useState(false);
     const writingTextColor = resolveFontColor(fontColor, theme);
     const selectedTemplate = useMemo(
         () => entryTemplates.find((template) => template.id === selectedTemplateId),
@@ -154,14 +156,8 @@ function EntryForm({
         setFormat(template.format);
     };
 
-    const saveCurrentDraftAsTemplate = async (): Promise<void> => {
+    const saveCurrentDraftAsTemplate = async (name: string): Promise<void> => {
         if (!onSaveTemplate) {
-            return;
-        }
-
-        // eslint-disable-next-line no-alert -- the template name field is logged in TODO.md › Bugs to fix
-        const name = globalThis.prompt(t('templateNamePrompt'));
-        if (!name?.trim()) {
             return;
         }
 
@@ -172,6 +168,7 @@ function EntryForm({
             visibility: visibility ?? 'private',
             format,
         });
+        setIsNamingTemplate(false);
     };
 
     const deleteSelectedTemplate = async (): Promise<void> => {
@@ -210,8 +207,9 @@ function EntryForm({
                         {onSaveTemplate && (
                             <button
                                 type="button"
-                                onClick={() => void saveCurrentDraftAsTemplate()}
+                                onClick={() => setIsNamingTemplate(true)}
                                 disabled={newEntryText.trim() === ''}
+                                aria-haspopup="dialog"
                                 className={`inline-flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-sm ${tintedTextClass('emerald', theme)} hover:bg-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
                                 title={t('saveEntryTemplate')}
                             >
@@ -228,6 +226,14 @@ function EntryForm({
                             >
                                 {t('deleteEntryTemplate')}
                             </button>
+                        )}
+                        {isNamingTemplate && (
+                            <TemplateNameDialog
+                                theme={theme}
+                                t={t}
+                                onCancel={() => setIsNamingTemplate(false)}
+                                onSave={saveCurrentDraftAsTemplate}
+                            />
                         )}
                     </div>
                 )}
