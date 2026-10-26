@@ -22,6 +22,9 @@ import {
 } from './EntriesList.utils';
 import { IconActionButton } from './EntryActionPrimitives';
 
+/** Secondary text (counts, timestamps, empty states) at WCAG AA contrast on the card and panel backgrounds of both themes. */
+const mutedTextClass = (isDark: boolean) => (isDark ? 'text-gray-400' : 'text-gray-500');
+
 export function EntryHistorySection({
     isVisible,
     isDark,
@@ -48,9 +51,9 @@ export function EntryHistorySection({
     let content: ReactNode;
 
     if (loadingHistory) {
-        content = <p className="text-sm text-gray-500">...</p>;
+        content = <p className={`text-sm ${mutedTextClass(isDark)}`}>...</p>;
     } else if (revisions.length === 0) {
-        content = <p className={`text-sm ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>{t('noRevisions')}</p>;
+        content = <p className={`text-sm ${mutedTextClass(isDark)}`}>{t('noRevisions')}</p>;
     } else {
         content = (
             <div className="space-y-3">
@@ -60,11 +63,11 @@ export function EntryHistorySection({
                         className={`p-3 rounded-lg border text-sm ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'}`}
                     >
                         <div className="flex justify-between items-center mb-2">
-                            <span className={`text-xs font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <span className={`text-xs font-medium ${mutedTextClass(isDark)}`}>
                                 {t('revision')} #{revisions.length - idx}
                             </span>
                             <div className="flex items-center gap-2">
-                                <span className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
+                                <span className={`text-xs ${mutedTextClass(isDark)}`}>
                                     {new Date(rev.createdAt).toLocaleString()}
                                 </span>
                                 {onDeleteRevision && (
@@ -289,7 +292,7 @@ export function EntryBodySection({
                     onToggleTask={onToggleTask}
                 />
             </div>
-            <div className={`mt-3 flex flex-wrap gap-2 text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`mt-3 flex flex-wrap gap-2 text-xs ${mutedTextClass(isDark)}`}>
                 <span>{t('entryWordCount', { count: wordCount })}</span>
                 <span aria-hidden="true">/</span>
                 <span>{readingTimeLabel}</span>
@@ -354,7 +357,7 @@ export function EntryBacklinksSection({
                 <h4 className={`text-sm font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     {t('backlinks')}
                 </h4>
-                <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                <span className={`text-xs ${mutedTextClass(isDark)}`}>
                     {backlinks.length === 1
                         ? t('backlinksCountOne')
                         : t('backlinksCount', { count: backlinks.length })}

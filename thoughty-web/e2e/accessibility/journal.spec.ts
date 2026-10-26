@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-import type { MockEntry } from '../support/mockApp.shared';
+import type { MockEntry, MockEntryRevision } from '../support/mockApp.shared';
 import { setupMockApp } from '../support/mockApp';
 
 const THEMES = ['dark', 'light'] as const;
@@ -14,6 +14,22 @@ const ENTRIES: MockEntry[] = [
   { id: 63, date: '2026-10-19', index: 1, content: 'Morning coffee, then a slow morning.', tags: [], visibility: 'private', mood: 2, diaryId: 1 },
   { id: 64, date: '2026-10-18', index: 1, content: 'Old morning notes, put away.', tags: ['archive'], visibility: 'private', is_archived: true, diaryId: 1 },
 ];
+
+// Earlier versions of the first card, with everything a revision can show; the other cards have none.
+const REVISIONS: Record<number, MockEntryRevision[]> = {
+  61: [
+    { id: 611, entryId: 61, content: 'A run by the harbor.', title: 'Harbor', timeOfDay: '07:00', mood: 3, feelings: ['tired'], tags: ['running'], date: '2026-10-20', format: 'plain', visibility: 'private', createdAt: '2026-10-20T08:00:00.000Z' },
+    { id: 612, entryId: 61, content: 'A short run.', tags: [], date: '2026-10-20', format: 'plain', visibility: 'private', createdAt: '2026-10-20T09:00:00.000Z' },
+  ],
+};
+
+async function openHistory(page: Page, entryId: number) {
+  const entry = page.locator(`#entry-${entryId}`);
+  await entry.getByLabel('More actions').click();
+  await page.getByRole('menuitem', { name: 'View history' }).click();
+  await expect(entry.getByRole('heading', { name: 'History' })).toBeVisible();
+  return entry;
+}
 
 async function expectNoAccessibilityViolations(page: Page) {
   const results = await new AxeBuilder({ page })
@@ -59,6 +75,27 @@ test.describe('journal accessibility with entries', () => {
 
         await page.getByRole('button', { name: 'Filter archived entries' }).click();
         await expect(page.locator('#entry-61 mark').first()).toBeVisible();
+        await expectNoAccessibilityViolations(page);
+      });
+
+      test(`${mode} revision history, empty and with revisions`, async ({ page }) => {
+        await setupMockApp(page, {
+          startAuthenticated: true,
+          config: { theme, highContrast },
+          initialEntries: ENTRIES,
+          initialRevisions: REVISIONS,
+        });
+        await page.goto('/journal');
+        await page.getByRole('button', { name: 'All Diaries' }).click();
+
+        const emptyHistory = await openHistory(page, 63);
+        await expect(emptyHistory.getByText('No previous versions')).toBeVisible();
+        await expectNoAccessibilityViolations(page);
+
+        const fullHistory = await openHistory(page, 61);
+        await expect(fullHistory.getByText('Revision #2')).toBeVisible();
+        await expect(fullHistory.getByText('A short run.')).toBeVisible();
+        await expect(fullHistory.getByText('A run by the harbor.')).toBeVisible();
         await expectNoAccessibilityViolations(page);
       });
 

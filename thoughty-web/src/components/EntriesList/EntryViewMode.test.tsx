@@ -365,6 +365,26 @@ describe('EntryViewMode', () => {
         expect(screen.getByText('History')).toBeInTheDocument();
     });
 
+    it.each([
+        ['dark', 'text-gray-400'],
+        ['light', 'text-gray-500'],
+    ] as const)('shows the empty history and revision times in the %s theme muted text color', async (theme, colorClass) => {
+        const onFetchHistory = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce(mockRevisions);
+        const user = userEvent.setup();
+        const { unmount } = renderEntryViewMode({ config: { theme }, onFetchHistory });
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('View history'));
+        expect(await screen.findByText('No revisions')).toHaveClass(colorClass);
+        unmount();
+
+        renderEntryViewMode({ config: { theme }, onFetchHistory });
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByTitle('View history'));
+        const createdAt = new Date(mockRevisions[0]!.createdAt).toLocaleString();
+        expect(await screen.findByText(createdAt)).toHaveClass(colorClass);
+    });
+
     it('closes history without refetching when view history is selected again', async () => {
         const onFetchHistory = vi.fn().mockResolvedValue(mockRevisions);
         const user = userEvent.setup();
