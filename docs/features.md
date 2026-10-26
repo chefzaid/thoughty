@@ -127,7 +127,7 @@ All AI features are optional and run through OpenRouter. A deployment can provid
 - **Data.** Download all your data as JSON.
 - **Subscription.** A placeholder page. The plan is a saved setting with no payment behind it, and the billing history and payment method are sample data until a payment provider is connected.
 - **Appearance.** Light or dark theme, high contrast, font family, size, and color, entries per page, and the pinned-entry limit.
-- **Saving settings.** A change shows at once. If it cannot be saved (the API refuses it or cannot be reached), the previous settings come back and a notice says so; the profile and tag pages then show no "saved" message.
+- **Saving settings.** A change shows at once. If it cannot be saved (the API refuses it or cannot be reached), the previous settings come back and a notice says so; the profile and tag pages then show no "saved" message. A new tag's color, which the app saves on its own, is tried once and saved again when the tags or the settings next change.
 - **Languages.** English and French.
 
 ## Accessibility and Experience

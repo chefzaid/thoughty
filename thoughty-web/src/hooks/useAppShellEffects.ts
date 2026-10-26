@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 
 import type { Config } from '../types';
@@ -16,6 +16,15 @@ interface UseAppShellEffectsParams {
   updateConfig: (newConfig: Config) => Promise<boolean>;
 }
 
+/**
+ * What a tag color save was computed from: the tags and the settings it started on. A failed save puts
+ * those same settings back, so the same input means "already tried"; a new tag or any other settings
+ * change (such as a later successful save) gives a new input and a new attempt.
+ */
+function tagColorSyncInput(allTags: readonly string[], config: Config): string {
+  return JSON.stringify([[...allTags].sort(), config]);
+}
+
 export function useAppShellEffects({
   allTags,
   config,
@@ -27,8 +36,14 @@ export function useAppShellEffects({
   tagMetadata,
   updateConfig,
 }: Readonly<UseAppShellEffectsParams>) {
+  const lastTagColorSyncInput = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!isAuthenticated || allTags.length === 0) {
+    if (!isAuthenticated) {
+      lastTagColorSyncInput.current = null;
+      return;
+    }
+    if (allTags.length === 0) {
       return;
     }
 
@@ -38,6 +53,13 @@ export function useAppShellEffects({
     if (nextSerializedTagMetadata === serializedTagMetadata) {
       return;
     }
+
+    // Each input is saved at most once, so a refused save does not post again after its rollback
+    const input = tagColorSyncInput(allTags, config);
+    if (input === lastTagColorSyncInput.current) {
+      return;
+    }
+    lastTagColorSyncInput.current = input;
 
     void updateConfig({
       ...config,

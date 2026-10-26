@@ -1,23 +1,9 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { setupMockApp } from '../support/mockApp';
+import { failSettingsSaves } from '../support/settingsSaves';
 
 const savedTemplates = (config: Record<string, unknown>) =>
   JSON.parse(String(config.entryTemplates ?? '[]')) as Array<{ name: string }>;
-
-/** Makes every settings save fail the way the API or the network can, while reading settings still works. */
-async function failSettingsSaves(page: Page, failure: 'status' | 'network') {
-  await page.route('http://localhost:5173/api/config', async (route) => {
-    if (route.request().method() !== 'POST') {
-      await route.fallback();
-      return;
-    }
-    if (failure === 'network') {
-      await route.abort('connectionrefused');
-      return;
-    }
-    await route.fulfill({ status: 400, json: { statusCode: 400, message: ['theme must be light or dark'], error: 'Bad Request' } });
-  });
-}
 
 test.describe('Settings that could not be saved', () => {
   test('says so on the profile, puts the previous theme back, and shows no saved message', async ({ page }) => {
