@@ -11,6 +11,7 @@ import AutoDismiss from '../AutoDismiss/AutoDismiss';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
 import { downloadBlob } from '../../utils/downloadFile';
 import { pluralPhrase } from '../../utils/pluralPhrase';
+import { readApiErrorMessage } from '../../services/api/base';
 import {
     DEFAULT_FORMAT_CONFIG,
     type FormatConfig,
@@ -119,7 +120,7 @@ function ImportExport({
                 body: JSON.stringify({ content, diaryId }),
             });
             if (!response.ok) {
-                showMessage('error', t('previewError'));
+                showMessage('error', t(await readApiErrorMessage(response, 'previewError')));
                 return;
             }
 
@@ -207,17 +208,20 @@ function ImportExport({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ content: fileContent, skipDuplicates, diaryId }),
             });
-            if (response.ok) {
-                const data = await response.json();
-                setMessage({
-                    type: 'success',
-                    text: pluralPhrase(t, 'importSuccess', data.importedCount, language, {
-                        skipped: pluralPhrase(t, 'importDuplicatesSkipped', data.skippedCount, language),
-                    }),
-                });
-                setPreview(null);
-                setFileContent('');
+            if (!response.ok) {
+                showMessage('error', t(await readApiErrorMessage(response, 'importError')));
+                return;
             }
+
+            const data = await response.json();
+            setMessage({
+                type: 'success',
+                text: pluralPhrase(t, 'importSuccess', data.importedCount, language, {
+                    skipped: pluralPhrase(t, 'importDuplicatesSkipped', data.skippedCount, language),
+                }),
+            });
+            setPreview(null);
+            setFileContent('');
         } catch (error) {
             console.error('Import failed:', error);
             showMessage('error', t('importError'));

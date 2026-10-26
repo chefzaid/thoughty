@@ -59,6 +59,11 @@ function chooseFile() {
     fireEvent.change(input);
 }
 
+/** A refused request with the API's JSON error body. */
+function refusal(status: number, body: Record<string, unknown>) {
+    return { ok: false, status, json: async () => ({ statusCode: status, ...body }) };
+}
+
 async function importFile(language: Language, importedCount: number, skippedCount: number) {
     (globalThis.fetch as Mock)
         .mockResolvedValueOnce({ ok: true, json: async () => formatConfig })
@@ -91,6 +96,54 @@ describe('ImportExport import message', () => {
         await importFile(language, imported, skipped);
 
         expect(await screen.findByText(expected)).toBeInTheDocument();
+    });
+
+    it.each([
+        ['en', 'This file has more entries than one import allows. Split it and try again.'],
+        ['fr', 'Ce fichier contient plus d’entrées qu’un seul import ne le permet. Divisez-le et réessayez.'],
+    ] as const)('shows the reason a refused import gives, in %s, and keeps the preview', async (language, expected) => {
+        (globalThis.fetch as Mock)
+            .mockResolvedValueOnce({ ok: true, json: async () => formatConfig })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ totalCount: 2, duplicateCount: 0 }) })
+            .mockResolvedValueOnce(refusal(400, { message: 'Too many entries', code: 'IMPORT_TOO_MANY_ENTRIES' }));
+        const t = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+        render(<ImportExport theme="dark" language={language} t={t} />);
+        await screen.findByText(t('chooseFile'));
+        chooseFile();
+        fireEvent.click(await screen.findByText(t('confirmImport')));
+
+        expect(await screen.findByText(expected)).toBeInTheDocument();
+        expect(screen.getByText(t('confirmImport'))).toBeEnabled();
+    });
+
+    it('says the import failed when the refusal gives no reason', async () => {
+        (globalThis.fetch as Mock)
+            .mockResolvedValueOnce({ ok: true, json: async () => formatConfig })
+            .mockResolvedValueOnce({ ok: true, json: async () => ({ totalCount: 1, duplicateCount: 0 }) })
+            .mockResolvedValueOnce(refusal(503, {}));
+        const t = (key: string) => getTranslation('fr', key);
+        render(<ImportExport theme="dark" language="fr" t={t} />);
+        await screen.findByText(t('chooseFile'));
+        chooseFile();
+        fireEvent.click(await screen.findByText(t('confirmImport')));
+
+        expect(await screen.findByText(t('importError'))).toBeInTheDocument();
+    });
+
+    it.each([
+        ['en', 'This file is larger than the import limit.'],
+        ['fr', 'Ce fichier dépasse la taille maximale d’import.'],
+    ] as const)('shows the reason a refused preview gives, in %s', async (language, expected) => {
+        (globalThis.fetch as Mock)
+            .mockResolvedValueOnce({ ok: true, json: async () => formatConfig })
+            .mockResolvedValueOnce(refusal(413, { message: 'File too large', code: 'IMPORT_FILE_TOO_LARGE' }));
+        const t = (key: string) => getTranslation(language, key);
+        render(<ImportExport theme="dark" language={language} t={t} />);
+        await screen.findByText(t('chooseFile'));
+        chooseFile();
+
+        expect(await screen.findByText(expected)).toBeInTheDocument();
+        expect(screen.queryByText(t('previewError'))).not.toBeInTheDocument();
     });
 
     it('hides an error message four seconds after it appears', async () => {
