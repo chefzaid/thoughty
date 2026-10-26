@@ -355,7 +355,9 @@ export function EntryBacklinksSection({
                     {t('backlinks')}
                 </h4>
                 <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {t('backlinksCount', { count: backlinks.length })}
+                    {backlinks.length === 1
+                        ? t('backlinksCountOne')
+                        : t('backlinksCount', { count: backlinks.length })}
                 </span>
             </div>
             <div className="space-y-2">

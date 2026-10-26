@@ -9,6 +9,7 @@ import {
     mockRevisions,
     mockSourceEntry,
 } from './EntriesList.test-utils';
+import { getTranslation } from '../../utils/translations';
 
 const renderEntryViewMode = (
     overrides: Partial<Parameters<typeof createEntryViewModeProps>[0]> = {},
@@ -206,6 +207,32 @@ describe('EntryViewMode', () => {
             date: '2024-01-15',
             index: 1,
         });
+    });
+
+    it.each([
+        ['en', 1, '1 link'],
+        ['en', 2, '2 links'],
+        ['en', 3, '3 links'],
+        ['fr', 1, '1 lien'],
+        ['fr', 2, '2 liens'],
+        ['fr', 3, '3 liens'],
+    ])('counts backlinks in the singular or plural in %s (%i)', async (lang, count, label) => {
+        const onFetchBacklinks = vi.fn().mockResolvedValue(
+            Array.from({ length: count }, (_, i) => ({
+                id: 40 + i,
+                date: '2024-01-10',
+                index: i + 1,
+                content: `Backlink ${i + 1} to [[2024-01-15]].`,
+                tags: [],
+                format: 'plain',
+            })),
+        );
+        renderEntryViewMode({
+            onFetchBacklinks,
+            t: (key, params) => getTranslation(lang, key, params),
+        });
+
+        expect(await screen.findByText(label)).toBeInTheDocument();
     });
 
     it('renders secondary actions in the more actions menu', async () => {

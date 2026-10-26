@@ -76,6 +76,7 @@ const translations: Record<string, string> = {
     backToSource: 'Back to source',
     backlinks: 'Backlinks',
     backlinksCount: '{count} links',
+    backlinksCountOne: '1 link',
     loadingBacklinks: 'Loading backlinks...',
     noBacklinks: 'No backlinks yet',
     history: 'History',

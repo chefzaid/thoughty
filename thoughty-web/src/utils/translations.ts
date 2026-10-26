@@ -703,6 +703,7 @@ type CoreTranslationKey =
   | "backToSource"
   | "backlinks"
   | "backlinksCount"
+  | "backlinksCountOne"
   | "entryNotFound"
   | "entryNotFoundMessage"
   | "entryReferenceHint"
@@ -1722,6 +1723,7 @@ export const translations: Translations = {
     backToSource: "Back to source entry",
     backlinks: "Backlinks",
     backlinksCount: "{count} links",
+    backlinksCountOne: "1 link",
     entryNotFound: "Entry not found",
     entryNotFoundMessage:
       "This entry may have been deleted, or the link is no longer valid.",
@@ -2775,6 +2777,7 @@ export const translations: Translations = {
     backToSource: "Retour à l'entrée source",
     backlinks: "Rétroliens",
     backlinksCount: "{count} liens",
+    backlinksCountOne: "1 lien",
     entryNotFound: "Entrée non trouvée",
     entryNotFoundMessage:
       "Cette entrée a peut-être été supprimée, ou le lien n'est plus valide.",
