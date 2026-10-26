@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 
 import type { MockEntry } from '../support/mockApp.shared';
 import { setupMockApp } from '../support/mockApp';

@@ -71,7 +71,9 @@ Vitest uses `jsdom` with `src/test/setup.ts` and runs each file in its own threa
 
 Playwright starts the Vite dev server on port `5173` (or reuses a running one) and runs headless Chromium. There are no named projects, so do not pass `--project`. Traces and screenshots are kept on failure, and CI retries a failed test twice.
 
-The mock app in `e2e/support` answers every `/api` call, so you need no API server or database. Specs are grouped by feature: `accessibility`, `ai`, `auth`, `cloud-sync`, `diary`, `import-export`, `journal`, `memoir`, `navigation`, `public`, `social`, `stats`, and `tags`. Put a new spec in the closest directory and name it after its behavior (`journal/attachments-preview.spec.ts`, not `critical-flows.spec.ts`).
+The mock app in `e2e/support` answers every `/api` call, so you need no API server or database. Specs are grouped by feature: `accessibility`, `ai`, `auth`, `cloud-sync`, `diary`, `import-export`, `journal`, `memoir`, `navigation`, `public`, `social`, `stats`, and `tags`, plus `harness` for the test setup itself. Put a new spec in the closest directory and name it after its behavior (`journal/attachments-preview.spec.ts`, not `critical-flows.spec.ts`).
+
+Specs import `test` and `expect` from `e2e/support/test.ts`, not from `@playwright/test` (ESLint rejects importing `test` from there). Its `context` fixture keeps every `/api` request inside the browser. A context route answers an `/api` request no mock route takes (a spec that unroutes the mock) with `503` and `{ message: 'No e2e mock answers <METHOD> <path>' }`. At teardown it moves every page to `about:blank`, which cancels requests still waiting on a route handler. Without that step Chromium sends those requests to the network when the context closes, and the dev server proxies them to `localhost:3001` (the API, if one is running locally). `harness/api-isolation.spec.ts` leaves such a request pending, then checks that its local server got no requests.
 
 ### Accessibility
 

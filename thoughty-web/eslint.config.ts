@@ -34,4 +34,22 @@ export default defineConfig([
       'no-alert': 'error',
     },
   },
+  {
+    files: ['e2e/**/*.ts'],
+    rules: {
+      // Playwright fixtures call `use`, which is not React's hook.
+      'react-hooks/rules-of-hooks': 'off',
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: '@playwright/test',
+          importNames: ['test'],
+          message: "Import test from e2e/support/test: its fixture keeps every /api request inside the browser.",
+        }],
+      }],
+    },
+  },
+  {
+    files: ['e2e/support/test.ts'],
+    rules: { 'no-restricted-imports': 'off' },
+  },
 ]);

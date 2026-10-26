@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 
 test.describe('Journal highlights', () => {

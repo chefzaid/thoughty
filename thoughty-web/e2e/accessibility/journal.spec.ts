@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '../support/test';
 
 import type { MockEntry, MockEntryRevision } from '../support/mockApp.shared';
 import { setupMockApp } from '../support/mockApp';

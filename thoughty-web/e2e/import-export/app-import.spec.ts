@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from '../support/test';
 
 import { buildZip } from '../../src/test/zipFixture';
 import { setupMockApp } from '../support/mockApp';

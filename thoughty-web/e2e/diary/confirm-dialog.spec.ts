@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 
 const DELETE_MESSAGE = '“Personal” will be deleted. Its entries will be moved to your default diary.';

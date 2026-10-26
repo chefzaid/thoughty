@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Page } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 
 // A 1x1 transparent PNG, served for the image attachment.

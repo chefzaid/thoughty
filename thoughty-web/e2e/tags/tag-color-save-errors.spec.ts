@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
 import { failSettingsSaves } from '../support/settingsSaves';
 
