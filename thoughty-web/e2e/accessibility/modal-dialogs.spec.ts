@@ -99,6 +99,40 @@ test.describe('Modal dialogs', () => {
     await expect(opener).toBeFocused();
   });
 
+  test('a text preview keeps Tab inside the dialog when the frame has focus', async ({ page }) => {
+    const textEntry = {
+      ...ENTRY,
+      attachments: [{
+        id: 32,
+        original_filename: 'notes.txt',
+        stored_filename: 'stored-notes.txt',
+        mimetype: 'text/plain',
+        size: 64,
+      }],
+    };
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: [textEntry], config: { theme: 'dark' } });
+    await page.route('**/api/attachments/file/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/plain', body: 'Notes from the lake walk.' }),
+    );
+    await page.goto('/journal');
+    await page.locator(`#entry-${textEntry.id}`).getByRole('button', { name: /notes\.txt/ }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Preview notes.txt' });
+    const frame = dialog.getByTitle('notes.txt');
+    await expect(dialog.getByRole('button', { name: 'Close' })).toBeFocused();
+    await expect(frame).toBeVisible();
+
+    await page.keyboard.press('Tab');
+    await expect(frame).toBeFocused();
+    // Inside the frame the parent page never sees this key press; focus must still come back in.
+    await page.keyboard.press('Tab');
+    await expect(dialog.getByRole('link', { name: 'Download' })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(frame).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(dialog.getByRole('button', { name: 'Close' })).toBeFocused();
+  });
+
   test('entry summary returns focus to the more actions button', async ({ page }) => {
     const entry = await openJournal(page);
     const moreActions = entry.getByLabel('More actions');

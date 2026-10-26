@@ -32,7 +32,6 @@ function ChatHarness({ onLoadHistory }: Readonly<{ onLoadHistory: () => Promise<
   return (
     <>
       <button type="button" onClick={() => setChatEntry(entry)}>Discuss</button>
-      <button type="button">Behind</button>
       {chatEntry && (
         <AiChatModal
           entry={chatEntry}
@@ -104,8 +103,12 @@ describe('AiChatModal keyboard', () => {
     await user.click(screen.getByRole('button', { name: 'Discuss' }));
     const input = screen.getByRole('textbox', { name: 'Message to the AI' });
     expect(input).toBeDisabled();
-    // A disabled field loses focus in the browser
-    screen.getByRole('button', { name: 'Behind' }).focus();
+    // A disabled field loses focus to the page body in the browser; jsdom keeps it there, so
+    // blur it the way the browser does (jsdom ignores blur() on a disabled element).
+    input.removeAttribute('disabled');
+    input.blur();
+    input.setAttribute('disabled', '');
+    expect(document.body).toHaveFocus();
 
     finishLoading([]);
 
