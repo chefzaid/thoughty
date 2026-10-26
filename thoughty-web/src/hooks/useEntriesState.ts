@@ -22,10 +22,20 @@ const EMPTY_NUMBERS: number[] = [];
 const normalizeEntryDate = (date: string): string =>
   date.includes('T') ? (date.split('T')[0] ?? date) : date;
 
+interface UseEntriesOptions {
+  /** Whether the profile config has arrived (or failed to), so the list asks with the user's page size. */
+  configLoaded?: boolean;
+  /** Whether the diary and route filters are settled, so the list does not ask for a diary it is about to leave. */
+  filtersReady?: boolean;
+  /** The journal permalink being opened: the list waits until it knows the page that entry is on. */
+  routeEntryId?: number;
+}
+
 export const useEntries = (
   isAuthenticated: boolean,
   config: Config,
   currentDiaryId: number | null,
+  { configLoaded = true, filtersReady = true, routeEntryId }: UseEntriesOptions = {},
 ) => {
   const { entriesService, aiService } = useApiServices();
   const queryClient = useQueryClient();
@@ -52,6 +62,12 @@ export const useEntries = (
   const [targetEntryId, setTargetEntryId] = useState<number | null>(null);
   const [activeTargetId, setActiveTargetId] = useState<number | null>(null);
   const [sourceEntry, setSourceEntry] = useState<SourceEntryInfo | null>(null);
+  const [handledPermalinkEntryId, setHandledPermalinkEntryId] = useState<number | null>(null);
+
+  // The first list request waits for everything that decides it, so it is sent once instead of
+  // being sent with defaults and thrown away when the page size, diary or permalink page arrives.
+  const permalinkPending = routeEntryId !== undefined && handledPermalinkEntryId !== routeEntryId;
+  const listReady = configLoaded && filtersReady && !permalinkPending;
 
   const getLimit = useCallback(() => {
     return typeof config.entriesPerPage === 'number'
@@ -113,7 +129,7 @@ export const useEntries = (
 
       return result ?? { entries: [], totalPages: 1, allTags: [] };
     },
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && listReady,
     placeholderData: keepPreviousData,
   });
 
@@ -140,6 +156,7 @@ export const useEntries = (
   const allTags = entriesQuery.data?.allTags ?? EMPTY_STRINGS;
   const entryDates = entryDatesQuery.data ?? EMPTY_STRINGS;
   const loading = !isAuthenticated
+    || !listReady
     || entriesQuery.isLoading
     || entriesQuery.isFetching
     || semanticSearchStatus === 'loading';
@@ -427,6 +444,8 @@ export const useEntries = (
     setActiveTargetId,
     sourceEntry,
     setSourceEntry,
+    handledPermalinkEntryId,
+    setHandledPermalinkEntryId,
     fetchEntries,
     fetchEntryDates,
     getLimit,

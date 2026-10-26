@@ -81,9 +81,14 @@ export function useAppShellModel(): AppShellModel {
   } = useConfig(isAuthenticated);
 
   const diariesState = useDiaries(isAuthenticated, routeEntryId !== undefined || routeDiaryId !== undefined);
-  const { currentDiaryId, setCurrentDiaryId, fetchDiaries } = diariesState;
+  const { currentDiaryId, setCurrentDiaryId, fetchDiaries, diarySelectionReady } = diariesState;
 
-  const entriesState = useEntries(isAuthenticated, config, currentDiaryId);
+  const entriesState = useEntries(isAuthenticated, config, currentDiaryId, {
+    configLoaded,
+    // A diary in the route is applied after the first render; the list waits for it
+    filtersReady: diarySelectionReady && (routeDiaryId === undefined || routeDiaryId === currentDiaryId),
+    routeEntryId,
+  });
 
   const entryFormState = useEntryForm(config, currentDiaryId, () => {
     entriesState.setPage(1);
@@ -120,6 +125,7 @@ export function useAppShellModel(): AppShellModel {
     filterTags: entriesState.filterTags,
     filterVisibility: entriesState.filterVisibility,
     getLimit: entriesState.getLimit,
+    handledPermalinkEntryId: entriesState.handledPermalinkEntryId,
     isAuthenticated,
     loading: entriesState.loading,
     navigate,
@@ -135,6 +141,7 @@ export function useAppShellModel(): AppShellModel {
     setFilterFavorites: entriesState.setFilterFavorites,
     setFilterTags: entriesState.setFilterTags,
     setFilterVisibility: entriesState.setFilterVisibility,
+    setHandledPermalinkEntryId: entriesState.setHandledPermalinkEntryId,
     setPage: entriesState.setPage,
     setSearch: entriesState.setSearch,
     setSourceEntry: entriesState.setSourceEntry,

@@ -23,6 +23,8 @@ interface UseEntryNavigationParams {
   filterTags: EntriesState['filterTags'];
   filterVisibility: EntriesState['filterVisibility'];
   getLimit: EntriesState['getLimit'];
+  /** The permalink that has landed; the entries list waits for the one in the route to land. */
+  handledPermalinkEntryId: EntriesState['handledPermalinkEntryId'];
   isAuthenticated: boolean;
   loading: EntriesState['loading'];
   navigate: NavigateFunction;
@@ -38,6 +40,7 @@ interface UseEntryNavigationParams {
   setFilterMood: EntriesState['setFilterMood'];
   setFilterTags: EntriesState['setFilterTags'];
   setFilterVisibility: EntriesState['setFilterVisibility'];
+  setHandledPermalinkEntryId: EntriesState['setHandledPermalinkEntryId'];
   setPage: EntriesState['setPage'];
   setSearch: EntriesState['setSearch'];
   setSourceEntry: EntriesState['setSourceEntry'];
@@ -68,6 +71,7 @@ export function useEntryNavigation({
   filterTags,
   filterVisibility,
   getLimit,
+  handledPermalinkEntryId,
   isAuthenticated,
   loading,
   navigate,
@@ -83,6 +87,7 @@ export function useEntryNavigation({
   setFilterMood,
   setFilterTags,
   setFilterVisibility,
+  setHandledPermalinkEntryId,
   setPage,
   setSearch,
   setSourceEntry,
@@ -92,7 +97,6 @@ export function useEntryNavigation({
 }: Readonly<UseEntryNavigationParams>) {
   const entryToast = useTransientMessage();
   const showEntryNotFoundToast = entryToast.show;
-  const [handledPermalinkEntryId, setHandledPermalinkEntryId] = useState<number | null>(null);
   const [pendingEntryTarget, setPendingEntryTarget] = useState<{
     date: string;
     index: number;
@@ -237,7 +241,7 @@ export function useEntryNavigation({
       }, { replace: true });
       setHandledPermalinkEntryId(null);
     }
-  }, [currentView, navigate, searchParams]);
+  }, [currentView, navigate, searchParams, setHandledPermalinkEntryId]);
 
   const executeEntryNavigation = useCallback(async (
     date: string,
@@ -391,7 +395,7 @@ export function useEntryNavigation({
     return () => {
       cancelled = true;
     };
-  }, [configLoaded, entriesService, getLimit, handledPermalinkEntryId, isAuthenticated, needsJournalResetForPermalink, resetJournalFiltersForPermalink, routeEntryId, setActiveTargetId, setPage, setSourceEntry, setTargetEntryId, showEntryNotFoundToast]);
+  }, [configLoaded, entriesService, getLimit, handledPermalinkEntryId, isAuthenticated, needsJournalResetForPermalink, resetJournalFiltersForPermalink, routeEntryId, setActiveTargetId, setHandledPermalinkEntryId, setPage, setSourceEntry, setTargetEntryId, showEntryNotFoundToast]);
 
   return {
     entryToast,

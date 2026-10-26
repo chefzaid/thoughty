@@ -1,11 +1,20 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { useState, type Dispatch, type SetStateAction } from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { useEntryNavigation } from './useEntryNavigation';
 import type { MoodFilter } from '../utils/entryMood';
 
-type UseEntryNavigationParams = Parameters<typeof useEntryNavigation>[0];
+type UseEntryNavigationParams = Omit<
+  Parameters<typeof useEntryNavigation>[0],
+  'handledPermalinkEntryId' | 'setHandledPermalinkEntryId'
+>;
+
+/** Keeps the landed permalink in state, as useEntries does for the app shell. */
+function useNavigation(params: UseEntryNavigationParams) {
+  const [handledPermalinkEntryId, setHandledPermalinkEntryId] = useState<number | null>(null);
+  return useEntryNavigation({ ...params, handledPermalinkEntryId, setHandledPermalinkEntryId });
+}
 
 function createSetterSpy<T>() {
   return vi.fn() as unknown as Dispatch<SetStateAction<T>>;
@@ -66,7 +75,7 @@ describe('useEntryNavigation', () => {
       configurable: true,
     });
 
-    const { result } = renderHook(() => useEntryNavigation(createParams()));
+    const { result } = renderHook(() => useNavigation(createParams()));
 
     let shareResult = false;
     await act(async () => {
@@ -87,7 +96,7 @@ describe('useEntryNavigation', () => {
     const share = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, 'share', { value: share, configurable: true });
 
-    const { result } = renderHook(() => useEntryNavigation(createParams()));
+    const { result } = renderHook(() => useNavigation(createParams()));
 
     await expect(result.current.handleShareEntry({
       id: 4,
@@ -107,7 +116,7 @@ describe('useEntryNavigation', () => {
     const share = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(globalThis.navigator, 'share', { value: share, configurable: true });
 
-    const { result } = renderHook(() => useEntryNavigation(createParams()));
+    const { result } = renderHook(() => useNavigation(createParams()));
 
     await result.current.handleShareEntry({
       id: 5,
@@ -135,7 +144,7 @@ describe('useEntryNavigation', () => {
       configurable: true,
     });
 
-    const { result, rerender } = renderHook((params: UseEntryNavigationParams) => useEntryNavigation(params), {
+    const { result, rerender } = renderHook((params: UseEntryNavigationParams) => useNavigation(params), {
       initialProps: createParams(),
     });
 
@@ -167,7 +176,7 @@ describe('useEntryNavigation', () => {
       configurable: true,
     });
 
-    const { result } = renderHook(() => useEntryNavigation(createParams()));
+    const { result } = renderHook(() => useNavigation(createParams()));
 
     await expect(result.current.handleShareEntry({
       id: 8,
@@ -197,7 +206,7 @@ describe('useEntryNavigation', () => {
       setActiveTargetId,
     });
 
-    renderHook(() => useEntryNavigation(params));
+    renderHook(() => useNavigation(params));
 
     await waitFor(() => {
       expect(navigateById).toHaveBeenCalledWith(7, 10);
@@ -223,7 +232,7 @@ describe('useEntryNavigation', () => {
       searchParams: new URLSearchParams('entry=7&diary=all'),
       setPage,
     });
-    const { rerender } = renderHook((props: UseEntryNavigationParams) => useEntryNavigation(props), { initialProps });
+    const { rerender } = renderHook((props: UseEntryNavigationParams) => useNavigation(props), { initialProps });
 
     expect(navigateById).not.toHaveBeenCalled();
 
@@ -246,7 +255,7 @@ describe('useEntryNavigation', () => {
     const navigateById = vi.fn();
     const setFilterArchiveStatus = createSetterSpy<'all' | 'active' | 'archived'>();
 
-    renderHook(() => useEntryNavigation(createParams({
+    renderHook(() => useNavigation(createParams({
       configLoaded: false,
       entriesService: {
         navigateByDate: vi.fn(),
@@ -281,7 +290,7 @@ describe('useEntryNavigation', () => {
       setTargetEntryId,
       setActiveTargetId,
     });
-    const { result } = renderHook(() => useEntryNavigation(params));
+    const { result } = renderHook(() => useNavigation(params));
 
     await act(async () => {
       await result.current.handleNavigateToEntry('2024-01-16', 1, {
@@ -316,7 +325,7 @@ describe('useEntryNavigation', () => {
       setSourceEntry,
       setActiveTargetId,
     });
-    const { result } = renderHook(() => useEntryNavigation(params));
+    const { result } = renderHook(() => useNavigation(params));
 
     await waitFor(() => {
       expect(result.current.entryToast.visible).toBe(true);
@@ -330,7 +339,7 @@ describe('useEntryNavigation', () => {
   it('returns early for unauthenticated permalink access', () => {
     const navigateById = vi.fn();
 
-    renderHook(() => useEntryNavigation(createParams({
+    renderHook(() => useNavigation(createParams({
       entriesService: {
         navigateByDate: vi.fn(),
         navigateById,
@@ -355,7 +364,7 @@ describe('useEntryNavigation', () => {
     const setCurrentDiaryId = createSetterSpy<number | null>();
     const setPage = createSetterSpy<number>();
     const navigateByDate = vi.fn().mockResolvedValue({ found: true, page: 5, entryId: 13 });
-    const { result } = renderHook(() => useEntryNavigation(createParams({
+    const { result } = renderHook(() => useNavigation(createParams({
       currentDiaryId: 9,
       entriesService: {
         navigateByDate,
@@ -406,7 +415,7 @@ describe('useEntryNavigation', () => {
     const setSourceEntry = vi.fn();
     const setTargetEntryId = vi.fn();
     const setActiveTargetId = vi.fn();
-    const { result } = renderHook(() => useEntryNavigation(createParams({
+    const { result } = renderHook(() => useNavigation(createParams({
       entriesService: {
         navigateByDate: vi.fn(),
         navigateById,
@@ -431,7 +440,7 @@ describe('useEntryNavigation', () => {
 
   it('does nothing when there is no source entry to navigate back to', async () => {
     const navigateById = vi.fn();
-    const { result } = renderHook(() => useEntryNavigation(createParams({
+    const { result } = renderHook(() => useNavigation(createParams({
       entriesService: {
         navigateByDate: vi.fn(),
         navigateById,

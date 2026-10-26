@@ -11,6 +11,8 @@ export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelecti
   const queryClient = useQueryClient();
   const [currentDiaryId, setCurrentDiaryId] = useState<number | null>(null);
   const hasInitializedDiarySelection = useRef(false);
+  // Set in the same update as the default diary, so readers never see the list before it is picked
+  const [defaultSelectionSettled, setDefaultSelectionSettled] = useState(false);
 
   const diariesQuery = useQuery({
     queryKey: DIARIES_QUERY_KEY,
@@ -33,6 +35,7 @@ export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelecti
     }
 
     hasInitializedDiarySelection.current = false;
+    setDefaultSelectionSettled(false);
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -43,6 +46,8 @@ export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelecti
     if (!diariesQuery.isFetched) {
       return;
     }
+
+    setDefaultSelectionSettled(true);
 
     if (diaries.length === 0) {
       return;
@@ -98,6 +103,8 @@ export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelecti
     diaries,
     currentDiaryId,
     setCurrentDiaryId,
+    /** False until the default diary has been picked (or there is none to pick), unless the route sets the diary. */
+    diarySelectionReady: suppressDefaultDiarySelection || defaultSelectionSettled,
     fetchDiaries,
     handleCreateDiary,
     handleUpdateDiary,

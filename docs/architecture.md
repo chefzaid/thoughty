@@ -103,6 +103,7 @@ flowchart TD
 
 - Route files stay thin. Components render; hooks own shared state, URL parameters, and API calls.
 - Server state goes through TanStack Query. The entry list keeps the previous page on screen while the next one loads.
+- The journal sends its first list request once everything that shapes it is known: the profile config (page size; a failed config request falls back to 10 at once), the default or route diary, and on a permalink the page that holds the entry. Until then the list query is disabled and the journal shows as loading, so no request is sent with defaults and thrown away.
 - Query-string parameters are product behavior: diary scope, import/export presets, entry permalinks.
 - API types are generated from the server's OpenAPI document ([ADR 0004](./adr/0004-openapi-as-contract-source.md)). A test fails if the frontend stops calling a documented product endpoint.
 

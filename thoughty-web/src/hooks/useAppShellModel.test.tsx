@@ -145,6 +145,7 @@ describe('useAppShellModel', () => {
     mocks.serializeTagMetadata.mockReturnValue('serialized-tag-metadata');
     mocks.useConfig.mockReturnValue({
       config: { theme: 'dark', tagMetadata: 'raw-tag-metadata', name: 'Config Name', avatarUrl: 'config-avatar.png' },
+      configLoaded: true,
       profileStats: { totalEntries: 12 },
       fetchConfig,
       fetchProfileStats,
@@ -154,6 +155,7 @@ describe('useAppShellModel', () => {
     });
     mocks.useDiaries.mockReturnValue({
       currentDiaryId: 9,
+      diarySelectionReady: true,
       setCurrentDiaryId,
       fetchDiaries,
       diaries: [{ id: 9, name: 'Work', icon: 'W' }],
@@ -309,6 +311,12 @@ describe('useAppShellModel', () => {
   it('assembles the shell model and wires side-effect inputs', () => {
     const { result } = renderHook(() => useAppShellModel());
 
+    // The list waits for the config, the route's diary and the permalink lookup
+    expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), 9, {
+      configLoaded: true,
+      filtersReady: true,
+      routeEntryId: 5,
+    });
     expect(mocks.useAppShellEffects).toHaveBeenCalledWith(expect.objectContaining({
       allTags: ['current', 'later'],
       currentDiaryId: 9,
@@ -336,6 +344,16 @@ describe('useAppShellModel', () => {
       importExportSection: 'import',
       highlightsModalOpen: false,
     });
+  });
+
+  it('holds the entries list until the diary in the route is applied', () => {
+    mocks.useDiaries.mockReturnValue({ ...mocks.useDiaries(), currentDiaryId: null });
+
+    renderHook(() => useAppShellModel());
+
+    expect(mocks.useEntries).toHaveBeenLastCalledWith(true, expect.anything(), null, expect.objectContaining({
+      filtersReady: false,
+    }));
   });
 
   it('handles navigation, tag renaming, and AI chat callbacks', async () => {
