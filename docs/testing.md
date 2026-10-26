@@ -75,7 +75,7 @@ The mock app in `e2e/support` answers every `/api` call, so you need no API serv
 
 ### Accessibility
 
-`e2e/accessibility/` runs axe (`@axe-core/playwright`) with the WCAG 2.0, 2.1, and 2.2 A and AA tags. `routes.spec.ts` scans every route in both themes and checks skip links, focus on route change, and key dialogs. `journal.spec.ts` scans the journal, search, filters, revision history (empty and with revisions), composer, and editor in both themes and with high contrast. `modal-dialogs.spec.ts` drives the AI chat, the attachment preview, and the entry summary with the keyboard alone (focus in, Tab trap, Escape, focus back on the opener) and scans the chat and the preview in both themes. Feature specs such as `journal/focus-mode.spec.ts` scan their own surfaces, and `journal/attachment-upload-errors.spec.ts` scans the composer with a pending attachment card in both themes and with high contrast. Give a new page or dialog a scan with the same tags.
+`e2e/accessibility/` runs axe (`@axe-core/playwright`) with the WCAG 2.0, 2.1, and 2.2 A and AA tags. `routes.spec.ts` scans every route in both themes and checks skip links, focus on route change, and key dialogs. `journal.spec.ts` scans the journal, search, filters, revision history (empty and with revisions), composer, and editor in both themes and with high contrast. `modal-dialogs.spec.ts` drives the AI chat, the attachment preview, and the entry summary with the keyboard alone (focus in, Tab trap, Escape, focus back on the opener) and scans the chat and the preview in both themes. Feature specs such as `journal/focus-mode.spec.ts` scan their own surfaces, and `journal/attachment-upload-errors.spec.ts` scans the composer with a pending attachment card in both themes and with high contrast. Give a new page or dialog a scan with the same tags, and report each node's `failureSummary` with its target, as `journal.spec.ts` does, so a failure keeps the measured colors and ratio.
 
 ### Mock API
 
@@ -98,7 +98,7 @@ await expect.poll(() => state.entries[0]?.content).toBe('Updated entry body');
 ```
 
 - Name tests by outcome (`'archives selected entries and reveals them through the archived filter'`, not `'works'`).
-- Prefer `getByRole`, `getByLabel`, and `getByPlaceholder`. Scope to a card (`page.locator('#entry-101')`) or pass `exact: true` when a name is ambiguous.
+- Prefer `getByRole`, `getByLabel`, and `getByPlaceholder`. Scope to a card (`page.locator('#entry-101')`) or pass `exact: true` when a name is ambiguous. A name matches any accessible name that contains it, so a toolbar button named after a filter (**Favorites**) also matches a card's **Add to favorites** while the list still shows the previous results; that race made `journal.spec.ts` fail about once in fifteen runs on four busy workers.
 - Call `setupMockApp` before you navigate. Keep state in the returned `state`, not in module variables; tests run in parallel.
 - Never race a message that hides itself. Install `page.clock` before you navigate, pause it before the action, assert, then `page.clock.runFor(...)` to check that it hides. See `e2e/tags/management.spec.ts`.
 

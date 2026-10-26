@@ -39,7 +39,8 @@ async function expectNoAccessibilityViolations(page: Page) {
     help,
     id,
     impact,
-    targets: nodes.map((node) => node.target),
+    // The summary keeps the measured colors and ratio, so a failure says why, not just where.
+    nodes: nodes.map((node) => ({ target: node.target, summary: node.failureSummary })),
   }));
 
   expect(violations).toEqual([]);
@@ -67,8 +68,8 @@ test.describe('journal accessibility with entries', () => {
 
         await page.getByRole('button', { name: 'Filter archived entries' }).click();
         await expect(page.locator('#entry-64')).toBeVisible();
-        await page.getByRole('button', { name: 'Visibility' }).click();
-        await page.getByRole('button', { name: 'Favorites' }).click();
+        await page.getByRole('button', { name: 'Visibility', exact: true }).click();
+        await page.getByRole('button', { name: 'Favorites', exact: true }).click();
         await page.getByRole('combobox', { name: 'Filter by mood' }).selectOption({ label: 'With a mood' });
         await expect(page.getByText('No entries found')).toBeVisible();
         await expectNoAccessibilityViolations(page);
