@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { unique, type MockAppState } from "./mockApp.shared";
-import { fulfillJson, type RouteContext } from "./mockApp.route-utils";
+import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route-utils";
 import { handleCloudSyncRoutes } from "./mockApp.routes.cloud-sync";
 import { handleAiCredentialRoutes } from "./mockApp.routes.ai-credentials";
 import { handleEntriesRoutes } from "./mockApp.routes.entries";
@@ -60,11 +60,7 @@ async function handleAuthRoutes({
       payload.challengeToken !== state.twoFactorChallengeToken ||
       payload.code !== "123456"
     ) {
-      await fulfillJson(
-        route,
-        { message: "Invalid verification code" },
-        { status: 401 },
-      );
+      await fulfillApiError(route, 401, "AUTH_INVALID_2FA_CODE", "Invalid or expired verification code.");
       return true;
     }
     state.user.twoFactorEnabled = true;
@@ -89,11 +85,7 @@ async function handleAuthRoutes({
       payload.challengeToken !== state.twoFactorChallengeToken ||
       payload.code !== "123456"
     ) {
-      await fulfillJson(
-        route,
-        { message: "Invalid verification code" },
-        { status: 401 },
-      );
+      await fulfillApiError(route, 401, "AUTH_INVALID_2FA_CODE", "Invalid or expired verification code.");
       return true;
     }
     state.authenticated = true;
@@ -120,11 +112,7 @@ async function handleAuthRoutes({
     const payload = request.postDataJSON() as { token?: string };
     state.lastVerificationToken = payload.token ?? null;
     if (!payload.token || payload.token === "expired-token") {
-      await fulfillJson(
-        route,
-        { message: "Invalid or expired verification token" },
-        { status: 400 },
-      );
+      await fulfillApiError(route, 400, "AUTH_INVALID_VERIFICATION_TOKEN", "Invalid or expired verification token");
       return true;
     }
 
@@ -192,11 +180,7 @@ async function handleAuthRoutes({
   // `state.authenticated`, set by login/register/2FA and cleared by logout.
   if (pathname === "/api/auth/refresh") {
     if (!state.authenticated) {
-      await fulfillJson(
-        route,
-        { message: "Refresh token is missing" },
-        { status: 401 },
-      );
+      await fulfillApiError(route, 401, "AUTH_REFRESH_TOKEN_MISSING", "Refresh token is missing");
       return true;
     }
     await fulfillJson(route, { accessToken: "test-access-token" });
@@ -301,11 +285,7 @@ async function handleFeatureRequestRoutes({
       (idea) => idea.id === requestId,
     );
     if (!featureRequest) {
-      await fulfillJson(
-        route,
-        { message: "Feature request not found" },
-        { status: 404 },
-      );
+      await fulfillApiError(route, 404, "FEATURE_REQUEST_NOT_FOUND", "Feature request not found");
       return true;
     }
     if (!state.featureRequestVotes.includes(requestId)) {

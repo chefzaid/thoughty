@@ -1,3 +1,4 @@
+import { apiErrorsTranslations, type ApiErrorTranslationKey } from "./translations.apiErrors";
 import { appImportTranslations, type AppImportTranslationKey } from "./translations.appImport";
 import { memoirTranslations, type MemoirTranslationKey } from "./translations.memoir";
 import { reviewTranslations, type ReviewTranslationKey } from "./translations.review";
@@ -33,6 +34,7 @@ import { fillTranslationParams } from "./translationParams";
 
 /** Every key, merged from the feature files beside this one (translations.<feature>.ts). */
 export type TranslationKey =
+  | ApiErrorTranslationKey
   | AppImportTranslationKey
   | MemoirTranslationKey
   | ReviewTranslationKey
@@ -73,6 +75,7 @@ export type Translations = Record<Language, Record<TranslationKey, string>>;
 
 export const translations: Translations = {
   en: {
+    ...apiErrorsTranslations.en,
     ...appImportTranslations.en,
     ...memoirTranslations.en,
     ...reviewTranslations.en,
@@ -106,6 +109,7 @@ export const translations: Translations = {
     ...commonTranslations.en,
   },
   fr: {
+    ...apiErrorsTranslations.fr,
     ...appImportTranslations.fr,
     ...memoirTranslations.fr,
     ...reviewTranslations.fr,

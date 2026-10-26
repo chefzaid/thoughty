@@ -1,4 +1,4 @@
-import { fulfillJson, type RouteContext } from "./mockApp.route-utils";
+import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route-utils";
 
 // A few of the models OpenRouter lists; the API passes them on as `{ id, name }`, sorted by name.
 const OPENROUTER_MODELS = [
@@ -18,11 +18,7 @@ export async function handleAiCredentialRoutes({
       const payload = request.postDataJSON() as { apiKey?: string };
       state.lastOpenRouterKeyPayload = payload;
       if (!payload.apiKey?.startsWith("sk-or-v1-")) {
-        await fulfillJson(
-          route,
-          { message: "OpenRouter rejected this API key" },
-          { status: 400 },
-        );
+        await fulfillApiError(route, 400, "AI_KEY_REJECTED", "OpenRouter rejected this API key");
         return true;
       }
       state.personalOpenRouterKey = payload.apiKey;
@@ -60,11 +56,7 @@ export async function handleAiCredentialRoutes({
 
   if (pathname === "/api/ai/usage") {
     if (!state.personalOpenRouterKey) {
-      await fulfillJson(
-        route,
-        { message: "Add a personal OpenRouter API key to view usage" },
-        { status: 400 },
-      );
+      await fulfillApiError(route, 400, "AI_PERSONAL_KEY_REQUIRED", "Add a personal OpenRouter API key to view usage");
       return true;
     }
     await fulfillJson(route, {

@@ -1,5 +1,7 @@
 // Base API utilities for making authenticated requests
 
+import { apiErrorsTranslations, type ApiErrorTranslationKey } from '../../utils/translations.apiErrors';
+
 export type AuthFetchFunction = (url: string, options?: RequestInit) => Promise<Response>;
 export type GetAccessTokenFunction = () => string | null;
 
@@ -7,6 +9,7 @@ interface ApiErrorPayload {
   error?: unknown;
   message?: unknown;
   details?: unknown;
+  code?: unknown;
 }
 
 const messageFromUnknown = (value: unknown): string | null => {
@@ -60,6 +63,19 @@ const messageFromPayload = (payload: unknown): string | null => {
   return messageFromUnknown(message) || messageFromUnknown(error) || messageFromUnknown(details);
 };
 
+/** The translation key for the API's error `code` (`apiError_<CODE>`), when the app knows that code. */
+const codeKeyFromPayload = (payload: unknown): ApiErrorTranslationKey | null => {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+  const { code } = payload as ApiErrorPayload;
+  if (typeof code !== 'string') {
+    return null;
+  }
+  const key = `apiError_${code}`;
+  return Object.hasOwn(apiErrorsTranslations.en, key) ? (key as ApiErrorTranslationKey) : null;
+};
+
 const isJsonText = (text: string): boolean => {
   try {
     JSON.parse(text);
@@ -85,10 +101,10 @@ const readBodyText = async (response: Response): Promise<string> => {
 };
 
 /**
- * The API's error message, or `fallback` when it sent none. A fallback the screen shows is a translation key,
- * and the screen translates the result with `t`, which passes the API's own message through unchanged.
- * JSON bodies without a usable message, empty bodies and HTML pages all give the fallback; only a plain-text
- * body is shown as written.
+ * What to show for a failed request, for the screen to translate with `t`: the translation key of the API's
+ * error `code` (`apiError_<CODE>`, see docs/architecture.md), else the API's own message (which `t` passes
+ * through unchanged), else `fallback`, a translation key. JSON bodies without a known code or a usable
+ * message, empty bodies and HTML pages all give the fallback; only a plain-text body is shown as written.
  */
 export const readApiErrorMessage = async (
   response: Response | undefined | null,
@@ -101,7 +117,7 @@ export const readApiErrorMessage = async (
   const jsonResponse = typeof response.clone === 'function' ? response.clone() : response;
   const payload = await safeJsonParse<unknown>(jsonResponse);
   if (payload !== null) {
-    return messageFromPayload(payload) || fallback;
+    return codeKeyFromPayload(payload) || messageFromPayload(payload) || fallback;
   }
 
   const text = await readBodyText(response);

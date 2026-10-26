@@ -1,3 +1,5 @@
+import { STATUS_CODES } from 'node:http';
+
 import type { Request, Route } from '@playwright/test';
 
 import type { MockAppState, MockEntry } from './mockApp.shared';
@@ -22,6 +24,11 @@ export function fulfillJson(
     headers: options.headers,
     body: JSON.stringify(body),
   });
+}
+
+/** Answers like the API's errors: Nest's body plus the stable `code` the web app translates (docs/architecture.md). */
+export function fulfillApiError(route: Route, statusCode: number, code: string, message: string) {
+  return fulfillJson(route, { statusCode, message, error: STATUS_CODES[statusCode] ?? 'Error', code }, { status: statusCode });
 }
 
 export function sortStrings(values: string[]): string[] {

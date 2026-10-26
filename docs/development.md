@@ -89,7 +89,7 @@ Tests are in the [Testing Guide](./testing.md).
 
 ## Changing the API
 
-Backend DTOs and controllers define the API contract ([ADR 0004](./adr/0004-openapi-as-contract-source.md)). After you change a route or DTO, run `npm run api:sync` and commit `thoughty-server/openapi/openapi.json` and `thoughty-web/src/generated/openapi.d.ts`. The frontend must call every product endpoint; `cd thoughty-web && npm run api:usage` checks this.
+Backend DTOs and controllers define the API contract ([ADR 0004](./adr/0004-openapi-as-contract-source.md)). After you change a route or DTO, run `npm run api:sync` and commit `thoughty-server/openapi/openapi.json` and `thoughty-web/src/generated/openapi.d.ts`. The frontend must call every product endpoint; `cd thoughty-web && npm run api:usage` checks this. Errors the web app shows carry a stable `code`: throw them with `apiError(...)` and translate new codes on the web ([API error codes](./architecture.md#api-error-codes)).
 
 ## Changing the Schema
 
