@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { getTranslation } from '../../utils/translations';
 import { createCloudSyncService } from './cloudSyncService';
 
 type Service = ReturnType<typeof createCloudSyncService>;
@@ -177,5 +178,21 @@ describe('cloudSyncService', () => {
     authFetch.mockResolvedValue(jsonResponse({}));
 
     await expect(call(service)).resolves.toEqual({ data: null, error: fallback });
+  });
+
+  it.each([
+    ['refused sign-in', (s: Service) => s.connect('dropbox', 'refused', 'http://localhost/cloud-callback'), 400, 'CLOUD_AUTHORIZATION_REJECTED',
+      'The cloud service did not accept this sign-in. Please connect again.',
+      'Le service cloud n’a pas accepté cette connexion. Veuillez vous reconnecter.'],
+    ['failed provider call', (s: Service) => s.triggerSync('google_drive'), 502, 'CLOUD_PROVIDER_FAILED',
+      'The cloud service could not complete this request. Please try again later.',
+      'Le service cloud n’a pas pu traiter cette demande. Veuillez réessayer plus tard.'],
+  ] as const)('reads a %s in English and French', async (_name, call, status, code, english, french) => {
+    authFetch.mockResolvedValue(jsonResponse({ statusCode: status, message: 'Provider detail', error: 'Error', code }, status));
+
+    const { error } = await call(service);
+
+    expect(getTranslation('en', error!)).toBe(english);
+    expect(getTranslation('fr', error!)).toBe(french);
   });
 });

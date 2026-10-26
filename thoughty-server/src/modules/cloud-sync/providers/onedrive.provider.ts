@@ -1,8 +1,10 @@
 import { cloudFetch as fetch } from './cloud-operation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { providerFailure } from './provider-failure';
 import type { CloudProvider, CloudTokens, CloudFileInfo } from './cloud-provider.interface';
 
+const PROVIDER_NAME = 'OneDrive';
 const MS_AUTH_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize';
 const MS_TOKEN_URL = 'https://login.microsoftonline.com/common/oauth2/v2.0/token';
 const GRAPH_API = 'https://graph.microsoft.com/v1.0';
@@ -45,9 +47,7 @@ export class OneDriveProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`OneDrive token exchange failed: ${error}`);
-      throw new Error('Failed to exchange authorization code');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'token exchange', response, 'code_exchange');
     }
 
     const data = await response.json();
@@ -71,9 +71,7 @@ export class OneDriveProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`OneDrive token refresh failed: ${error}`);
-      throw new Error('Failed to refresh access token');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'token refresh', response, 'token_refresh');
     }
 
     const data = await response.json();
@@ -111,9 +109,7 @@ export class OneDriveProvider implements CloudProvider {
     });
 
     if (!createResponse.ok) {
-      const error = await createResponse.text();
-      this.logger.error(`OneDrive folder creation failed: ${error}`);
-      throw new Error('Failed to create app folder');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'app folder creation', createResponse);
     }
 
     const folderData = await createResponse.json();
@@ -129,7 +125,7 @@ export class OneDriveProvider implements CloudProvider {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to list files');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'file list', response);
     }
 
     const data = await response.json();
@@ -159,9 +155,7 @@ export class OneDriveProvider implements CloudProvider {
     );
 
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`OneDrive upload failed: ${error}`);
-      throw new Error('Failed to upload file');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'upload', response);
     }
 
     const fileData = await response.json();
@@ -183,7 +177,7 @@ export class OneDriveProvider implements CloudProvider {
     );
 
     if (!response.ok) {
-      throw new Error('Failed to download file');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'download', response);
     }
 
     return response.text();

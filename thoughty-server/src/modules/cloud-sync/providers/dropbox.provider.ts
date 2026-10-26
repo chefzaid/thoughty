@@ -1,8 +1,10 @@
 import { cloudFetch as fetch } from './cloud-operation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { providerFailure } from './provider-failure';
 import type { CloudProvider, CloudTokens, CloudFileInfo } from './cloud-provider.interface';
 
+const PROVIDER_NAME = 'Dropbox';
 const DROPBOX_AUTH_URL = 'https://www.dropbox.com/oauth2/authorize';
 const DROPBOX_TOKEN_URL = 'https://api.dropboxapi.com/oauth2/token';
 const DROPBOX_API = 'https://api.dropboxapi.com/2';
@@ -45,9 +47,7 @@ export class DropboxProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`Dropbox token exchange failed: ${error}`);
-      throw new Error('Failed to exchange authorization code');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'token exchange', response, 'code_exchange');
     }
 
     const data = await response.json();
@@ -71,9 +71,7 @@ export class DropboxProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`Dropbox token refresh failed: ${error}`);
-      throw new Error('Failed to refresh access token');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'token refresh', response, 'token_refresh');
     }
 
     const data = await response.json();
@@ -107,11 +105,10 @@ export class DropboxProvider implements CloudProvider {
     });
 
     if (!createResponse.ok) {
+      // Ignore conflict errors (folder already exists). The body is only checked, never logged.
       const error = await createResponse.text();
-      // Ignore conflict errors (folder already exists)
       if (!error.includes('conflict')) {
-        this.logger.error(`Dropbox folder creation failed: ${error}`);
-        throw new Error('Failed to create app folder');
+        throw await providerFailure(this.logger, PROVIDER_NAME, 'app folder creation', createResponse);
       }
     }
   }
@@ -133,7 +130,7 @@ export class DropboxProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to list files');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'file list', response);
     }
 
     const data = await response.json();
@@ -168,9 +165,7 @@ export class DropboxProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`Dropbox upload failed: ${error}`);
-      throw new Error('Failed to upload file');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'upload', response);
     }
 
     const fileData = await response.json();
@@ -194,7 +189,7 @@ export class DropboxProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to download file');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'download', response);
     }
 
     return response.text();

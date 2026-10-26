@@ -1,8 +1,10 @@
 import { cloudFetch as fetch } from './cloud-operation';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { providerFailure } from './provider-failure';
 import type { CloudProvider, CloudTokens, CloudFileInfo } from './cloud-provider.interface';
 
+const PROVIDER_NAME = 'Google Drive';
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_DRIVE_API = 'https://www.googleapis.com/drive/v3';
@@ -48,9 +50,7 @@ export class GoogleDriveProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`Google token exchange failed: ${error}`);
-      throw new Error('Failed to exchange authorization code');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'token exchange', response, 'code_exchange');
     }
 
     const data = await response.json();
@@ -74,9 +74,7 @@ export class GoogleDriveProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`Google token refresh failed: ${error}`);
-      throw new Error('Failed to refresh access token');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'token refresh', response, 'token_refresh');
     }
 
     const data = await response.json();
@@ -99,7 +97,7 @@ export class GoogleDriveProvider implements CloudProvider {
     });
 
     if (!searchResponse.ok) {
-      throw new Error('Failed to search for app folder');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'app folder search', searchResponse);
     }
 
     const searchData = await searchResponse.json();
@@ -121,7 +119,7 @@ export class GoogleDriveProvider implements CloudProvider {
     });
 
     if (!createResponse.ok) {
-      throw new Error('Failed to create app folder');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'app folder creation', createResponse);
     }
 
     const folderData = await createResponse.json();
@@ -142,7 +140,7 @@ export class GoogleDriveProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to list files');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'file list', response);
     }
 
     const data = await response.json();
@@ -208,9 +206,7 @@ export class GoogleDriveProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      const error = await response.text();
-      this.logger.error(`Google Drive upload failed: ${error}`);
-      throw new Error('Failed to upload file');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'upload', response);
     }
 
     const fileData = await response.json();
@@ -228,7 +224,7 @@ export class GoogleDriveProvider implements CloudProvider {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to download file');
+      throw await providerFailure(this.logger, PROVIDER_NAME, 'download', response);
     }
 
     return response.text();

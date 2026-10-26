@@ -1,4 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException } from '@nestjs/common';
+import { apiError } from '@/common/errors';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { CloudSyncService } from './cloud-sync.service';
 import { createCloudSyncTestBed } from './cloud-sync.test-helpers';
@@ -133,7 +134,7 @@ describe('CloudSyncService', () => {
       expect(googleDriveProvider.listFiles).toHaveBeenCalledWith('new-access');
     });
 
-    it('should clear tokens and throw when refresh fails', async () => {
+    function expiredTokens() {
       const expiredTime = String(Date.now() - 120000);
       settingRepository.findOne.mockImplementation(({ where }: any) => {
         if (where.key === 'cloud_google_drive_access_token') return { value: service['encrypt']('old-access') };
@@ -141,12 +142,54 @@ describe('CloudSyncService', () => {
         if (where.key === 'cloud_google_drive_expires_at') return { value: expiredTime };
         return null;
       });
-
-      googleDriveProvider.refreshAccessToken.mockRejectedValue(new Error('invalid_grant'));
       settingRepository.delete.mockResolvedValue({});
+    }
+
+    it('should clear tokens and throw when the provider refuses the refresh token', async () => {
+      expiredTokens();
+      googleDriveProvider.refreshAccessToken.mockRejectedValue(
+        apiError(BadRequestException, 'CLOUD_CONNECTION_EXPIRED', 'Google Drive connection expired. Please reconnect.'),
+      );
 
       await expectApiError(service.listFiles(1, 'google_drive'), BadRequestException, 'CLOUD_CONNECTION_EXPIRED');
       expect(settingRepository.delete).toHaveBeenCalled();
+      expect(googleDriveProvider.listFiles).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['the provider fails', apiError(BadGatewayException, 'CLOUD_PROVIDER_FAILED')],
+      ['storing the new tokens fails', new Error('database unavailable')],
+    ])('keeps the connection when %s during a refresh', async (_case, failure) => {
+      expiredTokens();
+      googleDriveProvider.refreshAccessToken.mockRejectedValue(failure);
+
+      await expect(service.listFiles(1, 'google_drive')).rejects.toBe(failure);
+      expect(settingRepository.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('provider failures', () => {
+    it('passes a refused authorization code on as a coded error and stores nothing', async () => {
+      googleDriveProvider.exchangeCode.mockRejectedValue(apiError(BadRequestException, 'CLOUD_AUTHORIZATION_REJECTED'));
+
+      await expectApiError(
+        service.connect(1, 'google_drive', 'bad-code', 'http://localhost/callback'),
+        BadRequestException,
+        'CLOUD_AUTHORIZATION_REJECTED',
+      );
+      expect(settingRepository.upsert).not.toHaveBeenCalled();
+    });
+
+    it('passes a failed file list on as a 502', async () => {
+      settingRepository.findOne.mockImplementation(({ where }: any) => {
+        if (where.key === 'cloud_google_drive_access_token') return { value: service['encrypt']('access') };
+        if (where.key === 'cloud_google_drive_refresh_token') return { value: service['encrypt']('refresh') };
+        if (where.key === 'cloud_google_drive_expires_at') return { value: String(Date.now() + 3600000) };
+        return null;
+      });
+      googleDriveProvider.listFiles.mockRejectedValue(apiError(BadGatewayException, 'CLOUD_PROVIDER_FAILED'));
+
+      await expectApiError(service.listFiles(1, 'google_drive'), BadGatewayException, 'CLOUD_PROVIDER_FAILED');
     });
   });
 

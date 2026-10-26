@@ -54,4 +54,24 @@ test.describe('Cloud sync errors', () => {
     await expect(page.getByText('Ce service cloud n’est pas pris en charge.')).toBeVisible();
     await expect(page.getByText('Échec de la connexion au fournisseur cloud')).toHaveCount(0);
   });
+
+  test('say when the provider refused a sign-in or failed an upload, in French', async ({ page }) => {
+    const { state } = await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr' } });
+    await page.route('http://localhost:5173/api/cloud-sync/connect', (route) =>
+      fulfillApiError(route, 400, 'CLOUD_AUTHORIZATION_REJECTED', 'Dropbox did not accept this sign-in. Please connect again.'));
+    await page.route('http://localhost:5173/api/cloud-sync/upload*', (route) =>
+      fulfillApiError(route, 502, 'CLOUD_PROVIDER_FAILED', 'Google Drive could not complete the request'));
+
+    await page.goto('/profile');
+    await expect(page.getByText('Dropbox')).toBeVisible();
+    await page.evaluate(() => globalThis.postMessage({ type: 'cloud-oauth-callback', provider: 'dropbox', code: 'refused' }, '*'));
+    await expect(page.getByText('Le service cloud n’a pas accepté cette connexion. Veuillez vous reconnecter.')).toBeVisible();
+
+    await page.goto('/import-export?diary=1&section=import');
+    const card = page.locator('.cloud-sync-card', { hasText: 'Google Drive' });
+    await card.getByRole('button', { name: 'Exporter vers le cloud' }).click();
+    await expect(page.locator('.import-export .message.error'))
+      .toHaveText('Le service cloud n’a pas pu traiter cette demande. Veuillez réessayer plus tard.');
+    expect(state.lastCloudUploadPayload).toBeNull();
+  });
 });

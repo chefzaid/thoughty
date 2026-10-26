@@ -1,4 +1,6 @@
+import { BadGatewayException, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { OneDriveProvider } from './onedrive.provider';
 
 // Mock global fetch
@@ -54,11 +56,14 @@ describe('OneDriveProvider', () => {
     });
 
     it('should throw when token exchange fails', async () => {
-      mockFetch.mockResolvedValue({ ok: false, text: async () => 'error' });
+      mockFetch.mockResolvedValue({ ok: false, status: 400, text: async () => 'invalid_grant: code bad-code' });
 
-      await expect(
+      await expectApiError(
         provider.exchangeCode('bad-code', 'http://localhost/callback'),
-      ).rejects.toThrow('Failed to exchange authorization code');
+        BadRequestException,
+        'CLOUD_AUTHORIZATION_REJECTED',
+      );
+      expect((provider as any).logger.error).not.toHaveBeenCalledWith(expect.stringContaining('bad-code'));
     });
   });
 
@@ -94,11 +99,15 @@ describe('OneDriveProvider', () => {
     });
 
     it('should throw when refresh fails', async () => {
-      mockFetch.mockResolvedValue({ ok: false, text: async () => 'invalid_grant' });
+      mockFetch.mockResolvedValue({ ok: false, status: 400, text: async () => 'invalid_grant' });
 
-      await expect(
-        provider.refreshAccessToken('bad-refresh'),
-      ).rejects.toThrow('Failed to refresh access token');
+      await expectApiError(provider.refreshAccessToken('bad-refresh'), BadRequestException, 'CLOUD_CONNECTION_EXPIRED');
+    });
+
+    it('should report a provider failure, not an expired connection, when the refresh is refused for another reason', async () => {
+      mockFetch.mockResolvedValue({ ok: false, status: 401, text: async () => 'invalid_client' });
+
+      await expectApiError(provider.refreshAccessToken('refresh-123'), BadGatewayException, 'CLOUD_PROVIDER_FAILED');
     });
   });
 
@@ -188,12 +197,16 @@ describe('OneDriveProvider', () => {
         })
         .mockResolvedValueOnce({
           ok: false,
+          status: 503,
           text: async () => 'upload error',
         });
 
-      await expect(
+      await expectApiError(
         provider.uploadFile('access-token', 'export.txt', 'content', 'text/plain'),
-      ).rejects.toThrow('Failed to upload file');
+        BadGatewayException,
+        'CLOUD_PROVIDER_FAILED',
+      );
+      expect((provider as any).logger.error).not.toHaveBeenCalledWith(expect.stringContaining('upload error'));
     });
   });
 
@@ -210,11 +223,23 @@ describe('OneDriveProvider', () => {
     });
 
     it('should throw when download fails', async () => {
-      mockFetch.mockResolvedValue({ ok: false });
+      mockFetch.mockResolvedValue({ ok: false, status: 500 });
 
-      await expect(
-        provider.downloadFile('access-token', 'bad-id'),
-      ).rejects.toThrow('Failed to download file');
+      await expectApiError(provider.downloadFile('access-token', 'bad-id'), BadGatewayException, 'CLOUD_PROVIDER_FAILED');
+    });
+
+    it('should report an expired connection when the access token is refused', async () => {
+      mockFetch.mockResolvedValue({ ok: false, status: 401 });
+
+      await expectApiError(provider.downloadFile('revoked-token', 'file-1'), BadRequestException, 'CLOUD_CONNECTION_EXPIRED');
+    });
+  });
+
+  describe('unreachable provider', () => {
+    it('should report a failed file list as a provider failure', async () => {
+      mockFetch.mockResolvedValue({ ok: false, status: 503, text: async () => 'service unavailable' });
+
+      await expectApiError(provider.listFiles('access-token'), BadGatewayException, 'CLOUD_PROVIDER_FAILED');
     });
   });
 });

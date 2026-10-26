@@ -20,7 +20,7 @@ function createProviderMock() {
 
 /**
  * A fresh `CloudSyncService` over a settings repository mock, an `IoService` mock and one mock per
- * storage provider, returned with them. The service's error log is silenced.
+ * storage provider, returned with them. The service's error and warning logs are silenced.
  */
 export async function createCloudSyncTestBed() {
   const settingRepository = {
@@ -46,7 +46,9 @@ export async function createCloudSyncTestBed() {
   }).compile();
 
   const service = module.get<CloudSyncService>(CloudSyncService);
-  jest.spyOn((service as unknown as { logger: { error: () => void } }).logger, 'error').mockImplementation();
+  const { logger } = service as unknown as { logger: { error: () => void; warn: () => void } };
+  jest.spyOn(logger, 'error').mockImplementation();
+  jest.spyOn(logger, 'warn').mockImplementation();
 
   return { service, settingRepository, ioService, googleDriveProvider, oneDriveProvider, dropboxProvider };
 }

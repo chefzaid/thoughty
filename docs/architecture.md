@@ -203,6 +203,8 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 | Cloud sync | `CLOUD_NOT_CONNECTED` | Not connected to this cloud provider |
 |  | `CLOUD_CONNECTION_EXPIRED` | Cloud connection expired. Please reconnect. |
 |  | `CLOUD_UNKNOWN_PROVIDER` | Unknown provider |
+|  | `CLOUD_AUTHORIZATION_REJECTED` | The cloud provider did not accept this sign-in. Please connect again. |
+|  | `CLOUD_PROVIDER_FAILED` | The cloud provider could not complete the request |
 | Guided memoir | `MEMOIR_UNKNOWN_QUESTION` | Unknown memoir question |
 |  | `MEMOIR_NOT_STARTED` | The guided memoir has not been started |
 |  | `MEMOIR_ALREADY_STARTED` | The guided memoir is already started |

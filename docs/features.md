@@ -95,6 +95,7 @@ A program that turns the journal into a life story, at `/memoir`.
 - Upload an export, browse and download provider files, and import journal files from the cloud.
 - Scheduled sync every 6 hours, 12 hours, day, or week (skipped when nothing changed), plus a manual **Sync Now**.
 - A refused connection, upload, file list, download or import, schedule change, or sync says why in the reader's language, such as « La connexion à ce service cloud a expiré. Veuillez le reconnecter. » when the provider's access ran out, and falls back to a generic failure message when the API gives no reason.
+- When the provider itself fails, the API answers with a code rather than a bare server error: a sign-in code the provider turns down reads as « Le service cloud n’a pas accepté cette connexion. Veuillez vous reconnecter. », a revoked or expired access token as the expired connection above, and a provider that is down, slow, or refuses for another reason as a 502 « Le service cloud n’a pas pu traiter cette demande. Veuillez réessayer plus tard. ». Only a refused refresh token disconnects the account; a provider outage or a server credential problem during a refresh leaves it connected.
 
 ## Social
 

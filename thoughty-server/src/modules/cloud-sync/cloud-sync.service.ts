@@ -1,5 +1,5 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
-import { apiError } from '@/common/errors';
+import { Injectable, BadRequestException, HttpException, Logger } from '@nestjs/common';
+import { apiError, apiErrorCodeOf } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Setting } from '@/database/entities';
@@ -126,11 +126,15 @@ export class CloudSyncService {
       await this.storeTokens(userId, provider, newTokens);
       return newTokens.accessToken;
     } catch (error) {
-      // A cancelled/partitioned worker must not disconnect a healthy account.
+      // A cancelled/partitioned worker must not disconnect a healthy account, and neither must a provider that is
+      // down or refuses this server's own credentials: only a refused refresh token disconnects.
       checkCloudCancellation();
-      this.logger.error(`Failed to refresh token for ${provider}:`, error);
+      if (!(error instanceof HttpException) || apiErrorCodeOf(error) !== 'CLOUD_CONNECTION_EXPIRED') {
+        throw error;
+      }
+      this.logger.warn(`The ${provider} refresh token was refused; disconnecting user ${userId}`);
       await this.clearTokens(userId, provider);
-      throw apiError(BadRequestException, 'CLOUD_CONNECTION_EXPIRED', `${provider.replace('_', ' ')} connection expired. Please reconnect.`);
+      throw error;
     }
   }
 

@@ -1,3 +1,5 @@
+import { BadGatewayException, Logger } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { cloudFetch, withCloudOperation } from './cloud-operation';
 
 describe('cloud operation cancellation', () => {
@@ -33,5 +35,24 @@ describe('cloud operation cancellation', () => {
       verifyOwnership: async () => { throw new Error('lease lost'); } },
     () => cloudFetch('https://provider.test/upload'))).rejects.toThrow('lease lost');
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('answers a 502 when a provider cannot be reached, without the request path', async () => {
+    jest.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'));
+    const logError = jest.spyOn(Logger.prototype, 'error').mockImplementation();
+
+    await expectApiError(cloudFetch('https://provider.test/files/secret-file-id'), BadGatewayException, 'CLOUD_PROVIDER_FAILED');
+    await expectApiError(withCloudOperation({ signal: new AbortController().signal, verifyOwnership: async () => undefined },
+      () => cloudFetch(new Request('https://provider.test/upload'))), BadGatewayException, 'CLOUD_PROVIDER_FAILED');
+    expect(logError).toHaveBeenCalledWith('Cloud provider request to provider.test failed: TypeError');
+    expect(logError).not.toHaveBeenCalledWith(expect.stringContaining('secret-file-id'));
+  });
+
+  it('keeps a manual request\'s own cancellation error', async () => {
+    const controller = new AbortController();
+    controller.abort();
+    jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('aborted by caller'));
+
+    await expect(cloudFetch('https://provider.test/upload', { signal: controller.signal })).rejects.toThrow('aborted by caller');
   });
 });
