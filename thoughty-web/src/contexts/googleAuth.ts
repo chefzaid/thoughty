@@ -36,7 +36,7 @@ export function signInWithGoogleAccount(
   return new Promise((resolve, reject) => {
     const google = (globalThis as unknown as { google?: GoogleApi }).google;
     if (!google || !googleClientId) {
-      reject(new Error('Google Sign-In not configured'));
+      reject(new Error('googleSignInUnavailable'));
       return;
     }
 
@@ -44,7 +44,7 @@ export function signInWithGoogleAccount(
       client_id: googleClientId,
       callback: (response) => {
         if (!response.credential) {
-          reject(new Error('Google did not return a credential'));
+          reject(new Error('googleSignInFailed'));
           return;
         }
         void loginWithCredential(response.credential).then(resolve).catch(reject);

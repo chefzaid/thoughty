@@ -374,7 +374,7 @@ export const createAiService = (
       if (!response.ok) {
         return {
           data: null,
-          error: await readApiErrorMessage(response, "Could not save API key"),
+          error: await readApiErrorMessage(response, "apiKeySaveError"),
         };
       }
       return {
@@ -383,7 +383,7 @@ export const createAiService = (
       };
     } catch (error) {
       console.error("Error saving OpenRouter credential:", error);
-      return { data: null, error: "Could not save API key" };
+      return { data: null, error: "apiKeySaveError" };
     }
   };
 
@@ -399,7 +399,7 @@ export const createAiService = (
           data: null,
           error: await readApiErrorMessage(
             response,
-            "Could not remove API key",
+            "apiKeyRemoveError",
           ),
         };
       }
@@ -409,7 +409,7 @@ export const createAiService = (
       };
     } catch (error) {
       console.error("Error removing OpenRouter credential:", error);
-      return { data: null, error: "Could not remove API key" };
+      return { data: null, error: "apiKeyRemoveError" };
     }
   };
 
@@ -446,17 +446,17 @@ export const createAiService = (
           data: null,
           error: await readApiErrorMessage(
             response,
-            "Could not create retag plan",
+            "journalRetagError",
           ),
         };
       }
       const data = await safeJsonParse<unknown>(response);
       return isJournalRetagPlan(data)
         ? { data, error: null }
-        : { data: null, error: "Could not create retag plan" };
+        : { data: null, error: "journalRetagError" };
     } catch (error) {
       console.error("Error creating journal retag plan:", error);
-      return { data: null, error: "Could not create retag plan" };
+      return { data: null, error: "journalRetagError" };
     }
   };
 
@@ -474,7 +474,7 @@ export const createAiService = (
           data: null,
           error: await readApiErrorMessage(
             response,
-            "Could not apply retag plan",
+            "journalRetagApplyError",
           ),
         };
       }
@@ -487,7 +487,7 @@ export const createAiService = (
           (data as { affectedEntries?: unknown }).affectedEntries,
         )
       ) {
-        return { data: null, error: "Could not apply retag plan" };
+        return { data: null, error: "journalRetagApplyError" };
       }
       return {
         data: data as { success: boolean; affectedEntries: number },
@@ -495,7 +495,7 @@ export const createAiService = (
       };
     } catch (error) {
       console.error("Error applying journal retag plan:", error);
-      return { data: null, error: "Could not apply retag plan" };
+      return { data: null, error: "journalRetagApplyError" };
     }
   };
 

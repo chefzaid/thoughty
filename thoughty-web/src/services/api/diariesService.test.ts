@@ -97,7 +97,7 @@ describe('diariesService', () => {
 
       const result = await service.createDiary({ name: 'New Diary' });
 
-      expect(result).toEqual({ success: false, error: 'Failed to create diary' });
+      expect(result).toEqual({ success: false, error: 'diaryCreateFailed' });
     });
 
     it('returns error on exception', async () => {
@@ -106,7 +106,7 @@ describe('diariesService', () => {
 
       const result = await service.createDiary({ name: 'New Diary' });
 
-      expect(result).toEqual({ success: false, error: 'Failed to create diary' });
+      expect(result).toEqual({ success: false, error: 'diaryCreateFailed' });
       consoleSpy.mockRestore();
     });
   });
@@ -146,7 +146,7 @@ describe('diariesService', () => {
 
       const result = await service.updateDiary(1, { name: 'Updated' });
 
-      expect(result).toEqual({ success: false, error: 'Failed to update diary' });
+      expect(result).toEqual({ success: false, error: 'diaryUpdateFailed' });
     });
 
     it('returns error on exception', async () => {
@@ -155,7 +155,7 @@ describe('diariesService', () => {
 
       const result = await service.updateDiary(1, { name: 'Updated' });
 
-      expect(result).toEqual({ success: false, error: 'Failed to update diary' });
+      expect(result).toEqual({ success: false, error: 'diaryUpdateFailed' });
       consoleSpy.mockRestore();
     });
   });
@@ -192,7 +192,7 @@ describe('diariesService', () => {
 
       const result = await service.deleteDiary(1);
 
-      expect(result).toEqual({ success: false, error: 'Failed to delete diary' });
+      expect(result).toEqual({ success: false, error: 'diaryDeleteFailed' });
     });
 
     it('returns error on exception', async () => {
@@ -201,7 +201,7 @@ describe('diariesService', () => {
 
       const result = await service.deleteDiary(1);
 
-      expect(result).toEqual({ success: false, error: 'Failed to delete diary' });
+      expect(result).toEqual({ success: false, error: 'diaryDeleteFailed' });
       consoleSpy.mockRestore();
     });
   });
@@ -238,7 +238,7 @@ describe('diariesService', () => {
 
       const result = await service.setDefaultDiary(1);
 
-      expect(result).toEqual({ success: false, error: 'Failed to set default diary' });
+      expect(result).toEqual({ success: false, error: 'diarySetDefaultFailed' });
     });
 
     it('returns error on exception', async () => {
@@ -247,7 +247,7 @@ describe('diariesService', () => {
 
       const result = await service.setDefaultDiary(1);
 
-      expect(result).toEqual({ success: false, error: 'Failed to set default diary' });
+      expect(result).toEqual({ success: false, error: 'diarySetDefaultFailed' });
       consoleSpy.mockRestore();
     });
   });
@@ -285,7 +285,7 @@ describe('diariesService', () => {
 
       const result = await service.reorderDiaries([3, 1, 2]);
 
-      expect(result).toEqual({ success: false, error: 'Failed to reorder diaries' });
+      expect(result).toEqual({ success: false, error: 'diaryReorderFailed' });
       consoleSpy.mockRestore();
     });
   });

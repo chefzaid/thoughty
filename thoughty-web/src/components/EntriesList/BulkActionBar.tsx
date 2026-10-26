@@ -110,6 +110,7 @@ export function BulkActionBar({
                                 tagMetadata={tagMetadata}
                                 onChange={setBulkTags}
                                 placeholder={t('selectTags')}
+                                t={t}
                                 theme={isDark ? 'dark' : 'light'}
                             />
                             <div className="flex gap-2 mt-2">

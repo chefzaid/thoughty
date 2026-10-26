@@ -259,7 +259,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       startSession(data);
       return { success: true };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Registration failed';
+      const message = err instanceof Error ? err.message : 'authFailed';
       setError(message);
       return { success: false, error: message };
     }
@@ -283,7 +283,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       startSession(data);
       return { success: true };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Login failed';
+      const message = err instanceof Error ? err.message : 'authFailed';
       setError(message);
       return { success: false, error: message };
     }
@@ -299,7 +299,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       startSession(data);
       return { success: true };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Two-factor verification failed';
+      const message = err instanceof Error ? err.message : 'twoFactorVerificationFailed';
       setError(message);
       return { success: false, error: message };
     }
@@ -316,7 +316,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
         expiresInSeconds: data.expiresInSeconds,
       };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to resend verification code';
+      const message = err instanceof Error ? err.message : 'twoFactorResendFailed';
       setError(message);
       return { success: false, error: message };
     }
@@ -333,19 +333,19 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       });
 
       if (!response.ok) {
-        throw new Error(await readApiErrorMessage(response, 'OAuth login failed'));
+        throw new Error(await readApiErrorMessage(response, 'googleSignInFailed'));
       }
 
       const data = await safeJsonParse<TokenResponse>(response);
 
       if (!data) {
-        throw new Error('Server unavailable');
+        throw new Error('serverUnavailable');
       }
 
       startSession(data);
       return { success: true, isNewUser: data.user.isNewUser };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'OAuth login failed';
+      const message = err instanceof Error ? err.message : 'googleSignInFailed';
       setError(message);
       return { success: false, error: message };
     }
@@ -391,12 +391,12 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       });
 
       if (!response.ok) {
-        throw new Error(await readApiErrorMessage(response, 'Password change failed'));
+        throw new Error(await readApiErrorMessage(response, 'passwordChangeFailed'));
       }
 
       return { success: true };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Password change failed';
+      const message = err instanceof Error ? err.message : 'passwordChangeFailed';
       setError(message);
       return { success: false, error: message };
     }
@@ -413,14 +413,14 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       });
 
       if (!response.ok) {
-        throw new Error(await readApiErrorMessage(response, 'Failed to send reset email'));
+        throw new Error(await readApiErrorMessage(response, 'forgotPasswordFailed'));
       }
 
       const data = await safeJsonParse<{ message?: string }>(response);
 
       return { success: true, message: data?.message };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to send reset email';
+      const message = err instanceof Error ? err.message : 'forgotPasswordFailed';
       setError(message);
       return { success: false, error: message };
     }
@@ -503,7 +503,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       });
 
       if (!response.ok) {
-        throw new Error(await readApiErrorMessage(response, 'Failed to delete account'));
+        throw new Error(await readApiErrorMessage(response, 'deleteAccountFailed'));
       }
 
       const data = await safeJsonParse<{ message?: string }>(response);
@@ -513,7 +513,7 @@ export function AuthProvider({ children }: Readonly<AuthProviderProps>) {
       setUser(null);
       return { success: true, message: data?.message };
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete account';
+      const message = err instanceof Error ? err.message : 'deleteAccountFailed';
       setError(message);
       return { success: false, error: message };
     }

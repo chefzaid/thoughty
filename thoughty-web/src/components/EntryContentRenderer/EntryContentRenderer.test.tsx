@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { getTranslation } from '../../utils/translations';
 import EntryContentRenderer from './EntryContentRenderer';
 
 describe('EntryContentRenderer', () => {
@@ -9,7 +10,8 @@ describe('EntryContentRenderer', () => {
     const defaultProps = {
         content: '',
         onNavigateToEntry: mockOnNavigateToEntry,
-        theme: 'dark' as const
+        theme: 'dark' as const,
+        t: (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params),
     };
 
     beforeEach(() => {
@@ -161,6 +163,12 @@ describe('EntryContentRenderer', () => {
 
             const link = screen.getByRole('button');
             expect(link).toHaveAttribute('title', 'Navigate to entry on 2026-01-10 (#2)');
+        });
+
+        it('shows the tooltip in French', () => {
+            render(<EntryContentRenderer {...defaultProps} content="[[2026-01-10]]" t={(key, params) => getTranslation('fr', key, params)} />);
+
+            expect(screen.getByRole('button')).toHaveAttribute('title', "Aller à l'entrée du 2026-01-10");
         });
     });
 

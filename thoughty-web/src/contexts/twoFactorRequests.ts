@@ -26,7 +26,7 @@ export async function getTwoFactorStatus(authFetch: AuthFetchFunction): Promise<
 
 export async function startTwoFactorSetup(authFetch: AuthFetchFunction): Promise<TwoFactorChallenge> {
   const response = await authFetch('/api/auth/two-factor/setup', { method: 'POST' });
-  return parseResponse(response, 'Unable to start two-factor setup');
+  return parseResponse(response, 'twoFactorSetupFailed');
 }
 
 export async function enableTwoFactor(
@@ -38,7 +38,7 @@ export async function enableTwoFactor(
     method: 'POST',
     body: JSON.stringify({ challengeToken, code }),
   });
-  return parseResponse(response, 'Unable to enable two-factor authentication');
+  return parseResponse(response, 'twoFactorEnableFailed');
 }
 
 export async function disableTwoFactor(
@@ -49,5 +49,5 @@ export async function disableTwoFactor(
     method: 'POST',
     body: JSON.stringify({ password }),
   });
-  return parseResponse(response, 'Unable to disable two-factor authentication');
+  return parseResponse(response, 'twoFactorDisableFailed');
 }

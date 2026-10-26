@@ -61,7 +61,7 @@ function ProfileHeaderCard({
         aria-label={t('changeProfilePicture')}
       >
         {localConfig.avatarUrl || user?.avatarUrl ? (
-          <img src={localConfig.avatarUrl || user?.avatarUrl} alt="Profile" className="avatar-image" />
+          <img src={localConfig.avatarUrl || user?.avatarUrl} alt={t('profilePictureAlt')} className="avatar-image" />
         ) : (
           initial
         )}

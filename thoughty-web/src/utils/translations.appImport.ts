@@ -27,6 +27,7 @@ export type AppImportTranslationKey =
   | 'appImportDone'
   | 'appImportStopped'
   | 'appImportFailed'
+  | 'appImportAttachError'
   | 'appImportResultImported'
   | 'appImportResultAlready'
   | 'appImportResultAttached'
@@ -69,6 +70,7 @@ export const appImportTranslations: Record<Language, Record<AppImportTranslation
     appImportDone: 'Import finished',
     appImportStopped: 'Import stopped. Choose the same export again to continue where it stopped.',
     appImportFailed: 'The import stopped: {error}. Choose the same export again to continue where it stopped.',
+    appImportAttachError: 'Failed to attach files',
     appImportResultImported: 'New entries',
     appImportResultAlready: 'Already imported',
     appImportResultAttached: 'Files attached',
@@ -110,6 +112,7 @@ export const appImportTranslations: Record<Language, Record<AppImportTranslation
     appImportDone: 'Import terminé',
     appImportStopped: 'Import arrêté. Choisissez à nouveau le même export pour reprendre là où il s’est arrêté.',
     appImportFailed: 'L’import s’est interrompu : {error}. Choisissez à nouveau le même export pour reprendre là où il s’est arrêté.',
+    appImportAttachError: 'Échec de l’ajout des fichiers',
     appImportResultImported: 'Nouvelles entrées',
     appImportResultAlready: 'Déjà importées',
     appImportResultAttached: 'Fichiers joints',

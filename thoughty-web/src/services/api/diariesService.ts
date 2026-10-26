@@ -29,12 +29,12 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
         body: JSON.stringify(diaryData)
       });
       if (!response.ok) {
-        return { success: false, error: await readApiErrorMessage(response, 'Failed to create diary') };
+        return { success: false, error: await readApiErrorMessage(response, 'diaryCreateFailed') };
       }
       return { success: true };
     } catch (error) {
       console.error('Error creating diary:', error);
-      return { success: false, error: 'Failed to create diary' };
+      return { success: false, error: 'diaryCreateFailed' };
     }
   };
 
@@ -48,12 +48,12 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
         body: JSON.stringify(diaryData)
       });
       if (!response.ok) {
-        return { success: false, error: await readApiErrorMessage(response, 'Failed to update diary') };
+        return { success: false, error: await readApiErrorMessage(response, 'diaryUpdateFailed') };
       }
       return { success: true };
     } catch (error) {
       console.error('Error updating diary:', error);
-      return { success: false, error: 'Failed to update diary' };
+      return { success: false, error: 'diaryUpdateFailed' };
     }
   };
 
@@ -64,12 +64,12 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
     try {
       const response = await authFetch(`/api/diaries/${id}`, { method: 'DELETE' });
       if (!response.ok) {
-        return { success: false, error: await readApiErrorMessage(response, 'Failed to delete diary') };
+        return { success: false, error: await readApiErrorMessage(response, 'diaryDeleteFailed') };
       }
       return { success: true };
     } catch (error) {
       console.error('Error deleting diary:', error);
-      return { success: false, error: 'Failed to delete diary' };
+      return { success: false, error: 'diaryDeleteFailed' };
     }
   };
 
@@ -80,12 +80,12 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
     try {
       const response = await authFetch(`/api/diaries/${id}/default`, { method: 'PATCH' });
       if (!response.ok) {
-        return { success: false, error: await readApiErrorMessage(response, 'Failed to set default diary') };
+        return { success: false, error: await readApiErrorMessage(response, 'diarySetDefaultFailed') };
       }
       return { success: true };
     } catch (error) {
       console.error('Error setting default diary:', error);
-      return { success: false, error: 'Failed to set default diary' };
+      return { success: false, error: 'diarySetDefaultFailed' };
     }
   };
 
@@ -99,12 +99,12 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
         body: JSON.stringify({ orderedIds }),
       });
       if (!response.ok) {
-        return { success: false, error: await readApiErrorMessage(response, 'Failed to reorder diaries') };
+        return { success: false, error: await readApiErrorMessage(response, 'diaryReorderFailed') };
       }
       return { success: true };
     } catch (error) {
       console.error('Error reordering diaries:', error);
-      return { success: false, error: 'Failed to reorder diaries' };
+      return { success: false, error: 'diaryReorderFailed' };
     }
   };
 

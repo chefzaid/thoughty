@@ -14,6 +14,7 @@ interface AttachmentPreviewContentProps {
   readonly mimetype: string;
   readonly sourceUrl: string | null;
   readonly variant?: AttachmentPreviewVariant;
+  readonly t: (key: string) => string;
 }
 
 function AttachmentFileIcon() {
@@ -49,6 +50,7 @@ function AttachmentPreviewContent({
   mimetype,
   sourceUrl,
   variant = 'compact',
+  t,
 }: AttachmentPreviewContentProps) {
   if (!sourceUrl || !hasInlineAttachmentPreview(mimetype)) {
     return <AttachmentFileIcon />;
@@ -69,7 +71,7 @@ function AttachmentPreviewContent({
     return (
       <audio controls preload="metadata" className="w-full" aria-label={name}>
         <source src={sourceUrl} type={mimetype} />
-        <track kind="captions" src={EMPTY_CAPTIONS_TRACK_URL} srcLang="en" label="No captions available" default />
+        <track kind="captions" src={EMPTY_CAPTIONS_TRACK_URL} srcLang="en" label={t('captionsUnavailable')} default />
       </audio>
     );
   }

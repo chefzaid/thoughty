@@ -9,7 +9,7 @@ interface ConfirmModalProps {
   /** Label of the confirming button; defaults to Delete. */
   confirmLabel?: string;
   theme?: 'light' | 'dark';
-  t?: TranslationFunction;
+  t: TranslationFunction;
 }
 
 const ConfirmModal = ({
@@ -34,7 +34,7 @@ const ConfirmModal = ({
         className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
         onClick={onClose}
         onKeyDown={(e) => e.key === 'Escape' && onClose()}
-        aria-label="Close modal"
+        aria-label={t('closeDialog')}
       />
 
       {/* Modal */}
@@ -60,13 +60,13 @@ const ConfirmModal = ({
                 : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
             }`}
           >
-            {t ? t('cancel') : 'Cancel'}
+            {t('cancel')}
           </button>
           <button type="button"
             onClick={onConfirm}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
           >
-            {confirmLabel ?? (t ? t('delete') : 'Delete')}
+            {confirmLabel ?? t('delete')}
           </button>
         </div>
       </div>

@@ -64,6 +64,8 @@ interface TagBadgeProps {
   readonly showHash?: boolean;
   readonly removable?: boolean;
   readonly onRemove?: () => void;
+  /** Accessible name of the remove button, in the reader's language. */
+  readonly removeLabel?: string;
   readonly size?: 'sm' | 'xs' | '2xs';
   readonly suffix?: string;
   readonly className?: string;
@@ -78,6 +80,7 @@ function TagBadge({
   showHash = true,
   removable = false,
   onRemove,
+  removeLabel,
   size = 'sm',
   suffix = '',
   className = '',
@@ -127,7 +130,7 @@ function TagBadge({
         <button
           type="button"
           onClick={onRemove}
-          aria-label={`Remove ${tag} tag`}
+          aria-label={removeLabel}
           className="font-bold leading-none opacity-80 transition-opacity hover:opacity-100"
         >
           &times;

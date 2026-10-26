@@ -543,6 +543,6 @@ describe('AuthContext', () => {
         });
 
         expect(error).toBeInstanceOf(Error);
-        expect((error as Error).message).toBe('Google Sign-In not configured');
+        expect((error as Error).message).toBe('googleSignInUnavailable');
     });
 });

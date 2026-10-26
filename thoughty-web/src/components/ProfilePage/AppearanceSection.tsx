@@ -122,7 +122,7 @@ function LanguageSetting({
           onClick={() => handleChange({ target: { name: 'language', value: 'en' } })}
           title="English"
         >
-          <img src="/flags/gb.svg" alt="UK Flag" className="flag-icon" /> English
+          <img src="/flags/gb.svg" alt="" className="flag-icon" /> English
         </button>
         <button
           type="button"
@@ -130,7 +130,7 @@ function LanguageSetting({
           onClick={() => handleChange({ target: { name: 'language', value: 'fr' } })}
           title="Français"
         >
-          <img src="/flags/fr.svg" alt="French Flag" className="flag-icon" /> Français
+          <img src="/flags/fr.svg" alt="" className="flag-icon" /> Français
         </button>
       </div>
     </div>

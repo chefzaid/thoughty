@@ -82,6 +82,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     const [editIcon, setEditIcon] = useState<string>('');
     const [editColor, setEditColor] = useState<string>(DEFAULT_NEW_DIARY_COLOR);
     const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
+    /** A translation key, or a message the API sent, which `t` passes through. */
     const [error, setError] = useState<string>('');
     const [showIconPicker, setShowIconPicker] = useState<'new' | number | null>(null);
     const dragItem = useRef<number | null>(null);
@@ -102,7 +103,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         setError('');
 
         if (!newDiaryName.trim()) {
-            setError(t('diaryName') + ' is required');
+            setError('diaryNameRequired');
             return;
         }
 
@@ -118,7 +119,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
             setNewDiaryColor(DEFAULT_NEW_DIARY_COLOR);
             setNewDiaryVisibility('private');
         } catch (err) {
-            setError((err as Error).message || 'Failed to create diary');
+            setError((err as Error).message || 'diaryCreateFailed');
         }
     };
 
@@ -142,20 +143,20 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
             });
             setEditingDiary(null);
         } catch (err) {
-            setError((err as Error).message || 'Failed to update diary');
+            setError((err as Error).message || 'diaryUpdateFailed');
         }
     };
 
     const handleDelete = async (diary: Diary): Promise<void> => {
         if (diary.is_default) {
-            setError('Cannot delete the default diary');
+            setError('diaryDefaultDeleteBlocked');
             return;
         }
         if (globalThis.confirm(`${t('deleteDiary')}? ${t('deleteDiaryWarning')}`)) {
             try {
                 await onDeleteDiary(diary.id);
             } catch (err) {
-                setError((err as Error).message || 'Failed to delete diary');
+                setError((err as Error).message || 'diaryDeleteFailed');
             }
         }
     };
@@ -164,7 +165,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         try {
             await onSetDefault(diary.id);
         } catch (err) {
-            setError((err as Error).message || 'Failed to set default diary');
+            setError((err as Error).message || 'diarySetDefaultFailed');
         }
     };
 
@@ -194,7 +195,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         try {
             await onReorderDiaries(reordered.map(d => d.id));
         } catch (err) {
-            setError((err as Error).message || 'Failed to reorder diaries');
+            setError((err as Error).message || 'diaryReorderFailed');
         }
     };
 
@@ -214,7 +215,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         try {
             await onReorderDiaries(reordered.map((diary) => diary.id));
         } catch (err) {
-            setError((err as Error).message || 'Failed to reorder diaries');
+            setError((err as Error).message || 'diaryReorderFailed');
         }
     };
 
@@ -232,7 +233,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
 
             {error && (
                 <div className="error-message">
-                    {error}
+                    {t(error)}
                     <button type="button" onClick={() => setError('')}>×</button>
                 </div>
             )}
@@ -288,7 +289,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                     type="button"
                                     className={`toggle-switch ${newDiaryVisibility === 'public' ? 'public' : 'private'}`}
                                     onClick={() => setNewDiaryVisibility(newDiaryVisibility === 'private' ? 'public' : 'private')}
-                                    aria-label="Toggle visibility"
+                                    aria-label={t('diaryVisibilityToggle')}
                                     title={t('visibilityOverrideHint')}
                                 >
                                     <span className={`toggle-thumb ${newDiaryVisibility === 'public' ? 'on' : 'off'}`} />
@@ -368,7 +369,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                         type="button"
                                                         className={`toggle-switch ${editVisibility === 'public' ? 'public' : 'private'}`}
                                                         onClick={() => setEditVisibility(editVisibility === 'private' ? 'public' : 'private')}
-                                                        aria-label="Toggle visibility"
+                                                        aria-label={t('diaryVisibilityToggle')}
                                                         title={t('visibilityOverrideHint')}
                                                     >
                                                         <span className={`toggle-thumb ${editVisibility === 'public' ? 'on' : 'off'}`} />

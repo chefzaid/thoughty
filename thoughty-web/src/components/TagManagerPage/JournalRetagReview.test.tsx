@@ -141,4 +141,19 @@ describe("JournalRetagReview", () => {
     await user.click(screen.getByRole("button", { name: translate("applyJournalRetag") }));
     expect(await screen.findByText(applied)).toBeVisible();
   });
+
+  it.each([
+    ["en", "journalRetagError", "Could not analyze the journal."],
+    ["fr", "journalRetagError", "Impossible d'analyser le journal."],
+    ["fr", "Provider unavailable", "Provider unavailable"],
+  ] as const)("shows a failed preview in %s (%s)", async (language, error, expected) => {
+    const user = userEvent.setup();
+    previewJournalRetag.mockResolvedValue({ data: null, error });
+    const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+
+    render(<JournalRetagReview isDark language={language} onApplied={vi.fn().mockResolvedValue(undefined)} t={translate} />);
+    await user.click(screen.getByRole("button", { name: translate("organizeJournalTags") }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(expected);
+  });
 });

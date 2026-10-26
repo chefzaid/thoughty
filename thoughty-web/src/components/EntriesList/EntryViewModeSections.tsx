@@ -294,6 +294,7 @@ export function EntryBodySection({
                     searchTerm={searchTerm}
                     searchMatches={entry.search_matches}
                     onToggleTask={onToggleTask}
+                    t={t}
                 />
             </div>
             <div className={`mt-3 flex flex-wrap gap-2 text-xs ${mutedTextClass(isDark)}`}>

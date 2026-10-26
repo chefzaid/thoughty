@@ -97,6 +97,7 @@ function AuthenticatedAppLayout({
           title={t('deleteEntryTitle')}
           message={t('deleteEntryMessage')}
           theme={config.theme}
+          t={t}
         />
 
         <ConfirmModal
@@ -106,6 +107,7 @@ function AuthenticatedAppLayout({
           title={t('bulkDeleteTitle')}
           message={pluralPhrase(t, 'bulkDeleteMessage', selectedCount, resolveLanguage(config.language))}
           theme={config.theme}
+          t={t}
         />
 
         <AutoDismiss message={entryToast} durationMs={4000}>

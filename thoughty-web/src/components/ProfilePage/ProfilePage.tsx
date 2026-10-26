@@ -88,7 +88,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
     setDeletingAccount(false);
 
     if (!result.success) {
-      setDeleteError(result.error || t('deleteAccountFailed'));
+      setDeleteError(t(result.error || 'deleteAccountFailed'));
     }
   };
 
@@ -128,7 +128,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
         setNewPassword('');
         setConfirmNewPassword('');
       } else {
-        setPasswordError(result.error || t('passwordChangeFailed'));
+        setPasswordError(t(result.error || 'passwordChangeFailed'));
       }
     })();
   };

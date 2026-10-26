@@ -161,6 +161,20 @@ describe('AppImportPanel', () => {
     expect(await screen.findByText(expected)).toBeInTheDocument();
   });
 
+  it.each([
+    ['en', 'The import stopped: Failed to import entries.'],
+    ['fr', 'L’import s’est interrompu : Échec de l\'importation des entrées.'],
+  ] as const)('translates an import failure the API did not explain in %s', async (language, expected) => {
+    vi.mocked(readAppExport).mockResolvedValue(dayOneExport);
+    vi.mocked(runAppImport).mockRejectedValue(new Error('importError'));
+    const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+    render(<AppImportPanel language={language} t={translate} />);
+    chooseExport('export.zip', translate('appImportChoose'));
+
+    fireEvent.click(await screen.findByRole('button', { name: translate('appImportStart') }));
+    expect(await screen.findByText(expected, { exact: false })).toBeInTheDocument();
+  });
+
   it('shows why an import failed', async () => {
     vi.mocked(readAppExport).mockResolvedValue(dayOneExport);
     vi.mocked(runAppImport).mockRejectedValue(new Error('Diary not found'));

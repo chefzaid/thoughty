@@ -61,6 +61,7 @@ function AttachmentPreviewDialog({ preview, isDark, onClose, t }: AttachmentPrev
             mimetype={preview.mimetype}
             sourceUrl={preview.sourceUrl}
             variant="modal"
+            t={t}
           />
         </div>
       </div>

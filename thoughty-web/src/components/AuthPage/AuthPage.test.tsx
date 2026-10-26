@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import AuthPage from './AuthPage';
 import { useAuth } from '../../contexts/AuthContext';
+import { getTranslation } from '../../utils/translations';
 
 // Mock the auth context
 vi.mock('../../contexts/AuthContext', () => ({
@@ -150,6 +151,23 @@ describe('AuthPage', () => {
         await waitFor(() => {
             expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
         });
+    });
+
+    it.each([
+        ['en', 'authFailed', 'Authentication failed. Please try again.'],
+        ['fr', 'authFailed', "Échec de l'authentification. Veuillez réessayer."],
+        ['fr', 'serverUnavailable', 'Le serveur est indisponible. Veuillez réessayer plus tard.'],
+        ['fr', 'Invalid credentials', 'Invalid credentials'],
+    ] as const)('translates the sign-in error in %s (%s), passing an API message through', async (language, error, expected) => {
+        mockLogin.mockResolvedValue({ success: false, error });
+        const t = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+        render(<AuthPage t={t} theme="dark" />);
+
+        fireEvent.change(screen.getByLabelText(t('emailOrUsername')), { target: { value: 'user@test.com' } });
+        fireEvent.change(screen.getByLabelText(t('password')), { target: { value: 'password123' } });
+        fireEvent.click(screen.getByRole('button', { name: t('signIn') }));
+
+        expect(await screen.findByText(expected)).toBeInTheDocument();
     });
 
     it('submits registration successfully', async () => {

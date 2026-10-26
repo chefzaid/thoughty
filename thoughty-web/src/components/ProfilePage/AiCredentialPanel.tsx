@@ -62,7 +62,7 @@ function AiCredentialPanel({
     const result = await aiService.updateCredential(apiKey.trim());
     setBusy(false);
     if (!result.data) {
-      setMessage({ kind: "error", text: result.error || t("apiKeySaveError") });
+      setMessage({ kind: "error", text: t(result.error || "apiKeySaveError") });
       return;
     }
     setStatus(result.data);
@@ -80,7 +80,7 @@ function AiCredentialPanel({
     if (!result.data) {
       setMessage({
         kind: "error",
-        text: result.error || t("apiKeyRemoveError"),
+        text: t(result.error || "apiKeyRemoveError"),
       });
       return;
     }

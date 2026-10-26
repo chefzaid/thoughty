@@ -41,7 +41,7 @@ export const createAppImportService = (authFetch: (url: string, options?: Reques
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(request),
       }),
-      'Failed to import entries',
+      'importError',
     );
   },
 
@@ -52,7 +52,7 @@ export const createAppImportService = (authFetch: (url: string, options?: Reques
     for (const file of files) {
       form.append('files', file);
     }
-    return requestImport(authFetch('/api/io/import/attachments', { method: 'POST', body: form }), 'Failed to attach files');
+    return requestImport(authFetch('/api/io/import/attachments', { method: 'POST', body: form }), 'appImportAttachError');
   },
 });
 

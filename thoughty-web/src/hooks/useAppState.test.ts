@@ -682,19 +682,23 @@ describe("useAppState Hooks", () => {
       expect(result.current.entries[0]?.content).toBe("- [x] One\n- [x] Two");
     });
 
-    it("goes back to the saved entry and says why when a tick fails", async () => {
+    it.each([
+      ["en", "That line is no longer a task.", "That line is no longer a task."],
+      ["en", "taskUpdateFailed", "Failed to update the task."],
+      ["fr", undefined, "Échec de la mise à jour de la tâche."],
+    ])("goes back to the saved entry and says why when a tick fails (%s, %s)", async (language, error, expected) => {
       const alertSpy = vi.spyOn(globalThis, "alert").mockImplementation(() => {});
-      const setEntryTask = vi.fn().mockResolvedValue({ success: false, error: "That line is no longer a task." });
+      const setEntryTask = vi.fn().mockResolvedValue({ success: false, error });
       const fetchEntries = await mockTaskEntriesService(setEntryTask);
 
-      const { result } = renderHook(() => useEntries(true, mockConfig, null));
+      const { result } = renderHook(() => useEntries(true, { ...mockConfig, language }, null));
       await waitFor(() => expect(result.current.entries).toHaveLength(1));
 
       act(() => {
         result.current.setEntryTask(result.current.entries[0]!, 0, true);
       });
 
-      await waitFor(() => expect(alertSpy).toHaveBeenCalledWith("That line is no longer a task."));
+      await waitFor(() => expect(alertSpy).toHaveBeenCalledWith(expected));
       expect(fetchEntries).toHaveBeenCalledTimes(2);
       await waitFor(() => expect(result.current.entries[0]?.content).toBe("- [ ] One\n- [ ] Two"));
       alertSpy.mockRestore();

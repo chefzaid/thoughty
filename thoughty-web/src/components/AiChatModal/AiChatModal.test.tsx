@@ -25,6 +25,7 @@ const t = (key: string) => {
     aiChatError: 'Unable to get a response.',
     exportChatHistory: 'Export Chat',
     discussEntry: 'Discuss with AI',
+    closeDialog: 'Close dialog',
   };
   return translations[key] ?? key;
 };
@@ -128,7 +129,7 @@ describe('AiChatModal', () => {
       const user = userEvent.setup();
       render(<AiChatModal {...defaultProps} />);
       
-      const backdrop = screen.getByLabelText('Close modal');
+      const backdrop = screen.getByLabelText('Close dialog');
       await user.click(backdrop);
       expect(defaultProps.onClose).toHaveBeenCalledOnce();
     });

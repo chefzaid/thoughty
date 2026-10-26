@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { getTranslation } from '../../utils/translations';
 import ConfirmModal from './ConfirmModal';
 
 describe('ConfirmModal', () => {
@@ -10,7 +11,8 @@ describe('ConfirmModal', () => {
         onConfirm: vi.fn(),
         title: 'Delete Entry',
         message: 'Are you sure you want to delete this entry?',
-        theme: 'dark' as const
+        theme: 'dark' as const,
+        t: (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params),
     };
 
     beforeEach(() => {
@@ -104,6 +106,19 @@ describe('ConfirmModal', () => {
                 await user.click(backdrop);
                 expect(onClose).toHaveBeenCalledTimes(1);
             }
+        });
+    });
+
+    describe('Language', () => {
+        it.each([
+            ['en', 'Close dialog', 'Cancel', 'Delete'],
+            ['fr', 'Fermer la fenêtre', 'Annuler', 'Supprimer'],
+        ] as const)('labels the backdrop and buttons in %s', (language, closeLabel, cancelLabel, deleteLabel) => {
+            render(<ConfirmModal {...defaultProps} t={(key, params) => getTranslation(language, key, params)} />);
+
+            expect(screen.getByRole('button', { name: closeLabel })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: cancelLabel })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: deleteLabel })).toBeInTheDocument();
         });
     });
 });

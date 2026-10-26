@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, type KeyboardEvent, type ChangeEvent } from 'react';
 import TagBadge from '../TagBadge/TagBadge';
+import type { TranslationFunction } from '../../types';
 import { getTagMetadata, type TagMetadataMap } from '../../utils/tagMetadata';
 
 interface TagPickerProps {
@@ -8,9 +9,10 @@ interface TagPickerProps {
     tagMetadata?: TagMetadataMap;
     onChange: (tags: string[]) => void;
     allowNew?: boolean;
-    placeholder?: string;
+    placeholder: string;
     singleSelect?: boolean;
     theme?: 'light' | 'dark';
+    t: TranslationFunction;
 }
 
 function TagPicker({
@@ -19,9 +21,10 @@ function TagPicker({
     tagMetadata,
     onChange,
     allowNew = true,
-    placeholder = "Add tags...",
+    placeholder,
     singleSelect = false,
-    theme = 'dark'
+    theme = 'dark',
+    t,
 }: Readonly<TagPickerProps>) {
     const [inputValue, setInputValue] = useState<string>('');
     const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -107,7 +110,7 @@ function TagPicker({
         if (e.key === 'Enter') {
             e.preventDefault();
             if (inputValue.trim()) {
-                const exactMatch = filteredTags.find(t => t.toLowerCase() === inputValue.trim().toLowerCase());
+                const exactMatch = filteredTags.find(tag => tag.toLowerCase() === inputValue.trim().toLowerCase());
                 if (exactMatch) {
                     handleSelectTag(exactMatch);
                 } else if (allowNew) {
@@ -132,6 +135,7 @@ function TagPicker({
                         showHash={false}
                         removable={true}
                         onRemove={() => handleRemoveTag(tag)}
+                        removeLabel={t('removeTagNamed', { tag })}
                     />
                 ))}
                 <input
@@ -165,20 +169,20 @@ function TagPicker({
                             </button>
                         </li>
                     ))}
-                    {allowNew && inputValue && !filteredTags.some(t => t.toLowerCase() === inputValue.toLowerCase()) && (
+                    {allowNew && inputValue && !filteredTags.some(tag => tag.toLowerCase() === inputValue.toLowerCase()) && (
                         <li>
                             <button
                                 type="button"
                                 onClick={handleCreateTag}
                                 className={`w-full text-left px-4 py-2 cursor-pointer font-medium ${isLight ? 'hover:bg-gray-100 text-blue-600' : 'hover:bg-gray-700 text-blue-400'}`}
                             >
-                                Create "{inputValue}"
+                                {t('tagPickerCreate', { tag: inputValue })}
                             </button>
                         </li>
                     )}
                     {filteredTags.length === 0 && (!allowNew || !inputValue) && (
                         <li className={`px-4 py-2 italic ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
-                            No tags found
+                            {t('tagPickerNoTags')}
                         </li>
                     )}
                 </ul>

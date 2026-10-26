@@ -47,6 +47,10 @@ export const safeJsonParse = async <T = unknown>(response: Response | undefined 
   }
 };
 
+/**
+ * The API's error message, or `fallback` when it sent none. A fallback the screen shows is a translation key,
+ * and the screen translates the result with `t`, which passes the API's own message through unchanged.
+ */
 export const readApiErrorMessage = async (
   response: Response | undefined | null,
   fallback: string

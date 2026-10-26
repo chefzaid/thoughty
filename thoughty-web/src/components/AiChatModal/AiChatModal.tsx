@@ -149,7 +149,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
         className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
         onClick={onClose}
         onKeyDown={(e) => e.key === 'Escape' && onClose()}
-        aria-label="Close modal"
+        aria-label={t('closeDialog')}
       />
 
       {/* Modal */}

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { getTranslation } from '../../utils/translations';
 import TagPicker from './TagPicker';
 
 describe('TagPicker', () => {
@@ -11,7 +12,8 @@ describe('TagPicker', () => {
         allowNew: true,
         placeholder: 'Add tags...',
         singleSelect: false,
-        theme: 'dark' as const
+        theme: 'dark' as const,
+        t: (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params),
     };
 
     beforeEach(() => {
@@ -257,6 +259,24 @@ describe('TagPicker', () => {
             await user.keyboard('{Backspace}');
 
             expect(onChange).toHaveBeenCalledWith(['work']);
+        });
+    });
+
+    describe('Language', () => {
+        it.each([
+            ['en', 'Remove work tag', 'Create "garden"', 'No tags found'],
+            ['fr', 'Retirer le tag work', 'Créer « garden »', 'Aucun tag trouvé'],
+        ] as const)('labels the remove button and the menu in %s', async (language, removeLabel, createLabel, emptyLabel) => {
+            const user = userEvent.setup();
+            const t = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+            const { rerender } = render(<TagPicker {...defaultProps} selectedTags={['work']} t={t} />);
+
+            expect(screen.getByRole('button', { name: removeLabel })).toBeInTheDocument();
+            await user.type(screen.getByRole('textbox'), 'garden');
+            expect(screen.getByText(createLabel)).toBeInTheDocument();
+
+            rerender(<TagPicker {...defaultProps} selectedTags={['work']} allowNew={false} t={t} />);
+            expect(screen.getByText(emptyLabel)).toBeInTheDocument();
         });
     });
 });

@@ -117,7 +117,7 @@ function ImportResult({
 }: Readonly<{ summary: AppImportSummary | null; error?: string; language: Language; onReset: () => void; t: TranslationFunction }>) {
   let title = t('appImportDone');
   if (error) {
-    title = t('appImportFailed', { error });
+    title = t('appImportFailed', { error: t(error) });
   } else if (summary?.stopped) {
     title = t('appImportStopped');
   }

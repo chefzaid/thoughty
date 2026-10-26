@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { getTranslation } from '../../utils/translations';
 import DiaryManager from './DiaryManager';
 
 const mockT = (key: string): string => key;
@@ -76,6 +77,23 @@ describe('DiaryManager', () => {
         await waitFor(() => {
             expect(screen.getByText('Create failed')).toBeInTheDocument();
         });
+    });
+
+    it.each([
+        ['en', 'Diary name is required', 'Failed to create diary', 'Toggle visibility'],
+        ['fr', 'Le nom du journal est obligatoire', 'Échec de la création du journal', 'Changer la visibilité'],
+    ] as const)('shows its own messages in %s', async (language, nameRequired, createFailed, toggleLabel) => {
+        const t = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+        const onCreateDiary = vi.fn().mockRejectedValue(new Error('diaryCreateFailed'));
+        render(<DiaryManager {...baseProps} onCreateDiary={onCreateDiary} t={t} />);
+
+        expect(screen.getByRole('button', { name: toggleLabel })).toBeInTheDocument();
+        fireEvent.click(screen.getByText(t('createDiary')));
+        expect(await screen.findByText(nameRequired)).toBeInTheDocument();
+
+        fireEvent.change(screen.getByPlaceholderText(t('diaryName')), { target: { value: 'New Diary' } });
+        fireEvent.click(screen.getByText(t('createDiary')));
+        expect(await screen.findByText(createFailed)).toBeInTheDocument();
     });
 
     it('sets default diary', async () => {

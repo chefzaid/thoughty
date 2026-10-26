@@ -76,7 +76,7 @@ function JournalRetagReview({ isDark, language, onApplied, t }: JournalRetagRevi
     const result = await aiService.previewJournalRetag();
     setLoading(false);
     if (!result.data) {
-      setError(result.error || t("journalRetagError"));
+      setError(t(result.error || "journalRetagError"));
       return;
     }
     setPlan(result.data);
@@ -114,7 +114,7 @@ function JournalRetagReview({ isDark, language, onApplied, t }: JournalRetagRevi
     const result = await aiService.applyJournalRetag(mode, assignments);
     setApplying(false);
     if (!result.data?.success) {
-      setError(result.error || t("journalRetagApplyError"));
+      setError(t(result.error || "journalRetagApplyError"));
       return;
     }
     setAppliedCount(result.data.affectedEntries);

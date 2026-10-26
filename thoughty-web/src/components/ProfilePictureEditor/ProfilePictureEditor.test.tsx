@@ -92,7 +92,8 @@ describe('ProfilePictureEditor', () => {
         fireEvent.change(input, { target: { files: [file] } });
 
         await waitFor(() => {
-            expect(screen.getByLabelText('Zoom')).toBeInTheDocument();
+            expect(screen.getByLabelText('profilePictureZoom')).toBeInTheDocument();
+            expect(screen.getByAltText('profilePicturePreview')).toBeInTheDocument();
             expect(screen.getByText('save')).toBeEnabled();
         });
 

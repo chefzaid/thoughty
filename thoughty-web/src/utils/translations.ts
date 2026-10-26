@@ -125,6 +125,7 @@ type CoreTranslationKey =
   | "page"
   | "ofTotal"
   | "close"
+  | "closeDialog"
   | "backToTop"
   | "fullName"
   | "fullNameDescription"
@@ -145,6 +146,9 @@ type CoreTranslationKey =
   | "genderOther"
   | "changeProfilePicture"
   | "editProfilePicture"
+  | "profilePictureAlt"
+  | "profilePicturePreview"
+  | "profilePictureZoom"
   | "clickToUpload"
   | "maxFileSize"
   | "changeImage"
@@ -202,6 +206,8 @@ type CoreTranslationKey =
   | "suggestedTags"
   | "noTags"
   | "noMatchingTag"
+  | "tagPickerCreate"
+  | "tagPickerNoTags"
   | "journalRetagSelected_one"
   | "journalRetagSelected_other"
   | "applyingJournalRetag"
@@ -238,6 +244,7 @@ type CoreTranslationKey =
   | "addTag"
   | "tagAlreadyExists"
   | "deleteTag"
+  | "removeTagNamed"
   | "deleteTagConfirm_one"
   | "deleteTagConfirm_other"
   | "deleteTagFailed"
@@ -271,6 +278,9 @@ type CoreTranslationKey =
   | "twoFactorVerificationFailed"
   | "twoFactorResendFailed"
   | "twoFactorRequestFailed"
+  | "twoFactorSetupFailed"
+  | "twoFactorEnableFailed"
+  | "twoFactorDisableFailed"
   | "enterSixDigitCode"
   | "verifyAndSignIn"
   | "resendCode"
@@ -367,6 +377,7 @@ type CoreTranslationKey =
   | "lessActivity"
   | "moreActivity"
   | "noJournalActivity"
+  | "statsLoadError"
   | "statsHeatmapDay_one"
   | "statsHeatmapDay_other"
   | "importExport"
@@ -709,6 +720,8 @@ type CoreTranslationKey =
   | "passwordsDoNotMatch"
   | "authFailed"
   | "googleSignInFailed"
+  | "googleSignInUnavailable"
+  | "serverUnavailable"
   | "forgotPassword"
   | "sendResetLink"
   | "backToLogin"
@@ -723,6 +736,7 @@ type CoreTranslationKey =
   | "deleteAccountFailed"
   | "passwordRequired"
   | "backToSource"
+  | "navigateToEntryOn"
   | "backlinks"
   | "backlinksCount_one"
   | "backlinksCount_other"
@@ -734,10 +748,18 @@ type CoreTranslationKey =
   | "newDiary"
   | "diaryName"
   | "diaryColor"
+  | "diaryVisibilityToggle"
   | "setAsDefault"
   | "defaultDiary"
   | "deleteDiary"
   | "deleteDiaryWarning"
+  | "diaryNameRequired"
+  | "diaryDefaultDeleteBlocked"
+  | "diaryCreateFailed"
+  | "diaryUpdateFailed"
+  | "diaryDeleteFailed"
+  | "diarySetDefaultFailed"
+  | "diaryReorderFailed"
   | "createDiary"
   | "allDiaries"
   | "noDiaries"
@@ -783,6 +805,7 @@ type CoreTranslationKey =
   | "attachmentTypeNotAllowed"
   | "attachmentTooLarge"
   | "previewAttachment"
+  | "captionsUnavailable"
   | "downloadAttachment"
   | "transcribeAudio"
   | "transcribingAudio"
@@ -794,6 +817,8 @@ type CoreTranslationKey =
   | "unfavorite"
   | "pinEntry"
   | "unpinEntry"
+  | "pinUpdateFailed"
+  | "taskUpdateFailed"
   | "pinned"
   | "pinnedEntries"
   | "favorites"
@@ -1078,6 +1103,7 @@ export const translations: Translations = {
     page: "Page",
     ofTotal: "of {total}",
     close: "Close",
+    closeDialog: "Close dialog",
     backToTop: "Back to top",
 
     // Settings
@@ -1100,6 +1126,9 @@ export const translations: Translations = {
     genderOther: "Other",
     changeProfilePicture: "Change profile picture",
     editProfilePicture: "Edit Profile Picture",
+    profilePictureAlt: "Profile picture",
+    profilePicturePreview: "Profile picture preview",
+    profilePictureZoom: "Zoom",
     clickToUpload: "Click to upload an image",
     maxFileSize: "Maximum file size: 5MB",
     changeImage: "Choose different image",
@@ -1164,6 +1193,8 @@ export const translations: Translations = {
     suggestedTags: "Suggested tags",
     noTags: "No tags",
     noMatchingTag: "No matching tag",
+    tagPickerCreate: "Create \"{tag}\"",
+    tagPickerNoTags: "No tags found",
     journalRetagSelected_one: "{count} entry selected",
     journalRetagSelected_other: "{count} entries selected",
     applyingJournalRetag: "Applying changes...",
@@ -1201,6 +1232,7 @@ export const translations: Translations = {
     addTag: "Add tag",
     tagAlreadyExists: "That tag already exists.",
     deleteTag: "Delete tag",
+    removeTagNamed: "Remove {tag} tag",
     deleteTagConfirm_one: "Delete #{tag}? It will be removed from {count} entry. The entry itself is kept.",
     deleteTagConfirm_other: "Delete #{tag}? It will be removed from {count} entries. The entries themselves are kept.",
     deleteTagFailed: "Unable to delete the tag. Please try again.",
@@ -1241,6 +1273,9 @@ export const translations: Translations = {
       "The verification code could not be confirmed.",
     twoFactorResendFailed: "A new code could not be sent.",
     twoFactorRequestFailed: "The two-factor request failed.",
+    twoFactorSetupFailed: "Two-factor setup could not start.",
+    twoFactorEnableFailed: "Two-factor authentication could not be turned on.",
+    twoFactorDisableFailed: "Two-factor authentication could not be turned off.",
     enterSixDigitCode: "Enter the 6-digit code.",
     verifyAndSignIn: "Verify and sign in",
     resendCode: "Resend code",
@@ -1355,6 +1390,7 @@ export const translations: Translations = {
     lessActivity: "Less",
     moreActivity: "More",
     noJournalActivity: "No journaling activity yet.",
+    statsLoadError: "Failed to load statistics",
     statsHeatmapDay_one: "{count} entry on {date}",
     statsHeatmapDay_other: "{count} entries on {date}",
 
@@ -1744,6 +1780,8 @@ export const translations: Translations = {
     passwordsDoNotMatch: "Passwords do not match",
     authFailed: "Authentication failed. Please try again.",
     googleSignInFailed: "Google sign-in failed. Please try again.",
+    googleSignInUnavailable: "Google sign-in is not available.",
+    serverUnavailable: "The server is unavailable. Please try again later.",
     forgotPassword: "Forgot password?",
     sendResetLink: "Send Reset Link",
     backToLogin: "Back to Login",
@@ -1765,6 +1803,7 @@ export const translations: Translations = {
 
     // Entry Cross-References
     backToSource: "Back to source entry",
+    navigateToEntryOn: "Navigate to entry on {date}{index}",
     backlinks: "Backlinks",
     backlinksCount_one: "{count} link",
     backlinksCount_other: "{count} links",
@@ -1780,10 +1819,18 @@ export const translations: Translations = {
     newDiary: "New Diary",
     diaryName: "Diary Name",
     diaryColor: "Color",
+    diaryVisibilityToggle: "Toggle visibility",
     setAsDefault: "Set as Default",
     defaultDiary: "Default Diary",
     deleteDiary: "Delete Diary",
     deleteDiaryWarning: "Entries will be moved to your default diary.",
+    diaryNameRequired: "Diary name is required",
+    diaryDefaultDeleteBlocked: "Cannot delete the default diary",
+    diaryCreateFailed: "Failed to create diary",
+    diaryUpdateFailed: "Failed to update diary",
+    diaryDeleteFailed: "Failed to delete diary",
+    diarySetDefaultFailed: "Failed to set default diary",
+    diaryReorderFailed: "Failed to reorder diaries",
     createDiary: "Create Diary",
     allDiaries: "All Diaries",
     noDiaries: "No diaries found. Create one to get started!",
@@ -1835,6 +1882,7 @@ export const translations: Translations = {
       "This file type is not allowed. Allowed: images, audio, PDF, plain text.",
     attachmentTooLarge: "File is too large. Maximum size is 5 MB.",
     previewAttachment: "Preview",
+    captionsUnavailable: "No captions available",
     downloadAttachment: "Download attachment",
     transcribeAudio: "Transcribe audio",
     transcribingAudio: "Transcribing...",
@@ -1847,6 +1895,8 @@ export const translations: Translations = {
     unfavorite: "Remove from favorites",
     pinEntry: "Pin entry",
     unpinEntry: "Unpin entry",
+    pinUpdateFailed: "Failed to update pinned state",
+    taskUpdateFailed: "Failed to update the task.",
     pinned: "Pinned",
     pinnedEntries: "Pinned entries",
     favorites: "Favorites",
@@ -2132,6 +2182,7 @@ export const translations: Translations = {
     page: "Page",
     ofTotal: "sur {total}",
     close: "Fermer",
+    closeDialog: "Fermer la fenêtre",
     backToTop: "Retour en haut",
 
     // Settings
@@ -2155,6 +2206,9 @@ export const translations: Translations = {
     genderOther: "Autre",
     changeProfilePicture: "Changer la photo de profil",
     editProfilePicture: "Modifier la photo de profil",
+    profilePictureAlt: "Photo de profil",
+    profilePicturePreview: "Aperçu de la photo de profil",
+    profilePictureZoom: "Zoom",
     clickToUpload: "Cliquez pour télécharger une image",
     maxFileSize: "Taille maximale du fichier : 5 Mo",
     changeImage: "Choisir une autre image",
@@ -2222,6 +2276,8 @@ export const translations: Translations = {
     suggestedTags: "Tags suggérés",
     noTags: "Aucun tag",
     noMatchingTag: "Aucun tag correspondant",
+    tagPickerCreate: "Créer « {tag} »",
+    tagPickerNoTags: "Aucun tag trouvé",
     journalRetagSelected_one: "{count} entrée sélectionnée",
     journalRetagSelected_other: "{count} entrées sélectionnées",
     applyingJournalRetag: "Application des changements...",
@@ -2259,6 +2315,7 @@ export const translations: Translations = {
     addTag: "Ajouter le tag",
     tagAlreadyExists: "Ce tag existe déjà.",
     deleteTag: "Supprimer le tag",
+    removeTagNamed: "Retirer le tag {tag}",
     deleteTagConfirm_one: "Supprimer #{tag} ? Il sera retiré de {count} entrée. L'entrée elle-même est conservée.",
     deleteTagConfirm_other: "Supprimer #{tag} ? Il sera retiré de {count} entrées. Les entrées elles-mêmes sont conservées.",
     deleteTagFailed: "Impossible de supprimer le tag. Veuillez réessayer.",
@@ -2301,6 +2358,9 @@ export const translations: Translations = {
     twoFactorResendFailed: "Le nouveau code n'a pas pu être envoyé.",
     twoFactorRequestFailed:
       "La demande d'authentification à deux facteurs a échoué.",
+    twoFactorSetupFailed: "La configuration de l'authentification à deux facteurs n'a pas pu démarrer.",
+    twoFactorEnableFailed: "L'authentification à deux facteurs n'a pas pu être activée.",
+    twoFactorDisableFailed: "L'authentification à deux facteurs n'a pas pu être désactivée.",
     enterSixDigitCode: "Entrez le code à 6 chiffres.",
     verifyAndSignIn: "Vérifier et se connecter",
     resendCode: "Renvoyer le code",
@@ -2419,6 +2479,7 @@ export const translations: Translations = {
     lessActivity: "Moins",
     moreActivity: "Plus",
     noJournalActivity: "Aucune activité de journal pour le moment.",
+    statsLoadError: "Échec du chargement des statistiques",
     statsHeatmapDay_one: "{count} entrée le {date}",
     statsHeatmapDay_other: "{count} entrées le {date}",
 
@@ -2816,6 +2877,8 @@ export const translations: Translations = {
     passwordsDoNotMatch: "Les mots de passe ne correspondent pas",
     authFailed: "Échec de l'authentification. Veuillez réessayer.",
     googleSignInFailed: "Échec de la connexion Google. Veuillez réessayer.",
+    googleSignInUnavailable: "La connexion Google n'est pas disponible.",
+    serverUnavailable: "Le serveur est indisponible. Veuillez réessayer plus tard.",
     forgotPassword: "Mot de passe oublié ?",
     sendResetLink: "Envoyer le lien de réinitialisation",
     backToLogin: "Retour à la connexion",
@@ -2839,6 +2902,7 @@ export const translations: Translations = {
 
     // Entry Cross-References
     backToSource: "Retour à l'entrée source",
+    navigateToEntryOn: "Aller à l'entrée du {date}{index}",
     backlinks: "Rétroliens",
     backlinksCount_one: "{count} lien",
     backlinksCount_other: "{count} liens",
@@ -2854,11 +2918,19 @@ export const translations: Translations = {
     newDiary: "Nouveau journal",
     diaryName: "Nom du journal",
     diaryColor: "Couleur",
+    diaryVisibilityToggle: "Changer la visibilité",
     setAsDefault: "Définir par défaut",
     defaultDiary: "Journal par défaut",
     deleteDiary: "Supprimer le journal",
     deleteDiaryWarning:
       "Les entrées seront déplacées vers votre journal par défaut.",
+    diaryNameRequired: "Le nom du journal est obligatoire",
+    diaryDefaultDeleteBlocked: "Impossible de supprimer le journal par défaut",
+    diaryCreateFailed: "Échec de la création du journal",
+    diaryUpdateFailed: "Échec de la mise à jour du journal",
+    diaryDeleteFailed: "Échec de la suppression du journal",
+    diarySetDefaultFailed: "Échec du choix du journal par défaut",
+    diaryReorderFailed: "Échec de la réorganisation des journaux",
     createDiary: "Créer un journal",
     allDiaries: "Tous les journaux",
     noDiaries: "Aucun journal trouvé. Créez-en un pour commencer !",
@@ -2911,6 +2983,7 @@ export const translations: Translations = {
     attachmentTooLarge:
       "Le fichier est trop volumineux. Taille maximale : 5 Mo.",
     previewAttachment: "Apercu",
+    captionsUnavailable: "Aucun sous-titre disponible",
     downloadAttachment: "Télécharger la pièce jointe",
     transcribeAudio: "Transcrire l'audio",
     transcribingAudio: "Transcription...",
@@ -2923,6 +2996,8 @@ export const translations: Translations = {
     unfavorite: "Retirer des favoris",
     pinEntry: "Épingler l'entrée",
     unpinEntry: "Désépingler l'entrée",
+    pinUpdateFailed: "Échec de la mise à jour de l'épinglage",
+    taskUpdateFailed: "Échec de la mise à jour de la tâche.",
     pinned: "Épinglée",
     pinnedEntries: "Entrées épinglées",
     favorites: "Favoris",

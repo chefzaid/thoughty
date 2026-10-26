@@ -104,7 +104,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
             setError(null);
         } catch (err) {
             console.error('Error fetching stats:', err);
-            setError('Failed to load statistics');
+            setError('statsLoadError');
         } finally {
             setLoading(false);
         }
@@ -255,7 +255,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
         return (
             <div className="stats-container">
                 <div className="stats-error">
-                    <p>{error}</p>
+                    <p>{t(error ?? 'statsLoadError')}</p>
                     <button type="button" onClick={fetchStats}>{t('retry')}</button>
                 </div>
             </div>

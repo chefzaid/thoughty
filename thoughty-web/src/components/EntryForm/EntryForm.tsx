@@ -337,6 +337,7 @@ function EntryForm({
                             tagMetadata={tagMetadata}
                             onChange={setTags}
                             placeholder={t('filterTagsPlaceholder').replace('Filter by ', '')}
+                            t={t}
                             theme={theme}
                         />
                     </div>

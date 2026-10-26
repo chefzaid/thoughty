@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { getTranslation } from '../../utils/translations';
 import AttachmentPreviewContent from './AttachmentPreviewContent';
 import { usePendingAttachmentPreviewUrl } from './usePendingAttachmentPreviewUrl';
 
@@ -33,11 +34,28 @@ describe('AttachmentPreviewContent', () => {
         name="archive.bin"
         mimetype="application/octet-stream"
         sourceUrl="/api/attachments/file/archive.bin"
+        t={(key) => key}
       />,
     );
 
     expect(container.querySelector('svg')).toBeInTheDocument();
     expect(screen.queryByTitle('archive.bin')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['en', 'No captions available'],
+    ['fr', 'Aucun sous-titre disponible'],
+  ] as const)('labels the empty caption track of an audio file in %s', (language, label) => {
+    const { container } = render(
+      <AttachmentPreviewContent
+        name="note.mp3"
+        mimetype="audio/mpeg"
+        sourceUrl="/api/attachments/file/note.mp3"
+        t={(key) => getTranslation(language, key)}
+      />,
+    );
+
+    expect(container.querySelector('track')).toHaveAttribute('label', label);
   });
 
   it('does not create an object URL for unsupported pending files', () => {

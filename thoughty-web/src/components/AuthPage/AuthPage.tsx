@@ -105,7 +105,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
     if (result.success) {
       onAuthSuccess?.();
     } else {
-      setError(result.error || t('twoFactorVerificationFailed'));
+      setError(t(result.error || 'twoFactorVerificationFailed'));
     }
   };
 
@@ -129,7 +129,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
         if (result.success) {
           setSuccessMessage(t('resetEmailSent'));
         } else {
-          setError(result.error || t('forgotPasswordFailed'));
+          setError(t(result.error || 'forgotPasswordFailed'));
         }
         setLoading(false);
         return;
@@ -150,10 +150,10 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
       } else if (result.success) {
         onAuthSuccess?.();
       } else {
-        setError(result.error || t('authFailed'));
+        setError(t(result.error || 'authFailed'));
       }
     } catch (err) {
-      setError((err as Error).message || t('authFailed'));
+      setError(t((err as Error).message || 'authFailed'));
     } finally {
       setLoading(false);
     }
@@ -168,10 +168,10 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
       if (result.success) {
         onAuthSuccess?.();
       } else {
-        setError(result.error || t('googleSignInFailed'));
+        setError(t(result.error || 'googleSignInFailed'));
       }
     } catch (err) {
-      setError((err as Error).message || t('googleSignInFailed'));
+      setError(t((err as Error).message || 'googleSignInFailed'));
     } finally {
       setLoading(false);
     }
@@ -197,7 +197,7 @@ function AuthPage({ t, theme, onAuthSuccess, mode = 'login', onModeChange, onBac
       setTwoFactorCode('');
       setSuccessMessage(t('twoFactorCodeResent'));
     } else {
-      setError(result.error || t('twoFactorResendFailed'));
+      setError(t(result.error || 'twoFactorResendFailed'));
     }
   };
 

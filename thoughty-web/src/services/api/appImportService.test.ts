@@ -54,7 +54,7 @@ describe('appImportService', () => {
     const offline = createAppImportService(vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
     const empty = createAppImportService(vi.fn().mockResolvedValue(new Response('', { status: 200 })));
 
-    await expect(offline.uploadAttachments([], [])).resolves.toEqual({ ok: false, error: 'Failed to attach files', status: 0 });
-    await expect(empty.importEntries({ source: 'dayone', entries: [] })).resolves.toEqual({ ok: false, error: 'Failed to import entries', status: 200 });
+    await expect(offline.uploadAttachments([], [])).resolves.toEqual({ ok: false, error: 'appImportAttachError', status: 0 });
+    await expect(empty.importEntries({ source: 'dayone', entries: [] })).resolves.toEqual({ ok: false, error: 'importError', status: 200 });
   });
 });

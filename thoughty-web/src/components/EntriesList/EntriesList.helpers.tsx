@@ -299,6 +299,7 @@ export function EditForm({
                         tagMetadata={tagMetadata}
                         onChange={setEditTags}
                         placeholder={t('filterTagsPlaceholder').replace('Filter by ', '')}
+                        t={t}
                         theme={config.theme}
                     />
                 </div>

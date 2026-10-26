@@ -40,6 +40,7 @@ describe('Stats Component', () => {
                 stats: 'Stats',
                 statsOverview: 'Overview',
                 loadingStats: 'Loading...',
+                statsLoadError: 'Failed to load statistics',
                 totalEntries: 'Total Entries',
                 uniqueTags: 'Unique Tags',
                 yearsActive: 'Years Active',

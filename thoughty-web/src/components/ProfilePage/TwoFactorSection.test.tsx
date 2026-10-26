@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getTranslation } from '../../utils/translations';
 import TwoFactorSection from './TwoFactorSection';
 
 const authFetch = vi.fn();
@@ -73,5 +74,20 @@ describe('TwoFactorSection', () => {
 
     expect(await screen.findByText('twoFactorVerifyEmailFirst')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'enableTwoFactor' })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ['en', "Two-factor setup could not start."],
+    ['fr', "La configuration de l'authentification à deux facteurs n'a pas pu démarrer."],
+  ] as const)('shows a failed setup in %s', async (language, expected) => {
+    const user = userEvent.setup();
+    authFetch.mockResolvedValueOnce(new Response('', { status: 500 }));
+    const translate = (key: string) => getTranslation(language, key);
+    render(<TwoFactorSection isDark t={translate} />);
+
+    await waitFor(() => expect(authFetch).toHaveBeenCalledWith('/api/auth/two-factor/status'));
+    await user.click(await screen.findByRole('button', { name: translate('enableTwoFactor') }));
+
+    expect(await screen.findByText(expected)).toBeInTheDocument();
   });
 });

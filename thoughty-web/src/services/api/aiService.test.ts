@@ -501,11 +501,11 @@ describe("aiService", () => {
 
     await expect(service.previewJournalRetag()).resolves.toEqual({
       data: null,
-      error: "Could not create retag plan",
+      error: "journalRetagError",
     });
     await expect(service.applyJournalRetag("replace", [])).resolves.toEqual({
       data: null,
-      error: "Could not apply retag plan",
+      error: "journalRetagApplyError",
     });
   });
 });

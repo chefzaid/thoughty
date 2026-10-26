@@ -107,6 +107,7 @@ function PendingAttachmentCard({
                     name={file.name}
                     mimetype={file.type}
                     sourceUrl={previewUrl}
+                    t={t}
                 />
             )}
             isDark={isDark}
@@ -159,6 +160,7 @@ function UploadedAttachmentCard({
                     name={attachment.original_filename}
                     mimetype={attachment.mimetype}
                     sourceUrl={fileUrl}
+                    t={t}
                 />
             )}
             isDark={isDark}

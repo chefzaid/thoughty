@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useMemo } from 'react';
 import type { Components } from 'react-markdown';
 import { buildSearchHighlightPattern, splitSearchHighlights } from '../../utils/searchHighlight';
 import { countLinesBefore, findTaskLines } from '../../utils/taskList';
+import type { TranslationFunction } from '../../types';
 import type { MarkdownTaskList } from './MarkdownRenderer';
 
 const BRACKET_REFERENCE_PATTERN = /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]/i;
@@ -53,6 +54,8 @@ interface EntryContentRendererProps {
      * it, as in the feed and other read-only views, task list items show as checkboxes that cannot change.
      */
     readonly onToggleTask?: (line: number, checked: boolean) => void;
+    /** Writes the hover text of entry links, which only render as links with `onNavigateToEntry`. */
+    readonly t?: TranslationFunction;
 }
 
 const LazyMarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
@@ -184,7 +187,8 @@ function EntryContentRenderer({
     maxLength,
     searchTerm,
     searchMatches,
-    onToggleTask
+    onToggleTask,
+    t,
 }: Readonly<EntryContentRendererProps>) {
     const highlightPattern = useMemo(
         () => buildSearchHighlightPattern(searchTerm, searchMatches),
@@ -227,7 +231,7 @@ function EntryContentRenderer({
                     e.stopPropagation();
                     onNavigateToEntry(part.date, part.index, sourceEntry);
                 }}
-                title={`Navigate to entry on ${part.date}${indexSuffix}`}
+                title={t?.('navigateToEntryOn', { date: part.date, index: indexSuffix })}
             >
                 {part.displayText}
             </button>

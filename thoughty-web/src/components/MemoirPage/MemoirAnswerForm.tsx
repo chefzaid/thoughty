@@ -144,7 +144,7 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, t }: M
             detail: recorder.recording.seconds === null ? recorder.recording.file.name : formatRecordingTime(recorder.recording.seconds),
           })}</p>
           <audio controls preload="metadata" src={recorder.recording.url} aria-labelledby={`${fieldId}-recording`}>
-            <track kind="captions" src={EMPTY_CAPTIONS_TRACK_URL} srcLang="en" label="No captions available" default />
+            <track kind="captions" src={EMPTY_CAPTIONS_TRACK_URL} srcLang="en" label={t('captionsUnavailable')} default />
           </audio>
           <div className="memoir-actions">
             <button type="button" className="memoir-secondary" disabled={busy !== null} onClick={() => void handleTranscribe()}>

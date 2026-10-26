@@ -45,7 +45,7 @@ function TwoFactorSection({ isDark, t }: Readonly<TwoFactorSectionProps>) {
     try {
       return await request();
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : t('twoFactorRequestFailed'));
+      setError(t(requestError instanceof Error ? requestError.message : 'twoFactorRequestFailed'));
       return null;
     } finally {
       setBusy(false);

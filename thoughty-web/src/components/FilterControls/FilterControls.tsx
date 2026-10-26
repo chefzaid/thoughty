@@ -259,6 +259,7 @@ function FilterControls({
                         tagMetadata={tagMetadata}
                         onChange={(newTags) => { setFilterTags(newTags); setPage(1); }}
                         placeholder={t('filterTagsPlaceholder')}
+                        t={t}
                         singleSelect={false}
                         allowNew={false}
                         theme={theme}

@@ -339,7 +339,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
         return { success: true };
       }
 
-      return { success: false, error: await readApiErrorMessage(response, 'Failed to update pinned state') };
+      return { success: false, error: await readApiErrorMessage(response, 'pinUpdateFailed') };
     } catch (error) {
       console.error('Error toggling pinned state:', error);
       return { success: false };
@@ -361,7 +361,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
         return { success: true };
       }
 
-      return { success: false, error: await readApiErrorMessage(response, 'Failed to update the task') };
+      return { success: false, error: await readApiErrorMessage(response, 'taskUpdateFailed') };
     } catch (error) {
       console.error('Error updating task:', error);
       return { success: false };

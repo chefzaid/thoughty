@@ -30,25 +30,25 @@ async function postAuthRequest<T>(path: string, payload: object, fallbackError: 
   const data = await safeJsonParse<T>(response);
 
   if (!data) {
-    throw new Error('Server unavailable');
+    throw new Error('serverUnavailable');
   }
 
   return data;
 }
 
 export function registerWithPassword(payload: RegisterRequest): Promise<TokenResponse> {
-  return postAuthRequest('register', payload, 'Registration failed') as Promise<TokenResponse>;
+  return postAuthRequest('register', payload, 'authFailed') as Promise<TokenResponse>;
 }
 
 export function loginWithPassword(payload: LoginRequest): Promise<LoginResponse> {
-  return postAuthRequest('login', payload, 'Login failed') as Promise<LoginResponse>;
+  return postAuthRequest('login', payload, 'authFailed') as Promise<LoginResponse>;
 }
 
 export function verifyTwoFactorLogin(challengeToken: string, code: string): Promise<TokenResponse> {
   return postAuthRequest(
     'two-factor/verify',
     { challengeToken, code },
-    'Two-factor verification failed',
+    'twoFactorVerificationFailed',
   ) as Promise<TokenResponse>;
 }
 
@@ -56,6 +56,6 @@ export function resendTwoFactorChallenge(challengeToken: string): Promise<TwoFac
   return postAuthRequest(
     'two-factor/resend',
     { challengeToken },
-    'Failed to resend verification code',
+    'twoFactorResendFailed',
   ) as Promise<TwoFactorChallengeResponse>;
 }

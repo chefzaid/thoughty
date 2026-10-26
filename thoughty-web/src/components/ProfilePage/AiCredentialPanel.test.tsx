@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getTranslation } from "../../utils/translations";
 import AiCredentialPanel from "./AiCredentialPanel";
 
 const aiService = vi.hoisted(() => ({
@@ -131,5 +132,21 @@ describe("AiCredentialPanel", () => {
 
     expect(await screen.findByText("aiUnavailable")).toBeInTheDocument();
     expect(getUsageDashboard).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["en", "apiKeySaveError", "Could not save API key"],
+    ["fr", "apiKeySaveError", "Impossible d'enregistrer la clé API"],
+    ["fr", "Invalid OpenRouter key", "Invalid OpenRouter key"],
+  ] as const)("shows a failed save in %s (%s)", async (language, error, expected) => {
+    updateCredential.mockResolvedValue({ data: null, error });
+    const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+    render(<AiCredentialPanel t={translate} onCredentialChanged={vi.fn()} />);
+    await screen.findByText("...value");
+
+    fireEvent.change(screen.getByLabelText(translate("openRouterApiKey")), { target: { value: "sk-or-v1-bad" } });
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(translate("replaceApiKey")) }));
+
+    expect(await screen.findByText(expected)).toBeInTheDocument();
   });
 });

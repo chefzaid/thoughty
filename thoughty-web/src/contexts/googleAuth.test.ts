@@ -41,12 +41,12 @@ describe('signInWithGoogleAccount', () => {
     const login = vi.fn();
 
     await expect(signInWithGoogleAccount('client-id', login)).rejects.toThrow(
-      'Google did not return a credential',
+      'googleSignInFailed',
     );
     expect(login).not.toHaveBeenCalled();
   });
 
   it('rejects when Google Sign-In is not configured', async () => {
-    await expect(signInWithGoogleAccount('', vi.fn())).rejects.toThrow('Google Sign-In not configured');
+    await expect(signInWithGoogleAccount('', vi.fn())).rejects.toThrow('googleSignInUnavailable');
   });
 });

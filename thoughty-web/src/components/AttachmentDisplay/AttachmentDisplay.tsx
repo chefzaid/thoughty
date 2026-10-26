@@ -85,6 +85,7 @@ function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
                     mimetype={img.mimetype}
                     sourceUrl={url}
                     variant="detail"
+                    t={t}
                   />
                   <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[10px] bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity">
                     {img.original_filename}
@@ -119,6 +120,7 @@ function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
                       mimetype={file.mimetype}
                       sourceUrl={url}
                       variant="detail"
+                      t={t}
                     />
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2 text-xs text-gray-500">
