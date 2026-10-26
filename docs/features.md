@@ -39,7 +39,7 @@ flowchart LR
 - Separate diaries for different writing streams, each with a name, emoji, color, and default visibility.
 - An **All Diaries** view, and a default diary for quick capture.
 - The selected diary scopes the journal, stats, AI features, import and export, and books.
-- Deleting a diary asks first in a dialog that names it, then moves its entries to the default diary. The default diary cannot be deleted.
+- Deleting a diary asks first in a dialog that names it, then moves its entries to the default diary. Confirmation dialogs (diaries, tags, entries, comments, the recycle bin, stopping the memoir) take focus on Cancel, keep the keyboard inside, close with `Esc`, and return focus to the button that opened them. The default diary cannot be deleted.
 
 ## Tags, Search, and Filters
 
