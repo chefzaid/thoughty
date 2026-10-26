@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AttachmentDisplay from "./AttachmentDisplay";
 import type { Attachment } from "../../types";
@@ -217,7 +217,7 @@ describe("AttachmentDisplay", () => {
     expect(dialog).toBeInTheDocument();
   });
 
-  it("closes lightbox when clicking backdrop", async () => {
+  it("closes lightbox with its close button", async () => {
     const user = userEvent.setup();
     const attachments: Attachment[] = [
       {
@@ -237,8 +237,7 @@ describe("AttachmentDisplay", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     // Close lightbox via close button
-    const closeButton = screen.getByLabelText("close");
-    await user.click(closeButton);
+    await user.click(screen.getByRole("button", { name: "close" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
@@ -291,7 +290,7 @@ describe("AttachmentDisplay", () => {
     expect(modalPreview).toHaveAttribute("src", "blob:uuid-notes.txt");
   });
 
-  it("closes lightbox when the dialog receives a cancel event", async () => {
+  it("closes lightbox on Escape and returns focus to its preview button", async () => {
     const user = userEvent.setup();
     const attachments: Attachment[] = [
       {
@@ -306,15 +305,14 @@ describe("AttachmentDisplay", () => {
       <AttachmentDisplay attachments={attachments} theme="dark" t={mockT} />,
     );
 
-    await user.click(screen.getByRole("button"));
+    const previewButton = screen.getByRole("button");
+    await user.click(previewButton);
+    expect(screen.getByRole("button", { name: "close" })).toHaveFocus();
 
-    const dialog = screen.getByRole("dialog");
-    fireEvent(
-      dialog,
-      new Event("cancel", { bubbles: false, cancelable: true }),
-    );
+    await user.keyboard("{Escape}");
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(previewButton).toHaveFocus();
   });
 
   it("separates images and files into groups", () => {

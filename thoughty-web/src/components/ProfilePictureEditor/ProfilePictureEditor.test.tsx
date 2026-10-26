@@ -1,8 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import ProfilePictureEditor from './ProfilePictureEditor';
 
 const mockT = (key: string): string => key;
+
+function EditorHarness() {
+    const [isOpen, setIsOpen] = useState(false);
+    return (
+        <>
+            <button type="button" onClick={() => setIsOpen(true)}>Change picture</button>
+            <ProfilePictureEditor isOpen={isOpen} onClose={() => setIsOpen(false)} onSave={vi.fn()} t={mockT} />
+        </>
+    );
+}
 
 describe('ProfilePictureEditor', () => {
     beforeEach(() => {
@@ -117,5 +129,27 @@ describe('ProfilePictureEditor', () => {
         expect(backdrop).not.toBeNull();
         fireEvent.click(backdrop!);
         expect(onClose).toHaveBeenCalled();
+    });
+
+    it('is a modal dialog that keeps focus inside and returns it on Escape', async () => {
+        const user = userEvent.setup();
+        render(<EditorHarness />);
+        const opener = screen.getByRole('button', { name: 'Change picture' });
+        await user.click(opener);
+
+        const dialog = screen.getByRole('dialog', { name: 'editProfilePicture' });
+        expect(dialog).toHaveAttribute('aria-modal', 'true');
+        const close = screen.getByRole('button', { name: 'close' });
+        const cancel = screen.getByRole('button', { name: 'cancel' });
+        expect(close).toHaveFocus();
+
+        await user.tab({ shift: true });
+        expect(cancel).toHaveFocus();
+        await user.tab();
+        expect(close).toHaveFocus();
+
+        await user.keyboard('{Escape}');
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(opener).toHaveFocus();
     });
 });

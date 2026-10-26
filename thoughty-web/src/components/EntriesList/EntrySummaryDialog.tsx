@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { SummaryGuidance } from '../../services/api/aiService';
 import type { TranslationFunction as TranslationFn } from '../../types';
 
@@ -11,6 +12,10 @@ interface EntrySummaryDialogProps {
     t: TranslationFn;
 }
 
+/**
+ * Summarizes an entry in a modal dialog: focus starts in the first guidance field, Tab stays
+ * inside, Escape closes it from anywhere, and focus goes back to where it was.
+ */
 export default function EntrySummaryDialog({
     entryId,
     isOpen,
@@ -27,6 +32,10 @@ export default function EntrySummaryDialog({
     const [copied, setCopied] = useState(false);
     const includeInputRef = useRef<HTMLTextAreaElement>(null);
     const requestIdRef = useRef(0);
+    const dialogRef = useRef<HTMLDivElement>(null);
+    const titleId = useId();
+
+    useDialogFocus({ isOpen, dialogRef, initialFocusRef: includeInputRef, onClose });
 
     useEffect(() => {
         if (!isOpen) {
@@ -40,23 +49,7 @@ export default function EntrySummaryDialog({
         setLoading(false);
         setError('');
         setCopied(false);
-        includeInputRef.current?.focus();
     }, [entryId, isOpen]);
-
-    useEffect(() => {
-        if (!isOpen) {
-            return undefined;
-        }
-
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                onClose();
-            }
-        };
-
-        globalThis.addEventListener('keydown', handleKeyDown);
-        return () => globalThis.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
 
     const handleGenerate = useCallback(async () => {
         if (loading) {
@@ -117,20 +110,23 @@ export default function EntrySummaryDialog({
     const summaryAction = t(summary ? 'regenerateSummary' : 'generateSummary');
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop: a pointer target only; keyboard users close with Escape or the Close button. */}
             <button
                 type="button"
                 className="absolute inset-0 cursor-default bg-black/60"
                 onClick={onClose}
-                aria-label={t('close')}
+                aria-hidden="true"
+                tabIndex={-1}
             />
-            <dialog
-                open
+            <div
+                ref={dialogRef}
+                role="dialog"
                 aria-modal="true"
-                aria-labelledby={`entry-summary-title-${entryId}`}
+                aria-labelledby={titleId}
                 className={`relative z-10 m-0 p-0 flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-lg border shadow-2xl ${panelClass}`}
             >
                 <header className={`flex items-center justify-between border-b px-5 py-4 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <h3 id={`entry-summary-title-${entryId}`} className="text-base font-semibold">
+                    <h3 id={titleId} className="text-base font-semibold">
                         {t('entrySummary')}
                     </h3>
                     <button
@@ -140,7 +136,7 @@ export default function EntrySummaryDialog({
                         title={t('close')}
                         aria-label={t('close')}
                     >
-                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                             <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
                         </svg>
                     </button>
@@ -208,7 +204,7 @@ export default function EntrySummaryDialog({
                             : summaryAction}
                     </button>
                 </footer>
-            </dialog>
+            </div>
         </div>
     );
 }

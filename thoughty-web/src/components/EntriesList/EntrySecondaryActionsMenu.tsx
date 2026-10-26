@@ -36,6 +36,7 @@ export default function EntrySecondaryActionsMenu({
     const [menuOpen, setMenuOpen] = useLocalState(false);
     const [shareReady, setShareReady] = useLocalState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
     const shareReadyTimeoutRef = useRef<number | null>(null);
     const secondaryActionClass = isDark
         ? 'text-gray-200 hover:bg-gray-700'
@@ -55,6 +56,12 @@ export default function EntrySecondaryActionsMenu({
     const closeMenu = useCallback(() => {
         setMenuOpen(false);
     }, [setMenuOpen]);
+
+    // The menu item disappears with the menu, so a dialog it opens returns focus to the menu button.
+    const closeMenuForDialog = useCallback(() => {
+        triggerRef.current?.focus();
+        closeMenu();
+    }, [closeMenu]);
 
     useDismissibleMenu(menuOpen, menuRef, closeMenu);
 
@@ -99,18 +106,19 @@ export default function EntrySecondaryActionsMenu({
     }, [closeMenu, onToggleArchived]);
 
     const handleSummarize = useCallback(() => {
-        closeMenu();
+        closeMenuForDialog();
         onSummarize?.();
-    }, [closeMenu, onSummarize]);
+    }, [closeMenuForDialog, onSummarize]);
 
     const handleDelete = useCallback(() => {
-        closeMenu();
+        closeMenuForDialog();
         onDelete();
-    }, [closeMenu, onDelete]);
+    }, [closeMenuForDialog, onDelete]);
 
     return (
         <div className="relative" ref={menuRef}>
             <IconActionButton
+                buttonRef={triggerRef}
                 onClick={toggleMenu}
                 className={`p-1.5 ${menuButtonClass}`}
                 title={t('moreActions')}

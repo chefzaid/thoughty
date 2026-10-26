@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useApiServices } from "../../hooks/useApiServices";
+import { useDialogFocus } from "../../hooks/useDialogFocus";
 import type {
   JournalRetagMode,
   JournalRetagPlan,
@@ -36,37 +37,20 @@ function JournalRetagReview({ isDark, language, onApplied, t }: JournalRetagRevi
   const [appliedCount, setAppliedCount] = useState<number | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const wasOpenRef = useRef(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
-  useEffect(() => {
-    if (!isOpen) {
-      if (wasOpenRef.current) triggerRef.current?.focus();
-      wasOpenRef.current = false;
-      return undefined;
-    }
-    if (!wasOpenRef.current) closeRef.current?.focus();
-    wasOpenRef.current = true;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !applying) setIsOpen(false);
-      if (event.key !== "Tab") return;
-      const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-        "button:not(:disabled), input:not(:disabled)",
-      );
-      if (!focusable?.length) return;
-      const first = focusable.item(0);
-      const last = focusable.item(focusable.length - 1);
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    globalThis.addEventListener("keydown", handleKeyDown);
-    return () => globalThis.removeEventListener("keydown", handleKeyDown);
-  }, [applying, isOpen]);
+  // The review stays open while the new tags are being applied, so Escape waits for the result.
+  useDialogFocus({
+    isOpen,
+    dialogRef,
+    initialFocusRef: closeRef,
+    onClose: () => {
+      if (!applying) setIsOpen(false);
+    },
+    returnFocusRef: triggerRef,
+  });
 
   const loadPlan = async () => {
     setLoading(true);
@@ -151,17 +135,18 @@ function JournalRetagReview({ isDark, language, onApplied, t }: JournalRetagRevi
               disabled={applying}
               onClick={() => setIsOpen(false)}
             />
-            <dialog
+            <div
               ref={dialogRef}
               className={`journal-retag-dialog ${isDark ? "dark" : "light"}`}
-              open
+              role="dialog"
               aria-modal="true"
-              aria-labelledby="journal-retag-title"
+              aria-labelledby={titleId}
+              aria-describedby={descriptionId}
             >
               <header className="journal-retag-header">
                 <div>
-                  <h2 id="journal-retag-title">{t("journalRetagTitle")}</h2>
-                  <p>{t("journalRetagDescription")}</p>
+                  <h2 id={titleId}>{t("journalRetagTitle")}</h2>
+                  <p id={descriptionId}>{t("journalRetagDescription")}</p>
                 </div>
                 <button
                   ref={closeRef}
@@ -334,7 +319,7 @@ function JournalRetagReview({ isDark, language, onApplied, t }: JournalRetagRevi
                   </button>
                 </footer>
               )}
-            </dialog>
+            </div>
           </div>,
           document.body,
         )}

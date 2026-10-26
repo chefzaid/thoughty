@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useId } from 'react';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { Entry } from '../../types';
 import { downloadBlob } from '../../utils/downloadFile';
 import type { TranslationParams } from '../../utils/translations';
@@ -54,6 +55,10 @@ interface AiChatModalProps {
   readonly t: Translate;
 }
 
+/**
+ * Chats with the AI about one entry in a modal dialog: focus starts in the message field, Tab
+ * stays inside, Escape closes it from anywhere, and focus goes back to where it was.
+ */
 function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'dark', t }: AiChatModalProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -62,7 +67,11 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
   const [error, setError] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
   const isLight = theme === 'light';
+
+  useDialogFocus({ isOpen, dialogRef, initialFocusRef: inputRef, onClose });
 
   // Load persisted history from the API when the modal opens or the active entry changes.
   useEffect(() => {
@@ -101,12 +110,13 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
     messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   }, [messages, loading, historyLoading]);
 
-  // Focus input when modal opens
+  // The message field is disabled while the history loads, which drops focus out of the dialog;
+  // bring it back to the field once it can be typed in, unless the reader moved on inside the dialog.
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100);
+    if (isOpen && !historyLoading && !dialogRef.current?.contains(document.activeElement)) {
+      inputRef.current?.focus();
     }
-  }, [isOpen]);
+  }, [isOpen, historyLoading]);
 
   const handleSend = useCallback(async () => {
     const text = input.trim();
@@ -148,17 +158,20 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
+      {/* Backdrop: a pointer target only; keyboard users close with Escape or the close button. */}
       <button
         type="button"
         className="absolute inset-0 bg-black/50 backdrop-blur-sm cursor-default"
         onClick={onClose}
-        onKeyDown={(e) => e.key === 'Escape' && onClose()}
-        aria-label={t('closeDialog')}
+        aria-hidden="true"
+        tabIndex={-1}
       />
 
-      {/* Modal */}
       <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         className={`relative z-10 w-full max-w-2xl mx-4 rounded-xl shadow-2xl border flex flex-col ${
           isLight ? 'bg-white border-gray-200' : 'bg-gray-800 border-gray-700'
         }`}
@@ -168,7 +181,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
         <div className={`flex items-center justify-between px-5 py-4 border-b ${
           isLight ? 'border-gray-200' : 'border-gray-700'
         }`}>
-          <h3 className={`text-lg font-semibold ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
+          <h3 id={titleId} className={`text-lg font-semibold ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
             {t('aiChat')}
           </h3>
           <div className="flex items-center gap-2">
@@ -186,11 +199,13 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
             </button>
             <button type="button"
               onClick={onClose}
+              aria-label={t('closeDialog')}
+              title={t('closeDialog')}
               className={`p-1.5 rounded-lg transition-colors ${
                 isLight ? 'hover:bg-gray-100 text-gray-500' : 'hover:bg-gray-700 text-gray-400'
               }`}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -203,7 +218,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
         }`}>
           <span className="font-medium">{entry.date}</span>
           {entry.tags.length > 0 && (
-            <span className="ml-2 text-xs opacity-70">#{entry.tags.join(' #')}</span>
+            <span className="ml-2 text-xs">#{entry.tags.join(' #')}</span>
           )}
           <p className="mt-1 whitespace-pre-wrap line-clamp-3">{entryPreview}</p>
         </div>
@@ -211,12 +226,12 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-[200px]">
           {historyLoading && (
-            <p className={`text-center text-sm italic ${isLight ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p className={`text-center text-sm italic ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
               {t('aiLoadingHistory')}
             </p>
           )}
           {messages.length === 0 && !loading && !historyLoading && (
-            <p className={`text-center text-sm italic ${isLight ? 'text-gray-400' : 'text-gray-500'}`}>
+            <p className={`text-center text-sm italic ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
               {t('aiChatPlaceholder')}
             </p>
           )}
@@ -245,14 +260,16 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
           {loading && (
             <div className="flex justify-start">
               <div className={`px-4 py-2.5 rounded-2xl rounded-bl-md text-sm ${
-                isLight ? 'bg-gray-100 text-gray-500' : 'bg-gray-700 text-gray-400'
+                isLight ? 'bg-gray-100 text-gray-600' : 'bg-gray-700 text-gray-300'
               }`}>
                 {t('aiThinking')}
               </div>
             </div>
           )}
           {error && (
-            <div className="px-4 py-2.5 rounded-lg text-sm bg-red-500/10 border border-red-500/30 text-red-400">
+            <div role="alert" className={`px-4 py-2.5 rounded-lg text-sm bg-red-500/10 border border-red-500/30 ${
+              isLight ? 'text-red-700' : 'text-red-300'
+            }`}>
               {error}
             </div>
           )}
@@ -268,6 +285,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={t('aiChatPlaceholder')}
+              aria-label={t('aiChatMessageLabel')}
               rows={1}
               disabled={historyLoading}
               className={`flex-1 resize-none rounded-lg px-4 py-2.5 text-sm border focus:ring-2 focus:ring-blue-500 outline-none ${
@@ -279,9 +297,11 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
             <button type="button"
               onClick={handleSend}
               disabled={historyLoading || !input.trim() || loading}
+              aria-label={t('aiChatSend')}
+              title={t('aiChatSend')}
               className="px-4 py-2.5 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             </button>

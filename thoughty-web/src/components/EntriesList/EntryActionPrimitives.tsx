@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 
 interface IconActionButtonProps {
     title: string;
@@ -8,6 +8,7 @@ interface IconActionButtonProps {
     ariaLabel?: string;
     /** Set for a button that opens a menu, so the menu state is announced. */
     ariaExpanded?: boolean;
+    buttonRef?: Ref<HTMLButtonElement>;
 }
 
 export function IconActionButton({
@@ -17,9 +18,11 @@ export function IconActionButton({
     children,
     ariaLabel,
     ariaExpanded,
+    buttonRef,
 }: Readonly<IconActionButtonProps>) {
     return (
         <button
+            ref={buttonRef}
             type="button"
             onClick={onClick}
             className={`${className} rounded transition-colors`}

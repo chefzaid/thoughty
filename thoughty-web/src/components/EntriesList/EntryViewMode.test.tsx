@@ -316,6 +316,11 @@ describe('EntryViewMode', () => {
             includeDetails: undefined,
             excludeDetails: undefined,
         });
+
+        // The menu item is gone with the menu, so focus goes back to the menu button
+        await user.keyboard('{Escape}');
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('More actions')).toHaveFocus();
     });
 
     it('routes listen actions through the entry speech handlers', async () => {

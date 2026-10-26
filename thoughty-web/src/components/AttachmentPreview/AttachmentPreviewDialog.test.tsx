@@ -1,4 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import AttachmentPreviewDialog from './AttachmentPreviewDialog';
 
@@ -61,26 +63,59 @@ describe('AttachmentPreviewDialog', () => {
     expect(link).not.toHaveAttribute('target');
   });
 
-  it('calls onClose from the close button and cancel event', () => {
+  it('calls onClose from the close button', () => {
     const onClose = vi.fn();
-    render(
-      <AttachmentPreviewDialog
-        preview={{
-          name: 'photo.png',
-          mimetype: 'image/png',
-          sourceUrl: '/api/attachments/file/uuid-photo.png',
-          size: 1024,
-          downloadUrl: '/api/attachments/file/uuid-photo.png',
-        }}
-        isDark
-        onClose={onClose}
-        t={mockT}
-      />,
-    );
+    render(<AttachmentPreviewDialog preview={photo} isDark onClose={onClose} t={mockT} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'close' }));
-    fireEvent(screen.getByRole('dialog'), new Event('cancel', { bubbles: false, cancelable: true }));
 
-    expect(onClose).toHaveBeenCalledTimes(2);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('is a labelled modal dialog rendered at the end of the page', () => {
+    const { container } = render(<AttachmentPreviewDialog preview={photo} isDark onClose={vi.fn()} t={mockT} />);
+
+    const dialog = screen.getByRole('dialog', { name: 'previewAttachment photo.png' });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(dialog).toHaveAccessibleDescription('Image · 1.0 KB');
+    expect(container).not.toContainElement(dialog);
+  });
+
+  it('moves focus in, keeps Tab inside, closes on Escape and returns focus to its opener', async () => {
+    const user = userEvent.setup();
+    render(<PreviewHarness preview={photo} />);
+    const opener = screen.getByRole('button', { name: 'Open preview' });
+    await user.click(opener);
+
+    const download = screen.getByRole('link', { name: 'downloadAttachment' });
+    const close = screen.getByRole('button', { name: 'close' });
+    expect(close).toHaveFocus();
+
+    await user.tab();
+    expect(download).toHaveFocus();
+    await user.tab({ shift: true });
+    expect(close).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();
   });
 });
+
+const photo = {
+  name: 'photo.png',
+  mimetype: 'image/png',
+  sourceUrl: '/api/attachments/file/uuid-photo.png',
+  size: 1024,
+  downloadUrl: '/api/attachments/file/uuid-photo.png',
+};
+
+function PreviewHarness({ preview }: Readonly<{ preview: typeof photo }>) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setOpen(true)}>Open preview</button>
+      <AttachmentPreviewDialog preview={open ? preview : null} isDark onClose={() => setOpen(false)} t={mockT} />
+    </>
+  );
+}

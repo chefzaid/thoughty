@@ -84,6 +84,36 @@ describe("JournalRetagReview", () => {
     expect(onApplied).toHaveBeenCalledTimes(1);
   });
 
+  it("is a described modal dialog that ignores Escape while the tags are applied", async () => {
+    const user = userEvent.setup();
+    let finishApply: (value: unknown) => void = () => undefined;
+    previewJournalRetag.mockResolvedValue({ data: plan, error: null });
+    applyJournalRetag.mockReturnValue(new Promise((resolve) => { finishApply = resolve; }));
+
+    render(<JournalRetagReview isDark language="en" onApplied={vi.fn().mockResolvedValue(undefined)} t={t} />);
+    const trigger = screen.getByRole("button", { name: "organizeJournalTags" });
+    await user.click(trigger);
+    await screen.findByText("#growth");
+
+    const dialog = screen.getByRole("dialog", { name: "journalRetagTitle" });
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveAccessibleDescription("journalRetagDescription");
+    const apply = screen.getByRole("button", { name: "applyJournalRetag" });
+    apply.focus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "close" })).toHaveFocus();
+
+    await user.click(apply);
+    await user.keyboard("{Escape}");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+    finishApply({ data: { success: true, affectedEntries: 1 }, error: null });
+    expect(await screen.findByText("journalRetagApplied_one:1")).toBeVisible();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
+
   it("retries a failed preview and reports an empty journal", async () => {
     const user = userEvent.setup();
     previewJournalRetag

@@ -18,6 +18,19 @@ function Dialog({ onClose }: Readonly<{ onClose: () => void }>) {
   );
 }
 
+function MediaDialog() {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useDialogFocus({ isOpen: true, dialogRef, initialFocusRef: closeRef, onClose: vi.fn() });
+
+  return (
+    <div ref={dialogRef} role="dialog" aria-label="Preview">
+      <button ref={closeRef} type="button">Close</button>
+      <iframe title="Document" />
+    </div>
+  );
+}
+
 function Page({ onClose = vi.fn() }: Readonly<{ onClose?: () => void }>) {
   const [open, setOpen] = useState(false);
   return (
@@ -68,5 +81,15 @@ describe('useDialogFocus', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+
+  it('counts embedded documents as the ends of the cycle', () => {
+    render(<MediaDialog />);
+    const close = screen.getByRole('button', { name: 'Close' });
+    expect(close).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+
+    expect(screen.getByTitle('Document')).toHaveFocus();
   });
 });

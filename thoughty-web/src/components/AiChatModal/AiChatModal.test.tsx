@@ -127,10 +127,11 @@ describe('AiChatModal', () => {
 
     it('calls onClose when backdrop is clicked', async () => {
       const user = userEvent.setup();
-      render(<AiChatModal {...defaultProps} />);
-      
-      const backdrop = screen.getByLabelText('Close dialog');
-      await user.click(backdrop);
+      const { container } = render(<AiChatModal {...defaultProps} />);
+
+      const backdrop = container.querySelector<HTMLButtonElement>('button[aria-hidden="true"]');
+      expect(backdrop).not.toBeNull();
+      await user.click(backdrop!);
       expect(defaultProps.onClose).toHaveBeenCalledOnce();
     });
 

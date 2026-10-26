@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useEffect, type TouchEvent, type MouseEvent, type ChangeEvent } from 'react';
+import { useState, useRef, useCallback, useEffect, useId, type TouchEvent, type MouseEvent, type ChangeEvent } from 'react';
+import { useDialogFocus } from '../../hooks/useDialogFocus';
 import './ProfilePictureEditor.css';
 
 interface Position {
@@ -14,6 +15,10 @@ interface ProfilePictureEditorProps {
     readonly isDark?: boolean;
 }
 
+/**
+ * Crops a new profile picture in a modal dialog: focus starts on the close button, Tab stays
+ * inside, Escape closes it from anywhere, and focus goes back to the button that opened it.
+ */
 function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePictureEditorProps) {
     const [image, setImage] = useState<HTMLImageElement | null>(null);
     const [zoom, setZoom] = useState<number>(1);
@@ -23,6 +28,11 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
     const containerRef = useRef<HTMLButtonElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const imageLoadTokenRef = useRef(0);
+    const dialogRef = useRef<HTMLDivElement>(null);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
+    const titleId = useId();
+
+    useDialogFocus({ isOpen, dialogRef, initialFocusRef: closeButtonRef, onClose });
 
     const CANVAS_SIZE = 200;
     const MIN_ZOOM = 1;
@@ -221,20 +231,19 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
     if (!isOpen) return null;
 
     return (
-        <dialog
-            className="ppe-overlay"
-            open
-            onCancel={(event) => {
-                event.preventDefault();
-                onClose();
-            }}
-            aria-labelledby="ppe-title"
-        >
-            <button type="button" className="ppe-backdrop" aria-label={t('close')} onClick={onClose} />
-            <div className={`ppe-modal ${isDark ? 'dark' : 'light'}`}>
+        <div className="ppe-overlay">
+            {/* Backdrop: a pointer target only; keyboard users close with Escape or the close button. */}
+            <button type="button" className="ppe-backdrop" aria-hidden="true" tabIndex={-1} onClick={onClose} />
+            <div
+                ref={dialogRef}
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={titleId}
+                className={`ppe-modal ${isDark ? 'dark' : 'light'}`}
+            >
                 <div className="ppe-header">
-                    <h3 id="ppe-title">{t('editProfilePicture')}</h3>
-                    <button type="button" className="ppe-close-btn" onClick={onClose} aria-label={t('close')}>
+                    <h3 id={titleId}>{t('editProfilePicture')}</h3>
+                    <button ref={closeButtonRef} type="button" className="ppe-close-btn" onClick={onClose} aria-label={t('close')}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
@@ -327,7 +336,7 @@ function ProfilePictureEditor({ isOpen, onClose, onSave, t, isDark }: ProfilePic
                     </button>
                 </div>
             </div>
-        </dialog>
+        </div>
     );
 }
 
