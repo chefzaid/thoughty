@@ -55,13 +55,13 @@ export function useCloudSync(t: Translate, diaryId: number | null | undefined) {
     const messageTimeoutRef = useRef<number | null>(null);
 
     const fetchStatus = useCallback(async () => {
-        const data = await cloudSyncService.getStatus();
+        const { data } = await cloudSyncService.getStatus();
         if (data) setStatus(data as unknown as Record<string, CloudProviderStatus>);
         setLoading(false);
     }, [cloudSyncService]);
 
     const fetchSchedules = useCallback(async () => {
-        const data = await cloudSyncService.getSchedules();
+        const { data } = await cloudSyncService.getSchedules();
         if (data) {
             setSchedules(data);
             // Initialize form state from saved schedules
@@ -103,6 +103,11 @@ export function useCloudSync(t: Translate, diaryId: number | null | undefined) {
         }, MESSAGE_TIMEOUT_MS);
     }, []);
 
+    /** Shows a refused cloud request: the API's translated reason, or the call's own fallback message. */
+    const showError = useCallback((error: string | null) => {
+        showMessage('error', t(error ?? 'cloudSyncError'));
+    }, [showMessage, t]);
+
     // Listen for OAuth callback messages
     useEffect(() => {
         const handleMessage = async (event: MessageEvent) => {
@@ -112,12 +117,12 @@ export function useCloudSync(t: Translate, diaryId: number | null | undefined) {
 
                 setConnecting(provider);
                 const redirectUri = `${globalThis.location.origin}/cloud-callback`;
-                const success = await cloudSyncService.connect(provider, code, redirectUri);
-                if (success) {
+                const { error } = await cloudSyncService.connect(provider, code, redirectUri);
+                if (error) {
+                    showError(error);
+                } else {
                     showMessage('success', t('cloudConnected', { provider: PROVIDER_CONFIG[provider as CloudProviderType]?.name || provider }));
                     await fetchStatus();
-                } else {
-                    showMessage('error', t('cloudConnectError'));
                 }
                 setConnecting(null);
             }
@@ -125,36 +130,36 @@ export function useCloudSync(t: Translate, diaryId: number | null | undefined) {
 
         globalThis.addEventListener('message', handleMessage);
         return () => globalThis.removeEventListener('message', handleMessage);
-    }, [cloudSyncService, fetchStatus, showMessage, t]);
+    }, [cloudSyncService, fetchStatus, showError, showMessage, t]);
 
     const handleSaveSchedule = async (provider: CloudProviderType) => {
-        const success = await cloudSyncService.setSchedule(provider, {
+        const { error } = await cloudSyncService.setSchedule(provider, {
             frequency: scheduleFrequency[provider] || 'daily',
             format: scheduleFormat[provider],
             diaryId: diaryId ?? undefined,
             includeVisibility: scheduleIncludeVisibility[provider],
         });
-        if (success) {
-            showMessage('success', t('cloudScheduleSaved'));
-            await fetchSchedules();
-        } else {
-            showMessage('error', t('cloudScheduleSaveError'));
+        if (error) {
+            showError(error);
+            return;
         }
+        showMessage('success', t('cloudScheduleSaved'));
+        await fetchSchedules();
     };
 
     const handleRemoveSchedule = async (provider: CloudProviderType) => {
-        const success = await cloudSyncService.deleteSchedule(provider);
-        if (success) {
-            showMessage('success', t('cloudScheduleRemoved'));
-            await fetchSchedules();
-        } else {
-            showMessage('error', t('cloudScheduleRemoveError'));
+        const { error } = await cloudSyncService.deleteSchedule(provider);
+        if (error) {
+            showError(error);
+            return;
         }
+        showMessage('success', t('cloudScheduleRemoved'));
+        await fetchSchedules();
     };
 
     const handleSyncNow = async (provider: CloudProviderType) => {
         setSyncing(provider);
-        const result = await cloudSyncService.triggerSync(provider);
+        const { data: result, error } = await cloudSyncService.triggerSync(provider);
         if (result) {
             if (result.synced) {
                 showMessage('success', t('cloudSyncSuccess', { name: result.file?.name || '' }));
@@ -163,7 +168,7 @@ export function useCloudSync(t: Translate, diaryId: number | null | undefined) {
             }
             await fetchSchedules();
         } else {
-            showMessage('error', t('cloudSyncError'));
+            showError(error);
         }
         setSyncing(null);
     };
@@ -171,7 +176,7 @@ export function useCloudSync(t: Translate, diaryId: number | null | undefined) {
     const handleConnect = async (provider: CloudProviderType) => {
         setConnecting(provider);
         const redirectUri = `${globalThis.location.origin}/cloud-callback`;
-        const authUrl = await cloudSyncService.getAuthUrl(provider, redirectUri);
+        const { data: authUrl, error } = await cloudSyncService.getAuthUrl(provider, redirectUri);
         if (authUrl) {
             // Open OAuth in a popup
             const width = 600;
@@ -180,28 +185,28 @@ export function useCloudSync(t: Translate, diaryId: number | null | undefined) {
             const top = globalThis.screenY + (globalThis.outerHeight - height) / 2;
             globalThis.open(authUrl, 'cloud-oauth', `width=${width},height=${height},left=${left},top=${top}`);
         } else {
-            showMessage('error', t('cloudConnectError'));
+            showError(error);
             setConnecting(null);
         }
     };
 
     const handleDisconnect = async (provider: CloudProviderType) => {
-        const success = await cloudSyncService.disconnect(provider);
-        if (success) {
-            showMessage('success', t('cloudDisconnected', { provider: PROVIDER_CONFIG[provider]?.name || provider }));
-            await fetchStatus();
-            if (expandedProvider === provider) {
-                setExpandedProvider(null);
-                setFiles([]);
-            }
-        } else {
-            showMessage('error', t('cloudDisconnectError'));
+        const { error } = await cloudSyncService.disconnect(provider);
+        if (error) {
+            showError(error);
+            return;
+        }
+        showMessage('success', t('cloudDisconnected', { provider: PROVIDER_CONFIG[provider]?.name || provider }));
+        await fetchStatus();
+        if (expandedProvider === provider) {
+            setExpandedProvider(null);
+            setFiles([]);
         }
     };
 
     const handleUpload = async (provider: CloudProviderType) => {
         setUploading(provider);
-        const result = await cloudSyncService.uploadExport(provider, {
+        const { data: result, error } = await cloudSyncService.uploadExport(provider, {
             diaryId: diaryId ?? undefined,
             format: exportFormat,
             includeVisibility,
@@ -213,15 +218,18 @@ export function useCloudSync(t: Translate, diaryId: number | null | undefined) {
                 await loadFiles(provider);
             }
         } else {
-            showMessage('error', t('cloudUploadError'));
+            showError(error);
         }
         setUploading(null);
     };
 
     const loadFiles = async (provider: CloudProviderType) => {
         setLoadingFiles(true);
-        const data = await cloudSyncService.listFiles(provider);
-        setFiles(data);
+        const { data, error } = await cloudSyncService.listFiles(provider);
+        setFiles(data ?? []);
+        if (error) {
+            showError(error);
+        }
         setLoadingFiles(false);
     };
 
@@ -237,14 +245,14 @@ export function useCloudSync(t: Translate, diaryId: number | null | undefined) {
 
     const handleDownload = async (provider: CloudProviderType, file: CloudFileInfo) => {
         setDownloading(file.id);
-        const content = await cloudSyncService.downloadFile(provider, file.id);
+        const { data: content, error } = await cloudSyncService.downloadFile(provider, file.id);
         if (content) {
             // Trigger browser download
             const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
             downloadBlob(blob, file.name);
             showMessage('success', t('cloudDownloadSuccess', { name: file.name }));
         } else {
-            showMessage('error', t('cloudDownloadError'));
+            showError(error);
         }
         setDownloading(null);
     };

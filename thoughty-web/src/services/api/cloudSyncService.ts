@@ -1,4 +1,4 @@
-import { safeJsonParse } from './base';
+import { requestJson, type ServiceResult } from './base';
 
 export type CloudProviderType = 'google_drive' | 'onedrive' | 'dropbox';
 
@@ -36,154 +36,66 @@ export interface DiffSyncResult {
   file?: CloudFileInfo;
 }
 
-export const createCloudSyncService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
-  const getStatus = async (): Promise<CloudStatus | null> => {
-    try {
-      const response = await authFetch('/api/cloud-sync/status');
-      if (!response?.ok) return null;
-      return safeJsonParse<CloudStatus>(response);
-    } catch (error) {
-      console.error('Error fetching cloud status:', error);
-      return null;
-    }
+type CloudAuthFetch = (url: string, options?: RequestInit) => Promise<Response>;
+
+/** What a cloud action that returns no data answers once it is done. */
+export interface CloudActionResult {
+  success: boolean;
+}
+
+/**
+ * The cloud sync endpoints. Each call resolves to its data, or to the error to show with `t`: the API's
+ * coded reason (such as `CLOUD_CONNECTION_EXPIRED`) when it gives one, else the call's fallback key.
+ */
+export const createCloudSyncService = (authFetch: CloudAuthFetch) => {
+  const getStatus = (): Promise<ServiceResult<CloudStatus>> =>
+    requestJson(authFetch('/api/cloud-sync/status'), 'Failed to load cloud status');
+
+  const getAuthUrl = async (provider: CloudProviderType, redirectUri: string): Promise<ServiceResult<string>> => {
+    const { data, error } = await requestJson<{ url?: string }>(
+      authFetch('/api/cloud-sync/auth-url', { method: 'POST', body: JSON.stringify({ provider, redirectUri }) }),
+      'cloudConnectError',
+    );
+    return data?.url ? { data: data.url, error: null } : { data: null, error: error ?? 'cloudConnectError' };
   };
 
-  const getAuthUrl = async (provider: CloudProviderType, redirectUri: string): Promise<string | null> => {
-    try {
-      const response = await authFetch('/api/cloud-sync/auth-url', {
-        method: 'POST',
-        body: JSON.stringify({ provider, redirectUri }),
-      });
-      if (!response?.ok) return null;
-      const data = await safeJsonParse<{ url: string }>(response);
-      return data?.url || null;
-    } catch (error) {
-      console.error('Error getting auth URL:', error);
-      return null;
-    }
-  };
+  const connect = (provider: CloudProviderType, code: string, redirectUri: string): Promise<ServiceResult<CloudActionResult>> =>
+    requestJson(authFetch('/api/cloud-sync/connect', { method: 'POST', body: JSON.stringify({ provider, code, redirectUri }) }), 'cloudConnectError');
 
-  const connect = async (provider: CloudProviderType, code: string, redirectUri: string): Promise<boolean> => {
-    try {
-      const response = await authFetch('/api/cloud-sync/connect', {
-        method: 'POST',
-        body: JSON.stringify({ provider, code, redirectUri }),
-      });
-      return response?.ok ?? false;
-    } catch (error) {
-      console.error('Error connecting provider:', error);
-      return false;
-    }
-  };
+  const disconnect = (provider: CloudProviderType): Promise<ServiceResult<CloudActionResult>> =>
+    requestJson(authFetch('/api/cloud-sync/disconnect', { method: 'POST', body: JSON.stringify({ provider }) }), 'cloudDisconnectError');
 
-  const disconnect = async (provider: CloudProviderType): Promise<boolean> => {
-    try {
-      const response = await authFetch('/api/cloud-sync/disconnect', {
-        method: 'POST',
-        body: JSON.stringify({ provider }),
-      });
-      return response?.ok ?? false;
-    } catch (error) {
-      console.error('Error disconnecting provider:', error);
-      return false;
-    }
-  };
+  const listFiles = (provider: CloudProviderType): Promise<ServiceResult<CloudFileInfo[]>> =>
+    requestJson(authFetch(`/api/cloud-sync/files?provider=${provider}`), 'cloudListFilesError');
 
-  const listFiles = async (provider: CloudProviderType): Promise<CloudFileInfo[]> => {
-    try {
-      const response = await authFetch(`/api/cloud-sync/files?provider=${provider}`);
-      if (!response?.ok) return [];
-      return (await safeJsonParse<CloudFileInfo[]>(response)) || [];
-    } catch (error) {
-      console.error('Error listing cloud files:', error);
-      return [];
-    }
-  };
-
-  const uploadExport = async (
+  const uploadExport = (
     provider: CloudProviderType,
     options?: { diaryId?: number; format?: 'txt' | 'json' | 'md'; includeVisibility?: boolean },
-  ): Promise<CloudFileInfo | null> => {
-    try {
-      const response = await authFetch('/api/cloud-sync/upload', {
-        method: 'POST',
-        body: JSON.stringify({ provider, ...options }),
-      });
-      if (!response?.ok) return null;
-      return safeJsonParse<CloudFileInfo>(response);
-    } catch (error) {
-      console.error('Error uploading to cloud:', error);
-      return null;
-    }
+  ): Promise<ServiceResult<CloudFileInfo>> =>
+    requestJson(authFetch('/api/cloud-sync/upload', { method: 'POST', body: JSON.stringify({ provider, ...options }) }), 'cloudUploadError');
+
+  const downloadFile = async (provider: CloudProviderType, fileId: string): Promise<ServiceResult<string>> => {
+    const { data, error } = await requestJson<{ content?: string }>(
+      authFetch('/api/cloud-sync/download', { method: 'POST', body: JSON.stringify({ provider, fileId }) }),
+      'cloudDownloadError',
+    );
+    return data?.content ? { data: data.content, error: null } : { data: null, error: error ?? 'cloudDownloadError' };
   };
 
-  const downloadFile = async (provider: CloudProviderType, fileId: string): Promise<string | null> => {
-    try {
-      const response = await authFetch('/api/cloud-sync/download', {
-        method: 'POST',
-        body: JSON.stringify({ provider, fileId }),
-      });
-      if (!response?.ok) return null;
-      const data = await safeJsonParse<{ content: string }>(response);
-      return data?.content || null;
-    } catch (error) {
-      console.error('Error downloading from cloud:', error);
-      return null;
-    }
-  };
+  const getSchedules = (): Promise<ServiceResult<SyncSchedules>> =>
+    requestJson(authFetch('/api/cloud-sync/schedules'), 'Failed to load sync schedules');
 
-  const getSchedules = async (): Promise<SyncSchedules | null> => {
-    try {
-      const response = await authFetch('/api/cloud-sync/schedules');
-      if (!response?.ok) return null;
-      return safeJsonParse<SyncSchedules>(response);
-    } catch (error) {
-      console.error('Error fetching sync schedules:', error);
-      return null;
-    }
-  };
-
-  const setSchedule = async (
+  const setSchedule = (
     provider: CloudProviderType,
     config: { frequency: SyncFrequency; format?: string; diaryId?: number; includeVisibility?: boolean },
-  ): Promise<boolean> => {
-    try {
-      const response = await authFetch('/api/cloud-sync/schedule', {
-        method: 'POST',
-        body: JSON.stringify({ provider, ...config }),
-      });
-      return response?.ok ?? false;
-    } catch (error) {
-      console.error('Error setting sync schedule:', error);
-      return false;
-    }
-  };
+  ): Promise<ServiceResult<CloudActionResult>> =>
+    requestJson(authFetch('/api/cloud-sync/schedule', { method: 'POST', body: JSON.stringify({ provider, ...config }) }), 'cloudScheduleSaveError');
 
-  const deleteSchedule = async (provider: CloudProviderType): Promise<boolean> => {
-    try {
-      const response = await authFetch(`/api/cloud-sync/schedule?provider=${provider}`, {
-        method: 'DELETE',
-      });
-      return response?.ok ?? false;
-    } catch (error) {
-      console.error('Error deleting sync schedule:', error);
-      return false;
-    }
-  };
+  const deleteSchedule = (provider: CloudProviderType): Promise<ServiceResult<CloudActionResult>> =>
+    requestJson(authFetch(`/api/cloud-sync/schedule?provider=${provider}`, { method: 'DELETE' }), 'cloudScheduleRemoveError');
 
-  const triggerSync = async (provider: CloudProviderType): Promise<DiffSyncResult | null> => {
-    try {
-      const response = await authFetch('/api/cloud-sync/sync', {
-        method: 'POST',
-        body: JSON.stringify({ provider }),
-      });
-      if (!response?.ok) return null;
-      return safeJsonParse<DiffSyncResult>(response);
-    } catch (error) {
-      console.error('Error triggering sync:', error);
-      return null;
-    }
-  };
+  const triggerSync = (provider: CloudProviderType): Promise<ServiceResult<DiffSyncResult>> =>
+    requestJson(authFetch('/api/cloud-sync/sync', { method: 'POST', body: JSON.stringify({ provider }) }), 'cloudSyncError');
 
   return {
     getStatus,

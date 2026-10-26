@@ -94,6 +94,7 @@ A program that turns the journal into a life story, at `/memoir`.
 - Connect Google Drive, OneDrive, and Dropbox.
 - Upload an export, browse and download provider files, and import journal files from the cloud.
 - Scheduled sync every 6 hours, 12 hours, day, or week (skipped when nothing changed), plus a manual **Sync Now**.
+- A refused connection, upload, file list, download or import, schedule change, or sync says why in the reader's language, such as « La connexion à ce service cloud a expiré. Veuillez le reconnecter. » when the provider's access ran out, and falls back to a generic failure message when the API gives no reason.
 
 ## Social
 

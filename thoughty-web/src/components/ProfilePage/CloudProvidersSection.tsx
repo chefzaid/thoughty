@@ -201,7 +201,7 @@ function CloudProvidersSection({ t, isDark }: Readonly<CloudProvidersSectionProp
 
   const fetchStatus = useCallback(async () => {
     try {
-      const data = await cloudSyncService.getStatus();
+      const { data } = await cloudSyncService.getStatus();
       if (!mountedRef.current) return;
       if (data) setStatus(data as unknown as Record<string, CloudProviderStatus>);
     } finally {
@@ -221,13 +221,13 @@ function CloudProvidersSection({ t, isDark }: Readonly<CloudProvidersSectionProp
 
       setConnecting(provider);
       const redirectUri = `${globalThis.location.origin}/cloud-callback`;
-      const success = await cloudSyncService.connect(provider, code, redirectUri);
+      const { error } = await cloudSyncService.connect(provider, code, redirectUri);
       if (!mountedRef.current) return;
-      if (success) {
+      if (error) {
+        showTransientMessage({ type: 'error', text: t(error) });
+      } else {
         showTransientMessage({ type: 'success', text: t('cloudConnected', { provider: PROVIDER_CONFIG[provider].name }) });
         await fetchStatus();
-      } else {
-        showTransientMessage({ type: 'error', text: t('cloudConnectError') });
       }
       setConnecting(null);
     };
@@ -239,7 +239,7 @@ function CloudProvidersSection({ t, isDark }: Readonly<CloudProvidersSectionProp
   const handleConnect = async (provider: CloudProviderType) => {
     setConnecting(provider);
     const redirectUri = `${globalThis.location.origin}/cloud-callback`;
-    const authUrl = await cloudSyncService.getAuthUrl(provider, redirectUri);
+    const { data: authUrl, error } = await cloudSyncService.getAuthUrl(provider, redirectUri);
     if (!mountedRef.current) return;
     if (authUrl) {
       const width = 600;
@@ -259,19 +259,19 @@ function CloudProvidersSection({ t, isDark }: Readonly<CloudProvidersSectionProp
         popupPollTimersRef.current.push(pollTimer);
       }
     } else {
-      showTransientMessage({ type: 'error', text: t('cloudConnectError') });
+      showTransientMessage({ type: 'error', text: t(error ?? 'cloudConnectError') });
       setConnecting(null);
     }
   };
 
   const handleDisconnect = async (provider: CloudProviderType) => {
-    const success = await cloudSyncService.disconnect(provider);
+    const { error } = await cloudSyncService.disconnect(provider);
     if (!mountedRef.current) return;
-    if (success) {
+    if (error) {
+      showTransientMessage({ type: 'error', text: t(error) });
+    } else {
       showTransientMessage({ type: 'success', text: t('cloudDisconnected', { provider: PROVIDER_CONFIG[provider]?.name || provider }) });
       await fetchStatus();
-    } else {
-      showTransientMessage({ type: 'error', text: t('cloudDisconnectError') });
     }
   };
 

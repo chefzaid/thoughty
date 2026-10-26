@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CloudProvidersSection from './CloudProvidersSection';
+import { cloudOk, cloudRefused } from '../../services/api/cloudSyncService.test-helpers';
+import { getTranslation } from '../../utils/translations';
 
 const mockCloudSyncService = {
     getStatus: vi.fn(),
@@ -25,11 +27,11 @@ const mockT = (key: string): string => key;
 describe('CloudProvidersSection', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: false },
             onedrive: { connected: false },
             dropbox: { connected: false },
-        });
+        }));
     });
 
     afterEach(() => {
@@ -72,11 +74,11 @@ describe('CloudProvidersSection', () => {
     });
 
     it('shows disconnect button for connected providers', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
             dropbox: { connected: false },
-        });
+        }));
 
         render(<CloudProvidersSection t={mockT} isDark={false} />);
 
@@ -89,7 +91,7 @@ describe('CloudProvidersSection', () => {
     it('opens OAuth popup when connect is clicked', async () => {
         const mockOpen = vi.fn();
         globalThis.open = mockOpen;
-        mockCloudSyncService.getAuthUrl.mockResolvedValue('https://accounts.google.com/oauth');
+        mockCloudSyncService.getAuthUrl.mockResolvedValue(cloudOk('https://accounts.google.com/oauth'));
 
         render(<CloudProvidersSection t={mockT} isDark={false} />);
 
@@ -113,7 +115,7 @@ describe('CloudProvidersSection', () => {
     });
 
     it('shows error when auth URL fails', async () => {
-        mockCloudSyncService.getAuthUrl.mockResolvedValue(null);
+        mockCloudSyncService.getAuthUrl.mockResolvedValue(cloudRefused('getAuthUrl'));
 
         render(<CloudProvidersSection t={mockT} isDark={false} />);
 
@@ -129,12 +131,12 @@ describe('CloudProvidersSection', () => {
     });
 
     it('disconnects a provider', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
             dropbox: { connected: false },
-        });
-        mockCloudSyncService.disconnect.mockResolvedValue(true);
+        }));
+        mockCloudSyncService.disconnect.mockResolvedValue(cloudOk({ success: true }));
 
         render(<CloudProvidersSection t={mockT} isDark={false} />);
 
@@ -151,12 +153,12 @@ describe('CloudProvidersSection', () => {
     });
 
     it('shows error when disconnect fails', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
             dropbox: { connected: false },
-        });
-        mockCloudSyncService.disconnect.mockResolvedValue(false);
+        }));
+        mockCloudSyncService.disconnect.mockResolvedValue(cloudRefused('disconnect'));
 
         render(<CloudProvidersSection t={mockT} isDark={false} />);
 
@@ -172,18 +174,18 @@ describe('CloudProvidersSection', () => {
     });
 
     it('handles OAuth callback via postMessage', async () => {
-        mockCloudSyncService.connect.mockResolvedValue(true);
+        mockCloudSyncService.connect.mockResolvedValue(cloudOk({ success: true }));
         mockCloudSyncService.getStatus
-            .mockResolvedValueOnce({
+            .mockResolvedValueOnce(cloudOk({
                 google_drive: { connected: false },
                 onedrive: { connected: false },
                 dropbox: { connected: false },
-            })
-            .mockResolvedValueOnce({
+            }))
+            .mockResolvedValueOnce(cloudOk({
                 google_drive: { connected: true, connectedAt: '2024-01-15' },
                 onedrive: { connected: false },
                 dropbox: { connected: false },
-            });
+            }));
 
         render(<CloudProvidersSection t={mockT} isDark={false} />);
 
@@ -205,6 +207,34 @@ describe('CloudProvidersSection', () => {
                 expect.stringContaining('/cloud-callback')
             );
         });
+    });
+
+    it.each([
+        ['connection', 'connect', 'apiError_CLOUD_UNKNOWN_PROVIDER', 'Ce service cloud n’est pas pris en charge.'],
+        ['disconnection', 'disconnect', 'apiError_RATE_LIMITED', 'Trop de tentatives. Patientez un instant et réessayez.'],
+    ] as const)('shows the reason a refused %s gives, in French', async (_action, call, error, expected) => {
+        const t = (key: string, params?: Record<string, string | number>) => getTranslation('fr', key, params);
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
+            google_drive: { connected: call === 'disconnect' },
+            onedrive: { connected: false },
+            dropbox: { connected: false },
+        }));
+        mockCloudSyncService[call].mockResolvedValue(cloudRefused(call, error));
+        render(<CloudProvidersSection t={t} isDark={false} />);
+        await screen.findByText('Google Drive');
+
+        if (call === 'connect') {
+            await act(async () => {
+                globalThis.dispatchEvent(new MessageEvent('message', {
+                    data: { type: 'cloud-oauth-callback', provider: 'google_drive', code: 'auth-code-123' },
+                }));
+            });
+        } else {
+            fireEvent.click(await screen.findByText(t('cloudDisconnect')));
+        }
+
+        expect(await screen.findByText(expected)).toBeInTheDocument();
+        expect(screen.queryByText(t('cloudConnectError'))).not.toBeInTheDocument();
     });
 
     it('renders in dark mode', async () => {

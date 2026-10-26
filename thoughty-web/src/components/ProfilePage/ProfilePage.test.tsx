@@ -39,7 +39,7 @@ vi.mock('../../contexts/AuthContext', () => ({
 vi.mock('../../hooks/useAppState', () => ({
     useApiServices: () => ({
         cloudSyncService: {
-            getStatus: vi.fn().mockResolvedValue({}),
+            getStatus: vi.fn().mockResolvedValue({ data: {}, error: null }),
             getAuthUrl: vi.fn(),
             connect: vi.fn(),
             disconnect: vi.fn(),

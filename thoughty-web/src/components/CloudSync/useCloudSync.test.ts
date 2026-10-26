@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import { useCloudSync } from './useCloudSync';
+import { cloudOk, cloudRefused } from '../../services/api/cloudSyncService.test-helpers';
 
 const mockCloudSyncService = {
     getStatus: vi.fn(),
@@ -30,6 +31,8 @@ const t = (key: string, params?: Record<string, string | number>): string => (
 
 const file = { id: 'f1', name: 'export.txt', size: 10, modifiedAt: '2024-01-01T00:00:00Z' };
 
+type CloudSyncHook = ReturnType<typeof useCloudSync>;
+
 async function renderCloudSync(diaryId: number | null = null) {
     const hook = renderHook(() => useCloudSync(t, diaryId));
     await waitFor(() => expect(hook.result.current.loading).toBe(false));
@@ -45,8 +48,8 @@ function postOAuthMessage(data: unknown) {
 describe('useCloudSync', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockCloudSyncService.getStatus.mockResolvedValue({ google_drive: { connected: true } });
-        mockCloudSyncService.getSchedules.mockResolvedValue(null);
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({ google_drive: { connected: true } }));
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudRefused('getSchedules'));
     });
 
     afterEach(() => {
@@ -63,10 +66,10 @@ describe('useCloudSync', () => {
     });
 
     it('fills the schedule form from the saved schedules', async () => {
-        mockCloudSyncService.getSchedules.mockResolvedValue({
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudOk({
             dropbox: { enabled: true, frequency: 'weekly', format: 'md', includeVisibility: true },
             onedrive: { enabled: false },
-        });
+        }));
 
         const { result } = await renderCloudSync();
 
@@ -77,7 +80,7 @@ describe('useCloudSync', () => {
     });
 
     it('connects a provider when the OAuth popup posts its code', async () => {
-        mockCloudSyncService.connect.mockResolvedValue(true);
+        mockCloudSyncService.connect.mockResolvedValue(cloudOk({ success: true }));
         const { result } = await renderCloudSync();
 
         postOAuthMessage({ type: 'cloud-oauth-callback', provider: 'dropbox', code: 'abc' });
@@ -90,7 +93,7 @@ describe('useCloudSync', () => {
     });
 
     it('names an unknown provider by its key after the OAuth popup connects it', async () => {
-        mockCloudSyncService.connect.mockResolvedValue(true);
+        mockCloudSyncService.connect.mockResolvedValue(cloudOk({ success: true }));
         const { result } = await renderCloudSync();
 
         postOAuthMessage({ type: 'cloud-oauth-callback', provider: 'box', code: 'abc' });
@@ -99,7 +102,7 @@ describe('useCloudSync', () => {
     });
 
     it('reports a failed OAuth connection', async () => {
-        mockCloudSyncService.connect.mockResolvedValue(false);
+        mockCloudSyncService.connect.mockResolvedValue(cloudRefused('connect'));
         const { result } = await renderCloudSync();
 
         postOAuthMessage({ type: 'cloud-oauth-callback', provider: 'dropbox', code: 'abc' });
@@ -129,8 +132,8 @@ describe('useCloudSync', () => {
     });
 
     it('hides a message after a few seconds and replaces an earlier one', async () => {
-        mockCloudSyncService.setSchedule.mockResolvedValue(false);
-        mockCloudSyncService.deleteSchedule.mockResolvedValue(false);
+        mockCloudSyncService.setSchedule.mockResolvedValue(cloudRefused('setSchedule'));
+        mockCloudSyncService.deleteSchedule.mockResolvedValue(cloudRefused('deleteSchedule'));
         const { result, unmount } = await renderCloudSync();
         vi.useFakeTimers();
 
@@ -165,7 +168,7 @@ describe('useCloudSync', () => {
     });
 
     it('saves a schedule with the default frequency for a provider without one', async () => {
-        mockCloudSyncService.setSchedule.mockResolvedValue(true);
+        mockCloudSyncService.setSchedule.mockResolvedValue(cloudOk({ success: true }));
         const { result } = await renderCloudSync(4);
 
         act(() => {
@@ -184,7 +187,7 @@ describe('useCloudSync', () => {
     });
 
     it('reports a sync with no file name', async () => {
-        mockCloudSyncService.triggerSync.mockResolvedValue({ synced: true, message: 'ok' });
+        mockCloudSyncService.triggerSync.mockResolvedValue(cloudOk({ synced: true, message: 'ok' }));
         const { result } = await renderCloudSync();
 
         await act(async () => {
@@ -196,7 +199,7 @@ describe('useCloudSync', () => {
     });
 
     it('opens the OAuth popup centred on the window', async () => {
-        mockCloudSyncService.getAuthUrl.mockResolvedValue('https://auth.example/authorize');
+        mockCloudSyncService.getAuthUrl.mockResolvedValue(cloudOk('https://auth.example/authorize'));
         const open = vi.spyOn(globalThis, 'open').mockReturnValue(null);
         const { result } = await renderCloudSync();
 
@@ -210,7 +213,7 @@ describe('useCloudSync', () => {
     });
 
     it('reports a provider whose sign-in link cannot be created', async () => {
-        mockCloudSyncService.getAuthUrl.mockResolvedValue(null);
+        mockCloudSyncService.getAuthUrl.mockResolvedValue(cloudRefused('getAuthUrl'));
         const { result } = await renderCloudSync();
 
         await act(async () => {
@@ -222,8 +225,8 @@ describe('useCloudSync', () => {
     });
 
     it('closes the file list of a provider that is disconnected', async () => {
-        mockCloudSyncService.listFiles.mockResolvedValue([file]);
-        mockCloudSyncService.disconnect.mockResolvedValue(true);
+        mockCloudSyncService.listFiles.mockResolvedValue(cloudOk([file]));
+        mockCloudSyncService.disconnect.mockResolvedValue(cloudOk({ success: true }));
         const { result } = await renderCloudSync();
 
         await act(async () => {
@@ -244,7 +247,7 @@ describe('useCloudSync', () => {
     });
 
     it('reports a failed disconnect', async () => {
-        mockCloudSyncService.disconnect.mockResolvedValue(false);
+        mockCloudSyncService.disconnect.mockResolvedValue(cloudRefused('disconnect'));
         const { result } = await renderCloudSync();
 
         await act(async () => {
@@ -255,8 +258,8 @@ describe('useCloudSync', () => {
     });
 
     it('refreshes the open file list after an upload to the same provider', async () => {
-        mockCloudSyncService.listFiles.mockResolvedValueOnce([]).mockResolvedValueOnce([file]);
-        mockCloudSyncService.uploadExport.mockResolvedValue(file);
+        mockCloudSyncService.listFiles.mockResolvedValueOnce(cloudOk([])).mockResolvedValueOnce(cloudOk([file]));
+        mockCloudSyncService.uploadExport.mockResolvedValue(cloudOk(file));
         const { result } = await renderCloudSync();
 
         await act(async () => {
@@ -272,7 +275,7 @@ describe('useCloudSync', () => {
     });
 
     it('toggles the file list closed when browsing the open provider again', async () => {
-        mockCloudSyncService.listFiles.mockResolvedValue([file]);
+        mockCloudSyncService.listFiles.mockResolvedValue(cloudOk([file]));
         const { result } = await renderCloudSync();
 
         await act(async () => {
@@ -288,7 +291,7 @@ describe('useCloudSync', () => {
     });
 
     it('saves a downloaded file to the device', async () => {
-        mockCloudSyncService.downloadFile.mockResolvedValue('hello');
+        mockCloudSyncService.downloadFile.mockResolvedValue(cloudOk('hello'));
         const { result } = await renderCloudSync();
 
         await act(async () => {
@@ -302,7 +305,7 @@ describe('useCloudSync', () => {
     });
 
     it('reports a failed download', async () => {
-        mockCloudSyncService.downloadFile.mockResolvedValue(null);
+        mockCloudSyncService.downloadFile.mockResolvedValue(cloudRefused('downloadFile'));
         const { result } = await renderCloudSync();
 
         await act(async () => {
@@ -311,5 +314,34 @@ describe('useCloudSync', () => {
 
         expect(downloadBlob).not.toHaveBeenCalled();
         expect(result.current.message).toEqual({ type: 'error', text: 'cloudDownloadError' });
+    });
+
+    it.each([
+        ['getAuthUrl', (hook: CloudSyncHook) => hook.handleConnect('google_drive')],
+        ['disconnect', (hook: CloudSyncHook) => hook.handleDisconnect('google_drive')],
+        ['uploadExport', (hook: CloudSyncHook) => hook.handleUpload('google_drive')],
+        ['listFiles', (hook: CloudSyncHook) => hook.handleBrowseFiles('google_drive')],
+        ['downloadFile', (hook: CloudSyncHook) => hook.handleDownload('google_drive', file)],
+        ['setSchedule', (hook: CloudSyncHook) => hook.handleSaveSchedule('google_drive')],
+        ['deleteSchedule', (hook: CloudSyncHook) => hook.handleRemoveSchedule('google_drive')],
+        ['triggerSync', (hook: CloudSyncHook) => hook.handleSyncNow('google_drive')],
+    ] as const)('shows the reason a refused %s gives', async (call, action) => {
+        mockCloudSyncService[call].mockResolvedValue(cloudRefused(call, 'apiError_CLOUD_CONNECTION_EXPIRED'));
+        const { result } = await renderCloudSync();
+
+        await act(async () => {
+            await action(result.current);
+        });
+
+        expect(result.current.message).toEqual({ type: 'error', text: 'apiError_CLOUD_CONNECTION_EXPIRED' });
+    });
+
+    it('shows the reason a refused OAuth connection gives', async () => {
+        mockCloudSyncService.connect.mockResolvedValue(cloudRefused('connect', 'apiError_CLOUD_UNKNOWN_PROVIDER'));
+        const { result } = await renderCloudSync();
+
+        postOAuthMessage({ type: 'cloud-oauth-callback', provider: 'dropbox', code: 'abc' });
+
+        await waitFor(() => expect(result.current.message).toEqual({ type: 'error', text: 'apiError_CLOUD_UNKNOWN_PROVIDER' }));
     });
 });

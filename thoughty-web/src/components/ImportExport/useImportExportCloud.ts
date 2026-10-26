@@ -30,8 +30,13 @@ export function useImportExportCloud({ diaryId, showMessage, previewImportConten
     const [importingCloudFile, setImportingCloudFile] = useState<string | null>(null);
     const connectedProviders = CLOUD_PROVIDERS.filter((provider) => cloudStatus[provider]?.connected);
 
+    /** Shows a refused cloud request: the API's translated reason, or the call's own fallback message. */
+    function showError(error: string | null): void {
+        showMessage('error', t(error ?? 'cloudSyncError'));
+    }
+
     const fetchCloudStatus = useCallback(async (): Promise<void> => {
-        const data = await cloudSyncService.getStatus();
+        const { data } = await cloudSyncService.getStatus();
         if (data) {
             setCloudStatus(data);
         }
@@ -39,7 +44,7 @@ export function useImportExportCloud({ diaryId, showMessage, previewImportConten
     }, [cloudSyncService]);
 
     const fetchSchedules = useCallback(async (): Promise<void> => {
-        const data = await cloudSyncService.getSchedules();
+        const { data } = await cloudSyncService.getSchedules();
         if (!data) {
             return;
         }
@@ -77,48 +82,52 @@ export function useImportExportCloud({ diaryId, showMessage, previewImportConten
 
     async function handleCloudUpload(provider: CloudProviderType): Promise<void> {
         setUploading(provider);
-        const result = await cloudSyncService.uploadExport(provider, {
+        const { data: file, error } = await cloudSyncService.uploadExport(provider, {
             diaryId: diaryId ?? undefined,
             format: cloudExportFormat,
             includeVisibility: cloudIncludeVisibility,
         });
-        showMessage(result ? 'success' : 'error', result ? t('cloudUploadSuccess', { name: result.name }) : t('cloudUploadError'));
+        if (file) {
+            showMessage('success', t('cloudUploadSuccess', { name: file.name }));
+        } else {
+            showError(error);
+        }
         setUploading(null);
     }
 
     async function handleSaveSchedule(provider: CloudProviderType): Promise<void> {
-        const success = await cloudSyncService.setSchedule(provider, {
+        const { error } = await cloudSyncService.setSchedule(provider, {
             frequency: scheduleFrequency[provider] || 'daily',
             format: scheduleFormat[provider],
             diaryId: diaryId ?? undefined,
             includeVisibility: scheduleIncludeVisibility[provider],
         });
-        if (success) {
-            showMessage('success', t('cloudScheduleSaved'));
-            await fetchSchedules();
-        } else {
-            showMessage('error', t('cloudScheduleSaveError'));
+        if (error) {
+            showError(error);
+            return;
         }
+        showMessage('success', t('cloudScheduleSaved'));
+        await fetchSchedules();
     }
 
     async function handleRemoveSchedule(provider: CloudProviderType): Promise<void> {
-        const success = await cloudSyncService.deleteSchedule(provider);
-        if (success) {
-            showMessage('success', t('cloudScheduleRemoved'));
-            await fetchSchedules();
-        } else {
-            showMessage('error', t('cloudScheduleRemoveError'));
+        const { error } = await cloudSyncService.deleteSchedule(provider);
+        if (error) {
+            showError(error);
+            return;
         }
+        showMessage('success', t('cloudScheduleRemoved'));
+        await fetchSchedules();
     }
 
     async function handleSyncNow(provider: CloudProviderType): Promise<void> {
         setSyncing(provider);
-        const result = await cloudSyncService.triggerSync(provider);
+        const { data: result, error } = await cloudSyncService.triggerSync(provider);
         if (result) {
             showMessage('success', result.synced ? t('cloudSyncSuccess', { name: result.file?.name || '' }) : t('cloudSyncNoChanges'));
             await fetchSchedules();
         } else {
-            showMessage('error', t('cloudSyncError'));
+            showError(error);
         }
         setSyncing(null);
     }
@@ -131,17 +140,21 @@ export function useImportExportCloud({ diaryId, showMessage, previewImportConten
         }
         setCloudImportProvider(provider);
         setLoadingCloudFiles(true);
-        setCloudFiles(await cloudSyncService.listFiles(provider));
+        const { data: files, error } = await cloudSyncService.listFiles(provider);
+        setCloudFiles(files ?? []);
+        if (error) {
+            showError(error);
+        }
         setLoadingCloudFiles(false);
     }
 
     async function handleCloudFileImport(provider: CloudProviderType, file: CloudFileInfo): Promise<void> {
         setImportingCloudFile(file.id);
-        const content = await cloudSyncService.downloadFile(provider, file.id);
+        const { data: content, error } = await cloudSyncService.downloadFile(provider, file.id);
         if (content) {
             await previewImportContent(content, t('cloudDownloadSuccess', { name: file.name }));
         } else {
-            showMessage('error', t('cloudDownloadError'));
+            showError(error);
         }
         setImportingCloudFile(null);
     }

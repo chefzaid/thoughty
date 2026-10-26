@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImportExport from './ImportExport';
+import { cloudOk, cloudRefused } from '../../services/api/cloudSyncService.test-helpers';
 
 vi.mock('../../contexts/AuthContext', () => {
     const authFetch = (...args: Parameters<typeof fetch>) => {
@@ -49,8 +50,8 @@ describe('ImportExport', () => {
         globalThis.URL.createObjectURL = vi.fn(() => 'blob:test');
         globalThis.URL.revokeObjectURL = vi.fn();
         vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
-        mockCloudSyncService.getStatus.mockResolvedValue({});
-        mockCloudSyncService.getSchedules.mockResolvedValue([]);
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({}));
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudOk([]));
     });
 
     afterEach(() => {
@@ -287,14 +288,14 @@ describe('ImportExport', () => {
 
     it('runs the successful cloud upload, schedule, remove, and sync flows', async () => {
         (globalThis.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig });
-        mockCloudSyncService.getStatus.mockResolvedValue({ google_drive: { connected: true } });
-        mockCloudSyncService.getSchedules.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({ google_drive: { connected: true } }));
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudOk({
             google_drive: { enabled: true, frequency: 'daily', format: 'txt', includeVisibility: false },
-        });
-        mockCloudSyncService.uploadExport.mockResolvedValue({ name: 'cloud.txt' });
-        mockCloudSyncService.setSchedule.mockResolvedValue(true);
-        mockCloudSyncService.deleteSchedule.mockResolvedValue(true);
-        mockCloudSyncService.triggerSync.mockResolvedValue({ synced: true, file: { name: 'synced.txt' } });
+        }));
+        mockCloudSyncService.uploadExport.mockResolvedValue(cloudOk({ name: 'cloud.txt' }));
+        mockCloudSyncService.setSchedule.mockResolvedValue(cloudOk({ success: true }));
+        mockCloudSyncService.deleteSchedule.mockResolvedValue(cloudOk({ success: true }));
+        mockCloudSyncService.triggerSync.mockResolvedValue(cloudOk({ synced: true, file: { name: 'synced.txt' } }));
 
         render(<ImportExport theme="dark" t={mockT} />);
 
@@ -329,14 +330,14 @@ describe('ImportExport', () => {
 
     it('shows cloud error and no-change messages for unsuccessful cloud actions', async () => {
         (globalThis.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig });
-        mockCloudSyncService.getStatus.mockResolvedValue({ google_drive: { connected: true } });
-        mockCloudSyncService.getSchedules.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({ google_drive: { connected: true } }));
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudOk({
             google_drive: { enabled: true, frequency: 'daily', format: 'txt', includeVisibility: false },
-        });
-        mockCloudSyncService.uploadExport.mockResolvedValue(null);
-        mockCloudSyncService.setSchedule.mockResolvedValue(false);
-        mockCloudSyncService.deleteSchedule.mockResolvedValue(false);
-        mockCloudSyncService.triggerSync.mockResolvedValue({ synced: false, file: null });
+        }));
+        mockCloudSyncService.uploadExport.mockResolvedValue(cloudRefused('uploadExport'));
+        mockCloudSyncService.setSchedule.mockResolvedValue(cloudRefused('setSchedule'));
+        mockCloudSyncService.deleteSchedule.mockResolvedValue(cloudRefused('deleteSchedule'));
+        mockCloudSyncService.triggerSync.mockResolvedValue(cloudOk({ synced: false, file: null }));
 
         render(<ImportExport theme="dark" t={mockT} />);
 
@@ -361,12 +362,12 @@ describe('ImportExport', () => {
         (globalThis.fetch as Mock)
             .mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig })
             .mockResolvedValueOnce({ ok: true, json: async () => ({ totalCount: 1, duplicateCount: 0 }) });
-        mockCloudSyncService.getStatus.mockResolvedValue({ google_drive: { connected: true } });
-        mockCloudSyncService.getSchedules.mockResolvedValue({});
-        mockCloudSyncService.listFiles.mockResolvedValue([
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({ google_drive: { connected: true } }));
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudOk({}));
+        mockCloudSyncService.listFiles.mockResolvedValue(cloudOk([
             { id: 'file-1', name: 'cloud-export.txt', size: 2048, modifiedAt: '2024-01-01T12:00:00.000Z' },
-        ]);
-        mockCloudSyncService.downloadFile.mockResolvedValue('cloud content');
+        ]));
+        mockCloudSyncService.downloadFile.mockResolvedValue(cloudOk('cloud content'));
 
         render(<ImportExport theme="dark" t={mockT} />);
 
@@ -403,12 +404,12 @@ describe('ImportExport', () => {
 
     it('shows an error when downloading a cloud file fails', async () => {
         (globalThis.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig });
-        mockCloudSyncService.getStatus.mockResolvedValue({ google_drive: { connected: true } });
-        mockCloudSyncService.getSchedules.mockResolvedValue({});
-        mockCloudSyncService.listFiles.mockResolvedValue([
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({ google_drive: { connected: true } }));
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudOk({}));
+        mockCloudSyncService.listFiles.mockResolvedValue(cloudOk([
             { id: 'file-1', name: 'cloud-export.txt', size: 2048, modifiedAt: '2024-01-01T12:00:00.000Z' },
-        ]);
-        mockCloudSyncService.downloadFile.mockResolvedValue(null);
+        ]));
+        mockCloudSyncService.downloadFile.mockResolvedValue(cloudRefused('downloadFile'));
 
         render(<ImportExport theme="dark" t={mockT} />);
 

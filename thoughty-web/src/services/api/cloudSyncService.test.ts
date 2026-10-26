@@ -1,9 +1,137 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createCloudSyncService } from './cloudSyncService';
 
+type Service = ReturnType<typeof createCloudSyncService>;
+
+const jsonResponse = (body: unknown, status = 200) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  json: async () => body,
+});
+
+const expiredConnection = {
+  statusCode: 400,
+  message: 'google drive connection expired. Please reconnect.',
+  error: 'Bad Request',
+  code: 'CLOUD_CONNECTION_EXPIRED',
+};
+
+const file = { id: 'f1', name: 'export.txt', size: 1024, modifiedAt: '2024-01-01' };
+
+/** Every call, with the request it should send, what the API answers, and what the call resolves to. */
+const calls: ReadonlyArray<{
+  name: string;
+  call: (service: Service) => Promise<unknown>;
+  request: unknown[];
+  answer: unknown;
+  data: unknown;
+  fallback: string;
+}> = [
+  {
+    name: 'getStatus',
+    call: (service) => service.getStatus(),
+    request: ['/api/cloud-sync/status'],
+    answer: { google_drive: { connected: true, connectedAt: '2024-01-01' } },
+    data: { google_drive: { connected: true, connectedAt: '2024-01-01' } },
+    fallback: 'Failed to load cloud status',
+  },
+  {
+    name: 'getAuthUrl',
+    call: (service) => service.getAuthUrl('google_drive', 'http://localhost/cloud-callback'),
+    request: ['/api/cloud-sync/auth-url', {
+      method: 'POST',
+      body: JSON.stringify({ provider: 'google_drive', redirectUri: 'http://localhost/cloud-callback' }),
+    }],
+    answer: { url: 'https://accounts.google.com/oauth' },
+    data: 'https://accounts.google.com/oauth',
+    fallback: 'cloudConnectError',
+  },
+  {
+    name: 'connect',
+    call: (service) => service.connect('dropbox', 'auth-code', 'http://localhost/cloud-callback'),
+    request: ['/api/cloud-sync/connect', {
+      method: 'POST',
+      body: JSON.stringify({ provider: 'dropbox', code: 'auth-code', redirectUri: 'http://localhost/cloud-callback' }),
+    }],
+    answer: { success: true, connectedAt: '2024-01-01' },
+    data: { success: true, connectedAt: '2024-01-01' },
+    fallback: 'cloudConnectError',
+  },
+  {
+    name: 'disconnect',
+    call: (service) => service.disconnect('onedrive'),
+    request: ['/api/cloud-sync/disconnect', { method: 'POST', body: JSON.stringify({ provider: 'onedrive' }) }],
+    answer: { success: true },
+    data: { success: true },
+    fallback: 'cloudDisconnectError',
+  },
+  {
+    name: 'listFiles',
+    call: (service) => service.listFiles('google_drive'),
+    request: ['/api/cloud-sync/files?provider=google_drive'],
+    answer: [file],
+    data: [file],
+    fallback: 'cloudListFilesError',
+  },
+  {
+    name: 'uploadExport',
+    call: (service) => service.uploadExport('google_drive', { diaryId: 2, format: 'json', includeVisibility: true }),
+    request: ['/api/cloud-sync/upload', {
+      method: 'POST',
+      body: JSON.stringify({ provider: 'google_drive', diaryId: 2, format: 'json', includeVisibility: true }),
+    }],
+    answer: file,
+    data: file,
+    fallback: 'cloudUploadError',
+  },
+  {
+    name: 'downloadFile',
+    call: (service) => service.downloadFile('dropbox', 'f1'),
+    request: ['/api/cloud-sync/download', { method: 'POST', body: JSON.stringify({ provider: 'dropbox', fileId: 'f1' }) }],
+    answer: { content: '--- 2024-01-15 --\nHello' },
+    data: '--- 2024-01-15 --\nHello',
+    fallback: 'cloudDownloadError',
+  },
+  {
+    name: 'getSchedules',
+    call: (service) => service.getSchedules(),
+    request: ['/api/cloud-sync/schedules'],
+    answer: { google_drive: { enabled: true, frequency: 'daily' } },
+    data: { google_drive: { enabled: true, frequency: 'daily' } },
+    fallback: 'Failed to load sync schedules',
+  },
+  {
+    name: 'setSchedule',
+    call: (service) => service.setSchedule('google_drive', { frequency: 'weekly', format: 'md', diaryId: 1, includeVisibility: false }),
+    request: ['/api/cloud-sync/schedule', {
+      method: 'POST',
+      body: JSON.stringify({ provider: 'google_drive', frequency: 'weekly', format: 'md', diaryId: 1, includeVisibility: false }),
+    }],
+    answer: { success: true },
+    data: { success: true },
+    fallback: 'cloudScheduleSaveError',
+  },
+  {
+    name: 'deleteSchedule',
+    call: (service) => service.deleteSchedule('onedrive'),
+    request: ['/api/cloud-sync/schedule?provider=onedrive', { method: 'DELETE' }],
+    answer: { success: true },
+    data: { success: true },
+    fallback: 'cloudScheduleRemoveError',
+  },
+  {
+    name: 'triggerSync',
+    call: (service) => service.triggerSync('google_drive'),
+    request: ['/api/cloud-sync/sync', { method: 'POST', body: JSON.stringify({ provider: 'google_drive' }) }],
+    answer: { synced: true, message: 'Synced', file },
+    data: { synced: true, message: 'Synced', file },
+    fallback: 'cloudSyncError',
+  },
+];
+
 describe('cloudSyncService', () => {
   let authFetch: ReturnType<typeof vi.fn>;
-  let service: ReturnType<typeof createCloudSyncService>;
+  let service: Service;
 
   beforeEach(() => {
     authFetch = vi.fn();
@@ -15,397 +143,39 @@ describe('cloudSyncService', () => {
     vi.restoreAllMocks();
   });
 
-  describe('getStatus', () => {
-    it('should fetch and return cloud status', async () => {
-      const mockStatus = {
-        google_drive: { connected: true, connectedAt: '2024-01-01' },
-        onedrive: { connected: false },
-      };
-      authFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockStatus,
-        text: async () => JSON.stringify(mockStatus),
-      });
+  describe.each(calls)('$name', ({ call, request, answer, data, fallback }) => {
+    it('sends the request and resolves to the data', async () => {
+      authFetch.mockResolvedValue(jsonResponse(answer));
 
-      const result = await service.getStatus();
-
-      expect(result).toEqual(mockStatus);
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/status');
+      await expect(call(service)).resolves.toEqual({ data, error: null });
+      expect(authFetch).toHaveBeenCalledWith(...request);
     });
 
-    it('should return null on error', async () => {
-      authFetch.mockResolvedValue({ ok: false });
+    it('passes the API’s coded reason on', async () => {
+      authFetch.mockResolvedValue(jsonResponse(expiredConnection, 400));
 
-      const result = await service.getStatus();
-
-      expect(result).toBeNull();
+      await expect(call(service)).resolves.toEqual({ data: null, error: 'apiError_CLOUD_CONNECTION_EXPIRED' });
     });
 
-    it('should return null on fetch exception', async () => {
+    it('falls back to its own message when the API gives no reason', async () => {
+      authFetch.mockResolvedValue(jsonResponse({ statusCode: 503 }, 503));
+
+      await expect(call(service)).resolves.toEqual({ data: null, error: fallback });
+    });
+
+    it('falls back to its own message when the request cannot be sent', async () => {
       authFetch.mockRejectedValue(new Error('network error'));
 
-      const result = await service.getStatus();
-
-      expect(result).toBeNull();
+      await expect(call(service)).resolves.toEqual({ data: null, error: fallback });
     });
   });
 
-  describe('getAuthUrl', () => {
-    it('should return auth URL from API', async () => {
-      const mockData = { url: 'https://accounts.google.com/oauth?...' };
-      authFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockData,
-        text: async () => JSON.stringify(mockData),
-      });
-
-      const result = await service.getAuthUrl('google_drive', 'http://localhost/callback');
-
-      expect(result).toBe('https://accounts.google.com/oauth?...');
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/auth-url', {
-        method: 'POST',
-        body: JSON.stringify({ provider: 'google_drive', redirectUri: 'http://localhost/callback' }),
-      });
-    });
-
-    it('should return null when request fails', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-
-      const result = await service.getAuthUrl('google_drive', 'http://localhost/callback');
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null on exception', async () => {
-      authFetch.mockRejectedValue(new Error('network'));
-
-      const result = await service.getAuthUrl('google_drive', 'http://localhost/callback');
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('connect', () => {
-    it('should send connect request and return true on success', async () => {
-      authFetch.mockResolvedValue({ ok: true });
-
-      const result = await service.connect('google_drive', 'auth-code', 'http://localhost/callback');
-
-      expect(result).toBe(true);
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/connect', {
-        method: 'POST',
-        body: JSON.stringify({ provider: 'google_drive', code: 'auth-code', redirectUri: 'http://localhost/callback' }),
-      });
-    });
-
-    it('should return false on failure', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-
-      const result = await service.connect('google_drive', 'bad-code', 'http://localhost/callback');
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false on exception', async () => {
-      authFetch.mockRejectedValue(new Error('network'));
-
-      const result = await service.connect('google_drive', 'code', 'http://localhost/callback');
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('disconnect', () => {
-    it('should send disconnect request and return true on success', async () => {
-      authFetch.mockResolvedValue({ ok: true });
-
-      const result = await service.disconnect('onedrive');
-
-      expect(result).toBe(true);
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/disconnect', {
-        method: 'POST',
-        body: JSON.stringify({ provider: 'onedrive' }),
-      });
-    });
-
-    it('should return false on failure', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-
-      const result = await service.disconnect('onedrive');
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false on exception', async () => {
-      authFetch.mockRejectedValue(new Error('network'));
-
-      const result = await service.disconnect('onedrive');
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('listFiles', () => {
-    it('should fetch and return file list', async () => {
-      const mockFiles = [
-        { id: '1', name: 'export.txt', size: 1024, modifiedAt: '2024-01-01' },
-      ];
-      authFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockFiles,
-        text: async () => JSON.stringify(mockFiles),
-      });
-
-      const result = await service.listFiles('google_drive');
-
-      expect(result).toEqual(mockFiles);
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/files?provider=google_drive');
-    });
-
-    it('should return empty array on failure', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-
-      const result = await service.listFiles('google_drive');
-
-      expect(result).toEqual([]);
-    });
-
-    it('should return empty array on exception', async () => {
-      authFetch.mockRejectedValue(new Error('network'));
-
-      const result = await service.listFiles('google_drive');
-
-      expect(result).toEqual([]);
-    });
-  });
-
-  describe('uploadExport', () => {
-    it('should upload export and return file info', async () => {
-      const mockFile = { id: '1', name: 'export.txt', size: 100, modifiedAt: '2024-01-01' };
-      authFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockFile,
-        text: async () => JSON.stringify(mockFile),
-      });
-
-      const result = await service.uploadExport('google_drive', { format: 'txt', includeVisibility: true });
-
-      expect(result).toEqual(mockFile);
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/upload', {
-        method: 'POST',
-        body: JSON.stringify({ provider: 'google_drive', format: 'txt', includeVisibility: true }),
-      });
-    });
-
-    it('should return null on failure', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-
-      const result = await service.uploadExport('google_drive');
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null on exception', async () => {
-      authFetch.mockRejectedValue(new Error('network'));
-
-      const result = await service.uploadExport('google_drive');
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('downloadFile', () => {
-    it('should download and return file content', async () => {
-      const mockData = { content: 'file content' };
-      authFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockData,
-        text: async () => JSON.stringify(mockData),
-      });
-
-      const result = await service.downloadFile('onedrive', 'file-123');
-
-      expect(result).toBe('file content');
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/download', {
-        method: 'POST',
-        body: JSON.stringify({ provider: 'onedrive', fileId: 'file-123' }),
-      });
-    });
-
-    it('should return null on failure', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-
-      const result = await service.downloadFile('onedrive', 'file-123');
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null on exception', async () => {
-      authFetch.mockRejectedValue(new Error('network'));
-
-      const result = await service.downloadFile('onedrive', 'file-123');
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('getSchedules', () => {
-    it('should fetch and return sync schedules', async () => {
-      const mockSchedules = {
-        google_drive: { enabled: true, frequency: 'daily', format: 'txt', lastSyncAt: '2024-01-01' },
-        onedrive: { enabled: false },
-      };
-      authFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockSchedules,
-        text: async () => JSON.stringify(mockSchedules),
-      });
-
-      const result = await service.getSchedules();
-
-      expect(result).toEqual(mockSchedules);
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/schedules');
-    });
-
-    it('should return null on error', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-
-      const result = await service.getSchedules();
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null on exception', async () => {
-      authFetch.mockRejectedValue(new Error('network'));
-
-      const result = await service.getSchedules();
-
-      expect(result).toBeNull();
-    });
-  });
-
-  describe('setSchedule', () => {
-    it('should send schedule config and return true on success', async () => {
-      authFetch.mockResolvedValue({ ok: true });
-
-      const result = await service.setSchedule('google_drive', {
-        frequency: 'daily',
-        format: 'json',
-        diaryId: 5,
-        includeVisibility: true,
-      });
-
-      expect(result).toBe(true);
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/schedule', {
-        method: 'POST',
-        body: JSON.stringify({
-          provider: 'google_drive',
-          frequency: 'daily',
-          format: 'json',
-          diaryId: 5,
-          includeVisibility: true,
-        }),
-      });
-    });
-
-    it('should return false on failure', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-
-      const result = await service.setSchedule('google_drive', { frequency: 'daily' });
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false on exception', async () => {
-      authFetch.mockRejectedValue(new Error('network'));
-
-      const result = await service.setSchedule('google_drive', { frequency: 'daily' });
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('deleteSchedule', () => {
-    it('should send delete request and return true on success', async () => {
-      authFetch.mockResolvedValue({ ok: true });
-
-      const result = await service.deleteSchedule('onedrive');
-
-      expect(result).toBe(true);
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/schedule?provider=onedrive', {
-        method: 'DELETE',
-      });
-    });
-
-    it('should return false on failure', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-
-      const result = await service.deleteSchedule('onedrive');
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false on exception', async () => {
-      authFetch.mockRejectedValue(new Error('network'));
-
-      const result = await service.deleteSchedule('onedrive');
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('triggerSync', () => {
-    it('should trigger sync and return result with changes', async () => {
-      const mockResult = {
-        synced: true,
-        message: 'Sync completed successfully',
-        file: { id: '1', name: 'export.txt', size: 100, modifiedAt: '2024-01-01' },
-      };
-      authFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockResult,
-        text: async () => JSON.stringify(mockResult),
-      });
-
-      const result = await service.triggerSync('google_drive');
-
-      expect(result).toEqual(mockResult);
-      expect(authFetch).toHaveBeenCalledWith('/api/cloud-sync/sync', {
-        method: 'POST',
-        body: JSON.stringify({ provider: 'google_drive' }),
-      });
-    });
-
-    it('should return no-changes result', async () => {
-      const mockResult = {
-        synced: false,
-        message: 'No changes detected since last sync',
-      };
-      authFetch.mockResolvedValue({
-        ok: true,
-        json: async () => mockResult,
-        text: async () => JSON.stringify(mockResult),
-      });
-
-      const result = await service.triggerSync('onedrive');
-
-      expect(result?.synced).toBe(false);
-    });
-
-    it('should return null on failure', async () => {
-      authFetch.mockResolvedValue({ ok: false });
-
-      const result = await service.triggerSync('google_drive');
-
-      expect(result).toBeNull();
-    });
-
-    it('should return null on exception', async () => {
-      authFetch.mockRejectedValue(new Error('network'));
-
-      const result = await service.triggerSync('google_drive');
-
-      expect(result).toBeNull();
-    });
+  it.each([
+    ['getAuthUrl', (s: Service) => s.getAuthUrl('google_drive', 'http://localhost/cloud-callback'), 'cloudConnectError'],
+    ['downloadFile', (s: Service) => s.downloadFile('google_drive', 'f1'), 'cloudDownloadError'],
+  ] as const)('%s falls back to its own message when the answer has nothing in it', async (_name, call, fallback) => {
+    authFetch.mockResolvedValue(jsonResponse({}));
+
+    await expect(call(service)).resolves.toEqual({ data: null, error: fallback });
   });
 });

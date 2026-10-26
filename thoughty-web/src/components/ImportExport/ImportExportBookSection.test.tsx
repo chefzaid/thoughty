@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImportExport from './ImportExport';
+import { cloudOk } from '../../services/api/cloudSyncService.test-helpers';
 
 vi.mock('../../contexts/AuthContext', () => {
     const authFetch = (...args: Parameters<typeof fetch>) => {
@@ -92,8 +93,8 @@ describe('ImportExport book section', () => {
         globalThis.URL.createObjectURL = vi.fn(() => 'blob:test');
         globalThis.URL.revokeObjectURL = vi.fn();
         vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
-        mockCloudSyncService.getStatus.mockResolvedValue({});
-        mockCloudSyncService.getSchedules.mockResolvedValue([]);
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({}));
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudOk([]));
     });
 
     afterEach(() => {
@@ -299,11 +300,11 @@ describe('ImportExport book section', () => {
     });
 
     it('uploads the generated book to a connected cloud provider', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true },
             dropbox: { connected: true },
             onedrive: { connected: false },
-        });
+        }));
         (globalThis.fetch as Mock).mockResolvedValueOnce({
             ok: true,
             json: async () => ({

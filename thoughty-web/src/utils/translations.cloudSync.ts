@@ -24,6 +24,7 @@ export type CloudSyncTranslationKey =
   | "cloudBrowseFiles"
   | "cloudFilesInCloud"
   | "cloudNoFiles"
+  | "cloudListFilesError"
   | "cloudSchedule"
   | "cloudScheduleDescription"
   | "cloudScheduleFrequency"
@@ -75,6 +76,7 @@ export const cloudSyncTranslations: Record<Language, Record<CloudSyncTranslation
     cloudBrowseFiles: "Browse Files",
     cloudFilesInCloud: "Files in {provider}",
     cloudNoFiles: "No files found in your cloud folder",
+    cloudListFilesError: "Failed to list your cloud files",
     cloudSchedule: "Scheduled Sync",
     cloudScheduleDescription:
       "Automatically sync your journal to the cloud on a fixed schedule. Only changes since the last sync are detected — no redundant uploads.",
@@ -127,6 +129,7 @@ export const cloudSyncTranslations: Record<Language, Record<CloudSyncTranslation
     cloudBrowseFiles: "Parcourir les fichiers",
     cloudFilesInCloud: "Fichiers dans {provider}",
     cloudNoFiles: "Aucun fichier trouvé dans votre dossier cloud",
+    cloudListFilesError: "Échec de l'affichage de vos fichiers cloud",
     cloudSchedule: "Synchronisation programmée",
     cloudScheduleDescription:
       "Synchronisez automatiquement votre journal vers le cloud selon un calendrier fixe. Seuls les changements depuis la dernière synchronisation sont détectés.",

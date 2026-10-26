@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import CloudSync from './CloudSync';
+import { cloudOk, cloudRefused } from '../../services/api/cloudSyncService.test-helpers';
 
 const mockCloudSyncService = {
     getStatus: vi.fn(),
@@ -25,16 +26,16 @@ const mockT = (key: string): string => key;
 describe('CloudSync', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: false },
             onedrive: { connected: false },
             dropbox: { connected: false },
-        });
-        mockCloudSyncService.getSchedules.mockResolvedValue({
+        }));
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudOk({
             google_drive: { enabled: false },
             onedrive: { enabled: false },
             dropbox: { enabled: false },
-        });
+        }));
     });
 
     afterEach(() => {
@@ -70,10 +71,10 @@ describe('CloudSync', () => {
     });
 
     it('shows action buttons for connected provider', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
+        }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -85,10 +86,10 @@ describe('CloudSync', () => {
     });
 
     it('shows upload options for connected provider', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
+        }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -100,7 +101,7 @@ describe('CloudSync', () => {
 
     it('initiates OAuth flow on connect', async () => {
         const openSpy = vi.spyOn(globalThis, 'open').mockImplementation(() => null);
-        mockCloudSyncService.getAuthUrl.mockResolvedValue('https://accounts.google.com/oauth');
+        mockCloudSyncService.getAuthUrl.mockResolvedValue(cloudOk('https://accounts.google.com/oauth'));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -119,11 +120,11 @@ describe('CloudSync', () => {
     });
 
     it('handles disconnect', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.disconnect.mockResolvedValue(true);
+        }));
+        mockCloudSyncService.disconnect.mockResolvedValue(cloudOk({ success: true }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -139,11 +140,11 @@ describe('CloudSync', () => {
     });
 
     it('handles upload', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.uploadExport.mockResolvedValue({ id: '1', name: 'export.txt', size: 100, modifiedAt: '2024-01-01' });
+        }));
+        mockCloudSyncService.uploadExport.mockResolvedValue(cloudOk({ id: '1', name: 'export.txt', size: 100, modifiedAt: '2024-01-01' }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -163,11 +164,11 @@ describe('CloudSync', () => {
     });
 
     it('handles upload with diary ID and options', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.uploadExport.mockResolvedValue({ id: '1', name: 'export.json', size: 100, modifiedAt: '2024-01-01' });
+        }));
+        mockCloudSyncService.uploadExport.mockResolvedValue(cloudOk({ id: '1', name: 'export.json', size: 100, modifiedAt: '2024-01-01' }));
 
         render(<CloudSync theme="dark" t={mockT} diaryId={5} />);
 
@@ -195,13 +196,13 @@ describe('CloudSync', () => {
     });
 
     it('browses files in cloud storage', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.listFiles.mockResolvedValue([
+        }));
+        mockCloudSyncService.listFiles.mockResolvedValue(cloudOk([
             { id: 'f1', name: 'export.txt', size: 1024, modifiedAt: '2024-01-01T00:00:00Z' },
-        ]);
+        ]));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -218,11 +219,11 @@ describe('CloudSync', () => {
     });
 
     it('shows empty state when no files', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.listFiles.mockResolvedValue([]);
+        }));
+        mockCloudSyncService.listFiles.mockResolvedValue(cloudOk([]));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -238,11 +239,11 @@ describe('CloudSync', () => {
     });
 
     it('shows success message on upload', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.uploadExport.mockResolvedValue({ id: '1', name: 'export.txt', size: 100, modifiedAt: '2024-01-01' });
+        }));
+        mockCloudSyncService.uploadExport.mockResolvedValue(cloudOk({ id: '1', name: 'export.txt', size: 100, modifiedAt: '2024-01-01' }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -258,11 +259,11 @@ describe('CloudSync', () => {
     });
 
     it('shows error message on failed upload', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.uploadExport.mockResolvedValue(null);
+        }));
+        mockCloudSyncService.uploadExport.mockResolvedValue(cloudRefused('uploadExport'));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -286,10 +287,10 @@ describe('CloudSync', () => {
     });
 
     it('shows connected status text', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-15T10:30:00Z' },
             onedrive: { connected: false },
-        });
+        }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -299,10 +300,10 @@ describe('CloudSync', () => {
     });
 
     it('shows schedule section for connected provider', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
+        }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -315,11 +316,11 @@ describe('CloudSync', () => {
     });
 
     it('shows schedule status when enabled', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.getSchedules.mockResolvedValue({
+        }));
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudOk({
             google_drive: {
                 enabled: true,
                 frequency: 'daily',
@@ -328,7 +329,7 @@ describe('CloudSync', () => {
                 nextSyncAt: '2024-06-02T12:00:00Z',
             },
             onedrive: { enabled: false },
-        });
+        }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -339,11 +340,11 @@ describe('CloudSync', () => {
     });
 
     it('saves sync schedule on enable', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.setSchedule.mockResolvedValue(true);
+        }));
+        mockCloudSyncService.setSchedule.mockResolvedValue(cloudOk({ success: true }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -364,15 +365,15 @@ describe('CloudSync', () => {
     });
 
     it('removes sync schedule on disable', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.getSchedules.mockResolvedValue({
+        }));
+        mockCloudSyncService.getSchedules.mockResolvedValue(cloudOk({
             google_drive: { enabled: true, frequency: 'daily', format: 'txt' },
             onedrive: { enabled: false },
-        });
-        mockCloudSyncService.deleteSchedule.mockResolvedValue(true);
+        }));
+        mockCloudSyncService.deleteSchedule.mockResolvedValue(cloudOk({ success: true }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -388,15 +389,15 @@ describe('CloudSync', () => {
     });
 
     it('triggers sync now and shows success', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.triggerSync.mockResolvedValue({
+        }));
+        mockCloudSyncService.triggerSync.mockResolvedValue(cloudOk({
             synced: true,
             message: 'Sync completed successfully',
             file: { id: '1', name: 'export.txt', size: 100, modifiedAt: '2024-01-01' },
-        });
+        }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -413,14 +414,14 @@ describe('CloudSync', () => {
     });
 
     it('shows no-changes message when sync detects no diff', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.triggerSync.mockResolvedValue({
+        }));
+        mockCloudSyncService.triggerSync.mockResolvedValue(cloudOk({
             synced: false,
             message: 'No changes detected since last sync',
-        });
+        }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -436,11 +437,11 @@ describe('CloudSync', () => {
     });
 
     it('shows error message on failed sync', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
-        mockCloudSyncService.triggerSync.mockResolvedValue(null);
+        }));
+        mockCloudSyncService.triggerSync.mockResolvedValue(cloudRefused('triggerSync'));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
@@ -464,10 +465,10 @@ describe('CloudSync', () => {
     });
 
     it('shows frequency selector in schedule section', async () => {
-        mockCloudSyncService.getStatus.mockResolvedValue({
+        mockCloudSyncService.getStatus.mockResolvedValue(cloudOk({
             google_drive: { connected: true, connectedAt: '2024-01-01' },
             onedrive: { connected: false },
-        });
+        }));
 
         render(<CloudSync theme="dark" t={mockT} />);
 
