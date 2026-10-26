@@ -14,6 +14,10 @@ Thoughty has three test layers: backend Jest tests, frontend Vitest tests, and P
 
 Run the narrowest suite first and the broader ones before you merge a larger change.
 
+## Organizing Specs
+
+Spec files keep to the 500-line rule too. One that outgrows it is split by the behaviour it covers into `<unit>.<area>.spec.ts` on the server or `<unit>.<area>.test.ts(x)` on the web (for example `io.service.export.spec.ts` and `io.service.import.spec.ts`, or `useEntryActions.edit.test.ts` and `useEntryActions.bulk.test.ts`), each keeping the original top-level `describe` so the full test names stay the same. Setup the parts share (the unit under test over its mocks, fixtures, mocked module factories) goes in a `<unit>.test-helpers.ts` beside them, `.tsx` when it holds stand-in components. Both coverage reports leave `*.test-helpers.*` out (Jest's `collectCoverageFrom`, Vitest's `coverage.exclude`), the server build excludes them, and ESLint lets a `.test-helpers.tsx` export components beside fixtures. Vitest hoists `vi.mock` above the imports, so a spec reads a shared mock from its helper inside the factory: `vi.mock('../services/api', async () => (await import('./useAppState.test-helpers')).apiModuleMock());`.
+
 ## Commands
 
 | Command (repository root) | Runs |

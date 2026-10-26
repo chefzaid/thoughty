@@ -1,311 +1,46 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-
 import { useAppShellModel } from './useAppShellModel';
+import {
+  mocks,
+  stubShellModelHooks,
+  fetchProfileStats,
+  updateConfig,
+  fetchEntries,
+  setPage,
+  setTargetEntryId,
+  setFilterTags,
+  setTags,
+  setEditTags,
+  handleEdit,
+  setEditText,
+  aiChat,
+  fixWriting,
+  summarizeEntry,
+  getInspiration,
+  getChatHistory,
+  renameTag,
+  navigateToFirst,
+} from './useAppShellModel.test-helpers';
+import type { MockedLayoutProps, MockedRoutesProps } from './useAppShellModel.test-helpers';
 
-const mocks = vi.hoisted(() => ({
-  buildAuthenticatedLayoutProps: vi.fn((args) => ({ kind: 'layout', ...args })),
-  buildAuthenticatedRoutesProps: vi.fn((args) => ({ kind: 'routes', ...args })),
-  buildPublicShellProps: vi.fn((args) => ({
-    introPageProps: { kind: 'intro', ...args },
-    authPageProps: { kind: 'auth', ...args },
-  })),
-  parseTagMetadata: vi.fn(),
-  serializeTagMetadata: vi.fn(),
-  useApiServices: vi.fn(),
-  useAppRouteState: vi.fn(),
-  useAppShellEffects: vi.fn(),
-  useAppShellRouting: vi.fn(),
-  useAuth: vi.fn(),
-  useBulkSelect: vi.fn(),
-  useConfig: vi.fn(),
-  useDeleteModal: vi.fn(),
-  useDiaries: vi.fn(),
-  useEntries: vi.fn(),
-  useEntryEdit: vi.fn(),
-  useEntryForm: vi.fn(),
-  useEntryNavigation: vi.fn(),
-  useNavigate: vi.fn(),
+vi.mock('react-router-dom', async () => ({
+  ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
+  useNavigate: (await import('./useAppShellModel.test-helpers')).mocks.useNavigate,
 }));
-
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: mocks.useNavigate,
-  };
-});
-
-vi.mock('../contexts/AuthContext', () => ({
-  useAuth: mocks.useAuth,
-}));
-
-vi.mock('./useAppRouteState', () => ({
-  useAppRouteState: mocks.useAppRouteState,
-}));
-
-vi.mock('./useAppShellEffects', () => ({
-  useAppShellEffects: mocks.useAppShellEffects,
-}));
-
-vi.mock('./useAppShellRouting', () => ({
-  useAppShellRouting: mocks.useAppShellRouting,
-}));
-
-vi.mock('./useEntryNavigation', () => ({
-  useEntryNavigation: mocks.useEntryNavigation,
-}));
-
-vi.mock('./useAppState', () => ({
-  useApiServices: mocks.useApiServices,
-  useBulkSelect: mocks.useBulkSelect,
-  useConfig: mocks.useConfig,
-  useDeleteModal: mocks.useDeleteModal,
-  useDiaries: mocks.useDiaries,
-  useEntries: mocks.useEntries,
-  useEntryEdit: mocks.useEntryEdit,
-  useEntryForm: mocks.useEntryForm,
-}));
-
-vi.mock('../utils/tagMetadata', () => ({
-  parseTagMetadata: mocks.parseTagMetadata,
-  serializeTagMetadata: mocks.serializeTagMetadata,
-}));
-
-vi.mock('../utils/appShellProps', () => ({
-  buildAuthenticatedLayoutProps: mocks.buildAuthenticatedLayoutProps,
-  buildAuthenticatedRoutesProps: mocks.buildAuthenticatedRoutesProps,
-  buildPublicShellProps: mocks.buildPublicShellProps,
-}));
+vi.mock('../contexts/AuthContext', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.authContext);
+vi.mock('./useAppRouteState', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.appRouteState);
+vi.mock('./useAppShellEffects', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.appShellEffects);
+vi.mock('./useAppShellRouting', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.appShellRouting);
+vi.mock('./useEntryNavigation', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.entryNavigation);
+vi.mock('./useAppState', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.appState);
+vi.mock('../utils/tagMetadata', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.tagMetadata);
+vi.mock('../utils/appShellProps', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.appShellProps);
 
 describe('useAppShellModel', () => {
-  const navigate = vi.fn();
-  const logout = vi.fn().mockResolvedValue(undefined);
-  const t = vi.fn((key: string) => key);
-  const fetchConfig = vi.fn();
-  const fetchProfileStats = vi.fn();
-  const updateConfig = vi.fn();
-  const downloadUserData = vi.fn();
-  const fetchDiaries = vi.fn();
-  const fetchEntries = vi.fn();
-  const fetchEntryDates = vi.fn();
-  const fetchEntryHistory = vi.fn();
-  const fetchEntryBacklinks = vi.fn();
-  const setPage = vi.fn();
-  const setTargetEntryId = vi.fn();
-  const setFilterTags = vi.fn();
-  const setCurrentDiaryId = vi.fn();
-  const setActiveTargetId = vi.fn();
-  const setFilterArchiveStatus = vi.fn();
-  const setFilterDateObj = vi.fn();
-  const setFilterFavorites = vi.fn();
-  const setFilterVisibility = vi.fn();
-  const setSearch = vi.fn();
-  const setSourceEntry = vi.fn();
-  const setTags = vi.fn();
-  const setEditTags = vi.fn();
-  const handleEdit = vi.fn();
-  const setEditText = vi.fn();
-  const aiChat = vi.fn().mockResolvedValue('assistant reply');
-  const fixWriting = vi.fn().mockResolvedValue('Polished text');
-  const summarizeEntry = vi.fn().mockResolvedValue('Entry summary');
-  const getInspiration = vi.fn().mockResolvedValue('Fresh question?');
-  const getChatHistory = vi.fn().mockResolvedValue([{ role: 'assistant', content: 'history' }]);
-  const renameTag = vi.fn().mockResolvedValue({ success: true });
-  const deleteTag = vi.fn().mockResolvedValue({ success: true, affectedCount: 2 });
-  const fetchTagUsage = vi.fn().mockResolvedValue([{ tag: 'current', count: 2 }]);
-  const navigateToFirst = vi.fn().mockResolvedValue({ found: true, page: 4, entryId: 77 });
-
-  type MockedLayoutProps = ReturnType<typeof mocks.buildAuthenticatedLayoutProps>;
-  type MockedRoutesProps = ReturnType<typeof mocks.buildAuthenticatedRoutesProps>;
-
   beforeEach(() => {
     vi.clearAllMocks();
-
-    mocks.useNavigate.mockReturnValue(navigate);
-    mocks.useAuth.mockReturnValue({
-      isAuthenticated: true,
-      loading: false,
-      user: { username: 'auth-user', avatarUrl: 'auth-avatar.png', emailVerified: true },
-      logout,
-    });
-    mocks.useAppRouteState.mockReturnValue({
-      currentView: 'journal',
-      diaryReturnView: 'stats',
-      importExportFormat: 'json',
-      importExportIncludeVisibility: true,
-      importExportSection: 'import',
-      location: { pathname: '/journal' },
-      publicView: 'login',
-      routeDiaryId: 9,
-      routeEntryId: 5,
-      searchParams: new URLSearchParams('entry=5'),
-    });
-    mocks.parseTagMetadata.mockReturnValue({ current: { color: '#fff' } });
-    mocks.serializeTagMetadata.mockReturnValue('serialized-tag-metadata');
-    mocks.useConfig.mockReturnValue({
-      config: { theme: 'dark', tagMetadata: 'raw-tag-metadata', name: 'Config Name', avatarUrl: 'config-avatar.png' },
-      configLoaded: true,
-      profileStats: { totalEntries: 12 },
-      fetchConfig,
-      fetchProfileStats,
-      updateConfig,
-      downloadUserData,
-      t,
-    });
-    mocks.useDiaries.mockReturnValue({
-      currentDiaryId: 9,
-      diarySelectionReady: true,
-      setCurrentDiaryId,
-      fetchDiaries,
-      diaries: [{ id: 9, name: 'Work', icon: 'W' }],
-      handleCreateDiary: vi.fn(),
-      handleDeleteDiary: vi.fn(),
-      handleReorderDiaries: vi.fn(),
-      handleSetDefaultDiary: vi.fn(),
-      handleUpdateDiary: vi.fn(),
-    });
-    mocks.useEntries.mockReturnValue({
-      activeTargetId: null,
-      allTags: ['current', 'later'],
-      availableMonths: ['2024-01'],
-      availableYears: [2024],
-      deleteRevision: vi.fn(),
-      entries: [{ id: 1, content: 'hello' }],
-      entriesService: {
-        navigateToFirst,
-        renameTag,
-        deleteTag,
-        fetchTagUsage,
-      },
-      fetchEntries,
-      fetchEntryDates,
-      fetchEntryHistory,
-      fetchEntryBacklinks,
-      filterArchiveStatus: 'active',
-      filterDateObj: null,
-      filterFavorites: false,
-      filterTags: ['current'],
-      filterVisibility: 'all',
-      getLimit: vi.fn(() => 25),
-      groupedEntries: {},
-      inputPage: '1',
-      loading: false,
-      page: 2,
-      reorderEntries: vi.fn(),
-      runSemanticSearch: vi.fn().mockResolvedValue(undefined),
-      search: 'focus',
-      searchMode: 'keyword',
-      semanticSearchResult: null,
-      semanticSearchStatus: 'idle',
-      setActiveTargetId,
-      setFilterArchiveStatus,
-      setFilterDateObj,
-      setFilterFavorites,
-      setFilterTags,
-      setFilterVisibility,
-      setInputPage: vi.fn(),
-      setPage,
-      setSearch,
-      setSearchMode: vi.fn(),
-      setSourceEntry,
-      setTargetEntryId,
-      sourceEntry: null,
-      targetEntryId: null,
-      toggleArchived: vi.fn(),
-      toggleFavorite: vi.fn(),
-      togglePinned: vi.fn(),
-      setEntryTask: vi.fn(),
-      toggleVisibility: vi.fn(),
-      totalPages: 8,
-    });
-    mocks.useEntryForm.mockReturnValue({
-      addPendingFile: vi.fn(),
-      fixingWriting: false,
-      formError: '',
-      format: 'plain',
-      handleFixWriting: vi.fn(),
-      handleSubmit: vi.fn(),
-      handleSuggestTags: vi.fn(),
-      newEntryText: 'Draft',
-      pendingFiles: [],
-      removePendingFile: vi.fn(),
-      removeUploadedAttachment: vi.fn(),
-      selectedDate: new Date('2024-01-15'),
-      setFormat: vi.fn(),
-      setNewEntryText: vi.fn(),
-      setSelectedDate: vi.fn(),
-      setTags,
-      setVisibility: vi.fn(),
-      suggestingTags: false,
-      tags: ['current'],
-      uploadedAttachments: [],
-      visibility: 'private',
-    });
-    mocks.useEntryEdit.mockReturnValue({
-      addEditPendingFile: vi.fn(),
-      editDate: new Date('2024-01-15'),
-      editExistingAttachments: [],
-      editFormat: 'plain',
-      editPendingFiles: [],
-      editTags: ['current'],
-      editText: 'Edit me',
-      editVisibility: 'private',
-      editingEntry: null,
-      handleCancelEdit: vi.fn(),
-      handleEdit,
-      handleSaveEdit: vi.fn(),
-      removeEditAttachment: vi.fn(),
-      removeEditPendingFile: vi.fn(),
-      setEditDate: vi.fn(),
-      setEditFormat: vi.fn(),
-      setEditTags,
-      setEditText,
-      setEditVisibility: vi.fn(),
-    });
-    mocks.useDeleteModal.mockReturnValue({
-      cancelDelete: vi.fn(),
-      confirmDelete: vi.fn(),
-      deleteModalOpen: false,
-      handleDelete: vi.fn(),
-    });
-    mocks.useBulkSelect.mockReturnValue({
-      bulkModalOpen: false,
-      bulkMode: false,
-      cancelBulkModal: vi.fn(),
-      clearSelection: vi.fn(),
-      confirmBulkDelete: vi.fn(),
-      requestBulkAction: vi.fn(),
-      selectAll: vi.fn(),
-      selectedIds: new Set<number>([1, 2]),
-      toggleBulkMode: vi.fn(),
-      toggleSelect: vi.fn(),
-    });
-    mocks.useEntryNavigation.mockReturnValue({
-      entryToast: { visible: true, showCount: 1, show: vi.fn(), hide: vi.fn() },
-      handleBackToSource: vi.fn(),
-      handleNavigateToEntry: vi.fn(),
-      handleShareEntry: vi.fn(),
-    });
-    mocks.useAppShellRouting.mockReturnValue({
-      handleAuthSuccess: vi.fn(),
-      handleBackFromDiaries: vi.fn(),
-      handleDiaryChange: vi.fn(),
-      handleImportExportRouteStateChange: vi.fn(),
-      handleLogout: vi.fn(),
-      handleManageDiaries: vi.fn(),
-      handlePublicViewChange: vi.fn(),
-      handleViewChange: vi.fn(),
-    });
-    mocks.useApiServices.mockReturnValue({
-      aiService: {
-        chat: aiChat,
-        fixWriting,
-        summarizeEntry,
-        getInspiration,
-        getChatHistory,
-      },
-    });
+    stubShellModelHooks();
   });
 
   it('assembles the shell model and wires side-effect inputs', () => {
@@ -416,99 +151,5 @@ describe('useAppShellModel', () => {
 
     await expect(routesProps.handleGetInspiration?.()).resolves.toBe('Fresh question?');
     expect(getInspiration).toHaveBeenCalledWith(9);
-  });
-
-  it('deletes a tag everywhere it is selected and loads tag usage', async () => {
-    const { result } = renderHook(() => useAppShellModel());
-    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
-
-    await expect(routesProps.handleDeleteTag('current')).resolves.toBe(true);
-    expect(deleteTag).toHaveBeenCalledWith('current');
-    const nextFormTags = (setTags.mock.calls.at(-1)?.[0] as (tags: string[]) => string[])(['current', 'other']);
-    const nextFilterTags = (setFilterTags.mock.calls.at(-1)?.[0] as (tags: string[]) => string[])(['current']);
-    expect(nextFormTags).toEqual(['other']);
-    expect(nextFilterTags).toEqual([]);
-    expect(fetchEntries).toHaveBeenCalled();
-
-    await expect(routesProps.handleLoadTagUsage()).resolves.toEqual([{ tag: 'current', count: 2 }]);
-  });
-
-  it('returns false for a failed tag rename and skips follow-up updates', async () => {
-    renameTag.mockResolvedValueOnce({ success: false });
-    const { result } = renderHook(() => useAppShellModel());
-    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
-
-    await expect(routesProps.handleRenameTag('current', 'blocked')).resolves.toBe(false);
-
-    expect(setTags).not.toHaveBeenCalled();
-    expect(setEditTags).not.toHaveBeenCalled();
-    expect(setFilterTags).not.toHaveBeenCalled();
-    expect(fetchEntries).not.toHaveBeenCalled();
-    expect(fetchProfileStats).not.toHaveBeenCalled();
-  });
-
-  it('skips page updates when navigate-to-first does not find an entry', async () => {
-    navigateToFirst.mockResolvedValueOnce({ found: false, page: 9, entryId: 88 });
-    const { result } = renderHook(() => useAppShellModel());
-    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
-
-    await act(async () => {
-      await routesProps.handleNavigateToFirst(2023, null);
-    });
-
-    expect(navigateToFirst).toHaveBeenCalledWith(2023, null, 25);
-    expect(setPage).not.toHaveBeenCalled();
-    expect(setTargetEntryId).not.toHaveBeenCalled();
-  });
-
-  it('shows a notice and skips edit state updates when rephrasing returns null', async () => {
-    fixWriting.mockResolvedValueOnce(null);
-    const { result } = renderHook(() => useAppShellModel());
-    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
-
-    await act(async () => {
-      await routesProps.handleRephrase?.({ id: 44, content: 'Needs help' }, 'rewrite');
-    });
-
-    expect(fixWriting).toHaveBeenCalledWith('Needs help', 'rewrite');
-    expect(result.current.authenticatedLayoutProps).toMatchObject({
-      appNotice: { text: 'rephraseEntryFailed', toast: expect.objectContaining({ visible: true }) },
-    });
-    expect(handleEdit).not.toHaveBeenCalled();
-    expect(setEditText).not.toHaveBeenCalled();
-  });
-
-  it('says in the notice toast when settings changed on purpose could not be saved', async () => {
-    updateConfig.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
-    const { result } = renderHook(() => useAppShellModel());
-    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
-
-    await act(async () => {
-      await expect(routesProps.saveConfig({ theme: 'light' })).resolves.toBe(true);
-    });
-    expect(result.current.authenticatedLayoutProps).toMatchObject({
-      appNotice: { toast: expect.objectContaining({ visible: false }) },
-    });
-
-    await act(async () => {
-      await expect(routesProps.saveConfig({ theme: 'light' })).resolves.toBe(false);
-    });
-    expect(updateConfig).toHaveBeenCalledTimes(2);
-    expect(updateConfig).toHaveBeenLastCalledWith({ theme: 'light' });
-    expect(result.current.authenticatedLayoutProps).toMatchObject({
-      appNotice: { text: 'settingsSaveFailed', toast: expect.objectContaining({ visible: true }) },
-    });
-    // The quiet update stays available for saves that report a failure themselves
-    expect(routesProps.updateConfig).toBe(updateConfig);
-  });
-
-  it('hands the notifier to the entry hooks', () => {
-    renderHook(() => useAppShellModel());
-
-    const notifier = expect.objectContaining({ notify: expect.any(Function), t, language: 'en' });
-    expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), expect.anything(), notifier, expect.anything());
-    expect(mocks.useEntryEdit).toHaveBeenCalledWith(expect.anything(), expect.any(Function), notifier);
-    expect(mocks.useDeleteModal).toHaveBeenCalledWith(expect.any(Function), notifier);
-    expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier);
   });
 });

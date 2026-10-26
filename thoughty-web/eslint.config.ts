@@ -35,6 +35,11 @@ export default defineConfig([
     },
   },
   {
+    files: ['src/**/*.test-helpers.tsx'],
+    // Shared spec setup: test stand-in components sit beside fixtures, and Fast Refresh never loads these files.
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
+  {
     files: ['e2e/**/*.ts'],
     rules: {
       // Playwright fixtures call `use`, which is not React's hook.

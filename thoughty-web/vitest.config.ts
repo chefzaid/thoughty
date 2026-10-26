@@ -26,6 +26,7 @@ export default defineConfig({
       exclude: [
         'node_modules/',
         'src/test/',
+        'src/**/*.test-helpers.{ts,tsx}',
         'src/main.tsx',
         'src/App.tsx',
         'src/contexts/AuthContext.tsx',
