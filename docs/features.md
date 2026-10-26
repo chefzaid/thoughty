@@ -60,11 +60,11 @@ flowchart LR
 
 ## Import, Export, and Books
 
-- **Export** to TXT, JSON, Markdown, or CSV, or to PDF, EPUB, or HTML documents grouped by month. Exports can be scoped to a diary and can include visibility.
+- **Export** to TXT, JSON, Markdown, or CSV, or to PDF, EPUB, or HTML documents grouped by month. Exports can be scoped to a diary and can include visibility. A refused export says why in the reader's language (for example, the diary is gone) instead of downloading nothing.
 - **Markdown folder export.** A ZIP with one Markdown file per entry, organized by diary and year, with front matter and attachments. It opens as is in editors such as Obsidian.
-- **Import** TXT, JSON, or Markdown files up to 5 MB. The format is detected automatically, and a preview flags duplicates before anything is saved. When the API turns a file down (too large, too many entries for one import, or the diary is gone), the preview or the import says why in the reader's language instead of a generic failure, and the preview stays so the import can be tried again. The TXT layout (date format, separators, tag brackets) is configurable and reused for export.
+- **Import** TXT, JSON, or Markdown files up to 5 MB. The format is detected automatically, and a preview flags duplicates before anything is saved. When the API turns a file down (too large, too many entries for one import, or the diary is gone), the preview or the import says why in the reader's language instead of a generic failure, and the preview stays so the import can be tried again. The TXT layout (date format, separators, tag brackets) is configurable and reused for export; a refused save of it shows the API's reason.
 - **Day One and Journey.** Import their exports with titles, tags, favorites, Journey moods, and photos and recordings as attachments. Each journal can go into a diary of the same name. Videos are left out, and photos over 5 MB are scaled down. Importing the same file again skips entries already there.
-- **Danger zone.** Move every entry in the current scope to the recycle bin, after a confirmation.
+- **Danger zone.** Move every entry in the current scope to the recycle bin, after a confirmation. A refusal shows the API's reason rather than a generic failure.
 
 ### Book converter
 

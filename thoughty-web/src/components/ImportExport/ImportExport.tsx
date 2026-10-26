@@ -143,9 +143,11 @@ function ImportExport({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formatConfig),
             });
-            if (response.ok) {
-                showMessage('success', t('formatSaved'), 3000);
+            if (!response.ok) {
+                showMessage('error', t(await readApiErrorMessage(response, 'formatSaveError')));
+                return;
             }
+            showMessage('success', t('formatSaved'), 3000);
         } catch (error) {
             console.error('Failed to save format settings:', error);
             showMessage('error', t('formatSaveError'));
@@ -167,6 +169,7 @@ function ImportExport({
 
             const response = await authFetch(`/api/io/export?${params}`);
             if (!response.ok) {
+                showMessage('error', t(await readApiErrorMessage(response, 'exportError')));
                 return;
             }
 
@@ -251,7 +254,7 @@ function ImportExport({
                 showMessage('success', t('deleteAllSuccess'));
                 setConfirmDeleteAll(false);
             } else {
-                showMessage('error', t('deleteAllError'));
+                showMessage('error', t(await readApiErrorMessage(response, 'deleteAllError')));
             }
         } catch (error) {
             console.error('Delete all failed:', error);

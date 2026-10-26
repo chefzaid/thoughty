@@ -91,4 +91,36 @@ test.describe('Import/Export Feature', () => {
     await expect(page.getByText('Ce fichier dépasse la taille maximale d’import.')).toBeVisible();
     await expect(page.getByText('Échec de l\'aperçu du fichier')).toHaveCount(0);
   });
+
+  test('shows the reason the API gives for a refused export, format save and delete all, in French', async ({ page }) => {
+    const { state } = await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr' } });
+    const diaryGone = { statusCode: 404, message: 'Diary not found', error: 'Not Found', code: 'DIARY_NOT_FOUND' };
+    await page.route((url) => url.pathname === '/api/io/export', (route) => route.fulfill({ status: 404, json: diaryGone }));
+    await page.route((url) => url.pathname === '/api/entries/all', (route) => route.fulfill({ status: 404, json: diaryGone }));
+    await page.route('http://localhost:5173/api/io/format', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 400,
+        json: { statusCode: 400, message: ['dateFormat must be a string'], error: 'Bad Request', code: 'VALIDATION_FAILED' },
+      });
+    });
+    await page.goto('/import-export?section=export');
+
+    await page.getByRole('button', { name: 'Télécharger', exact: true }).click();
+    await expect(page.getByText('Ce journal est introuvable.')).toBeVisible();
+    await expect(page.getByText('Export téléchargé avec succès')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Enregistrer les paramètres' }).click();
+    await expect(page.getByText('Certaines informations envoyées sont manquantes ou invalides.')).toBeVisible();
+
+    const entriesBefore = state.entries.length;
+    await page.getByRole('button', { name: 'Supprimer toutes les entrées' }).click();
+    await page.getByRole('button', { name: 'Oui, tout supprimer' }).click();
+    await expect(page.getByText('Ce journal est introuvable.')).toBeVisible();
+    await expect(page.getByText('Échec de la suppression des entrées')).toHaveCount(0);
+    expect(state.entries).toHaveLength(entriesBefore);
+  });
 });
