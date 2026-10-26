@@ -44,22 +44,30 @@ test.describe('Route navigation', () => {
       startAuthenticated: true,
       initialEntries: statsEntries,
     });
-    // Hold the lookup so time can be frozen before the toast's countdown starts.
-    let answerLookup: () => void = () => undefined;
+    // Hold the lookups so time can be frozen before the toast's countdown starts. The journal
+    // can look the entry up more than once (it repeats the lookup when the profile's page size
+    // arrives and drops the earlier answer), so every lookup is held, then all are answered.
+    const heldLookups: Array<() => void> = [];
+    let lookupsReleased = false;
+    let markLookupRequested: () => void = () => undefined;
     const lookupRequested = new Promise<void>((requested) => {
-      void page.route('**/api/entries/by-date?id=999*', async (route) => {
+      markLookupRequested = requested;
+    });
+    await page.route('**/api/entries/by-date?id=999*', async (route) => {
+      if (!lookupsReleased) {
         await new Promise<void>((answer) => {
-          answerLookup = answer;
-          requested();
+          heldLookups.push(answer);
+          markLookupRequested();
         });
-        await route.fulfill({ json: { found: false } });
-      });
+      }
+      await route.fulfill({ json: { found: false } });
     });
 
     await page.goto('/journal?entry=999');
     await lookupRequested;
     await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
-    answerLookup();
+    lookupsReleased = true;
+    heldLookups.forEach((answer) => answer());
 
     const toast = page.getByRole('alert');
     await expect(toast).toContainText('Entry not found');
@@ -97,22 +105,31 @@ test.describe('Route navigation', () => {
       initialEntries: statsEntries,
     });
 
+    // The router renders a route change as a transition, so the URL can update while the
+    // previous view is still on screen: wait for each page's own title, not any heading
+    // that mentions it (Stats also has "Top Tags" headings).
+    const statsTitle = page.getByRole('heading', { level: 1, name: 'Stats', exact: true });
+    const tagsTitle = page.getByRole('heading', { level: 1, name: 'Tags', exact: true });
+
     await page.goto('/stats');
     await expect(page).toHaveURL(/\/stats$/);
-    await expect(page.getByRole('heading', { name: /Stats/i })).toBeVisible();
+    await expect(statsTitle).toBeVisible();
     await expect(page.getByText(/Total Entries/i)).toBeVisible();
 
     await page.getByRole('button', { name: 'Tags' }).click();
     await expect(page).toHaveURL(/\/tags$/);
-    await expect(page.getByRole('heading', { name: /Tags/i })).toBeVisible();
+    await expect(tagsTitle).toBeVisible();
+    await expect(statsTitle).toHaveCount(0);
 
     await page.goBack();
     await expect(page).toHaveURL(/\/stats$/);
-    await expect(page.getByRole('heading', { name: /Stats/i })).toBeVisible();
+    await expect(statsTitle).toBeVisible();
+    await expect(tagsTitle).toHaveCount(0);
 
     await page.goForward();
     await expect(page).toHaveURL(/\/tags$/);
-    await expect(page.getByRole('heading', { name: /Tags/i })).toBeVisible();
+    await expect(tagsTitle).toBeVisible();
+    await expect(statsTitle).toHaveCount(0);
   });
 
   test('preserves the return route when opening diary management from a scoped view', async ({ page }) => {
