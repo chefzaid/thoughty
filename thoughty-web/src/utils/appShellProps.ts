@@ -81,7 +81,10 @@ interface BuildAuthenticatedRoutesPropsParams {
   setHighlightsModalOpen: (value: boolean) => void;
   t: TranslationFunction;
   tagMetadata: TagMetadataMap;
-  updateConfig: (newConfig: Config) => Promise<void>;
+  /** Saves settings without a message when the save fails (resolves false, the old settings back). */
+  updateConfig: (newConfig: Config) => Promise<boolean>;
+  /** Saves settings and says in the app's notice toast when the save fails (resolves false). */
+  saveConfig: (newConfig: Config) => Promise<boolean>;
 }
 
 export function buildAuthenticatedLayoutProps({
@@ -152,6 +155,7 @@ export function buildAuthenticatedRoutesProps({
   importExportSection,
   profileStats,
   routingState,
+  saveConfig,
   setHighlightsModalOpen,
   t,
   tagMetadata,
@@ -182,7 +186,7 @@ export function buildAuthenticatedRoutesProps({
     },
     profileRouteProps: {
       config,
-      onUpdateConfig: (newConfig: Config) => updateConfig(newConfig),
+      onUpdateConfig: saveConfig,
       onDownloadData: downloadUserData,
       onBack: () => routingState.handleViewChange('journal'),
       t,
@@ -191,7 +195,7 @@ export function buildAuthenticatedRoutesProps({
     tagManagerRouteProps: {
       config,
       allTags: entriesState.allTags,
-      onUpdateConfig: (newConfig: Config) => updateConfig(newConfig),
+      onUpdateConfig: saveConfig,
       onRenameTag: handleRenameTag,
       onDeleteTag: handleDeleteTag,
       onLoadTagUsage: handleLoadTagUsage,
@@ -264,18 +268,19 @@ export function buildAuthenticatedRoutesProps({
       },
       entryForm: {
         entryTemplates: getEntryTemplates(config.entryTemplates),
-        onSaveTemplate: async (draft: EntryTemplateDraft) => {
+        // The name dialog says itself when the template could not be saved
+        onSaveTemplate: (draft: EntryTemplateDraft) => {
           const currentTemplates = getEntryTemplates(config.entryTemplates);
           const nextTemplates = [...currentTemplates, createEntryTemplate(draft)];
-          await updateConfig({
+          return updateConfig({
             ...config,
             entryTemplates: serializeCustomEntryTemplates(nextTemplates),
           });
         },
-        onDeleteTemplate: async (templateId: string) => {
+        onDeleteTemplate: (templateId: string) => {
           const nextTemplates = getEntryTemplates(config.entryTemplates)
             .filter((template) => template.id !== templateId);
-          await updateConfig({
+          return saveConfig({
             ...config,
             entryTemplates: serializeCustomEntryTemplates(nextTemplates),
           });

@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Config, ProfileStats } from '../types';
+import type { Notifier } from './useAppNotice';
 import { getTranslation } from '../utils/translations';
 import { useApiServices } from './useApiServices';
 
@@ -46,13 +47,15 @@ export const useConfig = (isAuthenticated: boolean) => {
     queryClient.setQueryData<Config>(CONFIG_QUERY_KEY, nextConfig);
   }, [queryClient]);
 
-  const updateConfig = useCallback(async (newConfig: Config) => {
+  /** Shows the new settings at once and saves them; resolves false, with the previous settings back, when the save fails. */
+  const updateConfig = useCallback(async (newConfig: Config): Promise<boolean> => {
     const previousConfig = queryClient.getQueryData<Config>(CONFIG_QUERY_KEY) ?? {};
     queryClient.setQueryData<Config>(CONFIG_QUERY_KEY, newConfig);
     const success = await configService.updateConfig(newConfig);
     if (!success) {
       queryClient.setQueryData<Config>(CONFIG_QUERY_KEY, previousConfig);
     }
+    return success;
   }, [configService, queryClient]);
 
   useEffect(() => {
@@ -87,3 +90,18 @@ export const useConfig = (isAuthenticated: boolean) => {
     t,
   };
 };
+
+/**
+ * Saves settings like `updateConfig` and, when the save fails and the previous settings come back,
+ * says so in the app's notice toast, in the language of the settings that stay.
+ */
+export const useReportedConfigUpdate = (
+  updateConfig: (newConfig: Config) => Promise<boolean>,
+  notifier: Notifier,
+) => useCallback(async (newConfig: Config): Promise<boolean> => {
+  const saved = await updateConfig(newConfig);
+  if (!saved) {
+    notifier.notify(notifier.t('settingsSaveFailed'));
+  }
+  return saved;
+}, [notifier, updateConfig]);

@@ -23,7 +23,8 @@ const MAX_TAG_LENGTH = 50;
 interface TagManagerPageProps {
   readonly config: ProfileConfig;
   readonly allTags: string[];
-  readonly onUpdateConfig: (config: ProfileConfig) => Promise<void>;
+  /** Resolves whether the settings were saved; the app says itself when they were not. */
+  readonly onUpdateConfig: (config: ProfileConfig) => Promise<boolean>;
   readonly onRenameTag: (currentTag: string, nextTag: string) => Promise<boolean>;
   readonly onDeleteTag: (tag: string) => Promise<boolean>;
   readonly onLoadTagUsage: () => Promise<TagUsage[] | null>;
@@ -70,10 +71,14 @@ function TagManagerPage({
     [allTags, localConfig.tagMetadata],
   );
 
-  const persistTagMetadata = async (tagMetadata: string): Promise<void> => {
+  /** Saves the tag metadata; resolves false, with the page back on the saved settings, when the save fails. */
+  const persistTagMetadata = async (tagMetadata: string): Promise<boolean> => {
     const nextConfig = { ...localConfig, tagMetadata };
-    await onUpdateConfig(nextConfig);
+    if (!(await onUpdateConfig(nextConfig))) {
+      return false;
+    }
     setLocalConfig(nextConfig);
+    return true;
   };
 
   const handleCreateTag = (event: FormEvent<HTMLFormElement>): void => {
@@ -89,7 +94,9 @@ function TagManagerPage({
 
     void (async () => {
       const metadata = assignMissingTagColors([name], parseTagMetadata(localConfig.tagMetadata));
-      await persistTagMetadata(serializeTagMetadata(metadata));
+      if (!(await persistTagMetadata(serializeTagMetadata(metadata)))) {
+        return;
+      }
       setNewTagName('');
       setTagError('');
     })();
@@ -109,7 +116,9 @@ function TagManagerPage({
       }
 
       const metadata = removeTagMetadata(parseTagMetadata(localConfig.tagMetadata), tag);
-      await persistTagMetadata(serializeTagMetadata(metadata));
+      if (!(await persistTagMetadata(serializeTagMetadata(metadata)))) {
+        return;
+      }
       setRenameDrafts(({ [tag]: _removed, ...rest }) => rest);
       setTagError('');
       await refreshTagUsage();
@@ -140,7 +149,9 @@ function TagManagerPage({
         tagMetadata: serializeTagMetadata(nextMetadata),
       };
 
-      await onUpdateConfig(nextConfig);
+      if (!(await onUpdateConfig(nextConfig))) {
+        return;
+      }
       setLocalConfig(nextConfig);
       setRenameDrafts({});
       saveToast.show();

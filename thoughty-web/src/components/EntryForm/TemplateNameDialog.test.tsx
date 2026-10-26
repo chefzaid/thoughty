@@ -12,7 +12,7 @@ function renderDialog(overrides: Partial<Parameters<typeof TemplateNameDialog>[0
     theme: 'dark' as const,
     t: translate('en'),
     onCancel: vi.fn(),
-    onSave: vi.fn(),
+    onSave: vi.fn().mockResolvedValue(true),
     ...overrides,
   };
   render(<TemplateNameDialog {...props} />);
@@ -59,8 +59,8 @@ describe('TemplateNameDialog', () => {
   });
 
   it('shows that it is saving and ignores a second submit meanwhile', async () => {
-    let finish: () => void = () => undefined;
-    const onSave = vi.fn(() => new Promise<void>((resolve) => { finish = resolve; }));
+    let finish: (saved: boolean) => void = () => undefined;
+    const onSave = vi.fn(() => new Promise<boolean>((resolve) => { finish = resolve; }));
     const user = userEvent.setup();
     renderDialog({ onSave });
 
@@ -70,8 +70,31 @@ describe('TemplateNameDialog', () => {
     await user.type(screen.getByLabelText('Template name'), '{Enter}');
     expect(onSave).toHaveBeenCalledTimes(1);
 
-    finish();
+    finish(true);
     expect(await screen.findByRole('button', { name: 'Save' })).toBeEnabled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('stays open with the name and says so when the template could not be saved', async () => {
+    const onSave = vi.fn().mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+    const user = userEvent.setup();
+    renderDialog({ onSave });
+    const input = screen.getByLabelText('Template name');
+
+    await user.type(input, 'Weekly{Enter}');
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('The template could not be saved. Try again.');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(input).toHaveValue('Weekly');
+    expect(input).toHaveFocus();
+    expect(input).toHaveAccessibleDescription('The template could not be saved. Try again.');
+    expect(input).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+
+    // Trying again clears the message
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledTimes(2);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it.each([

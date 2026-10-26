@@ -300,6 +300,7 @@ type CoreTranslationKey =
   | "cancel"
   | "saveSettings"
   | "settingsSaved"
+  | "settingsSaveFailed"
   | "verifiedAccount"
   | "verifyEmailTitle"
   | "verifyingEmail"
@@ -1298,6 +1299,7 @@ export const translations: Translations = {
     cancel: "Cancel",
     saveSettings: "Save Changes",
     settingsSaved: "Settings saved successfully",
+    settingsSaveFailed: "Your settings could not be saved, so the previous ones are back. Try again.",
     verifiedAccount: "Verified",
     verifyEmailTitle: "Verify your email",
     verifyingEmail: "Verifying your email...",
@@ -2387,6 +2389,7 @@ export const translations: Translations = {
     cancel: "Annuler",
     saveSettings: "Enregistrer",
     settingsSaved: "Paramètres enregistrés avec succès",
+    settingsSaveFailed: "Vos paramètres n'ont pas pu être enregistrés : les précédents sont rétablis. Réessayez.",
     verifiedAccount: "Vérifié",
     verifyEmailTitle: "Vérifiez votre email",
     verifyingEmail: "Vérification de votre email...",

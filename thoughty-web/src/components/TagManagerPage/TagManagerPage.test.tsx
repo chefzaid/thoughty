@@ -49,7 +49,7 @@ describe('TagManagerPage', () => {
   it('saves updates after successful rename flow and shows toast', async () => {
     const user = userEvent.setup();
     const onRenameTag = vi.fn().mockResolvedValue(true);
-    const onUpdateConfig = vi.fn().mockResolvedValue(undefined);
+    const onUpdateConfig = vi.fn().mockResolvedValue(true);
 
     render(
       <TagManagerPage
@@ -83,10 +83,34 @@ describe('TagManagerPage', () => {
     }, { timeout: 4000 });
   });
 
+  it('shows no saved message when the settings could not be saved', async () => {
+    const user = userEvent.setup();
+    const onUpdateConfig = vi.fn().mockResolvedValue(false);
+
+    render(
+      <TagManagerPage
+        config={baseConfig}
+        allTags={['focus']}
+        onUpdateConfig={onUpdateConfig}
+        onRenameTag={vi.fn().mockResolvedValue(true)}
+        onDeleteTag={vi.fn().mockResolvedValue(true)}
+        onLoadTagUsage={vi.fn().mockResolvedValue([])}
+        onRetagApplied={vi.fn().mockResolvedValue(undefined)}
+        t={(key: string) => key}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'mock-edit' }));
+    await user.click(screen.getByRole('button', { name: 'saveSettings' }));
+
+    await waitFor(() => expect(onUpdateConfig).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText('settingsSaved')).not.toBeInTheDocument();
+  });
+
   it('stops save flow when a rename fails', async () => {
     const user = userEvent.setup();
     const onRenameTag = vi.fn().mockResolvedValue(false);
-    const onUpdateConfig = vi.fn().mockResolvedValue(undefined);
+    const onUpdateConfig = vi.fn().mockResolvedValue(true);
 
     render(
       <TagManagerPage
@@ -115,7 +139,7 @@ describe('TagManagerPage', () => {
   it('saves directly when there are no pending renames', async () => {
     const user = userEvent.setup();
     const onRenameTag = vi.fn().mockResolvedValue(true);
-    const onUpdateConfig = vi.fn().mockResolvedValue(undefined);
+    const onUpdateConfig = vi.fn().mockResolvedValue(true);
 
     render(
       <TagManagerPage
@@ -149,7 +173,7 @@ describe('TagManagerPage', () => {
       const props = {
         config: configWithDraft,
         allTags: ['focus'],
-        onUpdateConfig: vi.fn().mockResolvedValue(undefined),
+        onUpdateConfig: vi.fn().mockResolvedValue(true),
         onRenameTag: vi.fn().mockResolvedValue(true),
         onDeleteTag: vi.fn().mockResolvedValue(true),
         onLoadTagUsage: vi.fn().mockResolvedValue([{ tag: 'focus', count: 3 }]),
@@ -195,6 +219,33 @@ describe('TagManagerPage', () => {
       const savedConfig = vi.mocked(props.onUpdateConfig).mock.calls[0]?.[0] as { tagMetadata?: string };
       expect(parseTagMetadata(savedConfig.tagMetadata).gratitude?.color).toMatch(/^#[0-9A-F]{6}$/i);
       expect(screen.getByPlaceholderText('newTagPlaceholder')).toHaveValue('');
+    });
+
+    it('keeps the new tag name and the page settings when the save fails', async () => {
+      const user = userEvent.setup();
+      const props = renderPage({ onUpdateConfig: vi.fn().mockResolvedValue(false) });
+
+      await user.type(screen.getByPlaceholderText('newTagPlaceholder'), 'Gratitude');
+      await user.click(screen.getByRole('button', { name: 'addTag' }));
+
+      await waitFor(() => expect(props.onUpdateConfig).toHaveBeenCalledTimes(1));
+      // The name stays, so the writer can try again
+      expect(screen.getByPlaceholderText('newTagPlaceholder')).toHaveValue('Gratitude');
+    });
+
+    it('stops after a failed save when deleting an unused tag', async () => {
+      const user = userEvent.setup();
+      const props = renderPage({ allTags: [], onUpdateConfig: vi.fn().mockResolvedValue(false) });
+
+      await waitFor(() => expect(props.onLoadTagUsage).toHaveBeenCalledTimes(1));
+
+      await user.click(screen.getByRole('button', { name: 'mock-delete-draft' }));
+      await user.click(screen.getByRole('button', { name: 'delete' }));
+
+      await waitFor(() => expect(props.onUpdateConfig).toHaveBeenCalledTimes(1));
+      expect(props.onDeleteTag).not.toHaveBeenCalled();
+      // No usage refresh after a save that did not happen
+      expect(props.onLoadTagUsage).toHaveBeenCalledTimes(1);
     });
 
     it('rejects a tag that already exists', async () => {

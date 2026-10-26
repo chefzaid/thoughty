@@ -17,6 +17,7 @@ import {
   useEntryEdit,
   useEntryForm,
 } from './useAppState';
+import { useReportedConfigUpdate } from './useConfigState';
 import { resolveLanguage } from '../utils/language';
 import { parseTagMetadata, serializeTagMetadata } from '../utils/tagMetadata';
 import {
@@ -83,6 +84,8 @@ export function useAppShellModel(): AppShellModel {
   } = useConfig(isAuthenticated);
   const appNotice = useAppNotice(t, resolveLanguage(config.language));
   const { notifier } = appNotice;
+  // Settings the reader changes on purpose say so when they could not be saved
+  const saveConfig = useReportedConfigUpdate(updateConfig, notifier);
 
   const diariesState = useDiaries(isAuthenticated, routeEntryId !== undefined || routeDiaryId !== undefined);
   const { currentDiaryId, setCurrentDiaryId, fetchDiaries, diarySelectionReady } = diariesState;
@@ -306,6 +309,7 @@ export function useAppShellModel(): AppShellModel {
     profileStats,
     routingState,
     setHighlightsModalOpen,
+    saveConfig,
     t,
     tagMetadata,
     updateConfig,

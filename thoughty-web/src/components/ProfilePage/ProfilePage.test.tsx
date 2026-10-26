@@ -1,6 +1,6 @@
 import { type ComponentProps } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfilePage from './ProfilePage';
 
@@ -96,7 +96,7 @@ describe('ProfilePage', () => {
             defaultVisibility: 'private',
             autoTagMaxTags: '0'
         },
-        onUpdateConfig: vi.fn(),
+        onUpdateConfig: vi.fn().mockResolvedValue(true),
         onDownloadData: vi.fn().mockResolvedValue(true),
         onBack: vi.fn(),
         t: (key: string, params: Record<string, string | number> = {}): string => {
@@ -300,13 +300,25 @@ describe('ProfilePage', () => {
             expect(defaultProps.onBack).toHaveBeenCalledTimes(1);
         });
 
-        it('calls onUpdateConfig when save is clicked', async () => {
+        it('calls onUpdateConfig when save is clicked and says the settings were saved', async () => {
             const user = userEvent.setup();
             render(<ProfilePage {...defaultProps} />);
 
             await user.click(screen.getByText('saveSettings'));
 
             expect(defaultProps.onUpdateConfig).toHaveBeenCalledTimes(1);
+            expect(await screen.findByRole('status')).toHaveTextContent('settingsSaved');
+        });
+
+        it('does not say the settings were saved when the save failed', async () => {
+            const onUpdateConfig = vi.fn().mockResolvedValue(false);
+            const user = userEvent.setup();
+            render(<ProfilePage {...defaultProps} onUpdateConfig={onUpdateConfig} />);
+
+            await user.click(screen.getByText('saveSettings'));
+
+            await waitFor(() => expect(onUpdateConfig).toHaveBeenCalledTimes(1));
+            expect(screen.queryByText('settingsSaved')).not.toBeInTheDocument();
         });
 
         it('saves updated config values', async () => {

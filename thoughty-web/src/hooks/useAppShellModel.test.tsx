@@ -478,6 +478,30 @@ describe('useAppShellModel', () => {
     expect(setEditText).not.toHaveBeenCalled();
   });
 
+  it('says in the notice toast when settings changed on purpose could not be saved', async () => {
+    updateConfig.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+    const { result } = renderHook(() => useAppShellModel());
+    const routesProps = result.current.authenticatedRoutesProps as MockedRoutesProps;
+
+    await act(async () => {
+      await expect(routesProps.saveConfig({ theme: 'light' })).resolves.toBe(true);
+    });
+    expect(result.current.authenticatedLayoutProps).toMatchObject({
+      appNotice: { toast: expect.objectContaining({ visible: false }) },
+    });
+
+    await act(async () => {
+      await expect(routesProps.saveConfig({ theme: 'light' })).resolves.toBe(false);
+    });
+    expect(updateConfig).toHaveBeenCalledTimes(2);
+    expect(updateConfig).toHaveBeenLastCalledWith({ theme: 'light' });
+    expect(result.current.authenticatedLayoutProps).toMatchObject({
+      appNotice: { text: 'settingsSaveFailed', toast: expect.objectContaining({ visible: true }) },
+    });
+    // The quiet update stays available for saves that report a failure themselves
+    expect(routesProps.updateConfig).toBe(updateConfig);
+  });
+
   it('hands the notifier to the entry hooks', () => {
     renderHook(() => useAppShellModel());
 

@@ -7,8 +7,11 @@ interface TemplateNameDialogProps {
   readonly theme?: 'light' | 'dark';
   readonly t: TranslationFunction;
   readonly onCancel: () => void;
-  /** Receives the trimmed name; the dialog closes itself through `onCancel` only when cancelled. */
-  readonly onSave: (name: string) => Promise<void> | void;
+  /**
+   * Receives the trimmed name and resolves whether the template was saved; the parent closes the
+   * dialog after a save, and the dialog stays open with a message when the save failed.
+   */
+  readonly onSave: (name: string) => Promise<boolean>;
 }
 
 /**
@@ -19,6 +22,7 @@ function TemplateNameDialog({ theme, t, onCancel, onSave }: TemplateNameDialogPr
   const [name, setName] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const titleId = useId();
@@ -28,6 +32,12 @@ function TemplateNameDialog({ theme, t, onCancel, onSave }: TemplateNameDialogPr
   const isLight = theme === 'light';
   const trimmedName = name.trim();
   const showError = submitted && trimmedName === '';
+  let errorMessage: string | null = null;
+  if (showError) {
+    errorMessage = t('templateNameRequired');
+  } else if (saveFailed) {
+    errorMessage = t('templateSaveFailed');
+  }
 
   useDialogFocus({ isOpen: true, dialogRef, initialFocusRef: inputRef, onClose: onCancel });
 
@@ -43,8 +53,13 @@ function TemplateNameDialog({ theme, t, onCancel, onSave }: TemplateNameDialogPr
     if (saving) return;
 
     setSaving(true);
+    setSaveFailed(false);
     try {
-      await onSave(trimmedName);
+      if (!(await onSave(trimmedName))) {
+        // The name is kept, so the reader can try again from the field
+        setSaveFailed(true);
+        inputRef.current?.focus();
+      }
     } finally {
       setSaving(false);
     }
@@ -88,15 +103,15 @@ function TemplateNameDialog({ theme, t, onCancel, onSave }: TemplateNameDialogPr
             onChange={(event) => setName(event.target.value)}
             required
             aria-invalid={showError}
-            aria-describedby={showError ? errorId : undefined}
+            aria-describedby={errorMessage ? errorId : undefined}
             autoComplete="off"
             className={`w-full border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${
               isLight ? 'bg-gray-50 border-gray-300 text-gray-900' : 'bg-gray-900 border-gray-700 text-gray-100'
             } ${showError ? 'border-red-500' : ''}`}
           />
-          {showError && (
+          {errorMessage && (
             <p id={errorId} role="alert" className={`mt-2 text-sm ${isLight ? 'text-red-700' : 'text-red-300'}`}>
-              {t('templateNameRequired')}
+              {errorMessage}
             </p>
           )}
           <div className="mt-6 flex justify-end gap-3">

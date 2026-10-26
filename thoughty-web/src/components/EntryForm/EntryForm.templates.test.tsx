@@ -71,7 +71,7 @@ describe('EntryForm templates', () => {
     });
 
     it('saves the current draft as a template under the name typed in the dialog', async () => {
-        const onSaveTemplate = vi.fn();
+        const onSaveTemplate = vi.fn().mockResolvedValue(true);
         const onSubmit = vi.fn((e) => e.preventDefault());
         const user = userEvent.setup();
 
@@ -106,8 +106,23 @@ describe('EntryForm templates', () => {
         expect(saveTemplate).toHaveFocus();
     });
 
+    it('keeps the name dialog open with a message when the template could not be saved', async () => {
+        const onSaveTemplate = vi.fn().mockResolvedValue(false);
+        const user = userEvent.setup();
+
+        render(<EntryForm {...defaultProps} newEntryText="Draft" onSaveTemplate={onSaveTemplate} />);
+
+        await user.click(screen.getByRole('button', { name: 'Save template' }));
+        await user.type(screen.getByLabelText('Template name'), 'Weekly{Enter}');
+
+        expect(onSaveTemplate).toHaveBeenCalledTimes(1);
+        expect(screen.getByRole('dialog', { name: 'Save as a template' })).toBeInTheDocument();
+        expect(screen.getByRole('alert')).toHaveTextContent('The template could not be saved. Try again.');
+        expect(screen.getByLabelText('Template name')).toHaveValue('Weekly');
+    });
+
     it('closes the name dialog without saving on Cancel', async () => {
-        const onSaveTemplate = vi.fn();
+        const onSaveTemplate = vi.fn().mockResolvedValue(true);
         const user = userEvent.setup();
 
         render(<EntryForm {...defaultProps} newEntryText="Draft" onSaveTemplate={onSaveTemplate} />);
@@ -119,8 +134,11 @@ describe('EntryForm templates', () => {
         expect(onSaveTemplate).not.toHaveBeenCalled();
     });
 
-    it('deletes a selected custom template', async () => {
-        const onDeleteTemplate = vi.fn();
+    it.each([
+        [true, ''],
+        [false, 'custom-1'],
+    ])('deletes a selected custom template (deleted: %s) and keeps it selected only when that failed', async (deleted, selected) => {
+        const onDeleteTemplate = vi.fn().mockResolvedValue(deleted);
         const user = userEvent.setup();
 
         render(
@@ -135,5 +153,6 @@ describe('EntryForm templates', () => {
         await user.click(screen.getByRole('button', { name: 'Delete template' }));
 
         expect(onDeleteTemplate).toHaveBeenCalledWith('custom-1');
+        expect(screen.getByLabelText('Entry template')).toHaveValue(selected);
     });
 });

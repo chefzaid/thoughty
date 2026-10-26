@@ -33,7 +33,8 @@ import {
 
 interface ProfilePageProps {
   readonly config: ProfileConfig;
-  readonly onUpdateConfig: (config: ProfileConfig) => Promise<void>;
+  /** Resolves whether the settings were saved; the app says itself when they were not. */
+  readonly onUpdateConfig: (config: ProfileConfig) => Promise<boolean>;
   readonly onDownloadData: () => Promise<boolean>;
   readonly onBack: () => void;
   readonly t: TranslationFunction;
@@ -178,8 +179,9 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
 
   const handleSave = (): void => {
     void (async () => {
-      await onUpdateConfig(localConfig);
-      saveToast.show();
+      if (await onUpdateConfig(localConfig)) {
+        saveToast.show();
+      }
     })();
   };
 

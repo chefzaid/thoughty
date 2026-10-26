@@ -211,7 +211,8 @@ function createRoutesParams(
     setHighlightsModalOpen: vi.fn(),
     t: (key: string) => key,
     tagMetadata: {},
-    updateConfig: vi.fn().mockResolvedValue(undefined),
+    updateConfig: vi.fn().mockResolvedValue(true),
+    saveConfig: vi.fn().mockResolvedValue(true),
     ...overrides,
   };
 }
@@ -422,9 +423,11 @@ describe('appShellProps', () => {
   });
 
   it('wires entry templates through user config', async () => {
-    const updateConfig = vi.fn().mockResolvedValue(undefined);
+    const updateConfig = vi.fn().mockResolvedValue(true);
+    const saveConfig = vi.fn().mockResolvedValue(false);
     const props = buildAuthenticatedRoutesProps(createRoutesParams({
       updateConfig,
+      saveConfig,
       config: {
         theme: 'dark',
         name: 'Zaid',
@@ -447,21 +450,24 @@ describe('appShellProps', () => {
       ]),
     );
 
-    await props.journalRouteProps.entryForm.onSaveTemplate?.({
+    // The name dialog reports a failed save itself, so saving a template goes through the quiet update
+    await expect(props.journalRouteProps.entryForm.onSaveTemplate?.({
       name: 'Meeting',
       content: 'Notes',
       tags: ['meeting'],
       visibility: 'public',
       format: 'markdown',
-    });
+    })).resolves.toBe(true);
     expect(updateConfig).toHaveBeenLastCalledWith(expect.objectContaining({
       entryTemplates: expect.stringContaining('Meeting'),
     }));
 
-    await props.journalRouteProps.entryForm.onDeleteTemplate?.('custom-1');
-    expect(updateConfig).toHaveBeenLastCalledWith(expect.objectContaining({
+    // Deleting one has no dialog, so a failure is reported by the app's notice
+    await expect(props.journalRouteProps.entryForm.onDeleteTemplate?.('custom-1')).resolves.toBe(false);
+    expect(saveConfig).toHaveBeenLastCalledWith(expect.objectContaining({
       entryTemplates: expect.not.stringContaining('custom-1'),
     }));
+    expect(updateConfig).toHaveBeenCalledTimes(1);
   });
 
   it('offers created tags in the composer and editor but filters only by used tags', () => {
@@ -488,7 +494,7 @@ describe('appShellProps', () => {
   });
 
   it('wires profile, tag manager, diary management, and import-export callbacks', async () => {
-    const updateConfig = vi.fn().mockResolvedValue(undefined);
+    const saveConfig = vi.fn().mockResolvedValue(true);
     const downloadUserData = vi.fn().mockResolvedValue(true);
     const handleRenameTag = vi.fn().mockResolvedValue(true);
     const handleDeleteDiary = vi.fn().mockImplementation(async (_id: number, callback: () => Promise<void>) => {
@@ -501,7 +507,7 @@ describe('appShellProps', () => {
     const fetchEntries = vi.fn().mockResolvedValue(undefined);
 
     const props = buildAuthenticatedRoutesProps(createRoutesParams({
-      updateConfig,
+      saveConfig,
       downloadUserData,
       handleRenameTag,
       diariesState: {
@@ -544,7 +550,7 @@ describe('appShellProps', () => {
     });
     props.journalRouteProps.diaryTabs.onManageDiaries();
 
-    expect(updateConfig).toHaveBeenCalledTimes(2);
+    expect(saveConfig).toHaveBeenCalledTimes(2);
     expect(downloadUserData).toHaveBeenCalledTimes(1);
     expect(handleRenameTag).toHaveBeenCalledWith('old', 'new');
     expect(handleDeleteDiary).toHaveBeenCalledWith(3, expect.any(Function));

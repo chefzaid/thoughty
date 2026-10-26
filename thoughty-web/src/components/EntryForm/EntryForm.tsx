@@ -67,8 +67,10 @@ interface EntryFormProps {
     readonly fontSize?: string | number;
     readonly language?: string;
     readonly entryTemplates?: EntryTemplate[];
-    readonly onSaveTemplate?: (template: EntryTemplateDraft) => Promise<void> | void;
-    readonly onDeleteTemplate?: (templateId: string) => Promise<void> | void;
+    /** Resolves whether the template was saved; the name dialog stays open with a message when it was not. */
+    readonly onSaveTemplate?: (template: EntryTemplateDraft) => Promise<boolean>;
+    /** Resolves whether the template was deleted; it stays selected when it was not. */
+    readonly onDeleteTemplate?: (templateId: string) => Promise<boolean>;
 }
 
 function entryFormClasses({ theme, format, visibility }: Pick<EntryFormProps, 'theme' | 'format' | 'visibility'>) {
@@ -156,19 +158,22 @@ function EntryForm({
         setFormat(template.format);
     };
 
-    const saveCurrentDraftAsTemplate = async (name: string): Promise<void> => {
+    const saveCurrentDraftAsTemplate = async (name: string): Promise<boolean> => {
         if (!onSaveTemplate) {
-            return;
+            return false;
         }
 
-        await onSaveTemplate({
+        const saved = await onSaveTemplate({
             name,
             content: newEntryText,
             tags,
             visibility: visibility ?? 'private',
             format,
         });
-        setIsNamingTemplate(false);
+        if (saved) {
+            setIsNamingTemplate(false);
+        }
+        return saved;
     };
 
     const deleteSelectedTemplate = async (): Promise<void> => {
@@ -176,8 +181,9 @@ function EntryForm({
             return;
         }
 
-        await onDeleteTemplate(selectedTemplate.id);
-        setSelectedTemplateId('');
+        if (await onDeleteTemplate(selectedTemplate.id)) {
+            setSelectedTemplateId('');
+        }
     };
 
     return (

@@ -13,7 +13,7 @@ interface UseAppShellEffectsParams {
   serializedTagMetadata: string;
   setCurrentDiaryId: Dispatch<SetStateAction<number | null>>;
   tagMetadata: TagMetadataMap;
-  updateConfig: (newConfig: Config) => Promise<void>;
+  updateConfig: (newConfig: Config) => Promise<boolean>;
 }
 
 export function useAppShellEffects({
