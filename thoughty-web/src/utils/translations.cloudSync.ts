@@ -17,12 +17,8 @@ export type CloudSyncTranslationKey =
   | "cloudUploading"
   | "cloudUploadSuccess"
   | "cloudUploadError"
-  | "cloudUploadOptions"
-  | "cloudDownload"
   | "cloudDownloadSuccess"
   | "cloudDownloadError"
-  | "cloudBrowseFiles"
-  | "cloudFilesInCloud"
   | "cloudNoFiles"
   | "cloudListFilesError"
   | "cloudSchedule"
@@ -69,12 +65,8 @@ export const cloudSyncTranslations: Record<Language, Record<CloudSyncTranslation
     cloudUploading: "Uploading...",
     cloudUploadSuccess: "Uploaded {name} successfully",
     cloudUploadError: "Failed to upload to cloud",
-    cloudUploadOptions: "Upload Options",
-    cloudDownload: "Download",
     cloudDownloadSuccess: "Downloaded {name}",
     cloudDownloadError: "Failed to download from cloud",
-    cloudBrowseFiles: "Browse Files",
-    cloudFilesInCloud: "Files in {provider}",
     cloudNoFiles: "No files found in your cloud folder",
     cloudListFilesError: "Failed to list your cloud files",
     cloudSchedule: "Scheduled Sync",
@@ -122,12 +114,8 @@ export const cloudSyncTranslations: Record<Language, Record<CloudSyncTranslation
     cloudUploading: "Envoi en cours...",
     cloudUploadSuccess: "{name} envoyé avec succès",
     cloudUploadError: "Échec de l'envoi vers le cloud",
-    cloudUploadOptions: "Options d'envoi",
-    cloudDownload: "Télécharger",
     cloudDownloadSuccess: "{name} téléchargé",
     cloudDownloadError: "Échec du téléchargement depuis le cloud",
-    cloudBrowseFiles: "Parcourir les fichiers",
-    cloudFilesInCloud: "Fichiers dans {provider}",
     cloudNoFiles: "Aucun fichier trouvé dans votre dossier cloud",
     cloudListFilesError: "Échec de l'affichage de vos fichiers cloud",
     cloudSchedule: "Synchronisation programmée",

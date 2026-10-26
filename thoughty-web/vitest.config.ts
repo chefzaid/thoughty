@@ -31,7 +31,6 @@ export default defineConfig({
         'src/App.tsx',
         'src/contexts/AuthContext.tsx',
         'src/hooks/useAppState.ts',
-        'src/components/CloudSync/CloudSync.tsx',
         'src/components/DiaryManager/DiaryManager.tsx',
         'src/components/EntriesList/EntriesList.tsx',
         'src/components/ProfilePage/ProfilePage.tsx',
