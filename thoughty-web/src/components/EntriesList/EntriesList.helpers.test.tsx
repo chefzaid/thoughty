@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { EditForm, EntryReorderControls } from './EntriesList.helpers';
 import { extractDate, getEntryCardStyle, getVisibilityButtonClass } from './EntriesList.utils';
 import { mockEntries } from './EntriesList.test-utils';
+import { getTranslation } from '../../utils/translations';
 
 vi.mock('../TagPicker/TagPicker', () => ({
     default: ({ onChange, placeholder, selectedTags }: { onChange: (tags: string[]) => void; placeholder: string; selectedTags: string[] }) => (
@@ -245,5 +246,34 @@ describe('EntriesList.helpers', () => {
         expect(screen.getByText('markdownHelpSummary')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'focusModeOpen' }));
         expect(screen.getByRole('textbox', { name: 'focusModeTextLabel' })).toHaveValue('Markdown text');
+    });
+
+    it.each([
+        ['en', 'tags...'],
+        ['fr', 'tags...'],
+    ] as const)('gives the edit tag picker its own placeholder in %s, not the filter one', (language, placeholder) => {
+        render(
+            <EditForm
+                config={{ theme: 'dark', language } as never}
+                editText="Text"
+                setEditText={vi.fn()}
+                editDate={new Date('2024-01-15')}
+                setEditDate={vi.fn()}
+                allTags={[]}
+                tagMetadata={{}}
+                editTags={[]}
+                setEditTags={vi.fn()}
+                editVisibility="private"
+                setEditVisibility={vi.fn()}
+                editFormat="plain"
+                setEditFormat={vi.fn()}
+                onSaveEdit={vi.fn()}
+                onCancelEdit={vi.fn()}
+                t={(key, params) => getTranslation(language, key, params)}
+            />,
+        );
+
+        expect(screen.getByTestId('tag-picker')).toHaveTextContent(`${placeholder}:`);
+        expect(screen.getByTestId('tag-picker')).not.toHaveTextContent(/Filter|Filtrer/);
     });
 });

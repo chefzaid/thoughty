@@ -134,9 +134,6 @@ const translations: Record<string, string> = {
 };
 
 export const t = (key: string, params?: Record<string, string | number>): string => {
-    if (key === 'filterTagsPlaceholder') {
-        return 'Filter by tags...';
-    }
     if (key.startsWith('bulkSelected_')) {
         return `Selected: ${params?.count ?? 0}`;
     }

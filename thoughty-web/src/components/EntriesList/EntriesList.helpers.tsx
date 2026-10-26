@@ -298,7 +298,7 @@ export function EditForm({
                         selectedTags={editTags}
                         tagMetadata={tagMetadata}
                         onChange={setEditTags}
-                        placeholder={t('filterTagsPlaceholder').replace('Filter by ', '')}
+                        placeholder={t('tagPickerPlaceholder')}
                         t={t}
                         theme={config.theme}
                     />

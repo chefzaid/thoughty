@@ -111,7 +111,7 @@ All AI features are optional and run through OpenRouter. A deployment can provid
 - **Get Inspired.** Asks one reflective question based on your tags. Only tag names and counts are sent, never entry text.
 - **Rephrase.** Rewrites a draft or entry: grammar only, light polish, or full rewrite.
 - **Summaries.** Summarizes a long entry, optionally focusing on or leaving out details you name.
-- **Entry chat.** Discuss an entry with AI. Chats are saved and can be exported as text.
+- **Entry chat.** Discuss an entry with AI. Chats are saved and can be exported as text, written in the profile language.
 - **Meaning search.** Searches the 100 newest entries in scope by idea and returns the top 20.
 - **Find duplicates.** Looks for entries that repeat the same subject and conclusion among the 40 newest in scope.
 - **Organize journal tags.** Proposes up to 12 tags for the 300 newest entries, up to three each. You review every change before it is saved.

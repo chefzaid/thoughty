@@ -1,38 +1,43 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Entry } from '../../types';
 import { downloadBlob } from '../../utils/downloadFile';
+import type { TranslationParams } from '../../utils/translations';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-function buildTranscript(entry: Entry, messages: ChatMessage[]): string {
-  const entryTags = entry.tags.length > 0 ? `Tags: ${entry.tags.join(', ')}` : 'Tags: None';
+type Translate = (key: string, params?: TranslationParams) => string;
+
+function buildTranscript(entry: Entry, messages: ChatMessage[], t: Translate): string {
+  const entryTags = entry.tags.length > 0
+    ? t('aiChatTranscriptTags', { tags: entry.tags.join(', ') })
+    : t('aiChatTranscriptNoTags');
   const transcriptLines = messages.flatMap((message) => [
-    `${message.role === 'user' ? 'User' : 'Assistant'}:`,
+    t(message.role === 'user' ? 'aiChatTranscriptUser' : 'aiChatTranscriptAssistant'),
     message.content,
     '',
   ]);
 
   return [
-    'Thoughty AI Chat Transcript',
+    t('aiChatTranscriptTitle'),
     '',
-    `Entry ID: ${entry.id}`,
-    `Date: ${entry.date}`,
+    t('aiChatTranscriptEntryId', { id: entry.id }),
+    t('aiChatTranscriptDate', { date: entry.date }),
     entryTags,
     '',
-    'Entry:',
+    t('aiChatTranscriptEntry'),
     entry.content,
     '',
-    'Conversation:',
+    t('aiChatTranscriptConversation'),
     '',
     ...transcriptLines,
   ].join('\n').trimEnd();
 }
 
-function downloadTranscript(entry: Entry, messages: ChatMessage[]): void {
-  const transcript = buildTranscript(entry, messages);
+function downloadTranscript(entry: Entry, messages: ChatMessage[], t: Translate): void {
+  const transcript = buildTranscript(entry, messages, t);
   const blob = new Blob([transcript], { type: 'text/plain;charset=utf-8' });
   const safeDate = entry.date.replace(/[^0-9-]/g, '-') || 'entry';
 
@@ -46,7 +51,7 @@ interface AiChatModalProps {
   readonly onSend: (entryId: number, entryContent: string, messages: ChatMessage[]) => Promise<string | null>;
   readonly onLoadHistory: (entryId: number) => Promise<ChatMessage[]>;
   readonly theme?: 'light' | 'dark';
-  readonly t: (key: string) => string;
+  readonly t: Translate;
 }
 
 function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'dark', t }: AiChatModalProps) {
@@ -169,7 +174,7 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => downloadTranscript(entry, messages)}
+              onClick={() => downloadTranscript(entry, messages, t)}
               disabled={historyLoading || messages.length === 0}
               className={`rounded-lg px-3 py-1.5 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
                 isLight

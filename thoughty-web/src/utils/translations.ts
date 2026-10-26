@@ -9,6 +9,7 @@ import { taskListTranslations, type TaskListTranslationKey } from "./translation
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
 import { landingTranslations, type LandingTranslationKey } from "./translations.landing";
+import { aiChatTranslations, type AiChatTranslationKey } from "./translations.aiChat";
 
 type CoreTranslationKey =
   | "journal"
@@ -957,7 +958,7 @@ type CoreTranslationKey =
   | "subscriptionIncluded"
   | "subscriptionPreviousCycle";
 
-export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey | MoodTranslationKey | TaskListTranslationKey | FocusModeTranslationKey | MarkdownToolbarTranslationKey | LandingTranslationKey;
+export type TranslationKey = CoreTranslationKey | MemoirTranslationKey | AppImportTranslationKey | ReviewTranslationKey | RecycleBinTranslationKey | SearchTranslationKey | EntryTitleTimeTranslationKey | MoodTranslationKey | TaskListTranslationKey | FocusModeTranslationKey | MarkdownToolbarTranslationKey | LandingTranslationKey | AiChatTranslationKey;
 
 export type Language = "en" | "fr";
 
@@ -978,6 +979,7 @@ export const translations: Translations = {
     ...focusModeTranslations.en,
     ...markdownToolbarTranslations.en,
     ...landingTranslations.en,
+    ...aiChatTranslations.en,
     // App
     journal: "Journal",
     feed: "Feed",
@@ -2056,6 +2058,7 @@ export const translations: Translations = {
     ...focusModeTranslations.fr,
     ...markdownToolbarTranslations.fr,
     ...landingTranslations.fr,
+    ...aiChatTranslations.fr,
     // App
     journal: "Journal",
     feed: "Fil public",
@@ -2982,7 +2985,7 @@ export const translations: Translations = {
       "Ce type de fichier n'est pas autorisé. Autorisés : images, audio, PDF, texte brut.",
     attachmentTooLarge:
       "Le fichier est trop volumineux. Taille maximale : 5 Mo.",
-    previewAttachment: "Apercu",
+    previewAttachment: "Aperçu",
     captionsUnavailable: "Aucun sous-titre disponible",
     downloadAttachment: "Télécharger la pièce jointe",
     transcribeAudio: "Transcrire l'audio",

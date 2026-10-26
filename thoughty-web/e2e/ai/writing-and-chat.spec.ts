@@ -117,4 +117,47 @@ test.describe('AI writing assistance and entry chat', () => {
     await expect(page.getByPlaceholder("What's on your mind?")).toHaveValue(question);
     await expect.poll(() => state.lastAiInspirationPayload).toEqual({ diaryId: 1 });
   });
+  test('exports the AI chat transcript in French for a French profile', async ({ page }) => {
+    await setupMockApp(page, {
+      startAuthenticated: true,
+      config: { language: 'fr' },
+      initialEntries: [
+        {
+          id: 104,
+          date: '2024-04-21',
+          index: 1,
+          content: 'Une réflexion sur le calme.',
+          tags: [],
+          visibility: 'private',
+          diaryId: 1,
+        },
+      ],
+    });
+
+    await page.goto('/journal');
+    await page.locator('#entry-104').getByTitle("Discuter avec l'IA").click();
+    await expect(page.getByText('Previously saved reflection prompt.')).toBeVisible();
+
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Exporter le chat' }).click();
+    const download = await downloadPromise;
+    const stream = await download.createReadStream();
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    const transcript = Buffer.concat(chunks).toString('utf8');
+
+    expect(transcript.split('\n').slice(0, 9)).toEqual([
+      'Transcription du chat IA de Thoughty',
+      '',
+      'ID de l’entrée : 104',
+      'Date : 2024-04-21',
+      'Tags : aucun',
+      '',
+      'Entrée :',
+      'Une réflexion sur le calme.',
+      '',
+    ]);
+    expect(transcript).toContain('Conversation :');
+    expect(transcript).not.toMatch(/Transcript\b|User:|Tags: None/);
+  });
 });

@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import MemoirAnswerForm from './MemoirAnswerForm';
+import { getTranslation } from '../../utils/translations';
 
 const attachmentsService = { uploadAttachment: vi.fn(), transcribeAttachment: vi.fn() };
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => attachmentsService }));
@@ -172,5 +173,25 @@ describe('MemoirAnswerForm', () => {
     expect(screen.queryByRole('button', { name: 'memoirRecord' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'cancel' }));
     expect(onCancel).toHaveBeenCalled();
+  });
+  it.each([
+    ['en', 'No captions available'],
+    ['fr', 'Aucun sous-titre disponible'],
+  ] as const)('gives the recording an empty caption track in the profile language (%s)', (language, label) => {
+    render(
+      <MemoirAnswerForm
+        questionId="childhood-home"
+        questionText="What was home like?"
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+        t={(key, params) => getTranslation(language, key, params)}
+      />,
+    );
+
+    chooseFile(new File(['voice'], 'story.m4a', { type: 'audio/mp4' }));
+
+    const captions = document.querySelector('audio track');
+    expect(captions).toHaveAttribute('srclang', language);
+    expect(captions).toHaveAttribute('label', label);
   });
 });

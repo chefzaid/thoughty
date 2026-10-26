@@ -45,7 +45,7 @@ describe('AttachmentPreviewContent', () => {
   it.each([
     ['en', 'No captions available'],
     ['fr', 'Aucun sous-titre disponible'],
-  ] as const)('labels the empty caption track of an audio file in %s', (language, label) => {
+  ] as const)('labels the empty caption track of an audio file in %s and declares that language', (language, label) => {
     const { container } = render(
       <AttachmentPreviewContent
         name="note.mp3"
@@ -56,6 +56,7 @@ describe('AttachmentPreviewContent', () => {
     );
 
     expect(container.querySelector('track')).toHaveAttribute('label', label);
+    expect(container.querySelector('track')).toHaveAttribute('srclang', language);
   });
 
   it('does not create an object URL for unsupported pending files', () => {

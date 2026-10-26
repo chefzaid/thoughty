@@ -94,8 +94,8 @@ test.describe('Mood check-in', () => {
     const form = page.locator('form').first();
     const mood = form.getByRole('group', { name: 'Humeur (facultative)' });
     await page.locator('form').first().locator('textarea').fill('Une journée calme.');
-    await form.locator('input[placeholder="Filtrer par tags..."]').fill('jours');
-    await form.locator('input[placeholder="Filtrer par tags..."]').press('Enter');
+    await form.locator('input[placeholder="tags..."]').fill('jours');
+    await form.locator('input[placeholder="tags..."]').press('Enter');
     await mood.getByText('Moyenne', { exact: true }).click();
     await form.getByRole('button', { name: 'Ressentis (facultatifs)' }).click();
     await form.getByLabel('Ajouter un ressenti avec vos mots').fill('Calme');
