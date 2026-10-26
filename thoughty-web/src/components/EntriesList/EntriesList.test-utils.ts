@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 import type { Entry, EntryRevision, GroupedEntries, SourceEntryInfo } from '../../types';
 import EntriesList from './EntriesList';
 import EntryViewMode from './EntryViewMode';
+import { fillTranslationParams } from '../../utils/translationParams';
 
 export const formatDate = (date: Date): string => {
     const year = date.getFullYear();
@@ -137,11 +138,7 @@ export const t = (key: string, params?: Record<string, string | number>): string
     if (key.startsWith('bulkSelected_')) {
         return `Selected: ${params?.count ?? 0}`;
     }
-    let value = translations[key] || key;
-    for (const [param, replacement] of Object.entries(params ?? {})) {
-        value = value.replace(`{${param}}`, String(replacement));
-    }
-    return value;
+    return fillTranslationParams(translations[key] || key, params);
 };
 
 export function createEntriesListProps(

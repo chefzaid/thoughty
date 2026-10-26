@@ -4,14 +4,10 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import EntryMoodField from './EntryMoodField';
 import { moodTranslations } from '../../utils/translations.mood';
+import { fillTranslationParams } from '../../utils/translationParams';
 
-const t = (key: string, params?: Record<string, string | number>) => {
-  let text: string = moodTranslations.en[key as keyof typeof moodTranslations.en] ?? key;
-  for (const [name, value] of Object.entries(params ?? {})) {
-    text = text.replace(`{${name}}`, String(value));
-  }
-  return text;
-};
+const t = (key: string, params?: Record<string, string | number>) =>
+  fillTranslationParams(moodTranslations.en[key as keyof typeof moodTranslations.en] ?? key, params);
 
 function StatefulField({ initialMood = null, initialFeelings = [], onChange }: Readonly<{
   initialMood?: number | null;

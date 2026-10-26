@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { components } from "../../generated/openapi";
 import { getTranslation } from "../../utils/translations";
 import StatsCorrelationGraph from "./StatsCorrelationGraph";
+import { fillTranslationParams } from "../../utils/translationParams";
 
 type StatsCorrelations = components["schemas"]["StatsCorrelationsDto"];
 
@@ -21,11 +22,7 @@ const translations: Record<string, string> = {
 };
 
 const t = (key: string, params?: Record<string, string | number>) =>
-  Object.entries(params ?? {}).reduce(
-    (value, [name, replacement]) =>
-      value.replace(`{${name}}`, String(replacement)),
-    translations[key] ?? key,
-  );
+  fillTranslationParams(translations[key] ?? key, params);
 
 const correlations: StatsCorrelations = {
   analyzedEntries: 4,

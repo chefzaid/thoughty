@@ -4,14 +4,10 @@ import { describe, expect, it } from 'vitest';
 import StatsMoodPanel from './StatsMoodPanel';
 import { moodTranslations } from '../../utils/translations.mood';
 import { getTranslation } from '../../utils/translations';
+import { fillTranslationParams } from '../../utils/translationParams';
 
-const t = (key: string, params?: Record<string, string | number>) => {
-    let text: string = moodTranslations.en[key as keyof typeof moodTranslations.en] ?? key;
-    for (const [name, value] of Object.entries(params ?? {})) {
-        text = text.replace(`{${name}}`, String(value));
-    }
-    return text;
-};
+const t = (key: string, params?: Record<string, string | number>) =>
+    fillTranslationParams(moodTranslations.en[key as keyof typeof moodTranslations.en] ?? key, params);
 
 const moods = {
     recordedEntries: 6,

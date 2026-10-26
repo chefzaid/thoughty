@@ -3,6 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import FeedbackPage from './FeedbackPage';
+import { fillTranslationParams } from '../../utils/translationParams';
 
 const { authFetch, authState } = vi.hoisted(() => ({
   authFetch: vi.fn(),
@@ -98,11 +99,7 @@ function installSuccessfulApi() {
 }
 
 function t(key: string, params?: Record<string, string | number>) {
-  const message = messages[key] ?? key;
-  return Object.entries(params ?? {}).reduce(
-    (current, [paramKey, value]) => current.replace(`{${paramKey}}`, String(value)),
-    message,
-  );
+  return fillTranslationParams(messages[key] ?? key, params);
 }
 
 function renderPage(overrides: { onBackHome?: () => void; onSignIn?: () => void } = {}) {

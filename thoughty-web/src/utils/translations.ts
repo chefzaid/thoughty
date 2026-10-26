@@ -11,6 +11,7 @@ import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from 
 import { landingTranslations, type LandingTranslationKey } from "./translations.landing";
 import { aiChatTranslations, type AiChatTranslationKey } from "./translations.aiChat";
 import { entryActionsTranslations, type EntryActionsTranslationKey } from "./translations.entryActions";
+import { fillTranslationParams } from "./translationParams";
 
 type CoreTranslationKey =
   | "journal"
@@ -3164,13 +3165,9 @@ export const getTranslation = (
   params: TranslationParams = {},
 ): string => {
   const language = translations[lang as Language] || translations["en"];
-  let text = language[key as TranslationKey] || key;
-
-  Object.keys(params).forEach((param) => {
-    text = text.replace(`{${param}}`, String(params[param]));
-  });
-
-  return text;
+  const text = language[key as TranslationKey] || key;
+  // A key read from data can be missing at run time (a diary without a visibility); it comes back as it was.
+  return typeof text === "string" ? fillTranslationParams(text, params) : text;
 };
 
 export type TranslationFunction = (
