@@ -157,4 +157,76 @@ describe('ListenButton', () => {
     const menu = screen.getByText('listenThisEntry').closest('div');
     expect(menu?.className).toContain('bg-gray-800');
   });
+  it('exposes its name, menu and pressed state to assistive technology', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<ListenButton {...defaultProps} label="Listen to Ada" />);
+
+    const trigger = screen.getByRole('button', { name: 'Listen to Ada' });
+    expect(trigger).toHaveAttribute('aria-pressed', 'false');
+    expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('menu', { name: 'Listen to Ada' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'listenThisEntry' })).toHaveFocus();
+
+    rerender(<ListenButton {...defaultProps} label="Listen to Ada" speaking activeEntryId={1} />);
+    const stopButton = screen.getByRole('button', { name: 'stopListening' });
+    expect(stopButton).toHaveAttribute('aria-pressed', 'true');
+    expect(stopButton).not.toHaveAttribute('aria-haspopup');
+  });
+
+  it('moves through the menu with the arrow keys and closes it with Escape', async () => {
+    const user = userEvent.setup();
+    render(<ListenButton {...defaultProps} />);
+
+    await user.click(screen.getByRole('button'));
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'listenFromHere' })).toHaveFocus();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitem', { name: 'listenThisEntry' })).toHaveFocus();
+    await user.keyboard('{ArrowUp}');
+    expect(screen.getByRole('menuitem', { name: 'listenFromHere' })).toHaveFocus();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(screen.getByRole('button')).toHaveFocus();
+  });
+
+  it('closes the menu when focus moves out of it', async () => {
+    const user = userEvent.setup();
+    render(
+      <>
+        <ListenButton {...defaultProps} />
+        <button type="button">next</button>
+      </>,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'listen' }));
+    await user.tab();
+    await user.tab();
+
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('opens the menu from the keyboard and starts reading with Enter', async () => {
+    const user = userEvent.setup();
+    render(<ListenButton {...defaultProps} />);
+
+    screen.getByRole('button').focus();
+    await user.keyboard('{Enter}');
+    await user.keyboard('{ArrowDown}{Enter}');
+
+    expect(defaultProps.onListenFrom).toHaveBeenCalledTimes(1);
+  });
+
+  it('lines the menu up with the start edge when asked', async () => {
+    const user = userEvent.setup();
+    render(<ListenButton {...defaultProps} menuAlign="start" />);
+
+    await user.click(screen.getByRole('button'));
+
+    expect(screen.getByRole('menu').className).toContain('left-0');
+  });
 });

@@ -100,6 +100,7 @@ A program that turns the journal into a life story, at `/memoir`.
 ## Social
 
 - **Feed.** Other users' public entries with infinite scroll, a tab for authors you follow, and a preview of your own public entries. Private, archived, moderated, and deleted content never appears, and moods are never shown.
+- **Listening to the feed.** Each feed entry has the Journal's listen button: read that entry aloud, or read on from it through the following entries, loading the next pages as the infinite scroll does until the feed ends. It uses your chosen voice and the read-dates setting from Profile, reads the title with the text, and picks an English or French voice from the language each entry appears to be written in. Reading stops when you press stop, switch feed tabs, or leave the feed. The button and its menu work from the keyboard (Enter to open, arrow keys, Escape to close) and tell screen readers whose entry they read and whether it is playing.
 - **Follows, comments, and likes.** Follow authors, comment on public entries (up to 1,000 characters), and like entries and comments. You can remove comments on your own entries.
 - **Leaderboard.** The ten most active writers and the most liked and most commented entries, for the week, month, year, or all time.
 - **Achievements.** A private Profile section with your karma and ten badges, such as writing streaks and likes received.

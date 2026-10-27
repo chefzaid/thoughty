@@ -156,14 +156,14 @@ interface EntryCommentsProps {
   readonly entryId: number;
   readonly commentCount: number;
   readonly currentUserId: number | undefined;
-  /** Rendered before the comments toggle in the entry's action row. */
-  readonly likeButton?: ReactNode;
+  /** Rendered before the comments toggle in the entry's action row (the like and listen buttons). */
+  readonly actions?: ReactNode;
   readonly feedService: FeedService;
   readonly theme: 'light' | 'dark';
   readonly t: Translate;
 }
 
-function EntryComments({ entryId, commentCount, currentUserId, likeButton, feedService, theme, t }: EntryCommentsProps) {
+function EntryComments({ entryId, commentCount, currentUserId, actions, feedService, theme, t }: EntryCommentsProps) {
   const threadId = useId();
   const [open, setOpen] = useState(false);
   const [total, setTotal] = useState(commentCount);
@@ -172,7 +172,7 @@ function EntryComments({ entryId, commentCount, currentUserId, likeButton, feedS
   return (
     <div className="feed-entry-comments">
       <div className="feed-entry-actions">
-        {likeButton}
+        {actions}
         <button
           type="button"
           className="feed-comments-toggle"

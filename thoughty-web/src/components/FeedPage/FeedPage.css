@@ -137,7 +137,6 @@
 .feed-entry {
   min-width: 0;
   padding: 1rem 1.1rem;
-  overflow: hidden;
   border: 1px solid #374151;
   border-radius: 0.5rem;
   background: #1f2937;
@@ -146,6 +145,12 @@
 .feed-page.light .feed-entry {
   border-color: #e5e7eb;
   background: #fff;
+}
+
+/* The entry being read aloud. */
+.feed-entry.reading {
+  border-color: #f97316;
+  box-shadow: 0 0 0 1px #f97316;
 }
 
 .feed-author {
@@ -251,6 +256,8 @@
 }
 
 .feed-content {
+  min-width: 0;
+  overflow: hidden;
   overflow-wrap: anywhere;
   line-height: 1.65;
 }

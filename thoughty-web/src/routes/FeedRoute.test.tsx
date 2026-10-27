@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 import FeedRoute from './FeedRoute';
 
 vi.mock('../components/FeedPage/FeedPage', () => ({
-  default: ({ onOpenLeaderboard }: { onOpenLeaderboard: () => void }) => (
-    <button type="button" onClick={onOpenLeaderboard}>feed page</button>
+  default: ({ onOpenLeaderboard, readDates, ttsVoiceUri }: { onOpenLeaderboard: () => void; readDates?: boolean; ttsVoiceUri?: string }) => (
+    <button type="button" onClick={onOpenLeaderboard} data-read-dates={String(readDates)} data-voice={ttsVoiceUri}>feed page</button>
   ),
 }));
 
@@ -37,5 +37,17 @@ describe('FeedRoute', () => {
     fireEvent.click(screen.getByRole('button', { name: 'leaderboard page' }));
     expect(screen.getByRole('status')).toHaveTextContent('/feed');
     expect(screen.getByRole('button', { name: 'feed page' })).toBeInTheDocument();
+  });
+
+  it('passes the reading-aloud settings to the feed', () => {
+    render(
+      <MemoryRouter initialEntries={['/feed']}>
+        <FeedRoute t={(key) => key} readDates={false} ttsVoiceUri="voice-1" />
+      </MemoryRouter>,
+    );
+
+    const feed = screen.getByRole('button', { name: 'feed page' });
+    expect(feed).toHaveAttribute('data-read-dates', 'false');
+    expect(feed).toHaveAttribute('data-voice', 'voice-1');
   });
 });

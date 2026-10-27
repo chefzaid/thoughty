@@ -6,10 +6,12 @@ import type { PublicFeedEntry, PublicFeedScope } from '../../services/api';
 import { resolveLanguage } from '../../utils/language';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
+import ListenButton from '../ListenButton/ListenButton';
 import EntryComments from './EntryComments';
 import LikeButton from './LikeButton';
 import FeedAuthor from './FeedAuthor';
 import FollowingPanel from './FollowingPanel';
+import { useFeedSpeech } from './useFeedSpeech';
 import { useFollows } from './useFollows';
 import './FeedPage.css';
 
@@ -24,11 +26,15 @@ const SCOPES: ReadonlyArray<{ scope: PublicFeedScope; icon: string; label: strin
 interface FeedPageProps {
   readonly theme?: 'light' | 'dark';
   readonly language?: string;
+  /** Whether reading aloud starts each entry with its date (the Journal's setting). */
+  readonly readDates?: boolean;
+  /** The voice chosen in the profile for reading aloud. */
+  readonly ttsVoiceUri?: string;
   readonly onOpenLeaderboard?: () => void;
   readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function FeedPage({ theme = 'dark', language, onOpenLeaderboard, t }: Readonly<FeedPageProps>) {
+function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onOpenLeaderboard, t }: Readonly<FeedPageProps>) {
   const uiLanguage = resolveLanguage(language);
   const feedService = useFeedService();
   const currentUserId = useAuth().user?.id;
@@ -42,36 +48,42 @@ function FeedPage({ theme = 'dark', language, onOpenLeaderboard, t }: Readonly<F
   const [error, setError] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const generationRef = useRef(0);
-  const pendingRequestsRef = useRef(new Set<string>());
+  /** In-flight page requests, so the infinite scroll and reading aloud share one request per page. */
+  const pendingRequestsRef = useRef(new Map<string, Promise<PublicFeedEntry[]>>());
 
-  const fetchPage = useCallback(async (
+  /** Loads a page and resolves to its entries, or to none when it fails or a newer request replaced it. */
+  const fetchPage = useCallback((
     requestScope: PublicFeedScope,
     requestedPage: number,
     replace: boolean,
     generation: number,
-  ) => {
+  ): Promise<PublicFeedEntry[]> => {
     const requestKey = `${generation}:${requestScope}:${requestedPage}`;
-    if (pendingRequestsRef.current.has(requestKey)) return;
+    const pending = pendingRequestsRef.current.get(requestKey);
+    if (pending) return pending;
 
-    pendingRequestsRef.current.add(requestKey);
     setLoading(true);
     setError(null);
-    const result = await feedService.fetchPublicFeed(requestScope, requestedPage, PAGE_SIZE);
-    pendingRequestsRef.current.delete(requestKey);
+    const request = feedService.fetchPublicFeed(requestScope, requestedPage, PAGE_SIZE).then((result) => {
+      pendingRequestsRef.current.delete(requestKey);
+      if (generation !== generationRef.current) return [];
 
-    if (generation !== generationRef.current) return;
+      if (!result.data) {
+        setError(result.error || 'feedLoadError');
+        setLoading(false);
+        return [];
+      }
 
-    if (!result.data) {
-      setError(result.error || 'feedLoadError');
+      const loaded = result.data.entries;
+      setEntries((current) => replace ? loaded : [...current, ...loaded]);
+      setPage(result.data.page);
+      setTotal(result.data.total);
+      setHasMore(result.data.hasMore);
       setLoading(false);
-      return;
-    }
-
-    setEntries((current) => replace ? result.data!.entries : [...current, ...result.data!.entries]);
-    setPage(result.data.page);
-    setTotal(result.data.total);
-    setHasMore(result.data.hasMore);
-    setLoading(false);
+      return loaded;
+    });
+    pendingRequestsRef.current.set(requestKey, request);
+    return request;
   }, [feedService]);
 
   useEffect(() => {
@@ -89,6 +101,20 @@ function FeedPage({ theme = 'dark', language, onOpenLeaderboard, t }: Readonly<F
       void fetchPage(scope, page + 1, false, generationRef.current);
     }
   }, [fetchPage, hasMore, loading, page, scope]);
+
+  const speech = useFeedSpeech({
+    entries,
+    hasMore,
+    fetchNextPage: () => fetchPage(scope, page + 1, false, generationRef.current),
+    language: uiLanguage,
+    readDates,
+    voiceUri: ttsVoiceUri,
+  });
+
+  const changeScope = (nextScope: PublicFeedScope) => {
+    speech.stop();
+    setScope(nextScope);
+  };
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -128,7 +154,7 @@ function FeedPage({ theme = 'dark', language, onOpenLeaderboard, t }: Readonly<F
               type="button"
               className={scope === option.scope ? 'active' : ''}
               aria-pressed={scope === option.scope}
-              onClick={() => setScope(option.scope)}
+              onClick={() => changeScope(option.scope)}
             >
               <span className={`codicon codicon-${option.icon}`} aria-hidden="true" />
               {t(option.label)}
@@ -156,7 +182,7 @@ function FeedPage({ theme = 'dark', language, onOpenLeaderboard, t }: Readonly<F
 
       <div className="feed-list">
         {entries.map((entry) => (
-          <article className="feed-entry" key={entry.id}>
+          <article className={`feed-entry${speech.activeEntryId === entry.id ? ' reading' : ''}`} key={entry.id}>
             <FeedAuthor
               author={entry.author}
               date={entry.date}
@@ -184,15 +210,31 @@ function FeedPage({ theme = 'dark', language, onOpenLeaderboard, t }: Readonly<F
               feedService={feedService}
               theme={theme}
               t={t}
-              likeButton={(
-                <LikeButton
-                  liked={entry.liked}
-                  likeCount={entry.likeCount}
-                  canLike={scope !== 'mine'}
-                  label={t('likeEntryBy', { username: entry.author.username })}
-                  onChange={(like) => feedService.setEntryLike(entry.id, like)}
-                  t={t}
-                />
+              actions={(
+                <>
+                  <LikeButton
+                    liked={entry.liked}
+                    likeCount={entry.likeCount}
+                    canLike={scope !== 'mine'}
+                    label={t('likeEntryBy', { username: entry.author.username })}
+                    onChange={(like) => feedService.setEntryLike(entry.id, like)}
+                    t={t}
+                  />
+                  {speech.supported && (
+                    <ListenButton
+                      entryId={entry.id}
+                      speaking={speech.speaking}
+                      activeEntryId={speech.activeEntryId}
+                      onListenOne={() => speech.readEntry(entry)}
+                      onListenFrom={() => speech.readFromEntry(entry)}
+                      onStop={speech.stop}
+                      theme={theme}
+                      menuAlign="start"
+                      label={t('listenEntryBy', { username: entry.author.username })}
+                      t={t}
+                    />
+                  )}
+                </>
               )}
             />
           </article>

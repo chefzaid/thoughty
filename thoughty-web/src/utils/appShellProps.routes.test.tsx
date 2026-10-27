@@ -51,6 +51,18 @@ describe('appShellProps', () => {
     expect(updateConfig).toHaveBeenCalledTimes(1);
   });
 
+  it('gives the feed the reading-aloud settings', () => {
+    const readingProps = buildAuthenticatedRoutesProps(createRoutesParams({
+      config: { theme: 'light', name: 'Zaid', language: 'fr', readDates: false, ttsVoiceUri: 'voice-1' },
+    })).feedRouteProps;
+    expect(readingProps).toMatchObject({ theme: 'light', language: 'fr', readDates: false, ttsVoiceUri: 'voice-1' });
+
+    const defaultProps = buildAuthenticatedRoutesProps(createRoutesParams({
+      config: { theme: 'dark', name: 'Zaid' },
+    })).feedRouteProps;
+    expect(defaultProps.readDates).toBe(true);
+  });
+
   it('offers created tags in the composer and editor but filters only by used tags', () => {
     const props = buildAuthenticatedRoutesProps(createRoutesParams({
       tagMetadata: { gratitude: { color: '#2563EB' }, focus: { color: '#DC2626' } },

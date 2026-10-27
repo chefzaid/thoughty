@@ -36,6 +36,7 @@ export type SocialTranslationKey =
   | "likes"
   | "likesCount"
   | "likeEntryBy"
+  | "listenEntryBy"
   | "likeCommentBy"
   | "likeUpdateError"
   | "leaderboard"
@@ -120,6 +121,7 @@ export const socialTranslations: Record<Language, Record<SocialTranslationKey, s
     likes: "Likes",
     likesCount: "Likes: {count}",
     likeEntryBy: "Like the entry by {username}",
+    listenEntryBy: "Listen to the entry by {username}",
     likeCommentBy: "Like the comment by {username}",
     likeUpdateError: "The like could not be updated.",
     leaderboard: "Leaderboard",
@@ -203,6 +205,7 @@ export const socialTranslations: Record<Language, Record<SocialTranslationKey, s
     likes: "J'aime",
     likesCount: "J'aime : {count}",
     likeEntryBy: "Aimer l'entrée de {username}",
+    listenEntryBy: "Écouter l'entrée de {username}",
     likeCommentBy: "Aimer le commentaire de {username}",
     likeUpdateError: "Le j'aime n'a pas pu être mis à jour.",
     leaderboard: "Classement",

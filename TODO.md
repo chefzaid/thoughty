@@ -190,7 +190,7 @@ Parts of tasks that cannot advance without the owner's decision or information. 
 ## Social Features
 
 - [x] Feed that shows public entries from other users with infinite scroll and to preview your own public entries
-- [ ] Feed text-to-speech: read a single entry aloud or continue reading from that entry onward, matching the Journal's reading controls
+- [x] Feed text-to-speech: read a single entry aloud or continue reading from that entry onward (through the next pages), matching the Journal's reading controls, with a voice language picked per entry
 - [x] Allow users to follow other users
 - [x] Comments on public entries
 - [x] Likes for entries and comments
