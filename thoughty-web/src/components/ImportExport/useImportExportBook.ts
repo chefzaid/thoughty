@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { TranslationFunction } from '../../types';
 import type { CloudFileInfo, CloudProviderType } from '../../services/api/cloudSyncService';
 import { downloadBlob } from '../../utils/downloadFile';
+import { readApiErrorMessage } from '../../services/api/base';
+import { appendBookSourceParams, bookVersionsQuery, isBookSourceReady } from './bookSource';
+import { useBookSourceData } from './useBookSourceData';
 import {
     DEFAULT_BOOK_OPTIONS,
     type BookOptions,
@@ -10,10 +13,14 @@ import {
     type MessageState,
 } from './ImportExport.types';
 
+const SOURCE_OPTION_KEYS: ReadonlySet<keyof BookOptions> = new Set(['source', 'savedSearchId', 'entryIds']);
+
 interface UseImportExportBookProps {
     authFetch: (url: string, options?: RequestInit) => Promise<Response>;
     connectedProviders: CloudProviderType[];
     diaryId?: number | null;
+    /** Entries picked in the journal (its Make a book action), which open the converter as a hand-picked book. */
+    initialEntryIds?: readonly number[];
     showMessage: (type: MessageState['type'], text: string, duration?: number) => void;
     t: TranslationFunction;
 }
@@ -22,10 +29,16 @@ export function useImportExportBook({
     authFetch,
     connectedProviders,
     diaryId,
+    initialEntryIds,
     showMessage,
     t,
 }: UseImportExportBookProps) {
-    const [options, setOptions] = useState<BookOptions>(DEFAULT_BOOK_OPTIONS);
+    const [options, setOptions] = useState<BookOptions>(() => (initialEntryIds?.length
+        ? { ...DEFAULT_BOOK_OPTIONS, source: 'entries', entryIds: [...new Set(initialEntryIds)] }
+        : DEFAULT_BOOK_OPTIONS));
+    const sourceData = useBookSourceData({ authFetch, options });
+    const sourceReady = isBookSourceReady(options);
+    const versionsQuery = bookVersionsQuery(options, diaryId);
     const [preview, setPreview] = useState<BookPreviewData | null>(null);
     const [action, setAction] = useState<'download' | 'upload' | 'version' | null>(null);
     const [versions, setVersions] = useState<BookVersionData[]>([]);
@@ -39,11 +52,12 @@ export function useImportExportBook({
     useEffect(() => {
         let active = true;
         const requestId = ++versionRequestRef.current;
-        const params = new URLSearchParams();
-        if (diaryId) params.set('diaryId', diaryId.toString());
         setVersions([]);
+        if (versionsQuery === null) {
+            return undefined;
+        }
 
-        authFetch(`/api/books/versions?${params}`)
+        authFetch(`/api/books/versions?${versionsQuery}`)
             .then(async (response) => {
                 if (!response.ok) {
                     return;
@@ -58,11 +72,11 @@ export function useImportExportBook({
         return () => {
             active = false;
         };
-    }, [authFetch, diaryId]);
+    }, [authFetch, versionsQuery]);
 
     function buildParams(): URLSearchParams {
         const params = new URLSearchParams();
-        if (diaryId) params.append('diaryId', diaryId.toString());
+        appendBookSourceParams(params, options, diaryId);
         if (options.title.trim()) params.append('title', options.title.trim());
         if (options.author.trim()) params.append('author', options.author.trim());
         if (options.format !== 'pdf') params.append('format', options.format);
@@ -91,13 +105,25 @@ export function useImportExportBook({
 
     function changeOption<K extends keyof BookOptions>(key: K, value: BookOptions[K]): void {
         setOptions((current) => ({ ...current, [key]: value }));
+        // An outline of other entries would mislead
+        if (SOURCE_OPTION_KEYS.has(key)) setPreview(null);
+    }
+
+    /** Builds the next version of a hand-picked book from the entries a saved version holds. */
+    function pickVersionEntries(version: BookVersionData): void {
+        setOptions((current) => ({ ...current, source: 'entries', entryIds: [...(version.source.entryIds ?? [])] }));
+        setPreview(null);
+    }
+
+    async function failureMessage(response: Response, fallback: string): Promise<string> {
+        return t(await readApiErrorMessage(response, fallback));
     }
 
     async function handlePreview(): Promise<void> {
         try {
             const response = await authFetch(`/api/books/preview?${buildParams()}`);
             if (!response.ok) {
-                showMessage('error', t('bookPreviewError'));
+                showMessage('error', await failureMessage(response, 'bookPreviewError'));
                 return;
             }
             setPreview(await response.json());
@@ -115,7 +141,7 @@ export function useImportExportBook({
                 ? { method: 'POST', body: coverBody }
                 : undefined);
             if (!response.ok) {
-                showMessage('error', t('bookExportError'));
+                showMessage('error', await failureMessage(response, 'bookExportError'));
                 return;
             }
 
@@ -144,7 +170,7 @@ export function useImportExportBook({
                 body: buildCoverBody(),
             });
             if (!response.ok) {
-                showMessage('error', t('bookCloudUploadError'));
+                showMessage('error', await failureMessage(response, 'bookCloudUploadError'));
                 return;
             }
 
@@ -166,7 +192,7 @@ export function useImportExportBook({
                 body: buildCoverBody(),
             });
             if (!response.ok) {
-                showMessage('error', t('bookVersionSaveError'));
+                showMessage('error', await failureMessage(response, 'bookVersionSaveError'));
                 return;
             }
             const version = await response.json() as BookVersionData;
@@ -209,8 +235,12 @@ export function useImportExportBook({
         handleUpload,
         handleVersionDownload,
         options,
+        pickedEntries: sourceData.pickedEntries,
         preview,
+        savedSearches: sourceData.savedSearches,
         setCloudProvider,
+        sourceReady,
+        pickVersionEntries,
         versions,
     };
 }

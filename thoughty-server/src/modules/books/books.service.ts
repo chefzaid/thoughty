@@ -1,8 +1,8 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Entry, Diary, User } from '@/database/entities';
+import { User } from '@/database/entities';
 import { AiBookComposerService, type BookWeavingMode } from '@/modules/ai';
 import {
   Book,
@@ -11,14 +11,14 @@ import {
   renderBookHtml,
   renderBookPdf,
   renderBookEpub,
-  EMBEDDED_BOOK_IMAGE_TYPES,
   type EmbeddedBookImage,
   isSafeEmbeddedBookImage,
 } from '@/common/utils';
 import { BookQueryDto, BookPreviewResponseDto } from './dto';
-import type { BookVersionManifest } from '@/database/entities';
+import type { BookVersionManifest, BookVersionSource } from '@/database/entities';
 import { createBookCover } from './book-cover.util';
 import { AttachmentsService } from '@/modules/attachments';
+import { BookEntrySourceService } from './book-entry-source.service';
 
 export type BookFormat = 'pdf' | 'epub' | 'html' | 'md';
 
@@ -29,6 +29,14 @@ export interface BookFile {
   title: string;
   author?: string;
   sourceManifest: BookVersionManifest;
+  /** Where the entries came from, recorded with a saved version. */
+  source: BookVersionSource;
+}
+
+/** A built book and where its entries came from. */
+interface SourcedBook {
+  book: Book;
+  source: BookVersionSource;
 }
 
 const DEFAULT_BOOK_TITLE = 'My Book of Thoughts';
@@ -41,56 +49,12 @@ export class BooksService {
   private readonly logger = new Logger(BooksService.name);
 
   constructor(
-    @InjectRepository(Entry)
-    private readonly entryRepository: Repository<Entry>,
-    @InjectRepository(Diary)
-    private readonly diaryRepository: Repository<Diary>,
+    private readonly entrySource: BookEntrySourceService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly aiBookComposer: AiBookComposerService,
     private readonly attachmentsService: AttachmentsService,
   ) {}
-
-  private async fetchEntries(userId: number, query: BookQueryDto): Promise<Entry[]> {
-    const qb = this.entryRepository
-      .createQueryBuilder('e')
-      .where('e.user_id = :userId', { userId })
-      .andWhere('e.is_archived = false')
-      .orderBy('e.date', 'ASC')
-      .addOrderBy('e.index', 'ASC');
-
-    if (query.diaryId) {
-      qb.andWhere('e.diary_id = :diaryId', { diaryId: query.diaryId });
-    }
-    if (query.dateFrom) {
-      qb.andWhere('e.date >= :dateFrom', { dateFrom: query.dateFrom });
-    }
-    if (query.dateTo) {
-      qb.andWhere('e.date <= :dateTo', { dateTo: query.dateTo });
-    }
-    if (query.embedImages === true) {
-      qb.leftJoinAndSelect(
-        'e.attachments',
-        'bookAttachment',
-        'bookAttachment.mimetype IN (:...imageTypes)',
-        { imageTypes: EMBEDDED_BOOK_IMAGE_TYPES },
-      ).addOrderBy('bookAttachment.created_at', 'ASC');
-    }
-
-    return qb.getMany();
-  }
-
-  private async resolveDiary(userId: number, diaryId?: number): Promise<Diary | null> {
-    if (!diaryId) {
-      return null;
-    }
-
-    const diary = await this.diaryRepository.findOne({ where: { id: diaryId, userId } });
-    if (!diary) {
-      throw apiError(NotFoundException, 'DIARY_NOT_FOUND');
-    }
-    return diary;
-  }
 
   private async resolveAuthor(userId: number, provided?: string): Promise<string | undefined> {
     if (provided?.trim()) {
@@ -110,15 +74,18 @@ export class BooksService {
   }
 
   async buildBookForUser(userId: number, query: BookQueryDto): Promise<Book> {
-    const [diary, entries, author] = await Promise.all([
-      this.resolveDiary(userId, query.diaryId),
-      this.fetchEntries(userId, query),
+    return (await this.buildSourcedBook(userId, query)).book;
+  }
+
+  private async buildSourcedBook(userId: number, query: BookQueryDto): Promise<SourcedBook> {
+    const [{ entries, source, defaultTitle }, author] = await Promise.all([
+      this.entrySource.select(userId, query),
       this.resolveAuthor(userId, query.author),
     ]);
 
-    const title = query.title?.trim() || diary?.name || DEFAULT_BOOK_TITLE;
+    const title = query.title?.trim() || defaultTitle || DEFAULT_BOOK_TITLE;
 
-    return buildBook(entries, {
+    const book = buildBook(entries, {
       title,
       author,
       chapterMode: query.chapterMode,
@@ -127,6 +94,7 @@ export class BooksService {
       includeUntagged: query.includeUntagged,
       tags: this.parseTagFilter(query.tags),
     });
+    return { book, source };
   }
 
   async preview(userId: number, query: BookQueryDto): Promise<BookPreviewResponseDto> {
@@ -239,7 +207,7 @@ export class BooksService {
     query: BookQueryDto,
     coverImage?: Express.Multer.File,
   ): Promise<BookFile> {
-    const book = await this.buildBookForUser(userId, query);
+    const { book, source } = await this.buildSourcedBook(userId, query);
     book.cover = createBookCover(query.coverTheme, coverImage);
     if (query.narrative !== false) {
       await this.composeNarratives(userId, book, query.weavingMode ?? 'strict');
@@ -307,6 +275,7 @@ export class BooksService {
             .filter((id): id is number => typeof id === 'number'),
         })),
       },
+      source,
     };
   }
 }

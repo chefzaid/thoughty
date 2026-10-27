@@ -13,6 +13,7 @@ const version = (id: number, versionNumber = id): BookVersionData => ({
     entryCount: 2,
     addedEntryCount: 2,
     addedChapterTitles: ['Travel'],
+    source: { kind: 'journal', diaryId: 1 },
     createdAt: '2026-10-26T10:00:00.000Z',
 });
 

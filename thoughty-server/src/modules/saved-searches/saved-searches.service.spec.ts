@@ -115,6 +115,15 @@ describe('SavedSearchesService', () => {
     await expect(service.create(7, { name: 'Family', diaryId: null, filters })).rejects.toThrow('connection lost');
   });
 
+  it('finds only the writer’s own search', async () => {
+    const saved = { id: 4, userId: 7, name: 'Family' };
+    savedRepository.findOne.mockResolvedValueOnce(saved).mockResolvedValueOnce(null);
+
+    await expect(service.findOwn(7, 4)).resolves.toBe(saved);
+    expect(savedRepository.findOne).toHaveBeenCalledWith({ where: { id: 4, userId: 7 } });
+    await expectApiError(service.findOwn(8, 4), NotFoundException, 'SAVED_SEARCH_NOT_FOUND');
+  });
+
   it('renames only the writer’s own search', async () => {
     const saved = { id: 4, userId: 7, name: 'Family', diaryId: null, filters, createdAt, updatedAt: createdAt } as SavedSearch;
     savedRepository.findOne.mockResolvedValueOnce(saved);

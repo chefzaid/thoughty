@@ -445,7 +445,7 @@ Concrete product features that build on what exists. Each one fills a gap visibl
 
 ### Books
 
-- [ ] Book from hand-picked entries or a saved search, not only from tags or years.
+- [x] Book from hand-picked entries or a saved search, not only from tags or years. The book converter's **Entries from** offers the journal (a diary or all), a saved search (its stored filters applied server-side, meaning searches refused) or hand-picked entries, picked with the journal's **Make a book** bulk action (up to 500, owned and outside the recycle bin) and editable in the converter. Chapters can be per tag, year, month or a single chapter for every source, with the same weaving, covers, preview and versions; each version records its source, each diary and saved search keeps its own history, and **Use these entries** reloads a hand-picked version's entries for the next one.
 - [ ] Book preview in the browser, page by page, before downloading or printing.
 
 ### AI

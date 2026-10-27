@@ -5254,10 +5254,35 @@
         "operationId": "BooksController_listVersions",
         "parameters": [
           {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Where the entries come from: the journal (the diary, date range and archive rules below), a saved search (its stored filters), or hand-picked entries",
+            "schema": {
+              "default": "journal",
+              "type": "string",
+              "enum": [
+                "journal",
+                "savedSearch",
+                "entries"
+              ]
+            }
+          },
+          {
+            "name": "savedSearchId",
+            "required": false,
+            "in": "query",
+            "description": "Saved search whose filters select the entries (source=savedSearch)",
+            "schema": {
+              "example": 4,
+              "type": "number"
+            }
+          },
+          {
             "name": "diaryId",
             "required": false,
             "in": "query",
-            "description": "Diary ID whose book history should be listed",
+            "description": "Diary ID whose journal book history should be listed",
             "schema": {
               "type": "number"
             }
@@ -5288,6 +5313,11 @@
                     "addedChapterTitles": [
                       "June reflections"
                     ],
+                    "source": {
+                      "kind": "savedSearch",
+                      "savedSearchId": 4,
+                      "savedSearchName": "Family favorites"
+                    },
                     "createdAt": "2026-06-24T10:00:00.000Z"
                   }
                 ]
@@ -5300,7 +5330,7 @@
             "bearer": []
           }
         ],
-        "summary": "List saved versions for the selected journal book",
+        "summary": "List saved versions of a book: a diary (or all diaries), a saved search, or the hand-picked book",
         "tags": [
           "Books"
         ]
@@ -5309,10 +5339,45 @@
         "operationId": "BooksController_createVersion",
         "parameters": [
           {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Where the entries come from: the journal (the diary, date range and archive rules below), a saved search (its stored filters), or hand-picked entries",
+            "schema": {
+              "default": "journal",
+              "type": "string",
+              "enum": [
+                "journal",
+                "savedSearch",
+                "entries"
+              ]
+            }
+          },
+          {
+            "name": "savedSearchId",
+            "required": false,
+            "in": "query",
+            "description": "Saved search whose filters select the entries (source=savedSearch)",
+            "schema": {
+              "example": 4,
+              "type": "number"
+            }
+          },
+          {
+            "name": "entryIds",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated IDs of the hand-picked entries (source=entries), at most 500",
+            "schema": {
+              "example": "12,15,31",
+              "type": "string"
+            }
+          },
+          {
             "name": "diaryId",
             "required": false,
             "in": "query",
-            "description": "Diary ID to build the book from",
+            "description": "Diary ID to build a journal book from (source=journal)",
             "schema": {
               "type": "number"
             }
@@ -5337,7 +5402,7 @@
             "name": "title",
             "required": false,
             "in": "query",
-            "description": "Book title (defaults to the diary name)",
+            "description": "Book title (defaults to the diary or saved search name)",
             "schema": {
               "type": "string"
             }
@@ -5355,7 +5420,7 @@
             "name": "dateFrom",
             "required": false,
             "in": "query",
-            "description": "Only include entries on or after this date (YYYY-MM-DD)",
+            "description": "Journal books: only include entries on or after this date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -5364,7 +5429,7 @@
             "name": "dateTo",
             "required": false,
             "in": "query",
-            "description": "Only include entries on or before this date (YYYY-MM-DD)",
+            "description": "Journal books: only include entries on or before this date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -5388,14 +5453,15 @@
             "name": "chapterMode",
             "required": false,
             "in": "query",
-            "description": "Chapter grouping mode: tags, calendar years, or calendar months",
+            "description": "Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book",
             "schema": {
               "default": "tags",
               "type": "string",
               "enum": [
                 "tags",
                 "year",
-                "month"
+                "month",
+                "single"
               ]
             }
           },
@@ -5550,6 +5616,11 @@
                   "addedChapterTitles": [
                     "June reflections"
                   ],
+                  "source": {
+                    "kind": "savedSearch",
+                    "savedSearchId": 4,
+                    "savedSearchName": "Family favorites"
+                  },
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -5596,15 +5667,104 @@
         ]
       }
     },
+    "/api/books/picked-entries": {
+      "get": {
+        "operationId": "BooksController_pickedEntries",
+        "parameters": [
+          {
+            "name": "entryIds",
+            "required": true,
+            "in": "query",
+            "description": "Comma-separated entry IDs, at most 500",
+            "schema": {
+              "example": "12,15,31",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picked entries the writer still has, by date, and the IDs that are gone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookPickedEntriesResponseDto"
+                },
+                "example": {
+                  "entries": [
+                    {
+                      "id": 12,
+                      "date": "2024-05-01",
+                      "title": "First day in Lisbon",
+                      "excerpt": "We walked down to the river and…",
+                      "diaryId": 2,
+                      "diaryName": "Travel",
+                      "isArchived": false
+                    }
+                  ],
+                  "missingIds": [
+                    44
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Describe the entries picked for a book, and which of them are no longer available",
+        "tags": [
+          "Books"
+        ]
+      }
+    },
     "/api/books/preview": {
       "get": {
         "operationId": "BooksController_preview",
         "parameters": [
           {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Where the entries come from: the journal (the diary, date range and archive rules below), a saved search (its stored filters), or hand-picked entries",
+            "schema": {
+              "default": "journal",
+              "type": "string",
+              "enum": [
+                "journal",
+                "savedSearch",
+                "entries"
+              ]
+            }
+          },
+          {
+            "name": "savedSearchId",
+            "required": false,
+            "in": "query",
+            "description": "Saved search whose filters select the entries (source=savedSearch)",
+            "schema": {
+              "example": 4,
+              "type": "number"
+            }
+          },
+          {
+            "name": "entryIds",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated IDs of the hand-picked entries (source=entries), at most 500",
+            "schema": {
+              "example": "12,15,31",
+              "type": "string"
+            }
+          },
+          {
             "name": "diaryId",
             "required": false,
             "in": "query",
-            "description": "Diary ID to build the book from",
+            "description": "Diary ID to build a journal book from (source=journal)",
             "schema": {
               "type": "number"
             }
@@ -5629,7 +5789,7 @@
             "name": "title",
             "required": false,
             "in": "query",
-            "description": "Book title (defaults to the diary name)",
+            "description": "Book title (defaults to the diary or saved search name)",
             "schema": {
               "type": "string"
             }
@@ -5647,7 +5807,7 @@
             "name": "dateFrom",
             "required": false,
             "in": "query",
-            "description": "Only include entries on or after this date (YYYY-MM-DD)",
+            "description": "Journal books: only include entries on or after this date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -5656,7 +5816,7 @@
             "name": "dateTo",
             "required": false,
             "in": "query",
-            "description": "Only include entries on or before this date (YYYY-MM-DD)",
+            "description": "Journal books: only include entries on or before this date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -5680,14 +5840,15 @@
             "name": "chapterMode",
             "required": false,
             "in": "query",
-            "description": "Chapter grouping mode: tags, calendar years, or calendar months",
+            "description": "Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book",
             "schema": {
               "default": "tags",
               "type": "string",
               "enum": [
                 "tags",
                 "year",
-                "month"
+                "month",
+                "single"
               ]
             }
           },
@@ -5836,7 +5997,7 @@
             "bearer": []
           }
         ],
-        "summary": "Preview the book outline (chapters built from tags) before exporting",
+        "summary": "Preview the book outline (chapters and entry counts) before exporting",
         "tags": [
           "Books"
         ]
@@ -5847,10 +6008,45 @@
         "operationId": "BooksController_export",
         "parameters": [
           {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Where the entries come from: the journal (the diary, date range and archive rules below), a saved search (its stored filters), or hand-picked entries",
+            "schema": {
+              "default": "journal",
+              "type": "string",
+              "enum": [
+                "journal",
+                "savedSearch",
+                "entries"
+              ]
+            }
+          },
+          {
+            "name": "savedSearchId",
+            "required": false,
+            "in": "query",
+            "description": "Saved search whose filters select the entries (source=savedSearch)",
+            "schema": {
+              "example": 4,
+              "type": "number"
+            }
+          },
+          {
+            "name": "entryIds",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated IDs of the hand-picked entries (source=entries), at most 500",
+            "schema": {
+              "example": "12,15,31",
+              "type": "string"
+            }
+          },
+          {
             "name": "diaryId",
             "required": false,
             "in": "query",
-            "description": "Diary ID to build the book from",
+            "description": "Diary ID to build a journal book from (source=journal)",
             "schema": {
               "type": "number"
             }
@@ -5875,7 +6071,7 @@
             "name": "title",
             "required": false,
             "in": "query",
-            "description": "Book title (defaults to the diary name)",
+            "description": "Book title (defaults to the diary or saved search name)",
             "schema": {
               "type": "string"
             }
@@ -5893,7 +6089,7 @@
             "name": "dateFrom",
             "required": false,
             "in": "query",
-            "description": "Only include entries on or after this date (YYYY-MM-DD)",
+            "description": "Journal books: only include entries on or after this date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -5902,7 +6098,7 @@
             "name": "dateTo",
             "required": false,
             "in": "query",
-            "description": "Only include entries on or before this date (YYYY-MM-DD)",
+            "description": "Journal books: only include entries on or before this date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -5926,14 +6122,15 @@
             "name": "chapterMode",
             "required": false,
             "in": "query",
-            "description": "Chapter grouping mode: tags, calendar years, or calendar months",
+            "description": "Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book",
             "schema": {
               "default": "tags",
               "type": "string",
               "enum": [
                 "tags",
                 "year",
-                "month"
+                "month",
+                "single"
               ]
             }
           },
@@ -6061,7 +6258,7 @@
             "bearer": []
           }
         ],
-        "summary": "Convert journal entries into a book (chapters from tags) and download it",
+        "summary": "Convert journal entries, a saved search or hand-picked entries into a book and download it",
         "tags": [
           "Books"
         ]
@@ -6070,10 +6267,45 @@
         "operationId": "BooksController_exportWithCover",
         "parameters": [
           {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Where the entries come from: the journal (the diary, date range and archive rules below), a saved search (its stored filters), or hand-picked entries",
+            "schema": {
+              "default": "journal",
+              "type": "string",
+              "enum": [
+                "journal",
+                "savedSearch",
+                "entries"
+              ]
+            }
+          },
+          {
+            "name": "savedSearchId",
+            "required": false,
+            "in": "query",
+            "description": "Saved search whose filters select the entries (source=savedSearch)",
+            "schema": {
+              "example": 4,
+              "type": "number"
+            }
+          },
+          {
+            "name": "entryIds",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated IDs of the hand-picked entries (source=entries), at most 500",
+            "schema": {
+              "example": "12,15,31",
+              "type": "string"
+            }
+          },
+          {
             "name": "diaryId",
             "required": false,
             "in": "query",
-            "description": "Diary ID to build the book from",
+            "description": "Diary ID to build a journal book from (source=journal)",
             "schema": {
               "type": "number"
             }
@@ -6098,7 +6330,7 @@
             "name": "title",
             "required": false,
             "in": "query",
-            "description": "Book title (defaults to the diary name)",
+            "description": "Book title (defaults to the diary or saved search name)",
             "schema": {
               "type": "string"
             }
@@ -6116,7 +6348,7 @@
             "name": "dateFrom",
             "required": false,
             "in": "query",
-            "description": "Only include entries on or after this date (YYYY-MM-DD)",
+            "description": "Journal books: only include entries on or after this date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -6125,7 +6357,7 @@
             "name": "dateTo",
             "required": false,
             "in": "query",
-            "description": "Only include entries on or before this date (YYYY-MM-DD)",
+            "description": "Journal books: only include entries on or before this date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -6149,14 +6381,15 @@
             "name": "chapterMode",
             "required": false,
             "in": "query",
-            "description": "Chapter grouping mode: tags, calendar years, or calendar months",
+            "description": "Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book",
             "schema": {
               "default": "tags",
               "type": "string",
               "enum": [
                 "tags",
                 "year",
-                "month"
+                "month",
+                "single"
               ]
             }
           },
@@ -6311,10 +6544,45 @@
         "operationId": "BooksController_upload",
         "parameters": [
           {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "description": "Where the entries come from: the journal (the diary, date range and archive rules below), a saved search (its stored filters), or hand-picked entries",
+            "schema": {
+              "default": "journal",
+              "type": "string",
+              "enum": [
+                "journal",
+                "savedSearch",
+                "entries"
+              ]
+            }
+          },
+          {
+            "name": "savedSearchId",
+            "required": false,
+            "in": "query",
+            "description": "Saved search whose filters select the entries (source=savedSearch)",
+            "schema": {
+              "example": 4,
+              "type": "number"
+            }
+          },
+          {
+            "name": "entryIds",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated IDs of the hand-picked entries (source=entries), at most 500",
+            "schema": {
+              "example": "12,15,31",
+              "type": "string"
+            }
+          },
+          {
             "name": "diaryId",
             "required": false,
             "in": "query",
-            "description": "Diary ID to build the book from",
+            "description": "Diary ID to build a journal book from (source=journal)",
             "schema": {
               "type": "number"
             }
@@ -6339,7 +6607,7 @@
             "name": "title",
             "required": false,
             "in": "query",
-            "description": "Book title (defaults to the diary name)",
+            "description": "Book title (defaults to the diary or saved search name)",
             "schema": {
               "type": "string"
             }
@@ -6357,7 +6625,7 @@
             "name": "dateFrom",
             "required": false,
             "in": "query",
-            "description": "Only include entries on or after this date (YYYY-MM-DD)",
+            "description": "Journal books: only include entries on or after this date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -6366,7 +6634,7 @@
             "name": "dateTo",
             "required": false,
             "in": "query",
-            "description": "Only include entries on or before this date (YYYY-MM-DD)",
+            "description": "Journal books: only include entries on or before this date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -6390,14 +6658,15 @@
             "name": "chapterMode",
             "required": false,
             "in": "query",
-            "description": "Chapter grouping mode: tags, calendar years, or calendar months",
+            "description": "Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book",
             "schema": {
               "default": "tags",
               "type": "string",
               "enum": [
                 "tags",
                 "year",
-                "month"
+                "month",
+                "single"
               ]
             }
           },
@@ -7090,6 +7359,332 @@
         "summary": "Trigger a diff-based sync (uploads only if content has changed)",
         "tags": [
           "Cloud Sync"
+        ]
+      }
+    },
+    "/api/saved-searches": {
+      "get": {
+        "operationId": "SavedSearchesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Saved searches and the limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchListResponseDto"
+                },
+                "example": {
+                  "savedSearches": [
+                    {
+                      "id": 4,
+                      "name": "Family favorites",
+                      "diaryId": 2,
+                      "filters": {
+                        "search": "\"long walk\" -rain",
+                        "searchMode": "keyword",
+                        "sort": "relevance",
+                        "tags": [
+                          "family"
+                        ],
+                        "date": "2019-07-14",
+                        "visibility": "all",
+                        "archiveStatus": "active",
+                        "favorites": true,
+                        "mood": "4,5"
+                      },
+                      "createdAt": "2026-10-27T09:30:00.000Z",
+                      "updatedAt": "2026-10-27T09:30:00.000Z"
+                    }
+                  ],
+                  "limit": 50
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the writer’s saved journal searches, by name",
+        "tags": [
+          "Saved searches"
+        ]
+      },
+      "post": {
+        "operationId": "SavedSearchesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSavedSearchDto"
+              },
+              "example": {
+                "name": "Family favorites",
+                "diaryId": 2,
+                "filters": {
+                  "search": "\"long walk\" -rain",
+                  "searchMode": "keyword",
+                  "sort": "relevance",
+                  "tags": [
+                    "family"
+                  ],
+                  "date": "2019-07-14",
+                  "visibility": "all",
+                  "archiveStatus": "active",
+                  "favorites": true,
+                  "mood": "4,5"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Search saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchResponseDto"
+                },
+                "example": {
+                  "id": 4,
+                  "name": "Family favorites",
+                  "diaryId": 2,
+                  "filters": {
+                    "search": "\"long walk\" -rain",
+                    "searchMode": "keyword",
+                    "sort": "relevance",
+                    "tags": [
+                      "family"
+                    ],
+                    "date": "2019-07-14",
+                    "visibility": "all",
+                    "archiveStatus": "active",
+                    "favorites": true,
+                    "mood": "4,5"
+                  },
+                  "createdAt": "2026-10-27T09:30:00.000Z",
+                  "updatedAt": "2026-10-27T09:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid filters, or the saved search limit is reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid filters, or the saved search limit is reached",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Diary not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Diary not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A saved search with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "A saved search with this name already exists",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save the current journal filters and diary scope under a name",
+        "tags": [
+          "Saved searches"
+        ]
+      }
+    },
+    "/api/saved-searches/{id}": {
+      "patch": {
+        "operationId": "SavedSearchesController_rename",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameSavedSearchDto"
+              },
+              "example": {
+                "name": "Family, 2019"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Search renamed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchResponseDto"
+                },
+                "example": {
+                  "id": 4,
+                  "name": "Family favorites",
+                  "diaryId": 2,
+                  "filters": {
+                    "search": "\"long walk\" -rain",
+                    "searchMode": "keyword",
+                    "sort": "relevance",
+                    "tags": [
+                      "family"
+                    ],
+                    "date": "2019-07-14",
+                    "visibility": "all",
+                    "archiveStatus": "active",
+                    "favorites": true,
+                    "mood": "4,5"
+                  },
+                  "createdAt": "2026-10-27T09:30:00.000Z",
+                  "updatedAt": "2026-10-27T09:30:00.000Z"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Saved search not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Saved search not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A saved search with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "A saved search with this name already exists",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rename a saved search",
+        "tags": [
+          "Saved searches"
+        ]
+      },
+      "delete": {
+        "operationId": "SavedSearchesController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchDeleteResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Saved search not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Saved search not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a saved search",
+        "tags": [
+          "Saved searches"
         ]
       }
     },
@@ -9153,332 +9748,6 @@
         "summary": "Delete entries from the recycle bin for good, with their history and files",
         "tags": [
           "Recycle bin"
-        ]
-      }
-    },
-    "/api/saved-searches": {
-      "get": {
-        "operationId": "SavedSearchesController_list",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Saved searches and the limit",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SavedSearchListResponseDto"
-                },
-                "example": {
-                  "savedSearches": [
-                    {
-                      "id": 4,
-                      "name": "Family favorites",
-                      "diaryId": 2,
-                      "filters": {
-                        "search": "\"long walk\" -rain",
-                        "searchMode": "keyword",
-                        "sort": "relevance",
-                        "tags": [
-                          "family"
-                        ],
-                        "date": "2019-07-14",
-                        "visibility": "all",
-                        "archiveStatus": "active",
-                        "favorites": true,
-                        "mood": "4,5"
-                      },
-                      "createdAt": "2026-10-27T09:30:00.000Z",
-                      "updatedAt": "2026-10-27T09:30:00.000Z"
-                    }
-                  ],
-                  "limit": 50
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "List the writer’s saved journal searches, by name",
-        "tags": [
-          "Saved searches"
-        ]
-      },
-      "post": {
-        "operationId": "SavedSearchesController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateSavedSearchDto"
-              },
-              "example": {
-                "name": "Family favorites",
-                "diaryId": 2,
-                "filters": {
-                  "search": "\"long walk\" -rain",
-                  "searchMode": "keyword",
-                  "sort": "relevance",
-                  "tags": [
-                    "family"
-                  ],
-                  "date": "2019-07-14",
-                  "visibility": "all",
-                  "archiveStatus": "active",
-                  "favorites": true,
-                  "mood": "4,5"
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Search saved",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SavedSearchResponseDto"
-                },
-                "example": {
-                  "id": 4,
-                  "name": "Family favorites",
-                  "diaryId": 2,
-                  "filters": {
-                    "search": "\"long walk\" -rain",
-                    "searchMode": "keyword",
-                    "sort": "relevance",
-                    "tags": [
-                      "family"
-                    ],
-                    "date": "2019-07-14",
-                    "visibility": "all",
-                    "archiveStatus": "active",
-                    "favorites": true,
-                    "mood": "4,5"
-                  },
-                  "createdAt": "2026-10-27T09:30:00.000Z",
-                  "updatedAt": "2026-10-27T09:30:00.000Z"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Invalid filters, or the saved search limit is reached",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "statusCode": 400,
-                  "message": "Invalid filters, or the saved search limit is reached",
-                  "error": "Bad Request",
-                  "code": "VALIDATION_FAILED"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Diary not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "statusCode": 404,
-                  "message": "Diary not found",
-                  "error": "Not Found",
-                  "code": "NOT_FOUND"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "A saved search with this name already exists",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "statusCode": 409,
-                  "message": "A saved search with this name already exists",
-                  "error": "Conflict",
-                  "code": "CONFLICT"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Save the current journal filters and diary scope under a name",
-        "tags": [
-          "Saved searches"
-        ]
-      }
-    },
-    "/api/saved-searches/{id}": {
-      "patch": {
-        "operationId": "SavedSearchesController_rename",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RenameSavedSearchDto"
-              },
-              "example": {
-                "name": "Family, 2019"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Search renamed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SavedSearchResponseDto"
-                },
-                "example": {
-                  "id": 4,
-                  "name": "Family favorites",
-                  "diaryId": 2,
-                  "filters": {
-                    "search": "\"long walk\" -rain",
-                    "searchMode": "keyword",
-                    "sort": "relevance",
-                    "tags": [
-                      "family"
-                    ],
-                    "date": "2019-07-14",
-                    "visibility": "all",
-                    "archiveStatus": "active",
-                    "favorites": true,
-                    "mood": "4,5"
-                  },
-                  "createdAt": "2026-10-27T09:30:00.000Z",
-                  "updatedAt": "2026-10-27T09:30:00.000Z"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Saved search not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "statusCode": 404,
-                  "message": "Saved search not found",
-                  "error": "Not Found",
-                  "code": "NOT_FOUND"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "A saved search with this name already exists",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "statusCode": 409,
-                  "message": "A saved search with this name already exists",
-                  "error": "Conflict",
-                  "code": "CONFLICT"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Rename a saved search",
-        "tags": [
-          "Saved searches"
-        ]
-      },
-      "delete": {
-        "operationId": "SavedSearchesController_delete",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "number"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Search deleted",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SavedSearchDeleteResponseDto"
-                },
-                "example": {
-                  "success": true
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Saved search not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiErrorResponse"
-                },
-                "example": {
-                  "statusCode": 404,
-                  "message": "Saved search not found",
-                  "error": "Not Found",
-                  "code": "NOT_FOUND"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Delete a saved search",
-        "tags": [
-          "Saved searches"
         ]
       }
     }
@@ -14747,6 +15016,58 @@
           "cached": true
         }
       },
+      "BookVersionSourceDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "journal",
+              "savedSearch",
+              "entries"
+            ]
+          },
+          "diaryId": {
+            "type": "number",
+            "nullable": true,
+            "description": "The diary of a journal book; null for all diaries"
+          },
+          "savedSearchId": {
+            "type": "number",
+            "description": "The saved search of a saved-search book",
+            "example": 4
+          },
+          "savedSearchName": {
+            "type": "string",
+            "description": "The saved search’s name when the version was made",
+            "example": "Family favorites"
+          },
+          "entryIds": {
+            "description": "The hand-picked entries of the version",
+            "example": [
+              12,
+              15
+            ],
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "example": {
+          "kind": "journal",
+          "diaryId": 1,
+          "savedSearchId": 4,
+          "savedSearchName": "Family favorites",
+          "entryIds": [
+            12,
+            15
+          ]
+        }
+      },
       "BookVersionResponseDto": {
         "type": "object",
         "properties": {
@@ -14789,6 +15110,19 @@
               "type": "string"
             }
           },
+          "source": {
+            "description": "Where the version’s entries came from",
+            "example": {
+              "kind": "savedSearch",
+              "savedSearchId": 4,
+              "savedSearchName": "Family favorites"
+            },
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/BookVersionSourceDto"
+              }
+            ]
+          },
           "createdAt": {
             "type": "string"
           }
@@ -14803,6 +15137,7 @@
           "entryCount",
           "addedEntryCount",
           "addedChapterTitles",
+          "source",
           "createdAt"
         ],
         "example": {
@@ -14818,7 +15153,110 @@
           "addedChapterTitles": [
             "June reflections"
           ],
+          "source": {
+            "kind": "savedSearch",
+            "savedSearchId": 4,
+            "savedSearchName": "Family favorites"
+          },
           "createdAt": "2026-06-24T10:00:00.000Z"
+        }
+      },
+      "BookPickedEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 12
+          },
+          "date": {
+            "type": "string",
+            "example": "2024-05-01",
+            "format": "date"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "First day in Lisbon"
+          },
+          "excerpt": {
+            "type": "string",
+            "example": "We walked down to the river and…",
+            "description": "The first words of the entry, as plain text"
+          },
+          "diaryId": {
+            "type": "number",
+            "nullable": true,
+            "example": 2
+          },
+          "diaryName": {
+            "type": "string",
+            "nullable": true,
+            "example": "Travel"
+          },
+          "isArchived": {
+            "type": "boolean",
+            "example": false
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "title",
+          "excerpt",
+          "diaryId",
+          "diaryName",
+          "isArchived"
+        ],
+        "example": {
+          "id": 12,
+          "date": "2024-05-01",
+          "title": "First day in Lisbon",
+          "excerpt": "We walked down to the river and…",
+          "diaryId": 2,
+          "diaryName": "Travel",
+          "isArchived": false
+        }
+      },
+      "BookPickedEntriesResponseDto": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "description": "The picked entries the writer still has, by date",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BookPickedEntryDto"
+            }
+          },
+          "missingIds": {
+            "example": [
+              44
+            ],
+            "description": "Picked IDs that are not the writer’s entries or are in the recycle bin",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "entries",
+          "missingIds"
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": 12,
+              "date": "2024-05-01",
+              "title": "First day in Lisbon",
+              "excerpt": "We walked down to the river and…",
+              "diaryId": 2,
+              "diaryName": "Travel",
+              "isArchived": false
+            }
+          ],
+          "missingIds": [
+            44
+          ]
         }
       },
       "BookChapterPreviewDto": {
@@ -15385,6 +15823,282 @@
             "size": 1,
             "modifiedAt": "2026-06-24T10:00:00.000Z"
           }
+        }
+      },
+      "SavedSearchFiltersDto": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "example": "\"long walk\" -rain",
+            "maxLength": 500,
+            "description": "Search text; empty for none"
+          },
+          "searchMode": {
+            "type": "string",
+            "enum": [
+              "keyword",
+              "semantic"
+            ],
+            "example": "keyword"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "relevance",
+              "date"
+            ],
+            "example": "relevance",
+            "description": "Order of keyword search results"
+          },
+          "tags": {
+            "example": [
+              "family"
+            ],
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "date": {
+            "type": "string",
+            "nullable": true,
+            "example": "2019-07-14",
+            "format": "date",
+            "description": "Entry date, or null for any date"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "all",
+              "public",
+              "private"
+            ],
+            "example": "all"
+          },
+          "archiveStatus": {
+            "type": "string",
+            "enum": [
+              "active",
+              "archived",
+              "all"
+            ],
+            "example": "active"
+          },
+          "favorites": {
+            "type": "boolean",
+            "example": true
+          },
+          "mood": {
+            "type": "string",
+            "example": "4,5",
+            "description": "Mood levels from 1 to 5 (comma-separated), \"any\", \"none\", or empty for any mood"
+          }
+        },
+        "required": [
+          "search",
+          "searchMode",
+          "sort",
+          "tags",
+          "date",
+          "visibility",
+          "archiveStatus",
+          "favorites",
+          "mood"
+        ],
+        "example": {
+          "search": "\"long walk\" -rain",
+          "searchMode": "keyword",
+          "sort": "relevance",
+          "tags": [
+            "family"
+          ],
+          "date": "2019-07-14",
+          "visibility": "all",
+          "archiveStatus": "active",
+          "favorites": true,
+          "mood": "4,5"
+        }
+      },
+      "SavedSearchResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 4
+          },
+          "name": {
+            "type": "string",
+            "example": "Family favorites"
+          },
+          "diaryId": {
+            "type": "number",
+            "nullable": true,
+            "example": 2,
+            "description": "Null for all diaries"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/SavedSearchFiltersDto"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-27T09:30:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-27T09:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "diaryId",
+          "filters",
+          "createdAt",
+          "updatedAt"
+        ],
+        "example": {
+          "id": 4,
+          "name": "Family favorites",
+          "diaryId": 2,
+          "filters": {
+            "search": "\"long walk\" -rain",
+            "searchMode": "keyword",
+            "sort": "relevance",
+            "tags": [
+              "family"
+            ],
+            "date": "2019-07-14",
+            "visibility": "all",
+            "archiveStatus": "active",
+            "favorites": true,
+            "mood": "4,5"
+          },
+          "createdAt": "2026-10-27T09:30:00.000Z",
+          "updatedAt": "2026-10-27T09:30:00.000Z"
+        }
+      },
+      "SavedSearchListResponseDto": {
+        "type": "object",
+        "properties": {
+          "savedSearches": {
+            "description": "Sorted by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SavedSearchResponseDto"
+            }
+          },
+          "limit": {
+            "type": "number",
+            "example": 50,
+            "description": "How many saved searches a writer can keep"
+          }
+        },
+        "required": [
+          "savedSearches",
+          "limit"
+        ],
+        "example": {
+          "savedSearches": [
+            {
+              "id": 4,
+              "name": "Family favorites",
+              "diaryId": 2,
+              "filters": {
+                "search": "\"long walk\" -rain",
+                "searchMode": "keyword",
+                "sort": "relevance",
+                "tags": [
+                  "family"
+                ],
+                "date": "2019-07-14",
+                "visibility": "all",
+                "archiveStatus": "active",
+                "favorites": true,
+                "mood": "4,5"
+              },
+              "createdAt": "2026-10-27T09:30:00.000Z",
+              "updatedAt": "2026-10-27T09:30:00.000Z"
+            }
+          ],
+          "limit": 50
+        }
+      },
+      "CreateSavedSearchDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Family favorites",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "diaryId": {
+            "type": "number",
+            "nullable": true,
+            "example": 2,
+            "description": "Diary the search is scoped to; null for all diaries"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/SavedSearchFiltersDto"
+          }
+        },
+        "required": [
+          "name",
+          "diaryId",
+          "filters"
+        ],
+        "example": {
+          "name": "Family favorites",
+          "diaryId": 2,
+          "filters": {
+            "search": "\"long walk\" -rain",
+            "searchMode": "keyword",
+            "sort": "relevance",
+            "tags": [
+              "family"
+            ],
+            "date": "2019-07-14",
+            "visibility": "all",
+            "archiveStatus": "active",
+            "favorites": true,
+            "mood": "4,5"
+          }
+        }
+      },
+      "RenameSavedSearchDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Family, 2019",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "example": {
+          "name": "Family, 2019"
+        }
+      },
+      "SavedSearchDeleteResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "example": {
+          "success": true
         }
       },
       "FeatureRequestDto": {
@@ -17600,282 +18314,6 @@
           "deletedCount": 2
         }
       },
-      "SavedSearchFiltersDto": {
-        "type": "object",
-        "properties": {
-          "search": {
-            "type": "string",
-            "example": "\"long walk\" -rain",
-            "maxLength": 500,
-            "description": "Search text; empty for none"
-          },
-          "searchMode": {
-            "type": "string",
-            "enum": [
-              "keyword",
-              "semantic"
-            ],
-            "example": "keyword"
-          },
-          "sort": {
-            "type": "string",
-            "enum": [
-              "relevance",
-              "date"
-            ],
-            "example": "relevance",
-            "description": "Order of keyword search results"
-          },
-          "tags": {
-            "example": [
-              "family"
-            ],
-            "maxItems": 20,
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          },
-          "date": {
-            "type": "string",
-            "nullable": true,
-            "example": "2019-07-14",
-            "format": "date",
-            "description": "Entry date, or null for any date"
-          },
-          "visibility": {
-            "type": "string",
-            "enum": [
-              "all",
-              "public",
-              "private"
-            ],
-            "example": "all"
-          },
-          "archiveStatus": {
-            "type": "string",
-            "enum": [
-              "active",
-              "archived",
-              "all"
-            ],
-            "example": "active"
-          },
-          "favorites": {
-            "type": "boolean",
-            "example": true
-          },
-          "mood": {
-            "type": "string",
-            "example": "4,5",
-            "description": "Mood levels from 1 to 5 (comma-separated), \"any\", \"none\", or empty for any mood"
-          }
-        },
-        "required": [
-          "search",
-          "searchMode",
-          "sort",
-          "tags",
-          "date",
-          "visibility",
-          "archiveStatus",
-          "favorites",
-          "mood"
-        ],
-        "example": {
-          "search": "\"long walk\" -rain",
-          "searchMode": "keyword",
-          "sort": "relevance",
-          "tags": [
-            "family"
-          ],
-          "date": "2019-07-14",
-          "visibility": "all",
-          "archiveStatus": "active",
-          "favorites": true,
-          "mood": "4,5"
-        }
-      },
-      "SavedSearchResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "number",
-            "example": 4
-          },
-          "name": {
-            "type": "string",
-            "example": "Family favorites"
-          },
-          "diaryId": {
-            "type": "number",
-            "nullable": true,
-            "example": 2,
-            "description": "Null for all diaries"
-          },
-          "filters": {
-            "$ref": "#/components/schemas/SavedSearchFiltersDto"
-          },
-          "createdAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-10-27T09:30:00.000Z"
-          },
-          "updatedAt": {
-            "format": "date-time",
-            "type": "string",
-            "example": "2026-10-27T09:30:00.000Z"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "diaryId",
-          "filters",
-          "createdAt",
-          "updatedAt"
-        ],
-        "example": {
-          "id": 4,
-          "name": "Family favorites",
-          "diaryId": 2,
-          "filters": {
-            "search": "\"long walk\" -rain",
-            "searchMode": "keyword",
-            "sort": "relevance",
-            "tags": [
-              "family"
-            ],
-            "date": "2019-07-14",
-            "visibility": "all",
-            "archiveStatus": "active",
-            "favorites": true,
-            "mood": "4,5"
-          },
-          "createdAt": "2026-10-27T09:30:00.000Z",
-          "updatedAt": "2026-10-27T09:30:00.000Z"
-        }
-      },
-      "SavedSearchListResponseDto": {
-        "type": "object",
-        "properties": {
-          "savedSearches": {
-            "description": "Sorted by name",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SavedSearchResponseDto"
-            }
-          },
-          "limit": {
-            "type": "number",
-            "example": 50,
-            "description": "How many saved searches a writer can keep"
-          }
-        },
-        "required": [
-          "savedSearches",
-          "limit"
-        ],
-        "example": {
-          "savedSearches": [
-            {
-              "id": 4,
-              "name": "Family favorites",
-              "diaryId": 2,
-              "filters": {
-                "search": "\"long walk\" -rain",
-                "searchMode": "keyword",
-                "sort": "relevance",
-                "tags": [
-                  "family"
-                ],
-                "date": "2019-07-14",
-                "visibility": "all",
-                "archiveStatus": "active",
-                "favorites": true,
-                "mood": "4,5"
-              },
-              "createdAt": "2026-10-27T09:30:00.000Z",
-              "updatedAt": "2026-10-27T09:30:00.000Z"
-            }
-          ],
-          "limit": 50
-        }
-      },
-      "CreateSavedSearchDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Family favorites",
-            "minLength": 1,
-            "maxLength": 80
-          },
-          "diaryId": {
-            "type": "number",
-            "nullable": true,
-            "example": 2,
-            "description": "Diary the search is scoped to; null for all diaries"
-          },
-          "filters": {
-            "$ref": "#/components/schemas/SavedSearchFiltersDto"
-          }
-        },
-        "required": [
-          "name",
-          "diaryId",
-          "filters"
-        ],
-        "example": {
-          "name": "Family favorites",
-          "diaryId": 2,
-          "filters": {
-            "search": "\"long walk\" -rain",
-            "searchMode": "keyword",
-            "sort": "relevance",
-            "tags": [
-              "family"
-            ],
-            "date": "2019-07-14",
-            "visibility": "all",
-            "archiveStatus": "active",
-            "favorites": true,
-            "mood": "4,5"
-          }
-        }
-      },
-      "RenameSavedSearchDto": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "example": "Family, 2019",
-            "minLength": 1,
-            "maxLength": 80
-          }
-        },
-        "required": [
-          "name"
-        ],
-        "example": {
-          "name": "Family, 2019"
-        }
-      },
-      "SavedSearchDeleteResponseDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "success"
-        ],
-        "example": {
-          "success": true
-        }
-      },
       "ApiErrorCode": {
         "type": "string",
         "enum": [
@@ -17955,6 +18393,11 @@
           "BOOK_COVER_INVALID",
           "BOOK_TOO_LARGE_FOR_VERSION",
           "BOOK_VERSION_NOT_FOUND",
+          "BOOK_SAVED_SEARCH_REQUIRED",
+          "BOOK_SAVED_SEARCH_SEMANTIC",
+          "BOOK_PICKED_ENTRIES_REQUIRED",
+          "BOOK_PICKED_ENTRIES_LIMIT",
+          "BOOK_PICKED_ENTRIES_UNAVAILABLE",
           "BOOK_AI_NARRATIVE_KEY_REQUIRED",
           "BOOK_AI_FRAMING_KEY_REQUIRED",
           "AI_KEY_NOT_CONFIGURED",

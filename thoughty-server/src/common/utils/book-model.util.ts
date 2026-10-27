@@ -3,7 +3,8 @@ import type { EmbeddedBookImage } from './book-image.util';
 
 export type ChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type TagScope = 'all' | 'first';
-export type ChapterMode = 'tags' | 'year' | 'month';
+/** One chapter per tag, per calendar year or month, or the whole book as a single chapter. */
+export type ChapterMode = 'tags' | 'year' | 'month' | 'single';
 
 export const UNTAGGED_CHAPTER_TITLE = 'Untagged Thoughts';
 

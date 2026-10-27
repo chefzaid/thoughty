@@ -72,14 +72,15 @@ flowchart LR
 
 ### Book converter
 
-- Turns a diary or the whole journal into a book, with one chapter per tag, or one per year or month in yearbook mode.
+- **Entries from** the journal (a diary or the whole journal), a saved search, or hand-picked entries. A saved search selects the entries its filters find when the book is made, scoped to its diary; meaning searches cannot be used, since their matches need AI and change from one run to the next. Hand-picked entries come from the journal: select entries and choose **Make a book**, which opens the converter with them (up to 500, archived ones included). The converter lists the picks, marks any that went to the recycle bin, and lets the writer remove them or clear the list; to add more, pick them in the journal again.
+- One chapter per tag, per year or month (yearbook mode), or a single chapter titled after the book, whatever the source.
 - With AI, each chapter's entries are woven into flowing first-person prose. **Strict** mode adds nothing that is not in the entries. **Creative** mode may add light transitions and texture but never invents major events. Without AI, chapters list the entries in date order.
 - Optional AI chapter introductions and summaries.
 - Options include chapter order, date range, which tags become chapters, an untagged chapter, entry dates, and a table of contents.
 - Covers use a color theme and an optional PNG or JPEG image up to 2 MB. Entry images can be embedded (up to 5 MB each and 25 MB per book).
-- Output as PDF, EPUB, HTML, or Markdown. Archived entries are left out.
+- Output as PDF, EPUB, HTML, or Markdown. Journal books leave archived entries out; a saved search follows its own archive filter.
 - **Preview Chapters** shows the outline without using AI.
-- **Versions.** Save the book, then save later versions from newer entries. Every version stays downloadable.
+- **Versions.** Save the book, then save later versions from newer entries. Every version stays downloadable and records its source. Each diary (and all diaries) and each saved search keeps its own history, so a new version of a saved-search book takes what the search finds now; hand-picked books share one history, and **Use these entries** on a version loads its picks back into the converter for the next version.
 - Books can be uploaded straight to a connected cloud provider.
 
 ## Guided Memoir

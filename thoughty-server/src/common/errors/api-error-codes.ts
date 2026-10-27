@@ -98,6 +98,13 @@ export const API_ERROR_MESSAGES = {
   BOOK_COVER_INVALID: 'Cover image must be a PNG or JPEG file no larger than 2 MB.',
   BOOK_TOO_LARGE_FOR_VERSION: 'Generated book is too large to save as a version.',
   BOOK_VERSION_NOT_FOUND: 'Book version not found',
+  BOOK_SAVED_SEARCH_REQUIRED: 'Choose a saved search to build the book from',
+  BOOK_SAVED_SEARCH_SEMANTIC:
+    'A book cannot be built from a meaning search. Choose a saved search that matches words instead.',
+  BOOK_PICKED_ENTRIES_REQUIRED: 'Pick at least one entry for the book',
+  BOOK_PICKED_ENTRIES_LIMIT: 'Too many picked entries for one book',
+  BOOK_PICKED_ENTRIES_UNAVAILABLE:
+    'Some picked entries no longer exist or are in the recycle bin. Remove them and try again.',
   BOOK_AI_NARRATIVE_KEY_REQUIRED:
     'AI narrative requires an OpenRouter API key on the server. Disable the AI narrative option to download a plain book.',
   BOOK_AI_FRAMING_KEY_REQUIRED:

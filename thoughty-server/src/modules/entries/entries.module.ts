@@ -28,6 +28,6 @@ import { EntryTaskListService } from './entry-task-list.service';
     EntryTaggingService,
     EntryTaskListService,
   ],
-  exports: [EntriesService, EntryListCacheService],
+  exports: [EntriesService, EntryListCacheService, EntrySearchService],
 })
 export class EntriesModule {}

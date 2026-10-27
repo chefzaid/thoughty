@@ -103,7 +103,7 @@ const MONTH_NAMES = [
   'December',
 ];
 
-function createDateChapterTitle(date: string, mode: Exclude<ChapterMode, 'tags'>): string {
+function createDateChapterTitle(date: string, mode: 'year' | 'month'): string {
   const [year, month] = date.split('-');
   if (mode === 'year') {
     return year;
@@ -111,6 +111,19 @@ function createDateChapterTitle(date: string, mode: Exclude<ChapterMode, 'tags'>
 
   const monthName = MONTH_NAMES[Number.parseInt(month, 10) - 1] ?? month;
   return `${monthName} ${year}`;
+}
+
+/** The chapter an entry belongs to when chapters follow the calendar; a single chapter takes the book's title. */
+function chronologicalChapter(
+  entry: BookEntry,
+  mode: Exclude<ChapterMode, 'tags'>,
+  bookTitle: string,
+): { key: string; title: string } {
+  if (mode === 'single') {
+    return { key: 'single', title: bookTitle };
+  }
+  const key = mode === 'year' ? entry.date.slice(0, 4) : entry.date.slice(0, 7);
+  return { key, title: createDateChapterTitle(entry.date, mode) };
 }
 
 function buildChronologicalBook(
@@ -121,12 +134,12 @@ function buildChronologicalBook(
   const chapterMap = new Map<string, BookChapter>();
 
   for (const entry of sortChronologically(normalized)) {
-    const key = options.chapterMode === 'year' ? entry.date.slice(0, 4) : entry.date.slice(0, 7);
+    const { key, title } = chronologicalChapter(entry, options.chapterMode, options.title);
     const chapter = chapterMap.get(key);
     if (chapter) {
       chapter.entries.push(entry);
     } else {
-      chapterMap.set(key, { title: createDateChapterTitle(entry.date, options.chapterMode), entries: [entry] });
+      chapterMap.set(key, { title, entries: [entry] });
     }
   }
 
@@ -139,11 +152,12 @@ function buildChronologicalBook(
 }
 
 /**
- * Group journal entries into book chapters, one chapter per tag.
- * Entries inside a chapter are connected chronologically to read as a narrative.
+ * Group journal entries into book chapters: one chapter per tag by default, per calendar year or
+ * month, or a single chapter titled after the book. Entries inside a chapter are connected
+ * chronologically to read as a narrative.
  */
 export function buildBook(entries: BookEntryInput[], options: BuildBookOptions): Book {
-  if (options.chapterMode === 'year' || options.chapterMode === 'month') {
+  if (options.chapterMode === 'year' || options.chapterMode === 'month' || options.chapterMode === 'single') {
     return buildChronologicalBook(entries, { ...options, chapterMode: options.chapterMode });
   }
 

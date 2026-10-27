@@ -1,0 +1,113 @@
+.book-source {
+    display: grid;
+    gap: 0.6rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.22));
+}
+
+.book-source__note {
+    margin: 0;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.72));
+    font-size: 0.85rem;
+}
+
+.book-source__note--error {
+    color: #f87171;
+}
+
+.book-picked {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.book-picked__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.book-picked__clear {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.book-picked__list {
+    display: grid;
+    max-height: 18rem;
+    margin: 0;
+    padding: 0;
+    gap: 0.4rem;
+    overflow-y: auto;
+    list-style: none;
+}
+
+.book-picked__item {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid var(--border-color, rgba(148, 163, 184, 0.28));
+    border-radius: 6px;
+}
+
+.book-picked__item .io-icon-btn {
+    flex: 0 0 auto;
+}
+
+.book-picked__item--missing {
+    border-style: dashed;
+}
+
+.book-picked__main {
+    display: grid;
+    min-width: 0;
+    gap: 0.15rem;
+}
+
+.book-picked__title,
+.book-picked__excerpt {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.book-picked__meta,
+.book-picked__excerpt {
+    color: var(--text-secondary, rgba(255, 255, 255, 0.72));
+    font-size: 0.8rem;
+}
+
+.book-picked__item--missing .book-picked__meta {
+    color: #fbbf24;
+}
+
+.import-export.light .book-source__note,
+.import-export.light .book-picked__meta,
+.import-export.light .book-picked__excerpt {
+    color: #4b5563;
+}
+
+.import-export.light .book-source__note--error {
+    color: #b91c1c;
+}
+
+.import-export.light .book-picked__item--missing .book-picked__meta {
+    color: #92400e;
+}
+
+.book-version-item__use {
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+@media (max-width: 760px) {
+    .book-version-item {
+        flex-wrap: wrap;
+    }
+}

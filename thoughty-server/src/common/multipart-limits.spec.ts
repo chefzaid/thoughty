@@ -7,6 +7,7 @@ import { AudioTranscriptionService } from '@/modules/attachments/audio-transcrip
 import { BooksController } from '@/modules/books/books.controller';
 import { BooksService } from '@/modules/books/books.service';
 import { BookVersionsService } from '@/modules/books/book-versions.service';
+import { BookEntrySourceService } from '@/modules/books/book-entry-source.service';
 import { CloudSyncService } from '@/modules/cloud-sync';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 
@@ -24,6 +25,7 @@ describe('Multipart upload limits', () => {
         { provide: AudioTranscriptionService, useValue: {} },
         { provide: BooksService, useValue: { export: exportBook } },
         { provide: BookVersionsService, useValue: { create: createVersion } },
+        { provide: BookEntrySourceService, useValue: {} },
         { provide: CloudSyncService, useValue: {} },
       ],
     })

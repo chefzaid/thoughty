@@ -8,5 +8,6 @@ import { SavedSearchesService } from './saved-searches.service';
   imports: [TypeOrmModule.forFeature([SavedSearch])],
   controllers: [SavedSearchesController],
   providers: [SavedSearchesService],
+  exports: [SavedSearchesService],
 })
 export class SavedSearchesModule {}

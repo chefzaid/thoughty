@@ -15,12 +15,17 @@ import {
     type BookChapterOrder,
     type BookFormat,
     type BookOptions,
+    type BookPickedEntries,
     type BookPreviewData,
     type BookTagScope,
     type BookVersionData,
     type BookWeavingMode,
 } from './ImportExport.types';
 import { BookCoverControls } from './ImportExportBookCover';
+import { BookSourceControls } from './ImportExportBookSource';
+import { describeBookVersionSource } from './bookSource';
+import type { SavedSearch } from '../../services/api/savedSearchesService';
+import type { BookSourceLoad } from './useBookSourceData';
 
 const BOOK_CHECKBOXES: ReadonlyArray<{
     key: 'narrative' | 'chapterFraming' | 'embedImages' | 'includeUntagged' | 'includeDates' | 'includeToc';
@@ -36,12 +41,21 @@ const BOOK_CHECKBOXES: ReadonlyArray<{
 
 const BOOK_PROGRESS_STEPS = [35, 68, 92] as const;
 
+const TITLE_PLACEHOLDER_KEYS: Record<BookOptions['source'], string> = {
+    journal: 'bookTitlePlaceholder',
+    savedSearch: 'bookTitlePlaceholderSavedSearch',
+    entries: 'bookTitlePlaceholderEntries',
+};
+
 export function BookSection({
     activeSection,
     sectionRef,
     diaryName,
     options,
     preview,
+    sourceReady,
+    savedSearches,
+    pickedEntries,
     generating,
     uploading,
     savingVersion,
@@ -56,6 +70,7 @@ export function BookSection({
     onUpload,
     onCreateVersion,
     onVersionDownload,
+    onUseVersionEntries,
     language,
     t,
 }: Readonly<{
@@ -64,6 +79,10 @@ export function BookSection({
     diaryName?: string;
     options: BookOptions;
     preview: BookPreviewData | null;
+    /** Whether the source names its entries, so the book can be previewed and generated. */
+    sourceReady: boolean;
+    savedSearches: BookSourceLoad<SavedSearch[]>;
+    pickedEntries: BookSourceLoad<BookPickedEntries>;
     generating: boolean;
     uploading: boolean;
     savingVersion: boolean;
@@ -78,6 +97,7 @@ export function BookSection({
     onUpload: () => void;
     onCreateVersion: () => void;
     onVersionDownload: (version: BookVersionData) => void;
+    onUseVersionEntries: (version: BookVersionData) => void;
     language: Language;
     t: TranslationFunction;
 }>) {
@@ -92,6 +112,16 @@ export function BookSection({
             <p className="section-description">{t('bookDescription', { diaryName: diaryName || '' })}</p>
 
             <div className="export-controls book-controls">
+                <BookSourceControls
+                    options={options}
+                    diaryName={diaryName}
+                    savedSearches={savedSearches}
+                    pickedEntries={pickedEntries}
+                    onOptionChange={onOptionChange}
+                    language={language}
+                    t={t}
+                />
+
                 <div className="book-options-grid book-options-grid--title">
                     <div className="export-option-group book-field">
                         <label htmlFor="book-title">{t('bookTitleLabel')}</label>
@@ -99,7 +129,7 @@ export function BookSection({
                             id="book-title"
                             type="text"
                             value={options.title}
-                            placeholder={t('bookTitlePlaceholder')}
+                            placeholder={t(TITLE_PLACEHOLDER_KEYS[options.source])}
                             maxLength={200}
                             onChange={(event) => onOptionChange('title', event.target.value)}
                         />
@@ -217,14 +247,14 @@ export function BookSection({
                 )}
 
                 <div className="export-option-row book-action-row">
-                    <button type="button" className="io-btn secondary" onClick={onPreview} disabled={generating}>
+                    <button type="button" className="io-btn secondary" onClick={onPreview} disabled={generating || !sourceReady}>
                         {t('previewBook')}
                     </button>
-                    <button type="button" className="io-btn primary" onClick={onDownload} disabled={generating}>
+                    <button type="button" className="io-btn primary" onClick={onDownload} disabled={generating || !sourceReady}>
                         <span className="codicon codicon-cloud-download" aria-hidden="true" />
                         {generating && !uploading && !savingVersion ? t('generatingBook') : t('downloadBook')}
                     </button>
-                    <button type="button" className="io-btn secondary" onClick={onCreateVersion} disabled={generating}>
+                    <button type="button" className="io-btn secondary" onClick={onCreateVersion} disabled={generating || !sourceReady}>
                         <span className="codicon codicon-history" aria-hidden="true" />
                         {versions.length > 0 ? t('updateBookVersion') : t('createBookVersion')}
                     </button>
@@ -251,7 +281,7 @@ export function BookSection({
                     <button type="button"
                         className="io-btn secondary book-cloud-upload"
                         onClick={onUpload}
-                        disabled={!cloudProvider || generating}
+                        disabled={!cloudProvider || generating || !sourceReady}
                     >
                         <span className="codicon codicon-cloud-upload" aria-hidden="true" />
                         {uploading ? t('uploadingBook') : t('uploadBook')}
@@ -287,7 +317,19 @@ export function BookSection({
                                         })}
                                         {version.addedChapterTitles.length > 0 && `: ${version.addedChapterTitles.join(', ')}`}
                                     </span>
+                                    <span className="book-version-item__meta">{describeBookVersionSource(version.source, t, language)}</span>
                                 </div>
+                                {version.source.kind === 'entries' && (
+                                    <button
+                                        type="button"
+                                        className="io-btn secondary book-version-item__use"
+                                        aria-label={t('bookVersionUseEntriesLabel', { version: version.versionNumber })}
+                                        disabled={generating}
+                                        onClick={() => onUseVersionEntries(version)}
+                                    >
+                                        {t('bookVersionUseEntries')}
+                                    </button>
+                                )}
                                 <button
                                     type="button"
                                     className="io-icon-btn"

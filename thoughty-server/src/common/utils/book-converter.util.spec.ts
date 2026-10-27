@@ -140,6 +140,16 @@ describe('book-converter.util', () => {
       ]);
     });
 
+    it('should place every entry in one chapter titled after the book, in date order', () => {
+      const book = buildBook(entries, { title: 'Letters', chapterMode: 'single', tags: ['travel'] });
+
+      expect(book.chapters).toHaveLength(1);
+      expect(book.chapters[0].title).toBe('Letters');
+      expect(book.chapters[0].entries.map((e) => e.date)).toEqual(
+        [...entries].filter((e) => e.content.trim()).map((e) => e.date).sort(),
+      );
+    });
+
     it('should carry title, author, and generation date', () => {
       const book = buildBook(entries, { title: 'My Book', author: 'Jane' });
 

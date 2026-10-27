@@ -85,7 +85,7 @@ export const bookTranslations: Record<Language, Record<BookTranslationKey, strin
   en: {
     book: "Book",
     bookDescription:
-      "Turn the entries of {diaryName} into a book: each tag becomes a chapter, and AI weaves its thoughts into flowing prose without adding anything that is not yours.",
+      "Turn your entries into a book, from {diaryName}, a saved search or entries you pick: chapters follow tags, years, months or one single chapter, and AI weaves the thoughts into flowing prose without adding anything that is not yours.",
     bookTitleLabel: "Title",
     bookTitlePlaceholder: "Defaults to the diary name",
     bookAuthorLabel: "Author",
@@ -169,7 +169,7 @@ export const bookTranslations: Record<Language, Record<BookTranslationKey, strin
   fr: {
     book: "Livre",
     bookDescription:
-      "Transformez les entrées de {diaryName} en livre : chaque tag devient un chapitre, et l'IA tisse ses pensées en prose fluide sans rien ajouter qui ne vienne de vous.",
+      "Transformez vos entrées en livre, depuis {diaryName}, une recherche enregistrée ou des entrées choisies : les chapitres suivent les tags, les années, les mois ou un seul chapitre, et l'IA tisse les pensées en prose fluide sans rien ajouter qui ne vienne de vous.",
     bookTitleLabel: "Titre",
     bookTitlePlaceholder: "Par défaut : le nom du journal",
     bookAuthorLabel: "Auteur",

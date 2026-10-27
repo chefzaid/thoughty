@@ -23,7 +23,9 @@ export const CLOUD_FORMAT_OPTIONS: ReadonlyArray<{ value: CloudExportFormat; lab
 ];
 
 export type BookFormat = 'pdf' | 'epub' | 'html' | 'md';
-export type BookChapterMode = 'tags' | 'year' | 'month';
+export type BookChapterMode = 'tags' | 'year' | 'month' | 'single';
+/** Where the book's entries come from: the journal, a saved search, or entries picked in the journal. */
+export type BookSource = 'journal' | 'savedSearch' | 'entries';
 export type BookChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type BookTagScope = 'all' | 'first';
 export type BookWeavingMode = 'strict' | 'creative';
@@ -40,6 +42,7 @@ export const BOOK_CHAPTER_MODE_OPTIONS: ReadonlyArray<{ value: BookChapterMode; 
     { value: 'tags', labelKey: 'bookChapterModeTags' },
     { value: 'year', labelKey: 'bookChapterModeYear' },
     { value: 'month', labelKey: 'bookChapterModeMonth' },
+    { value: 'single', labelKey: 'bookChapterModeSingle' },
 ];
 
 export const BOOK_CHAPTER_ORDER_OPTIONS: ReadonlyArray<{ value: BookChapterOrder; labelKey: string }> = [
@@ -58,7 +61,18 @@ export const BOOK_WEAVING_MODE_OPTIONS: ReadonlyArray<{ value: BookWeavingMode; 
     { value: 'creative', labelKey: 'bookWeavingCreative' },
 ];
 
+export const BOOK_SOURCE_OPTIONS: ReadonlyArray<{ value: BookSource; labelKey: string }> = [
+    { value: 'journal', labelKey: 'bookSourceJournal' },
+    { value: 'savedSearch', labelKey: 'bookSourceSavedSearch' },
+    { value: 'entries', labelKey: 'bookSourceEntries' },
+];
+
 export interface BookOptions {
+    source: BookSource;
+    /** The saved search a saved-search book is built from. */
+    savedSearchId: number | null;
+    /** The entries of a hand-picked book, in the order they were picked. */
+    entryIds: number[];
     title: string;
     author: string;
     format: BookFormat;
@@ -77,6 +91,9 @@ export interface BookOptions {
 }
 
 export const DEFAULT_BOOK_OPTIONS: BookOptions = {
+    source: 'journal',
+    savedSearchId: null,
+    entryIds: [],
     title: '',
     author: '',
     format: 'pdf',
@@ -98,6 +115,8 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
 export type BookChapterPreview = components['schemas']['BookChapterPreviewDto'];
 export type BookPreviewData = components['schemas']['BookPreviewResponseDto'];
 export type BookVersionData = components['schemas']['BookVersionResponseDto'];
+export type BookPickedEntries = components['schemas']['BookPickedEntriesResponseDto'];
+export type BookPickedEntry = components['schemas']['BookPickedEntryDto'];
 
 export function createProviderRecord<T>(value: T): Record<CloudProviderType, T> {
     return Object.fromEntries(CLOUD_PROVIDERS.map((provider) => [provider, value])) as Record<CloudProviderType, T>;
@@ -137,6 +156,8 @@ export interface ImportExportProps {
     readonly initialSection?: ImportExportSection;
     readonly initialExportFormat?: ImportExportFormat;
     readonly initialIncludeVisibility?: boolean;
+    /** Entries picked in the journal, which open the book converter as a hand-picked book. */
+    readonly initialBookEntryIds?: readonly number[];
     readonly onRouteStateChange?: (state: ImportExportRouteState) => void;
 }
 

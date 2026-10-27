@@ -5,7 +5,7 @@ import { pluralPhrase } from '../utils/pluralPhrase';
 import { useApiServices } from './useApiServices';
 import type { Notifier } from './useAppNotice';
 
-type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase';
+type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase' | 'book';
 type BulkOptions = { visibility?: 'public' | 'private'; tags?: string[]; diaryId?: number; isArchived?: boolean; mode?: RephraseMode };
 
 type BulkRephraseOutcome = 'updated' | 'unchanged' | 'failed';
@@ -44,7 +44,16 @@ const rephraseSelectedEntry = async (
   return success ? 'updated' : 'failed';
 };
 
-export const useBulkSelect = (onComplete: () => void, entries: Entry[], { notify, t, language }: Notifier) => {
+/**
+ * The journal's bulk selection and its actions. `onMakeBook` receives the selected entries for the book
+ * converter (Make a book); without it that action does nothing.
+ */
+export const useBulkSelect = (
+  onComplete: () => void,
+  entries: Entry[],
+  { notify, t, language }: Notifier,
+  onMakeBook?: (entryIds: number[]) => void,
+) => {
   const { entriesService, aiService } = useApiServices();
 
   const [bulkMode, setBulkMode] = useState(false);
@@ -136,7 +145,7 @@ export const useBulkSelect = (onComplete: () => void, entries: Entry[], { notify
     notify(t('bulkRephraseError'));
   }, [aiService, entries, entriesService, language, notify, onComplete, selectedIds, t]);
 
-  const executeBulkAction = useCallback(async (action: BulkAction, options?: BulkOptions) => {
+  const executeBulkAction = useCallback(async (action: Exclude<BulkAction, 'book'>, options?: BulkOptions) => {
     if (action === 'rephrase') {
       await executeBulkRephrase(options?.mode);
       return;
@@ -162,8 +171,15 @@ export const useBulkSelect = (onComplete: () => void, entries: Entry[], { notify
       setBulkModalOpen(true);
       return;
     }
+    if (action === 'book') {
+      const ids = Array.from(selectedIds);
+      setSelectedIds(new Set());
+      setBulkMode(false);
+      onMakeBook?.(ids);
+      return;
+    }
     executeBulkAction(action, options);
-  }, [executeBulkAction, selectedIds]);
+  }, [executeBulkAction, onMakeBook, selectedIds]);
 
   const confirmBulkDelete = useCallback(async () => {
     setBulkModalOpen(false);

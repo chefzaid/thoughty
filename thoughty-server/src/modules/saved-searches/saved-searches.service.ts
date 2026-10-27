@@ -59,12 +59,17 @@ export class SavedSearchesService {
     return this.toResponse(saved);
   }
 
-  async rename(userId: number, id: number, dto: RenameSavedSearchDto): Promise<SavedSearchResponseDto> {
+  /** One of the writer's saved searches, refused when it is not theirs. */
+  async findOwn(userId: number, id: number): Promise<SavedSearch> {
     const saved = await this.savedSearchRepository.findOne({ where: { id, userId } });
     if (!saved) {
       throw apiError(NotFoundException, 'SAVED_SEARCH_NOT_FOUND');
     }
+    return saved;
+  }
 
+  async rename(userId: number, id: number, dto: RenameSavedSearchDto): Promise<SavedSearchResponseDto> {
+    const saved = await this.findOwn(userId, id);
     saved.name = dto.name;
     return this.toResponse(await this.withNameCheck(() => this.savedSearchRepository.save(saved)));
   }

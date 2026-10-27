@@ -3,12 +3,14 @@ import { BooksController } from './books.controller';
 import { BooksService } from './books.service';
 import { CloudSyncService } from '@/modules/cloud-sync';
 import { BookVersionsService } from './book-versions.service';
+import { BookEntrySourceService } from './book-entry-source.service';
 
 describe('BooksController', () => {
   let controller: BooksController;
   let booksService: any;
   let cloudSyncService: any;
   let bookVersionsService: any;
+  let bookEntrySourceService: any;
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -25,17 +27,31 @@ describe('BooksController', () => {
       create: jest.fn(),
       download: jest.fn(),
     };
+    bookEntrySourceService = {
+      describePickedEntries: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BooksController],
       providers: [
         { provide: BooksService, useValue: booksService },
         { provide: BookVersionsService, useValue: bookVersionsService },
+        { provide: BookEntrySourceService, useValue: bookEntrySourceService },
         { provide: CloudSyncService, useValue: cloudSyncService },
       ],
     }).compile();
 
     controller = module.get<BooksController>(BooksController);
+  });
+
+  describe('picked entries', () => {
+    it('describes the writer’s picked entries', async () => {
+      const described = { entries: [], missingIds: [9] };
+      bookEntrySourceService.describePickedEntries.mockResolvedValue(described);
+
+      await expect(controller.pickedEntries(mockUser as any, { entryIds: '3,9' })).resolves.toBe(described);
+      expect(bookEntrySourceService.describePickedEntries).toHaveBeenCalledWith(1, '3,9');
+    });
   });
 
   describe('versions', () => {
@@ -44,8 +60,16 @@ describe('BooksController', () => {
 
       const result = await controller.listVersions(mockUser as any, { diaryId: 2 });
 
-      expect(bookVersionsService.list).toHaveBeenCalledWith(1, 2);
+      expect(bookVersionsService.list).toHaveBeenCalledWith(1, { diaryId: 2 });
       expect(result).toEqual([{ id: 1, versionNumber: 1 }]);
+    });
+
+    it('lists the versions of a saved-search book', async () => {
+      bookVersionsService.list.mockResolvedValue([]);
+
+      await controller.listVersions(mockUser as any, { source: 'savedSearch', savedSearchId: 4 });
+
+      expect(bookVersionsService.list).toHaveBeenCalledWith(1, { source: 'savedSearch', savedSearchId: 4 });
     });
 
     it('creates the next version with an optional cover', async () => {

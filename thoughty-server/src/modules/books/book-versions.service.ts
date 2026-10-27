@@ -1,9 +1,10 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
-import { BookVersion, type BookVersionManifest } from '@/database/entities';
+import { BookVersion, type BookVersionManifest, type BookVersionSource } from '@/database/entities';
 import { Repository } from 'typeorm';
-import { BookQueryDto, BookVersionResponseDto } from './dto';
+import { BookQueryDto, BookVersionResponseDto, BookVersionSourceDto, BookVersionsQueryDto } from './dto';
+import { bookScopeKey } from './book-entry-source.service';
 import { BooksService, type BookFile, type BookFormat } from './books.service';
 
 const MAX_VERSION_ARTIFACT_SIZE = 50 * 1024 * 1024;
@@ -16,8 +17,21 @@ export class BookVersionsService {
     private readonly booksService: BooksService,
   ) {}
 
-  private scopeKey(diaryId?: number): string {
-    return diaryId ? `diary:${diaryId}` : 'all';
+  private scopeKey(source: BookVersionSource): string {
+    switch (source.kind) {
+      case 'savedSearch':
+        return bookScopeKey('savedSearch', undefined, source.savedSearchId);
+      case 'entries':
+        return bookScopeKey('entries');
+      default:
+        return bookScopeKey('journal', source.diaryId ?? undefined);
+    }
+  }
+
+  /** The recorded source; versions made before sources were recorded came from the journal of their diary. */
+  private sourceResponse(version: BookVersion): BookVersionSourceDto {
+    const source = version.source ?? { kind: 'journal' };
+    return source.kind === 'journal' ? { kind: 'journal', diaryId: version.diaryId } : source;
   }
 
   private toResponse(version: BookVersion): BookVersionResponseDto {
@@ -32,6 +46,7 @@ export class BookVersionsService {
       entryCount: version.entryCount,
       addedEntryCount: version.addedEntryCount,
       addedChapterTitles: version.addedChapterTitles,
+      source: this.sourceResponse(version),
       createdAt: version.createdAt.toISOString(),
     };
   }
@@ -69,9 +84,10 @@ export class BookVersionsService {
       .filter((title) => !previousTitles.has(title.toLowerCase()));
   }
 
-  async list(userId: number, diaryId?: number): Promise<BookVersionResponseDto[]> {
+  async list(userId: number, query: BookVersionsQueryDto = {}): Promise<BookVersionResponseDto[]> {
+    const scopeKey = bookScopeKey(query.source, query.diaryId, query.savedSearchId);
     const versions = await this.versionRepository.find({
-      where: { userId, scopeKey: this.scopeKey(diaryId) },
+      where: { userId, scopeKey },
       order: { versionNumber: 'DESC' },
     });
     return versions.map((version) => this.toResponse(version));
@@ -84,10 +100,10 @@ export class BookVersionsService {
   ): Promise<BookVersionResponseDto> {
     const file = await this.booksService.export(userId, query, coverImage);
     const content = this.artifactBuffer(file);
-    const scopeKey = this.scopeKey(query.diaryId);
+    const scopeKey = this.scopeKey(file.source);
 
     return this.versionRepository.manager.transaction(async (manager) => {
-      await manager.query('SELECT pg_advisory_xact_lock($1, $2)', [userId, query.diaryId ?? 0]);
+      await manager.query('SELECT pg_advisory_xact_lock($1, hashtext($2))', [userId, scopeKey]);
       const repository = manager.getRepository(BookVersion);
       const previous = await repository.findOne({
         where: { userId, scopeKey },
@@ -96,8 +112,9 @@ export class BookVersionsService {
       const versionNumber = (previous?.versionNumber ?? 0) + 1;
       const version = repository.create({
         userId,
-        diaryId: query.diaryId ?? null,
+        diaryId: file.source.kind === 'journal' ? file.source.diaryId ?? null : null,
         scopeKey,
+        source: file.source,
         versionNumber,
         title: file.title,
         author: file.author ?? null,
@@ -135,6 +152,7 @@ export class BookVersionsService {
       title: version.title,
       author: version.author ?? undefined,
       sourceManifest: version.manifest,
+      source: version.source,
     };
   }
 }

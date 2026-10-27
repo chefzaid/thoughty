@@ -53,3 +53,26 @@ export function buildDiaryRouteSearchParams(
 
   return nextSearchParams;
 }
+/** The navigation state that opens the book converter on entries picked in the journal. */
+export interface BookConverterRouteState {
+  readonly bookEntryIds: readonly number[];
+}
+
+/** Where the journal's Make a book action goes: the book converter of the current diary, with the picked entries. */
+export function buildBookConverterRoute(diaryId: number | null, entryIds: readonly number[]): {
+  pathname: string;
+  search: string;
+  state: BookConverterRouteState;
+} {
+  return {
+    pathname: getPathForView('importExport'),
+    search: toSearchString(buildDiaryRouteSearchParams('importExport', diaryId, { importExportSection: 'book' })),
+    state: { bookEntryIds: [...entryIds] },
+  };
+}
+
+/** The entry IDs a navigation brought to the book converter, or none. */
+export function readBookConverterEntryIds(state: unknown): number[] {
+  const ids = (state as Partial<BookConverterRouteState> | null)?.bookEntryIds;
+  return Array.isArray(ids) ? ids.filter((id): id is number => Number.isInteger(id) && id > 0) : [];
+}

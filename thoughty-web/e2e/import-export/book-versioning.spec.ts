@@ -4,7 +4,14 @@ import { setupMockApp } from '../support/mockApp';
 
 test.describe('Book versioning', () => {
   test('saves and downloads an immutable book version', async ({ page }) => {
-    const { state } = await setupMockApp(page, { startAuthenticated: true });
+    const { state } = await setupMockApp(page, {
+      startAuthenticated: true,
+      initialEntries: [
+        { id: 1, date: '2024-05-01', index: 1, content: 'An idea for the garden', tags: ['ideas'], visibility: 'private', diaryId: 1 },
+        { id: 2, date: '2024-05-02', index: 1, content: 'Planning the week', tags: ['work'], visibility: 'private', diaryId: 1 },
+        { id: 3, date: '2024-05-03', index: 1, content: 'Another idea', tags: ['ideas'], visibility: 'private', diaryId: 1 },
+      ],
+    });
 
     await page.goto('/import-export?diary=1&section=book');
 
@@ -19,6 +26,7 @@ test.describe('Book versioning', () => {
     await expect(bookSection.getByText('2 chapters · 3 entries')).toBeVisible();
     await expect(bookSection.getByText(/3 new entries · 2 new chapters/)).toBeVisible();
     await expect(bookSection.getByRole('button', { name: 'Create New Version' })).toBeVisible();
+    await expect(bookSection.getByText('From the journal')).toBeVisible();
     await expect.poll(() => state.lastBookVersionRequestUrl?.searchParams.get('diaryId')).toBe('1');
     await expect.poll(() => state.lastBookVersionRequestUrl?.searchParams.get('format')).toBe('md');
 

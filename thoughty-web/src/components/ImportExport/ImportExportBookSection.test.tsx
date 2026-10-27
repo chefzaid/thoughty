@@ -66,6 +66,7 @@ const mockBookVersion = {
     entryCount: 5,
     addedEntryCount: 4,
     addedChapterTitles: ['travel', 'food'],
+    source: { kind: 'journal', diaryId: 1 },
     createdAt: '2026-08-01T12:00:00.000Z',
 };
 

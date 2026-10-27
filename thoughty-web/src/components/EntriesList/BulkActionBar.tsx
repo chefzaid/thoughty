@@ -6,7 +6,7 @@ import { pluralPhrase } from '../../utils/pluralPhrase';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import type { Language } from '../../utils/translations';
 
-export type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase';
+export type BulkAction = 'delete' | 'visibility' | 'tags' | 'move' | 'archive' | 'rephrase' | 'book';
 
 export interface BulkActionOptions {
     visibility?: 'public' | 'private';
@@ -49,6 +49,7 @@ export function BulkActionBar({
         { action: 'visibility' as const, options: { visibility: 'private' as const }, label: t('bulkMakePrivate'), className: `px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${isDark ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-400 hover:bg-gray-500 text-white'}` },
         { action: 'archive' as const, options: { isArchived: true }, label: t('bulkArchive'), className: 'px-3 py-1.5 text-xs font-medium bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition-colors' },
         { action: 'archive' as const, options: { isArchived: false }, label: t('bulkUnarchive'), className: `px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${isDark ? 'bg-slate-700 hover:bg-slate-600 text-slate-200' : 'bg-slate-500 hover:bg-slate-600 text-white'}` },
+        { action: 'book' as const, label: t('bulkMakeBook'), className: 'px-3 py-1.5 text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors' },
     ];
 
     if (selectedCount === 0) {

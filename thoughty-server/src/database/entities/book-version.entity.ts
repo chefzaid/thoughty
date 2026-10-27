@@ -13,6 +13,16 @@ export interface BookVersionManifest {
   chapters: Array<{ title: string; entryIds: number[] }>;
 }
 
+/**
+ * Where a book's entries came from, so a new version is generated from the same place: the
+ * journal (one diary or all of them), a saved search (its filters as they are when the version
+ * is made), or entries the writer picked by hand.
+ */
+export type BookVersionSource =
+  | { kind: 'journal'; diaryId?: number | null }
+  | { kind: 'savedSearch'; savedSearchId: number; savedSearchName: string }
+  | { kind: 'entries'; entryIds: number[] };
+
 @Entity('book_versions')
 export class BookVersion {
   @PrimaryGeneratedColumn()
@@ -50,6 +60,9 @@ export class BookVersion {
 
   @Column({ type: 'jsonb' })
   manifest: BookVersionManifest;
+
+  @Column({ type: 'jsonb', default: () => `'{"kind":"journal"}'::jsonb` })
+  source: BookVersionSource;
 
   @Column({ name: 'chapter_count', type: 'integer' })
   chapterCount: number;

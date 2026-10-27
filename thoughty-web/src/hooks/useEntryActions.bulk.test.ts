@@ -125,6 +125,27 @@ describe("useEntryActions", () => {
       expect(result.current.bulkMode).toBe(false);
     });
 
+    it("hands the selected entries to the book converter and leaves bulk mode", async () => {
+      const bulkOperation = vi.fn();
+      await createEntriesServiceMock({ bulkOperation });
+      const onMakeBook = vi.fn();
+      const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier, onMakeBook));
+
+      act(() => {
+        result.current.toggleBulkMode();
+        result.current.toggleSelect(4);
+        result.current.toggleSelect(2);
+      });
+      act(() => {
+        result.current.requestBulkAction("book");
+      });
+
+      expect(onMakeBook).toHaveBeenCalledWith([4, 2]);
+      expect(result.current.selectedIds.size).toBe(0);
+      expect(result.current.bulkMode).toBe(false);
+      expect(bulkOperation).not.toHaveBeenCalled();
+    });
+
     it("clears selection when exiting bulk mode", () => {
       const { result } = renderHook(() => useBulkSelect(mockOnComplete, [], notifier));
 

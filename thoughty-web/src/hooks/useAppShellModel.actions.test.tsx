@@ -19,6 +19,7 @@ import {
   renameTag,
   deleteTag,
   navigateToFirst,
+  navigate,
 } from './useAppShellModel.test-helpers';
 import type { MockedRoutesProps } from './useAppShellModel.test-helpers';
 
@@ -132,6 +133,18 @@ describe('useAppShellModel', () => {
     expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), expect.anything(), notifier, expect.anything());
     expect(mocks.useEntryEdit).toHaveBeenCalledWith(expect.anything(), expect.any(Function), notifier);
     expect(mocks.useDeleteModal).toHaveBeenCalledWith(expect.any(Function), notifier);
-    expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier);
+    expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier, expect.any(Function));
+  });
+
+  it('opens the book converter of the current diary on the entries picked in the journal', () => {
+    renderHook(() => useAppShellModel());
+    const makeBook = mocks.useBulkSelect.mock.calls.at(-1)![3] as (entryIds: number[]) => void;
+
+    act(() => makeBook([4, 2]));
+
+    expect(navigate).toHaveBeenCalledWith(
+      { pathname: '/import-export', search: '?diary=9&section=book&format=txt' },
+      { state: { bookEntryIds: [4, 2] } },
+    );
   });
 });

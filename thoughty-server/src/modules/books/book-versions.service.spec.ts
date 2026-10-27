@@ -4,20 +4,26 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { BookVersion } from '@/database/entities';
 import { BooksService, type BookFile } from './books.service';
 import { BookVersionsService } from './book-versions.service';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
 
 describe('BookVersionsService', () => {
   let service: BookVersionsService;
   let repository: any;
   let transactionalRepository: any;
   let booksService: any;
+  let lockQuery: jest.Mock;
 
-  const artifact = (chapters: Array<{ title: string; entryIds: number[] }>): BookFile => ({
+  const artifact = (
+    chapters: Array<{ title: string; entryIds: number[] }>,
+    source: BookFile['source'] = { kind: 'journal', diaryId: 3 },
+  ): BookFile => ({
     content: '# Saved book',
     filename: 'thoughty_book_My_Book_2026-08-01.md',
     contentType: 'text/markdown; charset=utf-8',
     title: 'My Book',
     author: 'jane',
     sourceManifest: { chapters },
+    source,
   });
 
   beforeEach(async () => {
@@ -30,12 +36,13 @@ describe('BookVersionsService', () => {
         ...value,
       })),
     };
+    lockQuery = jest.fn();
     repository = {
       find: jest.fn().mockResolvedValue([]),
       manager: {
         transaction: jest.fn(async (callback) =>
           callback({
-            query: jest.fn(),
+            query: lockQuery,
             getRepository: jest.fn(() => transactionalRepository),
           }),
         ),
@@ -78,13 +85,62 @@ describe('BookVersionsService', () => {
       },
     ]);
 
-    const result = await service.list(7, 3);
+    const result = await service.list(7, { diaryId: 3 });
 
     expect(repository.find).toHaveBeenCalledWith({
       where: { userId: 7, scopeKey: 'diary:3' },
       order: { versionNumber: 'DESC' },
     });
     expect(result[0]).toMatchObject({ id: 4, versionNumber: 2, addedChapterTitles: ['Food'] });
+  });
+
+  it('reads versions made before sources were recorded as journal books of their diary', async () => {
+    repository.find.mockResolvedValue([
+      { id: 4, diaryId: 3, createdAt: new Date('2026-08-01T12:00:00.000Z') },
+      {
+        id: 5,
+        diaryId: null,
+        source: { kind: 'savedSearch', savedSearchId: 2, savedSearchName: 'Family' },
+        createdAt: new Date('2026-08-02T12:00:00.000Z'),
+      },
+    ]);
+
+    const result = await service.list(7);
+
+    expect(repository.find).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 7, scopeKey: 'all' } }));
+    expect(result.map((version) => version.source)).toEqual([
+      { kind: 'journal', diaryId: 3 },
+      { kind: 'savedSearch', savedSearchId: 2, savedSearchName: 'Family' },
+    ]);
+  });
+
+  it('keeps one history per saved search and one for hand-picked books', async () => {
+    await service.list(7, { source: 'savedSearch', savedSearchId: 2 });
+    await service.list(7, { source: 'entries' });
+
+    expect(repository.find.mock.calls.map(([options]: [{ where: { scopeKey: string } }]) => options.where.scopeKey)).toEqual(['search:2', 'picked']);
+    await expectApiError(service.list(7, { source: 'savedSearch' }), BadRequestException, 'BOOK_SAVED_SEARCH_REQUIRED');
+  });
+
+  it('records the source of a version and numbers it within that source', async () => {
+    booksService.export.mockResolvedValueOnce(
+      artifact([{ title: 'Letters', entryIds: [5, 6] }], { kind: 'entries', entryIds: [6, 5] }),
+    );
+    await service.create(7, { source: 'entries', entryIds: '6,5' });
+    booksService.export.mockResolvedValueOnce(
+      artifact([{ title: 'Family', entryIds: [1] }], { kind: 'savedSearch', savedSearchId: 2, savedSearchName: 'Family' }),
+    );
+    await service.create(7, { source: 'savedSearch', savedSearchId: 2 });
+
+    expect(transactionalRepository.create.mock.calls.map(([version]: [Record<string, unknown>]) => [version.scopeKey, version.diaryId, version.source]))
+      .toEqual([
+        ['picked', null, { kind: 'entries', entryIds: [6, 5] }],
+        ['search:2', null, { kind: 'savedSearch', savedSearchId: 2, savedSearchName: 'Family' }],
+      ]);
+    expect(lockQuery).toHaveBeenCalledWith('SELECT pg_advisory_xact_lock($1, hashtext($2))', [7, 'picked']);
+    expect(transactionalRepository.findOne).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 7, scopeKey: 'search:2' } }),
+    );
   });
 
   it('saves the first immutable artifact with all source entries and chapters marked new', async () => {
@@ -98,7 +154,9 @@ describe('BookVersionsService', () => {
     expect(transactionalRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 7,
+        diaryId: 3,
         scopeKey: 'diary:3',
+        source: { kind: 'journal', diaryId: 3 },
         versionNumber: 1,
         filename: 'thoughty_book_My_Book_2026-08-01_v1.md',
         content: Buffer.from('# Saved book'),
@@ -163,6 +221,7 @@ describe('BookVersionsService', () => {
         title: 'Book',
         author: null,
         manifest: { chapters: [] },
+        source: { kind: 'entries', entryIds: [1] },
       }),
     };
     repository.createQueryBuilder.mockReturnValue(queryBuilder);
@@ -171,6 +230,7 @@ describe('BookVersionsService', () => {
 
     expect(queryBuilder.andWhere).toHaveBeenCalledWith('version.user_id = :userId', { userId: 7 });
     expect(result.filename).toBe('book_v2.pdf');
+    expect(result.source).toEqual({ kind: 'entries', entryIds: [1] });
 
     queryBuilder.getOne.mockResolvedValue(null);
     await expect(service.download(8, 4)).rejects.toThrow(NotFoundException);

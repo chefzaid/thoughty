@@ -59,6 +59,7 @@ describe('BulkActionBar', () => {
         fireEvent.click(screen.getByText('bulkMakePrivate'));
         fireEvent.click(screen.getByText('bulkArchive'));
         fireEvent.click(screen.getByText('bulkUnarchive'));
+        fireEvent.click(screen.getByText('bulkMakeBook'));
 
         fireEvent.click(screen.getByText('bulkRephrase'));
         fireEvent.click(screen.getByText('rephraseStyleLight'));
@@ -78,6 +79,7 @@ describe('BulkActionBar', () => {
         expect(onBulkAction).toHaveBeenCalledWith('visibility', { visibility: 'private' });
         expect(onBulkAction).toHaveBeenCalledWith('archive', { isArchived: true });
         expect(onBulkAction).toHaveBeenCalledWith('archive', { isArchived: false });
+        expect(onBulkAction).toHaveBeenCalledWith('book', undefined);
         expect(onBulkAction).toHaveBeenCalledWith('rephrase', { mode: 'polish' });
         expect(onBulkAction).toHaveBeenCalledWith('tags', { tags: ['alpha', 'beta'] });
         expect(onBulkAction).toHaveBeenCalledWith('move', { diaryId: 2 });

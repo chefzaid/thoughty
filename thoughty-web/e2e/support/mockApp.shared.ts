@@ -132,6 +132,7 @@ export interface MockBookVersion {
   entryCount: number;
   addedEntryCount: number;
   addedChapterTitles: string[];
+  source: components["schemas"]["BookVersionSourceDto"];
   createdAt: string;
 }
 
@@ -192,6 +193,8 @@ export interface MockAppState {
   likedEntryIds: number[];
   likedCommentIds: number[];
   bookVersions: MockBookVersion[];
+  /** What each saved version held, so the next one can count what it adds. */
+  bookVersionManifests: Record<number, { entryIds: number[]; chapterTitles: string[] }>;
   savedSearches: MockSavedSearch[];
   memoir: MockMemoirState;
   appImport: MockAppImportState;
@@ -212,6 +215,7 @@ export interface MockAppState {
   lastBookUploadRequestUrl: URL | null;
   lastBookUploadRequestBody: string | null;
   lastBookVersionRequestUrl: URL | null;
+  lastBookPreviewRequestUrl: URL | null;
   lastBookVersionDownloadId: number | null;
   lastAiSuggestionPayload: unknown;
   lastAiFixPayload: unknown;
@@ -410,6 +414,7 @@ export function createMockAppState(
     likedEntryIds: [...(options.likedEntryIds || [])],
     likedCommentIds: [...(options.likedCommentIds || [])],
     bookVersions: [],
+    bookVersionManifests: {},
     savedSearches: (options.savedSearches || []).map((saved) => ({ ...saved, filters: { ...saved.filters } })),
     memoir: createMockMemoirState(options.memoirProgram ?? null),
     appImport: createMockAppImportState(),
@@ -434,6 +439,7 @@ export function createMockAppState(
     lastBookUploadRequestUrl: null,
     lastBookUploadRequestBody: null,
     lastBookVersionRequestUrl: null,
+    lastBookPreviewRequestUrl: null,
     lastBookVersionDownloadId: null,
     lastAiSuggestionPayload: null,
     lastAiFixPayload: null,

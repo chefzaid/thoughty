@@ -19,6 +19,7 @@ import {
 } from './useAppState';
 import { useReportedConfigUpdate } from './useConfigState';
 import { resolveLanguage } from '../utils/language';
+import { buildBookConverterRoute } from '../utils/appRouting';
 import { parseTagMetadata, serializeTagMetadata } from '../utils/tagMetadata';
 import {
   buildAuthenticatedLayoutProps,
@@ -108,7 +109,12 @@ export function useAppShellModel(): AppShellModel {
   // A deleted entry leaves every view measured from the entries (calendar, writing streak) too
   const deleteModalState = useDeleteModal(() => { void entriesState.refreshEntryQueries(); }, notifier);
 
-  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier);
+  const handleMakeBook = useCallback((entryIds: number[]) => {
+    const { state, ...to } = buildBookConverterRoute(currentDiaryId, entryIds);
+    navigate(to, { state });
+  }, [currentDiaryId, navigate]);
+
+  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier, handleMakeBook);
 
   const handleNavigateToFirst = useCallback(async (year: number, month: number | null) => {
     const data = await entriesState.entriesService.navigateToFirst(year, month, entriesState.getLimit());

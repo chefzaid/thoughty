@@ -3,3 +3,4 @@ export * from './books.controller';
 export * from './books.service';
 export * from './book-versions.service';
 export * from './dto';
+export * from './book-entry-source.service';

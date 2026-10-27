@@ -51,7 +51,7 @@ flowchart TD
 | `stats` | statistics, heatmap, writing goal progress, daily writing streak, mood stats, connections graph, writing-tendency analysis |
 | `review` | year in review: totals, rhythm, themes, highlights, moods, and the on-request AI mood arc |
 | `io` | import and export formats, TXT format settings, Day One and Journey imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
-| `books` | book composition, covers, previews, saved versions |
+| `books` | book composition, covers, previews, saved versions; `BookEntrySourceService` selects entries from the journal, a saved search (through `saved-searches` and the entry list filters of `entries`) or hand-picked IDs |
 | `cloud-sync` | provider connections, file browsing, schedules, queued jobs |
 | `config` | user preferences and profile, encrypted settings, data export, the feature-flag endpoint (no feature reads flags yet) |
 | `feature-requests` | community idea board and votes |
@@ -196,6 +196,11 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `BOOK_COVER_INVALID` | Cover image must be a PNG or JPEG file no larger than 2 MB. |
 |  | `BOOK_TOO_LARGE_FOR_VERSION` | Generated book is too large to save as a version. |
 |  | `BOOK_VERSION_NOT_FOUND` | Book version not found |
+|  | `BOOK_SAVED_SEARCH_REQUIRED` | Choose a saved search to build the book from |
+|  | `BOOK_SAVED_SEARCH_SEMANTIC` | A book cannot be built from a meaning search. Choose a saved search that matches words instead. |
+|  | `BOOK_PICKED_ENTRIES_REQUIRED` | Pick at least one entry for the book |
+|  | `BOOK_PICKED_ENTRIES_LIMIT` | Too many picked entries for one book |
+|  | `BOOK_PICKED_ENTRIES_UNAVAILABLE` | Some picked entries no longer exist or are in the recycle bin. Remove them and try again. |
 |  | `BOOK_AI_NARRATIVE_KEY_REQUIRED` | AI narrative requires an OpenRouter API key on the server. Disable the AI narrative option to download a plain book. |
 |  | `BOOK_AI_FRAMING_KEY_REQUIRED` | AI chapter framing requires an OpenRouter API key on the server. Disable chapter introductions and summaries to generate the book without them. |
 | AI features and the OpenRouter key | `AI_KEY_NOT_CONFIGURED` | OpenRouter API key is not configured |

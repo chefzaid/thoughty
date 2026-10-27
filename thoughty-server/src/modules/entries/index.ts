@@ -5,3 +5,5 @@ export * from './entry-tagging.service';
 export * from './entry-list-cache.service';
 export { resolveMaxPinnedEntries } from './entries-command.service';
 export * from './dto';
+export * from './entry-search.service';
+export { applyEntryListFilters } from './entry-list-filters';

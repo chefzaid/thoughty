@@ -12,6 +12,7 @@ export function ImportExportBookPanel({
     connectedProviders,
     diaryId,
     diaryName,
+    initialEntryIds,
     language,
     sectionRef,
     showMessage,
@@ -22,6 +23,7 @@ export function ImportExportBookPanel({
     connectedProviders: CloudProviderType[];
     diaryId?: number | null;
     diaryName?: string;
+    initialEntryIds?: readonly number[];
     language: Language;
     sectionRef: RefObject<HTMLElement | null>;
     showMessage: (type: MessageState['type'], text: string, duration?: number) => void;
@@ -31,6 +33,7 @@ export function ImportExportBookPanel({
         authFetch,
         connectedProviders,
         diaryId,
+        initialEntryIds,
         showMessage,
         t,
     });
@@ -42,6 +45,9 @@ export function ImportExportBookPanel({
             diaryName={diaryName}
             options={book.options}
             preview={book.preview}
+            sourceReady={book.sourceReady}
+            savedSearches={book.savedSearches}
+            pickedEntries={book.pickedEntries}
             generating={book.action !== null}
             uploading={book.action === 'upload'}
             savingVersion={book.action === 'version'}
@@ -56,6 +62,7 @@ export function ImportExportBookPanel({
             onUpload={book.handleUpload}
             onCreateVersion={book.handleCreateVersion}
             onVersionDownload={book.handleVersionDownload}
+            onUseVersionEntries={book.pickVersionEntries}
             language={language}
             t={t}
         />

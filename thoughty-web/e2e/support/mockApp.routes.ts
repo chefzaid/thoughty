@@ -4,7 +4,8 @@ import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route
 import { handleCloudSyncRoutes } from "./mockApp.routes.cloud-sync";
 import { handleAiCredentialRoutes } from "./mockApp.routes.ai-credentials";
 import { handleEntriesRoutes } from "./mockApp.routes.entries";
-import { handleBookRoutes, handleIoRoutes } from "./mockApp.routes.io";
+import { handleIoRoutes } from "./mockApp.routes.io";
+import { handleBookRoutes } from "./mockApp.routes.books";
 import { handleReferenceRoutes } from "./mockApp.routes.reference";
 import { handleDiaryRoutes } from "./mockApp.routes.diaries";
 import { handleSocialRoutes } from "./mockApp.routes.social";

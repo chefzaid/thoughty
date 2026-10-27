@@ -5,6 +5,9 @@ import { BooksService } from './books.service';
 import { AiBookComposerService } from '@/modules/ai';
 import { AttachmentsService } from '@/modules/attachments';
 import { Entry, Diary, User } from '@/database/entities';
+import { EntrySearchService } from '@/modules/entries';
+import { SavedSearchesService } from '@/modules/saved-searches';
+import { BookEntrySourceService } from './book-entry-source.service';
 
 describe('BooksService', () => {
   const png = Buffer.from(
@@ -79,6 +82,9 @@ describe('BooksService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BooksService,
+        BookEntrySourceService,
+        { provide: SavedSearchesService, useValue: {} },
+        { provide: EntrySearchService, useValue: {} },
         { provide: getRepositoryToken(Entry), useValue: entryRepository },
         { provide: getRepositoryToken(Diary), useValue: diaryRepository },
         { provide: getRepositoryToken(User), useValue: userRepository },
@@ -191,6 +197,7 @@ describe('BooksService', () => {
       expect(Buffer.isBuffer(result.content)).toBe(true);
       expect((result.content as Buffer).subarray(0, 5).toString()).toBe('%PDF-');
       expect(aiService.composeBookChapter).not.toHaveBeenCalled();
+      expect(result.source).toEqual({ kind: 'journal', diaryId: null });
     });
 
     it('should export Markdown when requested', async () => {

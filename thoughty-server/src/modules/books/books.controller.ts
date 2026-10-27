@@ -24,6 +24,8 @@ import { memoryStorage } from 'multer';
 import { Response } from 'express';
 import { BooksService } from './books.service';
 import {
+  BookPickedEntriesQueryDto,
+  BookPickedEntriesResponseDto,
   BookQueryDto,
   BookPreviewResponseDto,
   BookUploadQueryDto,
@@ -31,6 +33,7 @@ import {
   BookVersionsQueryDto,
 } from './dto';
 import { BookVersionsService } from './book-versions.service';
+import { BookEntrySourceService } from './book-entry-source.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { CloudFileInfoDto, CloudSyncService } from '@/modules/cloud-sync';
@@ -50,6 +53,7 @@ export class BooksController {
   constructor(
     private readonly booksService: BooksService,
     private readonly bookVersionsService: BookVersionsService,
+    private readonly bookEntrySourceService: BookEntrySourceService,
     private readonly cloudSyncService: CloudSyncService,
   ) {}
 
@@ -60,7 +64,7 @@ export class BooksController {
   }
 
   @Get('versions')
-  @ApiOperation({ summary: 'List saved versions for the selected journal book' })
+  @ApiOperation({ summary: 'List saved versions of a book: a diary (or all diaries), a saved search, or the hand-picked book' })
   @ApiResponse({
     status: 200,
     description: 'Saved book version metadata in descending version order',
@@ -70,7 +74,7 @@ export class BooksController {
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: BookVersionsQueryDto,
   ): Promise<BookVersionResponseDto[]> {
-    return this.bookVersionsService.list(user.userId, query.diaryId);
+    return this.bookVersionsService.list(user.userId, query);
   }
 
   @Post('versions')
@@ -110,8 +114,22 @@ export class BooksController {
     this.sendBookFile(res, bookFile);
   }
 
+  @Get('picked-entries')
+  @ApiOperation({ summary: 'Describe the entries picked for a book, and which of them are no longer available' })
+  @ApiResponse({
+    status: 200,
+    description: 'The picked entries the writer still has, by date, and the IDs that are gone',
+    type: BookPickedEntriesResponseDto,
+  })
+  async pickedEntries(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: BookPickedEntriesQueryDto,
+  ): Promise<BookPickedEntriesResponseDto> {
+    return this.bookEntrySourceService.describePickedEntries(user.userId, query.entryIds);
+  }
+
   @Get('preview')
-  @ApiOperation({ summary: 'Preview the book outline (chapters built from tags) before exporting' })
+  @ApiOperation({ summary: 'Preview the book outline (chapters and entry counts) before exporting' })
   @ApiResponse({
     status: 200,
     description: 'Book outline with chapter titles and entry counts',
@@ -126,7 +144,7 @@ export class BooksController {
 
   @Get('export')
   @ApiOperation({
-    summary: 'Convert journal entries into a book (chapters from tags) and download it',
+    summary: 'Convert journal entries, a saved search or hand-picked entries into a book and download it',
   })
   @ApiResponse({
     status: 200,

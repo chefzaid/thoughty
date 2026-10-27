@@ -7,13 +7,14 @@ import {
   Matches,
   MaxLength,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
+import { BookSourceQueryDto, BookVersionSourceDto } from './book-source.dto';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-export class BookQueryDto {
-  @ApiPropertyOptional({ description: 'Diary ID to build the book from' })
+export class BookQueryDto extends BookSourceQueryDto {
+  @ApiPropertyOptional({ description: 'Diary ID to build a journal book from (source=journal)' })
   @IsOptional()
   @Transform(({ value }) => Number.parseInt(value, 10))
   @IsNumber()
@@ -28,7 +29,7 @@ export class BookQueryDto {
   @IsIn(['pdf', 'epub', 'html', 'md'])
   format?: 'pdf' | 'epub' | 'html' | 'md';
 
-  @ApiPropertyOptional({ description: 'Book title (defaults to the diary name)' })
+  @ApiPropertyOptional({ description: 'Book title (defaults to the diary or saved search name)' })
   @IsOptional()
   @IsString()
   @MaxLength(200)
@@ -42,12 +43,12 @@ export class BookQueryDto {
   @MaxLength(200)
   author?: string;
 
-  @ApiPropertyOptional({ description: 'Only include entries on or after this date (YYYY-MM-DD)' })
+  @ApiPropertyOptional({ description: 'Journal books: only include entries on or after this date (YYYY-MM-DD)' })
   @IsOptional()
   @Matches(DATE_PATTERN, { message: 'dateFrom must be in YYYY-MM-DD format' })
   dateFrom?: string;
 
-  @ApiPropertyOptional({ description: 'Only include entries on or before this date (YYYY-MM-DD)' })
+  @ApiPropertyOptional({ description: 'Journal books: only include entries on or before this date (YYYY-MM-DD)' })
   @IsOptional()
   @Matches(DATE_PATTERN, { message: 'dateTo must be in YYYY-MM-DD format' })
   dateTo?: string;
@@ -62,13 +63,13 @@ export class BookQueryDto {
   chapterOrder?: 'alpha' | 'entries' | 'chrono';
 
   @ApiPropertyOptional({
-    description: 'Chapter grouping mode: tags, calendar years, or calendar months',
-    enum: ['tags', 'year', 'month'],
+    description: 'Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book',
+    enum: ['tags', 'year', 'month', 'single'],
     default: 'tags',
   })
   @IsOptional()
-  @IsIn(['tags', 'year', 'month'])
-  chapterMode?: 'tags' | 'year' | 'month';
+  @IsIn(['tags', 'year', 'month', 'single'])
+  chapterMode?: 'tags' | 'year' | 'month' | 'single';
 
   @ApiPropertyOptional({
     description: 'Place entries in every matching tag chapter, or only in their first tag chapter',
@@ -195,8 +196,8 @@ export class BookPreviewResponseDto {
   chapters: BookChapterPreviewDto[];
 }
 
-export class BookVersionsQueryDto {
-  @ApiPropertyOptional({ description: 'Diary ID whose book history should be listed' })
+export class BookVersionsQueryDto extends PickType(BookSourceQueryDto, ['source', 'savedSearchId'] as const) {
+  @ApiPropertyOptional({ description: 'Diary ID whose journal book history should be listed' })
   @IsOptional()
   @Transform(({ value }) => Number.parseInt(value, 10))
   @IsNumber()
@@ -233,6 +234,13 @@ export class BookVersionResponseDto {
 
   @ApiProperty({ type: [String] })
   addedChapterTitles: string[];
+
+  @ApiProperty({
+    type: BookVersionSourceDto,
+    description: 'Where the version’s entries came from',
+    example: { kind: 'savedSearch', savedSearchId: 4, savedSearchName: 'Family favorites' },
+  })
+  source: BookVersionSourceDto;
 
   @ApiProperty()
   createdAt: string;
