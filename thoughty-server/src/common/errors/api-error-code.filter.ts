@@ -1,3 +1,4 @@
+import { STATUS_CODES } from 'node:http';
 import { ArgumentsHost, Catch, HttpException, HttpStatus } from '@nestjs/common';
 import { BaseExceptionFilter } from '@nestjs/core';
 import type { ApiErrorCode } from './api-error-codes';
@@ -20,15 +21,24 @@ export function genericApiErrorCode(status: number): ApiErrorCode {
   return GENERIC_CODES[status] ?? (status >= 500 ? 'INTERNAL_ERROR' : 'VALIDATION_FAILED');
 }
 
-/** `exception` with a generic `code` added to its body when it was raised without one (keeps Nest's other fields). */
+/**
+ * `exception` with a generic `code` added to its body when it was raised without one, and the
+ * `statusCode` and `error` reason phrase every error body documents (`ApiErrorResponse`) when it
+ * lacks them, as a guard's bare `UnauthorizedException()` or the throttler's message does. Nest's
+ * other fields are kept.
+ */
 export function withApiErrorCode(exception: HttpException): HttpException {
   if (apiErrorCodeOf(exception)) {
     return exception;
   }
   const status = exception.getStatus();
   const response = exception.getResponse();
-  const body = typeof response === 'string' ? { statusCode: status, message: response } : response;
-  return new HttpException({ ...body, code: genericApiErrorCode(status) }, status, { cause: exception });
+  const body = typeof response === 'string' ? { message: response } : response;
+  return new HttpException(
+    { statusCode: status, error: STATUS_CODES[status], ...body, code: genericApiErrorCode(status) },
+    status,
+    { cause: exception },
+  );
 }
 
 /**

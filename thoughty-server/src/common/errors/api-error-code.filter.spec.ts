@@ -43,6 +43,11 @@ class ErrorsController {
     throw new HttpException({ message: 'Short and stout' }, 418);
   }
 
+  @Get('guard')
+  guard(): never {
+    throw new UnauthorizedException();
+  }
+
   @Post('notes')
   note(@Body() body: NoteDto): NoteDto {
     return body;
@@ -85,7 +90,18 @@ describe('ApiErrorCodeFilter', () => {
   it('turns a plain-text error body into the usual shape', async () => {
     const response = await request(app.getHttpServer()).get('/errors/text').expect(429);
 
-    expect(response.body).toEqual({ statusCode: 429, message: 'Too many requests', code: 'RATE_LIMITED' });
+    expect(response.body).toEqual({
+      statusCode: 429,
+      message: 'Too many requests',
+      error: 'Too Many Requests',
+      code: 'RATE_LIMITED',
+    });
+  });
+
+  it('adds the reason phrase to a bare guard refusal, as every documented error body has it', async () => {
+    const response = await request(app.getHttpServer()).get('/errors/guard').expect(401);
+
+    expect(response.body).toEqual({ statusCode: 401, message: 'Unauthorized', error: 'Unauthorized', code: 'UNAUTHORIZED' });
   });
 
   it('gives validation errors a generic code and keeps their list of messages', async () => {
@@ -102,7 +118,12 @@ describe('ApiErrorCodeFilter', () => {
   it('falls back to a generic code by status class', async () => {
     const response = await request(app.getHttpServer()).get('/errors/teapot').expect(418);
 
-    expect(response.body).toEqual({ message: 'Short and stout', code: 'VALIDATION_FAILED' });
+    expect(response.body).toEqual({
+      statusCode: 418,
+      message: 'Short and stout',
+      error: "I'm a Teapot",
+      code: 'VALIDATION_FAILED',
+    });
     expect(genericApiErrorCode(504)).toBe('INTERNAL_ERROR');
     expect(genericApiErrorCode(503)).toBe('SERVICE_UNAVAILABLE');
   });
