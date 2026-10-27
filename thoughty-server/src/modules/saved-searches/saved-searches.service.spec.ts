@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
-import { BookVersion, Diary, LifeEra, SavedSearch } from '@/database/entities';
+import { BookVersion, Diary, LifeEra, Person, SavedSearch } from '@/database/entities';
 import { SAVED_SEARCH_LIMIT } from './dto';
 import { SavedSearchesService } from './saved-searches.service';
 
@@ -21,6 +21,7 @@ describe('SavedSearchesService', () => {
   let savedRepository: Record<string, jest.Mock>;
   let diaryRepository: { exists: jest.Mock };
   let eraRepository: { exists: jest.Mock };
+  let personRepository: { exists: jest.Mock };
   let manager: { query: jest.Mock; getRepository: jest.Mock };
   let queryBuilder: Record<string, jest.Mock>;
   let countBuilder: Record<string, jest.Mock>;
@@ -48,6 +49,7 @@ describe('SavedSearchesService', () => {
     };
     diaryRepository = { exists: jest.fn().mockResolvedValue(true) };
     eraRepository = { exists: jest.fn().mockResolvedValue(true) };
+    personRepository = { exists: jest.fn().mockResolvedValue(true) };
     savedRepository = {
       createQueryBuilder: jest.fn(() => queryBuilder),
       count: jest.fn().mockResolvedValue(0),
@@ -61,6 +63,7 @@ describe('SavedSearchesService', () => {
       getRepository: jest.fn((entity) => {
         if (entity === Diary) return diaryRepository;
         if (entity === LifeEra) return eraRepository;
+        if (entity === Person) return personRepository;
         return entity === BookVersion ? bookVersionRepository : savedRepository;
       }),
     };
@@ -78,8 +81,8 @@ describe('SavedSearchesService', () => {
     await expect(service.list(7)).resolves.toEqual({
       savedSearches: [
         // Saved before life eras: no era
-        { id: 2, name: 'Family', diaryId: null, filters: { ...filters, eraId: null }, bookVersionCount: 0, createdAt, updatedAt: createdAt },
-        { id: 3, name: 'Trips', diaryId: null, filters: { ...filters, eraId: 5 }, bookVersionCount: 2, createdAt, updatedAt: createdAt },
+        { id: 2, name: 'Family', diaryId: null, filters: { ...filters, eraId: null, personId: null }, bookVersionCount: 0, createdAt, updatedAt: createdAt },
+        { id: 3, name: 'Trips', diaryId: null, filters: { ...filters, eraId: 5, personId: null }, bookVersionCount: 2, createdAt, updatedAt: createdAt },
       ],
       limit: SAVED_SEARCH_LIMIT,
     });
@@ -110,14 +113,14 @@ describe('SavedSearchesService', () => {
       userId: 7,
       name: 'Family',
       diaryId: 3,
-      filters: { ...filters, tags: ['family', 'trips'], eraId: null },
+      filters: { ...filters, tags: ['family', 'trips'], eraId: null, personId: null },
     });
     expect(eraRepository.exists).not.toHaveBeenCalled();
     expect(result).toEqual({
       id: 4,
       name: 'Family',
       diaryId: 3,
-      filters: { ...filters, tags: ['family', 'trips'], eraId: null },
+      filters: { ...filters, tags: ['family', 'trips'], eraId: null, personId: null },
       bookVersionCount: 0,
       createdAt,
       updatedAt: createdAt,
@@ -148,6 +151,21 @@ describe('SavedSearchesService', () => {
       service.create(7, { name: 'Theirs', diaryId: null, filters: { ...filters, eraId: 9 } }),
       NotFoundException,
       'LIFE_ERA_NOT_FOUND',
+    );
+    expect(savedRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('keeps the writer’s own person and refuses another writer’s', async () => {
+    await service.create(7, { name: 'Marie', diaryId: null, filters: { ...filters, personId: 12 } });
+    expect(personRepository.exists).toHaveBeenCalledWith({ where: { id: 12, userId: 7 } });
+    expect(savedRepository.save).toHaveBeenCalledWith(expect.objectContaining({ filters: expect.objectContaining({ personId: 12 }) }));
+
+    savedRepository.save.mockClear();
+    personRepository.exists.mockResolvedValue(false);
+    await expectApiError(
+      service.create(7, { name: 'Theirs', diaryId: null, filters: { ...filters, personId: 13 } }),
+      NotFoundException,
+      'PERSON_NOT_FOUND',
     );
     expect(savedRepository.save).not.toHaveBeenCalled();
   });

@@ -8,6 +8,7 @@ export interface EntriesCommandTestBed {
   diaryRepository: Record<string, jest.Mock>;
   entryTaggingService: Record<string, jest.Mock>;
   configService: Record<string, jest.Mock>;
+  entryMentions: Record<string, jest.Mock>;
 }
 
 /**
@@ -44,13 +45,19 @@ export function createEntriesCommandTestBed(): EntriesCommandTestBed {
     getConfig: jest.fn().mockResolvedValue({ maxPinnedEntries: '3' }),
   };
 
+  // Saving with mentions saves through the entry repository, so specs read what was saved there
+  const entryMentions = {
+    save: jest.fn((_userId: number, value: unknown) => entryRepository.save(value)),
+  };
+
   const service = new EntriesCommandService(
     entryRepository as never,
     revisionRepository as never,
     diaryRepository as never,
     entryTaggingService as never,
     configService as never,
+    entryMentions as never,
   );
 
-  return { service, entryRepository, revisionRepository, diaryRepository, entryTaggingService, configService };
+  return { service, entryRepository, revisionRepository, diaryRepository, entryTaggingService, configService, entryMentions };
 }

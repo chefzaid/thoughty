@@ -86,6 +86,10 @@ export const API_ERROR_MESSAGES = {
   LIFE_ERA_LIMIT_REACHED: 'Life era limit reached',
   LIFE_ERA_DATES_INVALID: 'A life era cannot end before it starts',
 
+  // People mentioned in entries.
+  PERSON_NOT_FOUND: 'Person not found',
+  PERSON_MERGE_SAME: 'A person cannot be merged into themselves',
+
   // Attachments and audio transcription.
   ATTACHMENT_NOT_FOUND: 'Attachment not found',
   ATTACHMENT_FILE_NOT_FOUND: 'File not found',

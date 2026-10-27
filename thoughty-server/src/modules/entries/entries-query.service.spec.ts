@@ -196,6 +196,22 @@ describe('EntriesQueryService', () => {
     expect(entriesQb.andWhere).toHaveBeenCalledWith(expect.stringContaining('(era.end_date IS NULL OR e.date <= era.end_date)'), { eraId: 3 });
   });
 
+  it('filters the journal to the entries that mention a person', async () => {
+    const entriesQb = createQueryBuilder();
+    entriesQb.getCount.mockResolvedValue(0);
+    entriesQb.getMany.mockResolvedValue([]);
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(entriesQb)
+      .mockReturnValueOnce(createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([]) }));
+
+    await service.getEntries(4, { personId: 12 });
+
+    expect(entriesQb.andWhere).toHaveBeenCalledWith(
+      'EXISTS (SELECT 1 FROM entry_people ep WHERE ep.entry_id = e.id AND ep.person_id = :personId)',
+      { personId: 12 },
+    );
+  });
+
   it('keeps date order for a search when asked, pinned entries first', async () => {
     const entriesQb = createQueryBuilder();
     entriesQb.getCount.mockResolvedValue(0);

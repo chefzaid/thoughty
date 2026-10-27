@@ -87,6 +87,19 @@ export class SavedSearchFiltersDto implements SavedSearchFilters {
   @IsInt()
   @Min(1)
   eraId?: number | null;
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    required: false,
+    example: 12,
+    description: 'Person the entries mention; null or left out for anyone (searches saved before people have none)',
+  })
+  @IsOptional()
+  @ValidateIf((_dto, value) => value !== null)
+  @IsInt()
+  @Min(1)
+  personId?: number | null;
 }
 
 export class CreateSavedSearchDto {

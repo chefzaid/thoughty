@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { IoService } from './io.service';
 import { Entry, Setting, Diary, User } from '@/database/entities';
+import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 
 export const mockEntry = {
   id: 1,
@@ -64,6 +65,8 @@ export async function createIoServiceTestBed() {
       { provide: getRepositoryToken(Setting), useValue: settingRepository },
       { provide: getRepositoryToken(Diary), useValue: diaryRepository },
       { provide: getRepositoryToken(User), useValue: userRepository },
+      // Saving with mentions saves through the entry repository, so specs read what was saved there
+      { provide: EntryMentionsService, useValue: { save: (_userId: number, value: unknown) => entryRepository.save(value) } },
     ],
   }).compile();
 

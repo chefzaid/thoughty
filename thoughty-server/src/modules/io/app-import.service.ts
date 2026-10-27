@@ -6,6 +6,7 @@ import { Attachment, Diary, Entry } from '@/database/entities';
 import { normalizeEntryTitle, normalizeMood, normalizeTimeOfDay, sanitizeString } from '@/common/utils';
 import { AttachmentsService } from '@/modules/attachments';
 import { DiariesService } from '@/modules/diaries';
+import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import {
   AppImportDto,
   AppImportEntryDto,
@@ -38,6 +39,7 @@ export class AppImportService {
     private readonly attachmentRepository: Repository<Attachment>,
     private readonly diariesService: DiariesService,
     private readonly attachmentsService: AttachmentsService,
+    private readonly entryMentions: EntryMentionsService,
   ) {}
 
   async importEntries(userId: number, dto: AppImportDto): Promise<AppImportResponseDto> {
@@ -84,7 +86,7 @@ export class AppImportService {
 
     if (rows.length > 0) {
       try {
-        const saved = await this.entryRepository.save(rows);
+        const saved = await this.entryMentions.save(userId, rows);
         for (const entry of saved) {
           entryIdByRef.set(entry.importRef as string, entry.id);
         }

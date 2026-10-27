@@ -11,6 +11,7 @@ import { DiaryEntryTransferService } from '@/modules/diaries/diary-entry-transfe
 import { EntriesCommandService } from '@/modules/entries/entries-command.service';
 import { EntriesQueryService } from '@/modules/entries/entries-query.service';
 import { EntrySearchService } from '@/modules/entries/entry-search.service';
+import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { RecycleBinService } from './recycle-bin.service';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -55,6 +56,7 @@ describePostgres('PostgreSQL recycle bin', () => {
       diaries,
       { resolveSavedTags: async (_user: number, _text: string, tags: string[]) => tags } as never,
       configService as never,
+      new EntryMentionsService(entries),
     );
     queries = new EntriesQueryService(entries, revisions, new EntrySearchService(entries));
     removeStoredFiles = jest.fn().mockResolvedValue(undefined);

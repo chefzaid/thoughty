@@ -17,6 +17,8 @@ export interface SavedSearchFilters {
   mood: string;
   /** The life era the entries are dated in; null, or missing in searches saved before eras, for any. */
   eraId?: number | null;
+  /** The person the entries mention; null, or missing in searches saved before people, for anyone. */
+  personId?: number | null;
 }
 
 /** A named combination of journal filters and a diary scope, kept per writer. */

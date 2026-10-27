@@ -19,3 +19,4 @@ export * from './memoir-answer.entity';
 export * from './year-review-mood.entity';
 export * from './saved-search.entity';
 export * from './life-era.entity';
+export * from './person.entity';

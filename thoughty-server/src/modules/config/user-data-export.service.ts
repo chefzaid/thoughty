@@ -14,6 +14,7 @@ import {
   YearReviewMood,
   SavedSearch,
   LifeEra,
+  Person,
   Setting,
   User,
   UserFollow,
@@ -53,10 +54,12 @@ export class UserDataExportService {
     private readonly savedSearchRepository: Repository<SavedSearch>,
     @InjectRepository(LifeEra)
     private readonly lifeEraRepository: Repository<LifeEra>,
+    @InjectRepository(Person)
+    private readonly personRepository: Repository<Person>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       // Entries in the recycle bin are still personal data until they are removed for good
@@ -69,6 +72,7 @@ export class UserDataExportService {
       this.yearReviewMoodRepository.find({ where: { userId }, order: { year: 'ASC', createdAt: 'ASC' } }),
       this.savedSearchRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
       this.lifeEraRepository.find({ where: { userId }, order: { startDate: 'ASC', id: 'ASC' } }),
+      this.collectPeople(userId),
     ]);
 
     const safeUser = user
@@ -178,7 +182,32 @@ export class UserDataExportService {
         createdAt: era.createdAt,
         updatedAt: era.updatedAt,
       })),
+      people,
     };
+  }
+
+  /**
+   * The people the writer mentions, with their handles and the entries (recycle bin included) that
+   * mention them. The ID is what a saved search's `personId` filter refers to.
+   */
+  private async collectPeople(userId: number) {
+    const rows = (await this.personRepository.query(
+      `SELECT p.id, p.name, p.created_at AS "createdAt", p.updated_at AS "updatedAt",
+              COALESCE((SELECT array_agg(h.handle ORDER BY h.created_at, h.handle) FROM person_handles h WHERE h.person_id = p.id), '{}') AS handles,
+              COALESCE((SELECT array_agg(ep.entry_id ORDER BY ep.entry_id) FROM entry_people ep WHERE ep.person_id = p.id), '{}') AS "entryIds"
+         FROM people p
+        WHERE p.user_id = $1
+        ORDER BY p.id`,
+      [userId],
+    )) as Array<{ id: number; name: string; handles: string[]; entryIds: number[]; createdAt: Date; updatedAt: Date }>;
+    return rows.map((person) => ({
+      id: person.id,
+      name: person.name,
+      handles: person.handles,
+      entryIds: person.entryIds.map(Number),
+      createdAt: person.createdAt,
+      updatedAt: person.updatedAt,
+    }));
   }
 
   private async collectMemoirData(userId: number) {

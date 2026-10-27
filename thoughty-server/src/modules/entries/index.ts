@@ -7,3 +7,5 @@ export { resolveMaxPinnedEntries } from './entries-command.service';
 export * from './dto';
 export * from './entry-search.service';
 export { applyEntryListFilters } from './entry-list-filters';
+export * from './entry-mentions.service';
+export { PEOPLE_LIMIT, PEOPLE_LOCK_NAMESPACE } from './entry-mentions.sync';

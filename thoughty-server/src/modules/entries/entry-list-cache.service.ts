@@ -85,6 +85,7 @@ export class EntryListCacheService {
       limit: query.limit ?? 10,
       mood: query.mood ?? '',
       page: query.page ?? 1,
+      personId: query.personId ?? '',
       search: query.search?.trim() ?? '',
       sort: query.sort ?? 'relevance',
       tags: tags ?? '',

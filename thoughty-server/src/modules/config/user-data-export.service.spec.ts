@@ -12,6 +12,7 @@ import {
   YearReviewMood,
   SavedSearch,
   LifeEra,
+  Person,
   MemoirProgram,
   Setting,
   User,
@@ -36,6 +37,7 @@ describe('UserDataExportService', () => {
   let yearReviewMoodRepository: any;
   let savedSearchRepository: any;
   let lifeEraRepository: any;
+  let personRepository: any;
 
   beforeEach(async () => {
     settingRepository = { find: jest.fn() };
@@ -53,6 +55,7 @@ describe('UserDataExportService', () => {
     yearReviewMoodRepository = { find: jest.fn().mockResolvedValue([]) };
     savedSearchRepository = { find: jest.fn().mockResolvedValue([]) };
     lifeEraRepository = { find: jest.fn().mockResolvedValue([]) };
+    personRepository = { query: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -72,6 +75,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(YearReviewMood), useValue: yearReviewMoodRepository },
         { provide: getRepositoryToken(SavedSearch), useValue: savedSearchRepository },
         { provide: getRepositoryToken(LifeEra), useValue: lifeEraRepository },
+        { provide: getRepositoryToken(Person), useValue: personRepository },
       ],
     }).compile();
 
@@ -336,6 +340,23 @@ describe('UserDataExportService', () => {
       { id: 4, name: 'University', startDate: '2010-09-01', endDate: null, color: '#2A9D8F', emoji: '🎓', note: 'Lyon', createdAt, updatedAt: createdAt },
     ]);
     expect(lifeEraRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { startDate: 'ASC', id: 'ASC' } });
+  });
+
+  it('includes the people with their handles and the entries that mention them, recycle bin included', async () => {
+    for (const repository of [diaryRepository, entryRepository, revisionRepository, attachmentRepository, settingRepository]) {
+      repository.find.mockResolvedValue([]);
+    }
+    const createdAt = new Date('2026-10-01T10:00:00Z');
+    personRepository.query.mockResolvedValue([
+      { id: 12, name: 'Marie', handles: ['marie', 'marie-c'], entryIds: ['3', '9'], createdAt, updatedAt: createdAt },
+    ]);
+
+    const result = await service.downloadData(1);
+
+    expect(result.people).toEqual([
+      { id: 12, name: 'Marie', handles: ['marie', 'marie-c'], entryIds: [3, 9], createdAt, updatedAt: createdAt },
+    ]);
+    expect(personRepository.query).toHaveBeenCalledWith(expect.stringContaining('FROM people p'), [1]);
   });
 
   it('should exclude sensitive fields from user data', async () => {

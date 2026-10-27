@@ -53,7 +53,7 @@ describePostgres('PostgreSQL saved searches', () => {
 
     const { savedSearches } = await service.list(writerId);
     expect(savedSearches.map((saved) => [saved.name, saved.diaryId])).toEqual([['Family', null], ['trips', travel.id]]);
-    expect(savedSearches[0]?.filters).toEqual({ ...filters, eraId: null });
+    expect(savedSearches[0]?.filters).toEqual({ ...filters, eraId: null, personId: null });
     await expectApiError(service.delete(otherId, savedSearches[0]!.id), NotFoundException, 'SAVED_SEARCH_NOT_FOUND');
     await expectApiError(service.create(otherId, { name: 'Mine', diaryId: travel.id, filters }), NotFoundException, 'DIARY_NOT_FOUND');
   });

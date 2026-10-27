@@ -1321,6 +1321,16 @@
             }
           },
           {
+            "name": "personId",
+            "required": false,
+            "in": "query",
+            "description": "Person ID: only entries that mention the person",
+            "schema": {
+              "example": 12,
+              "type": "number"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -1620,6 +1630,16 @@
             "description": "Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing)",
             "schema": {
               "example": 3,
+              "type": "number"
+            }
+          },
+          {
+            "name": "personId",
+            "required": false,
+            "in": "query",
+            "description": "Person ID: only entries that mention the person",
+            "schema": {
+              "example": 12,
               "type": "number"
             }
           },
@@ -7417,7 +7437,8 @@
                         "archiveStatus": "active",
                         "favorites": true,
                         "mood": "4,5",
-                        "eraId": 3
+                        "eraId": 3,
+                        "personId": 12
                       },
                       "bookVersionCount": 2,
                       "createdAt": "2026-10-27T09:30:00.000Z",
@@ -7465,7 +7486,8 @@
                   "archiveStatus": "active",
                   "favorites": true,
                   "mood": "4,5",
-                  "eraId": 3
+                  "eraId": 3,
+                  "personId": 12
                 }
               }
             }
@@ -7495,7 +7517,8 @@
                     "archiveStatus": "active",
                     "favorites": true,
                     "mood": "4,5",
-                    "eraId": 3
+                    "eraId": 3,
+                    "personId": 12
                   },
                   "bookVersionCount": 2,
                   "createdAt": "2026-10-27T09:30:00.000Z",
@@ -7614,7 +7637,8 @@
                     "archiveStatus": "active",
                     "favorites": true,
                     "mood": "4,5",
-                    "eraId": 3
+                    "eraId": 3,
+                    "personId": 12
                   },
                   "bookVersionCount": 2,
                   "createdAt": "2026-10-27T09:30:00.000Z",
@@ -10076,6 +10100,290 @@
         "summary": "Delete entries from the recycle bin for good, with their history and files",
         "tags": [
           "Recycle bin"
+        ]
+      }
+    },
+    "/api/people": {
+      "get": {
+        "operationId": "PeopleController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "People and the limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonListResponseDto"
+                },
+                "example": {
+                  "people": [
+                    {
+                      "id": 12,
+                      "name": "Marie",
+                      "handles": [
+                        "marie",
+                        "marie-c"
+                      ],
+                      "entryCount": 8,
+                      "lastMentionedOn": "2026-10-21",
+                      "createdAt": "2026-10-27T09:30:00.000Z",
+                      "updatedAt": "2026-10-27T09:30:00.000Z"
+                    }
+                  ],
+                  "limit": 1000
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the people the writer mentions with @handle, by name, with how many entries mention each",
+        "tags": [
+          "People"
+        ]
+      }
+    },
+    "/api/people/{id}": {
+      "patch": {
+        "operationId": "PeopleController_rename",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePersonDto"
+              },
+              "example": {
+                "name": "Marie Curie"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Person renamed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonResponseDto"
+                },
+                "example": {
+                  "id": 12,
+                  "name": "Marie",
+                  "handles": [
+                    "marie",
+                    "marie-c"
+                  ],
+                  "entryCount": 8,
+                  "lastMentionedOn": "2026-10-21",
+                  "createdAt": "2026-10-27T09:30:00.000Z",
+                  "updatedAt": "2026-10-27T09:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid name",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Person not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Person not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change the name shown for a person; their handles and the entries’ text stay as they are",
+        "tags": [
+          "People"
+        ]
+      },
+      "delete": {
+        "operationId": "PeopleController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Person deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Person not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Person not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a person: their entries are unlinked and keep their text",
+        "tags": [
+          "People"
+        ]
+      }
+    },
+    "/api/people/{id}/merge": {
+      "post": {
+        "operationId": "PeopleController_merge",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "The person kept",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MergePersonDto"
+              },
+              "example": {
+                "duplicateId": 14
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The person kept, with the duplicate merged in",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonResponseDto"
+                },
+                "example": {
+                  "id": 12,
+                  "name": "Marie",
+                  "handles": [
+                    "marie",
+                    "marie-c"
+                  ],
+                  "entryCount": 8,
+                  "lastMentionedOn": "2026-10-21",
+                  "createdAt": "2026-10-27T09:30:00.000Z",
+                  "updatedAt": "2026-10-27T09:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A person cannot be merged into themselves",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "A person cannot be merged into themselves",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Person not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Person not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Merge a duplicate into this person: its handles and entries move here, then it is deleted",
+        "tags": [
+          "People"
         ]
       }
     }
@@ -16228,6 +16536,12 @@
             "nullable": true,
             "example": 3,
             "description": "Life era the entries are dated in; null or left out for any date (searches saved before eras have none)"
+          },
+          "personId": {
+            "type": "number",
+            "nullable": true,
+            "example": 12,
+            "description": "Person the entries mention; null or left out for anyone (searches saved before people have none)"
           }
         },
         "required": [
@@ -16253,7 +16567,8 @@
           "archiveStatus": "active",
           "favorites": true,
           "mood": "4,5",
-          "eraId": 3
+          "eraId": 3,
+          "personId": 12
         }
       },
       "SavedSearchResponseDto": {
@@ -16318,7 +16633,8 @@
             "archiveStatus": "active",
             "favorites": true,
             "mood": "4,5",
-            "eraId": 3
+            "eraId": 3,
+            "personId": 12
           },
           "bookVersionCount": 2,
           "createdAt": "2026-10-27T09:30:00.000Z",
@@ -16363,7 +16679,8 @@
                 "archiveStatus": "active",
                 "favorites": true,
                 "mood": "4,5",
-                "eraId": 3
+                "eraId": 3,
+                "personId": 12
               },
               "bookVersionCount": 2,
               "createdAt": "2026-10-27T09:30:00.000Z",
@@ -16412,7 +16729,8 @@
             "archiveStatus": "active",
             "favorites": true,
             "mood": "4,5",
-            "eraId": 3
+            "eraId": 3,
+            "personId": 12
           }
         }
       },
@@ -18880,6 +19198,146 @@
           "deletedCount": 2
         }
       },
+      "PersonResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 12
+          },
+          "name": {
+            "type": "string",
+            "example": "Marie",
+            "description": "The name shown; the handle as first written until the writer changes it"
+          },
+          "handles": {
+            "example": [
+              "marie",
+              "marie-c"
+            ],
+            "description": "Handles that mention the person, without the @ and in lower case, the first one first",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "entryCount": {
+            "type": "number",
+            "example": 8,
+            "minimum": 0,
+            "description": "Entries that mention the person, leaving out the recycle bin"
+          },
+          "lastMentionedOn": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": "2026-10-21",
+            "description": "Date of the latest entry that mentions the person; null when none does"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-27T09:30:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-27T09:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "handles",
+          "entryCount",
+          "lastMentionedOn",
+          "createdAt",
+          "updatedAt"
+        ],
+        "example": {
+          "id": 12,
+          "name": "Marie",
+          "handles": [
+            "marie",
+            "marie-c"
+          ],
+          "entryCount": 8,
+          "lastMentionedOn": "2026-10-21",
+          "createdAt": "2026-10-27T09:30:00.000Z",
+          "updatedAt": "2026-10-27T09:30:00.000Z"
+        }
+      },
+      "PersonListResponseDto": {
+        "type": "object",
+        "properties": {
+          "people": {
+            "description": "By name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonResponseDto"
+            }
+          },
+          "limit": {
+            "type": "number",
+            "example": 1000,
+            "description": "How many people a writer can keep; mentions of new people past it stay plain text"
+          }
+        },
+        "required": [
+          "people",
+          "limit"
+        ],
+        "example": {
+          "people": [
+            {
+              "id": 12,
+              "name": "Marie",
+              "handles": [
+                "marie",
+                "marie-c"
+              ],
+              "entryCount": 8,
+              "lastMentionedOn": "2026-10-21",
+              "createdAt": "2026-10-27T09:30:00.000Z",
+              "updatedAt": "2026-10-27T09:30:00.000Z"
+            }
+          ],
+          "limit": 1000
+        }
+      },
+      "UpdatePersonDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Marie Curie",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "example": {
+          "name": "Marie Curie"
+        }
+      },
+      "MergePersonDto": {
+        "type": "object",
+        "properties": {
+          "duplicateId": {
+            "type": "number",
+            "example": 14,
+            "description": "The duplicate to merge into this person: its handles and entries move here, then it is deleted"
+          }
+        },
+        "required": [
+          "duplicateId"
+        ],
+        "example": {
+          "duplicateId": 14
+        }
+      },
       "ApiErrorCode": {
         "type": "string",
         "enum": [
@@ -18948,6 +19406,8 @@
           "LIFE_ERA_NAME_TAKEN",
           "LIFE_ERA_LIMIT_REACHED",
           "LIFE_ERA_DATES_INVALID",
+          "PERSON_NOT_FOUND",
+          "PERSON_MERGE_SAME",
           "ATTACHMENT_NOT_FOUND",
           "ATTACHMENT_FILE_NOT_FOUND",
           "ATTACHMENT_FILE_MISSING",

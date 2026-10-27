@@ -45,6 +45,9 @@ describe('saved search DTOs', () => {
     await expect(invalidProperties(create({ name: 'Uni', diaryId: null, filters: { ...filters, eraId: null } }))).resolves.toEqual([]);
     await expect(invalidProperties(create({ name: 'Uni', diaryId: null, filters: { ...filters, eraId: 0 } }))).resolves.toEqual(['filters.eraId']);
     await expect(invalidProperties(create({ name: 'Uni', diaryId: null, filters: { ...filters, eraId: '3' } }))).resolves.toEqual(['filters.eraId']);
+    await expect(invalidProperties(create({ name: 'Marie', diaryId: null, filters: { ...filters, personId: 12 } }))).resolves.toEqual([]);
+    await expect(invalidProperties(create({ name: 'Marie', diaryId: null, filters: { ...filters, personId: null } }))).resolves.toEqual([]);
+    await expect(invalidProperties(create({ name: 'Marie', diaryId: null, filters: { ...filters, personId: 0 } }))).resolves.toEqual(['filters.personId']);
   });
 
   it('needs a positive diary ID or null', async () => {

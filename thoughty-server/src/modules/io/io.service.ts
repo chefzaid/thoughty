@@ -21,6 +21,7 @@ import {
   FormatConfig,
   ParsedEntry,
 } from '@/common/utils';
+import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { FormatConfigDto, PreviewImportDto, ImportDto, PreviewResponseDto, ImportResponseDto } from './dto';
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5MB
@@ -46,6 +47,7 @@ export class IoService {
     private readonly diaryRepository: Repository<Diary>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly entryMentions: EntryMentionsService,
   ) {}
 
   private async getFormatConfig(userId: number): Promise<FormatConfig> {
@@ -176,7 +178,7 @@ export class IoService {
     });
     const nextIndex = countResult + 1;
 
-    await this.entryRepository.save({
+    await this.entryMentions.save(userId, {
       userId,
       date: entry.date,
       index: nextIndex,

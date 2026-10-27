@@ -12,7 +12,7 @@ import {
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
-/** The journal filters shared by the entry list and the calendar month: search, tags, flags, mood and diary. */
+/** The journal filters shared by the entry list and the calendar month: search, tags, flags, mood, diary, life era and person. */
 export class EntryFilterQueryDto {
   @ApiPropertyOptional({
     description:
@@ -90,6 +90,13 @@ export class EntryFilterQueryDto {
   @IsInt()
   @Min(1)
   eraId?: number;
+
+  @ApiPropertyOptional({ description: 'Person ID: only entries that mention the person', example: 12 })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === undefined || value === null ? undefined : Number(value)))
+  @IsInt()
+  @Min(1)
+  personId?: number;
 }
 
 export class GetEntriesQueryDto extends EntryFilterQueryDto {

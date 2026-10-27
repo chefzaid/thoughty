@@ -24,6 +24,9 @@ import {
   YearReviewMood,
   SavedSearch,
   LifeEra,
+  Person,
+  PersonHandle,
+  EntryPerson,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -72,6 +75,9 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           YearReviewMood,
           SavedSearch,
           LifeEra,
+          Person,
+          PersonHandle,
+          EntryPerson,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),
@@ -106,6 +112,9 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
       YearReviewMood,
       SavedSearch,
       LifeEra,
+      Person,
+      PersonHandle,
+      EntryPerson,
     ]),
   ],
   exports: [TypeOrmModule],

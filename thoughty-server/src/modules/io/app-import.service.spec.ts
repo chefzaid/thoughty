@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Attachment, Diary, Entry } from '@/database/entities';
 import { AttachmentsService } from '@/modules/attachments';
 import { DiariesService } from '@/modules/diaries';
+import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { AppImportService } from './app-import.service';
 import type { AppImportDto, AppImportEntryDto } from './dto';
 
@@ -70,6 +71,7 @@ describe('AppImportService', () => {
         { provide: getRepositoryToken(Attachment), useValue: attachmentRepository },
         { provide: DiariesService, useValue: diariesService },
         { provide: AttachmentsService, useValue: attachmentsService },
+        { provide: EntryMentionsService, useValue: { save: (_userId: number, value: unknown) => entryRepository.save(value) } },
       ],
     }).compile();
     service = moduleRef.get(AppImportService);

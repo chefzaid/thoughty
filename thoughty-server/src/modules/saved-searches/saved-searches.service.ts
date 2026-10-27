@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, type EntityManager } from 'typeorm';
 import { apiError } from '@/common/errors';
-import { BookVersion, Diary, LifeEra, SavedSearch, type SavedSearchFilters } from '@/database/entities';
+import { BookVersion, Diary, LifeEra, Person, SavedSearch, type SavedSearchFilters } from '@/database/entities';
 import {
   CreateSavedSearchDto,
   RenameSavedSearchDto,
@@ -46,6 +46,7 @@ export class SavedSearchesService {
       await manager.query('SELECT pg_advisory_xact_lock(hashtext($1), $2)', [SAVED_SEARCH_LOCK_NAMESPACE, userId]);
       await this.assertOwnDiary(manager, userId, dto.diaryId);
       await this.assertOwnEra(manager, userId, dto.filters.eraId ?? null);
+      await this.assertOwnPerson(manager, userId, dto.filters.personId ?? null);
 
       const repository = manager.getRepository(SavedSearch);
       if (await repository.count({ where: { userId } }) >= SAVED_SEARCH_LIMIT) {
@@ -132,6 +133,12 @@ export class SavedSearchesService {
     }
   }
 
+  private async assertOwnPerson(manager: EntityManager, userId: number, personId: number | null): Promise<void> {
+    if (personId !== null && !(await manager.getRepository(Person).exists({ where: { id: personId, userId } }))) {
+      throw apiError(NotFoundException, 'PERSON_NOT_FOUND');
+    }
+  }
+
   /** Runs a write and turns a clash with another saved search's name (in any case) into a coded conflict. */
   private async withNameCheck<T>(write: () => Promise<T>): Promise<T> {
     try {
@@ -157,6 +164,7 @@ export class SavedSearchesService {
       favorites: filters.favorites,
       mood: filters.mood,
       eraId: filters.eraId ?? null,
+      personId: filters.personId ?? null,
     };
   }
 
@@ -165,8 +173,8 @@ export class SavedSearchesService {
       id: saved.id,
       name: saved.name,
       diaryId: saved.diaryId,
-      // Searches saved before life eras have no era: they cover every date
-      filters: { ...saved.filters, eraId: saved.filters.eraId ?? null },
+      // Searches saved before life eras or people have none: they cover every date and everyone
+      filters: { ...saved.filters, eraId: saved.filters.eraId ?? null, personId: saved.filters.personId ?? null },
       bookVersionCount,
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt,

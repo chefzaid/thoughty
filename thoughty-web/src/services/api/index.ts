@@ -14,5 +14,6 @@ export * from './reviewService';
 export * from './recycleBinService';
 export * from './savedSearchesService';
 export * from './lifeErasService';
+export * from './peopleService';
 export * from './entryCalendarService';
 export * from './writingStreakService';

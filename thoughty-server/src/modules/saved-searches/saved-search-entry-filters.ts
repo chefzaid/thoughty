@@ -10,10 +10,10 @@ export interface SavedSearchEntryFilters {
 
 /**
  * The entry list filters a saved search stands for: its diary, tags, visibility, favorites,
- * archive state, mood and life era. The search text is left to the caller, which prepares it for the database.
+ * archive state, mood, life era and person. The search text is left to the caller, which prepares it for the database.
  */
 export function toSavedSearchEntryFilters(saved: Pick<SavedSearch, 'diaryId' | 'filters'>): SavedSearchEntryFilters {
-  const { tags, visibility, favorites, archiveStatus, mood, date, eraId } = saved.filters;
+  const { tags, visibility, favorites, archiveStatus, mood, date, eraId, personId } = saved.filters;
   return {
     filters: {
       tags: tags.join(','),
@@ -23,6 +23,7 @@ export function toSavedSearchEntryFilters(saved: Pick<SavedSearch, 'diaryId' | '
       mood: mood || undefined,
       diaryId: saved.diaryId ?? undefined,
       eraId: eraId ?? undefined,
+      personId: personId ?? undefined,
     },
     date: date ?? undefined,
   };

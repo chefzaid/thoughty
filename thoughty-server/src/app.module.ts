@@ -21,6 +21,7 @@ import { ReviewModule } from './modules/review';
 import { RecycleBinModule } from './modules/recycle-bin';
 import { SavedSearchesModule } from './modules/saved-searches';
 import { LifeErasModule } from './modules/life-eras';
+import { PeopleModule } from './modules/people';
 import { AccountPurgeModule } from './modules/account-purge';
 import { HealthController } from './health.controller';
 import {
@@ -65,6 +66,7 @@ import {
     RecycleBinModule,
     SavedSearchesModule,
     LifeErasModule,
+    PeopleModule,
     AccountPurgeModule,
   ],
   providers: [

@@ -7,6 +7,7 @@ import { normalizeEntryTitle, normalizeFeelings, normalizeMood, normalizeTimeOfD
 import { ConfigService } from '@/modules/config';
 import { CreateEntryDto, UpdateEntryDto, BulkOperationDto } from './dto';
 import { EntryTaggingService } from './entry-tagging.service';
+import { EntryMentionsService } from './entry-mentions.service';
 
 const DEFAULT_MAX_PINNED_ENTRIES = 3;
 
@@ -53,6 +54,7 @@ export class EntriesCommandService {
     private readonly diaryRepository: Repository<Diary>,
     private readonly entryTaggingService: EntryTaggingService,
     private readonly configService: ConfigService,
+    private readonly entryMentions: EntryMentionsService,
   ) {}
 
   private sanitizeTagName(tag?: string | null): string {
@@ -70,7 +72,7 @@ export class EntriesCommandService {
     const nextIndex = countResult + 1;
 
     // A new entry is numbered after the day's entries whatever its time, so existing links keep their targets
-    const entry = await this.entryRepository.save({
+    const entry = await this.entryMentions.save(userId, {
       userId,
       date: dateStr,
       index: nextIndex,
@@ -147,7 +149,7 @@ export class EntriesCommandService {
     entry.visibility = dto.visibility || 'private';
     entry.index = newIndex;
 
-    const updated = await this.entryRepository.save(entry);
+    const updated = await this.entryMentions.save(userId, entry);
 
     if (oldDate !== dto.date) {
       const remainingEntries = await this.entryRepository.find({

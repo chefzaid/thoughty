@@ -13,6 +13,7 @@ import { EntrySearchService } from './entry-search.service';
 import { EntryCalendarService } from './entry-calendar.service';
 import { EntryTaggingService } from './entry-tagging.service';
 import { EntryTaskListService } from './entry-task-list.service';
+import { EntryMentionsService } from './entry-mentions.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary]), UserConfigModule, AiModule],
@@ -27,7 +28,8 @@ import { EntryTaskListService } from './entry-task-list.service';
     EntryCalendarService,
     EntryTaggingService,
     EntryTaskListService,
+    EntryMentionsService,
   ],
-  exports: [EntriesService, EntryListCacheService, EntrySearchService],
+  exports: [EntriesService, EntryListCacheService, EntrySearchService, EntryMentionsService],
 })
 export class EntriesModule {}

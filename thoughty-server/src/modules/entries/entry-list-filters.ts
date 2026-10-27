@@ -16,7 +16,7 @@ export function parseEntryIdsFilter(ids: string | undefined): number[] {
 
 /**
  * Narrows a query on entries aliased `e` to the journal filters: the given IDs, the prepared search,
- * tags, visibility, diary, favorites, archive state, mood and life era. The caller scopes it to the
+ * tags, visibility, diary, favorites, archive state, mood, life era and person. The caller scopes it to the
  * writer and orders it; entries in the recycle bin are left out by the entity's soft delete.
  */
 export function applyEntryListFilters(
@@ -24,7 +24,7 @@ export function applyEntryListFilters(
   query: EntryFilterQueryDto,
   prepared: PreparedEntrySearch | null,
 ): void {
-  const { ids, tags, visibility, diaryId, favorites, archiveStatus, mood, eraId } = query;
+  const { ids, tags, visibility, diaryId, favorites, archiveStatus, mood, eraId, personId } = query;
 
   const entryIds = parseEntryIdsFilter(ids);
   if (entryIds.length > 0) {
@@ -86,5 +86,10 @@ export function applyEntryListFilters(
         AND e.date >= era.start_date AND (era.end_date IS NULL OR e.date <= era.end_date))`,
       { eraId },
     );
+  }
+
+  if (personId) {
+    // Links join only a writer's entries to their own people, so another writer's person matches nothing
+    qb.andWhere('EXISTS (SELECT 1 FROM entry_people ep WHERE ep.entry_id = e.id AND ep.person_id = :personId)', { personId });
   }
 }
