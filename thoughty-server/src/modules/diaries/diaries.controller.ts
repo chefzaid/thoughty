@@ -13,6 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { DiariesService } from './diaries.service';
 import { CreateDiaryDto, UpdateDiaryDto, DiaryResponseDto, ReorderDiariesDto } from './dto';
+import { SuccessResponseDto } from '@/modules/entries/dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 
@@ -57,13 +58,13 @@ export class DiariesController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a diary (entries moved to default diary)' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Diary deleted' })
+  @ApiResponse({ status: 200, description: 'Diary deleted', type: SuccessResponseDto })
   @ApiResponse({ status: 400, description: 'Cannot delete default diary' })
   @ApiResponse({ status: 404, description: 'Diary not found' })
   async delete(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.diariesService.delete(user.userId, id);
   }
 
@@ -81,11 +82,11 @@ export class DiariesController {
 
   @Patch('reorder')
   @ApiOperation({ summary: 'Reorder diaries' })
-  @ApiResponse({ status: 200, description: 'Diaries reordered' })
+  @ApiResponse({ status: 200, description: 'Diaries reordered', type: SuccessResponseDto })
   async reorder(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ReorderDiariesDto,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.diariesService.reorder(user.userId, dto.orderedIds);
   }
 }

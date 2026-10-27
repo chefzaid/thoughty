@@ -1993,14 +1993,45 @@ export interface components {
     schemas: {
         /**
          * @example {
+         *       "id": 1,
+         *       "email": "writer@example.com",
+         *       "username": "writer",
+         *       "authProvider": "local",
+         *       "emailVerified": true,
+         *       "twoFactorEnabled": true,
+         *       "isNewUser": true
+         *     }
+         */
+        AuthUserDto: {
+            /** @example 1 */
+            id: number;
+            /** @example writer@example.com */
+            email: string;
+            /** @example writer */
+            username: string;
+            /** @enum {string} */
+            authProvider: "local" | "google" | "keycloak";
+            emailVerified: boolean;
+            twoFactorEnabled: boolean;
+            /** @description Sent by sign-in flows that can create the account (OAuth); true when it did */
+            isNewUser?: boolean;
+        };
+        /**
+         * @example {
          *       "user": {
-         *         "example": "example"
+         *         "id": 1,
+         *         "email": "writer@example.com",
+         *         "username": "writer",
+         *         "authProvider": "local",
+         *         "emailVerified": true,
+         *         "twoFactorEnabled": true,
+         *         "isNewUser": true
          *       },
          *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
          *     }
          */
         AuthResponseDto: {
-            user: Record<string, never>;
+            user: components["schemas"]["AuthUserDto"];
             /** @description Short-lived access token; keep it in memory only. The refresh token is set as an httpOnly cookie scoped to /api/auth and never appears in a response body. */
             accessToken: string;
         };
@@ -2163,7 +2194,7 @@ export interface components {
          *       "username": "Daily Journal",
          *       "email": "user@example.com",
          *       "avatarUrl": "https://thoughty.example.com/callback",
-         *       "authProvider": "google_drive",
+         *       "authProvider": "local",
          *       "emailVerified": true,
          *       "twoFactorEnabled": true,
          *       "createdAt": "2026-06-24T10:00:00.000Z"
@@ -2174,7 +2205,8 @@ export interface components {
             username: string;
             email: string;
             avatarUrl?: string;
-            authProvider: string;
+            /** @enum {string} */
+            authProvider: "local" | "google" | "keycloak";
             emailVerified: boolean;
             twoFactorEnabled: boolean;
             /** Format: date-time */
@@ -2553,6 +2585,89 @@ export interface components {
             page?: number;
             entryId?: number;
             error?: string;
+        };
+        /**
+         * @example {
+         *       "month": "01",
+         *       "day": "15",
+         *       "year": 2026
+         *     }
+         */
+        EntryHighlightsDateDto: {
+            /** @example 01 */
+            month: string;
+            /** @example 15 */
+            day: string;
+            /** @example 2026 */
+            year: number;
+        };
+        /**
+         * @example {
+         *       "randomEntry": {
+         *         "id": 1,
+         *         "user_id": 1,
+         *         "diary_id": 1,
+         *         "date": "2026-06-24",
+         *         "index": 1,
+         *         "title": "Morning walk by the river",
+         *         "time_of_day": "08:30",
+         *         "mood": 4,
+         *         "feelings": [
+         *           "calm",
+         *           "grateful"
+         *         ],
+         *         "tags": [
+         *           "reflection"
+         *         ],
+         *         "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *         "format": "plain",
+         *         "visibility": "private",
+         *         "is_favorite": true,
+         *         "is_archived": true,
+         *         "is_pinned": true,
+         *         "diary_name": "Daily Journal",
+         *         "diary_icon": "journal",
+         *         "diary_color": "#2A9D8F",
+         *         "attachments": [
+         *           {
+         *             "id": 1,
+         *             "original_filename": "Daily Journal",
+         *             "stored_filename": "Daily Journal",
+         *             "mimetype": "example",
+         *             "size": 1,
+         *             "transcript": "example",
+         *             "transcribed_at": "2026-06-24T10:00:00.000Z"
+         *           }
+         *         ],
+         *         "created_at": "2026-06-24T10:00:00.000Z",
+         *         "search_matches": [
+         *           "morning run",
+         *           "swimming"
+         *         ]
+         *       },
+         *       "onThisDay": {
+         *         "1": []
+         *       },
+         *       "currentDate": {
+         *         "month": "01",
+         *         "day": "15",
+         *         "year": 2026
+         *       }
+         *     }
+         */
+        EntryHighlightsResponseDto: {
+            /** @description A random entry, or null when there is none */
+            randomEntry: components["schemas"]["EntryResponseDto"] | null;
+            /**
+             * @description Entries written on this day in earlier years, keyed by how many years ago
+             * @example {
+             *       "1": []
+             *     }
+             */
+            onThisDay: {
+                [key: string]: components["schemas"]["EntryResponseDto"][];
+            };
+            currentDate: components["schemas"]["EntryHighlightsDateDto"];
         };
         /**
          * @example {
@@ -3096,7 +3211,7 @@ export interface components {
         OpenRouterCredentialStatusDto: {
             hasPersonalKey: boolean;
             /** @example ...0b855d */
-            keyHint?: Record<string, never> | null;
+            keyHint: string | null;
             /** @enum {string} */
             source: "personal" | "server" | "none";
             aiAvailable: boolean;
@@ -3115,36 +3230,28 @@ export interface components {
         };
         /**
          * @example {
-         *       "label": {
-         *         "example": "example"
-         *       },
+         *       "label": "example",
          *       "usage": 1,
          *       "usageDaily": 1,
          *       "usageWeekly": 1,
          *       "usageMonthly": 6,
-         *       "limit": {
-         *         "example": "example"
-         *       },
-         *       "limitRemaining": {
-         *         "example": "example"
-         *       },
+         *       "limit": 1,
+         *       "limitRemaining": 1,
          *       "limitReset": "daily",
-         *       "expiresAt": {
-         *         "example": "2026-06-24T10:00:00.000Z"
-         *       }
+         *       "expiresAt": "2026-06-24T10:00:00.000Z"
          *     }
          */
         OpenRouterProviderUsageDto: {
-            label?: Record<string, never> | null;
+            label: string | null;
             usage: number;
             usageDaily: number;
             usageWeekly: number;
             usageMonthly: number;
-            limit?: Record<string, never> | null;
-            limitRemaining?: Record<string, never> | null;
+            limit: number | null;
+            limitRemaining: number | null;
             /** @enum {string|null} */
-            limitReset?: "daily" | "weekly" | "monthly" | null;
-            expiresAt?: Record<string, never> | null;
+            limitReset: "daily" | "weekly" | "monthly" | null;
+            expiresAt: string | null;
         };
         /**
          * @example {
@@ -3169,23 +3276,15 @@ export interface components {
         /**
          * @example {
          *       "provider": {
-         *         "label": {
-         *           "example": "example"
-         *         },
+         *         "label": "example",
          *         "usage": 1,
          *         "usageDaily": 1,
          *         "usageWeekly": 1,
          *         "usageMonthly": 6,
-         *         "limit": {
-         *           "example": "example"
-         *         },
-         *         "limitRemaining": {
-         *           "example": "example"
-         *         },
+         *         "limit": 1,
+         *         "limitRemaining": 1,
          *         "limitReset": "daily",
-         *         "expiresAt": {
-         *           "example": "2026-06-24T10:00:00.000Z"
-         *         }
+         *         "expiresAt": "2026-06-24T10:00:00.000Z"
          *       },
          *       "thoughty": {
          *         "promptTokens": 1,
@@ -3294,9 +3393,7 @@ export interface components {
          *       "id": 1,
          *       "date": "2026-07-31",
          *       "index": 1,
-         *       "diaryId": {
-         *         "example": "example"
-         *       },
+         *       "diaryId": 1,
          *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *       "tags": [
          *         "reflection"
@@ -3308,7 +3405,7 @@ export interface components {
             /** @example 2026-07-31 */
             date: string;
             index: number;
-            diaryId?: Record<string, never> | null;
+            diaryId: number | null;
             /** @description Bounded entry preview */
             content: string;
             tags: string[];
@@ -3322,9 +3419,7 @@ export interface components {
          *           "id": 1,
          *           "date": "2026-07-31",
          *           "index": 1,
-         *           "diaryId": {
-         *             "example": "example"
-         *           },
+         *           "diaryId": 1,
          *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *           "tags": [
          *             "reflection"
@@ -3353,9 +3448,7 @@ export interface components {
          *               "id": 1,
          *               "date": "2026-07-31",
          *               "index": 1,
-         *               "diaryId": {
-         *                 "example": "example"
-         *               },
+         *               "diaryId": 1,
          *               "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *               "tags": [
          *                 "reflection"
@@ -3571,9 +3664,7 @@ export interface components {
          *       "userId": 1,
          *       "name": "Daily Journal",
          *       "icon": "journal",
-         *       "color": {
-         *         "example": "#2A9D8F"
-         *       },
+         *       "color": "#2A9D8F",
          *       "visibility": "private",
          *       "isDefault": true,
          *       "position": 1,
@@ -3587,8 +3678,13 @@ export interface components {
             userId: number;
             name: string;
             icon: string;
-            color?: Record<string, never>;
-            visibility: string;
+            /** @example #2A9D8F */
+            color: string | null;
+            /**
+             * @example private
+             * @enum {string}
+             */
+            visibility: "public" | "private";
             isDefault: boolean;
             position: number;
             /**
@@ -4387,20 +4483,92 @@ export interface components {
         };
         /**
          * @example {
-         *       "entries": [
+         *       "date": "2026-10-21",
+         *       "index": 1,
+         *       "title": "June reflections",
+         *       "timeOfDay": "08:30",
+         *       "mood": 1,
+         *       "feelings": [
          *         "example"
+         *       ],
+         *       "tags": [
+         *         "reflection"
+         *       ],
+         *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *       "format": "plain",
+         *       "visibility": "public",
+         *       "diaryName": "Daily Journal"
+         *     }
+         */
+        PreviewEntryDto: {
+            /** @example 2026-10-21 */
+            date: string;
+            /** @example 1 */
+            index: number;
+            title?: string;
+            /**
+             * @description Time of day (HH:MM)
+             * @example 08:30
+             */
+            timeOfDay?: string;
+            mood?: number;
+            feelings?: string[];
+            tags: string[];
+            content: string;
+            /** @enum {string} */
+            format: "plain" | "markdown";
+            /** @enum {string} */
+            visibility?: "public" | "private";
+            /** @description The diary the file names for this entry */
+            diaryName?: string;
+        };
+        /**
+         * @example {
+         *       "date": "2026-10-21",
+         *       "content": "Today I wrote a thoughtful journal entry about focus and calm."
+         *     }
+         */
+        PreviewDuplicateDto: {
+            /** @example 2026-10-21 */
+            date: string;
+            /** @description The first 100 characters of the entry */
+            content: string;
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "date": "2026-10-21",
+         *           "index": 1,
+         *           "title": "June reflections",
+         *           "timeOfDay": "08:30",
+         *           "mood": 1,
+         *           "feelings": [
+         *             "example"
+         *           ],
+         *           "tags": [
+         *             "reflection"
+         *           ],
+         *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *           "format": "plain",
+         *           "visibility": "public",
+         *           "diaryName": "Daily Journal"
+         *         }
          *       ],
          *       "totalCount": 3,
          *       "duplicates": [
-         *         "example"
+         *         {
+         *           "date": "2026-10-21",
+         *           "content": "Today I wrote a thoughtful journal entry about focus and calm."
+         *         }
          *       ],
          *       "duplicateCount": 3
          *     }
          */
         PreviewResponseDto: {
-            entries: string[];
+            entries: components["schemas"]["PreviewEntryDto"][];
             totalCount: number;
-            duplicates: string[];
+            duplicates: components["schemas"]["PreviewDuplicateDto"][];
             duplicateCount: number;
         };
         /**
@@ -6460,7 +6628,13 @@ export interface operations {
                     /**
                      * @example {
                      *       "user": {
-                     *         "example": "example"
+                     *         "id": 1,
+                     *         "email": "writer@example.com",
+                     *         "username": "writer",
+                     *         "authProvider": "local",
+                     *         "emailVerified": true,
+                     *         "twoFactorEnabled": true,
+                     *         "isNewUser": true
                      *       },
                      *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                      *     }
@@ -6533,7 +6707,13 @@ export interface operations {
                     /**
                      * @example {
                      *       "user": {
-                     *         "example": "example"
+                     *         "id": 1,
+                     *         "email": "writer@example.com",
+                     *         "username": "writer",
+                     *         "authProvider": "local",
+                     *         "emailVerified": true,
+                     *         "twoFactorEnabled": true,
+                     *         "isNewUser": true
                      *       },
                      *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
                      *       "twoFactorRequired": true,
@@ -6591,7 +6771,13 @@ export interface operations {
                     /**
                      * @example {
                      *       "user": {
-                     *         "example": "example"
+                     *         "id": 1,
+                     *         "email": "writer@example.com",
+                     *         "username": "writer",
+                     *         "authProvider": "local",
+                     *         "emailVerified": true,
+                     *         "twoFactorEnabled": true,
+                     *         "isNewUser": true
                      *       },
                      *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                      *     }
@@ -6808,7 +6994,13 @@ export interface operations {
                     /**
                      * @example {
                      *       "user": {
-                     *         "example": "example"
+                     *         "id": 1,
+                     *         "email": "writer@example.com",
+                     *         "username": "writer",
+                     *         "authProvider": "local",
+                     *         "emailVerified": true,
+                     *         "twoFactorEnabled": true,
+                     *         "isNewUser": true
                      *       },
                      *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                      *     }
@@ -6889,7 +7081,13 @@ export interface operations {
                     /**
                      * @example {
                      *       "user": {
-                     *         "example": "example"
+                     *         "id": 1,
+                     *         "email": "writer@example.com",
+                     *         "username": "writer",
+                     *         "authProvider": "local",
+                     *         "emailVerified": true,
+                     *         "twoFactorEnabled": true,
+                     *         "isNewUser": true
                      *       },
                      *       "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                      *     }
@@ -7125,7 +7323,7 @@ export interface operations {
                      *       "username": "Daily Journal",
                      *       "email": "user@example.com",
                      *       "avatarUrl": "https://thoughty.example.com/callback",
-                     *       "authProvider": "google_drive",
+                     *       "authProvider": "local",
                      *       "emailVerified": true,
                      *       "twoFactorEnabled": true,
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
@@ -7754,7 +7952,63 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "randomEntry": {
+                     *         "id": 1,
+                     *         "user_id": 1,
+                     *         "diary_id": 1,
+                     *         "date": "2026-06-24",
+                     *         "index": 1,
+                     *         "title": "Morning walk by the river",
+                     *         "time_of_day": "08:30",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm",
+                     *           "grateful"
+                     *         ],
+                     *         "tags": [
+                     *           "reflection"
+                     *         ],
+                     *         "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                     *         "format": "plain",
+                     *         "visibility": "private",
+                     *         "is_favorite": true,
+                     *         "is_archived": true,
+                     *         "is_pinned": true,
+                     *         "diary_name": "Daily Journal",
+                     *         "diary_icon": "journal",
+                     *         "diary_color": "#2A9D8F",
+                     *         "attachments": [
+                     *           {
+                     *             "id": 1,
+                     *             "original_filename": "Daily Journal",
+                     *             "stored_filename": "Daily Journal",
+                     *             "mimetype": "example",
+                     *             "size": 1,
+                     *             "transcript": "example",
+                     *             "transcribed_at": "2026-06-24T10:00:00.000Z"
+                     *           }
+                     *         ],
+                     *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "search_matches": [
+                     *           "morning run",
+                     *           "swimming"
+                     *         ]
+                     *       },
+                     *       "onThisDay": {
+                     *         "1": []
+                     *       },
+                     *       "currentDate": {
+                     *         "month": "01",
+                     *         "day": "15",
+                     *         "year": 2026
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryHighlightsResponseDto"];
+                };
             };
         };
     };
@@ -8874,23 +9128,15 @@ export interface operations {
                     /**
                      * @example {
                      *       "provider": {
-                     *         "label": {
-                     *           "example": "example"
-                     *         },
+                     *         "label": "example",
                      *         "usage": 1,
                      *         "usageDaily": 1,
                      *         "usageWeekly": 1,
                      *         "usageMonthly": 6,
-                     *         "limit": {
-                     *           "example": "example"
-                     *         },
-                     *         "limitRemaining": {
-                     *           "example": "example"
-                     *         },
+                     *         "limit": 1,
+                     *         "limitRemaining": 1,
                      *         "limitReset": "daily",
-                     *         "expiresAt": {
-                     *           "example": "2026-06-24T10:00:00.000Z"
-                     *         }
+                     *         "expiresAt": "2026-06-24T10:00:00.000Z"
                      *       },
                      *       "thoughty": {
                      *         "promptTokens": 1,
@@ -9075,9 +9321,7 @@ export interface operations {
                      *               "id": 1,
                      *               "date": "2026-07-31",
                      *               "index": 1,
-                     *               "diaryId": {
-                     *                 "example": "example"
-                     *               },
+                     *               "diaryId": 1,
                      *               "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                      *               "tags": [
                      *                 "reflection"
@@ -9318,9 +9562,7 @@ export interface operations {
                      *         "userId": 1,
                      *         "name": "Daily Journal",
                      *         "icon": "journal",
-                     *         "color": {
-                     *           "example": "#2A9D8F"
-                     *         },
+                     *         "color": "#2A9D8F",
                      *         "visibility": "private",
                      *         "isDefault": true,
                      *         "position": 1,
@@ -9370,9 +9612,7 @@ export interface operations {
                      *       "userId": 1,
                      *       "name": "Daily Journal",
                      *       "icon": "journal",
-                     *       "color": {
-                     *         "example": "#2A9D8F"
-                     *       },
+                     *       "color": "#2A9D8F",
                      *       "visibility": "private",
                      *       "isDefault": true,
                      *       "position": 1,
@@ -9440,9 +9680,7 @@ export interface operations {
                      *       "userId": 1,
                      *       "name": "Daily Journal",
                      *       "icon": "journal",
-                     *       "color": {
-                     *         "example": "#2A9D8F"
-                     *       },
+                     *       "color": "#2A9D8F",
                      *       "visibility": "private",
                      *       "isDefault": true,
                      *       "position": 1,
@@ -9489,7 +9727,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
             /** @description Cannot delete default diary */
             400: {
@@ -9550,9 +9795,7 @@ export interface operations {
                      *       "userId": 1,
                      *       "name": "Daily Journal",
                      *       "icon": "journal",
-                     *       "color": {
-                     *         "example": "#2A9D8F"
-                     *       },
+                     *       "color": "#2A9D8F",
                      *       "visibility": "private",
                      *       "isDefault": true,
                      *       "position": 1,
@@ -9608,7 +9851,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
         };
     };
@@ -9929,11 +10179,30 @@ export interface operations {
                     /**
                      * @example {
                      *       "entries": [
-                     *         "example"
+                     *         {
+                     *           "date": "2026-10-21",
+                     *           "index": 1,
+                     *           "title": "June reflections",
+                     *           "timeOfDay": "08:30",
+                     *           "mood": 1,
+                     *           "feelings": [
+                     *             "example"
+                     *           ],
+                     *           "tags": [
+                     *             "reflection"
+                     *           ],
+                     *           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                     *           "format": "plain",
+                     *           "visibility": "public",
+                     *           "diaryName": "Daily Journal"
+                     *         }
                      *       ],
                      *       "totalCount": 3,
                      *       "duplicates": [
-                     *         "example"
+                     *         {
+                     *           "date": "2026-10-21",
+                     *           "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                     *         }
                      *       ],
                      *       "duplicateCount": 3
                      *     }

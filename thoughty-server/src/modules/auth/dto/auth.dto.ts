@@ -141,17 +141,33 @@ export class DeleteAccountDto {
   password?: string;
 }
 
-export class AuthResponseDto {
+/** The signed-in user a new session reports. */
+export class AuthUserDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: 'writer@example.com' })
+  email: string;
+
+  @ApiProperty({ example: 'writer' })
+  username: string;
+
+  @ApiProperty({ enum: ['local', 'google', 'keycloak'] })
+  authProvider: string;
+
   @ApiProperty()
-  user: {
-    id: number;
-    email: string;
-    username: string;
-    authProvider: string;
-    emailVerified: boolean;
-    twoFactorEnabled: boolean;
-    isNewUser?: boolean;
-  };
+  emailVerified: boolean;
+
+  @ApiProperty()
+  twoFactorEnabled: boolean;
+
+  @ApiPropertyOptional({ description: 'Sent by sign-in flows that can create the account (OAuth); true when it did' })
+  isNewUser?: boolean;
+}
+
+export class AuthResponseDto {
+  @ApiProperty({ type: AuthUserDto })
+  user: AuthUserDto;
 
   @ApiProperty({
     description:
@@ -224,7 +240,7 @@ export class UserResponseDto {
   @ApiPropertyOptional()
   avatarUrl?: string;
 
-  @ApiProperty()
+  @ApiProperty({ enum: ['local', 'google', 'keycloak'] })
   authProvider: string;
 
   @ApiProperty()

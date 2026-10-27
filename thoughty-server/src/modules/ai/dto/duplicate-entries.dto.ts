@@ -22,7 +22,7 @@ export class DuplicateEntryPreviewDto {
   @ApiProperty({ minimum: 1 })
   index!: number;
 
-  @ApiPropertyOptional({ minimum: 1, nullable: true })
+  @ApiProperty({ type: Number, minimum: 1, nullable: true })
   diaryId!: number | null;
 
   @ApiProperty({ description: 'Bounded entry preview' })

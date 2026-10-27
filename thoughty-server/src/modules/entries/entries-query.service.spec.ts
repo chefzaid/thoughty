@@ -250,11 +250,12 @@ describe('EntriesQueryService', () => {
   });
 
   it('returns random and on-this-day highlights grouped by years ago', async () => {
-    const randomQb = createQueryBuilder({ getOne: jest.fn().mockResolvedValue({ id: 99 }) });
+    const diary = { name: 'Travel', icon: '✈️', color: '#2A9D8F' };
+    const randomQb = createQueryBuilder({ getOne: jest.fn().mockResolvedValue({ id: 99, isFavorite: true, diary }) });
     const onThisDayQb = createQueryBuilder({
       getRawAndEntities: jest.fn().mockResolvedValue({
         raw: [{ entry_year: '2023' }, { entry_year: '2022' }],
-        entities: [{ id: 1 }, { id: 2 }],
+        entities: [{ id: 1, diary }, { id: 2, diary: null }],
       }),
     });
     entryRepository.createQueryBuilder
@@ -277,9 +278,27 @@ describe('EntriesQueryService', () => {
 
     expect(randomQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 3 });
     expect(onThisDayQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 3 });
-    expect(result.randomEntry).toEqual({ id: 99 });
-    expect(result.onThisDay).toEqual({ 1: [{ id: 1 }], 2: [{ id: 2 }] });
+    // Sent like every other entry: snake_case, with the diary the web shows on each card
+    expect(result.randomEntry).toEqual(
+      expect.objectContaining({ id: 99, is_favorite: true, diary_name: 'Travel', diary_icon: '✈️', diary_color: '#2A9D8F' }),
+    );
+    expect(result.randomEntry).not.toHaveProperty('diary');
+    expect(result.onThisDay).toEqual({
+      1: [expect.objectContaining({ id: 1, diary_name: 'Travel' })],
+      2: [expect.objectContaining({ id: 2, diary_name: undefined })],
+    });
     expect(result.currentDate).toEqual({ month: '01', day: '15', year: 2024 });
+  });
+
+  it('answers no random entry and no earlier years when the journal is empty', async () => {
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(createQueryBuilder({ getOne: jest.fn().mockResolvedValue(null) }))
+      .mockReturnValueOnce(createQueryBuilder({ getRawAndEntities: jest.fn().mockResolvedValue({ raw: [], entities: [] }) }));
+
+    const result = await service.getHighlights(7, {});
+
+    expect(result.randomEntry).toBeNull();
+    expect(result.onThisDay).toEqual({});
   });
 
   it('returns revisions ordered by date and throws when the entry is missing', async () => {

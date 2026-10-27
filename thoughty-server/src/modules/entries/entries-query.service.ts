@@ -3,7 +3,14 @@ import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry, EntryRevision } from '@/database/entities';
-import { GetEntriesQueryDto, GetHighlightsQueryDto, EntriesListResponseDto } from './dto';
+import {
+  GetEntriesQueryDto,
+  GetHighlightsQueryDto,
+  EntriesListResponseDto,
+  EntryHighlightsResponseDto,
+  EntryResponseDto,
+} from './dto';
+import { toEntryResponse } from './entry-response.mapper';
 import { addSameDayOrder } from '@/common/utils';
 import { applyEntryListFilters, parseEntryIdsFilter } from './entry-list-filters';
 import { EntrySearchService, type PreparedEntrySearch } from './entry-search.service';
@@ -104,35 +111,7 @@ export class EntriesQueryService {
 
     return {
       entries: entries.map((entry) => ({
-        id: entry.id,
-        user_id: entry.userId,
-        diary_id: entry.diaryId,
-        date: entry.date,
-        index: entry.index,
-        title: entry.title ?? null,
-        time_of_day: entry.timeOfDay ?? null,
-        mood: entry.mood ?? null,
-        feelings: entry.feelings ?? [],
-        tags: entry.tags,
-        content: entry.content,
-        format: entry.format,
-        visibility: entry.visibility,
-        is_favorite: entry.isFavorite,
-        is_archived: entry.isArchived,
-        is_pinned: entry.isPinned,
-        diary_name: entry.diary?.name,
-        diary_icon: entry.diary?.icon,
-        diary_color: entry.diary?.color ?? undefined,
-        created_at: entry.createdAt,
-        attachments: (entry.attachments || []).map((attachment) => ({
-          id: attachment.id,
-          original_filename: attachment.originalFilename,
-          stored_filename: attachment.storedFilename,
-          mimetype: attachment.mimetype,
-          size: attachment.size,
-          transcript: attachment.transcript ?? undefined,
-          transcribed_at: attachment.transcribedAt ?? undefined,
-        })),
+        ...toEntryResponse(entry),
         ...(searchMatches ? { search_matches: searchMatches.get(entry.id) ?? [] } : {}),
       })),
       total,
@@ -165,14 +144,7 @@ export class EntriesQueryService {
     return { dates: result.map((row) => row.date) };
   }
 
-  async getHighlights(
-    userId: number,
-    query: GetHighlightsQueryDto,
-  ): Promise<{
-    randomEntry: Entry | null;
-    onThisDay: Record<number, Entry[]>;
-    currentDate: { month: string; day: string; year: number };
-  }> {
+  async getHighlights(userId: number, query: GetHighlightsQueryDto): Promise<EntryHighlightsResponseDto> {
     const { diaryId } = query;
     const today = new Date();
     const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
@@ -209,7 +181,7 @@ export class EntriesQueryService {
       onThisDayQb.getRawAndEntities(),
     ]);
 
-    const onThisDay: Record<number, Entry[]> = {};
+    const onThisDay: Record<number, EntryResponseDto[]> = {};
     for (let index = 0; index < onThisDayEntries.entities.length; index++) {
       const entry = onThisDayEntries.entities[index];
       const entryYear = Number.parseInt(onThisDayEntries.raw[index].entry_year, 10);
@@ -218,11 +190,11 @@ export class EntriesQueryService {
       if (!onThisDay[yearsAgo]) {
         onThisDay[yearsAgo] = [];
       }
-      onThisDay[yearsAgo].push(entry);
+      onThisDay[yearsAgo].push(toEntryResponse(entry));
     }
 
     return {
-      randomEntry,
+      randomEntry: randomEntry ? toEntryResponse(randomEntry) : null,
       onThisDay,
       currentDate: { month: currentMonth, day: currentDay, year: currentYear },
     };

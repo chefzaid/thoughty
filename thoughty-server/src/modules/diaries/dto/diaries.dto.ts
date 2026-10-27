@@ -88,10 +88,10 @@ export class DiaryResponseDto {
   @ApiProperty()
   icon: string;
 
-  @ApiPropertyOptional()
-  color?: string | null;
+  @ApiProperty({ type: String, nullable: true, example: '#2A9D8F' })
+  color: string | null;
 
-  @ApiProperty()
+  @ApiProperty({ enum: ['public', 'private'], example: 'private' })
   visibility: 'public' | 'private';
 
   @ApiProperty()

@@ -6,6 +6,30 @@ import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
 import { EntryCalendarService } from './entry-calendar.service';
+import type { Entry } from '@/database/entities';
+
+/** A saved entry as TypeORM returns it, without the relations a mutation does not load. */
+const savedEntry = (fields: Partial<Entry> = {}) =>
+  ({
+    id: 1,
+    userId: 1,
+    diaryId: 2,
+    date: '2024-01-16',
+    index: 1,
+    title: null,
+    timeOfDay: null,
+    mood: null,
+    feelings: [],
+    tags: ['work'],
+    content: 'Updated content',
+    format: 'plain',
+    visibility: 'private',
+    isFavorite: false,
+    isArchived: false,
+    isPinned: false,
+    createdAt: new Date('2024-01-16T08:00:00Z'),
+    ...fields,
+  }) as Entry;
 
 describe('EntriesService', () => {
   let service: EntriesService;
@@ -140,7 +164,16 @@ describe('EntriesService', () => {
     const result = await service.getEntryByDate(1, { date: '2024-01-15', index: 1, limit: 10 });
 
     expect(entryLookupService.getEntryByDate).toHaveBeenCalledWith(1, { date: '2024-01-15', index: 1, limit: 10 });
-    expect(result).toBe(expected);
+    expect(result).toEqual(expected);
+  });
+
+  it('answers the entry it found in the API shape, not as the database entity', async () => {
+    entryLookupService.getEntryByDate.mockResolvedValue({ found: true, entry: savedEntry(), page: 2, entryId: 1 });
+
+    const result = await service.getEntryByDate(1, { date: '2024-01-16', index: 1, limit: 10 });
+
+    expect(result).toEqual({ found: true, page: 2, entryId: 1, entry: expect.objectContaining({ id: 1, diary_id: 2, is_favorite: false }) });
+    expect(result.entry).not.toHaveProperty('isFavorite');
   });
 
   it('delegates getBacklinks to EntryLookupService', async () => {
@@ -187,65 +220,65 @@ describe('EntriesService', () => {
 
   it('delegates update to EntriesCommandService', async () => {
     const dto = { text: 'Updated content', tags: ['work'], date: '2024-01-16' };
-    const expected = { success: true, entry: { id: 1 } };
-    entriesCommandService.update.mockResolvedValue(expected);
+    const saved = { success: true, entry: savedEntry() };
+    entriesCommandService.update.mockResolvedValue(saved);
 
     const result = await service.update(1, 1, dto as never);
 
     expect(entriesCommandService.update).toHaveBeenCalledWith(1, 1, dto);
     expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
-    expect(result).toBe(expected);
+    expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, content: 'Updated content' }) });
   });
 
   it('ticks a task through EntryTaskListService and clears the cached lists', async () => {
-    const expected = { success: true, entry: { id: 1, content: '- [x] Call' } };
-    entryTaskListService.setTask.mockResolvedValue(expected);
+    const saved = { success: true, entry: savedEntry({ content: '- [x] Call' }) };
+    entryTaskListService.setTask.mockResolvedValue(saved);
 
     const result = await service.setTask(1, 4, { line: 0, checked: true });
 
     expect(entryTaskListService.setTask).toHaveBeenCalledWith(1, 4, { line: 0, checked: true });
     expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
-    expect(result).toBe(expected);
+    expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, content: '- [x] Call' }) });
   });
 
   it('delegates updateVisibility to EntriesCommandService', async () => {
-    const expected = { success: true, entry: { id: 1, visibility: 'public' } };
-    entriesCommandService.updateVisibility.mockResolvedValue(expected);
+    const saved = { success: true, entry: savedEntry({ visibility: 'public' }) };
+    entriesCommandService.updateVisibility.mockResolvedValue(saved);
 
     const result = await service.updateVisibility(1, 1, 'public');
 
     expect(entriesCommandService.updateVisibility).toHaveBeenCalledWith(1, 1, 'public');
-    expect(result).toBe(expected);
+    expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, visibility: 'public' }) });
   });
 
   it('delegates toggleFavorite to EntriesCommandService', async () => {
-    const expected = { success: true, entry: { id: 1, isFavorite: true } };
-    entriesCommandService.toggleFavorite.mockResolvedValue(expected);
+    const saved = { success: true, entry: savedEntry({ isFavorite: true }) };
+    entriesCommandService.toggleFavorite.mockResolvedValue(saved);
 
     const result = await service.toggleFavorite(1, 1, true);
 
     expect(entriesCommandService.toggleFavorite).toHaveBeenCalledWith(1, 1, true);
-    expect(result).toBe(expected);
+    expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, is_favorite: true }) });
   });
 
   it('delegates toggleArchived to EntriesCommandService', async () => {
-    const expected = { success: true, entry: { id: 1, isArchived: true } };
-    entriesCommandService.toggleArchived.mockResolvedValue(expected);
+    const saved = { success: true, entry: savedEntry({ isArchived: true }) };
+    entriesCommandService.toggleArchived.mockResolvedValue(saved);
 
     const result = await service.toggleArchived(1, 1, true);
 
     expect(entriesCommandService.toggleArchived).toHaveBeenCalledWith(1, 1, true);
-    expect(result).toBe(expected);
+    expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, is_archived: true }) });
   });
 
   it('delegates togglePinned to EntriesCommandService', async () => {
-    const expected = { success: true, entry: { id: 1, isPinned: true } };
-    entriesCommandService.togglePinned.mockResolvedValue(expected);
+    const saved = { success: true, entry: savedEntry({ isPinned: true }) };
+    entriesCommandService.togglePinned.mockResolvedValue(saved);
 
     const result = await service.togglePinned(1, 1, true);
 
     expect(entriesCommandService.togglePinned).toHaveBeenCalledWith(1, 1, true);
-    expect(result).toBe(expected);
+    expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, is_pinned: true }) });
   });
 
   it('delegates deleteAll to EntriesCommandService', async () => {

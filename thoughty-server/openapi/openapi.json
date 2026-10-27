@@ -60,7 +60,13 @@
                 },
                 "example": {
                   "user": {
-                    "example": "example"
+                    "id": 1,
+                    "email": "writer@example.com",
+                    "username": "writer",
+                    "authProvider": "local",
+                    "emailVerified": true,
+                    "twoFactorEnabled": true,
+                    "isNewUser": true
                   },
                   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
@@ -142,7 +148,13 @@
                 },
                 "example": {
                   "user": {
-                    "example": "example"
+                    "id": 1,
+                    "email": "writer@example.com",
+                    "username": "writer",
+                    "authProvider": "local",
+                    "emailVerified": true,
+                    "twoFactorEnabled": true,
+                    "isNewUser": true
                   },
                   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
                   "twoFactorRequired": true,
@@ -203,7 +215,13 @@
                 },
                 "example": {
                   "user": {
-                    "example": "example"
+                    "id": 1,
+                    "email": "writer@example.com",
+                    "username": "writer",
+                    "authProvider": "local",
+                    "emailVerified": true,
+                    "twoFactorEnabled": true,
+                    "isNewUser": true
                   },
                   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
@@ -448,7 +466,13 @@
                 },
                 "example": {
                   "user": {
-                    "example": "example"
+                    "id": 1,
+                    "email": "writer@example.com",
+                    "username": "writer",
+                    "authProvider": "local",
+                    "emailVerified": true,
+                    "twoFactorEnabled": true,
+                    "isNewUser": true
                   },
                   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
@@ -533,7 +557,13 @@
                 },
                 "example": {
                   "user": {
-                    "example": "example"
+                    "id": 1,
+                    "email": "writer@example.com",
+                    "username": "writer",
+                    "authProvider": "local",
+                    "emailVerified": true,
+                    "twoFactorEnabled": true,
+                    "isNewUser": true
                   },
                   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
                 }
@@ -805,7 +835,7 @@
                   "username": "Daily Journal",
                   "email": "user@example.com",
                   "avatarUrl": "https://thoughty.example.com/callback",
-                  "authProvider": "google_drive",
+                  "authProvider": "local",
                   "emailVerified": true,
                   "twoFactorEnabled": true,
                   "createdAt": "2026-06-24T10:00:00.000Z"
@@ -1718,7 +1748,66 @@
         ],
         "responses": {
           "200": {
-            "description": "Highlights data"
+            "description": "Highlights data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryHighlightsResponseDto"
+                },
+                "example": {
+                  "randomEntry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1,
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
+                  },
+                  "onThisDay": {
+                    "1": []
+                  },
+                  "currentDate": {
+                    "month": "01",
+                    "day": "15",
+                    "year": 2026
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3069,23 +3158,15 @@
                 },
                 "example": {
                   "provider": {
-                    "label": {
-                      "example": "example"
-                    },
+                    "label": "example",
                     "usage": 1,
                     "usageDaily": 1,
                     "usageWeekly": 1,
                     "usageMonthly": 6,
-                    "limit": {
-                      "example": "example"
-                    },
-                    "limitRemaining": {
-                      "example": "example"
-                    },
+                    "limit": 1,
+                    "limitRemaining": 1,
                     "limitReset": "daily",
-                    "expiresAt": {
-                      "example": "2026-06-24T10:00:00.000Z"
-                    }
+                    "expiresAt": "2026-06-24T10:00:00.000Z"
                   },
                   "thoughty": {
                     "promptTokens": 1,
@@ -3309,9 +3390,7 @@
                           "id": 1,
                           "date": "2026-07-31",
                           "index": 1,
-                          "diaryId": {
-                            "example": "example"
-                          },
+                          "diaryId": 1,
                           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                           "tags": [
                             "reflection"
@@ -3604,9 +3683,7 @@
                     "userId": 1,
                     "name": "Daily Journal",
                     "icon": "journal",
-                    "color": {
-                      "example": "#2A9D8F"
-                    },
+                    "color": "#2A9D8F",
                     "visibility": "private",
                     "isDefault": true,
                     "position": 1,
@@ -3663,9 +3740,7 @@
                   "userId": 1,
                   "name": "Daily Journal",
                   "icon": "journal",
-                  "color": {
-                    "example": "#2A9D8F"
-                  },
+                  "color": "#2A9D8F",
                   "visibility": "private",
                   "isDefault": true,
                   "position": 1,
@@ -3748,9 +3823,7 @@
                   "userId": 1,
                   "name": "Daily Journal",
                   "icon": "journal",
-                  "color": {
-                    "example": "#2A9D8F"
-                  },
+                  "color": "#2A9D8F",
                   "visibility": "private",
                   "isDefault": true,
                   "position": 1,
@@ -3802,7 +3875,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Diary deleted"
+            "description": "Diary deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           },
           "400": {
             "description": "Cannot delete default diary",
@@ -3874,9 +3957,7 @@
                   "userId": 1,
                   "name": "Daily Journal",
                   "icon": "journal",
-                  "color": {
-                    "example": "#2A9D8F"
-                  },
+                  "color": "#2A9D8F",
                   "visibility": "private",
                   "isDefault": true,
                   "position": 1,
@@ -3936,7 +4017,17 @@
         },
         "responses": {
           "200": {
-            "description": "Diaries reordered"
+            "description": "Diaries reordered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4340,11 +4431,30 @@
                 },
                 "example": {
                   "entries": [
-                    "example"
+                    {
+                      "date": "2026-10-21",
+                      "index": 1,
+                      "title": "June reflections",
+                      "timeOfDay": "08:30",
+                      "mood": 1,
+                      "feelings": [
+                        "example"
+                      ],
+                      "tags": [
+                        "reflection"
+                      ],
+                      "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                      "format": "plain",
+                      "visibility": "public",
+                      "diaryName": "Daily Journal"
+                    }
                   ],
                   "totalCount": 3,
                   "duplicates": [
-                    "example"
+                    {
+                      "date": "2026-10-21",
+                      "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                    }
                   ],
                   "duplicateCount": 3
                 }
@@ -8829,11 +8939,63 @@
       }
     },
     "schemas": {
+      "AuthUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 1
+          },
+          "email": {
+            "type": "string",
+            "example": "writer@example.com"
+          },
+          "username": {
+            "type": "string",
+            "example": "writer"
+          },
+          "authProvider": {
+            "type": "string",
+            "enum": [
+              "local",
+              "google",
+              "keycloak"
+            ]
+          },
+          "emailVerified": {
+            "type": "boolean"
+          },
+          "twoFactorEnabled": {
+            "type": "boolean"
+          },
+          "isNewUser": {
+            "type": "boolean",
+            "description": "Sent by sign-in flows that can create the account (OAuth); true when it did"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "username",
+          "authProvider",
+          "emailVerified",
+          "twoFactorEnabled"
+        ],
+        "example": {
+          "id": 1,
+          "email": "writer@example.com",
+          "username": "writer",
+          "authProvider": "local",
+          "emailVerified": true,
+          "twoFactorEnabled": true,
+          "isNewUser": true
+        }
+      },
       "AuthResponseDto": {
         "type": "object",
         "properties": {
           "user": {
-            "type": "object"
+            "$ref": "#/components/schemas/AuthUserDto"
           },
           "accessToken": {
             "type": "string",
@@ -8846,7 +9008,13 @@
         ],
         "example": {
           "user": {
-            "example": "example"
+            "id": 1,
+            "email": "writer@example.com",
+            "username": "writer",
+            "authProvider": "local",
+            "emailVerified": true,
+            "twoFactorEnabled": true,
+            "isNewUser": true
           },
           "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         }
@@ -9114,7 +9282,12 @@
             "type": "string"
           },
           "authProvider": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "local",
+              "google",
+              "keycloak"
+            ]
           },
           "emailVerified": {
             "type": "boolean"
@@ -9141,7 +9314,7 @@
           "username": "Daily Journal",
           "email": "user@example.com",
           "avatarUrl": "https://thoughty.example.com/callback",
-          "authProvider": "google_drive",
+          "authProvider": "local",
           "emailVerified": true,
           "twoFactorEnabled": true,
           "createdAt": "2026-06-24T10:00:00.000Z"
@@ -9757,6 +9930,121 @@
           "page": 1,
           "entryId": 1,
           "error": "example"
+        }
+      },
+      "EntryHighlightsDateDto": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "example": "01"
+          },
+          "day": {
+            "type": "string",
+            "example": "15"
+          },
+          "year": {
+            "type": "number",
+            "example": 2026
+          }
+        },
+        "required": [
+          "month",
+          "day",
+          "year"
+        ],
+        "example": {
+          "month": "01",
+          "day": "15",
+          "year": 2026
+        }
+      },
+      "EntryHighlightsResponseDto": {
+        "type": "object",
+        "properties": {
+          "randomEntry": {
+            "nullable": true,
+            "description": "A random entry, or null when there is none",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryResponseDto"
+              }
+            ]
+          },
+          "onThisDay": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/EntryResponseDto"
+              }
+            },
+            "description": "Entries written on this day in earlier years, keyed by how many years ago",
+            "example": {
+              "1": []
+            }
+          },
+          "currentDate": {
+            "$ref": "#/components/schemas/EntryHighlightsDateDto"
+          }
+        },
+        "required": [
+          "randomEntry",
+          "onThisDay",
+          "currentDate"
+        ],
+        "example": {
+          "randomEntry": {
+            "id": 1,
+            "user_id": 1,
+            "diary_id": 1,
+            "date": "2026-06-24",
+            "index": 1,
+            "title": "Morning walk by the river",
+            "time_of_day": "08:30",
+            "mood": 4,
+            "feelings": [
+              "calm",
+              "grateful"
+            ],
+            "tags": [
+              "reflection"
+            ],
+            "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+            "format": "plain",
+            "visibility": "private",
+            "is_favorite": true,
+            "is_archived": true,
+            "is_pinned": true,
+            "diary_name": "Daily Journal",
+            "diary_icon": "journal",
+            "diary_color": "#2A9D8F",
+            "attachments": [
+              {
+                "id": 1,
+                "original_filename": "Daily Journal",
+                "stored_filename": "Daily Journal",
+                "mimetype": "example",
+                "size": 1,
+                "transcript": "example",
+                "transcribed_at": "2026-06-24T10:00:00.000Z"
+              }
+            ],
+            "created_at": "2026-06-24T10:00:00.000Z",
+            "search_matches": [
+              "morning run",
+              "swimming"
+            ]
+          },
+          "onThisDay": {
+            "1": []
+          },
+          "currentDate": {
+            "month": "01",
+            "day": "15",
+            "year": 2026
+          }
         }
       },
       "TagUsageDto": {
@@ -10667,7 +10955,7 @@
             "type": "boolean"
           },
           "keyHint": {
-            "type": "object",
+            "type": "string",
             "nullable": true,
             "example": "...0b855d"
           },
@@ -10685,6 +10973,7 @@
         },
         "required": [
           "hasPersonalKey",
+          "keyHint",
           "source",
           "aiAvailable"
         ],
@@ -10718,7 +11007,7 @@
         "type": "object",
         "properties": {
           "label": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "usage": {
@@ -10734,11 +11023,11 @@
             "type": "number"
           },
           "limit": {
-            "type": "object",
+            "type": "number",
             "nullable": true
           },
           "limitRemaining": {
-            "type": "object",
+            "type": "number",
             "nullable": true
           },
           "limitReset": {
@@ -10751,34 +11040,31 @@
             ]
           },
           "expiresAt": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           }
         },
         "required": [
+          "label",
           "usage",
           "usageDaily",
           "usageWeekly",
-          "usageMonthly"
+          "usageMonthly",
+          "limit",
+          "limitRemaining",
+          "limitReset",
+          "expiresAt"
         ],
         "example": {
-          "label": {
-            "example": "example"
-          },
+          "label": "example",
           "usage": 1,
           "usageDaily": 1,
           "usageWeekly": 1,
           "usageMonthly": 6,
-          "limit": {
-            "example": "example"
-          },
-          "limitRemaining": {
-            "example": "example"
-          },
+          "limit": 1,
+          "limitRemaining": 1,
           "limitReset": "daily",
-          "expiresAt": {
-            "example": "2026-06-24T10:00:00.000Z"
-          }
+          "expiresAt": "2026-06-24T10:00:00.000Z"
         }
       },
       "ThoughtyAiUsageDto": {
@@ -10841,23 +11127,15 @@
         ],
         "example": {
           "provider": {
-            "label": {
-              "example": "example"
-            },
+            "label": "example",
             "usage": 1,
             "usageDaily": 1,
             "usageWeekly": 1,
             "usageMonthly": 6,
-            "limit": {
-              "example": "example"
-            },
-            "limitRemaining": {
-              "example": "example"
-            },
+            "limit": 1,
+            "limitRemaining": 1,
             "limitReset": "daily",
-            "expiresAt": {
-              "example": "2026-06-24T10:00:00.000Z"
-            }
+            "expiresAt": "2026-06-24T10:00:00.000Z"
           },
           "thoughty": {
             "promptTokens": 1,
@@ -11027,7 +11305,7 @@
             "minimum": 1
           },
           "diaryId": {
-            "type": "object",
+            "type": "number",
             "minimum": 1,
             "nullable": true
           },
@@ -11046,6 +11324,7 @@
           "id",
           "date",
           "index",
+          "diaryId",
           "content",
           "tags"
         ],
@@ -11053,9 +11332,7 @@
           "id": 1,
           "date": "2026-07-31",
           "index": 1,
-          "diaryId": {
-            "example": "example"
-          },
+          "diaryId": 1,
           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
           "tags": [
             "reflection"
@@ -11094,9 +11371,7 @@
               "id": 1,
               "date": "2026-07-31",
               "index": 1,
-              "diaryId": {
-                "example": "example"
-              },
+              "diaryId": 1,
               "content": "Today I wrote a thoughtful journal entry about focus and calm.",
               "tags": [
                 "reflection"
@@ -11146,9 +11421,7 @@
                   "id": 1,
                   "date": "2026-07-31",
                   "index": 1,
-                  "diaryId": {
-                    "example": "example"
-                  },
+                  "diaryId": 1,
                   "content": "Today I wrote a thoughtful journal entry about focus and calm.",
                   "tags": [
                     "reflection"
@@ -11539,10 +11812,17 @@
             "type": "string"
           },
           "color": {
-            "type": "object"
+            "type": "string",
+            "nullable": true,
+            "example": "#2A9D8F"
           },
           "visibility": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "example": "private"
           },
           "isDefault": {
             "type": "boolean"
@@ -11574,6 +11854,7 @@
           "userId",
           "name",
           "icon",
+          "color",
           "visibility",
           "isDefault",
           "position",
@@ -11586,9 +11867,7 @@
           "userId": 1,
           "name": "Daily Journal",
           "icon": "journal",
-          "color": {
-            "example": "#2A9D8F"
-          },
+          "color": "#2A9D8F",
           "visibility": "private",
           "isDefault": true,
           "position": 1,
@@ -12745,13 +13024,117 @@
           "diaryId": 1
         }
       },
+      "PreviewEntryDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-10-21"
+          },
+          "index": {
+            "type": "number",
+            "example": 1
+          },
+          "title": {
+            "type": "string"
+          },
+          "timeOfDay": {
+            "type": "string",
+            "description": "Time of day (HH:MM)",
+            "example": "08:30"
+          },
+          "mood": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "feelings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "type": "string"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ]
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "diaryName": {
+            "type": "string",
+            "description": "The diary the file names for this entry"
+          }
+        },
+        "required": [
+          "date",
+          "index",
+          "tags",
+          "content",
+          "format"
+        ],
+        "example": {
+          "date": "2026-10-21",
+          "index": 1,
+          "title": "June reflections",
+          "timeOfDay": "08:30",
+          "mood": 1,
+          "feelings": [
+            "example"
+          ],
+          "tags": [
+            "reflection"
+          ],
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "format": "plain",
+          "visibility": "public",
+          "diaryName": "Daily Journal"
+        }
+      },
+      "PreviewDuplicateDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-10-21"
+          },
+          "content": {
+            "type": "string",
+            "description": "The first 100 characters of the entry"
+          }
+        },
+        "required": [
+          "date",
+          "content"
+        ],
+        "example": {
+          "date": "2026-10-21",
+          "content": "Today I wrote a thoughtful journal entry about focus and calm."
+        }
+      },
       "PreviewResponseDto": {
         "type": "object",
         "properties": {
           "entries": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/PreviewEntryDto"
             }
           },
           "totalCount": {
@@ -12760,7 +13143,7 @@
           "duplicates": {
             "type": "array",
             "items": {
-              "type": "string"
+              "$ref": "#/components/schemas/PreviewDuplicateDto"
             }
           },
           "duplicateCount": {
@@ -12775,11 +13158,30 @@
         ],
         "example": {
           "entries": [
-            "example"
+            {
+              "date": "2026-10-21",
+              "index": 1,
+              "title": "June reflections",
+              "timeOfDay": "08:30",
+              "mood": 1,
+              "feelings": [
+                "example"
+              ],
+              "tags": [
+                "reflection"
+              ],
+              "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+              "format": "plain",
+              "visibility": "public",
+              "diaryName": "Daily Journal"
+            }
           ],
           "totalCount": 3,
           "duplicates": [
-            "example"
+            {
+              "date": "2026-10-21",
+              "content": "Today I wrote a thoughtful journal entry about focus and calm."
+            }
           ],
           "duplicateCount": 3
         }

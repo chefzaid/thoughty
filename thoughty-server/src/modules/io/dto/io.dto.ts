@@ -107,25 +107,60 @@ export class ImportDto {
   diaryId?: number;
 }
 
-export class PreviewResponseDto {
+/** An entry read from the file, before it is imported. */
+export class PreviewEntryDto {
+  @ApiProperty({ example: '2026-10-21' })
+  date: string;
+
+  @ApiProperty({ example: 1 })
+  index: number;
+
+  @ApiPropertyOptional()
+  title?: string;
+
+  @ApiPropertyOptional({ description: 'Time of day (HH:MM)', example: '08:30' })
+  timeOfDay?: string;
+
+  @ApiPropertyOptional({ minimum: 1, maximum: 5 })
+  mood?: number;
+
+  @ApiPropertyOptional({ type: [String] })
+  feelings?: string[];
+
+  @ApiProperty({ type: [String] })
+  tags: string[];
+
   @ApiProperty()
-  entries: Array<{
-    date: string;
-    index: number;
-    title?: string;
-    timeOfDay?: string;
-    tags: string[];
-    content: string;
-  }>;
+  content: string;
+
+  @ApiProperty({ enum: ['plain', 'markdown'] })
+  format: 'plain' | 'markdown';
+
+  @ApiPropertyOptional({ enum: ['public', 'private'] })
+  visibility?: 'public' | 'private';
+
+  @ApiPropertyOptional({ description: 'The diary the file names for this entry' })
+  diaryName?: string;
+}
+
+/** An entry in the file that is already in the journal. */
+export class PreviewDuplicateDto {
+  @ApiProperty({ example: '2026-10-21' })
+  date: string;
+
+  @ApiProperty({ description: 'The first 100 characters of the entry' })
+  content: string;
+}
+
+export class PreviewResponseDto {
+  @ApiProperty({ type: [PreviewEntryDto] })
+  entries: PreviewEntryDto[];
 
   @ApiProperty()
   totalCount: number;
 
-  @ApiProperty()
-  duplicates: Array<{
-    date: string;
-    content: string;
-  }>;
+  @ApiProperty({ type: [PreviewDuplicateDto] })
+  duplicates: PreviewDuplicateDto[];
 
   @ApiProperty()
   duplicateCount: number;

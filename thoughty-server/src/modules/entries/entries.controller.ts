@@ -43,6 +43,7 @@ import {
   CountedMutationResponseDto,
   DeleteAllResponseDto,
   SuccessResponseDto,
+  EntryHighlightsResponseDto,
 } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
@@ -113,11 +114,11 @@ export class EntriesController {
 
   @Get('highlights')
   @ApiOperation({ summary: 'Get random thought and entries from this day in previous years' })
-  @ApiResponse({ status: 200, description: 'Highlights data' })
+  @ApiResponse({ status: 200, description: 'Highlights data', type: EntryHighlightsResponseDto })
   async getHighlights(
     @CurrentUser() user: AuthenticatedUser,
     @Query() query: GetHighlightsQueryDto,
-  ) {
+  ): Promise<EntryHighlightsResponseDto> {
     return this.entriesService.getHighlights(user.userId, query);
   }
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Entry, EntryRevision } from '@/database/entities';
+import { EntryRevision } from '@/database/entities';
 import {
   CreateEntryDto,
   UpdateEntryDto,
@@ -13,7 +13,11 @@ import {
   BulkOperationDto,
   EntriesListResponseDto,
   EntryBacklinksResponseDto,
+  EntryHighlightsResponseDto,
+  EntryLookupResponseDto,
+  EntryMutationResponseDto,
 } from './dto';
+import { toEntryResponse } from './entry-response.mapper';
 import { EntriesQueryService } from './entries-query.service';
 import { EntryLookupService } from './entry-lookup.service';
 import { EntriesCommandService } from './entries-command.service';
@@ -67,14 +71,9 @@ export class EntriesService {
   async getEntryByDate(
     userId: number,
     query: GetEntryByDateQueryDto,
-  ): Promise<{
-    found: boolean;
-    entry?: Entry;
-    page?: number;
-    entryId?: number;
-    error?: string;
-  }> {
-    return this.entryLookupService.getEntryByDate(userId, query);
+  ): Promise<EntryLookupResponseDto> {
+    const { entry, ...result } = await this.entryLookupService.getEntryByDate(userId, query);
+    return entry ? { ...result, entry: toEntryResponse(entry) } : result;
   }
 
   async getBacklinks(userId: number, entryId: number): Promise<EntryBacklinksResponseDto> {
@@ -91,70 +90,63 @@ export class EntriesService {
     userId: number,
     id: number,
     dto: UpdateEntryDto,
-  ): Promise<{ success: boolean; entry: Entry }> {
+  ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.update(userId, id, dto);
     this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
   async setTask(
     userId: number,
     id: number,
     dto: UpdateEntryTaskDto,
-  ): Promise<{ success: boolean; entry: Entry }> {
+  ): Promise<EntryMutationResponseDto> {
     const result = await this.entryTaskListService.setTask(userId, id, dto);
     this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
   async updateVisibility(
     userId: number,
     id: number,
     visibility: 'public' | 'private',
-  ): Promise<{ success: boolean; entry: Entry }> {
+  ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.updateVisibility(userId, id, visibility);
     this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
   async toggleFavorite(
     userId: number,
     id: number,
     isFavorite: boolean,
-  ): Promise<{ success: boolean; entry: Entry }> {
+  ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.toggleFavorite(userId, id, isFavorite);
     this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
   async toggleArchived(
     userId: number,
     id: number,
     isArchived: boolean,
-  ): Promise<{ success: boolean; entry: Entry }> {
+  ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.toggleArchived(userId, id, isArchived);
     this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
   async togglePinned(
     userId: number,
     id: number,
     isPinned: boolean,
-  ): Promise<{ success: boolean; entry: Entry }> {
+  ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.togglePinned(userId, id, isPinned);
     this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
-  async getHighlights(
-    userId: number,
-    query: GetHighlightsQueryDto,
-  ): Promise<{
-    randomEntry: Entry | null;
-    onThisDay: Record<number, Entry[]>;
-    currentDate: { month: string; day: string; year: number };
-  }> {
+  async getHighlights(userId: number, query: GetHighlightsQueryDto): Promise<EntryHighlightsResponseDto> {
     return this.entriesQueryService.getHighlights(userId, query);
   }
 

@@ -1,5 +1,5 @@
 // Response bodies of the entries API.
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional, getSchemaPath } from '@nestjs/swagger';
 import { MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
 
 export class EntryResponseDto {
@@ -74,6 +74,33 @@ export class EntryResponseDto {
     example: ['morning run', 'swimming'],
   })
   search_matches?: string[];
+}
+
+export class EntryHighlightsDateDto {
+  @ApiProperty({ example: '01' })
+  month: string;
+
+  @ApiProperty({ example: '15' })
+  day: string;
+
+  @ApiProperty({ example: 2026 })
+  year: number;
+}
+
+export class EntryHighlightsResponseDto {
+  @ApiProperty({ type: EntryResponseDto, nullable: true, description: 'A random entry, or null when there is none' })
+  randomEntry: EntryResponseDto | null;
+
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'array', items: { $ref: getSchemaPath(EntryResponseDto) } },
+    description: 'Entries written on this day in earlier years, keyed by how many years ago',
+    example: { 1: [] },
+  })
+  onThisDay: Record<number, EntryResponseDto[]>;
+
+  @ApiProperty({ type: EntryHighlightsDateDto })
+  currentDate: EntryHighlightsDateDto;
 }
 
 export class EntriesListResponseDto {

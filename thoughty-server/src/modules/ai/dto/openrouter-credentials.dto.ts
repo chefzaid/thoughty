@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsString, Matches, MaxLength, MinLength } from 'class-validator';
 
@@ -20,22 +20,22 @@ export class SaveOpenRouterCredentialDto {
 
 export class OpenRouterCredentialStatusDto {
   @ApiProperty() hasPersonalKey!: boolean;
-  @ApiPropertyOptional({ nullable: true, example: '...0b855d' }) keyHint!: string | null;
+  @ApiProperty({ type: String, nullable: true, example: '...0b855d' }) keyHint!: string | null;
   @ApiProperty({ enum: ['personal', 'server', 'none'] }) source!: 'personal' | 'server' | 'none';
   @ApiProperty() aiAvailable!: boolean;
 }
 
 export class OpenRouterProviderUsageDto {
-  @ApiPropertyOptional({ nullable: true }) label!: string | null;
+  @ApiProperty({ type: String, nullable: true }) label!: string | null;
   @ApiProperty() usage!: number;
   @ApiProperty() usageDaily!: number;
   @ApiProperty() usageWeekly!: number;
   @ApiProperty() usageMonthly!: number;
-  @ApiPropertyOptional({ nullable: true }) limit!: number | null;
-  @ApiPropertyOptional({ nullable: true }) limitRemaining!: number | null;
-  @ApiPropertyOptional({ nullable: true, enum: ['daily', 'weekly', 'monthly'] })
+  @ApiProperty({ type: Number, nullable: true }) limit!: number | null;
+  @ApiProperty({ type: Number, nullable: true }) limitRemaining!: number | null;
+  @ApiProperty({ nullable: true, enum: ['daily', 'weekly', 'monthly'] })
   limitReset!: 'daily' | 'weekly' | 'monthly' | null;
-  @ApiPropertyOptional({ nullable: true }) expiresAt!: string | null;
+  @ApiProperty({ type: String, nullable: true }) expiresAt!: string | null;
 }
 
 export class ThoughtyAiUsageDto {
