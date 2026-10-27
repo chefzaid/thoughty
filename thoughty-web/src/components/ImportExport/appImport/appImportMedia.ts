@@ -21,6 +21,11 @@ export function fileExtension(name: string): string {
   return dot > 0 ? name.slice(dot + 1).toLowerCase() : '';
 }
 
+/** The name a file is stored under: photos re-encoded as JPEG take the `.jpg` extension. */
+export function storedMediaName(media: { readonly name: string; readonly convert: boolean }): string {
+  return media.convert ? `${media.name.replace(/\.[^.]+$/, '')}.jpg` : media.name;
+}
+
 export function baseName(path: string): string {
   return path.slice(path.lastIndexOf('/') + 1);
 }

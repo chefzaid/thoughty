@@ -1,6 +1,6 @@
 import type { AppImportEntryRequest, AppImportService, ImportResult } from '../../../services/api/appImportService';
 import { readZipFile } from '../../../utils/zipReader';
-import { MAX_ATTACHMENT_BYTES } from './appImportMedia';
+import { MAX_ATTACHMENT_BYTES, storedMediaName } from './appImportMedia';
 import type { AppExport, ImportedEntry, ImportedMedia } from './appImportTypes';
 import { shrinkPhoto } from './shrinkPhoto';
 
@@ -154,8 +154,7 @@ async function prepareFile(archive: Blob, media: ImportedMedia): Promise<File | 
     if (!jpeg) {
       return media.convert ? 'unreadable' : 'tooLarge';
     }
-    const name = media.name.replace(/\.[^.]+$/, '') + '.jpg';
-    return new File([jpeg], media.convert ? name : media.name, { type: 'image/jpeg' });
+    return new File([jpeg], storedMediaName(media), { type: 'image/jpeg' });
   }
   if (blob.size > MAX_ATTACHMENT_BYTES) {
     return 'tooLarge';
@@ -217,7 +216,7 @@ export async function runAppImport(
       }
       const attachedNames = new Set(saved.attachedFiles);
       for (const media of entry.media) {
-        if (!attachedNames.has(media.name) && !attachedNames.has(media.name.replace(/\.[^.]+$/, '.jpg'))) {
+        if (!attachedNames.has(media.name) && !attachedNames.has(storedMediaName({ ...media, convert: true }))) {
           pendingFiles.push({ entryId: saved.entryId, media });
         }
       }

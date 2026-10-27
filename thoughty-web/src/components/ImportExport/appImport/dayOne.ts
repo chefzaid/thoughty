@@ -1,8 +1,10 @@
 import type { ZipEntry } from '../../../utils/zipReader';
-import { attachmentTypeFor, cleanSourceId, cleanTags, cleanTitle, fileExtension, localDate, localTime } from './appImportMedia';
+import { inlineImageMarkdown } from '../../../utils/inlineImages';
+import { attachmentTypeFor, cleanSourceId, cleanTags, cleanTitle, fileExtension, localDate, localTime, storedMediaName } from './appImportMedia';
 import type { ImportedEntry, ImportedMedia } from './appImportTypes';
 
 interface DayOneMedia {
+  identifier?: unknown;
   md5?: unknown;
   type?: unknown;
   format?: unknown;
@@ -33,8 +35,8 @@ const MEDIA_FOLDERS = [
   ['pdfAttachments', 'pdfs'],
 ] as const;
 
-// Inline references to photos and recordings, which become attachments instead
-const MOMENT_REFERENCE = /!\[[^\]]*\]\(dayone-moment:\/*[^)]*\)/g;
+// Inline references to photos and recordings: `dayone-moment://<identifier>`, `dayone-moment:/audio/<identifier>`
+const MOMENT_REFERENCE = /!\[([^\]]*)\]\(dayone-moment:\/*(?:([a-z]+)\/)?([^)/]*)\)/g;
 
 export function isDayOneJournal(data: unknown): data is { entries: DayOneEntry[] } {
   if (!data || typeof data !== 'object' || !Array.isArray((data as { entries?: unknown }).entries)) {
@@ -80,15 +82,28 @@ export function splitDayOneTitle(text: string): { title?: string; content: strin
   return { title, content: text.slice(match[0].length).trim() };
 }
 
-export function cleanDayOneText(text: string): string {
-  return unescapeDayOneMarkdown(text.replaceAll(MOMENT_REFERENCE, ''))
+/**
+ * The text without Day One's escapes and gaps. An inline photo stays where it is, naming the file
+ * the import sends next (`photos` maps Day One's identifiers to those names); other inline
+ * references (recordings, videos, missing photos) are removed, their files listed below the entry.
+ */
+export function cleanDayOneText(text: string, photos: ReadonlyMap<string, string> = new Map()): string {
+  const placed = text.replaceAll(MOMENT_REFERENCE, (_reference: string, alt: string, kind: string | undefined, identifier: string) => {
+    const name = kind ? undefined : photos.get(identifier.toLowerCase());
+    return name ? inlineImageMarkdown(name, unescapeDayOneMarkdown(alt)) : '';
+  });
+  return unescapeDayOneMarkdown(placed)
     .replaceAll(/[ \t]+$/gm, '')
     .replaceAll(/\n{3,}/g, '\n\n')
     .trim();
 }
 
-function entryMedia(entry: DayOneEntry, lookup: DayOneMediaLookup): { media: ImportedMedia[]; skipped: number } {
+function entryMedia(
+  entry: DayOneEntry,
+  lookup: DayOneMediaLookup,
+): { media: ImportedMedia[]; skipped: number; photos: Map<string, string> } {
   const media: ImportedMedia[] = [];
+  const photos = new Map<string, string>();
   let skipped = 0;
   for (const [field, folder] of MEDIA_FOLDERS) {
     const items = entry[field];
@@ -102,10 +117,14 @@ function entryMedia(entry: DayOneEntry, lookup: DayOneMediaLookup): { media: Imp
         skipped++;
         continue;
       }
-      media.push({ name: `${item.md5 as string}.${fileExtension(file.name)}`, file, ...type });
+      const imported = { name: `${item.md5 as string}.${fileExtension(file.name)}`, file, ...type };
+      media.push(imported);
+      if (field === 'photos' && typeof item.identifier === 'string') {
+        photos.set(item.identifier.toLowerCase(), storedMediaName(imported));
+      }
     }
   }
-  return { media, skipped };
+  return { media, skipped, photos };
 }
 
 /** Entries of one Day One journal; `journal` is the JSON file's name. */
@@ -122,11 +141,11 @@ export function parseDayOneJournal(
     if (Number.isNaN(timestamp)) {
       continue;
     }
-    const { media, skipped } = entryMedia(entry, lookup);
+    const { media, skipped, photos } = entryMedia(entry, lookup);
     skippedMedia += skipped;
     const sourceId = typeof entry.uuid === 'string' && entry.uuid ? entry.uuid : (entry.creationDate as string);
     const timeZone = typeof entry.timeZone === 'string' ? entry.timeZone : undefined;
-    const text = typeof entry.text === 'string' ? cleanDayOneText(entry.text) : '';
+    const text = typeof entry.text === 'string' ? cleanDayOneText(entry.text, photos) : '';
     const explicitTitle = cleanTitle(entry.title);
     const { title, content } = explicitTitle ? { title: explicitTitle, content: text } : splitDayOneTitle(text);
     entries.push({

@@ -31,6 +31,14 @@ describe('cleanDayOneText', () => {
   });
 });
 
+describe('cleanDayOneText with inline photos', () => {
+  it('keeps each photo the import sends where the text places it, and removes the other references', () => {
+    const photos = new Map([['f1a2', '5F2B.jpeg'], ['c3d4', 'aa11.jpg']]);
+    expect(cleanDayOneText('Beach\n\n![](dayone-moment://F1A2)\n\n![The \\(bay\\)](dayone-moment://c3d4) ![](dayone-moment:/video/F1A2) ![](dayone-moment://gone)', photos))
+      .toBe('Beach\n\n![](attachment:5F2B.jpeg)\n\n![The (bay)](attachment:aa11.jpg)');
+  });
+});
+
 describe('splitDayOneTitle', () => {
   it('takes a first-line heading as the title', () => {
     expect(splitDayOneTitle('# Trip to Lyon \\#2 ##\n\nTrain at 8.')).toEqual({ title: 'Trip to Lyon #2', content: 'Train at 8.' });
@@ -101,6 +109,25 @@ describe('parseDayOneJournal', () => {
       },
     ]);
     expect(skippedMedia).toBe(2);
+  });
+
+  it('places inline photos by the name their file is stored under', () => {
+    const { entries } = parseDayOneJournal(
+      {
+        entries: [{
+          uuid: 'P',
+          creationDate: '2022-06-01T07:05:00Z',
+          timeZone: 'UTC',
+          text: 'Morning\n\n![](dayone-moment://ID-1)\n\n![](dayone-moment://ID-2)',
+          photos: [{ identifier: 'ID-1', md5: '5F2B', type: 'jpeg' }, { identifier: 'ID-2', md5: 'aa11', type: 'heic' }],
+          audios: [{ identifier: 'ID-3', md5: '77cc', format: 'm4a' }],
+        }],
+      },
+      'Journal',
+      lookup,
+    );
+
+    expect(entries[0]!.content).toBe('Morning\n\n![](attachment:5F2B.jpeg)\n\n![](attachment:aa11.jpg)');
   });
 
   it('maps titles from the title field or a first-line heading, and the local time', () => {
