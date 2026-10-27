@@ -448,6 +448,7 @@ export const useEntries = (
     setHandledPermalinkEntryId,
     fetchEntries,
     fetchEntryDates,
+    refreshEntryQueries,
     getLimit,
     entriesService,
     toggleVisibility,

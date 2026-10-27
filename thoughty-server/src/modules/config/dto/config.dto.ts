@@ -99,6 +99,9 @@ export class UpdateConfigDto {
   @SettingChoice(BOOLEAN_TEXT, 'Read entry dates aloud')
   readDates?: string;
 
+  @SettingChoice(BOOLEAN_TEXT, 'Show the writing streak card above the journal; shown unless false')
+  streakCard?: string;
+
   @SettingText(MODEL_ID_MAX_LENGTH, MODEL_DESCRIPTION)
   openRouterModel?: string;
 
@@ -158,6 +161,7 @@ export const USER_CONFIG_KEYS: ReadonlySet<string> = new Set<keyof UpdateConfigD
   'maxPinnedEntries',
   'defaultVisibility',
   'readDates',
+  'streakCard',
   'openRouterModel',
   'openRouterTagModel',
   'openRouterWritingModel',

@@ -49,6 +49,20 @@ function periodTotals(type: DiaryGoalType, days: Map<string, DayWriting>, today:
   return totals;
 }
 
+/**
+ * Periods in a row in `met`, `step` days apart, that end at `periodStart`; a `periodStart` not met yet
+ * does not break the run before it, so it counts back from the period before.
+ */
+export function currentRun(met: ReadonlySet<string>, periodStart: string, step: number): number {
+  let run = 0;
+  let cursor = met.has(periodStart) ? periodStart : addDays(periodStart, -step);
+  while (met.has(cursor)) {
+    run += 1;
+    cursor = addDays(cursor, -step);
+  }
+  return run;
+}
+
 function longestRun(metPeriods: string[], step: number): number {
   let longest = 0;
   let run = 0;
@@ -81,19 +95,12 @@ export function measureDiaryGoal(
   const met = new Set(metPeriods);
   const progress = totals.get(periodStart) ?? 0;
 
-  let currentStreak = 0;
-  let cursor = met.has(periodStart) ? periodStart : addDays(periodStart, -step);
-  while (met.has(cursor)) {
-    currentStreak += 1;
-    cursor = addDays(cursor, -step);
-  }
-
   return {
     period: type === 'words_per_day' ? 'day' : 'week',
     periodStart,
     progress,
     met: progress >= target,
-    currentStreak,
+    currentStreak: currentRun(met, periodStart, step),
     longestStreak: longestRun(metPeriods, step),
     metPeriods,
   };

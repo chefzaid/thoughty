@@ -9,6 +9,7 @@ import { StatsPersonalityAnalysisService } from './stats-personality-analysis.se
 import { StatsCorrelationService } from './stats-correlation.service';
 import { StatsMoodService } from './stats-mood.service';
 import { StatsGoalService } from './stats-goal.service';
+import { StatsStreakService } from './stats-streak.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Diary, Entry]), AiModule],
@@ -20,6 +21,7 @@ import { StatsGoalService } from './stats-goal.service';
     StatsCorrelationService,
     StatsMoodService,
     StatsGoalService,
+    StatsStreakService,
   ],
   exports: [StatsService],
 })

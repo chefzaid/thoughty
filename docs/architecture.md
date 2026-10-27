@@ -48,7 +48,7 @@ flowchart TD
 | `saved-searches` | named journal filter combinations with their diary scope: list, save, rename, delete, at most 50 per writer |
 | `attachments` | upload validation, object storage, audio transcription |
 | `ai` | OpenRouter credentials and usage, tag suggestions, inspiration, rephrasing, summaries, chat, semantic search, duplicates, tag organization, writing insights |
-| `stats` | statistics, heatmap, writing goal progress, mood stats, connections graph, writing-tendency analysis |
+| `stats` | statistics, heatmap, writing goal progress, daily writing streak, mood stats, connections graph, writing-tendency analysis |
 | `review` | year in review: totals, rhythm, themes, highlights, moods, and the on-request AI mood arc |
 | `io` | import and export formats, TXT format settings, Day One and Journey imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
 | `books` | book composition, covers, previews, saved versions |

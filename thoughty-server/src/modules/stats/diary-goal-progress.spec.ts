@@ -1,4 +1,4 @@
-import { measureDiaryGoal, mondayOf, type DayWriting } from './diary-goal-progress';
+import { currentRun, measureDiaryGoal, mondayOf, type DayWriting } from './diary-goal-progress';
 
 const days = (writing: Record<string, Partial<DayWriting>>) =>
   new Map(Object.entries(writing).map(([day, value]) => [day, { entries: 0, words: 0, ...value }]));
@@ -11,6 +11,23 @@ describe('mondayOf', () => {
     ['2026-01-01', '2025-12-29'],
   ])('starts the week of %s on Monday %s', (day, monday) => {
     expect(mondayOf(day)).toBe(monday);
+  });
+});
+
+describe('currentRun', () => {
+  const met = new Set(['2026-10-24', '2026-10-25', '2026-10-26', '2026-10-27']);
+
+  it('counts the periods in a row that end at the current one', () => {
+    expect(currentRun(met, '2026-10-27', 1)).toBe(4);
+  });
+
+  it('counts back from the period before when the current one is not met yet', () => {
+    expect(currentRun(met, '2026-10-28', 1)).toBe(4);
+  });
+
+  it('starts from nothing after a missed period, and steps by weeks', () => {
+    expect(currentRun(met, '2026-10-29', 1)).toBe(0);
+    expect(currentRun(new Set(['2026-10-12', '2026-10-19']), '2026-10-26', 7)).toBe(2);
   });
 });
 

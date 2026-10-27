@@ -335,6 +335,18 @@ describe('ProfilePage', () => {
             );
         });
 
+        it('saves the writing streak card turned off', async () => {
+            const user = userEvent.setup();
+            render(<ProfilePage {...defaultProps} />);
+
+            await user.click(screen.getByRole('switch', { name: 'streakCardSetting' }));
+            await user.click(screen.getByText('saveSettings'));
+
+            expect(defaultProps.onUpdateConfig).toHaveBeenCalledWith(
+                expect.objectContaining({ streakCard: false })
+            );
+        });
+
         it('saves the automatic tag limit', async () => {
             const user = userEvent.setup();
             render(<ProfilePage {...defaultProps} />);

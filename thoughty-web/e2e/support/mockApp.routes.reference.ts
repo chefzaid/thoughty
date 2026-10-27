@@ -5,6 +5,7 @@ import {
 } from './mockApp.shared';
 import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
 import { buildMockGoals } from './mockApp.goals';
+import { buildMockStreak } from './mockApp.streak';
 
 function getAiFixPrefix(mode?: string): string {
   if (mode === 'rewrite') {
@@ -28,6 +29,13 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
       ...buildStats(filteredEntries),
       goals: buildMockGoals(state.entries, state.diaries, diaryId ? Number(diaryId) : null, today),
     });
+    return true;
+  }
+
+  if (pathname === '/api/stats/streak') {
+    const diaryId = searchParams.get('diaryId');
+    const today = searchParams.get('today') ?? new Date().toISOString().slice(0, 10);
+    await fulfillJson(route, buildMockStreak(state.entries, diaryId ? Number(diaryId) : null, today));
     return true;
   }
 

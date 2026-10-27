@@ -6,10 +6,12 @@ import {
   PersonalityAnalysisResponseDto,
   StatsQueryDto,
   StatsResponseDto,
+  WritingStreakResponseDto,
 } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { StatsPersonalityAnalysisService } from './stats-personality-analysis.service';
+import { StatsStreakService } from './stats-streak.service';
 
 @ApiTags('Stats')
 @ApiBearerAuth()
@@ -19,6 +21,7 @@ export class StatsController {
   constructor(
     private readonly statsService: StatsService,
     private readonly statsPersonalityAnalysisService: StatsPersonalityAnalysisService,
+    private readonly statsStreakService: StatsStreakService,
   ) {}
 
   @Get()
@@ -33,6 +36,24 @@ export class StatsController {
     @Query() query: StatsQueryDto,
   ): Promise<StatsResponseDto> {
     return this.statsService.getStats(user.userId, query.diaryId, query.today);
+  }
+
+  @Get('streak')
+  @ApiOperation({ summary: 'Get the daily writing streak and the last entry, up to the writer’s day' })
+  @ApiResponse({
+    status: 200,
+    description: 'Days in a row with an entry, whether today has one, and the last entry to pick up from',
+    type: WritingStreakResponseDto,
+  })
+  async getStreak(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: StatsQueryDto,
+  ): Promise<WritingStreakResponseDto> {
+    return this.statsStreakService.getStreak(
+      user.userId,
+      query.diaryId,
+      query.today ?? new Date().toISOString().slice(0, 10),
+    );
   }
 
   @Post('personality-analysis')

@@ -18,6 +18,8 @@ export interface Config {
   avatarUrl?: string;
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;
+  /** The journal's writing streak card; shown unless false. */
+  streakCard?: boolean;
   openRouterModel?: string;
   openRouterSummaryModel?: string;
   openRouterPromptModel?: string;

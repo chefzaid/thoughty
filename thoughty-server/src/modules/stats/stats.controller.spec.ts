@@ -2,11 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { StatsController } from './stats.controller';
 import { StatsService } from './stats.service';
 import { StatsPersonalityAnalysisService } from './stats-personality-analysis.service';
+import { StatsStreakService } from './stats-streak.service';
 
 describe('StatsController', () => {
   let controller: StatsController;
   let statsService: any;
   let statsPersonalityAnalysisService: any;
+  const statsStreakService = { getStreak: jest.fn() };
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -23,6 +25,7 @@ describe('StatsController', () => {
       providers: [
         { provide: StatsService, useValue: statsService },
         { provide: StatsPersonalityAnalysisService, useValue: statsPersonalityAnalysisService },
+        { provide: StatsStreakService, useValue: statsStreakService },
       ],
     }).compile();
 
@@ -50,6 +53,26 @@ describe('StatsController', () => {
       const result = await controller.getStats(mockUser as any, { diaryId: 5, today: '2026-10-27' });
       expect(statsService.getStats).toHaveBeenCalledWith(1, 5, '2026-10-27');
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('getStreak', () => {
+    it('measures the streak in the diary up to the writer’s day', async () => {
+      const streak = { currentStreak: 2, writtenToday: true, daysSinceLastEntry: 0, lastEntry: null };
+      statsStreakService.getStreak.mockResolvedValue(streak);
+
+      await expect(controller.getStreak(mockUser as never, { diaryId: 5, today: '2026-10-27' })).resolves.toBe(streak);
+      expect(statsStreakService.getStreak).toHaveBeenCalledWith(1, 5, '2026-10-27');
+    });
+
+    it('falls back to the server’s UTC day', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-10-27T23:30:00Z'));
+      try {
+        await controller.getStreak(mockUser as never, {});
+        expect(statsStreakService.getStreak).toHaveBeenLastCalledWith(1, undefined, '2026-10-27');
+      } finally {
+        jest.useRealTimers();
+      }
     });
   });
 

@@ -173,6 +173,7 @@ export interface MockAppState {
     fontColor?: string;
     highContrast?: boolean | string;
     readDates?: boolean;
+    streakCard?: boolean;
     ttsVoiceUri?: string;
     openRouterModel?: string;
   };
@@ -386,6 +387,9 @@ export function createMockAppState(
       autoTagMaxTags: "0",
       highContrast: false,
       readDates: true,
+      // The fixtures are dated 2024, so the card would offer to pick up from them on every journal
+      // page; specs about the card turn it on
+      streakCard: false,
       ...options.config,
     },
     // Copied, so diaries a test creates never leak into the next test's defaults

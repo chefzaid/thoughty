@@ -11,6 +11,7 @@ import {
 } from '../../types/config';
 import { getPreferredSpeechVoice, getSpeechLang, getSpeechVoicesForLanguage } from '../../utils/speechVoices';
 import AppearanceAccessibilitySettings from './AppearanceAccessibilitySettings';
+import SettingSwitch from './SettingSwitch';
 
 const FONT_FAMILY_OPTIONS: ReadonlyArray<{ value: FontFamilyPreference; labelKey: string }> = [
   { value: 'system', labelKey: 'fontTypeSystem' },
@@ -350,22 +351,14 @@ function SpeechSettings({
 }>) {
   return (
     <>
-      <div className="setting-row horizontal read-dates-row">
-        <div className="setting-info">
-          <span className="setting-label">{t('readDates')}</span>
-          <span className="setting-description">{t('readDatesDescription')}</span>
-        </div>
-        <div className="theme-switch-container setting-row-control">
-          <button
-            type="button"
-            className={`theme-switch ${readDates === false ? 'light' : 'dark'}`}
-            onClick={() => handleChange({ target: { name: 'readDates', value: readDates === false ? 'true' : 'false' } })}
-            aria-label={t('readDates')}
-          >
-            <span className={`switch-thumb ${readDates === false ? 'off' : 'on'}`} />
-          </button>
-        </div>
-      </div>
+      <SettingSwitch
+        name="readDates"
+        label={t('readDates')}
+        description={t('readDatesDescription')}
+        enabled={readDates !== false}
+        handleChange={handleChange}
+        rowClassName="read-dates-row"
+      />
 
       <div className="setting-row horizontal">
         <div className="setting-info">
@@ -465,6 +458,14 @@ function AppearanceSection({
         highContrast={localConfig.highContrast}
         handleChange={handleChange}
         t={t}
+      />
+
+      <SettingSwitch
+        name="streakCard"
+        label={t('streakCardSetting')}
+        description={t('streakCardSettingDescription')}
+        enabled={localConfig.streakCard !== false}
+        handleChange={handleChange}
       />
 
       <SpeechSettings

@@ -1105,6 +1105,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stats/streak": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get the daily writing streak and the last entry, up to the writer’s day */
+        get: operations["StatsController_getStreak"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stats/personality-analysis": {
         parameters: {
             query?: never;
@@ -3156,6 +3173,7 @@ export interface components {
          *       "maxPinnedEntries": "example",
          *       "defaultVisibility": "public",
          *       "readDates": "true",
+         *       "streakCard": "true",
          *       "openRouterModel": "example",
          *       "openRouterTagModel": "reflection",
          *       "openRouterWritingModel": "example",
@@ -3224,6 +3242,11 @@ export interface components {
              * @enum {string}
              */
             readDates?: "true" | "false";
+            /**
+             * @description Show the writing streak card above the journal; shown unless false
+             * @enum {string}
+             */
+            streakCard?: "true" | "false";
             /** @description OpenRouter model id, or empty for the default */
             openRouterModel?: string;
             /** @description OpenRouter model id, or empty for the default */
@@ -3273,6 +3296,7 @@ export interface components {
          *       "maxPinnedEntries": "example",
          *       "defaultVisibility": "public",
          *       "readDates": "true",
+         *       "streakCard": "true",
          *       "openRouterModel": "example",
          *       "openRouterTagModel": "reflection",
          *       "openRouterWritingModel": "example",
@@ -3341,6 +3365,11 @@ export interface components {
              * @enum {string}
              */
             readDates?: "true" | "false";
+            /**
+             * @description Show the writing streak card above the journal; shown unless false
+             * @enum {string}
+             */
+            streakCard?: "true" | "false";
             /** @description OpenRouter model id, or empty for the default */
             openRouterModel?: string;
             /** @description OpenRouter model id, or empty for the default */
@@ -4556,6 +4585,63 @@ export interface components {
             moods: components["schemas"]["StatsMoodDto"];
             /** @description Writing goal progress: the diary’s own goal, or every diary’s that has one for all diaries */
             goals: components["schemas"]["DiaryGoalProgressDto"][];
+        };
+        /**
+         * @example {
+         *       "id": 42,
+         *       "date": "2026-10-21",
+         *       "title": "Morning walk by the river",
+         *       "snippet": "A slow walk along the river before work…"
+         *     }
+         */
+        WritingStreakLastEntryDto: {
+            /** @example 42 */
+            id: number;
+            /**
+             * Format: date
+             * @description Entry date (YYYY-MM-DD)
+             * @example 2026-10-21
+             */
+            date: string;
+            /** @example Morning walk by the river */
+            title: string | null;
+            /**
+             * @description The start of the text as plain words, cut at a word boundary
+             * @example A slow walk along the river before work…
+             */
+            snippet: string;
+        };
+        /**
+         * @example {
+         *       "currentStreak": 4,
+         *       "writtenToday": true,
+         *       "daysSinceLastEntry": 0,
+         *       "lastEntry": {
+         *         "id": 42,
+         *         "date": "2026-10-21",
+         *         "title": "Morning walk by the river",
+         *         "snippet": "A slow walk along the river before work…"
+         *       }
+         *     }
+         */
+        WritingStreakResponseDto: {
+            /**
+             * @description Days in a row with at least one entry, up to today; a today without an entry yet does not break it
+             * @example 4
+             */
+            currentStreak: number;
+            /**
+             * @description Whether there is an entry dated today
+             * @example true
+             */
+            writtenToday: boolean;
+            /**
+             * @description Days from the last entry to today; null when there is no entry yet
+             * @example 0
+             */
+            daysSinceLastEntry: number | null;
+            /** @description The latest entry on or before today; null when there is no entry yet */
+            lastEntry: components["schemas"]["WritingStreakLastEntryDto"] | null;
         };
         /**
          * @example {
@@ -9445,6 +9531,7 @@ export interface operations {
                      *       "maxPinnedEntries": "example",
                      *       "defaultVisibility": "public",
                      *       "readDates": "true",
+                     *       "streakCard": "true",
                      *       "openRouterModel": "example",
                      *       "openRouterTagModel": "reflection",
                      *       "openRouterWritingModel": "example",
@@ -9493,6 +9580,7 @@ export interface operations {
                  *       "maxPinnedEntries": "example",
                  *       "defaultVisibility": "public",
                  *       "readDates": "true",
+                 *       "streakCard": "true",
                  *       "openRouterModel": "example",
                  *       "openRouterTagModel": "reflection",
                  *       "openRouterWritingModel": "example",
@@ -10487,7 +10575,7 @@ export interface operations {
             query?: {
                 /** @description Limit the statistics to one diary */
                 diaryId?: number;
-                /** @description The writer’s own day, which writing goals are measured up to; the server’s UTC day when left out */
+                /** @description The writer’s own day, which writing goals and the writing streak are measured up to; the server’s UTC day when left out */
                 today?: string;
             };
             header?: never;
@@ -10640,6 +10728,44 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["StatsResponseDto"];
+                };
+            };
+        };
+    };
+    StatsController_getStreak: {
+        parameters: {
+            query?: {
+                /** @description Limit the statistics to one diary */
+                diaryId?: number;
+                /** @description The writer’s own day, which writing goals and the writing streak are measured up to; the server’s UTC day when left out */
+                today?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Days in a row with an entry, whether today has one, and the last entry to pick up from */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "currentStreak": 4,
+                     *       "writtenToday": true,
+                     *       "daysSinceLastEntry": 0,
+                     *       "lastEntry": {
+                     *         "id": 42,
+                     *         "date": "2026-10-21",
+                     *         "title": "Morning walk by the river",
+                     *         "snippet": "A slow walk along the river before work…"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["WritingStreakResponseDto"];
                 };
             };
         };

@@ -3055,6 +3055,7 @@
                   "maxPinnedEntries": "example",
                   "defaultVisibility": "public",
                   "readDates": "true",
+                  "streakCard": "true",
                   "openRouterModel": "example",
                   "openRouterTagModel": "reflection",
                   "openRouterWritingModel": "example",
@@ -3112,6 +3113,7 @@
                 "maxPinnedEntries": "example",
                 "defaultVisibility": "public",
                 "readDates": "true",
+                "streakCard": "true",
                 "openRouterModel": "example",
                 "openRouterTagModel": "reflection",
                 "openRouterWritingModel": "example",
@@ -4315,7 +4317,7 @@
             "name": "today",
             "required": false,
             "in": "query",
-            "description": "The writer’s own day, which writing goals are measured up to; the server’s UTC day when left out",
+            "description": "The writer’s own day, which writing goals and the writing streak are measured up to; the server’s UTC day when left out",
             "schema": {
               "format": "date",
               "example": "2026-10-27",
@@ -4476,6 +4478,67 @@
           }
         ],
         "summary": "Get aggregated statistics about journal entries",
+        "tags": [
+          "Stats"
+        ]
+      }
+    },
+    "/api/stats/streak": {
+      "get": {
+        "operationId": "StatsController_getStreak",
+        "parameters": [
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Limit the statistics to one diary",
+            "schema": {
+              "minimum": 1,
+              "example": 3,
+              "type": "number"
+            }
+          },
+          {
+            "name": "today",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s own day, which writing goals and the writing streak are measured up to; the server’s UTC day when left out",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-27",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Days in a row with an entry, whether today has one, and the last entry to pick up from",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WritingStreakResponseDto"
+                },
+                "example": {
+                  "currentStreak": 4,
+                  "writtenToday": true,
+                  "daysSinceLastEntry": 0,
+                  "lastEntry": {
+                    "id": 42,
+                    "date": "2026-10-21",
+                    "title": "Morning walk by the river",
+                    "snippet": "A slow walk along the river before work…"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the daily writing streak and the last entry, up to the writer’s day",
         "tags": [
           "Stats"
         ]
@@ -11467,6 +11530,14 @@
             ],
             "description": "Read entry dates aloud"
           },
+          "streakCard": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Show the writing streak card above the journal; shown unless false"
+          },
           "openRouterModel": {
             "type": "string",
             "maxLength": 300,
@@ -11556,6 +11627,7 @@
           "maxPinnedEntries": "example",
           "defaultVisibility": "public",
           "readDates": "true",
+          "streakCard": "true",
           "openRouterModel": "example",
           "openRouterTagModel": "reflection",
           "openRouterWritingModel": "example",
@@ -11685,6 +11757,14 @@
             ],
             "description": "Read entry dates aloud"
           },
+          "streakCard": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Show the writing streak card above the journal; shown unless false"
+          },
           "openRouterModel": {
             "type": "string",
             "maxLength": 300,
@@ -11774,6 +11854,7 @@
           "maxPinnedEntries": "example",
           "defaultVisibility": "public",
           "readDates": "true",
+          "streakCard": "true",
           "openRouterModel": "example",
           "openRouterTagModel": "reflection",
           "openRouterWritingModel": "example",
@@ -13710,6 +13791,93 @@
               ]
             }
           ]
+        }
+      },
+      "WritingStreakLastEntryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 42
+          },
+          "date": {
+            "type": "string",
+            "example": "2026-10-21",
+            "format": "date",
+            "description": "Entry date (YYYY-MM-DD)"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Morning walk by the river"
+          },
+          "snippet": {
+            "type": "string",
+            "example": "A slow walk along the river before work…",
+            "description": "The start of the text as plain words, cut at a word boundary"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "title",
+          "snippet"
+        ],
+        "example": {
+          "id": 42,
+          "date": "2026-10-21",
+          "title": "Morning walk by the river",
+          "snippet": "A slow walk along the river before work…"
+        }
+      },
+      "WritingStreakResponseDto": {
+        "type": "object",
+        "properties": {
+          "currentStreak": {
+            "type": "number",
+            "example": 4,
+            "minimum": 0,
+            "description": "Days in a row with at least one entry, up to today; a today without an entry yet does not break it"
+          },
+          "writtenToday": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether there is an entry dated today"
+          },
+          "daysSinceLastEntry": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "example": 0,
+            "description": "Days from the last entry to today; null when there is no entry yet"
+          },
+          "lastEntry": {
+            "nullable": true,
+            "description": "The latest entry on or before today; null when there is no entry yet",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WritingStreakLastEntryDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "currentStreak",
+          "writtenToday",
+          "daysSinceLastEntry",
+          "lastEntry"
+        ],
+        "example": {
+          "currentStreak": 4,
+          "writtenToday": true,
+          "daysSinceLastEntry": 0,
+          "lastEntry": {
+            "id": 42,
+            "date": "2026-10-21",
+            "title": "Morning walk by the river",
+            "snippet": "A slow walk along the river before work…"
+          }
         }
       },
       "PersonalityAnalysisRequestDto": {

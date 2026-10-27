@@ -21,6 +21,7 @@ export interface ProfileConfig {
   maxPinnedEntries?: number | string;
   defaultVisibility?: 'public' | 'private';
   readDates?: boolean;
+  streakCard?: boolean;
   openRouterModel?: string;
   openRouterTagModel?: string;
   openRouterWritingModel?: string;

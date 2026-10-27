@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import JournalView from './JournalView';
-import { createProps, focusModeTrigger } from './JournalView.test-helpers';
+import { createProps, focusModeTrigger, listLayoutRoute } from './JournalView.test-helpers';
 import type { JournalViewProps } from './JournalView.test-helpers';
 
 vi.mock('../DiaryTabs/DiaryTabs', async () => ({ default: (await import('./JournalView.test-helpers')).MockDiaryTabs }));
 vi.mock('../ThoughtOfTheDay/ThoughtOfTheDay', async () => ({ default: (await import('./JournalView.test-helpers')).MockThoughtOfTheDay }));
+vi.mock('../WritingStreak/WritingStreakCard', async () => ({ default: (await import('./JournalView.test-helpers')).MockWritingStreakCard }));
 vi.mock('../EntryForm/EntryForm', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntryForm }));
 vi.mock('../FilterControls/FilterControls', async () => ({ default: (await import('./JournalView.test-helpers')).MockFilterControls }));
 vi.mock('../EntriesList/EntriesList', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntriesList }));
@@ -33,6 +34,26 @@ describe('JournalView', () => {
     fireEvent.keyDown(document, { key: 'n', ctrlKey: true });
 
     expect(screen.getByTestId('entry-text')).toHaveFocus();
+  });
+
+  it('shows the writing streak card for the diary, unless it is turned off in Profile', () => {
+    const { rerender } = render(<JournalView {...defaultProps} diaryTabs={{ ...defaultProps.diaryTabs, currentDiaryId: 2 }} />);
+
+    expect(screen.getByTestId('writing-streak-card')).toHaveAttribute('data-diary-id', '2');
+    expect(screen.getByTestId('writing-streak-card')).toHaveAttribute('data-enabled', 'true');
+
+    rerender(<JournalView {...defaultProps} config={{ ...defaultProps.config, streakCard: false }} />);
+    expect(screen.getByTestId('writing-streak-card')).toHaveAttribute('data-enabled', 'false');
+  });
+
+  it('writes now in the composer, or rereads the last entry through its permalink', () => {
+    render(<JournalView {...defaultProps} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Write now' }));
+    expect(screen.getByTestId('entry-text')).toHaveFocus();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reread it' }));
+    expect(listLayoutRoute.openEntry).toHaveBeenCalledWith(7);
   });
 
   it('opens focus mode for the composer with Ctrl+Shift+F', () => {

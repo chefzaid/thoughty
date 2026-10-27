@@ -9,11 +9,12 @@ export type ApiConfig = components['schemas']['UserConfigDto'];
 export type FeatureFlags = paths['/api/config/feature-flags']['get']['responses'][200]['content']['application/json'];
 
 /** The app's settings from the API's text: the on/off preferences become true or false. */
-export function fromApiConfig({ readDates, highContrast, ...preferences }: ApiConfig): Config {
+export function fromApiConfig({ readDates, highContrast, streakCard, ...preferences }: ApiConfig): Config {
   return {
     ...preferences,
     ...(readDates === undefined ? {} : { readDates: readDates === 'true' }),
     ...(highContrast === undefined ? {} : { highContrast: highContrast === 'true' }),
+    ...(streakCard === undefined ? {} : { streakCard: streakCard === 'true' }),
   };
 }
 

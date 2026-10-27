@@ -99,13 +99,14 @@ export function useAppShellModel(): AppShellModel {
 
   const entryFormState = useEntryForm(config, currentDiaryId, () => {
     entriesState.setPage(1);
-    entriesState.fetchEntries();
-    entriesState.fetchEntryDates();
+    // The list, its dates, and every view measured from the entries (calendar, writing streak) read them again
+    void entriesState.refreshEntryQueries();
   });
 
   const entryEditState = useEntryEdit(config, entriesState.fetchEntries, notifier);
 
-  const deleteModalState = useDeleteModal(entriesState.fetchEntries, notifier);
+  // A deleted entry leaves every view measured from the entries (calendar, writing streak) too
+  const deleteModalState = useDeleteModal(() => { void entriesState.refreshEntryQueries(); }, notifier);
 
   const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier);
 

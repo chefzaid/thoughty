@@ -158,6 +158,22 @@ describe('AppearanceSection', () => {
     });
   });
 
+  it('turns the writing streak card off and on with a switch that says its state', async () => {
+    const user = userEvent.setup();
+    const { rerender } = render(<AppearanceSection {...defaultProps} />);
+
+    const toggle = screen.getByRole('switch', { name: 'streakCardSetting' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText('streakCardSettingDescription')).toBeInTheDocument();
+    await user.click(toggle);
+    expect(defaultProps.handleChange).toHaveBeenCalledWith({ target: { name: 'streakCard', value: 'false' } });
+
+    rerender(<AppearanceSection {...defaultProps} localConfig={{ ...defaultProps.localConfig, streakCard: false }} />);
+    expect(screen.getByRole('switch', { name: 'streakCardSetting' })).toHaveAttribute('aria-checked', 'false');
+    await user.click(screen.getByRole('switch', { name: 'streakCardSetting' }));
+    expect(defaultProps.handleChange).toHaveBeenLastCalledWith({ target: { name: 'streakCard', value: 'true' } });
+  });
+
   it('calls handleChange to toggle high contrast mode', async () => {
     const user = userEvent.setup();
     render(<AppearanceSection {...defaultProps} />);

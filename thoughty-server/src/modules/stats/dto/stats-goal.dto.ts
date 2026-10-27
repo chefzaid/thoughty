@@ -13,7 +13,7 @@ export class StatsQueryDto {
   @ApiPropertyOptional({
     example: '2026-10-27',
     format: 'date',
-    description: 'The writer’s own day, which writing goals are measured up to; the server’s UTC day when left out',
+    description: 'The writer’s own day, which writing goals and the writing streak are measured up to; the server’s UTC day when left out',
   })
   @IsOptional()
   @Matches(/^\d{4}-\d{2}-\d{2}$/)

@@ -381,7 +381,7 @@ The market splits three ways, and no product spans all of them. Everyday journal
 - [ ] First-run onboarding that asks what the writer is here for (daily journal, life story, a gift, coming from another app) and lands them in the right place: a first template, the memoir start page, the gift flow, or the Day One or Journey importer.
 - [ ] Define and track a north-star metric (weekly writing days per active writer) plus the funnel from sign-up to first entry, to fifth entry, to week four, using the existing telemetry, with privacy-safe counts only and no entry text.
 - [ ] Recurring journaling reminders and writing prompts at a user-configured time: installable PWA with web push and an optional email nudge on the web today, then app notifications once the native apps ship.
-- [ ] Gentle streaks and a "pick up where you left off" prompt after a gap, without guilt-driven copy; streaks already exist as badges and can feed this.
+- [x] Gentle streaks and a "pick up where you left off" prompt after a gap, without guilt-driven copy: a dismissible card above the composer shows the days in a row (from two, in the diary shown, up to the writer's day, `GET /api/stats/streak`), and after three days without an entry offers to write now or reread the last entry; never counts a lost streak, and can be turned off in Profile (`streakCard`).
 - [ ] Monthly private recap email (opt-in): entries written, a memory from that month in past years, and a link back, as the low-cost sibling of the year in review.
 
 ### Capture

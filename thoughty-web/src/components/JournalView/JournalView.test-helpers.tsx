@@ -40,6 +40,18 @@ export const MockThoughtOfTheDay = (props: {
   </div>
 );
 
+export const MockWritingStreakCard = (props: {
+  diaryId: number | null;
+  enabled: boolean;
+  onWriteNow: () => void;
+  onOpenEntry: (entryId: number) => void;
+}) => (
+  <div data-testid="writing-streak-card" data-diary-id={props.diaryId ?? 'all'} data-enabled={String(props.enabled)}>
+    <button type="button" onClick={props.onWriteNow}>Write now</button>
+    <button type="button" onClick={() => props.onOpenEntry(7)}>Reread it</button>
+  </div>
+);
+
 export const MockEntryForm = (props: {
   newEntryText: string;
   setNewEntryText: (text: string) => void;
@@ -49,7 +61,7 @@ export const MockEntryForm = (props: {
   onSubmit: (e: SubmitEvent) => void;
 }) => (
   <form data-testid="entry-form" onSubmit={props.onSubmit}>
-    <input data-testid="entry-text" value={props.newEntryText} onChange={(e) => props.setNewEntryText(e.target.value)} />
+    <textarea data-testid="entry-text" value={props.newEntryText} onChange={(e) => props.setNewEntryText(e.target.value)} />
     <span data-testid="form-error">{props.formError}</span>
     <span data-testid="entry-tags">{props.tags.join(',')}</span>
     <span data-testid="entry-visibility">{props.visibility}</span>

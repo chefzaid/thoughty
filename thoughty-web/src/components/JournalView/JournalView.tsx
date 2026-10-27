@@ -11,6 +11,7 @@ import DuplicateReview from '../DuplicateReview/DuplicateReview';
 import SavedSearches from '../SavedSearches/SavedSearches';
 import JournalCalendar from '../JournalCalendar/JournalCalendar';
 import JournalLayoutSwitch from '../JournalCalendar/JournalLayoutSwitch';
+import WritingStreakCard from '../WritingStreak/WritingStreakCard';
 import { useJournalLayoutRoute } from '../JournalCalendar/useJournalLayoutRoute';
 import type { Config, TranslationFunction } from '../../types';
 import { resolveLanguage } from '../../utils/language';
@@ -118,6 +119,16 @@ function JournalView({
         diaryId={thoughtOfDay.diaryId}
         onNavigateToEntry={thoughtOfDay.onNavigateToEntry}
         theme={config.theme}
+        t={t}
+      />
+
+      <WritingStreakCard
+        diaryId={diaryTabs.currentDiaryId}
+        enabled={config.streakCard !== false}
+        onWriteNow={() => entryFormRef.current?.querySelector('textarea')?.focus()}
+        onOpenEntry={layoutRoute.openEntry}
+        language={language}
+        theme={theme}
         t={t}
       />
 
