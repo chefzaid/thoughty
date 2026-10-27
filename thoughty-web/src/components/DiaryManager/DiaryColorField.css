@@ -1,0 +1,49 @@
+/* The diary color picker and its preset swatches. */
+
+.color-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    align-items: flex-start;
+}
+
+.color-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.diary-color-input {
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0.15rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(128, 128, 128, 0.25);
+    background: transparent;
+    cursor: pointer;
+}
+
+.diary-color-swatches {
+    display: flex;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+}
+
+.diary-color-swatch {
+    width: 1.35rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.diary-color-swatch:hover {
+    transform: scale(1.08);
+}
+
+.diary-color-swatch.selected {
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 2px var(--diary-accent, #3b82f6);
+}

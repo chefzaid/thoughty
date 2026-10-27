@@ -1,0 +1,73 @@
+/* The on/off switch of SettingSwitch and the theme switch of the appearance settings. */
+
+.theme-switch-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.theme-label,
+.visibility-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.4;
+    transition: opacity 0.2s ease;
+}
+
+.theme-label.active,
+.visibility-label.active {
+    opacity: 1;
+}
+
+.theme-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.profile-page.dark .theme-icon {
+    color: #e5e7eb;
+}
+
+.profile-page.light .theme-icon {
+    color: #374151;
+}
+
+.theme-switch {
+    position: relative;
+    width: 2.75rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.theme-switch.dark {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+}
+
+.theme-switch.light {
+    background: linear-gradient(135deg, #f97316, #eab308);
+}
+
+.switch-thumb {
+    position: absolute;
+    top: 0.1875rem;
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: left 0.3s ease;
+}
+
+.switch-thumb.off {
+    left: 0.1875rem;
+}
+
+.switch-thumb.on {
+    left: 1.4375rem;
+}

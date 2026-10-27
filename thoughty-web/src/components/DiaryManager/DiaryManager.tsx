@@ -3,6 +3,7 @@ import './DiaryManager.css';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import DiaryGoalField from './DiaryGoalField';
 import DiaryIconPicker from './DiaryIconPicker';
+import DiaryColorField from './DiaryColorField';
 import type { Diary as ApiDiary, DiaryFormData } from '../../types';
 import { DEFAULT_DIARY_COLORS, normalizeDiaryColor, resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
 import { describeDiaryGoal, diaryGoalDraft, NO_DIARY_GOAL, readDiaryGoal } from '../../utils/diaryGoals';
@@ -12,43 +13,6 @@ import { resolveLanguage } from '../../utils/language';
 type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'visibility' | 'isDefault' | 'goalType' | 'goalTarget'>;
 
 const DEFAULT_NEW_DIARY_COLOR = DEFAULT_DIARY_COLORS[0] ?? '#E76F51';
-
-function DiaryColorField({
-    color,
-    onChange,
-    label,
-}: Readonly<{
-    color: string;
-    onChange: (color: string) => void;
-    label: string;
-}>) {
-    return (
-        <div className="color-section">
-            <span className="visibility-label">{label}</span>
-            <div className="color-picker-row">
-                <input
-                    type="color"
-                    value={color}
-                    onChange={(event) => onChange(event.target.value.toUpperCase())}
-                    className="diary-color-input"
-                    aria-label={label}
-                />
-                <div className="diary-color-swatches">
-                    {DEFAULT_DIARY_COLORS.map((swatch) => (
-                        <button
-                            key={swatch}
-                            type="button"
-                            className={`diary-color-swatch ${color === swatch ? 'selected' : ''}`}
-                            style={{ backgroundColor: swatch }}
-                            onClick={() => onChange(swatch)}
-                            aria-label={`${label} ${swatch}`}
-                        />
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
 
 interface DiaryManagerProps {
     readonly diaries: Diary[];

@@ -1,5 +1,6 @@
 import { useState, type ComponentProps } from 'react';
 import type { TranslationFunction } from './types';
+import './DataPrivacySection.css';
 import ActiveSessionsSection from './ActiveSessionsSection';
 import TwoFactorSection from './TwoFactorSection';
 

@@ -1,26 +1,21 @@
 import Footer from '../Footer/Footer';
+// The public page tokens and buttons come before the landing stylesheets, whose rules override them.
+import './IntroPage.css';
+import HeroCollage from './HeroCollage';
+import LandingHeader, { type LandingActionProps } from './LandingHeader';
 import {
   BookVisual,
-  HeroCollage,
   LandingIcon,
   LookBackVisual,
   MemoirVisual,
   WritingVisual,
   type LandingIconName,
 } from './IntroVisuals';
-import './IntroPage.css';
 import './IntroLanding.css';
 
-interface IntroPageProps {
+interface IntroPageProps extends LandingActionProps {
   readonly theme?: 'light' | 'dark';
-  readonly t: (key: string, params?: Record<string, string | number>) => string;
-  readonly isAuthenticated?: boolean;
-  readonly onOpenJournal: () => void;
-  readonly onSignIn: () => void;
-  readonly onSignUp: () => void;
 }
-
-type ActionProps = Omit<IntroPageProps, 'theme'>;
 
 const PROOF_ITEMS: readonly (readonly [LandingIconName, string, string])[] = [
   ['lock', 'landingProofPrivateTitle', 'landingProofPrivateBody'],
@@ -88,7 +83,7 @@ const MORE_ITEMS: readonly (readonly [LandingIconName, string, string])[] = [
 ];
 
 // Signed-out visitors start a journal; signed-in visitors go back to theirs.
-function PrimaryAction({ isAuthenticated, onOpenJournal, onSignUp, t }: Readonly<ActionProps>) {
+function PrimaryAction({ isAuthenticated, onOpenJournal, onSignUp, t }: Readonly<LandingActionProps>) {
   return isAuthenticated ? (
     <button type="button" className="intro-btn primary" onClick={onOpenJournal}>
       {t('landingOpenJournal')}
@@ -97,41 +92,6 @@ function PrimaryAction({ isAuthenticated, onOpenJournal, onSignUp, t }: Readonly
     <button type="button" className="intro-btn primary" onClick={onSignUp}>
       {t('landingStart')}
     </button>
-  );
-}
-
-function LandingHeader(props: Readonly<ActionProps>) {
-  const { isAuthenticated, onOpenJournal, onSignIn, onSignUp, t } = props;
-
-  return (
-    <header className="landing-header">
-      <span className="landing-brand">
-        <img src="/thoughty-logo.svg" alt="" />
-        <span className="landing-brand-name">Thoughty</span>
-      </span>
-      <nav className="landing-nav" aria-label={t('landingNavLabel')}>
-        <a href="#features">{t('landingNavFeatures')}</a>
-        <a href="#memoir">{t('landingNavMemoir')}</a>
-        <a href="#privacy">{t('landingNavPrivacy')}</a>
-        <a href="/blog">{t('landingNavBlog')}</a>
-      </nav>
-      <div className="landing-header-actions">
-        {isAuthenticated ? (
-          <button type="button" className="intro-btn primary" onClick={onOpenJournal}>
-            {t('landingOpenJournal')}
-          </button>
-        ) : (
-          <>
-            <button type="button" className="intro-btn ghost" onClick={onSignIn}>
-              {t('signIn')}
-            </button>
-            <button type="button" className="intro-btn primary" onClick={onSignUp}>
-              {t('signUp')}
-            </button>
-          </>
-        )}
-      </div>
-    </header>
   );
 }
 

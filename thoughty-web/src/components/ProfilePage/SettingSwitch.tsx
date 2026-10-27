@@ -1,3 +1,5 @@
+import './SettingSwitch.css';
+
 interface SettingSwitchProps {
   /** The setting it turns on and off, sent to `handleChange` as `'true'` or `'false'`. */
   name: string;

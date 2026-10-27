@@ -1,0 +1,237 @@
+/* Account security and data controls: password change, download, two-factor and session buttons, and
+   account deletion. DangerZoneSection (in Import/Export) uses the deletion styles too, from the same route
+   bundle; they must load after ProfilePage.css, whose .profile-section colors .danger-section overrides. */
+
+/* API Key Input */
+.api-key-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+}
+
+.api-key-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 0.375rem;
+    color: #6b7280;
+    transition: color 0.2s ease;
+}
+
+.api-key-toggle:hover {
+    color: #3b82f6;
+}
+
+/* Password Change Form */
+.password-change-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.change-password-subsection {
+    border-top: 1px solid rgba(156, 163, 175, 0.2);
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+}
+
+.download-data-divider {
+    height: 1px;
+    margin-top: 0.5rem;
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.profile-page.light .download-data-divider {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.password-error {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.password-success {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    background: #dcfce7;
+    color: #14532d;
+    border: 1px solid #86efac;
+}
+
+.btn-change-password {
+    margin-top: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: #4f46e5;
+    color: white;
+    align-self: flex-start;
+}
+
+.btn-change-password:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-change-password:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Download Data Button */
+.btn-download-data {
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: #4f46e5;
+    color: white;
+    white-space: nowrap;
+}
+
+.btn-download-data:hover:not(:disabled) {
+    background: linear-gradient(135deg, #2563eb, #7c3aed);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.btn-download-data:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Delete Account Section */
+.delete-account-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.setting-label.danger {
+    color: #ef4444;
+}
+
+.section-icon.danger {
+    color: #ef4444;
+}
+
+.section-title.danger {
+    color: #ef4444;
+}
+
+.danger-section {
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.profile-page.dark .danger-section {
+    background: rgba(239, 68, 68, 0.05);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.profile-page.light .danger-section {
+    background: rgba(239, 68, 68, 0.02);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.btn-delete-account {
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #ef4444;
+    background: transparent;
+    color: #ef4444;
+}
+
+.btn-delete-account:hover {
+    background: #dc2626;
+    color: white;
+}
+
+.delete-confirm-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 300px;
+}
+
+.delete-warning {
+    font-size: 0.875rem;
+    color: #991b1b;
+    margin: 0;
+    padding: 0.75rem;
+    background: rgba(254, 226, 226, 0.95);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.delete-confirm-input::placeholder {
+    color: #ef4444;
+    opacity: 0.7;
+}
+
+.delete-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.btn-cancel-delete {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #6b7280;
+    background: transparent;
+    color: #6b7280;
+}
+
+.btn-cancel-delete:hover {
+    background: rgba(107, 114, 128, 0.1);
+}
+
+.btn-confirm-delete {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    background: #dc2626;
+    color: white;
+}
+
+.btn-confirm-delete:hover:not(:disabled) {
+    background: #dc2626;
+}
+
+.btn-confirm-delete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

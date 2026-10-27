@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from 'react';
 import type { TranslationFunction, ProfileConfig } from './types';
+import './AppearanceSection.css';
 import {
   DEFAULT_FONT_FAMILY,
   normalizeFontSize,

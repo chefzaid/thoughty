@@ -1,0 +1,78 @@
+/* The plan overview and billing history; ActiveSessionsSection reuses .billing-history for its table. */
+
+.subscription-overview {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.subscription-overview > div,
+.billing-history {
+    overflow-x: auto;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(107, 114, 128, 0.22);
+    padding: 0.875rem;
+}
+
+.profile-page.dark .subscription-overview > div,
+.profile-page.dark .billing-history {
+    background: rgba(17, 24, 39, 0.72);
+}
+
+.profile-page.light .subscription-overview > div,
+.profile-page.light .billing-history {
+    background: #f9fafb;
+}
+
+.subscription-overview strong {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 1.05rem;
+}
+
+.billing-history-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.billing-history-header h4 {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+.billing-history-header span {
+    font-size: 0.8rem;
+}
+
+.billing-history table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+}
+
+.billing-history th,
+.billing-history td {
+    padding: 0.55rem 0.4rem;
+    text-align: left;
+    border-top: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+.billing-history th {
+    font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .subscription-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .billing-history-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}

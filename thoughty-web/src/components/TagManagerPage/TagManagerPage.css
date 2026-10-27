@@ -1,0 +1,96 @@
+/* The tag manager page header and its create-tag form. */
+
+.profile-page-subtitle {
+    margin: 0.25rem 0 0;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+}
+
+.profile-page.dark .profile-page-subtitle {
+    color: #9ca3af;
+}
+
+.profile-page.light .profile-page-subtitle {
+    color: #6b7280;
+}
+
+.tag-manager-header {
+    position: sticky;
+    top: 0.75rem;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem 1.25rem;
+    border-radius: 1rem;
+    backdrop-filter: blur(14px);
+}
+
+.tag-manager-header.dark {
+    background: rgba(17, 24, 39, 0.88);
+    border: 1px solid rgba(75, 85, 99, 0.55);
+}
+
+.tag-manager-header.light {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(209, 213, 219, 0.9);
+}
+
+.tag-manager-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tag-manager-create {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border: 1px solid;
+    border-radius: 0.75rem;
+}
+
+.tag-manager-create.dark {
+    background: rgba(17, 24, 39, 0.55);
+    border-color: rgba(75, 85, 99, 0.5);
+}
+
+.tag-manager-create.light {
+    background: rgba(249, 250, 251, 0.9);
+    border-color: rgba(209, 213, 219, 0.8);
+}
+
+.tag-manager-create-field {
+    flex: 1 1 16rem;
+}
+
+.tag-manager-create .btn-save:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.tag-manager-error {
+    flex-basis: 100%;
+    margin: 0;
+    font-size: 0.875rem;
+    color: #ef4444;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .tag-manager-header {
+        top: 0.5rem;
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .tag-manager-header-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}

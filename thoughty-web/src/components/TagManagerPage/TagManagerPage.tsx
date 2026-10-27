@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import TagOrganizationSection from '../ProfilePage/TagOrganizationSection';
+import './TagManagerPage.css';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import type { ProfileConfig, TranslationFunction } from '../ProfilePage/types';
 import type { TagUsage } from '../../services/api/entriesService';

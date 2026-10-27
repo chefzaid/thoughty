@@ -1,4 +1,5 @@
 import { useMemo, type Dispatch, type SetStateAction } from 'react';
+import './TagOrganizationSection.css';
 import TagBadge from '../TagBadge/TagBadge';
 import type { ProfileConfig, TranslationFunction } from './types';
 import { resolveLanguage } from '../../utils/language';

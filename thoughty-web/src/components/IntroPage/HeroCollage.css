@@ -1,0 +1,254 @@
+/* The landing hero illustration. Colors come from the public page tokens in IntroPage.css. */
+
+.hero-collage {
+    position: relative;
+    min-height: 38rem;
+}
+
+.collage-entry,
+.collage-memoir {
+    position: absolute;
+    border: 1px solid var(--pub-border);
+    border-radius: 18px;
+    background: var(--pub-surface);
+    box-shadow: var(--pub-shadow);
+}
+
+.collage-entry {
+    top: 0;
+    left: 0;
+    width: 82%;
+    padding: 1.4rem 1.5rem 1.5rem;
+    rotate: -1.5deg;
+}
+
+.collage-entry-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.collage-date,
+.collage-memoir-label {
+    color: var(--pub-accent);
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.collage-memoir-label {
+    display: block;
+    color: var(--pub-pink);
+}
+
+.collage-private {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: var(--pub-accent-soft);
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.collage-private .landing-icon {
+    width: 0.85rem;
+    height: 0.85rem;
+}
+
+.collage-title {
+    display: block;
+    margin-top: 0.6rem;
+    font-family: var(--pub-serif);
+    font-size: 1.55rem;
+    line-height: 1.2;
+}
+
+.collage-mood {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: 0.55rem;
+    color: var(--pub-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.collage-mood-scale {
+    display: inline-flex;
+    gap: 0.2rem;
+}
+
+.collage-mood-scale span {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--pub-accent-soft);
+}
+
+.collage-mood-scale span.on {
+    background: var(--pub-green);
+}
+
+.collage-entry p {
+    margin: 0.8rem 0 0;
+    color: var(--pub-text);
+    line-height: 1.6;
+}
+
+.collage-tasks {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0.9rem 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--pub-text);
+    font-size: 0.92rem;
+}
+
+.collage-tasks li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.collage-tasks li.done {
+    color: var(--pub-muted);
+    text-decoration: line-through;
+}
+
+.collage-checkbox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.05rem;
+    height: 1.05rem;
+    border: 1.5px solid var(--pub-muted);
+    border-radius: 4px;
+}
+
+.collage-tasks li.done .collage-checkbox {
+    border-color: var(--pub-button);
+    background: var(--pub-button);
+    color: #ffffff;
+}
+
+.collage-checkbox .landing-icon {
+    width: 0.75rem;
+    height: 0.75rem;
+    stroke-width: 3;
+}
+
+.collage-tags {
+    display: flex;
+    gap: 0.4rem;
+    margin-top: 1rem;
+}
+
+.collage-memoir {
+    z-index: 2;
+    top: 13rem;
+    right: 0;
+    width: min(17rem, 62%);
+    padding: 1.1rem 1.2rem;
+    rotate: 2deg;
+}
+
+.collage-memoir strong {
+    display: block;
+    margin-top: 0.5rem;
+    font-family: var(--pub-serif);
+    font-size: 1.12rem;
+    line-height: 1.35;
+}
+
+.collage-voice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.9rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 999px;
+    background: var(--pub-accent-soft);
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.collage-voice .landing-icon {
+    width: 1rem;
+    height: 1rem;
+    color: var(--pub-accent);
+}
+
+.collage-wave {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    height: 1rem;
+    margin-left: auto;
+}
+
+.collage-wave span {
+    width: 3px;
+    border-radius: 2px;
+    background: var(--pub-accent);
+}
+
+.collage-book {
+    position: absolute;
+    z-index: 1;
+    bottom: 0;
+    left: 7%;
+    width: 12rem;
+    rotate: -5deg;
+}
+
+.collage-book-formats {
+    margin-top: 0.35rem;
+    letter-spacing: 0.08em;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .collage-memoir {
+        animation: landing-float 7s ease-in-out infinite;
+    }
+
+    .collage-book {
+        animation: landing-float 8s ease-in-out -3s infinite;
+    }
+}
+
+@keyframes landing-float {
+    50% {
+        translate: 0 -8px;
+    }
+}
+
+@media (max-width: 960px) {
+    .hero-collage {
+        width: min(100%, 34rem);
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .hero-collage {
+        display: grid;
+        gap: 1rem;
+        min-height: 0;
+    }
+
+    .collage-entry,
+    .collage-memoir {
+        position: static;
+        width: auto;
+        rotate: none;
+        animation: none;
+    }
+
+    .collage-book {
+        display: none;
+    }
+}

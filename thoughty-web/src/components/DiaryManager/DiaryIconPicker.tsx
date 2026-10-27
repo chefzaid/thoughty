@@ -1,3 +1,5 @@
+import './DiaryIconPicker.css';
+
 // Common emoji icons for diaries
 const DIARY_ICONS = ['📓', '💭', '💤', '💖', '🎯', '✨', '🌟', '📝', '🌈', '🌙', '☀️', '🔥', '💡', '🎨', '🎵', '📚', '🌺', '🍀', '⭐', '🌸'];
 

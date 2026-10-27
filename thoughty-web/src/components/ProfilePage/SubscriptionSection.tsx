@@ -1,5 +1,6 @@
 import type { ChangeEvent } from 'react';
 import type { ProfileConfig, TranslationFunction } from './types';
+import './SubscriptionSection.css';
 
 type SubscriptionPlan = NonNullable<ProfileConfig['subscriptionPlan']>;
 
