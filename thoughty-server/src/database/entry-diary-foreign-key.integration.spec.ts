@@ -49,7 +49,11 @@ describePostgres('EntryDiaryForeignKey1787097600000 on PostgreSQL', () => {
     // An older database may carry a key of its own on the column, not checked against older rows
     await dataSource.query('ALTER TABLE entries ADD FOREIGN KEY (diary_id) REFERENCES diaries(id) NOT VALID');
 
+    await queryRunner.startTransaction();
+    // As `runPendingMigrations` does: the journal list triggers of later migrations fire per statement
+    await queryRunner.query('SET CONSTRAINTS ALL IMMEDIATE');
     await migration.up(queryRunner);
+    await queryRunner.commitTransaction();
     await queryRunner.release();
 
     expect([await diaryOf(kept), await diaryOf(none), await diaryOf(gone), await diaryOf(foreign), await diaryOf(stranded)])

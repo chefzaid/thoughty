@@ -260,7 +260,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 - `config` owns preferences and encrypted integration settings. `cloud-sync` owns job status, locking, retries, and provider sync state.
 - `memoir` owns the question catalogue and which entry answers which question. Answers are created through the `entries` service, so entry rules still apply.
 - The public feed reads only entries that are both public and moderation-visible ([ADR 0013](./adr/0013-public-social-content-and-moderation.md)). New social features must not reuse private-entry assumptions without extending that ADR.
-- Repeated entry-list reads are served from a short-lived per-pod cache (30 s by default, `ENTRIES_CACHE_TTL_SECONDS`) that entry mutations invalidate.
+- Repeated entry-list reads are served from a short-lived per-pod cache (30 s by default, `ENTRIES_CACHE_TTL_SECONDS`), checked on every read against the writer's version in `entry_list_versions`, which database triggers on every table the list reads move on in the commit that changes it ([ADR 0022](./adr/0022-versioned-entry-list-cache.md)). Writers never invalidate the cache themselves: a write from any service, replica, the worker or raw SQL shows in the next read. A table the list starts to read needs the trigger in the migration that adds it (`entry-list-cache.integration.spec.ts` fails otherwise).
 
 ## ADR Process
 
@@ -301,6 +301,7 @@ Status is `Proposed` for a decision that guides upcoming work, `Accepted` for im
 | [0019](./adr/0019-explicit-delivery-jobs.md) | Accepted | Use Explicit Delivery Jobs and Non-Blocking Verification |
 | [0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md) | Accepted | Read Other Apps' Exports in the Browser and Stream the Full Export |
 | [0021](./adr/0021-in-app-book-preview-with-pdfjs.md) | Accepted | Preview Books Page by Page with a Pinned, Self-Hosted PDF.js |
+| [0022](./adr/0022-versioned-entry-list-cache.md) | Accepted | Check the Journal List Cache Against a Version the Database Keeps |
 
 ## ADR Template
 

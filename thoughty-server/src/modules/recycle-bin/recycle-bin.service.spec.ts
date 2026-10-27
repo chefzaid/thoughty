@@ -45,7 +45,6 @@ describe('RecycleBinService', () => {
   let dataSource: { transaction: jest.Mock };
   let attachmentsService: { removeStoredFiles: jest.Mock };
   let configService: { getConfig: jest.Mock };
-  let cache: { invalidateUser: jest.Mock };
   let service: RecycleBinService;
 
   beforeEach(() => {
@@ -67,14 +66,12 @@ describe('RecycleBinService', () => {
     dataSource = { transaction: jest.fn(async (work: (value: typeof manager) => unknown) => work(manager)) };
     attachmentsService = { removeStoredFiles: jest.fn().mockResolvedValue(undefined) };
     configService = { getConfig: jest.fn().mockResolvedValue({ maxPinnedEntries: '3' }) };
-    cache = { invalidateUser: jest.fn() };
     service = new RecycleBinService(
       dataSource as never,
       entryRepository as never,
       attachmentRepository as never,
       attachmentsService as never,
       configService as never,
-      cache as never,
     );
   });
 
@@ -140,7 +137,7 @@ describe('RecycleBinService', () => {
   });
 
   describe('restore', () => {
-    it('puts entries back at the end of their day, in order, and refreshes the cached journal', async () => {
+    it('puts entries back at the end of their day, in order', async () => {
       const selection = queryBuilder({
         many: [trashed({ id: 12, index: 1 }), trashed({ id: 14, index: 3 }), trashed({ id: 15, date: '2026-10-21', index: 1 })],
       });
@@ -158,7 +155,6 @@ describe('RecycleBinService', () => {
       expect(selection.setLock).toHaveBeenCalledWith('pessimistic_write');
       const updates = managerEntries.update.mock.calls.map(([criteria, values]) => [criteria.id, values.index, values.deletedAt]);
       expect(updates).toEqual([[12, 3, null], [14, 4, null], [15, 1, null]]);
-      expect(cache.invalidateUser).toHaveBeenCalledWith(7);
     });
 
     it('sends entries of a missing diary to the default diary and drops import references taken again', async () => {
@@ -195,7 +191,6 @@ describe('RecycleBinService', () => {
 
       await expectApiError(service.restore(7, [40]), NotFoundException, 'RECYCLE_BIN_ENTRIES_NOT_FOUND');
       expect(managerEntries.update).not.toHaveBeenCalled();
-      expect(cache.invalidateUser).not.toHaveBeenCalled();
     });
   });
 

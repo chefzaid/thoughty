@@ -70,7 +70,6 @@ describePostgres('PostgreSQL recycle bin', () => {
       attachments,
       { removeStoredFiles } as never,
       configService as never,
-      { invalidateUser: jest.fn() } as never,
     );
     diariesService = new DiariesService(diaries, new DiaryEntryTransferService(entries));
   });

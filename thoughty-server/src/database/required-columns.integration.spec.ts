@@ -41,6 +41,8 @@ describePostgres('RequiredColumns1787184000000 on PostgreSQL', () => {
     );
 
     await queryRunner.startTransaction();
+    // As `runPendingMigrations` does: the journal list triggers of later migrations fire per statement
+    await queryRunner.query('SET CONSTRAINTS ALL IMMEDIATE');
     await migration.up(queryRunner);
     await queryRunner.commitTransaction();
     await queryRunner.release();

@@ -5,7 +5,7 @@ import { DataSource, In, IsNull, Not, Repository, type EntityManager, type Selec
 import { Attachment, Diary, Entry } from '@/database/entities';
 import { AttachmentsService } from '@/modules/attachments';
 import { ConfigService } from '@/modules/config';
-import { EntryListCacheService, resolveMaxPinnedEntries } from '@/modules/entries';
+import { resolveMaxPinnedEntries } from '@/modules/entries';
 import {
   RECYCLE_BIN_RETENTION_DAYS,
   RecycleBinListResponseDto,
@@ -38,7 +38,6 @@ export class RecycleBinService {
     private readonly attachmentRepository: Repository<Attachment>,
     private readonly attachmentsService: AttachmentsService,
     private readonly configService: ConfigService,
-    private readonly entryListCacheService: EntryListCacheService,
   ) {}
 
   /** The writer's bin, most recently deleted first. */
@@ -68,7 +67,7 @@ export class RecycleBinService {
 
   /** Restores the chosen entries, or every entry in the bin when no IDs are given. */
   async restore(userId: number, ids?: number[]): Promise<RecycleBinRestoreResponseDto> {
-    const result = await this.dataSource.transaction(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const qb = manager
         .getRepository(Entry)
         .createQueryBuilder('e')
@@ -89,9 +88,6 @@ export class RecycleBinService {
       }
       return this.putBack(manager, userId, trashed);
     });
-
-    this.entryListCacheService.invalidateUser(userId);
-    return result;
   }
 
   /** Removes the chosen entries for good, or the whole bin when no IDs are given. */

@@ -1,5 +1,6 @@
 #!/usr/bin/env ts-node
 import dataSource from '../src/database/data-source';
+import { runPendingMigrations } from '../src/database/run-migrations';
 import { banner, fmt, log, section, summaryBox } from './lib/logger';
 
 async function migrate(): Promise<void> {
@@ -12,7 +13,7 @@ async function migrate(): Promise<void> {
         log.step('Checking migration history...');
 
         await dataSource.initialize();
-        const applied = await dataSource.runMigrations({ transaction: 'all' });
+        const applied = await runPendingMigrations(dataSource);
 
         if (applied.length === 0) {
             log.success('Database schema is already current');

@@ -1,14 +1,24 @@
 import { Injectable, Optional } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { GetEntriesQueryDto, EntriesListResponseDto } from './dto';
 
 interface CachedEntryList {
   expiresAt: number;
+  /** The writer's `entry_list_versions.version` when the list was read. */
+  version: string;
   value: EntriesListResponseDto;
 }
 
 const DEFAULT_CACHE_TTL_MS = 30_000;
 const DEFAULT_MAX_CACHE_KEYS = 500;
 
+/**
+ * Repeated journal-list reads, kept per API replica for `ENTRIES_CACHE_TTL_SECONDS`. A copy is served
+ * only while the writer's `entry_list_versions.version` is the one it was read at: triggers on every
+ * table the list reads move that version on in the commit that changes the list, so a write by any
+ * service, replica, worker or raw SQL statement makes the next read fresh. No write path has to
+ * invalidate anything (see `docs/architecture.md`, Data Ownership Rules).
+ */
 @Injectable()
 export class EntryListCacheService {
   private readonly ttlMs: number;
@@ -16,35 +26,56 @@ export class EntryListCacheService {
   private readonly cache = new Map<string, CachedEntryList>();
   private readonly keysByUser = new Map<number, Set<string>>();
 
-  constructor(@Optional() env: NodeJS.ProcessEnv = process.env) {
+  constructor(
+    private readonly dataSource: DataSource,
+    @Optional() env: NodeJS.ProcessEnv = process.env,
+  ) {
     this.ttlMs = parsePositiveInt(env.ENTRIES_CACHE_TTL_SECONDS, DEFAULT_CACHE_TTL_MS / 1000) * 1000;
     this.maxKeys = parsePositiveInt(env.ENTRIES_CACHE_MAX_KEYS, DEFAULT_MAX_CACHE_KEYS);
   }
 
-  get(userId: number, query: GetEntriesQueryDto): EntriesListResponseDto | undefined {
+  /**
+   * The writer's list for the query: the cached copy when their version has not moved since it was
+   * read, otherwise `load`'s result, kept under the version read before it ran (a change committed
+   * while it ran moves the version on, so that copy is never served again).
+   */
+  async getOrLoad(
+    userId: number,
+    query: GetEntriesQueryDto,
+    load: () => Promise<EntriesListResponseDto>,
+  ): Promise<EntriesListResponseDto> {
+    const version = await this.readVersion(userId);
     const key = this.buildKey(userId, query);
     const cached = this.cache.get(key);
-
-    if (!cached) {
-      return undefined;
+    if (cached && cached.version === version && cached.expiresAt > Date.now()) {
+      return structuredClone(cached.value);
     }
-
-    if (cached.expiresAt <= Date.now()) {
+    if (cached) {
       this.deleteKey(userId, key);
-      return undefined;
     }
 
-    return structuredClone(cached.value);
+    const value = await load();
+    this.set(userId, key, version, value);
+    return value;
   }
 
-  set(userId: number, query: GetEntriesQueryDto, value: EntriesListResponseDto): void {
+  /** `'0'` until the writer's list first changes. Read from the primary, where every write lands. */
+  private async readVersion(userId: number): Promise<string> {
+    const rows: Array<{ version: string }> = await this.dataSource.query(
+      'SELECT version FROM entry_list_versions WHERE user_id = $1',
+      [userId],
+    );
+    return String(rows[0]?.version ?? '0');
+  }
+
+  private set(userId: number, key: string, version: string, value: EntriesListResponseDto): void {
     if (this.ttlMs <= 0 || this.maxKeys <= 0) {
       return;
     }
 
-    const key = this.buildKey(userId, query);
     this.cache.set(key, {
       expiresAt: Date.now() + this.ttlMs,
+      version,
       value: structuredClone(value),
     });
 
@@ -52,18 +83,6 @@ export class EntryListCacheService {
     userKeys.add(key);
     this.keysByUser.set(userId, userKeys);
     this.pruneOldestKeys();
-  }
-
-  invalidateUser(userId: number): void {
-    const userKeys = this.keysByUser.get(userId);
-    if (!userKeys) {
-      return;
-    }
-
-    for (const key of userKeys) {
-      this.cache.delete(key);
-    }
-    this.keysByUser.delete(userId);
   }
 
   private buildKey(userId: number, query: GetEntriesQueryDto): string {

@@ -73,9 +73,7 @@ describe('EntriesService', () => {
     };
 
     entryListCacheService = {
-      get: jest.fn(),
-      set: jest.fn(),
-      invalidateUser: jest.fn(),
+      getOrLoad: jest.fn((_userId: number, _query: unknown, load: () => Promise<unknown>) => load()),
     };
 
     entryTaskListService = {
@@ -110,27 +108,23 @@ describe('EntriesService', () => {
     jest.clearAllMocks();
   });
 
-  it('returns cached entries without querying the database', async () => {
+  it('reads the list through the cache, which loads it from EntriesQueryService when stale', async () => {
     const expected = { entries: [], total: 0, page: 1, totalPages: 1, allTags: [] };
-    entryListCacheService.get.mockReturnValue(expected);
-
-    const result = await service.getEntries(1, { page: 1, limit: 10 });
-
-    expect(entryListCacheService.get).toHaveBeenCalledWith(1, { page: 1, limit: 10 });
-    expect(entriesQueryService.getEntries).not.toHaveBeenCalled();
-    expect(result).toBe(expected);
-  });
-
-  it('delegates getEntries to EntriesQueryService and caches misses', async () => {
-    const expected = { entries: [], total: 0, page: 1, totalPages: 1, allTags: [] };
-    entryListCacheService.get.mockReturnValue(undefined);
     entriesQueryService.getEntries.mockResolvedValue(expected);
 
     const result = await service.getEntries(1, { page: 1, limit: 10 });
 
+    expect(entryListCacheService.getOrLoad).toHaveBeenCalledWith(1, { page: 1, limit: 10 }, expect.any(Function));
     expect(entriesQueryService.getEntries).toHaveBeenCalledWith(1, { page: 1, limit: 10 });
-    expect(entryListCacheService.set).toHaveBeenCalledWith(1, { page: 1, limit: 10 }, expected);
     expect(result).toBe(expected);
+  });
+
+  it('serves a cached list without querying the entries', async () => {
+    const expected = { entries: [], total: 0, page: 1, totalPages: 1, allTags: [] };
+    entryListCacheService.getOrLoad.mockResolvedValue(expected);
+
+    await expect(service.getEntries(1, { page: 1, limit: 10 })).resolves.toBe(expected);
+    expect(entriesQueryService.getEntries).not.toHaveBeenCalled();
   });
 
   it('delegates the calendar month to EntryCalendarService without the list cache', async () => {
@@ -140,7 +134,7 @@ describe('EntriesService', () => {
     const result = await service.getCalendarMonth(1, { month: '2026-10', mood: 'any' });
 
     expect(entryCalendarService.getMonth).toHaveBeenCalledWith(1, { month: '2026-10', mood: 'any' });
-    expect(entryListCacheService.get).not.toHaveBeenCalled();
+    expect(entryListCacheService.getOrLoad).not.toHaveBeenCalled();
     expect(result).toBe(expected);
   });
 
@@ -221,7 +215,6 @@ describe('EntriesService', () => {
     const result = await service.create(1, dto);
 
     expect(entriesCommandService.create).toHaveBeenCalledWith(1, dto);
-    expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
     expect(result).toBe(expected);
   });
 
@@ -233,18 +226,16 @@ describe('EntriesService', () => {
     const result = await service.update(1, 1, dto as never);
 
     expect(entriesCommandService.update).toHaveBeenCalledWith(1, 1, dto);
-    expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
     expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, content: 'Updated content' }) });
   });
 
-  it('ticks a task through EntryTaskListService and clears the cached lists', async () => {
+  it('ticks a task through EntryTaskListService', async () => {
     const saved = { success: true, entry: savedEntry({ content: '- [x] Call' }) };
     entryTaskListService.setTask.mockResolvedValue(saved);
 
     const result = await service.setTask(1, 4, { line: 0, checked: true });
 
     expect(entryTaskListService.setTask).toHaveBeenCalledWith(1, 4, { line: 0, checked: true });
-    expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
     expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, content: '- [x] Call' }) });
   });
 
@@ -288,13 +279,12 @@ describe('EntriesService', () => {
     expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, is_pinned: true }) });
   });
 
-  it('opens a sealed time capsule early and invalidates cached lists', async () => {
+  it('opens a sealed time capsule early', async () => {
     timeCapsuleService.openEarly.mockResolvedValue(savedEntry({ content: 'Dear future me' }));
 
     const result = await service.unseal(1, 1);
 
     expect(timeCapsuleService.openEarly).toHaveBeenCalledWith(1, 1);
-    expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
     expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, content: 'Dear future me', sealed_until: null }) });
   });
 
@@ -339,14 +329,13 @@ describe('EntriesService', () => {
     expect(result).toBe(expected);
   });
 
-  it('deletes tags through EntriesCommandService and invalidates cached lists', async () => {
+  it('deletes tags through EntriesCommandService', async () => {
     const expected = { success: true, affectedCount: 2 };
     entriesCommandService.deleteTag.mockResolvedValue(expected);
 
     const result = await service.deleteTag(1, 'old');
 
     expect(entriesCommandService.deleteTag).toHaveBeenCalledWith(1, 'old');
-    expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
     expect(result).toBe(expected);
   });
 

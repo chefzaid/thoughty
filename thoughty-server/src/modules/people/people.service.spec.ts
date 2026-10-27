@@ -12,7 +12,6 @@ const marie = { ...marieRow, entryCount: 3 };
 describe('PeopleService', () => {
   let repository: Record<string, jest.Mock> & { manager?: unknown };
   let manager: { query: jest.Mock; getRepository: jest.Mock };
-  let cache: { invalidateUser: jest.Mock };
   let service: PeopleService;
 
   beforeEach(() => {
@@ -25,8 +24,7 @@ describe('PeopleService', () => {
       update: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     repository.manager = { ...manager, transaction: jest.fn((work) => work(manager)) };
-    cache = { invalidateUser: jest.fn() };
-    service = new PeopleService(repository as never, cache as never);
+    service = new PeopleService(repository as never);
   });
 
   it('lists the writer’s people with their handles, counts and the limit', async () => {
@@ -62,7 +60,6 @@ describe('PeopleService', () => {
     expect(manager.getRepository).toHaveBeenCalledWith(Person);
     expect(repository.delete).toHaveBeenCalledWith({ id: 14, userId: 7 });
     expect(repository.update).toHaveBeenCalledWith({ id: 12, userId: 7 }, { updatedAt: expect.any(Date) });
-    expect(cache.invalidateUser).toHaveBeenCalledWith(7);
   });
 
   it('refuses to merge a person into themselves or with someone else’s person', async () => {
@@ -71,14 +68,12 @@ describe('PeopleService', () => {
     repository.count.mockResolvedValue(1);
     await expectApiError(service.merge(7, 12, { duplicateId: 99 }), NotFoundException, 'PERSON_NOT_FOUND');
     expect(repository.delete).not.toHaveBeenCalled();
-    expect(cache.invalidateUser).not.toHaveBeenCalled();
   });
 
   it('deletes a person and widens the saved searches for them, or says they are not found', async () => {
     await expect(service.delete(7, 12)).resolves.toEqual({ success: true });
     expect(repository.delete).toHaveBeenCalledWith({ id: 12, userId: 7 });
     expect(manager.query).toHaveBeenLastCalledWith(expect.stringContaining("jsonb_set(filters, '{personId}', 'null'::jsonb)"), [7, '12']);
-    expect(cache.invalidateUser).toHaveBeenCalledWith(7);
 
     repository.delete.mockResolvedValue({ affected: 0 });
     await expectApiError(service.delete(7, 99), NotFoundException, 'PERSON_NOT_FOUND');

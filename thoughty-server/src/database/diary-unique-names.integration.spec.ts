@@ -66,6 +66,8 @@ describePostgres('DiaryUniqueNames1787011200000 on PostgreSQL', () => {
 
     // Migrations run in a transaction (`transaction: 'all'`), which the table lock needs.
     await queryRunner.startTransaction();
+    // As `runPendingMigrations` does: the journal list triggers of later migrations fire per statement
+    await queryRunner.query('SET CONSTRAINTS ALL IMMEDIATE');
     await migration.up(queryRunner);
     await queryRunner.commitTransaction();
     await queryRunner.release();

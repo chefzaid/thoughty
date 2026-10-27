@@ -8,7 +8,7 @@ import {
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
 import { BookVersion, Diary, Entry, EntryRevision, LifeEra, SavedSearch, User } from '@/database/entities';
-import { EntryListCacheService, EntrySearchService } from '@/modules/entries';
+import { EntrySearchService } from '@/modules/entries';
 import { EntriesQueryService } from '@/modules/entries/entries-query.service';
 import { EntryCalendarService } from '@/modules/entries/entry-calendar.service';
 import { SavedSearchesService } from '@/modules/saved-searches';
@@ -47,7 +47,7 @@ describePostgres('PostgreSQL life eras', () => {
     dataSource = database.dataSource;
     const entries = dataSource.getRepository(Entry);
     const search = new EntrySearchService(entries);
-    service = new LifeErasService(dataSource.getRepository(LifeEra), new EntryListCacheService({}));
+    service = new LifeErasService(dataSource.getRepository(LifeEra));
     queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource));
     calendar = new EntryCalendarService(entries, search);
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));

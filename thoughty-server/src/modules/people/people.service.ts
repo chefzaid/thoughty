@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository, type EntityManager } from 'typeorm';
 import { apiError } from '@/common/errors';
 import { Person } from '@/database/entities';
-import { EntryListCacheService, PEOPLE_LIMIT, PEOPLE_LOCK_NAMESPACE } from '@/modules/entries';
+import { PEOPLE_LIMIT, PEOPLE_LOCK_NAMESPACE } from '@/modules/entries';
 import { MergePersonDto, PersonListResponseDto, PersonResponseDto, UpdatePersonDto } from './dto';
 
 interface PersonRow {
@@ -39,7 +39,6 @@ export class PeopleService {
   constructor(
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
-    private readonly entryListCache: EntryListCacheService,
   ) {}
 
   async list(userId: number): Promise<PersonListResponseDto> {
@@ -62,7 +61,7 @@ export class PeopleService {
     if (duplicateId === id) {
       throw apiError(BadRequestException, 'PERSON_MERGE_SAME');
     }
-    const merged = await this.personRepository.manager.transaction(async (manager) => {
+    return this.personRepository.manager.transaction(async (manager) => {
       // Saving an entry links it under the same lock, so no link to the duplicate is added meanwhile
       await manager.query('SELECT pg_advisory_xact_lock(hashtext($1), $2)', [PEOPLE_LOCK_NAMESPACE, userId]);
       const found = await manager.getRepository(Person).count({ where: { id: In([id, duplicateId]), userId } });
@@ -84,8 +83,6 @@ export class PeopleService {
       await manager.getRepository(Person).update({ id, userId }, { updatedAt: new Date() });
       return this.summary(manager, userId, id);
     });
-    this.entryListCache.invalidateUser(userId);
-    return merged;
   }
 
   /** Deletes a person and their links; entries keep their text, and saved searches for them widen to anyone. */
@@ -102,7 +99,6 @@ export class PeopleService {
         [userId, String(id)],
       );
     });
-    this.entryListCache.invalidateUser(userId);
     return { success: true };
   }
 

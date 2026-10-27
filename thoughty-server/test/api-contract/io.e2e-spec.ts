@@ -212,6 +212,55 @@ describeContract('io', (context) => {
     });
   });
 
+  it('shows what an import adds in the journal list straight away, photos included', async () => {
+    const { alice } = context;
+    type Listed = { total: number; entries: { id: number; attachments: { id: number }[] }[] };
+    // The same query every time: a list cached before an import must not be served after it
+    const journal = async () =>
+      (
+        await call('GET /api/entries', {
+          as: alice,
+          query: new URLSearchParams({ page: '1', limit: '50', archiveStatus: 'active' }),
+          status: 200,
+        })
+      ).body as Listed;
+    const before = await journal();
+    await journal();
+
+    const exported = await call('GET /api/io/export', { as: alice, status: 200, contentType: /^text\/plain/ });
+    const imported = await call('POST /api/io/import', {
+      as: alice,
+      json: { content: exported.text, skipDuplicates: false, diaryId: null },
+      status: 200,
+    });
+    const { importedCount } = imported.body as { importedCount: number };
+    expect(importedCount).toBeGreaterThan(0);
+    expect((await journal()).total).toBe(before.total + importedCount);
+
+    const dayOne = await call('POST /api/io/import/entries', {
+      as: alice,
+      json: { source: 'dayone', entries: [{ sourceId: 'DO-LIST', date: '2099-01-01', content: 'Harbour', tags: [] }] },
+      status: 200,
+    });
+    const entryId = (dayOne.body as { entries: { entryId: number }[] }).entries[0]!.entryId;
+    const listed = await journal();
+    expect(listed.total).toBe(before.total + importedCount + 1);
+    expect(listed.entries.find((entry) => entry.id === entryId)?.attachments).toEqual([]);
+
+    const attached = await call('POST /api/io/import/attachments', {
+      as: alice,
+      multipart: {
+        fields: { entryIds: String(entryId) },
+        files: [{ field: 'files', buffer: PNG_PIXEL, filename: 'harbour.png', contentType: 'image/png' }],
+      },
+      status: 200,
+    });
+    const [photo] = (attached.body as { attachments: { id: number }[] }).attachments;
+    expect((await journal()).entries.find((entry) => entry.id === entryId)?.attachments).toEqual([
+      expect.objectContaining({ id: photo!.id }),
+    ]);
+  });
+
   it('keeps inline images to the entry’s own attachments and embeds them where they stand', async () => {
     const { alice, bob } = context;
     const png = { field: 'file', buffer: PNG_PIXEL, filename: 'pier.png', contentType: 'image/png' };

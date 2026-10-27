@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { apiError } from '@/common/errors';
 import { LifeEra } from '@/database/entities';
-import { EntryListCacheService } from '@/modules/entries';
 import {
   CreateLifeEraDto,
   LIFE_ERA_LIMIT,
@@ -26,7 +25,6 @@ export class LifeErasService {
   constructor(
     @InjectRepository(LifeEra)
     private readonly lifeEraRepository: Repository<LifeEra>,
-    private readonly entryListCache: EntryListCacheService,
   ) {}
 
   async list(userId: number): Promise<LifeEraListResponseDto> {
@@ -87,7 +85,6 @@ export class LifeErasService {
     assertDateRange(era.startDate, era.endDate);
 
     const saved = await this.withNameCheck(() => this.lifeEraRepository.save(era));
-    this.entryListCache.invalidateUser(userId);
     return toLifeEraResponse(saved);
   }
 
@@ -103,7 +100,6 @@ export class LifeErasService {
         [userId, String(id)],
       );
     });
-    this.entryListCache.invalidateUser(userId);
     return { success: true };
   }
 

@@ -25,7 +25,7 @@ export function buildTimeCapsuleBed(dataSource: DataSource) {
   const comments = dataSource.getRepository(EntryComment);
   const timeCapsules = timeCapsuleServiceOn(dataSource);
   const search = new EntrySearchService(entries);
-  const cache = new EntryListCacheService({});
+  const cache = new EntryListCacheService(dataSource, {});
   const configService = { getConfig: jest.fn().mockResolvedValue({ maxPinnedEntries: '3', language: 'en' }) };
   const commands = new EntriesCommandService(
     entries,
@@ -69,9 +69,8 @@ export function buildTimeCapsuleBed(dataSource: DataSource) {
       dataSource.getRepository(Attachment),
       { removeStoredFiles: jest.fn().mockResolvedValue([]) } as never,
       configService as never,
-      cache,
     ),
-    people: new PeopleService(dataSource.getRepository(Person), cache),
+    people: new PeopleService(dataSource.getRepository(Person)),
     feed: new PublicFeedService(entries, dataSource.getRepository(UserFollow), comments, likes),
     comments: new CommentsService(comments, entries, likes),
   };

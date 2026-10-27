@@ -39,14 +39,9 @@ export class EntriesService {
   ) {}
 
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
-    const cached = this.entryListCacheService.get(userId, query);
-    if (cached) {
-      return cached;
-    }
-
-    const result = await this.entriesQueryService.getEntries(userId, query);
-    this.entryListCacheService.set(userId, query, result);
-    return result;
+    return this.entryListCacheService.getOrLoad(userId, query, () =>
+      this.entriesQueryService.getEntries(userId, query),
+    );
   }
 
   async getDates(userId: number): Promise<{ dates: string[] }> {
@@ -83,9 +78,7 @@ export class EntriesService {
   }
 
   async create(userId: number, dto: CreateEntryDto): Promise<{ success: boolean; entryId: number }> {
-    const result = await this.entriesCommandService.create(userId, dto);
-    this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return this.entriesCommandService.create(userId, dto);
   }
 
   async update(
@@ -94,7 +87,6 @@ export class EntriesService {
     dto: UpdateEntryDto,
   ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.update(userId, id, dto);
-    this.entryListCacheService.invalidateUser(userId);
     return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
@@ -104,7 +96,6 @@ export class EntriesService {
     dto: UpdateEntryTaskDto,
   ): Promise<EntryMutationResponseDto> {
     const result = await this.entryTaskListService.setTask(userId, id, dto);
-    this.entryListCacheService.invalidateUser(userId);
     return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
@@ -114,7 +105,6 @@ export class EntriesService {
     visibility: 'public' | 'private',
   ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.updateVisibility(userId, id, visibility);
-    this.entryListCacheService.invalidateUser(userId);
     return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
@@ -124,7 +114,6 @@ export class EntriesService {
     isFavorite: boolean,
   ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.toggleFavorite(userId, id, isFavorite);
-    this.entryListCacheService.invalidateUser(userId);
     return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
@@ -134,7 +123,6 @@ export class EntriesService {
     isArchived: boolean,
   ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.toggleArchived(userId, id, isArchived);
-    this.entryListCacheService.invalidateUser(userId);
     return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
@@ -144,14 +132,12 @@ export class EntriesService {
     isPinned: boolean,
   ): Promise<EntryMutationResponseDto> {
     const result = await this.entriesCommandService.togglePinned(userId, id, isPinned);
-    this.entryListCacheService.invalidateUser(userId);
     return { success: result.success, entry: toEntryResponse(result.entry) };
   }
 
   /** Opens a sealed time capsule before its date, at the writer's request; nothing is emailed. */
   async unseal(userId: number, id: number): Promise<EntryMutationResponseDto> {
     const entry = await this.timeCapsuleService.openEarly(userId, id);
-    this.entryListCacheService.invalidateUser(userId);
     return { success: true, entry: toEntryResponse(entry) };
   }
 
@@ -160,24 +146,18 @@ export class EntriesService {
   }
 
   async deleteAll(userId: number, diaryId?: number): Promise<{ success: boolean; deletedCount: number }> {
-    const result = await this.entriesCommandService.deleteAll(userId, diaryId);
-    this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return this.entriesCommandService.deleteAll(userId, diaryId);
   }
 
   async delete(userId: number, id: number): Promise<{ success: boolean }> {
-    const result = await this.entriesCommandService.delete(userId, id);
-    this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return this.entriesCommandService.delete(userId, id);
   }
 
   async bulkOperation(
     userId: number,
     dto: BulkOperationDto,
   ): Promise<{ success: boolean; affectedCount: number }> {
-    const result = await this.entriesCommandService.bulkOperation(userId, dto);
-    this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return this.entriesCommandService.bulkOperation(userId, dto);
   }
 
   async renameTag(
@@ -185,9 +165,7 @@ export class EntriesService {
     oldTag: string,
     newTag: string,
   ): Promise<{ success: boolean; affectedCount: number }> {
-    const result = await this.entriesCommandService.renameTag(userId, oldTag, newTag);
-    this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return this.entriesCommandService.renameTag(userId, oldTag, newTag);
   }
 
   async getTagUsage(userId: number): Promise<{ tags: Array<{ tag: string; count: number }> }> {
@@ -195,9 +173,7 @@ export class EntriesService {
   }
 
   async deleteTag(userId: number, tag: string): Promise<{ success: boolean; affectedCount: number }> {
-    const result = await this.entriesCommandService.deleteTag(userId, tag);
-    this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return this.entriesCommandService.deleteTag(userId, tag);
   }
 
   async reorderEntries(
@@ -205,9 +181,7 @@ export class EntriesService {
     date: string,
     orderedIds: number[],
   ): Promise<{ success: boolean }> {
-    const result = await this.entriesCommandService.reorderEntries(userId, date, orderedIds);
-    this.entryListCacheService.invalidateUser(userId);
-    return result;
+    return this.entriesCommandService.reorderEntries(userId, date, orderedIds);
   }
 
   async getRevisions(userId: number, entryId: number): Promise<EntryRevision[]> {

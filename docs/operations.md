@@ -111,7 +111,7 @@ select tc.id, tc.user_id, tc.open_at from time_capsules tc join entries e on e.i
 where tc.opened_at is null and tc.open_at <= now() and e.deleted_at is null limit 20;
 ```
 
-Memoir, "On this day", monthly recap or time capsule rows that stay due mean the worker is down or failing (rows of deleted accounts stay due until the account purge removes them, and are never sent). The opt-in email logs carry only the user ID, never the address or entry text; an SMTP error's message is left out because it can quote the address. A capsule opens within a minute of its time; the journal list of an API replica can still show it sealed for up to `ENTRIES_CACHE_TTL_SECONDS` (30 seconds by default).
+Memoir, "On this day", monthly recap or time capsule rows that stay due mean the worker is down or failing (rows of deleted accounts stay due until the account purge removes them, and are never sent). The opt-in email logs carry only the user ID, never the address or entry text; an SMTP error's message is left out because it can quote the address. A capsule opens within a minute of its time, and the journal list shows it open from the next read on every API replica.
 
 ## Backup and Recovery
 

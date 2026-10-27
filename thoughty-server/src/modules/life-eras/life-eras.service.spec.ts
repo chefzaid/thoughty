@@ -23,7 +23,6 @@ describe('LifeErasService', () => {
   let repository: Record<string, jest.Mock> & { manager?: unknown };
   let queryBuilder: Record<string, jest.Mock>;
   let manager: { query: jest.Mock; getRepository: jest.Mock };
-  let cache: { invalidateUser: jest.Mock };
   let service: LifeErasService;
 
   beforeEach(() => {
@@ -43,8 +42,7 @@ describe('LifeErasService', () => {
     };
     manager = { query: jest.fn().mockResolvedValue([]), getRepository: jest.fn(() => repository) };
     repository.manager = { transaction: jest.fn((work) => work(manager)) };
-    cache = { invalidateUser: jest.fn() };
-    service = new LifeErasService(repository as never, cache as never);
+    service = new LifeErasService(repository as never);
   });
 
   it('lists the writer’s eras by start date, ongoing ones last on the same start, with the limit', async () => {
@@ -97,11 +95,10 @@ describe('LifeErasService', () => {
     await expectApiError(service.findOwn(8, 3), NotFoundException, 'LIFE_ERA_NOT_FOUND');
   });
 
-  it('changes only the given fields, checks the resulting range and drops cached entry lists', async () => {
+  it('changes only the given fields, checks the resulting range', async () => {
     repository.findOne.mockResolvedValueOnce({ ...university });
     await expect(service.update(7, 3, { endDate: null, note: 'Lyon' }))
       .resolves.toEqual({ ...universityResponse, endDate: null, note: 'Lyon' });
-    expect(cache.invalidateUser).toHaveBeenCalledWith(7);
 
     repository.findOne.mockResolvedValueOnce({ ...university });
     await expect(service.update(7, 3, { name: 'Uni', startDate: '2011-01-01', color: null, emoji: '📚' }))
@@ -118,15 +115,12 @@ describe('LifeErasService', () => {
     await expectApiError(service.update(7, 4, { name: 'Gone' }), NotFoundException, 'LIFE_ERA_NOT_FOUND');
   });
 
-  it('deletes only the writer’s own era, widens the saved searches filtered by it and drops cached lists', async () => {
+  it('deletes only the writer’s own era, widens the saved searches filtered by it', async () => {
     await expect(service.delete(7, 3)).resolves.toEqual({ success: true });
     expect(repository.delete).toHaveBeenCalledWith({ id: 3, userId: 7 });
     expect(manager.query).toHaveBeenCalledWith(expect.stringContaining("jsonb_set(filters, '{eraId}', 'null'::jsonb)"), [7, '3']);
-    expect(cache.invalidateUser).toHaveBeenCalledWith(7);
 
-    cache.invalidateUser.mockClear();
     repository.delete.mockResolvedValueOnce({ affected: 0 });
     await expectApiError(service.delete(8, 3), NotFoundException, 'LIFE_ERA_NOT_FOUND');
-    expect(cache.invalidateUser).not.toHaveBeenCalled();
   });
 });

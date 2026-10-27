@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { join } from 'node:path';
 import { DataSource, type DataSourceOptions } from 'typeorm';
+import { runPendingMigrations } from './run-migrations';
 
 /**
  * PostgreSQL integration specs run only when THOUGHTY_PG_TEST_URL points at the disposable
@@ -62,7 +63,7 @@ export async function createPostgresTestDatabase(
   });
   try {
     await dataSource.initialize();
-    if (!options.synchronize) await dataSource.runMigrations({ transaction: 'all' });
+    if (!options.synchronize) await runPendingMigrations(dataSource);
   } catch (error) {
     if (dataSource.isInitialized) await dataSource.destroy();
     await administer(`DROP DATABASE IF EXISTS "${name}" WITH (FORCE)`);
