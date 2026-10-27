@@ -323,6 +323,23 @@ describe('EntryViewMode', () => {
         expect(screen.getByLabelText('More actions')).toHaveFocus();
     });
 
+    it('opens the image card dialog with the text selected in the entry', async () => {
+        const user = userEvent.setup();
+        vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+        const getSelection = vi.spyOn(globalThis, 'getSelection').mockReturnValue({ toString: () => ' entry ' } as Selection);
+        renderEntryViewMode();
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByRole('menuitem', { name: 'shareAsImage' }));
+
+        expect(screen.getByRole('dialog', { name: 'shareAsImage' })).toBeInTheDocument();
+        expect(screen.getByLabelText('shareImageText')).toHaveValue('entry');
+        await user.keyboard('{Escape}');
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('More actions')).toHaveFocus();
+        getSelection.mockRestore();
+    });
+
     it('routes listen actions through the entry speech handlers', async () => {
         const speakEntry = vi.fn();
         const speakFromEntry = vi.fn();

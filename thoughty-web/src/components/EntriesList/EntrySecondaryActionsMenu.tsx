@@ -13,6 +13,7 @@ interface EntrySecondaryActionsMenuProps {
     isArchived: boolean;
     showHistory: boolean;
     onShareEntry?: () => Promise<void>;
+    onShareImage?: () => void;
     onToggleHistory?: () => Promise<void>;
     onSummarize?: () => void;
     onToggleArchived: () => void;
@@ -27,6 +28,7 @@ export default function EntrySecondaryActionsMenu({
     isArchived,
     showHistory,
     onShareEntry,
+    onShareImage,
     onToggleHistory,
     onSummarize,
     onToggleArchived,
@@ -110,6 +112,11 @@ export default function EntrySecondaryActionsMenu({
         onSummarize?.();
     }, [closeMenuForDialog, onSummarize]);
 
+    const handleShareImage = useCallback(() => {
+        closeMenuForDialog();
+        onShareImage?.();
+    }, [closeMenuForDialog, onShareImage]);
+
     const handleDelete = useCallback(() => {
         closeMenuForDialog();
         onDelete();
@@ -160,6 +167,20 @@ export default function EntrySecondaryActionsMenu({
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.882 13.119 9 12.825 9 12.5a2.5 2.5 0 10-2.5 2.5c.325 0 .619-.118.842-.316l8.632 4.316A2.49 2.49 0 0016 19.5a2.5 2.5 0 102.5-2.5c-.325 0-.619.118-.842.316l-8.632-4.316A2.49 2.49 0 009 12.5c0-.325-.118-.619-.316-.842l8.632-4.316A2.49 2.49 0 0018.5 7a2.5 2.5 0 10-2.5-2.5c0 .325.118.619.316.842l-8.632 4.316z" />
                             </svg>
                             <span>{shareReady ? t('entryLinkCopied') : t('shareEntry')}</span>
+                        </MenuActionButton>
+                    )}
+                    {onShareImage && (
+                        <MenuActionButton
+                            onClick={handleShareImage}
+                            className={secondaryActionClass}
+                            title={t('shareAsImage')}
+                        >
+                            <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                                <rect x="3" y="4" width="18" height="16" rx="2" />
+                                <circle cx="9" cy="10" r="1.75" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M21 16l-5-5-8 9" />
+                            </svg>
+                            <span>{t('shareAsImage')}</span>
                         </MenuActionButton>
                     )}
                     {onToggleHistory && (

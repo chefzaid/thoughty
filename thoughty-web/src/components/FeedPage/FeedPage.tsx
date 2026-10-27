@@ -7,6 +7,8 @@ import { resolveLanguage } from '../../utils/language';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
 import ListenButton from '../ListenButton/ListenButton';
+import ShareImageDialog from '../ShareImageCard/ShareImageDialog';
+import { formatCardDate } from '../ShareImageCard/shareCardLayout';
 import EntryComments from './EntryComments';
 import LikeButton from './LikeButton';
 import FeedAuthor from './FeedAuthor';
@@ -46,6 +48,7 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageEntry, setImageEntry] = useState<PublicFeedEntry | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const generationRef = useRef(0);
   /** In-flight page requests, so the infinite scroll and reading aloud share one request per page. */
@@ -234,6 +237,18 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
                       t={t}
                     />
                   )}
+                  {entry.author.id === currentUserId && (
+                    <button
+                      type="button"
+                      className="feed-share-image"
+                      title={t('shareAsImage')}
+                      aria-label={t('shareAsImageBy', { date: formatCardDate(entry.date, uiLanguage) })}
+                      onClick={() => setImageEntry(entry)}
+                    >
+                      <span className="codicon codicon-file-media" aria-hidden="true" />
+                      {t('shareAsImage')}
+                    </button>
+                  )}
                 </>
               )}
             />
@@ -251,6 +266,16 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
       {!loading && !error && entries.length === 0 && <p className="feed-state">{emptyMessage}</p>}
       {!error && entries.length > 0 && !hasMore && <p className="feed-state end">{t('feedEnd')}</p>}
       <div ref={sentinelRef} className="feed-sentinel" aria-hidden="true" />
+      {imageEntry && (
+        <ShareImageDialog
+          isOpen
+          entry={{ ...imageEntry, visibility: 'public' }}
+          isDark={theme !== 'light'}
+          language={uiLanguage}
+          onClose={() => setImageEntry(null)}
+          t={t}
+        />
+      )}
       {!error && hasMore && (
         <button type="button" className="feed-load-more" onClick={loadNextPage} disabled={loading}>
           <span className="codicon codicon-chevron-down" aria-hidden="true" />

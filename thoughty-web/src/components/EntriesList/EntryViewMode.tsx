@@ -11,6 +11,8 @@ import { IconActionButton } from './EntryActionPrimitives';
 import EntryRephraseButton from './EntryRephraseButton';
 import EntrySecondaryActionsMenu from './EntrySecondaryActionsMenu';
 import EntrySummaryDialog from './EntrySummaryDialog';
+import ShareImageDialog from '../ShareImageCard/ShareImageDialog';
+import { selectedExcerpt, toCardText } from '../ShareImageCard/shareCardLayout';
 import {
     BackToSourceButton,
     EntryBodySection,
@@ -87,6 +89,7 @@ export default function EntryViewMode({
     t,
 }: Readonly<EntryViewModeProps>) {
     const [summaryOpen, setSummaryOpen] = useLocalState(false);
+    const [shareImage, setShareImage] = useLocalState<{ excerpt?: string } | null>(null);
     const isDark = config.theme !== 'light';
     const archiveActionLabel = entry.is_archived ? t('unarchive') : t('archive');
     const entryPermalink = getEntryPermalink?.(entry.id);
@@ -208,6 +211,7 @@ export default function EntryViewMode({
                         onShareEntry={onShareEntry ? async () => {
                             await onShareEntry(entry);
                         } : undefined}
+                        onShareImage={() => setShareImage({ excerpt: selectedExcerpt(globalThis.getSelection?.()?.toString(), toCardText(entry.content, entry.format)) })}
                         onToggleHistory={onFetchHistory ? handleToggleHistory : undefined}
                         onSummarize={onSummarize ? () => setSummaryOpen(true) : undefined}
                         onToggleArchived={() => onToggleArchived(entry)}
@@ -232,6 +236,15 @@ export default function EntryViewMode({
                 tagMetadata={tagMetadata}
                 onDeleteRevision={onDeleteRevision}
                 onHandleDeleteRevision={handleDeleteRevision}
+                t={t}
+            />
+            <ShareImageDialog
+                isOpen={shareImage !== null}
+                entry={entry}
+                initialExcerpt={shareImage?.excerpt}
+                isDark={isDark}
+                language={resolveLanguage(config.language)}
+                onClose={() => setShareImage(null)}
                 t={t}
             />
             {onSummarize && (

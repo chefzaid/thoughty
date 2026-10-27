@@ -442,7 +442,7 @@ Concrete product features that build on what exists. Each one fills a gap visibl
 
 - [ ] Per-diary settings: a default template, a reminder schedule, and an optional PIN lock as a first step before full end-to-end encryption.
 - [ ] Private share links for a single entry or a book version: a link with an expiry date that can be revoked, so one person can read an entry without making it public in the feed.
-- [ ] Share an entry as an image card (quote, date and theme colors) for people who post outside the app.
+- [x] Share an entry as an image card (quote, date and theme colors) for people who post outside the app: **More actions › Share as image** (and the button on your own public entries in the feed) draws the card on a canvas in the browser, with the whole entry or a selected excerpt, the localized date, an optional title and "— Thoughty" mark, light, dark and violet presets, square and portrait sizes at 2x, and downloads a PNG, copies it, or opens the share sheet where supported.
 
 ### Books
 

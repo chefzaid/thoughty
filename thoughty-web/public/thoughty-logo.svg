@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Thoughty">
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Thoughty">
   <title>Thoughty</title>
   <defs>
     <linearGradient id="thoughty-tile" x1="6" y1="4" x2="58" y2="60" gradientUnits="userSpaceOnUse">

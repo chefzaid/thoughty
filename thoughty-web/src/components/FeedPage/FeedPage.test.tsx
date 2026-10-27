@@ -291,4 +291,24 @@ describe('FeedPage', () => {
     expect(onOpenLeaderboard).toHaveBeenCalled();
     await screen.findByText('feedEmptyCommunity');
   });
+
+  it('offers an image card for the reader own entries only', async () => {
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+    const own = { ...createEntry(5, 'Me'), author: { id: 1, username: 'Me', avatarUrl: null, isFollowed: false }, title: 'Mine' };
+    fetchPublicFeed.mockResolvedValueOnce({
+      data: { entries: [own, createEntry(6, 'Ada')], total: 2, page: 1, totalPages: 1, hasMore: false },
+      error: null,
+    });
+
+    render(<FeedPage theme="light" t={(key, params) => getTranslation('en', key, params)} />);
+
+    const share = await screen.findByRole('button', { name: 'Share the entry of August 1, 2026 as an image' });
+    expect(screen.getAllByTitle('Share as image')).toHaveLength(1);
+    fireEvent.click(share);
+    expect(screen.getByRole('dialog', { name: 'Share as image' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Light' })).toBeChecked();
+    expect(screen.queryByRole('note')).not.toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]!);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
 });

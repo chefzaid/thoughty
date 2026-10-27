@@ -107,6 +107,7 @@
 .feed-scope button:focus-visible,
 .feed-follow:focus-visible,
 .feed-comments-toggle:focus-visible,
+.feed-share-image:focus-visible,
 .feed-comment-delete:focus-visible,
 .feed-comment-form button:focus-visible,
 .feed-comment-form textarea:focus-visible,
@@ -115,6 +116,29 @@
 .feed-state button:focus-visible {
   outline: 3px solid #38bdf8;
   outline-offset: 2px;
+}
+
+.feed-share-image {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.45rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: #d1d5db;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.feed-page.light .feed-share-image {
+  color: #374151;
+}
+
+.feed-share-image:hover {
+  background: rgba(148, 163, 184, 0.2);
 }
 
 .feed-count {
