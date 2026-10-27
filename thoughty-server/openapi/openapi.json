@@ -7188,6 +7188,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -7231,6 +7247,22 @@
                 "example": {
                   "success": true,
                   "connectedAt": "2026-06-24T10:00:00.000Z"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
                 }
               }
             }
@@ -20489,6 +20521,7 @@
           "CLOUD_NOT_CONNECTED",
           "CLOUD_CONNECTION_EXPIRED",
           "CLOUD_UNKNOWN_PROVIDER",
+          "CLOUD_PROVIDER_NOT_CONFIGURED",
           "CLOUD_AUTHORIZATION_REJECTED",
           "CLOUD_PROVIDER_FAILED",
           "MEMOIR_UNKNOWN_QUESTION",

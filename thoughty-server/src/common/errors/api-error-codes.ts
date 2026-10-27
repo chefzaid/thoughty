@@ -135,6 +135,7 @@ export const API_ERROR_MESSAGES = {
   CLOUD_NOT_CONNECTED: 'Not connected to this cloud provider',
   CLOUD_CONNECTION_EXPIRED: 'Cloud connection expired. Please reconnect.',
   CLOUD_UNKNOWN_PROVIDER: 'Unknown provider',
+  CLOUD_PROVIDER_NOT_CONFIGURED: 'This cloud provider is not set up on this server',
   CLOUD_AUTHORIZATION_REJECTED: 'The cloud provider did not accept this sign-in. Please connect again.',
   CLOUD_PROVIDER_FAILED: 'The cloud provider could not complete the request',
 

@@ -1,4 +1,4 @@
-import { BadGatewayException, BadRequestException } from '@nestjs/common';
+import { BadGatewayException, BadRequestException, ServiceUnavailableException } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { CloudSyncService } from './cloud-sync.service';
@@ -40,6 +40,17 @@ describe('CloudSyncService', () => {
     it('should throw BadRequestException for unknown provider', async () => {
       await expectApiError(service.getAuthUrl('icloud' as any, 'http://localhost/callback', 'state'), BadRequestException, 'CLOUD_UNKNOWN_PROVIDER');
     });
+
+    it('refuses a provider this server has no OAuth client for, instead of a sign-in link without one', async () => {
+      googleDriveProvider.isConfigured.mockReturnValue(false);
+
+      await expectApiError(
+        service.getAuthUrl('google_drive', 'http://localhost/callback', 'state'),
+        ServiceUnavailableException,
+        'CLOUD_PROVIDER_NOT_CONFIGURED',
+      );
+      expect(googleDriveProvider.getAuthUrl).not.toHaveBeenCalled();
+    });
   });
 
   describe('connect', () => {
@@ -64,6 +75,18 @@ describe('CloudSyncService', () => {
       await expect(
         service.connect(1, 'icloud' as any, 'code', 'http://localhost/callback'),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('refuses to connect a provider this server has no OAuth client for', async () => {
+      googleDriveProvider.isConfigured.mockReturnValue(false);
+
+      await expectApiError(
+        service.connect(1, 'google_drive', 'code', 'http://localhost/callback'),
+        ServiceUnavailableException,
+        'CLOUD_PROVIDER_NOT_CONFIGURED',
+      );
+      expect(googleDriveProvider.exchangeCode).not.toHaveBeenCalled();
+      expect(settingRepository.upsert).not.toHaveBeenCalled();
     });
   });
 

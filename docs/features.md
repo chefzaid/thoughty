@@ -104,7 +104,7 @@ A program that turns the journal into a life story, at `/memoir`.
 
 ## Cloud Sync
 
-- Connect Google Drive, OneDrive, and Dropbox.
+- Connect Google Drive, OneDrive, and Dropbox. A provider the server has no OAuth client for (its `*_CLIENT_ID` and `*_CLIENT_SECRET`) refuses to connect with « Ce service cloud n’est pas configuré sur ce serveur. » instead of opening the provider's sign-in page without one.
 - Upload an export, browse and download provider files, and import journal files from the cloud.
 - Scheduled sync every 6 hours, 12 hours, day, or week (skipped when nothing changed), plus a manual **Sync Now**.
 - A refused connection, upload, file list, download or import, schedule change, or sync says why in the reader's language, such as « La connexion à ce service cloud a expiré. Veuillez le reconnecter. » when the provider's access ran out, and falls back to a generic failure message when the API gives no reason.

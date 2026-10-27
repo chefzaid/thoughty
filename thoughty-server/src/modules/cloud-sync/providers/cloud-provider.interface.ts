@@ -41,4 +41,9 @@ export interface CloudProvider {
    * Get the OAuth authorization URL
    */
   getAuthUrl(redirectUri: string, state: string): string;
+
+  /**
+   * Whether this server has the provider's OAuth client ID and secret, without which no sign-in can succeed
+   */
+  isConfigured(): boolean;
 }

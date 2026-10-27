@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, HttpException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, HttpException, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { apiError, apiErrorCodeOf } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -144,20 +144,24 @@ export class CloudSyncService {
     }
   }
 
-  async getAuthUrl(provider: CloudProviderType, redirectUri: string, state: string): Promise<{ url: string }> {
+  /** The provider a sign-in goes through, refused when unknown or when this server has no OAuth client for it. */
+  private signInProvider(provider: CloudProviderType): CloudProvider {
     const providerImpl = this.providers[provider];
     if (!providerImpl) {
       throw apiError(BadRequestException, 'CLOUD_UNKNOWN_PROVIDER', `Unknown provider: ${provider}`);
     }
-    return { url: providerImpl.getAuthUrl(redirectUri, state) };
+    if (!providerImpl.isConfigured()) {
+      throw apiError(ServiceUnavailableException, 'CLOUD_PROVIDER_NOT_CONFIGURED');
+    }
+    return providerImpl;
+  }
+
+  async getAuthUrl(provider: CloudProviderType, redirectUri: string, state: string): Promise<{ url: string }> {
+    return { url: this.signInProvider(provider).getAuthUrl(redirectUri, state) };
   }
 
   async connect(userId: number, provider: CloudProviderType, code: string, redirectUri: string): Promise<{ success: boolean; connectedAt: string }> {
-    const providerImpl = this.providers[provider];
-    if (!providerImpl) {
-      throw apiError(BadRequestException, 'CLOUD_UNKNOWN_PROVIDER', `Unknown provider: ${provider}`);
-    }
-
+    const providerImpl = this.signInProvider(provider);
     const tokens = await providerImpl.exchangeCode(code, redirectUri);
     await this.storeTokens(userId, provider, tokens);
 

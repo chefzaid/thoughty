@@ -25,6 +25,14 @@ describe('GoogleDriveProvider', () => {
     jest.spyOn((provider as any).logger, 'error').mockImplementation();
   });
 
+  describe('isConfigured', () => {
+    it('needs both the OAuth client ID and secret', () => {
+      expect(provider.isConfigured()).toBe(true);
+      const withoutSecret = { get: (key: string, fallback: string) => (key === 'GOOGLE_DRIVE_CLIENT_ID' ? 'id' : fallback) };
+      expect(new GoogleDriveProvider(withoutSecret as unknown as ConfigService).isConfigured()).toBe(false);
+    });
+  });
+
   describe('getAuthUrl', () => {
     it('should generate correct OAuth URL', () => {
       const url = provider.getAuthUrl('http://localhost/callback', 'state123');

@@ -22,6 +22,10 @@ export class OneDriveProvider implements CloudProvider {
     this.clientSecret = this.configService.get<string>('ONEDRIVE_CLIENT_SECRET', '');
   }
 
+  isConfigured(): boolean {
+    return Boolean(this.clientId && this.clientSecret);
+  }
+
   getAuthUrl(redirectUri: string, state: string): string {
     const params = new URLSearchParams({
       client_id: this.clientId,

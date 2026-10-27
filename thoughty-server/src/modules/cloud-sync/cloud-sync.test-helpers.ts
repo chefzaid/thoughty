@@ -10,6 +10,7 @@ import { DropboxProvider } from './providers/dropbox.provider';
 function createProviderMock() {
   return {
     getAuthUrl: jest.fn(),
+    isConfigured: jest.fn().mockReturnValue(true),
     exchangeCode: jest.fn(),
     refreshAccessToken: jest.fn(),
     listFiles: jest.fn(),

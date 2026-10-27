@@ -42,6 +42,7 @@ export class CloudSyncController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get OAuth authorization URL for a provider' })
   @ApiResponse({ status: 200, description: 'Authorization URL', type: CloudAuthUrlResponseDto })
+  @ApiResponse({ status: 503, description: 'This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)' })
   async getAuthUrl(@Body() dto: CloudAuthUrlDto): Promise<CloudAuthUrlResponseDto> {
     const state = randomBytes(32).toString('hex');
     return this.cloudSyncService.getAuthUrl(dto.provider, dto.redirectUri, state);
@@ -51,6 +52,7 @@ export class CloudSyncController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Connect a cloud provider with OAuth code' })
   @ApiResponse({ status: 200, description: 'Provider connected', type: CloudConnectResponseDto })
+  @ApiResponse({ status: 503, description: 'This server has no OAuth client for the provider (`CLOUD_PROVIDER_NOT_CONFIGURED`)' })
   async connect(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CloudConnectDto,
