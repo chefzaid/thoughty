@@ -17,6 +17,8 @@ export interface MockSavedSearch {
     archiveStatus: 'active' | 'archived' | 'all';
     favorites: boolean;
     mood: string;
+    /** Left out by searches saved before life eras. */
+    eraId?: number | null;
   };
   createdAt: string;
   updatedAt: string;

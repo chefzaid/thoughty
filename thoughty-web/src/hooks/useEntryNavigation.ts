@@ -20,6 +20,7 @@ interface UseEntryNavigationParams {
   filterDateObj: EntriesState['filterDateObj'];
   filterFavorites: EntriesState['filterFavorites'];
   filterMood: EntriesState['filterMood'];
+  filterEraId: EntriesState['filterEraId'];
   filterTags: EntriesState['filterTags'];
   filterVisibility: EntriesState['filterVisibility'];
   getLimit: EntriesState['getLimit'];
@@ -38,6 +39,7 @@ interface UseEntryNavigationParams {
   setFilterDateObj: EntriesState['setFilterDateObj'];
   setFilterFavorites: EntriesState['setFilterFavorites'];
   setFilterMood: EntriesState['setFilterMood'];
+  setFilterEraId: EntriesState['setFilterEraId'];
   setFilterTags: EntriesState['setFilterTags'];
   setFilterVisibility: EntriesState['setFilterVisibility'];
   setHandledPermalinkEntryId: EntriesState['setHandledPermalinkEntryId'];
@@ -68,6 +70,7 @@ export function useEntryNavigation({
   filterDateObj,
   filterFavorites,
   filterMood,
+  filterEraId,
   filterTags,
   filterVisibility,
   getLimit,
@@ -85,6 +88,7 @@ export function useEntryNavigation({
   setFilterDateObj,
   setFilterFavorites,
   setFilterMood,
+  setFilterEraId,
   setFilterTags,
   setFilterVisibility,
   setHandledPermalinkEntryId,
@@ -127,6 +131,10 @@ export function useEntryNavigation({
       return true;
     }
 
+    if (filterEraId !== null) {
+      return true;
+    }
+
     if (filterArchiveStatus !== 'all') {
       return true;
     }
@@ -145,6 +153,7 @@ export function useEntryNavigation({
     currentView,
     filterDateObj,
     filterArchiveStatus,
+    filterEraId,
     filterFavorites,
     filterMood,
     filterTags,
@@ -183,6 +192,10 @@ export function useEntryNavigation({
       setFilterMood('');
     }
 
+    if (filterEraId !== null) {
+      setFilterEraId(null);
+    }
+
     if (filterArchiveStatus !== 'all') {
       setFilterArchiveStatus('all');
     }
@@ -211,6 +224,7 @@ export function useEntryNavigation({
     currentView,
     filterDateObj,
     filterArchiveStatus,
+    filterEraId,
     filterFavorites,
     filterMood,
     filterTags,
@@ -224,6 +238,7 @@ export function useEntryNavigation({
     setFilterArchiveStatus,
     setFilterDateObj,
     setFilterFavorites,
+    setFilterEraId,
     setFilterMood,
     setFilterTags,
     setFilterVisibility,

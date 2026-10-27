@@ -15,6 +15,7 @@ vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (awa
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
 vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import('./JournalView.test-helpers')).MockSavedSearches }));
+vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 vi.mock('../JournalCalendar/useJournalLayoutRoute', async () => {
   const { listLayoutRoute } = await import('./JournalView.test-helpers');
   return { useJournalLayoutRoute: () => listLayoutRoute };

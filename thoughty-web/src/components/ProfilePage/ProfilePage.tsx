@@ -14,6 +14,8 @@ import ProfileActions from './ProfileActions';
 import DataPrivacySection from './DataPrivacySection';
 import SubscriptionSection from './SubscriptionSection';
 import AchievementsSection from './AchievementsSection';
+import LifeErasSection from '../LifeEras/LifeErasSection';
+import { resolveLanguage } from '../../utils/language';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
 
@@ -253,6 +255,8 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
           changingPassword={changingPassword}
         />
       </div>
+
+      <LifeErasSection isDark={isDark} language={resolveLanguage(config.language)} t={t} />
 
       <AppearanceSection
         localConfig={localConfig}

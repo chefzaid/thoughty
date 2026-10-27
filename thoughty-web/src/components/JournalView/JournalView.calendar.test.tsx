@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type JournalCalendar from '../JournalCalendar/JournalCalendar';
 import JournalView from './JournalView';
-import { createProps, type JournalViewProps } from './JournalView.test-helpers';
+import { createProps, lifeEraListMock, type JournalViewProps } from './JournalView.test-helpers';
 
 vi.mock('../DiaryTabs/DiaryTabs', async () => ({ default: (await import('./JournalView.test-helpers')).MockDiaryTabs }));
 vi.mock('../ThoughtOfTheDay/ThoughtOfTheDay', async () => ({ default: (await import('./JournalView.test-helpers')).MockThoughtOfTheDay }));
@@ -18,6 +18,7 @@ vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (awa
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
 vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import('./JournalView.test-helpers')).MockSavedSearches }));
+vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 
 type CalendarProps = ComponentProps<typeof JournalCalendar>;
 const calendarProps = vi.hoisted(() => ({ current: null as CalendarProps | null }));
@@ -104,12 +105,38 @@ describe('JournalView calendar layout', () => {
 
     expect(calendar().filters).toEqual({
       search: 'harbor', tags: ['sea'], visibility: 'public', favorites: true, archiveStatus: 'all',
-      mood: '4,5', diaryId: 2, entryIds: null,
+      mood: '4,5', eraId: null, diaryId: 2, entryIds: null,
     });
+    expect(calendar().era).toBeNull();
     expect(calendar().selectedDate).toBe('2026-10-20');
     expect(calendar().availableYears).toEqual([2026, 2024]);
     expect(calendar().language).toBe('en');
     expect(calendar().theme).toBe('dark');
+  });
+
+  it('narrows the month to the life era of the filter and names it', () => {
+    const university = {
+      id: 3, name: 'University', emoji: null, color: null, note: null,
+      startDate: '2010-09-01', endDate: '2014-06-30', createdAt: '', updatedAt: '',
+    };
+    lifeEraListMock.eras = [university];
+    renderJournal(createProps({ filters: { filterEraId: 3 } }), '?diary=1&layout=calendar');
+    lifeEraListMock.eras = [];
+
+    expect(calendar().filters).toMatchObject({ eraId: 3 });
+    expect(calendar().era).toEqual(university);
+  });
+
+  it('stops narrowing to an era that no longer exists once the eras have loaded', () => {
+    const setFilterEraId = vi.fn();
+    lifeEraListMock.eras = [];
+    renderJournal(createProps({ filters: { filterEraId: 7, setFilterEraId } }), '?diary=1&layout=calendar');
+    expect(setFilterEraId).not.toHaveBeenCalled();
+
+    lifeEraListMock.loaded = true;
+    renderJournal(createProps({ filters: { filterEraId: 7, setFilterEraId } }), '?diary=1&layout=calendar');
+    lifeEraListMock.loaded = false;
+    expect(setFilterEraId).toHaveBeenCalledWith(null);
   });
 
   it('narrows a meaning search to its matches once it has run', () => {

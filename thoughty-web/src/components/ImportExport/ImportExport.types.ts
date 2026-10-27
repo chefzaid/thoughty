@@ -23,7 +23,7 @@ export const CLOUD_FORMAT_OPTIONS: ReadonlyArray<{ value: CloudExportFormat; lab
 ];
 
 export type BookFormat = 'pdf' | 'epub' | 'html' | 'md';
-export type BookChapterMode = 'tags' | 'year' | 'month' | 'single';
+export type BookChapterMode = 'tags' | 'year' | 'month' | 'single' | 'eras';
 /** Where the book's entries come from: the journal, a saved search, or entries picked in the journal. */
 export type BookSource = 'journal' | 'savedSearch' | 'entries';
 export type BookChapterOrder = 'alpha' | 'entries' | 'chrono';
@@ -43,6 +43,7 @@ export const BOOK_CHAPTER_MODE_OPTIONS: ReadonlyArray<{ value: BookChapterMode; 
     { value: 'year', labelKey: 'bookChapterModeYear' },
     { value: 'month', labelKey: 'bookChapterModeMonth' },
     { value: 'single', labelKey: 'bookChapterModeSingle' },
+    { value: 'eras', labelKey: 'bookChapterModeEras' },
 ];
 
 export const BOOK_CHAPTER_ORDER_OPTIONS: ReadonlyArray<{ value: BookChapterOrder; labelKey: string }> = [

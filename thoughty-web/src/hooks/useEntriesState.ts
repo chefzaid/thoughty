@@ -60,6 +60,7 @@ export const useEntries = (
   const [filterFavorites, setFilterFavorites] = useState<boolean>(false);
   const [filterArchiveStatus, setFilterArchiveStatus] = useState<ArchiveStatusFilter>('active');
   const [filterMood, setFilterMood] = useState<MoodFilter>('');
+  const [filterEraId, setFilterEraId] = useState<number | null>(null);
 
   const [targetEntryId, setTargetEntryId] = useState<number | null>(null);
   const [activeTargetId, setActiveTargetId] = useState<number | null>(null);
@@ -103,9 +104,10 @@ export const useEntries = (
       filterFavorites,
       filterArchiveStatus,
       filterMood,
+      filterEraId,
       currentDiaryId,
     },
-  ] as const, [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterFavorites, filterMood, filterTags, filterVisibility, getLimit, page, searchSort, semanticEntryIds]);
+  ] as const, [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterEraId, filterFavorites, filterMood, filterTags, filterVisibility, getLimit, page, searchSort, semanticEntryIds]);
 
   const entriesQuery = useQuery({
     queryKey: entriesQueryKey,
@@ -125,6 +127,7 @@ export const useEntries = (
         favorites: filterFavorites,
         archiveStatus: filterArchiveStatus,
         mood: filterMood,
+        eraId: filterEraId,
         diaryId: currentDiaryId,
         entryIds: semanticEntryIds,
       });
@@ -436,6 +439,8 @@ export const useEntries = (
     setFilterArchiveStatus,
     filterMood,
     setFilterMood,
+    filterEraId,
+    setFilterEraId,
     availableYears,
     availableMonths,
     targetEntryId,

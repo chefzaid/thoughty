@@ -2,6 +2,7 @@ import { createMockMemoirState, type MockMemoirProgram, type MockMemoirState } f
 import { createMockAppImportState, type MockAppImportState } from "./mockApp.app-import";
 import { createMockReviewState, type MockReviewState } from "./mockApp.review";
 import type { MockSavedSearch } from "./mockApp.routes.saved-searches";
+import type { MockLifeEra } from "./mockApp.routes.life-eras";
 import type { MockDiary } from "./mockApp.diaries";
 import type { components } from "../../src/generated/openapi";
 import {
@@ -155,6 +156,7 @@ export interface SetupMockAppOptions {
   /** A started guided memoir (defaults filled in), or null/omitted for one not started yet. */
   memoirProgram?: Partial<MockMemoirProgram> | null;
   savedSearches?: MockSavedSearch[];
+  lifeEras?: MockLifeEra[];
 }
 
 export interface MockAppState {
@@ -196,6 +198,7 @@ export interface MockAppState {
   /** What each saved version held, so the next one can count what it adds. */
   bookVersionManifests: Record<number, { entryIds: number[]; chapterTitles: string[] }>;
   savedSearches: MockSavedSearch[];
+  lifeEras: MockLifeEra[];
   memoir: MockMemoirState;
   appImport: MockAppImportState;
   review: MockReviewState;
@@ -416,6 +419,7 @@ export function createMockAppState(
     bookVersions: [],
     bookVersionManifests: {},
     savedSearches: (options.savedSearches || []).map((saved) => ({ ...saved, filters: { ...saved.filters } })),
+    lifeEras: (options.lifeEras || []).map((era) => ({ ...era })),
     memoir: createMockMemoirState(options.memoirProgram ?? null),
     appImport: createMockAppImportState(),
     review: createMockReviewState(),

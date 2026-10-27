@@ -61,6 +61,19 @@ describe('SavedSearches', () => {
     expect(screen.getByRole('button', { name: 'savedSearches' })).toBeInTheDocument();
   });
 
+  it('restores and names the life era a search is narrowed to', async () => {
+    savedSearchesService.list.mockResolvedValue(listOf([savedSearch({ id: 7, name: 'Uni', diaryId: null, filters: { ...noFilters, eraId: 3 } })]));
+    renderSavedSearches();
+    const dialog = await openDialog();
+
+    const uni = await within(dialog).findByRole('button', { name: 'Uni' });
+    expect(uni).toHaveAccessibleDescription('allDiaries · 🎓 University');
+    fireEvent.click(uni);
+
+    expect(filters()).toEqual(expect.objectContaining({ filterEraId: 3 }));
+    await waitFor(() => expect(location()).toBe('?diary=all&view=7'));
+  });
+
   it('applies the saved search a link names once the list has loaded', async () => {
     renderSavedSearches('?view=4');
 

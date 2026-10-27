@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
-import type { EntryCalendarItem, EntryCalendarQuery } from '../../services/api';
+import type { EntryCalendarItem, EntryCalendarQuery, LifeEra } from '../../services/api';
 import type { Theme, TranslationFunction } from '../../types';
 import {
   addMonths,
@@ -12,6 +12,7 @@ import {
 } from '../../utils/calendarMonth';
 import { formatEntryDate } from '../../utils/entryDate';
 import type { Language } from '../../utils/translations';
+import CalendarEraBanner from './CalendarEraBanner';
 import CalendarGrid from './CalendarGrid';
 import { useCalendarMonth } from './useCalendarMonth';
 
@@ -21,6 +22,8 @@ interface JournalCalendarProps {
   readonly onMonthChange: (month: CalendarMonth) => void;
   /** The journal filters and diary, without the month. */
   readonly filters: Omit<EntryCalendarQuery, 'month'>;
+  /** The life era the filters narrow the journal to, named above the grid. */
+  readonly era?: LifeEra | null;
   /** The journal's date filter (`YYYY-MM-DD`), marked in the grid. */
   readonly selectedDate: string | null;
   /** Years that have entries, offered to jump to. */
@@ -50,6 +53,7 @@ function JournalCalendar({
   month,
   onMonthChange,
   filters,
+  era = null,
   selectedDate,
   availableYears,
   onOpenDay,
@@ -146,6 +150,9 @@ function JournalCalendar({
           </button>
         </div>
       </div>
+      {era && (
+        <CalendarEraBanner era={era} shown={shown} onGoToStart={() => goToDate(era.startDate)} language={language} theme={theme} t={t} />
+      )}
       <p id={helpId} className={`mb-2 hidden text-xs sm:block ${mutedText}`}>{t('calendarKeyboardHelp')}</p>
       <div className={`mb-2 min-h-5 text-sm ${mutedText}`} aria-live="polite">
         {failed && (

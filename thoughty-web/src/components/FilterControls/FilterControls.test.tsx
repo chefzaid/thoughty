@@ -49,6 +49,8 @@ describe('FilterControls', () => {
     setFilterArchiveStatus: vi.fn(),
     filterMood: '' as const,
     setFilterMood: vi.fn(),
+    filterEraId: null,
+    setFilterEraId: vi.fn(),
     allTags: ['tag1', 'tag2', 'tag3'],
     setPage: mockSetPage,
     theme: 'dark' as const,
@@ -134,7 +136,47 @@ describe('FilterControls', () => {
     expect(mockSetFilterVisibility).toHaveBeenCalledWith('all');
     expect(defaultProps.setFilterArchiveStatus).toHaveBeenCalledWith('active');
     expect(defaultProps.setFilterMood).toHaveBeenCalledWith('');
+    expect(defaultProps.setFilterEraId).toHaveBeenCalledWith(null);
     expect(mockSetPage).toHaveBeenCalledWith(1);
+  });
+
+  const eras = [
+    { id: 3, name: 'University', emoji: '🎓', startDate: '2010-09-01', endDate: '2014-06-30', color: null, note: null, createdAt: '', updatedAt: '' },
+    { id: 4, name: 'Paris', emoji: null, startDate: '2015-01-01', endDate: null, color: null, note: null, createdAt: '', updatedAt: '' },
+  ];
+
+  it('offers no era filter before the writer has eras', () => {
+    render(<FilterControls {...defaultProps} />);
+
+    expect(screen.queryByRole('combobox', { name: 'eraFilterLabel' })).not.toBeInTheDocument();
+  });
+
+  it('filters by a life era, back to page one, and opens the eras', () => {
+    const setFilterEraId = vi.fn();
+    const onManageEras = vi.fn();
+    const { rerender } = render(<FilterControls {...defaultProps} eras={eras} setFilterEraId={setFilterEraId} onManageEras={onManageEras} />);
+
+    const select = screen.getByRole('combobox', { name: 'eraFilterLabel' });
+    expect(Array.from((select as HTMLSelectElement).options).map((option) => option.text)).toEqual(['eraFilterAll', '🎓 University', 'Paris']);
+    fireEvent.change(select, { target: { value: '4' } });
+    expect(setFilterEraId).toHaveBeenCalledWith(4);
+    expect(mockSetPage).toHaveBeenCalledWith(1);
+
+    rerender(<FilterControls {...defaultProps} eras={eras} filterEraId={3} setFilterEraId={setFilterEraId} theme="light" />);
+    expect(screen.getByRole('combobox', { name: 'eraFilterLabel' })).toHaveValue('3');
+    fireEvent.change(screen.getByRole('combobox', { name: 'eraFilterLabel' }), { target: { value: '' } });
+    expect(setFilterEraId).toHaveBeenLastCalledWith(null);
+    expect(screen.queryByRole('button', { name: 'eraFilterManage' })).not.toBeInTheDocument();
+
+    rerender(<FilterControls {...defaultProps} eras={eras} onManageEras={onManageEras} />);
+    fireEvent.click(screen.getByRole('button', { name: 'eraFilterManage' }));
+    expect(onManageEras).toHaveBeenCalled();
+  });
+
+  it('keeps showing an era kept in the filter while the eras are not known', () => {
+    render(<FilterControls {...defaultProps} filterEraId={9} />);
+
+    expect(screen.getByRole('combobox', { name: 'eraFilterLabel' })).toHaveValue('9');
   });
 
   it('filters by mood level, by any mood or none, and back to page one', () => {

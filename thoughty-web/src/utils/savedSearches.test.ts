@@ -20,6 +20,7 @@ const state: JournalFilterState = {
   filterFavorites: true,
   filterArchiveStatus: 'all',
   filterMood: '4,5',
+  filterEraId: null,
 };
 const saved: SavedSearchFilters = {
   search: 'walk',
@@ -31,6 +32,7 @@ const saved: SavedSearchFilters = {
   archiveStatus: 'all',
   favorites: true,
   mood: '4,5',
+  eraId: null,
 };
 const t = (key: string, params?: Record<string, string | number>) =>
   params ? `${key}(${Object.values(params).join(', ')})` : key;
@@ -62,6 +64,22 @@ describe('saved search filters', () => {
     expect(matchesSavedSearch(saved, { ...state, filterFavorites: false })).toBe(false);
     expect(matchesSavedSearch(saved, { ...state, filterMood: '' })).toBe(false);
     expect(matchesSavedSearch(saved, { ...state, searchMode: 'semantic' })).toBe(false);
+    expect(matchesSavedSearch(saved, { ...state, filterEraId: 3 })).toBe(false);
+    expect(matchesSavedSearch({ ...saved, eraId: 3 }, { ...state, filterEraId: 3 })).toBe(true);
+  });
+
+  it('reads a search saved before life eras as covering every date', () => {
+    const { eraId: _eraId, ...beforeEras } = saved;
+    expect(matchesSavedSearch(beforeEras, state)).toBe(true);
+    expect(matchesSavedSearch(beforeEras, { ...state, filterEraId: 3 })).toBe(false);
+    expect(toSavedSearchFilters({ ...state, filterEraId: 3 }).eraId).toBe(3);
+  });
+
+  it('names the life era a search is narrowed to, and leaves out one it does not know', () => {
+    const eras = [{ id: 3, name: 'University', emoji: '🎓' }];
+    const uni: SavedSearchFilters = { ...saved, search: '', tags: [], date: null, visibility: 'all', archiveStatus: 'active', favorites: false, mood: '', eraId: 3 };
+    expect(describeSavedSearch(uni, null, diaries, t, eras)).toBe('allDiaries · 🎓 University');
+    expect(describeSavedSearch(uni, null, diaries, t)).toBe('allDiaries · savedSearchNoFilters');
   });
 
   it('describes the diary and every filter a search sets', () => {

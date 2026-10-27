@@ -46,6 +46,7 @@ flowchart TD
 | `recycle-bin` | deleted entries kept for 30 days: list, restore, delete forever, empty, and the hourly purge |
 | `diaries` | diary containers, ordering, default diary, writing goals, moving entries when a diary is deleted |
 | `saved-searches` | named journal filter combinations with their diary scope: list, save, rename, delete, at most 50 per writer |
+| `life-eras` | named date ranges of the writer's life: list, add, change, delete, at most 100 per writer; the journal's `eraId` filter lives in the entries module's `applyEntryListFilters`, era chapters in `buildBook`, and `books` and `memoir` read eras through `LifeErasService` |
 | `attachments` | upload validation, object storage, audio transcription |
 | `ai` | OpenRouter credentials and usage, tag suggestions, inspiration, rephrasing, summaries, chat, semantic search, duplicates, tag organization, writing insights |
 | `stats` | statistics, heatmap, writing goal progress, daily writing streak, mood stats, connections graph, writing-tendency analysis |
@@ -107,7 +108,7 @@ flowchart TD
 - Route files stay thin. Components render; hooks own shared state, URL parameters, and API calls.
 - Server state goes through TanStack Query. The entry list keeps the previous page on screen while the next one loads.
 - The journal sends its first list request once everything that shapes it is known: the profile config (page size; a failed config request falls back to 10 at once), the default or route diary, and on a permalink the page that holds the entry. Until then the list query is disabled and the journal shows as loading, so no request is sent with defaults and thrown away.
-- Query-string parameters are product behavior: diary scope, import/export presets, entry permalinks, the saved search on screen (`view=<id>`, written beside `diary` when one is applied and dropped as soon as a filter changes), and the journal layout (`layout=calendar` with `month=YYYY-MM`; switching layout adds a history step, changing month replaces it, and a diary change keeps both). The calendar month is a TanStack query under the journal's entry key (`['app', 'entries', 'calendar', …]`), so every change that reloads the list reloads the month too.
+- Query-string parameters are product behavior: diary scope, import/export presets, entry permalinks, the saved search on screen (`view=<id>`, written beside `diary` when one is applied and dropped as soon as a filter changes), and the journal layout (`layout=calendar` with `month=YYYY-MM`; switching layout adds a history step, changing month replaces it, and a diary change keeps both). The calendar month is a TanStack query under the journal's entry key (`['app', 'entries', 'calendar', …]`), so every change that reloads the list reloads the month too. The life eras are one TanStack query (`['lifeEras']`, `useLifeEraList`) shared by the filter bar, the calendar, the memoir answer form and the profile section; changing or deleting an era also reloads the journal's entry queries and the saved searches, since an era's dates decide what its filter shows. The era filter itself is journal state (`filterEraId`) like the other filters, sent as `eraId` by the list and the calendar and kept in saved searches.
 - API types are generated from the server's OpenAPI document ([ADR 0004](./adr/0004-openapi-as-contract-source.md)). A test fails if the frontend stops calling a documented product endpoint.
 
 ## API Error Codes
@@ -181,6 +182,10 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 | Saved searches | `SAVED_SEARCH_NOT_FOUND` | Saved search not found |
 |  | `SAVED_SEARCH_NAME_TAKEN` | A saved search with this name already exists |
 |  | `SAVED_SEARCH_LIMIT_REACHED` | Saved search limit reached |
+| Life eras | `LIFE_ERA_NOT_FOUND` | Life era not found |
+|  | `LIFE_ERA_NAME_TAKEN` | A life era with this name already exists |
+|  | `LIFE_ERA_LIMIT_REACHED` | Life era limit reached |
+|  | `LIFE_ERA_DATES_INVALID` | A life era cannot end before it starts |
 | Attachments and audio transcription | `ATTACHMENT_NOT_FOUND` | Attachment not found |
 |  | `ATTACHMENT_FILE_NOT_FOUND` | File not found |
 |  | `ATTACHMENT_FILE_MISSING` | No file provided |

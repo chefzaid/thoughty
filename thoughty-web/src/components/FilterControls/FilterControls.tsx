@@ -8,6 +8,8 @@ import type { SemanticSearchResponse } from '../../services/api/aiService';
 import type { EntrySearchMode, SemanticSearchStatus } from '../../hooks/useEntriesState';
 import { MOOD_FILTER_OPTIONS, isMoodFilter, type MoodFilter } from '../../utils/entryMood';
 import { tintedTextClass } from '../../utils/tintedText';
+import type { LifeEra } from '../../services/api/lifeErasService';
+import EraFilterSelect from './EraFilterSelect';
 
 type VisibilityFilter = 'all' | 'public' | 'private';
 
@@ -33,6 +35,12 @@ interface FilterControlsProps {
     readonly setFilterArchiveStatus: Dispatch<SetStateAction<ArchiveStatusFilter>>;
     readonly filterMood: MoodFilter;
     readonly setFilterMood: Dispatch<SetStateAction<MoodFilter>>;
+    readonly filterEraId: number | null;
+    readonly setFilterEraId: Dispatch<SetStateAction<number | null>>;
+    /** The writer's life eras, offered as a filter when there are any. */
+    readonly eras?: readonly LifeEra[];
+    /** Opens the screen where life eras are managed. */
+    readonly onManageEras?: () => void;
     readonly allTags: string[];
     readonly tagMetadata?: TagMetadataMap;
     readonly setPage: Dispatch<SetStateAction<number>>;
@@ -64,6 +72,10 @@ function FilterControls({
     setFilterArchiveStatus,
     filterMood,
     setFilterMood,
+    filterEraId,
+    setFilterEraId,
+    eras = [],
+    onManageEras,
     allTags,
     tagMetadata,
     setPage,
@@ -96,6 +108,7 @@ function FilterControls({
         setFilterFavorites(false);
         setFilterArchiveStatus('active');
         setFilterMood('');
+        setFilterEraId(null);
         setPage(1);
     };
 
@@ -356,6 +369,14 @@ function FilterControls({
                             <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
                         ))}
                     </select>
+                    <EraFilterSelect
+                        eras={eras}
+                        value={filterEraId}
+                        onChange={(eraId) => { setFilterEraId(eraId); setPage(1); }}
+                        onManageEras={onManageEras}
+                        theme={theme}
+                        t={t}
+                    />
                     <button type="button"
                         onClick={handleReset}
                         className={`inline-flex h-10 shrink-0 items-center gap-2 px-4 bg-red-500/10 hover:bg-red-500/20 ${tintedTextClass('red', theme)} border border-red-500/50 rounded-lg transition-all text-sm font-medium`}

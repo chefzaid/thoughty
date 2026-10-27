@@ -15,7 +15,8 @@ const memoirService = {
   answer: vi.fn(),
   leave: vi.fn(),
 };
-const attachmentsService = { uploadAttachment: vi.fn(), transcribeAttachment: vi.fn() };
+// One stand-in for every authenticated service the page uses: attachments and life eras
+const attachmentsService = { uploadAttachment: vi.fn(), transcribeAttachment: vi.fn(), list: vi.fn() };
 
 vi.mock('../../hooks/useMemoirService', () => ({ useMemoirService: () => memoirService }));
 vi.mock('../../hooks/useAuthenticatedService', () => ({ useAuthenticatedService: () => attachmentsService }));
@@ -80,6 +81,7 @@ describe('MemoirPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     memoirService.fetchOverview.mockResolvedValue({ data: overview(), error: null });
+    attachmentsService.list.mockResolvedValue({ data: { lifeEras: [], limit: 100 }, error: null });
   });
 
   it('introduces the program and starts it in a new diary named by the writer', async () => {
@@ -151,6 +153,25 @@ describe('MemoirPage', () => {
     expect(await screen.findByText('memoirAnswerSaved')).toBeInTheDocument();
     expect(screen.queryByLabelText('memoirYourAnswer')).not.toBeInTheDocument();
     expect(memoirService.fetchOverview).toHaveBeenCalledTimes(2);
+  });
+
+  it('places an answer in one of the writer’s life eras', async () => {
+    attachmentsService.list.mockResolvedValue({
+      data: {
+        lifeEras: [{ id: 3, name: 'Childhood', emoji: null, color: null, note: null, startDate: '1960-01-01', endDate: '1972-12-31', createdAt: '', updatedAt: '' }],
+        limit: 100,
+      },
+      error: null,
+    });
+    memoirService.answer.mockResolvedValue({ data: { questionId: 'childhood-home', entryId: 90 }, error: null });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'memoirAnswerQuestion' }));
+    fireEvent.change(await screen.findByRole('combobox', { name: 'memoirEraLabel' }), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText('memoirYourAnswer'), { target: { value: 'A fig tree.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'memoirSaveAnswer' }));
+
+    await waitFor(() => expect(memoirService.answer).toHaveBeenCalledWith({ questionId: 'childhood-home', text: 'A fig tree.', eraId: 3 }));
   });
 
   it('keeps the answer open when it cannot be saved', async () => {

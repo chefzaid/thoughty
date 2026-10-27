@@ -87,7 +87,7 @@ export async function handleMemoirRoutes(context: RouteContext): Promise<boolean
   }
 
   if (pathname === '/api/memoir/answers' && method === 'POST' && memoir.program) {
-    const payload = request.postDataJSON() as { questionId: string; text: string; attachmentIds?: number[] };
+    const payload = request.postDataJSON() as { questionId: string; text: string; attachmentIds?: number[]; eraId?: number };
     memoir.lastAnswerPayload = payload;
     const question = QUESTIONS.find((candidate) => candidate.id === payload.questionId);
     if (!question || memoir.answers[question.id]) {
@@ -102,7 +102,8 @@ export async function handleMemoirRoutes(context: RouteContext): Promise<boolean
         date: '2026-10-19',
         index: 1,
         content: payload.text ? `### ${question.text.en}\n\n${payload.text}` : `### ${question.text.en}`,
-        tags: [question.chapter.title.en],
+        // The era the memory belongs to is a second tag, as `MemoirAnswersService` adds it
+        tags: [question.chapter.title.en, ...state.lifeEras.filter((era) => era.id === payload.eraId).map((era) => era.name)],
         visibility: 'private',
         format: 'markdown',
         diaryId: memoir.program.diaryId,

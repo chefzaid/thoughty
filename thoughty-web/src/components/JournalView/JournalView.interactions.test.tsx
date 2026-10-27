@@ -15,6 +15,7 @@ vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (awa
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
 vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import('./JournalView.test-helpers')).MockSavedSearches }));
+vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 vi.mock('../JournalCalendar/useJournalLayoutRoute', async () => {
   const { listLayoutRoute } = await import('./JournalView.test-helpers');
   return { useJournalLayoutRoute: () => listLayoutRoute };
@@ -175,5 +176,14 @@ describe('JournalView', () => {
     fireEvent.click(button);
 
     expect(props.onOpenRecycleBin).toHaveBeenCalledTimes(1);
+  });
+
+  it('gives the filter bar the writer’s life eras and a way to manage them', () => {
+    const props = createProps();
+    render(<JournalView {...props} />);
+
+    expect(screen.getByTestId('filter-era-count')).toHaveTextContent('0');
+    fireEvent.click(screen.getByTestId('manage-eras-btn'));
+    expect(props.onManageLifeEras).toHaveBeenCalledTimes(1);
   });
 });

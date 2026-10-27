@@ -80,6 +80,19 @@ describe('entriesService', () => {
       expect(String(mockAuthFetch.mock.calls[1]?.[0])).not.toContain('mood=');
     });
 
+    it('sends the life era filter only when one is chosen', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+      });
+
+      await service.fetchEntries({ ...defaultParams, eraId: 3 });
+      await service.fetchEntries({ ...defaultParams, eraId: null });
+
+      expect(new URL(String(mockAuthFetch.mock.calls[0]?.[0]), 'https://x.test').searchParams.get('eraId')).toBe('3');
+      expect(String(mockAuthFetch.mock.calls[1]?.[0])).not.toContain('eraId=');
+    });
+
     it('returns null when response is not ok', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: false,

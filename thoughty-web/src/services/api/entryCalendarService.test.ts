@@ -5,7 +5,7 @@ import { createEntryCalendarService, type EntryCalendarQuery } from './entryCale
 const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
 const everything: EntryCalendarQuery = {
   month: '2026-10', search: '', tags: [], visibility: 'all', favorites: false,
-  archiveStatus: 'all', mood: '', diaryId: null, entryIds: null,
+  archiveStatus: 'all', mood: '', diaryId: null, eraId: null, entryIds: null,
 };
 
 describe('entryCalendarService', () => {
@@ -23,14 +23,14 @@ describe('entryCalendarService', () => {
 
     await service.fetchMonth({
       month: '2019-07', search: 'lake picnic', tags: ['family', 'summer'], visibility: 'private', favorites: true,
-      archiveStatus: 'active', mood: '4,5', diaryId: 2, entryIds: [9, 3],
+      archiveStatus: 'active', mood: '4,5', diaryId: 2, eraId: 6, entryIds: [9, 3],
     });
     await service.fetchMonth({ ...everything, search: '   ', entryIds: [] });
 
     const [first, second] = authFetch.mock.calls.map(([url]) => new URL(String(url), 'https://thoughty.test'));
     expect(Object.fromEntries(first!.searchParams)).toEqual({
       month: '2019-07', search: 'lake picnic', tags: 'family,summer', visibility: 'private', favorites: 'true',
-      archiveStatus: 'active', mood: '4,5', diaryId: '2', ids: '9,3',
+      archiveStatus: 'active', mood: '4,5', diaryId: '2', eraId: '6', ids: '9,3',
     });
     expect(Object.fromEntries(second!.searchParams)).toEqual({ month: '2026-10', ids: '0' });
   });

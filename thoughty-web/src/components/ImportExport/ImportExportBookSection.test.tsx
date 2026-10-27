@@ -195,6 +195,27 @@ describe('ImportExport book section', () => {
         expect(screen.getByLabelText('bookTagScope')).toBeDisabled();
     });
 
+    it('previews an outline with one chapter per life era and an outside-eras chapter option', async () => {
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ ...mockBookPreview, chapters: [{ title: 'University', entryCount: 3, firstDate: '2011-01-10', lastDate: '2013-03-01' }] }),
+        });
+
+        await renderBookSection();
+
+        expect(screen.getByLabelText('bookIncludeUntagged')).toBeChecked();
+        fireEvent.change(screen.getByLabelText('bookChapterMode'), { target: { value: 'eras' } });
+        expect(screen.getByLabelText('bookChapterMode')).toHaveAccessibleDescription('bookErasHint');
+        fireEvent.click(screen.getByLabelText('bookIncludeOutsideEras'));
+        fireEvent.click(screen.getByText('previewBook'));
+
+        await screen.findByText('University');
+        const previewCall = (globalThis.fetch as Mock).mock.calls.find((call: unknown[]) => (call[0] as string).includes('/api/books/preview'));
+        expect((previewCall as [string])[0]).toContain('chapterMode=eras');
+        expect((previewCall as [string])[0]).toContain('includeUntagged=false');
+        expect(screen.getByLabelText('bookChapterOrder')).toBeDisabled();
+    });
+
     it('shows a hint when no chapters could be built', async () => {
         (globalThis.fetch as Mock).mockResolvedValueOnce({
             ok: true,

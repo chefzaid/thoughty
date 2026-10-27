@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { EntryCalendarItem } from '../../services/api';
+import type { EntryCalendarItem, LifeEra } from '../../services/api';
 import { createTestQueryClient } from '../../test/queryClient';
 import type { CalendarMonth } from '../../utils/calendarMonth';
 import { getTranslation } from '../../utils/translations';
@@ -16,8 +16,12 @@ vi.mock('../../hooks/useAuthenticatedService', () => ({
 
 const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
 const FILTERS = {
-  search: '', tags: [], visibility: 'all', favorites: false, archiveStatus: 'active', mood: '', diaryId: null, entryIds: null,
+  search: '', tags: [], visibility: 'all', favorites: false, archiveStatus: 'active', mood: '', diaryId: null, eraId: null, entryIds: null,
 } as const;
+const UNIVERSITY: LifeEra = {
+  id: 3, name: 'University', emoji: '🎓', color: '#2A9D8F', note: null,
+  startDate: '2010-09-01', endDate: '2014-06-30', createdAt: '', updatedAt: '',
+};
 
 const item = (overrides: Partial<EntryCalendarItem>): EntryCalendarItem => ({
   id: 1, diary_id: 1, date: '2026-10-20', index: 1, time_of_day: null, title: null, snippet: 'Text', mood: null, ...overrides,
@@ -38,15 +42,17 @@ interface HarnessProps {
   readonly onOpenDay?: (date: string) => void;
   readonly onOpenEntry?: (entry: EntryCalendarItem) => void;
   readonly theme?: 'light' | 'dark';
+  readonly era?: LifeEra | null;
 }
 
-function Harness({ initialMonth = null, selectedDate = null, onMonthChange, onOpenDay = vi.fn(), onOpenEntry = vi.fn(), theme = 'dark' }: HarnessProps) {
+function Harness({ initialMonth = null, selectedDate = null, onMonthChange, onOpenDay = vi.fn(), onOpenEntry = vi.fn(), theme = 'dark', era = null }: HarnessProps) {
   const [month, setMonth] = useState<CalendarMonth | null>(initialMonth);
   return (
     <JournalCalendar
       month={month}
       onMonthChange={(next) => { setMonth(next); onMonthChange?.(next); }}
-      filters={FILTERS}
+      filters={era ? { ...FILTERS, eraId: era.id } : FILTERS}
+      era={era}
       selectedDate={selectedDate}
       availableYears={[2026, 2019]}
       onOpenDay={onOpenDay}
@@ -105,6 +111,26 @@ describe('JournalCalendar', () => {
     expect(today).toHaveAttribute('tabindex', '0');
     expect(busy).toHaveAttribute('tabindex', '-1');
     expect(calendarService.fetchMonth).toHaveBeenCalledWith({ ...FILTERS, month: '2026-10' });
+  });
+
+  it('names the life era it is narrowed to and goes to its first month from outside it', async () => {
+    const onMonthChange = vi.fn();
+    renderCalendar({ era: UNIVERSITY, onMonthChange });
+
+    expect(screen.getByText(/^Life era: 🎓 University \(.*2010 – .*2014\)$/)).toBeInTheDocument();
+    expect(calendarService.fetchMonth).toHaveBeenCalledWith(expect.objectContaining({ eraId: 3, month: '2026-10' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Go to the start of University' }));
+
+    expect(onMonthChange).toHaveBeenCalledWith({ year: 2010, month: 9 });
+    expect(await screen.findByRole('grid', { name: 'September 2010' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Go to the start of University' })).not.toBeInTheDocument();
+  });
+
+  it('names an ongoing era in the light theme without a way back when the month is inside it', () => {
+    renderCalendar({ era: { ...UNIVERSITY, endDate: null, color: null, emoji: null }, theme: 'light' });
+
+    expect(screen.getByText(/^Life era: University \(Since .*2010\)$/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Go to the start/ })).not.toBeInTheDocument();
   });
 
   it("opens on the date filter's month with that day selected and focusable", async () => {

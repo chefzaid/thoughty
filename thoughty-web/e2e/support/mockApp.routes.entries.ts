@@ -8,6 +8,7 @@ import {
 import { fulfillJson, sortStrings, toEntryMutationResponse, toEntryResponse, toRevisionResponse, type RouteContext } from './mockApp.route-utils';
 import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 import { getMockBacklinks } from './mockApp.backlinks';
+import { mockEraContains } from './mockApp.routes.life-eras';
 
 const TASK_LINE = /^((?:[\t ]*>)*[\t ]*(?:[*+-]|\d{1,9}[.)])[\t ]+\[)([ xX])(\](?:[\t \r]|$)[^\n]*)$/;
 
@@ -42,6 +43,7 @@ export function getFilteredEntries(
   const archiveStatus = searchParams.get('archiveStatus') || 'active';
   const diaryId = searchParams.get('diaryId');
   const mood = searchParams.get('mood') || '';
+  const eraId = searchParams.get('eraId');
   const semanticIds = searchParams.get('ids')
     ?.split(',')
     .map((id) => Number(id)) ?? null;
@@ -90,6 +92,10 @@ export function getFilteredEntries(
   } else if (mood) {
     const levels = mood.split(',').map(Number);
     filtered = filtered.filter((entry) => entry.mood != null && levels.includes(entry.mood));
+  }
+  if (eraId) {
+    const era = state.lifeEras.find((candidate) => String(candidate.id) === eraId);
+    filtered = era ? filtered.filter((entry) => mockEraContains(era, entry.date)) : [];
   }
   if (semanticIds) {
     const semanticRank = new Map(semanticIds.map((id, index) => [id, index]));

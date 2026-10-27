@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { weekdayName } from '../../utils/calendarNames';
-import { browserTimeZone, formatDeliveryDate, localize, WEEKDAYS } from './memoirFormat';
+import { browserTimeZone, formatDeliveryDate, localize, todayIn, WEEKDAYS } from './memoirFormat';
 
 describe('memoirFormat', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -35,5 +35,12 @@ describe('memoirFormat', () => {
       throw new RangeError('no zone');
     });
     expect(browserTimeZone()).toBe('UTC');
+  });
+
+  it('reads today in the memoir’s time zone, or the browser’s when the zone is unknown', () => {
+    const now = new Date('2026-10-27T23:30:00Z');
+    expect(todayIn('Europe/Paris', now)).toBe('2026-10-28');
+    expect(todayIn('America/Los_Angeles', now)).toBe('2026-10-27');
+    expect(todayIn('Not/AZone', now)).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
 });

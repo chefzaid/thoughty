@@ -11,8 +11,9 @@ import MemoirProgress from './MemoirProgress';
 import MemoirQuestionCard from './MemoirQuestionCard';
 import MemoirSettings from './MemoirSettings';
 import { resolveLanguage } from '../../utils/language';
-import { localize } from './memoirFormat';
+import { localize, todayIn } from './memoirFormat';
 import { useMemoir } from './useMemoir';
+import { useLifeEraList } from '../LifeEras/useLifeEras';
 import './MemoirPage.css';
 
 export interface MemoirPageProps {
@@ -47,6 +48,7 @@ function MemoirPage({
 }: MemoirPageProps) {
   const language = resolveLanguage(rawLanguage);
   const memoir = useMemoir();
+  const { eras } = useLifeEraList();
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(initialQuestionId);
   const [skipping, setSkipping] = useState(false);
   const [actionFailed, setActionFailed] = useState(false);
@@ -100,6 +102,9 @@ function MemoirPage({
       questionText={questionText}
       onSubmit={handleAnswer}
       onCancel={() => setActiveQuestionId(null)}
+      eras={eras}
+      answerDate={todayIn(program?.timeZone ?? 'UTC')}
+      language={language}
       t={t}
     />
   );

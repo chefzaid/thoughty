@@ -27,6 +27,9 @@ vi.mock('./AchievementsSection', () => ({
   default: () => <section aria-label="achievements" />,
 }));
 
+vi.mock('../LifeEras/LifeErasSection', () => ({
+  default: ({ language }: { language: string }) => <div data-testid="life-eras-section">{language}</div>,
+}));
 vi.mock('./CloudProvidersSection', () => ({
     default: () => <div>cloudProviders</div>,
 }));
@@ -155,6 +158,12 @@ describe('ProfilePage', () => {
             expect(screen.getByText('appearance')).toBeInTheDocument();
             expect(screen.getByText('cloudProviders')).toBeInTheDocument();
             expect(screen.getByText('subscriptionManagement')).toBeInTheDocument();
+        });
+
+        it('shows the life eras in the saved language', () => {
+            render(<ProfilePage {...defaultProps} config={{ ...defaultProps.config, language: 'fr' }} />);
+
+            expect(screen.getByTestId('life-eras-section')).toHaveTextContent('fr');
         });
 
 

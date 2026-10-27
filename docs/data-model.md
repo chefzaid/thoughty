@@ -25,6 +25,7 @@ erDiagram
     User ||--o{ MemoirAnswer : writes
     User ||--o{ YearReviewMood : keeps
     User ||--o{ SavedSearch : saves
+    User ||--o{ LifeEra : names
 
     Diary ||--o{ Entry : contains
     Diary ||--o{ BookVersion : scopes
@@ -41,7 +42,7 @@ erDiagram
     EntryComment ||--o{ CommentLike : receives
 ```
 
-Uniqueness rules worth knowing: diary names per user, one setting per key, one AI chat per entry, one vote per idea, one like per user and item, one follow per pair (never yourself), one memoir program per user, and one memoir answer per question and per entry, and saved search names per user whatever their case. Comments hold 1 to 1,000 non-blank characters.
+Uniqueness rules worth knowing: diary names per user, one setting per key, one AI chat per entry, one vote per idea, one like per user and item, one follow per pair (never yourself), one memoir program per user, and one memoir answer per question and per entry, and saved search and life era names per user whatever their case. Comments hold 1 to 1,000 non-blank characters.
 
 ## Ownership and Deletion Rules
 
@@ -59,6 +60,7 @@ Every table except `users` references a user, and those foreign keys cascade. Ac
 | `BookVersion` | Deleted with the user. A diary's journal versions (`diary:<id>`) go with the diary (`ON DELETE CASCADE`); the all-diaries history (`all`) stays. A saved search's versions (`search:<id>`) are deleted with the saved search, in the same transaction, after its delete confirmation says how many go. Hand-picked versions (`picked`) stay listed and downloadable when their entries are deleted; only a new version from the same picks is refused (`400 BOOK_PICKED_ENTRIES_UNAVAILABLE`) until the missing picks are removed. |
 | `YearReviewMood` | Deleted with the user or their diary. |
 | `SavedSearch` | Deleted with the user, and with it the book versions saved from it. Deleting its diary keeps the search, its book versions, and widens it to all diaries (`SET NULL`). |
+| `LifeEra` | Deleted with the user. Deleting one leaves entries untouched and sets `eraId` to null in the writer's saved searches filtered by it, in the same transaction, so they cover every date. |
 | Everything else | Deleted with the user. Votes also go with their request. |
 
 ## Entries
@@ -161,6 +163,19 @@ Progress is computed on request (`StatsGoalService`, in `GET /api/stats` as `goa
 - A writer keeps at most 50 (`SAVED_SEARCH_LIMIT`, sent with the list). Saves take a transaction-scoped advisory lock on `(hashtext('saved_searches'), user_id)`, so concurrent saves cannot pass the limit. The diary must be the writer's own.
 - Each listed search carries `bookVersionCount`, the book versions saved from it (`scope_key` `search:<id>`), counted in one grouped query; the delete confirmation names that count, since deleting the search deletes those versions.
 - Saved searches are private: they are only read by their owner, and they are part of the data download.
+
+## Life Eras
+
+`life_eras` keeps named periods of the writer's life (`LifeErasModule`, `/api/life-eras`): a `name` (`VARCHAR(50)`, not blank), `start_date` (`DATE`), `end_date` (`DATE`, null while the era is ongoing, never before the start: `chk_life_eras_dates`), and optional `color` (`#RRGGBB` in capitals), `emoji` (16 characters) and `note` (500 characters).
+
+- Eras may overlap. An entry belongs to an era by its date alone, first and last days included; nothing is stored on entries.
+- The unique index `uq_life_eras_user_name` on `(user_id, lower(name))` gives one name per writer whatever its case (`409 LIFE_ERA_NAME_TAKEN`); `idx_life_eras_user_start` serves the list, ordered by start date, closed before ongoing on the same start, then by name.
+- A writer keeps at most 100 (`LIFE_ERA_LIMIT`, sent with the list). Adding takes a transaction-scoped advisory lock on `(hashtext('life_eras'), user_id)`, so concurrent requests cannot pass the limit. An end before the start is refused with `400 LIFE_ERA_DATES_INVALID`; an update checks the range it leaves.
+- The journal filter `eraId` (`EntryFilterQueryDto`, shared by the list, the calendar and saved-search books through `applyEntryListFilters`) adds `EXISTS (SELECT 1 FROM life_eras era WHERE era.id = :eraId AND era.user_id = e.user_id AND e.date BETWEEN start AND end-or-unbounded)`, so another writer's era matches none of your entries. The entry list cache key includes `eraId`, and changing or deleting an era drops the writer's cached lists.
+- Saved searches keep the era as `filters.eraId` (optional: searches saved before eras lack it and are read as `null`). Saving one checks the era is the writer's own (`404 LIFE_ERA_NOT_FOUND`).
+- Era books (`chapterMode=eras`) read the writer's eras and place each entry in the shortest era covering its date (an ongoing era lasting until today), ties going to the later start, then the name; `includeUntagged` adds the "Other" chapter for entries outside every era.
+- A memoir answer can name an era (`eraId`): the entry is tagged with the era's name besides its chapter tag. The tag is a copy; renaming or deleting the era leaves it.
+- Life eras are private, read only by their owner, part of the data download (with their IDs, which saved searches refer to), and erased with the account.
 
 ## Public Feed Eligibility
 

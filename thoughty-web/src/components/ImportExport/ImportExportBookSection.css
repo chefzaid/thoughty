@@ -427,3 +427,13 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+.book-field-hint {
+    margin: 0 0 0.75rem;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.72));
+    font-size: 0.85rem;
+}
+
+.import-export.light .book-field-hint {
+    color: #4b5563;
+}

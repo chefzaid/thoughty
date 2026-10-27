@@ -2,6 +2,7 @@ import type { components } from "../../src/generated/openapi";
 import { type MockAppState, type MockBookVersion, type MockEntry } from "./mockApp.shared";
 import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route-utils";
 import { getFilteredEntries } from "./mockApp.routes.entries";
+import { byStart, mockEraContains, type MockLifeEra } from "./mockApp.routes.life-eras";
 
 type BookPreview = components["schemas"]["BookPreviewResponseDto"];
 type BookSource = MockBookVersion["source"];
@@ -58,6 +59,7 @@ function selectEntries(state: MockAppState, params: URLSearchParams): BookSelect
       archiveStatus: saved.filters.archiveStatus,
       mood: saved.filters.mood,
       diaryId: saved.diaryId === null ? "" : String(saved.diaryId),
+      eraId: saved.filters.eraId ? String(saved.filters.eraId) : "",
     });
     return {
       entries: getFilteredEntries(state, filters).filtered,
@@ -77,9 +79,42 @@ interface MockChapter {
   entries: MockEntry[];
 }
 
-/** Chapters as `buildBook` groups them: by tag (alphabetical, untagged last), year, month, or one chapter. */
-function buildChapters(entries: MockEntry[], params: URLSearchParams, title: string): MockChapter[] {
+const DAY_MS = 86_400_000;
+
+/** Among the eras that cover the date, the shortest (an ongoing one lasting until today), then the latest to start. */
+function mostSpecificEra(eras: MockLifeEra[], date: string): MockLifeEra | undefined {
+  const today = new Date().toISOString().slice(0, 10);
+  const until = date > today ? date : today;
+  const length = (era: MockLifeEra) => (Date.parse(era.endDate ?? until) - Date.parse(era.startDate)) / DAY_MS;
+  return eras
+    .filter((era) => mockEraContains(era, date))
+    .sort((left, right) => length(left) - length(right) || right.startDate.localeCompare(left.startDate) || left.name.localeCompare(right.name))[0];
+}
+
+/** One chapter per life era in era order, each entry in its most specific era, then "Other" unless left out. */
+function buildEraChapters(entries: MockEntry[], eras: MockLifeEra[], params: URLSearchParams): MockChapter[] {
+  const ordered = [...eras].sort(byStart);
+  const chapters = new Map<number, MockChapter>();
+  const outside: MockEntry[] = [];
+  for (const entry of chronological(entries)) {
+    const era = mostSpecificEra(ordered, entry.date);
+    if (!era) {
+      outside.push(entry);
+      continue;
+    }
+    const chapter = chapters.get(era.id) ?? { title: era.name, entries: [] };
+    chapter.entries.push(entry);
+    chapters.set(era.id, chapter);
+  }
+  const result = ordered.flatMap((era) => chapters.get(era.id) ?? []);
+  if (outside.length > 0 && params.get("includeUntagged") !== "false") result.push({ title: "Other", entries: outside });
+  return result;
+}
+
+/** Chapters as `buildBook` groups them: by tag (alphabetical, untagged last), year, month, era, or one chapter. */
+function buildChapters(entries: MockEntry[], params: URLSearchParams, title: string, eras: MockLifeEra[]): MockChapter[] {
   const mode = params.get("chapterMode") ?? "tags";
+  if (mode === "eras") return buildEraChapters(entries, eras, params);
   const chapters = new Map<string, MockChapter>();
   const place = (key: string, chapterTitle: string, entry: MockEntry) => {
     const chapter = chapters.get(key) ?? { title: chapterTitle, entries: [] };
@@ -104,7 +139,7 @@ function buildChapters(entries: MockEntry[], params: URLSearchParams, title: str
 function buildBook(state: MockAppState, params: URLSearchParams) {
   const selection = selectEntries(state, params);
   const title = params.get("title")?.trim() || selection.defaultTitle || "My Book of Thoughts";
-  return { title, source: selection.source, chapters: buildChapters(selection.entries, params, title) };
+  return { title, source: selection.source, chapters: buildChapters(selection.entries, params, title, state.lifeEras) };
 }
 
 function toPreview(book: ReturnType<typeof buildBook>): BookPreview {

@@ -170,6 +170,7 @@ export function BookSection({
                             value={options.chapterMode}
                             onChange={(event) => onOptionChange('chapterMode', event.target.value as BookChapterMode)}
                             className="format-select"
+                            aria-describedby={options.chapterMode === 'eras' ? 'book-chapter-mode-eras' : undefined}
                         >
                             {BOOK_CHAPTER_MODE_OPTIONS.map((option) => (
                                 <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
@@ -220,6 +221,9 @@ export function BookSection({
                     </div>
                 </div>
 
+                {options.chapterMode === 'eras' && (
+                    <p id="book-chapter-mode-eras" className="book-field-hint">{t('bookErasHint')}</p>
+                )}
                 <div className="export-option-row book-checkbox-row">
                     {BOOK_CHECKBOXES.map((checkbox) => (
                         <label key={checkbox.key} className="checkbox-label">
@@ -228,7 +232,7 @@ export function BookSection({
                                 checked={options[checkbox.key]}
                                 onChange={(event) => onOptionChange(checkbox.key, event.target.checked)}
                             />
-                            {t(checkbox.labelKey)}
+                            {t(checkbox.key === 'includeUntagged' && options.chapterMode === 'eras' ? 'bookIncludeOutsideEras' : checkbox.labelKey)}
                         </label>
                     ))}
                 </div>

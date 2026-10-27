@@ -19,6 +19,7 @@ export type SavedSearchFilterControls = Pick<ComponentProps<typeof FilterControl
   | 'filterTags' | 'setFilterTags' | 'filterDateObj' | 'setFilterDateObj'
   | 'filterVisibility' | 'setFilterVisibility' | 'filterFavorites' | 'setFilterFavorites'
   | 'filterArchiveStatus' | 'setFilterArchiveStatus' | 'filterMood' | 'setFilterMood'
+  | 'filterEraId' | 'setFilterEraId'
   | 'setPage' | 'onSemanticSearch'>;
 
 interface UseSavedSearchRouteOptions {
@@ -77,6 +78,7 @@ export function useSavedSearchRoute({ savedSearches, filters, currentDiaryId, no
     controls.setFilterFavorites(values.favorites);
     controls.setFilterArchiveStatus(values.archiveStatus);
     controls.setFilterMood(savedSearchMood(values.mood));
+    controls.setFilterEraId(values.eraId ?? null);
     controls.setPage(1);
     setPendingMeaningSearch(values.searchMode === 'semantic' && values.search.trim().length >= 2
       ? { search: values.search, diaryId: saved.diaryId }

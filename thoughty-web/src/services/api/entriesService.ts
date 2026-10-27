@@ -1,5 +1,6 @@
 import { readApiErrorMessage, safeJsonParse } from './base';
-import type { ArchiveStatusFilter, Entry, EntryBacklink, EntriesResponse, EntryRevision, EntrySearchSort } from '../../types';
+import type { Entry, EntryBacklink, EntriesResponse, EntryRevision } from '../../types';
+import { entryListParams, type EntryListQuery } from './entryListQuery';
 import type { components, paths } from '../../generated/openapi';
 
 type CreateEntryRequestDto = components['schemas']['CreateEntryDto'];
@@ -35,50 +36,9 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   /**
    * Fetch entries with filters and pagination
    */
-  const fetchEntries = async (params: {
-    page: number;
-    limit: number;
-    search: string;
-    /** Order of keyword search results; sent only with a search. */
-    sort?: EntrySearchSort;
-    filterTags: string[];
-    filterDate: string;
-    filterVisibility: string;
-    favorites: boolean;
-    archiveStatus: ArchiveStatusFilter;
-    /** `any`, `none`, or levels such as `4,5`; empty for every entry. */
-    mood?: string;
-    diaryId: number | null;
-    entryIds?: number[] | null;
-  }): Promise<EntriesResponse | null> => {
+  const fetchEntries = async (params: EntryListQuery): Promise<EntriesResponse | null> => {
     try {
-      const urlParams = new URLSearchParams({
-        page: params.page.toString(),
-        limit: params.limit.toString(),
-        search: params.search,
-        tags: params.filterTags.join(','),
-        date: params.filterDate,
-        visibility: params.filterVisibility
-      });
-      if (params.search.trim() && params.sort) {
-        urlParams.append('sort', params.sort);
-      }
-      if (params.diaryId) {
-        urlParams.append('diaryId', params.diaryId.toString());
-      }
-      if (params.favorites) {
-        urlParams.append('favorites', 'true');
-      }
-      if (params.archiveStatus !== 'all') {
-        urlParams.append('archiveStatus', params.archiveStatus);
-      }
-      if (params.mood) {
-        urlParams.append('mood', params.mood);
-      }
-      if (params.entryIds) {
-        urlParams.append('ids', params.entryIds.length > 0 ? params.entryIds.join(',') : '0');
-      }
-
+      const urlParams = entryListParams(params);
       const response = await authFetch(`/api/entries?${urlParams}`);
       const data = await safeJsonParse<EntriesListApiResponse>(response);
 

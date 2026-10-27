@@ -1,9 +1,11 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from 'react';
 
 import { useAuthenticatedService } from '../../hooks/useAuthenticatedService';
-import { createAttachmentsService, type AnswerMemoirRequest } from '../../services/api';
+import { createAttachmentsService, type AnswerMemoirRequest, type LifeEra } from '../../services/api';
 import type { TranslationFunction } from '../../types';
 import { EMPTY_CAPTIONS_TRACK_URL } from '../../utils/attachments';
+import type { Language } from '../../utils/translations';
+import MemoirEraField from './MemoirEraField';
 import { formatRecordingTime, isVoiceRecordingSupported, useVoiceRecorder } from './useVoiceRecorder';
 import './MemoirAnswerForm.css';
 
@@ -25,13 +27,19 @@ interface MemoirAnswerFormProps {
   readonly questionText: string;
   readonly onSubmit: (request: AnswerMemoirRequest) => Promise<boolean>;
   readonly onCancel: () => void;
+  /** The writer's life eras, to place the memory in one. */
+  readonly eras?: readonly LifeEra[];
+  /** The day the answer will be dated (`YYYY-MM-DD`). */
+  readonly answerDate?: string;
+  readonly language?: Language;
   readonly t: TranslationFunction;
 }
 
-function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, t }: MemoirAnswerFormProps) {
+function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, eras = [], answerDate = '', language = 'en', t }: MemoirAnswerFormProps) {
   const attachmentsService = useAuthenticatedService(createAttachmentsService);
   const recorder = useVoiceRecorder();
   const [text, setText] = useState('');
+  const [eraId, setEraId] = useState<number | null>(null);
   const [problem, setProblem] = useState<FormProblem>(null);
   const [busy, setBusy] = useState<'transcribing' | 'saving' | null>(null);
   const uploaded = useRef<{ file: File; id: number } | null>(null);
@@ -94,7 +102,12 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, t }: M
       setProblem('upload');
       return;
     }
-    const saved = await onSubmit({ questionId, text: text.trim(), ...(attachmentId ? { attachmentIds: [attachmentId] } : {}) });
+    const saved = await onSubmit({
+      questionId,
+      text: text.trim(),
+      ...(attachmentId ? { attachmentIds: [attachmentId] } : {}),
+      ...(eraId ? { eraId } : {}),
+    });
     setBusy(null);
     if (!saved) setProblem('save');
   };
@@ -158,6 +171,16 @@ function MemoirAnswerForm({ questionId, questionText, onSubmit, onCancel, t }: M
           </div>
         </div>
       )}
+
+      <MemoirEraField
+        eras={eras}
+        answerDate={answerDate}
+        value={eraId}
+        onChange={setEraId}
+        disabled={busy !== null}
+        language={language}
+        t={t}
+      />
 
       {problem && <p className="memoir-error" role="alert">{t(PROBLEM_MESSAGES[problem])}</p>}
       <div className="memoir-actions">

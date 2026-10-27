@@ -34,6 +34,7 @@ function createParams(overrides: Partial<UseEntryNavigationParams> = {}): UseEnt
     filterDateObj: null,
     filterFavorites: false,
     filterMood: '',
+    filterEraId: null,
     filterTags: [],
     filterVisibility: 'all',
     getLimit: vi.fn(() => 10),
@@ -50,6 +51,7 @@ function createParams(overrides: Partial<UseEntryNavigationParams> = {}): UseEnt
     setFilterDateObj: createSetterSpy<Date | null>(),
     setFilterFavorites: createSetterSpy<boolean>(),
     setFilterMood: createSetterSpy<MoodFilter>(),
+    setFilterEraId: createSetterSpy<number | null>(),
     setFilterTags: createSetterSpy<string[]>(),
     setFilterVisibility: createSetterSpy<'all' | 'public' | 'private'>(),
     setPage: createSetterSpy<number>(),
@@ -361,6 +363,7 @@ describe('useEntryNavigation', () => {
     const setFilterFavorites = createSetterSpy<boolean>();
     const setFilterArchiveStatus = createSetterSpy<'all' | 'active' | 'archived'>();
     const setFilterMood = createSetterSpy<MoodFilter>();
+    const setFilterEraId = createSetterSpy<number | null>();
     const setCurrentDiaryId = createSetterSpy<number | null>();
     const setPage = createSetterSpy<number>();
     const navigateByDate = vi.fn().mockResolvedValue({ found: true, page: 5, entryId: 13 });
@@ -374,6 +377,7 @@ describe('useEntryNavigation', () => {
       filterDateObj: new Date('2024-01-15'),
       filterFavorites: true,
       filterMood: '4,5',
+      filterEraId: 3,
       filterTags: ['work'],
       filterVisibility: 'private',
       navigate,
@@ -385,6 +389,7 @@ describe('useEntryNavigation', () => {
       setFilterDateObj,
       setFilterFavorites,
       setFilterMood,
+      setFilterEraId,
       setFilterTags,
       setFilterVisibility,
       setPage,
@@ -402,6 +407,7 @@ describe('useEntryNavigation', () => {
     expect(setFilterFavorites).toHaveBeenCalledWith(false);
     expect(setFilterArchiveStatus).toHaveBeenCalledWith('all');
     expect(setFilterMood).toHaveBeenCalledWith('');
+    expect(setFilterEraId).toHaveBeenCalledWith(null);
     expect(setCurrentDiaryId).toHaveBeenCalledWith(null);
     expect(navigate).toHaveBeenCalledWith({ pathname: '/journal', search: '?diary=all' }, { replace: true });
     expect(setPage).toHaveBeenCalledWith(1);

@@ -88,6 +88,36 @@ describe('MemoirAnswerForm', () => {
     expect(uploaded.type).toBe('audio/webm');
   });
 
+  it('says which eras the answer’s day falls in and saves the era the memory belongs to', async () => {
+    const eras = [
+      { id: 3, name: 'University', emoji: '🎓', color: null, note: null, startDate: '2010-09-01', endDate: '2014-06-30', createdAt: '', updatedAt: '' },
+      { id: 4, name: 'Paris', emoji: null, color: null, note: null, startDate: '2015-01-01', endDate: null, createdAt: '', updatedAt: '' },
+      { id: 5, name: 'Remote work', emoji: null, color: null, note: null, startDate: '2026-01-01', endDate: null, createdAt: '', updatedAt: '' },
+    ];
+    const onSubmit = vi.fn().mockResolvedValue(true);
+    const en = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
+    render(<MemoirAnswerForm questionId="childhood-home" questionText="Home?" onSubmit={onSubmit} onCancel={vi.fn()} eras={eras} answerDate="2026-10-27" language="en" t={en} />);
+
+    expect(screen.getByText('This answer is dated today, during Paris and Remote work.')).toBeInTheDocument();
+    const select = screen.getByRole('combobox', { name: 'Life era this memory belongs to' });
+    expect(select).toHaveAccessibleDescription('The answer is also tagged with the era’s name, so the tag filter finds it.');
+    fireEvent.change(select, { target: { value: '3' } });
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Lectures in Lyon.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save answer' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ questionId: 'childhood-home', text: 'Lectures in Lyon.', eraId: 3 }));
+  });
+
+  it('offers no era choice before the writer has eras, nor a date line outside every era', () => {
+    renderForm();
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+
+    const eras = [{ id: 3, name: 'University', emoji: null, color: null, note: null, startDate: '2010-09-01', endDate: '2014-06-30', createdAt: '', updatedAt: '' }];
+    render(<MemoirAnswerForm questionId="love-first" questionText="Love?" onSubmit={vi.fn()} onCancel={vi.fn()} eras={eras} answerDate="2026-10-27" t={t} />);
+    expect(screen.getByRole('combobox', { name: 'memoirEraLabel' })).toHaveValue('');
+    expect(screen.queryByText(/memoirEraToday/)).not.toBeInTheDocument();
+  });
+
   it('stops recording on its own at the length limit', async () => {
     vi.useFakeTimers();
     renderForm();

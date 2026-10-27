@@ -19,3 +19,13 @@ export function browserTimeZone(): string {
     return 'UTC';
   }
 }
+
+/** Today's date (`YYYY-MM-DD`) in the memoir's time zone, the day an answer is dated; the browser's day when the zone is unknown. */
+export function todayIn(timeZone: string, now = new Date()): string {
+  const format = (zone?: string) => new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now);
+  try {
+    return format(timeZone);
+  } catch {
+    return format();
+  }
+}

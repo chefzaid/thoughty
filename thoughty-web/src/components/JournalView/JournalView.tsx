@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, type ComponentProps } from 'react';
+import { useCallback, useEffect, useRef, useState, type ComponentProps } from 'react';
 import DiaryTabs from '../DiaryTabs/DiaryTabs';
 import ThoughtOfTheDay from '../ThoughtOfTheDay/ThoughtOfTheDay';
 import EntryForm from '../EntryForm/EntryForm';
@@ -18,6 +18,7 @@ import { resolveLanguage } from '../../utils/language';
 import { formatEntryDate } from '../../utils/entryDate';
 import { parseSavedSearchDate } from '../../utils/savedSearches';
 import { useJournalKeyboardShortcuts } from './useJournalKeyboardShortcuts';
+import { useLifeEraList } from '../LifeEras/useLifeEras';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
 interface ThoughtOfDayProps {
@@ -27,7 +28,7 @@ interface ThoughtOfDayProps {
   onNavigateToEntry: ComponentProps<typeof ThoughtOfTheDay>['onNavigateToEntry'];
 }
 type EntryFormProps = Omit<ComponentProps<typeof EntryForm>, 'theme' | 't' | 'fontColor' | 'fontFamily' | 'fontSize' | 'language'>;
-type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' | 't' | 'onOpenHighlights' | 'actions'>;
+type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' | 't' | 'onOpenHighlights' | 'actions' | 'eras' | 'onManageEras'>;
 type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' | 'searchTerm'>;
 type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage'>;
 type YearMonthNavigatorProps = Pick<ComponentProps<typeof YearMonthNavigator>, 'availableYears' | 'availableMonths' | 'onNavigate'>;
@@ -43,6 +44,8 @@ interface JournalViewProps {
   yearMonthNavigator: YearMonthNavigatorProps;
   duplicateReview: DuplicateReviewProps;
   onOpenRecycleBin: () => void;
+  /** Opens the profile's life eras. */
+  onManageLifeEras: () => void;
   /** Shows a message in the app's notice toast. */
   onNotify: (message: string) => void;
   config: Config;
@@ -59,6 +62,7 @@ function JournalView({
   yearMonthNavigator,
   duplicateReview,
   onOpenRecycleBin,
+  onManageLifeEras,
   onNotify,
   config,
   t
@@ -74,6 +78,14 @@ function JournalView({
   const showCalendar = layoutRoute.layout === 'calendar';
   const language = resolveLanguage(config.language);
   const theme = config.theme ?? 'dark';
+  const { list: eraList, eras } = useLifeEraList();
+  const selectedEra = eras.find((era) => era.id === filters.filterEraId) ?? null;
+  // An era deleted meanwhile (in the profile, or on another device) stops narrowing the journal
+  const { filterEraId, setFilterEraId } = filters;
+  const eraGone = eraList.isSuccess === true && filterEraId !== null && selectedEra === null;
+  useEffect(() => {
+    if (eraGone) setFilterEraId(null);
+  }, [eraGone, setFilterEraId]);
 
   useJournalKeyboardShortcuts({
     entryFormRef,
@@ -94,6 +106,7 @@ function JournalView({
     favorites: filters.filterFavorites,
     archiveStatus: filters.filterArchiveStatus,
     mood: filters.filterMood,
+    eraId: filters.filterEraId,
     diaryId: diaryTabs.currentDiaryId,
     entryIds: keywordSearch ? null : filters.semanticSearchResult?.matches.map((match) => match.entryId) ?? null,
   };
@@ -147,6 +160,8 @@ function JournalView({
       <div ref={searchRef}>
         <FilterControls
           {...filters}
+          eras={eras}
+          onManageEras={onManageLifeEras}
           theme={config.theme}
           t={t}
           onOpenHighlights={() => thoughtOfDay.setOpen(true)}
@@ -156,6 +171,7 @@ function JournalView({
                 filters={filters}
                 currentDiaryId={diaryTabs.currentDiaryId}
                 diaries={diaryTabs.diaries}
+                eras={eras}
                 theme={config.theme}
                 language={language}
                 t={t}
@@ -193,6 +209,7 @@ function JournalView({
           month={layoutRoute.month}
           onMonthChange={layoutRoute.setMonth}
           filters={calendarFilters}
+          era={selectedEra}
           selectedDate={filters.filterDateObj ? formatEntryDate(filters.filterDateObj) : null}
           availableYears={yearMonthNavigator.availableYears}
           onOpenDay={openCalendarDay}
