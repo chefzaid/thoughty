@@ -13,14 +13,15 @@ import {
   ZipWriter,
   type ArchiveLanguage,
   type ArchiveLink,
+  type ArchiveOmittedFile,
   type ZipSink,
 } from '@/common/utils';
-import { AttachmentsService } from '@/modules/attachments';
+import { AttachmentsService, isVideoMimetype, maxSizeFor } from '@/modules/attachments';
 import { ConfigService } from '@/modules/config';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
-// Uploads are capped at 5 MB; the check guards against objects replaced in storage
-const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+/** Videos go into an archive until they reach 2 GB in all; the README lists the ones left out. */
+export const MAX_ARCHIVE_VIDEO_BYTES = 2 * 1024 * 1024 * 1024;
 
 export interface MarkdownArchive {
   filename: string;
@@ -30,6 +31,27 @@ export interface MarkdownArchive {
 
 function entryDate(date: string | Date): string {
   return typeof date === 'string' ? date.slice(0, 10) : date.toISOString().slice(0, 10);
+}
+
+/** The videos past the archive's video budget, by the sizes recorded at upload, oldest entries first. */
+function videosOverBudget(entries: Entry[]): { ids: Set<number>; listed: ArchiveOmittedFile[] } {
+  const ids = new Set<number>();
+  const listed: ArchiveOmittedFile[] = [];
+  let videoBytes = 0;
+  for (const entry of entries) {
+    for (const attachment of entry.attachments ?? []) {
+      if (!isVideoMimetype(attachment.mimetype)) {
+        continue;
+      }
+      if (videoBytes + attachment.size > MAX_ARCHIVE_VIDEO_BYTES) {
+        ids.add(attachment.id);
+        listed.push({ date: entryDate(entry.date), name: attachment.originalFilename });
+      } else {
+        videoBytes += attachment.size;
+      }
+    }
+  }
+  return { ids, listed };
 }
 
 /** Full export as a folder of Markdown files, one per entry, with the attachments beside them. */
@@ -102,8 +124,9 @@ export class MarkdownArchiveService {
     };
 
     const diaryCount = new Set(entries.map((entry) => entry.diaryId)).size;
+    const omitted = videosOverBudget(entries);
     paths.allocate('README', '.md');
-    await zip.addFile('README.md', renderArchiveReadme(language, entries.length, diaryCount, exportedOn));
+    await zip.addFile('README.md', renderArchiveReadme(language, entries.length, diaryCount, exportedOn, omitted.listed));
 
     for (const entry of entries) {
       const date = entryDate(entry.date);
@@ -113,9 +136,13 @@ export class MarkdownArchiveService {
       const links: ArchiveLink[] = [];
 
       for (const attachment of entry.attachments ?? []) {
+        if (omitted.ids.has(attachment.id)) {
+          continue;
+        }
         let data: Buffer;
         try {
-          data = await this.attachmentsService.getFileBuffer(attachment.storedFilename, MAX_ATTACHMENT_BYTES);
+          // Each upload is within its type's limit; the check guards against objects replaced in storage
+          data = await this.attachmentsService.getFileBuffer(attachment.storedFilename, maxSizeFor(attachment.mimetype));
         } catch (error) {
           this.logger.warn(`Leaving attachment ${attachment.id} out of the archive: ${(error as Error).message}`);
           continue;

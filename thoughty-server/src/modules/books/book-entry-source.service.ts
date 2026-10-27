@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, type SelectQueryBuilder } from 'typeorm';
 import { apiError } from '@/common/errors';
-import { EMBEDDED_BOOK_IMAGE_TYPES, stripMarkdown } from '@/common/utils';
+import { EMBEDDED_BOOK_IMAGE_TYPES, embeddedBookImageCondition, stripMarkdown } from '@/common/utils';
 import { Diary, Entry, type BookVersionSource } from '@/database/entities';
 import { applyEntryListFilters, EntrySearchService } from '@/modules/entries';
 import { SavedSearchesService, savedSearchBookScopeKey, toSavedSearchEntryFilters } from '@/modules/saved-searches';
@@ -123,7 +123,7 @@ export class BookEntrySourceService {
       qb.leftJoinAndSelect(
         'e.attachments',
         'bookAttachment',
-        'bookAttachment.mimetype IN (:...imageTypes)',
+        embeddedBookImageCondition('bookAttachment'),
         { imageTypes: EMBEDDED_BOOK_IMAGE_TYPES },
       ).addOrderBy('bookAttachment.created_at', 'ASC');
     }

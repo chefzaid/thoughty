@@ -61,6 +61,8 @@ export interface ContractRequest {
   code?: ApiErrorCode;
   /** For a file download: the content type it must be served with. */
   contentType?: RegExp;
+  /** Keeps the body as the bytes received (a ZIP or a video), which supertest otherwise reads as text. */
+  binary?: boolean;
 }
 
 function buildPath(template: string, params: Record<string, string | number> = {}): string {
@@ -109,6 +111,14 @@ export class ContractClient {
       }
     } else if (options.json !== undefined) {
       pending = pending.send(options.json as object);
+    }
+
+    if (options.binary) {
+      pending = pending.buffer(true).parse((stream, done) => {
+        const chunks: Buffer[] = [];
+        stream.on('data', (chunk: Buffer) => chunks.push(chunk));
+        stream.on('end', () => done(null, Buffer.concat(chunks)));
+      });
     }
 
     const response = await pending;

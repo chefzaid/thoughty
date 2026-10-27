@@ -21,6 +21,7 @@ import {
   FormatConfig,
   ParsedEntry,
   EMBEDDED_BOOK_IMAGE_TYPES,
+  embeddedBookImageCondition,
   hydrateBookImages,
   inlineImageIds,
   inlineImagesToAltText,
@@ -290,7 +291,7 @@ export class IoService {
       qb.andWhere('e.diary_id = :diaryId', { diaryId });
     }
     if (isDocumentFormat(format)) {
-      qb.leftJoinAndSelect('e.attachments', 'documentImage', 'documentImage.mimetype IN (:...imageTypes)', {
+      qb.leftJoinAndSelect('e.attachments', 'documentImage', embeddedBookImageCondition('documentImage'), {
         imageTypes: EMBEDDED_BOOK_IMAGE_TYPES,
       });
     }

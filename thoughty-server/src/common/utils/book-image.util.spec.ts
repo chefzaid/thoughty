@@ -3,6 +3,7 @@ import {
   bookImageExtension,
   escapeBookImageMarkdownText,
   isSafeEmbeddedBookImage,
+  embeddedBookImageCondition,
   normalizeEmbeddedBookImages,
 } from './book-image.util';
 
@@ -40,6 +41,15 @@ describe('book-image.util', () => {
       size: 3,
     }]);
     expect(normalizeEmbeddedBookImages()).toEqual([]);
+  });
+
+  it('prints the poster frame of a video under its name, never the video, and skips a video without one', () => {
+    expect(normalizeEmbeddedBookImages([
+      { id: 3, originalFilename: 'beach.mp4', storedFilename: 'video.mp4', mimetype: 'video/mp4', size: 9000, posterFilename: 'frame.jpg', posterSize: 40 },
+      { id: 4, originalFilename: 'boat.mov', storedFilename: 'boat.mov', mimetype: 'video/quicktime', size: 9000, posterFilename: null },
+      { id: 5, originalFilename: 'odd.pdf', storedFilename: 'odd.pdf', mimetype: 'application/pdf', size: 9, posterFilename: 'x.jpg', posterSize: 1 },
+    ])).toEqual([{ id: 3, name: 'beach.mp4', storedFilename: 'frame.jpg', mimeType: 'image/jpeg', size: 40 }]);
+    expect(embeddedBookImageCondition('a')).toBe('(a.mimetype IN (:...imageTypes) OR a.poster_filename IS NOT NULL)');
   });
 
   it('builds data URIs only after an image is hydrated', () => {

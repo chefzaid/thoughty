@@ -1430,6 +1430,7 @@
                           "stored_filename": "Daily Journal",
                           "mimetype": "example",
                           "size": 1,
+                          "poster_filename": "Daily Journal",
                           "transcript": "example",
                           "transcribed_at": "2026-06-24T10:00:00.000Z"
                         }
@@ -1882,6 +1883,7 @@
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
                         "size": 1,
+                        "poster_filename": "Daily Journal",
                         "transcript": "example",
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
@@ -1967,6 +1969,7 @@
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
                         "size": 1,
+                        "poster_filename": "Daily Journal",
                         "transcript": "example",
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
@@ -2020,6 +2023,7 @@
                             "stored_filename": "Daily Journal",
                             "mimetype": "example",
                             "size": 1,
+                            "poster_filename": "Daily Journal",
                             "transcript": "example",
                             "transcribed_at": "2026-06-24T10:00:00.000Z"
                           }
@@ -2410,6 +2414,7 @@
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
                         "size": 1,
+                        "poster_filename": "Daily Journal",
                         "transcript": "example",
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
@@ -2560,6 +2565,7 @@
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
                         "size": 1,
+                        "poster_filename": "Daily Journal",
                         "transcript": "example",
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
@@ -2691,6 +2697,7 @@
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
                         "size": 1,
+                        "poster_filename": "Daily Journal",
                         "transcript": "example",
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
@@ -2818,6 +2825,7 @@
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
                         "size": 1,
+                        "poster_filename": "Daily Journal",
                         "transcript": "example",
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
@@ -2929,6 +2937,7 @@
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
                         "size": 1,
+                        "poster_filename": "Daily Journal",
                         "transcript": "example",
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
@@ -3024,6 +3033,7 @@
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
                         "size": 1,
+                        "poster_filename": "Daily Journal",
                         "transcript": "example",
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
@@ -3119,6 +3129,7 @@
                         "stored_filename": "Daily Journal",
                         "mimetype": "example",
                         "size": 1,
+                        "poster_filename": "Daily Journal",
                         "transcript": "example",
                         "transcribed_at": "2026-06-24T10:00:00.000Z"
                       }
@@ -5318,6 +5329,7 @@
     },
     "/api/attachments/upload": {
       "post": {
+        "description": "Images, audio, PDF and text up to 5 MB; MP4, WebM and QuickTime videos up to 50 MB, recognized by their bytes. The file is written to a temporary file as it arrives (the size limit stops it there) and streamed to storage.",
         "operationId": "AttachmentsController_upload",
         "parameters": [],
         "requestBody": {
@@ -5344,6 +5356,7 @@
                   "stored_filename": "Daily Journal",
                   "mimetype": "example",
                   "size": 1,
+                  "poster_filename": "Daily Journal",
                   "transcript": "example",
                   "transcribed_at": "2026-06-24T10:00:00.000Z",
                   "entry_id": 1,
@@ -5404,6 +5417,7 @@
                   "stored_filename": "Daily Journal",
                   "mimetype": "example",
                   "size": 1,
+                  "poster_filename": "Daily Journal",
                   "transcript": "example",
                   "transcribed_at": "2026-06-24T10:00:00.000Z",
                   "entry_id": 1,
@@ -5419,6 +5433,55 @@
           }
         ],
         "summary": "Link an attachment to an entry",
+        "tags": [
+          "Attachments"
+        ]
+      }
+    },
+    "/api/attachments/{id}/poster": {
+      "post": {
+        "description": "A JPEG of at most 1 MB and 4096 pixels a side, drawn from the video by the browser; it replaces any earlier one.",
+        "operationId": "AttachmentsController_setPoster",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Poster frame stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentRecordResponseDto"
+                },
+                "example": {
+                  "id": 1,
+                  "original_filename": "Daily Journal",
+                  "stored_filename": "Daily Journal",
+                  "mimetype": "example",
+                  "size": 1,
+                  "poster_filename": "Daily Journal",
+                  "transcript": "example",
+                  "transcribed_at": "2026-06-24T10:00:00.000Z",
+                  "entry_id": 1,
+                  "created_at": "2026-06-24T10:00:00.000Z"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Store a video attachment's poster frame",
         "tags": [
           "Attachments"
         ]
@@ -5506,6 +5569,7 @@
     },
     "/api/attachments/file/{filename}": {
       "get": {
+        "description": "An attachment file or a video poster frame, to its owner. A single `Range: bytes=` range is answered with 206, as video players ask when they seek.",
         "operationId": "AttachmentsController_serveFile",
         "parameters": [
           {
@@ -5521,6 +5585,9 @@
           "200": {
             "description": "File content"
           },
+          "206": {
+            "description": "The requested byte range of the file"
+          },
           "404": {
             "description": "File missing or not owned by the caller",
             "content": {
@@ -5533,6 +5600,22 @@
                   "message": "File missing or not owned by the caller",
                   "error": "Not Found",
                   "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "416": {
+            "description": "The requested range starts past the end of the file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 416,
+                  "message": "The requested range starts past the end of the file",
+                  "error": "Range Not Satisfiable",
+                  "code": "VALIDATION_FAILED"
                 }
               }
             }
@@ -11556,6 +11639,11 @@
           "size": {
             "type": "number"
           },
+          "poster_filename": {
+            "type": "string",
+            "nullable": true,
+            "description": "A video's poster frame, served by `GET /api/attachments/file/{filename}` like the video"
+          },
           "transcript": {
             "type": "string",
             "nullable": true
@@ -11579,6 +11667,7 @@
           "stored_filename": "Daily Journal",
           "mimetype": "example",
           "size": 1,
+          "poster_filename": "Daily Journal",
           "transcript": "example",
           "transcribed_at": "2026-06-24T10:00:00.000Z"
         }
@@ -11749,6 +11838,7 @@
               "stored_filename": "Daily Journal",
               "mimetype": "example",
               "size": 1,
+              "poster_filename": "Daily Journal",
               "transcript": "example",
               "transcribed_at": "2026-06-24T10:00:00.000Z"
             }
@@ -11827,6 +11917,7 @@
                   "stored_filename": "Daily Journal",
                   "mimetype": "example",
                   "size": 1,
+                  "poster_filename": "Daily Journal",
                   "transcript": "example",
                   "transcribed_at": "2026-06-24T10:00:00.000Z"
                 }
@@ -12074,6 +12165,7 @@
                 "stored_filename": "Daily Journal",
                 "mimetype": "example",
                 "size": 1,
+                "poster_filename": "Daily Journal",
                 "transcript": "example",
                 "transcribed_at": "2026-06-24T10:00:00.000Z"
               }
@@ -12178,6 +12270,7 @@
                 "stored_filename": "Daily Journal",
                 "mimetype": "example",
                 "size": 1,
+                "poster_filename": "Daily Journal",
                 "transcript": "example",
                 "transcribed_at": "2026-06-24T10:00:00.000Z"
               }
@@ -12270,6 +12363,7 @@
                 "stored_filename": "Daily Journal",
                 "mimetype": "example",
                 "size": 1,
+                "poster_filename": "Daily Journal",
                 "transcript": "example",
                 "transcribed_at": "2026-06-24T10:00:00.000Z"
               }
@@ -12323,6 +12417,7 @@
                     "stored_filename": "Daily Journal",
                     "mimetype": "example",
                     "size": 1,
+                    "poster_filename": "Daily Journal",
                     "transcript": "example",
                     "transcribed_at": "2026-06-24T10:00:00.000Z"
                   }
@@ -12938,6 +13033,7 @@
                 "stored_filename": "Daily Journal",
                 "mimetype": "example",
                 "size": 1,
+                "poster_filename": "Daily Journal",
                 "transcript": "example",
                 "transcribed_at": "2026-06-24T10:00:00.000Z"
               }
@@ -16468,6 +16564,11 @@
           "size": {
             "type": "number"
           },
+          "poster_filename": {
+            "type": "string",
+            "nullable": true,
+            "description": "A video's poster frame, served by `GET /api/attachments/file/{filename}` like the video"
+          },
           "transcript": {
             "type": "string",
             "nullable": true
@@ -16501,6 +16602,7 @@
           "stored_filename": "Daily Journal",
           "mimetype": "example",
           "size": 1,
+          "poster_filename": "Daily Journal",
           "transcript": "example",
           "transcribed_at": "2026-06-24T10:00:00.000Z",
           "entry_id": 1,
@@ -20524,6 +20626,9 @@
           "ATTACHMENT_TOO_LARGE",
           "ATTACHMENT_EXPORT_TOO_LARGE",
           "ATTACHMENT_NOT_AUDIO",
+          "ATTACHMENT_CONTENT_MISMATCH",
+          "ATTACHMENT_NOT_VIDEO",
+          "ATTACHMENT_RANGE_NOT_SATISFIABLE",
           "TRANSCRIPTION_FAILED",
           "IMPORT_CONTENT_REQUIRED",
           "IMPORT_FILE_TOO_LARGE",

@@ -124,6 +124,7 @@ export const CONTRACT_SUITES = {
     'DELETE /api/attachments/{id}',
     'GET /api/attachments/file/{filename}',
   ],
+  media: ['POST /api/attachments/{id}/poster'],
   books: [
     'GET /api/books/versions',
     'POST /api/books/versions',

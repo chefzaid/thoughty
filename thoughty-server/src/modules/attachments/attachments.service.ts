@@ -20,54 +20,55 @@ import {
   CreateBucketCommand,
   HeadBucketCommand,
 } from '@aws-sdk/client-s3';
+import { createReadStream } from 'node:fs';
+import { open } from 'node:fs/promises';
 import type { Readable } from 'node:stream';
+import type { ByteRange } from '@/common/utils';
+import {
+  ALLOWED_MIMETYPES,
+  INLINE_MIMETYPES,
+  VIDEO_SIGNATURE_BYTES,
+  detectVideoType,
+  isVideoMimetype,
+  maxSizeFor,
+  storedKeysOf,
+} from './attachment-media';
 
-const ALLOWED_MIMETYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/svg+xml',
-  'application/pdf',
-  'text/plain',
-  'audio/mpeg',
-  'audio/mp3',
-  'audio/mp4',
-  'audio/x-m4a',
-  'audio/aac',
-  'audio/ogg',
-  'audio/wav',
-  'audio/wave',
-  'audio/x-wav',
-  'audio/webm',
-];
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
-/** Types a browser may render inline; anything else (SVG, text) is served as a download. */
-const INLINE_MIMETYPES = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'application/pdf',
-  'audio/mpeg',
-  'audio/mp3',
-  'audio/mp4',
-  'audio/x-m4a',
-  'audio/aac',
-  'audio/ogg',
-  'audio/wav',
-  'audio/wave',
-  'audio/x-wav',
-  'audio/webm',
-]);
-
-export interface ServedAttachmentFile {
-  stream: Readable;
+/** A stored file its owner may read: an attachment's file or a video's poster frame. */
+export interface OwnedAttachmentFile {
+  key: string;
   contentType: string;
   originalFilename: string;
   inline: boolean;
+  /** Bytes, as recorded at upload. */
+  size: number;
+}
+
+/** A stored file opened for reading, whole or one byte range of it. */
+export interface OpenedAttachmentFile {
+  stream: Readable;
+  contentLength?: number;
+}
+
+/** The first bytes of an upload, from memory or from the temporary file the upload route writes. */
+async function readHead(file: Express.Multer.File, bytes: number): Promise<Buffer> {
+  if (file.buffer) {
+    return file.buffer.subarray(0, bytes);
+  }
+  const handle = await open(file.path, 'r');
+  try {
+    const head = Buffer.alloc(bytes);
+    const { bytesRead } = await handle.read(head, 0, bytes, 0);
+    return head.subarray(0, bytesRead);
+  } finally {
+    await handle.close();
+  }
+}
+
+/** A poster frame is named after its video, as a JPEG. */
+function posterName(originalFilename: string): string {
+  const dot = originalFilename.lastIndexOf('.');
+  return `${dot > 0 ? originalFilename.slice(0, dot) : originalFilename}-poster.jpg`;
 }
 
 @Injectable()
@@ -111,7 +112,7 @@ export class AttachmentsService implements OnModuleInit {
     }
   }
 
-  /** Rejects a missing file, a type outside the allowlist, or a file over the size limit. */
+  /** Rejects a missing file, a type outside the allowlist, or a file over its type's size limit (50 MB for videos, 5 MB otherwise). */
   assertUploadable(file: Express.Multer.File | undefined): asserts file is Express.Multer.File {
     if (!file) {
       throw apiError(BadRequestException, 'ATTACHMENT_FILE_MISSING');
@@ -125,17 +126,47 @@ export class AttachmentsService implements OnModuleInit {
       );
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    const maxSize = maxSizeFor(file.mimetype);
+    if (file.size > maxSize) {
       throw apiError(
         BadRequestException,
         'ATTACHMENT_TOO_LARGE',
-        `File size exceeds maximum of ${MAX_FILE_SIZE / 1024 / 1024}MB`,
+        `File size exceeds maximum of ${maxSize / 1024 / 1024}MB`,
       );
     }
   }
 
+  /**
+   * The type to store: a video's comes from its bytes (an MP4, QuickTime or WebM signature), never
+   * from the type the browser declared, and a file that claims to be a video without being one is refused.
+   */
+  private async storedTypeOf(file: Express.Multer.File): Promise<string> {
+    if (!isVideoMimetype(file.mimetype)) {
+      return file.mimetype;
+    }
+    const detected = detectVideoType(await readHead(file, VIDEO_SIGNATURE_BYTES));
+    if (!detected) {
+      throw apiError(BadRequestException, 'ATTACHMENT_CONTENT_MISMATCH');
+    }
+    return detected;
+  }
+
+  /** Stores a file from memory, or streams it from the temporary file of a disk upload. */
+  async putObject(key: string, file: Express.Multer.File, contentType: string): Promise<void> {
+    await this.s3.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: file.buffer ?? createReadStream(file.path),
+        ContentLength: file.size,
+        ContentType: contentType,
+      }),
+    );
+  }
+
   async upload(userId: number, file: Express.Multer.File, entryId?: number): Promise<Attachment> {
     this.assertUploadable(file);
+    const mimetype = await this.storedTypeOf(file);
 
     if (entryId) {
       const entry = await this.entryRepository.findOne({
@@ -149,21 +180,14 @@ export class AttachmentsService implements OnModuleInit {
     const ext = extname(file.originalname).toLowerCase();
     const storedFilename = `${randomUUID()}${ext}`;
 
-    await this.s3.send(
-      new PutObjectCommand({
-        Bucket: this.bucket,
-        Key: storedFilename,
-        Body: file.buffer,
-        ContentType: file.mimetype,
-      }),
-    );
+    await this.putObject(storedFilename, file, mimetype);
 
     const attachment = this.attachmentRepository.create({
       userId,
       entryId: entryId || null,
       originalFilename: file.originalname,
       storedFilename,
-      mimetype: file.mimetype,
+      mimetype,
       size: file.size,
     });
 
@@ -213,30 +237,55 @@ export class AttachmentsService implements OnModuleInit {
   }
 
   /**
-   * Opens a stored file for the user who owns its attachment. Attachments are never shown in the
-   * public feed, so nobody else may read them; a key that is not the caller's answers as missing.
-   * The type comes from the attachment row (limited to the upload allowlist), not from storage. A file of
-   * a sealed time capsule also answers as missing until the capsule opens.
+   * A stored file for the user who owns its attachment: the attachment's own file, or the poster
+   * frame of their video. Attachments are never shown in the public feed, so nobody else may read
+   * them; a key that is not the caller's answers as missing, as does a file of a sealed time capsule
+   * until the capsule opens. The type comes from the attachment row (limited to the upload
+   * allowlist), not from storage; a poster frame is always a JPEG.
    */
-  async getOwnedFile(userId: number, storedFilename: string): Promise<ServedAttachmentFile> {
+  async findOwnedFile(userId: number, key: string): Promise<OwnedAttachmentFile> {
     const attachment = await this.attachmentRepository.findOne({
-      where: { storedFilename, userId },
+      where: [
+        { storedFilename: key, userId },
+        { posterFilename: key, userId },
+      ],
       relations: { entry: true },
       withDeleted: true,
     });
     if (!attachment || attachment.entry?.sealedUntil) {
       throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
     }
-    const { stream } = await this.getFileStream(attachment.storedFilename);
+    if (attachment.posterFilename === key) {
+      return {
+        key,
+        contentType: 'image/jpeg',
+        originalFilename: posterName(attachment.originalFilename),
+        inline: true,
+        size: attachment.posterSize ?? 0,
+      };
+    }
     const contentType = ALLOWED_MIMETYPES.includes(attachment.mimetype)
       ? attachment.mimetype
       : 'application/octet-stream';
     return {
-      stream,
+      key,
       contentType,
       originalFilename: attachment.originalFilename,
       inline: INLINE_MIMETYPES.has(contentType),
+      size: attachment.size,
     };
+  }
+
+  /** Opens a stored file, or only the bytes of `range`, as a video player asks for when it seeks. */
+  async openFile(key: string, range?: ByteRange): Promise<OpenedAttachmentFile> {
+    const result = await this.s3.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        ...(range ? { Range: `bytes=${range.start}-${range.end}` } : {}),
+      }),
+    );
+    return { stream: result.Body as Readable, contentLength: result.ContentLength };
   }
 
   /** One of the writer's attachments, to work on; one of a sealed time capsule is refused until the capsule opens. */
@@ -285,19 +334,7 @@ export class AttachmentsService implements OnModuleInit {
       throw apiError(NotFoundException, 'ATTACHMENT_NOT_FOUND');
     }
 
-    try {
-      await this.s3.send(
-        new DeleteObjectCommand({
-          Bucket: this.bucket,
-          Key: attachment.storedFilename,
-        }),
-      );
-    } catch (err) {
-      this.logger.warn(
-        `Could not delete S3 object ${attachment.storedFilename}: ${(err as Error).message}`,
-      );
-    }
-
+    await this.removeStoredFiles(storedKeysOf([attachment]));
     await this.attachmentRepository.remove(attachment);
     return { success: true };
   }
@@ -307,7 +344,7 @@ export class AttachmentsService implements OnModuleInit {
       where: { userId, entryId },
     });
 
-    await this.removeStoredFiles(attachments.map((attachment) => attachment.storedFilename));
+    await this.removeStoredFiles(storedKeysOf(attachments));
     await this.attachmentRepository.remove(attachments);
   }
 

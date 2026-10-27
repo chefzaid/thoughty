@@ -10,10 +10,13 @@ import {
   UseInterceptors,
   UploadedFile,
   Res,
+  Headers,
   NotFoundException,
   HttpCode,
   HttpStatus,
+  HttpException,
 } from '@nestjs/common';
+import { tmpdir } from 'node:os';
 import { apiError } from '@/common/errors';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -24,9 +27,13 @@ import {
   ApiConsumes,
   ApiParam,
 } from '@nestjs/swagger';
-import { memoryStorage } from 'multer';
+import { diskStorage, memoryStorage } from 'multer';
 import { Response } from 'express';
-import { AttachmentsService, ServedAttachmentFile } from './attachments.service';
+import { parseByteRange } from '@/common/utils';
+import { AttachmentsService, OwnedAttachmentFile } from './attachments.service';
+import { VideoPosterService } from './video-poster.service';
+import { TempUploadCleanupInterceptor } from './temp-upload-cleanup.interceptor';
+import { MAX_POSTER_SIZE, MAX_VIDEO_SIZE } from './attachment-media';
 import {
   LinkAttachmentDto,
   AudioTranscriptionResponseDto,
@@ -38,6 +45,16 @@ import { AudioTranscriptionService } from './audio-transcription.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
+
+/** `416 Range Not Satisfiable`, which Nest has no exception class for. */
+export class RangeNotSatisfiableException extends HttpException {
+  constructor(objectOrError?: object) {
+    super(
+      objectOrError ?? { statusCode: HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, message: 'Range Not Satisfiable' },
+      HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
+    );
+  }
+}
 
 /** Builds a Content-Disposition header whose filename cannot break out of the header value. */
 function contentDisposition(inline: boolean, originalFilename: string): string {
@@ -57,20 +74,27 @@ export class AttachmentsController {
   constructor(
     private readonly attachmentsService: AttachmentsService,
     private readonly audioTranscriptionService: AudioTranscriptionService,
+    private readonly videoPosterService: VideoPosterService,
   ) {}
 
   @Post('upload')
-  @ApiOperation({ summary: 'Upload a file attachment' })
+  @ApiOperation({
+    summary: 'Upload a file attachment',
+    description:
+      'Images, audio, PDF and text up to 5 MB; MP4, WebM and QuickTime videos up to 50 MB, recognized by their bytes. ' +
+      'The file is written to a temporary file as it arrives (the size limit stops it there) and streamed to storage.',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'File uploaded successfully', type: AttachmentRecordResponseDto })
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: memoryStorage(),
+      storage: diskStorage({ destination: tmpdir() }),
       limits: {
         ...MULTIPART_FIELD_LIMITS,
-        fileSize: 5 * 1024 * 1024, // 5MB
+        fileSize: MAX_VIDEO_SIZE,
       },
     }),
+    TempUploadCleanupInterceptor,
   )
   async upload(
     @CurrentUser() user: AuthenticatedUser,
@@ -97,6 +121,28 @@ export class AttachmentsController {
     }
     const attachment = await this.attachmentsService.linkToEntry(user.userId, id, dto.entryId);
     return toAttachmentRecordResponse(attachment);
+  }
+
+  @Post(':id/poster')
+  @ApiOperation({
+    summary: "Store a video attachment's poster frame",
+    description: 'A JPEG of at most 1 MB and 4096 pixels a side, drawn from the video by the browser; it replaces any earlier one.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 201, description: 'Poster frame stored', type: AttachmentRecordResponseDto })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { ...MULTIPART_FIELD_LIMITS, fields: 0, parts: 1, fileSize: MAX_POSTER_SIZE },
+    }),
+  )
+  async setPoster(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<AttachmentRecordResponseDto> {
+    return toAttachmentRecordResponse(await this.videoPosterService.setPoster(user.userId, id, file));
   }
 
   @Post(':id/transcribe')
@@ -126,21 +172,41 @@ export class AttachmentsController {
   }
 
   @Get('file/:filename')
-  @ApiOperation({ summary: 'Serve an attachment file' })
+  @ApiOperation({
+    summary: 'Serve an attachment file',
+    description: 'An attachment file or a video poster frame, to its owner. A single `Range: bytes=` range is answered with 206, as video players ask when they seek.',
+  })
   @ApiParam({ name: 'filename', type: String })
   @ApiResponse({ status: 200, description: 'File content' })
+  @ApiResponse({ status: 206, description: 'The requested byte range of the file' })
   @ApiResponse({ status: 404, description: 'File missing or not owned by the caller' })
+  @ApiResponse({ status: 416, description: 'The requested range starts past the end of the file' })
   async serveFile(
     @CurrentUser() user: AuthenticatedUser,
     @Param('filename') filename: string,
+    @Headers('range') rangeHeader: string | undefined,
     @Res() res: Response,
   ) {
     // Sanitize filename to prevent path traversal
     const sanitized = filename.replace(/[^a-zA-Z0-9._-]/g, '');
 
-    let file: ServedAttachmentFile;
+    let file: OwnedAttachmentFile;
     try {
-      file = await this.attachmentsService.getOwnedFile(user.userId, sanitized);
+      file = await this.attachmentsService.findOwnedFile(user.userId, sanitized);
+    } catch {
+      throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
+    }
+
+    const range = parseByteRange(rangeHeader, file.size);
+    res.setHeader('Accept-Ranges', 'bytes');
+    if (range === 'unsatisfiable') {
+      res.setHeader('Content-Range', `bytes */${file.size}`);
+      throw apiError(RangeNotSatisfiableException, 'ATTACHMENT_RANGE_NOT_SATISFIABLE');
+    }
+
+    let opened: Awaited<ReturnType<AttachmentsService['openFile']>>;
+    try {
+      opened = await this.attachmentsService.openFile(file.key, range ?? undefined);
     } catch {
       throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
     }
@@ -152,7 +218,14 @@ export class AttachmentsController {
       // Types such as SVG can carry script; never let one run if it is opened directly.
       res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
     }
-    file.stream.on('error', () => res.destroy());
-    file.stream.pipe(res);
+    if (range) {
+      res.status(HttpStatus.PARTIAL_CONTENT);
+      res.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${file.size}`);
+      res.setHeader('Content-Length', String(range.end - range.start + 1));
+    } else if (opened.contentLength !== undefined) {
+      res.setHeader('Content-Length', String(opened.contentLength));
+    }
+    opened.stream.on('error', () => res.destroy());
+    opened.stream.pipe(res);
   }
 }

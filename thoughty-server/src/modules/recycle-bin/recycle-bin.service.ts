@@ -3,7 +3,7 @@ import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, IsNull, Not, Repository, type EntityManager, type SelectQueryBuilder } from 'typeorm';
 import { Attachment, Diary, Entry } from '@/database/entities';
-import { AttachmentsService } from '@/modules/attachments';
+import { AttachmentsService, storedKeysOf } from '@/modules/attachments';
 import { ConfigService } from '@/modules/config';
 import { resolveMaxPinnedEntries } from '@/modules/entries';
 import {
@@ -144,11 +144,11 @@ export class RecycleBinService {
       }
 
       const attachments = await manager.find(Attachment, {
-        select: { id: true, storedFilename: true },
+        select: { id: true, storedFilename: true, posterFilename: true },
         where: { entryId: In(ids) },
       });
       await manager.delete(Entry, { id: In(ids) });
-      return { count: ids.length, storedFilenames: attachments.map((attachment) => attachment.storedFilename) };
+      return { count: ids.length, storedFilenames: storedKeysOf(attachments) };
     });
 
     await this.attachmentsService.removeStoredFiles(storedFilenames);

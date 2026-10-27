@@ -40,6 +40,7 @@ export function toAttachmentRecordResponse(attachment: Attachment): AttachmentRe
     stored_filename: attachment.storedFilename,
     mimetype: attachment.mimetype,
     size: attachment.size,
+    poster_filename: attachment.posterFilename,
     entry_id: attachment.entryId,
     created_at: attachment.createdAt,
     transcript: attachment.transcript,

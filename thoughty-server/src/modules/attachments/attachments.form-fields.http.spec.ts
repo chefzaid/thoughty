@@ -4,6 +4,7 @@ import { createValidatedControllerApp, HTTP_SPEC_USER } from '@/common/validatio
 import { AttachmentsController } from './attachments.controller';
 import { AttachmentsService } from './attachments.service';
 import { AudioTranscriptionService } from './audio-transcription.service';
+import { VideoPosterService } from './video-poster.service';
 
 describe('AttachmentsController form fields over HTTP', () => {
   let app: INestApplication;
@@ -21,6 +22,7 @@ describe('AttachmentsController form fields over HTTP', () => {
     app = await createValidatedControllerApp([AttachmentsController], [
       { provide: AttachmentsService, useValue: attachmentsService },
       { provide: AudioTranscriptionService, useValue: {} },
+      { provide: VideoPosterService, useValue: {} },
     ]);
   });
 

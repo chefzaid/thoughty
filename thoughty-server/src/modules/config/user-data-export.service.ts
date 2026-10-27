@@ -183,6 +183,7 @@ export class UserDataExportService {
         originalFilename: attachment.originalFilename,
         mimetype: attachment.mimetype,
         size: attachment.size,
+        hasPosterFrame: Boolean(attachment.posterFilename),
         transcript: attachment.transcript,
         transcribedAt: attachment.transcribedAt,
         createdAt: attachment.createdAt,

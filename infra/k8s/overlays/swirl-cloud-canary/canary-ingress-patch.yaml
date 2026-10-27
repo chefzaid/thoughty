@@ -11,6 +11,12 @@
   path: /spec/routes/5/match
   value: Host(`thoughty.swirlit.dev`)
 - op: replace
+  path: /spec/routes/6/match
+  value: Host(`thoughty.swirlit.dev`) && Path(`/api/attachments/upload`) && Header(`X-Thoughty-Canary`, `always`)
+- op: replace
+  path: /spec/routes/7/match
+  value: Host(`thoughty.swirlit.dev`) && Path(`/api/attachments/upload`)
+- op: replace
   path: /spec/tls/secretName
   value: swirlit-dev-tls
 - op: replace

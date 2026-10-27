@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException } from '@nestjs/common';
-import { AttachmentsController } from './attachments.controller';
+import { HttpStatus, NotFoundException } from '@nestjs/common';
+import { expectApiError } from '@/common/errors/api-error.test-helpers';
+import { AttachmentsController, RangeNotSatisfiableException } from './attachments.controller';
+import { VideoPosterService } from './video-poster.service';
 import { AttachmentsService } from './attachments.service';
 import { AudioTranscriptionService } from './audio-transcription.service';
 
@@ -8,6 +10,7 @@ describe('AttachmentsController', () => {
   let controller: AttachmentsController;
   let attachmentsService: any;
   let audioTranscriptionService: any;
+  let videoPosterService: { setPoster: jest.Mock };
 
   const mockUser = { userId: 1, email: 'test@example.com' };
 
@@ -27,15 +30,18 @@ describe('AttachmentsController', () => {
       upload: jest.fn(),
       linkToEntry: jest.fn(),
       delete: jest.fn(),
-      getOwnedFile: jest.fn(),
+      findOwnedFile: jest.fn(),
+      openFile: jest.fn(),
     };
     audioTranscriptionService = { transcribe: jest.fn() };
+    videoPosterService = { setPoster: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AttachmentsController],
       providers: [
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: AudioTranscriptionService, useValue: audioTranscriptionService },
+        { provide: VideoPosterService, useValue: videoPosterService },
       ],
     }).compile();
 
@@ -130,25 +136,52 @@ describe('AttachmentsController', () => {
     });
   });
 
+  describe('setPoster', () => {
+    it("stores the caller's poster frame and answers the video's record", async () => {
+      const poster = { buffer: Buffer.from([0xff, 0xd8]), mimetype: 'image/jpeg', size: 2 } as Express.Multer.File;
+      videoPosterService.setPoster.mockResolvedValue({
+        ...mockAttachment,
+        mimetype: 'video/mp4',
+        posterFilename: 'poster.jpg',
+        posterSize: 2,
+      });
+
+      const result = await controller.setPoster(mockUser as any, 1, poster);
+
+      expect(videoPosterService.setPoster).toHaveBeenCalledWith(1, 1, poster);
+      expect(result).toEqual(expect.objectContaining({ id: 1, mimetype: 'video/mp4', poster_filename: 'poster.jpg' }));
+    });
+  });
+
   describe('serveFile', () => {
-    const servedFile = (overrides: Record<string, unknown> = {}) => ({
-      stream: { pipe: jest.fn(), on: jest.fn() },
+    const ownedFile = (overrides: Record<string, unknown> = {}) => ({
+      key: 'abc-uuid.jpg',
       contentType: 'image/jpeg',
       originalFilename: 'photo.jpg',
       inline: true,
+      size: 1000,
       ...overrides,
     });
+    const openedFile = (contentLength?: number) => ({
+      stream: { pipe: jest.fn(), on: jest.fn() },
+      contentLength,
+    });
+    const response = () => ({ setHeader: jest.fn(), status: jest.fn(), destroy: jest.fn() });
 
     it('streams a file the caller owns with safe headers', async () => {
-      const file = servedFile();
-      attachmentsService.getOwnedFile.mockResolvedValue(file);
-      const mockRes = { setHeader: jest.fn() };
+      const opened = openedFile(1000);
+      attachmentsService.findOwnedFile.mockResolvedValue(ownedFile());
+      attachmentsService.openFile.mockResolvedValue(opened);
+      const mockRes = response();
 
-      await controller.serveFile(mockUser as any, 'abc-uuid.jpg', mockRes as any);
+      await controller.serveFile(mockUser as any, 'abc-uuid.jpg', undefined, mockRes as any);
 
-      expect(attachmentsService.getOwnedFile).toHaveBeenCalledWith(1, 'abc-uuid.jpg');
+      expect(attachmentsService.findOwnedFile).toHaveBeenCalledWith(1, 'abc-uuid.jpg');
+      expect(attachmentsService.openFile).toHaveBeenCalledWith('abc-uuid.jpg', undefined);
       expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'image/jpeg');
       expect(mockRes.setHeader).toHaveBeenCalledWith('X-Content-Type-Options', 'nosniff');
+      expect(mockRes.setHeader).toHaveBeenCalledWith('Accept-Ranges', 'bytes');
+      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Length', '1000');
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
         `inline; filename="photo.jpg"; filename*=UTF-8''photo.jpg`,
@@ -157,20 +190,75 @@ describe('AttachmentsController', () => {
         'Content-Security-Policy',
         expect.anything(),
       );
-      expect(file.stream.pipe).toHaveBeenCalledWith(mockRes);
+      expect(mockRes.status).not.toHaveBeenCalled();
+      expect(opened.stream.pipe).toHaveBeenCalledWith(mockRes);
+    });
+
+    it('cuts the connection when the storage stream fails midway', async () => {
+      const opened = openedFile();
+      attachmentsService.findOwnedFile.mockResolvedValue(ownedFile());
+      attachmentsService.openFile.mockResolvedValue(opened);
+      const mockRes = response();
+
+      await controller.serveFile(mockUser as any, 'abc-uuid.jpg', undefined, mockRes as any);
+      const [event, onError] = opened.stream.on.mock.calls[0] as [string, () => void];
+      onError();
+
+      expect(event).toBe('error');
+      expect(mockRes.destroy).toHaveBeenCalled();
+      expect(mockRes.setHeader).not.toHaveBeenCalledWith('Content-Length', expect.anything());
+    });
+
+    it('answers one byte range with 206, as a video player asks when it seeks', async () => {
+      const opened = openedFile(100);
+      attachmentsService.findOwnedFile.mockResolvedValue(
+        ownedFile({ key: 'clip.mp4', contentType: 'video/mp4', originalFilename: 'clip.mp4', size: 5000 }),
+      );
+      attachmentsService.openFile.mockResolvedValue(opened);
+      const mockRes = response();
+
+      await controller.serveFile(mockUser as any, 'clip.mp4', 'bytes=100-199', mockRes as any);
+
+      expect(attachmentsService.openFile).toHaveBeenCalledWith('clip.mp4', { start: 100, end: 199 });
+      expect(mockRes.status).toHaveBeenCalledWith(HttpStatus.PARTIAL_CONTENT);
+      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Range', 'bytes 100-199/5000');
+      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Length', '100');
+      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'video/mp4');
+      expect(opened.stream.pipe).toHaveBeenCalledWith(mockRes);
+    });
+
+    it('answers 416 with the file size for a range past its end, without opening it', async () => {
+      attachmentsService.findOwnedFile.mockResolvedValue(ownedFile({ size: 5000 }));
+      const mockRes = response();
+
+      await expectApiError(
+        controller.serveFile(mockUser as any, 'abc-uuid.jpg', 'bytes=5000-', mockRes as any),
+        RangeNotSatisfiableException,
+        'ATTACHMENT_RANGE_NOT_SATISFIABLE',
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Range', 'bytes */5000');
+      expect(attachmentsService.openFile).not.toHaveBeenCalled();
+    });
+
+    it('builds its default body like the other exceptions', () => {
+      expect(new RangeNotSatisfiableException().getResponse()).toEqual({
+        statusCode: 416,
+        message: 'Range Not Satisfiable',
+      });
     });
 
     it('serves SVG and text as sandboxed downloads with an escaped filename', async () => {
-      attachmentsService.getOwnedFile.mockResolvedValue(
-        servedFile({
+      attachmentsService.findOwnedFile.mockResolvedValue(
+        ownedFile({
           contentType: 'image/svg+xml',
           originalFilename: 'a"b\r\nX-Evil: 1é.svg',
           inline: false,
         }),
       );
-      const mockRes = { setHeader: jest.fn() };
+      attachmentsService.openFile.mockResolvedValue(openedFile());
+      const mockRes = response();
 
-      await controller.serveFile(mockUser as any, 'abc-uuid.svg', mockRes as any);
+      await controller.serveFile(mockUser as any, 'abc-uuid.svg', undefined, mockRes as any);
 
       expect(mockRes.setHeader).toHaveBeenCalledWith(
         'Content-Disposition',
@@ -183,33 +271,36 @@ describe('AttachmentsController', () => {
     });
 
     it('answers 404 for a file that is missing or belongs to someone else', async () => {
-      attachmentsService.getOwnedFile.mockRejectedValue(new NotFoundException('File not found'));
-      const mockRes = { setHeader: jest.fn() };
+      attachmentsService.findOwnedFile.mockRejectedValue(new NotFoundException('File not found'));
+      const mockRes = response();
 
       await expect(
-        controller.serveFile({ userId: 2 } as any, 'abc-uuid.jpg', mockRes as any),
+        controller.serveFile({ userId: 2 } as any, 'abc-uuid.jpg', undefined, mockRes as any),
       ).rejects.toThrow(NotFoundException);
-      expect(attachmentsService.getOwnedFile).toHaveBeenCalledWith(2, 'abc-uuid.jpg');
+      expect(attachmentsService.findOwnedFile).toHaveBeenCalledWith(2, 'abc-uuid.jpg');
       expect(mockRes.setHeader).not.toHaveBeenCalled();
     });
 
     it('answers 404 when the storage object does not exist', async () => {
-      attachmentsService.getOwnedFile.mockRejectedValue(new Error('NoSuchKey'));
-      const mockRes = { setHeader: jest.fn() };
+      attachmentsService.findOwnedFile.mockResolvedValue(ownedFile());
+      attachmentsService.openFile.mockRejectedValue(new Error('NoSuchKey'));
+      const mockRes = response();
 
       await expect(
-        controller.serveFile(mockUser as any, 'nonexistent.jpg', mockRes as any),
+        controller.serveFile(mockUser as any, 'nonexistent.jpg', undefined, mockRes as any),
       ).rejects.toThrow(NotFoundException);
+      expect(mockRes.setHeader).not.toHaveBeenCalledWith('Content-Type', expect.anything());
     });
 
     it('sanitizes filename to prevent path traversal', async () => {
-      attachmentsService.getOwnedFile.mockResolvedValue(servedFile());
-      const mockRes = { setHeader: jest.fn() };
+      attachmentsService.findOwnedFile.mockResolvedValue(ownedFile());
+      attachmentsService.openFile.mockResolvedValue(openedFile());
+      const mockRes = response();
 
-      await controller.serveFile(mockUser as any, '../../../etc/passwd', mockRes as any);
+      await controller.serveFile(mockUser as any, '../../../etc/passwd', undefined, mockRes as any);
 
       // Slashes are stripped, so ../../etc/passwd becomes ......etcpasswd
-      expect(attachmentsService.getOwnedFile).toHaveBeenCalledWith(1, '......etcpasswd');
+      expect(attachmentsService.findOwnedFile).toHaveBeenCalledWith(1, '......etcpasswd');
     });
   });
 });

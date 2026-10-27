@@ -179,7 +179,7 @@ describe('BooksService', () => {
       expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
         'e.attachments',
         'bookAttachment',
-        'bookAttachment.mimetype IN (:...imageTypes)',
+        '(bookAttachment.mimetype IN (:...imageTypes) OR bookAttachment.poster_filename IS NOT NULL)',
         { imageTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] },
       );
       expect(mockQueryBuilder.addOrderBy).toHaveBeenCalledWith(

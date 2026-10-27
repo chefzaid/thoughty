@@ -66,9 +66,10 @@ describePostgres('PostgreSQL account purge', () => {
     );
     await dataSource.query(`INSERT INTO entry_revisions (entry_id, user_id, content, date) VALUES ($1, $2, 'Older', '2026-01-02')`, [entryId, userId]);
     await dataSource.query(
-      `INSERT INTO attachments (user_id, entry_id, original_filename, stored_filename, mimetype, size)
-       VALUES ($1, $2, 'a.jpg', $3, 'image/jpeg', 1), ($1, NULL, 'b.m4a', $4, 'audio/mp4', 1)`,
-      [userId, entryId, `${userId}-linked.jpg`, `${userId}-unlinked.m4a`],
+      `INSERT INTO attachments (user_id, entry_id, original_filename, stored_filename, mimetype, size, poster_filename, poster_size)
+       VALUES ($1, $2, 'a.jpg', $3, 'image/jpeg', 1, NULL, NULL), ($1, NULL, 'b.m4a', $4, 'audio/mp4', 1, NULL, NULL),
+              ($1, $2, 'c.mp4', $5, 'video/mp4', 1, $6, 1)`,
+      [userId, entryId, `${userId}-linked.jpg`, `${userId}-unlinked.m4a`, `${userId}-video.mp4`, `${userId}-poster.jpg`],
     );
     await dataSource.query(`INSERT INTO settings (user_id, key, value) VALUES ($1, 'openRouterApiKey', 'encrypted')`, [userId]);
     await dataSource.query(`INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, NOW())`, [userId, `${userId}`.padStart(64, '0')]);
@@ -153,7 +154,12 @@ describePostgres('PostgreSQL account purge', () => {
     await expect(service.purgeExpired(now)).resolves.toEqual({ purgedUserIds: [goneId], failedUserIds: [] });
 
     expect(removeStoredFiles).toHaveBeenCalledTimes(1);
-    expect([...removeStoredFiles.mock.calls[0][0]].sort()).toEqual([`${goneId}-linked.jpg`, `${goneId}-unlinked.m4a`]);
+    expect([...removeStoredFiles.mock.calls[0][0]].sort()).toEqual([
+      `${goneId}-linked.jpg`,
+      `${goneId}-poster.jpg`,
+      `${goneId}-unlinked.m4a`,
+      `${goneId}-video.mp4`,
+    ]);
     expect(await dataSource.query('SELECT id FROM users WHERE id = $1', [goneId])).toEqual([]);
     expect(await remainingRows(goneId)).toEqual({});
 
@@ -170,7 +176,7 @@ describePostgres('PostgreSQL account purge', () => {
     expect(await remainingRows(friendId)).toEqual(expect.objectContaining({
       'entries.user_id': 3,
       'time_capsules.user_id': 1,
-      'attachments.user_id': 2,
+      'attachments.user_id': 3,
       'settings.user_id': 1,
       'feature_requests.user_id': 1,
     }));

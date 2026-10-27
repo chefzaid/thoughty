@@ -52,6 +52,35 @@ spec:
                 port:
                   number: 3001
 ---
+# The attachment upload route alone takes videos of up to 50 MiB (the API's limit); its body cap
+# leaves 1 MiB for the multipart framing. Being the longer, exact path, it wins over /api.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: thoughty-upload-ingress
+  namespace: thoughty
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.middlewares: thoughty-thoughty-video-upload-limit@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - thoughty.example.com
+      secretName: thoughty-tls
+  rules:
+    - host: thoughty.example.com
+      http:
+        paths:
+          - path: /api/attachments/upload
+            pathType: Exact
+            backend:
+              service:
+                name: thoughty-server
+                port:
+                  number: 3001
+---
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
@@ -60,3 +89,13 @@ metadata:
 spec:
   buffering:
     maxRequestBodyBytes: 10485760
+---
+# Bodies past 1 MiB are buffered to disk by Traefik, not memory.
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: thoughty-video-upload-limit
+  namespace: thoughty
+spec:
+  buffering:
+    maxRequestBodyBytes: 53477376

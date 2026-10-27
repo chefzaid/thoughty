@@ -32,6 +32,13 @@ export class Attachment {
   @Column({ type: 'integer' })
   size: number;
 
+  /** The storage key of a video's poster frame (a JPEG the browser drew), served under the same rules. */
+  @Column({ name: 'poster_filename', type: 'varchar', length: 255, nullable: true })
+  posterFilename: string | null;
+
+  @Column({ name: 'poster_size', type: 'integer', nullable: true })
+  posterSize: number | null;
+
   @Column({ type: 'text', nullable: true })
   transcript: string | null;
 

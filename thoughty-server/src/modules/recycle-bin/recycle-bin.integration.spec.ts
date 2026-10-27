@@ -176,6 +176,10 @@ describePostgres('PostgreSQL recycle bin', () => {
     const recent = await write('Recent', { index: 2 });
     await revisions.save({ entryId: old.id, userId, content: 'Older', tags: [], date: '2026-10-20' });
     await attachments.save({ userId, entryId: old.id, originalFilename: 'old.m4a', storedFilename: 'old-key.m4a', mimetype: 'audio/mp4', size: 10 });
+    await attachments.save({
+      userId, entryId: old.id, originalFilename: 'old.mp4', storedFilename: 'old-key.mp4', mimetype: 'video/mp4', size: 10,
+      posterFilename: 'old-poster.jpg', posterSize: 5,
+    });
     await dataSource.getRepository(MemoirAnswer).insert({ userId, questionId: 'childhood-home', entryId: old.id });
     const now = new Date();
     await entries.update({ id: old.id }, { deletedAt: new Date(now.getTime() - 31 * DAY_MS) });
@@ -187,7 +191,7 @@ describePostgres('PostgreSQL recycle bin', () => {
     expect(await revisions.count({ where: { entryId: old.id } })).toBe(0);
     expect(await attachments.count({ where: { entryId: old.id } })).toBe(0);
     expect(await dataSource.getRepository(MemoirAnswer).count({ where: { userId } })).toBe(0);
-    expect(removeStoredFiles).toHaveBeenCalledWith(['old-key.m4a']);
+    expect([...removeStoredFiles.mock.calls[0][0]].sort()).toEqual(['old-key.m4a', 'old-key.mp4', 'old-poster.jpg']);
     expect((await bin.list(userId)).entries.map((entry) => entry.id)).toEqual([recent.id]);
   });
 

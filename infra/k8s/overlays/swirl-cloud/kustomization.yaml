@@ -24,6 +24,10 @@ patches:
     target:
       kind: Ingress
       name: thoughty-api-ingress
+  - path: upload-ingress-patch.yaml
+    target:
+      kind: Ingress
+      name: thoughty-upload-ingress
   - path: postgres-backup-patch.yaml
   - path: web-patch.yaml
   - path: worker-patch.yaml

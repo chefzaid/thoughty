@@ -43,7 +43,7 @@ describe('IoService inline images', () => {
     expect(entryRepository.createQueryBuilder().leftJoinAndSelect).toHaveBeenCalledWith(
       'e.attachments',
       'documentImage',
-      'documentImage.mimetype IN (:...imageTypes)',
+      '(documentImage.mimetype IN (:...imageTypes) OR documentImage.poster_filename IS NOT NULL)',
       { imageTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] },
     );
     expect(attachmentsService.getFileBuffer).toHaveBeenCalledTimes(1);

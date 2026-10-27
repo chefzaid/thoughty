@@ -219,6 +219,13 @@ export class AttachmentResponseDto {
   @ApiProperty()
   size: number;
 
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: "A video's poster frame, served by `GET /api/attachments/file/{filename}` like the video",
+  })
+  poster_filename?: string | null;
+
   @ApiPropertyOptional({ type: String, nullable: true })
   transcript?: string | null;
 

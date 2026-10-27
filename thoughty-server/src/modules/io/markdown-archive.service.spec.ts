@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 import { Diary, Entry } from '@/database/entities';
 import { AttachmentsService } from '@/modules/attachments';
 import { ConfigService } from '@/modules/config';
-import { MarkdownArchiveService } from './markdown-archive.service';
+import { MarkdownArchiveService, MAX_ARCHIVE_VIDEO_BYTES } from './markdown-archive.service';
 import { noTimeCapsules } from '@/modules/time-capsules/time-capsules.test-helpers';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
@@ -187,5 +187,39 @@ describe('MarkdownArchiveService', () => {
     const { zip } = await buildArchive();
 
     expect(Object.keys(zip.files)).toContain('Journal/2022/2022-07-14.md');
+  });
+
+  it('adds videos within their 2 GB budget, at their own size limit, and lists in the README those left out', async () => {
+    const gigabyte = 1024 * 1024 * 1024;
+    const clip = (id: number, name: string, size: number) =>
+      ({ id, originalFilename: name, storedFilename: `${id}.mp4`, mimetype: 'video/mp4', size }) as Entry['attachments'][number];
+    entries = [
+      { ...baseEntry, id: 1, diaryId: 1, date: '2024-05-01', index: 1, content: 'Sea.', attachments: [clip(1, 'sea.mp4', gigabyte)] },
+      {
+        ...baseEntry,
+        id: 2,
+        diaryId: 1,
+        date: '2024-05-02',
+        index: 1,
+        content: 'Hills.',
+        attachments: [clip(2, 'hills.mp4', gigabyte + 1), clip(3, 'birds.mp4', gigabyte)],
+      },
+    ];
+
+    const { zip } = await buildArchive();
+
+    expect(MAX_ARCHIVE_VIDEO_BYTES).toBe(2 * gigabyte);
+    expect(attachmentsService.getFileBuffer.mock.calls).toEqual([
+      ['1.mp4', 50 * 1024 * 1024],
+      ['3.mp4', 50 * 1024 * 1024],
+    ]);
+    expect(Object.keys(zip.files)).toEqual(expect.arrayContaining(['Journal/2024/attachments/2024-05-01-sea.mp4', 'Journal/2024/attachments/2024-05-02-birds.mp4']));
+    const hills = await zip.file('Journal/2024/2024-05-02.md')!.async('string');
+    expect(hills).toContain('[birds.mp4](<attachments/2024-05-02-birds.mp4>)');
+    expect(hills).not.toContain('hills.mp4');
+    const readme = await zip.file('README.md')!.async('string');
+    expect(readme).toContain('An archive holds up to 2 GB of videos.');
+    expect(readme).toContain('- 2024-05-02: hills.mp4');
+    expect(readme).not.toContain('sea.mp4');
   });
 });

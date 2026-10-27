@@ -245,60 +245,99 @@ describe('AttachmentsService', () => {
     });
   });
 
-  describe('getOwnedFile', () => {
-    it('streams a file only for the user who owns its attachment', async () => {
-      const body = Readable.from(['x']);
+  describe('findOwnedFile', () => {
+    it('finds a file, or a video poster frame, only for the user who owns its attachment', async () => {
       attachmentRepository.findOne.mockResolvedValue(mockAttachment);
-      mockSend.mockResolvedValue({ Body: body, ContentType: 'text/html' });
 
-      const result = await service.getOwnedFile(1, 'abc-uuid.jpg');
+      const result = await service.findOwnedFile(1, 'abc-uuid.jpg');
 
       expect(attachmentRepository.findOne).toHaveBeenCalledWith({
-        where: { storedFilename: 'abc-uuid.jpg', userId: 1 },
+        where: [
+          { storedFilename: 'abc-uuid.jpg', userId: 1 },
+          { posterFilename: 'abc-uuid.jpg', userId: 1 },
+        ],
         relations: { entry: true },
         withDeleted: true,
       });
       expect(result).toEqual({
-        stream: body,
+        key: 'abc-uuid.jpg',
         contentType: 'image/jpeg',
         originalFilename: 'photo.jpg',
         inline: true,
+        size: 1024,
+      });
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('serves a poster frame as an inline JPEG named after its video', async () => {
+      attachmentRepository.findOne.mockResolvedValue({
+        ...mockAttachment,
+        originalFilename: 'beach.day.mov',
+        mimetype: 'video/quicktime',
+        storedFilename: 'video.mov',
+        posterFilename: 'poster.jpg',
+        posterSize: 321,
+      });
+
+      await expect(service.findOwnedFile(1, 'poster.jpg')).resolves.toEqual({
+        key: 'poster.jpg',
+        contentType: 'image/jpeg',
+        originalFilename: 'beach.day-poster.jpg',
+        inline: true,
+        size: 321,
+      });
+      await expect(service.findOwnedFile(1, 'video.mov')).resolves.toMatchObject({
+        contentType: 'video/quicktime',
+        inline: true,
+        size: 1024,
       });
     });
 
-    it('answers missing for another user without touching storage', async () => {
+    it('answers missing for another user', async () => {
       attachmentRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.getOwnedFile(2, 'abc-uuid.jpg')).rejects.toThrow(NotFoundException);
-      expect(mockSend).not.toHaveBeenCalled();
+      await expect(service.findOwnedFile(2, 'abc-uuid.jpg')).rejects.toThrow(NotFoundException);
     });
 
     it('answers missing for a file of a sealed time capsule', async () => {
       attachmentRepository.findOne.mockResolvedValue({ ...mockAttachment, entry: { sealedUntil: new Date('2030-01-01T08:00:00Z') } });
 
-      await expect(service.getOwnedFile(1, 'abc-uuid.jpg')).rejects.toThrow(NotFoundException);
-      expect(mockSend).not.toHaveBeenCalled();
+      await expect(service.findOwnedFile(1, 'abc-uuid.jpg')).rejects.toThrow(NotFoundException);
     });
 
     it('marks SVG and text as downloads and unknown types as octet-stream', async () => {
-      mockSend.mockResolvedValue({ Body: Readable.from(['x']) });
       attachmentRepository.findOne.mockResolvedValueOnce({
         ...mockAttachment,
         mimetype: 'image/svg+xml',
       });
-      await expect(service.getOwnedFile(1, 'a.svg')).resolves.toMatchObject({
+      await expect(service.findOwnedFile(1, 'a.svg')).resolves.toMatchObject({
         contentType: 'image/svg+xml',
         inline: false,
       });
 
       attachmentRepository.findOne.mockResolvedValueOnce({ ...mockAttachment, mimetype: 'text/plain' });
-      await expect(service.getOwnedFile(1, 'a.txt')).resolves.toMatchObject({ inline: false });
+      await expect(service.findOwnedFile(1, 'a.txt')).resolves.toMatchObject({ inline: false });
 
       attachmentRepository.findOne.mockResolvedValueOnce({ ...mockAttachment, mimetype: 'text/html' });
-      await expect(service.getOwnedFile(1, 'a.html')).resolves.toMatchObject({
+      await expect(service.findOwnedFile(1, 'a.html')).resolves.toMatchObject({
         contentType: 'application/octet-stream',
         inline: false,
       });
+    });
+  });
+
+  describe('openFile', () => {
+    it('reads the whole object, or only the requested bytes', async () => {
+      const body = Readable.from(['x']);
+      mockSend.mockResolvedValue({ Body: body, ContentLength: 1 });
+
+      await expect(service.openFile('clip.mp4')).resolves.toEqual({ stream: body, contentLength: 1 });
+      expect(mockSend).toHaveBeenLastCalledWith(expect.not.objectContaining({ Range: expect.anything() }));
+
+      await service.openFile('clip.mp4', { start: 10, end: 19 });
+      expect(mockSend).toHaveBeenLastCalledWith(
+        expect.objectContaining({ _type: 'GetObject', Key: 'clip.mp4', Range: 'bytes=10-19' }),
+      );
     });
   });
 
@@ -353,15 +392,16 @@ describe('AttachmentsService', () => {
   });
 
   describe('deleteByEntryId', () => {
-    it('deletes all attachments for an entry from S3 and database', async () => {
+    it('deletes all attachments for an entry, with video poster frames, from S3 and database', async () => {
       const att1 = { ...mockAttachment, id: 1 };
-      const att2 = { ...mockAttachment, id: 2, storedFilename: 'def-uuid.jpg' };
+      const att2 = { ...mockAttachment, id: 2, storedFilename: 'def-uuid.mp4', posterFilename: 'def-poster.jpg' };
       attachmentRepository.find.mockResolvedValue([att1, att2]);
       mockSend.mockResolvedValue({});
 
       await service.deleteByEntryId(1, 10);
 
-      expect(mockSend).toHaveBeenCalledTimes(2);
+      expect(mockSend).toHaveBeenCalledTimes(3);
+      expect(mockSend).toHaveBeenLastCalledWith(expect.objectContaining({ Key: 'def-poster.jpg', _type: 'DeleteObject' }));
       expect(attachmentRepository.remove).toHaveBeenCalledWith([att1, att2]);
     });
   });

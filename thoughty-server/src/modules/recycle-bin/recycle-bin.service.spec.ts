@@ -198,7 +198,7 @@ describe('RecycleBinService', () => {
     it('deletes the chosen entries with their attachment rows, then their stored files', async () => {
       const selection = queryBuilder({ many: [{ id: 12 }, { id: 13 }] });
       managerEntries.createQueryBuilder.mockReturnValue(selection);
-      manager.find.mockResolvedValue([{ id: 5, storedFilename: 'river.jpg' }]);
+      manager.find.mockResolvedValue([{ id: 5, storedFilename: 'river.jpg' }, { id: 6, storedFilename: 'sea.mp4', posterFilename: 'sea.jpg' }]);
 
       await expect(service.deletePermanently(7, [12, 13])).resolves.toBe(2);
 
@@ -207,7 +207,7 @@ describe('RecycleBinService', () => {
       expect(selection.andWhere).toHaveBeenCalledWith('e.id IN (:...ids)', { ids: [12, 13] });
       expect(selection.setOnLocked).toHaveBeenCalledWith('skip_locked');
       expect(manager.delete).toHaveBeenCalledWith(Entry, { id: expect.anything() });
-      expect(attachmentsService.removeStoredFiles).toHaveBeenCalledWith(['river.jpg']);
+      expect(attachmentsService.removeStoredFiles).toHaveBeenCalledWith(['river.jpg', 'sea.mp4', 'sea.jpg']);
     });
 
     it('empties the whole bin, and refuses a selection that matches nothing', async () => {

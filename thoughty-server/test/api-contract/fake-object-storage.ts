@@ -8,7 +8,8 @@ interface StoredObject {
 
 /**
  * Just enough of the S3 API, over HTTP on a local port, for the real `@aws-sdk/client-s3` the
- * attachment service uses: path-style bucket create and head, and object put, get and delete. The
+ * attachment service uses: path-style bucket create and head, and object put, get (whole or one
+ * `Range: bytes=start-end`) and delete. The
  * contract specs point `S3_ENDPOINT` at it, so every attachment route runs its real storage code.
  */
 export class FakeObjectStorage {
@@ -94,6 +95,20 @@ export class FakeObjectStorage {
         const stored = this.objects.get(key);
         if (!stored) {
           sendError(response, 404, 'NoSuchKey');
+          return;
+        }
+        const range = /^bytes=(\d+)-(\d+)$/.exec(String(request.headers.range ?? ''));
+        if (range) {
+          const start = Number(range[1]);
+          const end = Math.min(Number(range[2]), stored.body.length - 1);
+          const part = stored.body.subarray(start, end + 1);
+          response
+            .writeHead(206, {
+              'Content-Type': stored.contentType,
+              'Content-Length': part.length,
+              'Content-Range': `bytes ${start}-${end}/${stored.body.length}`,
+            })
+            .end(part);
           return;
         }
         response

@@ -282,6 +282,23 @@ spec:
       services:
         - name: thoughty-web-rollout
           kind: TraefikService
+    # The attachment upload route takes videos of up to 50 MiB (see base/ingress.yaml)
+    - kind: Rule
+      match: Host(`thoughty.example.com`) && Path(`/api/attachments/upload`) && Header(`X-Thoughty-Canary`, `always`)
+      priority: 475
+      middlewares:
+        - name: thoughty-video-upload-limit
+      services:
+        - name: thoughty-server-canary
+          port: 3001
+    - kind: Rule
+      match: Host(`thoughty.example.com`) && Path(`/api/attachments/upload`)
+      priority: 375
+      middlewares:
+        - name: thoughty-video-upload-limit
+      services:
+        - name: thoughty-api-rollout
+          kind: TraefikService
 ---
 apiVersion: traefik.io/v1alpha1
 kind: TraefikService

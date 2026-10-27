@@ -17,3 +17,4 @@ export * from './entry-mentions.util';
 export * from './time-zone.util';
 export * from './inline-image.util';
 export * from './book-inline-image.util';
+export * from './byte-range.util';

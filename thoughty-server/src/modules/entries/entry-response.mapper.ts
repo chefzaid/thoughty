@@ -56,6 +56,7 @@ function openEntryResponse(entry: Entry): EntryResponseDto {
             stored_filename: attachment.storedFilename,
             mimetype: attachment.mimetype,
             size: attachment.size,
+            poster_filename: attachment.posterFilename ?? undefined,
             transcript: attachment.transcript ?? undefined,
             transcribed_at: attachment.transcribedAt ?? undefined,
           })),

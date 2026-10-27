@@ -101,6 +101,9 @@ export const API_ERROR_MESSAGES = {
   ATTACHMENT_TOO_LARGE: 'File size exceeds the maximum',
   ATTACHMENT_EXPORT_TOO_LARGE: 'Attachment exceeds the export size limit',
   ATTACHMENT_NOT_AUDIO: 'Only audio attachments can be transcribed',
+  ATTACHMENT_CONTENT_MISMATCH: 'The file content does not match its type',
+  ATTACHMENT_NOT_VIDEO: 'Only video attachments have a poster frame',
+  ATTACHMENT_RANGE_NOT_SATISFIABLE: 'The requested range is outside the file',
   TRANSCRIPTION_FAILED: 'Audio transcription request failed',
 
   // Import, export and books.

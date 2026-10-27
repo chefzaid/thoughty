@@ -33,6 +33,8 @@ interface BookEntryInput {
     storedFilename: string;
     mimetype: string;
     size: number;
+    posterFilename?: string | null;
+    posterSize?: number | null;
   }>;
 }
 

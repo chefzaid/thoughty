@@ -28,6 +28,13 @@ export interface ArchiveLink {
   transcript?: string | null;
 }
 
+/** A file an archive leaves out (a video past its size budget), listed in the README. */
+export interface ArchiveOmittedFile {
+  /** The day of its entry. */
+  date: string;
+  name: string;
+}
+
 // Path separators, characters Windows reserves, and control characters
 const UNSAFE_NAME_CHARACTERS = /[\u0000-\u001f\u007f<>:"/\\|?*]+/g;
 const WINDOWS_RESERVED_NAMES = /^(con|prn|aux|nul|com\d|lpt\d)$/i;
@@ -140,24 +147,39 @@ export function renderArchiveEntry(entry: ArchiveEntry, diaryName: string | null
   return `${[frontMatter.join('\n'), content.trim(), ...attachmentBlocks].filter(Boolean).join('\n\n')}\n`;
 }
 
-const README_TEXT: Record<ArchiveLanguage, { title: string; summary: (entries: number, diaries: number, date: string) => string; layout: string }> = {
+const README_TEXT: Record<ArchiveLanguage, { title: string; summary: (entries: number, diaries: number, date: string) => string; layout: string; omitted: string }> = {
   en: {
     title: 'Thoughty export',
     summary: (entries, diaries, date) => `Exported on ${date}: ${entries} ${entries === 1 ? 'entry' : 'entries'} in ${diaries} ${diaries === 1 ? 'diary' : 'diaries'}.`,
     layout:
-      'Each diary is a folder with one folder per year. Every entry is a Markdown file named after its date and title, starting with YAML front matter (title, date, time, diary, mood from 1 for very low to 5 for very good, feelings, tags, visibility, format, favorite, archived, and sealed_until for a time capsule still sealed). Photos, recordings, and other attachments are in the year’s `attachments` folder and linked from their entry, so the folder opens as it is in Markdown editors such as Obsidian.',
+      'Each diary is a folder with one folder per year. Every entry is a Markdown file named after its date and title, starting with YAML front matter (title, date, time, diary, mood from 1 for very low to 5 for very good, feelings, tags, visibility, format, favorite, archived, and sealed_until for a time capsule still sealed). Photos, recordings, videos, and other attachments are in the year’s `attachments` folder and linked from their entry, so the folder opens as it is in Markdown editors such as Obsidian.',
+    omitted:
+      'An archive holds up to 2 GB of videos. These videos did not fit and are not included; download them from their entries in Thoughty:',
   },
   fr: {
     title: 'Export Thoughty',
     summary: (entries, diaries, date) => `Exporté le ${date} : ${entries} ${entries === 1 ? 'entrée' : 'entrées'} dans ${diaries} ${diaries === 1 ? 'journal' : 'journaux'}.`,
     layout:
-      'Chaque journal est un dossier, avec un dossier par année. Chaque entrée est un fichier Markdown nommé d’après sa date et son titre, qui commence par un en-tête YAML (titre, date, heure, journal, humeur de 1 pour très basse à 5 pour très bonne, ressentis, tags, visibilité, format, favori, archivé, et sealed_until pour une capsule temporelle encore scellée). Les photos, enregistrements et autres pièces jointes sont dans le dossier `attachments` de l’année et liés depuis leur entrée : le dossier s’ouvre tel quel dans les éditeurs Markdown comme Obsidian.',
+      'Chaque journal est un dossier, avec un dossier par année. Chaque entrée est un fichier Markdown nommé d’après sa date et son titre, qui commence par un en-tête YAML (titre, date, heure, journal, humeur de 1 pour très basse à 5 pour très bonne, ressentis, tags, visibilité, format, favori, archivé, et sealed_until pour une capsule temporelle encore scellée). Les photos, enregistrements, vidéos et autres pièces jointes sont dans le dossier `attachments` de l’année et liés depuis leur entrée : le dossier s’ouvre tel quel dans les éditeurs Markdown comme Obsidian.',
+    omitted:
+      'Une archive contient au plus 2 Go de vidéos. Ces vidéos n’y tenaient pas et ne sont pas incluses ; téléchargez-les depuis leurs entrées dans Thoughty :',
   },
 };
 
-export function renderArchiveReadme(language: ArchiveLanguage, entryCount: number, diaryCount: number, exportedOn: string): string {
+export function renderArchiveReadme(
+  language: ArchiveLanguage,
+  entryCount: number,
+  diaryCount: number,
+  exportedOn: string,
+  omitted: readonly ArchiveOmittedFile[] = [],
+): string {
   const text = README_TEXT[language];
-  return `# ${text.title}\n\n${text.summary(entryCount, diaryCount, exportedOn)}\n\n${text.layout}\n`;
+  const readme = `# ${text.title}\n\n${text.summary(entryCount, diaryCount, exportedOn)}\n\n${text.layout}\n`;
+  if (omitted.length === 0) {
+    return readme;
+  }
+  const list = omitted.map((file) => `- ${file.date}: ${escapeLinkText(file.name)}`).join('\n');
+  return `${readme}\n${text.omitted}\n\n${list}\n`;
 }
 
 export function archiveUnfiledFolderName(language: ArchiveLanguage): string {

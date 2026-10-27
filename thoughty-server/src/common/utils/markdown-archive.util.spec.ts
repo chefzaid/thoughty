@@ -134,6 +134,13 @@ describe('renderArchiveReadme', () => {
     expect(renderArchiveReadme('fr', 12, 3, '2026-10-19')).toContain('Exporté le 2026-10-19 : 12 entrées dans 3 journaux.');
   });
 
+  it('lists the videos left out of the archive, in the writer’s language', () => {
+    const omitted = [{ date: '2024-05-02', name: 'hills [day 2].mp4' }];
+    expect(renderArchiveReadme('en', 1, 1, '2026-10-19')).not.toContain('2 GB');
+    expect(renderArchiveReadme('en', 1, 1, '2026-10-19', omitted)).toMatch(/up to 2 GB of videos[^\n]*\n\n- 2024-05-02: hills \\\[day 2\\\]\.mp4\n$/);
+    expect(renderArchiveReadme('fr', 1, 1, '2026-10-19', omitted)).toContain('au plus 2 Go de vidéos');
+  });
+
   it('names the folder for entries without a diary', () => {
     expect(archiveUnfiledFolderName('en')).toBe('No diary');
     expect(archiveUnfiledFolderName('fr')).toBe('Sans journal');

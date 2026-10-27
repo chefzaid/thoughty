@@ -3,7 +3,9 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { AttachmentsController } from '@/modules/attachments/attachments.controller';
 import { AttachmentsService } from '@/modules/attachments/attachments.service';
+import { existsSync } from 'node:fs';
 import { AudioTranscriptionService } from '@/modules/attachments/audio-transcription.service';
+import { VideoPosterService } from '@/modules/attachments/video-poster.service';
 import { BooksController } from '@/modules/books/books.controller';
 import { BooksService } from '@/modules/books/books.service';
 import { BookVersionsService } from '@/modules/books/book-versions.service';
@@ -23,6 +25,7 @@ describe('Multipart upload limits', () => {
       providers: [
         { provide: AttachmentsService, useValue: { upload } },
         { provide: AudioTranscriptionService, useValue: {} },
+        { provide: VideoPosterService, useValue: {} },
         { provide: BooksService, useValue: { export: exportBook } },
         { provide: BookVersionsService, useValue: { create: createVersion } },
         { provide: BookEntrySourceService, useValue: {} },
@@ -70,10 +73,26 @@ describe('Multipart upload limits', () => {
     },
   );
 
-  it('keeps the attachment file-size limit', async () => {
+  it('writes the upload to a temporary file and deletes it once answered, whatever the outcome', async () => {
+    const paths: string[] = [];
+    upload.mockImplementationOnce((_user: number, file: Express.Multer.File) => {
+      paths.push(file.path);
+      expect(existsSync(file.path)).toBe(true);
+      return Promise.reject(new Error('storage down'));
+    });
     await request(app.getHttpServer())
       .post('/attachments/upload')
-      .attach('file', Buffer.alloc(5 * 1024 * 1024 + 1), 'large.txt')
+      .attach('file', Buffer.from('journal fixture'), 'note.txt')
+      .expect(500);
+    expect(paths).toHaveLength(1);
+    await new Promise((resolve) => setImmediate(resolve));
+    expect(existsSync(paths[0]!)).toBe(false);
+  });
+
+  it('stops an upload at the 50 MB video limit before the application sees it', async () => {
+    await request(app.getHttpServer())
+      .post('/attachments/upload')
+      .attach('file', Buffer.alloc(50 * 1024 * 1024 + 1), { filename: 'long.mp4', contentType: 'video/mp4' })
       .expect(413);
     expect(upload).not.toHaveBeenCalled();
   });

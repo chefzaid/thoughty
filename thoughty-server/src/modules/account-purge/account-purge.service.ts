@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Attachment, User } from '@/database/entities';
-import { AttachmentsService } from '@/modules/attachments';
+import { AttachmentsService, storedKeysOf } from '@/modules/attachments';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const PURGE_BATCH_SIZE = 50;
@@ -106,12 +106,10 @@ export class AccountPurgeService {
       }
 
       const attachments = await manager.find(Attachment, {
-        select: { id: true, storedFilename: true },
+        select: { id: true, storedFilename: true, posterFilename: true },
         where: { userId },
       });
-      const failed = await this.attachmentsService.removeStoredFiles(
-        attachments.map((attachment) => attachment.storedFilename),
-      );
+      const failed = await this.attachmentsService.removeStoredFiles(storedKeysOf(attachments));
       if (failed.length > 0) {
         // Keep the account, and with it the keys, so the next run deletes the remaining files.
         throw new Error(`${failed.length} stored file(s) could not be deleted`);

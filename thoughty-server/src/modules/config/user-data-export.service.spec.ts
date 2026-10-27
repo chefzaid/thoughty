@@ -165,6 +165,7 @@ describe('UserDataExportService', () => {
         transcribedAt: new Date('2024-01-15T10:05:00Z'),
         createdAt: new Date('2024-01-15T10:00:00Z'),
       },
+      { id: 4, entryId: 1, originalFilename: 'beach.mp4', mimetype: 'video/mp4', size: 4096, posterFilename: 'poster-key.jpg' },
     ]);
     settingRepository.find.mockResolvedValue([
       { key: 'theme', value: 'dark', updatedAt: new Date('2024-01-01') },
@@ -208,8 +209,12 @@ describe('UserDataExportService', () => {
         id: 3,
         transcript: 'Portable transcript',
         transcribedAt: new Date('2024-01-15T10:05:00Z'),
+        hasPosterFrame: false,
       }),
+      expect.objectContaining({ id: 4, mimetype: 'video/mp4', hasPosterFrame: true }),
     ]);
+    // Storage keys never leave the server
+    expect(JSON.stringify(result.attachments)).not.toContain('poster-key');
     expect(result.settings).toHaveLength(1);
     expect(result.following).toEqual([
       { userId: 2, username: 'maya', followedAt: new Date('2024-02-01') },

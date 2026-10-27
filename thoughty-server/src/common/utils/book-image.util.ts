@@ -28,24 +28,47 @@ interface AttachmentInput {
   storedFilename: string;
   mimetype: string;
   size: number;
+  /** A video's poster frame, a JPEG. */
+  posterFilename?: string | null;
+  posterSize?: number | null;
 }
 
+/**
+ * The join condition that loads the attachments a book or document may print, for the attachment
+ * alias `alias`: pictures, and videos that have a poster frame (the frame is printed, never the video).
+ */
+export function embeddedBookImageCondition(alias: string): string {
+  return `(${alias}.mimetype IN (:...imageTypes) OR ${alias}.poster_filename IS NOT NULL)`;
+}
+
+/**
+ * The pictures a book or document prints: each picture attachment, and the poster frame of each video
+ * that has one, captioned with the video's name like a picture.
+ */
 export function normalizeEmbeddedBookImages(
   attachments?: AttachmentInput[],
 ): EmbeddedBookImage[] {
-  return (attachments ?? [])
-    .filter((attachment) =>
-      EMBEDDED_BOOK_IMAGE_TYPES.includes(
-        attachment.mimetype as EmbeddedBookImageType,
-      ),
-    )
-    .map((attachment) => ({
-      id: attachment.id,
-      name: attachment.originalFilename,
-      storedFilename: attachment.storedFilename,
-      mimeType: attachment.mimetype as EmbeddedBookImageType,
-      size: attachment.size,
-    }));
+  return (attachments ?? []).flatMap((attachment): EmbeddedBookImage[] => {
+    if (EMBEDDED_BOOK_IMAGE_TYPES.includes(attachment.mimetype as EmbeddedBookImageType)) {
+      return [{
+        id: attachment.id,
+        name: attachment.originalFilename,
+        storedFilename: attachment.storedFilename,
+        mimeType: attachment.mimetype as EmbeddedBookImageType,
+        size: attachment.size,
+      }];
+    }
+    if (attachment.mimetype.startsWith('video/') && attachment.posterFilename && attachment.posterSize) {
+      return [{
+        id: attachment.id,
+        name: attachment.originalFilename,
+        storedFilename: attachment.posterFilename,
+        mimeType: 'image/jpeg',
+        size: attachment.posterSize,
+      }];
+    }
+    return [];
+  });
 }
 
 export function bookImageDataUri(image: EmbeddedBookImage): string | undefined {
