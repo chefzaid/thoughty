@@ -462,12 +462,12 @@ describe('AuthController', () => {
   });
 
   describe('resendVerificationEmail', () => {
-    it('delegates to emailVerificationService.sendVerificationEmail with userId', async () => {
+    it('delegates to emailVerificationService.sendVerificationEmail, requiring delivery', async () => {
       const expected = { success: true, message: 'Sent' };
       emailVerificationService.sendVerificationEmail.mockResolvedValue(expected);
 
       const result = await controller.resendVerificationEmail(mockUser as any);
-      expect(emailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(1);
+      expect(emailVerificationService.sendVerificationEmail).toHaveBeenCalledWith(1, { requireDelivery: true });
       expect(result).toBe(expected);
     });
   });

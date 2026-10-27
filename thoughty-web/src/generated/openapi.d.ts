@@ -9022,6 +9022,23 @@ export interface operations {
                     "application/json": components["schemas"]["SuccessMessageResponseDto"];
                 };
             };
+            /** @description No mail server is configured (`EMAIL_DELIVERY_NOT_CONFIGURED`) */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 503,
+                     *       "message": "No mail server is configured (`EMAIL_DELIVERY_NOT_CONFIGURED`)",
+                     *       "error": "Service Unavailable",
+                     *       "code": "SERVICE_UNAVAILABLE"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
         };
     };
     AuthController_deleteAccount: {

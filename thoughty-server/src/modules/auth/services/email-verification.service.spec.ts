@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -27,6 +27,7 @@ describe('EmailVerificationService', () => {
       save: jest.fn(),
     };
     emailService = {
+      isConfigured: jest.fn().mockReturnValue(true),
       sendEmailVerificationEmail: jest.fn().mockResolvedValue(undefined),
     };
 
@@ -77,6 +78,37 @@ describe('EmailVerificationService', () => {
     expect(result).toEqual({ success: true, message: 'Email already verified' });
     expect(userRepository.save).not.toHaveBeenCalled();
     expect(emailService.sendEmailVerificationEmail).not.toHaveBeenCalled();
+  });
+
+  it('refuses a requested resend while no mail server is configured, before storing a token', async () => {
+    userRepository.findOne.mockResolvedValue({ ...mockUser });
+    emailService.isConfigured.mockReturnValue(false);
+
+    await expectApiError(
+      service.sendVerificationEmail(1, { requireDelivery: true }),
+      ServiceUnavailableException,
+      'EMAIL_DELIVERY_NOT_CONFIGURED',
+    );
+    expect(userRepository.save).not.toHaveBeenCalled();
+    expect(emailService.sendEmailVerificationEmail).not.toHaveBeenCalled();
+  });
+
+  it('sends a requested resend when mail is configured, and answers an already verified email either way', async () => {
+    userRepository.findOne.mockResolvedValue({ ...mockUser });
+    userRepository.save.mockImplementation((user: any) => Promise.resolve(user));
+
+    await expect(service.sendVerificationEmail(1, { requireDelivery: true })).resolves.toEqual({
+      success: true,
+      message: 'Verification email sent',
+    });
+    expect(emailService.sendEmailVerificationEmail).toHaveBeenCalledTimes(1);
+
+    emailService.isConfigured.mockReturnValue(false);
+    userRepository.findOne.mockResolvedValue({ ...mockUser, emailVerified: true });
+    await expect(service.sendVerificationEmail(1, { requireDelivery: true })).resolves.toEqual({
+      success: true,
+      message: 'Email already verified',
+    });
   });
 
   it('throws when resending for an unknown user', async () => {

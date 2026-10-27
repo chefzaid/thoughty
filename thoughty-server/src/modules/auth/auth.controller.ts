@@ -437,10 +437,11 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Resend the current user email verification message' })
   @ApiResponse({ status: 200, description: 'Verification email sent if needed', type: SuccessMessageResponseDto })
+  @ApiResponse({ status: 503, description: 'No mail server is configured (`EMAIL_DELIVERY_NOT_CONFIGURED`)' })
   async resendVerificationEmail(
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<SuccessMessageResponseDto> {
-    return this.emailVerificationService.sendVerificationEmail(user.userId);
+    return this.emailVerificationService.sendVerificationEmail(user.userId, { requireDelivery: true });
   }
 
   @Post('delete-account')

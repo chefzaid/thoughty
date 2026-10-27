@@ -1150,6 +1150,22 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "No mail server is configured (`EMAIL_DELIVERY_NOT_CONFIGURED`)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 503,
+                  "message": "No mail server is configured (`EMAIL_DELIVERY_NOT_CONFIGURED`)",
+                  "error": "Service Unavailable",
+                  "code": "SERVICE_UNAVAILABLE"
+                }
+              }
+            }
           }
         },
         "security": [

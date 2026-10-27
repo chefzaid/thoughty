@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -24,7 +30,15 @@ export class EmailVerificationService {
     private readonly emailService: EmailService,
   ) {}
 
-  async sendVerificationEmail(userId: number): Promise<{ success: boolean; message: string }> {
+  /**
+   * Emails a new verification link. Registration sends one whatever happens and only logs a failure;
+   * a writer who asks for it again (`requireDelivery`) is told when no mail server is configured
+   * instead of being told it was sent.
+   */
+  async sendVerificationEmail(
+    userId: number,
+    { requireDelivery = false }: { requireDelivery?: boolean } = {},
+  ): Promise<{ success: boolean; message: string }> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
 
     if (!user) {
@@ -33,6 +47,10 @@ export class EmailVerificationService {
 
     if (user.emailVerified) {
       return { success: true, message: 'Email already verified' };
+    }
+
+    if (requireDelivery && !this.emailService.isConfigured()) {
+      throw apiError(ServiceUnavailableException, 'EMAIL_DELIVERY_NOT_CONFIGURED');
     }
 
     const token = crypto.randomBytes(32).toString('hex');
