@@ -103,6 +103,12 @@ body.high-contrast-mode .focus-mode {
   outline-offset: 2px;
 }
 
+.focus-mode-writing {
+  /* Holds the text and the people list shown under its caret line */
+  position: relative;
+  min-height: 0;
+}
+
 .focus-mode-text {
   display: block;
   box-sizing: border-box;

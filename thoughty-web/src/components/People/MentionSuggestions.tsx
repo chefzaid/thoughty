@@ -8,10 +8,12 @@ interface MentionSuggestionsProps {
     readonly theme?: 'light' | 'dark';
     readonly language: Language;
     readonly t: TranslationFunction;
+    /** Where the list goes in its positioned wrapper; under the field, as wide as it, when left out. */
+    readonly placement?: { readonly top: number; readonly left: number; readonly width: number } | null;
 }
 
 /** The people offered after `@`, under the writing field; the field keeps focus and the keyboard. */
-export default function MentionSuggestions({ suggestions, theme, language, t }: MentionSuggestionsProps) {
+export default function MentionSuggestions({ suggestions, theme, language, t, placement }: MentionSuggestionsProps) {
     const isLight = theme === 'light';
     return (
         <>
@@ -23,7 +25,8 @@ export default function MentionSuggestions({ suggestions, theme, language, t }: 
                     id={suggestions.id}
                     role="listbox"
                     aria-label={t('mentionSuggestionsLabel')}
-                    className={`absolute left-0 top-full z-30 mt-1 max-h-64 w-full max-w-sm overflow-auto rounded-lg border py-1 shadow-lg ${isLight
+                    style={placement ?? undefined}
+                    className={`absolute z-30 max-h-64 max-w-sm overflow-auto ${placement ? '' : 'left-0 top-full mt-1 w-full'} rounded-lg border py-1 shadow-lg ${isLight
                         ? 'border-gray-200 bg-white text-gray-900'
                         : 'border-gray-700 bg-gray-800 text-gray-100'}`}
                 >

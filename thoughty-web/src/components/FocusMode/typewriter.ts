@@ -17,10 +17,10 @@ const MIRRORED_STYLES = [
 ] as const;
 
 /**
- * How far below the top of the textarea's content the caret's line sits, measured on a hidden copy
- * of the text up to the caret that wraps the same way.
+ * Where the caret's line sits below the top of the textarea's content (its middle and its bottom),
+ * measured on a hidden copy of the text up to the caret that wraps the same way.
  */
-export function caretLineTop(textarea: HTMLTextAreaElement): number {
+function measureCaretLine(textarea: HTMLTextAreaElement): { middle: number; bottom: number } {
     const style = getComputedStyle(textarea);
     const mirror = document.createElement('div');
     for (const property of MIRRORED_STYLES) {
@@ -43,9 +43,34 @@ export function caretLineTop(textarea: HTMLTextAreaElement): number {
     mirror.appendChild(marker);
 
     document.body.appendChild(mirror);
-    const top = marker.offsetTop + marker.offsetHeight / 2;
+    const middle = marker.offsetTop + marker.offsetHeight / 2;
     mirror.remove();
-    return top;
+    // The marker is as tall as the font; the line, as its line height (when given in pixels)
+    const lineHeight = Number.parseFloat(style.lineHeight);
+    return { middle, bottom: middle + (Number.isFinite(lineHeight) ? lineHeight : marker.offsetHeight) / 2 };
+}
+
+/** How far below the top of the textarea's content the middle of the caret's line sits. */
+export function caretLineTop(textarea: HTMLTextAreaElement): number {
+    return measureCaretLine(textarea).middle;
+}
+
+/** A gap between the caret's line and a list shown under it. */
+const BELOW_LINE_GAP = 4;
+
+/**
+ * Where a list shown just under the caret's line goes, in the coordinates of the textarea's offset
+ * parent: below the line as it is scrolled now, starting and ending with the text column.
+ */
+export function belowCaretLine(textarea: HTMLTextAreaElement): { top: number; left: number; width: number } {
+    const style = getComputedStyle(textarea);
+    const paddingLeft = Number.parseFloat(style.paddingLeft) || 0;
+    const paddingRight = Number.parseFloat(style.paddingRight) || 0;
+    return {
+        top: textarea.offsetTop + measureCaretLine(textarea).bottom - textarea.scrollTop + BELOW_LINE_GAP,
+        left: textarea.offsetLeft + paddingLeft,
+        width: Math.max(0, textarea.clientWidth - paddingLeft - paddingRight),
+    };
 }
 
 /** The scroll position that puts a line at the vertical middle of a view of the given height. */

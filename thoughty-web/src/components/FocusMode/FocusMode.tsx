@@ -4,7 +4,10 @@ import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { FontFamilyPreference, TranslationFunction } from '../../types';
 import { normalizeFontSize, resolveFontColor, resolveFontFamily } from '../../types/config';
 import { countEntryWords } from '../../utils/entryMetrics';
-import { centerCaretLine } from './typewriter';
+import { resolveLanguage } from '../../utils/language';
+import MentionSuggestions from '../People/MentionSuggestions';
+import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
+import { belowCaretLine, centerCaretLine } from './typewriter';
 import { isFocusModeShortcut } from './focusModeShortcut';
 import { MAX_WORD_GOAL, parseWordGoal, readSavedGoal, saveGoal, wordsPhrase } from './focusModeSession';
 import './FocusMode.css';
@@ -29,6 +32,7 @@ interface FocusModeProps {
 /**
  * Full-screen, distraction-free writing: only the text, a live word count, and an optional word
  * goal for the session. The caret's line stays near the middle of the screen (typewriter scrolling).
+ * Typing `@` offers the writer's people as in the composer, in a list just under the caret's line.
  * Esc, the Done button, or the shortcut leave it, and the text stays in the composer or editor.
  */
 export default function FocusMode({
@@ -50,6 +54,10 @@ export default function FocusMode({
     const [goalInput, setGoalInput] = useState(readSavedGoal);
     // Words already there when focus mode opened, so the goal counts only what this session adds
     const [wordsAtStart] = useState(() => countEntryWords(text));
+
+    const mentions = useMentionAutocomplete(text, onTextChange);
+    const suggestionsOpen = mentions.suggestions !== null;
+    const [suggestionsPlacement, setSuggestionsPlacement] = useState<ReturnType<typeof belowCaretLine> | null>(null);
 
     useDialogFocus({ isOpen: true, dialogRef, initialFocusRef: textareaRef, onClose });
 
@@ -74,6 +82,17 @@ export default function FocusMode({
     useLayoutEffect(() => {
         keepCaretCentered(true);
     }, [keepCaretCentered, text]);
+
+    // The people list follows the caret's line, also while typewriter scrolling moves it
+    const placeSuggestions = useCallback(() => {
+        if (textareaRef.current) {
+            setSuggestionsPlacement(belowCaretLine(textareaRef.current));
+        }
+    }, []);
+
+    useLayoutEffect(() => {
+        if (suggestionsOpen) placeSuggestions();
+    }, [placeSuggestions, suggestionsOpen, text]);
 
     useEffect(() => {
         const previousOverflow = document.body.style.overflow;
@@ -136,22 +155,36 @@ export default function FocusMode({
                     {t('focusModeDone')}
                 </button>
             </header>
-            <textarea
-                ref={textareaRef}
-                className="focus-mode-text"
-                aria-label={t('focusModeTextLabel')}
-                aria-describedby={`${titleId}-hint`}
-                placeholder={placeholder}
-                value={text}
-                onChange={(event) => onTextChange(event.target.value)}
-                onSelect={() => keepCaretCentered(true)}
-                spellCheck
-                style={{
-                    color: resolveFontColor(fontColor, theme),
-                    fontFamily: resolveFontFamily(fontFamily),
-                    fontSize: `${normalizeFontSize(fontSize) * TEXT_SCALE}px`,
-                }}
-            />
+            <div className="focus-mode-writing" {...mentions.wrapperProps}>
+                <textarea
+                    ref={textareaRef}
+                    className="focus-mode-text"
+                    aria-label={t('focusModeTextLabel')}
+                    aria-describedby={`${titleId}-hint`}
+                    placeholder={placeholder}
+                    value={text}
+                    onChange={(event) => onTextChange(event.target.value)}
+                    {...mentions.fieldProps}
+                    onSelect={(event) => {
+                        mentions.fieldProps.onSelect(event);
+                        keepCaretCentered(true);
+                    }}
+                    onScroll={suggestionsOpen ? placeSuggestions : undefined}
+                    spellCheck
+                    style={{
+                        color: resolveFontColor(fontColor, theme),
+                        fontFamily: resolveFontFamily(fontFamily),
+                        fontSize: `${normalizeFontSize(fontSize) * TEXT_SCALE}px`,
+                    }}
+                />
+                <MentionSuggestions
+                    suggestions={mentions.suggestions}
+                    placement={suggestionsPlacement}
+                    theme={theme}
+                    language={resolveLanguage(language)}
+                    t={t}
+                />
+            </div>
             <footer className="focus-mode-footer">
                 <p id={`${titleId}-hint`} className="focus-mode-hint">{t('focusModeHint')}</p>
                 {goal !== null && (

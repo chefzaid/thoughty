@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { caretLineTop, centerCaretLine, typewriterScrollTop } from './typewriter';
+import { belowCaretLine, caretLineTop, centerCaretLine, typewriterScrollTop } from './typewriter';
 
 describe('typewriter scrolling', () => {
     afterEach(() => {
@@ -23,6 +23,21 @@ describe('typewriter scrolling', () => {
         expect(caretLineTop(area)).toBe(435);
         expect(offsetTop.mock.contexts.at(-1)).toHaveProperty('textContent', '​');
         expect(document.body.children).toHaveLength(1);
+        area.remove();
+    });
+
+    it('places a list just under the caret line as scrolled, along the text column', () => {
+        const area = document.createElement('textarea');
+        area.style.padding = '10px 24px';
+        Object.defineProperty(area, 'clientWidth', { value: 600 });
+        Object.defineProperty(area, 'offsetLeft', { value: 100 });
+        area.scrollTop = 50;
+        document.body.appendChild(area);
+        vi.spyOn(HTMLElement.prototype, 'offsetTop', 'get').mockReturnValue(300);
+        vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(30);
+
+        // The textarea's own offsetTop (300) plus the line's bottom (330), less the scroll, plus a gap
+        expect(belowCaretLine(area)).toEqual({ top: 584, left: 124, width: 552 });
         area.remove();
     });
 
