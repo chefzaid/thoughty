@@ -31,6 +31,7 @@ import { statsTranslations, type StatsTranslationKey } from "./translations.stat
 import { importExportTranslations, type ImportExportTranslationKey } from "./translations.importExport";
 import { bookTranslations, type BookTranslationKey } from "./translations.book";
 import { bookSourcesTranslations, type BookSourcesTranslationKey } from "./translations.bookSources";
+import { bookPreviewTranslations, type BookPreviewTranslationKey } from "./translations.bookPreview";
 import { authTranslations, type AuthTranslationKey } from "./translations.auth";
 import { aiWritingTranslations, type AiWritingTranslationKey } from "./translations.aiWriting";
 import { aiSettingsTranslations, type AiSettingsTranslationKey } from "./translations.aiSettings";
@@ -79,6 +80,7 @@ export type TranslationKey =
   | ImportExportTranslationKey
   | BookTranslationKey
   | BookSourcesTranslationKey
+  | BookPreviewTranslationKey
   | AuthTranslationKey
   | AiWritingTranslationKey
   | AiSettingsTranslationKey
@@ -132,6 +134,7 @@ export const translations: Translations = {
     ...importExportTranslations.en,
     ...bookTranslations.en,
     ...bookSourcesTranslations.en,
+    ...bookPreviewTranslations.en,
     ...authTranslations.en,
     ...aiWritingTranslations.en,
     ...aiSettingsTranslations.en,
@@ -178,6 +181,7 @@ export const translations: Translations = {
     ...importExportTranslations.fr,
     ...bookTranslations.fr,
     ...bookSourcesTranslations.fr,
+    ...bookPreviewTranslations.fr,
     ...authTranslations.fr,
     ...aiWritingTranslations.fr,
     ...aiSettingsTranslations.fr,

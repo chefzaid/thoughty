@@ -437,3 +437,8 @@
 .import-export.light .book-field-hint {
     color: #4b5563;
 }
+
+.book-ai-notice {
+    padding-left: 0.6rem;
+    border-left: 3px solid #f59e0b;
+}

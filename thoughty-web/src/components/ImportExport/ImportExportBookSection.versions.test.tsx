@@ -45,6 +45,7 @@ function renderSection(language: Language, versions: BookVersionData[], props: P
             onOptionChange={vi.fn()}
             onCloudProviderChange={vi.fn()}
             onPreview={vi.fn()}
+            onPagePreview={vi.fn()}
             onDownload={vi.fn()}
             onUpload={vi.fn()}
             onCreateVersion={vi.fn()}
@@ -96,7 +97,7 @@ describe('BookSection versions', () => {
     it('keeps the book actions off until the source names its entries', () => {
         renderSection('fr', [], { sourceReady: false, options: { ...DEFAULT_BOOK_OPTIONS, source: 'entries' } });
 
-        for (const name of ['Aperçu', 'Télécharger le livre', 'Enregistrer la première version']) {
+        for (const name of ['Aperçu des chapitres', 'Aperçu du livre', 'Télécharger le livre', 'Enregistrer la première version']) {
             expect(screen.getByRole('button', { name: new RegExp(name) })).toBeDisabled();
         }
         expect(screen.getByText(/Dans le journal, sélectionnez des entrées puis choisissez Faire un livre/)).toBeInTheDocument();

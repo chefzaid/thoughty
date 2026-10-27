@@ -5,6 +5,8 @@ import type { Language } from '../../utils/translations';
 import { BookSection } from './ImportExportBookSection';
 import type { MessageState } from './ImportExport.types';
 import { useImportExportBook } from './useImportExportBook';
+import { BookPreviewDialog } from '../BookPreview/BookPreviewDialog';
+import { BOOK_FORMAT_OPTIONS } from './ImportExport.types';
 
 export function ImportExportBookPanel({
     activeSection,
@@ -13,6 +15,7 @@ export function ImportExportBookPanel({
     diaryId,
     diaryName,
     initialEntryIds,
+    isLight,
     language,
     sectionRef,
     showMessage,
@@ -24,6 +27,7 @@ export function ImportExportBookPanel({
     diaryId?: number | null;
     diaryName?: string;
     initialEntryIds?: readonly number[];
+    isLight: boolean;
     language: Language;
     sectionRef: RefObject<HTMLElement | null>;
     showMessage: (type: MessageState['type'], text: string, duration?: number) => void;
@@ -38,7 +42,13 @@ export function ImportExportBookPanel({
         t,
     });
 
+    const formatLabelKey = BOOK_FORMAT_OPTIONS.find((option) => option.value === book.options.format)?.labelKey;
+    const formatNotice = book.options.format !== 'pdf' && formatLabelKey
+        ? t('bookPagePreviewFormatNotice', { format: t(formatLabelKey) })
+        : undefined;
+
     return (
+        <>
         <BookSection
             activeSection={activeSection}
             sectionRef={sectionRef}
@@ -58,6 +68,7 @@ export function ImportExportBookPanel({
             onCloudProviderChange={book.setCloudProvider}
             onOptionChange={book.changeOption}
             onPreview={book.handlePreview}
+            onPagePreview={book.handlePagePreview}
             onDownload={book.handleDownload}
             onUpload={book.handleUpload}
             onCreateVersion={book.handleCreateVersion}
@@ -66,5 +77,15 @@ export function ImportExportBookPanel({
             language={language}
             t={t}
         />
+        <BookPreviewDialog
+            open={book.pagePreview !== null}
+            file={book.pagePreview?.file?.blob ?? null}
+            notice={formatNotice}
+            isLight={isLight}
+            onClose={book.closePagePreview}
+            onDownload={book.downloadPagePreview}
+            t={t}
+        />
+        </>
     );
 }

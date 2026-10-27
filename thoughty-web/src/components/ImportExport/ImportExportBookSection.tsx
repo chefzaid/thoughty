@@ -24,6 +24,7 @@ import {
 import { BookCoverControls } from './ImportExportBookCover';
 import { BookSourceControls } from './ImportExportBookSource';
 import { describeBookVersionSource } from './bookSource';
+import { bookUsesAi } from './bookFile';
 import type { SavedSearch } from '../../services/api/savedSearchesService';
 import type { BookSourceLoad } from './useBookSourceData';
 
@@ -66,6 +67,7 @@ export function BookSection({
     onOptionChange,
     onCloudProviderChange,
     onPreview,
+    onPagePreview,
     onDownload,
     onUpload,
     onCreateVersion,
@@ -93,6 +95,7 @@ export function BookSection({
     onOptionChange: <K extends keyof BookOptions>(key: K, value: BookOptions[K]) => void;
     onCloudProviderChange: (provider: CloudProviderType | '') => void;
     onPreview: () => void;
+    onPagePreview: () => void;
     onDownload: () => void;
     onUpload: () => void;
     onCreateVersion: () => void;
@@ -105,6 +108,7 @@ export function BookSection({
     const progressLabel = savingVersion
         ? t('savingBookVersion')
         : generatingLabel;
+    const usesAi = bookUsesAi(options);
 
     return (
         <section ref={sectionRef} className={`io-section ${activeSection === 'book' ? 'is-route-target' : ''}`} id="book-section">
@@ -254,6 +258,16 @@ export function BookSection({
                     <button type="button" className="io-btn secondary" onClick={onPreview} disabled={generating || !sourceReady}>
                         {t('previewBook')}
                     </button>
+                    <button
+                        type="button"
+                        className="io-btn secondary"
+                        onClick={onPagePreview}
+                        disabled={generating || !sourceReady}
+                        aria-describedby={usesAi ? 'book-page-preview-ai' : undefined}
+                    >
+                        <span className="codicon codicon-book" aria-hidden="true" />
+                        {t('bookPagePreview')}
+                    </button>
                     <button type="button" className="io-btn primary" onClick={onDownload} disabled={generating || !sourceReady}>
                         <span className="codicon codicon-cloud-download" aria-hidden="true" />
                         {generating && !uploading && !savingVersion ? t('generatingBook') : t('downloadBook')}
@@ -263,6 +277,10 @@ export function BookSection({
                         {versions.length > 0 ? t('updateBookVersion') : t('createBookVersion')}
                     </button>
                 </div>
+
+                {usesAi && (
+                    <p id="book-page-preview-ai" className="book-field-hint book-ai-notice">{t('bookPagePreviewAiNotice')}</p>
+                )}
 
                 <div className="book-cloud-row">
                     <div className="export-option-group book-field book-cloud-provider">

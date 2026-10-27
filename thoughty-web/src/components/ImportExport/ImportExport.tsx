@@ -340,6 +340,7 @@ function ImportExport({
                 diaryName={diaryName}
                 diaryId={diaryId}
                 initialEntryIds={initialBookEntryIds}
+                isLight={isLight}
                 authFetch={authFetch}
                 connectedProviders={cloud.connectedProviders}
                 language={language}

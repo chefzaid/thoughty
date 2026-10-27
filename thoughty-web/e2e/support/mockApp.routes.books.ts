@@ -3,6 +3,7 @@ import { type MockAppState, type MockBookVersion, type MockEntry } from "./mockA
 import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route-utils";
 import { getFilteredEntries } from "./mockApp.routes.entries";
 import { byStart, mockEraContains, type MockLifeEra } from "./mockApp.routes.life-eras";
+import { buildMockBookPdf } from "./mockBookPdf";
 
 type BookPreview = components["schemas"]["BookPreviewResponseDto"];
 type BookSource = MockBookVersion["source"];
@@ -158,6 +159,28 @@ function toPreview(book: ReturnType<typeof buildBook>): BookPreview {
   };
 }
 
+const BOOK_CONTENT_TYPES: Record<string, string> = {
+  pdf: "application/pdf",
+  epub: "application/epub+zip",
+  html: "text/html; charset=utf-8",
+  md: "text/markdown; charset=utf-8",
+};
+
+/** The generated book file, as `BooksService.export` names it: a real PDF, or the other formats' text. */
+function exportBook(state: MockAppState, params: URLSearchParams) {
+  const book = buildBook(state, params);
+  const format = params.get("format") || "pdf";
+  const chapters = book.chapters.map((chapter) => ({ title: chapter.title, paragraphs: chapter.entries.map((entry) => entry.content) }));
+  const body = format === "pdf"
+    ? buildMockBookPdf({ title: book.title, author: params.get("author")?.trim() || "testuser", includeToc: params.get("includeToc") !== "false", chapters })
+    : [`# ${book.title}`, ...chapters.map((chapter) => `## ${chapter.title}\n\n${chapter.paragraphs.join("\n\n")}`)].join("\n\n");
+  return {
+    body,
+    contentType: BOOK_CONTENT_TYPES[format] ?? "application/octet-stream",
+    filename: `thoughty_book_${book.title.replaceAll(/[^a-zA-Z0-9_-]/g, "_")}_2026-08-01.${format}`,
+  };
+}
+
 /** The version history a book belongs to, as `bookScopeKey` names it. */
 function scopeOf(source: BookSource): string {
   if (source.kind === "savedSearch") return `search:${source.savedSearchId}`;
@@ -203,7 +226,7 @@ function createVersion(state: MockAppState, params: URLSearchParams): MockBookVe
   return version;
 }
 
-/** `/api/books/*`: preview, picked entries, saved versions and cloud upload, built from the mock journal. */
+/** `/api/books/*`: outline preview, export, picked entries, saved versions and cloud upload, built from the mock journal. */
 export async function handleBookRoutes({ route, request, url, pathname, searchParams, state }: RouteContext): Promise<boolean> {
   if (!pathname.startsWith("/api/books/")) return false;
 
@@ -222,6 +245,18 @@ async function answerBookRoute({ route, request, url, pathname, searchParams, st
   if (pathname === "/api/books/preview" && method === "GET") {
     state.lastBookPreviewRequestUrl = url;
     await fulfillJson(route, toPreview(buildBook(state, searchParams)));
+    return true;
+  }
+
+  if (pathname === "/api/books/export" && (method === "GET" || method === "POST")) {
+    state.bookExportRequestUrls.push(url);
+    const file = exportBook(state, searchParams);
+    await route.fulfill({
+      status: 200,
+      contentType: file.contentType,
+      headers: { "Content-Disposition": `attachment; filename="${file.filename}"` },
+      body: file.body,
+    });
     return true;
   }
 

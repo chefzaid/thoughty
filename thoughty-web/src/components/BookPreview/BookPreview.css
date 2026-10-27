@@ -1,0 +1,221 @@
+/* Book preview: the generated PDF, one page at a time, in a modal reader. */
+.book-reader-backdrop {
+    --reader-bg: #0f172a;
+    --reader-surface: #1e293b;
+    --reader-border: rgba(148, 163, 184, 0.35);
+    --reader-text: #f8fafc;
+    --reader-muted: #cbd5e1;
+    --reader-desk: #020617;
+    --reader-control-bg: rgba(67, 56, 202, 0.35);
+    --reader-control-border: rgba(129, 140, 248, 0.6);
+    --reader-control-text: #e0e7ff;
+    --reader-focus: #a5b4fc;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: rgba(2, 6, 23, 0.8);
+}
+
+.book-reader-backdrop.book-reader--light {
+    --reader-bg: #ffffff;
+    --reader-surface: #f8fafc;
+    --reader-border: #d1d5db;
+    --reader-text: #111827;
+    --reader-muted: #4b5563;
+    --reader-desk: #e5e7eb;
+    --reader-control-bg: #eef2ff;
+    --reader-control-border: #a5b4fc;
+    --reader-control-text: #3730a3;
+    --reader-focus: #4338ca;
+}
+
+.book-reader {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: min(100%, 1100px);
+    height: min(100%, 1000px);
+    padding: 1rem;
+    border: 1px solid var(--reader-border);
+    border-radius: 16px;
+    background: var(--reader-bg);
+    color: var(--reader-text);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.45);
+}
+
+.book-reader__header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.book-reader__title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.book-reader__actions,
+.book-reader__group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.book-reader__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0.45rem 0.7rem;
+    border: 1px solid var(--reader-control-border);
+    border-radius: 8px;
+    background: var(--reader-control-bg);
+    color: var(--reader-control-text);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.book-reader__btn--primary {
+    border-color: transparent;
+    background: linear-gradient(135deg, #4338ca, #6d28d9);
+    color: #f8fafc;
+}
+
+.book-reader__btn:hover:not(:disabled) {
+    filter: brightness(1.12);
+}
+
+.book-reader__btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.book-reader__btn:focus-visible,
+.book-reader__jump select:focus-visible,
+.book-reader__viewport:focus-visible {
+    outline: 3px solid var(--reader-focus);
+    outline-offset: 2px;
+}
+
+.book-reader__notice {
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+    border-left: 3px solid #f59e0b;
+    border-radius: 6px;
+    background: var(--reader-surface);
+    color: var(--reader-muted);
+    font-size: 0.875rem;
+}
+
+.book-reader__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    padding: 0.5rem;
+    border: 1px solid var(--reader-border);
+    border-radius: 10px;
+    background: var(--reader-surface);
+}
+
+.book-reader__status {
+    min-width: 7.5rem;
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.book-reader__jump {
+    display: flex;
+    flex: 1 1 14rem;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    font-size: 0.9rem;
+}
+
+.book-reader__jump select {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 2.5rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--reader-border);
+    border-radius: 8px;
+    background: var(--reader-bg);
+    color: var(--reader-text);
+}
+
+.book-reader__zoom {
+    min-width: 3.5rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+}
+
+.book-reader__progress,
+.book-reader__error {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin: 0;
+    color: var(--reader-muted);
+}
+
+.book-reader__viewport {
+    display: flex;
+    flex: 1 1 auto;
+    /* Auto margins on the page center it without cutting off the left edge once zoomed in. */
+    align-items: flex-start;
+    justify-content: flex-start;
+    min-height: 0;
+    padding: 12px;
+    overflow: auto;
+    border-radius: 10px;
+    background: var(--reader-desk);
+}
+
+.book-reader__page {
+    flex: none;
+    margin: auto;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 640px) {
+    .book-reader-backdrop {
+        padding: 0;
+    }
+
+    .book-reader {
+        width: 100%;
+        height: 100%;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 0;
+    }
+
+    .book-reader__toolbar {
+        justify-content: center;
+    }
+
+    .book-reader__jump {
+        flex-basis: 100%;
+        order: 3;
+    }
+
+    .book-reader__viewport {
+        padding: 6px;
+    }
+}

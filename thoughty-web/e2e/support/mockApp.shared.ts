@@ -232,6 +232,7 @@ export interface MockAppState {
   lastBookUploadRequestBody: string | null;
   lastBookVersionRequestUrl: URL | null;
   lastBookPreviewRequestUrl: URL | null;
+  bookExportRequestUrls: URL[];
   lastBookVersionDownloadId: number | null;
   lastAiSuggestionPayload: unknown;
   lastAiFixPayload: unknown;
@@ -467,6 +468,7 @@ export function createMockAppState(
     lastBookUploadRequestBody: null,
     lastBookVersionRequestUrl: null,
     lastBookPreviewRequestUrl: null,
+    bookExportRequestUrls: [],
     lastBookVersionDownloadId: null,
     lastAiSuggestionPayload: null,
     lastAiFixPayload: null,

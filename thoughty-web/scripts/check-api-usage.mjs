@@ -57,7 +57,7 @@ function collectRouteCandidates(file, source, candidates) {
       const matchIndex = match.index ?? 0;
       const statementEnd = source.indexOf(');', matchIndex);
       const callSource = source.slice(matchIndex, statementEnd === -1 ? matchIndex + 500 : statementEnd);
-      const methods = [...callSource.matchAll(/method\s*:\s*['"](POST|PUT|PATCH|DELETE)['"]/g)];
+      const methods = [...callSource.matchAll(/method\s*:\s*['"](GET|POST|PUT|PATCH|DELETE)['"]/g)];
 
       if (methods.length === 0) {
         addCandidate(candidates, 'GET', route, file);

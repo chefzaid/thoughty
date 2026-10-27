@@ -5,10 +5,19 @@ import { resolve } from 'node:path';
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  // The book preview's PDF.js worker is an ES module; bundle it as one, served from the app's origin.
+  worker: {
+    format: 'es',
+  },
   build: {
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Every UI string in both languages: loaded up front, cached apart from the app code.
+          if (/[\\/]src[\\/]utils[\\/]translation[^\\/]*\.ts$/.test(id)) {
+            return 'translations';
+          }
+
           if (!id.includes('node_modules')) {
             return;
           }

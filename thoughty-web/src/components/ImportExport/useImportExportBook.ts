@@ -5,6 +5,7 @@ import { downloadBlob } from '../../utils/downloadFile';
 import { readApiErrorMessage } from '../../services/api/base';
 import { appendBookSourceParams, bookVersionsQuery, isBookSourceReady } from './bookSource';
 import { useBookSourceData } from './useBookSourceData';
+import { isCachedPdfFor, pdfSettings, readBookFile, type CachedBookPdf, type GeneratedBookFile } from './bookFile';
 import {
     DEFAULT_BOOK_OPTIONS,
     type BookOptions,
@@ -14,6 +15,11 @@ import {
 } from './ImportExport.types';
 
 const SOURCE_OPTION_KEYS: ReadonlySet<keyof BookOptions> = new Set(['source', 'savedSearchId', 'entryIds']);
+
+/** The page-by-page preview: open, with the generated PDF once it is ready. */
+export interface BookPagePreviewState {
+    readonly file: GeneratedBookFile | null;
+}
 
 interface UseImportExportBookProps {
     authFetch: (url: string, options?: RequestInit) => Promise<Response>;
@@ -44,6 +50,10 @@ export function useImportExportBook({
     const [versions, setVersions] = useState<BookVersionData[]>([]);
     const [downloadingVersionId, setDownloadingVersionId] = useState<number | null>(null);
     const versionRequestRef = useRef(0);
+    const [pagePreview, setPagePreview] = useState<BookPagePreviewState | null>(null);
+    /** The last PDF generated, so previewing then downloading with the same settings generates it once. */
+    const lastPdfRef = useRef<CachedBookPdf | null>(null);
+    const pagePreviewAbortRef = useRef<AbortController | null>(null);
     const [cloudProvider, setCloudProvider] = useState<CloudProviderType | ''>('');
     const selectedCloudProvider: CloudProviderType | '' = cloudProvider && connectedProviders.includes(cloudProvider)
         ? cloudProvider
@@ -73,6 +83,8 @@ export function useImportExportBook({
             active = false;
         };
     }, [authFetch, versionsQuery]);
+
+    useEffect(() => () => pagePreviewAbortRef.current?.abort(), []);
 
     function buildParams(): URLSearchParams {
         const params = new URLSearchParams();
@@ -119,6 +131,62 @@ export function useImportExportBook({
         return t(await readApiErrorMessage(response, fallback));
     }
 
+    /** Generates the book; a refusal is shown and answers null. */
+    async function requestBookFile(params: URLSearchParams, extension: string, signal?: AbortSignal): Promise<GeneratedBookFile | null> {
+        const coverBody = buildCoverBody();
+        const response = await authFetch(`/api/books/export?${params}`, coverBody
+            ? { method: 'POST', body: coverBody, signal }
+            : { method: 'GET', signal });
+        if (!response.ok) {
+            showMessage('error', await failureMessage(response, 'bookExportError'));
+            return null;
+        }
+        return readBookFile(response, extension);
+    }
+
+    function saveBookFile(file: GeneratedBookFile): void {
+        downloadBlob(file.blob, file.filename);
+        showMessage('success', t('bookExportSuccess'), 3000);
+    }
+
+    /** Opens the page-by-page preview of the PDF these settings generate, reusing the last one if they are unchanged. */
+    async function handlePagePreview(): Promise<void> {
+        const params = buildParams();
+        const settings = pdfSettings(params);
+        if (isCachedPdfFor(lastPdfRef.current, settings, options)) {
+            setPagePreview({ file: lastPdfRef.current.file });
+            return;
+        }
+
+        pagePreviewAbortRef.current?.abort();
+        const controller = new AbortController();
+        pagePreviewAbortRef.current = controller;
+        const coverImage = options.coverImage;
+        setPagePreview({ file: null });
+        try {
+            params.delete('format');
+            const file = await requestBookFile(params, 'pdf', controller.signal);
+            if (controller.signal.aborted) return;
+            if (file) lastPdfRef.current = { settings, coverImage, file };
+            setPagePreview(file ? { file } : null);
+        } catch (error) {
+            if (controller.signal.aborted) return;
+            console.error('Book page preview failed:', error);
+            setPagePreview(null);
+            showMessage('error', t('bookExportError'));
+        }
+    }
+
+    function closePagePreview(): void {
+        pagePreviewAbortRef.current?.abort();
+        pagePreviewAbortRef.current = null;
+        setPagePreview(null);
+    }
+
+    function downloadPagePreview(): void {
+        if (pagePreview?.file) saveBookFile(pagePreview.file);
+    }
+
     async function handlePreview(): Promise<void> {
         try {
             const response = await authFetch(`/api/books/preview?${buildParams()}`);
@@ -134,22 +202,20 @@ export function useImportExportBook({
     }
 
     async function handleDownload(): Promise<void> {
+        const params = buildParams();
+        const settings = pdfSettings(params);
+        if (options.format === 'pdf' && isCachedPdfFor(lastPdfRef.current, settings, options)) {
+            saveBookFile(lastPdfRef.current.file);
+            return;
+        }
+
         setAction('download');
         try {
-            const coverBody = buildCoverBody();
-            const response = await authFetch(`/api/books/export?${buildParams()}`, coverBody
-                ? { method: 'POST', body: coverBody }
-                : undefined);
-            if (!response.ok) {
-                showMessage('error', await failureMessage(response, 'bookExportError'));
-                return;
-            }
-
-            const blob = await response.blob();
-            const filename = response.headers.get('Content-Disposition')?.split('filename=')[1]?.replaceAll('"', '')
-                || `thoughty_book_${new Date().toISOString().split('T')[0]}.${options.format}`;
-            downloadBlob(blob, filename);
-            showMessage('success', t('bookExportSuccess'), 3000);
+            const coverImage = options.coverImage;
+            const file = await requestBookFile(params, options.format);
+            if (!file) return;
+            if (options.format === 'pdf') lastPdfRef.current = { settings, coverImage, file };
+            saveBookFile(file);
         } catch (error) {
             console.error('Book export failed:', error);
             showMessage('error', t('bookExportError'));
@@ -227,14 +293,18 @@ export function useImportExportBook({
     return {
         action,
         changeOption,
+        closePagePreview,
         cloudProvider: selectedCloudProvider,
+        downloadPagePreview,
         downloadingVersionId,
         handleCreateVersion,
         handleDownload,
+        handlePagePreview,
         handlePreview,
         handleUpload,
         handleVersionDownload,
         options,
+        pagePreview,
         pickedEntries: sourceData.pickedEntries,
         preview,
         savedSearches: sourceData.savedSearches,
