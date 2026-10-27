@@ -102,6 +102,11 @@ export async function handleAppImportRoutes({ route, request, pathname, state }:
       });
       return { id, entryId, originalFilename: file.name };
     });
+    // The inline photos naming these files now point at them, as `resolveImportedFiles` does
+    for (const attachment of attachments) {
+      const entry = state.entries.find((candidate) => candidate.id === attachment.entryId);
+      if (entry) entry.content = entry.content.replaceAll(`(attachment:${encodeURIComponent(attachment.originalFilename)})`, `(attachment:${attachment.id})`);
+    }
 
     await fulfillJson(route, { attachments });
     return true;

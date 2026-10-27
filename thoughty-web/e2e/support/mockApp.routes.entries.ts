@@ -11,6 +11,7 @@ import { getMockBacklinks } from './mockApp.backlinks';
 import { mockEraContains } from './mockApp.routes.life-eras';
 import { addMockMentionedPeople, mockMentions } from './mockApp.routes.people';
 import { isMockSealed, mockSeal } from './mockApp.routes.time-capsules';
+import { placeInlineImages } from './mockApp.routes.attachments';
 
 const TASK_LINE = /^((?:[\t ]*>)*[\t ]*(?:[*+-]|\d{1,9}[.)])[\t ]+\[)([ xX])(\](?:[\t \r]|$)[^\n]*)$/;
 
@@ -171,6 +172,7 @@ async function handleEntriesCollectionRoute({ route, request, pathname, searchPa
     diaryId: payload.diaryId ?? 1,
     ...mockSeal(payload.seal),
   };
+  placeInlineImages(state, newEntry);
   state.entries.push(newEntry);
   state.entries = sortEntries(state.entries);
   addMockMentionedPeople(state.people, newEntry.content);
@@ -331,7 +333,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
         },
       ];
 
-      return {
+      const updated: MockEntry = {
         ...entry,
         ...(payload.title === undefined ? {} : { title: payload.title?.trim() || null }),
         ...(payload.timeOfDay === undefined ? {} : { time_of_day: payload.timeOfDay || null }),
@@ -343,6 +345,8 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
         visibility: payload.visibility,
         format: payload.format || 'plain',
       };
+      placeInlineImages(state, updated, entry.content);
+      return updated;
     });
     state.entries = sortEntries(state.entries);
     addMockMentionedPeople(state.people, payload.text);

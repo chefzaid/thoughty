@@ -19,6 +19,7 @@ import { handleLifeEraRoutes } from "./mockApp.routes.life-eras";
 import { handleOptInEmailRoutes } from "./mockApp.routes.opt-in-emails";
 import { handlePeopleRoutes } from "./mockApp.routes.people";
 import { handleTimeCapsuleRoutes } from "./mockApp.routes.time-capsules";
+import { handleAttachmentRoutes } from "./mockApp.routes.attachments";
 import { refuseInvalidJsonBody, refuseInvalidQueryParameters, refuseMislabelledUpload } from "./mockApp.routes.multipart";
 
 async function handleAuthRoutes({
@@ -399,6 +400,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     if (await handleTimeCapsuleRoutes(context)) {
+      return;
+    }
+    if (await handleAttachmentRoutes(context)) {
       return;
     }
     if (await handleEntriesRoutes(context)) {

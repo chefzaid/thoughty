@@ -4,6 +4,7 @@ import { fulfillApiError, fulfillJson, readQueryFlag, type RouteContext } from "
 import { getFilteredEntries } from "./mockApp.routes.entries";
 import { byStart, mockEraContains, type MockLifeEra } from "./mockApp.routes.life-eras";
 import { buildMockBookPdf } from "./mockBookPdf";
+import { bookInlineImages } from "./mockApp.routes.attachments";
 
 type BookPreview = components["schemas"]["BookPreviewResponseDto"];
 type BookSource = MockBookVersion["source"];
@@ -170,7 +171,8 @@ const BOOK_CONTENT_TYPES: Record<string, string> = {
 function exportBook(state: MockAppState, params: URLSearchParams) {
   const book = buildBook(state, params);
   const format = params.get("format") || "pdf";
-  const chapters = book.chapters.map((chapter) => ({ title: chapter.title, paragraphs: chapter.entries.map((entry) => entry.content) }));
+  const embed = readQueryFlag(params, "embedImages", false);
+  const chapters = book.chapters.map((chapter) => ({ title: chapter.title, paragraphs: chapter.entries.map((entry) => bookInlineImages(entry, embed)) }));
   const body = format === "pdf"
     ? buildMockBookPdf({ title: book.title, author: params.get("author")?.trim() || "testuser", includeToc: readQueryFlag(params, "includeToc", true), chapters })
     : [`# ${book.title}`, ...chapters.map((chapter) => `## ${chapter.title}\n\n${chapter.paragraphs.join("\n\n")}`)].join("\n\n");

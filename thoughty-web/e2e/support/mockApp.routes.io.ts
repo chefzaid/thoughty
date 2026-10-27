@@ -5,6 +5,7 @@ import {
   sortEntries,
 } from "./mockApp.shared";
 import { fulfillJson, readQueryFlag, type RouteContext } from "./mockApp.route-utils";
+import { importedInlineImages } from "./mockApp.routes.attachments";
 
 export async function handleIoRoutes({
   route,
@@ -64,7 +65,7 @@ export async function handleIoRoutes({
         id: state.nextEntryId++,
         date: imported.date,
         index: sameDayEntries.length + 1,
-        content: imported.content,
+        content: importedInlineImages(imported.content, imported.format),
         tags: imported.tags,
         visibility: imported.visibility || "private",
         format: imported.format || "plain",

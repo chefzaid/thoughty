@@ -54,9 +54,15 @@ test.describe('Import from other journaling apps', () => {
       { entryId: expect.any(Number), name: 'aa11.jpeg', type: 'image/jpeg' },
       { entryId: expect.any(Number), name: 'bb22.m4a', type: 'audio/mp4' },
     ]);
-    const fireworks = state.entries.find((entry) => entry.content === 'Fireworks over the river.');
+    const fireworks = state.entries.find((entry) => entry.content.startsWith('Fireworks over the river.'));
     expect(fireworks).toEqual(expect.objectContaining({ date: '2023-07-14', tags: ['summer'], is_favorite: true, visibility: 'private', format: 'markdown' }));
     expect(state.appImport.uploads[0]!.entryId).toBe(fireworks!.id);
+    // The photo Day One placed in the text was sent by name, then points at the stored file
+    const sent = state.appImport.entryPayloads as Array<{ entries: Array<{ sourceId: string; content: string }> }>;
+    expect(sent.flatMap((payload) => payload.entries).find((entry) => entry.sourceId === 'D1')!.content)
+      .toBe('Fireworks over the river.\n\n![](attachment:aa11.jpeg)');
+    const photo = fireworks!.attachments!.find((attachment) => attachment.original_filename === 'aa11.jpeg')!;
+    expect(fireworks!.content).toBe(`Fireworks over the river.\n\n![](attachment:${photo.id})`);
     expect(state.diaries.map((diary) => diary.name)).toEqual(['Work', 'Personal', 'Travel', 'Journal']);
 
     await panel.getByRole('button', { name: 'Import another export' }).click();
@@ -66,7 +72,7 @@ test.describe('Import from other journaling apps', () => {
     await expect(panel.getByText('Import finished')).toBeVisible();
     await expect(panel.getByText('Already imported').locator('..')).toContainText('2');
     expect(state.appImport.uploads).toHaveLength(2);
-    expect(state.entries.filter((entry) => entry.content === 'Fireworks over the river.')).toHaveLength(1);
+    expect(state.entries.filter((entry) => entry.content.startsWith('Fireworks over the river.'))).toHaveLength(1);
   });
 
   test('imports a Journey export into the current diary, turning its HTML into Markdown', async ({ page }) => {
