@@ -20,12 +20,14 @@ describe('GetEntryCalendarQueryDto', () => {
         mood: '4,5',
         diaryId: '2',
         ids: '3,1,2',
+        eraId: '3',
       }),
     ).resolves.toEqual([]);
 
-    const parsed = plainToInstance(GetEntryCalendarQueryDto, { month: '2026-12', favorites: 'true', diaryId: '7' });
+    const parsed = plainToInstance(GetEntryCalendarQueryDto, { month: '2026-12', favorites: 'true', diaryId: '7', eraId: '3' });
     expect(parsed.favorites).toBe(true);
     expect(parsed.diaryId).toBe(7);
+    expect(parsed.eraId).toBe(3);
   });
 
   it('requires a real month', async () => {
@@ -40,6 +42,9 @@ describe('GetEntryCalendarQueryDto', () => {
     await expect(invalidProperties({ month: '2026-10', visibility: 'friends' })).resolves.toEqual(['visibility']);
     await expect(invalidProperties({ month: '2026-10', archiveStatus: 'old' })).resolves.toEqual(['archiveStatus']);
     await expect(invalidProperties({ month: '2026-10', ids: '1,a' })).resolves.toEqual(['ids']);
+    for (const eraId of ['0', '-2', 'abc', '1.5']) {
+      await expect(invalidProperties({ month: '2026-10', eraId })).resolves.toEqual(['eraId']);
+    }
     await expect(invalidProperties({ month: '2026-10', search: 'a'.repeat(501) })).resolves.toEqual(['search']);
   });
 });

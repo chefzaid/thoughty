@@ -14,7 +14,7 @@ describe('toSavedSearchEntryFilters', () => {
   };
 
   it('turns a saved search into the entry list filters and the day it shows', () => {
-    expect(toSavedSearchEntryFilters({ diaryId: 2, filters })).toEqual({
+    expect(toSavedSearchEntryFilters({ diaryId: 2, filters: { ...filters, eraId: 3 } })).toEqual({
       filters: {
         tags: 'family,home',
         visibility: 'private',
@@ -22,6 +22,7 @@ describe('toSavedSearchEntryFilters', () => {
         archiveStatus: 'archived',
         mood: '4,5',
         diaryId: 2,
+        eraId: 3,
       },
       date: '2019-07-14',
     });
@@ -33,7 +34,8 @@ describe('toSavedSearchEntryFilters', () => {
       filters: { ...filters, tags: [], visibility: 'all', mood: '', date: null },
     });
 
-    expect(entryFilters).toEqual(expect.objectContaining({ tags: '', visibility: undefined, mood: undefined, diaryId: undefined }));
+    expect(entryFilters).toEqual(expect.objectContaining({ tags: '', visibility: undefined, mood: undefined, diaryId: undefined, eraId: undefined }));
+    expect(toSavedSearchEntryFilters({ diaryId: null, filters: { ...filters, eraId: null } }).filters.eraId).toBeUndefined();
     expect(date).toBeUndefined();
   });
 });

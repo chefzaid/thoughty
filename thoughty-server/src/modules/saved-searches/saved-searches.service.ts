@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, type EntityManager } from 'typeorm';
 import { apiError } from '@/common/errors';
-import { BookVersion, Diary, SavedSearch, type SavedSearchFilters } from '@/database/entities';
+import { BookVersion, Diary, LifeEra, SavedSearch, type SavedSearchFilters } from '@/database/entities';
 import {
   CreateSavedSearchDto,
   RenameSavedSearchDto,
@@ -45,6 +45,7 @@ export class SavedSearchesService {
     const saved = await this.withNameCheck(() => this.savedSearchRepository.manager.transaction(async (manager) => {
       await manager.query('SELECT pg_advisory_xact_lock(hashtext($1), $2)', [SAVED_SEARCH_LOCK_NAMESPACE, userId]);
       await this.assertOwnDiary(manager, userId, dto.diaryId);
+      await this.assertOwnEra(manager, userId, dto.filters.eraId ?? null);
 
       const repository = manager.getRepository(SavedSearch);
       if (await repository.count({ where: { userId } }) >= SAVED_SEARCH_LIMIT) {
@@ -125,6 +126,12 @@ export class SavedSearchesService {
     }
   }
 
+  private async assertOwnEra(manager: EntityManager, userId: number, eraId: number | null): Promise<void> {
+    if (eraId !== null && !(await manager.getRepository(LifeEra).exists({ where: { id: eraId, userId } }))) {
+      throw apiError(NotFoundException, 'LIFE_ERA_NOT_FOUND');
+    }
+  }
+
   /** Runs a write and turns a clash with another saved search's name (in any case) into a coded conflict. */
   private async withNameCheck<T>(write: () => Promise<T>): Promise<T> {
     try {
@@ -149,6 +156,7 @@ export class SavedSearchesService {
       archiveStatus: filters.archiveStatus,
       favorites: filters.favorites,
       mood: filters.mood,
+      eraId: filters.eraId ?? null,
     };
   }
 
@@ -157,7 +165,8 @@ export class SavedSearchesService {
       id: saved.id,
       name: saved.name,
       diaryId: saved.diaryId,
-      filters: saved.filters,
+      // Searches saved before life eras have no era: they cover every date
+      filters: { ...saved.filters, eraId: saved.filters.eraId ?? null },
       bookVersionCount,
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt,

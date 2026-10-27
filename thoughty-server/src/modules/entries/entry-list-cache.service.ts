@@ -79,6 +79,7 @@ export class EntryListCacheService {
       archiveStatus: query.archiveStatus ?? '',
       date: query.date ?? '',
       diaryId: query.diaryId ?? '',
+      eraId: query.eraId ?? '',
       favorites: query.favorites === true,
       ids: query.ids ?? '',
       limit: query.limit ?? 10,

@@ -16,15 +16,15 @@ export function parseEntryIdsFilter(ids: string | undefined): number[] {
 
 /**
  * Narrows a query on entries aliased `e` to the journal filters: the given IDs, the prepared search,
- * tags, visibility, diary, favorites, archive state and mood. The caller scopes it to the writer and
- * orders it; entries in the recycle bin are left out by the entity's soft delete.
+ * tags, visibility, diary, favorites, archive state, mood and life era. The caller scopes it to the
+ * writer and orders it; entries in the recycle bin are left out by the entity's soft delete.
  */
 export function applyEntryListFilters(
   qb: SelectQueryBuilder<Entry>,
   query: EntryFilterQueryDto,
   prepared: PreparedEntrySearch | null,
 ): void {
-  const { ids, tags, visibility, diaryId, favorites, archiveStatus, mood } = query;
+  const { ids, tags, visibility, diaryId, favorites, archiveStatus, mood, eraId } = query;
 
   const entryIds = parseEntryIdsFilter(ids);
   if (entryIds.length > 0) {
@@ -77,5 +77,14 @@ export function applyEntryListFilters(
     qb.andWhere('e.mood IS NULL');
   } else if (mood) {
     qb.andWhere('e.mood IN (:...moods)', { moods: [...new Set(mood.split(',').map(Number))] });
+  }
+
+  if (eraId) {
+    // Only the entry owner's era counts, so another writer's era ID matches nothing
+    qb.andWhere(
+      `EXISTS (SELECT 1 FROM life_eras era WHERE era.id = :eraId AND era.user_id = e.user_id
+        AND e.date >= era.start_date AND (era.end_date IS NULL OR e.date <= era.end_date))`,
+      { eraId },
+    );
   }
 }

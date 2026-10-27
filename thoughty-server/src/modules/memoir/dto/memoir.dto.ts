@@ -110,6 +110,15 @@ export class AnswerMemoirQuestionDto {
   @IsInt({ each: true })
   @Min(1, { each: true })
   attachmentIds?: number[];
+
+  @ApiPropertyOptional({
+    example: 3,
+    description: 'Life era the memory belongs to: the answer is also tagged with the era’s name',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  eraId?: number;
 }
 
 export class LocalizedTextDto {

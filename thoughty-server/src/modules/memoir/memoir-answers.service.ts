@@ -6,6 +6,7 @@ import { MemoirAnswer, MemoirProgram } from '@/database/entities';
 import { AttachmentsService } from '@/modules/attachments';
 import { ConfigService } from '@/modules/config';
 import { EntriesService } from '@/modules/entries';
+import { LifeErasService } from '@/modules/life-eras';
 import type { AnswerMemoirQuestionDto, MemoirAnswerResultDto } from './dto';
 import { composeAnswerContent } from './memoir-content';
 import { findMemoirChapter, findMemoirQuestion, resolveMemoirLanguage } from './memoir-questions';
@@ -21,6 +22,7 @@ export class MemoirAnswersService {
     private readonly entriesService: EntriesService,
     private readonly attachmentsService: AttachmentsService,
     private readonly configService: ConfigService,
+    private readonly lifeEras: LifeErasService,
   ) {}
 
   async answer(userId: number, dto: AnswerMemoirQuestionDto): Promise<MemoirAnswerResultDto> {
@@ -54,11 +56,14 @@ export class MemoirAnswersService {
     for (const attachmentId of attachmentIds) {
       await this.attachmentsService.getOwnedAttachment(userId, attachmentId);
     }
+    // The era the memory belongs to is kept as a tag: the answer itself is dated the day it is written
+    const era = dto.eraId ? await this.lifeEras.findOwn(userId, dto.eraId) : null;
 
     const language = resolveMemoirLanguage((await this.configService.getConfig(userId)).language);
+    const chapterTag = chapter.title[language];
     const { entryId } = await this.entriesService.create(userId, {
       text: composeAnswerContent(question.text[language], dto.text),
-      tags: [chapter.title[language]],
+      tags: era && era.name.toLowerCase() !== chapterTag.toLowerCase() ? [chapterTag, era.name] : [chapterTag],
       date: localDateIn(new Date(), program.timeZone),
       diaryId: program.diaryId,
       visibility: 'private',

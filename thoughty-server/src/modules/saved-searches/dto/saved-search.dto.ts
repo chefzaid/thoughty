@@ -8,6 +8,7 @@ import {
   IsInt,
   IsISO8601,
   IsObject,
+  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -73,6 +74,19 @@ export class SavedSearchFiltersDto implements SavedSearchFilters {
   @IsString()
   @Matches(/^(|any|none|[1-5](,[1-5]){0,4})$/, { message: 'Mood filter must be levels from 1 to 5, any, none, or empty' })
   mood!: string;
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    required: false,
+    example: 3,
+    description: 'Life era the entries are dated in; null or left out for any date (searches saved before eras have none)',
+  })
+  @IsOptional()
+  @ValidateIf((_dto, value) => value !== null)
+  @IsInt()
+  @Min(1)
+  eraId?: number | null;
 }
 
 export class CreateSavedSearchDto {

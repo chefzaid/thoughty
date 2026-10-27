@@ -49,7 +49,7 @@ describePostgres('PostgreSQL book sources', () => {
       new EntrySearchService(entries),
     );
     const noAi = { isConfigured: jest.fn().mockResolvedValue(false) };
-    books = new BooksService(source, dataSource.getRepository(User), noAi as never, {} as never);
+    books = new BooksService(source, dataSource.getRepository(User), noAi as never, {} as never, { findAll: async () => [] } as never);
     versions = new BookVersionsService(dataSource.getRepository(BookVersion), books);
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });

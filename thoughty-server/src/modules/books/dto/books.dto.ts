@@ -63,13 +63,16 @@ export class BookQueryDto extends BookSourceQueryDto {
   chapterOrder?: 'alpha' | 'entries' | 'chrono';
 
   @ApiPropertyOptional({
-    description: 'Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book',
-    enum: ['tags', 'year', 'month', 'single'],
+    description:
+      'Chapter grouping mode: tags, calendar years, calendar months, one chapter for the whole book, or one per ' +
+      'life era (each entry in the shortest era that covers its date; includeUntagged adds an "Other" chapter ' +
+      'for entries outside every era)',
+    enum: ['tags', 'year', 'month', 'single', 'eras'],
     default: 'tags',
   })
   @IsOptional()
-  @IsIn(['tags', 'year', 'month', 'single'])
-  chapterMode?: 'tags' | 'year' | 'month' | 'single';
+  @IsIn(['tags', 'year', 'month', 'single', 'eras'])
+  chapterMode?: 'tags' | 'year' | 'month' | 'single' | 'eras';
 
   @ApiPropertyOptional({
     description: 'Place entries in every matching tag chapter, or only in their first tag chapter',
@@ -89,7 +92,7 @@ export class BookQueryDto extends BookSourceQueryDto {
   tags?: string;
 
   @ApiPropertyOptional({
-    description: 'Add a final chapter for entries without tags',
+    description: 'Add a final chapter for entries without tags (tag chapters) or outside every life era (era chapters)',
     default: true,
   })
   @IsOptional()

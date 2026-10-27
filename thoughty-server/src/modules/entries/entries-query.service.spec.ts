@@ -182,6 +182,20 @@ describe('EntriesQueryService', () => {
     expect(entriesQb.andWhere).toHaveBeenCalledWith(...(parameters ? [condition, parameters] : [condition]));
   });
 
+  it('filters the journal by a life era of the entry owner', async () => {
+    const entriesQb = createQueryBuilder();
+    entriesQb.getCount.mockResolvedValue(0);
+    entriesQb.getMany.mockResolvedValue([]);
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(entriesQb)
+      .mockReturnValueOnce(createQueryBuilder({ getRawMany: jest.fn().mockResolvedValue([]) }));
+
+    await service.getEntries(4, { eraId: 3 });
+
+    expect(entriesQb.andWhere).toHaveBeenCalledWith(expect.stringContaining('FROM life_eras era WHERE era.id = :eraId AND era.user_id = e.user_id'), { eraId: 3 });
+    expect(entriesQb.andWhere).toHaveBeenCalledWith(expect.stringContaining('(era.end_date IS NULL OR e.date <= era.end_date)'), { eraId: 3 });
+  });
+
   it('keeps date order for a search when asked, pinned entries first', async () => {
     const entriesQb = createQueryBuilder();
     entriesQb.getCount.mockResolvedValue(0);

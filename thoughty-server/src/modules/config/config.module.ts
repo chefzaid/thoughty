@@ -15,6 +15,7 @@ import {
   MemoirAnswer,
   YearReviewMood,
   SavedSearch,
+  LifeEra,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -38,6 +39,7 @@ import { FeatureFlagsService } from '@/common';
       MemoirAnswer,
       YearReviewMood,
       SavedSearch,
+      LifeEra,
     ]),
   ],
   controllers: [ConfigController],

@@ -5,6 +5,7 @@ import {
   IsEnum,
   MaxLength,
   IsNumber,
+  IsInt,
   Min,
   Matches,
 } from 'class-validator';
@@ -79,6 +80,16 @@ export class EntryFilterQueryDto {
   })
   @IsNumber()
   diaryId?: number;
+
+  @ApiPropertyOptional({
+    description: 'Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing)',
+    example: 3,
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' || value === undefined || value === null ? undefined : Number(value)))
+  @IsInt()
+  @Min(1)
+  eraId?: number;
 }
 
 export class GetEntriesQueryDto extends EntryFilterQueryDto {

@@ -27,8 +27,8 @@ export interface AccountPurgeResult {
  * this removes the account for good: first every file the writer stored in object storage, then
  * the user row, whose foreign keys cascade to everything else they own or wrote (entries and
  * their history, attachments, settings with encrypted tokens, chats, diaries, books, memoir,
- * year reviews, AI usage, sync jobs, follows both ways, their comments and likes on anyone's
- * entries, and their feature requests with every vote on them).
+ * year reviews, saved searches, life eras, AI usage, sync jobs, follows both ways, their comments
+ * and likes on anyone's entries, and their feature requests with every vote on them).
  */
 @Injectable()
 export class AccountPurgeService {

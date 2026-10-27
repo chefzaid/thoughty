@@ -8,6 +8,7 @@ import { Entry, Diary, User } from '@/database/entities';
 import { EntrySearchService } from '@/modules/entries';
 import { SavedSearchesService } from '@/modules/saved-searches';
 import { BookEntrySourceService } from './book-entry-source.service';
+import { LifeErasService } from '@/modules/life-eras';
 
 describe('BooksService', () => {
   const png = Buffer.from(
@@ -20,6 +21,7 @@ describe('BooksService', () => {
   let userRepository: any;
   let aiService: any;
   let attachmentsService: any;
+  let lifeErasService: { findAll: jest.Mock };
   let mockQueryBuilder: any;
 
   const mockEntries = [
@@ -79,6 +81,8 @@ describe('BooksService', () => {
       getFileBuffer: jest.fn().mockResolvedValue(png),
     };
 
+    lifeErasService = { findAll: jest.fn().mockResolvedValue([]) };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BooksService,
@@ -90,6 +94,7 @@ describe('BooksService', () => {
         { provide: getRepositoryToken(User), useValue: userRepository },
         { provide: AiBookComposerService, useValue: aiService },
         { provide: AttachmentsService, useValue: attachmentsService },
+        { provide: LifeErasService, useValue: lifeErasService },
       ],
     }).compile();
 
@@ -134,6 +139,19 @@ describe('BooksService', () => {
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 1 });
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('e.date >= :dateFrom', { dateFrom: '2024-01-01' });
       expect(mockQueryBuilder.andWhere).toHaveBeenCalledWith('e.date <= :dateTo', { dateTo: '2024-02-01' });
+    });
+
+    it('groups chapters by the writer’s life eras, reading them only for that mode', async () => {
+      await service.buildBookForUser(1, {});
+      expect(lifeErasService.findAll).not.toHaveBeenCalled();
+
+      lifeErasService.findAll.mockResolvedValue([
+        { name: 'Naples winter', startDate: '2024-01-01', endDate: '2024-01-31' },
+      ]);
+      const book = await service.buildBookForUser(1, { chapterMode: 'eras' });
+
+      expect(lifeErasService.findAll).toHaveBeenCalledWith(1);
+      expect(book.chapters.map((chapter) => [chapter.title, chapter.entries.length])).toEqual([['Naples winter', 2], ['Other', 1]]);
     });
 
     it('should exclude archived entries', async () => {

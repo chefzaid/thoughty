@@ -20,6 +20,7 @@ import { MemoirModule } from './modules/memoir';
 import { ReviewModule } from './modules/review';
 import { RecycleBinModule } from './modules/recycle-bin';
 import { SavedSearchesModule } from './modules/saved-searches';
+import { LifeErasModule } from './modules/life-eras';
 import { AccountPurgeModule } from './modules/account-purge';
 import { HealthController } from './health.controller';
 import {
@@ -63,6 +64,7 @@ import {
     ReviewModule,
     RecycleBinModule,
     SavedSearchesModule,
+    LifeErasModule,
     AccountPurgeModule,
   ],
   providers: [

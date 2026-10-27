@@ -8,6 +8,7 @@ describe('MemoirAnswersService', () => {
   let entriesService: Record<string, jest.Mock>;
   let attachmentsService: Record<string, jest.Mock>;
   let configService: Record<string, jest.Mock>;
+  let lifeEras: Record<string, jest.Mock>;
   let service: MemoirAnswersService;
 
   beforeEach(() => {
@@ -29,12 +30,14 @@ describe('MemoirAnswersService', () => {
       linkMultipleToEntry: jest.fn().mockResolvedValue(undefined),
     };
     configService = { getConfig: jest.fn().mockResolvedValue({ language: 'fr' }) };
+    lifeEras = { findOwn: jest.fn().mockResolvedValue({ id: 4, userId: 3, name: 'Lyon' }) };
     service = new MemoirAnswersService(
       programRepository as never,
       answerRepository as never,
       entriesService as never,
       attachmentsService as never,
       configService as never,
+      lifeEras as never,
     );
   });
 
@@ -61,6 +64,24 @@ describe('MemoirAnswersService', () => {
     expect(answerRepository.insert).toHaveBeenCalledWith({ userId: 3, questionId: 'childhood-home', entryId: 81 });
     expect(attachmentsService.getOwnedAttachment).toHaveBeenCalledTimes(1);
     expect(attachmentsService.linkMultipleToEntry).toHaveBeenCalledWith(3, [31], 81);
+  });
+
+  it('also tags the answer with the writer’s life era it belongs to, once', async () => {
+    await service.answer(3, { questionId: 'childhood-home', text: 'Une maison.', eraId: 4 });
+
+    expect(lifeEras.findOwn).toHaveBeenCalledWith(3, 4);
+    expect(entriesService.create).toHaveBeenCalledWith(3, expect.objectContaining({ tags: ['Enfance', 'Lyon'], date: '2026-10-18' }));
+
+    lifeEras.findOwn.mockResolvedValueOnce({ id: 5, userId: 3, name: 'enfance' });
+    await service.answer(3, { questionId: 'childhood-home', text: 'Encore.', eraId: 5 });
+    expect(entriesService.create).toHaveBeenLastCalledWith(3, expect.objectContaining({ tags: ['Enfance'] }));
+  });
+
+  it('refuses another writer’s era before writing anything', async () => {
+    lifeEras.findOwn.mockRejectedValueOnce(new NotFoundException('Life era not found'));
+
+    await expect(service.answer(3, { questionId: 'love-first', text: 'x', eraId: 9 })).rejects.toThrow(NotFoundException);
+    expect(entriesService.create).not.toHaveBeenCalled();
   });
 
   it('accepts a voice-only answer', async () => {

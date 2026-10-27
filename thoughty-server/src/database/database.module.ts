@@ -23,6 +23,7 @@ import {
   MemoirAnswer,
   YearReviewMood,
   SavedSearch,
+  LifeEra,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -70,6 +71,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           MemoirAnswer,
           YearReviewMood,
           SavedSearch,
+          LifeEra,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),
@@ -103,6 +105,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
       MemoirAnswer,
       YearReviewMood,
       SavedSearch,
+      LifeEra,
     ]),
   ],
   exports: [TypeOrmModule],

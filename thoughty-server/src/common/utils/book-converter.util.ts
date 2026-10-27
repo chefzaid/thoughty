@@ -10,11 +10,13 @@ import {
   type TagScope,
   UNTAGGED_CHAPTER_TITLE,
 } from './book-model.util';
+import { compareErasChronologically, mostSpecificEra, OUTSIDE_ERAS_CHAPTER_TITLE, type BookEra } from './book-era.util';
 
 // The book model and its Markdown and HTML renderers live in their own modules; this one builds
 // books from entries and stays the entry point for all three.
 export * from './book-model.util';
 export * from './book-render.util';
+export * from './book-era.util';
 
 interface BookEntryInput {
   id?: number;
@@ -113,10 +115,12 @@ function createDateChapterTitle(date: string, mode: 'year' | 'month'): string {
   return `${monthName} ${year}`;
 }
 
+type CalendarChapterMode = Exclude<ChapterMode, 'tags' | 'eras'>;
+
 /** The chapter an entry belongs to when chapters follow the calendar; a single chapter takes the book's title. */
 function chronologicalChapter(
   entry: BookEntry,
-  mode: Exclude<ChapterMode, 'tags'>,
+  mode: CalendarChapterMode,
   bookTitle: string,
 ): { key: string; title: string } {
   if (mode === 'single') {
@@ -128,7 +132,7 @@ function chronologicalChapter(
 
 function buildChronologicalBook(
   entries: BookEntryInput[],
-  options: BuildBookOptions & { chapterMode: Exclude<ChapterMode, 'tags'> },
+  options: BuildBookOptions & { chapterMode: CalendarChapterMode },
 ): Book {
   const normalized = entries.map(normalizeBookEntry).filter((entry) => entry.content.trim());
   const chapterMap = new Map<string, BookChapter>();
@@ -152,13 +156,46 @@ function buildChronologicalBook(
 }
 
 /**
+ * One chapter per life era, in the eras' order, each entry in the most specific era that covers its
+ * date; entries outside every era go to a last "Other" chapter unless it is left out. Eras without
+ * entries have no chapter.
+ */
+function buildEraBook(entries: BookEntryInput[], options: BuildBookOptions): Book {
+  const eras = [...(options.eras ?? [])].sort(compareErasChronologically);
+  const generatedAt = new Date().toISOString().split('T')[0];
+  const byEra = new Map<BookEra, BookEntry[]>();
+  const outside: BookEntry[] = [];
+
+  for (const entry of sortChronologically(entries.map(normalizeBookEntry).filter((item) => item.content.trim()))) {
+    const era = mostSpecificEra(eras, entry.date, generatedAt);
+    if (era) {
+      byEra.set(era, [...(byEra.get(era) ?? []), entry]);
+    } else {
+      outside.push(entry);
+    }
+  }
+
+  const chapters: BookChapter[] = eras
+    .filter((era) => byEra.has(era))
+    .map((era) => ({ title: era.name, entries: byEra.get(era)! }));
+  if (options.includeUntagged !== false && outside.length > 0) {
+    chapters.push({ title: OUTSIDE_ERAS_CHAPTER_TITLE, entries: outside });
+  }
+
+  return { title: options.title, author: options.author, generatedAt, chapters };
+}
+
+/**
  * Group journal entries into book chapters: one chapter per tag by default, per calendar year or
- * month, or a single chapter titled after the book. Entries inside a chapter are connected
- * chronologically to read as a narrative.
+ * month, per life era, or a single chapter titled after the book. Entries inside a chapter are
+ * connected chronologically to read as a narrative.
  */
 export function buildBook(entries: BookEntryInput[], options: BuildBookOptions): Book {
   if (options.chapterMode === 'year' || options.chapterMode === 'month' || options.chapterMode === 'single') {
     return buildChronologicalBook(entries, { ...options, chapterMode: options.chapterMode });
+  }
+  if (options.chapterMode === 'eras') {
+    return buildEraBook(entries, options);
   }
 
   const chapterOrder = options.chapterOrder || 'alpha';

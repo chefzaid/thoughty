@@ -13,6 +13,7 @@ import {
   MemoirProgram,
   YearReviewMood,
   SavedSearch,
+  LifeEra,
   Setting,
   User,
   UserFollow,
@@ -50,10 +51,12 @@ export class UserDataExportService {
     private readonly yearReviewMoodRepository: Repository<YearReviewMood>,
     @InjectRepository(SavedSearch)
     private readonly savedSearchRepository: Repository<SavedSearch>,
+    @InjectRepository(LifeEra)
+    private readonly lifeEraRepository: Repository<LifeEra>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       // Entries in the recycle bin are still personal data until they are removed for good
@@ -65,6 +68,7 @@ export class UserDataExportService {
       this.collectMemoirData(userId),
       this.yearReviewMoodRepository.find({ where: { userId }, order: { year: 'ASC', createdAt: 'ASC' } }),
       this.savedSearchRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
+      this.lifeEraRepository.find({ where: { userId }, order: { startDate: 'ASC', id: 'ASC' } }),
     ]);
 
     const safeUser = user
@@ -161,6 +165,18 @@ export class UserDataExportService {
         filters: saved.filters,
         createdAt: saved.createdAt,
         updatedAt: saved.updatedAt,
+      })),
+      // The ID is what a saved search's `eraId` filter refers to
+      lifeEras: lifeEras.map((era) => ({
+        id: era.id,
+        name: era.name,
+        startDate: era.startDate,
+        endDate: era.endDate,
+        color: era.color,
+        emoji: era.emoji,
+        note: era.note,
+        createdAt: era.createdAt,
+        updatedAt: era.updatedAt,
       })),
     };
   }

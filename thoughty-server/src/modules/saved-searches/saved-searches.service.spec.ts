@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
-import { BookVersion, Diary, SavedSearch } from '@/database/entities';
+import { BookVersion, Diary, LifeEra, SavedSearch } from '@/database/entities';
 import { SAVED_SEARCH_LIMIT } from './dto';
 import { SavedSearchesService } from './saved-searches.service';
 
@@ -20,6 +20,7 @@ const createdAt = new Date('2026-10-27T09:00:00Z');
 describe('SavedSearchesService', () => {
   let savedRepository: Record<string, jest.Mock>;
   let diaryRepository: { exists: jest.Mock };
+  let eraRepository: { exists: jest.Mock };
   let manager: { query: jest.Mock; getRepository: jest.Mock };
   let queryBuilder: Record<string, jest.Mock>;
   let countBuilder: Record<string, jest.Mock>;
@@ -46,6 +47,7 @@ describe('SavedSearchesService', () => {
       delete: jest.fn().mockResolvedValue({ affected: 0 }),
     };
     diaryRepository = { exists: jest.fn().mockResolvedValue(true) };
+    eraRepository = { exists: jest.fn().mockResolvedValue(true) };
     savedRepository = {
       createQueryBuilder: jest.fn(() => queryBuilder),
       count: jest.fn().mockResolvedValue(0),
@@ -58,6 +60,7 @@ describe('SavedSearchesService', () => {
       query: jest.fn().mockResolvedValue([]),
       getRepository: jest.fn((entity) => {
         if (entity === Diary) return diaryRepository;
+        if (entity === LifeEra) return eraRepository;
         return entity === BookVersion ? bookVersionRepository : savedRepository;
       }),
     };
@@ -68,14 +71,15 @@ describe('SavedSearchesService', () => {
   it('lists the writer’s searches by name with the limit and how many book versions each holds', async () => {
     queryBuilder.getMany.mockResolvedValue([
       { id: 2, userId: 7, name: 'Family', diaryId: null, filters, createdAt, updatedAt: createdAt },
-      { id: 3, userId: 7, name: 'Trips', diaryId: null, filters, createdAt, updatedAt: createdAt },
+      { id: 3, userId: 7, name: 'Trips', diaryId: null, filters: { ...filters, eraId: 5 }, createdAt, updatedAt: createdAt },
     ]);
     countBuilder.getRawMany.mockResolvedValue([{ scopeKey: 'search:3', count: '2' }]);
 
     await expect(service.list(7)).resolves.toEqual({
       savedSearches: [
-        { id: 2, name: 'Family', diaryId: null, filters, bookVersionCount: 0, createdAt, updatedAt: createdAt },
-        { id: 3, name: 'Trips', diaryId: null, filters, bookVersionCount: 2, createdAt, updatedAt: createdAt },
+        // Saved before life eras: no era
+        { id: 2, name: 'Family', diaryId: null, filters: { ...filters, eraId: null }, bookVersionCount: 0, createdAt, updatedAt: createdAt },
+        { id: 3, name: 'Trips', diaryId: null, filters: { ...filters, eraId: 5 }, bookVersionCount: 2, createdAt, updatedAt: createdAt },
       ],
       limit: SAVED_SEARCH_LIMIT,
     });
@@ -106,13 +110,14 @@ describe('SavedSearchesService', () => {
       userId: 7,
       name: 'Family',
       diaryId: 3,
-      filters: { ...filters, tags: ['family', 'trips'] },
+      filters: { ...filters, tags: ['family', 'trips'], eraId: null },
     });
+    expect(eraRepository.exists).not.toHaveBeenCalled();
     expect(result).toEqual({
       id: 4,
       name: 'Family',
       diaryId: 3,
-      filters: { ...filters, tags: ['family', 'trips'] },
+      filters: { ...filters, tags: ['family', 'trips'], eraId: null },
       bookVersionCount: 0,
       createdAt,
       updatedAt: createdAt,
@@ -129,6 +134,21 @@ describe('SavedSearchesService', () => {
     diaryRepository.exists.mockResolvedValue(false);
 
     await expectApiError(service.create(7, { name: 'Family', diaryId: 9, filters }), NotFoundException, 'DIARY_NOT_FOUND');
+    expect(savedRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('keeps the writer’s own life era and refuses another writer’s', async () => {
+    await service.create(7, { name: 'University', diaryId: null, filters: { ...filters, eraId: 5 } });
+    expect(eraRepository.exists).toHaveBeenCalledWith({ where: { id: 5, userId: 7 } });
+    expect(savedRepository.save).toHaveBeenCalledWith(expect.objectContaining({ filters: expect.objectContaining({ eraId: 5 }) }));
+
+    savedRepository.save.mockClear();
+    eraRepository.exists.mockResolvedValue(false);
+    await expectApiError(
+      service.create(7, { name: 'Theirs', diaryId: null, filters: { ...filters, eraId: 9 } }),
+      NotFoundException,
+      'LIFE_ERA_NOT_FOUND',
+    );
     expect(savedRepository.save).not.toHaveBeenCalled();
   });
 

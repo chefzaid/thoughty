@@ -44,7 +44,7 @@ describePostgres('PostgreSQL book versions of deleted sources', () => {
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     const source = new BookEntrySourceService(entries, dataSource.getRepository(Diary), savedSearches, new EntrySearchService(entries));
     const noAi = { isConfigured: jest.fn().mockResolvedValue(false) };
-    const books = new BooksService(source, dataSource.getRepository(User), noAi as never, {} as never);
+    const books = new BooksService(source, dataSource.getRepository(User), noAi as never, {} as never, { findAll: async () => [] } as never);
     versions = new BookVersionsService(dataSource.getRepository(BookVersion), books);
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });

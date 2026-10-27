@@ -40,6 +40,13 @@ describe('saved search DTOs', () => {
     await expect(invalidProperties(plainToInstance(RenameSavedSearchDto, { name: '' }))).resolves.toEqual(['name']);
   });
 
+  it('takes an optional life era: a positive ID, null, or none for searches saved before eras', async () => {
+    await expect(invalidProperties(create({ name: 'Uni', diaryId: null, filters: { ...filters, eraId: 3 } }))).resolves.toEqual([]);
+    await expect(invalidProperties(create({ name: 'Uni', diaryId: null, filters: { ...filters, eraId: null } }))).resolves.toEqual([]);
+    await expect(invalidProperties(create({ name: 'Uni', diaryId: null, filters: { ...filters, eraId: 0 } }))).resolves.toEqual(['filters.eraId']);
+    await expect(invalidProperties(create({ name: 'Uni', diaryId: null, filters: { ...filters, eraId: '3' } }))).resolves.toEqual(['filters.eraId']);
+  });
+
   it('needs a positive diary ID or null', async () => {
     await expect(invalidProperties(create({ name: 'Family', filters }))).resolves.toEqual(['diaryId']);
     await expect(invalidProperties(create({ name: 'Family', diaryId: 0, filters }))).resolves.toEqual(['diaryId']);

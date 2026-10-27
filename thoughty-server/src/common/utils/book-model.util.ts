@@ -1,10 +1,11 @@
 import type { BookCover } from './book-cover-style.util';
 import type { EmbeddedBookImage } from './book-image.util';
+import type { BookEra } from './book-era.util';
 
 export type ChapterOrder = 'alpha' | 'entries' | 'chrono';
 export type TagScope = 'all' | 'first';
-/** One chapter per tag, per calendar year or month, or the whole book as a single chapter. */
-export type ChapterMode = 'tags' | 'year' | 'month' | 'single';
+/** One chapter per tag, per calendar year or month, per life era, or the whole book as a single chapter. */
+export type ChapterMode = 'tags' | 'year' | 'month' | 'single' | 'eras';
 
 export const UNTAGGED_CHAPTER_TITLE = 'Untagged Thoughts';
 
@@ -45,8 +46,11 @@ export interface BuildBookOptions {
   chapterMode?: ChapterMode;
   chapterOrder?: ChapterOrder;
   tagScope?: TagScope;
+  /** Tag chapters: add one for untagged entries. Era chapters: add one for entries outside every era. */
   includeUntagged?: boolean;
   tags?: string[];
+  /** The writer's life eras, for era chapters. */
+  eras?: BookEra[];
 }
 
 /** The entry's date followed by its time of day when it has one, as books and documents print it. */

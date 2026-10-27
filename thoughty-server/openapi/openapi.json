@@ -1311,6 +1311,16 @@
             }
           },
           {
+            "name": "eraId",
+            "required": false,
+            "in": "query",
+            "description": "Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing)",
+            "schema": {
+              "example": 3,
+              "type": "number"
+            }
+          },
+          {
             "name": "sort",
             "required": false,
             "in": "query",
@@ -1600,6 +1610,16 @@
             "in": "query",
             "description": "Diary ID",
             "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "eraId",
+            "required": false,
+            "in": "query",
+            "description": "Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing)",
+            "schema": {
+              "example": 3,
               "type": "number"
             }
           },
@@ -5453,7 +5473,7 @@
             "name": "chapterMode",
             "required": false,
             "in": "query",
-            "description": "Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book",
+            "description": "Chapter grouping mode: tags, calendar years, calendar months, one chapter for the whole book, or one per life era (each entry in the shortest era that covers its date; includeUntagged adds an \"Other\" chapter for entries outside every era)",
             "schema": {
               "default": "tags",
               "type": "string",
@@ -5461,7 +5481,8 @@
                 "tags",
                 "year",
                 "month",
-                "single"
+                "single",
+                "eras"
               ]
             }
           },
@@ -5492,7 +5513,7 @@
             "name": "includeUntagged",
             "required": false,
             "in": "query",
-            "description": "Add a final chapter for entries without tags",
+            "description": "Add a final chapter for entries without tags (tag chapters) or outside every life era (era chapters)",
             "schema": {
               "default": true,
               "type": "boolean"
@@ -5840,7 +5861,7 @@
             "name": "chapterMode",
             "required": false,
             "in": "query",
-            "description": "Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book",
+            "description": "Chapter grouping mode: tags, calendar years, calendar months, one chapter for the whole book, or one per life era (each entry in the shortest era that covers its date; includeUntagged adds an \"Other\" chapter for entries outside every era)",
             "schema": {
               "default": "tags",
               "type": "string",
@@ -5848,7 +5869,8 @@
                 "tags",
                 "year",
                 "month",
-                "single"
+                "single",
+                "eras"
               ]
             }
           },
@@ -5879,7 +5901,7 @@
             "name": "includeUntagged",
             "required": false,
             "in": "query",
-            "description": "Add a final chapter for entries without tags",
+            "description": "Add a final chapter for entries without tags (tag chapters) or outside every life era (era chapters)",
             "schema": {
               "default": true,
               "type": "boolean"
@@ -6122,7 +6144,7 @@
             "name": "chapterMode",
             "required": false,
             "in": "query",
-            "description": "Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book",
+            "description": "Chapter grouping mode: tags, calendar years, calendar months, one chapter for the whole book, or one per life era (each entry in the shortest era that covers its date; includeUntagged adds an \"Other\" chapter for entries outside every era)",
             "schema": {
               "default": "tags",
               "type": "string",
@@ -6130,7 +6152,8 @@
                 "tags",
                 "year",
                 "month",
-                "single"
+                "single",
+                "eras"
               ]
             }
           },
@@ -6161,7 +6184,7 @@
             "name": "includeUntagged",
             "required": false,
             "in": "query",
-            "description": "Add a final chapter for entries without tags",
+            "description": "Add a final chapter for entries without tags (tag chapters) or outside every life era (era chapters)",
             "schema": {
               "default": true,
               "type": "boolean"
@@ -6381,7 +6404,7 @@
             "name": "chapterMode",
             "required": false,
             "in": "query",
-            "description": "Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book",
+            "description": "Chapter grouping mode: tags, calendar years, calendar months, one chapter for the whole book, or one per life era (each entry in the shortest era that covers its date; includeUntagged adds an \"Other\" chapter for entries outside every era)",
             "schema": {
               "default": "tags",
               "type": "string",
@@ -6389,7 +6412,8 @@
                 "tags",
                 "year",
                 "month",
-                "single"
+                "single",
+                "eras"
               ]
             }
           },
@@ -6420,7 +6444,7 @@
             "name": "includeUntagged",
             "required": false,
             "in": "query",
-            "description": "Add a final chapter for entries without tags",
+            "description": "Add a final chapter for entries without tags (tag chapters) or outside every life era (era chapters)",
             "schema": {
               "default": true,
               "type": "boolean"
@@ -6658,7 +6682,7 @@
             "name": "chapterMode",
             "required": false,
             "in": "query",
-            "description": "Chapter grouping mode: tags, calendar years, calendar months, or one chapter for the whole book",
+            "description": "Chapter grouping mode: tags, calendar years, calendar months, one chapter for the whole book, or one per life era (each entry in the shortest era that covers its date; includeUntagged adds an \"Other\" chapter for entries outside every era)",
             "schema": {
               "default": "tags",
               "type": "string",
@@ -6666,7 +6690,8 @@
                 "tags",
                 "year",
                 "month",
-                "single"
+                "single",
+                "eras"
               ]
             }
           },
@@ -6697,7 +6722,7 @@
             "name": "includeUntagged",
             "required": false,
             "in": "query",
-            "description": "Add a final chapter for entries without tags",
+            "description": "Add a final chapter for entries without tags (tag chapters) or outside every life era (era chapters)",
             "schema": {
               "default": true,
               "type": "boolean"
@@ -7391,7 +7416,8 @@
                         "visibility": "all",
                         "archiveStatus": "active",
                         "favorites": true,
-                        "mood": "4,5"
+                        "mood": "4,5",
+                        "eraId": 3
                       },
                       "bookVersionCount": 2,
                       "createdAt": "2026-10-27T09:30:00.000Z",
@@ -7438,7 +7464,8 @@
                   "visibility": "all",
                   "archiveStatus": "active",
                   "favorites": true,
-                  "mood": "4,5"
+                  "mood": "4,5",
+                  "eraId": 3
                 }
               }
             }
@@ -7467,7 +7494,8 @@
                     "visibility": "all",
                     "archiveStatus": "active",
                     "favorites": true,
-                    "mood": "4,5"
+                    "mood": "4,5",
+                    "eraId": 3
                   },
                   "bookVersionCount": 2,
                   "createdAt": "2026-10-27T09:30:00.000Z",
@@ -7585,7 +7613,8 @@
                     "visibility": "all",
                     "archiveStatus": "active",
                     "favorites": true,
-                    "mood": "4,5"
+                    "mood": "4,5",
+                    "eraId": 3
                   },
                   "bookVersionCount": 2,
                   "createdAt": "2026-10-27T09:30:00.000Z",
@@ -7688,6 +7717,301 @@
         "summary": "Delete a saved search and the book versions saved from it",
         "tags": [
           "Saved searches"
+        ]
+      }
+    },
+    "/api/life-eras": {
+      "get": {
+        "operationId": "LifeErasController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Life eras and the limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifeEraListResponseDto"
+                },
+                "example": {
+                  "lifeEras": [
+                    {
+                      "id": 3,
+                      "name": "University",
+                      "startDate": "2010-09-01",
+                      "endDate": "2014-06-30",
+                      "color": "#2A9D8F",
+                      "emoji": "🎓",
+                      "note": "Lyon, then a year in Montréal",
+                      "createdAt": "2026-10-27T09:30:00.000Z",
+                      "updatedAt": "2026-10-27T09:30:00.000Z"
+                    }
+                  ],
+                  "limit": 100
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the writer’s life eras, by start date",
+        "tags": [
+          "Life eras"
+        ]
+      },
+      "post": {
+        "operationId": "LifeErasController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateLifeEraDto"
+              },
+              "example": {
+                "name": "University",
+                "startDate": "2010-09-01",
+                "endDate": "2014-06-30",
+                "color": "#2A9D8F",
+                "emoji": "🎓",
+                "note": "Lyon, then a year in Montréal"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Era added",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifeEraResponseDto"
+                },
+                "example": {
+                  "id": 3,
+                  "name": "University",
+                  "startDate": "2010-09-01",
+                  "endDate": "2014-06-30",
+                  "color": "#2A9D8F",
+                  "emoji": "🎓",
+                  "note": "Lyon, then a year in Montréal",
+                  "createdAt": "2026-10-27T09:30:00.000Z",
+                  "updatedAt": "2026-10-27T09:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid era, an end before the start, or the life era limit is reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid era, an end before the start, or the life era limit is reached",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A life era with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "A life era with this name already exists",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add a named date range of the writer’s life",
+        "tags": [
+          "Life eras"
+        ]
+      }
+    },
+    "/api/life-eras/{id}": {
+      "patch": {
+        "operationId": "LifeErasController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateLifeEraDto"
+              },
+              "example": {
+                "name": "University",
+                "startDate": "2010-09-01",
+                "endDate": "2014-06-30",
+                "color": "#2A9D8F",
+                "emoji": "🎓",
+                "note": "Lyon, then a year in Montréal"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Era changed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LifeEraResponseDto"
+                },
+                "example": {
+                  "id": 3,
+                  "name": "University",
+                  "startDate": "2010-09-01",
+                  "endDate": "2014-06-30",
+                  "color": "#2A9D8F",
+                  "emoji": "🎓",
+                  "note": "Lyon, then a year in Montréal",
+                  "createdAt": "2026-10-27T09:30:00.000Z",
+                  "updatedAt": "2026-10-27T09:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid era, or an end before the start",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid era, or an end before the start",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Life era not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Life era not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A life era with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "A life era with this name already exists",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change a life era’s name, dates, colour, emoji or note",
+        "tags": [
+          "Life eras"
+        ]
+      },
+      "delete": {
+        "operationId": "LifeErasController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Era deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Life era not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Life era not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a life era; saved searches filtered by it then cover every date",
+        "tags": [
+          "Life eras"
         ]
       }
     },
@@ -9146,7 +9470,8 @@
                 "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
                 "attachmentIds": [
                   31
-                ]
+                ],
+                "eraId": 3
               }
             }
           }
@@ -15897,6 +16222,12 @@
             "type": "string",
             "example": "4,5",
             "description": "Mood levels from 1 to 5 (comma-separated), \"any\", \"none\", or empty for any mood"
+          },
+          "eraId": {
+            "type": "number",
+            "nullable": true,
+            "example": 3,
+            "description": "Life era the entries are dated in; null or left out for any date (searches saved before eras have none)"
           }
         },
         "required": [
@@ -15921,7 +16252,8 @@
           "visibility": "all",
           "archiveStatus": "active",
           "favorites": true,
-          "mood": "4,5"
+          "mood": "4,5",
+          "eraId": 3
         }
       },
       "SavedSearchResponseDto": {
@@ -15985,7 +16317,8 @@
             "visibility": "all",
             "archiveStatus": "active",
             "favorites": true,
-            "mood": "4,5"
+            "mood": "4,5",
+            "eraId": 3
           },
           "bookVersionCount": 2,
           "createdAt": "2026-10-27T09:30:00.000Z",
@@ -16029,7 +16362,8 @@
                 "visibility": "all",
                 "archiveStatus": "active",
                 "favorites": true,
-                "mood": "4,5"
+                "mood": "4,5",
+                "eraId": 3
               },
               "bookVersionCount": 2,
               "createdAt": "2026-10-27T09:30:00.000Z",
@@ -16077,7 +16411,8 @@
             "visibility": "all",
             "archiveStatus": "active",
             "favorites": true,
-            "mood": "4,5"
+            "mood": "4,5",
+            "eraId": 3
           }
         }
       },
@@ -16111,6 +16446,219 @@
         ],
         "example": {
           "success": true
+        }
+      },
+      "LifeEraResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 3
+          },
+          "name": {
+            "type": "string",
+            "example": "University"
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2010-09-01",
+            "format": "date"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": "2014-06-30",
+            "description": "Null while the era is still going on"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true,
+            "example": "#2A9D8F"
+          },
+          "emoji": {
+            "type": "string",
+            "nullable": true,
+            "example": "🎓"
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "example": "Lyon, then a year in Montréal"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-27T09:30:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-27T09:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "startDate",
+          "endDate",
+          "color",
+          "emoji",
+          "note",
+          "createdAt",
+          "updatedAt"
+        ],
+        "example": {
+          "id": 3,
+          "name": "University",
+          "startDate": "2010-09-01",
+          "endDate": "2014-06-30",
+          "color": "#2A9D8F",
+          "emoji": "🎓",
+          "note": "Lyon, then a year in Montréal",
+          "createdAt": "2026-10-27T09:30:00.000Z",
+          "updatedAt": "2026-10-27T09:30:00.000Z"
+        }
+      },
+      "LifeEraListResponseDto": {
+        "type": "object",
+        "properties": {
+          "lifeEras": {
+            "description": "By start date, then name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LifeEraResponseDto"
+            }
+          },
+          "limit": {
+            "type": "number",
+            "example": 100,
+            "description": "How many life eras a writer can keep"
+          }
+        },
+        "required": [
+          "lifeEras",
+          "limit"
+        ],
+        "example": {
+          "lifeEras": [
+            {
+              "id": 3,
+              "name": "University",
+              "startDate": "2010-09-01",
+              "endDate": "2014-06-30",
+              "color": "#2A9D8F",
+              "emoji": "🎓",
+              "note": "Lyon, then a year in Montréal",
+              "createdAt": "2026-10-27T09:30:00.000Z",
+              "updatedAt": "2026-10-27T09:30:00.000Z"
+            }
+          ],
+          "limit": 100
+        }
+      },
+      "CreateLifeEraDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "University",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2010-09-01",
+            "format": "date",
+            "description": "First day of the era"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": "2014-06-30",
+            "description": "Last day of the era, on or after its start; null or left out while it is still going on"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true,
+            "example": "#2A9D8F",
+            "description": "Accent colour (#RRGGBB)"
+          },
+          "emoji": {
+            "type": "string",
+            "nullable": true,
+            "example": "🎓",
+            "maxLength": 16
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "example": "Lyon, then a year in Montréal",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "name",
+          "startDate"
+        ],
+        "example": {
+          "name": "University",
+          "startDate": "2010-09-01",
+          "endDate": "2014-06-30",
+          "color": "#2A9D8F",
+          "emoji": "🎓",
+          "note": "Lyon, then a year in Montréal"
+        }
+      },
+      "UpdateLifeEraDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "University",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2010-09-01",
+            "format": "date",
+            "description": "First day of the era"
+          },
+          "endDate": {
+            "type": "string",
+            "nullable": true,
+            "format": "date",
+            "example": "2014-06-30",
+            "description": "Last day of the era, on or after its start; null or left out while it is still going on"
+          },
+          "color": {
+            "type": "string",
+            "nullable": true,
+            "example": "#2A9D8F",
+            "description": "Accent colour (#RRGGBB)"
+          },
+          "emoji": {
+            "type": "string",
+            "nullable": true,
+            "example": "🎓",
+            "maxLength": 16
+          },
+          "note": {
+            "type": "string",
+            "nullable": true,
+            "example": "Lyon, then a year in Montréal",
+            "maxLength": 500
+          }
+        },
+        "example": {
+          "name": "University",
+          "startDate": "2010-09-01",
+          "endDate": "2014-06-30",
+          "color": "#2A9D8F",
+          "emoji": "🎓",
+          "note": "Lyon, then a year in Montréal"
         }
       },
       "FeatureRequestDto": {
@@ -17471,6 +18019,11 @@
             "items": {
               "type": "number"
             }
+          },
+          "eraId": {
+            "type": "number",
+            "example": 3,
+            "description": "Life era the memory belongs to: the answer is also tagged with the era’s name"
           }
         },
         "required": [
@@ -17482,7 +18035,8 @@
           "text": "A narrow house with a fig tree in the yard and my grandmother singing in the kitchen.",
           "attachmentIds": [
             31
-          ]
+          ],
+          "eraId": 3
         }
       },
       "MemoirAnswerResultDto": {
@@ -18390,6 +18944,10 @@
           "SAVED_SEARCH_NOT_FOUND",
           "SAVED_SEARCH_NAME_TAKEN",
           "SAVED_SEARCH_LIMIT_REACHED",
+          "LIFE_ERA_NOT_FOUND",
+          "LIFE_ERA_NAME_TAKEN",
+          "LIFE_ERA_LIMIT_REACHED",
+          "LIFE_ERA_DATES_INVALID",
           "ATTACHMENT_NOT_FOUND",
           "ATTACHMENT_FILE_NOT_FOUND",
           "ATTACHMENT_FILE_MISSING",

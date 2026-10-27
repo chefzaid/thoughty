@@ -80,6 +80,12 @@ export const API_ERROR_MESSAGES = {
   SAVED_SEARCH_NAME_TAKEN: 'A saved search with this name already exists',
   SAVED_SEARCH_LIMIT_REACHED: 'Saved search limit reached',
 
+  // Life eras.
+  LIFE_ERA_NOT_FOUND: 'Life era not found',
+  LIFE_ERA_NAME_TAKEN: 'A life era with this name already exists',
+  LIFE_ERA_LIMIT_REACHED: 'Life era limit reached',
+  LIFE_ERA_DATES_INVALID: 'A life era cannot end before it starts',
+
   // Attachments and audio transcription.
   ATTACHMENT_NOT_FOUND: 'Attachment not found',
   ATTACHMENT_FILE_NOT_FOUND: 'File not found',

@@ -42,6 +42,7 @@ describe('memoir DTOs', () => {
       questionId: 'childhood-home',
       text: '  A fig tree in the yard.  ',
       attachmentIds: [3],
+      eraId: 2,
     });
     await expect(validate(dto)).resolves.toHaveLength(0);
     expect(dto.text).toBe('A fig tree in the yard.');
@@ -50,7 +51,8 @@ describe('memoir DTOs', () => {
       questionId: '../etc',
       text: 'x',
       attachmentIds: [1, 2, 3, 4, 5, 6],
+      eraId: 0,
     });
-    await expect(invalidProperties(validate(invalid))).resolves.toEqual(['questionId', 'attachmentIds']);
+    await expect(invalidProperties(validate(invalid))).resolves.toEqual(['questionId', 'attachmentIds', 'eraId']);
   });
 });

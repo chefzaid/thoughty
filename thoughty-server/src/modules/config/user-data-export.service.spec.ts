@@ -11,6 +11,7 @@ import {
   MemoirAnswer,
   YearReviewMood,
   SavedSearch,
+  LifeEra,
   MemoirProgram,
   Setting,
   User,
@@ -34,6 +35,7 @@ describe('UserDataExportService', () => {
   let memoirAnswerRepository: any;
   let yearReviewMoodRepository: any;
   let savedSearchRepository: any;
+  let lifeEraRepository: any;
 
   beforeEach(async () => {
     settingRepository = { find: jest.fn() };
@@ -50,6 +52,7 @@ describe('UserDataExportService', () => {
     memoirAnswerRepository = { find: jest.fn().mockResolvedValue([]) };
     yearReviewMoodRepository = { find: jest.fn().mockResolvedValue([]) };
     savedSearchRepository = { find: jest.fn().mockResolvedValue([]) };
+    lifeEraRepository = { find: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -68,6 +71,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(MemoirAnswer), useValue: memoirAnswerRepository },
         { provide: getRepositoryToken(YearReviewMood), useValue: yearReviewMoodRepository },
         { provide: getRepositoryToken(SavedSearch), useValue: savedSearchRepository },
+        { provide: getRepositoryToken(LifeEra), useValue: lifeEraRepository },
       ],
     }).compile();
 
@@ -315,6 +319,23 @@ describe('UserDataExportService', () => {
       },
     ]);
     expect(savedSearchRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { createdAt: 'ASC', id: 'ASC' } });
+  });
+
+  it('includes the life eras with the ID saved searches refer to, without the owner', async () => {
+    for (const repository of [diaryRepository, entryRepository, revisionRepository, attachmentRepository, settingRepository]) {
+      repository.find.mockResolvedValue([]);
+    }
+    const createdAt = new Date('2026-10-01T10:00:00Z');
+    lifeEraRepository.find.mockResolvedValue([
+      { id: 4, userId: 1, name: 'University', startDate: '2010-09-01', endDate: null, color: '#2A9D8F', emoji: '🎓', note: 'Lyon', createdAt, updatedAt: createdAt },
+    ]);
+
+    const result = await service.downloadData(1);
+
+    expect(result.lifeEras).toEqual([
+      { id: 4, name: 'University', startDate: '2010-09-01', endDate: null, color: '#2A9D8F', emoji: '🎓', note: 'Lyon', createdAt, updatedAt: createdAt },
+    ]);
+    expect(lifeEraRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { startDate: 'ASC', id: 'ASC' } });
   });
 
   it('should exclude sensitive fields from user data', async () => {

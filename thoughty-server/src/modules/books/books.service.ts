@@ -19,6 +19,7 @@ import type { BookVersionManifest, BookVersionSource } from '@/database/entities
 import { createBookCover } from './book-cover.util';
 import { AttachmentsService } from '@/modules/attachments';
 import { BookEntrySourceService } from './book-entry-source.service';
+import { LifeErasService } from '@/modules/life-eras';
 
 export type BookFormat = 'pdf' | 'epub' | 'html' | 'md';
 
@@ -54,6 +55,7 @@ export class BooksService {
     private readonly userRepository: Repository<User>,
     private readonly aiBookComposer: AiBookComposerService,
     private readonly attachmentsService: AttachmentsService,
+    private readonly lifeEras: LifeErasService,
   ) {}
 
   private async resolveAuthor(userId: number, provided?: string): Promise<string | undefined> {
@@ -78,9 +80,10 @@ export class BooksService {
   }
 
   private async buildSourcedBook(userId: number, query: BookQueryDto): Promise<SourcedBook> {
-    const [{ entries, source, defaultTitle }, author] = await Promise.all([
+    const [{ entries, source, defaultTitle }, author, eras] = await Promise.all([
       this.entrySource.select(userId, query),
       this.resolveAuthor(userId, query.author),
+      query.chapterMode === 'eras' ? this.lifeEras.findAll(userId) : Promise.resolve([]),
     ]);
 
     const title = query.title?.trim() || defaultTitle || DEFAULT_BOOK_TITLE;
@@ -93,6 +96,7 @@ export class BooksService {
       tagScope: query.tagScope,
       includeUntagged: query.includeUntagged,
       tags: this.parseTagFilter(query.tags),
+      eras,
     });
     return { book, source };
   }

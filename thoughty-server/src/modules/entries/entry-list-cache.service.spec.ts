@@ -61,6 +61,15 @@ describe('EntryListCacheService', () => {
     expect(cache.get(7, {})).toBeUndefined();
   });
 
+  it('keeps life era filters apart', () => {
+    const cache = new EntryListCacheService({ ENTRIES_CACHE_TTL_SECONDS: '30' });
+    cache.set(7, { eraId: 3 }, response);
+
+    expect(cache.get(7, { eraId: 3 })).toEqual(response);
+    expect(cache.get(7, { eraId: 4 })).toBeUndefined();
+    expect(cache.get(7, {})).toBeUndefined();
+  });
+
   it('expires cached entries after the configured ttl', () => {
     jest.useFakeTimers();
     jest.setSystemTime(new Date('2024-01-15T10:00:00Z'));

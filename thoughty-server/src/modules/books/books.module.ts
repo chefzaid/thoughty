@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BookVersion, Entry, Diary, User } from '@/database/entities';
 import { EntriesModule } from '@/modules/entries';
 import { SavedSearchesModule } from '@/modules/saved-searches';
+import { LifeErasModule } from '@/modules/life-eras';
 import { AiModule } from '@/modules/ai';
 import { CloudSyncModule } from '@/modules/cloud-sync';
 import { AttachmentsModule } from '@/modules/attachments';
@@ -18,6 +19,7 @@ import { BookEntrySourceService } from './book-entry-source.service';
     CloudSyncModule,
     EntriesModule,
     SavedSearchesModule,
+    LifeErasModule,
     TypeOrmModule.forFeature([BookVersion, Entry, Diary, User]),
   ],
   controllers: [BooksController],

@@ -93,6 +93,7 @@ describe('EntryCalendarService', () => {
       mood: '4,5,4',
       diaryId: 2,
       ids: '5,6,5',
+      eraId: 8,
     });
 
     expect(entrySearch.prepare).toHaveBeenCalledWith('harbor');
@@ -107,6 +108,7 @@ describe('EntryCalendarService', () => {
     expect(qb.andWhere).toHaveBeenCalledWith('e.is_favorite = true');
     expect(qb.andWhere).toHaveBeenCalledWith('e.is_archived = true');
     expect(qb.andWhere).toHaveBeenCalledWith('e.mood IN (:...moods)', { moods: [4, 5] });
+    expect(qb.andWhere).toHaveBeenCalledWith(expect.stringContaining('FROM life_eras era'), { eraId: 8 });
   });
 
   it('matches a search PostgreSQL cannot read as words literally, and the other mood and archive filters', async () => {
