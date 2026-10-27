@@ -30,12 +30,20 @@ describe('nextDailySend', () => {
     expect(next('2026-03-28T08:00:00Z', 9, 'Europe/Paris')).toBe('2026-03-29T07:00:00.000Z');
   });
 
-  it('sends an hour the clocks skip one hour later, and a repeated hour once', () => {
+  it('sends an hour the clocks skip one hour later, and a repeated hour once, on its first occurrence', () => {
     // On 2026-03-29 Paris clocks jump from 02:00 to 03:00: 02:00 arrives at 03:00 local.
     expect(next('2026-03-28T12:00:00Z', 2, 'Europe/Paris')).toBe('2026-03-29T01:00:00.000Z');
-    // On 2026-10-25 Paris lives 02:00 to 03:00 twice: one send, on the second 02:00, then the next day.
-    const first = next('2026-10-24T12:00:00Z', 2, 'Europe/Paris');
-    expect(first).toBe('2026-10-25T01:00:00.000Z');
-    expect(next(first, 2, 'Europe/Paris')).toBe('2026-10-26T01:00:00.000Z');
+    // On 2026-10-25 Paris lives 02:00 to 03:00 twice: one send, on the first 02:00 (CEST), then the next day.
+    const paris = next('2026-10-24T12:00:00Z', 2, 'Europe/Paris');
+    expect(paris).toBe('2026-10-25T00:00:00.000Z');
+    expect(next(paris, 2, 'Europe/Paris')).toBe('2026-10-26T01:00:00.000Z');
+    // A run late inside the repeated hour (its second occurrence included) moves on to the next day too.
+    expect(next('2026-10-25T01:30:00Z', 2, 'Europe/Paris')).toBe('2026-10-26T01:00:00.000Z');
+    // West of UTC the same rule holds: New York lives 01:00 twice on 2026-11-01, and sends at the first (EDT).
+    const newYork = next('2026-10-31T12:00:00Z', 1, 'America/New_York');
+    expect(newYork).toBe('2026-11-01T05:00:00.000Z');
+    expect(next(newYork, 1, 'America/New_York')).toBe('2026-11-02T06:00:00.000Z');
+    // …and skips 02:00 on 2026-03-08, sending at 03:00 EDT.
+    expect(next('2026-03-07T12:00:00Z', 2, 'America/New_York')).toBe('2026-03-08T07:00:00.000Z');
   });
 });

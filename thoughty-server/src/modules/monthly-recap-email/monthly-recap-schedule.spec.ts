@@ -33,9 +33,9 @@ describe('monthly recap schedule', () => {
     expect(next('2026-10-01T06:00:00Z', 8, 'Europe/Paris')).toBe('2026-11-01T07:00:00.000Z');
     // New York changes on 1 November 2026 at 02:00: 08:00 that morning is already EST (UTC-5).
     expect(next('2026-10-15T12:00:00Z', 8, 'America/New_York')).toBe('2026-11-01T13:00:00.000Z');
-    // …and 01:00, which the clocks live twice that night, is sent once, then next month.
+    // …and 01:00, which the clocks live twice that night, is sent once, on its first occurrence (EDT), then next month.
     const repeated = next('2026-10-15T12:00:00Z', 1, 'America/New_York');
-    expect(['2026-11-01T05:00:00.000Z', '2026-11-01T06:00:00.000Z']).toContain(repeated);
+    expect(repeated).toBe('2026-11-01T05:00:00.000Z');
     expect(next(repeated, 1, 'America/New_York')).toBe('2026-12-01T06:00:00.000Z');
     // Paris skips 02:00 on 29 March 2026, a Sunday but not a 1st: 1 March and 1 April keep their hour.
     expect(next('2026-03-01T01:00:00Z', 2, 'Europe/Paris')).toBe('2026-04-01T00:00:00.000Z');

@@ -6,8 +6,8 @@ export const DEFAULT_MONTHLY_RECAP_HOUR = 8;
 
 /**
  * The first time strictly after `after` that the zone's wall clock reads `hour`:00 on the 1st of a month:
- * this month's 1st if that hour is still to come, otherwise next month's. Daylight-saving changes are
- * handled as for the daily emails (`zonedTimeToUtc`).
+ * this month's 1st if that hour is still to come, otherwise next month's. On a daylight-saving change an
+ * hour the clocks skip arrives an hour later, and a repeated one on its first occurrence (`zonedTimeToUtc`).
  */
 export function nextMonthlySend(after: Date, hour: number, timeZone: string): Date {
   const local = zonedParts(after, timeZone);

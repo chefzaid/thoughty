@@ -55,15 +55,30 @@ function zoneOffsetMs(date: Date, timeZone: string): number {
   return wallClockAsUtc - Math.floor(date.getTime() / 1000) * 1000;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /**
- * The instant a wall-clock hour occurs in a zone; day overflow rolls into the next month. An hour
- * skipped by a daylight-saving change lands an hour later, and a repeated one on its second occurrence.
+ * The instant a wall-clock hour occurs in a zone; day overflow rolls into the next month. On a
+ * daylight-saving change, in every zone: an hour the clocks skip lands as many minutes later as they
+ * jump (02:00 becomes 03:00), and an hour they repeat lands on its first occurrence, so a delivery is
+ * never held back by the change.
  */
 export function zonedTimeToUtc(year: number, month: number, day: number, hour: number, timeZone: string): Date {
   const wallClockAsUtc = Date.UTC(year, month - 1, day, hour);
-  const firstGuess = wallClockAsUtc - zoneOffsetMs(new Date(wallClockAsUtc), timeZone);
-  // Re-read the offset at the guess so a daylight-saving change between the two instants is honoured.
-  return new Date(wallClockAsUtc - zoneOffsetMs(new Date(firstGuess), timeZone));
+  // UTC offsets span -12h to +14h, so the instant lies within a day of the wall clock read as UTC: the
+  // offsets a day either side are those in force before and after any change around it.
+  const offsetBefore = zoneOffsetMs(new Date(wallClockAsUtc - DAY_MS), timeZone);
+  const offsetAfter = zoneOffsetMs(new Date(wallClockAsUtc + DAY_MS), timeZone);
+  // Clocks only repeat when they go back (the offset shrinks), so the offset before gives the earlier
+  // instant whenever both read the hour.
+  for (const offset of [offsetBefore, offsetAfter]) {
+    const instant = new Date(wallClockAsUtc - offset);
+    if (zoneOffsetMs(instant, timeZone) === offset) {
+      return instant;
+    }
+  }
+  // Neither reads the hour: the clocks skipped it, and the offset before moves it past the jump.
+  return new Date(wallClockAsUtc - offsetBefore);
 }
 
 /** The calendar date (YYYY-MM-DD) it is at `now` in the zone. */
