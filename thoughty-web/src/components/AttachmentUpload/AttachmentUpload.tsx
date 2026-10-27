@@ -5,7 +5,9 @@ import {
     formatAttachmentSize,
     getAttachmentKindLabel,
     hasInlineAttachmentPreview,
+    isImageAttachment,
 } from '../../utils/attachments';
+import type { InlineImageTarget } from '../InlineImages/useInlineImageInsert';
 import { mutedTextClass } from '../../utils/tintedText';
 import AttachmentPreviewContent from '../AttachmentPreview/AttachmentPreviewContent';
 import AttachmentPreviewDialog from '../AttachmentPreview/AttachmentPreviewDialog';
@@ -20,8 +22,24 @@ interface AttachmentUploadProps {
     readonly onAddFile: (file: File) => void;
     readonly onRemovePendingFile: (index: number) => void;
     readonly onRemoveUploadedAttachment: (id: number) => void;
+    /** Shows "Insert in text" on pictures, for Markdown entries. */
+    readonly onInsertImage?: (target: InlineImageTarget) => void;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
+}
+
+/** The card button that places the picture at the caret of the entry's text. */
+function InsertImageButton({ name, className, onClick, t }: Readonly<{
+    name: string;
+    className: string;
+    onClick: () => void;
+    t: (key: string, params?: Record<string, string | number>) => string;
+}>) {
+    return (
+        <button type="button" onClick={onClick} aria-haspopup="dialog" aria-label={t('insertImageFor', { name })} className={`text-xs font-medium ${className}`}>
+            {t('insertImage')}
+        </button>
+    );
 }
 
 /** Why a picked file cannot be attached, as a translation key, or null when it can. */
@@ -93,6 +111,7 @@ function PendingAttachmentCard({
     isDark,
     onRemove,
     onPreview,
+    onInsert,
     t,
 }: Readonly<{
     file: File;
@@ -100,10 +119,15 @@ function PendingAttachmentCard({
     isDark: boolean;
     onRemove: (index: number) => void;
     onPreview: (preview: ActiveUploadPreview) => void;
-    t: (key: string) => string;
+    onInsert?: (target: InlineImageTarget) => void;
+    t: (key: string, params?: Record<string, string | number>) => string;
 }>) {
     const previewUrl = usePendingAttachmentPreviewUrl(file);
     const canPreview = Boolean(previewUrl) && hasInlineAttachmentPreview(file.type);
+    const linkClass = isDark ? 'text-blue-300 hover:text-blue-200' : 'text-blue-700 hover:text-blue-800';
+    const insert = onInsert && isImageAttachment(file.type)
+        ? <InsertImageButton name={file.name} className={linkClass} onClick={() => onInsert({ pending: index })} t={t} />
+        : null;
 
     return (
         <AttachmentCard
@@ -121,20 +145,25 @@ function PendingAttachmentCard({
             )}
             isDark={isDark}
             accentClass={isDark ? 'bg-gray-700/50 border-gray-600' : 'bg-gray-100 border-gray-300'}
-            action={canPreview ? (
-                <button
-                    type="button"
-                    onClick={() => onPreview({
-                        name: file.name,
-                        mimetype: file.type,
-                        sourceUrl: previewUrl!,
-                        size: file.size,
-                    })}
-                    className={`text-xs font-medium ${isDark ? 'text-blue-300 hover:text-blue-200' : 'text-blue-700 hover:text-blue-800'}`}
-                    aria-label={`${t('previewAttachment')} ${file.name}`}
-                >
-                    {t('previewAttachment')}
-                </button>
+            action={canPreview || insert ? (
+                <div className="flex flex-wrap items-center gap-3">
+                    {canPreview && (
+                        <button
+                            type="button"
+                            onClick={() => onPreview({
+                                name: file.name,
+                                mimetype: file.type,
+                                sourceUrl: previewUrl!,
+                                size: file.size,
+                            })}
+                            className={`text-xs font-medium ${linkClass}`}
+                            aria-label={`${t('previewAttachment')} ${file.name}`}
+                        >
+                            {t('previewAttachment')}
+                        </button>
+                    )}
+                    {insert}
+                </div>
             ) : undefined}
             onRemove={() => onRemove(index)}
             t={t}
@@ -147,13 +176,15 @@ function UploadedAttachmentCard({
     isDark,
     onRemove,
     onPreview,
+    onInsert,
     t,
 }: Readonly<{
     attachment: Attachment;
     isDark: boolean;
     onRemove: (id: number) => void;
     onPreview: (preview: ActiveUploadPreview) => void;
-    t: (key: string) => string;
+    onInsert?: (target: InlineImageTarget) => void;
+    t: (key: string, params?: Record<string, string | number>) => string;
 }>) {
     const fileUrl = useAuthenticatedAttachmentUrl(attachment.stored_filename);
     const canPreview = hasInlineAttachmentPreview(attachment.mimetype);
@@ -175,7 +206,7 @@ function UploadedAttachmentCard({
             isDark={isDark}
             accentClass={isDark ? 'bg-gray-700/50 border-green-600/30' : 'bg-green-50 border-green-300'}
             action={(
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     {canPreview && fileUrl && (
                         <button
                             type="button"
@@ -200,6 +231,14 @@ function UploadedAttachmentCard({
                     >
                         {t('downloadAttachment')}
                     </a>
+                    {onInsert && isImageAttachment(attachment.mimetype) && (
+                        <InsertImageButton
+                            name={attachment.original_filename}
+                            className={isDark ? 'text-green-300 hover:text-green-200' : 'text-green-700 hover:text-green-800'}
+                            onClick={() => onInsert({ attachment: attachment.id })}
+                            t={t}
+                        />
+                    )}
                 </div>
             )}
             onRemove={() => onRemove(attachment.id)}
@@ -214,6 +253,7 @@ function AttachmentUpload({
     onAddFile,
     onRemovePendingFile,
     onRemoveUploadedAttachment,
+    onInsertImage,
     theme,
     t
 }: AttachmentUploadProps) {
@@ -290,6 +330,7 @@ function AttachmentUpload({
                             isDark={isDark}
                             onRemove={onRemovePendingFile}
                             onPreview={setActivePreview}
+                            onInsert={onInsertImage}
                             t={t}
                         />
                     ))}
@@ -301,6 +342,7 @@ function AttachmentUpload({
                             isDark={isDark}
                             onRemove={onRemoveUploadedAttachment}
                             onPreview={setActivePreview}
+                            onInsert={onInsertImage}
                             t={t}
                         />
                     ))}

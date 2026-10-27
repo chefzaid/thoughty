@@ -4,6 +4,7 @@ import { getAutoTagLimit } from '../utils/autoTagLimit';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
 import { browserTimeZone, isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
+import { storePlacedFiles } from '../utils/inlineImages';
 import { useApiServices } from './useApiServices';
 import { useEntryTagSuggestions } from './useEntryTagSuggestions';
 
@@ -76,8 +77,12 @@ export const useEntryForm = (
       return;
     }
 
+    // Pictures placed in the text are uploaded first, so the saved text names them by ID
+    const placed = format === 'markdown'
+      ? await storePlacedFiles(newEntryText, pendingFiles, (file) => attachmentsService.uploadAttachment(file))
+      : { text: newEntryText, remaining: pendingFiles };
     const result = await entriesService.createEntry({
-      text: newEntryText,
+      text: placed.text,
       title: cleanEntryTitle(title),
       timeOfDay: timeOfDay || null,
       mood,
@@ -96,7 +101,7 @@ export const useEntryForm = (
     }
 
     const allAttachmentIds = uploadedAttachments.map((attachment) => attachment.id);
-    for (const file of pendingFiles) {
+    for (const file of placed.remaining) {
       const uploaded = await attachmentsService.uploadAttachment(file, result.entryId);
       if (uploaded) {
         allAttachmentIds.push(uploaded.id);

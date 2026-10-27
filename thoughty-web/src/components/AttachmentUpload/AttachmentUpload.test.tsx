@@ -328,4 +328,24 @@ describe('AttachmentUpload', () => {
 
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:preview');
   });
+
+  it('offers to place pictures in the text, only for pictures and only when asked', async () => {
+    const onInsertImage = vi.fn();
+    const picture = new File(['x'], 'sea.png', { type: 'image/png' });
+    const memo = new File(['x'], 'memo.mp3', { type: 'audio/mpeg' });
+    const stored = { id: 5, original_filename: 'pier.png', stored_filename: 'pier.png', mimetype: 'image/png', size: 10 } as Attachment;
+    const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
+    const { rerender } = render(
+      <AttachmentUpload {...defaultProps} t={t} pendingFiles={[memo, picture]} uploadedAttachments={[stored]} onInsertImage={onInsertImage} />,
+    );
+
+    expect(screen.getAllByRole('button', { name: /in the text$/ })).toHaveLength(2);
+    await userEvent.click(screen.getByRole('button', { name: 'Insert sea.png in the text' }));
+    expect(onInsertImage).toHaveBeenLastCalledWith({ pending: 1 });
+    await userEvent.click(screen.getByRole('button', { name: 'Insert pier.png in the text' }));
+    expect(onInsertImage).toHaveBeenLastCalledWith({ attachment: 5 });
+
+    rerender(<AttachmentUpload {...defaultProps} t={t} pendingFiles={[memo, picture]} uploadedAttachments={[stored]} />);
+    expect(screen.queryByRole('button', { name: /in the text$/ })).toBeNull();
+  });
 });

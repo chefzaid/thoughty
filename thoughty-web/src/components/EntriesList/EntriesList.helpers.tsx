@@ -16,6 +16,7 @@ import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
 import MentionSuggestions from '../People/MentionSuggestions';
 import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
 import { resolveLanguage } from '../../utils/language';
+import { useInlineImageInsert } from '../InlineImages/useInlineImageInsert';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -204,6 +205,14 @@ export function EditForm({
     const editFormatButtonClass = getEditFormatButtonClass(editFormat, config.theme);
     const editArea = useAutoGrowTextarea(editText);
     const mentions = useMentionAutocomplete(editText, setEditText);
+    const inlineImages = useInlineImageInsert({
+        text: editText,
+        setText: setEditText,
+        pendingFiles: editPendingFiles ?? [],
+        attachments: editExistingAttachments ?? [],
+        theme: config.theme,
+        t,
+    });
     const mentionSuggestions = (
         <MentionSuggestions suggestions={mentions.suggestions} theme={config.theme} language={resolveLanguage(config.language)} t={t} />
     );
@@ -227,7 +236,7 @@ export function EditForm({
                     />
                 </div>
             )}
-            <div {...mentions.wrapperProps}>
+            <div ref={inlineImages.fieldRef} {...mentions.wrapperProps}>
                 {editFormat === 'markdown' ? (
                     <Suspense
                         fallback={(
@@ -250,6 +259,7 @@ export function EditForm({
                                 preview="edit"
                                 height={200}
                                 textareaProps={{ 'aria-label': t('entryTextLabel'), style: { color: writingTextColor }, ...mentions.fieldProps }}
+                                onInsertImage={inlineImages.open}
                                 t={t}
                             />
                             {mentionSuggestions}
@@ -341,6 +351,7 @@ export function EditForm({
                         onAddFile={onAddEditFile}
                         onRemovePendingFile={onRemoveEditPendingFile || (() => {})}
                         onRemoveUploadedAttachment={onRemoveEditAttachment || (() => {})}
+                        onInsertImage={editFormat === 'markdown' ? inlineImages.open : undefined}
                         theme={config.theme}
                         t={t}
                     />
@@ -369,6 +380,7 @@ export function EditForm({
                     {t('cancel')}
                 </button>
             </div>
+            {inlineImages.dialog}
         </div>
     );
 }

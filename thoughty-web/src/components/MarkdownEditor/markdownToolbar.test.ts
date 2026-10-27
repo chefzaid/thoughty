@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { isValidElement, type ReactElement } from 'react';
 import { checkedListCommand, getCommands, getExtraCommands, type ICommand } from '@uiw/react-md-editor/commands';
 import { getTranslation } from '../../utils/translations';
@@ -66,5 +66,17 @@ describe('buildMarkdownCommands', () => {
 
         const bold = toolbar.find((command) => command.name === 'bold');
         expect(isValidElement(bold?.icon) && (bold.icon as ReactElement<{ 'aria-hidden'?: boolean }>).props['aria-hidden']).toBe(true);
+    });
+
+    it('adds the inline picture button after the image one only when the form can place pictures', () => {
+        const onInsertImage = vi.fn();
+        const toolbar = buildMarkdownCommands((key) => key, onInsertImage);
+        const names = toolbar.map((command) => command.name);
+        const inline = toolbar[names.indexOf('image') + 1];
+
+        expect(inline).toMatchObject({ name: 'inline-image', buttonProps: { 'aria-label': 'markdownToolbarInlineImage', 'aria-haspopup': 'dialog' } });
+        inline?.execute?.({} as never, {} as never);
+        expect(onInsertImage).toHaveBeenCalledTimes(1);
+        expect(buildMarkdownCommands((key) => key).some((command) => command.name === 'inline-image')).toBe(false);
     });
 });

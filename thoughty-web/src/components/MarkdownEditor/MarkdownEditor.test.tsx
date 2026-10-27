@@ -37,5 +37,7 @@ describe('MarkdownHelp', () => {
         expect(screen.getByText('markdownHelpTask')).toBeVisible();
         expect(screen.getByText('- [x] …')).toBeVisible();
         expect(screen.getByText('markdownHelpTaskDone')).toBeVisible();
+        expect(screen.getByText('![…](attachment:12)')).toBeVisible();
+        expect(screen.getByText('markdownHelpInlineImage')).toBeVisible();
     });
 });

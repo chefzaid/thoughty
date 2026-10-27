@@ -25,6 +25,7 @@ import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
 import { resolveLanguage } from '../../utils/language';
 import TimeCapsuleField from './TimeCapsuleField';
 import { defaultTimeCapsule, type TimeCapsuleDraft } from '../../utils/timeCapsule';
+import { useInlineImageInsert } from '../InlineImages/useInlineImageInsert';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -145,6 +146,9 @@ function EntryForm({
     onDeleteTemplate
 }: EntryFormProps) {
     const writingArea = useAutoGrowTextarea(newEntryText);
+    const inlineImages = useInlineImageInsert({
+        text: newEntryText, setText: setNewEntryText, pendingFiles: pendingFiles ?? [], attachments: uploadedAttachments ?? [], theme, t,
+    });
     const mentions = useMentionAutocomplete(newEntryText, setNewEntryText);
     const mentionSuggestions = (
         <MentionSuggestions suggestions={mentions.suggestions} theme={theme} language={resolveLanguage(language)} t={t} />
@@ -280,7 +284,7 @@ function EntryForm({
                         />
                     </div>
                 )}
-                <div {...mentions.wrapperProps}>
+                <div ref={inlineImages.fieldRef} {...mentions.wrapperProps}>
                     {format === 'markdown' ? (
                         <Suspense
                             fallback={(
@@ -313,6 +317,7 @@ function EntryForm({
                                         style: { color: writingTextColor },
                                         ...mentions.fieldProps,
                                     }}
+                                    onInsertImage={inlineImages.open}
                                     t={t}
                                 />
                                 {mentionSuggestions}
@@ -449,6 +454,7 @@ function EntryForm({
                             onAddFile={onAddFile}
                             onRemovePendingFile={onRemovePendingFile || (() => {})}
                             onRemoveUploadedAttachment={onRemoveUploadedAttachment || (() => {})}
+                            onInsertImage={format === 'markdown' ? inlineImages.open : undefined}
                             theme={theme}
                             t={t}
                         />
@@ -471,6 +477,7 @@ function EntryForm({
                     </button>
                 </div>
             </form>
+            {inlineImages.dialog}
             {formError && (
                 <div role="alert" className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
                     {t(formError)}

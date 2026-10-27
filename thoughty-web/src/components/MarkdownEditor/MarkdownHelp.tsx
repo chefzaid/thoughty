@@ -8,6 +8,7 @@ const SYNTAX: ReadonlyArray<readonly [string, string]> = [
     ['- [ ] …', 'markdownHelpTask'],
     ['- [x] …', 'markdownHelpTaskDone'],
     ['[[2024-01-15]]', 'markdownHelpReference'],
+    ['![…](attachment:12)', 'markdownHelpInlineImage'],
 ];
 
 /** A short Markdown reference under the editor, closed until the writer opens it. */

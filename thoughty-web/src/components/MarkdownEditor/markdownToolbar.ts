@@ -1,4 +1,4 @@
-import { cloneElement, isValidElement, type ReactElement, type SVGProps } from 'react';
+import { cloneElement, createElement, isValidElement, type ReactElement, type SVGProps } from 'react';
 import { getCommands, getExtraCommands, type ICommand } from '@uiw/react-md-editor/commands';
 import type { TranslationFunction } from '../../types';
 
@@ -59,12 +59,28 @@ function translateCommand(command: ICommand, t: TranslationFunction): ICommand {
     return translated;
 }
 
+/** Opens the dialog that places one of the entry's pictures at the caret. */
+function inlineImageCommand(onInsertImage: () => void, t: TranslationFunction): ICommand {
+    const label = t('markdownToolbarInlineImage');
+    return {
+        name: 'inline-image',
+        keyCommand: 'inline-image',
+        buttonProps: { 'aria-label': label, title: label, 'aria-haspopup': 'dialog' },
+        icon: createElement('span', { className: 'codicon codicon-file-media', 'aria-hidden': true }),
+        execute: () => onInsertImage(),
+    };
+}
+
 /**
  * The editor's formatting toolbar: the editor's own buttons in their order, every one named in the
  * writer's language, including the task list button (which starts `- [ ]` items) and the guide link.
+ * With `onInsertImage`, a button after the image one places one of the entry's own pictures.
  */
-export function buildMarkdownCommands(t: TranslationFunction): ICommand[] {
-    return getCommands().map((command) => translateCommand(command, t));
+export function buildMarkdownCommands(t: TranslationFunction, onInsertImage?: () => void): ICommand[] {
+    return getCommands().flatMap((command) => {
+        const translated = translateCommand(command, t);
+        return command.name === 'image' && onInsertImage ? [translated, inlineImageCommand(onInsertImage, t)] : [translated];
+    });
 }
 
 /** The buttons at the right end of the toolbar (edit, preview, full screen), named the same way. */

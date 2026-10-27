@@ -4,6 +4,7 @@ import { getAutoTagLimit } from '../utils/autoTagLimit';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
 import { useApiServices } from './useApiServices';
+import { storePlacedFiles } from '../utils/inlineImages';
 import type { Notifier } from './useAppNotice';
 
 export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: Notifier) => {
@@ -67,8 +68,13 @@ export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: 
       return;
     }
 
-    const success = await entriesService.updateEntry(editingEntry.id, {
-      text: editText,
+    // Pictures placed in the text are uploaded first, so the saved text names them by ID
+    const entryId = editingEntry.id;
+    const placed = editFormat === 'markdown'
+      ? await storePlacedFiles(editText, editPendingFiles, (file) => attachmentsService.uploadAttachment(file, entryId))
+      : { text: editText, remaining: editPendingFiles };
+    const success = await entriesService.updateEntry(entryId, {
+      text: placed.text,
       title: cleanEntryTitle(editTitle),
       timeOfDay: editTimeOfDay || null,
       mood: editMood,
@@ -84,7 +90,7 @@ export const useEntryEdit = (config: Config, onSave: () => void, { notify, t }: 
       return;
     }
 
-    for (const file of editPendingFiles) {
+    for (const file of placed.remaining) {
       await attachmentsService.uploadAttachment(file, editingEntry.id);
     }
 
