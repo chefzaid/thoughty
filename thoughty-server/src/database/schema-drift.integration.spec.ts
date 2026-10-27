@@ -41,8 +41,6 @@ const KNOWN_DRIFT: string[] = [
   'entries.(diary_id) -> diaries: foreign key missing',
   // Needs Input › May `users.email` become `NOT NULL`?
   'users.email: nullable is false in the entity but true in the database',
-  // Bugs to fix › user.entity.ts (`username`)
-  'users.username: length is 50 in the entity but 100 in the database',
 ];
 
 describePostgres('entities against the migrated schema on PostgreSQL', () => {

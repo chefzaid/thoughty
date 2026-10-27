@@ -16,7 +16,8 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 50 })
+  /** New names are cut to 50 characters (`AuthService`); the column keeps up to 100, as older accounts may. */
+  @Column({ length: 100 })
   username: string;
 
   @Column({ length: 255, unique: true })
