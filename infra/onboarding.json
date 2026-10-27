@@ -19,6 +19,7 @@
     "infra/k8s/overlays/swirl-cloud/ingress-patch.yaml",
     "infra/k8s/overlays/swirl-cloud/api-ingress-patch.yaml",
     "infra/k8s/overlays/swirl-cloud/sso-ingress.yaml",
+    "infra/k8s/overlays/swirl-cloud/upload-ingress-patch.yaml",
     "infra/k8s/overlays/swirl-cloud/database-setup-job.yaml",
     "infra/k8s/overlays/swirl-cloud/observability.yaml",
     "infra/k8s/overlays/swirl-cloud/ingress-middleware.yaml",
