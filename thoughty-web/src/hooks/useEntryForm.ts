@@ -100,12 +100,8 @@ export const useEntryForm = (
       return;
     }
 
-    const allAttachmentIds = uploadedAttachments.map((attachment) => attachment.id);
     for (const file of placed.remaining) {
-      const uploaded = await attachmentsService.uploadAttachment(file, result.entryId);
-      if (uploaded) {
-        allAttachmentIds.push(uploaded.id);
-      }
+      await attachmentsService.uploadAttachment(file, result.entryId);
     }
 
     for (const attachment of uploadedAttachments) {
