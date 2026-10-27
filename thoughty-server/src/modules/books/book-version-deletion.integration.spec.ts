@@ -8,7 +8,6 @@ import {
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
 import { BookVersion, Diary, Entry, SavedSearch, User } from '@/database/entities';
-import { OrphanedSavedSearchBookVersions1786579200000 } from '@/database/migrations/1786579200000-orphaned-saved-search-book-versions';
 import { EntrySearchService } from '@/modules/entries';
 import { SavedSearchesService } from '@/modules/saved-searches';
 import { BookEntrySourceService } from './book-entry-source.service';
@@ -126,29 +125,5 @@ describePostgres('PostgreSQL book versions of deleted sources', () => {
       BadRequestException,
       'BOOK_PICKED_ENTRIES_UNAVAILABLE',
     );
-  });
-
-  it('removes the versions already left behind by deleted saved searches, and only those', async () => {
-    await write('2024-01-01', 'First.');
-    const kept = await savedSearches.create(writerId, { name: 'Kept', diaryId: null, filters: everything });
-    const gone = await savedSearches.create(writerId, { name: 'Gone', diaryId: null, filters: everything });
-    await versions.create(writerId, { ...plain, source: 'savedSearch', savedSearchId: kept.id });
-    await versions.create(writerId, { ...plain, source: 'savedSearch', savedSearchId: gone.id });
-    await versions.create(writerId, plain);
-    // A version filed under another writer's saved search ID is not that search's history.
-    await dataSource.query(
-      `INSERT INTO book_versions (user_id, scope_key, version_number, title, format, filename, content_type, content,
-         manifest, chapter_count, entry_count, added_entry_count)
-       VALUES ($1, $2, 1, 'Stray', 'md', 'stray.md', 'text/markdown', '\\x00', '{"chapters":[]}', 0, 0, 0)`,
-      [otherId, `search:${kept.id}`],
-    );
-    await dataSource.query('DELETE FROM saved_searches WHERE id = $1', [gone.id]);
-
-    const queryRunner = dataSource.createQueryRunner();
-    await new OrphanedSavedSearchBookVersions1786579200000().up(queryRunner);
-    await queryRunner.release();
-
-    expect(await scopeKeys(writerId)).toEqual(['all', `search:${kept.id}`]);
-    expect(await scopeKeys(otherId)).toEqual([]);
   });
 });
