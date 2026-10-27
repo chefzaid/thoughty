@@ -190,6 +190,25 @@ describe('SavedSearches', () => {
     await waitFor(() => expect(within(dialog).getByLabelText('savedSearchName')).toHaveFocus());
   });
 
+  it('says how many book versions go with a search before deleting it', async () => {
+    savedSearchesService.list.mockResolvedValue(listOf([
+      savedSearch({ bookVersionCount: 2 }),
+      savedSearch({ id: 5, name: 'Trips', bookVersionCount: 1 }),
+    ]));
+    savedSearchesService.remove.mockResolvedValue({ data: { success: true }, error: null });
+    renderSavedSearches();
+    const dialog = await openDialog();
+
+    fireEvent.click(await within(dialog).findByRole('button', { name: 'savedSearchDelete Family' }));
+    expect(screen.getByRole('alertdialog')).toHaveAccessibleDescription('savedSearchDeleteWithBooks_other Family | 2');
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'cancel' }));
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'savedSearchDelete Trips' }));
+    expect(screen.getByRole('alertdialog')).toHaveAccessibleDescription('savedSearchDeleteWithBooks_one Trips | 1');
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'delete' }));
+    await waitFor(() => expect(savedSearchesService.remove).toHaveBeenCalledWith(5));
+  });
+
   it('says when a delete failed, and keeps a search when the confirmation is cancelled', async () => {
     savedSearchesService.remove.mockResolvedValue({ data: null, error: 'savedSearchDeleteFailed' });
     renderSavedSearches();

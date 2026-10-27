@@ -1,8 +1,14 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
-import { BookVersion, type BookVersionManifest, type BookVersionSource } from '@/database/entities';
-import { Repository } from 'typeorm';
+import {
+  BookVersion,
+  SavedSearch,
+  type BookVersionManifest,
+  type BookVersionSource,
+} from '@/database/entities';
+import { lockBookVersionHistory } from '@/modules/saved-searches';
+import { Repository, type EntityManager } from 'typeorm';
 import { BookQueryDto, BookVersionResponseDto, BookVersionSourceDto, BookVersionsQueryDto } from './dto';
 import { bookScopeKey } from './book-entry-source.service';
 import { BooksService, type BookFile, type BookFormat } from './books.service';
@@ -84,6 +90,23 @@ export class BookVersionsService {
       .filter((title) => !previousTitles.has(title.toLowerCase()));
   }
 
+  /**
+   * A saved search deleted while its book was being built takes its version history with it, so
+   * the version is refused rather than saved where no screen lists it.
+   */
+  private async assertSourceStillExists(
+    manager: EntityManager,
+    userId: number,
+    source: BookVersionSource,
+  ): Promise<void> {
+    if (
+      source.kind === 'savedSearch' &&
+      !(await manager.getRepository(SavedSearch).exists({ where: { id: source.savedSearchId, userId } }))
+    ) {
+      throw apiError(NotFoundException, 'SAVED_SEARCH_NOT_FOUND');
+    }
+  }
+
   async list(userId: number, query: BookVersionsQueryDto = {}): Promise<BookVersionResponseDto[]> {
     const scopeKey = bookScopeKey(query.source, query.diaryId, query.savedSearchId);
     const versions = await this.versionRepository.find({
@@ -103,7 +126,8 @@ export class BookVersionsService {
     const scopeKey = this.scopeKey(file.source);
 
     return this.versionRepository.manager.transaction(async (manager) => {
-      await manager.query('SELECT pg_advisory_xact_lock($1, hashtext($2))', [userId, scopeKey]);
+      await lockBookVersionHistory(manager, userId, scopeKey);
+      await this.assertSourceStillExists(manager, userId, file.source);
       const repository = manager.getRepository(BookVersion);
       const previous = await repository.findOne({
         where: { userId, scopeKey },

@@ -18,7 +18,7 @@ const filters: SavedSearchFilters = {
     mood: '',
 };
 const savedSearch = (id: number, name: string, overrides: Partial<SavedSearchFilters> = {}) => ({
-    id, name, diaryId: null, filters: { ...filters, ...overrides }, createdAt: '', updatedAt: '',
+    id, name, diaryId: null, filters: { ...filters, ...overrides }, bookVersionCount: 0, createdAt: '', updatedAt: '',
 });
 
 function renderSource(language: Language, props: Partial<ComponentProps<typeof BookSourceControls>> = {}) {

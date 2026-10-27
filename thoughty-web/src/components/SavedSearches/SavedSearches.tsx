@@ -4,7 +4,9 @@ import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { SavedSearch } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 import { describeSavedSearch, toSavedSearchFilters } from '../../utils/savedSearches';
+import type { Language } from '../../utils/translations';
 import SavedSearchList from './SavedSearchList';
 import { useSavedSearches } from './useSavedSearches';
 import { useSavedSearchRoute, type SavedSearchFilterControls } from './useSavedSearchRoute';
@@ -14,6 +16,7 @@ interface SavedSearchesProps {
   readonly currentDiaryId: number | null;
   readonly diaries: readonly Pick<Diary, 'id' | 'name'>[];
   readonly theme?: 'light' | 'dark';
+  readonly language: Language;
   readonly t: TranslationFunction;
   /** Shows a message in the app's notice toast. */
   readonly notify: (message: string) => void;
@@ -22,7 +25,7 @@ interface SavedSearchesProps {
 const MAX_NAME_LENGTH = 80;
 
 /** The filter bar's saved searches: a button that names the one shown, and a dialog to save, show, rename and delete them. */
-function SavedSearches({ filters, currentDiaryId, diaries, theme, t, notify }: SavedSearchesProps) {
+function SavedSearches({ filters, currentDiaryId, diaries, theme, language, t, notify }: SavedSearchesProps) {
   const { list, create, rename, remove } = useSavedSearches();
   const savedSearches = list.data?.savedSearches;
   const limit = list.data?.limit ?? 0;
@@ -232,12 +235,21 @@ function SavedSearches({ filters, currentDiaryId, diaries, theme, t, notify }: S
         onClose={() => setPendingDelete(null)}
         onConfirm={() => void confirmDelete()}
         title={t('savedSearchDeleteTitle')}
-        message={t('savedSearchDeleteMessage', { name: pendingDelete?.name ?? '' })}
+        message={deleteMessage(pendingDelete, language, t)}
         theme={theme}
         t={t}
       />
     </>
   );
+}
+
+/** What deleting a saved search removes: the search, and the book versions saved from it when it has any. */
+function deleteMessage(saved: SavedSearch | null, language: Language, t: TranslationFunction): string {
+  const name = saved?.name ?? '';
+  const bookVersionCount = saved?.bookVersionCount ?? 0;
+  return bookVersionCount > 0
+    ? pluralPhrase(t, 'savedSearchDeleteWithBooks', bookVersionCount, language, { name })
+    : t('savedSearchDeleteMessage', { name });
 }
 
 export default SavedSearches;

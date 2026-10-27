@@ -53,7 +53,7 @@ export class SavedSearchesController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a saved search' })
+  @ApiOperation({ summary: 'Delete a saved search and the book versions saved from it' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Search deleted', type: SavedSearchDeleteResponseDto })
   @ApiResponse({ status: 404, description: 'Saved search not found' })

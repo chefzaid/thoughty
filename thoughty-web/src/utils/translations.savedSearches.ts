@@ -20,6 +20,8 @@ export type SavedSearchesTranslationKey =
   | 'savedSearchDelete'
   | 'savedSearchDeleteTitle'
   | 'savedSearchDeleteMessage'
+  | 'savedSearchDeleteWithBooks_one'
+  | 'savedSearchDeleteWithBooks_other'
   | 'savedSearchSaved'
   | 'savedSearchRenamed'
   | 'savedSearchDeleted'
@@ -53,6 +55,8 @@ export const savedSearchesTranslations: Record<Language, Record<SavedSearchesTra
     savedSearchDelete: 'Delete {name}',
     savedSearchDeleteTitle: 'Delete saved search?',
     savedSearchDeleteMessage: '“{name}” will be removed from your saved searches. Your entries stay as they are.',
+    savedSearchDeleteWithBooks_one: '“{name}” will be removed from your saved searches, along with {count} book version saved from it. To keep it, download it first in Import/Export › Book. Your entries stay as they are.',
+    savedSearchDeleteWithBooks_other: '“{name}” will be removed from your saved searches, along with {count} book versions saved from it. To keep them, download them first in Import/Export › Book. Your entries stay as they are.',
     savedSearchSaved: 'Saved “{name}”.',
     savedSearchRenamed: 'Renamed to “{name}”.',
     savedSearchDeleted: 'Deleted “{name}”.',
@@ -85,6 +89,8 @@ export const savedSearchesTranslations: Record<Language, Record<SavedSearchesTra
     savedSearchDelete: 'Supprimer {name}',
     savedSearchDeleteTitle: 'Supprimer la recherche enregistrée ?',
     savedSearchDeleteMessage: '« {name} » sera retirée de vos recherches enregistrées. Vos entrées ne changent pas.',
+    savedSearchDeleteWithBooks_one: '« {name} » sera retirée de vos recherches enregistrées, avec {count} version de livre créée à partir d’elle. Pour la garder, téléchargez-la d’abord dans Import/Export › Livre. Vos entrées ne changent pas.',
+    savedSearchDeleteWithBooks_other: '« {name} » sera retirée de vos recherches enregistrées, avec {count} versions de livre créées à partir d’elle. Pour les garder, téléchargez-les d’abord dans Import/Export › Livre. Vos entrées ne changent pas.',
     savedSearchSaved: '« {name} » enregistrée.',
     savedSearchRenamed: 'Renommée en « {name} ».',
     savedSearchDeleted: '« {name} » supprimée.',

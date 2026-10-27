@@ -41,7 +41,7 @@ describePostgres('PostgreSQL book sources', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     const entries = dataSource.getRepository(Entry);
-    savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch));
+    savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     source = new BookEntrySourceService(
       entries,
       dataSource.getRepository(Diary),

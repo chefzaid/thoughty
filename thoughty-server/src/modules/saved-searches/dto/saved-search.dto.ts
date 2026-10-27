@@ -118,6 +118,13 @@ export class SavedSearchResponseDto {
   @ApiProperty({ type: SavedSearchFiltersDto })
   filters!: SavedSearchFiltersDto;
 
+  @ApiProperty({
+    example: 2,
+    minimum: 0,
+    description: 'Book versions saved from this search, which are deleted with it',
+  })
+  bookVersionCount!: number;
+
   @ApiProperty({ example: '2026-10-27T09:30:00.000Z' })
   createdAt!: Date;
 

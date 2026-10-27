@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
-import { Diary, SavedSearch } from '@/database/entities';
+import { BookVersion, Diary, SavedSearch } from '@/database/entities';
 import { SAVED_SEARCH_LIMIT } from './dto';
 import { SavedSearchesService } from './saved-searches.service';
 
@@ -22,6 +22,8 @@ describe('SavedSearchesService', () => {
   let diaryRepository: { exists: jest.Mock };
   let manager: { query: jest.Mock; getRepository: jest.Mock };
   let queryBuilder: Record<string, jest.Mock>;
+  let countBuilder: Record<string, jest.Mock>;
+  let bookVersionRepository: Record<string, jest.Mock>;
   let service: SavedSearchesService;
 
   beforeEach(() => {
@@ -30,6 +32,18 @@ describe('SavedSearchesService', () => {
       orderBy: jest.fn().mockReturnThis(),
       addOrderBy: jest.fn().mockReturnThis(),
       getMany: jest.fn().mockResolvedValue([]),
+    };
+    countBuilder = {
+      select: jest.fn().mockReturnThis(),
+      addSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
+      groupBy: jest.fn().mockReturnThis(),
+      getRawMany: jest.fn().mockResolvedValue([]),
+    };
+    bookVersionRepository = {
+      createQueryBuilder: jest.fn(() => countBuilder),
+      delete: jest.fn().mockResolvedValue({ affected: 0 }),
     };
     diaryRepository = { exists: jest.fn().mockResolvedValue(true) };
     savedRepository = {
@@ -42,23 +56,40 @@ describe('SavedSearchesService', () => {
     };
     manager = {
       query: jest.fn().mockResolvedValue([]),
-      getRepository: jest.fn((entity) => (entity === Diary ? diaryRepository : savedRepository)),
+      getRepository: jest.fn((entity) => {
+        if (entity === Diary) return diaryRepository;
+        return entity === BookVersion ? bookVersionRepository : savedRepository;
+      }),
     };
     savedRepository.manager = { transaction: jest.fn((work) => work(manager)) } as never;
-    service = new SavedSearchesService(savedRepository as never);
+    service = new SavedSearchesService(savedRepository as never, bookVersionRepository as never);
   });
 
-  it('lists the writer’s searches by name with the limit', async () => {
+  it('lists the writer’s searches by name with the limit and how many book versions each holds', async () => {
     queryBuilder.getMany.mockResolvedValue([
       { id: 2, userId: 7, name: 'Family', diaryId: null, filters, createdAt, updatedAt: createdAt },
+      { id: 3, userId: 7, name: 'Trips', diaryId: null, filters, createdAt, updatedAt: createdAt },
     ]);
+    countBuilder.getRawMany.mockResolvedValue([{ scopeKey: 'search:3', count: '2' }]);
 
     await expect(service.list(7)).resolves.toEqual({
-      savedSearches: [{ id: 2, name: 'Family', diaryId: null, filters, createdAt, updatedAt: createdAt }],
+      savedSearches: [
+        { id: 2, name: 'Family', diaryId: null, filters, bookVersionCount: 0, createdAt, updatedAt: createdAt },
+        { id: 3, name: 'Trips', diaryId: null, filters, bookVersionCount: 2, createdAt, updatedAt: createdAt },
+      ],
       limit: SAVED_SEARCH_LIMIT,
     });
     expect(queryBuilder.where).toHaveBeenCalledWith('saved.user_id = :userId', { userId: 7 });
     expect(queryBuilder.orderBy).toHaveBeenCalledWith('LOWER(saved.name)', 'ASC');
+    expect(countBuilder.where).toHaveBeenCalledWith('version.user_id = :userId', { userId: 7 });
+    expect(countBuilder.andWhere).toHaveBeenCalledWith('version.scope_key IN (:...scopeKeys)', {
+      scopeKeys: ['search:2', 'search:3'],
+    });
+  });
+
+  it('does not count book versions when there are no saved searches', async () => {
+    await expect(service.list(7)).resolves.toEqual({ savedSearches: [], limit: SAVED_SEARCH_LIMIT });
+    expect(bookVersionRepository.createQueryBuilder).not.toHaveBeenCalled();
   });
 
   it('saves a search under the writer’s lock with each tag once and only known filters', async () => {
@@ -82,6 +113,7 @@ describe('SavedSearchesService', () => {
       name: 'Family',
       diaryId: 3,
       filters: { ...filters, tags: ['family', 'trips'] },
+      bookVersionCount: 0,
       createdAt,
       updatedAt: createdAt,
     });
@@ -128,7 +160,9 @@ describe('SavedSearchesService', () => {
     const saved = { id: 4, userId: 7, name: 'Family', diaryId: null, filters, createdAt, updatedAt: createdAt } as SavedSearch;
     savedRepository.findOne.mockResolvedValueOnce(saved);
 
-    await expect(service.rename(7, 4, { name: 'Family, 2019' })).resolves.toEqual(expect.objectContaining({ id: 4, name: 'Family, 2019' }));
+    countBuilder.getRawMany.mockResolvedValueOnce([{ scopeKey: 'search:4', count: 3 }]);
+    await expect(service.rename(7, 4, { name: 'Family, 2019' }))
+      .resolves.toEqual(expect.objectContaining({ id: 4, name: 'Family, 2019', bookVersionCount: 3 }));
     expect(savedRepository.findOne).toHaveBeenCalledWith({ where: { id: 4, userId: 7 } });
 
     savedRepository.findOne.mockResolvedValueOnce(null);
@@ -139,12 +173,16 @@ describe('SavedSearchesService', () => {
     await expectApiError(service.rename(7, 4, { name: 'Trips' }), ConflictException, 'SAVED_SEARCH_NAME_TAKEN');
   });
 
-  it('deletes only the writer’s own search', async () => {
+  it('deletes only the writer’s own search, with its book versions, under their history’s lock', async () => {
     savedRepository.delete.mockResolvedValueOnce({ affected: 1 });
     await expect(service.delete(7, 4)).resolves.toEqual({ success: true });
+    expect(manager.query).toHaveBeenCalledWith('SELECT pg_advisory_xact_lock($1, hashtext($2))', [7, 'search:4']);
     expect(savedRepository.delete).toHaveBeenCalledWith({ id: 4, userId: 7 });
+    expect(bookVersionRepository.delete).toHaveBeenCalledWith({ userId: 7, scopeKey: 'search:4' });
 
+    bookVersionRepository.delete.mockClear();
     savedRepository.delete.mockResolvedValueOnce({ affected: 0 });
     await expectApiError(service.delete(7, 5), NotFoundException, 'SAVED_SEARCH_NOT_FOUND');
+    expect(bookVersionRepository.delete).not.toHaveBeenCalled();
   });
 });

@@ -1630,7 +1630,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete a saved search */
+        /** Delete a saved search and the book versions saved from it */
         delete: operations["SavedSearchesController_delete"];
         options?: never;
         head?: never;
@@ -5723,6 +5723,7 @@ export interface components {
          *         "favorites": true,
          *         "mood": "4,5"
          *       },
+         *       "bookVersionCount": 2,
          *       "createdAt": "2026-10-27T09:30:00.000Z",
          *       "updatedAt": "2026-10-27T09:30:00.000Z"
          *     }
@@ -5738,6 +5739,11 @@ export interface components {
              */
             diaryId: number | null;
             filters: components["schemas"]["SavedSearchFiltersDto"];
+            /**
+             * @description Book versions saved from this search, which are deleted with it
+             * @example 2
+             */
+            bookVersionCount: number;
             /**
              * Format: date-time
              * @example 2026-10-27T09:30:00.000Z
@@ -5769,6 +5775,7 @@ export interface components {
          *             "favorites": true,
          *             "mood": "4,5"
          *           },
+         *           "bookVersionCount": 2,
          *           "createdAt": "2026-10-27T09:30:00.000Z",
          *           "updatedAt": "2026-10-27T09:30:00.000Z"
          *         }
@@ -12375,6 +12382,7 @@ export interface operations {
                      *             "favorites": true,
                      *             "mood": "4,5"
                      *           },
+                     *           "bookVersionCount": 2,
                      *           "createdAt": "2026-10-27T09:30:00.000Z",
                      *           "updatedAt": "2026-10-27T09:30:00.000Z"
                      *         }
@@ -12443,6 +12451,7 @@ export interface operations {
                      *         "favorites": true,
                      *         "mood": "4,5"
                      *       },
+                     *       "bookVersionCount": 2,
                      *       "createdAt": "2026-10-27T09:30:00.000Z",
                      *       "updatedAt": "2026-10-27T09:30:00.000Z"
                      *     }
@@ -12591,6 +12600,7 @@ export interface operations {
                      *         "favorites": true,
                      *         "mood": "4,5"
                      *       },
+                     *       "bookVersionCount": 2,
                      *       "createdAt": "2026-10-27T09:30:00.000Z",
                      *       "updatedAt": "2026-10-27T09:30:00.000Z"
                      *     }

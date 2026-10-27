@@ -157,6 +157,7 @@ function JournalView({
                 currentDiaryId={diaryTabs.currentDiaryId}
                 diaries={diaryTabs.diaries}
                 theme={config.theme}
+                language={language}
                 t={t}
                 notify={onNotify}
               />

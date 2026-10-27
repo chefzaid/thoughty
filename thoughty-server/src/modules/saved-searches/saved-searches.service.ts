@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, type EntityManager } from 'typeorm';
 import { apiError } from '@/common/errors';
-import { Diary, SavedSearch, type SavedSearchFilters } from '@/database/entities';
+import { BookVersion, Diary, SavedSearch, type SavedSearchFilters } from '@/database/entities';
 import {
   CreateSavedSearchDto,
   RenameSavedSearchDto,
@@ -11,6 +11,7 @@ import {
   SavedSearchListResponseDto,
   SavedSearchResponseDto,
 } from './dto';
+import { lockBookVersionHistory, savedSearchBookScopeKey } from './saved-search-book-versions';
 
 /** Namespace of the advisory lock that serializes one writer's saves, so the limit holds under concurrent requests. */
 const SAVED_SEARCH_LOCK_NAMESPACE = 'saved_searches';
@@ -21,6 +22,8 @@ export class SavedSearchesService {
   constructor(
     @InjectRepository(SavedSearch)
     private readonly savedSearchRepository: Repository<SavedSearch>,
+    @InjectRepository(BookVersion)
+    private readonly bookVersionRepository: Repository<BookVersion>,
   ) {}
 
   async list(userId: number): Promise<SavedSearchListResponseDto> {
@@ -31,7 +34,11 @@ export class SavedSearchesService {
       .addOrderBy('saved.id', 'ASC')
       .getMany();
 
-    return { savedSearches: savedSearches.map((saved) => this.toResponse(saved)), limit: SAVED_SEARCH_LIMIT };
+    const counts = await this.bookVersionCounts(userId, savedSearches.map((saved) => saved.id));
+    return {
+      savedSearches: savedSearches.map((saved) => this.toResponse(saved, counts.get(saved.id))),
+      limit: SAVED_SEARCH_LIMIT,
+    };
   }
 
   async create(userId: number, dto: CreateSavedSearchDto): Promise<SavedSearchResponseDto> {
@@ -71,15 +78,45 @@ export class SavedSearchesService {
   async rename(userId: number, id: number, dto: RenameSavedSearchDto): Promise<SavedSearchResponseDto> {
     const saved = await this.findOwn(userId, id);
     saved.name = dto.name;
-    return this.toResponse(await this.withNameCheck(() => this.savedSearchRepository.save(saved)));
+    const [renamed, counts] = await Promise.all([
+      this.withNameCheck(() => this.savedSearchRepository.save(saved)),
+      this.bookVersionCounts(userId, [id]),
+    ]);
+    return this.toResponse(renamed, counts.get(id));
   }
 
+  /**
+   * Deletes a saved search with the book versions built from it, which no screen could list once
+   * it is gone. Holding the history's lock keeps a version saved at the same moment from outliving it.
+   */
   async delete(userId: number, id: number): Promise<{ success: boolean }> {
-    const result = await this.savedSearchRepository.delete({ id, userId });
-    if (!result.affected) {
-      throw apiError(NotFoundException, 'SAVED_SEARCH_NOT_FOUND');
-    }
+    await this.savedSearchRepository.manager.transaction(async (manager) => {
+      const scopeKey = savedSearchBookScopeKey(id);
+      await lockBookVersionHistory(manager, userId, scopeKey);
+      const result = await manager.getRepository(SavedSearch).delete({ id, userId });
+      if (!result.affected) {
+        throw apiError(NotFoundException, 'SAVED_SEARCH_NOT_FOUND');
+      }
+      await manager.getRepository(BookVersion).delete({ userId, scopeKey });
+    });
     return { success: true };
+  }
+
+  /** How many book versions each of the given saved searches holds; those with none are left out. */
+  private async bookVersionCounts(userId: number, ids: number[]): Promise<Map<number, number>> {
+    if (ids.length === 0) {
+      return new Map();
+    }
+    const scopeKeys = new Map(ids.map((id) => [savedSearchBookScopeKey(id), id]));
+    const rows = await this.bookVersionRepository
+      .createQueryBuilder('version')
+      .select('version.scope_key', 'scopeKey')
+      .addSelect('COUNT(*)::int', 'count')
+      .where('version.user_id = :userId', { userId })
+      .andWhere('version.scope_key IN (:...scopeKeys)', { scopeKeys: [...scopeKeys.keys()] })
+      .groupBy('version.scope_key')
+      .getRawMany<{ scopeKey: string; count: number }>();
+    return new Map(rows.map((row) => [scopeKeys.get(row.scopeKey)!, Number(row.count)]));
   }
 
   private async assertOwnDiary(manager: EntityManager, userId: number, diaryId: number | null): Promise<void> {
@@ -115,12 +152,13 @@ export class SavedSearchesService {
     };
   }
 
-  private toResponse(saved: SavedSearch): SavedSearchResponseDto {
+  private toResponse(saved: SavedSearch, bookVersionCount = 0): SavedSearchResponseDto {
     return {
       id: saved.id,
       name: saved.name,
       diaryId: saved.diaryId,
       filters: saved.filters,
+      bookVersionCount,
       createdAt: saved.createdAt,
       updatedAt: saved.updatedAt,
     };

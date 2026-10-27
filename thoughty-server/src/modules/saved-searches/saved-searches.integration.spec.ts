@@ -7,7 +7,7 @@ import {
   POSTGRES_SETUP_TIMEOUT_MS,
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
-import { Diary, SavedSearch, User } from '@/database/entities';
+import { BookVersion, Diary, SavedSearch, User } from '@/database/entities';
 import { SAVED_SEARCH_LIMIT } from './dto';
 import { SavedSearchesService } from './saved-searches.service';
 
@@ -34,7 +34,7 @@ describePostgres('PostgreSQL saved searches', () => {
   beforeAll(async () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
-    service = new SavedSearchesService(dataSource.getRepository(SavedSearch));
+    service = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
 

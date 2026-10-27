@@ -5,7 +5,7 @@ import { apiError } from '@/common/errors';
 import { EMBEDDED_BOOK_IMAGE_TYPES, stripMarkdown } from '@/common/utils';
 import { Diary, Entry, type BookVersionSource } from '@/database/entities';
 import { applyEntryListFilters, EntrySearchService } from '@/modules/entries';
-import { SavedSearchesService, toSavedSearchEntryFilters } from '@/modules/saved-searches';
+import { SavedSearchesService, savedSearchBookScopeKey, toSavedSearchEntryFilters } from '@/modules/saved-searches';
 import {
   MAX_PICKED_BOOK_ENTRIES,
   type BookPickedEntriesResponseDto,
@@ -47,7 +47,7 @@ export function bookScopeKey(source: BookSourceKind | undefined, diaryId?: numbe
     if (!savedSearchId) {
       throw apiError(BadRequestException, 'BOOK_SAVED_SEARCH_REQUIRED');
     }
-    return `search:${savedSearchId}`;
+    return savedSearchBookScopeKey(savedSearchId);
   }
   if (source === 'entries') {
     return 'picked';

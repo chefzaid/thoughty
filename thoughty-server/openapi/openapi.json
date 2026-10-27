@@ -7393,6 +7393,7 @@
                         "favorites": true,
                         "mood": "4,5"
                       },
+                      "bookVersionCount": 2,
                       "createdAt": "2026-10-27T09:30:00.000Z",
                       "updatedAt": "2026-10-27T09:30:00.000Z"
                     }
@@ -7468,6 +7469,7 @@
                     "favorites": true,
                     "mood": "4,5"
                   },
+                  "bookVersionCount": 2,
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -7585,6 +7587,7 @@
                     "favorites": true,
                     "mood": "4,5"
                   },
+                  "bookVersionCount": 2,
                   "createdAt": "2026-10-27T09:30:00.000Z",
                   "updatedAt": "2026-10-27T09:30:00.000Z"
                 }
@@ -7682,7 +7685,7 @@
             "bearer": []
           }
         ],
-        "summary": "Delete a saved search",
+        "summary": "Delete a saved search and the book versions saved from it",
         "tags": [
           "Saved searches"
         ]
@@ -15941,6 +15944,12 @@
           "filters": {
             "$ref": "#/components/schemas/SavedSearchFiltersDto"
           },
+          "bookVersionCount": {
+            "type": "number",
+            "example": 2,
+            "minimum": 0,
+            "description": "Book versions saved from this search, which are deleted with it"
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string",
@@ -15957,6 +15966,7 @@
           "name",
           "diaryId",
           "filters",
+          "bookVersionCount",
           "createdAt",
           "updatedAt"
         ],
@@ -15977,6 +15987,7 @@
             "favorites": true,
             "mood": "4,5"
           },
+          "bookVersionCount": 2,
           "createdAt": "2026-10-27T09:30:00.000Z",
           "updatedAt": "2026-10-27T09:30:00.000Z"
         }
@@ -16020,6 +16031,7 @@
                 "favorites": true,
                 "mood": "4,5"
               },
+              "bookVersionCount": 2,
               "createdAt": "2026-10-27T09:30:00.000Z",
               "updatedAt": "2026-10-27T09:30:00.000Z"
             }

@@ -102,6 +102,40 @@ test.describe('Book sources', () => {
     await expect(bookSection.getByText('From the saved search Family')).toBeVisible();
   });
 
+  test('deletes the book versions of a saved search with it, after saying how many go', async ({ page }) => {
+    const { state } = await setupMockApp(page, {
+      startAuthenticated: true,
+      initialEntries: ENTRIES,
+      savedSearches: [savedSearch(1, 'Family', { tags: ['family'] }), savedSearch(2, 'Work', { tags: ['work'] })],
+    });
+
+    await page.goto('/import-export?diary=1&section=book');
+    const bookSection = page.locator('#book-section');
+    await bookSection.getByLabel('Entries from').selectOption('savedSearch');
+    await bookSection.getByLabel('Saved search').selectOption({ label: 'Family' });
+    await bookSection.getByRole('button', { name: 'Save First Version' }).click();
+    await bookSection.getByRole('button', { name: 'Create New Version' }).click();
+    await expect(bookSection.getByText('From the saved search Family')).toHaveCount(2);
+    await bookSection.getByLabel('Saved search').selectOption({ label: 'Work' });
+    await bookSection.getByRole('button', { name: 'Save First Version' }).click();
+    await expect(bookSection.getByText('From the saved search Work')).toBeVisible();
+
+    await page.goto('/journal?diary=all');
+    await page.getByRole('button', { name: 'Saved searches' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Saved searches' });
+    await dialog.getByRole('button', { name: 'Delete Family' }).click();
+    const confirm = page.getByRole('alertdialog', { name: 'Delete saved search?' });
+    await expect(confirm).toContainText('“Family” will be removed from your saved searches, along with 2 book versions saved from it.');
+    await confirm.getByRole('button', { name: 'Delete' }).click();
+    await expect(dialog.getByRole('status')).toHaveText('Deleted “Family”.');
+    expect(state.bookVersions.map((version) => version.source)).toEqual([
+      { kind: 'savedSearch', savedSearchId: 2, savedSearchName: 'Work' },
+    ]);
+
+    await dialog.getByRole('button', { name: 'Delete Work' }).click();
+    await expect(confirm).toContainText('along with 1 book version saved from it. To keep it, download it first in Import/Export › Book.');
+  });
+
   test('flags in French a picked entry that went to the recycle bin', async ({ page }) => {
     const { state } = await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr' }, initialEntries: ENTRIES });
 

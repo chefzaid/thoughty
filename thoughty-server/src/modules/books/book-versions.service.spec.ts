@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BookVersion } from '@/database/entities';
+import { BookVersion, SavedSearch } from '@/database/entities';
 import { BooksService, type BookFile } from './books.service';
 import { BookVersionsService } from './book-versions.service';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
@@ -12,6 +12,7 @@ describe('BookVersionsService', () => {
   let transactionalRepository: any;
   let booksService: any;
   let lockQuery: jest.Mock;
+  let savedSearchRepository: { exists: jest.Mock };
 
   const artifact = (
     chapters: Array<{ title: string; entryIds: number[] }>,
@@ -37,13 +38,16 @@ describe('BookVersionsService', () => {
       })),
     };
     lockQuery = jest.fn();
+    savedSearchRepository = { exists: jest.fn().mockResolvedValue(true) };
     repository = {
       find: jest.fn().mockResolvedValue([]),
       manager: {
         transaction: jest.fn(async (callback) =>
           callback({
             query: lockQuery,
-            getRepository: jest.fn(() => transactionalRepository),
+            getRepository: jest.fn((entity) =>
+              entity === SavedSearch ? savedSearchRepository : transactionalRepository,
+            ),
           }),
         ),
       },
@@ -141,6 +145,23 @@ describe('BookVersionsService', () => {
     expect(transactionalRepository.findOne).toHaveBeenCalledWith(
       expect.objectContaining({ where: { userId: 7, scopeKey: 'search:2' } }),
     );
+    expect(savedSearchRepository.exists).toHaveBeenCalledTimes(1);
+    expect(savedSearchRepository.exists).toHaveBeenCalledWith({ where: { id: 2, userId: 7 } });
+  });
+
+  it('refuses a version of a saved search deleted while its book was built', async () => {
+    booksService.export.mockResolvedValueOnce(
+      artifact([{ title: 'Family', entryIds: [1] }], { kind: 'savedSearch', savedSearchId: 2, savedSearchName: 'Family' }),
+    );
+    savedSearchRepository.exists.mockResolvedValueOnce(false);
+
+    await expectApiError(
+      service.create(7, { source: 'savedSearch', savedSearchId: 2 }),
+      NotFoundException,
+      'SAVED_SEARCH_NOT_FOUND',
+    );
+    expect(lockQuery).toHaveBeenCalledWith('SELECT pg_advisory_xact_lock($1, hashtext($2))', [7, 'search:2']);
+    expect(transactionalRepository.save).not.toHaveBeenCalled();
   });
 
   it('saves the first immutable artifact with all source entries and chapters marked new', async () => {

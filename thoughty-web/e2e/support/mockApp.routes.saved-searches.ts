@@ -22,6 +22,15 @@ export interface MockSavedSearch {
   updatedAt: string;
 }
 
+type SavedSearchResponse = MockSavedSearch & { bookVersionCount: number };
+
+/** A saved search as the API answers it, with how many book versions were saved from it. */
+function toResponse(state: MockAppState, saved: MockSavedSearch): SavedSearchResponse {
+  const bookVersionCount = state.bookVersions
+    .filter(({ source }) => source.kind === 'savedSearch' && source.savedSearchId === saved.id).length;
+  return { ...saved, bookVersionCount };
+}
+
 const byName = (left: MockSavedSearch, right: MockSavedSearch) =>
   left.name.toLowerCase().localeCompare(right.name.toLowerCase()) || left.id - right.id;
 
@@ -29,10 +38,16 @@ function nameTaken(state: MockAppState, name: string, exceptId?: number): boolea
   return state.savedSearches.some((saved) => saved.id !== exceptId && saved.name.toLowerCase() === name.toLowerCase());
 }
 
-/** `/api/saved-searches` as the API answers it: by name, one name per writer whatever its case, with a limit. */
+/**
+ * `/api/saved-searches` as the API answers it: by name, one name per writer whatever its case, with a
+ * limit, and deleting a search deletes the book versions saved from it.
+ */
 export async function handleSavedSearchRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/saved-searches' && request.method() === 'GET') {
-    await fulfillJson(route, { savedSearches: [...state.savedSearches].sort(byName), limit: MOCK_SAVED_SEARCH_LIMIT });
+    await fulfillJson(route, {
+      savedSearches: [...state.savedSearches].sort(byName).map((saved) => toResponse(state, saved)),
+      limit: MOCK_SAVED_SEARCH_LIMIT,
+    });
     return true;
   }
 
@@ -54,7 +69,7 @@ export async function handleSavedSearchRoutes({ route, request, pathname, state 
       updatedAt: now,
     };
     state.savedSearches.push(saved);
-    await fulfillJson(route, saved, { status: 201 });
+    await fulfillJson(route, toResponse(state, saved), { status: 201 });
     return true;
   }
 
@@ -74,12 +89,14 @@ export async function handleSavedSearchRoutes({ route, request, pathname, state 
     }
     saved.name = name;
     saved.updatedAt = new Date().toISOString();
-    await fulfillJson(route, saved);
+    await fulfillJson(route, toResponse(state, saved));
     return true;
   }
 
   if (request.method() === 'DELETE') {
     state.savedSearches = state.savedSearches.filter((candidate) => candidate.id !== saved.id);
+    state.bookVersions = state.bookVersions
+      .filter(({ source }) => source.kind !== 'savedSearch' || source.savedSearchId !== saved.id);
     await fulfillJson(route, { success: true });
     return true;
   }

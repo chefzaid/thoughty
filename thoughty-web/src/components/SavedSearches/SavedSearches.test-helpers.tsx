@@ -24,6 +24,7 @@ export const savedSearch = (overrides: Partial<SavedSearch> = {}): SavedSearch =
   name: 'Family',
   diaryId: 2,
   filters: { ...noFilters, tags: ['family'], date: '2019-07-14', favorites: true },
+  bookVersionCount: 0,
   createdAt: '2026-10-27T09:00:00.000Z',
   updatedAt: '2026-10-27T09:00:00.000Z',
   ...overrides,
@@ -64,6 +65,7 @@ function Harness({ notify, onSemanticSearch }: { notify: (message: string) => vo
         currentDiaryId={currentDiaryId}
         diaries={[{ id: 1, name: 'Journal' }, { id: 2, name: 'Travel' }]}
         theme="light"
+        language="en"
         t={t}
         notify={notify}
       />
