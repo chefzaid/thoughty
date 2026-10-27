@@ -37,8 +37,6 @@ const KNOWN_DRIFT: string[] = [
   'entry_revisions.format: nullable is false in the entity but true in the database',
   'entry_revisions.visibility: nullable is false in the entity but true in the database',
   'entry_revisions.created_at: nullable is false in the entity but true in the database',
-  // Bugs to fix › initial schema (`entries.diary_id`)
-  'entries.(diary_id) -> diaries: foreign key missing',
   // Needs Input › May `users.email` become `NOT NULL`?
   'users.email: nullable is false in the entity but true in the database',
 ];

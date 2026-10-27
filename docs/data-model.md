@@ -59,7 +59,7 @@ Every table except `users` references a user, and those foreign keys cascade. Ac
 | Entity | Deletion behavior |
 |---|---|
 | `User` | Deleting an account sets `deleted_at` and removes refresh tokens. Deleted users cannot sign in, and their content leaves the feed, follows, comments, likes, and counts. The account and everything it owns or wrote is erased after the grace period. |
-| `Diary` | The default diary cannot be deleted. Deleting another first moves its entries, including those in the recycle bin, to the default diary, and drops its writing goal with the row. `entries.diary_id` is `ON DELETE SET NULL` as a safety net. |
+| `Diary` | The default diary cannot be deleted. Deleting another first moves its entries, including those in the recycle bin, to the default diary, and drops its writing goal with the row. `entries.diary_id` is `ON DELETE SET NULL` as a safety net (the foreign key `fk_entries_diary`, which migration `1787097600000-entry-diary-foreign-key` added: the initial schema had left the column without one, and entries it found pointing at a missing diary or another writer's moved to their writer's default diary). |
 | `Entry` | Deleting moves it to the [recycle bin](#recycle-bin). Purging it hard-deletes the row, which cascades revisions, attachment rows, AI chat, comments, likes, and the memoir answer. |
 | `EntryRevision`, `AiChatHistory`, `EntryComment`, `EntryLike`, `CommentLike` | Deleted with their entry (or comment). Comments and likes also go with their author. A comment can be removed by its author or the entry owner. |
 | `Attachment` | The row is deleted with its entry or user. Purging an entry and deleting an attachment also remove the stored object. Any other hard delete leaves the object behind. |

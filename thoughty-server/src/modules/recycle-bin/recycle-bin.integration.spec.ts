@@ -122,8 +122,11 @@ describePostgres('PostgreSQL recycle bin', () => {
 
   it('restores into the default diary when the original diary is gone, and drops an import reference that is taken again', async () => {
     const imported = await write('Imported', { importRef: 'dayone:abc' });
-    const orphan = await write('Orphan', { diaryId: 999, date: '2026-10-21' });
+    const gone = await dataSource.getRepository(Diary).save({ userId, name: 'Gone', position: 9 });
+    const orphan = await write('Orphan', { diaryId: gone.id, date: '2026-10-21' });
     await commands.bulkOperation(userId, { ids: [imported.id, orphan.id], action: 'delete' });
+    // Removed without moving its entries first: the foreign key leaves them without a diary
+    await dataSource.getRepository(Diary).delete({ id: gone.id });
 
     // Importing the same export again is allowed while the first copy is in the bin
     await write('Imported again', { importRef: 'dayone:abc', diaryId: defaultDiary.id, date: '2026-10-22' });
