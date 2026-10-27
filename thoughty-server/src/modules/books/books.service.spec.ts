@@ -269,6 +269,17 @@ describe('BooksService', () => {
       expect(result.content).not.toContain('### 2024-01-10');
     });
 
+    it('should give the AI composer the alt text of inline images and embed them where they stand', async () => {
+      mockQueryBuilder.getMany.mockResolvedValue([{ ...mockEntries[0], format: 'markdown', content: 'Pasta ![The bay](attachment:10) in Naples' }]);
+
+      await service.export(1, { format: 'md', chapterMode: 'single' });
+      expect(aiService.composeBookChapter).toHaveBeenCalledWith(1, expect.any(String), [expect.objectContaining({ content: 'Pasta The bay in Naples' })], 'strict');
+
+      const result = await service.export(1, { format: 'html', chapterMode: 'single', narrative: false, embedImages: true });
+      expect(result.content).toContain('Pasta <figure class="entry-image inline-image"><img src="data:image/png;base64,');
+      expect(String(result.content).match(/<img /g)).toHaveLength(1);
+    });
+
     it('should pass the requested creative weaving mode to the AI composer', async () => {
       await service.export(1, { format: 'md', weavingMode: 'creative' });
 

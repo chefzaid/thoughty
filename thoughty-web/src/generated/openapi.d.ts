@@ -3215,7 +3215,7 @@ export interface components {
              *     ]
              */
             feelings?: string[];
-            /** @description Entry content */
+            /** @description Entry content. A Markdown entry places one of its attachments with `![alt text](attachment:<id>)`: a reference stays when the attachment is on this entry, is the writer's and on no entry yet (it then joins the entry), or was already in the saved text; any other becomes its alt text. */
             text: string;
             /** @description Tags for the entry */
             tags: string[];
@@ -3355,7 +3355,7 @@ export interface components {
              *     ]
              */
             feelings?: string[];
-            /** @description Entry content */
+            /** @description Entry content. A Markdown entry places one of its attachments with `![alt text](attachment:<id>)`: a reference stays when the attachment is on this entry, is the writer's and on no entry yet (it then joins the entry), or was already in the saved text; any other becomes its alt text. */
             text: string;
             /** @description Tags for the entry */
             tags: string[];
@@ -5350,7 +5350,7 @@ export interface components {
              * @example 4
              */
             mood?: number;
-            /** @description Entry text as Markdown; may be empty when the entry holds only photos */
+            /** @description Entry text as Markdown; may be empty when the entry holds only photos. An inline photo names the file sent next for this entry as `![alt text](attachment:<URL-encoded file name>)`, and becomes `attachment:<id>` when that file is stored; a reference to an attachment ID becomes its alt text. */
             content: string;
             tags: string[];
             favorite?: boolean;

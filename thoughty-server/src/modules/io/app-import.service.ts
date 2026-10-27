@@ -3,10 +3,11 @@ import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Attachment, Diary, Entry } from '@/database/entities';
-import { normalizeEntryTitle, normalizeMood, normalizeTimeOfDay, sanitizeString } from '@/common/utils';
+import { normalizeEntryTitle, normalizeMood, normalizeTimeOfDay, replaceInlineImages, sanitizeString } from '@/common/utils';
 import { AttachmentsService } from '@/modules/attachments';
 import { DiariesService } from '@/modules/diaries';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
+import { EntryInlineImagesService } from '@/modules/entries/entry-inline-images.service';
 import {
   AppImportDto,
   AppImportEntryDto,
@@ -17,6 +18,14 @@ import {
 
 function journalKey(name: string): string {
   return name.trim().toLowerCase();
+}
+
+/**
+ * An imported entry's inline photos name the files the browser sends next (`attachment:<file name>`)
+ * and become references to them as they are stored; a reference to an attachment ID keeps its alt text.
+ */
+function keepImportedFileReferences(content: string): string {
+  return replaceInlineImages(content, (reference) => (reference.fileName === null ? reference.alt : reference.raw));
 }
 
 function cleanTags(tags: string[]): string[] {
@@ -40,6 +49,7 @@ export class AppImportService {
     private readonly diariesService: DiariesService,
     private readonly attachmentsService: AttachmentsService,
     private readonly entryMentions: EntryMentionsService,
+    private readonly inlineImages: EntryInlineImagesService,
   ) {}
 
   async importEntries(userId: number, dto: AppImportDto): Promise<AppImportResponseDto> {
@@ -76,7 +86,7 @@ export class AppImportService {
         timeOfDay: normalizeTimeOfDay(entry.timeOfDay),
         mood: normalizeMood(entry.mood),
         tags: cleanTags(entry.tags),
-        content: entry.content,
+        content: keepImportedFileReferences(entry.content),
         format: 'markdown',
         visibility: 'private',
         isFavorite: entry.favorite === true,
@@ -145,6 +155,7 @@ export class AppImportService {
         originalFilename: attachment.originalFilename,
       });
     }
+    await this.inlineImages.resolveImportedFiles(userId, attachments);
     return { attachments };
   }
 

@@ -8,5 +8,6 @@ export * from './dto';
 export * from './entry-search.service';
 export { applyEntryListFilters } from './entry-list-filters';
 export * from './entry-mentions.service';
+export * from './entry-inline-images.service';
 export { PEOPLE_LIMIT, PEOPLE_LOCK_NAMESPACE } from './entry-mentions.sync';
 export { EntriesQueryService, ON_THIS_DAY_LIMIT, type OnThisDayEntry, type OnThisDayQuery } from './entries-query.service';

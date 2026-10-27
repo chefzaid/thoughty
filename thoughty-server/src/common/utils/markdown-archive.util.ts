@@ -1,3 +1,5 @@
+import { replaceInlineImages } from './inline-image.util';
+
 export type ArchiveLanguage = 'en' | 'fr';
 
 export interface ArchiveEntry {
@@ -17,6 +19,8 @@ export interface ArchiveEntry {
 }
 
 export interface ArchiveLink {
+  /** The attachment's ID, which inline images of the entry name. */
+  id?: number;
   /** Path relative to the entry's Markdown file. */
   path: string;
   name: string;
@@ -68,7 +72,29 @@ function escapeLinkText(text: string): string {
   return text.replaceAll(/([\\[\]])/g, String.raw`\$1`);
 }
 
-/** One entry as Markdown with YAML front matter, followed by links to its attachments. */
+/**
+ * A Markdown entry's inline images pointing at their files in the archive, and the links the text
+ * does not place. An inline image whose file is not in the archive (deleted, or unreadable) keeps
+ * its alt text.
+ */
+function placeArchiveImages(entry: ArchiveEntry, links: ArchiveLink[]): { content: string; trailing: ArchiveLink[] } {
+  if (entry.format !== 'markdown') {
+    return { content: entry.content, trailing: links };
+  }
+  const byId = new Map(links.filter((link) => link.id !== undefined).map((link) => [link.id as number, link]));
+  const placed = new Set<ArchiveLink>();
+  const content = replaceInlineImages(entry.content, (reference) => {
+    const link = reference.id === null ? undefined : byId.get(reference.id);
+    if (!link) {
+      return reference.alt;
+    }
+    placed.add(link);
+    return `![${reference.alt}](<${link.path}>)`;
+  });
+  return { content, trailing: links.filter((link) => !placed.has(link)) };
+}
+
+/** One entry as Markdown with YAML front matter, followed by links to the attachments its text does not place. */
 export function renderArchiveEntry(entry: ArchiveEntry, diaryName: string | null, links: ArchiveLink[]): string {
   const frontMatter = ['---'];
   if (entry.title) {
@@ -104,13 +130,14 @@ export function renderArchiveEntry(entry: ArchiveEntry, diaryName: string | null
   }
   frontMatter.push('---');
 
-  const attachmentBlocks = links.map((link) => {
+  const { content, trailing } = placeArchiveImages(entry, links);
+  const attachmentBlocks = trailing.map((link) => {
     const markup = `${link.mimetype.startsWith('image/') ? '!' : ''}[${escapeLinkText(link.name)}](<${link.path}>)`;
     const transcript = link.transcript?.trim();
     return transcript ? `${markup}\n\n> ${transcript.replaceAll('\n', '\n> ')}` : markup;
   });
 
-  return `${[frontMatter.join('\n'), entry.content.trim(), ...attachmentBlocks].filter(Boolean).join('\n\n')}\n`;
+  return `${[frontMatter.join('\n'), content.trim(), ...attachmentBlocks].filter(Boolean).join('\n\n')}\n`;
 }
 
 const README_TEXT: Record<ArchiveLanguage, { title: string; summary: (entries: number, diaries: number, date: string) => string; layout: string }> = {

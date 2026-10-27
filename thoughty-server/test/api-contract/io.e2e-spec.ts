@@ -157,7 +157,7 @@ describeContract('io', (context) => {
             favorite: true,
             mood: 4,
           },
-          { sourceId: 'DO-2', date: '2023-01-03', content: 'Thaw', tags: [] },
+          { sourceId: 'DO-2', date: '2023-01-03', content: 'Thaw ![Melt](attachment:snow.png)', tags: [] },
         ],
       },
       status: 200,
@@ -190,12 +190,64 @@ describeContract('io', (context) => {
       status: 200,
     });
     expect((attached.body as { attachments: unknown[] }).attachments).toHaveLength(1);
+    // The inline photo named in the text becomes a reference once its file is stored
+    const thawId = body.entries[1]!.entryId;
+    const thawPhoto = await call('POST /api/io/import/attachments', {
+      as: alice,
+      multipart: { fields: { entryIds: String(thawId) }, files: [photo] },
+      status: 200,
+    });
+    const [stored] = (thawPhoto.body as { attachments: { id: number }[] }).attachments;
+    const thaw = await call('GET /api/entries', {
+      as: alice,
+      query: new URLSearchParams({ page: '1', limit: '10', ids: String(thawId), archiveStatus: 'active' }),
+      status: 200,
+    });
+    expect((thaw.body as { entries: { content: string }[] }).entries[0]!.content).toBe(`Thaw ![Melt](attachment:${stored!.id})`);
     await call('POST /api/io/import/attachments', {
       as: bob,
       multipart: { fields: { entryIds: String(entryId) }, files: [photo] },
       status: 404,
       code: 'ENTRY_NOT_FOUND',
     });
+  });
+
+  it('keeps inline images to the entry’s own attachments and embeds them where they stand', async () => {
+    const { alice, bob } = context;
+    const png = { field: 'file', buffer: PNG_PIXEL, filename: 'pier.png', contentType: 'image/png' };
+    const upload = async (as: typeof alice) =>
+      (await call('POST /api/attachments/upload', { as, multipart: { files: [png] }, status: 201 })).body as { id: number };
+    const mine = await upload(alice);
+    const bobs = await upload(bob);
+    // The composer uploads the picture before the entry exists, as "Insert image" does
+    const entryId = await createEntry(context, alice, {
+      text: `Pier ![The pier](attachment:${mine.id}) ![Theirs](attachment:${bobs.id})`,
+      format: 'markdown',
+      date: '2024-06-01',
+      visibility: 'public',
+    });
+    const listed = await call('GET /api/entries', {
+      as: alice,
+      query: new URLSearchParams({ page: '1', limit: '10', ids: String(entryId), archiveStatus: 'active' }),
+      status: 200,
+    });
+    const [entry] = (listed.body as { entries: { content: string; attachments: { id: number }[] }[] }).entries;
+    expect(entry!.content).toBe(`Pier ![The pier](attachment:${mine.id}) Theirs`);
+    expect(entry!.attachments.map((attachment) => attachment.id)).toEqual([mine.id]);
+
+    const html = await call('GET /api/io/export', {
+      as: alice,
+      query: { format: 'html' },
+      status: 200,
+      contentType: /^text\/html/,
+    });
+    expect(html.text).toContain('Pier <figure class="entry-image inline-image"><img src="data:image/png;base64,');
+    const json = await call('GET /api/io/export', { as: alice, query: { format: 'json' }, status: 200, contentType: /^application\/json/ });
+    expect(json.text).toContain(`![The pier](attachment:${mine.id})`);
+
+    const feed = await call('GET /api/entries/feed', { as: alice, query: { scope: 'mine', page: '1', limit: '10' }, status: 200 });
+    const shared = (feed.body as { entries: { id: number; content: string }[] }).entries.find((item) => item.id === entryId);
+    expect(shared?.content).toBe('Pier The pier Theirs');
   });
 
   it('uploads, serves, links and deletes attachments in object storage, scoped to their owner', async () => {

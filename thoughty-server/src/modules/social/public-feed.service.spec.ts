@@ -52,7 +52,7 @@ describe('PublicFeedService', () => {
         title: 'What I learned',
         timeOfDay: '21:15',
         tags: ['growth'],
-        content: 'A public reflection',
+        content: 'A public reflection ![The pier](attachment:5)',
         format: 'markdown',
         mood: 2,
         feelings: ['lonely'],
@@ -76,7 +76,8 @@ describe('PublicFeedService', () => {
           title: 'What I learned',
           timeOfDay: '21:15',
           tags: ['growth'],
-          content: 'A public reflection',
+          // Attachments stay private: the feed gets the alt text
+          content: 'A public reflection The pier',
           format: 'markdown',
           createdAt,
           commentCount: 4,
@@ -154,7 +155,7 @@ describe('PublicFeedService', () => {
         date: '2026-08-01',
         index: 1,
         tags: [],
-        content: 'Mine',
+        content: 'Mine ![as typed](attachment:5)',
         format: 'plain',
         createdAt: new Date(),
         user: { id: 7, username: 'me', avatarUrl: null },
@@ -165,6 +166,7 @@ describe('PublicFeedService', () => {
     const result = await service.getFeed(7, { scope: 'mine' });
 
     expect(result.entries[0].author.isFollowed).toBe(false);
+    expect(result.entries[0].content).toBe('Mine ![as typed](attachment:5)');
     expect(result.entries[0].commentCount).toBe(0);
     expect(result.entries[0]).toEqual(expect.objectContaining({ likeCount: 0, liked: false }));
     expect(followRepository.find).not.toHaveBeenCalled();

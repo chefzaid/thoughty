@@ -20,7 +20,12 @@ import {
   renderBookEpub,
   FormatConfig,
   ParsedEntry,
+  EMBEDDED_BOOK_IMAGE_TYPES,
+  hydrateBookImages,
+  inlineImageIds,
+  inlineImagesToAltText,
 } from '@/common/utils';
+import { AttachmentsService } from '@/modules/attachments';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { FormatConfigDto, PreviewImportDto, ImportDto, PreviewResponseDto, ImportResponseDto } from './dto';
@@ -54,6 +59,7 @@ export class IoService {
     private readonly userRepository: Repository<User>,
     private readonly entryMentions: EntryMentionsService,
     private readonly timeCapsules: TimeCapsuleService,
+    private readonly attachmentsService: AttachmentsService,
   ) {}
 
   private async getFormatConfig(userId: number): Promise<FormatConfig> {
@@ -193,7 +199,8 @@ export class IoService {
       mood: entry.mood ?? null,
       feelings: entry.feelings ?? [],
       tags: entry.tags,
-      content: entry.content,
+      // A file carries no attachments, so an inline image it names keeps only its alt text
+      content: entry.format === 'markdown' ? inlineImagesToAltText(entry.content) : entry.content,
       format: entry.format || 'plain',
       visibility: entry.visibility || defaultVisibility,
       diaryId,
@@ -237,6 +244,14 @@ export class IoService {
       title: diary?.name ?? 'My Journal',
       author: user?.username,
     });
+    // Documents show attachments only where the text places them, within the books' image budgets
+    for (const chapter of document.chapters) {
+      for (const entry of chapter.entries) {
+        const placed = new Set(entry.format === 'markdown' ? inlineImageIds(entry.content) : []);
+        entry.images = entry.images?.filter((image) => placed.has(image.id));
+      }
+    }
+    await hydrateBookImages(document, (storedFilename, maxBytes) => this.attachmentsService.getFileBuffer(storedFilename, maxBytes));
 
     switch (format) {
       case 'html':
@@ -273,6 +288,11 @@ export class IoService {
 
     if (diaryId) {
       qb.andWhere('e.diary_id = :diaryId', { diaryId });
+    }
+    if (isDocumentFormat(format)) {
+      qb.leftJoinAndSelect('e.attachments', 'documentImage', 'documentImage.mimetype IN (:...imageTypes)', {
+        imageTypes: EMBEDDED_BOOK_IMAGE_TYPES,
+      });
     }
 
     // Data files keep sealed time capsules as written, marked sealed, so the export is complete; the PDF,

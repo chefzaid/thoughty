@@ -8,6 +8,7 @@ import { ConfigService } from '@/modules/config';
 import { CreateEntryDto, UpdateEntryDto, BulkOperationDto } from './dto';
 import { EntryTaggingService } from './entry-tagging.service';
 import { EntryMentionsService } from './entry-mentions.service';
+import { EntryInlineImagesService } from './entry-inline-images.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
 
@@ -58,6 +59,7 @@ export class EntriesCommandService {
     private readonly configService: ConfigService,
     private readonly entryMentions: EntryMentionsService,
     private readonly timeCapsules: TimeCapsuleService,
+    private readonly inlineImages: EntryInlineImagesService,
   ) {}
 
   private sanitizeTagName(tag?: string | null): string {
@@ -73,6 +75,8 @@ export class EntriesCommandService {
       where: { userId, date: dateStr },
     });
     const nextIndex = countResult + 1;
+    const format = dto.format || 'plain';
+    const { content, placed } = await this.inlineImages.check(userId, { content: dto.text, format });
 
     // A new entry is numbered after the day's entries whatever its time, so existing links keep their targets
     const written = {
@@ -84,14 +88,15 @@ export class EntriesCommandService {
       mood: normalizeMood(dto.mood),
       feelings: normalizeFeelings(dto.feelings),
       tags: resolvedTags,
-      content: dto.text,
-      format: dto.format || 'plain',
+      content,
+      format,
       visibility: dto.visibility || 'private',
       diaryId: targetDiaryId,
     };
     const entry = dto.seal
       ? await this.timeCapsules.createSealed(userId, written, dto.seal)
       : await this.entryMentions.save(userId, written);
+    await this.inlineImages.attachPlaced(userId, entry.id, placed);
 
     return { success: true, entryId: entry.id };
   }
@@ -137,7 +142,14 @@ export class EntriesCommandService {
       newIndex = countResult + 1;
     }
 
-    entry.content = dto.text;
+    const format = dto.format || entry.format;
+    const { content, placed } = await this.inlineImages.check(userId, {
+      content: dto.text,
+      format,
+      entryId: entry.id,
+      previousContent: entry.content,
+    });
+    entry.content = content;
     if (dto.title !== undefined) {
       entry.title = normalizeEntryTitle(dto.title);
     }
@@ -152,22 +164,15 @@ export class EntriesCommandService {
     }
     entry.tags = resolvedTags;
     entry.date = dto.date;
-    entry.format = dto.format || entry.format;
+    entry.format = format;
     entry.visibility = dto.visibility || 'private';
     entry.index = newIndex;
 
     const updated = await this.entryMentions.save(userId, entry);
+    await this.inlineImages.attachPlaced(userId, entry.id, placed);
 
     if (oldDate !== dto.date) {
-      const remainingEntries = await this.entryRepository.find({
-        where: { userId, date: oldDate },
-        order: { index: 'ASC' },
-      });
-
-      for (let index = 0; index < remainingEntries.length; index++) {
-        remainingEntries[index].index = index + 1;
-        await this.entryRepository.save(remainingEntries[index]);
-      }
+      await this.renumberDay(userId, oldDate);
     }
 
     return { success: true, entry: updated };
@@ -256,19 +261,8 @@ export class EntriesCommandService {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
 
-    const entryDate = entry.date;
     await this.entryRepository.softDelete({ id, userId });
-
-    const remainingEntries = await this.entryRepository.find({
-      where: { userId, date: entryDate },
-      order: { index: 'ASC' },
-    });
-
-    for (let index = 0; index < remainingEntries.length; index++) {
-      remainingEntries[index].index = index + 1;
-      await this.entryRepository.save(remainingEntries[index]);
-    }
-
+    await this.renumberDay(userId, entry.date);
     return { success: true };
   }
 
@@ -408,14 +402,7 @@ export class EntriesCommandService {
     await this.entryRepository.softDelete({ id: In(validIds), userId });
 
     for (const date of affectedDates) {
-      const remaining = await this.entryRepository.find({
-        where: { userId, date },
-        order: { index: 'ASC' },
-      });
-      for (let index = 0; index < remaining.length; index++) {
-        remaining[index].index = index + 1;
-        await this.entryRepository.save(remaining[index]);
-      }
+      await this.renumberDay(userId, date);
     }
 
     return { success: true, affectedCount: validIds.length };
@@ -483,7 +470,16 @@ export class EntriesCommandService {
     return { success: true, affectedCount: validIds.length };
   }
 
-  private async getMaxPinnedEntries(userId: number): Promise<number> {
+  /** Numbers the day's entries 1, 2, 3… again, closing the gap a moved or deleted entry left. */
+  private async renumberDay(userId: number, date: string): Promise<void> {
+    const remaining = await this.entryRepository.find({ where: { userId, date }, order: { index: 'ASC' } });
+    for (let index = 0; index < remaining.length; index++) {
+      remaining[index].index = index + 1;
+      await this.entryRepository.save(remaining[index]);
+    }
+  }
+
+    private async getMaxPinnedEntries(userId: number): Promise<number> {
     const config = await this.configService.getConfig(userId);
     return resolveMaxPinnedEntries(config.maxPinnedEntries);
   }

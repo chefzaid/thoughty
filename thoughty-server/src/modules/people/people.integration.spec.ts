@@ -8,7 +8,7 @@ import {
   type PostgresTestDatabase,
 } from '@/database/postgres-test-database.test-helpers';
 import { Attachment, BookVersion, Diary, Entry, EntryRevision, Person, SavedSearch, Setting, User } from '@/database/entities';
-import { EntryListCacheService, EntryMentionsService, EntrySearchService } from '@/modules/entries';
+import { EntryInlineImagesService, EntryListCacheService, EntryMentionsService, EntrySearchService } from '@/modules/entries';
 import { EntriesCommandService } from '@/modules/entries/entries-command.service';
 import { EntriesQueryService } from '@/modules/entries/entries-query.service';
 import { EntryCalendarService } from '@/modules/entries/entry-calendar.service';
@@ -58,6 +58,7 @@ describePostgres('PostgreSQL people', () => {
       configService as never,
       mentions,
       timeCapsuleServiceOn(dataSource),
+      new EntryInlineImagesService(dataSource.getRepository(Attachment), entries),
     );
     const search = new EntrySearchService(entries);
     queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource));
@@ -70,7 +71,7 @@ describePostgres('PostgreSQL people', () => {
       configService as never,
       cache,
     );
-    io = new IoService(entries, dataSource.getRepository(Setting), dataSource.getRepository(Diary), dataSource.getRepository(User), mentions, timeCapsuleServiceOn(dataSource));
+    io = new IoService(entries, dataSource.getRepository(Setting), dataSource.getRepository(Diary), dataSource.getRepository(User), mentions, timeCapsuleServiceOn(dataSource), { getFileBuffer: jest.fn() } as never);
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     people = new PeopleService(dataSource.getRepository(Person), cache);
   }, POSTGRES_SETUP_TIMEOUT_MS);

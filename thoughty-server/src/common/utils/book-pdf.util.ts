@@ -6,6 +6,8 @@ import {
   stripMarkdown,
 } from './book-converter.util';
 import { BOOK_COVER_PALETTES } from './book-cover-style.util';
+import type { EmbeddedBookImage } from './book-image.util';
+import { inlineImageCaption, layoutBookEntry } from './book-inline-image.util';
 
 const PAGE_MARGIN = 72;
 const TITLE_FONT_SIZE = 28;
@@ -122,45 +124,62 @@ function renderChapterBody(
       doc.font('Helvetica-Bold').fontSize(ENTRY_TITLE_FONT_SIZE).fillColor('#000000').text(entry.title);
       doc.moveDown(0.3);
     }
-    const content = entry.format === 'markdown' ? stripMarkdown(entry.content) : entry.content;
-    doc.font('Helvetica').fontSize(BODY_FONT_SIZE).fillColor('#000000').text(content, {
-      align: 'justify',
-      lineGap: 2,
-    });
+    const { segments, trailing } = layoutBookEntry(entry);
+    for (const segment of segments) {
+      // An inline image the PDF cannot draw (GIF, WebP) leaves its alt text, like one it has no data for
+      if (segment.type === 'image' && drawEntryImage(doc, segment.image, inlineImageCaption(segment))) {
+        continue;
+      }
+      const raw = segment.type === 'text' ? segment.text : segment.alt;
+      const text = entry.format === 'markdown' ? stripMarkdown(raw) : raw;
+      if (text.trim()) {
+        doc.font('Helvetica').fontSize(BODY_FONT_SIZE).fillColor('#000000').text(text.replace(/^\n+|\s+$/g, ''), {
+          align: 'justify',
+          lineGap: 2,
+        });
+      }
+    }
     doc.moveDown(1.2);
-    renderEntryImages(doc, entry);
+    renderEntryImages(doc, entry, trailing);
   }
 }
 
-function renderEntryImages(doc: PDFKit.PDFDocument, entry: Book['chapters'][number]['entries'][number]): void {
-  for (const image of entry.images ?? []) {
-    if (!image.data || (image.mimeType !== 'image/jpeg' && image.mimeType !== 'image/png')) {
-      continue;
-    }
-
-    if (doc.y + ENTRY_IMAGE_HEIGHT > doc.page.height - doc.page.margins.bottom) {
-      doc.addPage();
-    }
-    const imageY = doc.y;
-    try {
-      doc.image(image.data, doc.page.margins.left, imageY, {
-        fit: [
-          doc.page.width - doc.page.margins.left - doc.page.margins.right,
-          ENTRY_IMAGE_HEIGHT - 30,
-        ],
-        align: 'center',
-        valign: 'center',
-      });
-    } catch {
-      continue;
-    }
-    doc.y = imageY + ENTRY_IMAGE_HEIGHT - 22;
-    doc.font('Helvetica-Oblique').fontSize(DATE_FONT_SIZE).fillColor('#666666').text(
-      `${entry.date} - ${image.name}`,
-      { align: 'center' },
-    );
-    doc.fillColor('#000000').moveDown(1);
+function renderEntryImages(
+  doc: PDFKit.PDFDocument,
+  entry: Book['chapters'][number]['entries'][number],
+  images: EmbeddedBookImage[] = entry.images ?? [],
+): void {
+  for (const image of images) {
+    drawEntryImage(doc, image, `${entry.date} - ${image.name}`);
   }
+}
+
+/** Draws a JPEG or PNG with its caption below, on a new page when it does not fit; false when it cannot. */
+function drawEntryImage(doc: PDFKit.PDFDocument, image: EmbeddedBookImage, caption: string): boolean {
+  if (!image.data || (image.mimeType !== 'image/jpeg' && image.mimeType !== 'image/png')) {
+    return false;
+  }
+
+  if (doc.y + ENTRY_IMAGE_HEIGHT > doc.page.height - doc.page.margins.bottom) {
+    doc.addPage();
+  }
+  const imageY = doc.y;
+  try {
+    doc.image(image.data, doc.page.margins.left, imageY, {
+      fit: [
+        doc.page.width - doc.page.margins.left - doc.page.margins.right,
+        ENTRY_IMAGE_HEIGHT - 30,
+      ],
+      align: 'center',
+      valign: 'center',
+    });
+  } catch {
+    return false;
+  }
+  doc.y = imageY + ENTRY_IMAGE_HEIGHT - 22;
+  doc.font('Helvetica-Oblique').fontSize(DATE_FONT_SIZE).fillColor('#666666').text(caption, { align: 'center' });
+  doc.fillColor('#000000').moveDown(1);
+  return true;
 }
 
 function renderChapterFraming(doc: PDFKit.PDFDocument, heading: string, content: string): void {

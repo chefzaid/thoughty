@@ -5,6 +5,7 @@ import { Attachment, Diary, Entry } from '@/database/entities';
 import { AttachmentsService } from '@/modules/attachments';
 import { DiariesService } from '@/modules/diaries';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
+import { EntryInlineImagesService } from '@/modules/entries/entry-inline-images.service';
 import { AppImportService } from './app-import.service';
 import type { AppImportDto, AppImportEntryDto } from './dto';
 
@@ -21,6 +22,7 @@ describe('AppImportService', () => {
   let attachmentRepository: { find: jest.Mock };
   let diariesService: { create: jest.Mock };
   let attachmentsService: { assertUploadable: jest.Mock; upload: jest.Mock };
+  let inlineImages: { resolveImportedFiles: jest.Mock };
   let dayCounts: Array<{ date: string; count: string }>;
   let nextId: number;
 
@@ -62,6 +64,7 @@ describe('AppImportService', () => {
     attachmentRepository = { find: jest.fn().mockResolvedValue([]) };
     diariesService = { create: jest.fn() };
     attachmentsService = { assertUploadable: jest.fn(), upload: jest.fn() };
+    inlineImages = { resolveImportedFiles: jest.fn().mockResolvedValue(undefined) };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -72,6 +75,7 @@ describe('AppImportService', () => {
         { provide: DiariesService, useValue: diariesService },
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: EntryMentionsService, useValue: { save: (_userId: number, value: unknown) => entryRepository.save(value) } },
+        { provide: EntryInlineImagesService, useValue: inlineImages },
       ],
     }).compile();
     service = moduleRef.get(AppImportService);
@@ -107,6 +111,13 @@ describe('AppImportService', () => {
         alreadyImportedCount: 0,
         createdDiaries: [],
       });
+    });
+
+    it('keeps the inline photos that name files still to come and turns attachment IDs into their alt text', async () => {
+      await service.importEntries(7, batch([entry({ content: 'Sea ![Pier](attachment:abc.jpeg) ![Other](attachment:4)' })]));
+
+      const [rows] = entryRepository.save.mock.calls[0];
+      expect(rows[0].content).toBe('Sea ![Pier](attachment:abc.jpeg) Other');
     });
 
     it('keeps the title and time of day the source app gave each entry', async () => {
@@ -269,6 +280,7 @@ describe('AppImportService', () => {
         { id: 120, entryId: 12, originalFilename: 'b.jpg' },
         { id: 130, entryId: 13, originalFilename: 'c.jpg' },
       ]);
+      expect(inlineImages.resolveImportedFiles).toHaveBeenCalledWith(7, result.attachments);
     });
 
     it('needs one entry ID per file', async () => {

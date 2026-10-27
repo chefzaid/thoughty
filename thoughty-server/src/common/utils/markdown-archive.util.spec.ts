@@ -79,6 +79,24 @@ describe('renderArchiveEntry', () => {
     );
   });
 
+  it('points inline images at their files in the archive and lists only the files the text does not place', () => {
+    const placed: ArchiveEntry = { ...entry, content: 'Pier ![The pier](attachment:5) and ![Gone](attachment:9)' };
+    const markdown = renderArchiveEntry(placed, null, [
+      { id: 5, path: 'attachments/2024-03-05-pier one.png', name: 'pier one.png', mimetype: 'image/png' },
+      { id: 6, path: 'attachments/2024-03-05-note.pdf', name: 'note.pdf', mimetype: 'application/pdf' },
+    ]);
+
+    expect(markdown).toContain('Pier ![The pier](<attachments/2024-03-05-pier one.png>) and Gone\n\n[note.pdf](<attachments/2024-03-05-note.pdf>)\n');
+    expect(markdown).not.toContain('attachment:');
+  });
+
+  it('leaves plain-text entries and their attachment list as they are', () => {
+    const plain: ArchiveEntry = { ...entry, format: 'plain', content: 'Raw ![x](attachment:5)' };
+    const markdown = renderArchiveEntry(plain, null, [{ id: 5, path: 'attachments/a.png', name: 'a.png', mimetype: 'image/png' }]);
+
+    expect(markdown).toContain('Raw ![x](attachment:5)\n\n![a.png](<attachments/a.png>)\n');
+  });
+
   it('puts the title first and the quoted time after the date', () => {
     const markdown = renderArchiveEntry({ ...entry, title: 'Sea "day"', timeOfDay: '08:30' }, null, []);
 

@@ -11,8 +11,8 @@ import {
   renderBookHtml,
   renderBookPdf,
   renderBookEpub,
-  type EmbeddedBookImage,
-  isSafeEmbeddedBookImage,
+  hydrateBookImages,
+  inlineImagesToAltText,
 } from '@/common/utils';
 import { BookQueryDto, BookPreviewResponseDto } from './dto';
 import type { BookVersionManifest, BookVersionSource } from '@/database/entities';
@@ -41,9 +41,6 @@ interface SourcedBook {
 }
 
 const DEFAULT_BOOK_TITLE = 'My Book of Thoughts';
-const MAX_EMBEDDED_IMAGE_SIZE = 5 * 1024 * 1024;
-const MAX_EMBEDDED_IMAGES_TOTAL = 25 * 1024 * 1024;
-const IMAGE_FETCH_BATCH_SIZE = 4;
 
 @Injectable()
 export class BooksService {
@@ -134,7 +131,7 @@ export class BooksService {
       chapter.narrative = await this.aiBookComposer.composeBookChapter(
         userId,
         chapter.title,
-        chapter.entries.map((entry) => ({ date: entry.date, content: entry.content })),
+        chapter.entries.map((entry) => ({ date: entry.date, content: inlineImagesToAltText(entry.content) })),
         mode,
       );
     }
@@ -149,60 +146,10 @@ export class BooksService {
       const framing = await this.aiBookComposer.composeChapterFraming(
         userId,
         chapter.title,
-        chapter.entries.map((entry) => ({ date: entry.date, content: entry.content })),
+        chapter.entries.map((entry) => ({ date: entry.date, content: inlineImagesToAltText(entry.content) })),
       );
       chapter.introduction = framing.introduction;
       chapter.summary = framing.summary;
-    }
-  }
-
-  private async hydrateBookImages(book: Book): Promise<void> {
-    const uniqueImages = collectUniqueBookImages(book);
-
-    const candidates: EmbeddedBookImage[] = [];
-    let reservedBytes = 0;
-    for (const image of uniqueImages.values()) {
-      if (
-        image.size <= 0 ||
-        image.size > MAX_EMBEDDED_IMAGE_SIZE ||
-        reservedBytes + image.size > MAX_EMBEDDED_IMAGES_TOTAL
-      ) {
-        continue;
-      }
-      candidates.push(image);
-      reservedBytes += image.size;
-    }
-
-    const dataById = new Map<number, Buffer>();
-    let embeddedBytes = 0;
-    for (let index = 0; index < candidates.length; index += IMAGE_FETCH_BATCH_SIZE) {
-      const batch = candidates.slice(index, index + IMAGE_FETCH_BATCH_SIZE);
-      const results = await Promise.allSettled(
-        batch.map((image) =>
-          this.attachmentsService.getFileBuffer(image.storedFilename, MAX_EMBEDDED_IMAGE_SIZE),
-        ),
-      );
-      results.forEach((result, resultIndex) => {
-        const image = batch[resultIndex];
-        if (
-          result.status === 'fulfilled' &&
-          isSafeEmbeddedBookImage(image, result.value) &&
-          embeddedBytes + result.value.length <= MAX_EMBEDDED_IMAGES_TOTAL
-        ) {
-          dataById.set(image.id, result.value);
-          embeddedBytes += result.value.length;
-        } else if (result.status === 'rejected') {
-          this.logger.warn(`Skipping unavailable book image attachment ${image.id}`);
-        }
-      });
-    }
-
-    for (const chapter of book.chapters) {
-      for (const entry of chapter.entries) {
-        for (const image of entry.images ?? []) {
-          image.data = dataById.get(image.id);
-        }
-      }
     }
   }
 
@@ -220,7 +167,7 @@ export class BooksService {
       await this.composeChapterFraming(userId, book);
     }
     if (query.embedImages === true) {
-      await this.hydrateBookImages(book);
+      await hydrateBookImages(book, (storedFilename, maxBytes) => this.attachmentsService.getFileBuffer(storedFilename, maxBytes), this.logger);
     }
     const format: BookFormat = query.format || 'pdf';
     const renderOptions = {
@@ -282,16 +229,4 @@ export class BooksService {
       source,
     };
   }
-}
-
-function collectUniqueBookImages(book: Book): Map<number, EmbeddedBookImage> {
-    const uniqueImages = new Map<number, EmbeddedBookImage>();
-    for (const chapter of book.chapters) {
-      for (const entry of chapter.entries) {
-        for (const image of entry.images ?? []) {
-          uniqueImages.set(image.id, image);
-        }
-      }
-    }
-    return uniqueImages;
 }

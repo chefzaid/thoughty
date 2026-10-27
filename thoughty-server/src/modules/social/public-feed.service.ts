@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Entry, EntryComment, UserFollow } from '@/database/entities';
+import { inlineImagesToAltText } from '@/common/utils';
 import type { GetPublicFeedQueryDto, PublicFeedResponseDto } from './dto';
 import { LikesService } from './likes.service';
 import { applyPublicFeedVisibility } from './public-feed-visibility';
@@ -77,7 +78,8 @@ export class PublicFeedService {
         title: entry.title ?? null,
         timeOfDay: entry.timeOfDay ?? null,
         tags: entry.tags,
-        content: entry.content,
+        // Attachments are private: an inline image reaches the feed as its alt text
+        content: entry.format === 'markdown' ? inlineImagesToAltText(entry.content) : entry.content,
         format: entry.format,
         createdAt: entry.createdAt,
         commentCount: commentCounts.get(entry.id) ?? 0,

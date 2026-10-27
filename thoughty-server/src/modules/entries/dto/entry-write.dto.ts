@@ -62,8 +62,13 @@ class EntryDetailsDto {
   feelings?: string[];
 }
 
+const ENTRY_TEXT_DESCRIPTION =
+  'Entry content. A Markdown entry places one of its attachments with `![alt text](attachment:<id>)`: a ' +
+  'reference stays when the attachment is on this entry, is the writer\'s and on no entry yet (it then joins ' +
+  'the entry), or was already in the saved text; any other becomes its alt text.';
+
 export class CreateEntryDto extends EntryDetailsDto {
-  @ApiProperty({ description: 'Entry content' })
+  @ApiProperty({ description: ENTRY_TEXT_DESCRIPTION })
   @IsString()
   @MaxLength(50000, { message: 'Content exceeds maximum length of 50000 characters' })
   text: string;
@@ -109,7 +114,7 @@ export class CreateEntryDto extends EntryDetailsDto {
 }
 
 export class UpdateEntryDto extends EntryDetailsDto {
-  @ApiProperty({ description: 'Entry content' })
+  @ApiProperty({ description: ENTRY_TEXT_DESCRIPTION })
   @IsString()
   @MaxLength(50000)
   text: string;

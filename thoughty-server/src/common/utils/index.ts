@@ -15,3 +15,5 @@ export * from './entry-task-list.util';
 export * from './plain-excerpt.util';
 export * from './entry-mentions.util';
 export * from './time-zone.util';
+export * from './inline-image.util';
+export * from './book-inline-image.util';

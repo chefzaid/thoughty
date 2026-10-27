@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Entry, EntryRevision, Diary } from '@/database/entities';
+import { Attachment, Entry, EntryRevision, Diary } from '@/database/entities';
 import { AiModule } from '@/modules/ai';
 import { UserConfigModule } from '@/modules/config';
 import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module';
@@ -15,9 +15,10 @@ import { EntryCalendarService } from './entry-calendar.service';
 import { EntryTaggingService } from './entry-tagging.service';
 import { EntryTaskListService } from './entry-task-list.service';
 import { EntryMentionsService } from './entry-mentions.service';
+import { EntryInlineImagesService } from './entry-inline-images.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary]), UserConfigModule, AiModule, TimeCapsulesModule],
+  imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary, Attachment]), UserConfigModule, AiModule, TimeCapsulesModule],
   controllers: [EntriesController],
   providers: [
     EntriesService,
@@ -30,7 +31,8 @@ import { EntryMentionsService } from './entry-mentions.service';
     EntryTaggingService,
     EntryTaskListService,
     EntryMentionsService,
+    EntryInlineImagesService,
   ],
-  exports: [EntriesService, EntriesQueryService, EntryListCacheService, EntrySearchService, EntryMentionsService],
+  exports: [EntriesService, EntriesQueryService, EntryListCacheService, EntrySearchService, EntryMentionsService, EntryInlineImagesService],
 })
 export class EntriesModule {}

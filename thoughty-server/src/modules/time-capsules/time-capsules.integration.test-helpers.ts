@@ -7,6 +7,7 @@ import { EntryCalendarService } from '@/modules/entries/entry-calendar.service';
 import { EntryListCacheService } from '@/modules/entries/entry-list-cache.service';
 import { EntryLookupService } from '@/modules/entries/entry-lookup.service';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
+import { EntryInlineImagesService } from '@/modules/entries/entry-inline-images.service';
 import { EntrySearchService } from '@/modules/entries/entry-search.service';
 import { EntryTaskListService } from '@/modules/entries/entry-task-list.service';
 import { PeopleService } from '@/modules/people/people.service';
@@ -34,6 +35,7 @@ export function buildTimeCapsuleBed(dataSource: DataSource) {
     configService as never,
     new EntryMentionsService(entries),
     timeCapsules,
+    new EntryInlineImagesService(dataSource.getRepository(Attachment), entries),
   );
   const queries = new EntriesQueryService(entries, revisions, search, timeCapsules);
   const journal = new EntriesService(

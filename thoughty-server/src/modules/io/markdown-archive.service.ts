@@ -124,6 +124,7 @@ export class MarkdownArchiveService {
         const attachmentPath = paths.allocate(`${yearFolder}/attachments/${date}-${safeArchiveName(stem, 'file')}`, extension);
         await zip.addFile(attachmentPath, data, { compress: false });
         links.push({
+          id: attachment.id,
           path: attachmentPath.slice(yearFolder.length + 1),
           name: attachment.originalFilename,
           mimetype: attachment.mimetype,

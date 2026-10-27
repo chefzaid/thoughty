@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { IoService } from './io.service';
+import { AttachmentsService } from '@/modules/attachments';
 import { Entry, Setting, Diary, User } from '@/database/entities';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
 import { noTimeCapsules } from '@/modules/time-capsules/time-capsules.test-helpers';
@@ -35,6 +36,7 @@ export async function createIoServiceTestBed() {
     andWhere: jest.fn().mockReturnThis(),
     orderBy: jest.fn().mockReturnThis(),
     addOrderBy: jest.fn().mockReturnThis(),
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
     getMany: jest.fn().mockResolvedValue([mockEntry]),
   };
 
@@ -60,6 +62,10 @@ export async function createIoServiceTestBed() {
     findOne: jest.fn().mockResolvedValue({ id: 1, username: 'jane' }),
   };
 
+  const attachmentsService = {
+    getFileBuffer: jest.fn(),
+  };
+
   const module: TestingModule = await Test.createTestingModule({
     providers: [
       IoService,
@@ -70,6 +76,7 @@ export async function createIoServiceTestBed() {
       // Saving with mentions saves through the entry repository, so specs read what was saved there
       { provide: EntryMentionsService, useValue: { save: (_userId: number, value: unknown) => entryRepository.save(value) } },
       noTimeCapsules(),
+      { provide: AttachmentsService, useValue: attachmentsService },
     ],
   }).compile();
 
@@ -80,5 +87,6 @@ export async function createIoServiceTestBed() {
     settingRepository,
     diaryRepository,
     userRepository,
+    attachmentsService,
   };
 }

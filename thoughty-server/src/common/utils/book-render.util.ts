@@ -1,5 +1,6 @@
 import { BOOK_COVER_PALETTES } from './book-cover-style.util';
-import { bookImageDataUri, escapeBookImageMarkdownText } from './book-image.util';
+import { bookImageDataUri, escapeBookImageMarkdownText, type EmbeddedBookImage } from './book-image.util';
+import { bookEntryMarkdown, inlineImageCaption, layoutBookEntry } from './book-inline-image.util';
 import { escapeHtml } from './sanitize.util';
 import {
   type Book,
@@ -53,8 +54,8 @@ export function renderBookMarkdown(book: Book, options: RenderBookOptions = {}):
   return lines.join('\n');
 }
 
-function renderMarkdownEntryImages(lines: string[], entry: BookEntry): void {
-  for (const image of entry.images ?? []) {
+function renderMarkdownEntryImages(lines: string[], entry: BookEntry, images: EmbeddedBookImage[] = entry.images ?? []): void {
+  for (const image of images) {
     const source = bookImageDataUri(image);
     if (source) {
       const name = escapeBookImageMarkdownText(image.name);
@@ -99,6 +100,7 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     '.entry-image{margin:1.2em 0;text-align:center}',
     '.entry-image img{display:block;max-width:100%;max-height:34em;margin:0 auto;object-fit:contain}',
     '.entry-image figcaption{color:#666;font-size:0.8em;margin-top:0.4em}',
+    '.inline-image{white-space:normal}',
     '</style>',
     '</head>',
     '<body>',
@@ -131,8 +133,8 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
   return parts.join('\n');
 }
 
-function renderHtmlEntryImages(parts: string[], entry: BookEntry): void {
-  for (const image of entry.images ?? []) {
+function renderHtmlEntryImages(parts: string[], entry: BookEntry, images: EmbeddedBookImage[] = entry.images ?? []): void {
+  for (const image of images) {
     const source = bookImageDataUri(image);
     if (source) {
       parts.push(
@@ -161,8 +163,9 @@ function renderMarkdownChapter(lines: string[], chapter: BookChapter, index: num
       if (heading) {
         lines.push(`### ${heading}`, '');
       }
-      lines.push(entry.content, '');
-      renderMarkdownEntryImages(lines, entry);
+      const { content, trailing } = bookEntryMarkdown(entry);
+      lines.push(content, '');
+      renderMarkdownEntryImages(lines, entry, trailing);
     }
   }
   if (chapter.summary) {
@@ -198,8 +201,12 @@ function renderHtmlChapter(parts: string[], chapter: BookChapter, index: number,
       if (entry.title) {
         parts.push(`<h3 class="entry-title">${escapeHtml(entry.title)}</h3>`);
       }
-      parts.push(`<div class="entry-content">${escapeHtml(entry.content)}</div>`, '</article>');
-      renderHtmlEntryImages(parts, entry);
+      const { segments, trailing } = layoutBookEntry(entry);
+      const content = segments.map((segment) => (segment.type === 'text'
+        ? escapeHtml(segment.text)
+        : `<figure class="entry-image inline-image"><img src="${bookImageDataUri(segment.image)}" alt="${escapeHtml(segment.alt)}"><figcaption>${escapeHtml(inlineImageCaption(segment))}</figcaption></figure>`));
+      parts.push(`<div class="entry-content">${content.join('')}</div>`, '</article>');
+      renderHtmlEntryImages(parts, entry, trailing);
     }
   }
   if (chapter.summary) {

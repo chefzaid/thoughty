@@ -10,6 +10,7 @@ export interface EntriesCommandTestBed {
   configService: Record<string, jest.Mock>;
   entryMentions: Record<string, jest.Mock>;
   timeCapsules: Record<string, jest.Mock>;
+  inlineImages: Record<string, jest.Mock>;
 }
 
 /**
@@ -55,6 +56,12 @@ export function createEntriesCommandTestBed(): EntriesCommandTestBed {
     createSealed: jest.fn(async (_userId: number, written: object) => ({ id: 99, ...written })),
   };
 
+  // Inline images keep the text as written unless a spec says otherwise
+  const inlineImages = {
+    check: jest.fn(async (_userId: number, draft: { content: string }) => ({ content: draft.content, placed: [] })),
+    attachPlaced: jest.fn().mockResolvedValue(undefined),
+  };
+
   const service = new EntriesCommandService(
     entryRepository as never,
     revisionRepository as never,
@@ -63,7 +70,8 @@ export function createEntriesCommandTestBed(): EntriesCommandTestBed {
     configService as never,
     entryMentions as never,
     timeCapsules as never,
+    inlineImages as never,
   );
 
-  return { service, entryRepository, revisionRepository, diaryRepository, entryTaggingService, configService, entryMentions, timeCapsules };
+  return { service, entryRepository, revisionRepository, diaryRepository, entryTaggingService, configService, entryMentions, timeCapsules, inlineImages };
 }

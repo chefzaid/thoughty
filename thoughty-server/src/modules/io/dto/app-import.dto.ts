@@ -57,7 +57,12 @@ export class AppImportEntryDto {
   @Max(MAX_MOOD)
   mood?: number;
 
-  @ApiProperty({ description: 'Entry text as Markdown; may be empty when the entry holds only photos' })
+  @ApiProperty({
+    description:
+      'Entry text as Markdown; may be empty when the entry holds only photos. An inline photo names the file sent ' +
+      'next for this entry as `![alt text](attachment:<URL-encoded file name>)`, and becomes `attachment:<id>` ' +
+      'when that file is stored; a reference to an attachment ID becomes its alt text.',
+  })
   @IsString()
   @MaxLength(50000)
   content: string;

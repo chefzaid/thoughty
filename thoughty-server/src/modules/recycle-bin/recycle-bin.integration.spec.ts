@@ -12,6 +12,7 @@ import { EntriesCommandService } from '@/modules/entries/entries-command.service
 import { EntriesQueryService } from '@/modules/entries/entries-query.service';
 import { EntrySearchService } from '@/modules/entries/entry-search.service';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
+import { EntryInlineImagesService } from '@/modules/entries/entry-inline-images.service';
 import { RecycleBinService } from './recycle-bin.service';
 import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 
@@ -59,6 +60,7 @@ describePostgres('PostgreSQL recycle bin', () => {
       configService as never,
       new EntryMentionsService(entries),
       timeCapsuleServiceOn(dataSource),
+      new EntryInlineImagesService(attachments, entries),
     );
     queries = new EntriesQueryService(entries, revisions, new EntrySearchService(entries), timeCapsuleServiceOn(dataSource));
     removeStoredFiles = jest.fn().mockResolvedValue(undefined);
