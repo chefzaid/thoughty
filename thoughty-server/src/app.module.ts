@@ -33,7 +33,7 @@ import {
   ApiErrorCodeFilter,
   DatabaseInputExceptionFilter,
   JsonLogger,
-  RequestLoggingMiddleware,
+  applyRequestLogging,
 } from './common';
 
 @Module({
@@ -106,6 +106,6 @@ import {
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
-    consumer.apply(RequestLoggingMiddleware).forRoutes('*');
+    applyRequestLogging(consumer);
   }
 }

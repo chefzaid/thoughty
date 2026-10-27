@@ -1,4 +1,4 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Injectable, MiddlewareConsumer, NestMiddleware } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { NextFunction, Request, Response } from 'express';
 import { FeatureTelemetryService, HttpMetricsService } from '../metrics';
@@ -77,4 +77,13 @@ export class RequestLoggingMiddleware implements NestMiddleware {
 
     next();
   }
+}
+
+/**
+ * Logs every request under the global `/api` prefix, unknown routes included. The path is the named
+ * wildcard of Nest 11 (path-to-regexp v8): a bare `'*'` matches the same requests but makes Nest warn
+ * `Unsupported route path` at every start while it converts it.
+ */
+export function applyRequestLogging(consumer: MiddlewareConsumer): void {
+  consumer.apply(RequestLoggingMiddleware).forRoutes('{*splat}');
 }

@@ -70,6 +70,8 @@ export interface ContractApi {
   dataSource: DataSource;
   storage: FakeObjectStorage;
   logger: CapturedJsonLogger;
+  /** The warnings and errors logged while the API booted, before any request. */
+  bootLog: string[];
   /** Every outside URL the API tried to `fetch`, which failed as if the network were down. */
   blockedRequests: string[];
   close: () => Promise<void>;
@@ -133,6 +135,7 @@ export async function startContractApi(): Promise<ContractApi> {
     });
     configureApp(app);
     await app.init();
+    const bootLog = [...logger.lines];
     // The S3 client loads its HTTP handler with a dynamic import(), which Jest only runs with this flag
     if (!storage.hasBucket(CONTRACT_BUCKET)) {
       await app.close();
@@ -147,6 +150,7 @@ export async function startContractApi(): Promise<ContractApi> {
       dataSource: database.dataSource,
       storage,
       logger,
+      bootLog,
       blockedRequests,
       close: async () => {
         await app.close();

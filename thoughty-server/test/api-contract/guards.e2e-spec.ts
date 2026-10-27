@@ -1,3 +1,4 @@
+import request from 'supertest';
 import {
   describePostgres,
   POSTGRES_SETUP_TIMEOUT_MS,
@@ -32,6 +33,18 @@ describePostgres('API contract: guards', () => {
 
   afterAll(async () => {
     await api?.close();
+  });
+
+  it('boots without a warning or an error, the Nest 11 route path warning included', () => {
+    expect(api.bootLog).toEqual([]);
+  });
+
+  it('gives every request under /api a request id and a log line, unknown routes included', async () => {
+    for (const path of ['/api', '/api/health', '/api/entries', '/api/no/such/route']) {
+      const response = await request(api.http).get(path).set('x-request-id', `contract-${path}`);
+      expect(response.headers['x-request-id']).toBe(`contract-${path}`);
+    }
+    expect(api.logger.lines).toContainEqual(expect.stringContaining('"path":"/api/no/such/route","statusCode":404'));
   });
 
   it('documents most routes as signed-in only', () => {
