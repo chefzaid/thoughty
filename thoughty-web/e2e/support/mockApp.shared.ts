@@ -2,6 +2,8 @@ import { createMockMemoirState, type MockMemoirProgram, type MockMemoirState } f
 import { createMockAppImportState, type MockAppImportState } from "./mockApp.app-import";
 import { createMockReviewState, type MockReviewState } from "./mockApp.review";
 import type { MockSavedSearch } from "./mockApp.routes.saved-searches";
+import type { MockDiary } from "./mockApp.diaries";
+import type { components } from "../../src/generated/openapi";
 import {
   DEFAULT_CLOUD_FILES,
   DEFAULT_CLOUD_SCHEDULES,
@@ -156,15 +158,8 @@ export interface SetupMockAppOptions {
 
 export interface MockAppState {
   authenticated: boolean;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-    fullName?: string;
-    authProvider?: "local" | "google";
-    emailVerified?: boolean;
-    twoFactorEnabled?: boolean;
-  };
+  /** The signed-in user exactly as a new session reports it. */
+  user: components["schemas"]["AuthUserDto"];
   config: {
     theme: "light" | "dark";
     language: "en" | "fr";
@@ -181,16 +176,7 @@ export interface MockAppState {
     ttsVoiceUri?: string;
     openRouterModel?: string;
   };
-  diaries: Array<{
-    id: number;
-    name: string;
-    icon: string;
-    is_default: boolean;
-    visibility: "public" | "private";
-    color?: string | null;
-    goalType?: "entries_per_week" | "words_per_day" | null;
-    goalTarget?: number | null;
-  }>;
+  diaries: MockDiary[];
   entries: MockEntry[];
   trash: MockTrashedEntry[];
   revisions: Record<number, MockEntryRevision[]>;
@@ -388,7 +374,6 @@ export function createMockAppState(
       id: 1,
       username: "TestUser",
       email: "test@example.com",
-      fullName: "Test User",
       authProvider: "local",
       emailVerified: false,
       twoFactorEnabled: false,

@@ -21,7 +21,7 @@ const FAMILY_FAVORITES: MockSavedSearch = {
   updatedAt: '2026-10-27T09:00:00.000Z',
 };
 
-async function openSavedSearches(page: Page, name = /^Saved searches/) {
+async function openSavedSearches(page: Page, name: string | RegExp = /^Saved searches/) {
   await page.getByRole('button', { name }).click();
   const dialog = page.getByRole('dialog', { name: 'Saved searches' });
   await expect(dialog).toBeVisible();

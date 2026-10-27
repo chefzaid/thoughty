@@ -1,5 +1,6 @@
 import { sortEntries } from "./mockApp.shared";
 import { fulfillJson, type RouteContext } from "./mockApp.route-utils";
+import { mockDiary } from "./mockApp.diaries";
 
 interface AppImportPayload {
   source: string;
@@ -41,7 +42,7 @@ export async function handleAppImportRoutes({ route, request, pathname, state }:
         return existing.id;
       }
       const id = Math.max(...state.diaries.map((diary) => diary.id)) + 1;
-      state.diaries.push({ id, name: journal, icon: "📓", is_default: false, visibility: "private" });
+      state.diaries.push(mockDiary({ id, name: journal, position: state.diaries.length }));
       createdDiaries.push(journal);
       return id;
     };

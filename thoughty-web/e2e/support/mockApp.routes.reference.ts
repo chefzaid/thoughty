@@ -2,7 +2,6 @@ import {
   buildStats,
   sortEntries,
   unique,
-  type MockAppState,
 } from './mockApp.shared';
 import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
 import { buildMockGoals } from './mockApp.goals';
@@ -192,94 +191,9 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
   const aiHistoryMatch = /^\/api\/ai\/history\/(\d+)$/.exec(pathname);
   if (aiHistoryMatch) {
     await fulfillJson(route, {
+      entryId: Number(aiHistoryMatch[1]),
       messages: [{ role: 'assistant', content: 'Previously saved reflection prompt.' }],
     });
-    return true;
-  }
-
-  return false;
-}
-
-async function handleDiaryRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
-  if (pathname === '/api/diaries') {
-    if (request.method() === 'GET') {
-      await fulfillJson(route, state.diaries);
-      return true;
-    }
-
-    if (request.method() === 'POST') {
-      const payload = request.postDataJSON() as {
-        name: string;
-        icon?: string;
-        color?: string | null;
-        visibility?: 'public' | 'private';
-        goalType?: 'entries_per_week' | 'words_per_day' | null;
-        goalTarget?: number | null;
-      };
-      const newDiary = {
-        id: Math.max(0, ...state.diaries.map((diary) => diary.id)) + 1,
-        name: payload.name,
-        icon: payload.icon || '📓',
-        color: payload.color || null,
-        visibility: payload.visibility || 'private',
-        is_default: false,
-        goalType: payload.goalType ?? null,
-        goalTarget: payload.goalTarget ?? null,
-      };
-      state.diaries.push(newDiary);
-      await fulfillJson(route, { success: true, diary: newDiary }, { status: 201 });
-      return true;
-    }
-  }
-
-  const diaryMatch = /^\/api\/diaries\/(\d+)$/.exec(pathname);
-  if (diaryMatch && request.method() === 'PUT') {
-    const diaryId = Number(diaryMatch[1]);
-    const payload = request.postDataJSON() as {
-      name: string;
-      icon?: string;
-      color?: string | null;
-      visibility?: 'public' | 'private';
-      goalType?: 'entries_per_week' | 'words_per_day' | null;
-      goalTarget?: number | null;
-    };
-    state.diaries = state.diaries.map((diary) =>
-      diary.id === diaryId ? { ...diary, ...payload } : diary,
-    );
-    await fulfillJson(route, { success: true });
-    return true;
-  }
-
-  if (diaryMatch && request.method() === 'DELETE') {
-    const diaryId = Number(diaryMatch[1]);
-    const defaultDiary = state.diaries.find((diary) => diary.is_default) ?? state.diaries[0];
-    state.diaries = state.diaries.filter((diary) => diary.id !== diaryId || diary.is_default);
-    state.entries = state.entries.map((entry) =>
-      (entry.diaryId ?? 1) === diaryId ? { ...entry, diaryId: defaultDiary?.id ?? 1 } : entry,
-    );
-    // Entries in the recycle bin move too, as the API does
-    state.trash = state.trash.map((entry) =>
-      (entry.diaryId ?? 1) === diaryId ? { ...entry, diaryId: defaultDiary?.id ?? 1 } : entry,
-    );
-    await fulfillJson(route, { success: true });
-    return true;
-  }
-
-  const defaultDiaryMatch = /^\/api\/diaries\/(\d+)\/default$/.exec(pathname);
-  if (defaultDiaryMatch && request.method() === 'PATCH') {
-    const diaryId = Number(defaultDiaryMatch[1]);
-    state.diaries = state.diaries.map((diary) => ({ ...diary, is_default: diary.id === diaryId }));
-    await fulfillJson(route, { success: true });
-    return true;
-  }
-
-  if (pathname === '/api/diaries/reorder' && request.method() === 'PATCH') {
-    const payload = request.postDataJSON() as { orderedIds: number[] };
-    const diaryById = new Map(state.diaries.map((diary) => [diary.id, diary]));
-    state.diaries = payload.orderedIds
-      .map((id) => diaryById.get(id))
-      .filter((diary): diary is MockAppState['diaries'][number] => Boolean(diary));
-    await fulfillJson(route, { success: true });
     return true;
   }
 
@@ -298,7 +212,16 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
     );
     const months = sortStrings(unique(state.entries.map((entry) => entry.date.slice(5, 7))));
 
-    await fulfillJson(route, { years, months });
+    // The first entry of the journal, or of the year and month asked for, and the page it is on
+    const year = searchParams.get('year');
+    const month = searchParams.get('month');
+    const prefix = year ? `${year}-${month ? month.padStart(2, '0') : ''}` : '';
+    const sorted = sortEntries(state.entries);
+    const first = [...sorted].reverse().find((entry) => entry.date.startsWith(prefix));
+    const limit = Number(searchParams.get('limit') || '10');
+    await fulfillJson(route, first
+      ? { page: Math.floor(sorted.indexOf(first) / limit) + 1, found: true, entryId: first.id, years, months }
+      : { page: 1, found: false, years, months });
     return true;
   }
 
@@ -314,14 +237,14 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
         : sortedEntries.find((entry) => entry.date === date && entry.index === entryIndex);
 
     if (!matchedEntry) {
-      await fulfillJson(route, { found: false });
+      await fulfillJson(route, { found: false, error: 'Entry not found' });
       return true;
     }
 
     const entryPosition = sortedEntries.findIndex((entry) => entry.id === matchedEntry.id);
     const page = entryPosition >= 0 ? Math.floor(entryPosition / Math.max(limit, 1)) + 1 : 1;
 
-    await fulfillJson(route, { found: true, page, entryId: matchedEntry.id });
+    await fulfillJson(route, { found: true, entry: toEntryResponse(matchedEntry, state), page, entryId: matchedEntry.id });
     return true;
   }
 
@@ -332,10 +255,12 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
     const sorted = sortEntries(scopedEntries);
     const randomEntry = sorted[0] ?? null;
     const onThisDayEntry = sorted.at(-1) ?? null;
+    const now = new Date();
 
     await fulfillJson(route, {
       randomEntry: randomEntry ? toEntryResponse(randomEntry, state) : null,
       onThisDay: onThisDayEntry ? { '1': [toEntryResponse(onThisDayEntry, state)] } : {},
+      currentDate: { month: String(now.getMonth() + 1).padStart(2, '0'), day: String(now.getDate()).padStart(2, '0'), year: now.getFullYear() },
     });
     return true;
   }
@@ -345,10 +270,6 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
 
 export async function handleReferenceRoutes(context: RouteContext): Promise<boolean> {
   if (await handleStatsAndAiRoutes(context)) {
-    return true;
-  }
-
-  if (await handleDiaryRoutes(context)) {
     return true;
   }
 

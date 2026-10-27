@@ -6,6 +6,7 @@ import { handleAiCredentialRoutes } from "./mockApp.routes.ai-credentials";
 import { handleEntriesRoutes } from "./mockApp.routes.entries";
 import { handleBookRoutes, handleIoRoutes } from "./mockApp.routes.io";
 import { handleReferenceRoutes } from "./mockApp.routes.reference";
+import { handleDiaryRoutes } from "./mockApp.routes.diaries";
 import { handleSocialRoutes } from "./mockApp.routes.social";
 import { handleMemoirRoutes } from "./mockApp.routes.memoir";
 import { handleAppImportRoutes } from "./mockApp.routes.app-import";
@@ -146,9 +147,9 @@ async function handleAuthRoutes({
       id: 1,
       username: payload.username || "NewUser",
       email: payload.email || "new@example.com",
-      fullName: payload.username || "NewUser",
       authProvider: "local",
       emailVerified: false,
+      twoFactorEnabled: false,
     };
 
     await fulfillJson(route, {
@@ -201,7 +202,8 @@ async function handleAuthRoutes({
       return true;
     }
 
-    await fulfillJson(route, state.user);
+    const { isNewUser: _isNewUser, ...user } = state.user;
+    await fulfillJson(route, { ...user, createdAt: "2026-01-01T00:00:00.000Z" });
     return true;
   }
 
@@ -329,6 +331,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
     }
     if (await handleFeatureRequestRoutes(context)) {
       return;
+    }
+    if (await handleDiaryRoutes(context)) {
+      return true;
     }
     if (await handleReferenceRoutes(context)) {
       return;

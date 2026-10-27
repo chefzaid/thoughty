@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Page } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
+import { mockDiary } from '../support/mockApp.diaries';
 
 const entries = [
   { id: 501, date: '2024-04-15', index: 1, content: 'Sprint planning notes', tags: [], visibility: 'private' as const, diaryId: 1 },
@@ -61,8 +62,8 @@ test.describe('Writing goals', () => {
         initialEntries: entries,
         config: { theme },
         diaries: [
-          { id: 1, name: 'Work', icon: '💼', is_default: true, visibility: 'private', color: '#3B82F6', goalType: 'entries_per_week', goalTarget: 2 },
-          { id: 2, name: 'Personal', icon: '🏠', is_default: false, visibility: 'private', color: '#A855F7', goalType: 'words_per_day', goalTarget: 10 },
+          mockDiary({ id: 1, name: 'Work', icon: '💼', isDefault: true, color: '#3B82F6', goalType: 'entries_per_week', goalTarget: 2 }),
+          mockDiary({ id: 2, name: 'Personal', icon: '🏠', color: '#A855F7', goalType: 'words_per_day', goalTarget: 10 }),
         ],
       });
       await page.clock.setFixedTime(new Date('2024-04-24T21:00:00'));

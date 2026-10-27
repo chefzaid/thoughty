@@ -5,6 +5,7 @@ import {
   type MockMemoirProgram,
   type MockMemoirState,
 } from './mockApp.memoir';
+import { mockDiary } from './mockApp.diaries';
 import { fulfillJson, type RouteContext } from './mockApp.route-utils';
 import { sortEntries } from './mockApp.shared';
 
@@ -51,7 +52,7 @@ export async function handleMemoirRoutes(context: RouteContext): Promise<boolean
     let diaryId = payload.diaryId ?? null;
     if (!diaryId) {
       diaryId = Math.max(...state.diaries.map((diary) => diary.id)) + 1;
-      state.diaries.push({ id: diaryId, name: payload.diaryName ?? 'My memoir', icon: '📖', is_default: false, visibility: 'private', color: '#B45309' });
+      state.diaries.push(mockDiary({ id: diaryId, name: payload.diaryName ?? 'My memoir', icon: '📖', color: '#B45309', position: state.diaries.length }));
     }
     memoir.program = {
       ...createMockMemoirState({}).program!,

@@ -5,25 +5,12 @@ import type {
   MockCloudSchedule,
   MockFeatureRequest,
 } from "./mockApp.shared";
+import { mockDiary, type MockDiary } from "./mockApp.diaries";
 
 /** The fixtures every mock app starts with unless a spec passes its own. */
-export const DEFAULT_DIARIES = [
-  {
-    id: 1,
-    name: "Work",
-    icon: "💼",
-    is_default: true,
-    visibility: "private" as const,
-    color: "#3B82F6",
-  },
-  {
-    id: 2,
-    name: "Personal",
-    icon: "🏠",
-    is_default: false,
-    visibility: "private" as const,
-    color: "#A855F7",
-  },
+export const DEFAULT_DIARIES: MockDiary[] = [
+  mockDiary({ id: 1, name: "Work", icon: "💼", isDefault: true, color: "#3B82F6" }),
+  mockDiary({ id: 2, name: "Personal", icon: "🏠", color: "#A855F7" }),
 ];
 
 export const DEFAULT_CLOUD_STATUS: Record<MockCloudProvider, MockCloudProviderStatus> =

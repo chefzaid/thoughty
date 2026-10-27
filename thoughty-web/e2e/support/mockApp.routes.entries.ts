@@ -5,7 +5,7 @@ import {
   type MockAppState,
   type MockEntry,
 } from './mockApp.shared';
-import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
+import { fulfillJson, sortStrings, toEntryMutationResponse, toEntryResponse, type RouteContext } from './mockApp.route-utils';
 import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 import { getMockBacklinks } from './mockApp.backlinks';
 
@@ -225,7 +225,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
     }
 
     state.entries = sortEntries(state.entries);
-    await fulfillJson(route, { success: true, affected: payload.ids.length });
+    await fulfillJson(route, { success: true, affectedCount: payload.ids.length });
     return true;
   }
 
@@ -258,18 +258,18 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
 
   if (pathname === '/api/entries/tags/rename' && request.method() === 'PATCH') {
     const payload = request.postDataJSON() as { oldTag: string; newTag: string };
-    let affected = 0;
+    let affectedCount = 0;
     state.entries = state.entries.map((entry) => {
       if (!entry.tags.includes(payload.oldTag)) {
         return entry;
       }
-      affected += 1;
+      affectedCount += 1;
       return {
         ...entry,
         tags: unique(entry.tags.map((tag) => (tag === payload.oldTag ? payload.newTag : tag))),
       };
     });
-    await fulfillJson(route, { success: true, affected });
+    await fulfillJson(route, { success: true, affectedCount });
     return true;
   }
 
@@ -326,7 +326,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
     });
     state.entries = sortEntries(state.entries);
 
-    await fulfillJson(route, { success: true });
+    await fulfillJson(route, toEntryMutationResponse(state, entryId));
     return true;
   }
 
@@ -371,7 +371,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
       }];
     }
     state.entries = state.entries.map((candidate) => (candidate.id === entryId ? { ...candidate, content } : candidate));
-    await fulfillJson(route, { success: true, entry: { ...entry, content } });
+    await fulfillJson(route, toEntryMutationResponse(state, entryId));
     return true;
   }
 
@@ -383,7 +383,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
     state.entries = state.entries.map((entry) =>
       entry.id === entryId ? { ...entry, is_favorite: payload.isFavorite } : entry,
     );
-    await fulfillJson(route, { success: true });
+    await fulfillJson(route, toEntryMutationResponse(state, entryId));
     return true;
   }
 
@@ -395,7 +395,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
     state.entries = state.entries.map((entry) =>
       entry.id === entryId ? { ...entry, visibility: payload.visibility } : entry,
     );
-    await fulfillJson(route, { success: true });
+    await fulfillJson(route, toEntryMutationResponse(state, entryId));
     return true;
   }
 
@@ -407,7 +407,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
     state.entries = state.entries.map((entry) =>
       entry.id === entryId ? { ...entry, is_archived: payload.isArchived } : entry,
     );
-    await fulfillJson(route, { success: true });
+    await fulfillJson(route, toEntryMutationResponse(state, entryId));
     return true;
   }
 

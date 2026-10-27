@@ -14,7 +14,7 @@
     "test:e2e": "playwright test",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p e2e/tsconfig.json",
     "api:types": "node ./scripts/generate-api-types.mjs",
     "api:usage": "node ./scripts/check-api-usage.mjs"
   },

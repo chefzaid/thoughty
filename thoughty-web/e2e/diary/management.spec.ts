@@ -38,7 +38,7 @@ test.describe('Diary management', () => {
 
     const dreamLogCard = page.locator('.diary-card', { hasText: 'Dream Log' });
     await dreamLogCard.getByTitle('Set as Default').click();
-    await expect.poll(() => state.diaries.find((diary) => diary.name === 'Dream Log')?.is_default).toBe(true);
+    await expect.poll(() => state.diaries.find((diary) => diary.name === 'Dream Log')?.isDefault).toBe(true);
 
     const personalCard = page.locator('.diary-card', { hasText: 'Personal' });
     await personalCard.getByTitle('Delete').click();

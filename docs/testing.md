@@ -37,7 +37,7 @@ Spec files keep to the 500-line rule too. One that outgrows it is split by the b
 |---|---|
 | `npm test` | Vitest |
 | `npm run test:watch` / `npm run test:coverage` | watch mode / coverage (fails below the thresholds in `vitest.config.ts`) |
-| `npm run typecheck` / `npm run lint` | type check / ESLint |
+| `npm run typecheck` / `npm run lint` | type check (the app, then `e2e/` with `e2e/tsconfig.json`) / ESLint |
 | `npm run api:usage` | fails if the frontend stops calling a documented endpoint |
 | `npm run test:e2e:install` | install the bundled Chromium (once) |
 | `npm run test:e2e` | all Playwright specs |
@@ -89,7 +89,9 @@ Specs import `test` and `expect` from `e2e/support/test.ts`, not from `@playwrig
 
 ### Mock API
 
-`setupMockApp(page, options)` in `e2e/support/mockApp.ts` sets up per-test state, auth, and routes. State types are in `mockApp.shared.ts` and the default fixtures in `mockApp.defaults.ts`, and routes are split by feature into `mockApp.routes.*.ts`. For new backend behavior, add state fields to `mockApp.shared.ts`, handle the route in the closest routes file, record the request if the test asserts on it, and return the real API's response shape. Keep the mock minimal; it does not reimplement the backend. Derived answers follow the server's rules where a spec relies on them: `mockApp.search.ts` reads the search syntax (phrases, `-` exclusions, prefixes), and `mockApp.backlinks.ts` finds the entries whose `[[date]]`, `[[date#n]]`, or `entry(date--n)` references point at an entry, leaving out the recycle bin. `mockApp.routes.calendar.ts` answers the calendar month with the list's filters (`getFilteredEntries`), in day order. `mockApp.goals.ts` measures diary writing goals for `/api/stats` up to the `today` the app sends, with Monday-to-Sunday weeks.
+`setupMockApp(page, options)` in `e2e/support/mockApp.ts` sets up per-test state, auth, and routes. State types are in `mockApp.shared.ts` and the default fixtures in `mockApp.defaults.ts`, and routes are split by feature into `mockApp.routes.*.ts`. For new backend behavior, add state fields to `mockApp.shared.ts`, handle the route in the closest routes file, record the request if the test asserts on it, and return the real API's response shape. Keep the mock minimal; it does not reimplement the backend.
+
+Mock answers must match the API exactly. `fulfillJson` checks every answer against the response schema `thoughty-server/openapi/openapi.json` documents for that method, path and status (`mockApp.contract.ts`): a missing required field, a field the API never sends (such as `is_default` for `isDefault`), a wrong type, an unexpected `null` or a value outside an enum is recorded, and the `context` fixture fails the test at teardown with the list. Answers the API documents no JSON body for, and error statuses without a schema, are not checked. Build fixtures from the generated types so drift also fails `npm run typecheck`: `mockDiary()` (`mockApp.diaries.ts`) makes a `DiaryResponseDto`, `toEntryResponse()` an `EntryResponseDto`, and `state.user` is an `AuthUserDto`. Unit tests build diaries with `makeDiary()` from `src/test/diaryFixture.ts`. `harness/mock-contract.spec.ts` covers the check itself. Derived answers follow the server's rules where a spec relies on them: `mockApp.search.ts` reads the search syntax (phrases, `-` exclusions, prefixes), and `mockApp.backlinks.ts` finds the entries whose `[[date]]`, `[[date#n]]`, or `entry(date--n)` references point at an entry, leaving out the recycle bin. `mockApp.routes.calendar.ts` answers the calendar month with the list's filters (`getFilteredEntries`), in day order. `mockApp.goals.ts` measures diary writing goals for `/api/stats` up to the `today` the app sends, with Monday-to-Sunday weeks.
 
 ## Writing a Browser Test
 

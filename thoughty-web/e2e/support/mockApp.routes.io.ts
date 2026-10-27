@@ -29,7 +29,16 @@ export async function handleIoRoutes({
     const importedEntries = parseImportedEntries(payload.content);
 
     await fulfillJson(route, {
+      entries: importedEntries.map((entry, index) => ({
+        date: entry.date,
+        index: entry.index ?? index + 1,
+        tags: entry.tags,
+        content: entry.content,
+        format: entry.format || "plain",
+        ...(entry.visibility ? { visibility: entry.visibility } : {}),
+      })),
       totalCount: importedEntries.length,
+      duplicates: [],
       duplicateCount: 0,
     });
     return true;
@@ -62,6 +71,7 @@ export async function handleIoRoutes({
     state.entries = sortEntries(state.entries);
 
     await fulfillJson(route, {
+      success: true,
       importedCount: importedEntries.length,
       skippedCount: 0,
       totalProcessed: importedEntries.length,

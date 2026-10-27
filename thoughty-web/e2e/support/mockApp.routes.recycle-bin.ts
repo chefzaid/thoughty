@@ -28,7 +28,7 @@ function restore(state: MockAppState, ids: Set<number> | null) {
   const restoring = state.trash
     .filter((entry) => !ids || ids.has(entry.id))
     .sort((left, right) => left.date.localeCompare(right.date) || left.index - right.index);
-  const defaultDiaryId = state.diaries.find((diary) => diary.is_default)?.id ?? 1;
+  const defaultDiaryId = state.diaries.find((diary) => diary.isDefault)?.id ?? 1;
   let movedToDefaultCount = 0;
 
   for (const { deletedAt: _deletedAt, ...entry } of restoring) {
