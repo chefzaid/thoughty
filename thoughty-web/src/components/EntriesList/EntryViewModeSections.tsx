@@ -19,6 +19,8 @@ import type { Language } from '../../utils/translations';
 import { describeMood, feelingLabel, isMoodLevel, moodEmoji, moodLabelKey } from '../../utils/entryMood';
 import { resolveFontColor } from '../../types/config';
 import { mutedTextClass } from '../../utils/tintedText';
+import { placedAttachmentIds } from '../../utils/inlineImages';
+import { isImageAttachment } from '../../utils/attachments';
 import {
     extractDate,
     getEntryDiaryBadgeStyle,
@@ -266,6 +268,11 @@ export function EntryBodySection({
     const readingTimeLabel = readingTimeMinutes > 0
         ? t('entryReadingTimeMinutes', { minutes: readingTimeMinutes })
         : t('entryReadingTimeLessThanMinute');
+    // The pictures the text places show there, not again below it
+    const placed = entry.format === 'markdown' ? placedAttachmentIds(entry.content) : new Set<number>();
+    const belowText = (entry.attachments ?? []).filter(
+        (attachment) => !(placed.has(attachment.id) && isImageAttachment(attachment.mimetype)),
+    );
 
     return (
         <>
@@ -294,6 +301,8 @@ export function EntryBodySection({
                     searchMatches={entry.search_matches}
                     onToggleTask={onToggleTask}
                     t={t}
+                    attachments={entry.attachments}
+                    theme={theme}
                 />
             </div>
             <div className={`mt-3 flex flex-wrap gap-2 text-xs ${mutedTextClass(isDark)}`}>
@@ -312,9 +321,9 @@ export function EntryBodySection({
                 tagMetadata={tagMetadata}
                 t={t}
             />
-            {entry.attachments && entry.attachments.length > 0 && (
+            {belowText.length > 0 && (
                 <AttachmentDisplay
-                    attachments={entry.attachments}
+                    attachments={belowText}
                     theme={theme}
                     t={t}
                 />

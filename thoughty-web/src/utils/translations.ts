@@ -7,6 +7,7 @@ import { searchTranslations, type SearchTranslationKey } from "./translations.se
 import { entryTitleTimeTranslations, type EntryTitleTimeTranslationKey } from "./translations.entryTitleTime";
 import { moodTranslations, type MoodTranslationKey } from "./translations.mood";
 import { taskListTranslations, type TaskListTranslationKey } from "./translations.taskList";
+import { inlineImagesTranslations, type InlineImagesTranslationKey } from "./translations.inlineImages";
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
 import { entryTemplatesTranslations, type EntryTemplatesTranslationKey } from "./translations.entryTemplates";
 import { markdownToolbarTranslations, type MarkdownToolbarTranslationKey } from "./translations.markdownToolbar";
@@ -56,6 +57,7 @@ export type TranslationKey =
   | EntryTitleTimeTranslationKey
   | MoodTranslationKey
   | TaskListTranslationKey
+  | InlineImagesTranslationKey
   | FocusModeTranslationKey
   | EntryTemplatesTranslationKey
   | MarkdownToolbarTranslationKey
@@ -110,6 +112,7 @@ export const translations: Translations = {
     ...entryTitleTimeTranslations.en,
     ...moodTranslations.en,
     ...taskListTranslations.en,
+    ...inlineImagesTranslations.en,
     ...focusModeTranslations.en,
     ...entryTemplatesTranslations.en,
     ...markdownToolbarTranslations.en,
@@ -157,6 +160,7 @@ export const translations: Translations = {
     ...entryTitleTimeTranslations.fr,
     ...moodTranslations.fr,
     ...taskListTranslations.fr,
+    ...inlineImagesTranslations.fr,
     ...focusModeTranslations.fr,
     ...entryTemplatesTranslations.fr,
     ...markdownToolbarTranslations.fr,

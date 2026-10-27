@@ -3,7 +3,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAttachmentUrl } from '../../utils/attachments';
 
-export function useAuthenticatedAttachmentUrl(storedFilename: string): string | null {
+/** A local URL for the stored file, fetched with the session; nothing is fetched while `storedFilename` is null. */
+export function useAuthenticatedAttachmentUrl(storedFilename: string | null): string | null {
   const { authFetch } = useAuth();
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
@@ -11,6 +12,9 @@ export function useAuthenticatedAttachmentUrl(storedFilename: string): string | 
     let active = true;
     let currentObjectUrl: string | null = null;
     setObjectUrl(null);
+    if (storedFilename === null) {
+      return undefined;
+    }
 
     void (async () => {
       try {

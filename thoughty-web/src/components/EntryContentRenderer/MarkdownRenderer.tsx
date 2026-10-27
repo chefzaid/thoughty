@@ -1,9 +1,11 @@
 import { createContext, useContext, useMemo, type ElementType } from 'react';
-import Markdown, { type Components, type ExtraProps } from 'react-markdown';
+import Markdown, { defaultUrlTransform, type Components, type ExtraProps } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import MentionLink from '../People/MentionLink';
 import type { Person } from '../../services/api/peopleService';
 import { remarkMentions } from '../../utils/remarkMentions';
+import { keepAttachmentSources } from '../../utils/inlineImages';
+import InlineImage from '../InlineImages/InlineImage';
 
 type HastElement = NonNullable<ExtraProps['node']>;
 type HastChild = HastElement['children'][number];
@@ -93,6 +95,7 @@ function withTaskItems(components: Components | undefined): Components {
         input: ({ node: _node, ...props }) => (props.type === 'checkbox'
             ? <TaskCheckbox checked={Boolean(props.checked)} />
             : <input {...props} />),
+        img: ({ src, alt }) => <InlineImage src={typeof src === 'string' ? src : undefined} alt={alt} />,
         a: ({ node, children, ...props }) => {
             const personId = Number(node?.properties?.dataMention);
             if (personId > 0) {
@@ -107,6 +110,8 @@ const DEFAULT_COMPONENTS = withTaskItems(undefined);
 
 const NO_PEOPLE: ReadonlyMap<string, Person> = new Map();
 
+const urlTransform = (url: string) => keepAttachmentSources(url, defaultUrlTransform);
+
 function MarkdownRenderer({ content, components, taskList, mentionPeople = NO_PEOPLE, mentionTitle }: Readonly<MarkdownRendererProps>) {
     const resolvedComponents = useMemo(() => (components ? withTaskItems(components) : DEFAULT_COMPONENTS), [components]);
     const remarkPlugins = useMemo(() => [remarkGfm, remarkMentions(mentionPeople, mentionTitle)], [mentionPeople, mentionTitle]);
@@ -114,7 +119,7 @@ function MarkdownRenderer({ content, components, taskList, mentionPeople = NO_PE
     return (
         <span className="markdown-content">
             <TaskListContext.Provider value={taskList}>
-                <Markdown remarkPlugins={remarkPlugins} components={resolvedComponents}>
+                <Markdown remarkPlugins={remarkPlugins} components={resolvedComponents} urlTransform={urlTransform}>
                     {content}
                 </Markdown>
             </TaskListContext.Provider>

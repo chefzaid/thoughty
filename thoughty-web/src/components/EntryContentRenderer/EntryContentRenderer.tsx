@@ -6,7 +6,8 @@ import type { Person } from '../../services/api/peopleService';
 import { findMentions } from '../../utils/mentions';
 import { buildSearchHighlightPattern, splitSearchHighlights } from '../../utils/searchHighlight';
 import { countLinesBefore, findTaskLines } from '../../utils/taskList';
-import type { TranslationFunction } from '../../types';
+import type { Attachment, TranslationFunction } from '../../types';
+import { InlineImageContext, type InlineImageScope } from '../InlineImages/inlineImageContext';
 import type { MarkdownTaskList } from './MarkdownRenderer';
 
 const BRACKET_REFERENCE_PATTERN = /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]/i;
@@ -60,6 +61,12 @@ interface EntryContentRendererProps {
     readonly onToggleTask?: (line: number, checked: boolean) => void;
     /** Writes the hover text of entry links, which only render as links with `onNavigateToEntry`. */
     readonly t?: TranslationFunction;
+    /**
+     * The entry's attachments, for the pictures its Markdown text places (with `t`). Without them, as in
+     * the feed and highlights, a placed picture shows its alt text only.
+     */
+    readonly attachments?: readonly Attachment[];
+    readonly theme?: 'light' | 'dark';
 }
 
 const LazyMarkdownRenderer = lazy(() => import('./MarkdownRenderer'));
@@ -219,6 +226,8 @@ function EntryContentRenderer({
     searchMatches,
     onToggleTask,
     t,
+    attachments,
+    theme,
 }: Readonly<EntryContentRendererProps>) {
     const highlightPattern = useMemo(
         () => buildSearchHighlightPattern(searchTerm, searchMatches),
@@ -245,6 +254,10 @@ function EntryContentRenderer({
     const taskLines = useMemo(
         () => (format === 'markdown' && onToggleTask ? findTaskLines(content) : null),
         [content, format, onToggleTask]
+    );
+    const inlineImages = useMemo<InlineImageScope | null>(
+        () => (attachments && t ? { attachments, theme, t } : null),
+        [attachments, theme, t]
     );
     const taskListFrom = (start: number): MarkdownTaskList | undefined => (taskLines && onToggleTask
         ? { lineOffset: countLinesBefore(displayContent, start), taskLines, onToggle: onToggleTask }
@@ -274,10 +287,8 @@ function EntryContentRenderer({
         );
     };
 
-    // Markdown rendering mode
-    if (format === 'markdown') {
-        // For markdown entries, render markdown first, then handle references
-        // We still support cross-references inside markdown content
+    // Markdown entries are rendered part by part between cross-references, which stay links
+    const renderMarkdown = () => {
         if (!parts || parts.length === 0) {
             return (
                 <Suspense fallback={<span className="markdown-content">{displayContent}</span>}>
@@ -304,6 +315,14 @@ function EntryContentRenderer({
                     return null;
                 })}
             </>
+        );
+    };
+
+    if (format === 'markdown') {
+        return (
+            <InlineImageContext.Provider value={inlineImages}>
+                {renderMarkdown()}
+            </InlineImageContext.Provider>
         );
     }
 
