@@ -43,11 +43,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': resolve(__dirname, './src'),
-      '@components': resolve(__dirname, './src/components'),
-      '@contexts': resolve(__dirname, './src/contexts'),
-      '@utils': resolve(__dirname, './src/utils'),
-      '@types': resolve(__dirname, './src/types'),
+      '@': resolve(import.meta.dirname, './src'),
+      '@components': resolve(import.meta.dirname, './src/components'),
+      '@contexts': resolve(import.meta.dirname, './src/contexts'),
+      '@utils': resolve(import.meta.dirname, './src/utils'),
+      '@types': resolve(import.meta.dirname, './src/types'),
     },
   },
   server: {

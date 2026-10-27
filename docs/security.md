@@ -126,6 +126,10 @@ Trivy 0.74.0 (database of 2026-10-26, `--severity CRITICAL,HIGH`, amd64 and arm6
 
 Recheck before moving the digest: `trivy image --severity CRITICAL,HIGH --platform linux/amd64 docker.io/library/postgres:<tag>@<index digest>` (and `linux/arm64`), or the platform's Grafana **Trivy Security Reports** dashboard. `mirror.gcr.io/library/postgres@<index digest>` serves the same content when Docker Hub's anonymous pull limit is reached.
 
+## npm Dependencies
+
+`npm audit` reports no findings in `thoughty-server`, `thoughty-web` or the repository root (2026-10-27). Run it in all three after changing dependencies. Fixed versions are taken within each package's current major; a major upgrade is taken only when its breaking changes do not reach this code base, as with `nodemailer` 10, whose only break is requiring Node.js 20 (the images run 22) and which ships its own types, so `@types/nodemailer` is gone. When a dependency pins a vulnerable version of its own dependency, an `overrides` entry in `package.json` lifts it within that major and says so here: `@nestjs/swagger` 11.4.7 pins `js-yaml` 5.3.0 (GHSA-r3ph-w7gj-g6xm), raised to `^5.4.1` (the fixed `@nestjs/swagger` 12 needs NestJS 12). Remove such an override once the dependency itself moves past the fix.
+
 ## Review Checklist
 
 Runtime hardening and scanning are in [Deployment](./deployment.md#delivery-pipeline). For security-sensitive changes, check:

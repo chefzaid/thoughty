@@ -55,7 +55,7 @@
     "helmet": "^8.1.0",
     "jszip": "^3.10.1",
     "multer": "^2.3.0",
-    "nodemailer": "^9.1.1",
+    "nodemailer": "^10.2.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pdfkit": "^0.19.1",
@@ -68,7 +68,10 @@
     "xss": "^1.0.15"
   },
   "overrides": {
-    "multer": "$multer"
+    "multer": "$multer",
+    "@nestjs/swagger": {
+      "js-yaml": "^5.4.1"
+    }
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.16",
@@ -79,7 +82,6 @@
     "@types/jest": "^29.5.14",
     "@types/multer": "^2.1.0",
     "@types/node": "^22.15.30",
-    "@types/nodemailer": "^8.0.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/pdfkit": "^0.17.6",
     "@types/supertest": "^6.0.3",
