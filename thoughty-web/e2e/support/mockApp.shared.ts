@@ -236,7 +236,7 @@ export interface MockAppState {
   lastCloudDeleteScheduleProvider: string | null;
 }
 
-export const DEFAULT_FORMAT_CONFIG = {
+export const DEFAULT_FORMAT_CONFIG: components["schemas"]["FormatConfigResponseDto"] = {
   entrySeparator:
     "--------------------------------------------------------------------------------",
   sameDaySeparator:
@@ -247,6 +247,7 @@ export const DEFAULT_FORMAT_CONFIG = {
   tagOpenBracket: "[",
   tagCloseBracket: "]",
   tagSeparator: ",",
+  titlePlacement: "header",
 };
 
 /**

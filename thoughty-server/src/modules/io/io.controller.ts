@@ -22,6 +22,8 @@ import { MarkdownArchiveService } from './markdown-archive.service';
 import { responseSink } from './response-sink';
 import {
   FormatConfigDto,
+  FormatConfigResponseDto,
+  SaveFormatResponseDto,
   ExportQueryDto,
   PreviewImportDto,
   ImportDto,
@@ -53,18 +55,18 @@ export class IoController {
 
   @Get('format')
   @ApiOperation({ summary: 'Get current file format settings' })
-  @ApiResponse({ status: 200, description: 'Format settings' })
-  async getFormat(@CurrentUser() user: AuthenticatedUser) {
+  @ApiResponse({ status: 200, description: 'Format settings', type: FormatConfigResponseDto })
+  async getFormat(@CurrentUser() user: AuthenticatedUser): Promise<FormatConfigResponseDto> {
     return this.ioService.getFormat(user.userId);
   }
 
   @Post('format')
   @ApiOperation({ summary: 'Save file format settings' })
-  @ApiResponse({ status: 200, description: 'Settings saved' })
+  @ApiResponse({ status: 200, description: 'Settings saved', type: SaveFormatResponseDto })
   async saveFormat(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: FormatConfigDto,
-  ) {
+  ): Promise<SaveFormatResponseDto> {
     return this.ioService.saveFormat(user.userId, dto);
   }
 

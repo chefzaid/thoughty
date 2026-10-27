@@ -1,3 +1,4 @@
+import type { components } from "../../generated/openapi";
 import { readApiErrorMessage, safeJsonParse } from "./base";
 import type {
   AiApiResult,
@@ -6,15 +7,18 @@ import type {
   OpenRouterUsageDashboard,
 } from "./aiTypes";
 
+/** An OpenRouter model the user can pick for an AI task. */
+export type AiModel = components["schemas"]["AiModelDto"];
+
 /** The account's AI setup: available models, the OpenRouter key and usage. */
 export const createAiAccountService = (authFetch: AiAuthFetch) => {
-  const fetchModels = async (): Promise<{ id: string; name: string }[]> => {
+  const fetchModels = async (): Promise<AiModel[]> => {
     try {
       const response = await authFetch("/api/ai/models");
       if (!response.ok) {
         return [];
       }
-      const data = await response.json();
+      const data = await safeJsonParse<AiModel[]>(response);
       return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error("Error fetching models:", error);

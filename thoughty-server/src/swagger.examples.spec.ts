@@ -3,6 +3,15 @@ import { join } from 'node:path';
 import { enrichOpenApiExamples } from './swagger.examples';
 
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'options', 'head']);
+/** Operations that answer a file rather than JSON, so their success response documents no schema. */
+const FILE_DOWNLOADS = new Set([
+  'GET /api/config/download-data',
+  'GET /api/io/export',
+  'GET /api/attachments/file/{filename}',
+  'GET /api/books/versions/{versionId}/download',
+  'GET /api/books/export',
+  'POST /api/books/export',
+]);
 
 describe('enrichOpenApiExamples', () => {
   it('adds examples to component schemas and JSON request and response bodies', () => {
@@ -71,7 +80,7 @@ describe('enrichOpenApiExamples', () => {
 });
 
 describe('exported OpenAPI document', () => {
-  it('has operation metadata and examples for JSON request and response bodies', () => {
+  it('has operation metadata, a schema for every JSON success response, and examples for JSON bodies', () => {
     const openApiPath = join(process.cwd(), 'openapi', 'openapi.json');
     expect(existsSync(openApiPath)).toBe(true);
 
@@ -104,6 +113,10 @@ describe('exported OpenAPI document', () => {
             failures.push(`${label} response ${status} is missing a description`);
           }
           assertJsonContentExamples(`${label} response ${status}`, response.content, failures);
+          // The web types and the e2e mock contract check come from these schemas
+          if (status.startsWith('2') && !response.content && !FILE_DOWNLOADS.has(label)) {
+            failures.push(`${label} response ${status} documents no body schema`);
+          }
         }
       }
     }

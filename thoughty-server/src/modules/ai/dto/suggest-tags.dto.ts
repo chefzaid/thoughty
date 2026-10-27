@@ -23,3 +23,8 @@ export class SuggestTagsDto {
   @Max(10)
   maxTags?: number;
 }
+
+export class SuggestTagsResponseDto {
+  @ApiProperty({ type: [String], description: 'Suggested tags, lowercased, without the ones already attached' })
+  tags!: string[];
+}

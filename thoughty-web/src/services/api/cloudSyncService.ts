@@ -3,42 +3,28 @@ import { requestJson, type ServiceResult } from './base';
 
 export type CloudProviderType = 'google_drive' | 'onedrive' | 'dropbox';
 
+type Schemas = components['schemas'];
+
 /** A file in the cloud folder, as the API describes it. */
-export type CloudFileInfo = components['schemas']['CloudFileInfoDto'];
+export type CloudFileInfo = Schemas['CloudFileInfoDto'];
 
-export interface CloudStatus {
-  google_drive: { connected: boolean; connectedAt?: string };
-  onedrive: { connected: boolean; connectedAt?: string };
-  dropbox: { connected: boolean; connectedAt?: string };
-}
+/** Whether each provider is connected, and since when. */
+export type CloudStatus = Schemas['CloudStatusResponseDto'];
 
-export type SyncFrequency = 'every_6h' | 'every_12h' | 'daily' | 'weekly';
+/** One provider's automatic sync: its schedule and when it last and next runs. */
+export type SyncScheduleConfig = Schemas['SyncScheduleDto'];
 
-export interface SyncScheduleConfig {
-  enabled: boolean;
-  frequency?: SyncFrequency;
-  format?: string;
-  diaryId?: number;
-  includeVisibility?: boolean;
-  lastSyncAt?: string;
-  lastSyncHash?: string;
-  nextSyncAt?: string;
-}
+export type SyncFrequency = NonNullable<SyncScheduleConfig['frequency']>;
 
-export type SyncSchedules = Record<string, SyncScheduleConfig>;
+export type SyncSchedules = Schemas['CloudSyncSchedulesResponseDto'];
 
-export interface DiffSyncResult {
-  synced: boolean;
-  message: string;
-  file?: CloudFileInfo;
-}
+/** What a sync answers: whether anything changed and was uploaded. */
+export type DiffSyncResult = Schemas['DiffSyncResponseDto'];
 
 type CloudAuthFetch = (url: string, options?: RequestInit) => Promise<Response>;
 
 /** What a cloud action that returns no data answers once it is done. */
-export interface CloudActionResult {
-  success: boolean;
-}
+export type CloudActionResult = Schemas['SuccessResponseDto'];
 
 /**
  * The cloud sync endpoints. Each call resolves to its data, or to the error to show with `t`: the API's
@@ -49,14 +35,14 @@ export const createCloudSyncService = (authFetch: CloudAuthFetch) => {
     requestJson(authFetch('/api/cloud-sync/status'), 'Failed to load cloud status');
 
   const getAuthUrl = async (provider: CloudProviderType, redirectUri: string): Promise<ServiceResult<string>> => {
-    const { data, error } = await requestJson<{ url?: string }>(
+    const { data, error } = await requestJson<Schemas['CloudAuthUrlResponseDto']>(
       authFetch('/api/cloud-sync/auth-url', { method: 'POST', body: JSON.stringify({ provider, redirectUri }) }),
       'cloudConnectError',
     );
     return data?.url ? { data: data.url, error: null } : { data: null, error: error ?? 'cloudConnectError' };
   };
 
-  const connect = (provider: CloudProviderType, code: string, redirectUri: string): Promise<ServiceResult<CloudActionResult>> =>
+  const connect = (provider: CloudProviderType, code: string, redirectUri: string): Promise<ServiceResult<Schemas['CloudConnectResponseDto']>> =>
     requestJson(authFetch('/api/cloud-sync/connect', { method: 'POST', body: JSON.stringify({ provider, code, redirectUri }) }), 'cloudConnectError');
 
   const disconnect = (provider: CloudProviderType): Promise<ServiceResult<CloudActionResult>> =>
@@ -72,7 +58,7 @@ export const createCloudSyncService = (authFetch: CloudAuthFetch) => {
     requestJson(authFetch('/api/cloud-sync/upload', { method: 'POST', body: JSON.stringify({ provider, ...options }) }), 'cloudUploadError');
 
   const downloadFile = async (provider: CloudProviderType, fileId: string): Promise<ServiceResult<string>> => {
-    const { data, error } = await requestJson<{ content?: string }>(
+    const { data, error } = await requestJson<Schemas['CloudDownloadResponseDto']>(
       authFetch('/api/cloud-sync/download', { method: 'POST', body: JSON.stringify({ provider, fileId }) }),
       'cloudDownloadError',
     );

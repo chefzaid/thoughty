@@ -1,5 +1,6 @@
 import { test, expect } from '../support/test';
 import { setupMockApp } from "../support/mockApp";
+import { fulfillJson } from "../support/mockApp.route-utils";
 
 test.describe("Audio note transcription", () => {
   test("transcribes a saved audio attachment inline", async ({ page }) => {
@@ -35,15 +36,11 @@ test.describe("Audio note transcription", () => {
         request.method() === "POST"
       ) {
         transcriptionRequests += 1;
-        await route.fulfill({
-          status: 201,
-          contentType: "application/json",
-          body: JSON.stringify({
-            transcript: "I want to protect some quiet time for focused work.",
-            transcribed_at: "2026-08-01T12:00:00.000Z",
-            cached: false,
-          }),
-        });
+        await fulfillJson(route, {
+          transcript: "I want to protect some quiet time for focused work.",
+          transcribed_at: "2026-08-01T12:00:00.000Z",
+          cached: false,
+        }, { status: 201 });
         return;
       }
 

@@ -25,7 +25,13 @@ import {
 import { memoryStorage } from 'multer';
 import { Response } from 'express';
 import { AttachmentsService, ServedAttachmentFile } from './attachments.service';
-import { LinkAttachmentDto, AudioTranscriptionResponseDto } from './dto';
+import {
+  LinkAttachmentDto,
+  AudioTranscriptionResponseDto,
+  AttachmentRecordResponseDto,
+  toAttachmentRecordResponse,
+} from './dto';
+import { SuccessResponseDto } from '@/common/dto';
 import { AudioTranscriptionService } from './audio-transcription.service';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
@@ -54,7 +60,7 @@ export class AttachmentsController {
   @Post('upload')
   @ApiOperation({ summary: 'Upload a file attachment' })
   @ApiConsumes('multipart/form-data')
-  @ApiResponse({ status: 201, description: 'File uploaded successfully' })
+  @ApiResponse({ status: 201, description: 'File uploaded successfully', type: AttachmentRecordResponseDto })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -68,46 +74,26 @@ export class AttachmentsController {
     @CurrentUser() user: AuthenticatedUser,
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: LinkAttachmentDto,
-  ) {
+  ): Promise<AttachmentRecordResponseDto> {
     const attachment = await this.attachmentsService.upload(user.userId, file, dto.entryId);
 
-    return {
-      id: attachment.id,
-      original_filename: attachment.originalFilename,
-      stored_filename: attachment.storedFilename,
-      mimetype: attachment.mimetype,
-      size: attachment.size,
-      entry_id: attachment.entryId,
-      created_at: attachment.createdAt,
-      transcript: attachment.transcript,
-      transcribed_at: attachment.transcribedAt,
-    };
+    return toAttachmentRecordResponse(attachment);
   }
 
   @Post(':id/link')
   @ApiOperation({ summary: 'Link an attachment to an entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Attachment linked to entry' })
+  @ApiResponse({ status: 200, description: 'Attachment linked to entry', type: AttachmentRecordResponseDto })
   async linkToEntry(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: LinkAttachmentDto,
-  ) {
+  ): Promise<AttachmentRecordResponseDto> {
     if (!dto.entryId) {
       throw apiError(NotFoundException, 'VALIDATION_FAILED', 'entryId is required');
     }
     const attachment = await this.attachmentsService.linkToEntry(user.userId, id, dto.entryId);
-    return {
-      id: attachment.id,
-      original_filename: attachment.originalFilename,
-      stored_filename: attachment.storedFilename,
-      mimetype: attachment.mimetype,
-      size: attachment.size,
-      entry_id: attachment.entryId,
-      created_at: attachment.createdAt,
-      transcript: attachment.transcript,
-      transcribed_at: attachment.transcribedAt,
-    };
+    return toAttachmentRecordResponse(attachment);
   }
 
   @Post(':id/transcribe')
@@ -128,11 +114,11 @@ export class AttachmentsController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete an attachment' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Attachment deleted' })
+  @ApiResponse({ status: 200, description: 'Attachment deleted', type: SuccessResponseDto })
   async delete(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.attachmentsService.delete(user.userId, id);
   }
 

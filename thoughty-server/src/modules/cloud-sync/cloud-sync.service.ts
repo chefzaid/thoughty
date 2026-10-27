@@ -9,7 +9,13 @@ import { GoogleDriveProvider } from './providers/google-drive.provider';
 import { OneDriveProvider } from './providers/onedrive.provider';
 import { DropboxProvider } from './providers/dropbox.provider';
 import type { CloudProvider, CloudFileInfo, CloudTokens } from './providers/cloud-provider.interface';
-import type { CloudProviderType, SyncFrequency } from './dto';
+import type {
+  CloudProviderType,
+  CloudStatusResponseDto,
+  CloudSyncSchedulesResponseDto,
+  DiffSyncResponseDto,
+  SyncFrequency,
+} from './dto';
 import { checkCloudCancellation, verifyCloudOwnership } from './providers/cloud-operation';
 
 const ENCRYPTION_ALGORITHM = 'aes-256-gcm';
@@ -163,9 +169,9 @@ export class CloudSyncService {
     return { success: true };
   }
 
-  async getStatus(userId: number): Promise<Record<string, { connected: boolean; connectedAt?: string }>> {
+  async getStatus(userId: number): Promise<CloudStatusResponseDto> {
     const providers: CloudProviderType[] = ['google_drive', 'onedrive', 'dropbox'];
-    const status: Record<string, { connected: boolean; connectedAt?: string }> = {};
+    const status = {} as CloudStatusResponseDto;
 
     for (const provider of providers) {
       const [tokenSetting, connectedAtSetting] = await Promise.all([
@@ -221,27 +227,9 @@ export class CloudSyncService {
     weekly: 7 * 24 * 60 * 60 * 1000,
   };
 
-  async getSyncSchedules(userId: number): Promise<Record<string, {
-    enabled: boolean;
-    frequency?: SyncFrequency;
-    format?: string;
-    diaryId?: number;
-    includeVisibility?: boolean;
-    lastSyncAt?: string;
-    lastSyncHash?: string;
-    nextSyncAt?: string;
-  }>> {
+  async getSyncSchedules(userId: number): Promise<CloudSyncSchedulesResponseDto> {
     const providers: CloudProviderType[] = ['google_drive', 'onedrive', 'dropbox'];
-    const result: Record<string, {
-      enabled: boolean;
-      frequency?: SyncFrequency;
-      format?: string;
-      diaryId?: number;
-      includeVisibility?: boolean;
-      lastSyncAt?: string;
-      lastSyncHash?: string;
-      nextSyncAt?: string;
-    }> = {};
+    const result = {} as CloudSyncSchedulesResponseDto;
 
     for (const provider of providers) {
       const fields = ['sync_enabled', 'sync_frequency', 'sync_format', 'sync_diary_id', 'sync_include_visibility', 'last_sync_at', 'last_sync_hash'];
@@ -326,11 +314,7 @@ export class CloudSyncService {
     return { success: true };
   }
 
-  async executeDiffSync(userId: number, provider: CloudProviderType): Promise<{
-    synced: boolean;
-    message: string;
-    file?: CloudFileInfo;
-  }> {
+  async executeDiffSync(userId: number, provider: CloudProviderType): Promise<DiffSyncResponseDto> {
     await verifyCloudOwnership();
     // Load schedule config
     const [formatSetting, diaryIdSetting, includeVisibilitySetting, lastHashSetting] = await Promise.all([

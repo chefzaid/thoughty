@@ -2,6 +2,10 @@ import { useCallback, type Dispatch, type SetStateAction } from 'react';
 import { readApiErrorMessage, safeJsonParse } from '../services/api/base';
 import { API_BASE, authFailure } from './authRequests';
 import type { AuthResult, User } from './authTypes';
+import type { components } from '../generated/openapi';
+
+/** What the password, verification and deletion steps answer: done, with a sentence for the user. */
+type SuccessMessageResponse = components['schemas']['SuccessMessageResponseDto'];
 
 interface AccountActionsOptions {
   authFetch: (url: string, options?: RequestInit) => Promise<Response>;
@@ -48,7 +52,7 @@ export function useAccountActions({ authFetch, clearSession, setError, setUser }
         throw new Error(await readApiErrorMessage(response, 'forgotPasswordFailed'));
       }
 
-      const data = await safeJsonParse<{ message?: string }>(response);
+      const data = await safeJsonParse<SuccessMessageResponse>(response);
       return { success: true, message: data?.message };
     } catch (err) {
       return authFailure(err, 'forgotPasswordFailed', setError);
@@ -69,7 +73,7 @@ export function useAccountActions({ authFetch, clearSession, setError, setUser }
         throw new Error(await readApiErrorMessage(response, 'Failed to reset password'));
       }
 
-      const data = await safeJsonParse<{ message?: string }>(response);
+      const data = await safeJsonParse<SuccessMessageResponse>(response);
       return { success: true, message: data?.message };
     } catch (err) {
       return authFailure(err, 'Failed to reset password', setError);
@@ -89,7 +93,7 @@ export function useAccountActions({ authFetch, clearSession, setError, setUser }
         throw new Error(await readApiErrorMessage(response, 'Email verification failed'));
       }
 
-      const data = await safeJsonParse<{ message?: string }>(response);
+      const data = await safeJsonParse<SuccessMessageResponse>(response);
       setUser((currentUser) => currentUser ? { ...currentUser, emailVerified: true } : null);
       return { success: true, message: data?.message };
     } catch (err) {
@@ -108,7 +112,7 @@ export function useAccountActions({ authFetch, clearSession, setError, setUser }
         throw new Error(await readApiErrorMessage(response, 'Failed to resend verification email'));
       }
 
-      const data = await safeJsonParse<{ message?: string }>(response);
+      const data = await safeJsonParse<SuccessMessageResponse>(response);
       return { success: true, message: data?.message };
     } catch (err) {
       return authFailure(err, 'Failed to resend verification email', setError);
@@ -128,7 +132,7 @@ export function useAccountActions({ authFetch, clearSession, setError, setUser }
         throw new Error(await readApiErrorMessage(response, 'deleteAccountFailed'));
       }
 
-      const data = await safeJsonParse<{ message?: string }>(response);
+      const data = await safeJsonParse<SuccessMessageResponse>(response);
 
       // Log the user out after account deletion; the server has cleared the cookie
       clearSession();

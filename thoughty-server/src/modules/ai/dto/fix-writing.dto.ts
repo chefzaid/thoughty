@@ -21,3 +21,8 @@ export class FixWritingDto {
   @IsIn(fixWritingModes)
   mode?: FixWritingMode;
 }
+
+export class FixWritingResponseDto {
+  @ApiProperty({ description: 'The content rewritten in the requested mode' })
+  content!: string;
+}

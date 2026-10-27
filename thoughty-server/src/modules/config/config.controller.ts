@@ -3,6 +3,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { ConfigService } from './config.service';
 import { UserDataExportService } from './user-data-export.service';
 import { UpdateConfigDto } from './dto/config.dto';
+import { FEATURE_FLAGS_SCHEMA, UserConfigDto } from './dto/config-response.dto';
+import { SuccessResponseDto } from '@/common/dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { Response } from 'express';
@@ -24,8 +26,9 @@ export class ConfigController {
   @ApiResponse({
     status: 200,
     description: 'User preferences (the keys POST /api/config accepts), as text',
+    type: UserConfigDto,
   })
-  async getConfig(@CurrentUser() user: AuthenticatedUser): Promise<Record<string, string>> {
+  async getConfig(@CurrentUser() user: AuthenticatedUser): Promise<UserConfigDto> {
     return this.configService.getConfig(user.userId);
   }
 
@@ -36,18 +39,18 @@ export class ConfigController {
       'Saves the given preferences. Credentials, cloud connections, sync state, and export ' +
       'format have their own endpoints and cannot be set here.',
   })
-  @ApiResponse({ status: 200, description: 'Configuration updated' })
+  @ApiResponse({ status: 200, description: 'Configuration updated', type: SuccessResponseDto })
   @ApiResponse({ status: 400, description: 'Unknown or reserved setting, or an invalid value' })
   async updateConfig(
     @CurrentUser() user: AuthenticatedUser,
     @Body() newConfig: UpdateConfigDto,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.configService.updateConfig(user.userId, newConfig);
   }
 
   @Get('feature-flags')
   @ApiOperation({ summary: 'Get runtime feature flags for the current environment' })
-  @ApiResponse({ status: 200, description: 'Feature flag key/value map' })
+  @ApiResponse({ status: 200, description: 'Feature flag key/value map', schema: FEATURE_FLAGS_SCHEMA })
   async getFeatureFlags(): Promise<Record<string, boolean>> {
     return this.featureFlagsService.getFeatureFlags();
   }

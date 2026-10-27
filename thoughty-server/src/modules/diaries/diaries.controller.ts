@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { DiariesService } from './diaries.service';
 import { CreateDiaryDto, UpdateDiaryDto, DiaryResponseDto, ReorderDiariesDto } from './dto';
-import { SuccessResponseDto } from '@/modules/entries/dto';
+import { SuccessResponseDto } from '@/common/dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 

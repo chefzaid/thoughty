@@ -101,7 +101,7 @@ function ImportExport({
             try {
                 const response = await authFetch('/api/io/format');
                 if (response.ok) {
-                    setFormatConfig(await response.json());
+                    setFormatConfig(await response.json() as FormatConfig);
                 }
             } catch (error) {
                 console.error('Failed to fetch format settings:', error);

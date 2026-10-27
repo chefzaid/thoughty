@@ -188,11 +188,11 @@ export class AttachmentResponseDto {
   @ApiProperty()
   size: number;
 
-  @ApiPropertyOptional({ nullable: true })
-  transcript?: string;
+  @ApiPropertyOptional({ type: String, nullable: true })
+  transcript?: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
-  transcribed_at?: Date;
+  @ApiPropertyOptional({ type: Date, nullable: true })
+  transcribed_at?: Date | null;
 }
 
 export class EntryDatesResponseDto {
@@ -264,9 +264,4 @@ export class DeleteAllResponseDto {
 
   @ApiProperty()
   deletedCount: number;
-}
-
-export class SuccessResponseDto {
-  @ApiProperty()
-  success: boolean;
 }

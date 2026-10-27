@@ -1,16 +1,13 @@
 // Entry-related types
 
-export interface Attachment {
-  id: number;
-  original_filename: string;
-  stored_filename: string;
-  mimetype: string;
-  size: number;
-  entry_id?: number | null;
-  created_at?: string;
-  transcript?: string | null;
-  transcribed_at?: string | null;
-}
+import type { components } from '../generated/openapi';
+
+/**
+ * A file attached to an entry. Entries list their attachments with the base fields; an upload or a
+ * link answers the full record, with its entry and upload time.
+ */
+export type Attachment = components['schemas']['AttachmentResponseDto']
+  & Partial<Pick<components['schemas']['AttachmentRecordResponseDto'], 'entry_id' | 'created_at'>>;
 
 export interface Entry {
   id: number;
@@ -62,20 +59,8 @@ export interface EntriesResponse {
   allTags: string[];
 }
 
-export interface EntryRevision {
-  id: number;
-  entryId: number;
-  title?: string | null;
-  timeOfDay?: string | null;
-  mood?: number | null;
-  feelings?: string[];
-  content: string;
-  tags: string[];
-  date: string;
-  format: string;
-  visibility: string;
-  createdAt: string;
-}
+/** An earlier version of an entry, as its history lists it. */
+export type EntryRevision = components['schemas']['EntryRevisionResponseDto'];
 
 export interface EntryBacklink {
   id: number;

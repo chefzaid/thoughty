@@ -42,9 +42,11 @@ import {
   EntryMutationResponseDto,
   CountedMutationResponseDto,
   DeleteAllResponseDto,
-  SuccessResponseDto,
   EntryHighlightsResponseDto,
+  EntryRevisionResponseDto,
+  toEntryRevisionResponse,
 } from './dto';
+import { SuccessResponseDto } from '@/common/dto';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 
@@ -288,9 +290,13 @@ export class EntriesController {
   @Get(':id/history')
   @ApiOperation({ summary: 'Get revision history for an entry' })
   @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Entry revision history' })
-  async getHistory(@CurrentUser() user: AuthenticatedUser, @Param('id', ParseIntPipe) id: number) {
-    return this.entriesService.getRevisions(user.userId, id);
+  @ApiResponse({ status: 200, description: 'Earlier versions of the entry, newest first', type: [EntryRevisionResponseDto] })
+  async getHistory(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<EntryRevisionResponseDto[]> {
+    const revisions = await this.entriesService.getRevisions(user.userId, id);
+    return revisions.map(toEntryRevisionResponse);
   }
 
   @Delete(':id/history/:revisionId')

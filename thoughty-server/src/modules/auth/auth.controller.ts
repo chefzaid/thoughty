@@ -64,6 +64,7 @@ import {
 } from './services';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public, CurrentUser, AuthenticatedUser } from '@/common/decorators';
+import { SuccessMessageResponseDto, SuccessResponseDto } from '@/common/dto';
 import { RATE_LIMITS, throttleDefault } from '@/common';
 
 const REFRESH_COOKIE_NOTE = `Sets the httpOnly \`${REFRESH_TOKEN_COOKIE}\` refresh token cookie (path /api/auth).`;
@@ -201,11 +202,11 @@ export class AuthController {
   @ApiBearerAuth()
   @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiOperation({ summary: 'Confirm the setup code and enable two-factor authentication' })
-  @ApiResponse({ status: 200, description: 'Two-factor authentication enabled' })
+  @ApiResponse({ status: 200, description: 'Two-factor authentication enabled', type: SuccessResponseDto })
   async enableTwoFactor(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: TwoFactorCodeDto,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.twoFactorService.enable(user.userId, dto);
   }
 
@@ -215,12 +216,12 @@ export class AuthController {
   @ApiBearerAuth()
   @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiOperation({ summary: 'Disable two-factor authentication after password confirmation' })
-  @ApiResponse({ status: 200, description: 'Two-factor authentication disabled' })
+  @ApiResponse({ status: 200, description: 'Two-factor authentication disabled', type: SuccessResponseDto })
   @ApiResponse({ status: 401, description: 'Invalid password' })
   async disableTwoFactor(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: DisableTwoFactorDto,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.twoFactorService.disable(user.userId, dto.password);
   }
 
@@ -303,11 +304,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiCookieAuth(REFRESH_TOKEN_COOKIE)
   @ApiOperation({ summary: 'Logout, revoke the refresh token, and clear its cookie' })
-  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully', type: SuccessResponseDto })
   async logout(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     clearRefreshTokenCookie(res);
     return this.sessionService.logout(readRefreshTokenCookie(req));
   }
@@ -339,12 +340,12 @@ export class AuthController {
     summary: 'Revoke all other active sessions',
     description: 'The session of the refresh token cookie is kept.',
   })
-  @ApiResponse({ status: 200, description: 'Other sessions revoked' })
+  @ApiResponse({ status: 200, description: 'Other sessions revoked', type: SuccessResponseDto })
   @ApiResponse({ status: 400, description: 'Refresh token cookie missing' })
   async revokeOtherSessions(
     @CurrentUser() user: AuthenticatedUser,
     @Req() req: Request,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.sessionService.revokeOtherSessions(user.userId, readRefreshTokenCookie(req));
   }
 
@@ -358,13 +359,13 @@ export class AuthController {
     summary: 'Revoke one active session',
     description: 'The session of the refresh token cookie cannot be revoked here; use logout.',
   })
-  @ApiResponse({ status: 200, description: 'Session revoked' })
+  @ApiResponse({ status: 200, description: 'Session revoked', type: SuccessResponseDto })
   @ApiResponse({ status: 404, description: 'Session not found' })
   async revokeSession(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) sessionId: number,
     @Req() req: Request,
-  ): Promise<{ success: boolean }> {
+  ): Promise<SuccessResponseDto> {
     return this.sessionService.revokeSession(user.userId, sessionId, readRefreshTokenCookie(req));
   }
 
@@ -384,12 +385,12 @@ export class AuthController {
   @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change user password' })
-  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully', type: SuccessMessageResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized or incorrect current password' })
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChangePasswordDto,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<SuccessMessageResponseDto> {
     return this.passwordService.changePassword(user.userId, dto);
   }
 
@@ -398,10 +399,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.passwordRecovery))
   @ApiOperation({ summary: 'Request password reset email' })
-  @ApiResponse({ status: 200, description: 'Reset email sent if account exists' })
+  @ApiResponse({ status: 200, description: 'Reset email sent if account exists', type: SuccessMessageResponseDto })
   async forgotPassword(
     @Body() dto: ForgotPasswordDto,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<SuccessMessageResponseDto> {
     return this.passwordService.forgotPassword(dto.email);
   }
 
@@ -410,11 +411,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.passwordRecovery))
   @ApiOperation({ summary: 'Reset password with token' })
-  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully', type: SuccessMessageResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
   async resetPassword(
     @Body() dto: ResetPasswordDto,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<SuccessMessageResponseDto> {
     return this.passwordService.resetPassword(dto.token, dto.newPassword);
   }
 
@@ -423,9 +424,9 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.passwordRecovery))
   @ApiOperation({ summary: 'Verify email with token' })
-  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully', type: SuccessMessageResponseDto })
   @ApiResponse({ status: 400, description: 'Invalid or expired token' })
-  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<{ success: boolean; message: string }> {
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<SuccessMessageResponseDto> {
     return this.emailVerificationService.verifyEmail(dto.token);
   }
 
@@ -435,10 +436,10 @@ export class AuthController {
   @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Resend the current user email verification message' })
-  @ApiResponse({ status: 200, description: 'Verification email sent if needed' })
+  @ApiResponse({ status: 200, description: 'Verification email sent if needed', type: SuccessMessageResponseDto })
   async resendVerificationEmail(
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<SuccessMessageResponseDto> {
     return this.emailVerificationService.sendVerificationEmail(user.userId);
   }
 
@@ -448,13 +449,13 @@ export class AuthController {
   @Throttle(throttleDefault(RATE_LIMITS.accountSecurity))
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete user account' })
-  @ApiResponse({ status: 200, description: 'Account deleted; the refresh token cookie is cleared' })
+  @ApiResponse({ status: 200, description: 'Account deleted; the refresh token cookie is cleared', type: SuccessMessageResponseDto })
   @ApiResponse({ status: 401, description: 'Invalid password' })
   async deleteAccount(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: DeleteAccountDto,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<SuccessMessageResponseDto> {
     const result = await this.accountService.deleteAccount(user.userId, dto.password);
     clearRefreshTokenCookie(res);
     return result;

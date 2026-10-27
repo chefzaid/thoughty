@@ -1,5 +1,6 @@
 import { test, expect } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
+import { fulfillJson } from '../support/mockApp.route-utils';
 
 const statsEntries = [
   {
@@ -83,7 +84,7 @@ test.describe('Route navigation', () => {
           markLookupRequested();
         });
       }
-      await route.fulfill({ json: { found: false } });
+      await fulfillJson(route, { found: false });
     });
 
     await page.goto('/journal?entry=999');

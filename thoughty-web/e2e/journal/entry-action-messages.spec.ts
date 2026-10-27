@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
+import { fulfillJson } from '../support/mockApp.route-utils';
 
 const entry = {
   id: 10,
@@ -13,7 +14,7 @@ const entry = {
 
 /** Answers the given entry endpoint as if the API were down. */
 async function failEntryRequests(page: Page, path: string) {
-  await page.route(`http://localhost:5173${path}`, (route) => route.fulfill({ status: 503, json: {} }));
+  await page.route(`http://localhost:5173${path}`, (route) => fulfillJson(route, {}, { status: 503 }));
 }
 
 test.describe('Entry action messages', () => {
@@ -85,7 +86,7 @@ test.describe('Entry action messages', () => {
   test('reports why pinning failed in a toast, in English', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, initialEntries: [entry] });
     await page.route(`http://localhost:5173/api/entries/${entry.id}/pinned`, (route) =>
-      route.fulfill({ status: 400, json: { statusCode: 400, message: 'You can pin at most 3 entries.', error: 'Bad Request' } }));
+      fulfillJson(route, { statusCode: 400, message: 'You can pin at most 3 entries.', error: 'Bad Request' }, { status: 400 }));
 
     await page.goto('/journal');
     await page.locator('#entry-10').getByTitle('Pin entry').click();

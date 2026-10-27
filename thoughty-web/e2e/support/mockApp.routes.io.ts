@@ -15,11 +15,15 @@ export async function handleIoRoutes({
   state,
 }: RouteContext): Promise<boolean> {
   if (pathname === "/api/io/format") {
+    // The saved settings over the defaults, as the API fills them in
+    const formatConfig = () => ({ ...DEFAULT_FORMAT_CONFIG, ...(state.lastFormatPayload as object | null) });
     if (request.method() === "POST") {
       state.lastFormatPayload = request.postDataJSON();
+      await fulfillJson(route, { success: true, config: formatConfig() });
+      return true;
     }
 
-    await fulfillJson(route, state.lastFormatPayload || DEFAULT_FORMAT_CONFIG);
+    await fulfillJson(route, formatConfig());
     return true;
   }
 

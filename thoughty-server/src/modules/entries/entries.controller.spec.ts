@@ -299,13 +299,32 @@ describe('EntriesController', () => {
   });
 
   describe('getHistory', () => {
-    it('delegates to entriesService.getRevisions', async () => {
-      const expected = [{ id: 1, content: 'Old content', createdAt: new Date() }];
-      entriesService.getRevisions!.mockResolvedValue(expected);
+    it('lists the revisions from entriesService.getRevisions without their owner', async () => {
+      const createdAt = new Date('2026-10-20T08:00:00Z');
+      entriesService.getRevisions!.mockResolvedValue([
+        {
+          id: 1, entryId: 1, userId: 1, content: 'Old content', tags: ['walk'], date: '2026-10-20', timeOfDay: '07:30',
+          title: 'Walk', mood: 4, feelings: ['calm'], format: 'markdown', visibility: 'private', createdAt,
+        },
+        // Columns stored before titles, moods and feelings existed
+        {
+          id: 2, entryId: 1, userId: 1, content: 'First', tags: null, date: '2026-10-20', timeOfDay: undefined,
+          title: undefined, mood: undefined, feelings: undefined, format: 'plain', visibility: 'public', createdAt,
+        },
+      ]);
 
       const result = await controller.getHistory(mockUser as any, 1);
       expect(entriesService.getRevisions).toHaveBeenCalledWith(1, 1);
-      expect(result).toBe(expected);
+      expect(result).toEqual([
+        {
+          id: 1, entryId: 1, content: 'Old content', tags: ['walk'], date: '2026-10-20', timeOfDay: '07:30',
+          title: 'Walk', mood: 4, feelings: ['calm'], format: 'markdown', visibility: 'private', createdAt,
+        },
+        {
+          id: 2, entryId: 1, content: 'First', tags: [], date: '2026-10-20', timeOfDay: null,
+          title: null, mood: null, feelings: [], format: 'plain', visibility: 'public', createdAt,
+        },
+      ]);
     });
   });
 

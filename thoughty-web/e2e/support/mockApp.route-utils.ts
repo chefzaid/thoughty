@@ -5,7 +5,7 @@ import type { Request, Route } from '@playwright/test';
 import type { components } from '../../src/generated/openapi';
 
 import { checkMockResponse, recordContractViolations } from './mockApp.contract';
-import type { MockAppState, MockEntry } from './mockApp.shared';
+import type { MockAppState, MockEntry, MockEntryRevision } from './mockApp.shared';
 
 export type RouteContext = {
   route: Route;
@@ -39,6 +39,17 @@ export function fulfillApiError(route: Route, statusCode: number, code: string, 
 
 export function sortStrings(values: string[]): string[] {
   return [...values].sort((left, right) => left.localeCompare(right));
+}
+
+/** A revision as the history answers it (`EntryRevisionResponseDto`): the fields a revision never had are null or empty. */
+export function toRevisionResponse(revision: MockEntryRevision): components['schemas']['EntryRevisionResponseDto'] {
+  return {
+    ...revision,
+    title: revision.title ?? null,
+    timeOfDay: revision.timeOfDay ?? null,
+    mood: revision.mood ?? null,
+    feelings: revision.feelings ?? [],
+  };
 }
 
 /** An entry exactly as the API serializes it (`EntryResponseDto`), so the mock cannot drift from the contract. */

@@ -179,3 +179,41 @@ export class ImportResponseDto {
   @ApiProperty()
   totalProcessed: number;
 }
+
+/** The TXT file layout in use: the saved settings, with defaults for the ones never saved. */
+export class FormatConfigResponseDto {
+  @ApiProperty({ description: 'Line between two days' })
+  entrySeparator: string;
+
+  @ApiProperty({ description: 'Line between two entries of the same day' })
+  sameDaySeparator: string;
+
+  @ApiProperty()
+  datePrefix: string;
+
+  @ApiProperty()
+  dateSuffix: string;
+
+  @ApiProperty({ example: 'YYYY-MM-DD' })
+  dateFormat: string;
+
+  @ApiProperty()
+  tagOpenBracket: string;
+
+  @ApiProperty()
+  tagCloseBracket: string;
+
+  @ApiProperty()
+  tagSeparator: string;
+
+  @ApiProperty({ enum: ['header', 'firstLine'] })
+  titlePlacement: 'header' | 'firstLine';
+}
+
+export class SaveFormatResponseDto {
+  @ApiProperty()
+  success: boolean;
+
+  @ApiProperty({ type: FormatConfigResponseDto, description: 'The settings as saved, with defaults filled in' })
+  config: FormatConfigResponseDto;
+}

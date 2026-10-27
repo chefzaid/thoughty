@@ -62,7 +62,12 @@ async function handleCloudSyncReadRoutes({ route, request, pathname, searchParam
   }
 
   if (pathname === '/api/cloud-sync/schedules') {
-    await fulfillJson(route, state.cloudSchedules);
+    // The API answers every provider, a provider without a schedule as disabled
+    const providers: MockCloudProvider[] = ['google_drive', 'onedrive', 'dropbox'];
+    await fulfillJson(route, Object.fromEntries(providers.map((provider) => {
+      const schedule = state.cloudSchedules[provider];
+      return [provider, { ...schedule, enabled: schedule?.enabled ?? false, includeVisibility: schedule?.includeVisibility ?? false }];
+    })));
     return true;
   }
 
@@ -170,7 +175,7 @@ async function handleCloudSyncWriteRoutes({ route, request, pathname, searchPara
       };
     }
 
-    await fulfillJson(route, { success: true, synced: false, message: 'No changes detected' });
+    await fulfillJson(route, { synced: false, message: 'No changes detected since last sync' });
     return true;
   }
 

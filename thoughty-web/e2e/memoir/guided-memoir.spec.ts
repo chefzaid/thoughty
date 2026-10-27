@@ -1,6 +1,7 @@
 import { expect, test } from '../support/test';
 
 import { setupMockApp } from '../support/mockApp';
+import { fulfillJson } from '../support/mockApp.route-utils';
 
 test.describe('Guided memoir', () => {
   test('starts the memoir in a new diary, answers this week’s question, and opens it in the journal', async ({ page }) => {
@@ -42,11 +43,21 @@ test.describe('Guided memoir', () => {
       const url = route.request().url();
       if (url.endsWith('/upload')) {
         uploads += 1;
-        await route.fulfill({ status: 201, json: { id: 41, original_filename: 'story.mp3', mimetype: 'audio/mpeg', size: 9 } });
+        await fulfillJson(route, {
+          id: 41,
+          original_filename: 'story.mp3',
+          stored_filename: 'story-41.mp3',
+          mimetype: 'audio/mpeg',
+          size: 9,
+          entry_id: null,
+          created_at: '2026-10-19T08:59:00.000Z',
+          transcript: null,
+          transcribed_at: null,
+        }, { status: 201 });
         return;
       }
       if (url.endsWith('/41/transcribe')) {
-        await route.fulfill({ status: 201, json: { transcript: 'We played marbles until dark.', transcribed_at: '2026-10-19T09:00:00.000Z', cached: false } });
+        await fulfillJson(route, { transcript: 'We played marbles until dark.', transcribed_at: '2026-10-19T09:00:00.000Z', cached: false }, { status: 201 });
         return;
       }
       await route.fallback();

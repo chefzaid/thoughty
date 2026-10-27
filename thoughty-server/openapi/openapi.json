@@ -375,7 +375,17 @@
         },
         "responses": {
           "200": {
-            "description": "Two-factor authentication enabled"
+            "description": "Two-factor authentication enabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           }
         },
         "security": [
@@ -408,7 +418,17 @@
         },
         "responses": {
           "200": {
-            "description": "Two-factor authentication disabled"
+            "description": "Two-factor authentication disabled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           },
           "401": {
             "description": "Invalid password",
@@ -659,7 +679,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Logged out successfully"
+            "description": "Logged out successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           }
         },
         "security": [
@@ -736,7 +766,17 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Other sessions revoked"
+            "description": "Other sessions revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           },
           "400": {
             "description": "Refresh token cookie missing",
@@ -785,7 +825,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Session revoked"
+            "description": "Session revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           },
           "404": {
             "description": "Session not found",
@@ -891,7 +941,18 @@
         },
         "responses": {
           "200": {
-            "description": "Password changed successfully"
+            "description": "Password changed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessageResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "message": "example"
+                }
+              }
+            }
           },
           "401": {
             "description": "Unauthorized or incorrect current password",
@@ -940,7 +1001,18 @@
         },
         "responses": {
           "200": {
-            "description": "Reset email sent if account exists"
+            "description": "Reset email sent if account exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessageResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "message": "example"
+                }
+              }
+            }
           }
         },
         "summary": "Request password reset email",
@@ -969,7 +1041,18 @@
         },
         "responses": {
           "200": {
-            "description": "Password reset successfully"
+            "description": "Password reset successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessageResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "message": "example"
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid or expired token",
@@ -1013,7 +1096,18 @@
         },
         "responses": {
           "200": {
-            "description": "Email verified successfully"
+            "description": "Email verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessageResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "message": "example"
+                }
+              }
+            }
           },
           "400": {
             "description": "Invalid or expired token",
@@ -1044,7 +1138,18 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Verification email sent if needed"
+            "description": "Verification email sent if needed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessageResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "message": "example"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -1077,7 +1182,18 @@
         },
         "responses": {
           "200": {
-            "description": "Account deleted; the refresh token cookie is cleared"
+            "description": "Account deleted; the refresh token cookie is cleared",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessMessageResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "message": "example"
+                }
+              }
+            }
           },
           "401": {
             "description": "Invalid password",
@@ -2777,7 +2893,37 @@
         ],
         "responses": {
           "200": {
-            "description": "Entry revision history"
+            "description": "Earlier versions of the entry, newest first",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EntryRevisionResponseDto"
+                  }
+                },
+                "example": [
+                  {
+                    "id": 1,
+                    "entryId": 1,
+                    "title": "June reflections",
+                    "timeOfDay": "2026-06-24T10:00:00.000Z",
+                    "mood": 1,
+                    "feelings": [
+                      "example"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "tags": [
+                      "reflection"
+                    ],
+                    "date": "2026-06-24",
+                    "format": "2026-06-24T10:00:00.000Z",
+                    "visibility": "public",
+                    "createdAt": "2026-06-24T10:00:00.000Z"
+                  }
+                ]
+              }
+            }
           }
         },
         "security": [
@@ -2885,7 +3031,46 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "User preferences (the keys POST /api/config accepts), as text"
+            "description": "User preferences (the keys POST /api/config accepts), as text",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserConfigDto"
+                },
+                "example": {
+                  "theme": "light",
+                  "name": "Daily Journal",
+                  "bio": "example",
+                  "email": "user@example.com",
+                  "birthday": "example",
+                  "gender": "example",
+                  "avatarUrl": "https://thoughty.example.com/callback",
+                  "fontFamily": "system",
+                  "fontSize": "example",
+                  "fontColor": "#2A9D8F",
+                  "highContrast": "true",
+                  "ttsVoiceUri": "https://thoughty.example.com/callback",
+                  "language": "en",
+                  "entriesPerPage": "example",
+                  "maxPinnedEntries": "example",
+                  "defaultVisibility": "public",
+                  "readDates": "true",
+                  "openRouterModel": "example",
+                  "openRouterTagModel": "reflection",
+                  "openRouterWritingModel": "example",
+                  "openRouterChatModel": "example",
+                  "openRouterToneModel": "example",
+                  "openRouterSummaryModel": "example",
+                  "openRouterPromptModel": "example",
+                  "openRouterBookModel": "example",
+                  "autoTagMaxTags": "reflection",
+                  "tagMetadata": "reflection",
+                  "entryTemplates": "example",
+                  "subscriptionPlan": "free",
+                  "paymentMethodLabel": "example"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -2946,7 +3131,17 @@
         },
         "responses": {
           "200": {
-            "description": "Configuration updated"
+            "description": "Configuration updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           },
           "400": {
             "description": "Unknown or reserved setting, or an invalid value",
@@ -2982,7 +3177,29 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Feature flag key/value map"
+            "description": "Feature flag key/value map",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "example": {
+                    "ai": true,
+                    "bookConverter": true,
+                    "cloudSync": true,
+                    "publicSharing": true
+                  }
+                },
+                "example": {
+                  "ai": true,
+                  "bookConverter": true,
+                  "cloudSync": true,
+                  "publicSharing": true
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3022,7 +3239,23 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "List of available models"
+            "description": "List of available models",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiModelDto"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "openai/gpt-4o-mini",
+                    "name": "OpenAI: GPT-4o-mini"
+                  }
+                ]
+              }
+            }
           }
         },
         "security": [
@@ -3216,7 +3449,19 @@
         },
         "responses": {
           "200": {
-            "description": "Suggested tags returned successfully"
+            "description": "Suggested tags returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestTagsResponseDto"
+                },
+                "example": {
+                  "tags": [
+                    "reflection"
+                  ]
+                }
+              }
+            }
           }
         },
         "security": [
@@ -3250,7 +3495,17 @@
         },
         "responses": {
           "200": {
-            "description": "Corrected content returned successfully"
+            "description": "Corrected content returned successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FixWritingResponseDto"
+                },
+                "example": {
+                  "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4290,7 +4545,25 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Format settings"
+            "description": "Format settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FormatConfigResponseDto"
+                },
+                "example": {
+                  "entrySeparator": "example",
+                  "sameDaySeparator": "example",
+                  "datePrefix": "2026-06-24",
+                  "dateSuffix": "2026-06-24",
+                  "dateFormat": "YYYY-MM-DD",
+                  "tagOpenBracket": "reflection",
+                  "tagCloseBracket": "reflection",
+                  "tagSeparator": "reflection",
+                  "titlePlacement": "header"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4329,7 +4602,28 @@
         },
         "responses": {
           "200": {
-            "description": "Settings saved"
+            "description": "Settings saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SaveFormatResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "config": {
+                    "entrySeparator": "example",
+                    "sameDaySeparator": "example",
+                    "datePrefix": "2026-06-24",
+                    "dateSuffix": "2026-06-24",
+                    "dateFormat": "YYYY-MM-DD",
+                    "tagOpenBracket": "reflection",
+                    "tagCloseBracket": "reflection",
+                    "tagSeparator": "reflection",
+                    "titlePlacement": "header"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4675,7 +4969,25 @@
         },
         "responses": {
           "201": {
-            "description": "File uploaded successfully"
+            "description": "File uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentRecordResponseDto"
+                },
+                "example": {
+                  "id": 1,
+                  "original_filename": "Daily Journal",
+                  "stored_filename": "Daily Journal",
+                  "mimetype": "example",
+                  "size": 1,
+                  "transcript": "example",
+                  "transcribed_at": "2026-06-24T10:00:00.000Z",
+                  "entry_id": 1,
+                  "created_at": "2026-06-24T10:00:00.000Z"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4717,7 +5029,25 @@
         },
         "responses": {
           "200": {
-            "description": "Attachment linked to entry"
+            "description": "Attachment linked to entry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentRecordResponseDto"
+                },
+                "example": {
+                  "id": 1,
+                  "original_filename": "Daily Journal",
+                  "stored_filename": "Daily Journal",
+                  "mimetype": "example",
+                  "size": 1,
+                  "transcript": "example",
+                  "transcribed_at": "2026-06-24T10:00:00.000Z",
+                  "entry_id": 1,
+                  "created_at": "2026-06-24T10:00:00.000Z"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4787,7 +5117,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Attachment deleted"
+            "description": "Attachment deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6177,7 +6517,28 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Connection status for each provider"
+            "description": "Connection status for each provider",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudStatusResponseDto"
+                },
+                "example": {
+                  "google_drive": {
+                    "connected": true,
+                    "connectedAt": "2026-06-24T10:00:00.000Z"
+                  },
+                  "onedrive": {
+                    "connected": true,
+                    "connectedAt": "2026-06-24T10:00:00.000Z"
+                  },
+                  "dropbox": {
+                    "connected": true,
+                    "connectedAt": "2026-06-24T10:00:00.000Z"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6211,7 +6572,17 @@
         },
         "responses": {
           "200": {
-            "description": "Authorization URL"
+            "description": "Authorization URL",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudAuthUrlResponseDto"
+                },
+                "example": {
+                  "url": "https://thoughty.example.com/callback"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6246,7 +6617,18 @@
         },
         "responses": {
           "200": {
-            "description": "Provider connected"
+            "description": "Provider connected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudConnectResponseDto"
+                },
+                "example": {
+                  "success": true,
+                  "connectedAt": "2026-06-24T10:00:00.000Z"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6279,7 +6661,17 @@
         },
         "responses": {
           "200": {
-            "description": "Provider disconnected"
+            "description": "Provider disconnected",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6314,7 +6706,25 @@
         ],
         "responses": {
           "200": {
-            "description": "List of files"
+            "description": "List of files",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CloudFileInfoDto"
+                  }
+                },
+                "example": [
+                  {
+                    "id": "example",
+                    "name": "Daily Journal",
+                    "size": 1,
+                    "modifiedAt": "2026-06-24T10:00:00.000Z"
+                  }
+                ]
+              }
+            }
           }
         },
         "security": [
@@ -6350,7 +6760,20 @@
         },
         "responses": {
           "200": {
-            "description": "File uploaded"
+            "description": "File uploaded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudFileInfoDto"
+                },
+                "example": {
+                  "id": "example",
+                  "name": "Daily Journal",
+                  "size": 1,
+                  "modifiedAt": "2026-06-24T10:00:00.000Z"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6384,7 +6807,17 @@
         },
         "responses": {
           "200": {
-            "description": "File content"
+            "description": "File content",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudDownloadResponseDto"
+                },
+                "example": {
+                  "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6404,7 +6837,46 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Sync schedule configurations"
+            "description": "Sync schedule configurations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CloudSyncSchedulesResponseDto"
+                },
+                "example": {
+                  "google_drive": {
+                    "enabled": true,
+                    "frequency": "every_6h",
+                    "format": "2026-06-24T10:00:00.000Z",
+                    "diaryId": 1,
+                    "includeVisibility": true,
+                    "lastSyncAt": "2026-06-24T10:00:00.000Z",
+                    "lastSyncHash": "example",
+                    "nextSyncAt": "2026-06-24T10:00:00.000Z"
+                  },
+                  "onedrive": {
+                    "enabled": true,
+                    "frequency": "every_6h",
+                    "format": "2026-06-24T10:00:00.000Z",
+                    "diaryId": 1,
+                    "includeVisibility": true,
+                    "lastSyncAt": "2026-06-24T10:00:00.000Z",
+                    "lastSyncHash": "example",
+                    "nextSyncAt": "2026-06-24T10:00:00.000Z"
+                  },
+                  "dropbox": {
+                    "enabled": true,
+                    "frequency": "every_6h",
+                    "format": "2026-06-24T10:00:00.000Z",
+                    "diaryId": 1,
+                    "includeVisibility": true,
+                    "lastSyncAt": "2026-06-24T10:00:00.000Z",
+                    "lastSyncHash": "example",
+                    "nextSyncAt": "2026-06-24T10:00:00.000Z"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6441,7 +6913,17 @@
         },
         "responses": {
           "200": {
-            "description": "Schedule configured"
+            "description": "Schedule configured",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6474,7 +6956,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Schedule removed"
+            "description": "Schedule removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
           }
         },
         "security": [
@@ -6507,7 +6999,24 @@
         },
         "responses": {
           "200": {
-            "description": "Sync result"
+            "description": "Sync result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiffSyncResponseDto"
+                },
+                "example": {
+                  "synced": true,
+                  "message": "example",
+                  "file": {
+                    "id": "example",
+                    "name": "Daily Journal",
+                    "size": 1,
+                    "modifiedAt": "2026-06-24T10:00:00.000Z"
+                  }
+                }
+              }
+            }
           }
         },
         "security": [
@@ -9165,6 +9674,20 @@
           "emailVerified": true
         }
       },
+      "SuccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "example": {
+          "success": true
+        }
+      },
       "DisableTwoFactorDto": {
         "type": "object",
         "properties": {
@@ -9337,6 +9860,26 @@
         "example": {
           "currentPassword": "Password123!",
           "newPassword": "Password123!"
+        }
+      },
+      "SuccessMessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string",
+            "description": "What happened, in English"
+          }
+        },
+        "required": [
+          "success",
+          "message"
+        ],
+        "example": {
+          "success": true,
+          "message": "example"
         }
       },
       "ForgotPasswordDto": {
@@ -10461,20 +11004,6 @@
           ]
         }
       },
-      "SuccessResponseDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "success"
-        ],
-        "example": {
-          "success": true
-        }
-      },
       "UpdateEntryDto": {
         "type": "object",
         "properties": {
@@ -10711,6 +11240,100 @@
           "isPinned": true
         }
       },
+      "EntryRevisionResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "entryId": {
+            "type": "number",
+            "description": "The entry this version belongs to"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "timeOfDay": {
+            "type": "string",
+            "nullable": true,
+            "description": "Time of day (HH:MM), or null"
+          },
+          "mood": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 5
+          },
+          "feelings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "content": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "date": {
+            "type": "string",
+            "description": "Entry date (YYYY-MM-DD) of this version"
+          },
+          "format": {
+            "type": "string",
+            "description": "Text format of this version, such as plain or markdown"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ]
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "When this version was replaced"
+          }
+        },
+        "required": [
+          "id",
+          "entryId",
+          "title",
+          "timeOfDay",
+          "mood",
+          "feelings",
+          "content",
+          "tags",
+          "date",
+          "format",
+          "visibility",
+          "createdAt"
+        ],
+        "example": {
+          "id": 1,
+          "entryId": 1,
+          "title": "June reflections",
+          "timeOfDay": "2026-06-24T10:00:00.000Z",
+          "mood": 1,
+          "feelings": [
+            "example"
+          ],
+          "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+          "tags": [
+            "reflection"
+          ],
+          "date": "2026-06-24",
+          "format": "2026-06-24T10:00:00.000Z",
+          "visibility": "public",
+          "createdAt": "2026-06-24T10:00:00.000Z"
+        }
+      },
       "DeleteAllResponseDto": {
         "type": "object",
         "properties": {
@@ -10728,6 +11351,224 @@
         "example": {
           "success": true,
           "deletedCount": 3
+        }
+      },
+      "UserConfigDto": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "enum": [
+              "light",
+              "dark"
+            ],
+            "description": "Color theme"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Display name"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 10000,
+            "description": "Profile bio"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "description": "Contact email shown on the profile"
+          },
+          "birthday": {
+            "type": "string",
+            "maxLength": 10,
+            "description": "Birthday as YYYY-MM-DD, or empty",
+            "pattern": "^(\\d{4}-\\d{2}-\\d{2})?$"
+          },
+          "gender": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "Gender"
+          },
+          "avatarUrl": {
+            "type": "string",
+            "maxLength": 1000000,
+            "description": "Profile picture as a base64 image data URL or an http(s) URL, or empty",
+            "pattern": "^(data:image\\/[\\w.+-]+;base64,[\\w+/=]*|https?:\\/\\/\\S+)?$"
+          },
+          "fontFamily": {
+            "type": "string",
+            "enum": [
+              "system",
+              "serif",
+              "modern",
+              "mono"
+            ],
+            "description": "Font family"
+          },
+          "fontSize": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Font size in pixels",
+            "pattern": "^\\d{1,3}$"
+          },
+          "fontColor": {
+            "type": "string",
+            "maxLength": 7,
+            "description": "Text color as #rrggbb, or empty for the theme default",
+            "pattern": "^(#[0-9a-fA-F]{6})?$"
+          },
+          "highContrast": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "High contrast mode"
+          },
+          "ttsVoiceUri": {
+            "type": "string",
+            "maxLength": 1000,
+            "description": "Text-to-speech voice URI, or empty for the default"
+          },
+          "language": {
+            "type": "string",
+            "enum": [
+              "en",
+              "fr"
+            ],
+            "description": "Interface language"
+          },
+          "entriesPerPage": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Entries per page",
+            "pattern": "^\\d{1,3}$"
+          },
+          "maxPinnedEntries": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Maximum pinned entries",
+            "pattern": "^\\d{1,3}$"
+          },
+          "defaultVisibility": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "description": "Visibility of new entries"
+          },
+          "readDates": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Read entry dates aloud"
+          },
+          "openRouterModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterTagModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterWritingModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterChatModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterToneModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterSummaryModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterPromptModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "openRouterBookModel": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "OpenRouter model id, or empty for the default"
+          },
+          "autoTagMaxTags": {
+            "type": "string",
+            "maxLength": 3,
+            "description": "Maximum tags suggested automatically (0 turns it off)",
+            "pattern": "^\\d{1,3}$"
+          },
+          "tagMetadata": {
+            "type": "string",
+            "maxLength": 500000,
+            "description": "Tag colors and descriptions as serialized JSON"
+          },
+          "entryTemplates": {
+            "type": "string",
+            "maxLength": 500000,
+            "description": "Custom entry templates as serialized JSON"
+          },
+          "subscriptionPlan": {
+            "type": "string",
+            "enum": [
+              "free",
+              "plus",
+              "pro"
+            ],
+            "description": "Subscription plan"
+          },
+          "paymentMethodLabel": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "Payment method label"
+          }
+        },
+        "example": {
+          "theme": "light",
+          "name": "Daily Journal",
+          "bio": "example",
+          "email": "user@example.com",
+          "birthday": "example",
+          "gender": "example",
+          "avatarUrl": "https://thoughty.example.com/callback",
+          "fontFamily": "system",
+          "fontSize": "example",
+          "fontColor": "#2A9D8F",
+          "highContrast": "true",
+          "ttsVoiceUri": "https://thoughty.example.com/callback",
+          "language": "en",
+          "entriesPerPage": "example",
+          "maxPinnedEntries": "example",
+          "defaultVisibility": "public",
+          "readDates": "true",
+          "openRouterModel": "example",
+          "openRouterTagModel": "reflection",
+          "openRouterWritingModel": "example",
+          "openRouterChatModel": "example",
+          "openRouterToneModel": "example",
+          "openRouterSummaryModel": "example",
+          "openRouterPromptModel": "example",
+          "openRouterBookModel": "example",
+          "autoTagMaxTags": "reflection",
+          "tagMetadata": "reflection",
+          "entryTemplates": "example",
+          "subscriptionPlan": "free",
+          "paymentMethodLabel": "example"
         }
       },
       "UpdateConfigDto": {
@@ -10946,6 +11787,29 @@
           "entryTemplates": "example",
           "subscriptionPlan": "free",
           "paymentMethodLabel": "example"
+        }
+      },
+      "AiModelDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "OpenRouter model id",
+            "example": "openai/gpt-4o-mini"
+          },
+          "name": {
+            "type": "string",
+            "description": "Display name",
+            "example": "OpenAI: GPT-4o-mini"
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "example": {
+          "id": "openai/gpt-4o-mini",
+          "name": "OpenAI: GPT-4o-mini"
         }
       },
       "OpenRouterCredentialStatusDto": {
@@ -11179,6 +12043,26 @@
           "maxTags": 5
         }
       },
+      "SuggestTagsResponseDto": {
+        "type": "object",
+        "properties": {
+          "tags": {
+            "description": "Suggested tags, lowercased, without the ones already attached",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "tags"
+        ],
+        "example": {
+          "tags": [
+            "reflection"
+          ]
+        }
+      },
       "FixWritingDto": {
         "type": "object",
         "properties": {
@@ -11203,6 +12087,21 @@
         "example": {
           "content": "Today I wrote a thoughtful journal entry about focus and calm.",
           "mode": "grammar"
+        }
+      },
+      "FixWritingResponseDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "The content rewritten in the requested mode"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "example": {
+          "content": "Today I wrote a thoughtful journal entry about focus and calm."
         }
       },
       "SummarizeEntryDto": {
@@ -12955,6 +13854,67 @@
           }
         }
       },
+      "FormatConfigResponseDto": {
+        "type": "object",
+        "properties": {
+          "entrySeparator": {
+            "type": "string",
+            "description": "Line between two days"
+          },
+          "sameDaySeparator": {
+            "type": "string",
+            "description": "Line between two entries of the same day"
+          },
+          "datePrefix": {
+            "type": "string"
+          },
+          "dateSuffix": {
+            "type": "string"
+          },
+          "dateFormat": {
+            "type": "string",
+            "example": "YYYY-MM-DD"
+          },
+          "tagOpenBracket": {
+            "type": "string"
+          },
+          "tagCloseBracket": {
+            "type": "string"
+          },
+          "tagSeparator": {
+            "type": "string"
+          },
+          "titlePlacement": {
+            "type": "string",
+            "enum": [
+              "header",
+              "firstLine"
+            ]
+          }
+        },
+        "required": [
+          "entrySeparator",
+          "sameDaySeparator",
+          "datePrefix",
+          "dateSuffix",
+          "dateFormat",
+          "tagOpenBracket",
+          "tagCloseBracket",
+          "tagSeparator",
+          "titlePlacement"
+        ],
+        "example": {
+          "entrySeparator": "example",
+          "sameDaySeparator": "example",
+          "datePrefix": "2026-06-24",
+          "dateSuffix": "2026-06-24",
+          "dateFormat": "YYYY-MM-DD",
+          "tagOpenBracket": "reflection",
+          "tagCloseBracket": "reflection",
+          "tagSeparator": "reflection",
+          "titlePlacement": "header"
+        }
+      },
       "FormatConfigDto": {
         "type": "object",
         "properties": {
@@ -13002,6 +13962,40 @@
           "tagCloseBracket": "reflection",
           "tagSeparator": "reflection",
           "titlePlacement": "header"
+        }
+      },
+      "SaveFormatResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "config": {
+            "description": "The settings as saved, with defaults filled in",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/FormatConfigResponseDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "success",
+          "config"
+        ],
+        "example": {
+          "success": true,
+          "config": {
+            "entrySeparator": "example",
+            "sameDaySeparator": "example",
+            "datePrefix": "2026-06-24",
+            "dateSuffix": "2026-06-24",
+            "dateFormat": "YYYY-MM-DD",
+            "tagOpenBracket": "reflection",
+            "tagCloseBracket": "reflection",
+            "tagSeparator": "reflection",
+            "titlePlacement": "header"
+          }
         }
       },
       "PreviewImportDto": {
@@ -13500,6 +14494,63 @@
           "entryId": 1
         }
       },
+      "AttachmentRecordResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "original_filename": {
+            "type": "string"
+          },
+          "stored_filename": {
+            "type": "string"
+          },
+          "mimetype": {
+            "type": "string"
+          },
+          "size": {
+            "type": "number"
+          },
+          "transcript": {
+            "type": "string",
+            "nullable": true
+          },
+          "transcribed_at": {
+            "format": "date-time",
+            "type": "string",
+            "nullable": true
+          },
+          "entry_id": {
+            "type": "number",
+            "nullable": true,
+            "description": "The entry it belongs to, or null until linked"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "original_filename",
+          "stored_filename",
+          "mimetype",
+          "size",
+          "created_at"
+        ],
+        "example": {
+          "id": 1,
+          "original_filename": "Daily Journal",
+          "stored_filename": "Daily Journal",
+          "mimetype": "example",
+          "size": 1,
+          "transcript": "example",
+          "transcribed_at": "2026-06-24T10:00:00.000Z",
+          "entry_id": 1,
+          "created_at": "2026-06-24T10:00:00.000Z"
+        }
+      },
       "AudioTranscriptionResponseDto": {
         "type": "object",
         "properties": {
@@ -13707,6 +14758,58 @@
           "modifiedAt": "2026-06-24T10:00:00.000Z"
         }
       },
+      "CloudProviderStatusDto": {
+        "type": "object",
+        "properties": {
+          "connected": {
+            "type": "boolean"
+          },
+          "connectedAt": {
+            "type": "string",
+            "description": "When the provider was connected (ISO 8601)"
+          }
+        },
+        "required": [
+          "connected"
+        ],
+        "example": {
+          "connected": true,
+          "connectedAt": "2026-06-24T10:00:00.000Z"
+        }
+      },
+      "CloudStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "google_drive": {
+            "$ref": "#/components/schemas/CloudProviderStatusDto"
+          },
+          "onedrive": {
+            "$ref": "#/components/schemas/CloudProviderStatusDto"
+          },
+          "dropbox": {
+            "$ref": "#/components/schemas/CloudProviderStatusDto"
+          }
+        },
+        "required": [
+          "google_drive",
+          "onedrive",
+          "dropbox"
+        ],
+        "example": {
+          "google_drive": {
+            "connected": true,
+            "connectedAt": "2026-06-24T10:00:00.000Z"
+          },
+          "onedrive": {
+            "connected": true,
+            "connectedAt": "2026-06-24T10:00:00.000Z"
+          },
+          "dropbox": {
+            "connected": true,
+            "connectedAt": "2026-06-24T10:00:00.000Z"
+          }
+        }
+      },
       "CloudAuthUrlDto": {
         "type": "object",
         "properties": {
@@ -13731,6 +14834,21 @@
         "example": {
           "provider": "google_drive",
           "redirectUri": "https://thoughty.example.com/callback"
+        }
+      },
+      "CloudAuthUrlResponseDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "The provider page that asks the user to allow access"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "example": {
+          "url": "https://thoughty.example.com/callback"
         }
       },
       "CloudConnectDto": {
@@ -13763,6 +14881,26 @@
           "code": "example",
           "provider": "google_drive",
           "redirectUri": "https://thoughty.example.com/callback"
+        }
+      },
+      "CloudConnectResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "connectedAt": {
+            "type": "string",
+            "description": "When the provider was connected (ISO 8601)"
+          }
+        },
+        "required": [
+          "success",
+          "connectedAt"
+        ],
+        "example": {
+          "success": true,
+          "connectedAt": "2026-06-24T10:00:00.000Z"
         }
       },
       "CloudDisconnectDto": {
@@ -13853,6 +14991,126 @@
           "fileId": "example"
         }
       },
+      "CloudDownloadResponseDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "The file content as text"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "example": {
+          "content": "Today I wrote a thoughtful journal entry about focus and calm."
+        }
+      },
+      "SyncScheduleDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "frequency": {
+            "type": "string",
+            "enum": [
+              "every_6h",
+              "every_12h",
+              "daily",
+              "weekly"
+            ]
+          },
+          "format": {
+            "type": "string",
+            "description": "Export format (txt, json or md)"
+          },
+          "diaryId": {
+            "type": "number",
+            "description": "The diary exported, or all diaries when absent"
+          },
+          "includeVisibility": {
+            "type": "boolean"
+          },
+          "lastSyncAt": {
+            "type": "string",
+            "description": "Last sync time (ISO 8601)"
+          },
+          "lastSyncHash": {
+            "type": "string",
+            "description": "SHA-256 of the last uploaded export, to skip unchanged ones"
+          },
+          "nextSyncAt": {
+            "type": "string",
+            "description": "When the next sync is due (ISO 8601)"
+          }
+        },
+        "required": [
+          "enabled",
+          "includeVisibility"
+        ],
+        "example": {
+          "enabled": true,
+          "frequency": "every_6h",
+          "format": "2026-06-24T10:00:00.000Z",
+          "diaryId": 1,
+          "includeVisibility": true,
+          "lastSyncAt": "2026-06-24T10:00:00.000Z",
+          "lastSyncHash": "example",
+          "nextSyncAt": "2026-06-24T10:00:00.000Z"
+        }
+      },
+      "CloudSyncSchedulesResponseDto": {
+        "type": "object",
+        "properties": {
+          "google_drive": {
+            "$ref": "#/components/schemas/SyncScheduleDto"
+          },
+          "onedrive": {
+            "$ref": "#/components/schemas/SyncScheduleDto"
+          },
+          "dropbox": {
+            "$ref": "#/components/schemas/SyncScheduleDto"
+          }
+        },
+        "required": [
+          "google_drive",
+          "onedrive",
+          "dropbox"
+        ],
+        "example": {
+          "google_drive": {
+            "enabled": true,
+            "frequency": "every_6h",
+            "format": "2026-06-24T10:00:00.000Z",
+            "diaryId": 1,
+            "includeVisibility": true,
+            "lastSyncAt": "2026-06-24T10:00:00.000Z",
+            "lastSyncHash": "example",
+            "nextSyncAt": "2026-06-24T10:00:00.000Z"
+          },
+          "onedrive": {
+            "enabled": true,
+            "frequency": "every_6h",
+            "format": "2026-06-24T10:00:00.000Z",
+            "diaryId": 1,
+            "includeVisibility": true,
+            "lastSyncAt": "2026-06-24T10:00:00.000Z",
+            "lastSyncHash": "example",
+            "nextSyncAt": "2026-06-24T10:00:00.000Z"
+          },
+          "dropbox": {
+            "enabled": true,
+            "frequency": "every_6h",
+            "format": "2026-06-24T10:00:00.000Z",
+            "diaryId": 1,
+            "includeVisibility": true,
+            "lastSyncAt": "2026-06-24T10:00:00.000Z",
+            "lastSyncHash": "example",
+            "nextSyncAt": "2026-06-24T10:00:00.000Z"
+          }
+        }
+      },
       "SetSyncScheduleDto": {
         "type": "object",
         "properties": {
@@ -13925,6 +15183,40 @@
         ],
         "example": {
           "provider": "google_drive"
+        }
+      },
+      "DiffSyncResponseDto": {
+        "type": "object",
+        "properties": {
+          "synced": {
+            "type": "boolean",
+            "description": "False when nothing changed since the last sync, so nothing was uploaded"
+          },
+          "message": {
+            "type": "string"
+          },
+          "file": {
+            "description": "The uploaded file, when one was",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CloudFileInfoDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "synced",
+          "message"
+        ],
+        "example": {
+          "synced": true,
+          "message": "example",
+          "file": {
+            "id": "example",
+            "name": "Daily Journal",
+            "size": 1,
+            "modifiedAt": "2026-06-24T10:00:00.000Z"
+          }
         }
       },
       "FeatureRequestDto": {

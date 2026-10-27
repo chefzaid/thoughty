@@ -1,4 +1,5 @@
 import type { Page } from '@playwright/test';
+import { fulfillJson } from './mockApp.route-utils';
 
 /**
  * Makes every settings save (`POST /api/config`) fail the way the API or the network can, while reading
@@ -16,7 +17,7 @@ export async function failSettingsSaves(page: Page, failure: 'status' | 'network
       await route.abort('connectionrefused');
       return;
     }
-    await route.fulfill({ status: 400, json: { statusCode: 400, message: ['theme must be light or dark'], error: 'Bad Request' } });
+    await fulfillJson(route, { statusCode: 400, message: ['theme must be light or dark'], error: 'Bad Request' }, { status: 400 });
   });
   return { refusedSaves: () => refusedSaves };
 }

@@ -1,3 +1,4 @@
+import type { components } from "../../generated/openapi";
 import { safeJsonParse } from "./base";
 import type { AiAuthFetch, RephraseMode, SummaryGuidance } from "./aiTypes";
 
@@ -18,7 +19,7 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
         }),
       });
 
-      const data = await safeJsonParse<{ tags?: string[] }>(response);
+      const data = await safeJsonParse<components["schemas"]["SuggestTagsResponseDto"]>(response);
       if (!response.ok || !data) {
         return null;
       }
@@ -40,7 +41,7 @@ export const createAiWritingService = (authFetch: AiAuthFetch) => {
         body: JSON.stringify({ content, mode }),
       });
 
-      const data = await safeJsonParse<{ content?: string }>(response);
+      const data = await safeJsonParse<components["schemas"]["FixWritingResponseDto"]>(response);
       if (!response.ok || !data) {
         return null;
       }

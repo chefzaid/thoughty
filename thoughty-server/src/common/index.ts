@@ -1,4 +1,5 @@
 export * from './decorators';
+export * from './dto';
 export * from './errors';
 export * from './feature-flags';
 export * from './filters';

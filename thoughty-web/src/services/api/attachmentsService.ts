@@ -1,10 +1,10 @@
+import type { components } from "../../generated/openapi";
 import type { Attachment } from "../../types";
 
-export interface AudioTranscription {
-  transcript: string;
-  transcribed_at: string;
-  cached: boolean;
-}
+/** What an upload or a link answers: the attachment with its entry and upload time. */
+type AttachmentRecord = components["schemas"]["AttachmentRecordResponseDto"];
+
+export type AudioTranscription = components["schemas"]["AudioTranscriptionResponseDto"];
 
 export const createAttachmentsService = (
   authFetch: (url: string, options?: RequestInit) => Promise<Response>,
@@ -27,7 +27,7 @@ export const createAttachmentsService = (
       });
 
       if (response.ok) {
-        return (await response.json()) as Attachment;
+        return (await response.json()) as AttachmentRecord;
       }
       return null;
     } catch (error) {

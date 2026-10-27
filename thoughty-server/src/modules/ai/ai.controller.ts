@@ -13,8 +13,9 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@ne
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { AiService } from './ai.service';
-import { SuggestTagsDto } from './dto/suggest-tags.dto';
-import { FixWritingDto } from './dto/fix-writing.dto';
+import { SuggestTagsDto, SuggestTagsResponseDto } from './dto/suggest-tags.dto';
+import { FixWritingDto, FixWritingResponseDto } from './dto/fix-writing.dto';
+import { AiModelDto } from './dto/ai-model.dto';
 import { ChatDto, ChatHistoryResponseDto, ChatResponseDto } from './dto/chat.dto';
 import { EntrySummaryResponseDto, SummarizeEntryDto } from './dto/summarize-entry.dto';
 import { GenerateInspirationDto, InspirationResponseDto } from './dto/inspiration.dto';
@@ -53,10 +54,10 @@ export class AiController {
 
   @Get('models')
   @ApiOperation({ summary: 'List available OpenRouter models' })
-  @ApiResponse({ status: 200, description: 'List of available models' })
+  @ApiResponse({ status: 200, description: 'List of available models', type: [AiModelDto] })
   async listModels(
     @CurrentUser() user: AuthenticatedUser,
-  ): Promise<{ id: string; name: string }[]> {
+  ): Promise<AiModelDto[]> {
     return this.aiService.listModels(user.userId);
   }
 
@@ -111,21 +112,21 @@ export class AiController {
 
   @Post('suggest-tags')
   @ApiOperation({ summary: 'Suggest tags for journal content using OpenRouter' })
-  @ApiResponse({ status: 200, description: 'Suggested tags returned successfully' })
+  @ApiResponse({ status: 200, description: 'Suggested tags returned successfully', type: SuggestTagsResponseDto })
   async suggestTags(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: SuggestTagsDto,
-  ): Promise<{ tags: string[] }> {
+  ): Promise<SuggestTagsResponseDto> {
     return this.aiService.suggestTags(user.userId, dto);
   }
 
   @Post('fix-writing')
   @ApiOperation({ summary: 'Fix grammar, spelling, and style in journal content using OpenRouter' })
-  @ApiResponse({ status: 200, description: 'Corrected content returned successfully' })
+  @ApiResponse({ status: 200, description: 'Corrected content returned successfully', type: FixWritingResponseDto })
   async fixWriting(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: FixWritingDto,
-  ): Promise<{ content: string }> {
+  ): Promise<FixWritingResponseDto> {
     return this.aiService.fixWriting(user.userId, dto);
   }
 

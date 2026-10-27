@@ -94,7 +94,7 @@ describe('ImportExportCloudSection', () => {
             <CloudSyncSection
                 connectedProviders={['google_drive']}
                 schedules={{
-                    google_drive: { enabled: true, frequency: 'daily', lastSyncAt: '2024-01-01T12:00:00.000Z', nextSyncAt: '2024-01-02T12:00:00.000Z' },
+                    google_drive: { enabled: true, frequency: 'daily', includeVisibility: false, lastSyncAt: '2024-01-01T12:00:00.000Z', nextSyncAt: '2024-01-02T12:00:00.000Z' },
                 }}
                 uploading={null}
                 syncing={null}

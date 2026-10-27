@@ -222,9 +222,15 @@ async function handleConfigRoutes({
         ...state.config,
         ...(request.postDataJSON() as Record<string, unknown>),
       };
+      await fulfillJson(route, { success: true });
+      return true;
     }
 
-    await fulfillJson(route, state.config);
+    // The API stores and answers every preference as text
+    await fulfillJson(
+      route,
+      Object.fromEntries(Object.entries(state.config).map(([key, value]) => [key, String(value)])),
+    );
     return true;
   }
 

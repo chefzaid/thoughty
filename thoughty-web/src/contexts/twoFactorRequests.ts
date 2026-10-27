@@ -1,10 +1,8 @@
+import type { components } from '../generated/openapi';
 import { readApiErrorMessage, safeJsonParse, type AuthFetchFunction } from '../services/api/base';
 
-export interface TwoFactorStatus {
-  enabled: boolean;
-  available: boolean;
-  emailVerified: boolean;
-}
+export type TwoFactorStatus = components['schemas']['TwoFactorStatusResponseDto'];
+type SuccessResponse = components['schemas']['SuccessResponseDto'];
 
 interface TwoFactorChallenge {
   challengeToken: string;
@@ -33,7 +31,7 @@ export async function enableTwoFactor(
   authFetch: AuthFetchFunction,
   challengeToken: string,
   code: string,
-): Promise<{ success: boolean }> {
+): Promise<SuccessResponse> {
   const response = await authFetch('/api/auth/two-factor/enable', {
     method: 'POST',
     body: JSON.stringify({ challengeToken, code }),
@@ -44,7 +42,7 @@ export async function enableTwoFactor(
 export async function disableTwoFactor(
   authFetch: AuthFetchFunction,
   password: string,
-): Promise<{ success: boolean }> {
+): Promise<SuccessResponse> {
   const response = await authFetch('/api/auth/two-factor/disable', {
     method: 'POST',
     body: JSON.stringify({ password }),

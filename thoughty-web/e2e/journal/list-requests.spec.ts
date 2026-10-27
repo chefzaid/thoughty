@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
+import { fulfillJson } from '../support/mockApp.route-utils';
 
 const entries = [
   { id: 31, date: '2024-03-03', index: 1, content: 'Newest entry', tags: [], visibility: 'private' as const, diaryId: 1 },
@@ -52,7 +53,7 @@ test.describe('Journal list requests', () => {
 
   test('still shows the journal, at the default page size, when the config request fails', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, config: { entriesPerPage: 2 }, initialEntries: entries });
-    await page.route('**/api/config', (route) => route.fulfill({ status: 500, json: { error: 'Config unavailable' } }));
+    await page.route('**/api/config', (route) => fulfillJson(route, { statusCode: 500, message: 'Internal server error' }, { status: 500 }));
     const requests = recordListRequests(page);
 
     await page.goto('/journal');

@@ -1,5 +1,6 @@
-import { test, expect } from '../support/test';
+import { test, expect, type Route } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
+import { fulfillApiError, fulfillJson } from '../support/mockApp.route-utils';
 
 test.describe('Import/Export Feature', () => {
   test('exports from All Diaries as JSON and imports a JSON file through the UI', async ({ page }) => {
@@ -62,15 +63,10 @@ test.describe('Import/Export Feature', () => {
         await route.fallback();
         return;
       }
-      await route.fulfill({
-        status: 413,
-        json: { statusCode: 413, message: 'File too large. Maximum size is 10MB', error: 'Payload Too Large', code: 'IMPORT_FILE_TOO_LARGE' },
-      });
+      await fulfillApiError(route, 413, 'IMPORT_FILE_TOO_LARGE', 'File too large. Maximum size is 10MB');
     });
-    await page.route('http://localhost:5173/api/io/import', (route) => route.fulfill({
-      status: 400,
-      json: { statusCode: 400, message: 'Too many entries. Maximum 10000 entries per import. Found 10001.', error: 'Bad Request', code: 'IMPORT_TOO_MANY_ENTRIES' },
-    }));
+    await page.route('http://localhost:5173/api/io/import', (route) =>
+      fulfillApiError(route, 400, 'IMPORT_TOO_MANY_ENTRIES', 'Too many entries. Maximum 10000 entries per import. Found 10001.'));
     await page.goto('/import-export?section=import');
 
     const file = (name: string) => ({
@@ -94,18 +90,19 @@ test.describe('Import/Export Feature', () => {
 
   test('shows the reason the API gives for a refused export, format save and delete all, in French', async ({ page }) => {
     const { state } = await setupMockApp(page, { startAuthenticated: true, config: { language: 'fr' } });
-    const diaryGone = { statusCode: 404, message: 'Diary not found', error: 'Not Found', code: 'DIARY_NOT_FOUND' };
-    await page.route((url) => url.pathname === '/api/io/export', (route) => route.fulfill({ status: 404, json: diaryGone }));
-    await page.route((url) => url.pathname === '/api/entries/all', (route) => route.fulfill({ status: 404, json: diaryGone }));
+    const diaryGone = (route: Route) => fulfillApiError(route, 404, 'DIARY_NOT_FOUND', 'Diary not found');
+    await page.route((url) => url.pathname === '/api/io/export', diaryGone);
+    await page.route((url) => url.pathname === '/api/entries/all', diaryGone);
     await page.route('http://localhost:5173/api/io/format', async (route) => {
       if (route.request().method() !== 'POST') {
         await route.fallback();
         return;
       }
-      await route.fulfill({
-        status: 400,
-        json: { statusCode: 400, message: ['dateFormat must be a string'], error: 'Bad Request', code: 'VALIDATION_FAILED' },
-      });
+      await fulfillJson(
+        route,
+        { statusCode: 400, message: ['dateFormat must be a string'], error: 'Bad Request', code: 'VALIDATION_FAILED' },
+        { status: 400 },
+      );
     });
     await page.goto('/import-export?section=export');
 

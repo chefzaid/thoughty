@@ -1,10 +1,21 @@
 import { safeJsonParse } from './base';
 import type { Config, ProfileStats } from '../../types';
-import type { components } from '../../generated/openapi';
+import type { components, paths } from '../../generated/openapi';
 import { downloadBlob } from '../../utils/downloadFile';
 
 export type StatsApiResponse = components['schemas']['StatsResponseDto'];
-export type FeatureFlags = Record<string, boolean>;
+/** The preferences as the API answers them, every value as text ("16", "true"). */
+export type ApiConfig = components['schemas']['UserConfigDto'];
+export type FeatureFlags = paths['/api/config/feature-flags']['get']['responses'][200]['content']['application/json'];
+
+/** The app's settings from the API's text: the on/off preferences become true or false. */
+export function fromApiConfig({ readDates, highContrast, ...preferences }: ApiConfig): Config {
+  return {
+    ...preferences,
+    ...(readDates === undefined ? {} : { readDates: readDates === 'true' }),
+    ...(highContrast === undefined ? {} : { highContrast: highContrast === 'true' }),
+  };
+}
 
 export const createConfigService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
   /**
@@ -14,9 +25,9 @@ export const createConfigService = (authFetch: (url: string, options?: RequestIn
     try {
       const response = await authFetch('/api/config');
       if (!response) return null;
-      const data = await safeJsonParse<Config>(response);
+      const data = await safeJsonParse<ApiConfig>(response);
       if (response.ok && data) {
-        return data;
+        return fromApiConfig(data);
       }
       return null;
     } catch (error) {

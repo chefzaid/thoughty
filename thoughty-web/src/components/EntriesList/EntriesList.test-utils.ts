@@ -33,6 +33,10 @@ export const mockRevisions: EntryRevision[] = [
     {
         id: 21,
         entryId: 1,
+        title: null,
+        timeOfDay: null,
+        mood: null,
+        feelings: [],
         content: 'Older revision',
         tags: ['work'],
         date: '2024-01-14',

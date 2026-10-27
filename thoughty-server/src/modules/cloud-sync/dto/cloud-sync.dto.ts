@@ -85,15 +85,17 @@ export class CloudAuthUrlDto {
   redirectUri: string;
 }
 
-export type SyncFrequency = 'every_6h' | 'every_12h' | 'daily' | 'weekly';
+export const SYNC_FREQUENCIES = ['every_6h', 'every_12h', 'daily', 'weekly'] as const;
+
+export type SyncFrequency = (typeof SYNC_FREQUENCIES)[number];
 
 export class SetSyncScheduleDto {
   @ApiProperty({ description: 'Cloud provider', enum: ['google_drive', 'onedrive', 'dropbox'] })
   @IsIn(['google_drive', 'onedrive', 'dropbox'])
   provider: CloudProviderType;
 
-  @ApiProperty({ description: 'Sync frequency', enum: ['every_6h', 'every_12h', 'daily', 'weekly'] })
-  @IsIn(['every_6h', 'every_12h', 'daily', 'weekly'])
+  @ApiProperty({ description: 'Sync frequency', enum: SYNC_FREQUENCIES })
+  @IsIn(SYNC_FREQUENCIES)
   frequency: SyncFrequency;
 
   @ApiPropertyOptional({ description: 'Export format', enum: ['txt', 'json', 'md'], default: 'txt' })

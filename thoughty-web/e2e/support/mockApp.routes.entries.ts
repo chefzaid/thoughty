@@ -5,7 +5,7 @@ import {
   type MockAppState,
   type MockEntry,
 } from './mockApp.shared';
-import { fulfillJson, sortStrings, toEntryMutationResponse, toEntryResponse, type RouteContext } from './mockApp.route-utils';
+import { fulfillJson, sortStrings, toEntryMutationResponse, toEntryResponse, toRevisionResponse, type RouteContext } from './mockApp.route-utils';
 import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 import { getMockBacklinks } from './mockApp.backlinks';
 
@@ -425,7 +425,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
   const historyMatch = /^\/api\/entries\/(\d+)\/history$/.exec(pathname);
   if (historyMatch) {
     const entryId = Number(historyMatch[1]);
-    await fulfillJson(route, state.revisions[entryId] || []);
+    await fulfillJson(route, (state.revisions[entryId] || []).map(toRevisionResponse));
     return true;
   }
 

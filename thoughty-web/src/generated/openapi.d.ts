@@ -2122,6 +2122,14 @@ export interface components {
         };
         /**
          * @example {
+         *       "success": true
+         *     }
+         */
+        SuccessResponseDto: {
+            success: boolean;
+        };
+        /**
+         * @example {
          *       "password": "Password123!"
          *     }
          */
@@ -2221,6 +2229,17 @@ export interface components {
         ChangePasswordDto: {
             currentPassword: string;
             newPassword: string;
+        };
+        /**
+         * @example {
+         *       "success": true,
+         *       "message": "example"
+         *     }
+         */
+        SuccessMessageResponseDto: {
+            success: boolean;
+            /** @description What happened, in English */
+            message: string;
         };
         /**
          * @example {
@@ -2906,14 +2925,6 @@ export interface components {
         };
         /**
          * @example {
-         *       "success": true
-         *     }
-         */
-        SuccessResponseDto: {
-            success: boolean;
-        };
-        /**
-         * @example {
          *       "title": "Morning walk by the river",
          *       "timeOfDay": "08:30",
          *       "mood": 4,
@@ -3075,6 +3086,49 @@ export interface components {
         };
         /**
          * @example {
+         *       "id": 1,
+         *       "entryId": 1,
+         *       "title": "June reflections",
+         *       "timeOfDay": "2026-06-24T10:00:00.000Z",
+         *       "mood": 1,
+         *       "feelings": [
+         *         "example"
+         *       ],
+         *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *       "tags": [
+         *         "reflection"
+         *       ],
+         *       "date": "2026-06-24",
+         *       "format": "2026-06-24T10:00:00.000Z",
+         *       "visibility": "public",
+         *       "createdAt": "2026-06-24T10:00:00.000Z"
+         *     }
+         */
+        EntryRevisionResponseDto: {
+            id: number;
+            /** @description The entry this version belongs to */
+            entryId: number;
+            title: string | null;
+            /** @description Time of day (HH:MM), or null */
+            timeOfDay: string | null;
+            mood: number | null;
+            feelings: string[];
+            content: string;
+            tags: string[];
+            /** @description Entry date (YYYY-MM-DD) of this version */
+            date: string;
+            /** @description Text format of this version, such as plain or markdown */
+            format: string;
+            /** @enum {string} */
+            visibility: "public" | "private";
+            /**
+             * Format: date-time
+             * @description When this version was replaced
+             */
+            createdAt: string;
+        };
+        /**
+         * @example {
          *       "success": true,
          *       "deletedCount": 3
          *     }
@@ -3082,6 +3136,123 @@ export interface components {
         DeleteAllResponseDto: {
             success: boolean;
             deletedCount: number;
+        };
+        /**
+         * @example {
+         *       "theme": "light",
+         *       "name": "Daily Journal",
+         *       "bio": "example",
+         *       "email": "user@example.com",
+         *       "birthday": "example",
+         *       "gender": "example",
+         *       "avatarUrl": "https://thoughty.example.com/callback",
+         *       "fontFamily": "system",
+         *       "fontSize": "example",
+         *       "fontColor": "#2A9D8F",
+         *       "highContrast": "true",
+         *       "ttsVoiceUri": "https://thoughty.example.com/callback",
+         *       "language": "en",
+         *       "entriesPerPage": "example",
+         *       "maxPinnedEntries": "example",
+         *       "defaultVisibility": "public",
+         *       "readDates": "true",
+         *       "openRouterModel": "example",
+         *       "openRouterTagModel": "reflection",
+         *       "openRouterWritingModel": "example",
+         *       "openRouterChatModel": "example",
+         *       "openRouterToneModel": "example",
+         *       "openRouterSummaryModel": "example",
+         *       "openRouterPromptModel": "example",
+         *       "openRouterBookModel": "example",
+         *       "autoTagMaxTags": "reflection",
+         *       "tagMetadata": "reflection",
+         *       "entryTemplates": "example",
+         *       "subscriptionPlan": "free",
+         *       "paymentMethodLabel": "example"
+         *     }
+         */
+        UserConfigDto: {
+            /**
+             * @description Color theme
+             * @enum {string}
+             */
+            theme?: "light" | "dark";
+            /** @description Display name */
+            name?: string;
+            /** @description Profile bio */
+            bio?: string;
+            /** @description Contact email shown on the profile */
+            email?: string;
+            /** @description Birthday as YYYY-MM-DD, or empty */
+            birthday?: string;
+            /** @description Gender */
+            gender?: string;
+            /** @description Profile picture as a base64 image data URL or an http(s) URL, or empty */
+            avatarUrl?: string;
+            /**
+             * @description Font family
+             * @enum {string}
+             */
+            fontFamily?: "system" | "serif" | "modern" | "mono";
+            /** @description Font size in pixels */
+            fontSize?: string;
+            /** @description Text color as #rrggbb, or empty for the theme default */
+            fontColor?: string;
+            /**
+             * @description High contrast mode
+             * @enum {string}
+             */
+            highContrast?: "true" | "false";
+            /** @description Text-to-speech voice URI, or empty for the default */
+            ttsVoiceUri?: string;
+            /**
+             * @description Interface language
+             * @enum {string}
+             */
+            language?: "en" | "fr";
+            /** @description Entries per page */
+            entriesPerPage?: string;
+            /** @description Maximum pinned entries */
+            maxPinnedEntries?: string;
+            /**
+             * @description Visibility of new entries
+             * @enum {string}
+             */
+            defaultVisibility?: "public" | "private";
+            /**
+             * @description Read entry dates aloud
+             * @enum {string}
+             */
+            readDates?: "true" | "false";
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterTagModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterWritingModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterChatModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterToneModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterSummaryModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterPromptModel?: string;
+            /** @description OpenRouter model id, or empty for the default */
+            openRouterBookModel?: string;
+            /** @description Maximum tags suggested automatically (0 turns it off) */
+            autoTagMaxTags?: string;
+            /** @description Tag colors and descriptions as serialized JSON */
+            tagMetadata?: string;
+            /** @description Custom entry templates as serialized JSON */
+            entryTemplates?: string;
+            /**
+             * @description Subscription plan
+             * @enum {string}
+             */
+            subscriptionPlan?: "free" | "plus" | "pro";
+            /** @description Payment method label */
+            paymentMethodLabel?: string;
         };
         /**
          * @example {
@@ -3199,6 +3370,24 @@ export interface components {
             subscriptionPlan?: "free" | "plus" | "pro";
             /** @description Payment method label */
             paymentMethodLabel?: string;
+        };
+        /**
+         * @example {
+         *       "id": "openai/gpt-4o-mini",
+         *       "name": "OpenAI: GPT-4o-mini"
+         *     }
+         */
+        AiModelDto: {
+            /**
+             * @description OpenRouter model id
+             * @example openai/gpt-4o-mini
+             */
+            id: string;
+            /**
+             * @description Display name
+             * @example OpenAI: GPT-4o-mini
+             */
+            name: string;
         };
         /**
          * @example {
@@ -3323,6 +3512,17 @@ export interface components {
         };
         /**
          * @example {
+         *       "tags": [
+         *         "reflection"
+         *       ]
+         *     }
+         */
+        SuggestTagsResponseDto: {
+            /** @description Suggested tags, lowercased, without the ones already attached */
+            tags: string[];
+        };
+        /**
+         * @example {
          *       "content": "Today I wrote a thoughtful journal entry about focus and calm.",
          *       "mode": "grammar"
          *     }
@@ -3336,6 +3536,15 @@ export interface components {
              * @enum {string}
              */
             mode: "grammar" | "polish" | "rewrite";
+        };
+        /**
+         * @example {
+         *       "content": "Today I wrote a thoughtful journal entry about focus and calm."
+         *     }
+         */
+        FixWritingResponseDto: {
+            /** @description The content rewritten in the requested mode */
+            content: string;
         };
         /**
          * @example {
@@ -4446,6 +4655,34 @@ export interface components {
          *       "sameDaySeparator": "example",
          *       "datePrefix": "2026-06-24",
          *       "dateSuffix": "2026-06-24",
+         *       "dateFormat": "YYYY-MM-DD",
+         *       "tagOpenBracket": "reflection",
+         *       "tagCloseBracket": "reflection",
+         *       "tagSeparator": "reflection",
+         *       "titlePlacement": "header"
+         *     }
+         */
+        FormatConfigResponseDto: {
+            /** @description Line between two days */
+            entrySeparator: string;
+            /** @description Line between two entries of the same day */
+            sameDaySeparator: string;
+            datePrefix: string;
+            dateSuffix: string;
+            /** @example YYYY-MM-DD */
+            dateFormat: string;
+            tagOpenBracket: string;
+            tagCloseBracket: string;
+            tagSeparator: string;
+            /** @enum {string} */
+            titlePlacement: "header" | "firstLine";
+        };
+        /**
+         * @example {
+         *       "entrySeparator": "example",
+         *       "sameDaySeparator": "example",
+         *       "datePrefix": "2026-06-24",
+         *       "dateSuffix": "2026-06-24",
          *       "dateFormat": "2026-06-24",
          *       "tagOpenBracket": "reflection",
          *       "tagCloseBracket": "reflection",
@@ -4468,6 +4705,27 @@ export interface components {
              * @enum {string}
              */
             titlePlacement: "header" | "firstLine";
+        };
+        /**
+         * @example {
+         *       "success": true,
+         *       "config": {
+         *         "entrySeparator": "example",
+         *         "sameDaySeparator": "example",
+         *         "datePrefix": "2026-06-24",
+         *         "dateSuffix": "2026-06-24",
+         *         "dateFormat": "YYYY-MM-DD",
+         *         "tagOpenBracket": "reflection",
+         *         "tagCloseBracket": "reflection",
+         *         "tagSeparator": "reflection",
+         *         "titlePlacement": "header"
+         *       }
+         *     }
+         */
+        SaveFormatResponseDto: {
+            success: boolean;
+            /** @description The settings as saved, with defaults filled in */
+            config: components["schemas"]["FormatConfigResponseDto"];
         };
         /**
          * @example {
@@ -4760,6 +5018,33 @@ export interface components {
         };
         /**
          * @example {
+         *       "id": 1,
+         *       "original_filename": "Daily Journal",
+         *       "stored_filename": "Daily Journal",
+         *       "mimetype": "example",
+         *       "size": 1,
+         *       "transcript": "example",
+         *       "transcribed_at": "2026-06-24T10:00:00.000Z",
+         *       "entry_id": 1,
+         *       "created_at": "2026-06-24T10:00:00.000Z"
+         *     }
+         */
+        AttachmentRecordResponseDto: {
+            id: number;
+            original_filename: string;
+            stored_filename: string;
+            mimetype: string;
+            size: number;
+            transcript?: string | null;
+            /** Format: date-time */
+            transcribed_at?: string | null;
+            /** @description The entry it belongs to, or null until linked */
+            entry_id?: number | null;
+            /** Format: date-time */
+            created_at: string;
+        };
+        /**
+         * @example {
          *       "transcript": "example",
          *       "transcribed_at": "2026-06-24T10:00:00.000Z",
          *       "cached": true
@@ -4864,6 +5149,38 @@ export interface components {
         };
         /**
          * @example {
+         *       "connected": true,
+         *       "connectedAt": "2026-06-24T10:00:00.000Z"
+         *     }
+         */
+        CloudProviderStatusDto: {
+            connected: boolean;
+            /** @description When the provider was connected (ISO 8601) */
+            connectedAt?: string;
+        };
+        /**
+         * @example {
+         *       "google_drive": {
+         *         "connected": true,
+         *         "connectedAt": "2026-06-24T10:00:00.000Z"
+         *       },
+         *       "onedrive": {
+         *         "connected": true,
+         *         "connectedAt": "2026-06-24T10:00:00.000Z"
+         *       },
+         *       "dropbox": {
+         *         "connected": true,
+         *         "connectedAt": "2026-06-24T10:00:00.000Z"
+         *       }
+         *     }
+         */
+        CloudStatusResponseDto: {
+            google_drive: components["schemas"]["CloudProviderStatusDto"];
+            onedrive: components["schemas"]["CloudProviderStatusDto"];
+            dropbox: components["schemas"]["CloudProviderStatusDto"];
+        };
+        /**
+         * @example {
          *       "provider": "google_drive",
          *       "redirectUri": "https://thoughty.example.com/callback"
          *     }
@@ -4876,6 +5193,15 @@ export interface components {
             provider: "google_drive" | "onedrive" | "dropbox";
             /** @description OAuth redirect URI */
             redirectUri: string;
+        };
+        /**
+         * @example {
+         *       "url": "https://thoughty.example.com/callback"
+         *     }
+         */
+        CloudAuthUrlResponseDto: {
+            /** @description The provider page that asks the user to allow access */
+            url: string;
         };
         /**
          * @example {
@@ -4894,6 +5220,17 @@ export interface components {
             provider: "google_drive" | "onedrive" | "dropbox";
             /** @description OAuth redirect URI used in the authorization request */
             redirectUri: string;
+        };
+        /**
+         * @example {
+         *       "success": true,
+         *       "connectedAt": "2026-06-24T10:00:00.000Z"
+         *     }
+         */
+        CloudConnectResponseDto: {
+            success: boolean;
+            /** @description When the provider was connected (ISO 8601) */
+            connectedAt: string;
         };
         /**
          * @example {
@@ -4952,6 +5289,82 @@ export interface components {
         };
         /**
          * @example {
+         *       "content": "Today I wrote a thoughtful journal entry about focus and calm."
+         *     }
+         */
+        CloudDownloadResponseDto: {
+            /** @description The file content as text */
+            content: string;
+        };
+        /**
+         * @example {
+         *       "enabled": true,
+         *       "frequency": "every_6h",
+         *       "format": "2026-06-24T10:00:00.000Z",
+         *       "diaryId": 1,
+         *       "includeVisibility": true,
+         *       "lastSyncAt": "2026-06-24T10:00:00.000Z",
+         *       "lastSyncHash": "example",
+         *       "nextSyncAt": "2026-06-24T10:00:00.000Z"
+         *     }
+         */
+        SyncScheduleDto: {
+            enabled: boolean;
+            /** @enum {string} */
+            frequency?: "every_6h" | "every_12h" | "daily" | "weekly";
+            /** @description Export format (txt, json or md) */
+            format?: string;
+            /** @description The diary exported, or all diaries when absent */
+            diaryId?: number;
+            includeVisibility: boolean;
+            /** @description Last sync time (ISO 8601) */
+            lastSyncAt?: string;
+            /** @description SHA-256 of the last uploaded export, to skip unchanged ones */
+            lastSyncHash?: string;
+            /** @description When the next sync is due (ISO 8601) */
+            nextSyncAt?: string;
+        };
+        /**
+         * @example {
+         *       "google_drive": {
+         *         "enabled": true,
+         *         "frequency": "every_6h",
+         *         "format": "2026-06-24T10:00:00.000Z",
+         *         "diaryId": 1,
+         *         "includeVisibility": true,
+         *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
+         *         "lastSyncHash": "example",
+         *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
+         *       },
+         *       "onedrive": {
+         *         "enabled": true,
+         *         "frequency": "every_6h",
+         *         "format": "2026-06-24T10:00:00.000Z",
+         *         "diaryId": 1,
+         *         "includeVisibility": true,
+         *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
+         *         "lastSyncHash": "example",
+         *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
+         *       },
+         *       "dropbox": {
+         *         "enabled": true,
+         *         "frequency": "every_6h",
+         *         "format": "2026-06-24T10:00:00.000Z",
+         *         "diaryId": 1,
+         *         "includeVisibility": true,
+         *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
+         *         "lastSyncHash": "example",
+         *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
+         *       }
+         *     }
+         */
+        CloudSyncSchedulesResponseDto: {
+            google_drive: components["schemas"]["SyncScheduleDto"];
+            onedrive: components["schemas"]["SyncScheduleDto"];
+            dropbox: components["schemas"]["SyncScheduleDto"];
+        };
+        /**
+         * @example {
          *       "provider": "google_drive",
          *       "frequency": "every_6h",
          *       "format": "txt",
@@ -4995,6 +5408,25 @@ export interface components {
              * @enum {string}
              */
             provider: "google_drive" | "onedrive" | "dropbox";
+        };
+        /**
+         * @example {
+         *       "synced": true,
+         *       "message": "example",
+         *       "file": {
+         *         "id": "example",
+         *         "name": "Daily Journal",
+         *         "size": 1,
+         *         "modifiedAt": "2026-06-24T10:00:00.000Z"
+         *       }
+         *     }
+         */
+        DiffSyncResponseDto: {
+            /** @description False when nothing changed since the last sync, so nothing was uploaded */
+            synced: boolean;
+            message: string;
+            /** @description The uploaded file, when one was */
+            file?: components["schemas"]["CloudFileInfoDto"];
         };
         /**
          * @example {
@@ -6918,7 +7350,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
         };
     };
@@ -6945,7 +7384,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
             /** @description Invalid password */
             401: {
@@ -7179,7 +7625,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
         };
     };
@@ -7244,7 +7697,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
             /** @description Refresh token cookie missing */
             400: {
@@ -7281,7 +7741,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
             /** @description Session not found */
             404: {
@@ -7375,7 +7842,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "message": "example"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessMessageResponseDto"];
+                };
             };
             /** @description Unauthorized or incorrect current password */
             401: {
@@ -7419,7 +7894,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "message": "example"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessMessageResponseDto"];
+                };
             };
         };
     };
@@ -7447,7 +7930,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "message": "example"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessMessageResponseDto"];
+                };
             };
             /** @description Invalid or expired token */
             400: {
@@ -7491,7 +7982,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "message": "example"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessMessageResponseDto"];
+                };
             };
             /** @description Invalid or expired token */
             400: {
@@ -7526,7 +8025,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "message": "example"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessMessageResponseDto"];
+                };
             };
         };
     };
@@ -7553,7 +8060,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "message": "example"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessMessageResponseDto"];
+                };
             };
             /** @description Invalid password */
             401: {
@@ -8806,12 +9321,36 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Entry revision history */
+            /** @description Earlier versions of the entry, newest first */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example [
+                     *       {
+                     *         "id": 1,
+                     *         "entryId": 1,
+                     *         "title": "June reflections",
+                     *         "timeOfDay": "2026-06-24T10:00:00.000Z",
+                     *         "mood": 1,
+                     *         "feelings": [
+                     *           "example"
+                     *         ],
+                     *         "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                     *         "tags": [
+                     *           "reflection"
+                     *         ],
+                     *         "date": "2026-06-24",
+                     *         "format": "2026-06-24T10:00:00.000Z",
+                     *         "visibility": "public",
+                     *         "createdAt": "2026-06-24T10:00:00.000Z"
+                     *       }
+                     *     ]
+                     */
+                    "application/json": components["schemas"]["EntryRevisionResponseDto"][];
+                };
             };
         };
     };
@@ -8886,7 +9425,43 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "theme": "light",
+                     *       "name": "Daily Journal",
+                     *       "bio": "example",
+                     *       "email": "user@example.com",
+                     *       "birthday": "example",
+                     *       "gender": "example",
+                     *       "avatarUrl": "https://thoughty.example.com/callback",
+                     *       "fontFamily": "system",
+                     *       "fontSize": "example",
+                     *       "fontColor": "#2A9D8F",
+                     *       "highContrast": "true",
+                     *       "ttsVoiceUri": "https://thoughty.example.com/callback",
+                     *       "language": "en",
+                     *       "entriesPerPage": "example",
+                     *       "maxPinnedEntries": "example",
+                     *       "defaultVisibility": "public",
+                     *       "readDates": "true",
+                     *       "openRouterModel": "example",
+                     *       "openRouterTagModel": "reflection",
+                     *       "openRouterWritingModel": "example",
+                     *       "openRouterChatModel": "example",
+                     *       "openRouterToneModel": "example",
+                     *       "openRouterSummaryModel": "example",
+                     *       "openRouterPromptModel": "example",
+                     *       "openRouterBookModel": "example",
+                     *       "autoTagMaxTags": "reflection",
+                     *       "tagMetadata": "reflection",
+                     *       "entryTemplates": "example",
+                     *       "subscriptionPlan": "free",
+                     *       "paymentMethodLabel": "example"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["UserConfigDto"];
+                };
             };
         };
     };
@@ -8942,7 +9517,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
             /** @description Unknown or reserved setting, or an invalid value */
             400: {
@@ -8977,7 +9559,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "ai": true,
+                     *       "bookConverter": true,
+                     *       "cloudSync": true,
+                     *       "publicSharing": true
+                     *     }
+                     */
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
             };
         };
     };
@@ -9013,7 +9607,17 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example [
+                     *       {
+                     *         "id": "openai/gpt-4o-mini",
+                     *         "name": "OpenAI: GPT-4o-mini"
+                     *       }
+                     *     ]
+                     */
+                    "application/json": components["schemas"]["AiModelDto"][];
+                };
             };
         };
     };
@@ -9181,7 +9785,16 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "tags": [
+                     *         "reflection"
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuggestTagsResponseDto"];
+                };
             };
         };
     };
@@ -9209,7 +9822,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FixWritingResponseDto"];
+                };
             };
         };
     };
@@ -10087,7 +10707,22 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "entrySeparator": "example",
+                     *       "sameDaySeparator": "example",
+                     *       "datePrefix": "2026-06-24",
+                     *       "dateSuffix": "2026-06-24",
+                     *       "dateFormat": "YYYY-MM-DD",
+                     *       "tagOpenBracket": "reflection",
+                     *       "tagCloseBracket": "reflection",
+                     *       "tagSeparator": "reflection",
+                     *       "titlePlacement": "header"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["FormatConfigResponseDto"];
+                };
             };
         };
     };
@@ -10122,7 +10757,25 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "config": {
+                     *         "entrySeparator": "example",
+                     *         "sameDaySeparator": "example",
+                     *         "datePrefix": "2026-06-24",
+                     *         "dateSuffix": "2026-06-24",
+                     *         "dateFormat": "YYYY-MM-DD",
+                     *         "tagOpenBracket": "reflection",
+                     *         "tagCloseBracket": "reflection",
+                     *         "tagSeparator": "reflection",
+                     *         "titlePlacement": "header"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SaveFormatResponseDto"];
+                };
             };
         };
     };
@@ -10373,7 +11026,22 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 1,
+                     *       "original_filename": "Daily Journal",
+                     *       "stored_filename": "Daily Journal",
+                     *       "mimetype": "example",
+                     *       "size": 1,
+                     *       "transcript": "example",
+                     *       "transcribed_at": "2026-06-24T10:00:00.000Z",
+                     *       "entry_id": 1,
+                     *       "created_at": "2026-06-24T10:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AttachmentRecordResponseDto"];
+                };
             };
         };
     };
@@ -10402,7 +11070,22 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 1,
+                     *       "original_filename": "Daily Journal",
+                     *       "stored_filename": "Daily Journal",
+                     *       "mimetype": "example",
+                     *       "size": 1,
+                     *       "transcript": "example",
+                     *       "transcribed_at": "2026-06-24T10:00:00.000Z",
+                     *       "entry_id": 1,
+                     *       "created_at": "2026-06-24T10:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AttachmentRecordResponseDto"];
+                };
             };
         };
     };
@@ -10451,7 +11134,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
         };
     };
@@ -10913,7 +11603,25 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "google_drive": {
+                     *         "connected": true,
+                     *         "connectedAt": "2026-06-24T10:00:00.000Z"
+                     *       },
+                     *       "onedrive": {
+                     *         "connected": true,
+                     *         "connectedAt": "2026-06-24T10:00:00.000Z"
+                     *       },
+                     *       "dropbox": {
+                     *         "connected": true,
+                     *         "connectedAt": "2026-06-24T10:00:00.000Z"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CloudStatusResponseDto"];
+                };
             };
         };
     };
@@ -10941,7 +11649,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "url": "https://thoughty.example.com/callback"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CloudAuthUrlResponseDto"];
+                };
             };
         };
     };
@@ -10970,7 +11685,15 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "connectedAt": "2026-06-24T10:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CloudConnectResponseDto"];
+                };
             };
         };
     };
@@ -10997,7 +11720,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
         };
     };
@@ -11018,7 +11748,19 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example [
+                     *       {
+                     *         "id": "example",
+                     *         "name": "Daily Journal",
+                     *         "size": 1,
+                     *         "modifiedAt": "2026-06-24T10:00:00.000Z"
+                     *       }
+                     *     ]
+                     */
+                    "application/json": components["schemas"]["CloudFileInfoDto"][];
+                };
             };
         };
     };
@@ -11048,7 +11790,17 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "id": "example",
+                     *       "name": "Daily Journal",
+                     *       "size": 1,
+                     *       "modifiedAt": "2026-06-24T10:00:00.000Z"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CloudFileInfoDto"];
+                };
             };
         };
     };
@@ -11076,7 +11828,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "content": "Today I wrote a thoughtful journal entry about focus and calm."
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CloudDownloadResponseDto"];
+                };
             };
         };
     };
@@ -11094,7 +11853,43 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "google_drive": {
+                     *         "enabled": true,
+                     *         "frequency": "every_6h",
+                     *         "format": "2026-06-24T10:00:00.000Z",
+                     *         "diaryId": 1,
+                     *         "includeVisibility": true,
+                     *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
+                     *         "lastSyncHash": "example",
+                     *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
+                     *       },
+                     *       "onedrive": {
+                     *         "enabled": true,
+                     *         "frequency": "every_6h",
+                     *         "format": "2026-06-24T10:00:00.000Z",
+                     *         "diaryId": 1,
+                     *         "includeVisibility": true,
+                     *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
+                     *         "lastSyncHash": "example",
+                     *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
+                     *       },
+                     *       "dropbox": {
+                     *         "enabled": true,
+                     *         "frequency": "every_6h",
+                     *         "format": "2026-06-24T10:00:00.000Z",
+                     *         "diaryId": 1,
+                     *         "includeVisibility": true,
+                     *         "lastSyncAt": "2026-06-24T10:00:00.000Z",
+                     *         "lastSyncHash": "example",
+                     *         "nextSyncAt": "2026-06-24T10:00:00.000Z"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CloudSyncSchedulesResponseDto"];
+                };
             };
         };
     };
@@ -11125,7 +11920,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
         };
     };
@@ -11146,7 +11948,14 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
             };
         };
     };
@@ -11173,7 +11982,21 @@ export interface operations {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    /**
+                     * @example {
+                     *       "synced": true,
+                     *       "message": "example",
+                     *       "file": {
+                     *         "id": "example",
+                     *         "name": "Daily Journal",
+                     *         "size": 1,
+                     *         "modifiedAt": "2026-06-24T10:00:00.000Z"
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DiffSyncResponseDto"];
+                };
             };
         };
     };

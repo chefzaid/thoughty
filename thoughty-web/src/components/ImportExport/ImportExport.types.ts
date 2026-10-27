@@ -103,20 +103,10 @@ export function createProviderRecord<T>(value: T): Record<CloudProviderType, T> 
     return Object.fromEntries(CLOUD_PROVIDERS.map((provider) => [provider, value])) as Record<CloudProviderType, T>;
 }
 
-export interface FormatConfig {
-    entrySeparator: string;
-    sameDaySeparator: string;
-    datePrefix: string;
-    dateSuffix: string;
-    dateFormat: string;
-    tagOpenBracket: string;
-    tagCloseBracket: string;
-    tagSeparator: string;
-    /** Where TXT files keep entry titles: on the header line, or as the entry's first line. */
-    titlePlacement: TitlePlacement;
-}
+/** The TXT layout, as `GET /api/io/format` answers it; `titlePlacement` says where entry titles go. */
+export type FormatConfig = components['schemas']['FormatConfigResponseDto'];
 
-export type TitlePlacement = 'header' | 'firstLine';
+export type TitlePlacement = FormatConfig['titlePlacement'];
 
 export interface PreviewData {
     totalCount: number;
