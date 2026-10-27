@@ -10,6 +10,7 @@ import {
   EntryRevision,
   MemoirAnswer,
   YearReviewMood,
+  SavedSearch,
   MemoirProgram,
   Setting,
   User,
@@ -32,6 +33,7 @@ describe('UserDataExportService', () => {
   let memoirProgramRepository: any;
   let memoirAnswerRepository: any;
   let yearReviewMoodRepository: any;
+  let savedSearchRepository: any;
 
   beforeEach(async () => {
     settingRepository = { find: jest.fn() };
@@ -47,6 +49,7 @@ describe('UserDataExportService', () => {
     memoirProgramRepository = { findOne: jest.fn().mockResolvedValue(null) };
     memoirAnswerRepository = { find: jest.fn().mockResolvedValue([]) };
     yearReviewMoodRepository = { find: jest.fn().mockResolvedValue([]) };
+    savedSearchRepository = { find: jest.fn().mockResolvedValue([]) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -64,6 +67,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(MemoirProgram), useValue: memoirProgramRepository },
         { provide: getRepositoryToken(MemoirAnswer), useValue: memoirAnswerRepository },
         { provide: getRepositoryToken(YearReviewMood), useValue: yearReviewMoodRepository },
+        { provide: getRepositoryToken(SavedSearch), useValue: savedSearchRepository },
       ],
     }).compile();
 
@@ -275,6 +279,40 @@ describe('UserDataExportService', () => {
       },
     ]);
     expect(yearReviewMoodRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { year: 'ASC', createdAt: 'ASC' } });
+  });
+
+  it('includes the saved searches with their filters and diary scope', async () => {
+    for (const repository of [diaryRepository, entryRepository, revisionRepository, attachmentRepository, settingRepository]) {
+      repository.find.mockResolvedValue([]);
+    }
+    const filters = {
+      search: '', searchMode: 'keyword', sort: 'relevance', tags: ['family'], date: null,
+      visibility: 'all', archiveStatus: 'active', favorites: true, mood: '',
+    };
+    savedSearchRepository.find.mockResolvedValue([
+      {
+        id: 3,
+        userId: 1,
+        name: 'Family favorites',
+        diaryId: 2,
+        filters,
+        createdAt: new Date('2026-10-01T10:00:00Z'),
+        updatedAt: new Date('2026-10-02T10:00:00Z'),
+      },
+    ]);
+
+    const result = await service.downloadData(1);
+
+    expect(result.savedSearches).toEqual([
+      {
+        name: 'Family favorites',
+        diaryId: 2,
+        filters,
+        createdAt: new Date('2026-10-01T10:00:00Z'),
+        updatedAt: new Date('2026-10-02T10:00:00Z'),
+      },
+    ]);
+    expect(savedSearchRepository.find).toHaveBeenCalledWith({ where: { userId: 1 }, order: { createdAt: 'ASC', id: 'ASC' } });
   });
 
   it('should exclude sensitive fields from user data', async () => {

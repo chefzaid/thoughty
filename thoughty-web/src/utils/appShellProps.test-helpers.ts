@@ -205,6 +205,7 @@ export function createRoutesParams(
     importExportFormat: 'txt',
     importExportIncludeVisibility: false,
     importExportSection: 'export',
+    notify: vi.fn(),
     profileStats: null,
     routingState: createRoutingState(),
     setHighlightsModalOpen: vi.fn(),

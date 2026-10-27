@@ -8273,6 +8273,332 @@
           "Recycle bin"
         ]
       }
+    },
+    "/api/saved-searches": {
+      "get": {
+        "operationId": "SavedSearchesController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Saved searches and the limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchListResponseDto"
+                },
+                "example": {
+                  "savedSearches": [
+                    {
+                      "id": 4,
+                      "name": "Family favorites",
+                      "diaryId": 2,
+                      "filters": {
+                        "search": "\"long walk\" -rain",
+                        "searchMode": "keyword",
+                        "sort": "relevance",
+                        "tags": [
+                          "family"
+                        ],
+                        "date": "2019-07-14",
+                        "visibility": "all",
+                        "archiveStatus": "active",
+                        "favorites": true,
+                        "mood": "4,5"
+                      },
+                      "createdAt": "2026-10-27T09:30:00.000Z",
+                      "updatedAt": "2026-10-27T09:30:00.000Z"
+                    }
+                  ],
+                  "limit": 50
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the writer’s saved journal searches, by name",
+        "tags": [
+          "Saved searches"
+        ]
+      },
+      "post": {
+        "operationId": "SavedSearchesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSavedSearchDto"
+              },
+              "example": {
+                "name": "Family favorites",
+                "diaryId": 2,
+                "filters": {
+                  "search": "\"long walk\" -rain",
+                  "searchMode": "keyword",
+                  "sort": "relevance",
+                  "tags": [
+                    "family"
+                  ],
+                  "date": "2019-07-14",
+                  "visibility": "all",
+                  "archiveStatus": "active",
+                  "favorites": true,
+                  "mood": "4,5"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Search saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchResponseDto"
+                },
+                "example": {
+                  "id": 4,
+                  "name": "Family favorites",
+                  "diaryId": 2,
+                  "filters": {
+                    "search": "\"long walk\" -rain",
+                    "searchMode": "keyword",
+                    "sort": "relevance",
+                    "tags": [
+                      "family"
+                    ],
+                    "date": "2019-07-14",
+                    "visibility": "all",
+                    "archiveStatus": "active",
+                    "favorites": true,
+                    "mood": "4,5"
+                  },
+                  "createdAt": "2026-10-27T09:30:00.000Z",
+                  "updatedAt": "2026-10-27T09:30:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid filters, or the saved search limit is reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid filters, or the saved search limit is reached",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Diary not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Diary not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A saved search with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "A saved search with this name already exists",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Save the current journal filters and diary scope under a name",
+        "tags": [
+          "Saved searches"
+        ]
+      }
+    },
+    "/api/saved-searches/{id}": {
+      "patch": {
+        "operationId": "SavedSearchesController_rename",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RenameSavedSearchDto"
+              },
+              "example": {
+                "name": "Family, 2019"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Search renamed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchResponseDto"
+                },
+                "example": {
+                  "id": 4,
+                  "name": "Family favorites",
+                  "diaryId": 2,
+                  "filters": {
+                    "search": "\"long walk\" -rain",
+                    "searchMode": "keyword",
+                    "sort": "relevance",
+                    "tags": [
+                      "family"
+                    ],
+                    "date": "2019-07-14",
+                    "visibility": "all",
+                    "archiveStatus": "active",
+                    "favorites": true,
+                    "mood": "4,5"
+                  },
+                  "createdAt": "2026-10-27T09:30:00.000Z",
+                  "updatedAt": "2026-10-27T09:30:00.000Z"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Saved search not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Saved search not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A saved search with this name already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "A saved search with this name already exists",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Rename a saved search",
+        "tags": [
+          "Saved searches"
+        ]
+      },
+      "delete": {
+        "operationId": "SavedSearchesController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedSearchDeleteResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Saved search not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Saved search not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a saved search",
+        "tags": [
+          "Saved searches"
+        ]
+      }
     }
   },
   "info": {
@@ -14922,6 +15248,282 @@
           "deletedCount": 2
         }
       },
+      "SavedSearchFiltersDto": {
+        "type": "object",
+        "properties": {
+          "search": {
+            "type": "string",
+            "example": "\"long walk\" -rain",
+            "maxLength": 500,
+            "description": "Search text; empty for none"
+          },
+          "searchMode": {
+            "type": "string",
+            "enum": [
+              "keyword",
+              "semantic"
+            ],
+            "example": "keyword"
+          },
+          "sort": {
+            "type": "string",
+            "enum": [
+              "relevance",
+              "date"
+            ],
+            "example": "relevance",
+            "description": "Order of keyword search results"
+          },
+          "tags": {
+            "example": [
+              "family"
+            ],
+            "maxItems": 20,
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "date": {
+            "type": "string",
+            "nullable": true,
+            "example": "2019-07-14",
+            "format": "date",
+            "description": "Entry date, or null for any date"
+          },
+          "visibility": {
+            "type": "string",
+            "enum": [
+              "all",
+              "public",
+              "private"
+            ],
+            "example": "all"
+          },
+          "archiveStatus": {
+            "type": "string",
+            "enum": [
+              "active",
+              "archived",
+              "all"
+            ],
+            "example": "active"
+          },
+          "favorites": {
+            "type": "boolean",
+            "example": true
+          },
+          "mood": {
+            "type": "string",
+            "example": "4,5",
+            "description": "Mood levels from 1 to 5 (comma-separated), \"any\", \"none\", or empty for any mood"
+          }
+        },
+        "required": [
+          "search",
+          "searchMode",
+          "sort",
+          "tags",
+          "date",
+          "visibility",
+          "archiveStatus",
+          "favorites",
+          "mood"
+        ],
+        "example": {
+          "search": "\"long walk\" -rain",
+          "searchMode": "keyword",
+          "sort": "relevance",
+          "tags": [
+            "family"
+          ],
+          "date": "2019-07-14",
+          "visibility": "all",
+          "archiveStatus": "active",
+          "favorites": true,
+          "mood": "4,5"
+        }
+      },
+      "SavedSearchResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 4
+          },
+          "name": {
+            "type": "string",
+            "example": "Family favorites"
+          },
+          "diaryId": {
+            "type": "number",
+            "nullable": true,
+            "example": 2,
+            "description": "Null for all diaries"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/SavedSearchFiltersDto"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-27T09:30:00.000Z"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2026-10-27T09:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "diaryId",
+          "filters",
+          "createdAt",
+          "updatedAt"
+        ],
+        "example": {
+          "id": 4,
+          "name": "Family favorites",
+          "diaryId": 2,
+          "filters": {
+            "search": "\"long walk\" -rain",
+            "searchMode": "keyword",
+            "sort": "relevance",
+            "tags": [
+              "family"
+            ],
+            "date": "2019-07-14",
+            "visibility": "all",
+            "archiveStatus": "active",
+            "favorites": true,
+            "mood": "4,5"
+          },
+          "createdAt": "2026-10-27T09:30:00.000Z",
+          "updatedAt": "2026-10-27T09:30:00.000Z"
+        }
+      },
+      "SavedSearchListResponseDto": {
+        "type": "object",
+        "properties": {
+          "savedSearches": {
+            "description": "Sorted by name",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SavedSearchResponseDto"
+            }
+          },
+          "limit": {
+            "type": "number",
+            "example": 50,
+            "description": "How many saved searches a writer can keep"
+          }
+        },
+        "required": [
+          "savedSearches",
+          "limit"
+        ],
+        "example": {
+          "savedSearches": [
+            {
+              "id": 4,
+              "name": "Family favorites",
+              "diaryId": 2,
+              "filters": {
+                "search": "\"long walk\" -rain",
+                "searchMode": "keyword",
+                "sort": "relevance",
+                "tags": [
+                  "family"
+                ],
+                "date": "2019-07-14",
+                "visibility": "all",
+                "archiveStatus": "active",
+                "favorites": true,
+                "mood": "4,5"
+              },
+              "createdAt": "2026-10-27T09:30:00.000Z",
+              "updatedAt": "2026-10-27T09:30:00.000Z"
+            }
+          ],
+          "limit": 50
+        }
+      },
+      "CreateSavedSearchDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Family favorites",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "diaryId": {
+            "type": "number",
+            "nullable": true,
+            "example": 2,
+            "description": "Diary the search is scoped to; null for all diaries"
+          },
+          "filters": {
+            "$ref": "#/components/schemas/SavedSearchFiltersDto"
+          }
+        },
+        "required": [
+          "name",
+          "diaryId",
+          "filters"
+        ],
+        "example": {
+          "name": "Family favorites",
+          "diaryId": 2,
+          "filters": {
+            "search": "\"long walk\" -rain",
+            "searchMode": "keyword",
+            "sort": "relevance",
+            "tags": [
+              "family"
+            ],
+            "date": "2019-07-14",
+            "visibility": "all",
+            "archiveStatus": "active",
+            "favorites": true,
+            "mood": "4,5"
+          }
+        }
+      },
+      "RenameSavedSearchDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Family, 2019",
+            "minLength": 1,
+            "maxLength": 80
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "example": {
+          "name": "Family, 2019"
+        }
+      },
+      "SavedSearchDeleteResponseDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "success"
+        ],
+        "example": {
+          "success": true
+        }
+      },
       "ApiErrorCode": {
         "type": "string",
         "enum": [
@@ -14983,6 +15585,9 @@
           "DIARY_NAME_TAKEN",
           "DIARY_DEFAULT_NOT_DELETABLE",
           "SETTINGS_RESERVED",
+          "SAVED_SEARCH_NOT_FOUND",
+          "SAVED_SEARCH_NAME_TAKEN",
+          "SAVED_SEARCH_LIMIT_REACHED",
           "ATTACHMENT_NOT_FOUND",
           "ATTACHMENT_FILE_NOT_FOUND",
           "ATTACHMENT_FILE_MISSING",

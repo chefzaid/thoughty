@@ -86,6 +86,7 @@ describePostgres('PostgreSQL account purge', () => {
       `INSERT INTO year_review_moods (user_id, diary_id, year, months, summary, analyzed_entries) VALUES ($1, $2, 2026, '[]', 'Calm', 1)`,
       [userId, diaryId],
     );
+    await dataSource.query(`INSERT INTO saved_searches (user_id, name, diary_id, filters) VALUES ($1, 'Family', $2, '{}')`, [userId, diaryId]);
     const requestId = await one(`INSERT INTO feature_requests (user_id, title, details) VALUES ($1, 'Idea', 'Details') RETURNING id`, [userId]);
     return { entryId, requestId };
   };

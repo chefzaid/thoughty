@@ -13,6 +13,7 @@ vi.mock('../Pagination/Pagination', async () => ({ default: (await import('./Jou
 vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (await import('./JournalView.test-helpers')).MockYearMonthNavigator }));
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
+vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import('./JournalView.test-helpers')).MockSavedSearches }));
 
 describe('JournalView', () => {
   let defaultProps: JournalViewProps;
@@ -39,6 +40,16 @@ describe('JournalView', () => {
     render(<JournalView {...defaultProps} />);
 
     expect(screen.getByTestId('filter-controls')).toContainElement(screen.getByTestId('duplicate-review'));
+  });
+
+  it('puts the saved searches in the filter controls with the diary scope and the notice toast', () => {
+    render(<JournalView {...defaultProps} />);
+
+    expect(screen.getByTestId('filter-controls')).toContainElement(screen.getByTestId('saved-searches'));
+    expect(screen.getByTestId('saved-searches-diary')).toHaveTextContent('1');
+    expect(screen.getByTestId('saved-searches-diaries')).toHaveTextContent('2');
+    fireEvent.click(screen.getByRole('button', { name: 'Saved search notice' }));
+    expect(defaultProps.onNotify).toHaveBeenCalledWith('Saved search notice');
   });
 
   it('passes diaries data to DiaryTabs', () => {

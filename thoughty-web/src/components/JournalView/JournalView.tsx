@@ -8,6 +8,7 @@ import Pagination from '../Pagination/Pagination';
 import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
 import DuplicateReview from '../DuplicateReview/DuplicateReview';
+import SavedSearches from '../SavedSearches/SavedSearches';
 import type { Config, TranslationFunction } from '../../types';
 import { resolveLanguage } from '../../utils/language';
 import { useJournalKeyboardShortcuts } from './useJournalKeyboardShortcuts';
@@ -36,6 +37,8 @@ interface JournalViewProps {
   yearMonthNavigator: YearMonthNavigatorProps;
   duplicateReview: DuplicateReviewProps;
   onOpenRecycleBin: () => void;
+  /** Shows a message in the app's notice toast. */
+  onNotify: (message: string) => void;
   config: Config;
   t: TranslationFunction;
 }
@@ -50,6 +53,7 @@ function JournalView({
   yearMonthNavigator,
   duplicateReview,
   onOpenRecycleBin,
+  onNotify,
   config,
   t
 }: Readonly<JournalViewProps>) {
@@ -109,6 +113,14 @@ function JournalView({
           onOpenHighlights={() => thoughtOfDay.setOpen(true)}
           actions={(
             <>
+              <SavedSearches
+                filters={filters}
+                currentDiaryId={diaryTabs.currentDiaryId}
+                diaries={diaryTabs.diaries}
+                theme={config.theme}
+                t={t}
+                notify={onNotify}
+              />
               <DuplicateReview
                 {...duplicateReview}
                 theme={config.theme}

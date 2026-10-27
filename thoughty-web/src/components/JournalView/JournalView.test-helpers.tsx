@@ -116,6 +116,16 @@ export const MockBackToTopButton = ({ t }: { t: (key: string) => string }) => (
   <button type="button" data-testid="back-to-top">{t('backToTop')}</button>
 );
 
+export const MockSavedSearches = ({ currentDiaryId, diaries, notify }: {
+  currentDiaryId: number | null; diaries: Diary[]; notify: (message: string) => void;
+}) => (
+  <div data-testid="saved-searches">
+    <span data-testid="saved-searches-diary">{currentDiaryId}</span>
+    <span data-testid="saved-searches-diaries">{diaries.length}</span>
+    <button type="button" onClick={() => notify('Saved search notice')}>Saved search notice</button>
+  </div>
+);
+
 export const MockDuplicateReview = ({ diaryId }: { diaryId: number | null }) => (
   <div data-testid="duplicate-review">{diaryId}</div>
 );
@@ -256,6 +266,7 @@ export const createProps = (overrides: PropsOverrides = {}): JournalViewProps =>
       onNavigate: vi.fn(),
     },
     onOpenRecycleBin: vi.fn(),
+    onNotify: vi.fn(),
     config: mockConfig,
     t: mockT,
   };

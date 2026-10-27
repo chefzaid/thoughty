@@ -17,3 +17,4 @@ export * from './like.entity';
 export * from './memoir-program.entity';
 export * from './memoir-answer.entity';
 export * from './year-review-mood.entity';
+export * from './saved-search.entity';

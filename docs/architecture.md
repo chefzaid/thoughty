@@ -45,6 +45,7 @@ flowchart TD
 | `entries` | entry CRUD (title, time, mood, feelings), full-text search, revisions, tags, visibility, favorites, pins, archive, reordering, task list ticks, backlinks, highlights, delete-all |
 | `recycle-bin` | deleted entries kept for 30 days: list, restore, delete forever, empty, and the hourly purge |
 | `diaries` | diary containers, ordering, default diary, moving entries when a diary is deleted |
+| `saved-searches` | named journal filter combinations with their diary scope: list, save, rename, delete, at most 50 per writer |
 | `attachments` | upload validation, object storage, audio transcription |
 | `ai` | OpenRouter credentials and usage, tag suggestions, inspiration, rephrasing, summaries, chat, semantic search, duplicates, tag organization, writing insights |
 | `stats` | statistics, heatmap, mood stats, connections graph, writing-tendency analysis |
@@ -106,7 +107,7 @@ flowchart TD
 - Route files stay thin. Components render; hooks own shared state, URL parameters, and API calls.
 - Server state goes through TanStack Query. The entry list keeps the previous page on screen while the next one loads.
 - The journal sends its first list request once everything that shapes it is known: the profile config (page size; a failed config request falls back to 10 at once), the default or route diary, and on a permalink the page that holds the entry. Until then the list query is disabled and the journal shows as loading, so no request is sent with defaults and thrown away.
-- Query-string parameters are product behavior: diary scope, import/export presets, entry permalinks.
+- Query-string parameters are product behavior: diary scope, import/export presets, entry permalinks, and the saved search on screen (`view=<id>`, written beside `diary` when one is applied and dropped as soon as a filter changes).
 - API types are generated from the server's OpenAPI document ([ADR 0004](./adr/0004-openapi-as-contract-source.md)). A test fails if the frontend stops calling a documented product endpoint.
 
 ## API Error Codes
@@ -177,6 +178,9 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `DIARY_NAME_TAKEN` | A diary with this name already exists |
 |  | `DIARY_DEFAULT_NOT_DELETABLE` | Cannot delete the default diary |
 |  | `SETTINGS_RESERVED` | Settings cannot be changed here |
+| Saved searches | `SAVED_SEARCH_NOT_FOUND` | Saved search not found |
+|  | `SAVED_SEARCH_NAME_TAKEN` | A saved search with this name already exists |
+|  | `SAVED_SEARCH_LIMIT_REACHED` | Saved search limit reached |
 | Attachments and audio transcription | `ATTACHMENT_NOT_FOUND` | Attachment not found |
 |  | `ATTACHMENT_FILE_NOT_FOUND` | File not found |
 |  | `ATTACHMENT_FILE_MISSING` | No file provided |

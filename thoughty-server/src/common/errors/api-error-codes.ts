@@ -75,6 +75,11 @@ export const API_ERROR_MESSAGES = {
   DIARY_DEFAULT_NOT_DELETABLE: 'Cannot delete the default diary',
   SETTINGS_RESERVED: 'Settings cannot be changed here',
 
+  // Saved searches.
+  SAVED_SEARCH_NOT_FOUND: 'Saved search not found',
+  SAVED_SEARCH_NAME_TAKEN: 'A saved search with this name already exists',
+  SAVED_SEARCH_LIMIT_REACHED: 'Saved search limit reached',
+
   // Attachments and audio transcription.
   ATTACHMENT_NOT_FOUND: 'Attachment not found',
   ATTACHMENT_FILE_NOT_FOUND: 'File not found',

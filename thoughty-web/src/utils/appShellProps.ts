@@ -76,6 +76,8 @@ interface BuildAuthenticatedRoutesPropsParams {
   importExportFormat: ImportExportFormat;
   importExportIncludeVisibility: boolean;
   importExportSection: ImportExportSection;
+  /** Shows a message in the app's notice toast. */
+  notify: (message: string) => void;
   profileStats: AuthenticatedRoutesProps['profileRouteProps']['stats'] | null;
   routingState: Pick<AppShellRoutingState, 'handleBackFromDiaries' | 'handleDiaryChange' | 'handleImportExportRouteStateChange' | 'handleManageDiaries' | 'handleViewChange'>;
   setHighlightsModalOpen: (value: boolean) => void;
@@ -153,6 +155,7 @@ export function buildAuthenticatedRoutesProps({
   importExportFormat,
   importExportIncludeVisibility,
   importExportSection,
+  notify,
   profileStats,
   routingState,
   saveConfig,
@@ -425,6 +428,7 @@ export function buildAuthenticatedRoutesProps({
         availableMonths: entriesState.availableMonths,
         onNavigate: handleNavigateToFirst,
       },
+      onNotify: notify,
       config,
       t,
     },

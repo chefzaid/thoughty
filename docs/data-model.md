@@ -24,11 +24,13 @@ erDiagram
     User ||--o| MemoirProgram : runs
     User ||--o{ MemoirAnswer : writes
     User ||--o{ YearReviewMood : keeps
+    User ||--o{ SavedSearch : saves
 
     Diary ||--o{ Entry : contains
     Diary ||--o{ BookVersion : scopes
     Diary ||--o{ MemoirProgram : collects
     Diary ||--o{ YearReviewMood : scopes
+    Diary ||--o{ SavedSearch : scopes
 
     Entry ||--o{ EntryRevision : snapshots
     Entry ||--o{ Attachment : links
@@ -39,7 +41,7 @@ erDiagram
     EntryComment ||--o{ CommentLike : receives
 ```
 
-Uniqueness rules worth knowing: diary names per user, one setting per key, one AI chat per entry, one vote per idea, one like per user and item, one follow per pair (never yourself), one memoir program per user, and one memoir answer per question and per entry. Comments hold 1 to 1,000 non-blank characters.
+Uniqueness rules worth knowing: diary names per user, one setting per key, one AI chat per entry, one vote per idea, one like per user and item, one follow per pair (never yourself), one memoir program per user, and one memoir answer per question and per entry, and saved search names per user whatever their case. Comments hold 1 to 1,000 non-blank characters.
 
 ## Ownership and Deletion Rules
 
@@ -55,6 +57,7 @@ Every table except `users` references a user, and those foreign keys cascade. Ac
 | `MemoirProgram` | Deleted with the user or when the memoir is stopped. Deleting its diary keeps the program with no diary (`SET NULL`) until another is chosen. |
 | `MemoirAnswer` | Deleted with the user or the entry. Kept when the memoir is stopped. While the entry is in the recycle bin the question counts as unanswered; answering it again points the row at the new entry. |
 | `BookVersion`, `YearReviewMood` | Deleted with the user or their diary. |
+| `SavedSearch` | Deleted with the user. Deleting its diary keeps the search and widens it to all diaries (`SET NULL`). |
 | Everything else | Deleted with the user. Votes also go with their request. |
 
 ## Entries
@@ -137,6 +140,15 @@ Measured on PostgreSQL 16 on a development machine with the dev seed's main jour
 | Highlights for a page of 50 entries | 6 to 9 ms | 4 to 7 ms |
 
 The index lookup takes under a millisecond for a rare word. Search cost grows with the number of matches, since each is counted and ranked: roughly 5 to 8 ms per thousand. `sort=date` is 20 to 35% faster on broad searches because it skips ranking. Most of the large baseline is the tag list returned with every page. The vector takes about 650 bytes per entry (2.8 times its text) and the index 15 MB for 107,000 entries. `npm run benchmark` includes an `entries_full_text_search` query for checking a real database.
+
+## Saved Searches
+
+`saved_searches` keeps named journal views (`SavedSearchesModule`, `/api/saved-searches`): a `name` (`VARCHAR(80)`, not blank), the diary scope `diary_id` (null for all diaries), and the filter bar's state in `filters` (JSONB).
+
+- `filters` holds `search`, `searchMode` (`keyword` or `semantic`), `sort` (`relevance` or `date`), `tags`, `date` (`YYYY-MM-DD` or null), `visibility` (`all`, `public`, `private`), `archiveStatus` (`active`, `archived`, `all`), `favorites`, and `mood` (the entry list's mood filter, or empty). `SavedSearchFiltersDto` validates every field with the same bounds as `GET /api/entries` and refuses unknown ones, so a new filter needs a DTO field (old rows simply lack it) rather than a migration.
+- The unique index `uq_saved_searches_user_name` on `(user_id, lower(name))` gives one name per writer whatever its case; a clash answers `409 SAVED_SEARCH_NAME_TAKEN`. Lists are sorted by name, case-insensitively.
+- A writer keeps at most 50 (`SAVED_SEARCH_LIMIT`, sent with the list). Saves take a transaction-scoped advisory lock on `(hashtext('saved_searches'), user_id)`, so concurrent saves cannot pass the limit. The diary must be the writer's own.
+- Saved searches are private: they are only read by their owner, and they are part of the data download.
 
 ## Public Feed Eligibility
 

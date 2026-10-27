@@ -12,6 +12,7 @@ import {
   MemoirAnswer,
   MemoirProgram,
   YearReviewMood,
+  SavedSearch,
   Setting,
   User,
   UserFollow,
@@ -47,10 +48,12 @@ export class UserDataExportService {
     private readonly memoirAnswerRepository: Repository<MemoirAnswer>,
     @InjectRepository(YearReviewMood)
     private readonly yearReviewMoodRepository: Repository<YearReviewMood>,
+    @InjectRepository(SavedSearch)
+    private readonly savedSearchRepository: Repository<SavedSearch>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       // Entries in the recycle bin are still personal data until they are removed for good
@@ -61,6 +64,7 @@ export class UserDataExportService {
       this.collectSocialData(userId),
       this.collectMemoirData(userId),
       this.yearReviewMoodRepository.find({ where: { userId }, order: { year: 'ASC', createdAt: 'ASC' } }),
+      this.savedSearchRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
     ]);
 
     const safeUser = user
@@ -148,6 +152,13 @@ export class UserDataExportService {
         summary: mood.summary,
         analyzedEntries: mood.analyzedEntries,
         generatedAt: mood.createdAt,
+      })),
+      savedSearches: savedSearches.map((saved) => ({
+        name: saved.name,
+        diaryId: saved.diaryId,
+        filters: saved.filters,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt,
       })),
     };
   }

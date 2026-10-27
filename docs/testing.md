@@ -89,7 +89,7 @@ Specs import `test` and `expect` from `e2e/support/test.ts`, not from `@playwrig
 
 ### Mock API
 
-`setupMockApp(page, options)` in `e2e/support/mockApp.ts` sets up per-test state, auth, and routes. State types and defaults are in `mockApp.shared.ts`, and routes are split by feature into `mockApp.routes.*.ts`. For new backend behavior, add state fields to `mockApp.shared.ts`, handle the route in the closest routes file, record the request if the test asserts on it, and return the real API's response shape. Keep the mock minimal; it does not reimplement the backend. Derived answers follow the server's rules where a spec relies on them: `mockApp.search.ts` reads the search syntax (phrases, `-` exclusions, prefixes), and `mockApp.backlinks.ts` finds the entries whose `[[date]]`, `[[date#n]]`, or `entry(date--n)` references point at an entry, leaving out the recycle bin.
+`setupMockApp(page, options)` in `e2e/support/mockApp.ts` sets up per-test state, auth, and routes. State types are in `mockApp.shared.ts` and the default fixtures in `mockApp.defaults.ts`, and routes are split by feature into `mockApp.routes.*.ts`. For new backend behavior, add state fields to `mockApp.shared.ts`, handle the route in the closest routes file, record the request if the test asserts on it, and return the real API's response shape. Keep the mock minimal; it does not reimplement the backend. Derived answers follow the server's rules where a spec relies on them: `mockApp.search.ts` reads the search syntax (phrases, `-` exclusions, prefixes), and `mockApp.backlinks.ts` finds the entries whose `[[date]]`, `[[date#n]]`, or `entry(date--n)` references point at an entry, leaving out the recycle bin.
 
 ## Writing a Browser Test
 

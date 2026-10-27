@@ -1,6 +1,14 @@
 import { createMockMemoirState, type MockMemoirProgram, type MockMemoirState } from "./mockApp.memoir";
 import { createMockAppImportState, type MockAppImportState } from "./mockApp.app-import";
 import { createMockReviewState, type MockReviewState } from "./mockApp.review";
+import type { MockSavedSearch } from "./mockApp.routes.saved-searches";
+import {
+  DEFAULT_CLOUD_FILES,
+  DEFAULT_CLOUD_SCHEDULES,
+  DEFAULT_CLOUD_STATUS,
+  DEFAULT_DIARIES,
+  DEFAULT_FEATURE_REQUESTS,
+} from "./mockApp.defaults";
 
 type AuthPayload = {
   email?: string;
@@ -143,6 +151,7 @@ export interface SetupMockAppOptions {
   likedCommentIds?: number[];
   /** A started guided memoir (defaults filled in), or null/omitted for one not started yet. */
   memoirProgram?: Partial<MockMemoirProgram> | null;
+  savedSearches?: MockSavedSearch[];
 }
 
 export interface MockAppState {
@@ -194,6 +203,7 @@ export interface MockAppState {
   likedEntryIds: number[];
   likedCommentIds: number[];
   bookVersions: MockBookVersion[];
+  savedSearches: MockSavedSearch[];
   memoir: MockMemoirState;
   appImport: MockAppImportState;
   review: MockReviewState;
@@ -250,84 +260,6 @@ export const DEFAULT_FORMAT_CONFIG = {
   tagCloseBracket: "]",
   tagSeparator: ",",
 };
-
-const DEFAULT_DIARIES = [
-  {
-    id: 1,
-    name: "Work",
-    icon: "💼",
-    is_default: true,
-    visibility: "private" as const,
-    color: "#3B82F6",
-  },
-  {
-    id: 2,
-    name: "Personal",
-    icon: "🏠",
-    is_default: false,
-    visibility: "private" as const,
-    color: "#A855F7",
-  },
-];
-
-const DEFAULT_CLOUD_STATUS: Record<MockCloudProvider, MockCloudProviderStatus> =
-  {
-    google_drive: { connected: true, connectedAt: "2026-04-18T10:00:00.000Z" },
-    onedrive: { connected: false },
-    dropbox: { connected: false },
-  };
-
-const DEFAULT_CLOUD_SCHEDULES: Partial<
-  Record<MockCloudProvider, MockCloudSchedule>
-> = {
-  google_drive: {
-    enabled: true,
-    frequency: "daily",
-    format: "json",
-    includeVisibility: true,
-    lastSyncAt: "2026-04-18T10:00:00.000Z",
-    nextSyncAt: "2026-04-19T10:00:00.000Z",
-  },
-};
-
-const DEFAULT_CLOUD_FILES: MockCloudFile[] = [
-  {
-    id: "cloud-file-1",
-    provider: "google_drive",
-    name: "thoughty-cloud.json",
-    size: 512,
-    modifiedAt: "2026-04-18T10:00:00.000Z",
-    content: JSON.stringify({
-      entries: [
-        {
-          date: "2024-04-22",
-          content: "Cloud restored entry",
-          tags: ["cloud"],
-          visibility: "private",
-        },
-      ],
-    }),
-  },
-];
-
-const DEFAULT_FEATURE_REQUESTS: MockFeatureRequest[] = [
-  {
-    id: 1,
-    title: "Offline writing mode",
-    details: "Write and review journal entries without a network connection.",
-    status: "planned",
-    votes: 42,
-    createdAt: "2026-07-20T12:00:00.000Z",
-  },
-  {
-    id: 2,
-    title: "Mood calendar",
-    details: "Show recurring mood patterns across weeks and months.",
-    status: "open",
-    votes: 12,
-    createdAt: "2026-07-22T12:00:00.000Z",
-  },
-];
 
 /**
  * Newest day first; within a day, entries without a time in index order, then entries with a
@@ -486,6 +418,7 @@ export function createMockAppState(
     likedEntryIds: [...(options.likedEntryIds || [])],
     likedCommentIds: [...(options.likedCommentIds || [])],
     bookVersions: [],
+    savedSearches: (options.savedSearches || []).map((saved) => ({ ...saved, filters: { ...saved.filters } })),
     memoir: createMockMemoirState(options.memoirProgram ?? null),
     appImport: createMockAppImportState(),
     review: createMockReviewState(),

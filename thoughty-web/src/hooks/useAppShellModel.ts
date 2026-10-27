@@ -306,6 +306,7 @@ export function useAppShellModel(): AppShellModel {
     importExportFormat,
     importExportIncludeVisibility,
     importExportSection,
+    notify: notifier.notify,
     profileStats,
     routingState,
     setHighlightsModalOpen,

@@ -16,6 +16,7 @@ import { entryActionsTranslations, type EntryActionsTranslationKey } from "./tra
 import { socialTranslations, type SocialTranslationKey } from "./translations.social";
 import { publicPagesTranslations, type PublicPagesTranslationKey } from "./translations.publicPages";
 import { searchFiltersTranslations, type SearchFiltersTranslationKey } from "./translations.searchFilters";
+import { savedSearchesTranslations, type SavedSearchesTranslationKey } from "./translations.savedSearches";
 import { tagsTranslations, type TagsTranslationKey } from "./translations.tags";
 import { securityTranslations, type SecurityTranslationKey } from "./translations.security";
 import { settingsTranslations, type SettingsTranslationKey } from "./translations.settings";
@@ -52,6 +53,7 @@ export type TranslationKey =
   | SocialTranslationKey
   | PublicPagesTranslationKey
   | SearchFiltersTranslationKey
+  | SavedSearchesTranslationKey
   | TagsTranslationKey
   | SecurityTranslationKey
   | SettingsTranslationKey
@@ -93,6 +95,7 @@ export const translations: Translations = {
     ...socialTranslations.en,
     ...publicPagesTranslations.en,
     ...searchFiltersTranslations.en,
+    ...savedSearchesTranslations.en,
     ...tagsTranslations.en,
     ...securityTranslations.en,
     ...settingsTranslations.en,
@@ -127,6 +130,7 @@ export const translations: Translations = {
     ...socialTranslations.fr,
     ...publicPagesTranslations.fr,
     ...searchFiltersTranslations.fr,
+    ...savedSearchesTranslations.fr,
     ...tagsTranslations.fr,
     ...securityTranslations.fr,
     ...settingsTranslations.fr,

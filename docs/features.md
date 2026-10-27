@@ -48,6 +48,7 @@ flowchart LR
 - **Filters.** Search, tags, date, visibility, archive state, favorites, and mood all combine with each other and with the diary scope. The date picker only offers dates that have entries.
 - **Keyword search.** Full-text search over titles, text, and tags in English and French. It matches other forms of a word, ignores accents, and supports `"exact phrases"`, `-exclusions`, and `OR`. Results come best match first (or newest first) with the matches highlighted. Search stays fast on very large journals (see [Search Performance](./data-model.md#search-performance-on-a-large-journal)).
 - **Meaning search.** Find entries by idea instead of keywords, using AI.
+- **Saved searches.** Save any combination of search, filters, and diary under a name (for example favorites tagged "family" in the Personal diary), then show it again in one click from **Saved searches** in the filter bar. Searches can be renamed or deleted (after a confirmation), up to 50 per account. The journal address names the search on screen (`/journal?diary=2&view=4`), so it can be bookmarked or opened on another device, and drops it as soon as a filter changes; a link to a search that was deleted says so. A saved meaning search runs again when it is shown. Saved searches are included in the data download.
 
 ## Highlights and Insights
 
