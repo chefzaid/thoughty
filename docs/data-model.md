@@ -154,6 +154,12 @@ Measured on PostgreSQL 16 on a development machine with the dev seed's main jour
 
 The index lookup takes under a millisecond for a rare word. Search cost grows with the number of matches, since each is counted and ranked: roughly 5 to 8 ms per thousand. `sort=date` is 20 to 35% faster on broad searches because it skips ranking. Most of the large baseline is the tag list returned with every page. The vector takes about 650 bytes per entry (2.8 times its text) and the index 15 MB for 107,000 entries. `npm run benchmark` includes an `entries_full_text_search` query for checking a real database.
 
+## Diary Names
+
+A writer's diaries have distinct names, compared ignoring case and surrounding spaces: the unique index `uq_diaries_user_name` on `(user_id, lower(btrim(name)))`, the same comparison the app import uses to put a journal into "the diary of the same name" and the memoir uses to continue in an existing diary. The `Diary` entity names the index with `synchronize: false`, since TypeORM cannot describe an expression index. `POST /api/diaries` and `PUT /api/diaries/:id` let the index decide, so two requests racing for one name cannot both win, and answer `409 DIARY_NAME_TAKEN` on its violation; a diary may change the case of its own name.
+
+Migration `1787011200000-diary-unique-names` resolved the duplicates databases held before the index existed: per writer and name, the oldest diary (by `created_at`, then id) kept its name, and each later one became `Name (2)`, `Name (3)`… with the first number no diary of that writer used, shortened by whole characters to fit the 100-character column. Their entries, settings and books were untouched. Rolling back drops the index and keeps the new names.
+
 ## Diary Writing Goals
 
 A diary can carry one optional writing goal in `goal_type` (`entries_per_week` or `words_per_day`) and `goal_target`. The `chk_diaries_goal` constraint keeps them set together or both null, with 1 to 50 entries a week or 10 to 10,000 words a day; `DIARY_GOAL_LIMITS` and the `IsDiaryGoalTarget` validator hold the same bounds for the API, which answers `400 VALIDATION_FAILED` outside them. On `PUT /api/diaries/:id`, leaving `goalType` out keeps the goal and `null` removes it.

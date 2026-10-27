@@ -187,14 +187,23 @@ export class MemoirService {
     return diary.id;
   }
 
-  /** Restarting the memoir with the same diary name continues in that diary instead of failing. */
+  /**
+   * Restarting the memoir with the name of an existing diary (in any case) continues in that diary
+   * instead of failing, also when a parallel request has just created it.
+   */
   private async findOrCreateDiaryId(userId: number, name: string): Promise<number> {
-    const existing = await this.diaryRepository.findOne({ where: { userId, name: name.trim() } });
+    const existing = await this.diariesService.findByName(userId, name);
     if (existing) {
       return existing.id;
     }
-    const diary = await this.diariesService.create(userId, { name, icon: MEMOIR_DIARY_ICON, visibility: 'private' });
-    return diary.id;
+    try {
+      const diary = await this.diariesService.create(userId, { name, icon: MEMOIR_DIARY_ICON, visibility: 'private' });
+      return diary.id;
+    } catch (error) {
+      const created = error instanceof ConflictException ? await this.diariesService.findByName(userId, name) : null;
+      if (!created) throw error;
+      return created.id;
+    }
   }
 
   private async loadAnsweredIds(userId: number): Promise<Set<string>> {

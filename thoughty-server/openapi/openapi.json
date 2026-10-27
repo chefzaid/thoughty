@@ -4291,6 +4291,22 @@
                 }
               }
             }
+          },
+          "409": {
+            "description": "The writer already has a diary of this name, ignoring case",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "The writer already has a diary of this name, ignoring case",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -4371,6 +4387,22 @@
                   "message": "Diary not found",
                   "error": "Not Found",
                   "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The writer already has another diary of this name, ignoring case",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "The writer already has another diary of this name, ignoring case",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
                 }
               }
             }

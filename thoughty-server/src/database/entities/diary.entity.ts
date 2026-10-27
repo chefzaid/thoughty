@@ -6,7 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
-  Unique,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Entry } from './entry.entity';
@@ -14,8 +14,12 @@ import { Entry } from './entry.entity';
 /** A diary's writing goal: a number of entries each Monday-to-Sunday week, or of words each day. */
 export type DiaryGoalType = 'entries_per_week' | 'words_per_day';
 
+/** Diary names are unique per writer, ignoring case and surrounding spaces. */
+export const DIARY_NAME_UNIQUE_INDEX = 'uq_diaries_user_name';
+
 @Entity('diaries')
-@Unique(['userId', 'name'])
+// A unique expression index (`user_id, lower(btrim(name))`) TypeORM cannot describe; the migration builds it.
+@Index(DIARY_NAME_UNIQUE_INDEX, { synchronize: false })
 export class Diary {
   @PrimaryGeneratedColumn()
   id: number;

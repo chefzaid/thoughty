@@ -35,6 +35,7 @@ export class DiariesController {
   @ApiOperation({ summary: 'Create a new diary' })
   @ApiResponse({ status: 201, description: 'Diary created', type: DiaryResponseDto })
   @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 409, description: 'The writer already has a diary of this name, ignoring case' })
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateDiaryDto,
@@ -47,6 +48,7 @@ export class DiariesController {
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Diary updated', type: DiaryResponseDto })
   @ApiResponse({ status: 404, description: 'Diary not found' })
+  @ApiResponse({ status: 409, description: 'The writer already has another diary of this name, ignoring case' })
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,

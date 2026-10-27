@@ -5,6 +5,13 @@ import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route
 type Schemas = components['schemas'];
 const SUCCESS: Schemas['SuccessResponseDto'] = { success: true };
 
+/** Whether the writer has another diary of that name, compared as the API's unique index compares. */
+const nameTaken = (diaries: MockDiary[], name: string, exceptId?: number): boolean =>
+  diaries.some((diary) => diary.id !== exceptId && diary.name.trim().toLowerCase() === name.trim().toLowerCase());
+
+const refuseTakenName = (route: RouteContext['route']) =>
+  fulfillApiError(route, 409, 'DIARY_NAME_TAKEN', 'A diary with this name already exists');
+
 /** /api/diaries, answering exactly what DiariesController returns. */
 export async function handleDiaryRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
   if (pathname === '/api/diaries') {
@@ -15,9 +22,13 @@ export async function handleDiaryRoutes({ route, request, pathname, state }: Rou
 
     if (request.method() === 'POST') {
       const payload = request.postDataJSON() as Schemas['CreateDiaryDto'];
+      if (nameTaken(state.diaries, payload.name)) {
+        await refuseTakenName(route);
+        return true;
+      }
       const newDiary = mockDiary({
         id: Math.max(0, ...state.diaries.map((diary) => diary.id)) + 1,
-        name: payload.name,
+        name: payload.name.trim(),
         icon: payload.icon || '📓',
         color: payload.color || null,
         visibility: payload.visibility || 'private',
@@ -60,9 +71,13 @@ export async function handleDiaryRoutes({ route, request, pathname, state }: Rou
 
   if (request.method() === 'PUT') {
     const payload = request.postDataJSON() as Schemas['UpdateDiaryDto'];
+    if (nameTaken(state.diaries, payload.name, diary.id)) {
+      await refuseTakenName(route);
+      return true;
+    }
     const updated: MockDiary = {
       ...diary,
-      name: payload.name,
+      name: payload.name.trim(),
       icon: payload.icon || '📓',
       color: payload.color ?? diary.color,
       visibility: payload.visibility ?? diary.visibility,

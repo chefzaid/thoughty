@@ -3,7 +3,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { expectApiError } from '@/common/errors/api-error.test-helpers';
 import { DiariesService } from './diaries.service';
-import { Diary } from '@/database/entities';
+import { Diary, DIARY_NAME_UNIQUE_INDEX } from '@/database/entities';
 import { DiaryEntryTransferService } from './diary-entry-transfer.service';
 
 describe('DiariesService', () => {
@@ -32,6 +32,9 @@ describe('DiariesService', () => {
     isDefault: true,
     createdAt: new Date(),
   };
+
+  /** What PostgreSQL reports when the writer already has a diary of that name. */
+  const nameTaken = { code: '23505', constraint: DIARY_NAME_UNIQUE_INDEX };
 
   beforeEach(async () => {
     diaryRepository = {
@@ -161,11 +164,18 @@ describe('DiariesService', () => {
     });
 
     it('should throw ConflictException for duplicate name', async () => {
-      diaryRepository.save.mockRejectedValue({ code: '23505' });
+      diaryRepository.save.mockRejectedValue(nameTaken);
 
       await expectApiError(service.create(1, {
           name: 'Duplicate Diary',
         }), ConflictException, 'DIARY_NAME_TAKEN');
+    });
+
+    it('passes on a unique violation of another constraint', async () => {
+      const other = { code: '23505', constraint: 'diaries_pkey' };
+      diaryRepository.save.mockRejectedValue(other);
+
+      await expect(service.create(1, { name: 'Travel' })).rejects.toBe(other);
     });
 
     it('should rethrow other errors', async () => {
@@ -259,13 +269,9 @@ describe('DiariesService', () => {
 
     it('should throw ConflictException for duplicate name', async () => {
       diaryRepository.findOne.mockResolvedValue(mockDiary);
-      diaryRepository.save.mockRejectedValue({ code: '23505' });
+      diaryRepository.save.mockRejectedValue(nameTaken);
 
-      await expect(
-        service.update(1, 1, {
-          name: 'Duplicate Diary',
-        }),
-      ).rejects.toThrow(ConflictException);
+      await expectApiError(service.update(1, 1, { name: 'Duplicate Diary' }), ConflictException, 'DIARY_NAME_TAKEN');
     });
 
     it('should rethrow other errors', async () => {
@@ -278,6 +284,18 @@ describe('DiariesService', () => {
           name: 'Test Diary',
         }),
       ).rejects.toThrow('Database error');
+    });
+  });
+
+  describe('findByName', () => {
+    it('looks the name up ignoring case and surrounding spaces', async () => {
+      diaryRepository.findOne.mockResolvedValue(mockDiary);
+
+      await expect(service.findByName(1, ' test diary ')).resolves.toBe(mockDiary);
+      const { where } = diaryRepository.findOne.mock.calls[0][0];
+      expect(where.userId).toBe(1);
+      expect(where.name.getSql('"name"')).toBe('LOWER(BTRIM("name")) = LOWER(BTRIM(:name))');
+      expect(where.name.objectLiteralParameters).toEqual({ name: ' test diary ' });
     });
   });
 

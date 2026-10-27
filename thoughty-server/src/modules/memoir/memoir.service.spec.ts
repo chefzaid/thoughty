@@ -46,7 +46,7 @@ describe('MemoirService', () => {
     answerRepository = { find: jest.fn().mockResolvedValue([]) };
     diaryRepository = { findOne: jest.fn().mockResolvedValue(null) };
     userRepository = { findOne: jest.fn().mockResolvedValue({ id: 3, email: 'writer@example.com', emailVerified: true }) };
-    diariesService = { create: jest.fn().mockResolvedValue({ id: 11 }) };
+    diariesService = { create: jest.fn().mockResolvedValue({ id: 11 }), findByName: jest.fn().mockResolvedValue(null) };
     emailService = { isConfigured: jest.fn().mockReturnValue(true) };
     service = new MemoirService(
       programRepository as never,
@@ -139,13 +139,32 @@ describe('MemoirService', () => {
     });
 
     it('continues in an existing diary with the same name when the memoir is restarted', async () => {
-      diaryRepository.findOne.mockResolvedValue({ id: 6, userId: 3, name: 'My memoir' });
+      diariesService.findByName.mockResolvedValue({ id: 6, userId: 3, name: 'My memoir' });
 
-      await service.start(3, { ...start, diaryName: ' My memoir ' });
+      await service.start(3, { ...start, diaryName: ' my Memoir ' });
 
-      expect(diaryRepository.findOne).toHaveBeenCalledWith({ where: { userId: 3, name: 'My memoir' } });
+      expect(diariesService.findByName).toHaveBeenCalledWith(3, ' my Memoir ');
       expect(diariesService.create).not.toHaveBeenCalled();
       expect(programRepository.insert).toHaveBeenCalledWith(expect.objectContaining({ diaryId: 6 }));
+    });
+
+    it('continues in the diary a parallel request created first under the same name', async () => {
+      diariesService.findByName.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 7, userId: 3 });
+      diariesService.create.mockRejectedValueOnce(new ConflictException());
+
+      await service.start(3, { ...start, diaryName: 'My memoir' });
+
+      expect(programRepository.insert).toHaveBeenCalledWith(expect.objectContaining({ diaryId: 7 }));
+    });
+
+    it('passes on a failure to create the memoir diary', async () => {
+      const failure = new Error('database down');
+      diariesService.create.mockRejectedValueOnce(failure);
+      await expect(service.start(3, { ...start, diaryName: 'My memoir' })).rejects.toBe(failure);
+
+      diariesService.create.mockRejectedValueOnce(new ConflictException());
+      await expect(service.start(3, { ...start, diaryName: 'My memoir' })).rejects.toThrow(ConflictException);
+      expect(programRepository.insert).not.toHaveBeenCalled();
     });
 
     it('uses a chosen diary only when the writer owns it', async () => {

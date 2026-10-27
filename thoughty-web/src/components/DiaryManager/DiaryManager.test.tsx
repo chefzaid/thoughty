@@ -102,6 +102,21 @@ describe('DiaryManager', () => {
         expect(await screen.findByText(createFailed)).toBeInTheDocument();
     });
 
+    it.each([
+        ['en', 'A diary with this name already exists.'],
+        ['fr', 'Un journal portant ce nom existe déjà.'],
+    ] as const)('says in %s that the name is taken and keeps the typed name to change', async (language, message) => {
+        const t = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+        const onCreateDiary = vi.fn().mockRejectedValue(new Error('apiError_DIARY_NAME_TAKEN'));
+        render(<DiaryManager {...baseProps} onCreateDiary={onCreateDiary} t={t} />);
+
+        fireEvent.change(screen.getByPlaceholderText(t('diaryName')), { target: { value: 'personal' } });
+        fireEvent.click(screen.getByText(t('createDiary')));
+
+        expect(await screen.findByText(message)).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(t('diaryName'))).toHaveValue('personal');
+    });
+
     it('sets default diary', async () => {
         render(<DiaryManager {...baseProps} />);
         fireEvent.click(screen.getByTitle('setAsDefault'));

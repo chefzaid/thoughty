@@ -50,4 +50,25 @@ test.describe('Diary management', () => {
     await page.locator('.diary-manager-header .back-btn').click();
     await expect(page).toHaveURL(/\/journal\?diary=all$/);
   });
+
+  test('refuses a second diary of the same name with the API message, keeping what was typed', async ({ page }) => {
+    const { state } = await setupMockApp(page, { startAuthenticated: true });
+    const taken = page.locator('.error-message', { hasText: 'A diary with this name already exists.' });
+
+    await page.goto('/diaries?from=journal&diary=all');
+    await page.getByPlaceholder('Diary Name').fill('  personal ');
+    await page.getByRole('button', { name: 'Create Diary' }).click();
+
+    await expect(taken).toBeVisible();
+    await expect(page.getByPlaceholder('Diary Name')).toHaveValue('  personal ');
+    expect(state.diaries.map((diary) => diary.name)).toEqual(['Work', 'Personal']);
+
+    await page.locator('.diary-card', { hasText: 'Work' }).getByTitle('Edit').click();
+    await page.locator('.diary-card.editing input.diary-name-input').fill('PERSONAL');
+    await page.locator('.diary-card.editing .edit-form').getByRole('button', { name: 'Save' }).click();
+
+    await expect(taken).toBeVisible();
+    await expect(page.locator('.diary-card.editing input.diary-name-input')).toHaveValue('PERSONAL');
+    expect(state.diaries.map((diary) => diary.name)).toEqual(['Work', 'Personal']);
+  });
 });

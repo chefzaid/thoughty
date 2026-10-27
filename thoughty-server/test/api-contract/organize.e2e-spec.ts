@@ -121,6 +121,38 @@ describeContract('organize', (context) => {
     await call('DELETE /api/diaries/{id}', { as: alice, params: { id: travel.id }, status: 200 });
   });
 
+  it('refuses a second diary of the same name, ignoring case and spaces, as the diary form sends it', async () => {
+    const { alice, bob } = context;
+    const form = (name: string) => ({ name, icon: '📓', visibility: 'private', goalType: null, goalTarget: null });
+    const dreams = await call('POST /api/diaries', { as: alice, json: form('Dreams'), status: 201 });
+    const dreamsId = (dreams.body as { id: number }).id;
+    await call('POST /api/diaries', { as: alice, json: form('  dreams '), status: 409, code: 'DIARY_NAME_TAKEN' });
+    await call('POST /api/diaries', { as: bob, json: form('Dreams'), status: 201 });
+
+    const ideas = await call('POST /api/diaries', { as: alice, json: form('Ideas'), status: 201 });
+    const ideasId = (ideas.body as { id: number }).id;
+    await call('PUT /api/diaries/{id}', {
+      as: alice,
+      params: { id: ideasId },
+      json: form('DREAMS'),
+      status: 409,
+      code: 'DIARY_NAME_TAKEN',
+    });
+    const recased = await call('PUT /api/diaries/{id}', {
+      as: alice,
+      params: { id: dreamsId },
+      json: form('DREAMS'),
+      status: 200,
+    });
+    expect(recased.body).toMatchObject({ id: dreamsId, name: 'DREAMS' });
+
+    const listed = await call('GET /api/diaries', { as: alice, status: 200 });
+    expect((listed.body as { name: string }[]).map((diary) => diary.name)).toEqual(
+      expect.arrayContaining(['DREAMS', 'Ideas']),
+    );
+    expect((listed.body as { name: string }[]).filter((diary) => diary.name.toLowerCase() === 'dreams')).toHaveLength(1);
+  });
+
   it('saves, renames and deletes saved searches for all diaries or one', async () => {
     const { alice, bob } = context;
     const diaryId = await defaultDiaryId(context, alice);

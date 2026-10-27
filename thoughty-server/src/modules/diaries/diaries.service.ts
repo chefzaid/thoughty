@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Diary } from '@/database/entities';
+import { Raw, Repository } from 'typeorm';
+import { Diary, DIARY_NAME_UNIQUE_INDEX } from '@/database/entities';
 import { getDefaultDiaryColor, normalizeDiaryColor, sanitizeString } from '@/common/utils';
 import { CreateDiaryDto, UpdateDiaryDto } from './dto';
+import { DiaryEntryTransferService } from './diary-entry-transfer.service';
 
 type DiaryGoalFields = Pick<Diary, 'goalType' | 'goalTarget'>;
 
@@ -15,7 +16,22 @@ function goalFields(dto: CreateDiaryDto | UpdateDiaryDto): DiaryGoalFields | und
     ? { goalType: null, goalTarget: null }
     : { goalType: dto.goalType, goalTarget: dto.goalTarget ?? null };
 }
-import { DiaryEntryTransferService } from './diary-entry-transfer.service';
+
+/**
+ * Saves a diary, answering 409 `DIARY_NAME_TAKEN` when the writer has another diary of that name. The
+ * unique index decides, so two requests racing for one name cannot both win.
+ */
+async function withUniqueName(save: () => Promise<Diary>): Promise<Diary> {
+  try {
+    return await save();
+  } catch (error: unknown) {
+    const { code, constraint } = error as { code?: string; constraint?: string };
+    if (code === '23505' && constraint === DIARY_NAME_UNIQUE_INDEX) {
+      throw apiError(ConflictException, 'DIARY_NAME_TAKEN');
+    }
+    throw error;
+  }
+}
 
 @Injectable()
 export class DiariesService {
@@ -40,10 +56,10 @@ export class DiariesService {
       : 'private';
     const requestedColor = normalizeDiaryColor(dto.color);
 
-    try {
-      // Set position to the end
-      const count = await this.diaryRepository.count({ where: { userId } });
-      return await this.diaryRepository.save({
+    // Set position to the end
+    const count = await this.diaryRepository.count({ where: { userId } });
+    return withUniqueName(() =>
+      this.diaryRepository.save({
         userId,
         name: sanitizedName,
         icon: sanitizedIcon,
@@ -52,13 +68,15 @@ export class DiariesService {
         isDefault: false,
         position: count,
         ...(goalFields(dto) ?? { goalType: null, goalTarget: null }),
-      });
-    } catch (error: unknown) {
-      if ((error as { code?: string }).code === '23505') {
-        throw apiError(ConflictException, 'DIARY_NAME_TAKEN');
-      }
-      throw error;
-    }
+      }),
+    );
+  }
+
+  /** The writer's diary of that name, ignoring case and surrounding spaces as the unique index does. */
+  async findByName(userId: number, name: string): Promise<Diary | null> {
+    return this.diaryRepository.findOne({
+      where: { userId, name: Raw((column) => `LOWER(BTRIM(${column})) = LOWER(BTRIM(:name))`, { name }) },
+    });
   }
 
   async update(userId: number, id: number, dto: UpdateDiaryDto): Promise<Diary> {
@@ -83,14 +101,7 @@ export class DiariesService {
     diary.visibility = visibility as 'public' | 'private';
     Object.assign(diary, goalFields(dto));
 
-    try {
-      return await this.diaryRepository.save(diary);
-    } catch (error: unknown) {
-      if ((error as { code?: string }).code === '23505') {
-        throw apiError(ConflictException, 'DIARY_NAME_TAKEN');
-      }
-      throw error;
-    }
+    return withUniqueName(() => this.diaryRepository.save(diary));
   }
 
   async delete(userId: number, id: number): Promise<{ success: boolean }> {

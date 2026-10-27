@@ -89,6 +89,19 @@ describe('diariesService', () => {
       expect(result).toEqual({ success: false, error: 'Name already exists' });
     });
 
+    it('returns the translation key of the coded 409 for a name the writer already uses', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: () => Promise.resolve({ statusCode: 409, code: 'DIARY_NAME_TAKEN', message: 'A diary with this name already exists' }),
+      });
+
+      expect(await service.createDiary({ name: 'travel', icon: '📓', visibility: 'private' }))
+        .toEqual({ success: false, error: 'apiError_DIARY_NAME_TAKEN' });
+      expect(await service.updateDiary(2, { name: 'travel' }))
+        .toEqual({ success: false, error: 'apiError_DIARY_NAME_TAKEN' });
+    });
+
     it('returns default error when no error message provided', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: false,

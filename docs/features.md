@@ -38,7 +38,7 @@ flowchart LR
 
 ## Diaries
 
-- Separate diaries for different writing streams, each with a name, emoji, color, and default visibility.
+- Separate diaries for different writing streams, each with a name, emoji, color, and default visibility. Each diary has its own name, whatever its case or surrounding spaces: creating or renaming one to a name already used (`travel` beside `Travel`) is refused with "A diary with this name already exists." and the typed name stays to change.
 - An **All Diaries** view, and a default diary for quick capture.
 - The selected diary scopes the journal, stats, AI features, import and export, and books.
 - Deleting a diary asks first in a dialog that names it, then moves its entries to the default diary. Confirmation dialogs (diaries, tags, entries, comments, the recycle bin, stopping the memoir) take focus on Cancel, keep the keyboard inside, close with `Esc`, and return focus to the button that opened them. The default diary cannot be deleted.
