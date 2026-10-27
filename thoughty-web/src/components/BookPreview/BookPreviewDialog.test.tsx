@@ -54,6 +54,9 @@ describe('BookPreviewDialog', () => {
 
     afterEach(() => {
         openBookPdf.mockReset();
+        // Each test sees only its own console.error calls and measured sizes
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
     });
 
     it('renders nothing while closed', () => {
@@ -194,19 +197,24 @@ describe('BookPreviewDialog', () => {
     it('logs a page that fails to draw or read, but not a cancelled one', async () => {
         const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         const cancelled = Object.assign(new Error('cancelled'), { name: 'RenderingCancelledException' });
+        const renderPage = vi.fn()
+            .mockImplementationOnce(() => ({ done: Promise.reject(cancelled), cancel: vi.fn() }))
+            .mockImplementation(() => ({ done: Promise.reject(new Error('Bad page')), cancel: vi.fn() }));
         openBookPdf.mockResolvedValue(fakePdf({
-            renderPage: vi.fn()
-                .mockImplementationOnce(() => ({ done: Promise.reject(cancelled), cancel: vi.fn() }))
-                .mockImplementation(() => ({ done: Promise.reject(new Error('Bad page')), cancel: vi.fn() })),
+            renderPage,
             pageText: vi.fn(async () => {
                 throw new Error('No text');
             }),
         }).pdf);
         renderDialog();
         await screen.findByRole('toolbar');
+        // The first draw (the cancelled one) must have started before zooming asks for the next one:
+        // under load the zoom can otherwise land first and draw the only, cancelled, page.
+        await waitFor(() => expect(renderPage).toHaveBeenCalled());
         fireEvent.click(screen.getByRole('button', { name: 'Zoom in' }));
 
         await waitFor(() => expect(error).toHaveBeenCalledWith('Book preview could not draw the page:', expect.any(Error)));
+        expect(renderPage.mock.calls.length).toBeGreaterThanOrEqual(2);
         expect(error).toHaveBeenCalledWith('Book preview could not read the page text:', expect.any(Error));
         expect(error).not.toHaveBeenCalledWith(expect.anything(), cancelled);
     });
@@ -247,6 +255,5 @@ describe('BookPreviewDialog', () => {
 
         width.mockRestore();
         height.mockRestore();
-        vi.unstubAllGlobals();
     });
 });
