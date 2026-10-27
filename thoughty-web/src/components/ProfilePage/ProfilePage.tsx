@@ -16,6 +16,7 @@ import SubscriptionSection from './SubscriptionSection';
 import AchievementsSection from './AchievementsSection';
 import LifeErasSection from '../LifeEras/LifeErasSection';
 import OnThisDayEmailSection from '../OnThisDayEmail/OnThisDayEmailSection';
+import MonthlyRecapEmailSection from '../MonthlyRecapEmail/MonthlyRecapEmailSection';
 import type { Diary } from '../../types';
 import { resolveLanguage } from '../../utils/language';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
@@ -43,7 +44,7 @@ interface ProfilePageProps {
   readonly onBack: () => void;
   readonly t: TranslationFunction;
   readonly stats?: ProfileStats;
-  /** The writer's diaries, for the diary the "On this day" email reads. */
+  /** The writer's diaries, for the diary the opt-in emails read. */
   readonly diaries?: readonly Diary[];
 }
 
@@ -265,6 +266,8 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
       <LifeErasSection isDark={isDark} language={resolveLanguage(config.language)} t={t} />
 
       <OnThisDayEmailSection diaries={diaries} isDark={isDark} language={resolveLanguage(config.language)} t={t} />
+
+      <MonthlyRecapEmailSection diaries={diaries} isDark={isDark} language={resolveLanguage(config.language)} t={t} />
 
       <AppearanceSection
         localConfig={localConfig}

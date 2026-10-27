@@ -1,4 +1,5 @@
 import { zonedParts, zonedTimeToUtc } from '@/common/utils/time-zone.util';
+import type { OptInEmailSchedule } from '@/modules/opt-in-email/opt-in-email-schedule';
 
 /** The local hour the "On this day" email arrives at until the writer picks another. */
 export const DEFAULT_ON_THIS_DAY_HOUR = 8;
@@ -15,3 +16,10 @@ export function nextDailySend(after: Date, hour: number, timeZone: string): Date
     ? today
     : zonedTimeToUtc(local.year, local.month, local.day + 1, hour, timeZone);
 }
+
+/** Every local day at the chosen hour, at most one email a day. */
+export const ON_THIS_DAY_SCHEDULE: OptInEmailSchedule = {
+  defaultHour: DEFAULT_ON_THIS_DAY_HOUR,
+  next: nextDailySend,
+  period: (localDate) => localDate,
+};

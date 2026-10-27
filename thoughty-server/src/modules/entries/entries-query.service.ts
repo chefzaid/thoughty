@@ -14,6 +14,7 @@ import { toEntryResponse } from './entry-response.mapper';
 import { addSameDayOrder } from '@/common/utils';
 import { applyEntryListFilters, parseEntryIdsFilter } from './entry-list-filters';
 import { EntrySearchService, type PreparedEntrySearch } from './entry-search.service';
+import { ENTRY_WORDS_SQL } from '@/modules/stats/stats-sql';
 
 /** Entries "On this day" shows at most. */
 export const ON_THIS_DAY_LIMIT = 10;
@@ -30,6 +31,14 @@ export interface OnThisDayQuery {
 export interface OnThisDayEntry {
   entry: Entry;
   yearsAgo: number;
+}
+
+export interface MonthMemoryQuery {
+  /** The year whose month is being looked back on; only earlier years count. */
+  year: number;
+  /** 1 to 12. */
+  month: number;
+  diaryId?: number | null;
 }
 
 /**
@@ -223,6 +232,34 @@ export class EntriesQueryService {
       entry,
       yearsAgo: on.year - Number.parseInt(raw[index].entry_year, 10),
     }));
+  }
+
+  /**
+   * One memory from this calendar month in an earlier year, picked the same way every time: a favorite
+   * first, then the entry with the most words, then the oldest. Archived and empty entries, and the
+   * recycle bin, are left out. The monthly recap email reads it.
+   */
+  async findMonthMemory(userId: number, on: MonthMemoryQuery): Promise<OnThisDayEntry | null> {
+    const qb = this.entryRepository
+      .createQueryBuilder('e')
+      .addSelect('EXTRACT(YEAR FROM e.date)', 'entry_year')
+      .addSelect(ENTRY_WORDS_SQL, 'entry_words')
+      .where('e.user_id = :userId', { userId })
+      .andWhere('EXTRACT(MONTH FROM e.date) = :month', { month: on.month })
+      .andWhere('EXTRACT(YEAR FROM e.date) < :year', { year: on.year })
+      .andWhere('e.is_archived = FALSE')
+      .andWhere("BTRIM(e.content) <> ''")
+      .orderBy('e.is_favorite', 'DESC')
+      .addOrderBy('entry_words', 'DESC')
+      .addOrderBy('e.date', 'ASC')
+      .addOrderBy('e.id', 'ASC')
+      .limit(1);
+    if (on.diaryId) {
+      qb.andWhere('e.diary_id = :diaryId', { diaryId: on.diaryId });
+    }
+
+    const { entities, raw } = await qb.getRawAndEntities<{ entry_year: string }>();
+    return entities[0] ? { entry: entities[0], yearsAgo: on.year - Number.parseInt(raw[0].entry_year, 10) } : null;
   }
 
   async getRevisions(userId: number, entryId: number): Promise<EntryRevision[]> {

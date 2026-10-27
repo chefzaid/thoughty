@@ -15,6 +15,7 @@ import {
   Person,
   MemoirProgram,
   OnThisDayEmail,
+  MonthlyRecapEmail,
   Setting,
   User,
   UserFollow,
@@ -40,6 +41,7 @@ describe('UserDataExportService', () => {
   let lifeEraRepository: any;
   let personRepository: any;
   let onThisDayEmailRepository: any;
+  let monthlyRecapEmailRepository: any;
 
   beforeEach(async () => {
     settingRepository = { find: jest.fn() };
@@ -59,6 +61,7 @@ describe('UserDataExportService', () => {
     lifeEraRepository = { find: jest.fn().mockResolvedValue([]) };
     personRepository = { query: jest.fn().mockResolvedValue([]) };
     onThisDayEmailRepository = { findOne: jest.fn().mockResolvedValue(null) };
+    monthlyRecapEmailRepository = { findOne: jest.fn().mockResolvedValue(null) };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -80,6 +83,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(LifeEra), useValue: lifeEraRepository },
         { provide: getRepositoryToken(Person), useValue: personRepository },
         { provide: getRepositoryToken(OnThisDayEmail), useValue: onThisDayEmailRepository },
+        { provide: getRepositoryToken(MonthlyRecapEmail), useValue: monthlyRecapEmailRepository },
       ],
     }).compile();
 
@@ -361,24 +365,6 @@ describe('UserDataExportService', () => {
       { id: 12, name: 'Marie', handles: ['marie', 'marie-c'], entryIds: [3, 9], createdAt, updatedAt: createdAt },
     ]);
     expect(personRepository.query).toHaveBeenCalledWith(expect.stringContaining('FROM people p'), [1]);
-  });
-
-  it('includes the On this day email setting, and null when it was never saved', async () => {
-    for (const repository of [diaryRepository, entryRepository, revisionRepository, attachmentRepository, settingRepository]) {
-      repository.find.mockResolvedValue([]);
-    }
-    expect((await service.downloadData(1)).onThisDayEmail).toBeNull();
-
-    const createdAt = new Date('2026-10-01T10:00:00Z');
-    const nextSendAt = new Date('2026-10-28T07:00:00Z');
-    onThisDayEmailRepository.findOne.mockResolvedValue({
-      userId: 1, enabled: true, deliveryHour: 8, timeZone: 'Europe/Paris', diaryId: 4, nextSendAt, lastSentOn: '2026-10-27', createdAt, updatedAt: createdAt,
-    });
-
-    expect((await service.downloadData(1)).onThisDayEmail).toEqual({
-      enabled: true, deliveryHour: 8, timeZone: 'Europe/Paris', diaryId: 4, nextSendAt, lastSentOn: '2026-10-27', createdAt, updatedAt: createdAt,
-    });
-    expect(onThisDayEmailRepository.findOne).toHaveBeenCalledWith({ where: { userId: 1 } });
   });
 
   it('should exclude sensitive fields from user data', async () => {

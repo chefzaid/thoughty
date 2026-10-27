@@ -11,10 +11,9 @@ import type {
   YearReviewHighlightDto,
   YearReviewMoodDto,
   YearReviewRecordedMoodDto,
-  YearReviewTagDto,
 } from './dto';
 import { plainExcerpt } from '@/common/utils/plain-excerpt.util';
-import { countWords, isoWeekdayIndex, longestStreak } from './year-review-stats';
+import { countWords, isoWeekdayIndex, longestStreak, rankTags } from './year-review-stats';
 
 const TOP_TAGS = 10;
 const NEW_TAGS = 10;
@@ -110,8 +109,12 @@ export class YearReviewService {
   }
 
   /** The year's entries, oldest first, with word counts. */
-  async loadYearEntries(userId: number, year: number, diaryId?: number): Promise<YearEntry[]> {
-    const { from, to } = yearRange(year);
+  loadYearEntries(userId: number, year: number, diaryId?: number): Promise<YearEntry[]> {
+    return this.loadEntries(userId, yearRange(year), diaryId);
+  }
+
+  /** The entries dated from `from` to `to` (YYYY-MM-DD, both included), oldest first, with word counts; the recycle bin is left out. */
+  async loadEntries(userId: number, { from, to }: { from: string; to: string }, diaryId?: number): Promise<YearEntry[]> {
     const query = addSameDayOrder(
       this.entryRepository
         .createQueryBuilder('e')
@@ -156,19 +159,13 @@ export class YearReviewService {
     const words = entries.reduce((sum, entry) => sum + entry.words, 0);
     const months = Array.from({ length: 12 }, (_, index) => ({ month: index + 1, entries: 0, words: 0 }));
     const weekdays: number[] = Array.from({ length: 7 }, () => 0);
-    const tagCounts = new Map<string, number>();
     for (const entry of entries) {
       const month = months[Number(entry.date.slice(5, 7)) - 1];
       month.entries++;
       month.words += entry.words;
       weekdays[isoWeekdayIndex(entry.date)]++;
-      for (const tag of new Set(entry.tags)) {
-        tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
-      }
     }
-    const rankedTags: YearReviewTagDto[] = [...tagCounts.entries()]
-      .map(([tag, count]) => ({ tag, count }))
-      .sort((first, second) => second.count - first.count || first.tag.localeCompare(second.tag));
+    const rankedTags = rankTags(entries);
 
     return {
       year,

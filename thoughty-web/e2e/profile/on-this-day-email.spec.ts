@@ -1,6 +1,6 @@
 import { test, expect } from '../support/test';
 import { setupMockApp } from '../support/mockApp';
-import { MOCK_ON_THIS_DAY_UNSUBSCRIBE_TOKEN } from '../support/mockApp.routes.on-this-day-email';
+import { MOCK_ON_THIS_DAY_UNSUBSCRIBE_TOKEN } from '../support/mockApp.routes.opt-in-emails';
 
 test.describe('On this day by email', () => {
   test.use({ timezoneId: 'Europe/Paris' });

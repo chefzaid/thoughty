@@ -23,6 +23,8 @@ import { SavedSearchesModule } from './modules/saved-searches';
 import { LifeErasModule } from './modules/life-eras';
 import { PeopleModule } from './modules/people';
 import { OnThisDayEmailModule } from './modules/on-this-day-email';
+import { MonthlyRecapEmailModule } from './modules/monthly-recap-email';
+import { OptInEmailModule } from './modules/opt-in-email';
 import { AccountPurgeModule } from './modules/account-purge';
 import { HealthController } from './health.controller';
 import {
@@ -69,6 +71,8 @@ import {
     LifeErasModule,
     PeopleModule,
     OnThisDayEmailModule,
+    MonthlyRecapEmailModule,
+    OptInEmailModule,
     AccountPurgeModule,
   ],
   providers: [

@@ -92,6 +92,10 @@ describePostgres('PostgreSQL account purge', () => {
       `INSERT INTO on_this_day_emails (user_id, enabled, delivery_hour, time_zone, diary_id, next_send_at) VALUES ($1, TRUE, 8, 'Europe/Paris', $2, NOW())`,
       [userId, diaryId],
     );
+    await dataSource.query(
+      `INSERT INTO monthly_recap_emails (user_id, enabled, delivery_hour, time_zone, diary_id, next_send_at) VALUES ($1, TRUE, 8, 'Europe/Paris', $2, NOW())`,
+      [userId, diaryId],
+    );
     const personId = await one(`INSERT INTO people (user_id, name) VALUES ($1, 'Marie') RETURNING id`, [userId]);
     await dataSource.query(`INSERT INTO person_handles (user_id, handle, person_id) VALUES ($1, 'marie', $2)`, [userId, personId]);
     await dataSource.query(`INSERT INTO entry_people (entry_id, person_id) VALUES ($1, $2)`, [entryId, personId]);

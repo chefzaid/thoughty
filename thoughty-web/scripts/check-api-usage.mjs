@@ -11,6 +11,7 @@ const sourceRoot = join(webRoot, 'src');
 const operationalOperations = new Map([
   ['GET /api/health', 'Kubernetes readiness and liveness probes'],
   ['GET /api/metrics', 'Prometheus monitoring scrape'],
+  ['POST /api/on-this-day-email/unsubscribe', 'One-click unsubscribe (RFC 8058) that mail apps post from "On this day" emails'],
 ]);
 
 function collectSourceFiles(directory) {

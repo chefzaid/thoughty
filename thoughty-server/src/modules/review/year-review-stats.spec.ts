@@ -1,4 +1,4 @@
-import { countWords, isoWeekdayIndex, longestStreak, sampleEvenly } from './year-review-stats';
+import { countWords, isoWeekdayIndex, longestStreak, rankTags, sampleEvenly } from './year-review-stats';
 
 describe('year review stats', () => {
   it('counts words like the stats page', () => {
@@ -22,5 +22,13 @@ describe('year review stats', () => {
     expect(sampleEvenly([1, 2, 3, 4, 5, 6, 7, 8, 9], 3)).toEqual([1, 5, 9]);
     expect(sampleEvenly([1, 2], 5)).toEqual([1, 2]);
     expect(sampleEvenly([1, 2, 3], 1)).toEqual([1]);
+  });
+
+  it('ranks tags by the entries that carry them, a tag repeated in one entry counting once', () => {
+    expect(rankTags([{ tags: ['sea', 'family', 'sea'] }, { tags: ['family'] }, { tags: ['art'] }, { tags: [] }])).toEqual([
+      { tag: 'family', count: 2 },
+      { tag: 'art', count: 1 },
+      { tag: 'sea', count: 1 },
+    ]);
   });
 });

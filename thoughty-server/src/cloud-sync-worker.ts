@@ -5,6 +5,7 @@ import { JsonLogger } from './common';
 import { CloudSyncWorkerService } from './modules/cloud-sync/cloud-sync-worker.service';
 import { MemoirDeliveryWorkerService } from './modules/memoir/memoir-delivery-worker.service';
 import { OnThisDayDeliveryWorkerService } from './modules/on-this-day-email/on-this-day-delivery-worker.service';
+import { MonthlyRecapDeliveryWorkerService } from './modules/monthly-recap-email/monthly-recap-delivery-worker.service';
 import { RecycleBinPurgeWorkerService } from './modules/recycle-bin/recycle-bin-purge-worker.service';
 import { AccountPurgeWorkerService } from './modules/account-purge/account-purge-worker.service';
 
@@ -34,6 +35,7 @@ async function bootstrap(): Promise<void> {
   await app.get(CloudSyncWorkerService).start();
   await app.get(MemoirDeliveryWorkerService).start();
   await app.get(OnThisDayDeliveryWorkerService).start();
+  await app.get(MonthlyRecapDeliveryWorkerService).start();
   await app.get(RecycleBinPurgeWorkerService).start();
   await app.get(AccountPurgeWorkerService).start();
 }

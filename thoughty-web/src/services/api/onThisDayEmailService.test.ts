@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createOnThisDayEmailService, unsubscribeOnThisDayEmail } from './onThisDayEmailService';
+import { createOnThisDayEmailService } from './onThisDayEmailService';
 
 const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200, headers: { 'Content-Type': 'application/json' } });
 const settings = { enabled: true, deliveryHour: 8, timeZone: 'Europe/Paris', diaryId: null, nextSendAt: '2026-10-28T07:00:00.000Z', emailAvailable: true };
@@ -28,22 +28,6 @@ describe('onThisDayEmailService', () => {
     await expect(service.save({ enabled: false, deliveryHour: 8, timeZone: 'UTC', diaryId: null })).resolves.toEqual({
       data: null,
       error: 'onThisDayEmailSaveFailed',
-    });
-  });
-
-  it('unsubscribes with the link’s token, encoded, without signing in', async () => {
-    const fetchImpl = vi.fn().mockResolvedValue(ok({ success: true }));
-
-    await expect(unsubscribeOnThisDayEmail('3.a+b', fetchImpl)).resolves.toEqual({ data: { success: true }, error: null });
-    expect(fetchImpl).toHaveBeenCalledWith('/api/on-this-day-email/unsubscribe?token=3.a%2Bb', { method: 'POST' });
-
-    const invalid = new Response(JSON.stringify({ statusCode: 400, code: 'ON_THIS_DAY_UNSUBSCRIBE_INVALID' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-    await expect(unsubscribeOnThisDayEmail('bad', vi.fn().mockResolvedValue(invalid))).resolves.toEqual({
-      data: null,
-      error: 'apiError_ON_THIS_DAY_UNSUBSCRIBE_INVALID',
     });
   });
 });

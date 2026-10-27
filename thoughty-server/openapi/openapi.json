@@ -10555,6 +10555,177 @@
           "On this day email"
         ]
       }
+    },
+    "/api/monthly-recap-email": {
+      "get": {
+        "operationId": "MonthlyRecapEmailController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The setting",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptInEmailSettingsDto"
+                },
+                "example": {
+                  "enabled": true,
+                  "deliveryHour": 8,
+                  "timeZone": "Europe/Paris",
+                  "diaryId": 4,
+                  "nextSendAt": "2026-10-28T07:00:00.000Z",
+                  "emailAvailable": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the monthly recap email setting (off until turned on)",
+        "tags": [
+          "Monthly recap email"
+        ]
+      },
+      "put": {
+        "description": "Once on, it arrives on the 1st of each month at that local hour, about the month just ended.",
+        "operationId": "MonthlyRecapEmailController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOptInEmailDto"
+              },
+              "example": {
+                "enabled": true,
+                "deliveryHour": 8,
+                "timeZone": "Europe/Paris",
+                "diaryId": null
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved setting",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptInEmailSettingsDto"
+                },
+                "example": {
+                  "enabled": true,
+                  "deliveryHour": 8,
+                  "timeZone": "Europe/Paris",
+                  "diaryId": 4,
+                  "nextSendAt": "2026-10-28T07:00:00.000Z",
+                  "emailAvailable": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid hour or unknown time zone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid hour or unknown time zone",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The diary does not belong to you",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The diary does not belong to you",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Turn the monthly recap email on or off and choose its hour, time zone and diary",
+        "tags": [
+          "Monthly recap email"
+        ]
+      }
+    },
+    "/api/email-unsubscribe": {
+      "post": {
+        "description": "The token says which email it turns off (\"On this day\" or the monthly recap). The web unsubscribe page posts here, and the monthly recap’s one-click unsubscribe header too (RFC 8058, `List-Unsubscribe=One-Click` in the body). Repeating it changes nothing.",
+        "operationId": "EmailUnsubscribeController_unsubscribe",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "description": "The signed token from the email’s unsubscribe link",
+            "schema": {
+              "example": "12.Xq0o2Zr4b0bq9m3xg1Vd7QF2s8kPj5tYwHn6cLzA_eE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The email is off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailUnsubscribeResultDto"
+                },
+                "example": {
+                  "success": true,
+                  "kind": "monthly-recap"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The link is invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The link is invalid",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stop the opt-in email an email’s signed link names, without signing in",
+        "tags": [
+          "Email unsubscribe"
+        ]
+      }
     }
   },
   "info": {
@@ -19513,7 +19684,7 @@
           "enabled": {
             "type": "boolean",
             "example": true,
-            "description": "Whether the \"On this day\" email is on; off until the writer turns it on"
+            "description": "Whether the email is on; off until the writer turns it on"
           },
           "deliveryHour": {
             "type": "number",
@@ -19538,7 +19709,7 @@
             "type": "string",
             "example": "2026-10-28T07:00:00.000Z",
             "nullable": true,
-            "description": "When the email is next due, on days with past entries; null while it is off"
+            "description": "When the email is next due, if there is something to send then; null while it is off"
           },
           "emailAvailable": {
             "type": "boolean",
@@ -19599,6 +19770,125 @@
           "deliveryHour": 8,
           "timeZone": "Europe/Paris",
           "diaryId": null
+        }
+      },
+      "OptInEmailSettingsDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the email is on; off until the writer turns it on"
+          },
+          "deliveryHour": {
+            "type": "number",
+            "example": 8,
+            "minimum": 0,
+            "maximum": 23,
+            "description": "Local hour the email arrives at"
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "nullable": true,
+            "description": "IANA time zone of the delivery hour; null until the setting is first saved"
+          },
+          "diaryId": {
+            "type": "number",
+            "example": 4,
+            "nullable": true,
+            "description": "The diary the email reads; null for all diaries"
+          },
+          "nextSendAt": {
+            "type": "string",
+            "example": "2026-10-28T07:00:00.000Z",
+            "nullable": true,
+            "description": "When the email is next due, if there is something to send then; null while it is off"
+          },
+          "emailAvailable": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the account has a verified email and this server can send email"
+          }
+        },
+        "required": [
+          "enabled",
+          "deliveryHour",
+          "timeZone",
+          "diaryId",
+          "nextSendAt",
+          "emailAvailable"
+        ],
+        "example": {
+          "enabled": true,
+          "deliveryHour": 8,
+          "timeZone": "Europe/Paris",
+          "diaryId": 4,
+          "nextSendAt": "2026-10-28T07:00:00.000Z",
+          "emailAvailable": true
+        }
+      },
+      "UpdateOptInEmailDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "deliveryHour": {
+            "type": "number",
+            "example": 8,
+            "minimum": 0,
+            "maximum": 23
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "maxLength": 64
+          },
+          "diaryId": {
+            "type": "number",
+            "example": null,
+            "nullable": true,
+            "description": "One of your diaries, or null for all of them"
+          }
+        },
+        "required": [
+          "enabled",
+          "deliveryHour",
+          "timeZone",
+          "diaryId"
+        ],
+        "example": {
+          "enabled": true,
+          "deliveryHour": 8,
+          "timeZone": "Europe/Paris",
+          "diaryId": null
+        }
+      },
+      "EmailUnsubscribeResultDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "kind": {
+            "type": "string",
+            "example": "monthly-recap",
+            "enum": [
+              "on-this-day",
+              "monthly-recap"
+            ],
+            "description": "The email the link turned off"
+          }
+        },
+        "required": [
+          "success",
+          "kind"
+        ],
+        "example": {
+          "success": true,
+          "kind": "monthly-recap"
         }
       },
       "ApiErrorCode": {
@@ -19711,6 +20001,7 @@
           "MEMOIR_ANSWER_EMPTY",
           "MEMOIR_ALREADY_ANSWERED",
           "ON_THIS_DAY_UNSUBSCRIBE_INVALID",
+          "EMAIL_UNSUBSCRIBE_INVALID",
           "STATS_INVALID_DATE_RANGE",
           "REVIEW_YEAR_EMPTY",
           "REVIEW_MOOD_UNAVAILABLE",

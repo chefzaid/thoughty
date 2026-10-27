@@ -10,5 +10,6 @@ import { YearReviewService } from './year-review.service';
   imports: [TypeOrmModule.forFeature([Entry, Diary, Attachment, YearReviewMood]), AiModule],
   controllers: [ReviewController],
   providers: [YearReviewService, YearMoodService],
+  exports: [YearReviewService],
 })
 export class ReviewModule {}

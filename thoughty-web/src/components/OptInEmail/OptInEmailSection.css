@@ -1,0 +1,51 @@
+/* An opt-in email in the profile ("On this day", the monthly recap): the switch, then the hour, zone and diary once it is on. */
+.opt-in-email-fields {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.opt-in-email-fields .setting-row {
+    display: grid;
+    gap: 0.375rem;
+}
+
+.opt-in-email-muted,
+.opt-in-email-notice,
+.opt-in-email-error {
+    margin: 0;
+    font-size: 0.8125rem;
+}
+
+.opt-in-email.dark .opt-in-email-muted {
+    color: #9ca3af;
+}
+
+.opt-in-email.light .opt-in-email-muted {
+    color: #4b5563;
+}
+
+.opt-in-email-notice {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid #d97706;
+    border-radius: 4px;
+}
+
+.opt-in-email.dark .opt-in-email-notice {
+    background: rgba(217, 119, 6, 0.12);
+    color: #fcd34d;
+}
+
+.opt-in-email.light .opt-in-email-notice {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.opt-in-email.dark .opt-in-email-error {
+    color: #fca5a5;
+}
+
+.opt-in-email.light .opt-in-email-error {
+    color: #b91c1c;
+}

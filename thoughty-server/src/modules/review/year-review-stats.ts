@@ -34,3 +34,16 @@ export function sampleEvenly<T>(items: T[], count: number): T[] {
   const step = (items.length - 1) / (count - 1);
   return Array.from({ length: count }, (_, index) => items[Math.round(index * step)]);
 }
+
+/** Each tag with the number of entries that carry it, most used first, then alphabetically. */
+export function rankTags(entries: Array<{ tags: string[] }>): Array<{ tag: string; count: number }> {
+  const counts = new Map<string, number>();
+  for (const entry of entries) {
+    for (const tag of new Set(entry.tags)) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((first, second) => second.count - first.count || first.tag.localeCompare(second.tag));
+}

@@ -28,6 +28,7 @@ import {
   PersonHandle,
   EntryPerson,
   OnThisDayEmail,
+  MonthlyRecapEmail,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -80,6 +81,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           PersonHandle,
           EntryPerson,
           OnThisDayEmail,
+          MonthlyRecapEmail,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),
@@ -118,6 +120,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
       PersonHandle,
       EntryPerson,
       OnThisDayEmail,
+      MonthlyRecapEmail,
     ]),
   ],
   exports: [TypeOrmModule],
