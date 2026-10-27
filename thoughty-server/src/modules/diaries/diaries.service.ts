@@ -5,6 +5,16 @@ import { Repository } from 'typeorm';
 import { Diary } from '@/database/entities';
 import { getDefaultDiaryColor, normalizeDiaryColor, sanitizeString } from '@/common/utils';
 import { CreateDiaryDto, UpdateDiaryDto } from './dto';
+
+type DiaryGoalFields = Pick<Diary, 'goalType' | 'goalTarget'>;
+
+/** The validated goal fields to store, or undefined to keep the current goal. */
+function goalFields(dto: CreateDiaryDto | UpdateDiaryDto): DiaryGoalFields | undefined {
+  if (dto.goalType === undefined) return undefined;
+  return dto.goalType === null
+    ? { goalType: null, goalTarget: null }
+    : { goalType: dto.goalType, goalTarget: dto.goalTarget ?? null };
+}
 import { DiaryEntryTransferService } from './diary-entry-transfer.service';
 
 @Injectable()
@@ -41,6 +51,7 @@ export class DiariesService {
         visibility,
         isDefault: false,
         position: count,
+        ...(goalFields(dto) ?? { goalType: null, goalTarget: null }),
       });
     } catch (error: unknown) {
       if ((error as { code?: string }).code === '23505') {
@@ -70,6 +81,7 @@ export class DiariesService {
     diary.icon = sanitizedIcon;
     diary.color = dto.color === undefined ? diary.color : requestedColor ?? diary.color;
     diary.visibility = visibility as 'public' | 'private';
+    Object.assign(diary, goalFields(dto));
 
     try {
       return await this.diaryRepository.save(diary);

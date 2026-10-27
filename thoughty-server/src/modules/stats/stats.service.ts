@@ -6,6 +6,8 @@ import { StatsResponseDto } from './dto';
 import { StatsJournalAnalysisService } from './stats-journal-analysis.service';
 import { StatsCorrelationService } from './stats-correlation.service';
 import { StatsMoodService } from './stats-mood.service';
+import { StatsGoalService } from './stats-goal.service';
+import { ENTRY_WORDS_SQL } from './stats-sql';
 
 const WORDS_PER_MINUTE = 200;
 
@@ -17,9 +19,11 @@ export class StatsService {
     private readonly statsJournalAnalysisService: StatsJournalAnalysisService,
     private readonly statsCorrelationService: StatsCorrelationService,
     private readonly statsMoodService: StatsMoodService,
+    private readonly statsGoalService: StatsGoalService,
   ) {}
 
-  async getStats(userId: number, diaryId?: number): Promise<StatsResponseDto> {
+  /** `today` is the writer's own day, which writing goals are measured up to; the UTC day without it. */
+  async getStats(userId: number, diaryId?: number, today?: string): Promise<StatsResponseDto> {
     // Build base query builder
     const createQb = () => {
       const qb = this.entryRepository
@@ -44,6 +48,7 @@ export class StatsService {
       wordCountResult,
       correlations,
       moods,
+      goals,
     ] = await Promise.all([
       createQb().getCount(),
       createQb()
@@ -89,13 +94,11 @@ export class StatsService {
         .addOrderBy('count', 'DESC')
         .getRawMany(),
       createQb()
-        .select(
-          String.raw`COALESCE(SUM(CASE WHEN BTRIM(e.content) = '' THEN 0 ELSE CARDINALITY(REGEXP_SPLIT_TO_ARRAY(BTRIM(e.content), '\s+')) END), 0)`,
-          'totalWords',
-        )
+        .select(`COALESCE(SUM(${ENTRY_WORDS_SQL}), 0)`, 'totalWords')
         .getRawOne(),
       this.statsCorrelationService.analyze(userId, diaryId),
       this.statsMoodService.analyze(userId, diaryId),
+      this.statsGoalService.analyze(userId, diaryId, today ?? new Date().toISOString().slice(0, 10)),
     ]);
 
     const thoughtsPerYear: Record<string, number> = {};
@@ -170,6 +173,7 @@ export class StatsService {
       subjectAnalysis: journalAnalysis?.subjectAnalysis ?? null,
       correlations,
       moods,
+      goals,
     };
   }
 }

@@ -3577,6 +3577,8 @@ export interface components {
          *       "visibility": "private",
          *       "isDefault": true,
          *       "position": 1,
+         *       "goalType": "entries_per_week",
+         *       "goalTarget": 3,
          *       "createdAt": "2026-06-24T10:00:00.000Z"
          *     }
          */
@@ -3589,11 +3591,20 @@ export interface components {
             visibility: string;
             isDefault: boolean;
             position: number;
+            /**
+             * @example entries_per_week
+             * @enum {string|null}
+             */
+            goalType: "entries_per_week" | "words_per_day" | null;
+            /** @example 3 */
+            goalTarget: number | null;
             /** Format: date-time */
             createdAt: string;
         };
         /**
          * @example {
+         *       "goalType": "entries_per_week",
+         *       "goalTarget": 3,
          *       "name": "Daily Journal",
          *       "icon": "📓",
          *       "visibility": "private",
@@ -3601,6 +3612,17 @@ export interface components {
          *     }
          */
         CreateDiaryDto: {
+            /**
+             * @description Writing goal type; null removes the goal, left out keeps it on update
+             * @example entries_per_week
+             * @enum {string|null}
+             */
+            goalType?: "entries_per_week" | "words_per_day" | null;
+            /**
+             * @description Entries a week (1-50) or words a day (10-10000); required with a goal type
+             * @example 3
+             */
+            goalTarget?: number | null;
             /** @description Diary name */
             name: string;
             /**
@@ -3621,6 +3643,8 @@ export interface components {
         };
         /**
          * @example {
+         *       "goalType": "entries_per_week",
+         *       "goalTarget": 3,
          *       "name": "Daily Journal",
          *       "icon": "journal",
          *       "visibility": "public",
@@ -3628,6 +3652,17 @@ export interface components {
          *     }
          */
         UpdateDiaryDto: {
+            /**
+             * @description Writing goal type; null removes the goal, left out keeps it on update
+             * @example entries_per_week
+             * @enum {string|null}
+             */
+            goalType?: "entries_per_week" | "words_per_day" | null;
+            /**
+             * @description Entries a week (1-50) or words a day (10-10000); required with a goal type
+             * @example 3
+             */
+            goalTarget?: number | null;
             /** @description Diary name */
             name: string;
             /** @description Diary icon */
@@ -3930,6 +3965,79 @@ export interface components {
         };
         /**
          * @example {
+         *       "diaryId": 3,
+         *       "diaryName": "Morning pages",
+         *       "diaryIcon": "📓",
+         *       "goalType": "entries_per_week",
+         *       "goalTarget": 3,
+         *       "period": "week",
+         *       "periodStart": "2026-10-26",
+         *       "progress": 2,
+         *       "met": false,
+         *       "currentStreak": 4,
+         *       "longestStreak": 6,
+         *       "metPeriods": [
+         *         "2026-10-05",
+         *         "2026-10-12",
+         *         "2026-10-19"
+         *       ]
+         *     }
+         */
+        DiaryGoalProgressDto: {
+            /** @example 3 */
+            diaryId: number;
+            /** @example Morning pages */
+            diaryName: string;
+            /** @example 📓 */
+            diaryIcon: string;
+            /**
+             * @example entries_per_week
+             * @enum {string}
+             */
+            goalType: "entries_per_week" | "words_per_day";
+            /**
+             * @description Entries a week or words a day
+             * @example 3
+             */
+            goalTarget: number;
+            /**
+             * @description Weeks run from Monday to Sunday
+             * @example week
+             * @enum {string}
+             */
+            period: "day" | "week";
+            /**
+             * Format: date
+             * @description Today, or the Monday of this week
+             * @example 2026-10-26
+             */
+            periodStart: string;
+            /**
+             * @description Words written today, or entries written this week
+             * @example 2
+             */
+            progress: number;
+            /** @example false */
+            met: boolean;
+            /**
+             * @description Periods in a row that met the goal; the current one counts once met and does not break the streak before
+             * @example 4
+             */
+            currentStreak: number;
+            /** @example 6 */
+            longestStreak: number;
+            /**
+             * @description First day of every period that met the goal, oldest first
+             * @example [
+             *       "2026-10-05",
+             *       "2026-10-12",
+             *       "2026-10-19"
+             *     ]
+             */
+            metPeriods: string[];
+        };
+        /**
+         * @example {
          *       "totalThoughts": 120,
          *       "averageWordsPerEntry": 184,
          *       "averageReadingTimeMinutes": 1,
@@ -4042,7 +4150,27 @@ export interface components {
          *             "count": 14
          *           }
          *         ]
-         *       }
+         *       },
+         *       "goals": [
+         *         {
+         *           "diaryId": 3,
+         *           "diaryName": "Morning pages",
+         *           "diaryIcon": "📓",
+         *           "goalType": "entries_per_week",
+         *           "goalTarget": 3,
+         *           "period": "week",
+         *           "periodStart": "2026-10-26",
+         *           "progress": 2,
+         *           "met": false,
+         *           "currentStreak": 4,
+         *           "longestStreak": 6,
+         *           "metPeriods": [
+         *             "2026-10-05",
+         *             "2026-10-12",
+         *             "2026-10-19"
+         *           ]
+         *         }
+         *       ]
          *     }
          */
         StatsResponseDto: {
@@ -4121,6 +4249,8 @@ export interface components {
             correlations: components["schemas"]["StatsCorrelationsDto"];
             /** @description Recorded moods and feelings, computed without AI */
             moods: components["schemas"]["StatsMoodDto"];
+            /** @description Writing goal progress: the diary’s own goal, or every diary’s that has one for all diaries */
+            goals: components["schemas"]["DiaryGoalProgressDto"][];
         };
         /**
          * @example {
@@ -9194,6 +9324,8 @@ export interface operations {
                      *         "visibility": "private",
                      *         "isDefault": true,
                      *         "position": 1,
+                     *         "goalType": "entries_per_week",
+                     *         "goalTarget": 3,
                      *         "createdAt": "2026-06-24T10:00:00.000Z"
                      *       }
                      *     ]
@@ -9214,6 +9346,8 @@ export interface operations {
             content: {
                 /**
                  * @example {
+                 *       "goalType": "entries_per_week",
+                 *       "goalTarget": 3,
                  *       "name": "Daily Journal",
                  *       "icon": "📓",
                  *       "visibility": "private",
@@ -9242,6 +9376,8 @@ export interface operations {
                      *       "visibility": "private",
                      *       "isDefault": true,
                      *       "position": 1,
+                     *       "goalType": "entries_per_week",
+                     *       "goalTarget": 3,
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
                      */
@@ -9280,6 +9416,8 @@ export interface operations {
             content: {
                 /**
                  * @example {
+                 *       "goalType": "entries_per_week",
+                 *       "goalTarget": 3,
                  *       "name": "Daily Journal",
                  *       "icon": "journal",
                  *       "visibility": "public",
@@ -9308,6 +9446,8 @@ export interface operations {
                      *       "visibility": "private",
                      *       "isDefault": true,
                      *       "position": 1,
+                     *       "goalType": "entries_per_week",
+                     *       "goalTarget": 3,
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
                      */
@@ -9416,6 +9556,8 @@ export interface operations {
                      *       "visibility": "private",
                      *       "isDefault": true,
                      *       "position": 1,
+                     *       "goalType": "entries_per_week",
+                     *       "goalTarget": 3,
                      *       "createdAt": "2026-06-24T10:00:00.000Z"
                      *     }
                      */
@@ -9473,7 +9615,10 @@ export interface operations {
     StatsController_getStats: {
         parameters: {
             query?: {
+                /** @description Limit the statistics to one diary */
                 diaryId?: number;
+                /** @description The writer’s own day, which writing goals are measured up to; the server’s UTC day when left out */
+                today?: string;
             };
             header?: never;
             path?: never;
@@ -9601,7 +9746,27 @@ export interface operations {
                      *             "count": 14
                      *           }
                      *         ]
-                     *       }
+                     *       },
+                     *       "goals": [
+                     *         {
+                     *           "diaryId": 3,
+                     *           "diaryName": "Morning pages",
+                     *           "diaryIcon": "📓",
+                     *           "goalType": "entries_per_week",
+                     *           "goalTarget": 3,
+                     *           "period": "week",
+                     *           "periodStart": "2026-10-26",
+                     *           "progress": 2,
+                     *           "met": false,
+                     *           "currentStreak": 4,
+                     *           "longestStreak": 6,
+                     *           "metPeriods": [
+                     *             "2026-10-05",
+                     *             "2026-10-12",
+                     *             "2026-10-19"
+                     *           ]
+                     *         }
+                     *       ]
                      *     }
                      */
                     "application/json": components["schemas"]["StatsResponseDto"];

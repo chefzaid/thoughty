@@ -34,31 +34,21 @@ describe('StatsController', () => {
   });
 
   describe('getStats', () => {
-    it('delegates to statsService.getStats without diaryId', async () => {
+    it('delegates to statsService.getStats without a diary or a day', async () => {
       const expected = { totalEntries: 42 };
       statsService.getStats!.mockResolvedValue(expected);
 
-      const result = await controller.getStats(mockUser as any);
-      expect(statsService.getStats).toHaveBeenCalledWith(1, undefined);
+      const result = await controller.getStats(mockUser as any, {});
+      expect(statsService.getStats).toHaveBeenCalledWith(1, undefined, undefined);
       expect(result).toBe(expected);
     });
 
-    it('parses diaryId as integer and passes to service', async () => {
+    it('passes the diary and the writer’s day to the service', async () => {
       const expected = { totalEntries: 10 };
       statsService.getStats!.mockResolvedValue(expected);
 
-      const result = await controller.getStats(mockUser as any, '5');
-      expect(statsService.getStats).toHaveBeenCalledWith(1, 5);
-      expect(result).toBe(expected);
-    });
-
-    it('passes undefined when diaryId is empty string', async () => {
-      const expected = { totalEntries: 42 };
-      statsService.getStats!.mockResolvedValue(expected);
-
-      const result = await controller.getStats(mockUser as any, '');
-      // parseInt('', 10) returns NaN but since '' is falsy, it goes to undefined
-      expect(statsService.getStats).toHaveBeenCalledWith(1, undefined);
+      const result = await controller.getStats(mockUser as any, { diaryId: 5, today: '2026-10-27' });
+      expect(statsService.getStats).toHaveBeenCalledWith(1, 5, '2026-10-27');
       expect(result).toBe(expected);
     });
   });

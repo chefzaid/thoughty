@@ -5,6 +5,7 @@ import { Entry } from '@/database/entities';
 import { StatsJournalAnalysisService } from './stats-journal-analysis.service';
 import { StatsCorrelationService } from './stats-correlation.service';
 import { StatsMoodService } from './stats-mood.service';
+import { StatsGoalService } from './stats-goal.service';
 
 describe('StatsService', () => {
   let service: StatsService;
@@ -12,6 +13,7 @@ describe('StatsService', () => {
   let statsJournalAnalysisService: { analyze: jest.Mock };
   let statsCorrelationService: { analyze: jest.Mock };
   let statsMoodService: { analyze: jest.Mock };
+  let statsGoalService: { analyze: jest.Mock };
 
   beforeEach(async () => {
     const mockQueryBuilder = {
@@ -56,6 +58,8 @@ describe('StatsService', () => {
       }),
     };
 
+    statsGoalService = { analyze: jest.fn().mockResolvedValue([]) };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StatsService,
@@ -63,6 +67,7 @@ describe('StatsService', () => {
         { provide: StatsJournalAnalysisService, useValue: statsJournalAnalysisService },
         { provide: StatsCorrelationService, useValue: statsCorrelationService },
         { provide: StatsMoodService, useValue: statsMoodService },
+        { provide: StatsGoalService, useValue: statsGoalService },
       ],
     }).compile();
 
@@ -263,6 +268,22 @@ describe('StatsService', () => {
       expect(mockQb.andWhere).toHaveBeenCalledWith('e.diary_id = :diaryId', { diaryId: 1 });
       expect(statsCorrelationService.analyze).toHaveBeenCalledWith(1, 1);
       expect(statsMoodService.analyze).toHaveBeenCalledWith(1, 1);
+    });
+
+    it('measures writing goals up to the writer’s day, or the UTC day without one', async () => {
+      const goal = { diaryId: 1, goalType: 'words_per_day', goalTarget: 300, progress: 120 };
+      statsGoalService.analyze.mockResolvedValue([goal]);
+
+      await expect(service.getStats(1, 1, '2026-10-27')).resolves.toEqual(expect.objectContaining({ goals: [goal] }));
+      expect(statsGoalService.analyze).toHaveBeenCalledWith(1, 1, '2026-10-27');
+
+      jest.useFakeTimers({ now: new Date('2026-03-04T23:30:00.000Z') });
+      try {
+        await service.getStats(1);
+      } finally {
+        jest.useRealTimers();
+      }
+      expect(statsGoalService.analyze).toHaveBeenLastCalledWith(1, undefined, '2026-03-04');
     });
 
     it('should include AI tone, mood, and subject analysis when available', async () => {

@@ -6,3 +6,4 @@ export * from './stats-personality-analysis.service';
 export * from './stats-correlation.service';
 export * from './stats-mood.service';
 export * from './dto';
+export * from './stats-goal.service';

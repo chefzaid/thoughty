@@ -62,7 +62,9 @@ describe('DiaryManager', () => {
                 name: 'New Diary',
                 icon: '📓',
                 color: '#E76F51',
-                visibility: 'private'
+                visibility: 'private',
+                goalType: null,
+                goalTarget: null,
             });
         });
     });

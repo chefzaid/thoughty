@@ -104,7 +104,17 @@ describe('DiariesService', () => {
         visibility: 'private',
         isDefault: false,
         position: 0,
+        goalType: null,
+        goalTarget: null,
       });
+    });
+
+    it('creates a diary with a writing goal', async () => {
+      diaryRepository.save.mockResolvedValue(mockDiary);
+
+      await service.create(1, { name: 'Work', goalType: 'entries_per_week', goalTarget: 3 });
+
+      expect(diaryRepository.save).toHaveBeenCalledWith(expect.objectContaining({ goalType: 'entries_per_week', goalTarget: 3 }));
     });
 
     it('should use default icon if not provided', async () => {
@@ -202,6 +212,21 @@ describe('DiariesService', () => {
           color: '#445566',
         }),
       );
+    });
+
+    it('sets, keeps and clears the writing goal', async () => {
+      const diary = { ...mockDiary, goalType: null, goalTarget: null };
+      diaryRepository.findOne.mockResolvedValue(diary);
+      diaryRepository.save.mockImplementation(async (saved: unknown) => saved);
+
+      await service.update(1, 1, { name: 'Diary', goalType: 'words_per_day', goalTarget: 500 });
+      expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ goalType: 'words_per_day', goalTarget: 500 }));
+
+      await service.update(1, 1, { name: 'Renamed' });
+      expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ name: 'Renamed', goalType: 'words_per_day', goalTarget: 500 }));
+
+      await service.update(1, 1, { name: 'Renamed', goalType: null });
+      expect(diaryRepository.save).toHaveBeenLastCalledWith(expect.objectContaining({ goalType: null, goalTarget: null }));
     });
 
     it('should throw NotFoundException for non-existent diary', async () => {

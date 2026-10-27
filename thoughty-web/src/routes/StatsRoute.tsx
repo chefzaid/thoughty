@@ -52,6 +52,7 @@ function StatsRoute({
         t={t}
         diaryId={currentDiaryId}
         onOpenJournalDay={onOpenJournalDay}
+        onManageDiaries={onManageDiaries}
         tagMetadata={tagMetadata}
         language={language}
       />

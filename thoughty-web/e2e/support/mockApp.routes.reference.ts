@@ -5,6 +5,7 @@ import {
   type MockAppState,
 } from './mockApp.shared';
 import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
+import { buildMockGoals } from './mockApp.goals';
 
 function getAiFixPrefix(mode?: string): string {
   if (mode === 'rewrite') {
@@ -23,7 +24,11 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
       ? state.entries.filter((entry) => String(entry.diaryId ?? 1) === diaryId)
       : state.entries;
 
-    await fulfillJson(route, buildStats(filteredEntries));
+    const today = searchParams.get('today') ?? new Date().toISOString().slice(0, 10);
+    await fulfillJson(route, {
+      ...buildStats(filteredEntries),
+      goals: buildMockGoals(state.entries, state.diaries, diaryId ? Number(diaryId) : null, today),
+    });
     return true;
   }
 
@@ -208,6 +213,8 @@ async function handleDiaryRoutes({ route, request, pathname, state }: RouteConte
         icon?: string;
         color?: string | null;
         visibility?: 'public' | 'private';
+        goalType?: 'entries_per_week' | 'words_per_day' | null;
+        goalTarget?: number | null;
       };
       const newDiary = {
         id: Math.max(0, ...state.diaries.map((diary) => diary.id)) + 1,
@@ -216,6 +223,8 @@ async function handleDiaryRoutes({ route, request, pathname, state }: RouteConte
         color: payload.color || null,
         visibility: payload.visibility || 'private',
         is_default: false,
+        goalType: payload.goalType ?? null,
+        goalTarget: payload.goalTarget ?? null,
       };
       state.diaries.push(newDiary);
       await fulfillJson(route, { success: true, diary: newDiary }, { status: 201 });
@@ -231,6 +240,8 @@ async function handleDiaryRoutes({ route, request, pathname, state }: RouteConte
       icon?: string;
       color?: string | null;
       visibility?: 'public' | 'private';
+      goalType?: 'entries_per_week' | 'words_per_day' | null;
+      goalTarget?: number | null;
     };
     state.diaries = state.diaries.map((diary) =>
       diary.id === diaryId ? { ...diary, ...payload } : diary,

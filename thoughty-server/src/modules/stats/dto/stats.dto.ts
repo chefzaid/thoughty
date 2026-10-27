@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsInt, IsOptional, Matches, Min } from 'class-validator';
+import { DiaryGoalProgressDto } from './stats-goal.dto';
 
 export class ToneMoodAnalysisDto {
   @ApiProperty({ example: 'reflective' })
@@ -287,4 +288,10 @@ export class StatsResponseDto {
 
   @ApiProperty({ type: StatsMoodDto, description: 'Recorded moods and feelings, computed without AI' })
   moods!: StatsMoodDto;
+
+  @ApiProperty({
+    type: [DiaryGoalProgressDto],
+    description: 'Writing goal progress: the diary’s own goal, or every diary’s that has one for all diaries',
+  })
+  goals!: DiaryGoalProgressDto[];
 }

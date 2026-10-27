@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { StatsService } from './stats.service';
 import {
   PersonalityAnalysisRequestDto,
   PersonalityAnalysisResponseDto,
+  StatsQueryDto,
   StatsResponseDto,
 } from './dto';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
@@ -22,7 +23,6 @@ export class StatsController {
 
   @Get()
   @ApiOperation({ summary: 'Get aggregated statistics about journal entries' })
-  @ApiQuery({ name: 'diaryId', required: false, type: Number })
   @ApiResponse({
     status: 200,
     description: 'Statistics object with counts and breakdowns',
@@ -30,10 +30,9 @@ export class StatsController {
   })
   async getStats(
     @CurrentUser() user: AuthenticatedUser,
-    @Query('diaryId') diaryId?: string,
+    @Query() query: StatsQueryDto,
   ): Promise<StatsResponseDto> {
-    const parsedDiaryId = diaryId ? Number.parseInt(diaryId, 10) : undefined;
-    return this.statsService.getStats(user.userId, parsedDiaryId);
+    return this.statsService.getStats(user.userId, query.diaryId, query.today);
   }
 
   @Post('personality-analysis')

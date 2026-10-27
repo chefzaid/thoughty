@@ -1,9 +1,33 @@
-import { IsString, IsOptional, IsEnum, MaxLength, IsArray, IsInt, Matches } from 'class-validator';
+import { IsString, IsOptional, IsEnum, MaxLength, IsArray, IsInt, IsIn, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { DiaryGoalType } from '@/database/entities';
+import { DIARY_GOAL_TYPES, IsDiaryGoalTarget } from './diary-goal.dto';
 
 const DIARY_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 
-export class CreateDiaryDto {
+/** The optional writing goal, sent when creating or updating a diary. */
+class DiaryGoalFieldsDto {
+  @ApiPropertyOptional({
+    enum: DIARY_GOAL_TYPES,
+    nullable: true,
+    example: 'entries_per_week',
+    description: 'Writing goal type; null removes the goal, left out keeps it on update',
+  })
+  @IsOptional()
+  @IsIn(DIARY_GOAL_TYPES)
+  goalType?: DiaryGoalType | null;
+
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    example: 3,
+    description: 'Entries a week (1-50) or words a day (10-10000); required with a goal type',
+  })
+  @IsDiaryGoalTarget()
+  goalTarget?: number | null;
+}
+
+export class CreateDiaryDto extends DiaryGoalFieldsDto {
   @ApiProperty({ description: 'Diary name' })
   @IsString()
   @MaxLength(100)
@@ -27,7 +51,7 @@ export class CreateDiaryDto {
   color?: string;
 }
 
-export class UpdateDiaryDto {
+export class UpdateDiaryDto extends DiaryGoalFieldsDto {
   @ApiProperty({ description: 'Diary name' })
   @IsString()
   @MaxLength(100)
@@ -75,6 +99,12 @@ export class DiaryResponseDto {
 
   @ApiProperty()
   position: number;
+
+  @ApiProperty({ enum: DIARY_GOAL_TYPES, nullable: true, example: 'entries_per_week' })
+  goalType: DiaryGoalType | null;
+
+  @ApiProperty({ type: Number, nullable: true, example: 3 })
+  goalTarget: number | null;
 
   @ApiProperty()
   createdAt: Date;

@@ -225,6 +225,7 @@ export function buildAuthenticatedRoutesProps({
       onReorderDiaries: diariesState.handleReorderDiaries,
       onBack: routingState.handleBackFromDiaries,
       theme: config.theme,
+      language: config.language,
       t,
     },
     statsRouteProps: {

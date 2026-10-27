@@ -55,7 +55,7 @@ describePostgres('PostgreSQL account purge', () => {
   /** Gives the writer a row in every table that holds user data, and returns their public entry. */
   const fillAccount = async (userId: number): Promise<{ entryId: number; requestId: number }> => {
     const one = async (sql: string, params: unknown[]) => (await dataSource.query(sql, params))[0]?.id as number;
-    const diaryId = await one('INSERT INTO diaries (user_id, name, is_default) VALUES ($1, $2, true) RETURNING id', [userId, 'Journal']);
+    const diaryId = await one("INSERT INTO diaries (user_id, name, is_default, goal_type, goal_target) VALUES ($1, $2, true, 'words_per_day', 300) RETURNING id", [userId, 'Journal']);
     const entryId = await one(
       `INSERT INTO entries (user_id, diary_id, date, content, visibility) VALUES ($1, $2, '2026-01-02', 'Private thoughts', 'public') RETURNING id`,
       [userId, diaryId],

@@ -3610,6 +3610,8 @@
                     "visibility": "private",
                     "isDefault": true,
                     "position": 1,
+                    "goalType": "entries_per_week",
+                    "goalTarget": 3,
                     "createdAt": "2026-06-24T10:00:00.000Z"
                   }
                 ]
@@ -3638,6 +3640,8 @@
                 "$ref": "#/components/schemas/CreateDiaryDto"
               },
               "example": {
+                "goalType": "entries_per_week",
+                "goalTarget": 3,
                 "name": "Daily Journal",
                 "icon": "📓",
                 "visibility": "private",
@@ -3665,6 +3669,8 @@
                   "visibility": "private",
                   "isDefault": true,
                   "position": 1,
+                  "goalType": "entries_per_week",
+                  "goalTarget": 3,
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -3719,6 +3725,8 @@
                 "$ref": "#/components/schemas/UpdateDiaryDto"
               },
               "example": {
+                "goalType": "entries_per_week",
+                "goalTarget": 3,
                 "name": "Daily Journal",
                 "icon": "journal",
                 "visibility": "public",
@@ -3746,6 +3754,8 @@
                   "visibility": "private",
                   "isDefault": true,
                   "position": 1,
+                  "goalType": "entries_per_week",
+                  "goalTarget": 3,
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -3870,6 +3880,8 @@
                   "visibility": "private",
                   "isDefault": true,
                   "position": 1,
+                  "goalType": "entries_per_week",
+                  "goalTarget": 3,
                   "createdAt": "2026-06-24T10:00:00.000Z"
                 }
               }
@@ -3946,8 +3958,22 @@
             "name": "diaryId",
             "required": false,
             "in": "query",
+            "description": "Limit the statistics to one diary",
             "schema": {
+              "minimum": 1,
+              "example": 3,
               "type": "number"
+            }
+          },
+          {
+            "name": "today",
+            "required": false,
+            "in": "query",
+            "description": "The writer’s own day, which writing goals are measured up to; the server’s UTC day when left out",
+            "schema": {
+              "format": "date",
+              "example": "2026-10-27",
+              "type": "string"
             }
           }
         ],
@@ -4072,7 +4098,27 @@
                         "count": 14
                       }
                     ]
-                  }
+                  },
+                  "goals": [
+                    {
+                      "diaryId": 3,
+                      "diaryName": "Morning pages",
+                      "diaryIcon": "📓",
+                      "goalType": "entries_per_week",
+                      "goalTarget": 3,
+                      "period": "week",
+                      "periodStart": "2026-10-26",
+                      "progress": 2,
+                      "met": false,
+                      "currentStreak": 4,
+                      "longestStreak": 6,
+                      "metPeriods": [
+                        "2026-10-05",
+                        "2026-10-12",
+                        "2026-10-19"
+                      ]
+                    }
+                  ]
                 }
               }
             }
@@ -11504,6 +11550,20 @@
           "position": {
             "type": "number"
           },
+          "goalType": {
+            "type": "string",
+            "enum": [
+              "entries_per_week",
+              "words_per_day"
+            ],
+            "nullable": true,
+            "example": "entries_per_week"
+          },
+          "goalTarget": {
+            "type": "number",
+            "nullable": true,
+            "example": 3
+          },
           "createdAt": {
             "format": "date-time",
             "type": "string"
@@ -11517,6 +11577,8 @@
           "visibility",
           "isDefault",
           "position",
+          "goalType",
+          "goalTarget",
           "createdAt"
         ],
         "example": {
@@ -11530,12 +11592,30 @@
           "visibility": "private",
           "isDefault": true,
           "position": 1,
+          "goalType": "entries_per_week",
+          "goalTarget": 3,
           "createdAt": "2026-06-24T10:00:00.000Z"
         }
       },
       "CreateDiaryDto": {
         "type": "object",
         "properties": {
+          "goalType": {
+            "type": "string",
+            "enum": [
+              "entries_per_week",
+              "words_per_day"
+            ],
+            "nullable": true,
+            "example": "entries_per_week",
+            "description": "Writing goal type; null removes the goal, left out keeps it on update"
+          },
+          "goalTarget": {
+            "type": "number",
+            "nullable": true,
+            "example": 3,
+            "description": "Entries a week (1-50) or words a day (10-10000); required with a goal type"
+          },
           "name": {
             "type": "string",
             "description": "Diary name"
@@ -11563,6 +11643,8 @@
           "name"
         ],
         "example": {
+          "goalType": "entries_per_week",
+          "goalTarget": 3,
           "name": "Daily Journal",
           "icon": "📓",
           "visibility": "private",
@@ -11572,6 +11654,22 @@
       "UpdateDiaryDto": {
         "type": "object",
         "properties": {
+          "goalType": {
+            "type": "string",
+            "enum": [
+              "entries_per_week",
+              "words_per_day"
+            ],
+            "nullable": true,
+            "example": "entries_per_week",
+            "description": "Writing goal type; null removes the goal, left out keeps it on update"
+          },
+          "goalTarget": {
+            "type": "number",
+            "nullable": true,
+            "example": 3,
+            "description": "Entries a week (1-50) or words a day (10-10000); required with a goal type"
+          },
           "name": {
             "type": "string",
             "description": "Diary name"
@@ -11597,6 +11695,8 @@
           "name"
         ],
         "example": {
+          "goalType": "entries_per_week",
+          "goalTarget": 3,
           "name": "Daily Journal",
           "icon": "journal",
           "visibility": "public",
@@ -12050,6 +12150,113 @@
           ]
         }
       },
+      "DiaryGoalProgressDto": {
+        "type": "object",
+        "properties": {
+          "diaryId": {
+            "type": "number",
+            "example": 3
+          },
+          "diaryName": {
+            "type": "string",
+            "example": "Morning pages"
+          },
+          "diaryIcon": {
+            "type": "string",
+            "example": "📓"
+          },
+          "goalType": {
+            "type": "string",
+            "enum": [
+              "entries_per_week",
+              "words_per_day"
+            ],
+            "example": "entries_per_week"
+          },
+          "goalTarget": {
+            "type": "number",
+            "example": 3,
+            "description": "Entries a week or words a day"
+          },
+          "period": {
+            "type": "string",
+            "enum": [
+              "day",
+              "week"
+            ],
+            "example": "week",
+            "description": "Weeks run from Monday to Sunday"
+          },
+          "periodStart": {
+            "type": "string",
+            "example": "2026-10-26",
+            "format": "date",
+            "description": "Today, or the Monday of this week"
+          },
+          "progress": {
+            "type": "number",
+            "example": 2,
+            "description": "Words written today, or entries written this week"
+          },
+          "met": {
+            "type": "boolean",
+            "example": false
+          },
+          "currentStreak": {
+            "type": "number",
+            "example": 4,
+            "description": "Periods in a row that met the goal; the current one counts once met and does not break the streak before"
+          },
+          "longestStreak": {
+            "type": "number",
+            "example": 6
+          },
+          "metPeriods": {
+            "example": [
+              "2026-10-05",
+              "2026-10-12",
+              "2026-10-19"
+            ],
+            "description": "First day of every period that met the goal, oldest first",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "diaryId",
+          "diaryName",
+          "diaryIcon",
+          "goalType",
+          "goalTarget",
+          "period",
+          "periodStart",
+          "progress",
+          "met",
+          "currentStreak",
+          "longestStreak",
+          "metPeriods"
+        ],
+        "example": {
+          "diaryId": 3,
+          "diaryName": "Morning pages",
+          "diaryIcon": "📓",
+          "goalType": "entries_per_week",
+          "goalTarget": 3,
+          "period": "week",
+          "periodStart": "2026-10-26",
+          "progress": 2,
+          "met": false,
+          "currentStreak": 4,
+          "longestStreak": 6,
+          "metPeriods": [
+            "2026-10-05",
+            "2026-10-12",
+            "2026-10-19"
+          ]
+        }
+      },
       "StatsResponseDto": {
         "type": "object",
         "properties": {
@@ -12167,6 +12374,13 @@
                 "$ref": "#/components/schemas/StatsMoodDto"
               }
             ]
+          },
+          "goals": {
+            "description": "Writing goal progress: the diary’s own goal, or every diary’s that has one for all diaries",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiaryGoalProgressDto"
+            }
           }
         },
         "required": [
@@ -12181,7 +12395,8 @@
           "tagsPerYear",
           "tagsPerMonth",
           "correlations",
-          "moods"
+          "moods",
+          "goals"
         ],
         "example": {
           "totalThoughts": 120,
@@ -12296,7 +12511,27 @@
                 "count": 14
               }
             ]
-          }
+          },
+          "goals": [
+            {
+              "diaryId": 3,
+              "diaryName": "Morning pages",
+              "diaryIcon": "📓",
+              "goalType": "entries_per_week",
+              "goalTarget": 3,
+              "period": "week",
+              "periodStart": "2026-10-26",
+              "progress": 2,
+              "met": false,
+              "currentStreak": 4,
+              "longestStreak": 6,
+              "metPeriods": [
+                "2026-10-05",
+                "2026-10-12",
+                "2026-10-19"
+              ]
+            }
+          ]
         }
       },
       "PersonalityAnalysisRequestDto": {

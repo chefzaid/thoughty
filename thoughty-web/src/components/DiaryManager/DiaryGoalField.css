@@ -1,0 +1,51 @@
+.diary-goal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-start;
+}
+
+.diary-goal-inputs {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.diary-goal-select,
+.diary-goal-target {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.875rem;
+    border: 1px solid rgba(128, 128, 128, 0.3);
+    border-radius: 0.5rem;
+}
+
+.diary-goal-target {
+    width: 6rem;
+}
+
+.diary-manager.light .diary-goal-select,
+.diary-manager.light .diary-goal-target {
+    background: white;
+    color: #1f2937;
+}
+
+.diary-manager.dark .diary-goal-select,
+.diary-manager.dark .diary-goal-target {
+    background: #1f2937;
+    color: #f3f4f6;
+}
+
+.diary-goal-select:focus-visible,
+.diary-goal-target:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 1px;
+}
+
+.diary-goal-summary {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.diary-manager.dark .diary-goal-summary {
+    color: #9ca3af;
+}

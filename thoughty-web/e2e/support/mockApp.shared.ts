@@ -188,6 +188,8 @@ export interface MockAppState {
     is_default: boolean;
     visibility: "public" | "private";
     color?: string | null;
+    goalType?: "entries_per_week" | "words_per_day" | null;
+    goalTarget?: number | null;
   }>;
   entries: MockEntry[];
   trash: MockTrashedEntry[];

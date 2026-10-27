@@ -1,10 +1,12 @@
 import { useState, useRef, type ComponentPropsWithoutRef, type CSSProperties } from 'react';
 import './DiaryManager.css';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
+import DiaryGoalField from './DiaryGoalField';
+import DiaryIconPicker from './DiaryIconPicker';
+import type { DiaryGoalType } from '../../types';
 import { DEFAULT_DIARY_COLORS, normalizeDiaryColor, resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
-
-// Common emoji icons for diaries
-const DIARY_ICONS = ['📓', '💭', '💤', '💖', '🎯', '✨', '🌟', '📝', '🌈', '🌙', '☀️', '🔥', '💡', '🎨', '🎵', '📚', '🌺', '🍀', '⭐', '🌸'];
+import { describeDiaryGoal, diaryGoalDraft, NO_DIARY_GOAL, readDiaryGoal, type DiaryGoalFields } from '../../utils/diaryGoals';
+import { resolveLanguage } from '../../utils/language';
 
 interface Diary {
     id: number;
@@ -13,9 +15,11 @@ interface Diary {
     color?: string | null;
     visibility: 'public' | 'private';
     is_default?: boolean;
+    goalType?: DiaryGoalType | null;
+    goalTarget?: number | null;
 }
 
-interface DiaryFormData {
+interface DiaryFormData extends DiaryGoalFields {
     name: string;
     icon: string;
     color?: string | null;
@@ -70,19 +74,22 @@ interface DiaryManagerProps {
     readonly onReorderDiaries: (orderedIds: number[]) => Promise<void>;
     readonly onBack: () => void;
     readonly theme?: 'light' | 'dark';
+    readonly language?: string;
     readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onReorderDiaries, onBack, theme, t }: DiaryManagerProps) {
+function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, onSetDefault, onReorderDiaries, onBack, theme, language, t }: DiaryManagerProps) {
     const [newDiaryName, setNewDiaryName] = useState<string>('');
     const [newDiaryIcon, setNewDiaryIcon] = useState<string>('📓');
     const [newDiaryColor, setNewDiaryColor] = useState<string>(DEFAULT_NEW_DIARY_COLOR);
     const [newDiaryVisibility, setNewDiaryVisibility] = useState<'public' | 'private'>('private');
+    const [newDiaryGoal, setNewDiaryGoal] = useState(NO_DIARY_GOAL);
     const [editingDiary, setEditingDiary] = useState<Diary | null>(null);
     const [editName, setEditName] = useState<string>('');
     const [editIcon, setEditIcon] = useState<string>('');
     const [editColor, setEditColor] = useState<string>(DEFAULT_NEW_DIARY_COLOR);
     const [editVisibility, setEditVisibility] = useState<'public' | 'private'>('private');
+    const [editGoal, setEditGoal] = useState(NO_DIARY_GOAL);
     /** A translation key, or a message the API sent, which `t` passes through. */
     const [error, setError] = useState<string>('');
     const [showIconPicker, setShowIconPicker] = useState<'new' | number | null>(null);
@@ -91,6 +98,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     const dragOverItem = useRef<number | null>(null);
 
     const isLight = theme === 'light';
+    const uiLanguage = resolveLanguage(language);
 
     const getDiaryAccentStyle = (diary: Pick<Diary, 'id' | 'name' | 'color'>): CSSProperties => {
         const diaryColor = resolveDiaryColor(diary);
@@ -108,18 +116,25 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
             setError('diaryNameRequired');
             return;
         }
+        const goal = readDiaryGoal(newDiaryGoal, t, uiLanguage);
+        if ('error' in goal) {
+            setError(goal.error);
+            return;
+        }
 
         try {
             await onCreateDiary({
                 name: newDiaryName.trim(),
                 icon: newDiaryIcon,
                 color: normalizeDiaryColor(newDiaryColor) ?? DEFAULT_NEW_DIARY_COLOR,
-                visibility: newDiaryVisibility
+                visibility: newDiaryVisibility,
+                ...goal.fields,
             });
             setNewDiaryName('');
             setNewDiaryIcon('📓');
             setNewDiaryColor(DEFAULT_NEW_DIARY_COLOR);
             setNewDiaryVisibility('private');
+            setNewDiaryGoal(NO_DIARY_GOAL);
         } catch (err) {
             setError((err as Error).message || 'diaryCreateFailed');
         }
@@ -131,17 +146,24 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
         setEditIcon(diary.icon);
         setEditColor(resolveDiaryColor(diary));
         setEditVisibility(diary.visibility);
+        setEditGoal(diaryGoalDraft(diary.goalType, diary.goalTarget));
     };
 
     const handleSaveEdit = async (): Promise<void> => {
         if (!editName.trim() || !editingDiary) return;
+        const goal = readDiaryGoal(editGoal, t, uiLanguage);
+        if ('error' in goal) {
+            setError(goal.error);
+            return;
+        }
 
         try {
             await onUpdateDiary(editingDiary.id, {
                 name: editName.trim(),
                 icon: editIcon,
                 color: normalizeDiaryColor(editColor) ?? resolveDiaryColor(editingDiary),
-                visibility: editVisibility
+                visibility: editVisibility,
+                ...goal.fields,
             });
             setEditingDiary(null);
         } catch (err) {
@@ -248,34 +270,17 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
             {/* Create New Diary Form */}
             <div className="create-diary-section">
                 <h3>{t('newDiary')}</h3>
-                <form onSubmit={handleCreate} className="create-diary-form">
+                <form onSubmit={handleCreate} className="create-diary-form" noValidate>
                     <div className="form-row">
-                        <div className="icon-picker-wrapper">
-                            <button
-                                type="button"
-                                className="icon-button"
-                                onClick={() => setShowIconPicker(showIconPicker === 'new' ? null : 'new')}
-                            >
-                                {newDiaryIcon}
-                            </button>
-                            {showIconPicker === 'new' && (
-                                <div className="icon-picker-popup">
-                                    {DIARY_ICONS.map(icon => (
-                                        <button
-                                            key={icon}
-                                            type="button"
-                                            className="icon-option"
-                                            onClick={() => {
-                                                setNewDiaryIcon(icon);
-                                                setShowIconPicker(null);
-                                            }}
-                                        >
-                                            {icon}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        <DiaryIconPicker
+                            icon={newDiaryIcon}
+                            open={showIconPicker === 'new'}
+                            onToggle={() => setShowIconPicker(showIconPicker === 'new' ? null : 'new')}
+                            onPick={(icon) => {
+                                setNewDiaryIcon(icon);
+                                setShowIconPicker(null);
+                            }}
+                        />
                         <input
                             type="text"
                             value={newDiaryName}
@@ -304,6 +309,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                 <span className={`toggle-label ${newDiaryVisibility === 'public' ? 'active' : ''}`}>{t('public')}</span>
                             </div>
                         </div>
+                        <DiaryGoalField goal={newDiaryGoal} onChange={setNewDiaryGoal} t={t} />
                         <button type="submit" className="create-btn">
                             {t('createDiary')}
                         </button>
@@ -331,32 +337,15 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                 {editingDiary?.id === diary.id ? (
                                     <div className="edit-form">
                                         <div className="edit-row">
-                                            <div className="icon-picker-wrapper">
-                                                <button
-                                                    type="button"
-                                                    className="icon-button"
-                                                    onClick={() => setShowIconPicker(showIconPicker === diary.id ? null : diary.id)}
-                                                >
-                                                    {editIcon}
-                                                </button>
-                                                {showIconPicker === diary.id && (
-                                                    <div className="icon-picker-popup">
-                                                        {DIARY_ICONS.map(icon => (
-                                                            <button
-                                                                key={icon}
-                                                                type="button"
-                                                                className="icon-option"
-                                                                onClick={() => {
-                                                                    setEditIcon(icon);
-                                                                    setShowIconPicker(null);
-                                                                }}
-                                                            >
-                                                                {icon}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
+                                            <DiaryIconPicker
+                                                icon={editIcon}
+                                                open={showIconPicker === diary.id}
+                                                onToggle={() => setShowIconPicker(showIconPicker === diary.id ? null : diary.id)}
+                                                onPick={(icon) => {
+                                                    setEditIcon(icon);
+                                                    setShowIconPicker(null);
+                                                }}
+                                            />
                                             <input
                                                 type="text"
                                                 value={editName}
@@ -384,6 +373,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                     <span className={`toggle-label ${editVisibility === 'public' ? 'active' : ''}`}>{t('public')}</span>
                                                 </div>
                                             </div>
+                                            <DiaryGoalField goal={editGoal} onChange={setEditGoal} t={t} />
                                         </div>
                                         <div className="edit-actions">
                                             <button type="button" onClick={handleSaveEdit} className="save-btn">{t('save')}</button>
@@ -419,6 +409,11 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                     <span className="diary-name">{diary.name}</span>
                                                 </span>
                                                 <span className="diary-visibility">{t('defaultVisibility')}: {t(diary.visibility)}</span>
+                                                {diary.goalType && diary.goalTarget && (
+                                                    <span className="diary-goal-summary">
+                                                        {t('diaryGoalSummary', { goal: describeDiaryGoal(t, uiLanguage, diary.goalType, diary.goalTarget) })}
+                                                    </span>
+                                                )}
                                             </div>
                                             {diary.is_default && (
                                                 <span className="default-badge">{t('defaultDiary')}</span>

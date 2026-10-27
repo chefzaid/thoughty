@@ -50,7 +50,7 @@ Every table except `users` references a user, and those foreign keys cascade. Ac
 | Entity | Deletion behavior |
 |---|---|
 | `User` | Deleting an account sets `deleted_at` and removes refresh tokens. Deleted users cannot sign in, and their content leaves the feed, follows, comments, likes, and counts. The account and everything it owns or wrote is erased after the grace period. |
-| `Diary` | The default diary cannot be deleted. Deleting another first moves its entries, including those in the recycle bin, to the default diary. `entries.diary_id` is `ON DELETE SET NULL` as a safety net. |
+| `Diary` | The default diary cannot be deleted. Deleting another first moves its entries, including those in the recycle bin, to the default diary, and drops its writing goal with the row. `entries.diary_id` is `ON DELETE SET NULL` as a safety net. |
 | `Entry` | Deleting moves it to the [recycle bin](#recycle-bin). Purging it hard-deletes the row, which cascades revisions, attachment rows, AI chat, comments, likes, and the memoir answer. |
 | `EntryRevision`, `AiChatHistory`, `EntryComment`, `EntryLike`, `CommentLike` | Deleted with their entry (or comment). Comments and likes also go with their author. A comment can be removed by its author or the entry owner. |
 | `Attachment` | The row is deleted with its entry or user. Purging an entry and deleting an attachment also remove the stored object. Any other hard delete leaves the object behind. |
@@ -140,6 +140,12 @@ Measured on PostgreSQL 16 on a development machine with the dev seed's main jour
 | Highlights for a page of 50 entries | 6 to 9 ms | 4 to 7 ms |
 
 The index lookup takes under a millisecond for a rare word. Search cost grows with the number of matches, since each is counted and ranked: roughly 5 to 8 ms per thousand. `sort=date` is 20 to 35% faster on broad searches because it skips ranking. Most of the large baseline is the tag list returned with every page. The vector takes about 650 bytes per entry (2.8 times its text) and the index 15 MB for 107,000 entries. `npm run benchmark` includes an `entries_full_text_search` query for checking a real database.
+
+## Diary Writing Goals
+
+A diary can carry one optional writing goal in `goal_type` (`entries_per_week` or `words_per_day`) and `goal_target`. The `chk_diaries_goal` constraint keeps them set together or both null, with 1 to 50 entries a week or 10 to 10,000 words a day; `DIARY_GOAL_LIMITS` and the `IsDiaryGoalTarget` validator hold the same bounds for the API, which answers `400 VALIDATION_FAILED` outside them. On `PUT /api/diaries/:id`, leaving `goalType` out keeps the goal and `null` removes it.
+
+Progress is computed on request (`StatsGoalService`, in `GET /api/stats` as `goals`), never stored: one grouped query sums each goal diary's entries and words per day (words as in the other stats, split on whitespace), leaving out the recycle bin and entries dated after `today`, the writer's local day sent by the app (the server's UTC day without it). Days are summed into Monday-to-Sunday weeks for an entries goal. Each goal reports the current period's progress, whether it is met, the current and longest streaks, and the first day of every period that met it, which the activity heatmap marks. Only the writer's own diaries are read: a diary ID of someone else's diary gives no goal.
 
 ## Saved Searches
 

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import './StatsGoals.css';
 
 import { monthName, weekdayName } from '../../utils/calendarNames';
 import { pluralPhrase } from '../../utils/pluralPhrase';
@@ -12,8 +13,15 @@ interface HeatmapCell {
     inRange: boolean;
 }
 
+/** The days or Monday-to-Sunday weeks that met the diary's writing goal, each by its first day. */
+export interface HeatmapGoal {
+    readonly period: 'day' | 'week';
+    readonly metPeriods: readonly string[];
+}
+
 interface StatsActivityHeatmapProps {
     readonly thoughtsPerDay: Record<string, number>;
+    readonly goal?: HeatmapGoal;
     readonly themeClass: 'light' | 'dark';
     readonly language: Language;
     readonly t: (key: string, params?: Record<string, string | number>) => string;
@@ -21,8 +29,8 @@ interface StatsActivityHeatmapProps {
 }
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
-/** Weekdays labelled down the side of the grid (0 = Sunday), every other row. */
-const LABELLED_WEEKDAYS = new Set([1, 3, 5]);
+/** Rows labelled down the side of the grid, from Monday (0): Monday, Wednesday and Friday. */
+const LABELLED_ROWS = new Set([0, 2, 4]);
 
 function addUtcDays(date: Date, days: number): Date {
     return new Date(date.getTime() + days * DAY_IN_MS);
@@ -32,8 +40,9 @@ function toUtcDateOnly(date: Date): Date {
     return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
+/** Weeks run from Monday to Sunday, as writing goals count them. */
 function startOfUtcWeek(date: Date): Date {
-    return addUtcDays(date, -date.getUTCDay());
+    return addUtcDays(date, -((date.getUTCDay() + 6) % 7));
 }
 
 function getActivityLevel(count: number, maxCount: number): number {
@@ -87,15 +96,17 @@ function buildHeatmapWeeks(thoughtsPerDay: Record<string, number>): HeatmapCell[
 
 export default function StatsActivityHeatmap({
     thoughtsPerDay,
+    goal,
     themeClass,
     language,
     t,
     onOpenJournalDay,
 }: Readonly<StatsActivityHeatmapProps>) {
     const heatmapWeeks = useMemo(() => buildHeatmapWeeks(thoughtsPerDay), [thoughtsPerDay]);
+    const metPeriods = useMemo(() => new Set(goal?.metPeriods ?? []), [goal]);
     const weekdayLabels = useMemo(
-        () => Array.from({ length: 7 }, (_, index) => (
-            LABELLED_WEEKDAYS.has(index) ? weekdayName(index, language, 'short') : ''
+        () => Array.from({ length: 7 }, (_, row) => (
+            LABELLED_ROWS.has(row) ? weekdayName((row + 1) % 7, language, 'short') : ''
         )),
         [language],
     );
@@ -128,7 +139,7 @@ export default function StatsActivityHeatmap({
         <section className={`chart-card heatmap-card ${themeClass}`} aria-labelledby="journal-activity-heading">
             <div className="chart-header heatmap-header">
                 <h3 id="journal-activity-heading">{t('journalActivityByDay')}</h3>
-                <div className="heatmap-legend" aria-label={`${t('lessActivity')} ${t('moreActivity')}`}>
+                <div className="heatmap-legend">
                     <span>{t('lessActivity')}</span>
                     <div className="heatmap-legend-scale" aria-hidden="true">
                         {[0, 1, 2, 3, 4].map((level) => (
@@ -136,6 +147,14 @@ export default function StatsActivityHeatmap({
                         ))}
                     </div>
                     <span>{t('moreActivity')}</span>
+                    {goal && (
+                        <span className="heatmap-legend-goal">
+                            {goal.period === 'day'
+                                ? <span className={`heatmap-cell ${themeClass} level-2 goal-met`} aria-hidden="true" />
+                                : <span className="heatmap-goal-week" aria-hidden="true">✓</span>}
+                            {t(goal.period === 'day' ? 'statsHeatmapGoalLegendDay' : 'statsHeatmapGoalLegendWeek')}
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -143,7 +162,7 @@ export default function StatsActivityHeatmap({
                 <p className="heatmap-empty">{t('noJournalActivity')}</p>
             ) : (
                 <div className="heatmap-shell">
-                    <div className="heatmap-grid" role="img" aria-label={t('journalActivityByDay')}>
+                    <div className="heatmap-grid" role="group" aria-label={t('journalActivityByDay')}>
                         <div className="heatmap-corner" aria-hidden="true" />
                         <div className="heatmap-month-row" aria-hidden="true">
                             {monthLabels.map((label, index) => (
@@ -173,16 +192,21 @@ export default function StatsActivityHeatmap({
                                             );
                                         }
 
-                                        const dayLabel = pluralPhrase(t, 'statsHeatmapDay', cell.count, language, {
+                                        const countLabel = pluralPhrase(t, 'statsHeatmapDay', cell.count, language, {
                                             date: fullDateFormatter.format(cell.date),
                                         });
+                                        const dayMet = goal?.period === 'day' && metPeriods.has(cell.dateKey);
+                                        const weekMet = goal?.period === 'week' && metPeriods.has(week[0]?.dateKey ?? '');
+                                        let dayLabel = countLabel;
+                                        if (dayMet) dayLabel = t('statsHeatmapGoalMetDay', { label: countLabel });
+                                        if (weekMet) dayLabel = t('statsHeatmapGoalMetWeek', { label: countLabel });
 
                                         return (
                                             <button
                                                 type="button"
                                                 key={cell.dateKey}
                                                 onClick={() => void onOpenJournalDay?.(cell.dateKey)}
-                                                className={`heatmap-cell ${themeClass} level-${cell.level}`}
+                                                className={`heatmap-cell ${themeClass} level-${cell.level}${dayMet ? ' goal-met' : ''}`}
                                                 aria-label={dayLabel}
                                                 title={dayLabel}
                                                 disabled={!onOpenJournalDay}
@@ -192,6 +216,18 @@ export default function StatsActivityHeatmap({
                                 </div>
                             ))}
                         </div>
+                        {goal?.period === 'week' && (
+                            <>
+                                <div aria-hidden="true" />
+                                <div className="heatmap-goal-row" aria-hidden="true">
+                                    {heatmapWeeks.map((week) => (
+                                        <span key={week[0]?.dateKey ?? 'week'} className="heatmap-goal-week">
+                                            {metPeriods.has(week[0]?.dateKey ?? '') ? '✓' : ''}
+                                        </span>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

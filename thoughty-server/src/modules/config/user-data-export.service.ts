@@ -99,6 +99,8 @@ export class UserDataExportService {
         visibility: diary.visibility,
         isDefault: diary.isDefault,
         position: diary.position,
+        goalType: diary.goalType,
+        goalTarget: diary.goalTarget,
         createdAt: diary.createdAt,
       })),
       entries: entries.map((entry) => ({

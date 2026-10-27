@@ -20,6 +20,9 @@ import StatsInsights from './StatsInsights';
 import StatsPersonalityPanel from './StatsPersonalityPanel';
 import StatsCorrelationGraph from './StatsCorrelationGraph';
 import StatsMoodPanel from './StatsMoodPanel';
+import StatsGoalPanel from './StatsGoalPanel';
+import StatsPagination from './StatsPagination';
+import { formatEntryDate } from '../../utils/entryDate';
 import { resolveLanguage } from '../../utils/language';
 
 // Register Chart.js components
@@ -38,6 +41,7 @@ interface StatsProps {
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly diaryId?: number | null;
     readonly onOpenJournalDay?: (date: string) => void | Promise<void>;
+    readonly onManageDiaries?: () => void;
     readonly tagMetadata?: TagMetadataMap;
     readonly language?: string;
 }
@@ -79,9 +83,10 @@ const EMPTY_STATS: StatsData = {
         weekdays: [],
         topFeelings: [],
     },
+    goals: [],
 };
 
-function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: StatsProps) {
+function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetadata, language }: StatsProps) {
     const { authFetch } = useAuth();
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -97,6 +102,8 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
             setLoading(true);
             const params = new URLSearchParams();
             if (diaryId) params.append('diaryId', diaryId.toString());
+            // Writing goals are measured up to the writer's own day
+            params.append('today', formatEntryDate(new Date()));
             const response = await authFetch(`/api/stats?${params}`);
             if (!response.ok) throw new Error('Failed to fetch stats');
             const data = await response.json() as StatsData;
@@ -239,6 +246,8 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
         () => effectiveStats.thoughtsPerDay ?? {},
         [effectiveStats.thoughtsPerDay],
     );
+    const goals = effectiveStats.goals ?? EMPTY_STATS.goals;
+    const diaryGoal = diaryId ? goals.find((goal) => goal.diaryId === diaryId) : undefined;
 
     if (loading) {
         return (
@@ -336,8 +345,18 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
                     </>
                 )}
 
+                <StatsGoalPanel
+                    goals={goals}
+                    diaryId={diaryId}
+                    themeClass={themeClass}
+                    language={uiLanguage}
+                    t={t}
+                    onManageDiaries={onManageDiaries}
+                />
+
                 <StatsActivityHeatmap
                     thoughtsPerDay={thoughtsPerDay}
+                    goal={diaryGoal}
                     themeClass={themeClass}
                     language={uiLanguage}
                     t={t}
@@ -351,29 +370,14 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
                             <div className={`chart-card ${themeClass}`}>
                                 <div className="chart-header">
                                     <h3>{t('thoughtsPerYear')}</h3>
-                                    {totalYearChartPages > 1 && (
-                                        <div className="pagination-controls">
-                                            <button type="button"
-                                                className={`pagination-btn ${themeClass}`}
-                                                onClick={() => setYearPage(p => Math.max(0, p - 1))}
-                                                disabled={yearPage === 0}
-                                                title={t('previous')}
-                                            >
-                                                ←
-                                            </button>
-                                            <span className="pagination-info">
-                                                {yearPage + 1} / {totalYearChartPages}
-                                            </span>
-                                            <button type="button"
-                                                className={`pagination-btn ${themeClass}`}
-                                                onClick={() => setYearPage(p => Math.min(totalYearChartPages - 1, p + 1))}
-                                                disabled={yearPage === totalYearChartPages - 1}
-                                                title={t('next')}
-                                            >
-                                                →
-                                            </button>
-                                        </div>
-                                    )}
+                                    <StatsPagination
+                                        page={yearPage}
+                                        totalPages={totalYearChartPages}
+                                        onPageChange={setYearPage}
+                                        themeClass={themeClass}
+                                        previousLabel={t('previous')}
+                                        nextLabel={t('next')}
+                                    />
                                 </div>
                                 <div className="chart-wrapper">
                                     <Bar data={thoughtsPerYearChart} options={chartOptions} />
@@ -384,29 +388,14 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
                             <div className={`chart-card ${themeClass}`}>
                                 <div className="chart-header">
                                     <h3>{t('thoughtsPerMonth')}</h3>
-                                    {totalMonthPages > 1 && (
-                                        <div className="pagination-controls">
-                                            <button type="button"
-                                                className={`pagination-btn ${themeClass}`}
-                                                onClick={() => setMonthPage(p => Math.max(0, p - 1))}
-                                                disabled={monthPage === 0}
-                                                title={t('previous')}
-                                            >
-                                                ←
-                                            </button>
-                                            <span className="pagination-info">
-                                                {monthPage + 1} / {totalMonthPages}
-                                            </span>
-                                            <button type="button"
-                                                className={`pagination-btn ${themeClass}`}
-                                                onClick={() => setMonthPage(p => Math.min(totalMonthPages - 1, p + 1))}
-                                                disabled={monthPage === totalMonthPages - 1}
-                                                title={t('next')}
-                                            >
-                                                →
-                                            </button>
-                                        </div>
-                                    )}
+                                    <StatsPagination
+                                        page={monthPage}
+                                        totalPages={totalMonthPages}
+                                        onPageChange={setMonthPage}
+                                        themeClass={themeClass}
+                                        previousLabel={t('previous')}
+                                        nextLabel={t('next')}
+                                    />
                                 </div>
                                 <div className="chart-wrapper">
                                     <Bar data={thoughtsPerMonthChart} options={chartOptions} />
@@ -432,29 +421,14 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, tagMetadata, language }: S
                             <div className={`chart-card ${themeClass}`}>
                                 <div className="chart-header">
                                     <h3>{t('topTagsByYear')}</h3>
-                                    {totalTagsYearPages > 1 && (
-                                        <div className="pagination-controls">
-                                            <button type="button"
-                                                className={`pagination-btn ${themeClass}`}
-                                                onClick={() => setTagsYearPage(p => Math.max(0, p - 1))}
-                                                disabled={tagsYearPage === 0}
-                                                title={t('newerYears')}
-                                            >
-                                                ←
-                                            </button>
-                                            <span className="pagination-info">
-                                                {tagsYearPage + 1} / {totalTagsYearPages}
-                                            </span>
-                                            <button type="button"
-                                                className={`pagination-btn ${themeClass}`}
-                                                onClick={() => setTagsYearPage(p => Math.min(totalTagsYearPages - 1, p + 1))}
-                                                disabled={tagsYearPage === totalTagsYearPages - 1}
-                                                title={t('olderYears')}
-                                            >
-                                                →
-                                            </button>
-                                        </div>
-                                    )}
+                                    <StatsPagination
+                                        page={tagsYearPage}
+                                        totalPages={totalTagsYearPages}
+                                        onPageChange={setTagsYearPage}
+                                        themeClass={themeClass}
+                                        previousLabel={t('newerYears')}
+                                        nextLabel={t('olderYears')}
+                                    />
                                 </div>
                                 <div className="tag-breakdown">
                                     <table className="tag-table">
