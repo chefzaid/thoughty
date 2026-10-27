@@ -7,6 +7,7 @@ import FeedRoute from './FeedRoute';
 import ImportExportRoute from './ImportExportRoute';
 import JournalRoute from './JournalRoute';
 import MemoirRoute from './MemoirRoute';
+import PeopleRoute from './PeopleRoute';
 import ProfileRoute from './ProfileRoute';
 import RecycleBinRoute from './RecycleBinRoute';
 import ReviewRoute from './ReviewRoute';
@@ -19,6 +20,7 @@ interface AuthenticatedRoutesProps {
   importExportRouteProps: ComponentProps<typeof ImportExportRoute>;
   journalRouteProps: ComponentProps<typeof JournalRoute>;
   memoirRouteProps: ComponentProps<typeof MemoirRoute>;
+  peopleRouteProps: ComponentProps<typeof PeopleRoute>;
   profileRouteProps: ComponentProps<typeof ProfileRoute>;
   recycleBinRouteProps: ComponentProps<typeof RecycleBinRoute>;
   reviewRouteProps: ComponentProps<typeof ReviewRoute>;
@@ -32,6 +34,7 @@ function AuthenticatedRoutes({
   importExportRouteProps,
   journalRouteProps,
   memoirRouteProps,
+  peopleRouteProps,
   profileRouteProps,
   recycleBinRouteProps,
   reviewRouteProps,
@@ -42,6 +45,7 @@ function AuthenticatedRoutes({
     <Routes>
       <Route path={getPathForView('profile')} element={<ProfileRoute {...profileRouteProps} />} />
       <Route path={getPathForView('tags')} element={<TagManagerRoute {...tagManagerRouteProps} />} />
+      <Route path={getPathForView('people')} element={<PeopleRoute {...peopleRouteProps} />} />
       <Route path={getPathForView('diaries')} element={<DiariesRoute {...diariesRouteProps} />} />
       <Route path={getPathForView('feed')} element={<FeedRoute {...feedRouteProps} />} />
       <Route path={getPathForView('memoir')} element={<MemoirRoute {...memoirRouteProps} />} />

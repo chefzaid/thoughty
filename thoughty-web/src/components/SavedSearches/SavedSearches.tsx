@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
-import type { LifeEra, SavedSearch } from '../../services/api';
+import type { LifeEra, Person, SavedSearch } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import { describeSavedSearch, toSavedSearchFilters } from '../../utils/savedSearches';
@@ -17,6 +17,8 @@ interface SavedSearchesProps {
   readonly diaries: readonly Pick<Diary, 'id' | 'name'>[];
   /** The writer's life eras, to name a search's era. */
   readonly eras?: readonly LifeEra[];
+  /** The writer's people, to name the person a search is narrowed to. */
+  readonly people?: readonly Person[];
   readonly theme?: 'light' | 'dark';
   readonly language: Language;
   readonly t: TranslationFunction;
@@ -27,7 +29,7 @@ interface SavedSearchesProps {
 const MAX_NAME_LENGTH = 80;
 
 /** The filter bar's saved searches: a button that names the one shown, and a dialog to save, show, rename and delete them. */
-function SavedSearches({ filters, currentDiaryId, diaries, eras = [], theme, language, t, notify }: SavedSearchesProps) {
+function SavedSearches({ filters, currentDiaryId, diaries, eras = [], people = [], theme, language, t, notify }: SavedSearchesProps) {
   const { list, create, rename, remove } = useSavedSearches();
   const savedSearches = list.data?.savedSearches;
   const limit = list.data?.limit ?? 0;
@@ -180,6 +182,7 @@ function SavedSearches({ filters, currentDiaryId, diaries, eras = [], theme, lan
                   shownSearchId={shownSearch?.id ?? null}
                   diaries={diaries}
                   eras={eras}
+                  people={people}
                   isLight={isLight}
                   t={t}
                   onApply={show}
@@ -217,7 +220,7 @@ function SavedSearches({ filters, currentDiaryId, diaries, eras = [], theme, lan
                   </button>
                 </div>
                 <div id={nameHelpId} className={`text-xs ${muted}`}>
-                  <p>{t('savedSearchWillSave', { summary: describeSavedSearch(toSavedSearchFilters(filters), currentDiaryId, diaries, t, eras) })}</p>
+                  <p>{t('savedSearchWillSave', { summary: describeSavedSearch(toSavedSearchFilters(filters), currentDiaryId, diaries, t, eras, people) })}</p>
                   <p>
                     {isFull
                       ? t('savedSearchLimitReached', { limit })

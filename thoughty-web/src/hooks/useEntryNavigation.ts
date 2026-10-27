@@ -21,6 +21,7 @@ interface UseEntryNavigationParams {
   filterFavorites: EntriesState['filterFavorites'];
   filterMood: EntriesState['filterMood'];
   filterEraId: EntriesState['filterEraId'];
+  filterPersonId: EntriesState['filterPersonId'];
   filterTags: EntriesState['filterTags'];
   filterVisibility: EntriesState['filterVisibility'];
   getLimit: EntriesState['getLimit'];
@@ -40,6 +41,7 @@ interface UseEntryNavigationParams {
   setFilterFavorites: EntriesState['setFilterFavorites'];
   setFilterMood: EntriesState['setFilterMood'];
   setFilterEraId: EntriesState['setFilterEraId'];
+  setFilterPersonId: EntriesState['setFilterPersonId'];
   setFilterTags: EntriesState['setFilterTags'];
   setFilterVisibility: EntriesState['setFilterVisibility'];
   setHandledPermalinkEntryId: EntriesState['setHandledPermalinkEntryId'];
@@ -71,6 +73,7 @@ export function useEntryNavigation({
   filterFavorites,
   filterMood,
   filterEraId,
+  filterPersonId,
   filterTags,
   filterVisibility,
   getLimit,
@@ -89,6 +92,7 @@ export function useEntryNavigation({
   setFilterFavorites,
   setFilterMood,
   setFilterEraId,
+  setFilterPersonId,
   setFilterTags,
   setFilterVisibility,
   setHandledPermalinkEntryId,
@@ -131,7 +135,7 @@ export function useEntryNavigation({
       return true;
     }
 
-    if (filterEraId !== null) {
+    if (filterEraId !== null || filterPersonId !== null) {
       return true;
     }
 
@@ -156,6 +160,7 @@ export function useEntryNavigation({
     filterEraId,
     filterFavorites,
     filterMood,
+    filterPersonId,
     filterTags,
     filterVisibility,
     page,
@@ -196,6 +201,10 @@ export function useEntryNavigation({
       setFilterEraId(null);
     }
 
+    if (filterPersonId !== null) {
+      setFilterPersonId(null);
+    }
+
     if (filterArchiveStatus !== 'all') {
       setFilterArchiveStatus('all');
     }
@@ -227,6 +236,7 @@ export function useEntryNavigation({
     filterEraId,
     filterFavorites,
     filterMood,
+    filterPersonId,
     filterTags,
     filterVisibility,
     navigate,
@@ -240,6 +250,7 @@ export function useEntryNavigation({
     setFilterFavorites,
     setFilterEraId,
     setFilterMood,
+    setFilterPersonId,
     setFilterTags,
     setFilterVisibility,
     setPage,

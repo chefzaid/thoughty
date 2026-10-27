@@ -20,6 +20,9 @@ import MarkdownHelp from '../MarkdownEditor/MarkdownHelp';
 import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
 import TemplateNameDialog from './TemplateNameDialog';
 import type { FontFamilyPreference } from '../../types';
+import MentionSuggestions from '../People/MentionSuggestions';
+import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
+import { resolveLanguage } from '../../utils/language';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -135,6 +138,10 @@ function EntryForm({
     onDeleteTemplate
 }: EntryFormProps) {
     const writingArea = useAutoGrowTextarea(newEntryText);
+    const mentions = useMentionAutocomplete(newEntryText, setNewEntryText);
+    const mentionSuggestions = (
+        <MentionSuggestions suggestions={mentions.suggestions} theme={theme} language={resolveLanguage(language)} t={t} />
+    );
     const [selectedTemplateId, setSelectedTemplateId] = useState('');
     const [isNamingTemplate, setIsNamingTemplate] = useState(false);
     const writingTextColor = resolveFontColor(fontColor, theme);
@@ -258,7 +265,7 @@ function EntryForm({
                         />
                     </div>
                 )}
-                <div>
+                <div {...mentions.wrapperProps}>
                     {format === 'markdown' ? (
                         <Suspense
                             fallback={(
@@ -275,10 +282,11 @@ function EntryForm({
                                     title={t('entryReferenceHint')}
                                     value={newEntryText}
                                     onChange={(e) => setNewEntryText(e.target.value)}
+                                    {...mentions.fieldProps}
                                 />
                             )}
                         >
-                            <div data-color-mode={theme === 'light' ? 'light' : 'dark'}>
+                            <div className="relative" data-color-mode={theme === 'light' ? 'light' : 'dark'}>
                                 <LazyMDEditor
                                     value={newEntryText}
                                     onChange={(val) => setNewEntryText(val ?? '')}
@@ -288,27 +296,33 @@ function EntryForm({
                                         placeholder: t('whatsOnYourMind'),
                                         title: t('entryReferenceHint'),
                                         style: { color: writingTextColor },
+                                        ...mentions.fieldProps,
                                     }}
                                     t={t}
                                 />
+                                {mentionSuggestions}
                             </div>
                             <MarkdownHelp theme={theme} t={t} />
                         </Suspense>
                     ) : (
-                        <textarea
-                            ref={writingArea.ref}
-                            onPointerUp={writingArea.onPointerUp}
-                            className={`w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors resize-y ${theme === 'light'
-                                ? 'bg-gray-50 border-gray-300 text-gray-900'
-                                : 'bg-gray-900 border-gray-700 text-gray-100'
-                                }`}
-                            style={{ color: writingTextColor }}
-                            rows={3}
-                            placeholder={t('whatsOnYourMind')}
-                            title={t('entryReferenceHint')}
-                            value={newEntryText}
-                            onChange={(e) => setNewEntryText(e.target.value)}
-                        />
+                        <div className="relative">
+                            <textarea
+                                ref={writingArea.ref}
+                                onPointerUp={writingArea.onPointerUp}
+                                className={`w-full border p-4 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-colors resize-y ${theme === 'light'
+                                    ? 'bg-gray-50 border-gray-300 text-gray-900'
+                                    : 'bg-gray-900 border-gray-700 text-gray-100'
+                                    }`}
+                                style={{ color: writingTextColor }}
+                                rows={3}
+                                placeholder={t('whatsOnYourMind')}
+                                title={t('entryReferenceHint')}
+                                value={newEntryText}
+                                onChange={(e) => setNewEntryText(e.target.value)}
+                                {...mentions.fieldProps}
+                            />
+                            {mentionSuggestions}
+                        </div>
                     )}
                 </div>
                 {setMood && setFeelings && (

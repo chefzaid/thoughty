@@ -1,5 +1,7 @@
 import { useLocation, useSearchParams } from 'react-router-dom';
 
+import { parseJournalPersonParam } from '../utils/appRouting';
+
 import {
   getPublicViewForPath,
   getViewForPath,
@@ -23,6 +25,7 @@ export function useAppRouteState() {
   const routeEntryId = currentView === 'journal'
     ? parseEntrySearchParam(searchParams)
     : undefined;
+  const routePersonId = currentView === 'journal' ? parseJournalPersonParam(searchParams) : undefined;
 
   return {
     location,
@@ -31,6 +34,7 @@ export function useAppRouteState() {
     publicView,
     routeDiaryId,
     routeEntryId,
+    routePersonId,
     diaryReturnView: parseDiaryReturnView(searchParams) ?? 'journal',
     importExportSection: parseImportExportSection(searchParams) ?? 'export',
     importExportFormat: parseImportExportFormat(searchParams) ?? 'txt',

@@ -19,6 +19,8 @@ export interface MockSavedSearch {
     mood: string;
     /** Left out by searches saved before life eras. */
     eraId?: number | null;
+    /** Left out by searches saved before people. */
+    personId?: number | null;
   };
   createdAt: string;
   updatedAt: string;

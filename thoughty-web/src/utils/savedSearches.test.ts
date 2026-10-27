@@ -21,6 +21,7 @@ const state: JournalFilterState = {
   filterArchiveStatus: 'all',
   filterMood: '4,5',
   filterEraId: null,
+  filterPersonId: null,
 };
 const saved: SavedSearchFilters = {
   search: 'walk',
@@ -33,6 +34,7 @@ const saved: SavedSearchFilters = {
   favorites: true,
   mood: '4,5',
   eraId: null,
+  personId: null,
 };
 const t = (key: string, params?: Record<string, string | number>) =>
   params ? `${key}(${Object.values(params).join(', ')})` : key;
@@ -73,6 +75,18 @@ describe('saved search filters', () => {
     expect(matchesSavedSearch(beforeEras, state)).toBe(true);
     expect(matchesSavedSearch(beforeEras, { ...state, filterEraId: 3 })).toBe(false);
     expect(toSavedSearchFilters({ ...state, filterEraId: 3 }).eraId).toBe(3);
+  });
+
+  it('reads a search saved before people as covering anyone, and matches and names its person', () => {
+    const { personId: _personId, ...beforePeople } = saved;
+    expect(matchesSavedSearch(beforePeople, state)).toBe(true);
+    expect(matchesSavedSearch(beforePeople, { ...state, filterPersonId: 12 })).toBe(false);
+    expect(matchesSavedSearch({ ...saved, personId: 12 }, { ...state, filterPersonId: 12 })).toBe(true);
+    expect(toSavedSearchFilters({ ...state, filterPersonId: 12 }).personId).toBe(12);
+
+    const marie: SavedSearchFilters = { ...saved, search: '', tags: [], date: null, visibility: 'all', archiveStatus: 'active', favorites: false, mood: '', personId: 12 };
+    expect(describeSavedSearch(marie, null, diaries, t, [], [{ id: 12, name: 'Marie' }])).toBe('allDiaries · savedSearchPerson(Marie)');
+    expect(describeSavedSearch(marie, null, diaries, t)).toBe('allDiaries · savedSearchNoFilters');
   });
 
   it('names the life era a search is narrowed to, and leaves out one it does not know', () => {

@@ -5,7 +5,7 @@ import JournalView from '../components/JournalView/JournalView';
 import { getPathForView } from '../types';
 import { LIFE_ERAS_SECTION_ID } from '../utils/lifeEras';
 
-type JournalRouteProps = Omit<ComponentProps<typeof JournalView>, 'onOpenRecycleBin' | 'onManageLifeEras'>;
+type JournalRouteProps = Omit<ComponentProps<typeof JournalView>, 'onOpenRecycleBin' | 'onManageLifeEras' | 'onManagePeople'>;
 
 function JournalRoute(props: Readonly<JournalRouteProps>) {
   const navigate = useNavigate();
@@ -15,6 +15,7 @@ function JournalRoute(props: Readonly<JournalRouteProps>) {
       {...props}
       onOpenRecycleBin={() => navigate(getPathForView('recycleBin'))}
       onManageLifeEras={() => navigate({ pathname: getPathForView('profile'), hash: LIFE_ERAS_SECTION_ID })}
+      onManagePeople={() => navigate(getPathForView('people'))}
     />
   );
 }

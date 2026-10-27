@@ -93,6 +93,19 @@ describe('entriesService', () => {
       expect(String(mockAuthFetch.mock.calls[1]?.[0])).not.toContain('eraId=');
     });
 
+    it('sends the person filter only when one is chosen', async () => {
+      mockAuthFetch.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ entries: [], totalPages: 1, allTags: [] }),
+      });
+
+      await service.fetchEntries({ ...defaultParams, personId: 12 });
+      await service.fetchEntries({ ...defaultParams, personId: null });
+
+      expect(new URL(String(mockAuthFetch.mock.calls[0]?.[0]), 'https://x.test').searchParams.get('personId')).toBe('12');
+      expect(String(mockAuthFetch.mock.calls[1]?.[0])).not.toContain('personId=');
+    });
+
     it('returns null when response is not ok', async () => {
       mockAuthFetch.mockResolvedValue({
         ok: false,

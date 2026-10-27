@@ -1,5 +1,9 @@
-import React, { Suspense, lazy, useMemo } from 'react';
+import React, { Fragment, Suspense, lazy, useMemo } from 'react';
 import type { Components } from 'react-markdown';
+import MentionLink from '../People/MentionLink';
+import { useMentionPeople } from '../People/PeopleContext';
+import type { Person } from '../../services/api/peopleService';
+import { findMentions } from '../../utils/mentions';
 import { buildSearchHighlightPattern, splitSearchHighlights } from '../../utils/searchHighlight';
 import { countLinesBefore, findTaskLines } from '../../utils/taskList';
 import type { TranslationFunction } from '../../types';
@@ -100,6 +104,32 @@ function highlightText(text: string, key: string, pattern: RegExp | null): React
             )}
         </>
     );
+}
+
+/** Plain text with its mentions of the writer's people as links, and its search matches marked. */
+function linkMentions(
+    text: string,
+    key: string,
+    pattern: RegExp | null,
+    people: ReadonlyMap<string, Person>,
+    title: ((person: Person) => string) | undefined,
+): React.ReactNode {
+    const mentions = people.size > 0 ? findMentions(text).filter((mention) => people.has(mention.handle)) : [];
+    if (mentions.length === 0) return highlightText(text, key, pattern);
+    const nodes: React.ReactNode[] = [];
+    let at = 0;
+    mentions.forEach((mention, i) => {
+        const person = people.get(mention.handle) as Person;
+        nodes.push(
+            <Fragment key={`${key}-before-${i}`}>{highlightText(text.slice(at, mention.start), `${key}-before-${i}`, pattern)}</Fragment>,
+            <MentionLink key={`${key}-mention-${i}`} personId={person.id} title={title?.(person)}>
+                {highlightText(text.slice(mention.start, mention.end), `${key}-mention-${i}`, pattern)}
+            </MentionLink>,
+        );
+        at = mention.end;
+    });
+    nodes.push(<Fragment key={`${key}-rest`}>{highlightText(text.slice(at), `${key}-rest`, pattern)}</Fragment>);
+    return <>{nodes}</>;
 }
 
 function highlightChildren(children: React.ReactNode, keyPrefix: string, pattern: RegExp): React.ReactNode {
@@ -206,6 +236,12 @@ function EntryContentRenderer({
     ), [content, maxLength]);
 
     const parts = useMemo(() => parseContentParts(displayContent), [displayContent]);
+    const { byHandle: mentionPeople } = useMentionPeople();
+    const mentionTitle = useMemo(
+        () => (t ? (person: Person) => t('personMentionTitle', { name: person.name }) : undefined),
+        [t]
+    );
+    const plainText = (text: string, key: string) => linkMentions(text, key, highlightPattern, mentionPeople, mentionTitle);
     const taskLines = useMemo(
         () => (format === 'markdown' && onToggleTask ? findTaskLines(content) : null),
         [content, format, onToggleTask]
@@ -245,7 +281,7 @@ function EntryContentRenderer({
         if (!parts || parts.length === 0) {
             return (
                 <Suspense fallback={<span className="markdown-content">{displayContent}</span>}>
-                    <LazyMarkdownRenderer content={displayContent} components={markdownComponents} taskList={taskListFrom(0)} />
+                    <LazyMarkdownRenderer content={displayContent} components={markdownComponents} taskList={taskListFrom(0)} mentionPeople={mentionPeople} mentionTitle={mentionTitle} />
                 </Suspense>
             );
         }
@@ -256,7 +292,7 @@ function EntryContentRenderer({
                     if (part.type === 'text') {
                         return (
                             <Suspense key={part.key} fallback={<span className="markdown-content">{part.content || ''}</span>}>
-                                <LazyMarkdownRenderer content={part.content || ''} components={markdownComponents} taskList={taskListFrom(part.start)} />
+                                <LazyMarkdownRenderer content={part.content || ''} components={markdownComponents} taskList={taskListFrom(part.start)} mentionPeople={mentionPeople} mentionTitle={mentionTitle} />
                             </Suspense>
                         );
                     }
@@ -273,14 +309,14 @@ function EntryContentRenderer({
 
     // Plain text rendering mode (original behavior)
     if (!parts || parts.length === 0) {
-        return <>{highlightText(displayContent, 'root', highlightPattern)}</>;
+        return <>{plainText(displayContent, 'root')}</>;
     }
 
     return (
         <>
             {parts.map((part) => {
                 if (part.type === 'text') {
-                    return <span key={part.key}>{highlightText(part.content || '', part.key, highlightPattern)}</span>;
+                    return <span key={part.key}>{plainText(part.content || '', part.key)}</span>;
                 }
 
                 if (part.type === 'reference') {

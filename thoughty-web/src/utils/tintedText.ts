@@ -13,6 +13,7 @@ const TINTED_TEXT = {
     sky: { dark: 'text-sky-400', light: 'text-sky-700' },
     blue: { dark: 'text-blue-300', light: 'text-blue-700' },
     indigo: { dark: 'text-indigo-300', light: 'text-indigo-700' },
+    violet: { dark: 'text-violet-300', light: 'text-violet-700' },
     gray: { dark: 'text-gray-400', light: 'text-gray-600' },
 } as const;
 

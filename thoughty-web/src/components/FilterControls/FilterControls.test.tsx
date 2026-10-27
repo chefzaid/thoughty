@@ -51,6 +51,8 @@ describe('FilterControls', () => {
     setFilterMood: vi.fn(),
     filterEraId: null,
     setFilterEraId: vi.fn(),
+    filterPersonId: null,
+    setFilterPersonId: vi.fn(),
     allTags: ['tag1', 'tag2', 'tag3'],
     setPage: mockSetPage,
     theme: 'dark' as const,
@@ -137,6 +139,7 @@ describe('FilterControls', () => {
     expect(defaultProps.setFilterArchiveStatus).toHaveBeenCalledWith('active');
     expect(defaultProps.setFilterMood).toHaveBeenCalledWith('');
     expect(defaultProps.setFilterEraId).toHaveBeenCalledWith(null);
+    expect(defaultProps.setFilterPersonId).toHaveBeenCalledWith(null);
     expect(mockSetPage).toHaveBeenCalledWith(1);
   });
 
@@ -177,6 +180,36 @@ describe('FilterControls', () => {
     render(<FilterControls {...defaultProps} filterEraId={9} />);
 
     expect(screen.getByRole('combobox', { name: 'eraFilterLabel' })).toHaveValue('9');
+  });
+
+  const people = [
+    { id: 12, name: 'Marie', handles: ['marie'], entryCount: 3, lastMentionedOn: null, createdAt: '', updatedAt: '' },
+    { id: 14, name: 'Paul', handles: ['paul'], entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' },
+  ];
+
+  it('filters by a person once the writer mentions someone, back to page one, and opens the People page', () => {
+    const setFilterPersonId = vi.fn();
+    const onManagePeople = vi.fn();
+    const { rerender } = render(<FilterControls {...defaultProps} />);
+    expect(screen.queryByRole('combobox', { name: 'personFilterLabel' })).not.toBeInTheDocument();
+
+    rerender(<FilterControls {...defaultProps} people={people} setFilterPersonId={setFilterPersonId} onManagePeople={onManagePeople} />);
+    const select = screen.getByRole('combobox', { name: 'personFilterLabel' });
+    expect(Array.from((select as HTMLSelectElement).options).map((option) => option.text)).toEqual(['personFilterAll', 'Marie', 'Paul']);
+    fireEvent.change(select, { target: { value: '14' } });
+    expect(setFilterPersonId).toHaveBeenCalledWith(14);
+    expect(mockSetPage).toHaveBeenCalledWith(1);
+    fireEvent.click(screen.getByRole('button', { name: 'personFilterManage' }));
+    expect(onManagePeople).toHaveBeenCalled();
+
+    rerender(<FilterControls {...defaultProps} people={people} filterPersonId={12} setFilterPersonId={setFilterPersonId} theme="light" />);
+    fireEvent.change(screen.getByRole('combobox', { name: 'personFilterLabel' }), { target: { value: '' } });
+    expect(setFilterPersonId).toHaveBeenLastCalledWith(null);
+    expect(screen.queryByRole('button', { name: 'personFilterManage' })).not.toBeInTheDocument();
+
+    // A person kept in the filter while the people load still shows as chosen
+    rerender(<FilterControls {...defaultProps} filterPersonId={9} />);
+    expect(screen.getByRole('combobox', { name: 'personFilterLabel' })).toHaveValue('9');
   });
 
   it('filters by mood level, by any mood or none, and back to page one', () => {

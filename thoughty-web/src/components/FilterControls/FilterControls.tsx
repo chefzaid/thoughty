@@ -10,6 +10,8 @@ import { MOOD_FILTER_OPTIONS, isMoodFilter, type MoodFilter } from '../../utils/
 import { tintedTextClass } from '../../utils/tintedText';
 import type { LifeEra } from '../../services/api/lifeErasService';
 import EraFilterSelect from './EraFilterSelect';
+import type { Person } from '../../services/api/peopleService';
+import PersonFilterSelect from './PersonFilterSelect';
 
 type VisibilityFilter = 'all' | 'public' | 'private';
 
@@ -41,6 +43,12 @@ interface FilterControlsProps {
     readonly eras?: readonly LifeEra[];
     /** Opens the screen where life eras are managed. */
     readonly onManageEras?: () => void;
+    readonly filterPersonId: number | null;
+    readonly setFilterPersonId: Dispatch<SetStateAction<number | null>>;
+    /** The people the writer mentions, offered as a filter when there are any. */
+    readonly people?: readonly Person[];
+    /** Opens the People page. */
+    readonly onManagePeople?: () => void;
     readonly allTags: string[];
     readonly tagMetadata?: TagMetadataMap;
     readonly setPage: Dispatch<SetStateAction<number>>;
@@ -76,6 +84,10 @@ function FilterControls({
     setFilterEraId,
     eras = [],
     onManageEras,
+    filterPersonId,
+    setFilterPersonId,
+    people = [],
+    onManagePeople,
     allTags,
     tagMetadata,
     setPage,
@@ -109,6 +121,7 @@ function FilterControls({
         setFilterArchiveStatus('active');
         setFilterMood('');
         setFilterEraId(null);
+        setFilterPersonId(null);
         setPage(1);
     };
 
@@ -374,6 +387,14 @@ function FilterControls({
                         value={filterEraId}
                         onChange={(eraId) => { setFilterEraId(eraId); setPage(1); }}
                         onManageEras={onManageEras}
+                        theme={theme}
+                        t={t}
+                    />
+                    <PersonFilterSelect
+                        people={people}
+                        value={filterPersonId}
+                        onChange={(personId) => { setFilterPersonId(personId); setPage(1); }}
+                        onManagePeople={onManagePeople}
                         theme={theme}
                         t={t}
                     />

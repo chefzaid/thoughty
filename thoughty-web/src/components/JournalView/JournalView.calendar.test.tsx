@@ -19,6 +19,7 @@ vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await imp
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
 vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import('./JournalView.test-helpers')).MockSavedSearches }));
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
+vi.mock('../People/usePeople', async () => ({ usePeopleList: (await import('./JournalView.test-helpers')).mockUsePeopleList }));
 
 type CalendarProps = ComponentProps<typeof JournalCalendar>;
 const calendarProps = vi.hoisted(() => ({ current: null as CalendarProps | null }));
@@ -105,7 +106,7 @@ describe('JournalView calendar layout', () => {
 
     expect(calendar().filters).toEqual({
       search: 'harbor', tags: ['sea'], visibility: 'public', favorites: true, archiveStatus: 'all',
-      mood: '4,5', eraId: null, diaryId: 2, entryIds: null,
+      mood: '4,5', eraId: null, personId: null, diaryId: 2, entryIds: null,
     });
     expect(calendar().era).toBeNull();
     expect(calendar().selectedDate).toBe('2026-10-20');

@@ -156,6 +156,34 @@ span.entry-reference-link:hover {
   background: #dbeafe;
 }
 
+/* People mentions (@Marie) in the writer's own entries open the entries about that person */
+.entry-mention-link {
+  color: #c4b5fd;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+  border-radius: 2px;
+}
+
+.entry-mention-link:hover {
+  color: #ddd6fe;
+  text-decoration-style: solid;
+}
+
+.entry-mention-link:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, 0.7);
+  outline-offset: 1px;
+}
+
+.light-mode .entry-mention-link {
+  color: #6d28d9;
+}
+
+.light-mode .entry-mention-link:hover {
+  color: #5b21b6;
+}
+
 /* The Markdown editor's toolbar buttons are 20px squares; WCAG 2.2 asks for 24px targets */
 .w-md-editor .w-md-editor-toolbar li > button {
   min-width: 24px;

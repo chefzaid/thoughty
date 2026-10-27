@@ -7,6 +7,7 @@ import { compareSameDayEntries, reassignSameDayIndexes } from '../utils/entryTim
 import type { MoodFilter } from '../utils/entryMood';
 import { setTaskLine } from '../utils/taskList';
 import type { Notifier } from './useAppNotice';
+import { PEOPLE_QUERY_KEY } from '../utils/mentions';
 
 export type EntrySearchMode = 'keyword' | 'semantic';
 export type SemanticSearchStatus = 'idle' | 'loading' | 'complete' | 'error';
@@ -15,7 +16,7 @@ const ENTRY_DATES_QUERY_KEY = ['app', 'entry-dates'] as const;
 const ENTRY_YEARS_MONTHS_QUERY_KEY = ['app', 'entry-years-months'] as const;
 const ENTRIES_QUERY_KEY = 'entries';
 /** Every query that reads journal entries, for screens that bring entries back from elsewhere. */
-export const JOURNAL_ENTRY_QUERY_KEYS = [['app', ENTRIES_QUERY_KEY], ENTRY_DATES_QUERY_KEY, ENTRY_YEARS_MONTHS_QUERY_KEY] as const;
+export const JOURNAL_ENTRY_QUERY_KEYS = [['app', ENTRIES_QUERY_KEY], ENTRY_DATES_QUERY_KEY, ENTRY_YEARS_MONTHS_QUERY_KEY, PEOPLE_QUERY_KEY] as const;
 const EMPTY_ENTRIES: Entry[] = [];
 const EMPTY_STRINGS: string[] = [];
 const EMPTY_NUMBERS: number[] = [];
@@ -30,6 +31,8 @@ interface UseEntriesOptions {
   filtersReady?: boolean;
   /** The journal permalink being opened: the list waits until it knows the page that entry is on. */
   routeEntryId?: number;
+  /** The person the journal address names (null for none); undefined away from the journal. The list waits for it to apply. */
+  routePersonId?: number | null;
 }
 
 export const useEntries = (
@@ -37,7 +40,7 @@ export const useEntries = (
   config: Config,
   currentDiaryId: number | null,
   { notify, t }: Notifier,
-  { configLoaded = true, filtersReady = true, routeEntryId }: UseEntriesOptions = {},
+  { configLoaded = true, filtersReady = true, routeEntryId, routePersonId }: UseEntriesOptions = {},
 ) => {
   const { entriesService, aiService } = useApiServices();
   const queryClient = useQueryClient();
@@ -61,6 +64,7 @@ export const useEntries = (
   const [filterArchiveStatus, setFilterArchiveStatus] = useState<ArchiveStatusFilter>('active');
   const [filterMood, setFilterMood] = useState<MoodFilter>('');
   const [filterEraId, setFilterEraId] = useState<number | null>(null);
+  const [filterPersonId, setFilterPersonId] = useState<number | null>(null);
 
   const [targetEntryId, setTargetEntryId] = useState<number | null>(null);
   const [activeTargetId, setActiveTargetId] = useState<number | null>(null);
@@ -70,7 +74,8 @@ export const useEntries = (
   // The first list request waits for everything that decides it, so it is sent once instead of
   // being sent with defaults and thrown away when the page size, diary or permalink page arrives.
   const permalinkPending = routeEntryId !== undefined && handledPermalinkEntryId !== routeEntryId;
-  const listReady = configLoaded && filtersReady && !permalinkPending;
+  const personPending = routePersonId !== undefined && routePersonId !== filterPersonId;
+  const listReady = configLoaded && filtersReady && !permalinkPending && !personPending;
 
   const getLimit = useCallback(() => {
     return typeof config.entriesPerPage === 'number'
@@ -105,9 +110,10 @@ export const useEntries = (
       filterArchiveStatus,
       filterMood,
       filterEraId,
+      filterPersonId,
       currentDiaryId,
     },
-  ] as const, [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterEraId, filterFavorites, filterMood, filterTags, filterVisibility, getLimit, page, searchSort, semanticEntryIds]);
+  ] as const, [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterEraId, filterFavorites, filterMood, filterPersonId, filterTags, filterVisibility, getLimit, page, searchSort, semanticEntryIds]);
 
   const entriesQuery = useQuery({
     queryKey: entriesQueryKey,
@@ -128,6 +134,7 @@ export const useEntries = (
         archiveStatus: filterArchiveStatus,
         mood: filterMood,
         eraId: filterEraId,
+        personId: filterPersonId,
         diaryId: currentDiaryId,
         entryIds: semanticEntryIds,
       });
@@ -190,8 +197,10 @@ export const useEntries = (
   }, [entryDatesQuery]);
 
   const fetchEntries = useCallback(async () => {
+    // A saved or edited entry can mention other people, so their counts are read again too
+    void queryClient.invalidateQueries({ queryKey: PEOPLE_QUERY_KEY });
     return entriesQuery.refetch();
-  }, [entriesQuery]);
+  }, [entriesQuery, queryClient]);
 
   const setSearchMode = useCallback((mode: EntrySearchMode) => {
     semanticRequestIdRef.current += 1;
@@ -225,6 +234,7 @@ export const useEntries = (
       queryClient.invalidateQueries({ queryKey: ['app', ENTRIES_QUERY_KEY] }),
       queryClient.invalidateQueries({ queryKey: ENTRY_DATES_QUERY_KEY }),
       queryClient.invalidateQueries({ queryKey: ENTRY_YEARS_MONTHS_QUERY_KEY }),
+      queryClient.invalidateQueries({ queryKey: PEOPLE_QUERY_KEY }),
     ]);
   }, [queryClient]);
 
@@ -441,6 +451,8 @@ export const useEntries = (
     setFilterMood,
     filterEraId,
     setFilterEraId,
+    filterPersonId,
+    setFilterPersonId,
     availableYears,
     availableMonths,
     targetEntryId,

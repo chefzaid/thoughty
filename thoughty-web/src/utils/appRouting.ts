@@ -6,6 +6,14 @@ export const ENTRY_PERMALINK_PARAM = 'entry';
 export const JOURNAL_LAYOUT_PARAM = 'layout';
 /** The month the journal calendar shows (`YYYY-MM`). */
 export const JOURNAL_MONTH_PARAM = 'month';
+/** `person=<id>` shows the journal entries that mention the person. */
+export const JOURNAL_PERSON_PARAM = 'person';
+
+/** The person a journal address names; null when it names none (or not a valid ID). */
+export function parseJournalPersonParam(searchParams: URLSearchParams): number | null {
+  const raw = searchParams.get(JOURNAL_PERSON_PARAM);
+  return raw && /^[1-9]\d{0,9}$/.test(raw) ? Number(raw) : null;
+}
 
 export function buildEntryPermalink(entryId: number): string {
   const url = new URL(getPathForView('journal'), globalThis.location.origin);
@@ -25,7 +33,7 @@ export function buildDiaryRouteSearchParams(
     importExportSection?: ImportExportSection;
     importExportFormat?: ImportExportFormat;
     importExportIncludeVisibility?: boolean;
-    /** The current journal address, whose list or calendar layout (and month) the journal keeps. */
+    /** The current journal address, whose list or calendar layout (and month) and person the journal keeps. */
     journalSearchParams?: URLSearchParams;
   },
 ): URLSearchParams {
@@ -36,7 +44,7 @@ export function buildDiaryRouteSearchParams(
   }
 
   if (view === 'journal' && options?.journalSearchParams) {
-    for (const param of [JOURNAL_LAYOUT_PARAM, JOURNAL_MONTH_PARAM]) {
+    for (const param of [JOURNAL_LAYOUT_PARAM, JOURNAL_MONTH_PARAM, JOURNAL_PERSON_PARAM]) {
       const value = options.journalSearchParams.get(param);
       if (value !== null) nextSearchParams.set(param, value);
     }

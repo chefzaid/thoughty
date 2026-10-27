@@ -35,6 +35,7 @@ interface ListInputs {
   configLoaded: boolean;
   filtersReady: boolean;
   routeEntryId?: number;
+  routePersonId?: number | null;
 }
 
 /** Renders useEntries with inputs a test can change between renders, as the app shell does. */
@@ -44,6 +45,7 @@ function renderEntries(initial: ListInputs) {
     configLoaded: inputs.configLoaded,
     filtersReady: inputs.filtersReady,
     routeEntryId: inputs.routeEntryId,
+    routePersonId: inputs.routePersonId,
   }));
 
   return {
@@ -74,6 +76,18 @@ describe("journal list requests", () => {
     await waitFor(() => expect(list.result.current.loading).toBe(false));
     expect(services.fetchEntries).toHaveBeenCalledTimes(1);
     expect(services.fetchEntries).toHaveBeenCalledWith(expect.objectContaining({ page: 1, limit: 2 }));
+  });
+
+  it("waits for the person the journal address names before asking, then asks for their entries", async () => {
+    const list = renderEntries({ config: {}, configLoaded: true, filtersReady: true, routePersonId: 12 });
+
+    await act(async () => {});
+    expect(services.fetchEntries).not.toHaveBeenCalled();
+
+    act(() => list.result.current.setFilterPersonId(12));
+
+    await waitFor(() => expect(services.fetchEntries).toHaveBeenCalledTimes(1));
+    expect(services.fetchEntries).toHaveBeenCalledWith(expect.objectContaining({ personId: 12 }));
   });
 
   it("asks once with the default page size when the config failed to load", async () => {

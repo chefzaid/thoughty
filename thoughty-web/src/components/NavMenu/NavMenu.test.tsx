@@ -28,7 +28,7 @@ describe('NavMenu', () => {
     expect(screen.getByText('Thoughty')).toBeInTheDocument();
   });
 
-  it.each(['journal', 'memoir', 'stats', 'tags', 'importExport'])('renders %s navigation item', (text) => {
+  it.each(['journal', 'memoir', 'stats', 'tags', 'people', 'importExport'])('renders %s navigation item', (text) => {
     render(<NavMenu {...defaultProps} />);
     expect(screen.getByText(text)).toBeInTheDocument();
   });
@@ -67,6 +67,15 @@ describe('NavMenu', () => {
     const tagsButton = screen.getByText('tags');
     fireEvent.click(tagsButton);
     expect(mockOnViewChange).toHaveBeenCalledWith('tags');
+  });
+
+  it('opens the People page and highlights it while it is the current view', () => {
+    const { rerender } = render(<NavMenu {...defaultProps} />);
+    fireEvent.click(screen.getByText('people'));
+    expect(mockOnViewChange).toHaveBeenCalledWith('people');
+
+    rerender(<NavMenu {...defaultProps} currentView="people" />);
+    expect(screen.getByText('people').closest('button')).toHaveClass('active');
   });
 
   it('opens the memoir and highlights it while it is the current view', () => {

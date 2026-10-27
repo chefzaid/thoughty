@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type ComponentProps } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from 'react';
 import DiaryTabs from '../DiaryTabs/DiaryTabs';
 import ThoughtOfTheDay from '../ThoughtOfTheDay/ThoughtOfTheDay';
 import EntryForm from '../EntryForm/EntryForm';
@@ -19,6 +19,11 @@ import { formatEntryDate } from '../../utils/entryDate';
 import { parseSavedSearchDate } from '../../utils/savedSearches';
 import { useJournalKeyboardShortcuts } from './useJournalKeyboardShortcuts';
 import { useLifeEraList } from '../LifeEras/useLifeEras';
+import { MentionPeopleContext } from '../People/PeopleContext';
+import { usePeopleList } from '../People/usePeople';
+import { peopleByHandle } from '../../utils/mentions';
+import PersonFilterBanner from './PersonFilterBanner';
+import { usePersonFilterRoute } from './usePersonFilterRoute';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
 interface ThoughtOfDayProps {
@@ -28,7 +33,7 @@ interface ThoughtOfDayProps {
   onNavigateToEntry: ComponentProps<typeof ThoughtOfTheDay>['onNavigateToEntry'];
 }
 type EntryFormProps = Omit<ComponentProps<typeof EntryForm>, 'theme' | 't' | 'fontColor' | 'fontFamily' | 'fontSize' | 'language'>;
-type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' | 't' | 'onOpenHighlights' | 'actions' | 'eras' | 'onManageEras'>;
+type FilterControlsProps = Omit<ComponentProps<typeof FilterControls>, 'theme' | 't' | 'onOpenHighlights' | 'actions' | 'eras' | 'onManageEras' | 'people' | 'onManagePeople'>;
 type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' | 'searchTerm'>;
 type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage'>;
 type YearMonthNavigatorProps = Pick<ComponentProps<typeof YearMonthNavigator>, 'availableYears' | 'availableMonths' | 'onNavigate'>;
@@ -46,6 +51,8 @@ interface JournalViewProps {
   onOpenRecycleBin: () => void;
   /** Opens the profile's life eras. */
   onManageLifeEras: () => void;
+  /** Opens the People page. */
+  onManagePeople: () => void;
   /** Shows a message in the app's notice toast. */
   onNotify: (message: string) => void;
   config: Config;
@@ -63,6 +70,7 @@ function JournalView({
   duplicateReview,
   onOpenRecycleBin,
   onManageLifeEras,
+  onManagePeople,
   onNotify,
   config,
   t
@@ -87,6 +95,19 @@ function JournalView({
     if (eraGone) setFilterEraId(null);
   }, [eraGone, setFilterEraId]);
 
+  const { list: peopleList, people } = usePeopleList();
+  const mentionPeople = useMemo(() => ({ people, byHandle: peopleByHandle(people) }), [people]);
+  usePersonFilterRoute(filters);
+  const { filterPersonId, setFilterPersonId } = filters;
+  const selectedPerson = people.find((person) => person.id === filterPersonId) ?? null;
+  // A person deleted or merged meanwhile (or a link to one) stops narrowing the journal
+  const personGone = peopleList.isSuccess === true && filterPersonId !== null && selectedPerson === null;
+  useEffect(() => {
+    if (!personGone) return;
+    setFilterPersonId(null);
+    onNotify(t('apiError_PERSON_NOT_FOUND'));
+  }, [onNotify, personGone, setFilterPersonId, t]);
+
   useJournalKeyboardShortcuts({
     entryFormRef,
     searchRef,
@@ -107,6 +128,7 @@ function JournalView({
     archiveStatus: filters.filterArchiveStatus,
     mood: filters.filterMood,
     eraId: filters.filterEraId,
+    personId: filters.filterPersonId,
     diaryId: diaryTabs.currentDiaryId,
     entryIds: keywordSearch ? null : filters.semanticSearchResult?.matches.map((match) => match.entryId) ?? null,
   };
@@ -118,7 +140,7 @@ function JournalView({
   };
 
   return (
-    <>
+    <MentionPeopleContext.Provider value={mentionPeople}>
       <DiaryTabs
         {...diaryTabs}
         onDiaryChange={(id: number | null) => { diaryTabs.onDiaryChange(id); pagination.setPage(1); }}
@@ -162,6 +184,8 @@ function JournalView({
           {...filters}
           eras={eras}
           onManageEras={onManageLifeEras}
+          people={people}
+          onManagePeople={onManagePeople}
           theme={config.theme}
           t={t}
           onOpenHighlights={() => thoughtOfDay.setOpen(true)}
@@ -172,6 +196,7 @@ function JournalView({
                 currentDiaryId={diaryTabs.currentDiaryId}
                 diaries={diaryTabs.diaries}
                 eras={eras}
+                people={people}
                 theme={config.theme}
                 language={language}
                 t={t}
@@ -199,6 +224,16 @@ function JournalView({
           )}
         />
       </div>
+
+      {selectedPerson && (
+        <PersonFilterBanner
+          person={selectedPerson}
+          onClear={() => { setFilterPersonId(null); filters.setPage(1); }}
+          language={language}
+          theme={theme}
+          t={t}
+        />
+      )}
 
       <div className="mb-4 flex justify-end">
         <JournalLayoutSwitch layout={layoutRoute.layout} onChange={layoutRoute.setLayout} theme={theme} t={t} />
@@ -248,7 +283,7 @@ function JournalView({
           {entriesList.entries.length > 0 && <BackToTopButton theme={config.theme} t={t} />}
         </>
       )}
-    </>
+    </MentionPeopleContext.Provider>
   );
 }
 

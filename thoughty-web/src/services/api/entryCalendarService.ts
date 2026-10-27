@@ -19,6 +19,8 @@ export interface EntryCalendarQuery {
   readonly diaryId: number | null;
   /** The life era the entries are dated in; null for any date. */
   readonly eraId: number | null;
+  /** The person the entries mention; null for anyone. */
+  readonly personId?: number | null;
   /** A meaning search's matches; null when there is none. */
   readonly entryIds: readonly number[] | null;
 }
@@ -33,6 +35,7 @@ export function calendarQueryParams(query: EntryCalendarQuery): URLSearchParams 
   if (query.mood) params.set('mood', query.mood);
   if (query.diaryId !== null) params.set('diaryId', String(query.diaryId));
   if (query.eraId !== null) params.set('eraId', String(query.eraId));
+  if (query.personId) params.set('personId', String(query.personId));
   // No match at all still narrows the month, to nothing
   if (query.entryIds) params.set('ids', query.entryIds.length > 0 ? query.entryIds.join(',') : '0');
   return params;

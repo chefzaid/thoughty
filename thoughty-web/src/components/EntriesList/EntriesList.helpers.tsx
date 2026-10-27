@@ -13,6 +13,9 @@ import EntryMoodField from '../EntryForm/EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 import MarkdownHelp from '../MarkdownEditor/MarkdownHelp';
 import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
+import MentionSuggestions from '../People/MentionSuggestions';
+import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
+import { resolveLanguage } from '../../utils/language';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -200,6 +203,10 @@ export function EditForm({
         : 'bg-gray-50 border-gray-300 text-gray-900';
     const editFormatButtonClass = getEditFormatButtonClass(editFormat, config.theme);
     const editArea = useAutoGrowTextarea(editText);
+    const mentions = useMentionAutocomplete(editText, setEditText);
+    const mentionSuggestions = (
+        <MentionSuggestions suggestions={mentions.suggestions} theme={config.theme} language={resolveLanguage(config.language)} t={t} />
+    );
 
     const fieldId = `edit-entry-${entryId ?? 'draft'}`;
 
@@ -220,7 +227,7 @@ export function EditForm({
                     />
                 </div>
             )}
-            <div>
+            <div {...mentions.wrapperProps}>
                 {editFormat === 'markdown' ? (
                     <Suspense
                         fallback={(
@@ -232,32 +239,38 @@ export function EditForm({
                                 rows={3}
                                 value={editText}
                                 onChange={(e) => setEditText(e.target.value)}
+                                {...mentions.fieldProps}
                             />
                         )}
                     >
-                        <div data-color-mode={isDark ? 'dark' : 'light'}>
+                        <div className="relative" data-color-mode={isDark ? 'dark' : 'light'}>
                             <LazyMDEditor
                                 value={editText}
                                 onChange={(val) => setEditText(val ?? '')}
                                 preview="edit"
                                 height={200}
-                                textareaProps={{ 'aria-label': t('entryTextLabel'), style: { color: writingTextColor } }}
+                                textareaProps={{ 'aria-label': t('entryTextLabel'), style: { color: writingTextColor }, ...mentions.fieldProps }}
                                 t={t}
                             />
+                            {mentionSuggestions}
                         </div>
                         <MarkdownHelp theme={config.theme} t={t} />
                     </Suspense>
                 ) : (
-                    <textarea
-                        ref={editArea.ref}
-                        onPointerUp={editArea.onPointerUp}
-                        className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
-                        style={{ color: writingTextColor }}
-                        rows={3}
-                        aria-label={t('entryTextLabel')}
-                        value={editText}
-                        onChange={(e) => setEditText(e.target.value)}
-                    />
+                    <div className="relative">
+                        <textarea
+                            ref={editArea.ref}
+                            onPointerUp={editArea.onPointerUp}
+                            className={`w-full border p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-y ${inputClass}`}
+                            style={{ color: writingTextColor }}
+                            rows={3}
+                            aria-label={t('entryTextLabel')}
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            {...mentions.fieldProps}
+                        />
+                        {mentionSuggestions}
+                    </div>
                 )}
             </div>
             {setEditMood && setEditFeelings && (

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
-import type { LifeEra, SavedSearch } from '../../services/api';
+import type { LifeEra, Person, SavedSearch } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
 import { describeSavedSearch } from '../../utils/savedSearches';
 
@@ -9,6 +9,7 @@ interface SavedSearchListProps {
   readonly shownSearchId: number | null;
   readonly diaries: readonly Pick<Diary, 'id' | 'name'>[];
   readonly eras: readonly LifeEra[];
+  readonly people: readonly Person[];
   readonly isLight: boolean;
   readonly t: TranslationFunction;
   readonly onApply: (saved: SavedSearch) => void;
@@ -20,7 +21,7 @@ interface SavedSearchListProps {
 const MAX_NAME_LENGTH = 80;
 
 /** The saved searches, each shown in one click, renamed in place or deleted. */
-function SavedSearchList({ savedSearches, shownSearchId, diaries, eras, isLight, t, onApply, onRename, onDelete }: SavedSearchListProps) {
+function SavedSearchList({ savedSearches, shownSearchId, diaries, eras, people, isLight, t, onApply, onRename, onDelete }: SavedSearchListProps) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftName, setDraftName] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
@@ -128,7 +129,7 @@ function SavedSearchList({ savedSearches, shownSearchId, diaries, eras, isLight,
                     )}
                   </span>
                   <span id={summaryId} className={`block break-words text-xs ${muted}`}>
-                    {describeSavedSearch(saved.filters, saved.diaryId, diaries, t, eras)}
+                    {describeSavedSearch(saved.filters, saved.diaryId, diaries, t, eras, people)}
                   </span>
                 </button>
                 <button

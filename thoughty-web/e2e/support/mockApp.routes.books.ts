@@ -60,6 +60,7 @@ function selectEntries(state: MockAppState, params: URLSearchParams): BookSelect
       mood: saved.filters.mood,
       diaryId: saved.diaryId === null ? "" : String(saved.diaryId),
       eraId: saved.filters.eraId ? String(saved.filters.eraId) : "",
+      personId: saved.filters.personId ? String(saved.filters.personId) : "",
     });
     return {
       entries: getFilteredEntries(state, filters).filtered,

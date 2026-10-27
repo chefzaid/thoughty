@@ -65,6 +65,7 @@ export function useAppShellModel(): AppShellModel {
     publicView,
     routeDiaryId,
     routeEntryId,
+    routePersonId,
     diaryReturnView,
     importExportSection,
     importExportFormat,
@@ -96,6 +97,7 @@ export function useAppShellModel(): AppShellModel {
     // A diary in the route is applied after the first render; the list waits for it
     filtersReady: diarySelectionReady && (routeDiaryId === undefined || routeDiaryId === currentDiaryId),
     routeEntryId,
+    routePersonId,
   });
 
   const entryFormState = useEntryForm(config, currentDiaryId, () => {
@@ -135,6 +137,7 @@ export function useAppShellModel(): AppShellModel {
     filterArchiveStatus: entriesState.filterArchiveStatus,
     filterMood: entriesState.filterMood,
     filterEraId: entriesState.filterEraId,
+    filterPersonId: entriesState.filterPersonId,
     filterDateObj: entriesState.filterDateObj,
     filterFavorites: entriesState.filterFavorites,
     filterTags: entriesState.filterTags,
@@ -153,6 +156,7 @@ export function useAppShellModel(): AppShellModel {
     setFilterArchiveStatus: entriesState.setFilterArchiveStatus,
     setFilterMood: entriesState.setFilterMood,
     setFilterEraId: entriesState.setFilterEraId,
+    setFilterPersonId: entriesState.setFilterPersonId,
     setFilterDateObj: entriesState.setFilterDateObj,
     setFilterFavorites: entriesState.setFilterFavorites,
     setFilterTags: entriesState.setFilterTags,

@@ -3,6 +3,7 @@ import { createMockAppImportState, type MockAppImportState } from "./mockApp.app
 import { createMockReviewState, type MockReviewState } from "./mockApp.review";
 import type { MockSavedSearch } from "./mockApp.routes.saved-searches";
 import type { MockLifeEra } from "./mockApp.routes.life-eras";
+import { addMockMentionedPeople, type MockPerson } from "./mockApp.routes.people";
 import type { MockDiary } from "./mockApp.diaries";
 import type { components } from "../../src/generated/openapi";
 import {
@@ -157,6 +158,8 @@ export interface SetupMockAppOptions {
   memoirProgram?: Partial<MockMemoirProgram> | null;
   savedSearches?: MockSavedSearch[];
   lifeEras?: MockLifeEra[];
+  /** The people the writer mentions; by default those the initial entries mention. */
+  people?: MockPerson[];
 }
 
 export interface MockAppState {
@@ -199,6 +202,7 @@ export interface MockAppState {
   bookVersionManifests: Record<number, { entryIds: number[]; chapterTitles: string[] }>;
   savedSearches: MockSavedSearch[];
   lifeEras: MockLifeEra[];
+  people: MockPerson[];
   memoir: MockMemoirState;
   appImport: MockAppImportState;
   review: MockReviewState;
@@ -294,6 +298,13 @@ export function moveToTrash(state: MockAppState, isTrashed: (entry: MockEntry) =
     return { ...entry, index };
   }));
   return trashed.length;
+}
+
+/** The people a set of entries mentions, as the API would hold them after saving each. */
+function mentionedPeople(entries: MockEntry[]): MockPerson[] {
+  const people: MockPerson[] = [];
+  for (const entry of entries) addMockMentionedPeople(people, entry.content);
+  return people;
 }
 
 export function unique<T>(values: T[]): T[] {
@@ -420,6 +431,7 @@ export function createMockAppState(
     bookVersionManifests: {},
     savedSearches: (options.savedSearches || []).map((saved) => ({ ...saved, filters: { ...saved.filters } })),
     lifeEras: (options.lifeEras || []).map((era) => ({ ...era })),
+    people: options.people?.map((person) => ({ ...person, handles: [...person.handles] })) ?? mentionedPeople(options.initialEntries || []),
     memoir: createMockMemoirState(options.memoirProgram ?? null),
     appImport: createMockAppImportState(),
     review: createMockReviewState(),

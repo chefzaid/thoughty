@@ -5,6 +5,7 @@ import { formatEntryDate } from './entryDate';
 import { MOOD_FILTER_OPTIONS, isMoodFilter, type MoodFilter } from './entryMood';
 import type { LifeEra } from '../services/api/lifeErasService';
 import { eraLabel } from './lifeEras';
+import type { Person } from '../services/api/peopleService';
 
 /** The journal URL parameter that names the saved search being shown. */
 export const SAVED_SEARCH_PARAM = 'view';
@@ -22,6 +23,8 @@ export interface JournalFilterState {
   readonly filterMood: MoodFilter;
   /** The life era the entries are dated in; null for any date. */
   readonly filterEraId: number | null;
+  /** The person the entries mention; null for anyone. */
+  readonly filterPersonId: number | null;
 }
 
 export function toSavedSearchFilters(state: JournalFilterState): SavedSearchFilters {
@@ -36,6 +39,7 @@ export function toSavedSearchFilters(state: JournalFilterState): SavedSearchFilt
     favorites: state.filterFavorites,
     mood: state.filterMood,
     eraId: state.filterEraId,
+    personId: state.filterPersonId,
   };
 }
 
@@ -63,8 +67,9 @@ export function matchesSavedSearch(filters: SavedSearchFilters, state: JournalFi
     && current.archiveStatus === filters.archiveStatus
     && current.favorites === filters.favorites
     && current.mood === savedSearchMood(filters.mood)
-    // Searches saved before life eras have none
-    && current.eraId === (filters.eraId ?? null);
+    // Searches saved before life eras or people have none
+    && current.eraId === (filters.eraId ?? null)
+    && current.personId === (filters.personId ?? null);
 }
 
 /** A short line naming the diary scope and every filter a saved search sets, in the reader's language. */
@@ -74,11 +79,13 @@ export function describeSavedSearch(
   diaries: readonly Pick<Diary, 'id' | 'name'>[],
   t: TranslationFunction,
   eras: readonly Pick<LifeEra, 'id' | 'name' | 'emoji'>[] = [],
+  people: readonly Pick<Person, 'id' | 'name'>[] = [],
 ): string {
   const diaryName = diaryId === null ? t('allDiaries') : diaries.find((diary) => diary.id === diaryId)?.name;
   const search = filters.search.trim();
   const mood = MOOD_FILTER_OPTIONS.find((option) => option.value === savedSearchMood(filters.mood));
   const era = filters.eraId ? eras.find((candidate) => candidate.id === filters.eraId) : undefined;
+  const person = filters.personId ? people.find((candidate) => candidate.id === filters.personId) : undefined;
   const archive: Record<SavedSearchFilters['archiveStatus'], string | null> = {
     active: null,
     archived: t('archived'),
@@ -93,6 +100,7 @@ export function describeSavedSearch(
     filters.favorites ? t('favorites') : null,
     mood && mood.value ? t(mood.labelKey) : null,
     era ? eraLabel(era) : null,
+    person ? t('savedSearchPerson', { name: person.name }) : null,
   ].filter((part): part is string => Boolean(part));
 
   return [diaryName, ...(filterParts.length > 0 ? filterParts : [t('savedSearchNoFilters')])]

@@ -9,6 +9,7 @@ import { fulfillJson, sortStrings, toEntryMutationResponse, toEntryResponse, toR
 import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 import { getMockBacklinks } from './mockApp.backlinks';
 import { mockEraContains } from './mockApp.routes.life-eras';
+import { addMockMentionedPeople, mockMentions } from './mockApp.routes.people';
 
 const TASK_LINE = /^((?:[\t ]*>)*[\t ]*(?:[*+-]|\d{1,9}[.)])[\t ]+\[)([ xX])(\](?:[\t \r]|$)[^\n]*)$/;
 
@@ -44,6 +45,7 @@ export function getFilteredEntries(
   const diaryId = searchParams.get('diaryId');
   const mood = searchParams.get('mood') || '';
   const eraId = searchParams.get('eraId');
+  const personId = searchParams.get('personId');
   const semanticIds = searchParams.get('ids')
     ?.split(',')
     .map((id) => Number(id)) ?? null;
@@ -96,6 +98,10 @@ export function getFilteredEntries(
   if (eraId) {
     const era = state.lifeEras.find((candidate) => String(candidate.id) === eraId);
     filtered = era ? filtered.filter((entry) => mockEraContains(era, entry.date)) : [];
+  }
+  if (personId) {
+    const person = state.people.find((candidate) => String(candidate.id) === personId);
+    filtered = person ? filtered.filter((entry) => mockMentions(entry, person)) : [];
   }
   if (semanticIds) {
     const semanticRank = new Map(semanticIds.map((id, index) => [id, index]));
@@ -160,6 +166,7 @@ async function handleEntriesCollectionRoute({ route, request, pathname, searchPa
   };
   state.entries.push(newEntry);
   state.entries = sortEntries(state.entries);
+  addMockMentionedPeople(state.people, newEntry.content);
 
   await fulfillJson(route, { success: true, entryId: newEntry.id });
   return true;
@@ -331,6 +338,7 @@ async function handleEntryMutationRoutes({ route, request, pathname, searchParam
       };
     });
     state.entries = sortEntries(state.entries);
+    addMockMentionedPeople(state.people, payload.text);
 
     await fulfillJson(route, toEntryMutationResponse(state, entryId));
     return true;

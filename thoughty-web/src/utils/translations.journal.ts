@@ -113,7 +113,7 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     entryNotFoundMessage:
       "This entry may have been deleted, or the link is no longer valid.",
     entryReferenceHint:
-      'Tip: Reference other entries by writing "[[yyyy-mm-dd]]" or "[[yyyy-mm-dd#X]]" where X is the index of the entry for that day',
+      'Tip: Reference other entries by writing "[[yyyy-mm-dd]]" or "[[yyyy-mm-dd#X]]" where X is the index of the entry for that day, and mention someone with "@name"',
     highlightsTitle: "Highlights",
     randomThought: "Random Thought",
     onThisDay: "On This Day",
@@ -208,7 +208,7 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     entryNotFoundMessage:
       "Cette entrée a peut-être été supprimée, ou le lien n'est plus valide.",
     entryReferenceHint:
-      'Astuce : Référencez d\'autres entrées en écrivant "[[yyyy-mm-dd]]" ou "[[yyyy-mm-dd#X]]" où X est l\'index de l\'entrée pour ce jour',
+      'Astuce : Référencez d\'autres entrées en écrivant "[[yyyy-mm-dd]]" ou "[[yyyy-mm-dd#X]]" où X est l\'index de l\'entrée pour ce jour, et mentionnez quelqu\'un avec « @nom »',
     highlightsTitle: "À la une",
     randomThought: "Pensée aléatoire",
     onThisDay: "Ce jour-là",

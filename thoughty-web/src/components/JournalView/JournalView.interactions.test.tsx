@@ -16,6 +16,9 @@ vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await imp
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
 vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import('./JournalView.test-helpers')).MockSavedSearches }));
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
+vi.mock('../People/usePeople', async () => ({ usePeopleList: (await import('./JournalView.test-helpers')).mockUsePeopleList }));
+// These specs render without a router, so the person filter is left out of the address
+vi.mock('./usePersonFilterRoute', () => ({ usePersonFilterRoute: () => undefined }));
 vi.mock('../JournalCalendar/useJournalLayoutRoute', async () => {
   const { listLayoutRoute } = await import('./JournalView.test-helpers');
   return { useJournalLayoutRoute: () => listLayoutRoute };

@@ -5,6 +5,8 @@ import { EditForm, EntryReorderControls } from './EntriesList.helpers';
 import { extractDate, getEntryCardStyle, getVisibilityButtonClass } from './EntriesList.utils';
 import { mockEntries } from './EntriesList.test-utils';
 import { getTranslation } from '../../utils/translations';
+import { MentionPeopleContext } from '../People/PeopleContext';
+import { peopleByHandle } from '../../utils/mentions';
 
 vi.mock('../TagPicker/TagPicker', () => ({
     default: ({ onChange, placeholder, selectedTags }: { onChange: (tags: string[]) => void; placeholder: string; selectedTags: string[] }) => (
@@ -152,6 +154,39 @@ describe('EntriesList.helpers', () => {
         expect(onHandleKeyDown).toHaveBeenCalledTimes(1);
         expect(screen.getAllByText('dropHere')).toHaveLength(1);
         expect(screen.getAllByText('dragToReorder')).toHaveLength(1);
+    });
+
+    it('suggests the writer’s people after @ while editing', () => {
+        const marie = { id: 12, name: 'Marie', handles: ['marie'], entryCount: 1, lastMentionedOn: null, createdAt: '', updatedAt: '' };
+        const setEditText = vi.fn();
+        render(
+            <MentionPeopleContext.Provider value={{ people: [marie], byHandle: peopleByHandle([marie]) }}>
+                <EditForm
+                    config={{ theme: 'light', language: 'en' } as never}
+                    editText="Hi @ma"
+                    setEditText={setEditText}
+                    editDate={new Date('2024-01-15')}
+                    setEditDate={vi.fn()}
+                    allTags={[]}
+                    tagMetadata={{}}
+                    editTags={[]}
+                    setEditTags={vi.fn()}
+                    editVisibility="private"
+                    setEditVisibility={vi.fn()}
+                    editFormat="plain"
+                    setEditFormat={vi.fn()}
+                    onSaveEdit={vi.fn()}
+                    onCancelEdit={vi.fn()}
+                    t={t}
+                />
+            </MentionPeopleContext.Provider>,
+        );
+
+        const field = screen.getByDisplayValue('Hi @ma') as HTMLTextAreaElement;
+        field.setSelectionRange(6, 6);
+        fireEvent.select(field);
+        fireEvent.keyDown(field, { key: 'Tab' });
+        expect(setEditText).toHaveBeenCalledWith('Hi @Marie ');
     });
 
     it('renders the edit form and wires text, date, tag, attachment, format, visibility, save, and cancel handlers', () => {

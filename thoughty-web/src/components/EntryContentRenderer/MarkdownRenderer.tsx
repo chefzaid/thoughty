@@ -1,6 +1,9 @@
 import { createContext, useContext, useMemo, type ElementType } from 'react';
 import Markdown, { type Components, type ExtraProps } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import MentionLink from '../People/MentionLink';
+import type { Person } from '../../services/api/peopleService';
+import { remarkMentions } from '../../utils/remarkMentions';
 
 type HastElement = NonNullable<ExtraProps['node']>;
 type HastChild = HastElement['children'][number];
@@ -19,6 +22,10 @@ interface MarkdownRendererProps {
     readonly components?: Components;
     /** Without it, task list items show as checkboxes that cannot be changed. */
     readonly taskList?: MarkdownTaskList;
+    /** The writer's people by handle: mentions of them become links. Without it, mentions stay text. */
+    readonly mentionPeople?: ReadonlyMap<string, Person>;
+    /** Hover text of a mention link, from the person's name. */
+    readonly mentionTitle?: (person: Person) => string;
 }
 
 interface TaskItem {
@@ -86,18 +93,28 @@ function withTaskItems(components: Components | undefined): Components {
         input: ({ node: _node, ...props }) => (props.type === 'checkbox'
             ? <TaskCheckbox checked={Boolean(props.checked)} />
             : <input {...props} />),
+        a: ({ node, children, ...props }) => {
+            const personId = Number(node?.properties?.dataMention);
+            if (personId > 0) {
+                return <MentionLink personId={personId} title={props.title}>{children}</MentionLink>;
+            }
+            return <a {...props}>{children}</a>;
+        },
     };
 }
 
 const DEFAULT_COMPONENTS = withTaskItems(undefined);
 
-function MarkdownRenderer({ content, components, taskList }: Readonly<MarkdownRendererProps>) {
+const NO_PEOPLE: ReadonlyMap<string, Person> = new Map();
+
+function MarkdownRenderer({ content, components, taskList, mentionPeople = NO_PEOPLE, mentionTitle }: Readonly<MarkdownRendererProps>) {
     const resolvedComponents = useMemo(() => (components ? withTaskItems(components) : DEFAULT_COMPONENTS), [components]);
+    const remarkPlugins = useMemo(() => [remarkGfm, remarkMentions(mentionPeople, mentionTitle)], [mentionPeople, mentionTitle]);
 
     return (
         <span className="markdown-content">
             <TaskListContext.Provider value={taskList}>
-                <Markdown remarkPlugins={[remarkGfm]} components={resolvedComponents}>
+                <Markdown remarkPlugins={remarkPlugins} components={resolvedComponents}>
                     {content}
                 </Markdown>
             </TaskListContext.Provider>

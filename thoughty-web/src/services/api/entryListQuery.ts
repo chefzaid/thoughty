@@ -17,6 +17,8 @@ export interface EntryListQuery {
   diaryId: number | null;
   /** Only entries dated within this life era. */
   eraId?: number | null;
+  /** Only entries that mention this person. */
+  personId?: number | null;
   entryIds?: number[] | null;
 }
 
@@ -36,6 +38,7 @@ export function entryListParams(params: EntryListQuery): URLSearchParams {
   if (params.archiveStatus !== 'all') urlParams.append('archiveStatus', params.archiveStatus);
   if (params.mood) urlParams.append('mood', params.mood);
   if (params.eraId) urlParams.append('eraId', params.eraId.toString());
+  if (params.personId) urlParams.append('personId', params.personId.toString());
   // No meaning-search match at all still narrows the list, to nothing
   if (params.entryIds) urlParams.append('ids', params.entryIds.length > 0 ? params.entryIds.join(',') : '0');
   return urlParams;

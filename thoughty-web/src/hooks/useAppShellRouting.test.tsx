@@ -62,14 +62,14 @@ describe('useAppShellRouting', () => {
     }, { replace: true });
   });
 
-  it('keeps the journal calendar and its month, and only those, when the diary changes', () => {
+  it('keeps the journal calendar, its month and person, and only those, when the diary changes', () => {
     const navigate = vi.fn();
     const setCurrentDiaryId = vi.fn();
     const { result } = renderHook(() => useAppShellRouting(createParams({
       currentView: 'journal',
       navigate,
       setCurrentDiaryId,
-      searchParams: new URLSearchParams('diary=1&layout=calendar&month=2019-07&view=4&entry=9'),
+      searchParams: new URLSearchParams('diary=1&layout=calendar&month=2019-07&view=4&entry=9&person=12'),
     })));
 
     act(() => {
@@ -78,7 +78,7 @@ describe('useAppShellRouting', () => {
 
     expect(navigate).toHaveBeenCalledWith({
       pathname: '/journal',
-      search: '?diary=2&layout=calendar&month=2019-07',
+      search: '?diary=2&layout=calendar&month=2019-07&person=12',
     }, { replace: true });
   });
 

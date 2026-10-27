@@ -3,13 +3,17 @@ import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import type JournalView from './JournalView';
 import type { Config, Entry, Diary, GroupedEntries } from '../../types';
 import { makeDiary } from '../../test/diaryFixture';
-import type { LifeEra } from '../../services/api';
+import type { LifeEra, Person } from '../../services/api';
 
 type SubmitEvent = Parameters<NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>>[0];
 
 /** The life eras the mocked `useLifeEraList` gives JournalView; a spec may set them. */
 export const lifeEraListMock: { eras: LifeEra[]; loaded: boolean } = { eras: [], loaded: false };
 export const mockUseLifeEraList = () => ({ eras: lifeEraListMock.eras, list: { isSuccess: lifeEraListMock.loaded } });
+
+/** The people the mocked `usePeopleList` gives JournalView; a spec may set them. */
+export const peopleListMock: { people: Person[]; loaded: boolean } = { people: [], loaded: false };
+export const mockUsePeopleList = () => ({ people: peopleListMock.people, list: { isSuccess: peopleListMock.loaded } });
 
 /** Clicked by the mocked entry form's focus mode button. */
 export const focusModeTrigger = vi.fn();
@@ -83,11 +87,15 @@ export const MockFilterControls = (props: {
   actions?: ReactNode;
   eras?: readonly LifeEra[];
   onManageEras?: () => void;
+  people?: readonly Person[];
+  onManagePeople?: () => void;
 }) => (
   <div data-testid="filter-controls">
     {props.actions}
     <span data-testid="filter-era-count">{props.eras?.length ?? 0}</span>
     <button type="button" data-testid="manage-eras-btn" onClick={props.onManageEras}>Manage eras</button>
+    <span data-testid="filter-people-count">{props.people?.length ?? 0}</span>
+    <button type="button" data-testid="manage-people-btn" onClick={props.onManagePeople}>Manage people</button>
     <input data-testid="search-input" value={props.search} onChange={(e) => props.setSearch(e.target.value)} />
     <span data-testid="filter-visibility">{props.filterVisibility}</span>
     <button type="button" data-testid="open-highlights-btn" onClick={props.onOpenHighlights}>Highlights</button>
@@ -253,6 +261,8 @@ export const createProps = (overrides: PropsOverrides = {}): JournalViewProps =>
       setFilterMood: vi.fn(),
       filterEraId: null,
       setFilterEraId: vi.fn(),
+      filterPersonId: null,
+      setFilterPersonId: vi.fn(),
       allTags: ['tag1', 'tag2', 'tag3'],
       setPage: vi.fn(),
     },
@@ -300,6 +310,7 @@ export const createProps = (overrides: PropsOverrides = {}): JournalViewProps =>
     },
     onOpenRecycleBin: vi.fn(),
     onManageLifeEras: vi.fn(),
+    onManagePeople: vi.fn(),
     onNotify: vi.fn(),
     config: mockConfig,
     t: mockT,

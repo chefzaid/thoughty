@@ -27,6 +27,16 @@ describe('useAppRouteState', () => {
     expect(result.current.importExportIncludeVisibility).toBe(false);
   });
 
+  it('reads the person the journal shows, ignoring an invalid one and other views', () => {
+    const person = (entry: string) => renderHook(() => useAppRouteState(), { wrapper: createWrapper(entry) }).result.current.routePersonId;
+
+    expect(person('/journal?diary=all&person=12')).toBe(12);
+    expect(person('/journal?diary=all')).toBeNull();
+    expect(person('/journal?person=0')).toBeNull();
+    expect(person('/journal?person=abc')).toBeNull();
+    expect(person('/stats?person=12')).toBeUndefined();
+  });
+
   it('detects public routes without private route state', () => {
     const { result } = renderHook(() => useAppRouteState(), {
       wrapper: createWrapper('/login'),

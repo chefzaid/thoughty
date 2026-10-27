@@ -62,6 +62,13 @@ function NavMenu({ currentView, onViewChange, theme, name, avatarUrl, isEmailVer
                     {t('tags')}
                 </button>
                 <button type="button"
+                    className={`nav-item ${currentView === 'people' ? 'active' : ''}`}
+                    onClick={() => onViewChange('people')}
+                >
+                    <span className="codicon codicon-organization" aria-hidden="true" />
+                    {t('people')}
+                </button>
+                <button type="button"
                     className={`nav-item ${currentView === 'stats' ? 'active' : ''}`}
                     onClick={() => onViewChange('stats')}
                 >

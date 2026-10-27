@@ -16,7 +16,7 @@ export const t = (key: string, params?: Record<string, string | number>) =>
 
 export const noFilters: SavedSearchFilters = {
   search: '', searchMode: 'keyword', sort: 'relevance', tags: [], date: null,
-  visibility: 'all', archiveStatus: 'active', favorites: false, mood: '', eraId: null,
+  visibility: 'all', archiveStatus: 'active', favorites: false, mood: '', eraId: null, personId: null,
 };
 
 export const savedSearch = (overrides: Partial<SavedSearch> = {}): SavedSearch => ({
@@ -49,6 +49,7 @@ function Harness({ notify, onSemanticSearch }: { notify: (message: string) => vo
   const [filterArchiveStatus, setFilterArchiveStatus] = useState<ArchiveStatusFilter>('active');
   const [filterMood, setFilterMood] = useState<MoodFilter>('');
   const [filterEraId, setFilterEraId] = useState<number | null>(null);
+  const [filterPersonId, setFilterPersonId] = useState<number | null>(null);
   const [page, setPage] = useState(3);
   const location = useLocation();
   const diary = new URLSearchParams(location.search).get('diary');
@@ -61,7 +62,7 @@ function Harness({ notify, onSemanticSearch }: { notify: (message: string) => vo
           search, setSearch, searchMode, setSearchMode, searchSort, setSearchSort,
           filterTags, setFilterTags, filterDateObj, setFilterDateObj, filterVisibility, setFilterVisibility,
           filterFavorites, setFilterFavorites, filterArchiveStatus, setFilterArchiveStatus, filterMood, setFilterMood,
-          filterEraId, setFilterEraId, setPage, onSemanticSearch,
+          filterEraId, setFilterEraId, filterPersonId, setFilterPersonId, setPage, onSemanticSearch,
         }}
         currentDiaryId={currentDiaryId}
         diaries={[{ id: 1, name: 'Journal' }, { id: 2, name: 'Travel' }]}
@@ -72,7 +73,7 @@ function Harness({ notify, onSemanticSearch }: { notify: (message: string) => vo
         notify={notify}
       />
       <output data-testid="filters">
-        {JSON.stringify({ search, searchMode, searchSort, filterTags, date: filterDateObj?.toDateString() ?? null, filterVisibility, filterFavorites, filterArchiveStatus, filterMood, filterEraId, page })}
+        {JSON.stringify({ search, searchMode, searchSort, filterTags, date: filterDateObj?.toDateString() ?? null, filterVisibility, filterFavorites, filterArchiveStatus, filterMood, filterEraId, filterPersonId, page })}
       </output>
       <button type="button" onClick={() => setFilterFavorites((value) => !value)}>Toggle favorites</button>
       <button type="button" onClick={() => setSearch('morning')}>Type a search</button>

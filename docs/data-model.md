@@ -26,6 +26,9 @@ erDiagram
     User ||--o{ YearReviewMood : keeps
     User ||--o{ SavedSearch : saves
     User ||--o{ LifeEra : names
+    User ||--o{ Person : mentions
+    Person ||--o{ PersonHandle : "is mentioned by"
+    Person ||--o{ EntryPerson : "appears in"
 
     Diary ||--o{ Entry : contains
     Diary ||--o{ BookVersion : scopes
@@ -39,10 +42,11 @@ erDiagram
     Entry ||--o{ EntryComment : receives
     Entry ||--o{ EntryLike : receives
     Entry ||--o| MemoirAnswer : answers
+    Entry ||--o{ EntryPerson : mentions
     EntryComment ||--o{ CommentLike : receives
 ```
 
-Uniqueness rules worth knowing: diary names per user, one setting per key, one AI chat per entry, one vote per idea, one like per user and item, one follow per pair (never yourself), one memoir program per user, and one memoir answer per question and per entry, and saved search and life era names per user whatever their case. Comments hold 1 to 1,000 non-blank characters.
+Uniqueness rules worth knowing: diary names per user, one setting per key, one AI chat per entry, one vote per idea, one like per user and item, one follow per pair (never yourself), one memoir program per user, and one memoir answer per question and per entry, and saved search and life era names per user whatever their case, and each mention handle names one person per user. Comments hold 1 to 1,000 non-blank characters.
 
 ## Ownership and Deletion Rules
 
@@ -61,6 +65,7 @@ Every table except `users` references a user, and those foreign keys cascade. Ac
 | `YearReviewMood` | Deleted with the user or their diary. |
 | `SavedSearch` | Deleted with the user, and with it the book versions saved from it. Deleting its diary keeps the search, its book versions, and widens it to all diaries (`SET NULL`). |
 | `LifeEra` | Deleted with the user. Deleting one leaves entries untouched and sets `eraId` to null in the writer's saved searches filtered by it, in the same transaction, so they cover every date. |
+| `Person`, `PersonHandle`, `EntryPerson` | Deleted with the user. An entry's links (`entry_people`) are rebuilt from its text on every save and go with the entry when it is purged; they stay while it is in the recycle bin, which only counts leave out. Deleting a person deletes their handles and links, keeps the text, and sets `personId` to null in saved searches filtered by them; merging moves the duplicate's handles and links to the person kept and points those saved searches at them. |
 | Everything else | Deleted with the user. Votes also go with their request. |
 
 ## Entries
@@ -176,6 +181,18 @@ Progress is computed on request (`StatsGoalService`, in `GET /api/stats` as `goa
 - Era books (`chapterMode=eras`) read the writer's eras and place each entry in the shortest era covering its date (an ongoing era lasting until today), ties going to the later start, then the name; `includeUntagged` adds the "Other" chapter for entries outside every era.
 - A memoir answer can name an era (`eraId`): the entry is tagged with the era's name besides its chapter tag. The tag is a copy; renaming or deleting the era leaves it.
 - Life eras are private, read only by their owner, part of the data download (with their IDs, which saved searches refer to), and erased with the account.
+
+## People
+
+People are the writer's own records of someone they mention with `@handle` in an entry (`PeopleModule`, `/api/people`); they are never platform users and are never linked to accounts.
+
+- **Mention syntax** (`common/utils/entry-mentions.util.ts`, mirrored by the web's `utils/mentions.ts`): `@` then a handle that starts with a letter of any script and goes on with letters, combining marks and digits, joined by single `-` or `_` (`@Marie`, `@Jean-Paul`, `@marie_c`, `@Ольга`), at most 50 characters (a longer run is not a mention). The `@` must not follow a letter, digit, mark or one of `` . @ / \ + - ` ``, and the handle must not be followed by `@` or by `.`, `-` or `_` and a letter or digit, so e-mail addresses, domains, profile URLs and an escaped `\@name` stay text. Fenced code blocks, inline code spans, `[[date]]` references, Markdown links and images, autolinks and bare web addresses are left out, in plain and Markdown entries alike. Handles compare without case, by their NFC form in lower case (`@Marie` = `@marie`, but `@Élodie` ≠ `@Elodie`).
+- **Tables** (`People1786665600000`, entities in `person.entity.ts`): `people` holds the `name` shown (`VARCHAR(80)`, not blank), first the handle as first written; `person_handles` maps each handle key to its person, primary key `(user_id, handle)`; `entry_people` links entries and people, primary key `(entry_id, person_id)` with `idx_entry_people_person` for a person's entries. Every foreign key cascades.
+- **Linking** (`syncEntryMentions`, through `EntryMentionsService.save`): creating or editing an entry, a file import and a Day One or Journey import save the entry and rebuild its links in one transaction. A handle no one holds adds a person, under a transaction-scoped advisory lock on `(hashtext('people'), user_id)` so two saves at once add one person. A writer keeps at most 1,000 people (`PEOPLE_LIMIT`) and an entry links at most 50 (`ENTRY_MENTION_LIMIT`); past either, mentions stay plain text. Ticking a task only changes a box, so it relinks nothing; restoring a revision is an edit. The migration links the entries written before people existed, recycle bin included, with the same function.
+- **Counts** are read, never stored: `GET /api/people` lists each person by name with their handles, `entryCount` (entries outside the recycle bin) and `lastMentionedOn`, so edits, the bin, purges and deletions always show. The journal filter `personId` (`EntryFilterQueryDto`, through `applyEntryListFilters`) adds `EXISTS (SELECT 1 FROM entry_people ep WHERE ep.entry_id = e.id AND ep.person_id = :personId)`; links only join a writer's entries to their own people, so another writer's person matches nothing. The entry list cache key includes `personId`, and merging or deleting a person drops the writer's cached lists.
+- **Renaming** (`PATCH /api/people/:id`) changes only the name shown: handles and entry text stay as written. **Merging** (`POST /api/people/:id/merge` with `duplicateId`) moves the duplicate's handles and links to the person kept and deletes the duplicate, under the people lock, so `@duplicate` keeps naming the person kept; `400 PERSON_MERGE_SAME` refuses a person into themselves. **Deleting** unlinks every entry and keeps the text; saving an entry that still mentions the handle adds the person again. Changing a handle (with or without rewriting entries) is not offered yet.
+- Saved searches keep the person as `filters.personId` (optional, read as `null` in searches saved before people; saving checks the person is the writer's own, `404 PERSON_NOT_FOUND`), so saved-search books can be about one person.
+- People are private: read only by their owner, part of the data download (with their handles and the IDs of the entries that mention them, recycle bin included), erased with the account. The public feed and share texts carry the entry text as written, with no person data.
 
 ## Public Feed Eligibility
 
