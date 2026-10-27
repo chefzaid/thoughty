@@ -1,5 +1,4 @@
-// Relative, as the people migration loads this file too
-import { extractMentionHandles } from '../../common/utils/entry-mentions.util';
+import { extractMentionHandles } from '@/common/utils/entry-mentions.util';
 
 /** How many people one writer can keep; mentions of new people past it stay plain text. */
 export const PEOPLE_LIMIT = 1000;

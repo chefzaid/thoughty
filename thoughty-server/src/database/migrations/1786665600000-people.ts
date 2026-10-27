@@ -1,5 +1,5 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
-import { syncEntryMentions } from '../../modules/entries/entry-mentions.sync';
+import { linkMigrationEntryMentions } from './frozen/1786665600000-people-mentions';
 
 /** Entries read per batch while linking existing entries to the people they mention. */
 const BACKFILL_BATCH_SIZE = 500;
@@ -8,7 +8,8 @@ const BACKFILL_BATCH_SIZE = 500;
  * People the writer mentions in entries (`@Marie`): `people` holds each person's display name,
  * `person_handles` the handles that mention them (one person per handle and writer, whatever its case),
  * and `entry_people` which entries mention whom. Existing entries are linked from their text, as the
- * app links an entry each time it is saved, including those in the recycle bin.
+ * app linked an entry each time it was saved when this was written, including those in the recycle bin;
+ * the mention rules it applies are frozen in `frozen/1786665600000-people-mentions.ts`.
  */
 export class People1786665600000 implements MigrationInterface {
   name = 'People1786665600000';
@@ -58,7 +59,7 @@ export class People1786665600000 implements MigrationInterface {
         byWriter.set(entry.userId, [...(byWriter.get(entry.userId) ?? []), entry]);
       }
       for (const [userId, entries] of byWriter) {
-        await syncEntryMentions(queryRunner, userId, entries);
+        await linkMigrationEntryMentions(queryRunner, userId, entries);
       }
     }
   }

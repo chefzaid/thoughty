@@ -14,7 +14,9 @@
  * Handles are compared case-insensitively: the key is the NFC form in lower case (`@Marie` and
  * `@marie` are the same person, `@Élodie` and `@Elodie` are not).
  *
- * The web app holds the same rules in `thoughty-web/src/utils/mentions.ts`; change both together.
+ * The web app holds the same rules in `thoughty-web/src/utils/mentions.ts`; change both together. The people
+ * migration keeps its own frozen copy (`src/database/migrations/frozen/1786665600000-people-mentions.ts`),
+ * which stays as it is: existing entries that must follow a new rule need a new migration.
  */
 export const MENTION_HANDLE_MAX_LENGTH = 50;
 

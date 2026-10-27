@@ -186,10 +186,11 @@ describePostgres('PostgreSQL people', () => {
     expect(await summary()).toEqual([['Marie', ['marie'], 1, '2026-10-01']]);
   });
 
-  it('links the entries written before people existed when the migration runs', async () => {
+  it('links the entries written before people existed when the migration runs, leaving e-mails, code and links alone', async () => {
     await dataSource.query(
       `INSERT INTO entries (user_id, date, content, deleted_at) VALUES ($1, '2026-01-01', 'Old note on @Ana', NULL),
-         ($1, '2026-01-02', 'Binned note on @ana', NOW()), ($2, '2026-01-03', '@Bo', NULL)`,
+         ($1, '2026-01-02', 'Binned note on @ana', NOW()), ($2, '2026-01-03', '@Bo', NULL),
+         ($1, '2026-01-04', 'Mail ana@x.org, see \`@code\`, https://x.com/@web and [[2026-01-01]]', NULL)`,
       [writerId, otherId],
     );
 
