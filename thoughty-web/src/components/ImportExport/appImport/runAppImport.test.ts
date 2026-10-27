@@ -9,6 +9,7 @@ import { AppImportError, runAppImport } from './runAppImport';
 import { shrinkPhoto } from './shrinkPhoto';
 
 vi.mock('./shrinkPhoto', () => ({ shrinkPhoto: vi.fn() }));
+vi.mock('../../../utils/videoPoster', () => ({ captureVideoPoster: vi.fn(async () => new Blob(['jpeg'], { type: 'image/jpeg' })) }));
 
 type ImportEntries = AppImportService['importEntries'];
 type UploadAttachments = AppImportService['uploadAttachments'];
@@ -58,13 +59,21 @@ describe('runAppImport', () => {
       { name: 'big.jpeg', data: new Uint8Array(6 * 1024 * 1024).fill(4), store: true },
       { name: 'big.m4a', data: new Uint8Array(6 * 1024 * 1024).fill(5), store: true },
       { name: 'c.heic', data: new Uint8Array(100).fill(6), store: true },
+      { name: 'clip.mov', data: new Uint8Array(6 * 1024 * 1024).fill(7), store: true },
     ]) as BlobPart]);
     files = new Map((await readZipEntries(archive)).map((file) => [file.name, file]));
     importEntries = vi.fn<ImportEntries>();
     uploadAttachments = vi.fn<UploadAttachments>(async (uploads, entryIds) => ok({
       attachments: uploads.map((upload, index) => ({ id: index + 1, entryId: entryIds[index]!, originalFilename: upload.name })),
     }));
-    service = { importEntries, uploadAttachments };
+    service = {
+      importEntries,
+      uploadAttachments,
+      uploadVideo: vi.fn(async (file: File, entryId: number) => ok({
+        id: 50, original_filename: file.name, stored_filename: 'v.mov', mimetype: file.type, size: file.size, entry_id: entryId, created_at: '',
+      })),
+      uploadPoster: vi.fn(async () => ok({} as never)),
+    };
     onProgress.mockClear();
     vi.mocked(shrinkPhoto).mockReset();
   });
@@ -99,6 +108,24 @@ describe('runAppImport', () => {
     expect(entryIds).toEqual([100, 100, 101]);
     expect(summary).toEqual({ imported: 2, alreadyImported: 0, attached: 3, failedFiles: [], createdDiaries: [], stopped: false });
     expect(onProgress).toHaveBeenLastCalledWith({ phase: 'files', done: 3, total: 3 });
+  });
+
+  it('sends each video on its own, over the 5 MB photo limit, with the poster frame drawn from it', async () => {
+    acceptEntries();
+
+    const summary = await runAppImport(
+      exportOf([entry('A', { media: [media('a.jpeg'), media('clip.mov', 'video/quicktime')] })]),
+      { journalsAsDiaries: false },
+      service,
+      onProgress,
+      new AbortController().signal,
+    );
+
+    expect(uploadAttachments.mock.calls.map(([uploads]) => uploads.map((upload) => upload.name))).toEqual([['a.jpeg']]);
+    expect(service.uploadVideo).toHaveBeenCalledWith(expect.objectContaining({ name: 'clip.mov', type: 'video/quicktime', size: 6 * 1024 * 1024 }), 100);
+    expect(service.uploadPoster).toHaveBeenCalledWith(50, expect.any(Blob));
+    expect(summary).toEqual(expect.objectContaining({ attached: 2, failedFiles: [] }));
+    expect(onProgress).toHaveBeenLastCalledWith({ phase: 'files', done: 2, total: 2 });
   });
 
   it('sends the title and time of day only when the entry has them', async () => {

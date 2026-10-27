@@ -38,6 +38,25 @@ describe('appImportService', () => {
     expect((form.getAll('files') as File[]).map((file) => file.name)).toEqual(['a.jpg', 'b.jpg']);
   });
 
+  it('sends a video to the upload route with its entry, then its poster frame', async () => {
+    const authFetch = vi.fn().mockResolvedValue(jsonResponse({ id: 9, mimetype: 'video/mp4' }));
+    const service = createAppImportService(authFetch);
+
+    await expect(service.uploadVideo(new File(['v'], 'clip.mp4', { type: 'video/mp4' }), 12)).resolves.toEqual({
+      ok: true,
+      data: { id: 9, mimetype: 'video/mp4' },
+    });
+    const [url, options] = authFetch.mock.calls[0]!;
+    expect(url).toBe('/api/attachments/upload');
+    expect((options.body as FormData).get('entryId')).toBe('12');
+    expect(((options.body as FormData).get('file') as File).name).toBe('clip.mp4');
+
+    await service.uploadPoster(9, new Blob(['jpeg'], { type: 'image/jpeg' }));
+    const [posterUrl, posterOptions] = authFetch.mock.calls[1]!;
+    expect(posterUrl).toBe('/api/attachments/9/poster');
+    expect(((posterOptions.body as FormData).get('file') as File).name).toBe('poster.jpg');
+  });
+
   it('reports the status, message, and requested wait of a refused request', async () => {
     const authFetch = vi.fn().mockResolvedValue(jsonResponse({ message: 'Too Many Requests' }, { status: 429, headers: { 'Retry-After': '42' } }));
 

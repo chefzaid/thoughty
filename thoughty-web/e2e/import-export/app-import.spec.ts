@@ -2,6 +2,7 @@ import { expect, test } from '../support/test';
 
 import { buildZip } from '../../src/test/zipFixture';
 import { setupMockApp } from '../support/mockApp';
+import { MOCK_WEBM } from '../support/mockVideo';
 
 const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]);
 
@@ -30,13 +31,17 @@ async function dayOneExport(): Promise<Buffer> {
     },
     { name: 'photos/aa11.jpeg', data: jpeg, store: true },
     { name: 'audios/bb22.m4a', data: new Uint8Array([0, 0, 0, 24]), store: true },
-    { name: 'videos/cc33.mov', data: new Uint8Array([1]), store: true },
+    { name: 'videos/cc33.mov', data: MOCK_WEBM, store: true },
   ]));
 }
 
 test.describe('Import from other journaling apps', () => {
-  test('imports a Day One export with its photos into a diary per journal, and skips it when imported again', async ({ page }) => {
+  test('imports a Day One export with its photos and videos into a diary per journal, and skips it when imported again', async ({ page }) => {
     const { state } = await setupMockApp(page, { startAuthenticated: true });
+    const videoUploads: string[] = [];
+    page.on('request', (request) => {
+      if (request.url().endsWith('/api/attachments/upload')) videoUploads.push(request.url());
+    });
     await page.goto('/import-export?section=import');
     const panel = page.getByRole('region', { name: 'From Day One or Journey' });
     const archive = { name: 'Day One export.zip', mimeType: 'application/zip', buffer: await dayOneExport() };
@@ -64,6 +69,11 @@ test.describe('Import from other journaling apps', () => {
     const photo = fireworks!.attachments!.find((attachment) => attachment.original_filename === 'aa11.jpeg')!;
     expect(fireworks!.content).toBe(`Fireworks over the river.\n\n![](attachment:${photo.id})`);
     expect(state.diaries.map((diary) => diary.name)).toEqual(['Work', 'Personal', 'Travel', 'Journal']);
+    // The video went on its own to the upload route, then the poster frame drawn from it
+    await expect.poll(() => fireworks!.attachments!.find((attachment) => attachment.original_filename === 'cc33.mov')).toEqual(
+      expect.objectContaining({ mimetype: 'video/quicktime', poster_filename: expect.stringMatching(/^poster-/) }),
+    );
+    await expect(panel.getByText('Files left out (missing or of another type)')).toHaveCount(0);
 
     await panel.getByRole('button', { name: 'Import another export' }).click();
     await panel.getByLabel('Choose an export').setInputFiles(archive);
@@ -72,6 +82,7 @@ test.describe('Import from other journaling apps', () => {
     await expect(panel.getByText('Import finished')).toBeVisible();
     await expect(panel.getByText('Already imported').locator('..')).toContainText('2');
     expect(state.appImport.uploads).toHaveLength(2);
+    expect(videoUploads).toHaveLength(1);
     expect(state.entries.filter((entry) => entry.content.startsWith('Fireworks over the river.'))).toHaveLength(1);
   });
 

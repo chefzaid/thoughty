@@ -82,6 +82,7 @@ export interface MockEntry {
     stored_filename: string;
     mimetype: string;
     size: number;
+    poster_filename?: string | null;
     transcript?: string | null;
     transcribed_at?: string | null;
   }>;

@@ -26,10 +26,10 @@ describe('readAppExport', () => {
     expect(result.archive).toBe(file);
     expect(result.journals).toEqual(['Journal', 'Travel']);
     expect(result.entries.map((entry) => [entry.sourceId, entry.journal, entry.media.map((media) => media.name)])).toEqual([
-      ['A', 'Travel', []],
+      ['A', 'Travel', ['99dd.mov']],
       ['B', 'Journal', ['5f2b.jpeg']],
     ]);
-    expect(result.skippedMedia).toBe(1);
+    expect(result.skippedMedia).toBe(0);
   });
 
   it('reads a Journey export with one JSON file per entry', async () => {

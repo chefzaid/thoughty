@@ -85,7 +85,7 @@ export function splitDayOneTitle(text: string): { title?: string; content: strin
 /**
  * The text without Day One's escapes and gaps. An inline photo stays where it is, naming the file
  * the import sends next (`photos` maps Day One's identifiers to those names); other inline
- * references (recordings, videos, missing photos) are removed, their files listed below the entry.
+ * references (recordings, videos, missing photos) are removed, their files attached below the entry.
  */
 export function cleanDayOneText(text: string, photos: ReadonlyMap<string, string> = new Map()): string {
   const placed = text.replaceAll(MOMENT_REFERENCE, (_reference: string, alt: string, kind: string | undefined, identifier: string) => {

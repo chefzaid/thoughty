@@ -46,7 +46,7 @@ function AttachmentPreviewDialog({ preview, isDark, onClose, t }: AttachmentPrev
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <p className="truncate text-base font-semibold">{preview.name}</p>
-            <p id={detailsId} className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{getAttachmentKindLabel(preview.mimetype)} · {formatAttachmentSize(preview.size)}</p>
+            <p id={detailsId} className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{getAttachmentKindLabel(preview.mimetype, t)} · {formatAttachmentSize(preview.size)}</p>
           </div>
           <div className="flex items-center gap-3">
             {preview.downloadUrl && (

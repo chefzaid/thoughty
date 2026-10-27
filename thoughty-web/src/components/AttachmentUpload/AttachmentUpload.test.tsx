@@ -6,7 +6,8 @@ import type { Attachment } from '../../types';
 import { getTranslation } from '../../utils/translations';
 
 vi.mock('../AttachmentPreview/useAuthenticatedAttachmentUrl', () => ({
-  useAuthenticatedAttachmentUrl: (storedFilename: string) => `blob:stored-${storedFilename}`,
+  useAuthenticatedAttachmentUrl: (storedFilename: string | null) => (storedFilename ? `blob:stored-${storedFilename}` : null),
+  useAuthenticatedAttachmentResource: () => ({ url: null, status: 'idle' }),
 }));
 
 const mockT = (key: string) => key;
@@ -232,7 +233,7 @@ describe('AttachmentUpload', () => {
   ] as const)('shows the kind and size of a pending file in the %s theme muted text color', (theme, colorClass) => {
     const file = new File(['hello world!'], 'note.txt', { type: 'text/plain' });
     render(<AttachmentUpload {...defaultProps} theme={theme} pendingFiles={[file]} />);
-    expect(screen.getByText('Text · 12 B')).toHaveClass(colorClass);
+    expect(screen.getByText('attachmentKindText · 12 B')).toHaveClass(colorClass);
   });
 
   it('does not show attachment list when there are no files', () => {
@@ -269,7 +270,7 @@ describe('AttachmentUpload', () => {
     });
 
     const error = screen.getByRole('alert');
-    expect(error).toHaveTextContent('bad.exe: This file type is not allowed. Allowed: images, audio, PDF, plain text.');
+    expect(error).toHaveTextContent('bad.exe: This file type is not allowed. Allowed: images, audio, videos (MP4, WebM, MOV), PDF, plain text.');
     expect(error).toHaveTextContent('huge.pdf: File is too large. Maximum size is 5 MB.');
     expect(screen.getByTitle('Attach files')).toHaveAttribute('aria-describedby', error.id);
     expect(onAddFile).toHaveBeenCalledTimes(1);
@@ -347,5 +348,31 @@ describe('AttachmentUpload', () => {
 
     rerender(<AttachmentUpload {...defaultProps} t={t} pendingFiles={[memo, picture]} uploadedAttachments={[stored]} />);
     expect(screen.queryByRole('button', { name: /in the text$/ })).toBeNull();
+  });
+
+  it('takes videos up to 50 MB, plays a picked one from the file, and a stored one only on request', () => {
+    const onAddFile = vi.fn();
+    const sized = (name: string, size: number, type: string) => {
+      const file = new File(['v'], name, { type });
+      Object.defineProperty(file, 'size', { value: size });
+      return file;
+    };
+    const clip = sized('clip.mp4', 40 * 1024 * 1024, 'video/mp4');
+    const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
+    const stored: Attachment = { id: 3, original_filename: 'old.webm', stored_filename: 'old-key.webm', mimetype: 'video/webm', size: 10 };
+    const { container } = render(
+      <AttachmentUpload {...defaultProps} t={t} onAddFile={onAddFile} pendingFiles={[clip]} uploadedAttachments={[stored]} />,
+    );
+
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput.accept).toContain('video/quicktime');
+    fireEvent.change(fileInput, { target: { files: [clip, sized('long.mov', 50 * 1024 * 1024 + 1, 'video/quicktime')] } });
+
+    expect(onAddFile).toHaveBeenCalledWith(clip);
+    expect(screen.getByRole('alert')).toHaveTextContent('long.mov: Video is too large. Maximum size is 50 MB.');
+    expect(container.querySelector('video')).toHaveAttribute('src', 'blob:preview');
+    expect(screen.getByText('Video · 40.0 MB')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Play the video old.webm' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Download attachment' })).not.toBeInTheDocument();
   });
 });

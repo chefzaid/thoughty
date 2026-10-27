@@ -10,9 +10,19 @@ vi.mock("../../hooks/useApiServices", () => ({
   useApiServices: () => ({ attachmentsService: { transcribeAttachment } }),
 }));
 
+const requestedFiles: Array<string | null> = [];
+
 vi.mock("../AttachmentPreview/useAuthenticatedAttachmentUrl", () => ({
-  useAuthenticatedAttachmentUrl: (storedFilename: string) =>
-    `blob:${storedFilename}`,
+  useAuthenticatedAttachmentUrl: (storedFilename: string | null) => {
+    requestedFiles.push(storedFilename);
+    return storedFilename ? `blob:${storedFilename}` : null;
+  },
+  useAuthenticatedAttachmentResource: (storedFilename: string | null) => {
+    requestedFiles.push(storedFilename);
+    return storedFilename
+      ? { url: `blob:${storedFilename}`, status: "ready" }
+      : { url: null, status: "idle" };
+  },
 }));
 
 const mockT = (key: string) => key;
@@ -169,7 +179,7 @@ describe("AttachmentDisplay", () => {
       <AttachmentDisplay attachments={attachments} theme="dark" t={mockT} />,
     );
     expect(screen.getByTitle("notes.txt")).toBeInTheDocument();
-    expect(screen.getByText("Text · 512 B")).toBeInTheDocument();
+    expect(screen.getByText("attachmentKindText · 512 B")).toBeInTheDocument();
   });
 
   it("renders unsupported attachments as download links", () => {
@@ -370,5 +380,29 @@ describe("AttachmentDisplay", () => {
       <AttachmentDisplay attachments={attachments} theme="light" t={mockT} />,
     );
     expect(screen.getByText("file.txt")).toBeInTheDocument();
+  });
+
+  it("shows a video by its poster frame and fetches the video only once it is played", async () => {
+    requestedFiles.length = 0;
+    const video: Attachment = {
+      id: 8,
+      original_filename: "harbour.mov",
+      stored_filename: "harbour-key.mov",
+      mimetype: "video/quicktime",
+      size: 3 * 1024 * 1024,
+      poster_filename: "harbour-poster.jpg",
+    };
+    const { container } = render(
+      <AttachmentDisplay attachments={[video]} theme="light" t={mockT} />,
+    );
+
+    expect(screen.getByText("attachmentKindVideo · 3.0 MB")).toBeInTheDocument();
+    expect(requestedFiles).not.toContain("harbour-key.mov");
+    expect(requestedFiles).toContain("harbour-poster.jpg");
+    await userEvent.click(screen.getByRole("button", { name: "videoPlay" }));
+
+    expect(requestedFiles).toContain("harbour-key.mov");
+    expect(container.querySelector("video")).toHaveAttribute("src", "blob:harbour-key.mov");
+    expect(container.querySelector("video")).toHaveAttribute("poster", "blob:harbour-poster.jpg");
   });
 });

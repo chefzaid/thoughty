@@ -1,6 +1,3 @@
-/** Server limit for one attachment. */
-export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
-
 const STORED_TYPES: Record<string, string> = {
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
@@ -13,6 +10,10 @@ const STORED_TYPES: Record<string, string> = {
   mp3: 'audio/mpeg',
   ogg: 'audio/ogg',
   wav: 'audio/wav',
+  mp4: 'video/mp4',
+  m4v: 'video/mp4',
+  mov: 'video/quicktime',
+  webm: 'video/webm',
 };
 const CONVERTIBLE_PHOTOS = new Set(['heic', 'heif', 'tif', 'tiff']);
 
@@ -30,7 +31,7 @@ export function baseName(path: string): string {
   return path.slice(path.lastIndexOf('/') + 1);
 }
 
-/** How a file from an export can become an attachment, or null when it cannot (videos, unknown types). */
+/** How a file from an export can become an attachment, or null when it cannot (an unknown type). */
 export function attachmentTypeFor(name: string): { mimetype: string; convert: boolean } | null {
   const extension = fileExtension(name);
   if (STORED_TYPES[extension]) {

@@ -1,10 +1,12 @@
 import { readApiErrorMessage, safeJsonParse } from './base';
 import type { components } from '../../generated/openapi';
+import { posterForm } from './attachmentsService';
 
 export type AppImportRequest = components['schemas']['AppImportDto'];
 export type AppImportEntryRequest = components['schemas']['AppImportEntryDto'];
 export type AppImportResponse = components['schemas']['AppImportResponseDto'];
 export type ImportAttachmentsResponse = components['schemas']['ImportAttachmentsResponseDto'];
+export type ImportedAttachment = components['schemas']['AttachmentRecordResponseDto'];
 
 /** An import request's data, or why it failed: `status` 0 is a network error, 429 comes with the wait. */
 export type ImportResult<T> =
@@ -53,6 +55,22 @@ export const createAppImportService = (authFetch: (url: string, options?: Reques
       form.append('files', file);
     }
     return requestImport(authFetch('/api/io/import/attachments', { method: 'POST', body: form }), 'appImportAttachError');
+  },
+
+  /** Sends one video, which has its own, larger limit on the upload route, to its entry. */
+  uploadVideo(file: File, entryId: number): Promise<ImportResult<ImportedAttachment>> {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('entryId', String(entryId));
+    return requestImport(authFetch('/api/attachments/upload', { method: 'POST', body: form }), 'appImportAttachError');
+  },
+
+  /** Sends the poster frame drawn from an imported video. */
+  uploadPoster(attachmentId: number, poster: Blob): Promise<ImportResult<ImportedAttachment>> {
+    return requestImport(
+      authFetch(`/api/attachments/${attachmentId}/poster`, { method: 'POST', body: posterForm(poster) }),
+      'appImportAttachError',
+    );
   },
 });
 

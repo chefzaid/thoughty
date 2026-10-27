@@ -105,10 +105,11 @@ describe('parseDayOneJournal', () => {
           { name: '5F2B.jpeg', mimetype: 'image/jpeg', convert: false, file: files.get('photos/5f2b') },
           { name: 'aa11.heic', mimetype: 'image/jpeg', convert: true, file: files.get('photos/aa11') },
           { name: '77cc.m4a', mimetype: 'audio/mp4', convert: false, file: files.get('audios/77cc') },
+          { name: '99dd.mov', mimetype: 'video/quicktime', convert: false, file: files.get('videos/99dd') },
         ],
       },
     ]);
-    expect(skippedMedia).toBe(2);
+    expect(skippedMedia).toBe(1);
   });
 
   it('places inline photos by the name their file is stored under', () => {

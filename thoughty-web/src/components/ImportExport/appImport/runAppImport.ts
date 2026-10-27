@@ -1,8 +1,13 @@
-import type { AppImportEntryRequest, AppImportService, ImportResult } from '../../../services/api/appImportService';
+import type { AppImportEntryRequest, AppImportService } from '../../../services/api/appImportService';
+import { isVideoAttachment, MAX_ATTACHMENT_BYTES, maxAttachmentBytes } from '../../../utils/attachments';
 import { readZipFile } from '../../../utils/zipReader';
-import { MAX_ATTACHMENT_BYTES, storedMediaName } from './appImportMedia';
+import { storedMediaName } from './appImportMedia';
+import { AppImportError, withRetries } from './appImportRetries';
+import { sendVideo } from './appImportVideos';
 import type { AppExport, ImportedEntry, ImportedMedia } from './appImportTypes';
 import { shrinkPhoto } from './shrinkPhoto';
+
+export { AppImportError };
 
 const MAX_BATCH_ENTRIES = 200;
 const MAX_BATCH_CHARACTERS = 3_000_000;
@@ -10,9 +15,6 @@ const MAX_ENTRY_CHARACTERS = 50_000;
 const MAX_FILES_PER_REQUEST = 8;
 // The ingress accepts 10 MB per request; leave room for the multipart framing
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
-const NETWORK_RETRY_DELAYS = [2, 5, 15];
-const MAX_RATE_LIMIT_WAITS = 30;
-const DEFAULT_RATE_LIMIT_WAIT = 60;
 
 export interface AppImportOptions {
   readonly diaryId?: number | null;
@@ -38,50 +40,10 @@ export interface AppImportSummary {
   readonly stopped: boolean;
 }
 
-export class AppImportError extends Error {}
 
 interface PendingFile {
   readonly entryId: number;
   readonly media: ImportedMedia;
-}
-
-function wait(seconds: number, signal: AbortSignal): Promise<void> {
-  return new Promise((resolve) => {
-    const timer = globalThis.setTimeout(resolve, seconds * 1000);
-    signal.addEventListener('abort', () => {
-      globalThis.clearTimeout(timer);
-      resolve();
-    }, { once: true });
-  });
-}
-
-/** Retries network and server errors a few times, and waits out rate limits. */
-async function withRetries<T>(
-  call: () => Promise<ImportResult<T>>,
-  signal: AbortSignal,
-  onWait: (seconds: number) => void,
-): Promise<ImportResult<T>> {
-  let networkRetries = 0;
-  let rateLimitWaits = 0;
-  for (;;) {
-    const result = await call();
-    if (result.ok || signal.aborted) {
-      return result;
-    }
-    if (result.status === 429 && rateLimitWaits < MAX_RATE_LIMIT_WAITS) {
-      rateLimitWaits++;
-      const seconds = Math.min(result.retryAfterSeconds ?? DEFAULT_RATE_LIMIT_WAIT, 900);
-      onWait(seconds);
-      await wait(seconds, signal);
-    } else if ((result.status === 0 || result.status >= 500) && networkRetries < NETWORK_RETRY_DELAYS.length) {
-      await wait(NETWORK_RETRY_DELAYS[networkRetries++]!, signal);
-    } else {
-      return result;
-    }
-    if (signal.aborted) {
-      return result;
-    }
-  }
 }
 
 /** Entries over the server's length limit continue in follow-up entries on the same day. */
@@ -156,14 +118,14 @@ async function prepareFile(archive: Blob, media: ImportedMedia): Promise<File | 
     }
     return new File([jpeg], storedMediaName(media), { type: 'image/jpeg' });
   }
-  if (blob.size > MAX_ATTACHMENT_BYTES) {
+  if (blob.size > maxAttachmentBytes(media.mimetype)) {
     return 'tooLarge';
   }
   return new File([blob], media.name, { type: media.mimetype });
 }
 
 /**
- * Imports the entries in batches, then uploads their photos and recordings.
+ * Imports the entries in batches, then uploads their photos, recordings and videos.
  * Running it again with the same export skips what is already there.
  */
 export async function runAppImport(
@@ -286,8 +248,16 @@ async function uploadFiles(
       break;
     }
     const file = await prepareFile(archive, pending.media);
-    if (typeof file === 'string') {
-      failedFiles.push({ name: pending.media.name, reason: file });
+    if (typeof file === 'string' || isVideoAttachment(file.type)) {
+      // A video goes on its own, with its poster frame, to the route with the larger limit
+      const outcome = typeof file === 'string'
+        ? file
+        : await sendVideo(file, pending.entryId, service, signal, (seconds) => onProgress({ phase: 'files', done, total, waitingSeconds: seconds }));
+      if (outcome === 'attached') {
+        attached++;
+      } else if (outcome !== 'stopped') {
+        failedFiles.push({ name: pending.media.name, reason: outcome });
+      }
       done++;
       onProgress({ phase: 'files', done, total });
       continue;

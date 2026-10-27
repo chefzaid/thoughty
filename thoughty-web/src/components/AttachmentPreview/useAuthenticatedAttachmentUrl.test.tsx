@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useAuthenticatedAttachmentUrl } from './useAuthenticatedAttachmentUrl';
+import { useAuthenticatedAttachmentResource, useAuthenticatedAttachmentUrl } from './useAuthenticatedAttachmentUrl';
 
 const authFetch = vi.fn();
 
@@ -47,5 +47,22 @@ describe('useAuthenticatedAttachmentUrl', () => {
     await waitFor(() => expect(authFetch).toHaveBeenCalled());
     expect(result.current).toBeNull();
     expect(createObjectURL).not.toHaveBeenCalled();
+  });
+
+  it('says where the fetch stands, and fetches again on a new attempt', async () => {
+    authFetch.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({ ok: true, blob: vi.fn().mockResolvedValue(new Blob(['v'])) });
+
+    const { result, rerender } = renderHook(({ key, attempt }) => useAuthenticatedAttachmentResource(key, attempt), {
+      initialProps: { key: null as string | null, attempt: 0 },
+    });
+    expect(result.current).toEqual({ url: null, status: 'idle' });
+
+    rerender({ key: 'clip.mp4', attempt: 0 });
+    expect(result.current.status).toBe('loading');
+    await waitFor(() => expect(result.current).toEqual({ url: null, status: 'failed' }));
+
+    rerender({ key: 'clip.mp4', attempt: 1 });
+    await waitFor(() => expect(result.current).toEqual({ url: 'blob:authenticated-file', status: 'ready' }));
+    expect(authFetch).toHaveBeenCalledTimes(2);
   });
 });

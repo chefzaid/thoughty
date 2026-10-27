@@ -6,6 +6,8 @@ import {
     getAttachmentKindLabel,
     hasInlineAttachmentPreview,
     isImageAttachment,
+    isVideoAttachment,
+    maxAttachmentBytes,
 } from '../../utils/attachments';
 import type { InlineImageTarget } from '../InlineImages/useInlineImageInsert';
 import { mutedTextClass } from '../../utils/tintedText';
@@ -13,8 +15,7 @@ import AttachmentPreviewContent from '../AttachmentPreview/AttachmentPreviewCont
 import AttachmentPreviewDialog from '../AttachmentPreview/AttachmentPreviewDialog';
 import { usePendingAttachmentPreviewUrl } from '../AttachmentPreview/usePendingAttachmentPreviewUrl';
 import { useAuthenticatedAttachmentUrl } from '../AttachmentPreview/useAuthenticatedAttachmentUrl';
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+import StoredVideoPlayer from '../AttachmentPreview/StoredVideoPlayer';
 
 interface AttachmentUploadProps {
     readonly pendingFiles: File[];
@@ -47,7 +48,10 @@ function getRejectionReason(file: File): string | null {
     if (!ALLOWED_ATTACHMENT_TYPES.includes(file.type as (typeof ALLOWED_ATTACHMENT_TYPES)[number])) {
         return 'attachmentTypeNotAllowed';
     }
-    return file.size > MAX_FILE_SIZE ? 'attachmentTooLarge' : null;
+    if (file.size <= maxAttachmentBytes(file.type)) {
+        return null;
+    }
+    return isVideoAttachment(file.type) ? 'attachmentVideoTooLarge' : 'attachmentTooLarge';
 }
 
 interface ActiveUploadPreview {
@@ -134,7 +138,7 @@ function PendingAttachmentCard({
             key={`${file.name}-${file.lastModified}-${file.size}`}
             name={file.name}
             size={file.size}
-            kind={getAttachmentKindLabel(file.type)}
+            kind={getAttachmentKindLabel(file.type, t)}
             preview={(
                 <AttachmentPreviewContent
                     name={file.name}
@@ -186,23 +190,28 @@ function UploadedAttachmentCard({
     onInsert?: (target: InlineImageTarget) => void;
     t: (key: string, params?: Record<string, string | number>) => string;
 }>) {
-    const fileUrl = useAuthenticatedAttachmentUrl(attachment.stored_filename);
-    const canPreview = hasInlineAttachmentPreview(attachment.mimetype);
+    const isVideo = isVideoAttachment(attachment.mimetype);
+    // A video is fetched only when played, by its player
+    const fileUrl = useAuthenticatedAttachmentUrl(isVideo ? null : attachment.stored_filename);
+    const canPreview = hasInlineAttachmentPreview(attachment.mimetype) && !isVideo;
+    const linkClass = isDark ? 'text-green-300 hover:text-green-200' : 'text-green-700 hover:text-green-800';
 
     return (
         <AttachmentCard
             key={`uploaded-${attachment.id}`}
             name={attachment.original_filename}
             size={attachment.size}
-            kind={getAttachmentKindLabel(attachment.mimetype)}
-            preview={(
-                <AttachmentPreviewContent
-                    name={attachment.original_filename}
-                    mimetype={attachment.mimetype}
-                    sourceUrl={fileUrl}
-                    t={t}
-                />
-            )}
+            kind={getAttachmentKindLabel(attachment.mimetype, t)}
+            preview={isVideo
+                ? <StoredVideoPlayer attachment={attachment} variant="compact" isDark={isDark} showDownload={false} t={t} />
+                : (
+                    <AttachmentPreviewContent
+                        name={attachment.original_filename}
+                        mimetype={attachment.mimetype}
+                        sourceUrl={fileUrl}
+                        t={t}
+                    />
+                )}
             isDark={isDark}
             accentClass={isDark ? 'bg-gray-700/50 border-green-600/30' : 'bg-green-50 border-green-300'}
             action={(
@@ -217,24 +226,26 @@ function UploadedAttachmentCard({
                                 size: attachment.size,
                                 downloadUrl: fileUrl,
                             })}
-                            className={`text-xs font-medium ${isDark ? 'text-green-300 hover:text-green-200' : 'text-green-700 hover:text-green-800'}`}
+                            className={`text-xs font-medium ${linkClass}`}
                             aria-label={`${t('previewAttachment')} ${attachment.original_filename}`}
                         >
                             {t('previewAttachment')}
                         </button>
                     )}
-                    <a
-                        href={fileUrl ?? undefined}
-                        download={attachment.original_filename}
-                        aria-disabled={!fileUrl}
-                        className={`text-xs font-medium ${isDark ? 'text-green-300 hover:text-green-200' : 'text-green-700 hover:text-green-800'}`}
-                    >
-                        {t('downloadAttachment')}
-                    </a>
+                    {!isVideo && (
+                        <a
+                            href={fileUrl ?? undefined}
+                            download={attachment.original_filename}
+                            aria-disabled={!fileUrl}
+                            className={`text-xs font-medium ${linkClass}`}
+                        >
+                            {t('downloadAttachment')}
+                        </a>
+                    )}
                     {onInsert && isImageAttachment(attachment.mimetype) && (
                         <InsertImageButton
                             name={attachment.original_filename}
-                            className={isDark ? 'text-green-300 hover:text-green-200' : 'text-green-700 hover:text-green-800'}
+                            className={linkClass}
                             onClick={() => onInsert({ attachment: attachment.id })}
                             t={t}
                         />

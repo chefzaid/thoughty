@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createAttachmentsService } from "./attachmentsService";
 
+const captureVideoPoster = vi.fn();
+
+vi.mock("../../utils/videoPoster", () => ({
+  captureVideoPoster: (file: Blob) => captureVideoPoster(file),
+}));
+
 describe("createAttachmentsService", () => {
   let authFetch: ReturnType<typeof vi.fn>;
   let service: ReturnType<typeof createAttachmentsService>;
@@ -44,7 +50,7 @@ describe("createAttachmentsService", () => {
     it("includes entryId in FormData when provided", async () => {
       authFetch.mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ id: 1 }),
+        json: () => Promise.resolve({ id: 1, mimetype: "image/jpeg" }),
       });
 
       const file = new File(["data"], "photo.jpg", { type: "image/jpeg" });
@@ -52,6 +58,44 @@ describe("createAttachmentsService", () => {
 
       const formData = authFetch.mock.calls[0]![1]?.body as FormData;
       expect(formData.get("entryId")).toBe("42");
+    });
+
+    it("gives a video the poster frame drawn from its file, and answers its record with it", async () => {
+      const poster = new Blob(["jpeg"], { type: "image/jpeg" });
+      captureVideoPoster.mockResolvedValue(poster);
+      const stored = { id: 7, mimetype: "video/mp4", stored_filename: "v.mp4" };
+      authFetch
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(stored) })
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ ...stored, poster_filename: "p.jpg" }) });
+      const file = new File(["video"], "clip.mp4", { type: "video/mp4" });
+
+      await expect(service.uploadAttachment(file, 3)).resolves.toEqual({ ...stored, poster_filename: "p.jpg" });
+
+      expect(captureVideoPoster).toHaveBeenCalledWith(file);
+      expect(authFetch).toHaveBeenLastCalledWith("/api/attachments/7/poster", { method: "POST", body: expect.any(FormData) });
+      const form = authFetch.mock.calls[1]![1]?.body as FormData;
+      expect((form.get("file") as File).name).toBe("poster.jpg");
+    });
+
+    it("keeps a video without a poster frame when none can be drawn or stored", async () => {
+      const stored = { id: 7, mimetype: "video/webm", stored_filename: "v.webm" };
+      const file = new File(["video"], "clip.webm", { type: "video/webm" });
+      captureVideoPoster.mockResolvedValueOnce(null);
+      authFetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(stored) });
+      await expect(service.uploadAttachment(file)).resolves.toEqual(stored);
+      expect(authFetch).toHaveBeenCalledTimes(1);
+
+      captureVideoPoster.mockResolvedValueOnce(new Blob(["jpeg"]));
+      authFetch
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(stored) })
+        .mockResolvedValueOnce({ ok: false });
+      await expect(service.uploadAttachment(file)).resolves.toEqual(stored);
+
+      captureVideoPoster.mockResolvedValueOnce(new Blob(["jpeg"]));
+      authFetch
+        .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(stored) })
+        .mockRejectedValueOnce(new Error("offline"));
+      await expect(service.uploadAttachment(file)).resolves.toEqual(stored);
     });
 
     it("returns null on failure", async () => {

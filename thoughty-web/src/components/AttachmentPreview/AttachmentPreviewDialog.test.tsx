@@ -36,7 +36,7 @@ describe('AttachmentPreviewDialog', () => {
     );
 
     expect(screen.getByRole('dialog', { name: 'previewAttachment draft.txt' })).toBeInTheDocument();
-    expect(screen.getByText('Text · 512 B')).toBeInTheDocument();
+    expect(screen.getByText('attachmentKindText · 512 B')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'downloadAttachment' })).not.toBeInTheDocument();
   });
 
@@ -77,7 +77,7 @@ describe('AttachmentPreviewDialog', () => {
 
     const dialog = screen.getByRole('dialog', { name: 'previewAttachment photo.png' });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
-    expect(dialog).toHaveAccessibleDescription('Image · 1.0 KB');
+    expect(dialog).toHaveAccessibleDescription('attachmentKindImage · 1.0 KB');
     expect(container).not.toContainElement(dialog);
   });
 

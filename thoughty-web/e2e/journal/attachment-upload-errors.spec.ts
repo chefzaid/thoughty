@@ -21,7 +21,7 @@ test.describe('Attachment upload errors', () => {
     await fileInput.setInputFiles([program, tooLarge]);
 
     const error = page.getByRole('alert');
-    await expect(error).toContainText('setup.exe: This file type is not allowed. Allowed: images, audio, PDF, plain text.');
+    await expect(error).toContainText('setup.exe: This file type is not allowed. Allowed: images, audio, videos (MP4, WebM, MOV), PDF, plain text.');
     await expect(error).toContainText('scan.pdf: File is too large. Maximum size is 5 MB.');
     await expect(attach).toHaveAttribute('aria-describedby', (await error.getAttribute('id')) ?? '');
 

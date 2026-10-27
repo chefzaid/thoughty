@@ -61,9 +61,12 @@ describe('parseJourneyEntry', () => {
         tags: ['health'],
         favorite: true,
         journal: 'Journey',
-        media: [{ name: '1588-ab-photo1.jpg', mimetype: 'image/jpeg', convert: false, file: files.get('1588-ab-photo1.jpg') }],
+        media: [
+          { name: '1588-ab-photo1.jpg', mimetype: 'image/jpeg', convert: false, file: files.get('1588-ab-photo1.jpg') },
+          { name: '1588-ab-clip.mp4', mimetype: 'video/mp4', convert: false, file: files.get('1588-ab-clip.mp4') },
+        ],
       },
-      skippedMedia: 2,
+      skippedMedia: 1,
     });
   });
 

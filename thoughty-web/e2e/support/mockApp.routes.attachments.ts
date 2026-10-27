@@ -18,6 +18,26 @@ const poolOf = (state: MockAppState) => {
 };
 let nextAttachmentId = 500;
 
+/** The bytes of uploaded videos and poster frames, served back as they were sent. */
+const storedFiles = new Map<string, { body: Buffer; contentType: string }>();
+
+/** The file part of a multipart upload body: its name, type and bytes. */
+function filePart(request: RouteContext["request"]): { name: string; type: string; body: Buffer } | null {
+  const body = request.postDataBuffer();
+  const boundary = /boundary=(.+)$/.exec(request.headers()["content-type"] ?? "")?.[1];
+  if (!body || !boundary) return null;
+  const text = body.toString("latin1");
+  const header = /name="file"; filename="([^"]*)"\r\nContent-Type: ([^\r]*)\r\n\r\n/.exec(text);
+  if (!header) return null;
+  const start = header.index + header[0].length;
+  const end = text.indexOf(`\r\n--${boundary}`, start);
+  return { name: header[1]!, type: header[2]!, body: body.subarray(start, end) };
+}
+
+function findAttachment(state: MockAppState, id: number): MockAttachment | undefined {
+  return [...state.entries.flatMap((entry) => entry.attachments ?? []), ...poolOf(state)].find((attachment) => attachment.id === id);
+}
+
 const INLINE_IMAGE = /!\[((?:\\.|[^\\\]\n])*)\]\(attachment:([^\s)]+)\)/g;
 
 /**
@@ -43,23 +63,27 @@ function record(attachment: MockAttachment, entryId: number | null) {
   return { ...attachment, entry_id: entryId, created_at: "2026-08-01T12:00:00.000Z" };
 }
 
-/** `/api/attachments/*`: uploads, links, deletes, and serves every picture as a small PNG. */
+/**
+ * `/api/attachments/*`: uploads, links, deletes, and video poster frames; serves videos and poster
+ * frames as they were sent and every other file as a small PNG.
+ */
 export async function handleAttachmentRoutes({ route, request, pathname, state }: RouteContext): Promise<boolean> {
   if (!pathname.startsWith("/api/attachments/")) return false;
   const method = request.method();
 
   if (pathname === "/api/attachments/upload" && method === "POST") {
     const body = request.postDataBuffer()?.toString("latin1") ?? "";
-    const file = /name="file"; filename="([^"]*)"\r\nContent-Type: ([^\r]*)/.exec(body);
+    const file = filePart(request);
     const entryId = Number(/name="entryId"\r\n\r\n([^\r]*)/.exec(body)?.[1]) || null;
     const id = nextAttachmentId++;
     const attachment: MockAttachment = {
       id,
-      original_filename: file?.[1] ?? "file",
+      original_filename: file?.name ?? "file",
       stored_filename: `stored-${id}`,
-      mimetype: file?.[2] ?? "application/octet-stream",
-      size: 68,
+      mimetype: file?.type ?? "application/octet-stream",
+      size: file?.type.startsWith("video/") ? file.body.length : 68,
     };
+    if (file?.type.startsWith("video/")) storedFiles.set(attachment.stored_filename, { body: file.body, contentType: file.type });
     const entry = entryId === null ? undefined : state.entries.find((candidate) => candidate.id === entryId);
     if (entry) entry.attachments = [...(entry.attachments ?? []), attachment];
     else poolOf(state).push(attachment);
@@ -84,6 +108,25 @@ export async function handleAttachmentRoutes({ route, request, pathname, state }
     return true;
   }
 
+  const poster = /^\/api\/attachments\/(\d+)\/poster$/.exec(pathname);
+  if (poster && method === "POST") {
+    const attachment = findAttachment(state, Number(poster[1]));
+    const file = filePart(request);
+    if (!attachment) {
+      await fulfillApiError(route, 404, "ATTACHMENT_NOT_FOUND", "Attachment not found");
+    } else if (!attachment.mimetype.startsWith("video/")) {
+      await fulfillApiError(route, 400, "ATTACHMENT_NOT_VIDEO", "Only video attachments have a poster frame");
+    } else if (file?.type !== "image/jpeg" || file.body[0] !== 0xff || file.body[1] !== 0xd8) {
+      await fulfillApiError(route, 400, "ATTACHMENT_CONTENT_MISMATCH", "The file content does not match its type");
+    } else {
+      attachment.poster_filename = `poster-${attachment.id}.jpg`;
+      storedFiles.set(attachment.poster_filename, { body: file.body, contentType: "image/jpeg" });
+      const entry = state.entries.find((candidate) => candidate.attachments?.includes(attachment));
+      await fulfillJson(route, record(attachment, entry ? entry.id : null), { status: 201 });
+    }
+    return true;
+  }
+
   const removal = /^\/api\/attachments\/(\d+)$/.exec(pathname);
   if (removal && method === "DELETE") {
     const id = Number(removal[1]);
@@ -95,7 +138,8 @@ export async function handleAttachmentRoutes({ route, request, pathname, state }
   }
 
   if (pathname.startsWith("/api/attachments/file/") && method === "GET") {
-    await route.fulfill({ status: 200, contentType: "image/png", body: MOCK_PNG });
+    const stored = storedFiles.get(pathname.slice("/api/attachments/file/".length));
+    await route.fulfill(stored ? { status: 200, ...stored } : { status: 200, contentType: "image/png", body: MOCK_PNG });
     return true;
   }
   return false;

@@ -34,6 +34,6 @@ export interface AppExport {
   /** Oldest first. */
   readonly entries: ImportedEntry[];
   readonly journals: string[];
-  /** Videos, missing files, and other files Thoughty cannot keep. */
+  /** Missing files, and files of a type Thoughty cannot keep. */
   readonly skippedMedia: number;
 }

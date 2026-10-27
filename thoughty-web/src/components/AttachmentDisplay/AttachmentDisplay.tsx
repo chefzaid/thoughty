@@ -6,17 +6,20 @@ import {
   hasInlineAttachmentPreview,
   isAudioAttachment,
   isImageAttachment,
+  isVideoAttachment,
 } from "../../utils/attachments";
 import { useApiServices } from "../../hooks/useApiServices";
+import { mutedTextClass } from "../../utils/tintedText";
 import AudioTranscript from "./AudioTranscript";
 import AttachmentPreviewContent from "../AttachmentPreview/AttachmentPreviewContent";
 import AttachmentPreviewDialog from "../AttachmentPreview/AttachmentPreviewDialog";
+import StoredVideoPlayer from "../AttachmentPreview/StoredVideoPlayer";
 import { useAuthenticatedAttachmentUrl } from "../AttachmentPreview/useAuthenticatedAttachmentUrl";
 
 interface AttachmentDisplayProps {
   readonly attachments: Attachment[];
   readonly theme?: "light" | "dark";
-  readonly t: (key: string) => string;
+  readonly t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 interface ActivePreviewAttachment {
@@ -46,9 +49,13 @@ function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
   if (!attachments || attachments.length === 0) return null;
 
   const images = attachments.filter((a) => isImageAttachment(a.mimetype));
+  // Videos load only when played, so they are not fetched with the other previews
+  const videos = attachments.filter((a) => isVideoAttachment(a.mimetype));
   const previewFiles = attachments.filter(
     (a) =>
-      !isImageAttachment(a.mimetype) && hasInlineAttachmentPreview(a.mimetype),
+      !isImageAttachment(a.mimetype) &&
+      !isVideoAttachment(a.mimetype) &&
+      hasInlineAttachmentPreview(a.mimetype),
   );
   const files = attachments.filter(
     (a) => !hasInlineAttachmentPreview(a.mimetype),
@@ -97,6 +104,30 @@ function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
         </div>
       )}
 
+      {videos.length > 0 && (
+        <div className="mb-2 grid gap-2 sm:grid-cols-2">
+          {videos.map((video) => (
+            <div
+              key={video.id}
+              className={`rounded-lg border p-3 ${
+                isDark
+                  ? "bg-gray-700/50 border-gray-600 text-gray-200"
+                  : "bg-gray-50 border-gray-300 text-gray-800"
+              }`}
+            >
+              <p className="mb-2 truncate text-sm font-medium">
+                {video.original_filename}
+              </p>
+              <StoredVideoPlayer attachment={video} isDark={isDark} t={t} />
+              <p className={`mt-2 text-xs ${mutedTextClass(isDark)}`}>
+                {getAttachmentKindLabel(video.mimetype, t)} ·{" "}
+                {formatAttachmentSize(video.size)}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {previewFiles.length > 0 && (
         <div className="mb-2 grid gap-2 sm:grid-cols-2">
           {previewFiles.map((file) => (
@@ -125,7 +156,7 @@ function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2 text-xs text-gray-500">
                     <span>
-                      {getAttachmentKindLabel(file.mimetype)} ·{" "}
+                      {getAttachmentKindLabel(file.mimetype, t)} ·{" "}
                       {formatAttachmentSize(file.size)}
                     </span>
                     <div className="flex items-center gap-3">

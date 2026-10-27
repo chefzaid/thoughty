@@ -146,7 +146,7 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     attachFiles: "Attach files",
     removeAttachment: "Remove attachment",
     attachmentTypeNotAllowed:
-      "This file type is not allowed. Allowed: images, audio, PDF, plain text.",
+      "This file type is not allowed. Allowed: images, audio, videos (MP4, WebM, MOV), PDF, plain text.",
     attachmentTooLarge: "File is too large. Maximum size is 5 MB.",
     attachmentRejected: "{name}: {reason}",
     previewAttachment: "Preview",
@@ -241,7 +241,7 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     attachFiles: "Joindre des fichiers",
     removeAttachment: "Supprimer la pièce jointe",
     attachmentTypeNotAllowed:
-      "Ce type de fichier n'est pas autorisé. Autorisés : images, audio, PDF, texte brut.",
+      "Ce type de fichier n'est pas autorisé. Autorisés : images, audio, vidéos (MP4, WebM, MOV), PDF, texte brut.",
     attachmentTooLarge:
       "Le fichier est trop volumineux. Taille maximale : 5 Mo.",
     attachmentRejected: "{name} : {reason}",
