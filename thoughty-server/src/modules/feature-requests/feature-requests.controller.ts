@@ -11,7 +11,6 @@ import {
 import { FeatureRequestsService } from './feature-requests.service';
 
 @ApiTags('Feature Requests')
-@ApiBearerAuth()
 @Controller('feature-requests')
 export class FeatureRequestsController {
   constructor(private readonly featureRequestsService: FeatureRequestsService) {}
@@ -29,6 +28,7 @@ export class FeatureRequestsController {
   }
 
   @Get('votes')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'List feature requests voted for by the current user' })
   @ApiResponse({
     status: 200,
@@ -40,6 +40,7 @@ export class FeatureRequestsController {
   }
 
   @Post()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Submit a feature request and vote for it' })
   @ApiResponse({
     status: 201,
@@ -54,6 +55,7 @@ export class FeatureRequestsController {
   }
 
   @Post(':id/vote')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Vote once for a feature request' })
   @ApiResponse({
     status: 201,

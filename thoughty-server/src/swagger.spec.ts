@@ -28,7 +28,7 @@ describe('swagger helpers', () => {
           bearerFormat: 'JWT',
           description: 'Enter your JWT access token',
         },
-        'bearerAuth',
+        'bearer',
       )
       .addCookieAuth(
         'thoughty_refresh_token',

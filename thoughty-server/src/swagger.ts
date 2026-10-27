@@ -17,7 +17,7 @@ export function createSwaggerConfig() {
         bearerFormat: 'JWT',
         description: 'Enter your JWT access token',
       },
-      'bearerAuth',
+      'bearer',
     )
     .addCookieAuth(
       REFRESH_TOKEN_COOKIE,

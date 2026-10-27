@@ -8363,11 +8363,6 @@
             }
           }
         },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
         "summary": "List the highest-voted feature requests",
         "tags": [
           "Feature Requests"
@@ -11003,7 +10998,7 @@
   ],
   "components": {
     "securitySchemes": {
-      "bearerAuth": {
+      "bearer": {
         "scheme": "bearer",
         "bearerFormat": "JWT",
         "type": "http",
