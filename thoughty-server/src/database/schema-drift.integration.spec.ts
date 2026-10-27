@@ -11,32 +11,6 @@ import { findSchemaDrift } from './schema-drift.test-helpers';
  * must match exactly: fixing one fails the spec until its line is removed here.
  */
 const KNOWN_DRIFT: string[] = [
-  // Bugs to fix › initial schema (columns left nullable)
-  'attachments.created_at: nullable is false in the entity but true in the database',
-  'entries.index: nullable is false in the entity but true in the database',
-  'entries.tags: nullable is false in the entity but true in the database',
-  'entries.format: nullable is false in the entity but true in the database',
-  'entries.visibility: nullable is false in the entity but true in the database',
-  'entries.is_favorite: nullable is false in the entity but true in the database',
-  'entries.is_archived: nullable is false in the entity but true in the database',
-  'entries.is_pinned: nullable is false in the entity but true in the database',
-  'entries.created_at: nullable is false in the entity but true in the database',
-  'entries.search_vector: nullable is false in the entity but true in the database',
-  'refresh_tokens.created_at: nullable is false in the entity but true in the database',
-  'settings.updated_at: nullable is false in the entity but true in the database',
-  'users.auth_provider: nullable is false in the entity but true in the database',
-  'users.email_verified: nullable is false in the entity but true in the database',
-  'users.created_at: nullable is false in the entity but true in the database',
-  'users.updated_at: nullable is false in the entity but true in the database',
-  'diaries.icon: nullable is false in the entity but true in the database',
-  "diaries.icon: default is '📓' in the entity but undefined in the database",
-  'diaries.visibility: nullable is false in the entity but true in the database',
-  'diaries.is_default: nullable is false in the entity but true in the database',
-  'diaries.position: nullable is false in the entity but true in the database',
-  'diaries.created_at: nullable is false in the entity but true in the database',
-  'entry_revisions.format: nullable is false in the entity but true in the database',
-  'entry_revisions.visibility: nullable is false in the entity but true in the database',
-  'entry_revisions.created_at: nullable is false in the entity but true in the database',
   // Needs Input › May `users.email` become `NOT NULL`?
   'users.email: nullable is false in the entity but true in the database',
 ];
