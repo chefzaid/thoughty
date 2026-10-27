@@ -142,7 +142,11 @@ describePostgres('PostgreSQL people', () => {
   it('adds one person when two entries mention someone new at the same time', async () => {
     await Promise.all([write('2026-10-01', 'Hi @Newcomer'), write('2026-10-01', 'Bye @newcomer')]);
 
-    expect(await summary()).toEqual([['Newcomer', ['newcomer'], 2, '2026-10-01']]);
+    // Whichever save takes the people lock first adds the person, so the name is its spelling.
+    const [[name, ...rest], ...others] = await summary();
+    expect(['Newcomer', 'newcomer']).toContain(name);
+    expect(rest).toEqual([['newcomer'], 2, '2026-10-01']);
+    expect(others).toEqual([]);
   });
 
   it('renames the name shown and merges a duplicate whose handle then names the person kept', async () => {

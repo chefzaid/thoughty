@@ -65,7 +65,7 @@ cd thoughty-server
 THOUGHTY_PG_TEST_URL=postgresql://postgres:password@127.0.0.1:5432/thoughty_ha_test npm test -- integration.spec
 ```
 
-A new spec wraps its suite in `describePostgres`, calls `createPostgresTestDatabase` in `beforeAll` (with `POSTGRES_SETUP_TIMEOUT_MS`), calls `drop()` in `afterAll`, and empties its tables in `beforeEach` (for example `TRUNCATE users RESTART IDENTITY CASCADE`).
+A new spec wraps its suite in `describePostgres`, calls `createPostgresTestDatabase` in `beforeAll` (with `POSTGRES_SETUP_TIMEOUT_MS`), calls `drop()` in `afterAll`, and empties its tables in `beforeEach` (for example `TRUNCATE users RESTART IDENTITY CASCADE`). A test that runs work at the same time (`Promise.all`) must not assert which one finished first: PostgreSQL decides who takes a lock, so assert only what holds whatever the order (one person added, not whose spelling named it).
 
 ## Frontend Unit Tests
 
