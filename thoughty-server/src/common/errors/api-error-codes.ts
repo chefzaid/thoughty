@@ -143,6 +143,9 @@ export const API_ERROR_MESSAGES = {
   MEMOIR_ANSWER_EMPTY: 'Write an answer or attach a recording',
   MEMOIR_ALREADY_ANSWERED: 'This question already has an answer',
 
+  // The "On this day" email.
+  ON_THIS_DAY_UNSUBSCRIBE_INVALID: 'This unsubscribe link is not valid',
+
   // Stats and the year in review.
   STATS_INVALID_DATE_RANGE: 'The start date must be before or equal to the end date',
   REVIEW_YEAR_EMPTY: 'There are no entries to read in this year',

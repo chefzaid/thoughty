@@ -26,6 +26,7 @@ vault kv put secret/thoughty/app \
   JWT_SECRET="<secure-jwt-secret>" \
   REFRESH_SECRET="<secure-refresh-secret>" \
   TWO_FACTOR_SECRET="<secure-two-factor-secret>" \
+  UNSUBSCRIBE_SECRET="<secure-unsubscribe-secret>" \
   CONFIG_ENCRYPTION_SECRET="<secure-encryption-secret>" \
   S3_ACCESS_KEY="<s3-access-key>" \
   S3_SECRET_KEY="<s3-secret-key>" \

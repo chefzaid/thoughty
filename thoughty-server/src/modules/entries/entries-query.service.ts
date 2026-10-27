@@ -15,6 +15,23 @@ import { addSameDayOrder } from '@/common/utils';
 import { applyEntryListFilters, parseEntryIdsFilter } from './entry-list-filters';
 import { EntrySearchService, type PreparedEntrySearch } from './entry-search.service';
 
+/** Entries "On this day" shows at most. */
+export const ON_THIS_DAY_LIMIT = 10;
+
+export interface OnThisDayQuery {
+  year: number;
+  /** 1 to 12. */
+  month: number;
+  day: number;
+  diaryId?: number | null;
+  limit?: number;
+}
+
+export interface OnThisDayEntry {
+  entry: Entry;
+  yearsAgo: number;
+}
+
 /**
  * Reading the journal: the filtered and searched entry list, the days with entries, tag usage,
  * the day's highlights and an entry's revisions. Finding a single entry is `EntryLookupService`.
@@ -162,34 +179,14 @@ export class EntriesQueryService {
       randomQb = randomQb.andWhere('e.diary_id = :diaryId', { diaryId });
     }
 
-    let onThisDayQb = this.entryRepository
-      .createQueryBuilder('e')
-      .leftJoinAndSelect('e.diary', 'd')
-      .addSelect('EXTRACT(YEAR FROM e.date)', 'entry_year')
-      .where('e.user_id = :userId', { userId })
-      .andWhere("TO_CHAR(e.date, 'MM-DD') = :mmdd", { mmdd: `${currentMonth}-${currentDay}` })
-      .andWhere('EXTRACT(YEAR FROM e.date) < :currentYear', { currentYear })
-      .orderBy('e.date', 'DESC')
-      .limit(10);
-
-    if (diaryId) {
-      onThisDayQb = onThisDayQb.andWhere('e.diary_id = :diaryId', { diaryId });
-    }
-
     const [randomEntry, onThisDayEntries] = await Promise.all([
       randomQb.getOne(),
-      onThisDayQb.getRawAndEntities(),
+      this.findOnThisDay(userId, { year: currentYear, month: today.getMonth() + 1, day: today.getDate(), diaryId }),
     ]);
 
     const onThisDay: Record<number, EntryResponseDto[]> = {};
-    for (let index = 0; index < onThisDayEntries.entities.length; index++) {
-      const entry = onThisDayEntries.entities[index];
-      const entryYear = Number.parseInt(onThisDayEntries.raw[index].entry_year, 10);
-      const yearsAgo = currentYear - entryYear;
-
-      if (!onThisDay[yearsAgo]) {
-        onThisDay[yearsAgo] = [];
-      }
+    for (const { entry, yearsAgo } of onThisDayEntries) {
+      onThisDay[yearsAgo] ??= [];
       onThisDay[yearsAgo].push(toEntryResponse(entry));
     }
 
@@ -198,6 +195,34 @@ export class EntriesQueryService {
       onThisDay,
       currentDate: { month: currentMonth, day: currentDay, year: currentYear },
     };
+  }
+
+  /**
+   * "On this day": the writer's entries from earlier years dated on this month and day, newest first,
+   * in one diary or all of them. Entries in the recycle bin never count. Highlights and the
+   * "On this day" email both read it.
+   */
+  async findOnThisDay(userId: number, on: OnThisDayQuery): Promise<OnThisDayEntry[]> {
+    const mmdd = `${String(on.month).padStart(2, '0')}-${String(on.day).padStart(2, '0')}`;
+    const qb = this.entryRepository
+      .createQueryBuilder('e')
+      .leftJoinAndSelect('e.diary', 'd')
+      .addSelect('EXTRACT(YEAR FROM e.date)', 'entry_year')
+      .where('e.user_id = :userId', { userId })
+      .andWhere("TO_CHAR(e.date, 'MM-DD') = :mmdd", { mmdd })
+      .andWhere('EXTRACT(YEAR FROM e.date) < :currentYear', { currentYear: on.year })
+      .orderBy('e.date', 'DESC')
+      .limit(on.limit ?? ON_THIS_DAY_LIMIT);
+
+    if (on.diaryId) {
+      qb.andWhere('e.diary_id = :diaryId', { diaryId: on.diaryId });
+    }
+
+    const { entities, raw } = await qb.getRawAndEntities();
+    return entities.map((entry, index) => ({
+      entry,
+      yearsAgo: on.year - Number.parseInt(raw[index].entry_year, 10),
+    }));
   }
 
   async getRevisions(userId: number, entryId: number): Promise<EntryRevision[]> {

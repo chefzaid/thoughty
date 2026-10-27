@@ -16,6 +16,7 @@ import { handleRecycleBinRoutes } from "./mockApp.routes.recycle-bin";
 import { handleSavedSearchRoutes } from "./mockApp.routes.saved-searches";
 import { handleCalendarRoutes } from "./mockApp.routes.calendar";
 import { handleLifeEraRoutes } from "./mockApp.routes.life-eras";
+import { handleOnThisDayEmailRoutes } from "./mockApp.routes.on-this-day-email";
 import { handlePeopleRoutes } from "./mockApp.routes.people";
 
 async function handleAuthRoutes({
@@ -360,6 +361,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     if (await handleLifeEraRoutes(context)) {
+      return;
+    }
+    if (await handleOnThisDayEmailRoutes(context)) {
       return;
     }
     if (await handlePeopleRoutes(context)) {

@@ -84,12 +84,13 @@ Read the [canary limits](./deployment.md#canary-infrak8soverlaysswirl-cloud-cana
 | AI or cloud provider errors | `OPENROUTER_API_KEY`; OAuth client IDs, secrets, and redirect URIs. |
 | SSO fails ("Keycloak sign-in did not complete" on the sign-in page) | `oauth2-proxy`, the `thoughty-sso` Middleware on the `thoughty-sso-ingress` route, and the `KEYCLOAK_*` values. Local accounts keep working meanwhile. Never trust identity headers alone. |
 
-The worker runs four loops, never in API pods:
+The worker runs five loops, never in API pods:
 
 | Loop | Interval | Error log |
 |---|---|---|
 | Cloud sync | 60s scan, 5s poll | `Failed to process queued cloud sync jobs` |
 | Weekly memoir questions and email | 60s | `Weekly memoir email for user <id> failed` (not retried) |
+| "On this day" emails (at most one per writer and local day, only on days with past entries) | 60s | `On this day email for user <id> failed: <error name> <SMTP reply code>` (not retried that day); `Sent <n> On this day emails` after a run that sent some |
 | Recycle-bin purge (deleted over 30 days, with files) | hourly | `Failed to empty expired recycle bin entries` |
 | Account purge (accounts deleted over `ACCOUNT_PURGE_AFTER_DAYS`, default 30) | hourly | `Failed to purge deleted account <id>` (retried next run) |
 
@@ -100,9 +101,11 @@ select id, provider, status, attempt_count, locked_at, last_error
 from cloud_sync_jobs order by updated_at desc limit 20;
 select user_id, next_delivery_at from memoir_programs
 where status = 'active' and next_delivery_at <= now() limit 20;
+select user_id, next_send_at, last_sent_on from on_this_day_emails
+where enabled and next_send_at <= now() limit 20;
 ```
 
-Memoir rows that stay due mean the worker is down or failing.
+Memoir or "On this day" rows that stay due mean the worker is down or failing (rows of deleted accounts stay due until the account purge removes them, and are never sent). The "On this day" logs carry only the user ID, never the address or entry text; an SMTP error's message is left out because it can quote the address.
 
 ## Backup and Recovery
 

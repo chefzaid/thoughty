@@ -27,6 +27,7 @@ erDiagram
     User ||--o{ SavedSearch : saves
     User ||--o{ LifeEra : names
     User ||--o{ Person : mentions
+    User ||--o| OnThisDayEmail : receives
     Person ||--o{ PersonHandle : "is mentioned by"
     Person ||--o{ EntryPerson : "appears in"
 
@@ -35,6 +36,7 @@ erDiagram
     Diary ||--o{ MemoirProgram : collects
     Diary ||--o{ YearReviewMood : scopes
     Diary ||--o{ SavedSearch : scopes
+    Diary ||--o{ OnThisDayEmail : scopes
 
     Entry ||--o{ EntryRevision : snapshots
     Entry ||--o{ Attachment : links
@@ -66,6 +68,7 @@ Every table except `users` references a user, and those foreign keys cascade. Ac
 | `SavedSearch` | Deleted with the user, and with it the book versions saved from it. Deleting its diary keeps the search, its book versions, and widens it to all diaries (`SET NULL`). |
 | `LifeEra` | Deleted with the user. Deleting one leaves entries untouched and sets `eraId` to null in the writer's saved searches filtered by it, in the same transaction, so they cover every date. |
 | `Person`, `PersonHandle`, `EntryPerson` | Deleted with the user. An entry's links (`entry_people`) are rebuilt from its text on every save and go with the entry when it is purged; they stay while it is in the recycle bin, which only counts leave out. Deleting a person deletes their handles and links, keeps the text, and sets `personId` to null in saved searches filtered by them; merging moves the duplicate's handles and links to the person kept and points those saved searches at them. |
+| `OnThisDayEmail` | Deleted with the user. Deleting its diary widens the email to all diaries (`SET NULL`). Unsubscribing only turns it off and keeps the hour, zone and diary. |
 | Everything else | Deleted with the user. Votes also go with their request. |
 
 ## Entries
@@ -211,6 +214,7 @@ People are the writer's own records of someone they mention with `@handle` in an
 - **AI usage.** `ai_usage_events` records credential source (personal or server), model, tokens, and cost, never prompts, completions, or keys. The dashboard shows personal-key usage for the last 30 days.
 - **Book versions.** Each saved book is an immutable `BYTEA` file (PDF, EPUB, HTML, or Markdown) with a manifest of chapter titles and entry IDs only. `source` (JSONB) records where its entries came from: `{"kind":"journal","diaryId"}`, `{"kind":"savedSearch","savedSearchId","savedSearchName"}` or `{"kind":"entries","entryIds":[...]}`; versions saved before sources existed default to the journal. `scope_key` gives each diary (`diary:<id>`), all diaries (`all`), each saved search (`search:<id>`) and the hand-picked books (`picked`) its own version sequence; a transaction-scoped advisory lock on the user and scope serializes numbering. `diary_id` is set only for journal books, so deleting a diary deletes its book versions but not those of saved searches or picks. Deleting a saved search deletes its versions in the same transaction, under the same advisory lock, and a version being saved for a saved search deleted meanwhile is refused (`404 SAVED_SEARCH_NOT_FOUND`). The binary is loaded only by the owner's download query.
 - **Guided memoir.** `MemoirProgram` stores the collecting diary, `active` or `paused`, the email choice, and the schedule: `delivery_weekday` (0 = Sunday) at 09:00 in the IANA `time_zone`. `current_question_id` is this week's question and `next_delivery_at` drives the worker. The question catalogue is code (`modules/memoir/memoir-questions.ts`), referenced by stable string IDs. Answers are ordinary private entries; `MemoirAnswer` only links question and entry.
+- **"On this day" email.** `on_this_day_emails` holds one row per writer who saved the setting (`user_id` is the key; no row means off): `enabled` (default off), `delivery_hour` (0 to 23, `chk_on_this_day_emails_hour`) in the IANA `time_zone`, `diary_id` (null for all diaries), `next_send_at` (the next time that hour comes round, recomputed on every save and every worker pass) and `last_sent_on`, the writer's local date of the last email. The partial index `idx_on_this_day_emails_due` on `next_send_at WHERE enabled` lets the worker find the due rows without scanning; `last_sent_on` is what keeps a local day to one email. Which entries an email holds is not stored: it reads them at send time with the Highlights "On this day" query.
 - **Year in review.** Everything is computed from entries on request except the AI mood arc. `YearReviewMood` keeps the latest reading per scope (diary null for all diaries): one `{month, mood, valence}` item per month in JSONB (valence -2 to 2), a summary, and the number of entries read. Reading again replaces it in one transaction.
 
 ## Schema Migrations

@@ -381,4 +381,41 @@ describe('EmailService', () => {
       );
     });
   });
+
+  describe('sendRenderedEmail', () => {
+    const email = {
+      subject: 'On this day in your journal',
+      html: '<p>Hello</p>',
+      text: 'Hello',
+      headers: { 'List-Unsubscribe': '<https://thoughty.example.com/api/on-this-day-email/unsubscribe?token=1.x>' },
+    };
+
+    it('sends the rendered content with its headers from the configured address', async () => {
+      configService = createConfigService({
+        SMTP_HOST: 'smtp.example.com',
+        SMTP_PORT: 587,
+        SMTP_USER: 'user@example.com',
+        SMTP_PASS: 'password',
+      });
+      service = new EmailService(configService as ConfigService);
+
+      await service.sendRenderedEmail('writer@example.com', email);
+
+      expect(mockTransporter.sendMail).toHaveBeenCalledWith({
+        from: 'user@example.com',
+        to: 'writer@example.com',
+        subject: 'On this day in your journal',
+        html: '<p>Hello</p>',
+        text: 'Hello',
+        headers: email.headers,
+      });
+    });
+
+    it('throws when the transporter is not configured', async () => {
+      configService = createConfigService({});
+      service = new EmailService(configService as ConfigService);
+
+      await expect(service.sendRenderedEmail('writer@example.com', email)).rejects.toThrow('Email service not configured');
+    });
+  });
 });

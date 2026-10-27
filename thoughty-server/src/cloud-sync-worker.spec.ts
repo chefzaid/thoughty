@@ -22,6 +22,7 @@ describe('cloud-sync-worker bootstrap', () => {
     const FakeAppModule = class {};
     const FakeWorkerService = class {};
     const FakeMemoirWorkerService = class {};
+    const FakeOnThisDayWorkerService = class {};
     const FakeRecycleBinWorkerService = class {};
     const FakeAccountPurgeWorkerService = class {};
 
@@ -37,6 +38,9 @@ describe('cloud-sync-worker bootstrap', () => {
     jest.doMock('./modules/cloud-sync/cloud-sync-worker.service', () => ({ CloudSyncWorkerService: FakeWorkerService }));
     jest.doMock('./modules/memoir/memoir-delivery-worker.service', () => ({
       MemoirDeliveryWorkerService: FakeMemoirWorkerService,
+    }));
+    jest.doMock('./modules/on-this-day-email/on-this-day-delivery-worker.service', () => ({
+      OnThisDayDeliveryWorkerService: FakeOnThisDayWorkerService,
     }));
     jest.doMock('./modules/recycle-bin/recycle-bin-purge-worker.service', () => ({
       RecycleBinPurgeWorkerService: FakeRecycleBinWorkerService,
@@ -54,9 +58,10 @@ describe('cloud-sync-worker bootstrap', () => {
     });
     expect(app.get).toHaveBeenCalledWith(FakeWorkerService);
     expect(app.get).toHaveBeenCalledWith(FakeMemoirWorkerService);
+    expect(app.get).toHaveBeenCalledWith(FakeOnThisDayWorkerService);
     expect(app.get).toHaveBeenCalledWith(FakeRecycleBinWorkerService);
     expect(app.get).toHaveBeenCalledWith(FakeAccountPurgeWorkerService);
-    expect(start).toHaveBeenCalledTimes(4);
+    expect(start).toHaveBeenCalledTimes(5);
     expect(typeof handlers.SIGINT).toBe('function');
     expect(typeof handlers.SIGTERM).toBe('function');
 
@@ -79,6 +84,9 @@ describe('cloud-sync-worker bootstrap', () => {
     jest.doMock('./common', () => ({ JsonLogger: jest.fn(() => logger) }));
     jest.doMock('./modules/cloud-sync/cloud-sync-worker.service', () => ({ CloudSyncWorkerService: class {} }));
     jest.doMock('./modules/memoir/memoir-delivery-worker.service', () => ({ MemoirDeliveryWorkerService: class {} }));
+    jest.doMock('./modules/on-this-day-email/on-this-day-delivery-worker.service', () => ({
+      OnThisDayDeliveryWorkerService: class {},
+    }));
     jest.doMock('./modules/recycle-bin/recycle-bin-purge-worker.service', () => ({ RecycleBinPurgeWorkerService: class {} }));
     jest.doMock('./modules/account-purge/account-purge-worker.service', () => ({ AccountPurgeWorkerService: class {} }));
 

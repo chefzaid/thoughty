@@ -13,6 +13,14 @@ export interface MemoirQuestionEmail {
   footer: string;
 }
 
+/** An email whose content is already rendered, with any extra headers it needs (such as List-Unsubscribe). */
+export interface RenderedEmail {
+  subject: string;
+  html: string;
+  text: string;
+  headers?: Record<string, string>;
+}
+
 @Injectable()
 export class EmailService {
   private readonly transporter: nodemailer.Transporter | null = null;
@@ -201,6 +209,21 @@ export class EmailService {
         </div>
       `,
       text: `${email.heading}\n\n${email.question}\n\n${email.actionLabel}: ${email.actionUrl}\n\n${email.footer}\n`,
+    });
+  }
+
+  async sendRenderedEmail(toEmail: string, email: RenderedEmail): Promise<void> {
+    if (!this.transporter) {
+      throw new Error('Email service not configured');
+    }
+
+    await this.transporter.sendMail({
+      from: this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER'),
+      to: toEmail,
+      subject: email.subject,
+      html: email.html,
+      text: email.text,
+      headers: email.headers,
     });
   }
 

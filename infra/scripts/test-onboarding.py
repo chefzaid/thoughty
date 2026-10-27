@@ -235,7 +235,7 @@ class OnboardingTests(unittest.TestCase):
         else:
             self.assertEqual(requests["apps/thoughty/database"]["POSTGRES_PASSWORD"], {"generate": 24, "encoding": "hex"})
             required = requests["apps/thoughty/app"]
-            for key in ("JWT_SECRET", "REFRESH_SECRET", "TWO_FACTOR_SECRET", "CONFIG_ENCRYPTION_SECRET"):
+            for key in ("JWT_SECRET", "REFRESH_SECRET", "TWO_FACTOR_SECRET", "UNSUBSCRIBE_SECRET", "CONFIG_ENCRYPTION_SECRET"):
                 self.assertGreaterEqual(required[key]["generate"], 32)
                 self.assertEqual(required[key]["encoding"], "hex")
             self.assertEqual(required["S3_ACCESS_KEY"], {"value": ""})

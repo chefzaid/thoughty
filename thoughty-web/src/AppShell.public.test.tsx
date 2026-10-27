@@ -92,6 +92,23 @@ describe('AppShell public flows', () => {
     expect(verifyEmail).toHaveBeenCalledWith('route-token');
   });
 
+  it('loads the public unsubscribe route and turns the email off without signing in', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+    globalThis.history.replaceState({}, '', '/unsubscribe?token=3.signed');
+    setMockAuthState({ user: null, isAuthenticated: false });
+
+    renderAppShell();
+
+    expect(await screen.findByRole('heading', { name: 'Unsubscribe' })).toBeInTheDocument();
+    expect(await screen.findByText(/You won’t receive “On this day” emails anymore/)).toBeInTheDocument();
+    expect(fetchSpy).toHaveBeenCalledWith('/api/on-this-day-email/unsubscribe?token=3.signed', { method: 'POST' });
+    await userEvent.click(screen.getByRole('button', { name: 'Continue to Thoughty' }));
+    expect(globalThis.location.pathname).toBe('/');
+    fetchSpy.mockRestore();
+  });
+
   it('navigates from the intro page to sign in and sign up modes', async () => {
     const user = userEvent.setup();
     setMockAuthState({ user: null, isAuthenticated: false });

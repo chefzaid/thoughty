@@ -161,20 +161,23 @@ if ! { printf '%s\n' "$vault_token"; } | \
   jwt_secret="$(openssl rand -hex 48)"
   refresh_secret="$(openssl rand -hex 48)"
   two_factor_secret="$(openssl rand -hex 32)"
+  unsubscribe_secret="$(openssl rand -hex 32)"
   config_encryption_secret="$(openssl rand -hex 32)"
-  { printf '%s\n%s\n%s\n%s\n%s\n' \
-      "$vault_token" "$jwt_secret" "$refresh_secret" "$two_factor_secret" "$config_encryption_secret"; } | \
+  { printf '%s\n%s\n%s\n%s\n%s\n%s\n' \
+      "$vault_token" "$jwt_secret" "$refresh_secret" "$two_factor_secret" "$unsubscribe_secret" "$config_encryption_secret"; } | \
     kubectl exec -i -n "$INFRA_NAMESPACE" "$VAULT_POD" -- sh -ceu '
       IFS= read -r VAULT_TOKEN
       IFS= read -r jwt_secret
       IFS= read -r refresh_secret
       IFS= read -r two_factor_secret
+      IFS= read -r unsubscribe_secret
       IFS= read -r config_encryption_secret
       export VAULT_TOKEN VAULT_ADDR=http://127.0.0.1:8200
       vault kv put secret/apps/thoughty/app \
         JWT_SECRET="$jwt_secret" \
         REFRESH_SECRET="$refresh_secret" \
         TWO_FACTOR_SECRET="$two_factor_secret" \
+        UNSUBSCRIBE_SECRET="$unsubscribe_secret" \
         CONFIG_ENCRYPTION_SECRET="$config_encryption_secret" \
         S3_ACCESS_KEY="" S3_SECRET_KEY="" OPENROUTER_API_KEY="" \
         GOOGLE_DRIVE_CLIENT_ID="" GOOGLE_DRIVE_CLIENT_SECRET="" \
@@ -182,7 +185,7 @@ if ! { printf '%s\n' "$vault_token"; } | \
         DROPBOX_CLIENT_ID="" DROPBOX_CLIENT_SECRET="" \
         SMTP_HOST="" SMTP_PORT=587 SMTP_USER="" SMTP_PASS="" SMTP_FROM="" >/dev/null
     '
-  unset jwt_secret refresh_secret two_factor_secret config_encryption_secret
+  unset jwt_secret refresh_secret two_factor_secret unsubscribe_secret config_encryption_secret
 fi
 
 if ! { printf '%s\n' "$vault_token"; } | \

@@ -22,6 +22,7 @@ import { RecycleBinModule } from './modules/recycle-bin';
 import { SavedSearchesModule } from './modules/saved-searches';
 import { LifeErasModule } from './modules/life-eras';
 import { PeopleModule } from './modules/people';
+import { OnThisDayEmailModule } from './modules/on-this-day-email';
 import { AccountPurgeModule } from './modules/account-purge';
 import { HealthController } from './health.controller';
 import {
@@ -67,6 +68,7 @@ import {
     SavedSearchesModule,
     LifeErasModule,
     PeopleModule,
+    OnThisDayEmailModule,
     AccountPurgeModule,
   ],
   providers: [

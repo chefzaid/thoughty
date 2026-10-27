@@ -113,6 +113,10 @@
           "generate": 32,
           "encoding": "hex"
         },
+        "UNSUBSCRIBE_SECRET": {
+          "generate": 32,
+          "encoding": "hex"
+        },
         "CONFIG_ENCRYPTION_SECRET": {
           "generate": 32,
           "encoding": "hex"

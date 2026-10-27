@@ -12,13 +12,7 @@ export function formatDeliveryDate(iso: string, timeZone: string, language: Memo
   return new Intl.DateTimeFormat(language, { weekday: 'long', day: 'numeric', month: 'long', timeZone }).format(new Date(iso));
 }
 
-export function browserTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
+export { browserTimeZone } from '../../utils/timeZone';
 
 /** Today's date (`YYYY-MM-DD`) in the memoir's time zone, the day an answer is dated; the browser's day when the zone is unknown. */
 export function todayIn(timeZone: string, now = new Date()): string {

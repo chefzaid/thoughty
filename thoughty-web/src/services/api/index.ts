@@ -17,3 +17,4 @@ export * from './lifeErasService';
 export * from './peopleService';
 export * from './entryCalendarService';
 export * from './writingStreakService';
+export * from './onThisDayEmailService';

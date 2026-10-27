@@ -15,6 +15,8 @@ import DataPrivacySection from './DataPrivacySection';
 import SubscriptionSection from './SubscriptionSection';
 import AchievementsSection from './AchievementsSection';
 import LifeErasSection from '../LifeEras/LifeErasSection';
+import OnThisDayEmailSection from '../OnThisDayEmail/OnThisDayEmailSection';
+import type { Diary } from '../../types';
 import { resolveLanguage } from '../../utils/language';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
@@ -41,11 +43,15 @@ interface ProfilePageProps {
   readonly onBack: () => void;
   readonly t: TranslationFunction;
   readonly stats?: ProfileStats;
+  /** The writer's diaries, for the diary the "On this day" email reads. */
+  readonly diaries?: readonly Diary[];
 }
+
+const NO_DIARIES: readonly Diary[] = [];
 
 type FormSubmitHandler = NonNullable<ComponentProps<'form'>['onSubmit']>;
 
-function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats }: ProfilePageProps) {
+function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats, diaries = NO_DIARIES }: ProfilePageProps) {
   const { user, changePassword, deleteAccount } = useAuth();
   const [localConfig, setLocalConfig] = useState<ProfileConfig>(config);
 
@@ -257,6 +263,8 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats 
       </div>
 
       <LifeErasSection isDark={isDark} language={resolveLanguage(config.language)} t={t} />
+
+      <OnThisDayEmailSection diaries={diaries} isDark={isDark} language={resolveLanguage(config.language)} t={t} />
 
       <AppearanceSection
         localConfig={localConfig}

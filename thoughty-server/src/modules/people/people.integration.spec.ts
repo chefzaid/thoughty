@@ -194,7 +194,12 @@ describePostgres('PostgreSQL people', () => {
       [writerId, otherId],
     );
 
-    await dataSource.undoLastMigration({ transaction: 'all' });
+    // Roll back to just before the people migration (any later one first), then run them all again
+    let undone: string | undefined;
+    while (undone !== 'People1786665600000') {
+      [{ name: undone }] = (await dataSource.query('SELECT name FROM migrations ORDER BY id DESC LIMIT 1')) as Array<{ name: string }>;
+      await dataSource.undoLastMigration({ transaction: 'all' });
+    }
     await dataSource.runMigrations({ transaction: 'all' });
 
     expect(await summary()).toEqual([['Ana', ['ana'], 1, '2026-01-01']]);

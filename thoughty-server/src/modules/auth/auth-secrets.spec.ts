@@ -1,5 +1,5 @@
 import type { ConfigService } from '@nestjs/config';
-import { getSigningSecret, getTwoFactorSecret } from './auth-secrets';
+import { getSigningSecret, getTwoFactorSecret, getUnsubscribeSecret } from './auth-secrets';
 
 const config = (values: Record<string, string | undefined>) =>
   ({ get: jest.fn((key: string) => values[key]) }) as unknown as ConfigService;
@@ -28,11 +28,13 @@ describe('auth secrets', () => {
       expect(getTwoFactorSecret(config({}))).toBe(
         'your-secret-key-change-in-production:two-factor',
       );
+      expect(getUnsubscribeSecret(config({}))).toBe('your-secret-key-change-in-production:unsubscribe');
     });
 
     it('uses configured values, however short', () => {
       expect(getSigningSecret(config({ JWT_SECRET: 'short' }), 'JWT_SECRET')).toBe('short');
       expect(getTwoFactorSecret(config({ TWO_FACTOR_SECRET: 'tf' }))).toBe('tf');
+      expect(getUnsubscribeSecret(config({ UNSUBSCRIBE_SECRET: 'un' }))).toBe('un');
     });
   });
 
@@ -74,6 +76,17 @@ describe('auth secrets', () => {
         getTwoFactorSecret(config({ TWO_FACTOR_SECRET: 'two-factor-secret-change-in-production' })),
       ).toThrow('TWO_FACTOR_SECRET must not use the example value in production');
       expect(() => getTwoFactorSecret(config({}))).toThrow('JWT_SECRET is required in production');
+    });
+
+    it('derives the unsubscribe key from a strong JWT_SECRET and refuses a weak UNSUBSCRIBE_SECRET', () => {
+      expect(getUnsubscribeSecret(config({ JWT_SECRET: STRONG }))).toBe(`${STRONG}:unsubscribe`);
+      expect(getUnsubscribeSecret(config({ UNSUBSCRIBE_SECRET: 'c'.repeat(64) }))).toBe('c'.repeat(64));
+      expect(() =>
+        getUnsubscribeSecret(config({ UNSUBSCRIBE_SECRET: 'unsubscribe-secret-change-in-production' })),
+      ).toThrow('UNSUBSCRIBE_SECRET must not use the example value in production');
+      expect(() => getUnsubscribeSecret(config({ UNSUBSCRIBE_SECRET: 'short' }))).toThrow(
+        'UNSUBSCRIBE_SECRET must be at least 32 characters in production',
+      );
     });
   });
 });

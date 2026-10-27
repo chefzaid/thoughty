@@ -14,6 +14,7 @@ const ContactPage = lazy(() => import('./components/ContactPage/ContactPage'));
 const FeedbackPage = lazy(() => import('./components/FeedbackPage/FeedbackPage'));
 const LegalPage = lazy(() => import('./components/LegalPage/LegalPage'));
 const VerifyEmailPage = lazy(() => import('./components/VerifyEmailPage/VerifyEmailPage'));
+const UnsubscribePage = lazy(() => import('./components/UnsubscribePage/UnsubscribePage'));
 const AuthenticatedAppLayout = lazy(() => import('./routes/AuthenticatedAppLayout'));
 const AuthenticatedRoutes = lazy(() => import('./routes/AuthenticatedRoutes'));
 
@@ -42,6 +43,7 @@ function AppShell() {
     feedbackPageProps,
     legalPageProps,
     verifyEmailPageProps,
+    unsubscribePageProps,
     authenticatedLayoutProps,
     authenticatedRoutesProps,
     introPageProps,
@@ -73,6 +75,10 @@ function AppShell() {
 
   if (publicView === 'verifyEmail') {
     return renderPublic(renderLazy(<VerifyEmailPage {...verifyEmailPageProps} />), verifyEmailPageProps.t);
+  }
+
+  if (publicView === 'unsubscribe') {
+    return renderPublic(renderLazy(<UnsubscribePage {...unsubscribePageProps} />), unsubscribePageProps.t);
   }
 
   // The presentation page stays the entry point for everyone; signed-in visitors open the journal from it.

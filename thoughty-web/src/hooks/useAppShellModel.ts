@@ -34,6 +34,7 @@ import {
   type FeedbackPageProps,
   type IntroPageProps,
   type LegalPageProps,
+  type UnsubscribePageProps,
   type VerifyEmailPageProps,
 } from '../utils/appShellProps';
 import type { RephraseMode, SummaryGuidance } from '../services/api/aiService';
@@ -51,6 +52,7 @@ interface AppShellModel {
   feedbackPageProps: FeedbackPageProps;
   legalPageProps: Omit<LegalPageProps, 'page'>;
   verifyEmailPageProps: VerifyEmailPageProps;
+  unsubscribePageProps: UnsubscribePageProps;
   authenticatedLayoutProps: AuthenticatedLayoutProps;
   authenticatedRoutesProps: AuthenticatedRoutesProps;
   introPageProps: IntroPageProps;
@@ -289,6 +291,7 @@ export function useAppShellModel(): AppShellModel {
     legalPageProps,
     authPageProps,
     verifyEmailPageProps,
+    unsubscribePageProps,
   } = buildPublicShellProps({
     configTheme: config.theme,
     isAuthenticated,
@@ -360,6 +363,7 @@ export function useAppShellModel(): AppShellModel {
     feedbackPageProps,
     legalPageProps,
     verifyEmailPageProps,
+    unsubscribePageProps,
     authenticatedLayoutProps,
     authenticatedRoutesProps,
     introPageProps,

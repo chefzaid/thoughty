@@ -10386,6 +10386,175 @@
           "People"
         ]
       }
+    },
+    "/api/on-this-day-email": {
+      "get": {
+        "operationId": "OnThisDayEmailController_get",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "The setting",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnThisDayEmailSettingsDto"
+                },
+                "example": {
+                  "enabled": true,
+                  "deliveryHour": 8,
+                  "timeZone": "Europe/Paris",
+                  "diaryId": 4,
+                  "nextSendAt": "2026-10-28T07:00:00.000Z",
+                  "emailAvailable": true
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get the \"On this day\" email setting (off until turned on)",
+        "tags": [
+          "On this day email"
+        ]
+      },
+      "put": {
+        "operationId": "OnThisDayEmailController_update",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOnThisDayEmailDto"
+              },
+              "example": {
+                "enabled": true,
+                "deliveryHour": 8,
+                "timeZone": "Europe/Paris",
+                "diaryId": null
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The saved setting",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnThisDayEmailSettingsDto"
+                },
+                "example": {
+                  "enabled": true,
+                  "deliveryHour": 8,
+                  "timeZone": "Europe/Paris",
+                  "diaryId": 4,
+                  "nextSendAt": "2026-10-28T07:00:00.000Z",
+                  "emailAvailable": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid hour or unknown time zone",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid hour or unknown time zone",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The diary does not belong to you",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "The diary does not belong to you",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Turn the \"On this day\" email on or off and choose its hour, time zone and diary",
+        "tags": [
+          "On this day email"
+        ]
+      }
+    },
+    "/api/on-this-day-email/unsubscribe": {
+      "post": {
+        "description": "Mail apps post here for one-click unsubscribe (RFC 8058, `List-Unsubscribe=One-Click` in the body), and the web unsubscribe page does too. Repeating it changes nothing.",
+        "operationId": "OnThisDayEmailController_unsubscribe",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "description": "The signed token from the email’s unsubscribe link",
+            "schema": {
+              "example": "12.Xq0o2Zr4b0bq9m3xg1Vd7QF2s8kPj5tYwHn6cLzA_eE",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The email is off",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The link is invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The link is invalid",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Stop \"On this day\" emails from an email’s signed link, without signing in",
+        "tags": [
+          "On this day email"
+        ]
+      }
     }
   },
   "info": {
@@ -19338,6 +19507,100 @@
           "duplicateId": 14
         }
       },
+      "OnThisDayEmailSettingsDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the \"On this day\" email is on; off until the writer turns it on"
+          },
+          "deliveryHour": {
+            "type": "number",
+            "example": 8,
+            "minimum": 0,
+            "maximum": 23,
+            "description": "Local hour the email arrives at"
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "nullable": true,
+            "description": "IANA time zone of the delivery hour; null until the setting is first saved"
+          },
+          "diaryId": {
+            "type": "number",
+            "example": 4,
+            "nullable": true,
+            "description": "The diary the email reads; null for all diaries"
+          },
+          "nextSendAt": {
+            "type": "string",
+            "example": "2026-10-28T07:00:00.000Z",
+            "nullable": true,
+            "description": "When the email is next due, on days with past entries; null while it is off"
+          },
+          "emailAvailable": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the account has a verified email and this server can send email"
+          }
+        },
+        "required": [
+          "enabled",
+          "deliveryHour",
+          "timeZone",
+          "diaryId",
+          "nextSendAt",
+          "emailAvailable"
+        ],
+        "example": {
+          "enabled": true,
+          "deliveryHour": 8,
+          "timeZone": "Europe/Paris",
+          "diaryId": 4,
+          "nextSendAt": "2026-10-28T07:00:00.000Z",
+          "emailAvailable": true
+        }
+      },
+      "UpdateOnThisDayEmailDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "example": true
+          },
+          "deliveryHour": {
+            "type": "number",
+            "example": 8,
+            "minimum": 0,
+            "maximum": 23
+          },
+          "timeZone": {
+            "type": "string",
+            "example": "Europe/Paris",
+            "maxLength": 64
+          },
+          "diaryId": {
+            "type": "number",
+            "example": null,
+            "nullable": true,
+            "description": "One of your diaries, or null for all of them"
+          }
+        },
+        "required": [
+          "enabled",
+          "deliveryHour",
+          "timeZone",
+          "diaryId"
+        ],
+        "example": {
+          "enabled": true,
+          "deliveryHour": 8,
+          "timeZone": "Europe/Paris",
+          "diaryId": null
+        }
+      },
       "ApiErrorCode": {
         "type": "string",
         "enum": [
@@ -19447,6 +19710,7 @@
           "MEMOIR_DIARY_REQUIRED",
           "MEMOIR_ANSWER_EMPTY",
           "MEMOIR_ALREADY_ANSWERED",
+          "ON_THIS_DAY_UNSUBSCRIBE_INVALID",
           "STATS_INVALID_DATE_RANGE",
           "REVIEW_YEAR_EMPTY",
           "REVIEW_MOOD_UNAVAILABLE",

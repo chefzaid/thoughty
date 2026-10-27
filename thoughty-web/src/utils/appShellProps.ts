@@ -20,6 +20,7 @@ export {
   type FeedbackPageProps,
   type IntroPageProps,
   type LegalPageProps,
+  type UnsubscribePageProps,
   type VerifyEmailPageProps,
 } from './publicShellProps';
 
@@ -205,6 +206,7 @@ export function buildAuthenticatedRoutesProps({
       onBack: () => routingState.handleViewChange('journal'),
       t,
       stats: profileStats ?? undefined,
+      diaries: diariesState.diaries,
     },
     tagManagerRouteProps: {
       config,

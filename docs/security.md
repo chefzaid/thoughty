@@ -29,7 +29,7 @@ Thoughty accepts two kinds of accounts side by side, in every environment: local
 
 ## Public Surfaces
 
-`@Public()` routes: health, metrics, register, login, 2FA verify and resend, OAuth, SSO, refresh, logout, forgot and reset password, verify email, and the feature-request list. A new public route must state why, which throttle applies, and what it reveals. `/api/metrics` answers only callers on the private network (Prometheus scrapes the pods directly); anyone else, including every request through the ingress, gets `404`.
+`@Public()` routes: health, metrics, register, login, 2FA verify and resend, OAuth, SSO, refresh, logout, forgot and reset password, verify email, the "On this day" email unsubscribe, and the feature-request list. A new public route must state why, which throttle applies, and what it reveals. `/api/metrics` answers only callers on the private network (Prometheus scrapes the pods directly); anyone else, including every request through the ingress, gets `404`.
 
 Social features need a session and share one rule (`modules/social/public-feed-visibility.ts`): an entry is visible only if it is `public`, has `moderation_status = 'visible'`, is not archived or in the recycle bin, and its author is not deleted. Follows, comments, and likes on anything else answer `404`.
 
@@ -46,7 +46,7 @@ Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):
 |---|---|---|
 | Default | 100 per 15 min | every route except health and metrics |
 | Auth attempts | 5 per 15 min | register, login, OAuth, 2FA verify and resend |
-| Token refresh | 30 per 15 min | refresh |
+| Token refresh | 30 per 15 min | refresh, "On this day" email unsubscribe |
 | Password recovery | 3 per hour | forgot password, reset password, verify email |
 | Account security | 5 per hour | password change, verification resend, 2FA changes, session revocation, account deletion |
 | Social writes | 30 per 15 min | follows, comments, likes |
@@ -64,11 +64,11 @@ Rate limits (`thoughty-server/src/common/rate-limit.constants.ts`):
 
 Production secrets live in Vault and reach the cluster through External Secrets (`infra/k8s/overlays/swirl-cloud/external-secrets.yaml`). The standalone profile uses [Vault Agent](./standalone-vault.md). Nothing secret is committed. Setup and rotation: [Deployment](./deployment.md#configuration-and-secrets).
 
-- `JWT_SECRET`, `REFRESH_SECRET`, `TWO_FACTOR_SECRET`
+- `JWT_SECRET`, `REFRESH_SECRET`, `TWO_FACTOR_SECRET`, `UNSUBSCRIBE_SECRET` (signs email unsubscribe links; derived from `JWT_SECRET` if unset; one value across API and worker, and rotating it voids the links in emails already sent)
 - `CONFIG_ENCRYPTION_SECRET`: the most sensitive value. Leaking it exposes stored provider tokens and AI keys; losing it makes them unreadable.
 - PostgreSQL and backup credentials, S3 keys, the optional shared `OPENROUTER_API_KEY`, cloud-provider OAuth client secrets, and SMTP credentials
 
-In production the API and worker refuse to start without `CONFIG_ENCRYPTION_SECRET`, or when `JWT_SECRET` or `REFRESH_SECRET` (and `TWO_FACTOR_SECRET`, when set) is missing, an example value, or shorter than 32 characters (`auth/auth-secrets.ts`). Development keeps working defaults.
+In production the API and worker refuse to start without `CONFIG_ENCRYPTION_SECRET`, or when `JWT_SECRET` or `REFRESH_SECRET` (and `TWO_FACTOR_SECRET` or `UNSUBSCRIBE_SECRET`, when set) is missing, an example value, or shorter than 32 characters (`auth/auth-secrets.ts`). Development keeps working defaults.
 
 ## Data Protection
 
@@ -81,10 +81,11 @@ In production the API and worker refuse to start without `CONFIG_ENCRYPTION_SECR
 - **Deleted accounts:** an hourly worker job permanently deletes accounts deleted more than `ACCOUNT_PURGE_AFTER_DAYS` ago: first their files in object storage, then the user row, whose foreign keys cascade to everything they own or wrote, including their comments, likes, follows, and feature requests. If any file cannot be deleted, the account is kept and retried on the next run.
 - **Life eras:** every `/api/life-eras` route reads and writes only the writer's own eras (`404 LIFE_ERA_NOT_FOUND` otherwise). The journal's `eraId` filter matches an era only when it belongs to the entry's owner, with the ID bound as a parameter, so another writer's era ID finds nothing; a saved search or memoir answer that names an era must name one of the writer's own.
 - **People:** people are the writer's private notes, never platform users or accounts. Every `/api/people` route reads and writes only the writer's own people (`404 PERSON_NOT_FOUND` otherwise), and a merge needs both people to be theirs. Links only ever join a writer's entries to their own people, so the journal's `personId` filter (a bound parameter) finds nothing for another writer's person, and a saved search can only name the writer's own. The feed and share texts carry no person data, and the web renders mentions as links only in the writer's own journal.
-- **Data download:** includes recycle-bin entries, revisions, attachment metadata, settings, social and memoir data, stored mood readings, saved searches, life eras, people, and diary writing goals. It leaves out the password hash, session tokens, the personal AI key, cloud tokens and sync internals, and AI chat history.
+- **Data download:** includes recycle-bin entries, revisions, attachment metadata, settings, social and memoir data, stored mood readings, saved searches, life eras, people, diary writing goals, and the "On this day" email setting. It leaves out the password hash, session tokens, the personal AI key, cloud tokens and sync internals, and AI chat history.
 - **App imports:** Day One and Journey exports are parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)). Journey HTML goes through an inert `DOMParser` that keeps only text, basic formatting, and `http`, `https`, or `mailto` links. Imported entries are private and go only to the writer's own diaries. A batch holds at most 200 entries and is saved in one transaction. Every file is checked before any is stored.
 - **Markdown export:** streams one attachment at a time, re-checks the 5 MB limit, and builds paths from sanitized names.
 - **Memoir:** answers are private entries. Weekly emails go only to verified addresses of live accounts and contain the question and a link, never journal text.
+- **"On this day" email:** off until the writer turns it on, and sent only to the verified address of a live account. It is the one email that carries journal text, so it carries as little as is useful: per entry the title and at most the first 200 characters as plain text, and a link to the entry that still needs a session to open. Private entries are included on purpose, because the address is the owner's own and verified; entries in the recycle bin never are. Titles and excerpts are HTML-escaped. The unsubscribe link (and the RFC 8058 `List-Unsubscribe` one-click header) carries `<userId>.<HMAC-SHA-256 of a fixed purpose and the user ID, keyed by UNSUBSCRIBE_SECRET>`, checked in constant time by the public `POST /api/on-this-day-email/unsubscribe?token=…` (token-refresh throttle): it can only turn that writer's email off, reveals nothing, answers the same success whether or not anything changed, and answers `400 ON_THIS_DAY_UNSUBSCRIBE_INVALID` to anything not signed with the key. The settings routes read and write only the writer's own row, and a chosen diary must be the writer's (`404 DIARY_NOT_FOUND`). Worker logs carry the user ID and, on failure, the error name and SMTP reply code only, never the address, the SMTP message, or entry text.
 - **Year in review:** computed on request and never public. Sharing posts only the text the writer edited, without tags unless chosen.
 
 ## AI Privacy

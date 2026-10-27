@@ -60,6 +60,7 @@ flowchart TD
 | `social` | public feed, follows, comments, likes, leaderboard, achievements (karma and badges) |
 | `account-purge` | permanent deletion of deleted accounts after the grace period |
 | `memoir` | guided memoir: question catalogue, program settings, answers as entries, weekly delivery and email |
+| `on-this-day-email` | the opt-in "On this day" email: its setting (`GET`/`PUT /api/on-this-day-email`), the signed one-click unsubscribe, and the daily delivery, which reads past entries through `EntriesQueryService.findOnThisDay` (the query Highlights uses) and schedules in the writer's zone with `common/utils/time-zone.util.ts` (shared with the memoir) |
 | `metrics` | Prometheus metrics (the health endpoint is `HealthController` in `AppModule`) |
 
 Cross-cutting runtime code goes in `src/common`, entities and migrations in `src/database`, and operational scripts in `thoughty-server/scripts`.
@@ -68,12 +69,13 @@ Modules that outgrow one service split it by responsibility, and source files st
 
 ### Background Worker
 
-`thoughty-server/src/cloud-sync-worker.ts` boots `AppModule` as a Nest application context without HTTP and starts four loops that API replicas never run. The worker stays at one replica ([ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)). Manual uploads, downloads, and "sync now" run inline in the API request, not through the queue.
+`thoughty-server/src/cloud-sync-worker.ts` boots `AppModule` as a Nest application context without HTTP and starts five loops that API replicas never run. The worker stays at one replica ([ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)). Manual uploads, downloads, and "sync now" run inline in the API request, not through the queue.
 
 | Service | Interval | Work |
 |---|---|---|
 | `CloudSyncWorkerService` | jobs every 5 s, schedules every 60 s | turns due sync schedules (stored in `settings`) into `cloud_sync_jobs` rows, claims them with `FOR UPDATE SKIP LOCKED`, runs the sync, retries, and recovers stale jobs |
 | `MemoirDeliveryWorkerService` | every 60 s | moves due `memoir_programs` to their next question and sends the weekly email |
+| `OnThisDayDeliveryWorkerService` | every 60 s | claims due `on_this_day_emails` rows (`next_send_at <= now`, partial index on enabled rows) in batches of 50 with `FOR UPDATE SKIP LOCKED`, moves each to the next local day (`nextDailySend`, DST-aware), and, when the writer has past-year entries for the local day (`EntriesQueryService.findOnThisDay`, the Highlights query) and a verified address on a live account, writes `last_sent_on` in the same transaction and sends the email after the commit, so overlapping runs or a moved hour never send a day twice |
 | `RecycleBinPurgeWorkerService` | hourly | hard-deletes entries in the recycle bin for over 30 days and removes their files |
 | `AccountPurgeWorkerService` | hourly | permanently deletes accounts deleted more than `ACCOUNT_PURGE_AFTER_DAYS` (default 30) ago: their stored files, then the user row and everything that cascades from it |
 
@@ -228,6 +230,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `MEMOIR_DIARY_REQUIRED` | Choose a diary for your memoir first |
 |  | `MEMOIR_ANSWER_EMPTY` | Write an answer or attach a recording |
 |  | `MEMOIR_ALREADY_ANSWERED` | This question already has an answer |
+| "On this day" email | `ON_THIS_DAY_UNSUBSCRIBE_INVALID` | This unsubscribe link is not valid |
 | Stats and the year in review | `STATS_INVALID_DATE_RANGE` | The start date must be before or equal to the end date |
 |  | `REVIEW_YEAR_EMPTY` | There are no entries to read in this year |
 |  | `REVIEW_MOOD_UNAVAILABLE` | The mood of the year could not be read right now |

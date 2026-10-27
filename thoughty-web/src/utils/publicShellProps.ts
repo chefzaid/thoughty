@@ -7,6 +7,7 @@ import type ContactPage from '../components/ContactPage/ContactPage';
 import type FeedbackPage from '../components/FeedbackPage/FeedbackPage';
 import type IntroPage from '../components/IntroPage/IntroPage';
 import type LegalPage from '../components/LegalPage/LegalPage';
+import type UnsubscribePage from '../components/UnsubscribePage/UnsubscribePage';
 import type VerifyEmailPage from '../components/VerifyEmailPage/VerifyEmailPage';
 import type { PublicViewType, TranslationFunction } from '../types';
 
@@ -18,6 +19,7 @@ export type FeedbackPageProps = ComponentProps<typeof FeedbackPage>;
 export type AuthPageProps = ComponentProps<typeof AuthPage>;
 export type LegalPageProps = ComponentProps<typeof LegalPage>;
 export type VerifyEmailPageProps = ComponentProps<typeof VerifyEmailPage>;
+export type UnsubscribePageProps = ComponentProps<typeof UnsubscribePage>;
 
 type AppShellRoutingState = ReturnType<typeof import('../hooks/useAppShellRouting').useAppShellRouting>;
 
@@ -94,6 +96,12 @@ export function buildPublicShellProps({
     onContinue: () => routingState.handlePublicViewChange('login'),
   };
 
+  const unsubscribePageProps: UnsubscribePageProps = {
+    t,
+    theme,
+    onContinue: () => routingState.handlePublicViewChange('intro'),
+  };
+
   return {
     introPageProps,
     aboutPageProps,
@@ -103,5 +111,6 @@ export function buildPublicShellProps({
     legalPageProps,
     authPageProps,
     verifyEmailPageProps,
+    unsubscribePageProps,
   };
 }

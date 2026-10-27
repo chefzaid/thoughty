@@ -16,7 +16,7 @@ The chosen settings are committed to `infra/onboarding-values.json` with the ren
 
 ## Secrets and features
 
-The platform generates the database password, `JWT_SECRET`, `REFRESH_SECRET`, `TWO_FACTOR_SECRET`, and `CONFIG_ENCRYPTION_SECRET` when missing, and keeps existing values. Secrets stay in Vault, never in the settings file. S3, AI, cloud-provider, SMTP, and backup fields start empty. Onboarding does not provision attachment storage, and the backup CronJob stays suspended. Authentication uses the shared OAuth2 Proxy client; no Thoughty Keycloak client is created. See [Configuration and Secrets](deployment.md#configuration-and-secrets).
+The platform generates the database password, `JWT_SECRET`, `REFRESH_SECRET`, `TWO_FACTOR_SECRET`, `UNSUBSCRIBE_SECRET`, and `CONFIG_ENCRYPTION_SECRET` when missing, and keeps existing values. Secrets stay in Vault, never in the settings file. S3, AI, cloud-provider, SMTP, and backup fields start empty. Onboarding does not provision attachment storage, and the backup CronJob stays suspended. Authentication uses the shared OAuth2 Proxy client; no Thoughty Keycloak client is created. See [Configuration and Secrets](deployment.md#configuration-and-secrets).
 
 ## First pipeline
 

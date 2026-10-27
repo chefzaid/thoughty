@@ -3,6 +3,7 @@ import { createMockAppImportState, type MockAppImportState } from "./mockApp.app
 import { createMockReviewState, type MockReviewState } from "./mockApp.review";
 import type { MockSavedSearch } from "./mockApp.routes.saved-searches";
 import type { MockLifeEra } from "./mockApp.routes.life-eras";
+import { createMockOnThisDayEmail, type MockOnThisDayEmail } from "./mockApp.routes.on-this-day-email";
 import { addMockMentionedPeople, type MockPerson } from "./mockApp.routes.people";
 import type { MockDiary } from "./mockApp.diaries";
 import type { components } from "../../src/generated/openapi";
@@ -158,6 +159,8 @@ export interface SetupMockAppOptions {
   memoirProgram?: Partial<MockMemoirProgram> | null;
   savedSearches?: MockSavedSearch[];
   lifeEras?: MockLifeEra[];
+  /** The saved "On this day" email setting; off and never saved by default. */
+  onThisDayEmail?: Partial<MockOnThisDayEmail>;
   /** The people the writer mentions; by default those the initial entries mention. */
   people?: MockPerson[];
 }
@@ -202,6 +205,7 @@ export interface MockAppState {
   bookVersionManifests: Record<number, { entryIds: number[]; chapterTitles: string[] }>;
   savedSearches: MockSavedSearch[];
   lifeEras: MockLifeEra[];
+  onThisDayEmail: MockOnThisDayEmail;
   people: MockPerson[];
   memoir: MockMemoirState;
   appImport: MockAppImportState;
@@ -431,6 +435,7 @@ export function createMockAppState(
     bookVersionManifests: {},
     savedSearches: (options.savedSearches || []).map((saved) => ({ ...saved, filters: { ...saved.filters } })),
     lifeEras: (options.lifeEras || []).map((era) => ({ ...era })),
+    onThisDayEmail: createMockOnThisDayEmail(options.onThisDayEmail),
     people: options.people?.map((person) => ({ ...person, handles: [...person.handles] })) ?? mentionedPeople(options.initialEntries || []),
     memoir: createMockMemoirState(options.memoirProgram ?? null),
     appImport: createMockAppImportState(),

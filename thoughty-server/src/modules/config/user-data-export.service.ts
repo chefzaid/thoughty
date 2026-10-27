@@ -11,6 +11,7 @@ import {
   EntryRevision,
   MemoirAnswer,
   MemoirProgram,
+  OnThisDayEmail,
   YearReviewMood,
   SavedSearch,
   LifeEra,
@@ -56,10 +57,12 @@ export class UserDataExportService {
     private readonly lifeEraRepository: Repository<LifeEra>,
     @InjectRepository(Person)
     private readonly personRepository: Repository<Person>,
+    @InjectRepository(OnThisDayEmail)
+    private readonly onThisDayEmailRepository: Repository<OnThisDayEmail>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       // Entries in the recycle bin are still personal data until they are removed for good
@@ -73,6 +76,7 @@ export class UserDataExportService {
       this.savedSearchRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
       this.lifeEraRepository.find({ where: { userId }, order: { startDate: 'ASC', id: 'ASC' } }),
       this.collectPeople(userId),
+      this.onThisDayEmailRepository.findOne({ where: { userId } }),
     ]);
 
     const safeUser = user
@@ -183,6 +187,18 @@ export class UserDataExportService {
         updatedAt: era.updatedAt,
       })),
       people,
+      onThisDayEmail: onThisDayEmail
+        ? {
+            enabled: onThisDayEmail.enabled,
+            deliveryHour: onThisDayEmail.deliveryHour,
+            timeZone: onThisDayEmail.timeZone,
+            diaryId: onThisDayEmail.diaryId,
+            nextSendAt: onThisDayEmail.nextSendAt,
+            lastSentOn: onThisDayEmail.lastSentOn,
+            createdAt: onThisDayEmail.createdAt,
+            updatedAt: onThisDayEmail.updatedAt,
+          }
+        : null,
     };
   }
 

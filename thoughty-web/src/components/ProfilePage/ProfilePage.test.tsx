@@ -30,6 +30,9 @@ vi.mock('./AchievementsSection', () => ({
 vi.mock('../LifeEras/LifeErasSection', () => ({
   default: ({ language }: { language: string }) => <div data-testid="life-eras-section">{language}</div>,
 }));
+vi.mock('../OnThisDayEmail/OnThisDayEmailSection', () => ({
+  default: () => <section data-testid="on-this-day-email-section" />,
+}));
 vi.mock('./CloudProvidersSection', () => ({
     default: () => <div>cloudProviders</div>,
 }));

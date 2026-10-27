@@ -1,0 +1,51 @@
+/* The "On this day" email in the profile: the switch, then the hour, zone and diary once it is on. */
+.on-this-day-email-fields {
+    display: grid;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.on-this-day-email-fields .setting-row {
+    display: grid;
+    gap: 0.375rem;
+}
+
+.on-this-day-email-muted,
+.on-this-day-email-notice,
+.on-this-day-email-error {
+    margin: 0;
+    font-size: 0.8125rem;
+}
+
+.on-this-day-email.dark .on-this-day-email-muted {
+    color: #9ca3af;
+}
+
+.on-this-day-email.light .on-this-day-email-muted {
+    color: #4b5563;
+}
+
+.on-this-day-email-notice {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid #d97706;
+    border-radius: 4px;
+}
+
+.on-this-day-email.dark .on-this-day-email-notice {
+    background: rgba(217, 119, 6, 0.12);
+    color: #fcd34d;
+}
+
+.on-this-day-email.light .on-this-day-email-notice {
+    background: #fffbeb;
+    color: #92400e;
+}
+
+.on-this-day-email.dark .on-this-day-email-error {
+    color: #fca5a5;
+}
+
+.on-this-day-email.light .on-this-day-email-error {
+    color: #b91c1c;
+}

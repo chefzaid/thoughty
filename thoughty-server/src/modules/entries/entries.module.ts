@@ -30,6 +30,6 @@ import { EntryMentionsService } from './entry-mentions.service';
     EntryTaskListService,
     EntryMentionsService,
   ],
-  exports: [EntriesService, EntryListCacheService, EntrySearchService, EntryMentionsService],
+  exports: [EntriesService, EntriesQueryService, EntryListCacheService, EntrySearchService, EntryMentionsService],
 })
 export class EntriesModule {}

@@ -20,3 +20,4 @@ export * from './year-review-mood.entity';
 export * from './saved-search.entity';
 export * from './life-era.entity';
 export * from './person.entity';
+export * from './on-this-day-email.entity';
