@@ -1,9 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { IsOptional, IsString, MaxLength, Min } from 'class-validator';
+import { StrictInt } from '@/common/validation';
 
 export class SummarizeEntryDto {
   @ApiProperty({ description: 'ID of the journal entry to summarize', minimum: 1 })
-  @IsInt()
+  @StrictInt()
   @Min(1)
   entryId!: number;
 

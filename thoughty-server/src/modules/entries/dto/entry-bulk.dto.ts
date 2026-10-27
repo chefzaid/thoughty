@@ -7,20 +7,16 @@ import {
   IsDateString,
   MaxLength,
   ArrayMaxSize,
-  IsNumber,
-  IsInt,
   ArrayMinSize,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { StrictBoolean, StrictInt } from '@/common/validation';
 
 export class BulkOperationDto {
   @ApiProperty({ description: 'Entry IDs to operate on', type: [Number] })
   @IsArray()
   @ArrayMinSize(1, { message: 'At least one entry ID is required' })
-  @IsInt({ each: true })
-  @Type(() => Number)
+  @StrictInt({ each: true })
   ids: number[];
 
   @ApiProperty({
@@ -45,8 +41,7 @@ export class BulkOperationDto {
 
   @ApiPropertyOptional({ description: 'Diary ID to move entries to' })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
+  @StrictInt()
   diaryId?: number;
 
   @ApiPropertyOptional({ description: 'Whether the entries should be archived' })
@@ -68,8 +63,7 @@ export class ReorderEntriesDto {
   })
   @IsArray()
   @ArrayMinSize(1, { message: 'At least one entry ID is required' })
-  @IsInt({ each: true })
-  @Type(() => Number)
+  @StrictInt({ each: true })
   orderedIds: number[];
 }
 

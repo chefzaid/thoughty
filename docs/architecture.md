@@ -37,7 +37,7 @@ flowchart TD
 
 ## Backend Architecture
 
-`AppModule` registers the global JWT and throttling guards, so every request is authenticated (unless its route is marked public), throttled, and DTO-validated before a feature module runs a user-scoped query. Validation is one global `ValidationPipe` (`src/common/validation`); booleans and the numbers that arrive as text (query strings, multipart form fields) are read from the raw value by `@StrictBoolean()` and `@StrictInt()`, because its implicit conversion would turn `"false"` into `true` ([Request validation](./development.md#request-validation)). The feature modules live in `thoughty-server/src/modules`:
+`AppModule` registers the global JWT and throttling guards, so every request is authenticated (unless its route is marked public), throttled, and DTO-validated before a feature module runs a user-scoped query. Validation is one global `ValidationPipe` (`src/common/validation`) that whitelists DTO properties and converts nothing implicitly; every boolean and every number, in a query string, a multipart form or a JSON body, is read from the raw value by `@StrictBoolean()` and `@StrictInt()`, since implicit conversion would turn `"false"` into `true` and `""` into `0` ([Request validation](./development.md#request-validation)). The feature modules live in `thoughty-server/src/modules`:
 
 | Module | Responsibility |
 |---|---|

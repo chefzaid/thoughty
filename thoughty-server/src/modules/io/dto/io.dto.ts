@@ -1,6 +1,5 @@
-import { IsString, IsOptional, IsNumber, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { StrictBoolean, StrictInt } from '@/common/validation';
 
 export class FormatConfigDto {
@@ -84,8 +83,7 @@ export class PreviewImportDto {
 
   @ApiPropertyOptional({ description: 'Diary ID' })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @StrictInt()
   diaryId?: number;
 }
 
@@ -101,8 +99,7 @@ export class ImportDto {
 
   @ApiPropertyOptional({ description: 'Diary ID' })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
+  @StrictInt()
   diaryId?: number;
 }
 

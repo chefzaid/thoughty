@@ -3538,16 +3538,10 @@ export interface components {
          *       "gender": "example",
          *       "avatarUrl": "https://thoughty.example.com/callback",
          *       "fontFamily": "system",
-         *       "fontSize": "example",
          *       "fontColor": "#2A9D8F",
-         *       "highContrast": "true",
          *       "ttsVoiceUri": "https://thoughty.example.com/callback",
          *       "language": "en",
-         *       "entriesPerPage": "example",
-         *       "maxPinnedEntries": "example",
          *       "defaultVisibility": "public",
-         *       "readDates": "true",
-         *       "streakCard": "true",
          *       "openRouterModel": "example",
          *       "openRouterTagModel": "reflection",
          *       "openRouterWritingModel": "example",
@@ -3556,11 +3550,17 @@ export interface components {
          *       "openRouterSummaryModel": "example",
          *       "openRouterPromptModel": "example",
          *       "openRouterBookModel": "example",
-         *       "autoTagMaxTags": "reflection",
          *       "tagMetadata": "reflection",
          *       "entryTemplates": "example",
          *       "subscriptionPlan": "free",
-         *       "paymentMethodLabel": "example"
+         *       "paymentMethodLabel": "example",
+         *       "fontSize": "example",
+         *       "entriesPerPage": "example",
+         *       "maxPinnedEntries": "example",
+         *       "autoTagMaxTags": "reflection",
+         *       "highContrast": "true",
+         *       "readDates": "true",
+         *       "streakCard": "true"
          *     }
          */
         UserConfigDto: {
@@ -3586,15 +3586,8 @@ export interface components {
              * @enum {string}
              */
             fontFamily?: "system" | "serif" | "modern" | "mono";
-            /** @description Font size in pixels */
-            fontSize?: string;
             /** @description Text color as #rrggbb, or empty for the theme default */
             fontColor?: string;
-            /**
-             * @description High contrast mode
-             * @enum {string}
-             */
-            highContrast?: "true" | "false";
             /** @description Text-to-speech voice URI, or empty for the default */
             ttsVoiceUri?: string;
             /**
@@ -3602,25 +3595,11 @@ export interface components {
              * @enum {string}
              */
             language?: "en" | "fr";
-            /** @description Entries per page */
-            entriesPerPage?: string;
-            /** @description Maximum pinned entries */
-            maxPinnedEntries?: string;
             /**
              * @description Visibility of new entries
              * @enum {string}
              */
             defaultVisibility?: "public" | "private";
-            /**
-             * @description Read entry dates aloud
-             * @enum {string}
-             */
-            readDates?: "true" | "false";
-            /**
-             * @description Show the writing streak card above the journal; shown unless false
-             * @enum {string}
-             */
-            streakCard?: "true" | "false";
             /** @description OpenRouter model id, or empty for the default */
             openRouterModel?: string;
             /** @description OpenRouter model id, or empty for the default */
@@ -3637,8 +3616,6 @@ export interface components {
             openRouterPromptModel?: string;
             /** @description OpenRouter model id, or empty for the default */
             openRouterBookModel?: string;
-            /** @description Maximum tags suggested automatically (0 turns it off) */
-            autoTagMaxTags?: string;
             /** @description Tag colors and descriptions as serialized JSON */
             tagMetadata?: string;
             /** @description Custom entry templates as serialized JSON */
@@ -3650,6 +3627,29 @@ export interface components {
             subscriptionPlan?: "free" | "plus" | "pro";
             /** @description Payment method label */
             paymentMethodLabel?: string;
+            /** @description Font size in pixels */
+            fontSize?: string;
+            /** @description Entries per page */
+            entriesPerPage?: string;
+            /** @description Maximum pinned entries */
+            maxPinnedEntries?: string;
+            /** @description Maximum tags suggested automatically (0 turns it off) */
+            autoTagMaxTags?: string;
+            /**
+             * @description High contrast mode
+             * @enum {string}
+             */
+            highContrast?: "true" | "false";
+            /**
+             * @description Read entry dates aloud
+             * @enum {string}
+             */
+            readDates?: "true" | "false";
+            /**
+             * @description Show the writing streak card above the journal; shown unless false
+             * @enum {string}
+             */
+            streakCard?: "true" | "false";
         };
         /**
          * @example {
@@ -3710,14 +3710,11 @@ export interface components {
              */
             fontFamily?: "system" | "serif" | "modern" | "mono";
             /** @description Font size in pixels */
-            fontSize?: string;
+            fontSize?: string | number;
             /** @description Text color as #rrggbb, or empty for the theme default */
             fontColor?: string;
-            /**
-             * @description High contrast mode
-             * @enum {string}
-             */
-            highContrast?: "true" | "false";
+            /** @description High contrast mode */
+            highContrast?: ("true" | "false") | boolean;
             /** @description Text-to-speech voice URI, or empty for the default */
             ttsVoiceUri?: string;
             /**
@@ -3726,24 +3723,18 @@ export interface components {
              */
             language?: "en" | "fr";
             /** @description Entries per page */
-            entriesPerPage?: string;
+            entriesPerPage?: string | number;
             /** @description Maximum pinned entries */
-            maxPinnedEntries?: string;
+            maxPinnedEntries?: string | number;
             /**
              * @description Visibility of new entries
              * @enum {string}
              */
             defaultVisibility?: "public" | "private";
-            /**
-             * @description Read entry dates aloud
-             * @enum {string}
-             */
-            readDates?: "true" | "false";
-            /**
-             * @description Show the writing streak card above the journal; shown unless false
-             * @enum {string}
-             */
-            streakCard?: "true" | "false";
+            /** @description Read entry dates aloud */
+            readDates?: ("true" | "false") | boolean;
+            /** @description Show the writing streak card above the journal; shown unless false */
+            streakCard?: ("true" | "false") | boolean;
             /** @description OpenRouter model id, or empty for the default */
             openRouterModel?: string;
             /** @description OpenRouter model id, or empty for the default */
@@ -3761,7 +3752,7 @@ export interface components {
             /** @description OpenRouter model id, or empty for the default */
             openRouterBookModel?: string;
             /** @description Maximum tags suggested automatically (0 turns it off) */
-            autoTagMaxTags?: string;
+            autoTagMaxTags?: string | number;
             /** @description Tag colors and descriptions as serialized JSON */
             tagMetadata?: string;
             /** @description Custom entry templates as serialized JSON */
@@ -10643,16 +10634,10 @@ export interface operations {
                      *       "gender": "example",
                      *       "avatarUrl": "https://thoughty.example.com/callback",
                      *       "fontFamily": "system",
-                     *       "fontSize": "example",
                      *       "fontColor": "#2A9D8F",
-                     *       "highContrast": "true",
                      *       "ttsVoiceUri": "https://thoughty.example.com/callback",
                      *       "language": "en",
-                     *       "entriesPerPage": "example",
-                     *       "maxPinnedEntries": "example",
                      *       "defaultVisibility": "public",
-                     *       "readDates": "true",
-                     *       "streakCard": "true",
                      *       "openRouterModel": "example",
                      *       "openRouterTagModel": "reflection",
                      *       "openRouterWritingModel": "example",
@@ -10661,11 +10646,17 @@ export interface operations {
                      *       "openRouterSummaryModel": "example",
                      *       "openRouterPromptModel": "example",
                      *       "openRouterBookModel": "example",
-                     *       "autoTagMaxTags": "reflection",
                      *       "tagMetadata": "reflection",
                      *       "entryTemplates": "example",
                      *       "subscriptionPlan": "free",
-                     *       "paymentMethodLabel": "example"
+                     *       "paymentMethodLabel": "example",
+                     *       "fontSize": "example",
+                     *       "entriesPerPage": "example",
+                     *       "maxPinnedEntries": "example",
+                     *       "autoTagMaxTags": "reflection",
+                     *       "highContrast": "true",
+                     *       "readDates": "true",
+                     *       "streakCard": "true"
                      *     }
                      */
                     "application/json": components["schemas"]["UserConfigDto"];

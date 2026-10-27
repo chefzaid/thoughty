@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ArrayMaxSize, ArrayMinSize, IsArray, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { ArrayMaxSize, ArrayMinSize, IsArray, IsOptional, Max, Min } from 'class-validator';
 import { StrictInt } from '@/common/validation';
 
 /** How long a deleted entry stays in the recycle bin before it is removed for good. */
@@ -27,7 +27,7 @@ export class RecycleBinSelectionDto {
   @IsArray()
   @ArrayMinSize(1)
   @ArrayMaxSize(RECYCLE_BIN_SELECTION_MAX)
-  @IsInt({ each: true })
+  @StrictInt({ each: true })
   @Min(1, { each: true })
   ids!: number[];
 }

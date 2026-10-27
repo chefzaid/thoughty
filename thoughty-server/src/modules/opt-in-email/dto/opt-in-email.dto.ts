@@ -1,9 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsString, Max, MaxLength, Min, ValidateIf } from 'class-validator';
+import { IsString, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 import { SuccessResponseDto } from '@/common/dto';
 import { OPT_IN_EMAIL_KINDS, type OptInEmailKind } from '../opt-in-email-kind';
-import { StrictBoolean } from '@/common/validation';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 
 /** A writer's setting for one opt-in email. */
 export class OptInEmailSettingsDto {
@@ -43,7 +42,7 @@ export class UpdateOptInEmailDto {
   enabled!: boolean;
 
   @ApiProperty({ example: 8, minimum: 0, maximum: 23 })
-  @IsInt()
+  @StrictInt()
   @Min(0)
   @Max(23)
   deliveryHour!: number;
@@ -55,8 +54,7 @@ export class UpdateOptInEmailDto {
 
   @ApiProperty({ example: null, type: Number, nullable: true, description: 'One of your diaries, or null for all of them' })
   @ValidateIf((dto: UpdateOptInEmailDto) => dto.diaryId !== null)
-  @Type(() => Number)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId!: number | null;
 }

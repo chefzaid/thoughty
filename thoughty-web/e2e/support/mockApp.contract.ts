@@ -20,7 +20,7 @@ export interface ContractSchema {
 interface OpenApiDocument {
   paths: Record<string, Record<string, {
     parameters?: { name: string; in: string; schema?: ContractSchema }[];
-    requestBody?: { content?: Record<string, unknown> };
+    requestBody?: { content?: Record<string, { schema?: ContractSchema }> };
     responses?: Record<string, { content?: Record<string, { schema?: ContractSchema }> }>;
   }>>;
   components: { schemas: Record<string, ContractSchema> };
@@ -33,6 +33,8 @@ interface Operation {
   literalSegments: number;
   /** The media types the operation accepts a body in, such as `multipart/form-data` for an upload. */
   requestTypes: string[];
+  /** The schema of the JSON body the operation takes, if any. */
+  jsonRequest?: ContractSchema;
   /** The documented type of each query parameter, such as `boolean` for `narrative`. */
   queryTypes: Record<string, string | undefined>;
   responses: Record<string, ContractSchema | undefined>;
@@ -56,6 +58,7 @@ function loadOperations(): Operation[] {
       pattern: new RegExp(`^${path.replace(/\{[^}]+\}/g, '[^/]+')}$`),
       literalSegments: path.split('/').filter((segment) => segment && !segment.startsWith('{')).length,
       requestTypes: Object.keys(operation.requestBody?.content ?? {}),
+      jsonRequest: operation.requestBody?.content?.['application/json']?.schema,
       queryTypes: Object.fromEntries(
         (operation.parameters ?? []).filter((parameter) => parameter.in === 'query').map((parameter) => [parameter.name, parameter.schema?.type]),
       ),
@@ -184,6 +187,61 @@ export function checkQueryParameters(method: string, pathname: string, searchPar
     const valid = values.length === 1 && (type === 'boolean' ? QUERY_BOOLEANS.includes(values[0]!) : QUERY_INTEGER.test(values[0]!));
     return valid ? [] : [`${method} ${pathname} sends ${name}=${values.join('&')}, which the API refuses as a ${type}`];
   });
+}
+
+const JSON_BOOLEANS: readonly unknown[] = [true, false, 1, 0, 'true', 'false', '1', '0'];
+
+function isWholeNumber(value: unknown): boolean {
+  return Number.isInteger(value) || (typeof value === 'string' && QUERY_INTEGER.test(value));
+}
+
+/** Every way a JSON request `value` breaks the types the API reads in `schema`, as `$.path: problem` lines. */
+function requestTypeProblems(schema: ContractSchema, value: unknown, path: string, schemas: Record<string, ContractSchema>): string[] {
+  if (schema.$ref) {
+    const target = schemas[schema.$ref.split('/').at(-1) ?? ''];
+    return target ? requestTypeProblems(target, value, path, schemas) : [];
+  }
+  if (value === null || value === undefined) return [];
+  if (schema.allOf) return schema.allOf.flatMap((part) => requestTypeProblems(part, value, path, schemas));
+  const alternatives = schema.oneOf ?? schema.anyOf;
+  if (alternatives) {
+    const results = alternatives.map((option) => requestTypeProblems(option, value, path, schemas));
+    return results.some((problems) => problems.length === 0) ? [] : results.flat();
+  }
+  const sent = JSON.stringify(value);
+  switch (schema.type) {
+    case 'string':
+      return typeof value === 'string' ? [] : [`${path}: expected a string, got ${sent}`];
+    case 'number':
+    case 'integer':
+      return isWholeNumber(value) ? [] : [`${path}: expected a whole number, got ${sent}`];
+    case 'boolean':
+      return JSON_BOOLEANS.includes(value) ? [] : [`${path}: expected true, false, 1 or 0, got ${sent}`];
+    case 'array':
+      if (!Array.isArray(value)) return [`${path}: expected an array, got ${sent}`];
+      return schema.items ? value.flatMap((item, index) => requestTypeProblems(schema.items!, item, `${path}[${index}]`, schemas)) : [];
+    default:
+      break;
+  }
+  if (!schema.properties) return [];
+  if (typeof value !== 'object' || Array.isArray(value)) return [`${path}: expected an object, got ${sent}`];
+  return Object.entries(value as Record<string, unknown>).flatMap(([key, child]) => {
+    const childSchema = schema.properties![key];
+    if (childSchema) return requestTypeProblems(childSchema, child, `${path}.${key}`, schemas);
+    return schema.additionalProperties ? [] : [`${path}.${key}: not a property the API takes`];
+  });
+}
+
+/**
+ * Why the API would refuse this JSON body for its types, or an empty list. Its global pipe converts nothing
+ * (docs/development.md › Request validation), so a string must be sent as a string, a boolean as
+ * `@StrictBoolean()` reads it and a number as `@StrictInt()` does (a whole number or plain digits), and a
+ * property the DTO does not declare is refused. Ranges, formats and required fields are left to the mock.
+ */
+export function checkJsonRequestBody(method: string, pathname: string, body: unknown): string[] {
+  const schema = findOperation(method, pathname)?.jsonRequest;
+  if (!schema) return [];
+  return requestTypeProblems(schema, body, '$', loadDocument().components.schemas).map((problem) => `${method} ${pathname} sends ${problem}`);
 }
 
 const violations: string[] = [];

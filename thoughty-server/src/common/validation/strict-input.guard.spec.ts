@@ -3,17 +3,20 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
 import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
-import { DECORATORS } from '@nestjs/swagger';
-import { TransformationType } from 'class-transformer';
+import { ApiPropertyOptional, DECORATORS } from '@nestjs/swagger';
+import { TransformationType, Type } from 'class-transformer';
 import type { MetadataStorage } from 'class-transformer/types/MetadataStorage';
-import { IsOptional, getMetadataStorage } from 'class-validator';
-import { StrictBoolean, StrictInt, toStrictBoolean, toStrictInt } from './strict-input.decorators';
+import { IsInt, IsOptional, getMetadataStorage } from 'class-validator';
+import type { ValidationMetadata } from 'class-validator/types/metadata/ValidationMetadata';
+import { StrictBoolean, StrictInt, toStrictBoolean, toStrictInt, toStrictIntEach } from './strict-input.decorators';
 
 /*
- * Guards the rule in docs/development.md (Request validation): under the global pipe's implicit
- * conversion, `Boolean('false')` is true and `Number('')` is 0, so
- *  - every boolean DTO property reads its raw value through @StrictBoolean(), and
- *  - every number in a query string or multipart form reads its raw value through @StrictInt().
+ * Guards the rule in docs/development.md (Request validation): the global pipe converts nothing on
+ * its own, so
+ *  - every boolean DTO property reads its raw value through @StrictBoolean(),
+ *  - every number DTO property (query, form or JSON body) reads it through @StrictInt(), and
+ *  - no property converts a value with @Type(() => Number | String | Boolean), which would turn
+ *    `''` into `0` or `{}` into '[object Object]'.
  */
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { defaultMetadataStorage } = require('class-transformer/cjs/storage') as { defaultMetadataStorage: MetadataStorage };
@@ -37,49 +40,63 @@ function exportedClasses(file: string): Constructor[] {
   );
 }
 
-function validatedProperties(cls: Constructor): string[] {
-  const metadata = getMetadataStorage().getTargetValidationMetadatas(cls as never, '', true, false);
-  return [...new Set(metadata.map((entry) => entry.propertyName))];
+function validationsOf(cls: Constructor): ValidationMetadata[] {
+  return getMetadataStorage().getTargetValidationMetadatas(cls as never, '', true, false);
 }
 
-function hasTransform(cls: Constructor, property: string, transformFn: unknown): boolean {
+function hasTransform(cls: Constructor, property: string, transformFns: readonly unknown[]): boolean {
   return defaultMetadataStorage
     .findTransformMetadatas(cls as never, property, TransformationType.PLAIN_TO_CLASS)
-    .some((entry) => entry.transformFn === transformFn);
+    .some((entry) => transformFns.includes(entry.transformFn));
 }
 
-/** The `Class.property` names that break the rule; text-borne classes also need @StrictInt() on numbers. */
-export function strictInputViolations(classes: Iterable<Constructor>, textBorne: ReadonlySet<Constructor>): string[] {
+/** A number by its TypeScript type, its documented type (`number | null` is `Object` at runtime) or its validator. */
+function isNumberProperty(cls: Constructor, property: string, validations: ValidationMetadata[]): boolean {
+  if (Reflect.getMetadata('design:type', cls.prototype as object, property) === Number) return true;
+  const documented = (Reflect.getMetadata(DECORATORS.API_MODEL_PROPERTIES, cls.prototype as object, property) as { type?: unknown } | undefined)?.type;
+  if (documented === Number || (Array.isArray(documented) && documented[0] === Number)) return true;
+  return validations.some((entry) => entry.propertyName === property && (entry.name === 'isInt' || entry.name === 'isNumber'));
+}
+
+function convertsThroughType(cls: Constructor, property: string): boolean {
+  const target = defaultMetadataStorage.findTypeMetadata(cls as never, property)?.typeFunction();
+  return target === Number || target === String || target === Boolean;
+}
+
+/** The `Class.property` names that break the rule. */
+export function strictInputViolations(classes: Iterable<Constructor>): string[] {
   const violations: string[] = [];
   for (const cls of classes) {
-    for (const property of validatedProperties(cls)) {
+    const validations = validationsOf(cls);
+    for (const property of new Set(validations.map((entry) => entry.propertyName))) {
       const type = Reflect.getMetadata('design:type', cls.prototype as object, property);
-      if (type === Boolean && !hasTransform(cls, property, toStrictBoolean)) {
+      if (type === Boolean && !hasTransform(cls, property, [toStrictBoolean])) {
         violations.push(`${cls.name}.${property} (boolean without @StrictBoolean())`);
       }
-      if (type === Number && textBorne.has(cls) && !hasTransform(cls, property, toStrictInt)) {
-        violations.push(`${cls.name}.${property} (query/form number without @StrictInt())`);
+      if (isNumberProperty(cls, property, validations) && !hasTransform(cls, property, [toStrictInt, toStrictIntEach])) {
+        violations.push(`${cls.name}.${property} (number without @StrictInt())`);
+      }
+      if (convertsThroughType(cls, property)) {
+        violations.push(`${cls.name}.${property} (converted by @Type())`);
       }
     }
   }
   return violations;
 }
 
-/** The DTO classes controllers read from query strings or multipart form fields. */
-function textBorneClasses(): Set<Constructor> {
+/** The classes controllers read from query strings and bodies, wherever they are declared. */
+function controllerInputClasses(): Set<Constructor> {
   const classes = new Set<Constructor>();
   for (const controller of sourceFiles('.controller.ts').flatMap(exportedClasses)) {
     const prototype = controller.prototype as Record<string, unknown>;
     for (const method of Object.getOwnPropertyNames(prototype)) {
-      const handler = prototype[method];
-      if (method === 'constructor' || typeof handler !== 'function') continue;
+      if (method === 'constructor' || typeof prototype[method] !== 'function') continue;
       const args: Record<string, { index: number }> = Reflect.getMetadata(ROUTE_ARGS_METADATA, controller, method) ?? {};
       const paramTypes: Constructor[] = Reflect.getMetadata('design:paramtypes', prototype, method) ?? [];
-      const multipart = ((Reflect.getMetadata(DECORATORS.API_CONSUMES, handler) as string[] | undefined) ?? [])
-        .includes('multipart/form-data');
       for (const [key, { index }] of Object.entries(args)) {
         const kind = Number(key.split(':')[0]);
-        if (kind === RouteParamtypes.QUERY || (multipart && kind === RouteParamtypes.BODY)) classes.add(paramTypes[index]);
+        const paramType = paramTypes[index];
+        if ((kind === RouteParamtypes.QUERY || kind === RouteParamtypes.BODY) && typeof paramType === 'function') classes.add(paramType);
       }
     }
   }
@@ -88,28 +105,36 @@ function textBorneClasses(): Set<Constructor> {
 
 describe('strict boolean and number inputs', () => {
   const dtoClasses = new Set(sourceFiles('.dto.ts').flatMap(exportedClasses));
-  const textBorne = textBorneClasses();
+  const inputClasses = controllerInputClasses();
 
-  it('finds the DTOs and the query and form classes it checks', () => {
+  it('finds the DTOs and the classes controllers read from queries, forms and JSON bodies', () => {
     expect(dtoClasses.size).toBeGreaterThan(100);
-    const names = [...textBorne].map((cls) => cls.name);
-    expect(names).toEqual(
-      expect.arrayContaining(['BookQueryDto', 'BookUploadQueryDto', 'GetEntriesQueryDto', 'GetEntryCalendarQueryDto', 'ExportQueryDto', 'LinkAttachmentDto', 'ImportAttachmentsDto']),
+    expect([...inputClasses].map((cls) => cls.name)).toEqual(
+      expect.arrayContaining(['BookQueryDto', 'GetEntriesQueryDto', 'LinkAttachmentDto', 'CreateEntryDto', 'BulkOperationDto', 'CloudUploadDto', 'CreateSavedSearchDto']),
     );
-    expect(names).not.toContain('CreateEntryDto');
   });
 
-  it('reads every boolean DTO property and every query or form number through the shared decorators', () => {
-    expect(strictInputViolations(new Set([...dtoClasses, ...textBorne]), textBorne)).toEqual([]);
+  it('reads every boolean and every number DTO property through the shared decorators', () => {
+    expect(strictInputViolations(new Set([...dtoClasses, ...inputClasses]))).toEqual([]);
   });
 
-  it('reports a boolean or a query number declared the old way', () => {
-    class LegacyQueryDto {
+  it('reports a boolean or a number declared the old way', () => {
+    class LegacyDto {
       @IsOptional()
       flag?: boolean;
 
       @IsOptional()
       count?: number;
+
+      @ApiPropertyOptional({ type: Number, nullable: true })
+      @IsOptional()
+      @IsInt()
+      nullableCount?: number | null;
+
+      @IsOptional()
+      @IsInt({ each: true })
+      @Type(() => Number)
+      ids?: number[];
 
       @IsOptional()
       @StrictBoolean()
@@ -118,15 +143,18 @@ describe('strict boolean and number inputs', () => {
       @IsOptional()
       @StrictInt()
       fixedCount?: number;
-    }
-    class LegacyBodyDto {
+
       @IsOptional()
-      count?: number;
+      @StrictInt({ each: true })
+      fixedIds?: number[];
     }
 
-    expect(strictInputViolations([LegacyQueryDto, LegacyBodyDto], new Set([LegacyQueryDto]))).toEqual([
-      'LegacyQueryDto.flag (boolean without @StrictBoolean())',
-      'LegacyQueryDto.count (query/form number without @StrictInt())',
+    expect(strictInputViolations([LegacyDto])).toEqual([
+      'LegacyDto.flag (boolean without @StrictBoolean())',
+      'LegacyDto.count (number without @StrictInt())',
+      'LegacyDto.nullableCount (number without @StrictInt())',
+      'LegacyDto.ids (number without @StrictInt())',
+      'LegacyDto.ids (converted by @Type())',
     ]);
   });
 });

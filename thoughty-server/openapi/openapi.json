@@ -3298,16 +3298,10 @@
                   "gender": "example",
                   "avatarUrl": "https://thoughty.example.com/callback",
                   "fontFamily": "system",
-                  "fontSize": "example",
                   "fontColor": "#2A9D8F",
-                  "highContrast": "true",
                   "ttsVoiceUri": "https://thoughty.example.com/callback",
                   "language": "en",
-                  "entriesPerPage": "example",
-                  "maxPinnedEntries": "example",
                   "defaultVisibility": "public",
-                  "readDates": "true",
-                  "streakCard": "true",
                   "openRouterModel": "example",
                   "openRouterTagModel": "reflection",
                   "openRouterWritingModel": "example",
@@ -3316,11 +3310,17 @@
                   "openRouterSummaryModel": "example",
                   "openRouterPromptModel": "example",
                   "openRouterBookModel": "example",
-                  "autoTagMaxTags": "reflection",
                   "tagMetadata": "reflection",
                   "entryTemplates": "example",
                   "subscriptionPlan": "free",
-                  "paymentMethodLabel": "example"
+                  "paymentMethodLabel": "example",
+                  "fontSize": "example",
+                  "entriesPerPage": "example",
+                  "maxPinnedEntries": "example",
+                  "autoTagMaxTags": "reflection",
+                  "highContrast": "true",
+                  "readDates": "true",
+                  "streakCard": "true"
                 }
               }
             }
@@ -13129,25 +13129,11 @@
             ],
             "description": "Font family"
           },
-          "fontSize": {
-            "type": "string",
-            "maxLength": 3,
-            "description": "Font size in pixels",
-            "pattern": "^\\d{1,3}$"
-          },
           "fontColor": {
             "type": "string",
             "maxLength": 7,
             "description": "Text color as #rrggbb, or empty for the theme default",
             "pattern": "^(#[0-9a-fA-F]{6})?$"
-          },
-          "highContrast": {
-            "type": "string",
-            "enum": [
-              "true",
-              "false"
-            ],
-            "description": "High contrast mode"
           },
           "ttsVoiceUri": {
             "type": "string",
@@ -13162,18 +13148,6 @@
             ],
             "description": "Interface language"
           },
-          "entriesPerPage": {
-            "type": "string",
-            "maxLength": 3,
-            "description": "Entries per page",
-            "pattern": "^\\d{1,3}$"
-          },
-          "maxPinnedEntries": {
-            "type": "string",
-            "maxLength": 3,
-            "description": "Maximum pinned entries",
-            "pattern": "^\\d{1,3}$"
-          },
           "defaultVisibility": {
             "type": "string",
             "enum": [
@@ -13181,22 +13155,6 @@
               "private"
             ],
             "description": "Visibility of new entries"
-          },
-          "readDates": {
-            "type": "string",
-            "enum": [
-              "true",
-              "false"
-            ],
-            "description": "Read entry dates aloud"
-          },
-          "streakCard": {
-            "type": "string",
-            "enum": [
-              "true",
-              "false"
-            ],
-            "description": "Show the writing streak card above the journal; shown unless false"
           },
           "openRouterModel": {
             "type": "string",
@@ -13238,12 +13196,6 @@
             "maxLength": 300,
             "description": "OpenRouter model id, or empty for the default"
           },
-          "autoTagMaxTags": {
-            "type": "string",
-            "maxLength": 3,
-            "description": "Maximum tags suggested automatically (0 turns it off)",
-            "pattern": "^\\d{1,3}$"
-          },
           "tagMetadata": {
             "type": "string",
             "maxLength": 500000,
@@ -13267,6 +13219,50 @@
             "type": "string",
             "maxLength": 200,
             "description": "Payment method label"
+          },
+          "fontSize": {
+            "type": "string",
+            "pattern": "^\\d{1,3}$",
+            "description": "Font size in pixels"
+          },
+          "entriesPerPage": {
+            "type": "string",
+            "pattern": "^\\d{1,3}$",
+            "description": "Entries per page"
+          },
+          "maxPinnedEntries": {
+            "type": "string",
+            "pattern": "^\\d{1,3}$",
+            "description": "Maximum pinned entries"
+          },
+          "autoTagMaxTags": {
+            "type": "string",
+            "pattern": "^\\d{1,3}$",
+            "description": "Maximum tags suggested automatically (0 turns it off)"
+          },
+          "highContrast": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "High contrast mode"
+          },
+          "readDates": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Read entry dates aloud"
+          },
+          "streakCard": {
+            "type": "string",
+            "enum": [
+              "true",
+              "false"
+            ],
+            "description": "Show the writing streak card above the journal; shown unless false"
           }
         },
         "example": {
@@ -13278,16 +13274,10 @@
           "gender": "example",
           "avatarUrl": "https://thoughty.example.com/callback",
           "fontFamily": "system",
-          "fontSize": "example",
           "fontColor": "#2A9D8F",
-          "highContrast": "true",
           "ttsVoiceUri": "https://thoughty.example.com/callback",
           "language": "en",
-          "entriesPerPage": "example",
-          "maxPinnedEntries": "example",
           "defaultVisibility": "public",
-          "readDates": "true",
-          "streakCard": "true",
           "openRouterModel": "example",
           "openRouterTagModel": "reflection",
           "openRouterWritingModel": "example",
@@ -13296,11 +13286,17 @@
           "openRouterSummaryModel": "example",
           "openRouterPromptModel": "example",
           "openRouterBookModel": "example",
-          "autoTagMaxTags": "reflection",
           "tagMetadata": "reflection",
           "entryTemplates": "example",
           "subscriptionPlan": "free",
-          "paymentMethodLabel": "example"
+          "paymentMethodLabel": "example",
+          "fontSize": "example",
+          "entriesPerPage": "example",
+          "maxPinnedEntries": "example",
+          "autoTagMaxTags": "reflection",
+          "highContrast": "true",
+          "readDates": "true",
+          "streakCard": "true"
         }
       },
       "UpdateConfigDto": {
@@ -13357,10 +13353,19 @@
             "description": "Font family"
           },
           "fontSize": {
-            "type": "string",
-            "maxLength": 3,
-            "description": "Font size in pixels",
-            "pattern": "^\\d{1,3}$"
+            "oneOf": [
+              {
+                "type": "string",
+                "maxLength": 3,
+                "pattern": "^\\d{1,3}$"
+              },
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 999
+              }
+            ],
+            "description": "Font size in pixels"
           },
           "fontColor": {
             "type": "string",
@@ -13369,10 +13374,17 @@
             "pattern": "^(#[0-9a-fA-F]{6})?$"
           },
           "highContrast": {
-            "type": "string",
-            "enum": [
-              "true",
-              "false"
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "true",
+                  "false"
+                ]
+              },
+              {
+                "type": "boolean"
+              }
             ],
             "description": "High contrast mode"
           },
@@ -13390,16 +13402,34 @@
             "description": "Interface language"
           },
           "entriesPerPage": {
-            "type": "string",
-            "maxLength": 3,
-            "description": "Entries per page",
-            "pattern": "^\\d{1,3}$"
+            "oneOf": [
+              {
+                "type": "string",
+                "maxLength": 3,
+                "pattern": "^\\d{1,3}$"
+              },
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 999
+              }
+            ],
+            "description": "Entries per page"
           },
           "maxPinnedEntries": {
-            "type": "string",
-            "maxLength": 3,
-            "description": "Maximum pinned entries",
-            "pattern": "^\\d{1,3}$"
+            "oneOf": [
+              {
+                "type": "string",
+                "maxLength": 3,
+                "pattern": "^\\d{1,3}$"
+              },
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 999
+              }
+            ],
+            "description": "Maximum pinned entries"
           },
           "defaultVisibility": {
             "type": "string",
@@ -13410,18 +13440,32 @@
             "description": "Visibility of new entries"
           },
           "readDates": {
-            "type": "string",
-            "enum": [
-              "true",
-              "false"
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "true",
+                  "false"
+                ]
+              },
+              {
+                "type": "boolean"
+              }
             ],
             "description": "Read entry dates aloud"
           },
           "streakCard": {
-            "type": "string",
-            "enum": [
-              "true",
-              "false"
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "true",
+                  "false"
+                ]
+              },
+              {
+                "type": "boolean"
+              }
             ],
             "description": "Show the writing streak card above the journal; shown unless false"
           },
@@ -13466,10 +13510,19 @@
             "description": "OpenRouter model id, or empty for the default"
           },
           "autoTagMaxTags": {
-            "type": "string",
-            "maxLength": 3,
-            "description": "Maximum tags suggested automatically (0 turns it off)",
-            "pattern": "^\\d{1,3}$"
+            "oneOf": [
+              {
+                "type": "string",
+                "maxLength": 3,
+                "pattern": "^\\d{1,3}$"
+              },
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 999
+              }
+            ],
+            "description": "Maximum tags suggested automatically (0 turns it off)"
           },
           "tagMetadata": {
             "type": "string",

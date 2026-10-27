@@ -1,7 +1,6 @@
-import { IsString, IsOptional, IsIn, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { StrictBoolean } from '@/common/validation';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 
 export type CloudProviderType = 'google_drive' | 'onedrive' | 'dropbox';
 
@@ -42,8 +41,7 @@ export class CloudDisconnectDto {
 export class CloudUploadDto {
   @ApiPropertyOptional({ description: 'Diary ID to export' })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   diaryId?: number;
 
   @ApiPropertyOptional({ description: 'Export format', enum: ['txt', 'json', 'md'], default: 'txt' })
@@ -107,8 +105,7 @@ export class SetSyncScheduleDto {
 
   @ApiPropertyOptional({ description: 'Diary ID to export' })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   diaryId?: number;
 
   @ApiPropertyOptional({ description: 'Include visibility field', default: false })

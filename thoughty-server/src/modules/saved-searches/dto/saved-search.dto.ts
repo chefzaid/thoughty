@@ -4,7 +4,6 @@ import {
   ArrayMaxSize,
   IsArray,
   IsIn,
-  IsInt,
   IsISO8601,
   IsObject,
   IsOptional,
@@ -17,7 +16,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import type { SavedSearchFilters } from '@/database/entities';
-import { StrictBoolean } from '@/common/validation';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 
 /** How many saved searches one writer can keep. */
 export const SAVED_SEARCH_LIMIT = 50;
@@ -84,7 +83,7 @@ export class SavedSearchFiltersDto implements SavedSearchFilters {
   })
   @IsOptional()
   @ValidateIf((_dto, value) => value !== null)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   eraId?: number | null;
 
@@ -97,7 +96,7 @@ export class SavedSearchFiltersDto implements SavedSearchFilters {
   })
   @IsOptional()
   @ValidateIf((_dto, value) => value !== null)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   personId?: number | null;
 }
@@ -112,7 +111,7 @@ export class CreateSavedSearchDto {
 
   @ApiProperty({ type: Number, nullable: true, example: 2, description: 'Diary the search is scoped to; null for all diaries' })
   @ValidateIf((_dto, value) => value !== null)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId!: number | null;
 

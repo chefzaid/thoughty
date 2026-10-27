@@ -3,13 +3,13 @@ import {
   ArrayMaxSize,
   IsArray,
   IsIn,
-  IsInt,
   IsString,
   MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { StrictInt } from '@/common/validation';
 
 export const journalRetagModes = ['replace', 'add'] as const;
 export type JournalRetagMode = (typeof journalRetagModes)[number];
@@ -50,7 +50,7 @@ export class JournalRetagPlanResponseDto {
 
 export class JournalRetagAssignmentDto {
   @ApiProperty()
-  @IsInt()
+  @StrictInt()
   @Min(1)
   entryId: number;
 

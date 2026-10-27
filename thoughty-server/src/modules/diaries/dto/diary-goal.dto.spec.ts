@@ -1,13 +1,7 @@
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
+import { invalidPropertiesLikeApi, parseLikeApi } from '@/common/validation/dto-validation.test-helpers';
 import { CreateDiaryDto, UpdateDiaryDto } from './diaries.dto';
 
-async function invalidProperties(dto: object): Promise<string[]> {
-  const errors = await validate(dto, { whitelist: true, forbidNonWhitelisted: true });
-  return errors.map((error) => error.property);
-}
-
-const update = (body: object) => plainToInstance(UpdateDiaryDto, { name: 'Work', ...body });
+const invalidOnUpdate = (body: object) => invalidPropertiesLikeApi(UpdateDiaryDto, { name: 'Work', ...body });
 
 describe('diary goal fields', () => {
   it.each([
@@ -19,8 +13,12 @@ describe('diary goal fields', () => {
     [{ goalType: 'words_per_day', goalTarget: 10 }],
     [{ goalType: 'words_per_day', goalTarget: 10000 }],
   ])('accepts %j', async (body) => {
-    await expect(invalidProperties(update(body))).resolves.toEqual([]);
-    await expect(invalidProperties(plainToInstance(CreateDiaryDto, { name: 'Work', ...body }))).resolves.toEqual([]);
+    await expect(invalidOnUpdate(body)).resolves.toEqual([]);
+    await expect(invalidPropertiesLikeApi(CreateDiaryDto, { name: 'Work', ...body })).resolves.toEqual([]);
+  });
+
+  it('reads a target written as digits, like every number the API takes', async () => {
+    await expect(parseLikeApi(UpdateDiaryDto, { name: 'Work', goalType: 'entries_per_week', goalTarget: '3' })).resolves.toMatchObject({ goalTarget: 3 });
   });
 
   it.each([
@@ -29,12 +27,14 @@ describe('diary goal fields', () => {
     [{ goalType: 'entries_per_week', goalTarget: 0 }, ['goalTarget']],
     [{ goalType: 'entries_per_week', goalTarget: 51 }, ['goalTarget']],
     [{ goalType: 'entries_per_week', goalTarget: 2.5 }, ['goalTarget']],
-    [{ goalType: 'entries_per_week', goalTarget: '3' }, ['goalTarget']],
+    [{ goalType: 'entries_per_week', goalTarget: '' }, ['goalTarget']],
+    [{ goalType: 'entries_per_week', goalTarget: '3.0' }, ['goalTarget']],
+    [{ goalType: 'entries_per_week', goalTarget: true }, ['goalTarget']],
     [{ goalType: 'words_per_day', goalTarget: 9 }, ['goalTarget']],
     [{ goalType: 'words_per_day', goalTarget: 10001 }, ['goalTarget']],
     [{ goalTarget: 3 }, ['goalTarget']],
     [{ goalType: null, goalTarget: 3 }, ['goalTarget']],
   ])('rejects %j', async (body, properties) => {
-    await expect(invalidProperties(update(body))).resolves.toEqual(properties);
+    await expect(invalidOnUpdate(body)).resolves.toEqual(properties);
   });
 });

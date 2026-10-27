@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsInt, IsString, MaxLength, Min, MinLength } from 'class-validator';
+import { IsString, MaxLength, Min, MinLength } from 'class-validator';
 import { PEOPLE_LIMIT } from '@/modules/entries/entry-mentions.sync';
+import { StrictInt } from '@/common/validation';
 
 export const PERSON_NAME_MAX_LENGTH = 80;
 
@@ -22,7 +23,7 @@ export class MergePersonDto {
     example: 14,
     description: 'The duplicate to merge into this person: its handles and entries move here, then it is deleted',
   })
-  @IsInt()
+  @StrictInt()
   @Min(1)
   duplicateId!: number;
 }

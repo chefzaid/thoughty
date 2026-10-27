@@ -1,10 +1,7 @@
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
+import { invalidPropertiesLikeApi, parseLikeApi } from '@/common/validation/dto-validation.test-helpers';
 import { GetEntryCalendarQueryDto } from './entries.dto';
 
-async function invalidProperties(query: Record<string, unknown>): Promise<string[]> {
-  return (await validate(plainToInstance(GetEntryCalendarQueryDto, query))).map((error) => error.property);
-}
+const invalidProperties = (query: Record<string, unknown>) => invalidPropertiesLikeApi(GetEntryCalendarQueryDto, query, 'query');
 
 describe('GetEntryCalendarQueryDto', () => {
   it('takes a YYYY-MM month with the journal filters', async () => {
@@ -24,10 +21,8 @@ describe('GetEntryCalendarQueryDto', () => {
       }),
     ).resolves.toEqual([]);
 
-    const parsed = plainToInstance(GetEntryCalendarQueryDto, { month: '2026-12', favorites: 'true', diaryId: '7', eraId: '3' });
-    expect(parsed.favorites).toBe(true);
-    expect(parsed.diaryId).toBe(7);
-    expect(parsed.eraId).toBe(3);
+    await expect(parseLikeApi(GetEntryCalendarQueryDto, { month: '2026-12', favorites: 'true', diaryId: '7', eraId: '3' }, 'query'))
+      .resolves.toMatchObject({ favorites: true, diaryId: 7, eraId: 3 });
   });
 
   it('requires a real month', async () => {

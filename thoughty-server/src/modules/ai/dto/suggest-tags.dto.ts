@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsArray, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { StrictInt } from '@/common/validation';
 
 export class SuggestTagsDto {
   @ApiProperty({ description: 'Entry content to analyze for tag suggestions' })
@@ -18,7 +19,7 @@ export class SuggestTagsDto {
 
   @ApiPropertyOptional({ description: 'Maximum number of tags to return', default: 5 })
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(1)
   @Max(10)
   maxTags?: number;

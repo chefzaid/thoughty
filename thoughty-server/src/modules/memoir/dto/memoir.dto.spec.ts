@@ -1,58 +1,48 @@
-import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
+import { invalidPropertiesLikeApi, parseLikeApi } from '@/common/validation/dto-validation.test-helpers';
 import { AnswerMemoirQuestionDto, StartMemoirDto, UpdateMemoirDto } from './memoir.dto';
-
-async function invalidProperties(errors: Promise<{ property: string }[]>): Promise<string[]> {
-  return (await errors).map((error) => error.property);
-}
 
 describe('memoir DTOs', () => {
   const start = { emailEnabled: true, deliveryWeekday: 0, timeZone: 'Europe/Paris' };
 
   it('starts in a new diary named by the writer, trimmed', async () => {
-    const dto = plainToInstance(StartMemoirDto, { ...start, diaryName: '  My memoir  ' });
-
-    await expect(validate(dto)).resolves.toHaveLength(0);
-    expect(dto.diaryName).toBe('My memoir');
+    await expect(parseLikeApi(StartMemoirDto, { ...start, diaryName: '  My memoir  ' })).resolves.toMatchObject({ diaryName: 'My memoir' });
   });
 
   it('starts in an existing diary without needing a name', async () => {
-    const dto = plainToInstance(StartMemoirDto, { ...start, diaryId: '4' });
-
-    await expect(validate(dto)).resolves.toHaveLength(0);
-    expect(dto.diaryId).toBe(4);
+    await expect(parseLikeApi(StartMemoirDto, { ...start, diaryId: 4 })).resolves.toMatchObject({ diaryId: 4 });
+    await expect(parseLikeApi(StartMemoirDto, { ...start, diaryId: '4' })).resolves.toMatchObject({ diaryId: 4 });
   });
 
   it('requires a diary name or id and a weekday from 0 to 6', async () => {
-    await expect(invalidProperties(validate(plainToInstance(StartMemoirDto, start)))).resolves.toEqual(['diaryName']);
-    await expect(
-      invalidProperties(validate(plainToInstance(StartMemoirDto, { ...start, diaryName: 'Memoir', deliveryWeekday: 7 }))),
-    ).resolves.toEqual(['deliveryWeekday']);
-  });
-
-  it('accepts partial settings updates and rejects unknown statuses', async () => {
-    await expect(validate(plainToInstance(UpdateMemoirDto, { status: 'paused' }))).resolves.toHaveLength(0);
-    await expect(invalidProperties(validate(plainToInstance(UpdateMemoirDto, { status: 'done' })))).resolves.toEqual([
-      'status',
+    await expect(invalidPropertiesLikeApi(StartMemoirDto, start)).resolves.toEqual(['diaryName']);
+    await expect(invalidPropertiesLikeApi(StartMemoirDto, { ...start, diaryName: 'Memoir', deliveryWeekday: 7 })).resolves.toEqual([
+      'deliveryWeekday',
     ]);
   });
 
-  it('trims answers and bounds question ids and attachments', async () => {
-    const dto = plainToInstance(AnswerMemoirQuestionDto, {
-      questionId: 'childhood-home',
-      text: '  A fig tree in the yard.  ',
-      attachmentIds: [3],
-      eraId: 2,
-    });
-    await expect(validate(dto)).resolves.toHaveLength(0);
-    expect(dto.text).toBe('A fig tree in the yard.');
+  it('refuses a diary or weekday that is not a whole number instead of reading it as one', async () => {
+    await expect(invalidPropertiesLikeApi(StartMemoirDto, { ...start, diaryId: '' })).resolves.toEqual(['diaryId']);
+    await expect(invalidPropertiesLikeApi(StartMemoirDto, { ...start, diaryId: true })).resolves.toEqual(['diaryId']);
+    await expect(invalidPropertiesLikeApi(StartMemoirDto, { ...start, diaryName: 'Memoir', deliveryWeekday: '' })).resolves.toEqual([
+      'deliveryWeekday',
+    ]);
+    await expect(invalidPropertiesLikeApi(UpdateMemoirDto, { diaryId: '2.5' })).resolves.toEqual(['diaryId']);
+  });
 
-    const invalid = plainToInstance(AnswerMemoirQuestionDto, {
-      questionId: '../etc',
-      text: 'x',
-      attachmentIds: [1, 2, 3, 4, 5, 6],
-      eraId: 0,
-    });
-    await expect(invalidProperties(validate(invalid))).resolves.toEqual(['questionId', 'attachmentIds', 'eraId']);
+  it('accepts partial settings updates and rejects unknown statuses', async () => {
+    await expect(invalidPropertiesLikeApi(UpdateMemoirDto, { status: 'paused' })).resolves.toEqual([]);
+    await expect(invalidPropertiesLikeApi(UpdateMemoirDto, { status: 'done' })).resolves.toEqual(['status']);
+  });
+
+  it('trims answers and bounds question ids and attachments', async () => {
+    await expect(
+      parseLikeApi(AnswerMemoirQuestionDto, { questionId: 'childhood-home', text: '  A fig tree in the yard.  ', attachmentIds: [3], eraId: 2 }),
+    ).resolves.toMatchObject({ text: 'A fig tree in the yard.', attachmentIds: [3], eraId: 2 });
+
+    await expect(
+      invalidPropertiesLikeApi(AnswerMemoirQuestionDto, { questionId: '../etc', text: 'x', attachmentIds: [1, 2, 3, 4, 5, 6], eraId: 0 }),
+    ).resolves.toEqual(['questionId', 'attachmentIds', 'eraId']);
+    await expect(invalidPropertiesLikeApi(AnswerMemoirQuestionDto, { questionId: 'childhood-home', text: 'x', attachmentIds: [''] }))
+      .resolves.toEqual(['attachmentIds']);
   });
 });

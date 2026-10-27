@@ -1,10 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
   IsIn,
-  IsInt,
   IsOptional,
   IsString,
   Matches,
@@ -15,7 +14,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import type { MemoirProgramStatus } from '@/database/entities';
-import { StrictBoolean } from '@/common/validation';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 
 export const MEMOIR_ANSWER_MAX_LENGTH = 45_000;
 export const MEMOIR_ANSWER_MAX_ATTACHMENTS = 5;
@@ -26,8 +25,7 @@ const trimmed = ({ value }: { value: unknown }) => (typeof value === 'string' ? 
 export class StartMemoirDto {
   @ApiPropertyOptional({ example: 4, description: 'An existing diary to collect the answers; omit to create one named diaryName' })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId?: number;
 
@@ -44,7 +42,7 @@ export class StartMemoirDto {
   emailEnabled!: boolean;
 
   @ApiProperty({ example: 0, minimum: 0, maximum: 6, description: '0 = Sunday through 6 = Saturday' })
-  @IsInt()
+  @StrictInt()
   @Min(0)
   @Max(6)
   deliveryWeekday!: number;
@@ -58,8 +56,7 @@ export class StartMemoirDto {
 export class UpdateMemoirDto {
   @ApiPropertyOptional({ example: 4 })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId?: number;
 
@@ -70,7 +67,7 @@ export class UpdateMemoirDto {
 
   @ApiPropertyOptional({ example: 3, minimum: 0, maximum: 6 })
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(0)
   @Max(6)
   deliveryWeekday?: number;
@@ -107,7 +104,7 @@ export class AnswerMemoirQuestionDto {
   @IsOptional()
   @IsArray()
   @ArrayMaxSize(MEMOIR_ANSWER_MAX_ATTACHMENTS)
-  @IsInt({ each: true })
+  @StrictInt({ each: true })
   @Min(1, { each: true })
   attachmentIds?: number[];
 
@@ -116,7 +113,7 @@ export class AnswerMemoirQuestionDto {
     description: 'Life era the memory belongs to: the answer is also tagged with the era’s name',
   })
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(1)
   eraId?: number;
 }

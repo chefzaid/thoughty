@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsOptional, Min, validate } from 'class-validator';
+import { IsArray, IsOptional, Min, validate } from 'class-validator';
 import { BadRequestException } from '@nestjs/common';
 import { GLOBAL_VALIDATION_PIPE_OPTIONS, createGlobalValidationPipe } from './global-validation-pipe';
 import { StrictBoolean, StrictInt, parseStrictBoolean, parseStrictInt } from './strict-input.decorators';
@@ -22,6 +22,16 @@ class CountsDto {
   @IsOptional()
   @StrictInt()
   offset?: number;
+
+  @IsOptional()
+  @IsArray()
+  @StrictInt({ each: true })
+  @Min(1, { each: true })
+  ids?: number[];
+
+  @IsOptional()
+  @StrictInt({ message: 'Line must be a whole number' })
+  line?: number;
 }
 
 /** What the API's global pipe turns the raw input into, before validation. */
@@ -49,7 +59,7 @@ describe('parseStrictInt', () => {
 });
 
 describe('StrictBoolean under the global pipe options', () => {
-  it('keeps "false" false, where implicit conversion alone would make it true', async () => {
+  it('keeps "false" false, where Boolean("false") would make it true', async () => {
     const dto = convert(FlagsDto, { enabled: 'false', required: '0' });
 
     expect(dto).toEqual(expect.objectContaining({ enabled: false, required: false }));
@@ -112,5 +122,35 @@ describe('StrictInt under the global pipe options', () => {
       .catch((caught: unknown) => caught);
 
     expect((error as BadRequestException).getResponse()).toMatchObject({ message: ['offset must be a whole number'] });
+  });
+
+  it('takes a message of its own', async () => {
+    const error = await createGlobalValidationPipe()
+      .transform({ line: true }, { type: 'body', metatype: CountsDto })
+      .catch((caught: unknown) => caught);
+
+    expect((error as BadRequestException).getResponse()).toMatchObject({ message: ['Line must be a whole number'] });
+  });
+
+  it('reads every item of an array with { each: true }, numbers and digits alike', async () => {
+    const dto = convert(CountsDto, { ids: [3, '4', '05'] });
+
+    expect(dto.ids).toEqual([3, 4, 5]);
+    await expect(invalid(dto)).resolves.toEqual([]);
+  });
+
+  it.each([[['']], [[true]], [[1.5]], [['2', 'x']], [[['3']]], ['3']])('rejects the array %j', async (raw) => {
+    await expect(invalid(convert(CountsDto, { ids: raw }))).resolves.toEqual(['ids']);
+  });
+
+  it('applies the item range beside it and names each item in its message', async () => {
+    await expect(invalid(convert(CountsDto, { ids: ['0'] }))).resolves.toEqual(['ids']);
+    const error = await createGlobalValidationPipe()
+      .transform({ ids: [''] }, { type: 'body', metatype: CountsDto })
+      .catch((caught: unknown) => caught);
+
+    expect((error as BadRequestException).getResponse()).toMatchObject({
+      message: expect.arrayContaining(['each value in ids must be a whole number']),
+    });
   });
 });

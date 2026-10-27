@@ -1,7 +1,9 @@
-import { IsString, IsOptional, IsEnum, MaxLength, IsArray, IsInt, IsIn, Matches } from 'class-validator';
+import { IsString, IsOptional, IsEnum, MaxLength, IsArray, IsIn, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import type { DiaryGoalType } from '@/database/entities';
 import { DIARY_GOAL_TYPES, IsDiaryGoalTarget } from './diary-goal.dto';
+import { StrictInt, toStrictInt } from '@/common/validation';
 
 const DIARY_COLOR_PATTERN = /^#[0-9A-Fa-f]{6}$/;
 
@@ -23,6 +25,7 @@ class DiaryGoalFieldsDto {
     example: 3,
     description: 'Entries a week (1-50) or words a day (10-10000); required with a goal type',
   })
+  @Transform(toStrictInt)
   @IsDiaryGoalTarget()
   goalTarget?: number | null;
 }
@@ -113,6 +116,6 @@ export class DiaryResponseDto {
 export class ReorderDiariesDto {
   @ApiProperty({ description: 'Ordered array of diary IDs', type: [Number] })
   @IsArray()
-  @IsInt({ each: true })
+  @StrictInt({ each: true })
   orderedIds: number[];
 }

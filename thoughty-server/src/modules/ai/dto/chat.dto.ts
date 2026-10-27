@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { ArrayMaxSize, IsArray, IsIn, IsInt, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsIn, IsString, MaxLength, Min, ValidateNested } from 'class-validator';
+import { StrictInt } from '@/common/validation';
 
 export class ChatMessageDto {
   @ApiProperty({ description: 'Role of the message sender', enum: ['user', 'assistant'] })
@@ -16,7 +17,7 @@ export class ChatMessageDto {
 
 export class ChatDto {
   @ApiProperty({ description: 'The entry being discussed' })
-  @IsInt()
+  @StrictInt()
   @Min(1)
   entryId!: number;
 

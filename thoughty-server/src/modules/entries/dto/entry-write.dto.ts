@@ -7,9 +7,7 @@ import {
   IsDateString,
   MaxLength,
   ArrayMaxSize,
-  IsNumber,
   Min,
-  IsInt,
   Matches,
   Max,
   ValidateIf,
@@ -20,7 +18,7 @@ import { Type } from 'class-transformer';
 import { SealEntryDto } from './entry-seal.dto';
 import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
 import { MAX_FEELING_LENGTH, MAX_FEELINGS, MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
-import { StrictBoolean } from '@/common/validation';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 
 const TITLE_DESCRIPTION = 'Optional one-line title; empty or null removes it';
 const TIME_OF_DAY_DESCRIPTION =
@@ -50,7 +48,7 @@ class EntryDetailsDto {
 
   @ApiPropertyOptional({ description: MOOD_DESCRIPTION, type: Number, nullable: true, minimum: MIN_MOOD, maximum: MAX_MOOD, example: 4 })
   @ValidateIf((_, value) => value !== null && value !== undefined)
-  @IsInt({ message: 'Mood must be a whole number from 1 to 5' })
+  @StrictInt({ message: 'Mood must be a whole number from 1 to 5' })
   @Min(MIN_MOOD)
   @Max(MAX_MOOD)
   mood?: number | null;
@@ -89,8 +87,7 @@ export class CreateEntryDto extends EntryDetailsDto {
 
   @ApiPropertyOptional({ description: 'Diary ID' })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
+  @StrictInt()
   diaryId?: number;
 
   @ApiPropertyOptional({ enum: ['plain', 'markdown'], default: 'plain' })
@@ -171,7 +168,7 @@ export class UpdateEntryTaskDto {
     minimum: 0,
     example: 2,
   })
-  @IsInt({ message: 'Line must be a whole number' })
+  @StrictInt({ message: 'Line must be a whole number' })
   @Min(0)
   line: number;
 

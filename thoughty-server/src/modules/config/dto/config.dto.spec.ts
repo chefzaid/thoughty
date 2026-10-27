@@ -1,13 +1,10 @@
 import { BadRequestException } from '@nestjs/common';
 import { getMetadataStorage } from 'class-validator';
-import { createGlobalValidationPipe } from '@/common/validation';
+import { parseLikeApi } from '@/common/validation/dto-validation.test-helpers';
 import { UpdateConfigDto, USER_CONFIG_KEYS } from './config.dto';
 
 describe('UpdateConfigDto', () => {
-  // The global pipe of main.ts
-  const pipe = createGlobalValidationPipe();
-  const validate = (body: Record<string, unknown>) =>
-    pipe.transform(body, { type: 'body', metatype: UpdateConfigDto });
+  const validate = (body: Record<string, unknown>) => parseLikeApi(UpdateConfigDto, body);
 
   it('lists exactly the keys the DTO validates', () => {
     const validated = new Set(

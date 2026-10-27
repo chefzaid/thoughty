@@ -5,7 +5,7 @@ Thoughty stores private journals, attachments, sessions, and encrypted third-par
 ## Baseline
 
 - Every API route needs an access token unless marked `@Public()`.
-- The global `ValidationPipe` whitelists DTO fields and rejects unknown ones.
+- The global `ValidationPipe` whitelists DTO fields and rejects unknown ones. It converts no value implicitly: a text must arrive as a string, and booleans and numbers are read strictly by `@StrictBoolean()` and `@StrictInt()`, so `""`, `1.5` or `true` sent for an ID is a 400 instead of becoming `0` or `1` ([Request validation](./development.md#request-validation)).
 - Every query is scoped to the authenticated user. A diary, entry, or attachment the caller does not own answers `404`, including the target diary when creating, moving, or importing entries.
 - Passwords use bcrypt. Reset, verification, and 2FA challenge tokens are stored only as SHA-256 hashes.
 - In production, API responses carry a per-response nonce CSP with no `unsafe-inline` (`common/security/csp.ts`), and served HTML such as Swagger UI gets the nonce. Do not add `unsafe-inline`.

@@ -1,11 +1,12 @@
 // Sealing a new entry as a time capsule.
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
+import { IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 import {
   DEFAULT_TIME_CAPSULE_HOUR,
   MAX_TIME_CAPSULE_YEARS,
   type TimeCapsuleRequest,
 } from '@/modules/time-capsules/time-capsule-schedule';
+import { StrictInt } from '@/common/validation';
 
 export class SealEntryDto implements TimeCapsuleRequest {
   @ApiProperty({
@@ -24,7 +25,7 @@ export class SealEntryDto implements TimeCapsuleRequest {
     example: 9,
   })
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(0)
   @Max(23)
   openHour?: number;

@@ -13,9 +13,18 @@ const ToSettingText = () =>
     return typeof raw === 'number' || typeof raw === 'boolean' ? String(raw) : raw;
   });
 
+export const BOOLEAN_TEXT = ['true', 'false'] as const;
+export const SMALL_NUMBER = /^\d{1,3}$/;
+
 function SettingText(maxLength: number, description: string, pattern?: RegExp) {
   return applyDecorators(
-    ApiPropertyOptional({ type: String, maxLength, description, pattern: pattern?.source }),
+    // A whole-number setting (fontSize) may also be sent as a number, which is stored as its text.
+    pattern === SMALL_NUMBER
+      ? ApiPropertyOptional({
+        oneOf: [{ type: 'string', maxLength, pattern: pattern.source }, { type: 'integer', minimum: 0, maximum: 999 }],
+        description,
+      })
+      : ApiPropertyOptional({ type: String, maxLength, description, pattern: pattern?.source }),
     IsOptional(),
     ToSettingText(),
     IsString(),
@@ -26,15 +35,16 @@ function SettingText(maxLength: number, description: string, pattern?: RegExp) {
 
 function SettingChoice(values: readonly string[], description: string) {
   return applyDecorators(
-    ApiPropertyOptional({ type: String, enum: values, description }),
+    // An on/off setting (highContrast) may also be sent as a boolean, which is stored as its text.
+    values === BOOLEAN_TEXT
+      ? ApiPropertyOptional({ oneOf: [{ type: 'string', enum: [...values] }, { type: 'boolean' }], description })
+      : ApiPropertyOptional({ type: String, enum: values, description }),
     IsOptional(),
     ToSettingText(),
     IsIn(values),
   );
 }
 
-const BOOLEAN_TEXT = ['true', 'false'] as const;
-const SMALL_NUMBER = /^\d{1,3}$/;
 const MODEL_ID_MAX_LENGTH = 300;
 const MODEL_DESCRIPTION = 'OpenRouter model id, or empty for the default';
 

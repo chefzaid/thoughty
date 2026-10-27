@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsInt, IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength, Min, MinLength } from 'class-validator';
+import { StrictInt } from '@/common/validation';
 
 export class SemanticSearchDto {
   @ApiProperty({ minLength: 2, maxLength: 200 })
@@ -12,7 +13,7 @@ export class SemanticSearchDto {
 
   @ApiPropertyOptional({ description: 'Diary to search; omit to search across all diaries', minimum: 1 })
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId?: number;
 }

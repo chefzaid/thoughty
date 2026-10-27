@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsInt, IsOptional, Matches, Min } from 'class-validator';
+import { IsDateString, IsOptional, Matches, Min } from 'class-validator';
 import { DiaryGoalProgressDto } from './stats-goal.dto';
+import { StrictInt } from '@/common/validation';
 
 export class ToneMoodAnalysisDto {
   @ApiProperty({ example: 'reflective' })
@@ -53,7 +54,7 @@ export class SubjectAnalysisDto {
 export class PersonalityAnalysisRequestDto {
   @ApiPropertyOptional({ example: 3, minimum: 1 })
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId?: number;
 

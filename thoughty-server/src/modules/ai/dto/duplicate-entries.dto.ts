@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, Min } from 'class-validator';
+import { IsOptional, Min } from 'class-validator';
+import { StrictInt } from '@/common/validation';
 
 export class FindDuplicateEntriesDto {
   @ApiPropertyOptional({
@@ -7,7 +8,7 @@ export class FindDuplicateEntriesDto {
     minimum: 1,
   })
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId?: number;
 }

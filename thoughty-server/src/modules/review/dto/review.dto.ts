@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsOptional, Max, Min } from 'class-validator';
 import { StrictInt } from '@/common/validation';
 
 export const MIN_REVIEW_YEAR = 1900;
@@ -23,14 +23,14 @@ export class YearReviewQueryDto {
 
 export class YearMoodRequestDto {
   @ApiProperty({ example: 2025 })
-  @IsInt()
+  @StrictInt()
   @Min(MIN_REVIEW_YEAR)
   @Max(MAX_REVIEW_YEAR)
   year: number;
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId?: number;
 }

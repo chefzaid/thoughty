@@ -1,6 +1,6 @@
 import { test, expect } from '../support/test';
 import { mockDiary } from '../support/mockApp.diaries';
-import { checkMockResponse, checkQueryParameters } from '../support/mockApp.contract';
+import { checkJsonRequestBody, checkMockResponse, checkQueryParameters } from '../support/mockApp.contract';
 import { readQueryFlag } from '../support/mockApp.route-utils';
 
 // The guard every mock answer goes through: it must catch the drift that hid `is_default`.
@@ -49,6 +49,28 @@ test.describe('Mock API contract check', () => {
     expect(checkQueryParameters('GET', '/api/entries', new URLSearchParams('favorites=on'))).toEqual([
       'GET /api/entries sends favorites=on, which the API refuses as a boolean',
     ]);
+  });
+
+  test('refuses JSON bodies the API refuses for their types, as its global pipe and strict decorators do', () => {
+    const entry = { text: 'A walk', tags: ['walk'], date: '2026-10-27' };
+    const check = (body: object) => checkJsonRequestBody('POST', '/api/entries', body);
+
+    expect(check({ ...entry, diaryId: 2, mood: null, seal: { opensOn: '2031-10-27', openHour: '9', timeZone: 'UTC' } })).toEqual([]);
+    expect(check({ ...entry, diaryId: '2' })).toEqual([]);
+    expect(check({ ...entry, diaryId: '' })).toEqual(['POST /api/entries sends $.diaryId: expected a whole number, got ""']);
+    expect(check({ ...entry, mood: 4.5 })).toEqual(['POST /api/entries sends $.mood: expected a whole number, got 4.5']);
+    expect(check({ ...entry, text: 42, tags: ['walk', 7] })).toEqual([
+      'POST /api/entries sends $.text: expected a string, got 42',
+      'POST /api/entries sends $.tags[1]: expected a string, got 7',
+    ]);
+    expect(check({ ...entry, userId: 3 })).toEqual(['POST /api/entries sends $.userId: not a property the API takes']);
+    expect(checkJsonRequestBody('PATCH', '/api/entries/4/favorite', { isFavorite: 'yes' })).toEqual([
+      'PATCH /api/entries/4/favorite sends $.isFavorite: expected true, false, 1 or 0, got "yes"',
+    ]);
+    expect(checkJsonRequestBody('POST', '/api/saved-searches', { name: 'Walks', diaryId: null, filters: 'walks' })).toEqual([
+      'POST /api/saved-searches sends $.filters: expected an object, got "walks"',
+    ]);
+    expect(checkJsonRequestBody('POST', '/api/not-an-endpoint', { anything: '' })).toEqual([]);
   });
 
   test('reads a flag as the API does, with its default when it is not sent', () => {

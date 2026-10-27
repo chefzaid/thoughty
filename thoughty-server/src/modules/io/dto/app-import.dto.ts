@@ -3,7 +3,6 @@ import {
   ArrayMinSize,
   IsArray,
   IsIn,
-  IsInt,
   IsISO8601,
   IsOptional,
   IsString,
@@ -17,7 +16,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
 import { MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
-import { StrictBoolean } from '@/common/validation';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 
 export const APP_IMPORT_SOURCES = ['dayone', 'journey'] as const;
 export type AppImportSource = (typeof APP_IMPORT_SOURCES)[number];
@@ -53,7 +52,7 @@ export class AppImportEntryDto {
     example: 4,
   })
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(MIN_MOOD)
   @Max(MAX_MOOD)
   mood?: number;
@@ -97,7 +96,7 @@ export class AppImportDto {
 
   @ApiPropertyOptional({ description: 'Diary for the entries; defaults to the default diary' })
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId?: number;
 
