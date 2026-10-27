@@ -208,6 +208,9 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `ATTACHMENT_TOO_LARGE` | File size exceeds the maximum |
 |  | `ATTACHMENT_EXPORT_TOO_LARGE` | Attachment exceeds the export size limit |
 |  | `ATTACHMENT_NOT_AUDIO` | Only audio attachments can be transcribed |
+|  | `ATTACHMENT_CONTENT_MISMATCH` | The file content does not match its type |
+|  | `ATTACHMENT_NOT_VIDEO` | Only video attachments have a poster frame |
+|  | `ATTACHMENT_RANGE_NOT_SATISFIABLE` | The requested range is outside the file |
 |  | `TRANSCRIPTION_FAILED` | Audio transcription request failed |
 | Import, export and books | `IMPORT_CONTENT_REQUIRED` | File content is required |
 |  | `IMPORT_FILE_TOO_LARGE` | File too large |
@@ -302,6 +305,7 @@ Status is `Proposed` for a decision that guides upcoming work, `Accepted` for im
 | [0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md) | Accepted | Read Other Apps' Exports in the Browser and Stream the Full Export |
 | [0021](./adr/0021-in-app-book-preview-with-pdfjs.md) | Accepted | Preview Books Page by Page with a Pinned, Self-Hosted PDF.js |
 | [0022](./adr/0022-versioned-entry-list-cache.md) | Accepted | Check the Journal List Cache Against a Version the Database Keeps |
+| [0023](./adr/0023-video-attachments.md) | Accepted | Take Videos Through a Disk-Buffered Upload, With Poster Frames Drawn in the Browser |
 
 ## ADR Template
 

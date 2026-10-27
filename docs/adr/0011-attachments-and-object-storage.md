@@ -1,6 +1,6 @@
 # ADR 0011: Store Attachments as Metadata in PostgreSQL and Blobs in S3-Compatible Object Storage
 
-- Status: Accepted
+- Status: Accepted (uploads and video limits amended by [ADR 0023](./0023-video-attachments.md))
 - Date: 2026-05-27
 
 ## Context
