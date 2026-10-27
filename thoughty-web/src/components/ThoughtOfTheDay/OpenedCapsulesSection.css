@@ -1,25 +1,28 @@
-/* Time capsules opened lately: first in Highlights, with an indigo frame so they stand out. */
-.thought-of-day-modal .opened-capsules .highlight-card {
-    border-width: 2px;
-}
-
+/* Time capsules opened lately: first in Highlights, with a 2px indigo frame so they stand out.
+   The date and the sealed day are indigo too: the muted slate of other cards is too faint on
+   the light indigo background (4.25:1). */
 .thought-of-day-modal.light .opened-capsules .section-title,
+.thought-of-day-modal.light .opened-capsules .entry-meta,
 .thought-of-day-modal.light .opened-capsules .capsule-meta {
     color: #4338ca;
 }
 
 .thought-of-day-modal.dark .opened-capsules .section-title,
+.thought-of-day-modal.dark .opened-capsules .entry-meta,
 .thought-of-day-modal.dark .opened-capsules .capsule-meta {
     color: #a5b4fc;
 }
 
+/* The whole frame is set here, one class more specific than the theme borders in
+   ThoughtOfTheDay.css (`.thought-of-day-modal.light .highlight-card`), so it wins whichever
+   stylesheet loads first. */
 .thought-of-day-modal.light .opened-capsules .highlight-card {
-    border-color: #6366f1;
+    border: 2px solid #6366f1;
     background: #eef2ff;
 }
 
 .thought-of-day-modal.dark .opened-capsules .highlight-card {
-    border-color: #6366f1;
+    border: 2px solid #6366f1;
     background: #1e1b4b;
 }
 

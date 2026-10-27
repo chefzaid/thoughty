@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test } from '../support/test';
+import { expect, test, type Page } from '../support/test';
 
 import { setupMockApp } from '../support/mockApp';
-import type { MockEntry } from '../support/mockApp.shared';
+import type { MockEntry, SetupMockAppOptions } from '../support/mockApp.shared';
 
 const nextYear = new Date().getFullYear() + 1;
 const sealedLetter: MockEntry = {
@@ -16,6 +16,22 @@ const sealedLetter: MockEntry = {
   diaryId: 1,
   capsule: { openAt: `${nextYear}-03-01T08:00:00.000Z`, sealedAt: '2026-01-05T10:00:00.000Z', openedAt: null },
 };
+
+/** Opens Highlights with a capsule opened two hours ago and returns its section. */
+async function openHighlightsWithCapsule(page: Page, config: SetupMockAppOptions['config'] = {}) {
+  const openedAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+  await setupMockApp(page, {
+    startAuthenticated: true,
+    config,
+    initialEntries: [
+      { ...sealedLetter, capsule: { openAt: openedAt, sealedAt: '2025-03-01T10:00:00.000Z', openedAt } },
+      { id: 703, date: '2024-04-17', index: 1, content: 'Earlier highlight memory', tags: [], visibility: 'private', diaryId: 1 },
+    ],
+  });
+  await page.goto('/journal?diary=all');
+  await page.getByRole('button', { name: 'Highlights' }).click();
+  return page.locator('.opened-capsules');
+}
 
 test.describe('Time capsules', () => {
   test('seals a letter to the future self from its template, keeping it private and hidden', async ({ page }) => {
@@ -82,18 +98,7 @@ test.describe('Time capsules', () => {
   });
 
   test('shows a newly opened capsule first in Highlights, with the day it was sealed', async ({ page }) => {
-    const openedAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    await setupMockApp(page, {
-      startAuthenticated: true,
-      initialEntries: [
-        { ...sealedLetter, capsule: { openAt: openedAt, sealedAt: '2025-03-01T10:00:00.000Z', openedAt } },
-        { id: 703, date: '2024-04-17', index: 1, content: 'Earlier highlight memory', tags: [], visibility: 'private', diaryId: 1 },
-      ],
-    });
-    await page.goto('/journal?diary=all');
-    await page.getByRole('button', { name: 'Highlights' }).click();
-
-    const section = page.locator('.opened-capsules');
+    const section = await openHighlightsWithCapsule(page);
     await expect(section.getByRole('heading', { name: 'Time capsules opened' })).toBeVisible();
     await expect(section).toContainText('Dear future me');
     await expect(section).toContainText('Sealed on March 1, 2025');
@@ -103,4 +108,24 @@ test.describe('Time capsules', () => {
     await section.getByRole('button', { name: /2026-01-05/ }).click();
     await expect(page.locator('#entry-701')).toHaveClass(/highlight-entry/);
   });
+
+  for (const theme of ['light', 'dark'] as const) {
+    for (const highContrast of [false, true]) {
+      test(`frames an opened capsule in 2px indigo in Highlights, ${theme}${highContrast ? ' high contrast' : ''}`, async ({ page }) => {
+        const section = await openHighlightsWithCapsule(page, { theme, highContrast });
+        const card = section.locator('.highlight-card');
+        await expect(card).toContainText('Dear future me');
+        await expect(card).toHaveCSS('border-top-width', '2px');
+        await expect(card).toHaveCSS('border-left-width', '2px');
+        await expect(card).toHaveCSS('border-top-color', 'rgb(99, 102, 241)');
+        // Other highlight cards keep their thin theme border.
+        await expect(page.locator('.thought-of-day-modal .highlight-card').filter({ hasText: 'Earlier highlight memory' }).first()).toHaveCSS('border-top-width', '1px');
+
+        await card.getByRole('button', { name: /2026-01-05/ }).focus();
+        await expect(card.getByRole('button', { name: /2026-01-05/ })).toBeFocused();
+        const results = await new AxeBuilder({ page }).include('.thought-of-day-modal').analyze();
+        expect(results.violations).toEqual([]);
+      });
+    }
+  }
 });
