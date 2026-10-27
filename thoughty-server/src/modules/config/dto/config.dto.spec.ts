@@ -1,15 +1,11 @@
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { BadRequestException } from '@nestjs/common';
 import { getMetadataStorage } from 'class-validator';
+import { createGlobalValidationPipe } from '@/common/validation';
 import { UpdateConfigDto, USER_CONFIG_KEYS } from './config.dto';
 
 describe('UpdateConfigDto', () => {
-  // Same options as the global pipe in main.ts
-  const pipe = new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-    transformOptions: { enableImplicitConversion: true },
-  });
+  // The global pipe of main.ts
+  const pipe = createGlobalValidationPipe();
   const validate = (body: Record<string, unknown>) =>
     pipe.transform(body, { type: 'body', metatype: UpdateConfigDto });
 

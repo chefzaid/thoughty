@@ -37,6 +37,16 @@ export function fulfillApiError(route: Route, statusCode: number, code: string, 
   return fulfillJson(route, { statusCode, message, error: STATUS_CODES[statusCode] ?? 'Error', code }, { status: statusCode });
 }
 
+/**
+ * A boolean query flag as the API's `@StrictBoolean()` reads it: true or 1, false or 0, and `fallback`
+ * (the API's default) when it is not sent. `refuseInvalidQueryParameters` has already refused anything else.
+ */
+export function readQueryFlag(searchParams: URLSearchParams, name: string, fallback: boolean): boolean {
+  const value = searchParams.get(name);
+  if (value === null) return fallback;
+  return value === 'true' || value === '1';
+}
+
 export function sortStrings(values: string[]): string[] {
   return [...values].sort((left, right) => left.localeCompare(right));
 }

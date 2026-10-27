@@ -2,7 +2,6 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
-  IsBoolean,
   IsIn,
   IsInt,
   IsISO8601,
@@ -18,6 +17,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
 import { MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
+import { StrictBoolean } from '@/common/validation';
 
 export const APP_IMPORT_SOURCES = ['dayone', 'journey'] as const;
 export type AppImportSource = (typeof APP_IMPORT_SOURCES)[number];
@@ -72,7 +72,7 @@ export class AppImportEntryDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsBoolean()
+  @StrictBoolean()
   favorite?: boolean;
 
   @ApiPropertyOptional({ description: 'Name of the journal the entry belongs to in the source app' })
@@ -103,7 +103,7 @@ export class AppImportDto {
 
   @ApiPropertyOptional({ description: 'Put each source journal in the diary of the same name, creating the missing ones' })
   @IsOptional()
-  @IsBoolean()
+  @StrictBoolean()
   journalsAsDiaries?: boolean;
 }
 

@@ -10,10 +10,10 @@ import {
   IsNumber,
   IsInt,
   ArrayMinSize,
-  IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 
 export class BulkOperationDto {
   @ApiProperty({ description: 'Entry IDs to operate on', type: [Number] })
@@ -51,8 +51,7 @@ export class BulkOperationDto {
 
   @ApiPropertyOptional({ description: 'Whether the entries should be archived' })
   @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }) => value === true || value === 'true')
+  @StrictBoolean()
   isArchived?: boolean;
 }
 
@@ -77,7 +76,6 @@ export class ReorderEntriesDto {
 export class DeleteAllQueryDto {
   @ApiPropertyOptional({ description: 'Diary ID to delete entries from' })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   diaryId?: number;
 }

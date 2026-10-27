@@ -3,7 +3,6 @@ import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
-  IsBoolean,
   IsIn,
   IsInt,
   IsISO8601,
@@ -18,6 +17,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import type { SavedSearchFilters } from '@/database/entities';
+import { StrictBoolean } from '@/common/validation';
 
 /** How many saved searches one writer can keep. */
 export const SAVED_SEARCH_LIMIT = 50;
@@ -64,7 +64,7 @@ export class SavedSearchFiltersDto implements SavedSearchFilters {
   archiveStatus!: 'active' | 'archived' | 'all';
 
   @ApiProperty({ example: true })
-  @IsBoolean()
+  @StrictBoolean()
   favorites!: boolean;
 
   @ApiProperty({

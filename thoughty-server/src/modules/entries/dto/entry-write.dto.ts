@@ -10,17 +10,17 @@ import {
   IsNumber,
   Min,
   IsInt,
-  IsBoolean,
   Matches,
   Max,
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { SealEntryDto } from './entry-seal.dto';
 import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
 import { MAX_FEELING_LENGTH, MAX_FEELINGS, MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
+import { StrictBoolean } from '@/common/validation';
 
 const TITLE_DESCRIPTION = 'Optional one-line title; empty or null removes it';
 const TIME_OF_DAY_DESCRIPTION =
@@ -147,22 +147,19 @@ export class UpdateVisibilityDto {
 
 export class UpdateFavoriteDto {
   @ApiProperty({ description: 'Whether the entry is a favorite' })
-  @IsBoolean()
-  @Transform(({ value }) => value === true || value === 'true')
+  @StrictBoolean()
   isFavorite: boolean;
 }
 
 export class UpdateArchivedDto {
   @ApiProperty({ description: 'Whether the entry is archived' })
-  @IsBoolean()
-  @Transform(({ value }) => value === true || value === 'true')
+  @StrictBoolean()
   isArchived: boolean;
 }
 
 export class UpdatePinnedDto {
   @ApiProperty({ description: 'Whether the entry is pinned' })
-  @IsBoolean()
-  @Transform(({ value }) => value === true || value === 'true')
+  @StrictBoolean()
   isPinned: boolean;
 }
 
@@ -179,6 +176,6 @@ export class UpdateEntryTaskDto {
   line: number;
 
   @ApiProperty({ description: 'Whether the task is done', example: true })
-  @IsBoolean()
+  @StrictBoolean()
   checked: boolean;
 }

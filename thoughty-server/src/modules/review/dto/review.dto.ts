@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { IsInt, IsOptional, Max, Min } from 'class-validator';
+import { StrictInt } from '@/common/validation';
 
 export const MIN_REVIEW_YEAR = 1900;
 export const MAX_REVIEW_YEAR = 2200;
@@ -9,16 +9,14 @@ export type YearReviewHighlightKind = (typeof YEAR_REVIEW_HIGHLIGHT_KINDS)[numbe
 
 export class YearReviewQueryDto {
   @ApiProperty({ example: 2025 })
-  @Type(() => Number)
-  @IsInt()
   @Min(MIN_REVIEW_YEAR)
   @Max(MAX_REVIEW_YEAR)
+  @StrictInt()
   year: number;
 
   @ApiPropertyOptional({ description: 'Review one diary instead of all of them' })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId?: number;
 }

@@ -1,14 +1,6 @@
-import {
-  IsString,
-  IsOptional,
-  IsBoolean,
-  IsNumber,
-  IsIn,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+import { IsString, IsOptional, IsIn, Matches, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 import { BookSourceQueryDto, BookVersionSourceDto } from './book-source.dto';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -16,8 +8,7 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 export class BookQueryDto extends BookSourceQueryDto {
   @ApiPropertyOptional({ description: 'Diary ID to build a journal book from (source=journal)' })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   diaryId?: number;
 
   @ApiPropertyOptional({
@@ -96,20 +87,17 @@ export class BookQueryDto extends BookSourceQueryDto {
     default: true,
   })
   @IsOptional()
-  @Transform(({ value }) => value !== 'false' && value !== false)
-  @IsBoolean()
+  @StrictBoolean()
   includeUntagged?: boolean;
 
   @ApiPropertyOptional({ description: 'Show entry dates inside chapters', default: true })
   @IsOptional()
-  @Transform(({ value }) => value !== 'false' && value !== false)
-  @IsBoolean()
+  @StrictBoolean()
   includeDates?: boolean;
 
   @ApiPropertyOptional({ description: 'Include a table of contents', default: true })
   @IsOptional()
-  @Transform(({ value }) => value !== 'false' && value !== false)
-  @IsBoolean()
+  @StrictBoolean()
   includeToc?: boolean;
 
   @ApiPropertyOptional({
@@ -118,8 +106,7 @@ export class BookQueryDto extends BookSourceQueryDto {
     default: true,
   })
   @IsOptional()
-  @Transform(({ value }) => value !== 'false' && value !== false)
-  @IsBoolean()
+  @StrictBoolean()
   narrative?: boolean;
 
   @ApiPropertyOptional({
@@ -127,8 +114,7 @@ export class BookQueryDto extends BookSourceQueryDto {
     default: false,
   })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean()
+  @StrictBoolean()
   chapterFraming?: boolean;
 
   @ApiPropertyOptional({
@@ -154,8 +140,7 @@ export class BookQueryDto extends BookSourceQueryDto {
     default: false,
   })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean()
+  @StrictBoolean()
   embedImages?: boolean;
 }
 
@@ -202,8 +187,7 @@ export class BookPreviewResponseDto {
 export class BookVersionsQueryDto extends PickType(BookSourceQueryDto, ['source', 'savedSearchId'] as const) {
   @ApiPropertyOptional({ description: 'Diary ID whose journal book history should be listed' })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   diaryId?: number;
 }
 

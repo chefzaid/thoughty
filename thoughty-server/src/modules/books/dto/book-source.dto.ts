@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
+import { StrictInt } from '@/common/validation';
 
 /** How many entries one hand-picked book can hold. */
 export const MAX_PICKED_BOOK_ENTRIES = 500;
@@ -10,9 +10,6 @@ export type BookSourceKind = (typeof BOOK_SOURCES)[number];
 
 const ENTRY_IDS_PATTERN = /^\d+(,\d+)*$/;
 const ENTRY_IDS_MAX_LENGTH = MAX_PICKED_BOOK_ENTRIES * 11;
-
-const toNumber = ({ value }: { value: unknown }) =>
-  value === '' || value === undefined || value === null ? undefined : Number(value);
 
 /** Where a book's entries come from; the journal (a diary or all of them) unless told otherwise. */
 export class BookSourceQueryDto {
@@ -29,8 +26,7 @@ export class BookSourceQueryDto {
 
   @ApiPropertyOptional({ description: 'Saved search whose filters select the entries (source=savedSearch)', example: 4 })
   @IsOptional()
-  @Transform(toNumber)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   savedSearchId?: number;
 

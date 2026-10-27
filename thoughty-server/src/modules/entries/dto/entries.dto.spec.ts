@@ -75,10 +75,10 @@ describe('UpdateEntryTaskDto', () => {
     await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: 12, checked: false }))).resolves.toEqual([]);
   });
 
-  it('rejects a negative or fractional line and a missing or textual state', async () => {
+  it('rejects a negative or fractional line and a missing state or one other than true or false', async () => {
     await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: -1, checked: true }))).resolves.toEqual(['line']);
     await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: 1.5, checked: true }))).resolves.toEqual(['line']);
-    await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: 1, checked: 'true' }))).resolves.toEqual(['checked']);
+    await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: 1, checked: 'yes' }))).resolves.toEqual(['checked']);
     await expect(invalidProperties(plainToInstance(UpdateEntryTaskDto, { line: 1 }))).resolves.toEqual(['checked']);
   });
 });

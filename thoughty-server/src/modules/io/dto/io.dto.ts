@@ -1,6 +1,7 @@
-import { IsString, IsOptional, IsBoolean, IsNumber, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 
 export class FormatConfigDto {
   @ApiPropertyOptional()
@@ -58,14 +59,12 @@ export class FormatConfigDto {
 export class ExportQueryDto {
   @ApiPropertyOptional({ description: 'Diary ID to filter export' })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   diaryId?: number;
 
   @ApiPropertyOptional({ description: 'Include visibility field in export', default: false })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean()
+  @StrictBoolean()
   includeVisibility?: boolean;
 
   @ApiPropertyOptional({
@@ -97,7 +96,7 @@ export class ImportDto {
 
   @ApiPropertyOptional({ description: 'Skip duplicate entries', default: true })
   @IsOptional()
-  @IsBoolean()
+  @StrictBoolean()
   skipDuplicates?: boolean;
 
   @ApiPropertyOptional({ description: 'Diary ID' })

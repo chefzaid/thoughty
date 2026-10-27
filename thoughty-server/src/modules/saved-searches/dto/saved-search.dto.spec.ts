@@ -68,7 +68,7 @@ describe('saved search DTOs', () => {
     ['date', undefined],
     ['visibility', 'friends'],
     ['archiveStatus', 'deleted'],
-    ['favorites', 'true'],
+    ['favorites', 'yes'],
     ['mood', '6'],
     ['mood', '4,'],
   ])('refuses %s set to %j', async (field, value) => {

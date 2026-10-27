@@ -1,4 +1,4 @@
-import { checkMultipartRequest, recordContractViolations } from "./mockApp.contract";
+import { checkMultipartRequest, checkQueryParameters, recordContractViolations } from "./mockApp.contract";
 import { fulfillApiError, type RouteContext } from "./mockApp.route-utils";
 
 /**
@@ -12,5 +12,17 @@ export async function refuseMislabelledUpload({ route, request, pathname }: Rout
   if (!problem) return false;
   recordContractViolations([problem]);
   await fulfillApiError(route, 400, "VALIDATION_FAILED", problem);
+  return true;
+}
+
+/**
+ * Refuses a query string the API's strict boolean and number parsing would refuse (400 VALIDATION_FAILED),
+ * and fails the test that sent it.
+ */
+export async function refuseInvalidQueryParameters({ route, request, pathname, searchParams }: RouteContext): Promise<boolean> {
+  const problems = checkQueryParameters(request.method(), pathname, searchParams);
+  if (problems.length === 0) return false;
+  recordContractViolations(problems);
+  await fulfillApiError(route, 400, "VALIDATION_FAILED", problems.join("; "));
   return true;
 }

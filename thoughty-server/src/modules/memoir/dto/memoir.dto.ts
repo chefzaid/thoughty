@@ -3,7 +3,6 @@ import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
-  IsBoolean,
   IsIn,
   IsInt,
   IsOptional,
@@ -16,6 +15,7 @@ import {
   ValidateIf,
 } from 'class-validator';
 import type { MemoirProgramStatus } from '@/database/entities';
+import { StrictBoolean } from '@/common/validation';
 
 export const MEMOIR_ANSWER_MAX_LENGTH = 45_000;
 export const MEMOIR_ANSWER_MAX_ATTACHMENTS = 5;
@@ -40,7 +40,7 @@ export class StartMemoirDto {
   diaryName?: string;
 
   @ApiProperty({ example: true, description: 'Email each weekly question' })
-  @IsBoolean()
+  @StrictBoolean()
   emailEnabled!: boolean;
 
   @ApiProperty({ example: 0, minimum: 0, maximum: 6, description: '0 = Sunday through 6 = Saturday' })
@@ -65,7 +65,7 @@ export class UpdateMemoirDto {
 
   @ApiPropertyOptional({ example: false })
   @IsOptional()
-  @IsBoolean()
+  @StrictBoolean()
   emailEnabled?: boolean;
 
   @ApiPropertyOptional({ example: 3, minimum: 0, maximum: 6 })

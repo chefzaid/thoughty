@@ -5,7 +5,7 @@ import {
   type MockAppState,
   type MockEntry,
 } from './mockApp.shared';
-import { fulfillJson, sortStrings, toEntryMutationResponse, toEntryResponse, toRevisionResponse, type RouteContext } from './mockApp.route-utils';
+import { fulfillJson, readQueryFlag, sortStrings, toEntryMutationResponse, toEntryResponse, toRevisionResponse, type RouteContext } from './mockApp.route-utils';
 import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 import { getMockBacklinks } from './mockApp.backlinks';
 import { mockEraContains } from './mockApp.routes.life-eras';
@@ -41,7 +41,7 @@ export function getFilteredEntries(
   const tags = (searchParams.get('tags') || '').split(',').filter(Boolean);
   const date = searchParams.get('date') || '';
   const visibility = searchParams.get('visibility') || '';
-  const favorites = searchParams.get('favorites') === 'true';
+  const favorites = readQueryFlag(searchParams, 'favorites', false);
   const archiveStatus = searchParams.get('archiveStatus') || 'active';
   const diaryId = searchParams.get('diaryId');
   const mood = searchParams.get('mood') || '';

@@ -1,6 +1,6 @@
 import type { components } from "../../src/generated/openapi";
 import { type MockAppState, type MockBookVersion, type MockEntry } from "./mockApp.shared";
-import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route-utils";
+import { fulfillApiError, fulfillJson, readQueryFlag, type RouteContext } from "./mockApp.route-utils";
 import { getFilteredEntries } from "./mockApp.routes.entries";
 import { byStart, mockEraContains, type MockLifeEra } from "./mockApp.routes.life-eras";
 import { buildMockBookPdf } from "./mockBookPdf";
@@ -109,7 +109,7 @@ function buildEraChapters(entries: MockEntry[], eras: MockLifeEra[], params: URL
     chapters.set(era.id, chapter);
   }
   const result = ordered.flatMap((era) => chapters.get(era.id) ?? []);
-  if (outside.length > 0 && params.get("includeUntagged") !== "false") result.push({ title: "Other", entries: outside });
+  if (outside.length > 0 && readQueryFlag(params, "includeUntagged", true)) result.push({ title: "Other", entries: outside });
   return result;
 }
 
@@ -130,7 +130,7 @@ function buildChapters(entries: MockEntry[], params: URLSearchParams, title: str
     else if (mode === "year") place(year!, year!, entry);
     else if (mode === "month") place(`${year}-${month}`, `${MONTHS[Number(month) - 1]} ${year}`, entry);
     else if (entry.tags.length > 0) entry.tags.forEach((tag) => place(`tag:${tag.toLowerCase()}`, tag, entry));
-    else if (params.get("includeUntagged") !== "false") place("~untagged", "Untagged Thoughts", entry);
+    else if (readQueryFlag(params, "includeUntagged", true)) place("~untagged", "Untagged Thoughts", entry);
   }
 
   const result = [...chapters.entries()];
@@ -172,7 +172,7 @@ function exportBook(state: MockAppState, params: URLSearchParams) {
   const format = params.get("format") || "pdf";
   const chapters = book.chapters.map((chapter) => ({ title: chapter.title, paragraphs: chapter.entries.map((entry) => entry.content) }));
   const body = format === "pdf"
-    ? buildMockBookPdf({ title: book.title, author: params.get("author")?.trim() || "testuser", includeToc: params.get("includeToc") !== "false", chapters })
+    ? buildMockBookPdf({ title: book.title, author: params.get("author")?.trim() || "testuser", includeToc: readQueryFlag(params, "includeToc", true), chapters })
     : [`# ${book.title}`, ...chapters.map((chapter) => `## ${chapter.title}\n\n${chapter.paragraphs.join("\n\n")}`)].join("\n\n");
   return {
     body,

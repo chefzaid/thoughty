@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsIn, IsNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
+import { StrictBoolean } from '@/common/validation';
 
 export type CloudProviderType = 'google_drive' | 'onedrive' | 'dropbox';
 
@@ -56,6 +57,7 @@ export class CloudUploadDto {
 
   @ApiPropertyOptional({ description: 'Include visibility field', default: false })
   @IsOptional()
+  @StrictBoolean()
   includeVisibility?: boolean;
 }
 
@@ -111,6 +113,7 @@ export class SetSyncScheduleDto {
 
   @ApiPropertyOptional({ description: 'Include visibility field', default: false })
   @IsOptional()
+  @StrictBoolean()
   includeVisibility?: boolean;
 }
 

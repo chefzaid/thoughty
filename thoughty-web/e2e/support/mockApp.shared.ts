@@ -359,6 +359,7 @@ export function parseImportedEntries(
 export function buildExportBody(
   entries: MockEntry[],
   format: string | null,
+  includeVisibility = false,
 ): { contentType: string; body: string; extension: string } {
   if (format === "zip") {
     return { contentType: "application/zip", extension: "zip", body: "PK mock archive" };
@@ -374,7 +375,7 @@ export function buildExportBody(
           index: entry.index,
           tags: entry.tags,
           content: entry.content,
-          visibility: entry.visibility,
+          ...(includeVisibility ? { visibility: entry.visibility } : {}),
           format: entry.format || "plain",
         })),
       }),

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { StrictInt } from '@/common/validation';
 
 /** How long a deleted entry stays in the recycle bin before it is removed for good. */
 export const RECYCLE_BIN_RETENTION_DAYS = 30;
@@ -10,15 +10,13 @@ export const RECYCLE_BIN_SELECTION_MAX = 100;
 export class RecycleBinQueryDto {
   @ApiPropertyOptional({ example: 1, minimum: 1, default: 1 })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   page?: number = 1;
 
   @ApiPropertyOptional({ example: 20, minimum: 1, maximum: RECYCLE_BIN_PAGE_SIZE_MAX, default: 20 })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   @Max(RECYCLE_BIN_PAGE_SIZE_MAX)
   limit?: number = 20;

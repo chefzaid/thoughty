@@ -19,6 +19,7 @@ export interface ContractSchema {
 
 interface OpenApiDocument {
   paths: Record<string, Record<string, {
+    parameters?: { name: string; in: string; schema?: ContractSchema }[];
     requestBody?: { content?: Record<string, unknown> };
     responses?: Record<string, { content?: Record<string, { schema?: ContractSchema }> }>;
   }>>;
@@ -32,6 +33,8 @@ interface Operation {
   literalSegments: number;
   /** The media types the operation accepts a body in, such as `multipart/form-data` for an upload. */
   requestTypes: string[];
+  /** The documented type of each query parameter, such as `boolean` for `narrative`. */
+  queryTypes: Record<string, string | undefined>;
   responses: Record<string, ContractSchema | undefined>;
 }
 
@@ -53,6 +56,9 @@ function loadOperations(): Operation[] {
       pattern: new RegExp(`^${path.replace(/\{[^}]+\}/g, '[^/]+')}$`),
       literalSegments: path.split('/').filter((segment) => segment && !segment.startsWith('{')).length,
       requestTypes: Object.keys(operation.requestBody?.content ?? {}),
+      queryTypes: Object.fromEntries(
+        (operation.parameters ?? []).filter((parameter) => parameter.in === 'query').map((parameter) => [parameter.name, parameter.schema?.type]),
+      ),
       responses: Object.fromEntries(
         Object.entries(operation.responses ?? {}).map(([status, response]) => [
           status,
@@ -161,6 +167,23 @@ export function checkMultipartRequest(method: string, pathname: string, contentT
     return `${method} ${pathname} sends its multipart body as ${contentType ?? 'no content type'}`;
   }
   return /;\s*boundary=/.test(type) ? null : `${method} ${pathname} sends multipart/form-data without its boundary`;
+}
+
+const QUERY_BOOLEANS = ['true', 'false', '1', '0'];
+const QUERY_INTEGER = /^-?\d+$/;
+
+/**
+ * Why the API would refuse this query string, or an empty list: like its `@StrictBoolean()` and `@StrictInt()`
+ * (docs/development.md), a boolean must be sent once as true, false, 1 or 0 and a number once as whole digits.
+ */
+export function checkQueryParameters(method: string, pathname: string, searchParams: URLSearchParams): string[] {
+  const queryTypes = findOperation(method, pathname)?.queryTypes ?? {};
+  return Object.entries(queryTypes).flatMap(([name, type]) => {
+    const values = searchParams.getAll(name);
+    if (values.length === 0 || (type !== 'boolean' && type !== 'number' && type !== 'integer')) return [];
+    const valid = values.length === 1 && (type === 'boolean' ? QUERY_BOOLEANS.includes(values[0]!) : QUERY_INTEGER.test(values[0]!));
+    return valid ? [] : [`${method} ${pathname} sends ${name}=${values.join('&')}, which the API refuses as a ${type}`];
+  });
 }
 
 const violations: string[] = [];

@@ -1,14 +1,13 @@
-import { IsOptional, IsNumber } from 'class-validator';
+import { IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import type { Attachment } from '@/database/entities';
 import { AttachmentResponseDto } from '@/modules/entries/dto';
+import { StrictInt } from '@/common/validation';
 
 export class LinkAttachmentDto {
   @ApiPropertyOptional({ description: 'Entry ID to link attachment to' })
   @IsOptional()
-  @IsNumber()
-  @Type(() => Number)
+  @StrictInt()
   entryId?: number;
 }
 

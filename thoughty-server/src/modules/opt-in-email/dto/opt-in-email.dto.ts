@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsString, Max, MaxLength, Min, ValidateIf } from 'class-validator';
+import { IsInt, IsString, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 import { SuccessResponseDto } from '@/common/dto';
 import { OPT_IN_EMAIL_KINDS, type OptInEmailKind } from '../opt-in-email-kind';
+import { StrictBoolean } from '@/common/validation';
 
 /** A writer's setting for one opt-in email. */
 export class OptInEmailSettingsDto {
@@ -38,7 +39,7 @@ export class OptInEmailSettingsDto {
 /** Turning an opt-in email on or off and choosing its hour, time zone and diary. */
 export class UpdateOptInEmailDto {
   @ApiProperty({ example: true })
-  @IsBoolean()
+  @StrictBoolean()
   enabled!: boolean;
 
   @ApiProperty({ example: 8, minimum: 0, maximum: 23 })

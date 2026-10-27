@@ -1,6 +1,7 @@
 import { test, expect } from '../support/test';
 import { mockDiary } from '../support/mockApp.diaries';
-import { checkMockResponse } from '../support/mockApp.contract';
+import { checkMockResponse, checkQueryParameters } from '../support/mockApp.contract';
+import { readQueryFlag } from '../support/mockApp.route-utils';
 
 // The guard every mock answer goes through: it must catch the drift that hid `is_default`.
 test.describe('Mock API contract check', () => {
@@ -33,5 +34,28 @@ test.describe('Mock API contract check', () => {
     expect(checkMockResponse('GET', '/api/config/feature-flags', 200, { anything: true })).toEqual([]);
     expect(checkMockResponse('GET', '/api/not-an-endpoint', 200, { anything: true })).toEqual([]);
     expect(checkMockResponse('GET', '/api/diaries', 401, { message: 'Unauthorized' })).toEqual([]);
+  });
+
+  test('refuses query flags and numbers the API refuses, as its @StrictBoolean() and @StrictInt() do', () => {
+    const check = (query: string) => checkQueryParameters('GET', '/api/books/export', new URLSearchParams(query));
+
+    expect(check('format=md&narrative=false&includeToc=0&embedImages=true&chapterFraming=1&diaryId=3')).toEqual([]);
+    expect(check('narrative=yes')).toEqual(['GET /api/books/export sends narrative=yes, which the API refuses as a boolean']);
+    expect(check('includeToc=true&includeToc=false')).toEqual([
+      'GET /api/books/export sends includeToc=true&false, which the API refuses as a boolean',
+    ]);
+    expect(check('diaryId=')).toEqual(['GET /api/books/export sends diaryId=, which the API refuses as a number']);
+    expect(check('diaryId=1.5&title=1.5')).toEqual(['GET /api/books/export sends diaryId=1.5, which the API refuses as a number']);
+    expect(checkQueryParameters('GET', '/api/entries', new URLSearchParams('favorites=on'))).toEqual([
+      'GET /api/entries sends favorites=on, which the API refuses as a boolean',
+    ]);
+  });
+
+  test('reads a flag as the API does, with its default when it is not sent', () => {
+    const params = new URLSearchParams('narrative=false&embedImages=1');
+
+    expect(readQueryFlag(params, 'narrative', true)).toBe(false);
+    expect(readQueryFlag(params, 'embedImages', false)).toBe(true);
+    expect(readQueryFlag(params, 'includeToc', true)).toBe(true);
   });
 });

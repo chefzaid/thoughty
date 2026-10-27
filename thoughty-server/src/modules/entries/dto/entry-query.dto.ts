@@ -4,13 +4,12 @@ import {
   IsOptional,
   IsEnum,
   MaxLength,
-  IsNumber,
-  IsInt,
   Min,
   Matches,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 
 /** The journal filters shared by the entry list and the calendar month: search, tags, flags, mood, diary, life era and person. */
 export class EntryFilterQueryDto {
@@ -47,7 +46,7 @@ export class EntryFilterQueryDto {
 
   @ApiPropertyOptional({ description: 'Filter by favorites only' })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @StrictBoolean()
   favorites?: boolean;
 
   @ApiPropertyOptional({
@@ -73,12 +72,7 @@ export class EntryFilterQueryDto {
 
   @ApiPropertyOptional({ description: 'Diary ID' })
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === '' || value === undefined || value === null) return undefined;
-    const parsed = Number.parseInt(value, 10);
-    return Number.isNaN(parsed) ? undefined : parsed;
-  })
-  @IsNumber()
+  @StrictInt()
   diaryId?: number;
 
   @ApiPropertyOptional({
@@ -86,15 +80,13 @@ export class EntryFilterQueryDto {
     example: 3,
   })
   @IsOptional()
-  @Transform(({ value }) => (value === '' || value === undefined || value === null ? undefined : Number(value)))
-  @IsInt()
+  @StrictInt()
   @Min(1)
   eraId?: number;
 
   @ApiPropertyOptional({ description: 'Person ID: only entries that mention the person', example: 12 })
   @IsOptional()
-  @Transform(({ value }) => (value === '' || value === undefined || value === null ? undefined : Number(value)))
-  @IsInt()
+  @StrictInt()
   @Min(1)
   personId?: number;
 }
@@ -117,23 +109,13 @@ export class GetEntriesQueryDto extends EntryFilterQueryDto {
 
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === '' || value === undefined || value === null) return 1;
-    const parsed = Number.parseInt(value, 10);
-    return Number.isNaN(parsed) ? 1 : parsed;
-  })
-  @IsNumber()
+  @StrictInt()
   @Min(1)
   page?: number = 1;
 
   @ApiPropertyOptional({ default: 10 })
   @IsOptional()
-  @Transform(({ value }) => {
-    if (value === '' || value === undefined || value === null) return 10;
-    const parsed = Number.parseInt(value, 10);
-    return Number.isNaN(parsed) ? 10 : parsed;
-  })
-  @IsNumber()
+  @StrictInt()
   @Min(1)
   limit?: number = 10;
 }
@@ -141,20 +123,17 @@ export class GetEntriesQueryDto extends EntryFilterQueryDto {
 export class GetFirstEntryQueryDto {
   @ApiPropertyOptional({ description: 'Year to find first entry' })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   year?: number;
 
   @ApiPropertyOptional({ description: 'Month to find first entry' })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   month?: number;
 
   @ApiPropertyOptional({ default: 10 })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   limit?: number = 10;
 }
 
@@ -166,27 +145,23 @@ export class GetEntryByDateQueryDto {
 
   @ApiPropertyOptional({ description: 'Entry index for that day', default: 1 })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   index?: number = 1;
 
   @ApiPropertyOptional({ description: 'Entry ID' })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   id?: number;
 
   @ApiPropertyOptional({ default: 10 })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   limit?: number = 10;
 }
 
 export class GetHighlightsQueryDto {
   @ApiPropertyOptional({ description: 'Diary ID' })
   @IsOptional()
-  @Transform(({ value }) => Number.parseInt(value, 10))
-  @IsNumber()
+  @StrictInt()
   diaryId?: number;
 }

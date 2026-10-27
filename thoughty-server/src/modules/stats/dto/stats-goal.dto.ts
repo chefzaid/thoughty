@@ -1,12 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsInt, IsOptional, Matches, Min } from 'class-validator';
+import { IsDateString, IsOptional, Matches, Min } from 'class-validator';
 import type { DiaryGoalType } from '@/database/entities';
 import { DIARY_GOAL_TYPES } from '@/modules/diaries/dto';
+import { StrictInt } from '@/common/validation';
 
 export class StatsQueryDto {
   @ApiPropertyOptional({ example: 3, minimum: 1, description: 'Limit the statistics to one diary' })
   @IsOptional()
-  @IsInt()
+  @StrictInt()
   @Min(1)
   diaryId?: number;
 

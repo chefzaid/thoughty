@@ -4,7 +4,7 @@ import {
   parseImportedEntries,
   sortEntries,
 } from "./mockApp.shared";
-import { fulfillJson, type RouteContext } from "./mockApp.route-utils";
+import { fulfillJson, readQueryFlag, type RouteContext } from "./mockApp.route-utils";
 
 export async function handleIoRoutes({
   route,
@@ -88,6 +88,7 @@ export async function handleIoRoutes({
     const { body, contentType, extension } = buildExportBody(
       state.entries,
       searchParams.get("format"),
+      readQueryFlag(searchParams, "includeVisibility", false),
     );
 
     await route.fulfill({

@@ -1,6 +1,6 @@
-import { Type } from 'class-transformer';
-import { IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
+import { IsIn, IsOptional, Max, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { StrictInt } from '@/common/validation';
 
 export const publicFeedScopes = ['community', 'following', 'mine'] as const;
 export type PublicFeedScope = (typeof publicFeedScopes)[number];
@@ -13,15 +13,13 @@ export class GetPublicFeedQueryDto {
 
   @ApiPropertyOptional({ minimum: 1, default: 1 })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   page?: number;
 
   @ApiPropertyOptional({ minimum: 1, maximum: 20, default: 10 })
   @IsOptional()
-  @Type(() => Number)
-  @IsInt()
+  @StrictInt()
   @Min(1)
   @Max(20)
   limit?: number;
