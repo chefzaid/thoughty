@@ -5,6 +5,7 @@ import { EntryLookupService } from './entry-lookup.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
+import { EntryCalendarService } from './entry-calendar.service';
 
 describe('EntriesService', () => {
   let service: EntriesService;
@@ -13,6 +14,7 @@ describe('EntriesService', () => {
   let entriesCommandService: Record<string, jest.Mock>;
   let entryListCacheService: Record<string, jest.Mock>;
   let entryTaskListService: Record<string, jest.Mock>;
+  let entryCalendarService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
     entriesQueryService = {
@@ -54,6 +56,10 @@ describe('EntriesService', () => {
       setTask: jest.fn(),
     };
 
+    entryCalendarService = {
+      getMonth: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EntriesService,
@@ -62,6 +68,7 @@ describe('EntriesService', () => {
         { provide: EntriesCommandService, useValue: entriesCommandService },
         { provide: EntryListCacheService, useValue: entryListCacheService },
         { provide: EntryTaskListService, useValue: entryTaskListService },
+        { provide: EntryCalendarService, useValue: entryCalendarService },
       ],
     }).compile();
 
@@ -92,6 +99,17 @@ describe('EntriesService', () => {
 
     expect(entriesQueryService.getEntries).toHaveBeenCalledWith(1, { page: 1, limit: 10 });
     expect(entryListCacheService.set).toHaveBeenCalledWith(1, { page: 1, limit: 10 }, expected);
+    expect(result).toBe(expected);
+  });
+
+  it('delegates the calendar month to EntryCalendarService without the list cache', async () => {
+    const expected = { month: '2026-10', entries: [] };
+    entryCalendarService.getMonth.mockResolvedValue(expected);
+
+    const result = await service.getCalendarMonth(1, { month: '2026-10', mood: 'any' });
+
+    expect(entryCalendarService.getMonth).toHaveBeenCalledWith(1, { month: '2026-10', mood: 'any' });
+    expect(entryListCacheService.get).not.toHaveBeenCalled();
     expect(result).toBe(expected);
   });
 

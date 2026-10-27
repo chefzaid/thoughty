@@ -12,6 +12,7 @@ describe('EntriesController', () => {
     entriesService = {
       getEntries: jest.fn(),
       getDates: jest.fn(),
+      getCalendarMonth: jest.fn(),
       getFirstEntry: jest.fn(),
       getEntryByDate: jest.fn(),
       getBacklinks: jest.fn(),
@@ -64,6 +65,18 @@ describe('EntriesController', () => {
 
       const result = await controller.getDates(mockUser as any);
       expect(entriesService.getDates).toHaveBeenCalledWith(1);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('getCalendarMonth', () => {
+    it("delegates to entriesService.getCalendarMonth with the writer's id", async () => {
+      const query = { month: '2026-10', diaryId: 2 } as any;
+      const expected = { month: '2026-10', entries: [] };
+      entriesService.getCalendarMonth.mockResolvedValue(expected);
+
+      const result = await controller.getCalendarMonth(mockUser as any, query);
+      expect(entriesService.getCalendarMonth).toHaveBeenCalledWith(1, query);
       expect(result).toBe(expected);
     });
   });

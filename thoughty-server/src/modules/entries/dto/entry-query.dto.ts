@@ -11,7 +11,8 @@ import {
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 
-export class GetEntriesQueryDto {
+/** The journal filters shared by the entry list and the calendar month: search, tags, flags, mood and diary. */
+export class EntryFilterQueryDto {
   @ApiPropertyOptional({
     description:
       'Full-text search over content and tags, with English and French word forms and accents ignored. ' +
@@ -25,16 +26,6 @@ export class GetEntriesQueryDto {
   @MaxLength(500)
   search?: string;
 
-  @ApiPropertyOptional({
-    description: 'Order of search results: best match first, or by date as without a search',
-    enum: ['relevance', 'date'],
-    default: 'relevance',
-  })
-  @IsOptional()
-  @Transform(({ value }) => (value === '' ? undefined : value))
-  @IsEnum(['relevance', 'date'])
-  sort?: 'relevance' | 'date';
-
   @ApiPropertyOptional({ description: 'Comma-separated entry IDs to include, in relevance order' })
   @IsOptional()
   @IsString()
@@ -46,11 +37,6 @@ export class GetEntriesQueryDto {
   @IsOptional()
   @IsString()
   tags?: string;
-
-  @ApiPropertyOptional({ description: 'Filter by date (YYYY-MM-DD)' })
-  @IsOptional()
-  @IsString()
-  date?: string;
 
   @ApiPropertyOptional({ enum: ['public', 'private'] })
   @IsOptional()
@@ -93,6 +79,23 @@ export class GetEntriesQueryDto {
   })
   @IsNumber()
   diaryId?: number;
+}
+
+export class GetEntriesQueryDto extends EntryFilterQueryDto {
+  @ApiPropertyOptional({
+    description: 'Order of search results: best match first, or by date as without a search',
+    enum: ['relevance', 'date'],
+    default: 'relevance',
+  })
+  @IsOptional()
+  @Transform(({ value }) => (value === '' ? undefined : value))
+  @IsEnum(['relevance', 'date'])
+  sort?: 'relevance' | 'date';
+
+  @ApiPropertyOptional({ description: 'Filter by date (YYYY-MM-DD)' })
+  @IsOptional()
+  @IsString()
+  date?: string;
 
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()

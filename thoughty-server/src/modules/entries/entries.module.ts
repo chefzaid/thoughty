@@ -10,6 +10,7 @@ import { EntriesCommandService } from './entries-command.service';
 import { EntryLookupService } from './entry-lookup.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntrySearchService } from './entry-search.service';
+import { EntryCalendarService } from './entry-calendar.service';
 import { EntryTaggingService } from './entry-tagging.service';
 import { EntryTaskListService } from './entry-task-list.service';
 
@@ -23,6 +24,7 @@ import { EntryTaskListService } from './entry-task-list.service';
     EntriesCommandService,
     EntryListCacheService,
     EntrySearchService,
+    EntryCalendarService,
     EntryTaggingService,
     EntryTaskListService,
   ],

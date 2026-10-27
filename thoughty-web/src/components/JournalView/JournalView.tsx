@@ -9,8 +9,13 @@ import YearMonthNavigator from '../YearMonthNavigator/YearMonthNavigator';
 import BackToTopButton from '../BackToTopButton/BackToTopButton';
 import DuplicateReview from '../DuplicateReview/DuplicateReview';
 import SavedSearches from '../SavedSearches/SavedSearches';
+import JournalCalendar from '../JournalCalendar/JournalCalendar';
+import JournalLayoutSwitch from '../JournalCalendar/JournalLayoutSwitch';
+import { useJournalLayoutRoute } from '../JournalCalendar/useJournalLayoutRoute';
 import type { Config, TranslationFunction } from '../../types';
 import { resolveLanguage } from '../../utils/language';
+import { formatEntryDate } from '../../utils/entryDate';
+import { parseSavedSearchDate } from '../../utils/savedSearches';
 import { useJournalKeyboardShortcuts } from './useJournalKeyboardShortcuts';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
@@ -64,6 +69,10 @@ function JournalView({
   const closeHighlights = useCallback(() => {
     thoughtOfDay.setOpen(false);
   }, [thoughtOfDay]);
+  const layoutRoute = useJournalLayoutRoute();
+  const showCalendar = layoutRoute.layout === 'calendar';
+  const language = resolveLanguage(config.language);
+  const theme = config.theme ?? 'dark';
 
   useJournalKeyboardShortcuts({
     entryFormRef,
@@ -73,7 +82,26 @@ function JournalView({
     setPage: pagination.setPage,
     closeHighlights,
     highlightsOpen: thoughtOfDay.isOpen,
+    pageKeysEnabled: !showCalendar,
   });
+
+  const keywordSearch = filters.searchMode === 'keyword';
+  const calendarFilters = {
+    search: keywordSearch ? filters.search : '',
+    tags: filters.filterTags,
+    visibility: filters.filterVisibility,
+    favorites: filters.filterFavorites,
+    archiveStatus: filters.filterArchiveStatus,
+    mood: filters.filterMood,
+    diaryId: diaryTabs.currentDiaryId,
+    entryIds: keywordSearch ? null : filters.semanticSearchResult?.matches.map((match) => match.entryId) ?? null,
+  };
+  /** A day of the calendar opens in the list as the date filter, keeping the other filters and the diary. */
+  const openCalendarDay = (date: string) => {
+    filters.setFilterDateObj(parseSavedSearchDate(date));
+    filters.setPage(1);
+    layoutRoute.setLayout('list');
+  };
 
   return (
     <>
@@ -124,7 +152,7 @@ function JournalView({
               <DuplicateReview
                 {...duplicateReview}
                 theme={config.theme}
-                language={resolveLanguage(config.language)}
+                language={language}
                 t={t}
               />
               <button
@@ -144,32 +172,53 @@ function JournalView({
         />
       </div>
 
-      <EntriesList
-        {...entriesList}
-        config={config}
-        searchTerm={filters.searchMode === 'keyword' ? filters.search : undefined}
-        t={t}
-      />
+      <div className="mb-4 flex justify-end">
+        <JournalLayoutSwitch layout={layoutRoute.layout} onChange={layoutRoute.setLayout} theme={theme} t={t} />
+      </div>
 
-      <Pagination
-        {...pagination}
-        theme={config.theme}
-        t={t}
-      />
+      {showCalendar ? (
+        <JournalCalendar
+          month={layoutRoute.month}
+          onMonthChange={layoutRoute.setMonth}
+          filters={calendarFilters}
+          selectedDate={filters.filterDateObj ? formatEntryDate(filters.filterDateObj) : null}
+          availableYears={yearMonthNavigator.availableYears}
+          onOpenDay={openCalendarDay}
+          onOpenEntry={(entry) => layoutRoute.openEntry(entry.id)}
+          language={language}
+          theme={theme}
+          t={t}
+        />
+      ) : (
+        <>
+          <EntriesList
+            {...entriesList}
+            config={config}
+            searchTerm={filters.searchMode === 'keyword' ? filters.search : undefined}
+            t={t}
+          />
 
-      <YearMonthNavigator
-        availableYears={yearMonthNavigator.availableYears}
-        availableMonths={yearMonthNavigator.availableMonths}
-        navYear={navYear}
-        setNavYear={setNavYear}
-        navMonth={navMonth}
-        setNavMonth={setNavMonth}
-        onNavigate={yearMonthNavigator.onNavigate}
-        config={config}
-        t={t}
-      />
+          <Pagination
+            {...pagination}
+            theme={config.theme}
+            t={t}
+          />
 
-      {entriesList.entries.length > 0 && <BackToTopButton theme={config.theme} t={t} />}
+          <YearMonthNavigator
+            availableYears={yearMonthNavigator.availableYears}
+            availableMonths={yearMonthNavigator.availableMonths}
+            navYear={navYear}
+            setNavYear={setNavYear}
+            navMonth={navMonth}
+            setNavMonth={setNavMonth}
+            onNavigate={yearMonthNavigator.onNavigate}
+            config={config}
+            t={t}
+          />
+
+          {entriesList.entries.length > 0 && <BackToTopButton theme={config.theme} t={t} />}
+        </>
+      )}
     </>
   );
 }

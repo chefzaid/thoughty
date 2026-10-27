@@ -1,4 +1,4 @@
-import { countWords, isoWeekdayIndex, longestStreak, plainExcerpt, sampleEvenly } from './year-review-stats';
+import { countWords, isoWeekdayIndex, longestStreak, sampleEvenly } from './year-review-stats';
 
 describe('year review stats', () => {
   it('counts words like the stats page', () => {
@@ -16,13 +16,6 @@ describe('year review stats', () => {
   it('numbers weekdays from Monday', () => {
     expect(isoWeekdayIndex('2025-10-20')).toBe(0);
     expect(isoWeekdayIndex('2025-10-19')).toBe(6);
-  });
-
-  it('turns Markdown into a short plain excerpt', () => {
-    expect(plainExcerpt('# Sunday\n\n> A **long** walk to [the pier](https://x.y) ![photo](a.jpg)\n\n- bread\n1. milk\n```\ncode\n```\nWell\\-known', 200))
-      .toBe('Sunday A long walk to the pier bread milk Well-known');
-    expect(plainExcerpt('one two three four five six seven', 15)).toBe('one two three…');
-    expect(plainExcerpt('Supercalifragilistic', 10)).toBe('Supercalif…');
   });
 
   it('samples evenly from first to last', () => {

@@ -62,6 +62,26 @@ describe('useAppShellRouting', () => {
     }, { replace: true });
   });
 
+  it('keeps the journal calendar and its month, and only those, when the diary changes', () => {
+    const navigate = vi.fn();
+    const setCurrentDiaryId = vi.fn();
+    const { result } = renderHook(() => useAppShellRouting(createParams({
+      currentView: 'journal',
+      navigate,
+      setCurrentDiaryId,
+      searchParams: new URLSearchParams('diary=1&layout=calendar&month=2019-07&view=4&entry=9'),
+    })));
+
+    act(() => {
+      result.current.handleDiaryChange(2);
+    });
+
+    expect(navigate).toHaveBeenCalledWith({
+      pathname: '/journal',
+      search: '?diary=2&layout=calendar&month=2019-07',
+    }, { replace: true });
+  });
+
   it('navigates between authenticated and public views', () => {
     const navigate = vi.fn();
     const { result } = renderHook(() => useAppShellRouting(createParams({

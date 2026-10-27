@@ -5,7 +5,8 @@ import { YearReviewMood } from '@/database/entities';
 import { AiYearMoodService, type YearMoodSample } from '@/modules/ai';
 import type { YearReviewMoodDto } from './dto';
 import { toMoodDto, YearReviewService } from './year-review.service';
-import { plainExcerpt, sampleEvenly } from './year-review-stats';
+import { plainExcerpt } from '@/common/utils/plain-excerpt.util';
+import { sampleEvenly } from './year-review-stats';
 
 const ENTRIES_PER_MONTH = 5;
 const CHARACTERS_PER_ENTRY = 600;

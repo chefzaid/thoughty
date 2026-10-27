@@ -13,3 +13,4 @@ export * from './appImportService';
 export * from './reviewService';
 export * from './recycleBinService';
 export * from './savedSearchesService';
+export * from './entryCalendarService';

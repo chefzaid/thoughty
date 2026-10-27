@@ -30,6 +30,8 @@ import {
   GetFirstEntryQueryDto,
   GetEntryByDateQueryDto,
   GetHighlightsQueryDto,
+  GetEntryCalendarQueryDto,
+  EntryCalendarResponseDto,
   DeleteAllQueryDto,
   EntriesListResponseDto,
   EntryDatesResponseDto,
@@ -71,6 +73,22 @@ export class EntriesController {
   })
   async getDates(@CurrentUser() user: AuthenticatedUser): Promise<{ dates: string[] }> {
     return this.entriesService.getDates(user.userId);
+  }
+
+  @Get('calendar')
+  @ApiOperation({
+    summary: "A month's entries for the journal calendar",
+    description:
+      'Short summaries (title, the start of the text, time of day and mood) of the entries of one month that ' +
+      'match the journal filters, by day and in each day\'s order. Entries in the recycle bin are left out.',
+  })
+  @ApiResponse({ status: 200, description: "The month's entries", type: EntryCalendarResponseDto })
+  @ApiResponse({ status: 400, description: 'The month is not YYYY-MM, or a filter is invalid' })
+  async getCalendarMonth(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetEntryCalendarQueryDto,
+  ): Promise<EntryCalendarResponseDto> {
+    return this.entriesService.getCalendarMonth(user.userId, query);
   }
 
   @Get('first')

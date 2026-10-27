@@ -28,7 +28,7 @@ function resolveTags(state: MockAppState, tags: string[]): string[] {
   return tags;
 }
 
-function getFilteredEntries(
+export function getFilteredEntries(
   state: MockAppState,
   searchParams: URLSearchParams,
 ): { filtered: MockEntry[]; pageNumber: number; limit: number; searchResults: Map<number, MockSearchResult> | null } {

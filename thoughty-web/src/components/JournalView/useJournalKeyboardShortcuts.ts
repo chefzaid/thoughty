@@ -30,6 +30,8 @@ interface UseJournalKeyboardShortcutsParams {
   setPage: (page: number) => void;
   closeHighlights: () => void;
   highlightsOpen: boolean;
+  /** Whether the arrow keys turn the list's pages (not while the calendar is shown). */
+  pageKeysEnabled?: boolean;
 }
 
 export function useJournalKeyboardShortcuts({
@@ -40,6 +42,7 @@ export function useJournalKeyboardShortcuts({
   setPage,
   closeHighlights,
   highlightsOpen,
+  pageKeysEnabled = true,
 }: UseJournalKeyboardShortcutsParams): void {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
@@ -71,7 +74,8 @@ export function useJournalKeyboardShortcuts({
         return;
       }
 
-      if (isEditableTarget(event.target) || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+      if (!pageKeysEnabled || event.defaultPrevented || isEditableTarget(event.target)
+        || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
         return;
       }
 
@@ -89,5 +93,5 @@ export function useJournalKeyboardShortcuts({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [closeHighlights, entryFormRef, highlightsOpen, page, searchRef, setPage, totalPages]);
+  }, [closeHighlights, entryFormRef, highlightsOpen, page, pageKeysEnabled, searchRef, setPage, totalPages]);
 }

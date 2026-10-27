@@ -42,7 +42,7 @@ flowchart TD
 | Module | Responsibility |
 |---|---|
 | `auth` | SSO exchange, local and Google sign-in, tokens and sessions, email verification, 2FA, password recovery, account deletion |
-| `entries` | entry CRUD (title, time, mood, feelings), full-text search, revisions, tags, visibility, favorites, pins, archive, reordering, task list ticks, backlinks, highlights, delete-all |
+| `entries` | entry CRUD (title, time, mood, feelings), full-text search, revisions, tags, visibility, favorites, pins, archive, reordering, task list ticks, backlinks, highlights, the calendar month (`GET /api/entries/calendar?month=YYYY-MM`: short summaries of a month's entries under the same filters as the list, which share `EntryFilterQueryDto` and `applyEntryListFilters`), delete-all |
 | `recycle-bin` | deleted entries kept for 30 days: list, restore, delete forever, empty, and the hourly purge |
 | `diaries` | diary containers, ordering, default diary, moving entries when a diary is deleted |
 | `saved-searches` | named journal filter combinations with their diary scope: list, save, rename, delete, at most 50 per writer |
@@ -107,7 +107,7 @@ flowchart TD
 - Route files stay thin. Components render; hooks own shared state, URL parameters, and API calls.
 - Server state goes through TanStack Query. The entry list keeps the previous page on screen while the next one loads.
 - The journal sends its first list request once everything that shapes it is known: the profile config (page size; a failed config request falls back to 10 at once), the default or route diary, and on a permalink the page that holds the entry. Until then the list query is disabled and the journal shows as loading, so no request is sent with defaults and thrown away.
-- Query-string parameters are product behavior: diary scope, import/export presets, entry permalinks, and the saved search on screen (`view=<id>`, written beside `diary` when one is applied and dropped as soon as a filter changes).
+- Query-string parameters are product behavior: diary scope, import/export presets, entry permalinks, the saved search on screen (`view=<id>`, written beside `diary` when one is applied and dropped as soon as a filter changes), and the journal layout (`layout=calendar` with `month=YYYY-MM`; switching layout adds a history step, changing month replaces it, and a diary change keeps both). The calendar month is a TanStack query under the journal's entry key (`['app', 'entries', 'calendar', …]`), so every change that reloads the list reloads the month too.
 - API types are generated from the server's OpenAPI document ([ADR 0004](./adr/0004-openapi-as-contract-source.md)). A test fails if the frontend stops calling a documented product endpoint.
 
 ## API Error Codes

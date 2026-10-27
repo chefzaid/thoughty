@@ -170,6 +170,7 @@ export function useAppShellModel(): AppShellModel {
     importExportSection,
     logout,
     navigate,
+    searchParams,
     setCurrentDiaryId,
   });
 

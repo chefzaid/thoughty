@@ -426,6 +426,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/entries/calendar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A month's entries for the journal calendar
+         * @description Short summaries (title, the start of the text, time of day and mood) of the entries of one month that match the journal filters, by day and in each day's order. Entries in the recycle bin are left out.
+         */
+        get: operations["EntriesController_getCalendarMonth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/entries/first": {
         parameters: {
             query?: never;
@@ -2390,6 +2410,72 @@ export interface components {
          */
         EntryDatesResponseDto: {
             dates: string[];
+        };
+        /**
+         * @example {
+         *       "id": 1,
+         *       "diary_id": 1,
+         *       "date": "2026-10-21",
+         *       "index": 1,
+         *       "time_of_day": "08:30",
+         *       "title": "Morning walk by the river",
+         *       "snippet": "A slow walk along the river before work…",
+         *       "mood": 4
+         *     }
+         */
+        EntryCalendarItemDto: {
+            id: number;
+            diary_id: number | null;
+            /**
+             * @description Entry date (YYYY-MM-DD)
+             * @example 2026-10-21
+             */
+            date: string;
+            /**
+             * @description Same-day index, as cross-references use it
+             * @example 1
+             */
+            index: number;
+            /**
+             * @description Time of day (HH:MM), or null
+             * @example 08:30
+             */
+            time_of_day: string | null;
+            /** @example Morning walk by the river */
+            title: string | null;
+            /**
+             * @description The start of the text as plain words, cut at a word boundary
+             * @example A slow walk along the river before work…
+             */
+            snippet: string;
+            /**
+             * @description Recorded mood from 1 (very low) to 5 (very good), or null
+             * @example 4
+             */
+            mood: number | null;
+        };
+        /**
+         * @example {
+         *       "month": "2026-10",
+         *       "entries": [
+         *         {
+         *           "id": 1,
+         *           "diary_id": 1,
+         *           "date": "2026-10-21",
+         *           "index": 1,
+         *           "time_of_day": "08:30",
+         *           "title": "Morning walk by the river",
+         *           "snippet": "A slow walk along the river before work…",
+         *           "mood": 4
+         *         }
+         *       ]
+         *     }
+         */
+        EntryCalendarResponseDto: {
+            /** @example 2026-10 */
+            month: string;
+            /** @description The month's entries that match the filters, by day and then in each day's order */
+            entries: components["schemas"]["EntryCalendarItemDto"][];
         };
         /**
          * @example {
@@ -7165,14 +7251,10 @@ export interface operations {
             query?: {
                 /** @description Full-text search over content and tags, with English and French word forms and accents ignored. Supports "exact phrases" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts. */
                 search?: string;
-                /** @description Order of search results: best match first, or by date as without a search */
-                sort?: "relevance" | "date";
                 /** @description Comma-separated entry IDs to include, in relevance order */
                 ids?: string;
                 /** @description Comma-separated list of tags to filter by */
                 tags?: string;
-                /** @description Filter by date (YYYY-MM-DD) */
-                date?: string;
                 visibility?: "public" | "private";
                 /** @description Filter by favorites only */
                 favorites?: boolean;
@@ -7182,6 +7264,10 @@ export interface operations {
                 mood?: string;
                 /** @description Diary ID */
                 diaryId?: number;
+                /** @description Order of search results: best match first, or by date as without a search */
+                sort?: "relevance" | "date";
+                /** @description Filter by date (YYYY-MM-DD) */
+                date?: string;
                 page?: number;
                 limit?: number;
             };
@@ -7328,6 +7414,78 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["EntryDatesResponseDto"];
+                };
+            };
+        };
+    };
+    EntriesController_getCalendarMonth: {
+        parameters: {
+            query: {
+                /** @description Full-text search over content and tags, with English and French word forms and accents ignored. Supports "exact phrases" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts. */
+                search?: string;
+                /** @description Comma-separated entry IDs to include, in relevance order */
+                ids?: string;
+                /** @description Comma-separated list of tags to filter by */
+                tags?: string;
+                visibility?: "public" | "private";
+                /** @description Filter by favorites only */
+                favorites?: boolean;
+                /** @description Filter by archive state */
+                archiveStatus?: "all" | "active" | "archived";
+                /** @description Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; "any" for entries with a mood, or "none" for entries without one */
+                mood?: string;
+                /** @description Diary ID */
+                diaryId?: number;
+                /** @description The month to show (YYYY-MM) */
+                month: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The month's entries */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "month": "2026-10",
+                     *       "entries": [
+                     *         {
+                     *           "id": 1,
+                     *           "diary_id": 1,
+                     *           "date": "2026-10-21",
+                     *           "index": 1,
+                     *           "time_of_day": "08:30",
+                     *           "title": "Morning walk by the river",
+                     *           "snippet": "A slow walk along the river before work…",
+                     *           "mood": 4
+                     *         }
+                     *       ]
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryCalendarResponseDto"];
+                };
+            };
+            /** @description The month is not YYYY-MM, or a filter is invalid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "The month is not YYYY-MM, or a filter is invalid",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };

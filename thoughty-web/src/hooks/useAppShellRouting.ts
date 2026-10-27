@@ -24,6 +24,8 @@ interface UseAppShellRoutingParams {
   importExportSection: ImportExportSection;
   logout: () => Promise<void>;
   navigate: NavigateFunction;
+  /** The current address, so a diary change keeps the journal's list or calendar layout. */
+  searchParams?: URLSearchParams;
   setCurrentDiaryId: Dispatch<SetStateAction<number | null>>;
 }
 
@@ -40,6 +42,7 @@ export function useAppShellRouting({
   importExportSection,
   logout,
   navigate,
+  searchParams,
   setCurrentDiaryId,
 }: Readonly<UseAppShellRoutingParams>) {
   const handleAuthSuccess = useCallback(() => {
@@ -75,6 +78,7 @@ export function useAppShellRouting({
       importExportSection,
       importExportFormat,
       importExportIncludeVisibility,
+      journalSearchParams: searchParams,
     });
 
     navigate({
@@ -87,6 +91,7 @@ export function useAppShellRouting({
     importExportIncludeVisibility,
     importExportSection,
     navigate,
+    searchParams,
     setCurrentDiaryId,
   ]);
 

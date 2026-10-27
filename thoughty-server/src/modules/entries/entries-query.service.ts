@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { Entry, EntryRevision } from '@/database/entities';
 import { GetEntriesQueryDto, GetHighlightsQueryDto, EntriesListResponseDto } from './dto';
 import { addSameDayOrder } from '@/common/utils';
-import { escapeLikePattern } from './entry-search-query';
+import { applyEntryListFilters, parseEntryIdsFilter } from './entry-list-filters';
 import { EntrySearchService, type PreparedEntrySearch } from './entry-search.service';
 
 /**
@@ -37,20 +37,7 @@ export class EntriesQueryService {
   }
 
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
-    const {
-      search,
-      sort,
-      ids,
-      tags,
-      date,
-      visibility,
-      favorites,
-      archiveStatus,
-      mood,
-      diaryId,
-      page = 1,
-      limit = 10,
-    } = query;
+    const { search, sort, ids, date, page = 1, limit = 10 } = query;
 
     const qb = this.entryRepository
       .createQueryBuilder('e')
@@ -58,72 +45,24 @@ export class EntriesQueryService {
       .leftJoinAndSelect('e.attachments', 'a')
       .where('e.user_id = :userId', { userId });
 
-    const entryIds = ids
-      ? [...new Set(ids.split(',').map((id) => Number.parseInt(id, 10)))].slice(0, 50)
-      : [];
+    const prepared = search ? await this.entrySearch.prepare(search) : null;
+    applyEntryListFilters(qb, query, prepared);
+
+    const entryIds = parseEntryIdsFilter(ids);
     if (entryIds.length > 0) {
-      qb.andWhere('e.id IN (:...entryIds)', { entryIds });
       qb.addSelect('array_position(CAST(:semanticOrder AS integer[]), e.id)', 'semantic_rank');
       qb.setParameter('semanticOrder', entryIds);
     }
 
-    const prepared = search ? await this.entrySearch.prepare(search) : null;
     if (prepared?.kind === 'text') {
-      // Titles and tags are part of the search vector; an exact tag name still matches when it holds
-      // nothing PostgreSQL reads as a word.
-      qb.andWhere('(e.search_vector @@ CAST(:searchQuery AS tsquery) OR e.tags @> :searchTags)', {
-        searchQuery: prepared.matchQuery,
-        searchTags: [prepared.text],
-      });
       qb.addSelect(this.searchRankExpression(prepared), 'search_rank');
       if (prepared.exactQuery) {
         qb.setParameter('exactQuery', prepared.exactQuery);
-      }
-    } else if (prepared?.kind === 'literal') {
-      qb.andWhere('(e.content ILIKE :searchPattern OR e.title ILIKE :searchPattern OR e.tags @> :searchTags)', {
-        searchPattern: `%${escapeLikePattern(prepared.text)}%`,
-        searchTags: [prepared.text],
-      });
-    }
-
-    if (tags) {
-      const tagList = tags
-        .split(',')
-        .map((tag: string) => tag.trim())
-        .filter(Boolean);
-      if (tagList.length > 0) {
-        qb.andWhere('e.tags @> :tagList', { tagList });
       }
     }
 
     if (date) {
       qb.andWhere('e.date = :date', { date });
-    }
-
-    if (visibility && ['public', 'private'].includes(visibility)) {
-      qb.andWhere('e.visibility = :visibility', { visibility });
-    }
-
-    if (diaryId) {
-      qb.andWhere('e.diary_id = :diaryId', { diaryId });
-    }
-
-    if (favorites) {
-      qb.andWhere('e.is_favorite = true');
-    }
-
-    if (archiveStatus === 'active') {
-      qb.andWhere('e.is_archived = false');
-    } else if (archiveStatus === 'archived') {
-      qb.andWhere('e.is_archived = true');
-    }
-
-    if (mood === 'any') {
-      qb.andWhere('e.mood IS NOT NULL');
-    } else if (mood === 'none') {
-      qb.andWhere('e.mood IS NULL');
-    } else if (mood) {
-      qb.andWhere('e.mood IN (:...moods)', { moods: [...new Set(mood.split(',').map(Number))] });
     }
 
     const totalPromise = qb.getCount();

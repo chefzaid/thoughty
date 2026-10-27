@@ -1093,20 +1093,6 @@
             }
           },
           {
-            "name": "sort",
-            "required": false,
-            "in": "query",
-            "description": "Order of search results: best match first, or by date as without a search",
-            "schema": {
-              "default": "relevance",
-              "type": "string",
-              "enum": [
-                "relevance",
-                "date"
-              ]
-            }
-          },
-          {
             "name": "ids",
             "required": false,
             "in": "query",
@@ -1120,15 +1106,6 @@
             "required": false,
             "in": "query",
             "description": "Comma-separated list of tags to filter by",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "date",
-            "required": false,
-            "in": "query",
-            "description": "Filter by date (YYYY-MM-DD)",
             "schema": {
               "type": "string"
             }
@@ -1185,6 +1162,29 @@
             "description": "Diary ID",
             "schema": {
               "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Order of search results: best match first, or by date as without a search",
+            "schema": {
+              "default": "relevance",
+              "type": "string",
+              "enum": [
+                "relevance",
+                "date"
+              ]
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Filter by date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -1364,6 +1364,160 @@
           }
         ],
         "summary": "Get all distinct dates that have entries",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
+    "/api/entries/calendar": {
+      "get": {
+        "description": "Short summaries (title, the start of the text, time of day and mood) of the entries of one month that match the journal filters, by day and in each day's order. Entries in the recycle bin are left out.",
+        "operationId": "EntriesController_getCalendarMonth",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Full-text search over content and tags, with English and French word forms and accents ignored. Supports \"exact phrases\" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts.",
+            "schema": {
+              "maxLength": 500,
+              "example": "\"morning run\" -rain OR swim",
+              "type": "string"
+            }
+          },
+          {
+            "name": "ids",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated entry IDs to include, in relevance order",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated list of tags to filter by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "visibility",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "public",
+                "private"
+              ]
+            }
+          },
+          {
+            "name": "favorites",
+            "required": false,
+            "in": "query",
+            "description": "Filter by favorites only",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "archiveStatus",
+            "required": false,
+            "in": "query",
+            "description": "Filter by archive state",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "active",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "mood",
+            "required": false,
+            "in": "query",
+            "description": "Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; \"any\" for entries with a mood, or \"none\" for entries without one",
+            "schema": {
+              "example": "4,5",
+              "type": "string"
+            }
+          },
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "month",
+            "required": true,
+            "in": "query",
+            "description": "The month to show (YYYY-MM)",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "example": "2026-10",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The month's entries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryCalendarResponseDto"
+                },
+                "example": {
+                  "month": "2026-10",
+                  "entries": [
+                    {
+                      "id": 1,
+                      "diary_id": 1,
+                      "date": "2026-10-21",
+                      "index": 1,
+                      "time_of_day": "08:30",
+                      "title": "Morning walk by the river",
+                      "snippet": "A slow walk along the river before work…",
+                      "mood": 4
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The month is not YYYY-MM, or a filter is invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "The month is not YYYY-MM, or a filter is invalid",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A month's entries for the journal calendar",
         "tags": [
           "Entries"
         ]
@@ -9341,6 +9495,107 @@
         "example": {
           "dates": [
             "2026-06-24"
+          ]
+        }
+      },
+      "EntryCalendarItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "diary_id": {
+            "type": "number",
+            "nullable": true
+          },
+          "date": {
+            "type": "string",
+            "description": "Entry date (YYYY-MM-DD)",
+            "example": "2026-10-21"
+          },
+          "index": {
+            "type": "number",
+            "description": "Same-day index, as cross-references use it",
+            "example": 1
+          },
+          "time_of_day": {
+            "type": "string",
+            "nullable": true,
+            "description": "Time of day (HH:MM), or null",
+            "example": "08:30"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Morning walk by the river"
+          },
+          "snippet": {
+            "type": "string",
+            "description": "The start of the text as plain words, cut at a word boundary",
+            "example": "A slow walk along the river before work…"
+          },
+          "mood": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 1,
+            "maximum": 5,
+            "description": "Recorded mood from 1 (very low) to 5 (very good), or null",
+            "example": 4
+          }
+        },
+        "required": [
+          "id",
+          "diary_id",
+          "date",
+          "index",
+          "time_of_day",
+          "title",
+          "snippet",
+          "mood"
+        ],
+        "example": {
+          "id": 1,
+          "diary_id": 1,
+          "date": "2026-10-21",
+          "index": 1,
+          "time_of_day": "08:30",
+          "title": "Morning walk by the river",
+          "snippet": "A slow walk along the river before work…",
+          "mood": 4
+        }
+      },
+      "EntryCalendarResponseDto": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "example": "2026-10"
+          },
+          "entries": {
+            "description": "The month's entries that match the filters, by day and then in each day's order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EntryCalendarItemDto"
+            }
+          }
+        },
+        "required": [
+          "month",
+          "entries"
+        ],
+        "example": {
+          "month": "2026-10",
+          "entries": [
+            {
+              "id": 1,
+              "diary_id": 1,
+              "date": "2026-10-21",
+              "index": 1,
+              "time_of_day": "08:30",
+              "title": "Morning walk by the river",
+              "snippet": "A slow walk along the river before work…",
+              "mood": 4
+            }
           ]
         }
       },

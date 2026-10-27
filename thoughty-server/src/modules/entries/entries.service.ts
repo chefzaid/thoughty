@@ -8,6 +8,8 @@ import {
   GetFirstEntryQueryDto,
   GetEntryByDateQueryDto,
   GetHighlightsQueryDto,
+  GetEntryCalendarQueryDto,
+  EntryCalendarResponseDto,
   BulkOperationDto,
   EntriesListResponseDto,
   EntryBacklinksResponseDto,
@@ -17,6 +19,7 @@ import { EntryLookupService } from './entry-lookup.service';
 import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
+import { EntryCalendarService } from './entry-calendar.service';
 
 @Injectable()
 export class EntriesService {
@@ -26,6 +29,7 @@ export class EntriesService {
     private readonly entriesCommandService: EntriesCommandService,
     private readonly entryListCacheService: EntryListCacheService,
     private readonly entryTaskListService: EntryTaskListService,
+    private readonly entryCalendarService: EntryCalendarService,
   ) {}
 
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
@@ -41,6 +45,10 @@ export class EntriesService {
 
   async getDates(userId: number): Promise<{ dates: string[] }> {
     return this.entriesQueryService.getDates(userId);
+  }
+
+  async getCalendarMonth(userId: number, query: GetEntryCalendarQueryDto): Promise<EntryCalendarResponseDto> {
+    return this.entryCalendarService.getMonth(userId, query);
   }
 
   async getFirstEntry(

@@ -130,6 +130,15 @@ export const MockDuplicateReview = ({ diaryId }: { diaryId: number | null }) => 
   <div data-testid="duplicate-review">{diaryId}</div>
 );
 
+/** The list layout, for the specs that render the journal without a router. */
+export const listLayoutRoute = {
+  layout: 'list' as const,
+  month: null,
+  setLayout: vi.fn(),
+  setMonth: vi.fn(),
+  openEntry: vi.fn(),
+};
+
 export const mockT = vi.fn((key: string) => key);
 export const mockConfig: Config = {
   theme: 'dark',

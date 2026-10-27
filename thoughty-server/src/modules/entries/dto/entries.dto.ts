@@ -4,3 +4,4 @@ export * from './entry-bulk.dto';
 export * from './entry-tags.dto';
 export * from './entry-query.dto';
 export * from './entry-response.dto';
+export * from './entry-calendar.dto';

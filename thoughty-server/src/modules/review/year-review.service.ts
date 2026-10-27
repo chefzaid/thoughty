@@ -13,7 +13,8 @@ import type {
   YearReviewRecordedMoodDto,
   YearReviewTagDto,
 } from './dto';
-import { countWords, isoWeekdayIndex, longestStreak, plainExcerpt } from './year-review-stats';
+import { plainExcerpt } from '@/common/utils/plain-excerpt.util';
+import { countWords, isoWeekdayIndex, longestStreak } from './year-review-stats';
 
 const TOP_TAGS = 10;
 const NEW_TAGS = 10;
