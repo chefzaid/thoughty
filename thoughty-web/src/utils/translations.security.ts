@@ -18,7 +18,6 @@ export type SecurityTranslationKey =
   | "sessionRevokeError"
   | "sessionRevoked"
   | "otherSessionsRevoked"
-  | "security"
   | "currentPassword"
   | "newPassword"
   | "confirmNewPassword"
@@ -85,7 +84,6 @@ export const securityTranslations: Record<Language, Record<SecurityTranslationKe
     sessionRevokeError: "Could not revoke the session. Please try again.",
     sessionRevoked: "Session revoked",
     otherSessionsRevoked: "Other sessions revoked",
-    security: "Security",
     currentPassword: "Current Password",
     newPassword: "New Password",
     confirmNewPassword: "Confirm New Password",
@@ -158,7 +156,6 @@ export const securityTranslations: Record<Language, Record<SecurityTranslationKe
     sessionRevokeError: "Impossible de révoquer la session. Veuillez réessayer.",
     sessionRevoked: "Session révoquée",
     otherSessionsRevoked: "Autres sessions révoquées",
-    security: "Sécurité",
     currentPassword: "Mot de passe actuel",
     newPassword: "Nouveau mot de passe",
     confirmNewPassword: "Confirmer le nouveau mot de passe",

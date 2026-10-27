@@ -34,7 +34,6 @@ export default defineConfig({
         'src/components/DiaryManager/DiaryManager.tsx',
         'src/components/EntriesList/EntriesList.tsx',
         'src/components/ProfilePage/ProfilePage.tsx',
-        'src/components/ProfilePage/SecuritySection.tsx',
         'src/components/ProfilePictureEditor/ProfilePictureEditor.tsx',
         'src/services/api/index.ts',
         '*.config.ts',

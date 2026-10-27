@@ -1,6 +1,5 @@
 /* Account security and data controls: password change, download, two-factor and session buttons, and
-   account deletion. DangerZoneSection (in Import/Export) uses the deletion styles too, from the same route
-   bundle; they must load after ProfilePage.css, whose .profile-section colors .danger-section overrides. */
+   account deletion. */
 
 /* API Key Input */
 .api-key-input-container {
@@ -127,28 +126,6 @@
 
 .setting-label.danger {
     color: #ef4444;
-}
-
-.section-icon.danger {
-    color: #ef4444;
-}
-
-.section-title.danger {
-    color: #ef4444;
-}
-
-.danger-section {
-    border-color: rgba(239, 68, 68, 0.3);
-}
-
-.profile-page.dark .danger-section {
-    background: rgba(239, 68, 68, 0.05);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.profile-page.light .danger-section {
-    background: rgba(239, 68, 68, 0.02);
-    border: 1px solid rgba(239, 68, 68, 0.15);
 }
 
 .btn-delete-account {
