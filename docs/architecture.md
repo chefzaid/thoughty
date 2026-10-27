@@ -63,6 +63,7 @@ flowchart TD
 | `opt-in-email` | what the opt-in emails share: the setting table's columns (`OptInEmailSetting`, one table per email), the settings service (`get`/`update`, validating the zone and the diary), the delivery base (`OptInEmailDeliveryService`: claim due rows, one email per writer and schedule period, verified addresses of live accounts, language, unsubscribe links, ID-only logs), the worker loop base, the email layout (HTML and plain text, entry cards of at most 200 characters), the signed unsubscribe token carrying the email's kind, and the public `POST /api/email-unsubscribe` that turns off whichever email a token names |
 | `on-this-day-email` | the opt-in "On this day" email: its setting (`GET`/`PUT /api/on-this-day-email`), its own one-click unsubscribe route (kept for the links already sent), and the daily delivery, which reads past entries through `EntriesQueryService.findOnThisDay` (the query Highlights uses) and schedules in the writer's zone with `common/utils/time-zone.util.ts` (shared with the memoir) |
 | `monthly-recap-email` | the opt-in monthly recap: its setting (`GET`/`PUT /api/monthly-recap-email`) and the delivery on the 1st of the writer's month, which counts the month just ended with `YearReviewService.loadEntries` and the year in review's tag and recorded-mood helpers, and picks one memory of that month in an earlier year with `EntriesQueryService.findMonthMemory` |
+| `time-capsules` | sealing a new entry as a time capsule (`TimeCapsuleService.createSealed`, from `POST /api/entries` with `seal`; the schedule in `time-capsule-schedule.ts` reads the writer's day and hour with the time-zone utils), opening it early (`POST /api/entries/:id/unseal`) or on time (the worker's `TimeCapsuleDeliveryService` and the capsule email), the sealed copy given back to exports and the data download (`reveal`), and the capsules opened lately that Highlights shows; `assertEntryNotSealed` guards the writes, AI and attachment reads that refuse a sealed entry |
 | `metrics` | Prometheus metrics (the health endpoint is `HealthController` in `AppModule`) |
 
 Cross-cutting runtime code goes in `src/common`, entities and migrations in `src/database`, and operational scripts in `thoughty-server/scripts`.
@@ -71,7 +72,7 @@ Modules that outgrow one service split it by responsibility, and source files st
 
 ### Background Worker
 
-`thoughty-server/src/cloud-sync-worker.ts` boots `AppModule` as a Nest application context without HTTP and starts six loops that API replicas never run. The worker stays at one replica ([ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)). Manual uploads, downloads, and "sync now" run inline in the API request, not through the queue.
+`thoughty-server/src/cloud-sync-worker.ts` boots `AppModule` as a Nest application context without HTTP and starts seven loops that API replicas never run. The worker stays at one replica ([ADR 0006](./adr/0006-database-backed-cloud-sync-worker.md)). Manual uploads, downloads, and "sync now" run inline in the API request, not through the queue.
 
 | Service | Interval | Work |
 |---|---|---|
@@ -79,6 +80,7 @@ Modules that outgrow one service split it by responsibility, and source files st
 | `MemoirDeliveryWorkerService` | every 60 s | moves due `memoir_programs` to their next question and sends the weekly email |
 | `OnThisDayDeliveryWorkerService` | every 60 s | (both email loops extend `OptInEmailWorkerService` and `OptInEmailDeliveryService`) claims due `on_this_day_emails` rows (`next_send_at <= now`, partial index on enabled rows) in batches of 50 with `FOR UPDATE SKIP LOCKED`, moves each to the next local day (`nextDailySend`, DST-aware through `zonedTimeToUtc`: a skipped hour lands after the jump, a repeated one on its first occurrence, in every zone), and, when the writer has past-year entries for the local day (`EntriesQueryService.findOnThisDay`, the Highlights query) and a verified address on a live account, writes `last_sent_on` in the same transaction and sends the email after the commit, so overlapping runs or a moved hour never send a day twice |
 | `MonthlyRecapDeliveryWorkerService` | every 60 s | the same claim on `monthly_recap_emails`, moving each row to the 1st of the next local month (`nextMonthlySend`, DST-aware); when the month just ended has entries or a memory from an earlier year, and the writer has not had an email this local month, it writes `last_sent_on` and sends the recap after the commit |
+| `TimeCapsuleDeliveryWorkerService` | every 60 s | (extends `OptInEmailWorkerService`) claims due `time_capsules` (`open_at <= now`, still sealed, entry outside the recycle bin, live account; partial index `idx_time_capsules_due`) with `FOR UPDATE SKIP LOCKED`, opens each in the same transaction (`TimeCapsuleService.openCapsule`), and after the commit emails each once to a verified address with the shared email layout, without an unsubscribe link |
 | `RecycleBinPurgeWorkerService` | hourly | hard-deletes entries in the recycle bin for over 30 days and removes their files |
 | `AccountPurgeWorkerService` | hourly | permanently deletes accounts deleted more than `ACCOUNT_PURGE_AFTER_DAYS` (default 30) ago: their stored files, then the user row and everything that cascades from it |
 
@@ -178,6 +180,9 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `ENTRY_REVISION_NOT_FOUND` | Revision not found |
 |  | `ENTRY_TASKS_MARKDOWN_ONLY` | Only Markdown entries have task lists |
 |  | `ENTRY_TASK_CHANGED` | That line is no longer a task. Reload the entry and try again. |
+|  | `ENTRY_SEALED` | This entry is sealed as a time capsule until it opens |
+|  | `ENTRY_NOT_SEALED` | This entry is not sealed |
+|  | `TIME_CAPSULE_DATE_INVALID` | Choose an opening date from tomorrow up to 50 years ahead |
 |  | `TAG_RENAME_SAME_NAME` | New tag name must be different |
 |  | `TAG_NOT_FOUND` | No entries found with that tag |
 |  | `RECYCLE_BIN_ENTRIES_NOT_FOUND` | No matching entries in the recycle bin |
