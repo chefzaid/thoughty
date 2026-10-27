@@ -133,7 +133,11 @@ button.correlation-node:disabled {
   align-items: center;
   gap: 0.2rem 0.55rem;
   min-width: 0;
-  color: #0891b2;
+  color: #0e7490;
+}
+
+.chart-card.dark .correlation-edge {
+  color: #22d3ee;
 }
 
 .correlation-edge meter {
@@ -156,8 +160,12 @@ button.correlation-node:disabled {
   white-space: nowrap;
 }
 
-.tag-edge {
+.chart-card .tag-edge {
   color: #b45309;
+}
+
+.chart-card.dark .tag-edge {
+  color: #fbbf24;
 }
 
 .tag-edge meter {

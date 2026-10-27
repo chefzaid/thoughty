@@ -313,7 +313,7 @@ describe('Stats Component', () => {
             expect(screen.getByRole('heading', { name: 'Journal Activity by Day' })).toBeInTheDocument();
         });
 
-        await user.click(screen.getByRole('button', { name: '4 entries on Jan 18, 2024' }));
+        await user.click(screen.getByRole('gridcell', { name: '4 entries on Jan 18, 2024' }));
 
         expect(onOpenJournalDay).toHaveBeenCalledWith('2024-01-18');
     });

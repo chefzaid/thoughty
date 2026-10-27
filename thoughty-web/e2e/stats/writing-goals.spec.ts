@@ -11,16 +11,12 @@ const entries = [
   { id: 505, date: '2024-04-24', index: 1, content: 'a short evening line', tags: [], visibility: 'private' as const, diaryId: 2 },
 ];
 
-/**
- * Scans the goal panel and the activity map. The map's day cells are smaller than the 24px
- * target size already (TODO.md, Bugs to fix), so that one rule is left to its own fix.
- */
+/** Scans the goal panel and the activity map. */
 async function expectNoAccessibilityViolations(page: Page) {
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .include('.goal-card')
     .include('.heatmap-card')
-    .disableRules(['target-size'])
     .analyze();
   expect(results.violations.map(({ id, nodes }) => ({ id, targets: nodes.map((node) => node.target) }))).toEqual([]);
 }
@@ -47,9 +43,9 @@ test.describe('Writing goals', () => {
     await expect(goal.getByText('Streak: 1 week')).toBeVisible();
     await expect(goal.getByText('Best: 1 week')).toBeVisible();
 
-    const map = page.getByRole('group', { name: 'Journal Activity by Day' });
-    await expect(map.getByRole('button', { name: '1 entry on Apr 15, 2024, weekly goal met', exact: true })).toBeVisible();
-    await expect(map.getByRole('button', { name: '1 entry on Apr 22, 2024', exact: true })).toBeVisible();
+    const map = page.getByRole('grid', { name: 'Journal Activity by Day' });
+    await expect(map.getByRole('gridcell', { name: '1 entry on Apr 15, 2024, weekly goal met', exact: true })).toBeVisible();
+    await expect(map.getByRole('gridcell', { name: '1 entry on Apr 22, 2024', exact: true })).toBeVisible();
     await expect(page.locator('.heatmap-goal-row .heatmap-goal-week', { hasText: '✓' })).toHaveCount(1);
     await expect(page.getByText('Week that met the goal')).toBeVisible();
     await expectNoAccessibilityViolations(page);
@@ -72,8 +68,8 @@ test.describe('Writing goals', () => {
       const goal = page.getByRole('region', { name: 'Writing goal' });
       await expect(goal.getByRole('progressbar', { name: '4 of 10 words today' })).toBeVisible();
       await expect(goal.getByText('Streak: 1 day')).toBeVisible();
-      await expect(page.getByRole('button', { name: '1 entry on Apr 23, 2024, goal met', exact: true })).toHaveClass(/goal-met/);
-      await expect(page.getByRole('button', { name: '1 entry on Apr 24, 2024', exact: true })).not.toHaveClass(/goal-met/);
+      await expect(page.getByRole('gridcell', { name: '1 entry on Apr 23, 2024, goal met', exact: true })).toHaveClass(/goal-met/);
+      await expect(page.getByRole('gridcell', { name: '1 entry on Apr 24, 2024', exact: true })).not.toHaveClass(/goal-met/);
       await expectNoAccessibilityViolations(page);
 
       await page.goto('/stats?diary=all');

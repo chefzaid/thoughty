@@ -77,8 +77,8 @@ describe('Stats writing goals', () => {
         expect(within(panel).getByText('2 of 3 entries this week')).toBeInTheDocument();
         expect((globalThis.fetch as Mock).mock.calls[0]?.[0]).toBe('/api/stats?diaryId=2&today=2024-01-17');
 
-        expect(screen.getByRole('button', { name: '3 entries on Jan 9, 2024, weekly goal met' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: '2 entries on Jan 15, 2024' })).toBeInTheDocument();
+        expect(screen.getByRole('gridcell', { name: '3 entries on Jan 9, 2024, weekly goal met' })).toBeInTheDocument();
+        expect(screen.getByRole('gridcell', { name: '2 entries on Jan 15, 2024' })).toBeInTheDocument();
         expect(screen.getByText('Week that met the goal')).toBeInTheDocument();
     });
 
@@ -88,7 +88,7 @@ describe('Stats writing goals', () => {
         const panel = await screen.findByRole('region', { name: 'Writing goal' });
         expect(within(panel).getByText(/Pick one to see its goal/)).toBeInTheDocument();
         expect(within(panel).getByText('Work')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: '3 entries on Jan 9, 2024' })).toBeInTheDocument();
+        expect(screen.getByRole('gridcell', { name: '3 entries on Jan 9, 2024' })).toBeInTheDocument();
         expect(screen.queryByText('Week that met the goal')).not.toBeInTheDocument();
     });
 

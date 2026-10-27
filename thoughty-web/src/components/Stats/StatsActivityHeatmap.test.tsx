@@ -25,7 +25,7 @@ describe('StatsActivityHeatmap', () => {
         renderHeatmap(language, vi.fn());
 
         for (const label of [none, one, many]) {
-            expect(screen.getByRole('button', { name: label })).toHaveAttribute('title', label);
+            expect(screen.getByRole('gridcell', { name: label })).toHaveAttribute('title', label);
         }
     });
 
@@ -43,17 +43,56 @@ describe('StatsActivityHeatmap', () => {
         expect(days).toEqual([weekdays[0], '', weekdays[1], '', weekdays[2], '', '']);
     });
 
-    it('opens the journal on the clicked day and disables the days without a handler', async () => {
+    it('opens the journal on the clicked day, and only describes the keys without a handler', async () => {
         const user = userEvent.setup();
         const onOpenJournalDay = vi.fn();
         const { unmount } = renderHeatmap('fr', onOpenJournalDay);
 
-        await user.click(screen.getByRole('button', { name: '4 entrées le 18 janv. 2024' }));
+        await user.click(screen.getByRole('gridcell', { name: '4 entrées le 18 janv. 2024' }));
         expect(onOpenJournalDay).toHaveBeenCalledWith('2024-01-18');
+        expect(screen.getByRole('grid')).toHaveAccessibleDescription(/Entrée ouvre le jour dans le journal/);
         unmount();
 
         renderHeatmap('en');
-        expect(screen.getByRole('button', { name: '4 entries on Jan 18, 2024' })).toBeDisabled();
+        await user.click(screen.getByRole('gridcell', { name: '4 entries on Jan 18, 2024' }));
+        expect(screen.getByRole('grid')).toHaveAccessibleDescription(
+            'Arrow keys move by a day or a week, Page Up and Page Down by a month.',
+        );
+        expect(screen.getByRole('grid')).not.toHaveClass('opens-days');
+    });
+
+    it('is one tab stop whose arrows move the active day and whose Enter or Space opens it', async () => {
+        const user = userEvent.setup();
+        const onOpenJournalDay = vi.fn();
+        const { container } = renderHeatmap('en', onOpenJournalDay);
+        const grid = screen.getByRole('grid', { name: 'Journal Activity by Day' });
+        const activeName = () => document.getElementById(grid.getAttribute('aria-activedescendant') ?? '')?.getAttribute('aria-label');
+
+        await user.tab();
+        expect(grid).toHaveFocus();
+        expect(container.querySelectorAll('[tabindex]')).toHaveLength(1);
+        // The latest day with entries starts active
+        expect(activeName()).toBe('4 entries on Jan 18, 2024');
+
+        await user.keyboard('{ArrowUp}');
+        expect(activeName()).toBe('0 entries on Jan 17, 2024');
+        await user.keyboard('{ArrowLeft}');
+        expect(activeName()).toBe('0 entries on Jan 10, 2024');
+        await user.keyboard('{ArrowRight}{ArrowRight}');
+        // Past the last day, the active day stays on it
+        expect(activeName()).toBe('4 entries on Jan 18, 2024');
+        await user.keyboard('{Home}');
+        expect(activeName()).toBe('2 entries on Jan 15, 2024');
+        expect(screen.getByText('2 entries on Jan 15, 2024', { selector: '.heatmap-active-day' })).toBeInTheDocument();
+        await user.keyboard('{Enter}');
+        expect(onOpenJournalDay).toHaveBeenLastCalledWith('2024-01-15');
+        await user.keyboard('{Control>}{Home}{/Control}');
+        expect(activeName()).toMatch(/^0 entries on Jan 16, 2023$/);
+        await user.keyboard(' ');
+        expect(onOpenJournalDay).toHaveBeenLastCalledWith('2023-01-16');
+        await user.keyboard('{Control>}{End}{/Control}{a}');
+        expect(activeName()).toBe('4 entries on Jan 18, 2024');
+        expect(onOpenJournalDay).toHaveBeenCalledTimes(2);
     });
 
     it.each([
@@ -70,8 +109,8 @@ describe('StatsActivityHeatmap', () => {
             />,
         );
 
-        expect(screen.getByRole('button', { name: label })).toHaveClass('goal-met');
-        expect(document.querySelectorAll('button.goal-met')).toHaveLength(1);
+        expect(screen.getByRole('gridcell', { name: label })).toHaveClass('goal-met');
+        expect(document.querySelectorAll('[role="gridcell"].goal-met')).toHaveLength(1);
         expect(screen.getByText(legend)).toBeInTheDocument();
         expect(document.querySelector('.heatmap-goal-row')).toBeNull();
     });
@@ -87,9 +126,9 @@ describe('StatsActivityHeatmap', () => {
             />,
         );
 
-        expect(screen.getByRole('button', { name: '2 entries on Jan 15, 2024, weekly goal met' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: '0 entries on Jan 17, 2024, weekly goal met' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: '0 entries on Jan 14, 2024' })).toBeInTheDocument();
+        expect(screen.getByRole('gridcell', { name: '2 entries on Jan 15, 2024, weekly goal met' })).toBeInTheDocument();
+        expect(screen.getByRole('gridcell', { name: '0 entries on Jan 17, 2024, weekly goal met' })).toBeInTheDocument();
+        expect(screen.getByRole('gridcell', { name: '0 entries on Jan 14, 2024' })).toBeInTheDocument();
         const marks = [...container.querySelectorAll('.heatmap-goal-row .heatmap-goal-week')].map((mark) => mark.textContent);
         expect(marks.filter(Boolean)).toEqual(['✓']);
         expect(marks.at(-1)).toBe('✓');

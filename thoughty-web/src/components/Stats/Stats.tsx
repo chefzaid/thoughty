@@ -8,8 +8,8 @@ import {
     Tooltip,
     Legend,
     ArcElement,
+    type ChartOptions,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
 import './Stats.css';
 import { useAuth } from '../../contexts/AuthContext';
 import type { components } from '../../generated/openapi';
@@ -22,6 +22,8 @@ import StatsCorrelationGraph from './StatsCorrelationGraph';
 import StatsMoodPanel from './StatsMoodPanel';
 import StatsGoalPanel from './StatsGoalPanel';
 import StatsPagination from './StatsPagination';
+import StatsBarChart, { type StatsChartPoint } from './StatsBarChart';
+import { monthName } from '../../utils/calendarNames';
 import { formatEntryDate } from '../../utils/entryDate';
 import { resolveLanguage } from '../../utils/language';
 
@@ -56,7 +58,18 @@ interface YearTagData {
 const TAGS_YEARS_PER_PAGE = 5;
 const YEARS_PER_PAGE = 8;
 const MONTHS_PER_PAGE = 12;
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const TAG_COLORS = [
+    'rgba(59, 130, 246, 0.7)',
+    'rgba(139, 92, 246, 0.7)',
+    'rgba(236, 72, 153, 0.7)',
+    'rgba(34, 197, 94, 0.7)',
+    'rgba(251, 146, 60, 0.7)',
+    'rgba(14, 165, 233, 0.7)',
+    'rgba(168, 85, 247, 0.7)',
+    'rgba(244, 63, 94, 0.7)',
+    'rgba(20, 184, 166, 0.7)',
+    'rgba(234, 179, 8, 0.7)',
+];
 const EMPTY_STATS: StatsData = {
     totalThoughts: 0,
     averageWordsPerEntry: 0,
@@ -127,7 +140,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
     const gridColor = theme === 'light' ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.1)';
     const effectiveStats = stats ?? EMPTY_STATS;
 
-    const chartOptions = useMemo(() => ({
+    const chartOptions = useMemo((): ChartOptions<'bar'> => ({
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
@@ -160,73 +173,32 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
         [effectiveStats.thoughtsPerYear],
     );
     const totalYearChartPages = Math.ceil(allYearLabels.length / YEARS_PER_PAGE);
-    const thoughtsPerYearChart = useMemo(() => {
-        const yearLabels = allYearLabels.slice(yearPage * YEARS_PER_PAGE, (yearPage + 1) * YEARS_PER_PAGE);
-
-        return {
-            labels: yearLabels,
-            datasets: [
-                {
-                    data: yearLabels.map(year => effectiveStats.thoughtsPerYear[year]),
-                    backgroundColor: 'rgba(59, 130, 246, 0.7)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1,
-                    borderRadius: 6,
-                },
-            ],
-        };
-    }, [allYearLabels, effectiveStats.thoughtsPerYear, yearPage]);
+    const thoughtsPerYearPoints = useMemo((): StatsChartPoint[] => allYearLabels
+        .slice(yearPage * YEARS_PER_PAGE, (yearPage + 1) * YEARS_PER_PAGE)
+        .map((year) => ({ label: year, value: effectiveStats.thoughtsPerYear[year] ?? 0 })),
+    [allYearLabels, effectiveStats.thoughtsPerYear, yearPage]);
 
     const allMonthLabels = useMemo(
         () => Object.keys(effectiveStats.thoughtsPerMonth).sort((a, b) => a.localeCompare(b)),
         [effectiveStats.thoughtsPerMonth],
     );
     const totalMonthPages = Math.ceil(allMonthLabels.length / MONTHS_PER_PAGE);
-    const thoughtsPerMonthChart = useMemo(() => {
-        const monthLabels = allMonthLabels.slice(monthPage * MONTHS_PER_PAGE, (monthPage + 1) * MONTHS_PER_PAGE);
+    const thoughtsPerMonthPoints = useMemo((): StatsChartPoint[] => allMonthLabels
+        .slice(monthPage * MONTHS_PER_PAGE, (monthPage + 1) * MONTHS_PER_PAGE)
+        .map((month) => {
+            const [year, monthNumber] = month.split('-');
+            return {
+                label: `${monthName(Number(monthNumber), uiLanguage, 'short')} ${year ?? ''}`,
+                value: effectiveStats.thoughtsPerMonth[month] ?? 0,
+            };
+        }),
+    [allMonthLabels, effectiveStats.thoughtsPerMonth, monthPage, uiLanguage]);
 
-        return {
-            labels: monthLabels.map(m => {
-                const [year, month] = m.split('-');
-                return `${MONTH_NAMES[Number.parseInt(month ?? '1', 10) - 1] ?? ''} ${year ?? ''}`;
-            }),
-            datasets: [
-                {
-                    data: monthLabels.map(month => effectiveStats.thoughtsPerMonth[month]),
-                    backgroundColor: 'rgba(139, 92, 246, 0.7)',
-                    borderColor: 'rgba(139, 92, 246, 1)',
-                    borderWidth: 1,
-                    borderRadius: 6,
-                },
-            ],
-        };
-    }, [allMonthLabels, effectiveStats.thoughtsPerMonth, monthPage]);
-
-    const thoughtsPerTagChart = useMemo(() => {
-        const tagEntries = Object.entries(effectiveStats.thoughtsPerTag).slice(0, 10);
-
-        return {
-            labels: tagEntries.map(([tag]) => tag),
-            datasets: [
-                {
-                    data: tagEntries.map(([, count]) => count),
-                    backgroundColor: [
-                        'rgba(59, 130, 246, 0.7)',
-                        'rgba(139, 92, 246, 0.7)',
-                        'rgba(236, 72, 153, 0.7)',
-                        'rgba(34, 197, 94, 0.7)',
-                        'rgba(251, 146, 60, 0.7)',
-                        'rgba(14, 165, 233, 0.7)',
-                        'rgba(168, 85, 247, 0.7)',
-                        'rgba(244, 63, 94, 0.7)',
-                        'rgba(20, 184, 166, 0.7)',
-                        'rgba(234, 179, 8, 0.7)',
-                    ],
-                    borderRadius: 6,
-                },
-            ],
-        };
-    }, [effectiveStats.thoughtsPerTag]);
+    const thoughtsPerTagPoints = useMemo((): StatsChartPoint[] => Object.entries(effectiveStats.thoughtsPerTag)
+        .slice(0, 10)
+        .map(([tag, count]) => ({ label: tag, value: count })),
+    [effectiveStats.thoughtsPerTag]);
+    const tagChartOptions = useMemo((): ChartOptions<'bar'> => ({ ...chartOptions, indexAxis: 'y' }), [chartOptions]);
 
     const allTagsPerYear: YearTagData[] = useMemo(() => Object.entries(effectiveStats.tagsPerYear)
         .sort(([a], [b]) => Number(b) - Number(a))
@@ -366,10 +338,17 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
                 {stats.totalThoughts > 0 && (
                     <>
                         <div className="charts-row">
-                            {/* Thoughts per Year */}
-                            <div className={`chart-card ${themeClass}`}>
-                                <div className="chart-header">
-                                    <h3>{t('thoughtsPerYear')}</h3>
+                            <StatsBarChart
+                                title={t('thoughtsPerYear')}
+                                labelHeader={t('year')}
+                                points={thoughtsPerYearPoints}
+                                backgroundColor="rgba(59, 130, 246, 0.7)"
+                                borderColor="rgba(59, 130, 246, 1)"
+                                options={chartOptions}
+                                themeClass={themeClass}
+                                language={uiLanguage}
+                                t={t}
+                                controls={(
                                     <StatsPagination
                                         page={yearPage}
                                         totalPages={totalYearChartPages}
@@ -378,16 +357,19 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
                                         previousLabel={t('previous')}
                                         nextLabel={t('next')}
                                     />
-                                </div>
-                                <div className="chart-wrapper">
-                                    <Bar data={thoughtsPerYearChart} options={chartOptions} />
-                                </div>
-                            </div>
-
-                            {/* Thoughts per Month */}
-                            <div className={`chart-card ${themeClass}`}>
-                                <div className="chart-header">
-                                    <h3>{t('thoughtsPerMonth')}</h3>
+                                )}
+                            />
+                            <StatsBarChart
+                                title={t('thoughtsPerMonth')}
+                                labelHeader={t('month')}
+                                points={thoughtsPerMonthPoints}
+                                backgroundColor="rgba(139, 92, 246, 0.7)"
+                                borderColor="rgba(139, 92, 246, 1)"
+                                options={chartOptions}
+                                themeClass={themeClass}
+                                language={uiLanguage}
+                                t={t}
+                                controls={(
                                     <StatsPagination
                                         page={monthPage}
                                         totalPages={totalMonthPages}
@@ -396,26 +378,21 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
                                         previousLabel={t('previous')}
                                         nextLabel={t('next')}
                                     />
-                                </div>
-                                <div className="chart-wrapper">
-                                    <Bar data={thoughtsPerMonthChart} options={chartOptions} />
-                                </div>
-                            </div>
+                                )}
+                            />
                         </div>
 
                         <div className="charts-row">
-                            <div className={`chart-card ${themeClass}`}>
-                                <h3>{t('topTags')}</h3>
-                                <div className="chart-wrapper">
-                                    <Bar
-                                        data={thoughtsPerTagChart}
-                                        options={{
-                                            ...chartOptions,
-                                            indexAxis: 'y' as const,
-                                        }}
-                                    />
-                                </div>
-                            </div>
+                            <StatsBarChart
+                                title={t('topTags')}
+                                labelHeader={t('statsChartTag')}
+                                points={thoughtsPerTagPoints}
+                                backgroundColor={TAG_COLORS}
+                                options={tagChartOptions}
+                                themeClass={themeClass}
+                                language={uiLanguage}
+                                t={t}
+                            />
 
                             {/* Tags per Year Breakdown */}
                             <div className={`chart-card ${themeClass}`}>

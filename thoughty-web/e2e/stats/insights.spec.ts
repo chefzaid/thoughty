@@ -44,10 +44,10 @@ test.describe("Stats insight surfaces", () => {
       page.getByRole("heading", { name: "Journal Activity" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "1 entry on Apr 18, 2024", exact: true }),
+      page.getByRole("gridcell", { name: "1 entry on Apr 18, 2024", exact: true }),
     ).toHaveAttribute("title", "1 entry on Apr 18, 2024");
     await expect(
-      page.getByRole("button", { name: "0 entries on Apr 17, 2024", exact: true }),
+      page.getByRole("gridcell", { name: "0 entries on Apr 17, 2024", exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Subjects Discussed" }),
@@ -132,7 +132,7 @@ test.describe("Stats insight surfaces", () => {
 
     const heatmap = page.getByRole("region", { name: "Activité du journal par jour" });
     for (const label of ["2 entrées le 18 avr. 2024", "1 entrée le 19 avr. 2024", "0 entrée le 17 avr. 2024"]) {
-      await expect(heatmap.getByRole("button", { name: label, exact: true })).toHaveAttribute("title", label);
+      await expect(heatmap.getByRole("gridcell", { name: label, exact: true })).toHaveAttribute("title", label);
     }
     await expect(heatmap.getByText("févr.", { exact: true })).toBeVisible();
     await expect(heatmap.getByText("mer.", { exact: true })).toBeVisible();

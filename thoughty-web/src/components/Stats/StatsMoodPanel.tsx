@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import './StatsMoodPanel.css';
 import type { components } from '../../generated/openapi';
 import { monthName, weekdayName } from '../../utils/calendarNames';
 import { feelingLabel, moodEmoji, moodLabelKey, nearestMoodLevel, MOOD_LEVELS } from '../../utils/entryMood';
