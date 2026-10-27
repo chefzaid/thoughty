@@ -23,7 +23,6 @@ export const createAttachmentsService = (
       const response = await authFetch("/api/attachments/upload", {
         method: "POST",
         body: formData,
-        headers: {}, // Let browser set Content-Type with boundary for multipart
       });
 
       if (response.ok) {

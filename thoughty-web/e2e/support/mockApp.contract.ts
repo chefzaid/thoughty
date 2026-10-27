@@ -18,7 +18,10 @@ export interface ContractSchema {
 }
 
 interface OpenApiDocument {
-  paths: Record<string, Record<string, { responses?: Record<string, { content?: Record<string, { schema?: ContractSchema }> }> }>>;
+  paths: Record<string, Record<string, {
+    requestBody?: { content?: Record<string, unknown> };
+    responses?: Record<string, { content?: Record<string, { schema?: ContractSchema }> }>;
+  }>>;
   components: { schemas: Record<string, ContractSchema> };
 }
 
@@ -27,6 +30,8 @@ interface Operation {
   pattern: RegExp;
   /** Literal path segments, so `/api/diaries/reorder` wins over `/api/diaries/{id}`. */
   literalSegments: number;
+  /** The media types the operation accepts a body in, such as `multipart/form-data` for an upload. */
+  requestTypes: string[];
   responses: Record<string, ContractSchema | undefined>;
 }
 
@@ -47,6 +52,7 @@ function loadOperations(): Operation[] {
       method: method.toUpperCase(),
       pattern: new RegExp(`^${path.replace(/\{[^}]+\}/g, '[^/]+')}$`),
       literalSegments: path.split('/').filter((segment) => segment && !segment.startsWith('{')).length,
+      requestTypes: Object.keys(operation.requestBody?.content ?? {}),
       responses: Object.fromEntries(
         Object.entries(operation.responses ?? {}).map(([status, response]) => [
           status,
@@ -129,14 +135,32 @@ export function validateAgainstSchema(
  * matches or the API documents no JSON body for it.
  */
 export function checkMockResponse(method: string, pathname: string, status: number, body: unknown): string[] {
-  const operation = loadOperations()
-    .filter((candidate) => candidate.method === method && candidate.pattern.test(pathname))
-    .sort((left, right) => right.literalSegments - left.literalSegments)[0];
-  const schema = operation?.responses[String(status)];
+  const schema = findOperation(method, pathname)?.responses[String(status)];
   if (!schema) return [];
   return validateAgainstSchema(schema, JSON.parse(JSON.stringify(body)) as unknown).map(
     (problem) => `${method} ${pathname} ${status} ${problem}`,
   );
+}
+
+function findOperation(method: string, pathname: string): Operation | undefined {
+  return loadOperations()
+    .filter((candidate) => candidate.method === method && candidate.pattern.test(pathname))
+    .sort((left, right) => right.literalSegments - left.literalSegments)[0];
+}
+
+/**
+ * Why the API would refuse this upload before reading it, or null: a body sent to an operation that takes only
+ * `multipart/form-data` under another content type (the API's JSON parser fails on it, so the file never
+ * arrives), or without the multipart boundary the browser adds when it sets the type itself.
+ */
+export function checkMultipartRequest(method: string, pathname: string, contentType: string | undefined, hasBody: boolean): string | null {
+  const requestTypes = findOperation(method, pathname)?.requestTypes ?? [];
+  if (!hasBody || requestTypes.length === 0 || requestTypes.some((type) => type !== 'multipart/form-data')) return null;
+  const type = contentType?.toLowerCase() ?? '';
+  if (!type.startsWith('multipart/form-data')) {
+    return `${method} ${pathname} sends its multipart body as ${contentType ?? 'no content type'}`;
+  }
+  return /;\s*boundary=/.test(type) ? null : `${method} ${pathname} sends multipart/form-data without its boundary`;
 }
 
 const violations: string[] = [];

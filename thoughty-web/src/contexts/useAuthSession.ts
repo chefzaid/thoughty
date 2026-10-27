@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { safeJsonParse } from '../services/api/base';
+import { buildAuthHeaders, safeJsonParse } from '../services/api/base';
 import { API_BASE } from './authRequests';
 import type { TokenResponse, User } from './authTypes';
 import {
@@ -121,16 +121,8 @@ export function useAuthSession() {
     async (url: string, options: RequestInit = {}): Promise<Response> => {
       let accessToken = getAccessToken();
 
-      const makeRequest = async (token: string | null): Promise<Response> => {
-        const headers: HeadersInit = {
-          ...options.headers,
-          'Content-Type': 'application/json',
-        };
-        if (token) {
-          (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
-        }
-        return fetch(url, { ...options, headers });
-      };
+      const makeRequest = async (token: string | null): Promise<Response> =>
+        fetch(url, { ...options, headers: buildAuthHeaders(options, token) });
 
       let response = await makeRequest(accessToken);
 

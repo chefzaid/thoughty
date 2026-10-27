@@ -96,6 +96,40 @@ describe('useAuthSession', () => {
         expect(result.current.getAccessToken()).toBeNull();
     });
 
+    it('sends a multipart body without a JSON content type, also when retrying after a refresh', async () => {
+        const fetchMock = stubFetch(() => json({ id: 1, username: 'ada', email: 'ada@example.com' }));
+        const result = await renderSession();
+        fetchMock.mockResolvedValueOnce(json({}, 401));
+        const body = new FormData();
+        body.append('coverImage', new Blob(['png'], { type: 'image/png' }), 'cover.png');
+
+        await act(async () => {
+            await result.current.authFetch('/api/books/export?format=pdf', { method: 'POST', body });
+        });
+
+        const uploads = fetchMock.mock.calls.filter(([url]) => url === '/api/books/export?format=pdf');
+        expect(uploads).toHaveLength(2);
+        for (const [, init] of uploads as unknown as Array<[string, RequestInit]>) {
+            expect(init.body).toBe(body);
+            expect(init.headers).toEqual({ Authorization: 'Bearer access-token' });
+        }
+    });
+
+    it('sends JSON text as JSON and keeps a content type the caller chose', async () => {
+        const fetchMock = stubFetch(() => json({ id: 1, username: 'ada', email: 'ada@example.com' }));
+        const result = await renderSession();
+
+        await act(async () => {
+            await result.current.authFetch('/api/entries', { method: 'POST', body: '{"text":"Hi"}' });
+            await result.current.authFetch('/api/notes', { method: 'POST', body: 'Hi', headers: { 'Content-Type': 'text/plain' } });
+        });
+
+        const headersFor = (url: string) =>
+            (fetchMock.mock.calls as unknown as Array<[string, RequestInit]>).find(([called]) => called === url)?.[1].headers;
+        expect(headersFor('/api/entries')).toEqual({ 'Content-Type': 'application/json', Authorization: 'Bearer access-token' });
+        expect(headersFor('/api/notes')).toEqual({ 'Content-Type': 'text/plain', Authorization: 'Bearer access-token' });
+    });
+
     it('keeps the 401 response when the access token cannot be refreshed', async () => {
         const fetchMock = stubFetch(() => json({ id: 1, username: 'ada', email: 'ada@example.com' }));
         const result = await renderSession();

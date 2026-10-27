@@ -233,6 +233,19 @@ describe('createAuthFetch', () => {
     expect(result).toBe(mockResponse);
   });
 
+  it('falls back to fetch without a JSON content type for a multipart body', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('ok'));
+    const body = new FormData();
+
+    await createAuthFetch(undefined, () => 'token')('/api/attachments/upload', { method: 'POST', body });
+
+    expect(globalThis.fetch).toHaveBeenCalledWith('/api/attachments/upload', {
+      method: 'POST',
+      body,
+      headers: { Authorization: 'Bearer token' },
+    });
+  });
+
   it('passes custom options to fetch', async () => {
     const mockResponse = new Response('ok');
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(mockResponse);

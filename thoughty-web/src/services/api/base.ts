@@ -127,6 +127,29 @@ export const readApiErrorMessage = async (
   return text;
 };
 
+/** The app sends JSON as text; any other body (FormData, Blob, ArrayBuffer, URLSearchParams, a stream) is not JSON. */
+const isJsonBody = (body: RequestInit['body']): boolean => body === undefined || body === null || typeof body === 'string';
+
+/**
+ * The headers of an authenticated request: the caller's own, then `Content-Type: application/json` when the
+ * caller set no content type and the body is JSON text (or there is none), then the bearer token. Other bodies
+ * keep the type the browser gives them: a FormData its multipart boundary, a Blob its own type, URLSearchParams
+ * a form encoding. A JSON type on a multipart body makes the API's JSON parser refuse it before the upload.
+ */
+export const buildAuthHeaders = (options: RequestInit, token: string | null): Record<string, string> => {
+  const headers: Record<string, string> = options.headers instanceof Headers || Array.isArray(options.headers)
+    ? Object.fromEntries(new Headers(options.headers).entries())
+    : { ...options.headers };
+  const hasContentType = Object.keys(headers).some((name) => name.toLowerCase() === 'content-type');
+  if (!hasContentType && isJsonBody(options.body)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+};
+
 /**
  * Creates an authenticated fetch helper using the provided auth functions
  */
@@ -143,15 +166,7 @@ export const createAuthFetch = (
     }
 
     const token = typeof getAccessToken === 'function' ? getAccessToken() : null;
-    const isFormData = options.body instanceof FormData;
-    const headers: HeadersInit = {
-      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...options.headers,
-    };
-    if (token) {
-      (headers as Record<string, string>).Authorization = `Bearer ${token}`;
-    }
-    return fetch(url, { ...options, headers });
+    return fetch(url, { ...options, headers: buildAuthHeaders(options, token) });
   };
 };
 

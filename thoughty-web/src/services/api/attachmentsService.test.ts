@@ -37,7 +37,6 @@ describe("createAttachmentsService", () => {
       expect(authFetch).toHaveBeenCalledWith("/api/attachments/upload", {
         method: "POST",
         body: expect.any(FormData),
-        headers: {},
       });
       expect(result).toEqual(mockAttachment);
     });

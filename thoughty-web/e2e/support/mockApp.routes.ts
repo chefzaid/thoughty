@@ -19,6 +19,7 @@ import { handleLifeEraRoutes } from "./mockApp.routes.life-eras";
 import { handleOptInEmailRoutes } from "./mockApp.routes.opt-in-emails";
 import { handlePeopleRoutes } from "./mockApp.routes.people";
 import { handleTimeCapsuleRoutes } from "./mockApp.routes.time-capsules";
+import { refuseMislabelledUpload } from "./mockApp.routes.multipart";
 
 async function handleAuthRoutes({
   route,
@@ -331,6 +332,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       state,
     };
 
+    if (await refuseMislabelledUpload(context)) {
+      return;
+    }
     if (await handleAuthRoutes(context)) {
       return;
     }
