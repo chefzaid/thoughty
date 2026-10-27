@@ -1,12 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { SwaggerModule } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import helmet from 'helmet';
-import compression from 'compression';
 import { AppModule } from './app.module';
-import { createSwaggerDocument } from './swagger';
-import { createGlobalValidationPipe } from './common/validation';
-import { attachCspNonce, buildHelmetOptions, getRequestPayloadLimits, JsonLogger, useImportBodyParser, useTrustProxy } from './common';
+import { configureApp } from './configure-app';
+import { JsonLogger } from './common';
 
 async function bootstrap() {
   const logger = new JsonLogger('Bootstrap');
@@ -14,47 +10,7 @@ async function bootstrap() {
     bodyParser: false,
     logger,
   });
-  const payloadLimits = getRequestPayloadLimits();
-
-  // Resolve req.ip to the client behind the ingress; the throttler keys on it.
-  const trustProxy = useTrustProxy(app);
-
-  // Security middleware
-  app.use(attachCspNonce);
-  app.use(helmet(buildHelmetOptions(process.env.NODE_ENV === 'production')));
-  useImportBodyParser(app, payloadLimits.importJson);
-  app.useBodyParser('json', { limit: payloadLimits.json });
-  app.useBodyParser('urlencoded', { extended: true, limit: payloadLimits.urlencoded });
-
-  // Compression
-  app.use(compression());
-
-  // CORS
-  const corsOrigins = process.env.CORS_ORIGIN?.split(',') || [
-    'http://localhost:5173',
-    'http://localhost:3000',
-  ];
-  app.enableCors({
-    origin: corsOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-    credentials: true,
-    maxAge: 86400, // 24 hours
-  });
-
-  // Global prefix for all routes
-  app.setGlobalPrefix('api');
-
-  // Global validation pipe
-  app.useGlobalPipes(createGlobalValidationPipe());
-
-  // Swagger documentation
-  const document = createSwaggerDocument(app);
-  SwaggerModule.setup('api-docs', app, document, {
-    swaggerOptions: {
-      persistAuthorization: true,
-    },
-  });
+  const { payloadLimits, trustProxy } = configureApp(app);
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

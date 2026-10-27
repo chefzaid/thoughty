@@ -103,6 +103,9 @@ Write-Host ""
 * e2e
     * flags: -e --e2e
     * desc: Run frontend Playwright end-to-end tests only
+* api
+    * flags: -a --api
+    * desc: Run the real-API contract specs only (needs THOUGHTY_PG_TEST_URL)
 * coverage
     * flags: -c --coverage
     * desc: Run full coverage report
@@ -129,7 +132,7 @@ if [ "$coverage" == "true" ]; then
 fi
 
 RUN_ALL=true
-if [ "$backend" == "true" ] || [ "$frontend" == "true" ] || [ "$e2e" == "true" ]; then
+if [ "$backend" == "true" ] || [ "$frontend" == "true" ] || [ "$e2e" == "true" ] || [ "$api" == "true" ]; then
   RUN_ALL=false
 fi
 
@@ -160,6 +163,19 @@ if [ "$e2e" == "true" ]; then
   echo ""
 fi
 
+if [ "$api" == "true" ]; then
+  echo -e "${CYAN}▸ REAL-API CONTRACT TESTS${NC}"
+  echo -e "${CYAN}────────────────────────────────────────${NC}"
+  if [ -z "$THOUGHTY_PG_TEST_URL" ]; then
+    echo "Set THOUGHTY_PG_TEST_URL to a localhost thoughty_ha_test database (docs/testing.md)." >&2
+    exit 1
+  fi
+  cd thoughty-server
+  npm run test:e2e
+  cd ..
+  echo ""
+fi
+
 echo -e "${GREEN}✔${NC} All tests completed!"
 ```
 
@@ -179,7 +195,7 @@ if ($env:coverage -eq "true") {
 }
 
 $RUN_ALL = $true
-if ($env:backend -eq "true" -or $env:frontend -eq "true" -or $env:e2e -eq "true") {
+if ($env:backend -eq "true" -or $env:frontend -eq "true" -or $env:e2e -eq "true" -or $env:api -eq "true") {
     $RUN_ALL = $false
 }
 
@@ -200,6 +216,17 @@ if ($RUN_ALL -or $env:frontend -eq "true") {
 if ($env:e2e -eq "true") {
     Write-Section "FRONTEND E2E TESTS"
     Set-Location thoughty-web
+    npm.cmd run test:e2e
+    Set-Location ..
+}
+
+if ($env:api -eq "true") {
+    Write-Section "REAL-API CONTRACT TESTS"
+    if (-not $env:THOUGHTY_PG_TEST_URL) {
+        Write-Error "Set THOUGHTY_PG_TEST_URL to a localhost thoughty_ha_test database (docs/testing.md)."
+        exit 1
+    }
+    Set-Location thoughty-server
     npm.cmd run test:e2e
     Set-Location ..
 }
@@ -597,6 +624,7 @@ echo ""
 echo -e "  \033[0;36mbuild\033[0m       📦 Install dependencies"
 echo -e "  \033[0;36mtest\033[0m        🧪 Run tests"
 echo -e "    \033[0;90m-e, --e2e\033[0m Run frontend Playwright E2E tests"
+echo -e "    \033[0;90m-a, --api\033[0m Run the real-API contract specs (needs THOUGHTY_PG_TEST_URL)"
 echo -e "  \033[0;36mrun\033[0m         🚀 Start dev servers"
 echo -e "  \033[0;36mseed\033[0m        🌱 Seed database"
 echo -e "  \033[0;36mmigrate\033[0m     📋 Run migrations"
@@ -622,6 +650,7 @@ Write-Host ""
 Write-Host "  build       " -NoNewline -ForegroundColor Cyan; Write-Host "📦 Install dependencies"
 Write-Host "  test        " -NoNewline -ForegroundColor Cyan; Write-Host "🧪 Run tests"
 Write-Host "    -e, --e2e " -NoNewline -ForegroundColor DarkGray; Write-Host "Run frontend Playwright E2E tests"
+Write-Host "    -a, --api " -NoNewline -ForegroundColor DarkGray; Write-Host "Run the real-API contract specs (needs THOUGHTY_PG_TEST_URL)"
 Write-Host "  run         " -NoNewline -ForegroundColor Cyan; Write-Host "🚀 Start dev servers"
 Write-Host "  seed        " -NoNewline -ForegroundColor Cyan; Write-Host "🌱 Seed database"
 Write-Host "  migrate     " -NoNewline -ForegroundColor Cyan; Write-Host "📋 Run migrations"
