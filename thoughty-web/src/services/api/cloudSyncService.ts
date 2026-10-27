@@ -1,13 +1,10 @@
+import type { components } from '../../generated/openapi';
 import { requestJson, type ServiceResult } from './base';
 
 export type CloudProviderType = 'google_drive' | 'onedrive' | 'dropbox';
 
-export interface CloudFileInfo {
-  id: string;
-  name: string;
-  size: number;
-  modifiedAt: string;
-}
+/** A file in the cloud folder, as the API describes it. */
+export type CloudFileInfo = components['schemas']['CloudFileInfoDto'];
 
 export interface CloudStatus {
   google_drive: { connected: boolean; connectedAt?: string };

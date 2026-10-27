@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildAuthenticatedRoutesProps } from './appShellProps';
 import { createRoutesParams, createRoutingState } from './appShellProps.test-helpers';
+import { makeDiary } from '../test/diaryFixture';
 
 describe('appShellProps', () => {
   it('wires entry templates through user config', async () => {
@@ -75,7 +76,7 @@ describe('appShellProps', () => {
 
   it('gives the memoir the diaries, the interface language, and a way to refresh diaries', async () => {
     const fetchDiaries = vi.fn().mockResolvedValue(undefined);
-    const diaries = [{ id: 3, name: 'Work', icon: 'W', visibility: 'private' as const }];
+    const diaries = [makeDiary({ id: 3, name: 'Work', icon: 'W' })];
     const props = buildAuthenticatedRoutesProps(createRoutesParams({
       config: { theme: 'light', name: 'Zaid', tagMetadata: '{}', language: 'fr' },
       diariesState: { ...createRoutesParams().diariesState, diaries, fetchDiaries },
@@ -105,7 +106,7 @@ describe('appShellProps', () => {
       handleRenameTag,
       diariesState: {
         currentDiaryId: 3,
-        diaries: [{ id: 3, name: 'Work', icon: 'W', visibility: 'private' }],
+        diaries: [makeDiary({ id: 3, name: 'Work', icon: 'W' })],
         fetchDiaries: vi.fn().mockResolvedValue(undefined),
         handleCreateDiary: vi.fn().mockResolvedValue(undefined),
         handleDeleteDiary,

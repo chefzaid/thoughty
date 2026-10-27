@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act, waitFor } from "@testing-library/react";
 import { useConfig, useDiaries } from "./useAppState";
 import { renderHook } from "./hookTestUtils";
+import { makeDiary } from "../test/diaryFixture";
 
 vi.mock("../contexts/AuthContext", async () => (await import("./useAppState.test-helpers")).authContextMock());
 vi.mock("../services/api", async () => (await import("./useAppState.test-helpers")).apiModuleMock());
@@ -150,8 +151,8 @@ describe("useAppState Hooks", () => {
       const { createDiariesService } = await import("../services/api");
       vi.mocked(createDiariesService).mockReturnValue({
         fetchDiaries: vi.fn().mockResolvedValue([
-          { id: 1, name: "Default", is_default: true },
-          { id: 2, name: "Work", is_default: false },
+          makeDiary({ id: 1, name: "Default", isDefault: true }),
+          makeDiary({ id: 2, name: "Work" }),
         ]),
         createDiary: vi.fn(),
         updateDiary: vi.fn(),
@@ -198,7 +199,7 @@ describe("useAppState Hooks", () => {
 
       await expect(async () => {
         await act(async () => {
-          await result.current.handleCreateDiary({ name: "Test" });
+          await result.current.handleCreateDiary({ name: "Test", icon: "📓", visibility: "private" });
         });
       }).rejects.toThrow("Failed");
 
@@ -220,7 +221,7 @@ describe("useAppState Hooks", () => {
       vi.mocked(createDiariesService).mockReturnValue({
         fetchDiaries: vi
           .fn()
-          .mockResolvedValue([{ id: 2, name: "Other", is_default: true }]),
+          .mockResolvedValue([makeDiary({ id: 2, name: "Other", isDefault: true })]),
         createDiary: vi.fn(),
         updateDiary: vi.fn(),
         deleteDiary: vi.fn().mockResolvedValue({ success: true }),

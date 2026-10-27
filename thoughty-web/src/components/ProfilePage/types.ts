@@ -1,4 +1,5 @@
 import type { TranslationFunction } from '../../types';
+import type { User } from '../../contexts/authTypes';
 
 export type { TranslationFunction };
 
@@ -34,13 +35,8 @@ export interface ProfileConfig {
   paymentMethodLabel?: string;
 }
 
-export interface ProfileUser {
-  username?: string;
-  email?: string;
-  avatarUrl?: string;
-  authProvider?: 'local' | 'google';
-  emailVerified?: boolean;
-}
+/** The signed-in user's fields the profile page reads. */
+export type ProfileUser = Partial<Pick<User, 'username' | 'email' | 'avatarUrl' | 'authProvider' | 'emailVerified'>>;
 
 export interface ProfileStats {
   firstEntryYear?: number;

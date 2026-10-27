@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RecycleBinPage as RecycleBinPageData, TrashedEntry } from '../../services/api';
+import { makeDiary } from '../../test/diaryFixture';
 import { createTestQueryClient } from '../../test/queryClient';
 import RecycleBinPage, { type RecycleBinPageProps } from './RecycleBinPage';
 
@@ -54,7 +55,7 @@ function renderPage(props: Partial<RecycleBinPageProps> = {}) {
     <QueryClientProvider client={createTestQueryClient()}>
       <RecycleBinPage
         language="en"
-        diaries={[{ id: 1, name: 'Journal', icon: '📓', visibility: 'private', is_default: true }]}
+        diaries={[makeDiary({ id: 1, name: 'Journal', isDefault: true })]}
         page={1}
         t={t}
         {...handlers}

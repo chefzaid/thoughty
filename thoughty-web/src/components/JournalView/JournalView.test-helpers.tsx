@@ -2,6 +2,7 @@ import { vi } from 'vitest';
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import type JournalView from './JournalView';
 import type { Config, Entry, Diary, GroupedEntries } from '../../types';
+import { makeDiary } from '../../test/diaryFixture';
 
 type SubmitEvent = Parameters<NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>>[0];
 
@@ -148,8 +149,8 @@ export const mockConfig: Config = {
 };
 
 export const mockDiaries: Diary[] = [
-  { id: 1, name: 'Personal', icon: '📓', visibility: 'private', is_default: true },
-  { id: 2, name: 'Work', icon: '💼', visibility: 'private', is_default: false },
+  makeDiary({ id: 1, name: 'Personal', icon: '📓', isDefault: true }),
+  makeDiary({ id: 2, name: 'Work', icon: '💼' }),
 ];
 
 export const mockEntries: [Entry, Entry] = [

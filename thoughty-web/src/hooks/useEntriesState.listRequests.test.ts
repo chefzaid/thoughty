@@ -3,6 +3,7 @@ import { act, waitFor } from "@testing-library/react";
 import { useDiaries, useEntries } from "./useAppState";
 import { renderHook } from "./hookTestUtils";
 import type { Config } from "../types";
+import { makeDiary } from "../test/diaryFixture";
 
 const services = vi.hoisted(() => ({
   fetchEntries: vi.fn(),
@@ -147,8 +148,8 @@ describe("default diary selection readiness", () => {
 
   it("becomes ready in the same render the default diary is picked", async () => {
     services.fetchDiaries.mockResolvedValue([
-      { id: 1, name: "Default", is_default: true },
-      { id: 2, name: "Work", is_default: false },
+      makeDiary({ id: 1, name: "Default", isDefault: true }),
+      makeDiary({ id: 2, name: "Work" }),
     ]);
     const seen: Array<{ ready: boolean; diaryId: number | null }> = [];
 

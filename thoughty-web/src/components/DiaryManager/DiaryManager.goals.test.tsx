@@ -3,10 +3,11 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { getTranslation, type Language } from '../../utils/translations';
 import DiaryManager from './DiaryManager';
+import { makeDiary } from '../../test/diaryFixture';
 
 const diaries = [
-    { id: 1, name: 'Personal', icon: '📓', color: '#E76F51', is_default: true, visibility: 'private' as const },
-    { id: 2, name: 'Work', icon: '💼', color: '#2A9D8F', visibility: 'public' as const, goalType: 'entries_per_week' as const, goalTarget: 3 },
+    makeDiary({ id: 1, name: 'Personal', icon: '📓', color: '#E76F51', isDefault: true, visibility: 'private' }),
+    makeDiary({ id: 2, name: 'Work', icon: '💼', color: '#2A9D8F', visibility: 'public', goalType: 'entries_per_week', goalTarget: 3 }),
 ];
 
 const renderManager = (language: Language = 'en') => {

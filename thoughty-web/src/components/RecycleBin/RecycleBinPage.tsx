@@ -108,7 +108,7 @@ function RecycleBinPage({ theme, language: rawLanguage, diaries, page, onChangeP
   const [pending, setPending] = useState<PendingConfirmation>(null);
   const [notice, setNotice] = useState<Notice>(null);
   const data = bin.data;
-  const defaultDiaryName = diaries.find((diary) => diary.is_default)?.name ?? t('recycleBinDefaultDiary');
+  const defaultDiaryName = diaries.find((diary) => diary.isDefault)?.name ?? t('recycleBinDefaultDiary');
   const entries = (count: number) => binCountPhrase(t, 'recycleBinEntries', count, language);
 
   // A page emptied by restoring or deleting gives way to the last page that still has entries

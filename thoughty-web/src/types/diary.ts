@@ -1,30 +1,15 @@
-// Diary-related types
+// Diary-related types, derived from the API contract so a renamed field fails the type check
+
+import type { components } from '../generated/openapi';
+
+/** A diary as `GET /api/diaries` returns it. */
+export type Diary = components['schemas']['DiaryResponseDto'];
 
 /** A writing goal: entries each Monday-to-Sunday week, or words each day. */
-export type DiaryGoalType = 'entries_per_week' | 'words_per_day';
+export type DiaryGoalType = NonNullable<Diary['goalType']>;
 
-export interface Diary {
-  id: number;
-  name: string;
-  icon: string;
-  color?: string | null;
-  visibility: 'public' | 'private';
-  description?: string;
-  is_default?: boolean;
-  position?: number;
-  goalType?: DiaryGoalType | null;
-  goalTarget?: number | null;
-  user_id?: number;
-  created_at?: string;
-  updated_at?: string;
-}
+/** What the diary form sends to create a diary. */
+export type DiaryFormData = components['schemas']['CreateDiaryDto'];
 
-export interface DiaryFormData {
-  name: string;
-  icon: string;
-  color?: string | null;
-  description?: string;
-  visibility?: 'public' | 'private';
-  goalType?: DiaryGoalType | null;
-  goalTarget?: number | null;
-}
+/** What the diary form sends to update a diary. */
+export type DiaryUpdateData = components['schemas']['UpdateDiaryDto'];

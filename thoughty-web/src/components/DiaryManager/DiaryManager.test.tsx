@@ -1,22 +1,15 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { getTranslation } from '../../utils/translations';
 import DiaryManager from './DiaryManager';
+import { makeDiary } from '../../test/diaryFixture';
+import type { Diary } from '../../types';
 
 const mockT = (key: string): string => key;
 
-interface Diary {
-    id: number;
-    name: string;
-    icon: string;
-    color?: string | null;
-    is_default: boolean;
-    visibility: 'public' | 'private';
-}
-
 const defaultDiaries: Diary[] = [
-    { id: 1, name: 'Personal', icon: '📓', color: '#E76F51', is_default: true, visibility: 'private' },
-    { id: 2, name: 'Work', icon: '💼', color: '#2A9D8F', is_default: false, visibility: 'public' }
+    makeDiary({ id: 1, name: 'Personal', icon: '📓', color: '#E76F51', isDefault: true, visibility: 'private' }),
+    makeDiary({ id: 2, name: 'Work', icon: '💼', color: '#2A9D8F', isDefault: false, visibility: 'public' })
 ];
 
 describe('DiaryManager', () => {
@@ -50,6 +43,18 @@ describe('DiaryManager', () => {
     it('shows default badge', () => {
         render(<DiaryManager {...baseProps} />);
         expect(screen.getByText('defaultDiary')).toBeInTheDocument();
+    });
+
+    it('offers no Set as Default or Delete on the default diary the API marks with isDefault', () => {
+        render(<DiaryManager {...baseProps} />);
+        const defaultCard = screen.getByText('Personal').closest('li') as HTMLElement;
+        const otherCard = screen.getByText('Work').closest('li') as HTMLElement;
+
+        expect(defaultCard).toHaveClass('default');
+        expect(within(defaultCard).queryByTitle('setAsDefault')).not.toBeInTheDocument();
+        expect(within(defaultCard).queryByTitle('delete')).not.toBeInTheDocument();
+        expect(within(otherCard).getByTitle('setAsDefault')).toBeInTheDocument();
+        expect(within(otherCard).getByTitle('delete')).toBeInTheDocument();
     });
 
     it('creates new diary', async () => {

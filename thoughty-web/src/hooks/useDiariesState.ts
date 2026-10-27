@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Diary } from '../types';
+import type { Diary, DiaryFormData, DiaryUpdateData } from '../types';
 import { useApiServices } from './useApiServices';
 
 const DIARIES_QUERY_KEY = ['app', 'diaries'] as const;
@@ -56,18 +56,18 @@ export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelecti
     hasInitializedDiarySelection.current = true;
 
     if (!suppressDefaultDiarySelection && currentDiaryId === null && diaries.length > 0) {
-      const defaultDiary = diaries.find(d => d.is_default);
+      const defaultDiary = diaries.find(d => d.isDefault);
       if (defaultDiary) setCurrentDiaryId(defaultDiary.id);
     }
   }, [currentDiaryId, diaries, diariesQuery.isFetched, suppressDefaultDiarySelection]);
 
-  const handleCreateDiary = useCallback(async (diaryData: Partial<Diary>) => {
+  const handleCreateDiary = useCallback(async (diaryData: DiaryFormData) => {
     const result = await diariesService.createDiary(diaryData);
     if (!result.success) throw new Error(result.error);
     await queryClient.invalidateQueries({ queryKey: DIARIES_QUERY_KEY });
   }, [diariesService, queryClient]);
 
-  const handleUpdateDiary = useCallback(async (id: number, diaryData: Partial<Diary>) => {
+  const handleUpdateDiary = useCallback(async (id: number, diaryData: DiaryUpdateData) => {
     const result = await diariesService.updateDiary(id, diaryData);
     if (!result.success) throw new Error(result.error);
     queryClient.setQueryData<Diary[]>(DIARIES_QUERY_KEY, (previousDiaries = []) => (
@@ -80,7 +80,7 @@ export const useDiaries = (isAuthenticated: boolean, suppressDefaultDiarySelecti
     const result = await diariesService.deleteDiary(id);
     if (!result.success) throw new Error(result.error);
     if (currentDiaryId === id) {
-      const defaultDiary = diaries.find(d => d.is_default);
+      const defaultDiary = diaries.find(d => d.isDefault);
       setCurrentDiaryId(defaultDiary?.id || null);
     }
     await queryClient.invalidateQueries({ queryKey: DIARIES_QUERY_KEY });

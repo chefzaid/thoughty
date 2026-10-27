@@ -69,12 +69,12 @@ describe('diariesService', () => {
         json: () => Promise.resolve({ id: 1, name: 'New Diary' }),
       });
 
-      const result = await service.createDiary({ name: 'New Diary', icon: '📓' });
+      const result = await service.createDiary({ name: 'New Diary', icon: '📓', visibility: 'private' });
 
       expect(result).toEqual({ success: true });
       expect(mockAuthFetch).toHaveBeenCalledWith('/api/diaries', {
         method: 'POST',
-        body: JSON.stringify({ name: 'New Diary', icon: '📓' }),
+        body: JSON.stringify({ name: 'New Diary', icon: '📓', visibility: 'private' }),
       });
     });
 
@@ -84,7 +84,7 @@ describe('diariesService', () => {
         json: () => Promise.resolve({ error: 'Name already exists' }),
       });
 
-      const result = await service.createDiary({ name: 'Existing Diary' });
+      const result = await service.createDiary({ name: 'Existing Diary', icon: '📓', visibility: 'private' });
 
       expect(result).toEqual({ success: false, error: 'Name already exists' });
     });
@@ -95,7 +95,7 @@ describe('diariesService', () => {
         json: () => Promise.resolve({}),
       });
 
-      const result = await service.createDiary({ name: 'New Diary' });
+      const result = await service.createDiary({ name: 'New Diary', icon: '📓', visibility: 'private' });
 
       expect(result).toEqual({ success: false, error: 'diaryCreateFailed' });
     });
@@ -104,7 +104,7 @@ describe('diariesService', () => {
       mockAuthFetch.mockRejectedValue(new Error('Network error'));
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const result = await service.createDiary({ name: 'New Diary' });
+      const result = await service.createDiary({ name: 'New Diary', icon: '📓', visibility: 'private' });
 
       expect(result).toEqual({ success: false, error: 'diaryCreateFailed' });
       consoleSpy.mockRestore();

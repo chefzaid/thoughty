@@ -1,3 +1,4 @@
+import type { components } from '../../generated/openapi';
 import type { CloudExportFormat, ImportExportFormat, ImportExportSection, TranslationFunction } from '../../types';
 import type { CloudProviderType } from '../../services/api/cloudSyncService';
 import type { Language } from '../../utils/translations';
@@ -93,34 +94,10 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
     coverImage: null,
 };
 
-export interface BookChapterPreview {
-    title: string;
-    entryCount: number;
-    firstDate: string;
-    lastDate: string;
-}
-
-export interface BookPreviewData {
-    title: string;
-    author?: string;
-    chapterCount: number;
-    entryCount: number;
-    chapters: BookChapterPreview[];
-}
-
-export interface BookVersionData {
-    id: number;
-    versionNumber: number;
-    title: string;
-    author?: string;
-    format: BookFormat;
-    filename: string;
-    chapterCount: number;
-    entryCount: number;
-    addedEntryCount: number;
-    addedChapterTitles: string[];
-    createdAt: string;
-}
+// Book responses, derived from the API contract so a renamed field fails the type check
+export type BookChapterPreview = components['schemas']['BookChapterPreviewDto'];
+export type BookPreviewData = components['schemas']['BookPreviewResponseDto'];
+export type BookVersionData = components['schemas']['BookVersionResponseDto'];
 
 export function createProviderRecord<T>(value: T): Record<CloudProviderType, T> {
     return Object.fromEntries(CLOUD_PROVIDERS.map((provider) => [provider, value])) as Record<CloudProviderType, T>;

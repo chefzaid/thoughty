@@ -3,23 +3,11 @@ import HighlightCard from './HighlightCard';
 import './ThoughtOfTheDay.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
+import type { components } from '../../generated/openapi';
 
-interface Entry {
-    id: number;
-    title?: string | null;
-    content: string;
-    date: string;
-    index?: number;
-    tags?: string[];
-    format?: 'plain' | 'markdown';
-    diary_name?: string;
-    diary_icon?: string;
-}
-
-interface Highlights {
-    randomEntry?: Entry;
-    onThisDay?: Record<string, Entry[]>;
-}
+/** What `GET /api/entries/highlights` returns. */
+type Highlights = components['schemas']['EntryHighlightsResponseDto'];
+type Entry = components['schemas']['EntryResponseDto'];
 
 interface SourceEntryInfo {
     id: number;
@@ -99,8 +87,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
             if (diaryId) params.append('diaryId', diaryId.toString());
             const response = await authFetch(`/api/entries/highlights?${params}`);
             if (!response.ok) throw new Error('Failed to fetch highlights');
-            const data = await response.json();
-            setHighlights(data);
+            setHighlights(await response.json() as Highlights);
             setError(null);
         } catch (err) {
             console.error('Error fetching highlights:', err);

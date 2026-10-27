@@ -3,28 +3,13 @@ import './DiaryManager.css';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import DiaryGoalField from './DiaryGoalField';
 import DiaryIconPicker from './DiaryIconPicker';
-import type { DiaryGoalType } from '../../types';
+import type { Diary as ApiDiary, DiaryFormData } from '../../types';
 import { DEFAULT_DIARY_COLORS, normalizeDiaryColor, resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
-import { describeDiaryGoal, diaryGoalDraft, NO_DIARY_GOAL, readDiaryGoal, type DiaryGoalFields } from '../../utils/diaryGoals';
+import { describeDiaryGoal, diaryGoalDraft, NO_DIARY_GOAL, readDiaryGoal } from '../../utils/diaryGoals';
 import { resolveLanguage } from '../../utils/language';
 
-interface Diary {
-    id: number;
-    name: string;
-    icon: string;
-    color?: string | null;
-    visibility: 'public' | 'private';
-    is_default?: boolean;
-    goalType?: DiaryGoalType | null;
-    goalTarget?: number | null;
-}
-
-interface DiaryFormData extends DiaryGoalFields {
-    name: string;
-    icon: string;
-    color?: string | null;
-    visibility: 'public' | 'private';
-}
+/** The diary fields Manage Diaries reads. */
+type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'visibility' | 'isDefault' | 'goalType' | 'goalTarget'>;
 
 const DEFAULT_NEW_DIARY_COLOR = DEFAULT_DIARY_COLORS[0] ?? '#E76F51';
 
@@ -172,7 +157,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
     };
 
     const handleDelete = (diary: Diary): void => {
-        if (diary.is_default) {
+        if (diary.isDefault) {
             setError('diaryDefaultDeleteBlocked');
             return;
         }
@@ -327,7 +312,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                         {diaries.map((diary, index) => (
                             <li
                                 key={diary.id}
-                                className={`diary-card ${diary.is_default ? 'default' : ''} ${editingDiary?.id === diary.id ? 'editing' : ''}`}
+                                className={`diary-card ${diary.isDefault ? 'default' : ''} ${editingDiary?.id === diary.id ? 'editing' : ''}`}
                                 draggable={editingDiary?.id !== diary.id}
                                 onDragStart={() => handleDragStart(index)}
                                 onDragOver={(e) => handleDragOver(e, index)}
@@ -415,12 +400,12 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                                     </span>
                                                 )}
                                             </div>
-                                            {diary.is_default && (
+                                            {diary.isDefault && (
                                                 <span className="default-badge">{t('defaultDiary')}</span>
                                             )}
                                         </div>
                                         <div className="diary-actions">
-                                            {!diary.is_default && (
+                                            {!diary.isDefault && (
                                                 <button type="button"
                                                     onClick={() => handleSetDefault(diary)}
                                                     className="action-btn set-default"
@@ -436,7 +421,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
                                             >
                                                 ✏️
                                             </button>
-                                            {!diary.is_default && (
+                                            {!diary.isDefault && (
                                                 <button type="button"
                                                     onClick={() => handleDelete(diary)}
                                                     className="action-btn delete"

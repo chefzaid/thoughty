@@ -7,6 +7,7 @@ import { vi } from 'vitest';
 import App from '../App';
 import AppShell from '../AppShell';
 import { createTestQueryClient } from './queryClient';
+import { makeDiary } from './diaryFixture';
 
 vi.mock('react-chartjs-2', () => ({
   Bar: () => <div data-testid="bar-chart" />,
@@ -142,7 +143,7 @@ export function createDefaultFetchResponse(url: string) {
     return createJsonResponse(mockEntriesResponse);
   }
   if (url.includes('/api/diaries')) {
-    return createJsonResponse([{ id: 1, name: 'My Diary', is_default: true }]);
+    return createJsonResponse([makeDiary({ id: 1, name: 'My Diary', isDefault: true })]);
   }
   if (url.includes('/api/stats')) {
     return createJsonResponse(mockStatsResponse);

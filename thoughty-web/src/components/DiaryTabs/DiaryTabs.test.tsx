@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import DiaryTabs from './DiaryTabs';
+import { makeDiary } from '../../test/diaryFixture';
 
 describe('DiaryTabs', () => {
   const mockT = (key: string) => key;
@@ -8,9 +9,9 @@ describe('DiaryTabs', () => {
   const mockOnManageDiaries = vi.fn();
 
   const mockDiaries = [
-    { id: 1, name: 'Personal', icon: '📔', color: '#E76F51', is_default: true },
-    { id: 2, name: 'Work', icon: '💼', color: '#2A9D8F', is_default: false },
-    { id: 3, name: 'Travel', color: '#3A86FF', is_default: false }
+    makeDiary({ id: 1, name: 'Personal', icon: '📔', color: '#E76F51', isDefault: true }),
+    makeDiary({ id: 2, name: 'Work', icon: '💼', color: '#2A9D8F', isDefault: false }),
+    makeDiary({ id: 3, name: 'Travel', icon: '', color: '#3A86FF', isDefault: false })
   ];
 
   const defaultProps = {

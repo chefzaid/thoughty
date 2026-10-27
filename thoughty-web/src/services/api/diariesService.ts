@@ -1,5 +1,5 @@
 import { readApiErrorMessage, safeJsonParse } from './base';
-import type { Diary } from '../../types';
+import type { Diary, DiaryFormData, DiaryUpdateData } from '../../types';
 
 export const createDiariesService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
   /**
@@ -22,7 +22,7 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
   /**
    * Create a new diary
    */
-  const createDiary = async (diaryData: Partial<Diary>): Promise<{ success: boolean; error?: string }> => {
+  const createDiary = async (diaryData: DiaryFormData): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await authFetch('/api/diaries', {
         method: 'POST',
@@ -41,7 +41,7 @@ export const createDiariesService = (authFetch: (url: string, options?: RequestI
   /**
    * Update a diary
    */
-  const updateDiary = async (id: number, diaryData: Partial<Diary>): Promise<{ success: boolean; error?: string }> => {
+  const updateDiary = async (id: number, diaryData: DiaryUpdateData): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await authFetch(`/api/diaries/${id}`, {
         method: 'PUT',

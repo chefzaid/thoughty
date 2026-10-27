@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MemoirOverview, MemoirProgram } from '../../services/api';
+import { makeDiary } from '../../test/diaryFixture';
 import { createTestQueryClient } from '../../test/queryClient';
 import MemoirPage, { type MemoirPageProps } from './MemoirPage';
 
@@ -61,8 +62,8 @@ const overview = (programOverrides: Partial<MemoirProgram> | null = {}, answered
 });
 
 const diaries = [
-  { id: 6, name: 'My memoir', icon: '📖', visibility: 'private' as const },
-  { id: 2, name: 'Thoughts', icon: '💭', visibility: 'private' as const },
+  makeDiary({ id: 6, name: 'My memoir', icon: '📖' }),
+  makeDiary({ id: 2, name: 'Thoughts', icon: '💭' }),
 ];
 
 function renderPage(props: Partial<MemoirPageProps> = {}) {

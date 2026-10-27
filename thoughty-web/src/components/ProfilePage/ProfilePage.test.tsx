@@ -63,7 +63,7 @@ type MockAuthValue = ReturnType<typeof useAuth>;
 
 function createAuthValue(overrides: Partial<MockAuthValue> = {}): MockAuthValue {
     return {
-        user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local' },
+        user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local', emailVerified: false, twoFactorEnabled: false },
         loading: false,
         error: null,
         isAuthenticated: true,
@@ -182,7 +182,7 @@ describe('ProfilePage', () => {
 
         it('displays verified account status for verified users', () => {
             mockedUseAuth.mockReturnValue(createAuthValue({
-                user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local', emailVerified: true },
+                user: { id: 1, username: 'johndoe', email: 'john@example.com', authProvider: 'local', emailVerified: true, twoFactorEnabled: false },
             }));
 
             render(<ProfilePage {...defaultProps} />);

@@ -1,14 +1,10 @@
 import type { CSSProperties } from 'react';
 import './DiaryTabs.css';
 import { resolveDiaryColor, withAlpha } from '../../utils/diaryColors';
+import type { Diary as ApiDiary } from '../../types';
 
-interface Diary {
-    id: number;
-    name: string;
-    icon?: string;
-    color?: string | null;
-    is_default?: boolean;
-}
+/** The diary fields the tabs read. */
+type Diary = Pick<ApiDiary, 'id' | 'name' | 'icon' | 'color' | 'isDefault'>;
 
 interface DiaryTabsProps {
     readonly diaries: Diary[];
@@ -50,7 +46,7 @@ function DiaryTabs({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, th
                         <button
                             key={diary.id}
                             type="button"
-                            className={`diary-tab ${currentDiaryId === diary.id ? 'active' : ''} ${diary.is_default ? 'default' : ''}`}
+                            className={`diary-tab ${currentDiaryId === diary.id ? 'active' : ''} ${diary.isDefault ? 'default' : ''}`}
                             onClick={() => { onDiaryChange(diary.id); }}
                             title={diary.name}
                             style={{
@@ -61,7 +57,7 @@ function DiaryTabs({ diaries, currentDiaryId, onDiaryChange, onManageDiaries, th
                             <span className="diary-icon">{diary.icon || '📓'}</span>
                             <span className="diary-accent-dot" />
                             <span className="diary-name">{diary.name}</span>
-                            {diary.is_default && <span className="default-badge">★</span>}
+                            {diary.isDefault && <span className="default-badge">★</span>}
                         </button>
                     );
                 })}

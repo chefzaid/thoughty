@@ -1,15 +1,12 @@
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  displayName?: string;
-  fullName?: string;
-  avatarUrl?: string;
-  isNewUser?: boolean;
-  authProvider?: 'local' | 'google' | 'keycloak';
-  emailVerified?: boolean;
-  twoFactorEnabled?: boolean;
-}
+import type { components } from '../generated/openapi';
+
+type Schemas = components['schemas'];
+
+/**
+ * The signed-in user: what a new session reports, plus the avatar `GET /api/auth/me` adds.
+ * Derived from the API contract so a renamed field fails the type check.
+ */
+export type User = Schemas['AuthUserDto'] & Partial<Pick<Schemas['UserResponseDto'], 'avatarUrl'>>;
 
 export interface AuthResult {
   success: boolean;
