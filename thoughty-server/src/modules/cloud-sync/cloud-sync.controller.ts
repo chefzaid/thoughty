@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { Controller, Get, Post, Delete, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Body, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CloudSyncService } from './cloud-sync.service';
 import {
@@ -39,6 +39,7 @@ export class CloudSyncController {
   }
 
   @Post('auth-url')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get OAuth authorization URL for a provider' })
   @ApiResponse({ status: 200, description: 'Authorization URL', type: CloudAuthUrlResponseDto })
   async getAuthUrl(@Body() dto: CloudAuthUrlDto): Promise<CloudAuthUrlResponseDto> {
@@ -47,6 +48,7 @@ export class CloudSyncController {
   }
 
   @Post('connect')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Connect a cloud provider with OAuth code' })
   @ApiResponse({ status: 200, description: 'Provider connected', type: CloudConnectResponseDto })
   async connect(
@@ -57,6 +59,7 @@ export class CloudSyncController {
   }
 
   @Post('disconnect')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Disconnect a cloud provider' })
   @ApiResponse({ status: 200, description: 'Provider disconnected', type: SuccessResponseDto })
   async disconnect(
@@ -77,6 +80,7 @@ export class CloudSyncController {
   }
 
   @Post('upload')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Export and upload journal to cloud storage' })
   @ApiResponse({ status: 200, description: 'File uploaded', type: CloudFileInfoDto })
   async upload(
@@ -87,6 +91,7 @@ export class CloudSyncController {
   }
 
   @Post('download')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Download a file from cloud storage' })
   @ApiResponse({ status: 200, description: 'File content', type: CloudDownloadResponseDto })
   async download(
@@ -104,6 +109,7 @@ export class CloudSyncController {
   }
 
   @Post('schedule')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Set or update a sync schedule' })
   @ApiResponse({ status: 200, description: 'Schedule configured', type: SuccessResponseDto })
   async setSchedule(
@@ -131,6 +137,7 @@ export class CloudSyncController {
   }
 
   @Post('sync')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Trigger a diff-based sync (uploads only if content has changed)' })
   @ApiResponse({ status: 200, description: 'Sync result', type: DiffSyncResponseDto })
   async triggerSync(

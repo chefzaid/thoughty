@@ -52,7 +52,7 @@ describe('EntriesController JSON bodies over HTTP', () => {
   });
 
   it('reads the entry IDs and target diary of a bulk move', async () => {
-    await request(app.getHttpServer()).post('/api/entries/bulk').send({ ids: [4, '5'], action: 'move', diaryId: '2' }).expect(201);
+    await request(app.getHttpServer()).post('/api/entries/bulk').send({ ids: [4, '5'], action: 'move', diaryId: '2' }).expect(200);
 
     expect(entriesService.bulkOperation).toHaveBeenCalledWith(HTTP_SPEC_USER.userId, expect.objectContaining({ ids: [4, 5], diaryId: 2 }));
   });

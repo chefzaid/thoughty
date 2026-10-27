@@ -10,6 +10,7 @@ import {
   Logger,
   UploadedFiles,
   UseInterceptors,
+  HttpStatus,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
@@ -61,6 +62,7 @@ export class IoController {
   }
 
   @Post('format')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Save file format settings' })
   @ApiResponse({ status: 200, description: 'Settings saved', type: SaveFormatResponseDto })
   async saveFormat(
@@ -91,6 +93,7 @@ export class IoController {
   }
 
   @Post('preview')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Preview import - parse file and check for duplicates' })
   @ApiResponse({ status: 200, description: 'Parsed entries with duplicate info', type: PreviewResponseDto })
   async preview(
@@ -101,6 +104,7 @@ export class IoController {
   }
 
   @Post('import')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Import entries from parsed content' })
   @ApiResponse({ status: 200, description: 'Import results', type: ImportResponseDto })
   async import(
@@ -111,7 +115,7 @@ export class IoController {
   }
 
   @Post('import/entries')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.importWrite))
   @ApiOperation({ summary: 'Import a batch of entries from another journaling app (Day One, Journey)' })
   @ApiResponse({ status: 200, description: 'Entry ID for each source entry', type: AppImportResponseDto })
@@ -123,7 +127,7 @@ export class IoController {
   }
 
   @Post('import/attachments')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.importWrite))
   @ApiOperation({ summary: 'Attach photos and recordings from an app import to their entries' })
   @ApiConsumes('multipart/form-data')

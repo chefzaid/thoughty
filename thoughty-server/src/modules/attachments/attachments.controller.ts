@@ -11,6 +11,8 @@ import {
   UploadedFile,
   Res,
   NotFoundException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -81,6 +83,7 @@ export class AttachmentsController {
   }
 
   @Post(':id/link')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Link an attachment to an entry' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Attachment linked to entry', type: AttachmentRecordResponseDto })

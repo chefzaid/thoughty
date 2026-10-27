@@ -20,9 +20,9 @@ describe('CloudSyncController JSON bodies over HTTP', () => {
   afterAll(async () => app.close());
 
   it('uploads one diary, read from a number or digits, or every diary when it is left out', async () => {
-    await request(app.getHttpServer()).post('/api/cloud-sync/upload').send({ provider: 'dropbox', diaryId: 3 }).expect(201);
-    await request(app.getHttpServer()).post('/api/cloud-sync/upload').send({ provider: 'dropbox', diaryId: '4' }).expect(201);
-    await request(app.getHttpServer()).post('/api/cloud-sync/upload').send({ provider: 'dropbox' }).expect(201);
+    await request(app.getHttpServer()).post('/api/cloud-sync/upload').send({ provider: 'dropbox', diaryId: 3 }).expect(200);
+    await request(app.getHttpServer()).post('/api/cloud-sync/upload').send({ provider: 'dropbox', diaryId: '4' }).expect(200);
+    await request(app.getHttpServer()).post('/api/cloud-sync/upload').send({ provider: 'dropbox' }).expect(200);
 
     expect(cloudSyncService.uploadExport.mock.calls.map((call) => call.slice(0, 3))).toEqual([
       [HTTP_SPEC_USER.userId, 'dropbox', 3],

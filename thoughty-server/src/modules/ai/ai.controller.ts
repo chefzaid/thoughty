@@ -8,6 +8,8 @@ import {
   Post,
   Put,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
@@ -111,6 +113,7 @@ export class AiController {
   }
 
   @Post('suggest-tags')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Suggest tags for journal content using OpenRouter' })
   @ApiResponse({ status: 200, description: 'Suggested tags returned successfully', type: SuggestTagsResponseDto })
   async suggestTags(
@@ -121,6 +124,7 @@ export class AiController {
   }
 
   @Post('fix-writing')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Fix grammar, spelling, and style in journal content using OpenRouter' })
   @ApiResponse({ status: 200, description: 'Corrected content returned successfully', type: FixWritingResponseDto })
   async fixWriting(
@@ -131,6 +135,7 @@ export class AiController {
   }
 
   @Post('summarize')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Summarize a journal entry with optional detail guidance' })
   @ApiResponse({
     status: 200,
@@ -145,6 +150,7 @@ export class AiController {
   }
 
   @Post('inspiration')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Ask a reflective journal question based on the user tags' })
   @ApiResponse({
     status: 200,
@@ -159,6 +165,7 @@ export class AiController {
   }
 
   @Post('duplicates')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Find high-confidence semantic duplicate journal entries' })
   @ApiResponse({
     status: 200,
@@ -173,6 +180,7 @@ export class AiController {
   }
 
   @Post('semantic-search')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Search owned journal entries by semantic similarity' })
   @ApiResponse({
     status: 200,
@@ -214,6 +222,7 @@ export class AiController {
   }
 
   @Post('chat')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Chat about a journal entry with AI for analysis or discussion' })
   @ApiResponse({
     status: 200,

@@ -10,6 +10,8 @@ import {
   Query,
   ParseIntPipe,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { EntriesService } from './entries.service';
@@ -157,6 +159,7 @@ export class EntriesController {
   }
 
   @Post('bulk')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Perform bulk operations on entries' })
   @ApiResponse({
     status: 200,

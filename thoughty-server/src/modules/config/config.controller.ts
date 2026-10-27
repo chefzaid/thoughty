@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, Res, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ConfigService } from './config.service';
 import { UserDataExportService } from './user-data-export.service';
@@ -33,6 +33,7 @@ export class ConfigController {
   }
 
   @Post()
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Update user configuration',
     description:
