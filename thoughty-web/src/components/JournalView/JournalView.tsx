@@ -154,6 +154,7 @@ function JournalView({
         diaryId={thoughtOfDay.diaryId}
         onNavigateToEntry={thoughtOfDay.onNavigateToEntry}
         theme={config.theme}
+        language={language}
         t={t}
       />
 

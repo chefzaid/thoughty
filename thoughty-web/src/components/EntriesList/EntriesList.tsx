@@ -34,6 +34,7 @@ interface EntriesListProps {
     onTogglePinned: (entry: Entry) => void;
     /** Ticks a task list item of a Markdown entry, by its line in the text. */
     onToggleTask?: (entry: Entry, line: number, checked: boolean) => void;
+    onUnseal?: (entry: Entry) => void;
     editingEntry: Entry | null;
     editText: string;
     setEditText: Dispatch<SetStateAction<string>>;
@@ -101,6 +102,7 @@ function EntriesList({
     onToggleArchived,
     onTogglePinned,
     onToggleTask,
+    onUnseal,
     editingEntry,
     editText,
     setEditText,
@@ -463,6 +465,7 @@ function EntriesList({
                                                     onToggleArchived={onToggleArchived}
                                                     onTogglePinned={onTogglePinned}
                                                     onToggleTask={onToggleTask}
+                                                    onUnseal={onUnseal}
                                                     onEdit={onEdit}
                                                     onDelete={onDelete}
                                                     onNavigateToEntry={onNavigateToEntry}

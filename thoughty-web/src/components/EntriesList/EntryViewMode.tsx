@@ -19,6 +19,7 @@ import {
     EntryHeaderBadges,
 } from './EntryViewModeSections';
 import useEntryViewModeState from './useEntryViewModeState';
+import SealedEntryCard from './SealedEntryCard';
 
 
 interface EntryViewModeProps {
@@ -37,6 +38,8 @@ interface EntryViewModeProps {
     onToggleArchived: (entry: Entry) => void;
     onTogglePinned: (entry: Entry) => void;
     onToggleTask?: (entry: Entry, line: number, checked: boolean) => void;
+    /** Opens a sealed time capsule early. */
+    onUnseal?: (entry: Entry) => void;
     onEdit: (entry: Entry) => void;
     onDelete: (id: number) => void;
     onNavigateToEntry: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
@@ -55,7 +58,23 @@ interface EntryViewModeProps {
     t: TranslationFn;
 }
 
-export default function EntryViewMode({
+/** An entry card's content: a sealed time capsule shows only its placeholder, any other entry all of itself. */
+export default function EntryViewMode(props: Readonly<EntryViewModeProps>) {
+    const { entry, config, showDiaryLabel, onUnseal, onDelete, t } = props;
+    return entry.sealed_until ? (
+        <SealedEntryCard
+            entry={{ ...entry, sealed_until: entry.sealed_until }}
+            theme={config.theme}
+            language={resolveLanguage(config.language)}
+            showDiaryLabel={showDiaryLabel}
+            onUnseal={onUnseal}
+            onDelete={onDelete}
+            t={t}
+        />
+    ) : <OpenEntryViewMode {...props} />;
+}
+
+function OpenEntryViewMode({
     entry,
     config,
     speaking,

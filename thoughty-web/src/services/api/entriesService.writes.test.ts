@@ -55,12 +55,27 @@ describe('entriesService', () => {
       expect(JSON.parse(String(mockAuthFetch.mock.calls[1]?.[1]?.body))).toEqual({ ...newEntry, format: 'plain' });
     });
 
-    it('returns false when response is not ok', async () => {
+    it('returns false with the error when response is not ok', async () => {
       mockAuthFetch.mockResolvedValue({ ok: false });
 
       const result = await service.createEntry(newEntry);
 
-      expect(result).toEqual({ success: false });
+      expect(result).toEqual({ success: false, error: 'entrySaveFailed' });
+    });
+
+    it('seals a time capsule as a private entry, and names a refused date by its code', async () => {
+      mockAuthFetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true, entryId: 45 }) });
+      const seal = { opensOn: '2031-10-27', openHour: 9, timeZone: 'Europe/Paris' };
+
+      await service.createEntry({ ...newEntry, visibility: 'public', seal });
+      expect(JSON.parse(String(mockAuthFetch.mock.calls[0]?.[1]?.body))).toEqual({ ...newEntry, format: 'plain', visibility: 'private', seal });
+
+      mockAuthFetch.mockResolvedValueOnce({
+        ok: false,
+        clone: () => ({ text: () => Promise.resolve(JSON.stringify({ code: 'TIME_CAPSULE_DATE_INVALID', message: 'Choose' })) }),
+        text: () => Promise.resolve(''),
+      });
+      await expect(service.createEntry({ ...newEntry, seal })).resolves.toEqual({ success: false, error: 'apiError_TIME_CAPSULE_DATE_INVALID' });
     });
 
     it('returns false on error', async () => {
@@ -325,6 +340,25 @@ describe('entriesService', () => {
       const result = await service.togglePinned(1, true);
 
       expect(result).toEqual({ success: false, error: 'Pinned entry limit reached (3)' });
+    });
+  });
+
+  describe('unsealEntry', () => {
+    it('opens a sealed entry early', async () => {
+      mockAuthFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ success: true }) });
+
+      await expect(service.unsealEntry(7)).resolves.toEqual({ success: true });
+      expect(mockAuthFetch).toHaveBeenCalledWith('/api/entries/7/unseal', { method: 'POST' });
+    });
+
+    it('answers why it could not, or a generic failure when the request fails', async () => {
+      mockAuthFetch.mockResolvedValueOnce({ ok: false });
+      await expect(service.unsealEntry(7)).resolves.toEqual({ success: false, error: 'timeCapsuleOpenFailed' });
+
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockAuthFetch.mockRejectedValueOnce(new Error('offline'));
+      await expect(service.unsealEntry(7)).resolves.toEqual({ success: false, error: 'timeCapsuleOpenFailed' });
+      consoleSpy.mockRestore();
     });
   });
 

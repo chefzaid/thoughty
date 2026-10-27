@@ -5,6 +5,7 @@ import type { RecycleBinRestoreResult, ServiceResult, TrashedEntry } from '../..
 import type { Diary, TranslationFunction } from '../../types';
 import { formatTimeOfDay } from '../../utils/entryTime';
 import { resolveLanguage } from '../../utils/language';
+import { formatTimeCapsuleMoment } from '../../utils/timeCapsule';
 import type { Language } from '../../utils/translations';
 import {
   binCountPhrase,
@@ -64,7 +65,13 @@ function TrashedEntryCard({ entry, defaultDiaryName, language, busy, onRestore, 
           </span>
         </header>
         {entry.title && <p className="recycle-bin-title">{entry.title}</p>}
-        <p className="recycle-bin-excerpt">{binExcerpt(entry.content)}</p>
+        {entry.sealedUntil ? (
+          <p className="recycle-bin-excerpt">
+            {t('timeCapsuleSealedLabel')} · {t('timeCapsuleSealedUntil', { date: formatTimeCapsuleMoment(entry.sealedUntil, language) })}
+          </p>
+        ) : (
+          <p className="recycle-bin-excerpt">{binExcerpt(entry.content)}</p>
+        )}
         <p className="recycle-bin-meta">
           <span>{t('recycleBinDeletedOn', { date: formatDeletedOn(entry.deletedAt, language) })}</span>
           <span className={daysLeft <= 3 ? 'recycle-bin-soon' : undefined}>

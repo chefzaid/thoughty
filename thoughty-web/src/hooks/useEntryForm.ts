@@ -3,6 +3,7 @@ import type { Attachment, Config } from '../types';
 import { getAutoTagLimit } from '../utils/autoTagLimit';
 import { formatEntryDate } from '../utils/entryDate';
 import { cleanEntryTitle } from '../utils/entryTime';
+import { browserTimeZone, isValidTimeCapsuleDate, type TimeCapsuleDraft } from '../utils/timeCapsule';
 import { useApiServices } from './useApiServices';
 import { useEntryTagSuggestions } from './useEntryTagSuggestions';
 
@@ -18,6 +19,8 @@ export const useEntryForm = (
   const [timeOfDay, setTimeOfDay] = useState<string>('');
   const [mood, setMood] = useState<number | null>(null);
   const [feelings, setFeelings] = useState<string[]>([]);
+  /** Set when the entry is sealed as a time capsule. */
+  const [timeCapsule, setTimeCapsule] = useState<TimeCapsuleDraft | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [visibility, setVisibility] = useState<'public' | 'private' | null>(null);
@@ -36,6 +39,7 @@ export const useEntryForm = (
     setTimeOfDay('');
     setMood(null);
     setFeelings([]);
+    setTimeCapsule(null);
     setTags([]);
     setFormat('plain');
     setVisibility(config.defaultVisibility || 'private');
@@ -50,8 +54,11 @@ export const useEntryForm = (
     if ((!tags || tags.length === 0) && autoTagLimit === 0) {
       return 'entryTagRequired';
     }
+    if (timeCapsule && !isValidTimeCapsuleDate(timeCapsule.opensOn, new Date())) {
+      return 'timeCapsuleDateRequired';
+    }
     return '';
-  }, [newEntryText, tags, autoTagLimit]);
+  }, [newEntryText, tags, autoTagLimit, timeCapsule]);
 
   useEffect(() => {
     if (config.defaultVisibility && visibility === null) {
@@ -80,10 +87,11 @@ export const useEntryForm = (
       visibility,
       format,
       diaryId: currentDiaryId,
+      seal: timeCapsule ? { ...timeCapsule, timeZone: browserTimeZone() } : null,
     });
 
     if (!result.success || !result.entryId) {
-      setFormError('entrySaveFailed');
+      setFormError(result.error || 'entrySaveFailed');
       return;
     }
 
@@ -103,7 +111,7 @@ export const useEntryForm = (
 
     resetEntryForm();
     onSuccess();
-  }, [attachmentsService, currentDiaryId, entriesService, feelings, format, mood, newEntryText, onSuccess, pendingFiles, resetEntryForm, selectedDate, tags, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
+  }, [attachmentsService, currentDiaryId, entriesService, feelings, format, mood, newEntryText, onSuccess, pendingFiles, resetEntryForm, selectedDate, tags, timeCapsule, timeOfDay, title, uploadedAttachments, validateEntryForm, visibility]);
 
   const addPendingFile = useCallback((file: File) => {
     setPendingFiles((prev) => [...prev, file]);
@@ -153,6 +161,8 @@ export const useEntryForm = (
     setMood,
     feelings,
     setFeelings,
+    timeCapsule,
+    setTimeCapsule,
     tags,
     setTags,
     selectedDate,

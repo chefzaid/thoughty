@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import HighlightCard from './HighlightCard';
+import OpenedCapsulesSection from './OpenedCapsulesSection';
+import type { Language } from '../../utils/translations';
 import './ThoughtOfTheDay.css';
 import { useAuth } from '../../contexts/AuthContext';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
@@ -22,6 +24,7 @@ interface ThoughtOfTheDayProps {
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly diaryId?: number | null;
     readonly onNavigateToEntry?: (date: string, index: number, sourceEntry?: SourceEntryInfo | null) => void;
+    readonly language?: Language;
 }
 
 function OnThisDaySection({
@@ -71,7 +74,7 @@ function OnThisDaySection({
     );
 }
 
-function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry }: ThoughtOfTheDayProps) {
+function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry, language = 'en' }: ThoughtOfTheDayProps) {
     const { authFetch } = useAuth();
     const modalRef = useRef<HTMLDivElement | null>(null);
     const closeButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -180,7 +183,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
             );
         }
 
-        if (!hasRandomEntry && !hasOnThisDay) {
+        if (!hasRandomEntry && !hasOnThisDay && openedCapsules.length === 0) {
             return (
                 <div className="thought-of-day-empty">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -193,6 +196,15 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
 
         return (
             <div className="thought-of-day-content">
+                {openedCapsules.length > 0 && (
+                    <OpenedCapsulesSection
+                        capsules={openedCapsules}
+                        language={language}
+                        formatDate={formatDate}
+                        onSelectEntry={handleEntryClick}
+                        t={t}
+                    />
+                )}
                 {hasRandomEntry && randomEntry && (
                     <div className="highlight-section random-thought">
                         <h3 className="section-title">
@@ -248,6 +260,7 @@ function ThoughtOfTheDay({ isOpen, onClose, theme, t, diaryId, onNavigateToEntry
     const randomEntry = highlights?.randomEntry ?? null;
     const hasRandomEntry = randomEntry !== null;
     const hasOnThisDay = highlights?.onThisDay && Object.keys(highlights.onThisDay).length > 0;
+    const openedCapsules = highlights?.openedCapsules ?? [];
 
     return (
         <div className={`thought-of-day-overlay ${themeClass}`}>

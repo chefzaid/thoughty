@@ -61,6 +61,35 @@ describe('ThoughtOfTheDay', () => {
         expect(screen.getByText('New Year walk')).toHaveClass('entry-title');
     });
 
+    it('shows newly opened time capsules first, with the day they were sealed, and opens them', async () => {
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({
+                randomEntry: null,
+                onThisDay: {},
+                openedCapsules: [
+                    { entry: { id: 9, date: '2025-10-27', index: 1, content: 'Dear future me', title: 'A letter' }, sealed_at: '2025-10-27T12:00:00Z', opened_at: '2026-10-27T07:00:00Z', opened_early: false },
+                    { entry: { id: 10, date: '2026-01-02', index: 2, content: 'Too curious' }, sealed_at: '2026-01-02T12:00:00Z', opened_at: '2026-10-26T07:00:00Z', opened_early: true },
+                ],
+            }),
+        });
+        const onNavigateToEntry = vi.fn();
+        const onClose = vi.fn();
+        const t = (key: string, params?: Record<string, string | number>) => (params ? `${key}:${Object.values(params).join(',')}` : key);
+
+        render(<ThoughtOfTheDay isOpen={true} onClose={onClose} theme="light" t={t} language="fr" onNavigateToEntry={onNavigateToEntry} />);
+
+        expect(await screen.findByText('timeCapsuleHighlightsTitle')).toBeInTheDocument();
+        expect(screen.getByText('A letter')).toBeInTheDocument();
+        expect(screen.getByText('timeCapsuleSealedOn:27 octobre 2025')).toBeInTheDocument();
+        expect(screen.getAllByText(/timeCapsuleOpenedEarly/)).toHaveLength(1);
+        expect(screen.queryByText('noHighlights')).not.toBeInTheDocument();
+
+        fireEvent.click(screen.getByRole('button', { name: /2025-10-27/ }));
+        expect(onNavigateToEntry).toHaveBeenCalledWith('2025-10-27', 1, null);
+        expect(onClose).toHaveBeenCalled();
+    });
+
     it('shows empty state when no highlights', async () => {
         (globalThis.fetch as Mock).mockResolvedValueOnce({
             ok: true,

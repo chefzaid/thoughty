@@ -38,6 +38,11 @@ export interface Entry {
   attachments?: Attachment[];
   /** With a keyword search: the words and phrases of this entry that matched, as written. */
   search_matches?: string[];
+  /**
+   * While the entry is a sealed time capsule, when it opens (ISO); its text is then empty and its title,
+   * tags, mood and attachments are left out.
+   */
+  sealed_until?: string | null;
 }
 
 /** Keyword search results come best match first, or by date as without a search. */

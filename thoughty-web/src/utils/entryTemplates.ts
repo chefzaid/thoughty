@@ -8,6 +8,8 @@ export interface EntryTemplate {
   visibility: 'public' | 'private';
   format: 'plain' | 'markdown';
   builtIn?: boolean;
+  /** A built-in letter to the future: applying it offers to seal the entry as a time capsule this many years ahead. */
+  sealYears?: number;
 }
 
 export interface EntryTemplateDraft {
@@ -117,6 +119,7 @@ const DEFAULT_ENTRY_TEMPLATES: EntryTemplate[] = [
     visibility: 'private',
     format: 'plain',
     builtIn: true,
+    sealYears: 1,
   },
   {
     id: 'builtin-unsent-letter',

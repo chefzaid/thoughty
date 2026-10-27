@@ -23,6 +23,8 @@ import type { FontFamilyPreference } from '../../types';
 import MentionSuggestions from '../People/MentionSuggestions';
 import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
 import { resolveLanguage } from '../../utils/language';
+import TimeCapsuleField from './TimeCapsuleField';
+import { defaultTimeCapsule, type TimeCapsuleDraft } from '../../utils/timeCapsule';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -40,6 +42,9 @@ interface EntryFormProps {
     readonly setMood?: Dispatch<SetStateAction<number | null>>;
     readonly feelings?: string[];
     readonly setFeelings?: Dispatch<SetStateAction<string[]>>;
+    /** The time capsule the entry is sealed as, or null; sealing keeps it private. */
+    readonly timeCapsule?: TimeCapsuleDraft | null;
+    readonly setTimeCapsule?: (value: TimeCapsuleDraft | null) => void;
     readonly selectedDate: Date;
     readonly setSelectedDate: Dispatch<SetStateAction<Date>>;
     readonly tags: string[];
@@ -105,6 +110,8 @@ function EntryForm({
     setMood,
     feelings = [],
     setFeelings,
+    timeCapsule = null,
+    setTimeCapsule,
     selectedDate,
     setSelectedDate,
     tags,
@@ -163,6 +170,14 @@ function EntryForm({
         setTags(template.tags);
         setVisibility(template.visibility);
         setFormat(template.format);
+        if (template.sealYears && setTimeCapsule) {
+            setTimeCapsule(defaultTimeCapsule(new Date(), template.sealYears));
+        }
+    };
+
+    const changeTimeCapsule = (value: TimeCapsuleDraft | null): void => {
+        setTimeCapsule?.(value);
+        if (value) setVisibility('private');
     };
 
     const saveCurrentDraftAsTemplate = async (name: string): Promise<boolean> => {
@@ -336,6 +351,9 @@ function EntryForm({
                         t={t}
                     />
                 )}
+                {setTimeCapsule && (
+                    <TimeCapsuleField id="composer-capsule" value={timeCapsule} onChange={changeTimeCapsule} inputClass={inputClass} theme={theme} t={t} />
+                )}
                 <div className="flex flex-wrap gap-4 items-end">
                     <div className="w-40 z-10">
                         <label htmlFor="composer-date" className="sr-only">{t('entryDateLabel')}</label>
@@ -438,8 +456,9 @@ function EntryForm({
                     <button
                         type="button"
                         onClick={() => setVisibility(v => v === 'private' ? 'public' : 'private')}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${getVisibilityButtonClass(visibility ?? 'private', theme)}`}
-                        title={visibility === 'public' ? t('publicTooltip') : t('privateTooltip')}
+                        disabled={timeCapsule !== null}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all disabled:cursor-not-allowed disabled:opacity-60 ${getVisibilityButtonClass(visibility ?? 'private', theme)}`}
+                        title={timeCapsule ? t('timeCapsuleVisibilityLocked') : (visibility === 'public' ? t('publicTooltip') : t('privateTooltip'))}
                     >
                         <VisibilityIcon visibility={visibility ?? 'private'} className="w-5 h-5" />
                     </button>

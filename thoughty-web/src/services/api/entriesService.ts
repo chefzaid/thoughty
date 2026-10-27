@@ -30,6 +30,8 @@ interface CreateEntryInput {
   visibility: CreateEntryRequestDto['visibility'] | null;
   format?: CreateEntryRequestDto['format'];
   diaryId: number | null;
+  /** Seals the entry as a time capsule until this local date and hour, in the writer's time zone. */
+  seal?: CreateEntryRequestDto['seal'] | null;
 }
 
 export const createEntriesService = (authFetch: (url: string, options?: RequestInit) => Promise<Response>) => {
@@ -76,7 +78,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
   /**
    * Create a new entry
    */
-  const createEntry = async (entry: CreateEntryInput): Promise<{ success: boolean; entryId?: number }> => {
+  const createEntry = async (entry: CreateEntryInput): Promise<{ success: boolean; entryId?: number; error?: string }> => {
     try {
       const payload: CreateEntryRequestDto = {
         text: entry.text,
@@ -89,6 +91,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
         visibility: entry.visibility ?? 'private',
         format: entry.format ?? 'plain',
         ...(entry.diaryId ? { diaryId: entry.diaryId } : {}),
+        ...(entry.seal ? { seal: entry.seal, visibility: 'private' as const } : {}),
       };
 
       const response = await authFetch('/api/entries', {
@@ -99,7 +102,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
         const data = await safeJsonParse<CreateEntryApiResponse>(response);
         return { success: true, entryId: data?.entryId };
       }
-      return { success: false };
+      return { success: false, error: await readApiErrorMessage(response, 'entrySaveFailed') };
     } catch (error) {
       console.error('Error saving entry:', error);
       return { success: false };
@@ -306,6 +309,19 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     }
   };
 
+  /** Opens a sealed time capsule before its date. */
+  const unsealEntry = async (id: number): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await authFetch(`/api/entries/${id}/unseal`, { method: 'POST' });
+      return response.ok
+        ? { success: true }
+        : { success: false, error: await readApiErrorMessage(response, 'timeCapsuleOpenFailed') };
+    } catch (error) {
+      console.error('Error opening time capsule:', error);
+      return { success: false, error: 'timeCapsuleOpenFailed' };
+    }
+  };
+
   /**
    * Tick or untick the task list item on one line of a Markdown entry
    */
@@ -441,6 +457,7 @@ export const createEntriesService = (authFetch: (url: string, options?: RequestI
     toggleFavorite,
     toggleArchived,
     togglePinned,
+    unsealEntry,
     setEntryTask,
     bulkOperation,
     renameTag,

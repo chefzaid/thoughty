@@ -108,6 +108,7 @@ describe("useAppState Hooks", () => {
         toggleFavorite: vi.fn(),
         toggleArchived: vi.fn(),
         togglePinned: vi.fn(),
+        unsealEntry: vi.fn(),
         setEntryTask: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
@@ -189,6 +190,7 @@ describe("useAppState Hooks", () => {
         toggleFavorite: vi.fn(),
         toggleArchived: vi.fn(),
         togglePinned: vi.fn(),
+        unsealEntry: vi.fn(),
         setEntryTask: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
@@ -279,6 +281,7 @@ describe("useAppState Hooks", () => {
         toggleFavorite: vi.fn(),
         toggleArchived: vi.fn(),
         togglePinned: vi.fn(),
+        unsealEntry: vi.fn(),
         setEntryTask: vi.fn(),
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
@@ -317,7 +320,10 @@ describe("useAppState Hooks", () => {
     const mockTaskEntriesService = async (
       setEntryTask: (id: number, line: number, checked: boolean) => Promise<{ success: boolean; error?: string }>,
       fetchEntries = vi.fn(),
-      overrides: { togglePinned?: (id: number, pinned: boolean) => Promise<{ success: boolean; error?: string }> } = {},
+      overrides: {
+        togglePinned?: (id: number, pinned: boolean) => Promise<{ success: boolean; error?: string }>;
+        unsealEntry?: (id: number) => Promise<{ success: boolean; error?: string }>;
+      } = {},
     ) => {
       fetchEntries.mockResolvedValue({
         entries: [
@@ -338,6 +344,7 @@ describe("useAppState Hooks", () => {
         toggleFavorite: vi.fn(),
         toggleArchived: vi.fn(),
         togglePinned: vi.fn(),
+        unsealEntry: vi.fn(),
         setEntryTask,
         bulkOperation: vi.fn(),
         navigateToFirst: vi.fn(),
@@ -424,6 +431,27 @@ describe("useAppState Hooks", () => {
       expect(togglePinned).toHaveBeenCalledWith(7, true);
       expect(languageNotifier.notify).toHaveBeenCalledWith(expected);
       expect(fetchEntries).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+      [{ success: true }, "Time capsule opened", 2],
+      [{ success: false, error: "apiError_ENTRY_NOT_SEALED" }, "This entry is not sealed.", 1],
+      [{ success: false }, "Could not open the time capsule. Please try again.", 1],
+    ] as const)("opens a time capsule early and says so (%o)", async (answer, expected, fetches) => {
+      const languageNotifier = createNotifier("en");
+      const unsealEntry = vi.fn().mockResolvedValue(answer);
+      const fetchEntries = await mockTaskEntriesService(vi.fn(), vi.fn(), { unsealEntry });
+
+      const { result } = renderHook(() => useEntries(true, { ...mockConfig, language: "en" }, null, languageNotifier));
+      await waitFor(() => expect(result.current.entries).toHaveLength(1));
+
+      await act(async () => {
+        await result.current.unsealEntry(result.current.entries[0]!);
+      });
+
+      expect(unsealEntry).toHaveBeenCalledWith(7);
+      expect(languageNotifier.notify).toHaveBeenCalledWith(expected);
+      await waitFor(() => expect(fetchEntries).toHaveBeenCalledTimes(fetches));
     });
 
     it("exposes entry actions", () => {

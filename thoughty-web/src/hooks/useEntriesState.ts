@@ -273,6 +273,15 @@ export const useEntries = (
     notify(t(result.error || 'pinUpdateFailed'));
   }, [entriesService, notify, refreshEntryQueries, t]);
 
+  /** Opens a sealed time capsule early; the writer confirmed it on the card. */
+  const unsealEntry = useCallback(async (entry: Entry) => {
+    const result = await entriesService.unsealEntry(entry.id);
+    if (result.success) {
+      await refreshEntryQueries();
+    }
+    notify(t(result.success ? 'timeCapsuleOpened' : result.error || 'timeCapsuleOpenFailed'));
+  }, [entriesService, notify, refreshEntryQueries, t]);
+
   /** Sends an entry's waiting ticks one after the other, so the server applies them in order. */
   const sendEntryTasks = useCallback(async (entryId: number) => {
     if (sendingTasksRef.current.has(entryId)) {
@@ -472,6 +481,7 @@ export const useEntries = (
     toggleFavorite,
     toggleArchived,
     togglePinned,
+    unsealEntry,
     setEntryTask,
     fetchEntryHistory,
     fetchEntryBacklinks,

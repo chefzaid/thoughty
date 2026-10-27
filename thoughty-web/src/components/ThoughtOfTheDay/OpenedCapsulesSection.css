@@ -1,0 +1,30 @@
+/* Time capsules opened lately: first in Highlights, with an indigo frame so they stand out. */
+.thought-of-day-modal .opened-capsules .highlight-card {
+    border-width: 2px;
+}
+
+.thought-of-day-modal.light .opened-capsules .section-title,
+.thought-of-day-modal.light .opened-capsules .capsule-meta {
+    color: #4338ca;
+}
+
+.thought-of-day-modal.dark .opened-capsules .section-title,
+.thought-of-day-modal.dark .opened-capsules .capsule-meta {
+    color: #a5b4fc;
+}
+
+.thought-of-day-modal.light .opened-capsules .highlight-card {
+    border-color: #6366f1;
+    background: #eef2ff;
+}
+
+.thought-of-day-modal.dark .opened-capsules .highlight-card {
+    border-color: #6366f1;
+    background: #1e1b4b;
+}
+
+.thought-of-day-modal .opened-capsules .capsule-meta {
+    margin: 0.75rem 0 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+}

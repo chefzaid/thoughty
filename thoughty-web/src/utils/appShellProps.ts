@@ -60,9 +60,9 @@ interface BuildAuthenticatedRoutesPropsParams {
   deleteModalState: Pick<DeleteModalState, 'handleDelete'>;
   diariesState: Pick<DiariesState, 'currentDiaryId' | 'diaries' | 'fetchDiaries' | 'handleCreateDiary' | 'handleDeleteDiary' | 'handleReorderDiaries' | 'handleSetDefaultDiary' | 'handleUpdateDiary'>;
   downloadUserData: AuthenticatedRoutesProps['profileRouteProps']['onDownloadData'];
-  entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterEraId' | 'filterFavorites' | 'filterMood' | 'filterPersonId' | 'filterTags' | 'filterVisibility' | 'groupedEntries' | 'inputPage' | 'loading' | 'page' | 'rankedResults' | 'reorderEntries' | 'runSemanticSearch' | 'search' | 'searchMode' | 'searchSort' | 'semanticSearchResult' | 'semanticSearchStatus' | 'setEntryTask' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterEraId' | 'setFilterFavorites' | 'setFilterMood' | 'setFilterPersonId' | 'setFilterTags' | 'setFilterVisibility' | 'setInputPage' | 'setPage' | 'setSearch' | 'setSearchMode' | 'setSearchSort' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'totalPages'>;
+  entriesState: Pick<EntriesState, 'activeTargetId' | 'allTags' | 'availableMonths' | 'availableYears' | 'deleteRevision' | 'entries' | 'fetchEntries' | 'fetchEntryBacklinks' | 'fetchEntryHistory' | 'filterArchiveStatus' | 'filterDateObj' | 'filterEraId' | 'filterFavorites' | 'filterMood' | 'filterPersonId' | 'filterTags' | 'filterVisibility' | 'groupedEntries' | 'inputPage' | 'loading' | 'page' | 'rankedResults' | 'reorderEntries' | 'runSemanticSearch' | 'search' | 'searchMode' | 'searchSort' | 'semanticSearchResult' | 'semanticSearchStatus' | 'setEntryTask' | 'setFilterArchiveStatus' | 'setFilterDateObj' | 'setFilterEraId' | 'setFilterFavorites' | 'setFilterMood' | 'setFilterPersonId' | 'setFilterTags' | 'setFilterVisibility' | 'setInputPage' | 'setPage' | 'setSearch' | 'setSearchMode' | 'setSearchSort' | 'sourceEntry' | 'targetEntryId' | 'toggleArchived' | 'toggleFavorite' | 'togglePinned' | 'toggleVisibility' | 'totalPages' | 'unsealEntry'>;
   entryEditState: Pick<EntryEditState, 'addEditPendingFile' | 'editDate' | 'editExistingAttachments' | 'editFeelings' | 'editFormat' | 'editMood' | 'editPendingFiles' | 'editTags' | 'editText' | 'editTimeOfDay' | 'editTitle' | 'editVisibility' | 'editingEntry' | 'handleCancelEdit' | 'handleEdit' | 'handleSaveEdit' | 'removeEditAttachment' | 'removeEditPendingFile' | 'setEditDate' | 'setEditFeelings' | 'setEditFormat' | 'setEditMood' | 'setEditTags' | 'setEditText' | 'setEditTimeOfDay' | 'setEditTitle' | 'setEditVisibility'>;
-  entryFormState: Pick<EntryFormState, 'addPendingFile' | 'feelings' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'mood' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'selectedDate' | 'setFeelings' | 'setFormat' | 'setMood' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setTimeOfDay' | 'setTitle' | 'setVisibility' | 'suggestingTags' | 'tags' | 'timeOfDay' | 'title' | 'uploadedAttachments' | 'visibility'>;
+  entryFormState: Pick<EntryFormState, 'addPendingFile' | 'feelings' | 'fixingWriting' | 'formError' | 'format' | 'handleFixWriting' | 'handleSubmit' | 'handleSuggestTags' | 'mood' | 'newEntryText' | 'pendingFiles' | 'removePendingFile' | 'removeUploadedAttachment' | 'selectedDate' | 'setFeelings' | 'setFormat' | 'setMood' | 'setNewEntryText' | 'setSelectedDate' | 'setTags' | 'setTimeCapsule' | 'setTimeOfDay' | 'setTitle' | 'setVisibility' | 'suggestingTags' | 'tags' | 'timeCapsule' | 'timeOfDay' | 'title' | 'uploadedAttachments' | 'visibility'>;
   entryNavigationState: Pick<EntryNavigationState, 'handleBackToSource' | 'handleNavigateToEntry' | 'handleShareEntry'>;
   handleDiscuss: (entry: Entry) => void;
   handleRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
@@ -312,6 +312,8 @@ export function buildAuthenticatedRoutesProps({
         setMood: entryFormState.setMood,
         feelings: entryFormState.feelings,
         setFeelings: entryFormState.setFeelings,
+        timeCapsule: entryFormState.timeCapsule,
+        setTimeCapsule: entryFormState.setTimeCapsule,
         selectedDate: entryFormState.selectedDate,
         setSelectedDate: entryFormState.setSelectedDate,
         tags: entryFormState.tags,
@@ -377,6 +379,7 @@ export function buildAuthenticatedRoutesProps({
         onToggleArchived: entriesState.toggleArchived,
         onTogglePinned: entriesState.togglePinned,
         onToggleTask: entriesState.setEntryTask,
+        onUnseal: entriesState.unsealEntry,
         editingEntry: entryEditState.editingEntry,
         editText: entryEditState.editText,
         setEditText: entryEditState.setEditText,
