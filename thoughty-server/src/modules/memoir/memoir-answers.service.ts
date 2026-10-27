@@ -44,11 +44,12 @@ export class MemoirAnswersService {
     if (!dto.text && attachmentIds.length === 0) {
       throw apiError(BadRequestException, 'MEMOIR_ANSWER_EMPTY');
     }
-    // An answer whose entry is in the recycle bin no longer counts, so the question can be answered again
+    // An answer whose entry is in the recycle bin no longer counts, so the question can be answered again.
+    // The select keeps the whole primary key: a findOne with a relation reads it to pick its one row.
     const previous = await this.answerRepository.findOne({
       where: { userId, questionId: question.id },
       relations: { entry: true },
-      select: { questionId: true, entryId: true, entry: { id: true } },
+      select: { userId: true, questionId: true, entryId: true, entry: { id: true } },
     });
     if (previous?.entry) {
       throw apiError(ConflictException, 'MEMOIR_ALREADY_ANSWERED');
