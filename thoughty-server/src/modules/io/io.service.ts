@@ -22,6 +22,7 @@ import {
   ParsedEntry,
 } from '@/common/utils';
 import { EntryMentionsService } from '@/modules/entries/entry-mentions.service';
+import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { FormatConfigDto, PreviewImportDto, ImportDto, PreviewResponseDto, ImportResponseDto } from './dto';
 
 const MAX_IMPORT_SIZE = 5 * 1024 * 1024; // 5MB
@@ -29,6 +30,10 @@ const MAX_ENTRIES_PER_IMPORT = 10000;
 
 export type TextExportFormat = 'txt' | 'json' | 'md';
 export type ExportFormat = TextExportFormat | 'csv' | 'pdf' | 'html' | 'epub';
+
+function isDocumentFormat(format: ExportFormat): format is 'pdf' | 'html' | 'epub' {
+  return format === 'pdf' || format === 'html' || format === 'epub';
+}
 
 export interface ExportFile {
   content: string | Buffer;
@@ -48,6 +53,7 @@ export class IoService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly entryMentions: EntryMentionsService,
+    private readonly timeCapsules: TimeCapsuleService,
   ) {}
 
   private async getFormatConfig(userId: number): Promise<FormatConfig> {
@@ -269,7 +275,12 @@ export class IoService {
       qb.andWhere('e.diary_id = :diaryId', { diaryId });
     }
 
-    const entries = await qb.getMany();
+    // Data files keep sealed time capsules as written, marked sealed, so the export is complete; the PDF,
+    // HTML and EPUB reading copies leave them out like books do
+    const loaded = await qb.getMany();
+    const entries = isDocumentFormat(format)
+      ? loaded.filter((entry) => !entry.sealedUntil)
+      : await this.timeCapsules.reveal(loaded);
 
     // When exporting all diaries, attach diary names to entries
     let entriesWithDiary = entries as Array<Entry & { diaryName?: string }>;

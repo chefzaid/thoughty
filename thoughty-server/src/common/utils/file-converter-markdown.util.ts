@@ -6,6 +6,7 @@ import {
   moodFields,
   normalizeEntryDate,
   type ParsedEntry,
+  sealedUntilText,
   sortEntries,
 } from './file-converter-entry.util';
 
@@ -46,7 +47,9 @@ function buildMarkdownMetaLines(entry: EntryData, includeVisibility: boolean): s
   const tagsStr = tagLabels ? `**Tags:** ${tagLabels}` : '';
   const visStr = includeVisibility ? `**Visibility:** ${entry.visibility || 'private'}` : '';
   const diaryStr = entry.diaryName ? `**Diary:** ${entry.diaryName}` : '';
-  const meta = [timeStr, titleStr, moodStr, feelingsStr, tagsStr, visStr, diaryStr].filter(Boolean).join(' | ');
+  const sealedUntil = sealedUntilText(entry);
+  const sealedStr = sealedUntil ? `**Sealed until:** ${sealedUntil}` : '';
+  const meta = [timeStr, titleStr, moodStr, feelingsStr, tagsStr, visStr, sealedStr, diaryStr].filter(Boolean).join(' | ');
 
   return meta ? [meta, ''] : [];
 }
@@ -106,7 +109,7 @@ function parseMarkdownTag(tag: string): string {
 
 function parseMarkdownMetadataLine(trimmed: string): MarkdownMetadata | null {
   // Split only known metadata boundaries; diary names can contain ordinary pipes.
-  const sections = trimmed.split(/\|(?=[ \t]*\*\*(?:Time|Title|Mood|Feelings|Tags|Visibility|Diary):\*\*)/).map((part) => part.trim());
+  const sections = trimmed.split(/\|(?=[ \t]*\*\*(?:Time|Title|Mood|Feelings|Tags|Visibility|Sealed until|Diary):\*\*)/).map((part) => part.trim());
   const result: MarkdownMetadata = { tags: [] };
   for (const section of sections) {
     if (!applyMarkdownMetadataSection(section, result)) return null;
@@ -139,6 +142,9 @@ function applyMarkdownMetadataSection(section: string, result: MarkdownMetadata)
     const visibility = section.slice('**Visibility:**'.length).trim();
     if (visibility !== 'public' && visibility !== 'private') return false;
     result.visibility = visibility;
+  } else if (section.startsWith('**Sealed until:**')) {
+    // Written so the file says the entry was sealed; an imported entry comes back open
+    if (Number.isNaN(Date.parse(section.slice('**Sealed until:**'.length).trim()))) return false;
   } else if (section.startsWith('**Diary:**')) {
     const diary = section.slice('**Diary:**'.length).trim();
     if (!diary) return false;

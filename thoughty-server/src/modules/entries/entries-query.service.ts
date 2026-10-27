@@ -15,6 +15,7 @@ import { addSameDayOrder } from '@/common/utils';
 import { applyEntryListFilters, parseEntryIdsFilter } from './entry-list-filters';
 import { EntrySearchService, type PreparedEntrySearch } from './entry-search.service';
 import { ENTRY_WORDS_SQL } from '@/modules/stats/stats-sql';
+import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
 /** Entries "On this day" shows at most. */
 export const ON_THIS_DAY_LIMIT = 10;
@@ -53,6 +54,7 @@ export class EntriesQueryService {
     @InjectRepository(EntryRevision)
     private readonly revisionRepository: Repository<EntryRevision>,
     private readonly entrySearch: EntrySearchService,
+    private readonly timeCapsules: TimeCapsuleService,
   ) {}
 
   async getTagUsage(userId: number): Promise<{ tags: Array<{ tag: string; count: number }> }> {
@@ -181,6 +183,7 @@ export class EntriesQueryService {
       .createQueryBuilder('e')
       .leftJoinAndSelect('e.diary', 'd')
       .where('e.user_id = :userId', { userId })
+      .andWhere('e.sealed_until IS NULL')
       .orderBy('RANDOM()')
       .limit(1);
 
@@ -188,9 +191,10 @@ export class EntriesQueryService {
       randomQb = randomQb.andWhere('e.diary_id = :diaryId', { diaryId });
     }
 
-    const [randomEntry, onThisDayEntries] = await Promise.all([
+    const [randomEntry, onThisDayEntries, openedCapsules] = await Promise.all([
       randomQb.getOne(),
       this.findOnThisDay(userId, { year: currentYear, month: today.getMonth() + 1, day: today.getDate(), diaryId }),
+      this.timeCapsules.findRecentlyOpened(userId, diaryId, today),
     ]);
 
     const onThisDay: Record<number, EntryResponseDto[]> = {};
@@ -203,13 +207,19 @@ export class EntriesQueryService {
       randomEntry: randomEntry ? toEntryResponse(randomEntry) : null,
       onThisDay,
       currentDate: { month: currentMonth, day: currentDay, year: currentYear },
+      openedCapsules: openedCapsules.map((capsule) => ({
+        entry: toEntryResponse(capsule.entry),
+        sealed_at: capsule.createdAt,
+        opened_at: capsule.openedAt!,
+        opened_early: capsule.openedAt! < capsule.openAt,
+      })),
     };
   }
 
   /**
    * "On this day": the writer's entries from earlier years dated on this month and day, newest first,
-   * in one diary or all of them. Entries in the recycle bin never count. Highlights and the
-   * "On this day" email both read it.
+   * in one diary or all of them. Entries in the recycle bin and sealed time capsules never count.
+   * Highlights and the "On this day" email both read it.
    */
   async findOnThisDay(userId: number, on: OnThisDayQuery): Promise<OnThisDayEntry[]> {
     const mmdd = `${String(on.month).padStart(2, '0')}-${String(on.day).padStart(2, '0')}`;
@@ -220,6 +230,7 @@ export class EntriesQueryService {
       .where('e.user_id = :userId', { userId })
       .andWhere("TO_CHAR(e.date, 'MM-DD') = :mmdd", { mmdd })
       .andWhere('EXTRACT(YEAR FROM e.date) < :currentYear', { currentYear: on.year })
+      .andWhere('e.sealed_until IS NULL')
       .orderBy('e.date', 'DESC')
       .limit(on.limit ?? ON_THIS_DAY_LIMIT);
 
@@ -236,8 +247,8 @@ export class EntriesQueryService {
 
   /**
    * One memory from this calendar month in an earlier year, picked the same way every time: a favorite
-   * first, then the entry with the most words, then the oldest. Archived and empty entries, and the
-   * recycle bin, are left out. The monthly recap email reads it.
+   * first, then the entry with the most words, then the oldest. Archived and empty entries, sealed time
+   * capsules and the recycle bin are left out. The monthly recap email reads it.
    */
   async findMonthMemory(userId: number, on: MonthMemoryQuery): Promise<OnThisDayEntry | null> {
     const qb = this.entryRepository
@@ -248,6 +259,7 @@ export class EntriesQueryService {
       .andWhere('EXTRACT(MONTH FROM e.date) = :month', { month: on.month })
       .andWhere('EXTRACT(YEAR FROM e.date) < :year', { year: on.year })
       .andWhere('e.is_archived = FALSE')
+      .andWhere('e.sealed_until IS NULL')
       .andWhere("BTRIM(e.content) <> ''")
       .orderBy('e.is_favorite', 'DESC')
       .addOrderBy('entry_words', 'DESC')
@@ -269,6 +281,10 @@ export class EntriesQueryService {
 
     if (!entry) {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
+    }
+    // A sealed time capsule shows no history until it opens
+    if (entry.sealedUntil) {
+      return [];
     }
 
     return this.revisionRepository.find({

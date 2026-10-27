@@ -243,21 +243,24 @@ export class RecycleBinService {
     return new Map(rows.map((row) => [Number(row.entryId), Number(row.count)]));
   }
 
+  /** A sealed time capsule shows only its date, time and diary until it opens. */
   private toDto(entry: Entry, attachmentCount: number): TrashedEntryDto {
     const deletedAt = entry.deletedAt as Date;
+    const sealed = Boolean(entry.sealedUntil);
     return {
       id: entry.id,
       date: entry.date,
-      title: entry.title ?? null,
+      title: sealed ? null : (entry.title ?? null),
       timeOfDay: entry.timeOfDay ?? null,
-      content: entry.content,
+      content: sealed ? '' : entry.content,
       format: entry.format,
-      tags: entry.tags,
+      tags: sealed ? [] : entry.tags,
       diaryId: entry.diary ? entry.diaryId : null,
       diaryName: entry.diary?.name ?? null,
       diaryIcon: entry.diary?.icon ?? null,
       diaryColor: entry.diary?.color ?? null,
       attachmentCount,
+      sealedUntil: entry.sealedUntil ? entry.sealedUntil.toISOString() : null,
       deletedAt: deletedAt.toISOString(),
       purgeAt: purgeDateFor(deletedAt).toISOString(),
     };

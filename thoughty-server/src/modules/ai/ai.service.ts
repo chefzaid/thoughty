@@ -23,6 +23,7 @@ import { resolveAiModel } from './ai-model.util';
 import { AiUsageService } from './ai-usage.service';
 import { resolveOpenRouterCredential } from './openrouter-credential.util';
 import { UNTRUSTED_CONTENT_INSTRUCTION, untrustedBlock, unwrapBlock } from './untrusted-content';
+import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
 
 export type { JournalAnalysis, SubjectAnalysis, ToneMoodAnalysis } from './journal-analysis';
 
@@ -63,11 +64,13 @@ export class AiService {
     @Optional() private readonly usageService?: AiUsageService,
   ) {}
 
+  /** The writer's entry, for an AI feature about it; a sealed time capsule is refused until it opens. */
   private async assertEntryOwnership(userId: number, entryId: number): Promise<Entry> {
     const entry = await this.entryRepository.findOne({ where: { id: entryId, userId } });
     if (!entry) {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
+    assertEntryNotSealed(entry);
     return entry;
   }
 

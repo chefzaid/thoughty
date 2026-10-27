@@ -71,6 +71,17 @@ export class TrashedEntryDto {
   @ApiProperty({ example: 1, description: 'Files kept with the entry until it is restored or removed' })
   attachmentCount!: number;
 
+  @ApiProperty({
+    example: null,
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description:
+      'When a sealed time capsule opens; null otherwise. A sealed entry shows no title, text or tags, and once ' +
+      'restored after that time it opens on the next run of the worker.',
+  })
+  sealedUntil!: string | null;
+
   @ApiProperty({ example: '2026-10-22T08:30:00.000Z', format: 'date-time' })
   deletedAt!: string;
 

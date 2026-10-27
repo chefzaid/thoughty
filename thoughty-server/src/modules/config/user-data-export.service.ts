@@ -19,9 +19,11 @@ import {
   LifeEra,
   Person,
   Setting,
+  TimeCapsule,
   User,
   UserFollow,
 } from '@/database/entities';
+import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 import { isExportableSettingKey } from './config.service';
 
 /** An opt-in email setting as the data download writes it, null when it was never saved. */
@@ -79,14 +81,20 @@ export class UserDataExportService {
     private readonly onThisDayEmailRepository: Repository<OnThisDayEmail>,
     @InjectRepository(MonthlyRecapEmail)
     private readonly monthlyRecapEmailRepository: Repository<MonthlyRecapEmail>,
+    @InjectRepository(TimeCapsule)
+    private readonly timeCapsuleRepository: Repository<TimeCapsule>,
+    private readonly timeCapsules: TimeCapsuleService,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
-      // Entries in the recycle bin are still personal data until they are removed for good
-      this.entryRepository.find({ where: { userId }, order: { date: 'ASC', index: 'ASC' }, withDeleted: true }),
+      // Entries in the recycle bin are still personal data until they are removed for good, and sealed
+      // time capsules are written as they were sealed
+      this.entryRepository
+        .find({ where: { userId }, order: { date: 'ASC', index: 'ASC' }, withDeleted: true })
+        .then((loaded) => this.timeCapsules.reveal(loaded)),
       this.revisionRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
       this.attachmentRepository.find({ where: { userId }, order: { createdAt: 'ASC' } }),
       this.settingRepository.find({ where: { userId } }),
@@ -98,6 +106,7 @@ export class UserDataExportService {
       this.collectPeople(userId),
       this.onThisDayEmailRepository.findOne({ where: { userId } }),
       this.monthlyRecapEmailRepository.findOne({ where: { userId } }),
+      this.timeCapsuleRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
     ]);
 
     const safeUser = user
@@ -152,6 +161,7 @@ export class UserDataExportService {
         isFavorite: entry.isFavorite,
         createdAt: entry.createdAt,
         deletedAt: entry.deletedAt,
+        sealedUntil: entry.sealedUntil,
       })),
       revisions: revisions.map((revision) => ({
         id: revision.id,
@@ -210,6 +220,16 @@ export class UserDataExportService {
       people,
       onThisDayEmail: exportOptInEmail(onThisDayEmail),
       monthlyRecapEmail: exportOptInEmail(monthlyRecapEmail),
+      // When each time capsule was sealed for and when it opened; a sealed one's text is with its entry
+      timeCapsules: capsules.map((capsule) => ({
+        entryId: capsule.entryId,
+        opensOn: capsule.opensOn,
+        openHour: capsule.openHour,
+        timeZone: capsule.timeZone,
+        openAt: capsule.openAt,
+        openedAt: capsule.openedAt,
+        sealedAt: capsule.createdAt,
+      })),
     };
   }
 

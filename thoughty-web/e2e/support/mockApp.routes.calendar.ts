@@ -1,4 +1,5 @@
 import { getFilteredEntries } from './mockApp.routes.entries';
+import { isMockSealed } from './mockApp.routes.time-capsules';
 import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
 import { sortEntries } from './mockApp.shared';
 
@@ -34,9 +35,10 @@ export async function handleCalendarRoutes({ route, request, pathname, searchPar
       date: entry.date,
       index: entry.index,
       time_of_day: entry.time_of_day ?? null,
-      title: entry.title ?? null,
-      snippet: mockSnippet(entry.content),
-      mood: entry.mood ?? null,
+      title: isMockSealed(entry) ? null : (entry.title ?? null),
+      snippet: isMockSealed(entry) ? '' : mockSnippet(entry.content),
+      mood: isMockSealed(entry) ? null : (entry.mood ?? null),
+      sealed: isMockSealed(entry),
     })),
   });
   return true;

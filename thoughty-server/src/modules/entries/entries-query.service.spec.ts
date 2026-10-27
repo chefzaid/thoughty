@@ -7,6 +7,7 @@ describe('EntriesQueryService', () => {
   let entryRepository: Record<string, jest.Mock>;
   let revisionRepository: Record<string, jest.Mock>;
   let entrySearch: Record<string, jest.Mock>;
+  let timeCapsules: Record<string, jest.Mock>;
 
   beforeEach(() => {
     entryRepository = {
@@ -30,10 +31,12 @@ describe('EntriesQueryService', () => {
       findMatches: jest.fn().mockResolvedValue(new Map([[1, ['Work']]])),
     };
 
+    timeCapsules = { findRecentlyOpened: jest.fn().mockResolvedValue([]) };
     service = new EntriesQueryService(
       entryRepository as never,
       revisionRepository as never,
       entrySearch as never,
+      timeCapsules as never,
     );
   });
 
@@ -143,6 +146,7 @@ describe('EntriesQueryService', () => {
           diary_icon: '💼',
           diary_color: '#123456',
           created_at: entry.createdAt,
+          sealed_until: null,
           attachments: [
             {
               id: 12,
@@ -318,6 +322,36 @@ describe('EntriesQueryService', () => {
       2: [expect.objectContaining({ id: 2, diary_name: undefined })],
     });
     expect(result.currentDate).toEqual({ month: '01', day: '15', year: 2024 });
+    expect(randomQb.andWhere).toHaveBeenCalledWith('e.sealed_until IS NULL');
+    expect(onThisDayQb.andWhere).toHaveBeenCalledWith('e.sealed_until IS NULL');
+    expect(timeCapsules.findRecentlyOpened).toHaveBeenCalledWith(7, 3, expect.any(Date));
+    expect(result.openedCapsules).toEqual([]);
+  });
+
+  it('shows the capsules opened lately, saying when they were sealed and whether they opened early', async () => {
+    entryRepository.createQueryBuilder
+      .mockReturnValueOnce(createQueryBuilder({ getOne: jest.fn().mockResolvedValue(null) }))
+      .mockReturnValueOnce(createQueryBuilder({ getRawAndEntities: jest.fn().mockResolvedValue({ raw: [], entities: [] }) }));
+    const sealedAt = new Date('2025-10-27T09:00:00Z');
+    const entry = { id: 12, content: 'Dear future me', tags: [], sealedUntil: null };
+    timeCapsules.findRecentlyOpened.mockResolvedValue([
+      { entry, createdAt: sealedAt, openAt: new Date('2026-10-27T07:00:00Z'), openedAt: new Date('2026-10-27T07:00:30Z') },
+      { entry: { ...entry, id: 13 }, createdAt: sealedAt, openAt: new Date('2030-01-01T08:00:00Z'), openedAt: new Date('2026-10-26T20:00:00Z') },
+    ]);
+
+    const result = await service.getHighlights(7, {});
+
+    expect(result.openedCapsules).toEqual([
+      { entry: expect.objectContaining({ id: 12, content: 'Dear future me' }), sealed_at: sealedAt, opened_at: new Date('2026-10-27T07:00:30Z'), opened_early: false },
+      { entry: expect.objectContaining({ id: 13 }), sealed_at: sealedAt, opened_at: new Date('2026-10-26T20:00:00Z'), opened_early: true },
+    ]);
+  });
+
+  it('shows no history for a sealed time capsule', async () => {
+    entryRepository.findOne.mockResolvedValueOnce({ id: 8, userId: 2, sealedUntil: new Date('2030-01-01T08:00:00Z') });
+
+    await expect(service.getRevisions(2, 8)).resolves.toEqual([]);
+    expect(revisionRepository.find).not.toHaveBeenCalled();
   });
 
   it('answers no random entry and no earlier years when the journal is empty', async () => {

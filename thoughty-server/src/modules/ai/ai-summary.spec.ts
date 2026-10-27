@@ -92,6 +92,13 @@ describe('AiService entry summaries', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('refuses a sealed time capsule until it opens, without calling the model', async () => {
+    entryRepository.findOne.mockResolvedValueOnce({ id: 10, userId: 1, content: '', sealedUntil: new Date('2031-01-01T08:00:00Z') });
+
+    await expect(service.summarizeEntry(1, { entryId: 10 })).rejects.toMatchObject({ response: { code: 'ENTRY_SEALED' } });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('rejects summary requests when OpenRouter is not configured', async () => {
     service = await createService('');
 

@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Entry, EntryRevision, Diary } from '@/database/entities';
 import { AiModule } from '@/modules/ai';
 import { UserConfigModule } from '@/modules/config';
+import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module';
 import { EntriesController } from './entries.controller';
 import { EntriesService } from './entries.service';
 import { EntriesQueryService } from './entries-query.service';
@@ -16,7 +17,7 @@ import { EntryTaskListService } from './entry-task-list.service';
 import { EntryMentionsService } from './entry-mentions.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary]), UserConfigModule, AiModule],
+  imports: [TypeOrmModule.forFeature([Entry, EntryRevision, Diary]), UserConfigModule, AiModule, TimeCapsulesModule],
   controllers: [EntriesController],
   providers: [
     EntriesService,

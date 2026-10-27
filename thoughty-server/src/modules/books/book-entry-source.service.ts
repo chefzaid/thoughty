@@ -91,6 +91,7 @@ export class BookEntrySourceService {
       .leftJoinAndSelect('e.diary', 'd')
       .where('e.user_id = :userId', { userId })
       .andWhere('e.id IN (:...ids)', { ids })
+      .andWhere('e.sealed_until IS NULL')
       .orderBy('e.date', 'ASC')
       .addOrderBy('e.index', 'ASC')
       .getMany();
@@ -110,10 +111,12 @@ export class BookEntrySourceService {
     };
   }
 
+  /** The writer's entries for a book; sealed time capsules stay out of books until they open. */
   private baseQuery(userId: number, query: BookQueryDto): SelectQueryBuilder<Entry> {
     const qb = this.entryRepository
       .createQueryBuilder('e')
       .where('e.user_id = :userId', { userId })
+      .andWhere('e.sealed_until IS NULL')
       .orderBy('e.date', 'ASC')
       .addOrderBy('e.index', 'ASC');
     if (query.embedImages === true) {

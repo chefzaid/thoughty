@@ -103,6 +103,13 @@ export class Entry {
   @Column({ name: 'import_ref', type: 'varchar', length: 120, nullable: true })
   importRef: string | null;
 
+  /**
+   * While the entry is a sealed time capsule, when it opens; null otherwise. A sealed entry keeps no
+   * title, text, tags, mood or feelings here (they wait in `time_capsules`) and stays private.
+   */
+  @Column({ name: 'sealed_until', type: 'timestamptz', nullable: true })
+  sealedUntil: Date | null;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

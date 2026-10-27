@@ -24,7 +24,7 @@ const UNIVERSITY: LifeEra = {
 };
 
 const item = (overrides: Partial<EntryCalendarItem>): EntryCalendarItem => ({
-  id: 1, diary_id: 1, date: '2026-10-20', index: 1, time_of_day: null, title: null, snippet: 'Text', mood: null, ...overrides,
+  id: 1, diary_id: 1, date: '2026-10-20', index: 1, time_of_day: null, title: null, snippet: 'Text', mood: null, sealed: false, ...overrides,
 });
 
 const OCTOBER: EntryCalendarItem[] = [
@@ -111,6 +111,17 @@ describe('JournalCalendar', () => {
     expect(today).toHaveAttribute('tabindex', '0');
     expect(busy).toHaveAttribute('tabindex', '-1');
     expect(calendarService.fetchMonth).toHaveBeenCalledWith({ ...FILTERS, month: '2026-10' });
+  });
+
+  it('names a sealed time capsule only as one', async () => {
+    calendarService.fetchMonth.mockResolvedValue({
+      data: { month: '2026-10', entries: [item({ id: 8, date: '2026-10-05', snippet: '', sealed: true })] },
+      error: null,
+    });
+    renderCalendar();
+
+    const day = await screen.findByRole('gridcell', { name: 'Monday, October 5, 2026: 1 entry' });
+    expect(within(day).getByRole('button', { name: 'Open 🔒 Sealed time capsule' })).toBeInTheDocument();
   });
 
   it('names the life era it is narrowed to and goes to its first month from outside it', async () => {

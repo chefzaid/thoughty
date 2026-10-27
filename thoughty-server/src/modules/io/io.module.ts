@@ -5,6 +5,7 @@ import { AttachmentsModule } from '@/modules/attachments';
 import { UserConfigModule } from '@/modules/config';
 import { DiariesModule } from '@/modules/diaries';
 import { EntriesModule } from '@/modules/entries';
+import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module';
 import { IoController } from './io.controller';
 import { IoService } from './io.service';
 import { AppImportService } from './app-import.service';
@@ -17,6 +18,7 @@ import { MarkdownArchiveService } from './markdown-archive.service';
     DiariesModule,
     UserConfigModule,
     EntriesModule,
+    TimeCapsulesModule,
   ],
   controllers: [IoController],
   providers: [IoService, AppImportService, MarkdownArchiveService],

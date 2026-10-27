@@ -17,6 +17,7 @@ import {
 } from '@/common/utils';
 import { AttachmentsService } from '@/modules/attachments';
 import { ConfigService } from '@/modules/config';
+import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
 // Uploads are capped at 5 MB; the check guards against objects replaced in storage
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
@@ -43,6 +44,7 @@ export class MarkdownArchiveService {
     private readonly diaryRepository: Repository<Diary>,
     private readonly attachmentsService: AttachmentsService,
     private readonly configService: ConfigService,
+    private readonly timeCapsules: TimeCapsuleService,
   ) {}
 
   /** Checks the diary and loads the entries before anything is sent, so errors still get a status code. */
@@ -63,7 +65,11 @@ export class MarkdownArchiveService {
     if (diaryId) {
       query.andWhere('e.diary_id = :diaryId', { diaryId });
     }
-    const [entries, config] = await Promise.all([query.getMany(), this.configService.getConfig(userId)]);
+    // Sealed time capsules are written as they were sealed, marked `sealed_until`, so the archive is complete
+    const [entries, config] = await Promise.all([
+      query.getMany().then((loaded) => this.timeCapsules.reveal(loaded)),
+      this.configService.getConfig(userId),
+    ]);
     const language: ArchiveLanguage = config.language === 'fr' ? 'fr' : 'en';
     const exportedOn = new Date().toISOString().slice(0, 10);
     const label = diary ? diary.name.replaceAll(/[^a-zA-Z0-9_-]/g, '_') : 'all_diaries';

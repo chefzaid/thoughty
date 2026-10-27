@@ -35,6 +35,7 @@ const trashed = (overrides: Partial<TrashedEntry> = {}): TrashedEntry => ({
   diaryIcon: '🧭',
   diaryColor: '#2A9D8F',
   attachmentCount: 2,
+  sealedUntil: null,
   deletedAt: new Date().toISOString(),
   purgeAt: new Date(Date.now() + 29.5 * 24 * 60 * 60 * 1000).toISOString(),
   ...overrides,
@@ -101,6 +102,17 @@ describe('RecycleBinPage', () => {
 
     const entry = await screen.findByRole('article', { name: 'October 21, 2026 · 6:45 AM' });
     expect(within(entry).getByText('Harbor at dawn')).toBeInTheDocument();
+  });
+
+  it('shows a sealed time capsule by when it opens, never its words', async () => {
+    recycleBinService.fetchPage.mockResolvedValue({
+      data: binPage({ entries: [trashed({ content: '', tags: [], sealedUntil: '2031-10-27T08:00:00.000Z' })], total: 1 }),
+      error: null,
+    });
+    renderPage();
+
+    const entry = await screen.findByRole('article', { name: 'October 21, 2026' });
+    expect(within(entry).getByText(/timeCapsuleSealedLabel · timeCapsuleSealedUntil October 27, 2031/)).toBeInTheDocument();
   });
 
   it('restores one entry and says where entries without a diary went', async () => {

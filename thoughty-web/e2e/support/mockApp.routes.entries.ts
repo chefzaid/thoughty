@@ -10,6 +10,7 @@ import { matchMockSearch, type MockSearchResult } from './mockApp.search';
 import { getMockBacklinks } from './mockApp.backlinks';
 import { mockEraContains } from './mockApp.routes.life-eras';
 import { addMockMentionedPeople, mockMentions } from './mockApp.routes.people';
+import { isMockSealed, mockSeal } from './mockApp.routes.time-capsules';
 
 const TASK_LINE = /^((?:[\t ]*>)*[\t ]*(?:[*+-]|\d{1,9}[.)])[\t ]+\[)([ xX])(\](?:[\t \r]|$)[^\n]*)$/;
 
@@ -52,6 +53,10 @@ export function getFilteredEntries(
   const pageNumber = Number(searchParams.get('page') || '1');
   const limit = Number(searchParams.get('limit') || '10');
 
+  // Like the API, a sealed time capsule matches nothing about its words, tags, mood or people
+  if (search || tags.length > 0 || mood || personId) {
+    filtered = filtered.filter((entry) => !isMockSealed(entry));
+  }
   let searchResults: Map<number, MockSearchResult> | null = null;
   if (search) {
     const results = new Map<number, MockSearchResult>();
@@ -148,6 +153,7 @@ async function handleEntriesCollectionRoute({ route, request, pathname, searchPa
     visibility?: 'public' | 'private' | null;
     format?: 'plain' | 'markdown';
     diaryId?: number | null;
+    seal?: { opensOn: string; openHour?: number };
   };
   const sameDayEntries = state.entries.filter((entry) => entry.date === payload.date);
   const newEntry: MockEntry = {
@@ -163,6 +169,7 @@ async function handleEntriesCollectionRoute({ route, request, pathname, searchPa
     visibility: payload.visibility || 'private',
     format: payload.format || 'plain',
     diaryId: payload.diaryId ?? 1,
+    ...mockSeal(payload.seal),
   };
   state.entries.push(newEntry);
   state.entries = sortEntries(state.entries);

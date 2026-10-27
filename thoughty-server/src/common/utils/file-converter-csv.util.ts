@@ -1,6 +1,6 @@
 import { normalizeEntryTitle, normalizeTimeOfDay } from './entry-order.util';
 import { normalizeFeelings, normalizeMood } from './entry-mood.util';
-import { type EntryData, normalizeEntryDate, sortEntries } from './file-converter-entry.util';
+import { type EntryData, normalizeEntryDate, sealedUntilText, sortEntries } from './file-converter-entry.util';
 
 function escapeCsvCell(value: string | number | undefined): string {
   const serialized = value === undefined ? '' : String(value);
@@ -19,6 +19,8 @@ function countWords(content: string): number {
  */
 export function generateCsvFile(entries: EntryData[], includeVisibility = false): string {
   const sorted = sortEntries(entries);
+  // The column only appears when a sealed time capsule is in the file
+  const includeSealed = sorted.some((entry) => entry.sealedUntil);
   const headers = [
     'date',
     'index',
@@ -29,6 +31,7 @@ export function generateCsvFile(entries: EntryData[], includeVisibility = false)
     'diary',
     'tags',
     ...(includeVisibility ? ['visibility'] : []),
+    ...(includeSealed ? ['sealed_until'] : []),
     'format',
     'word_count',
     'reading_time_minutes',
@@ -49,6 +52,7 @@ export function generateCsvFile(entries: EntryData[], includeVisibility = false)
       entry.diaryName,
       (entry.tags || []).join(';'),
       ...(includeVisibility ? [entry.visibility || 'private'] : []),
+      ...(includeSealed ? [sealedUntilText(entry) ?? undefined] : []),
       entry.format || 'plain',
       wordCount,
       readingTimeMinutes,

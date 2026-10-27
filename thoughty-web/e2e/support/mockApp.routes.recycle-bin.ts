@@ -1,5 +1,6 @@
 import { sortEntries, type MockAppState, type MockTrashedEntry } from './mockApp.shared';
 import { fulfillJson, type RouteContext } from './mockApp.route-utils';
+import { isMockSealed } from './mockApp.routes.time-capsules';
 
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -8,16 +9,17 @@ function toTrashedEntryResponse(entry: MockTrashedEntry, state: MockAppState) {
   return {
     id: entry.id,
     date: entry.date,
-    title: entry.title ?? null,
+    title: isMockSealed(entry) ? null : (entry.title ?? null),
     timeOfDay: entry.time_of_day ?? null,
-    content: entry.content,
+    content: isMockSealed(entry) ? '' : entry.content,
     format: entry.format ?? 'plain',
-    tags: entry.tags,
+    tags: isMockSealed(entry) ? [] : entry.tags,
     diaryId: diary ? diary.id : null,
     diaryName: diary?.name ?? null,
     diaryIcon: diary?.icon ?? null,
     diaryColor: diary?.color ?? null,
     attachmentCount: entry.attachments?.length ?? 0,
+    sealedUntil: isMockSealed(entry) ? entry.capsule!.openAt : null,
     deletedAt: entry.deletedAt,
     purgeAt: new Date(new Date(entry.deletedAt).getTime() + RETENTION_MS).toISOString(),
   };

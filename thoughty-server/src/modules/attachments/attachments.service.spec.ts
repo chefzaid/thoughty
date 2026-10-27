@@ -155,6 +155,8 @@ describe('AttachmentsService', () => {
       await expect(service.getOwnedAttachment(1, 1)).resolves.toBe(mockAttachment);
       expect(attachmentRepository.findOne).toHaveBeenCalledWith({
         where: { id: 1, userId: 1 },
+        relations: { entry: true },
+        withDeleted: true,
       });
     });
 
@@ -162,6 +164,14 @@ describe('AttachmentsService', () => {
       attachmentRepository.findOne.mockResolvedValue(null);
 
       await expect(service.getOwnedAttachment(2, 1)).rejects.toThrow(NotFoundException);
+    });
+
+    it('refuses an attachment of a sealed time capsule until it opens', async () => {
+      attachmentRepository.findOne.mockResolvedValue({ ...mockAttachment, entry: { sealedUntil: new Date('2030-01-01T08:00:00Z') } });
+      await expect(service.getOwnedAttachment(1, 1)).rejects.toMatchObject({ response: { code: 'ENTRY_SEALED' } });
+
+      attachmentRepository.findOne.mockResolvedValue({ ...mockAttachment, entry: { sealedUntil: null } });
+      await expect(service.getOwnedAttachment(1, 1)).resolves.toMatchObject({ id: mockAttachment.id });
     });
   });
 
@@ -245,6 +255,8 @@ describe('AttachmentsService', () => {
 
       expect(attachmentRepository.findOne).toHaveBeenCalledWith({
         where: { storedFilename: 'abc-uuid.jpg', userId: 1 },
+        relations: { entry: true },
+        withDeleted: true,
       });
       expect(result).toEqual({
         stream: body,
@@ -258,6 +270,13 @@ describe('AttachmentsService', () => {
       attachmentRepository.findOne.mockResolvedValue(null);
 
       await expect(service.getOwnedFile(2, 'abc-uuid.jpg')).rejects.toThrow(NotFoundException);
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it('answers missing for a file of a sealed time capsule', async () => {
+      attachmentRepository.findOne.mockResolvedValue({ ...mockAttachment, entry: { sealedUntil: new Date('2030-01-01T08:00:00Z') } });
+
+      await expect(service.getOwnedFile(1, 'abc-uuid.jpg')).rejects.toThrow(NotFoundException);
       expect(mockSend).not.toHaveBeenCalled();
     });
 

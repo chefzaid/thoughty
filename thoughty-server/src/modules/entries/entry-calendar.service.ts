@@ -37,7 +37,7 @@ export class EntryCalendarService {
     const { month, search } = query;
     const qb = this.entryRepository
       .createQueryBuilder('e')
-      .select(['e.id', 'e.diaryId', 'e.date', 'e.index', 'e.timeOfDay', 'e.title', 'e.mood'])
+      .select(['e.id', 'e.diaryId', 'e.date', 'e.index', 'e.timeOfDay', 'e.title', 'e.mood', 'e.sealedUntil'])
       .addSelect('LEFT(e.content, :snippetSource)', 'content_start')
       .setParameter('snippetSource', SNIPPET_SOURCE_LENGTH)
       .where('e.user_id = :userId', { userId })
@@ -55,16 +55,20 @@ export class EntryCalendarService {
 
     return {
       month,
-      entries: entities.map((entry) => ({
-        id: entry.id,
-        diary_id: entry.diaryId ?? null,
-        date: entry.date,
-        index: entry.index,
-        time_of_day: entry.timeOfDay ?? null,
-        title: entry.title ?? null,
-        snippet: plainExcerpt(textStarts.get(entry.id) ?? '', SNIPPET_LENGTH),
-        mood: entry.mood ?? null,
-      })),
+      entries: entities.map((entry) => {
+        const sealed = Boolean(entry.sealedUntil);
+        return {
+          id: entry.id,
+          diary_id: entry.diaryId ?? null,
+          date: entry.date,
+          index: entry.index,
+          time_of_day: entry.timeOfDay ?? null,
+          title: sealed ? null : (entry.title ?? null),
+          snippet: sealed ? '' : plainExcerpt(textStarts.get(entry.id) ?? '', SNIPPET_LENGTH),
+          mood: sealed ? null : (entry.mood ?? null),
+          sealed,
+        };
+      }),
     };
   }
 }

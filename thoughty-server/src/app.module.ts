@@ -26,6 +26,7 @@ import { OnThisDayEmailModule } from './modules/on-this-day-email';
 import { MonthlyRecapEmailModule } from './modules/monthly-recap-email';
 import { OptInEmailModule } from './modules/opt-in-email';
 import { AccountPurgeModule } from './modules/account-purge';
+import { TimeCapsuleEmailModule } from './modules/time-capsules';
 import { HealthController } from './health.controller';
 import {
   createThrottlerModuleOptions,
@@ -74,6 +75,7 @@ import {
     MonthlyRecapEmailModule,
     OptInEmailModule,
     AccountPurgeModule,
+    TimeCapsuleEmailModule,
   ],
   providers: [
     // Global JWT Auth Guard

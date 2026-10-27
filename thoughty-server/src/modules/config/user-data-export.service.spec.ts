@@ -16,11 +16,13 @@ import {
   MemoirProgram,
   OnThisDayEmail,
   MonthlyRecapEmail,
+  TimeCapsule,
   Setting,
   User,
   UserFollow,
 } from '@/database/entities';
 import { UserDataExportService } from './user-data-export.service';
+import { noTimeCapsules } from '@/modules/time-capsules/time-capsules.test-helpers';
 
 describe('UserDataExportService', () => {
   let service: UserDataExportService;
@@ -84,6 +86,8 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(Person), useValue: personRepository },
         { provide: getRepositoryToken(OnThisDayEmail), useValue: onThisDayEmailRepository },
         { provide: getRepositoryToken(MonthlyRecapEmail), useValue: monthlyRecapEmailRepository },
+        { provide: getRepositoryToken(TimeCapsule), useValue: { find: jest.fn().mockResolvedValue([]) } },
+        noTimeCapsules(),
       ],
     }).compile();
 

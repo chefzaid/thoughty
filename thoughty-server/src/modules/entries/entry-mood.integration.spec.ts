@@ -10,6 +10,7 @@ import { StatsMoodService } from '@/modules/stats/stats-mood.service';
 import { YearReviewService } from '@/modules/review/year-review.service';
 import { EntriesQueryService } from './entries-query.service';
 import { EntrySearchService } from './entry-search.service';
+import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 
 describePostgres('PostgreSQL entry moods', () => {
   let database: PostgresTestDatabase;
@@ -25,7 +26,7 @@ describePostgres('PostgreSQL entry moods', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     entries = dataSource.getRepository(Entry);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries));
+    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource));
     stats = new StatsMoodService(entries);
     review = new YearReviewService(
       entries,

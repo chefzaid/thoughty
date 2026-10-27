@@ -9,6 +9,7 @@ import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Attachment, Entry } from '@/database/entities';
+import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 import {
@@ -214,13 +215,16 @@ export class AttachmentsService implements OnModuleInit {
   /**
    * Opens a stored file for the user who owns its attachment. Attachments are never shown in the
    * public feed, so nobody else may read them; a key that is not the caller's answers as missing.
-   * The type comes from the attachment row (limited to the upload allowlist), not from storage.
+   * The type comes from the attachment row (limited to the upload allowlist), not from storage. A file of
+   * a sealed time capsule also answers as missing until the capsule opens.
    */
   async getOwnedFile(userId: number, storedFilename: string): Promise<ServedAttachmentFile> {
     const attachment = await this.attachmentRepository.findOne({
       where: { storedFilename, userId },
+      relations: { entry: true },
+      withDeleted: true,
     });
-    if (!attachment) {
+    if (!attachment || attachment.entry?.sealedUntil) {
       throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
     }
     const { stream } = await this.getFileStream(attachment.storedFilename);
@@ -235,12 +239,18 @@ export class AttachmentsService implements OnModuleInit {
     };
   }
 
+  /** One of the writer's attachments, to work on; one of a sealed time capsule is refused until the capsule opens. */
   async getOwnedAttachment(userId: number, attachmentId: number): Promise<Attachment> {
     const attachment = await this.attachmentRepository.findOne({
       where: { id: attachmentId, userId },
+      relations: { entry: true },
+      withDeleted: true,
     });
     if (!attachment) {
       throw apiError(NotFoundException, 'ATTACHMENT_NOT_FOUND');
+    }
+    if (attachment.entry) {
+      assertEntryNotSealed(attachment.entry);
     }
     return attachment;
   }

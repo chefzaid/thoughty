@@ -18,6 +18,7 @@ import { handleCalendarRoutes } from "./mockApp.routes.calendar";
 import { handleLifeEraRoutes } from "./mockApp.routes.life-eras";
 import { handleOptInEmailRoutes } from "./mockApp.routes.opt-in-emails";
 import { handlePeopleRoutes } from "./mockApp.routes.people";
+import { handleTimeCapsuleRoutes } from "./mockApp.routes.time-capsules";
 
 async function handleAuthRoutes({
   route,
@@ -385,6 +386,9 @@ export async function registerMockAppRoutes(page: Page, state: MockAppState) {
       return;
     }
     if (await handleMemoirRoutes(context)) {
+      return;
+    }
+    if (await handleTimeCapsuleRoutes(context)) {
       return;
     }
     if (await handleEntriesRoutes(context)) {

@@ -74,6 +74,8 @@ export interface MockEntry {
   createdAt?: string;
   format?: "plain" | "markdown";
   diaryId?: number | null;
+  /** A time capsule: sealed until `openAt` while `openedAt` is null (`mockApp.routes.time-capsules.ts`). */
+  capsule?: { openAt: string; sealedAt: string; openedAt: string | null };
   attachments?: Array<{
     id: number;
     original_filename: string;

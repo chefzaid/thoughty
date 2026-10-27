@@ -5,7 +5,7 @@ describe('EntriesQueryService.findMonthMemory', () => {
   const setup = (rows: { entities: unknown[]; raw: unknown[] }) => {
     const qb = createQueryBuilder({ getRawAndEntities: jest.fn().mockResolvedValue(rows) });
     const repository = { createQueryBuilder: jest.fn(() => qb) };
-    return { qb, service: new EntriesQueryService(repository as never, {} as never, {} as never) };
+    return { qb, service: new EntriesQueryService(repository as never, {} as never, {} as never, {} as never) };
   };
 
   it('picks a favorite first, then the longest and oldest entry of that month in an earlier year', async () => {

@@ -158,7 +158,7 @@ describe('JournalView calendar layout', () => {
     expect(location()).toBe('?diary=1');
 
     fireEvent.click(screen.getByRole('button', { name: 'journalLayoutCalendar' }));
-    act(() => calendar().onOpenEntry({ id: 42, diary_id: 1, date: '2026-10-20', index: 2, time_of_day: null, title: null, snippet: '', mood: null }));
+    act(() => calendar().onOpenEntry({ id: 42, diary_id: 1, date: '2026-10-20', index: 2, time_of_day: null, title: null, snippet: '', mood: null, sealed: false }));
     expect(location()).toBe('?diary=all&entry=42');
     expect(screen.getByTestId('entries-list')).toBeInTheDocument();
   });

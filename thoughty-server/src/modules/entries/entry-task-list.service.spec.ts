@@ -103,6 +103,10 @@ describe('EntryTaskListService', () => {
     entryRepository.findOne.mockResolvedValueOnce(entry());
     await expect(service.setTask(1, 4, { line: 5, checked: true })).rejects.toThrow(ConflictException);
 
+    // A sealed time capsule cannot be ticked until it opens
+    entryRepository.findOne.mockResolvedValueOnce(entry({ sealedUntil: new Date('2030-01-01T09:00:00Z') }));
+    await expect(service.setTask(1, 4, { line: 0, checked: true })).rejects.toMatchObject({ response: { code: 'ENTRY_SEALED' } });
+
     expect(entryRepository.save).not.toHaveBeenCalled();
     expect(revisionRepository.save).not.toHaveBeenCalled();
   });

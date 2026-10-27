@@ -21,6 +21,7 @@ describe('EntryListCacheService', () => {
       is_archived: false,
       is_pinned: false,
       created_at: new Date('2024-01-15T10:00:00Z'),
+      sealed_until: null,
       attachments: [],
     }],
     total: 1,

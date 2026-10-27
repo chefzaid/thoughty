@@ -14,9 +14,11 @@ import {
   Matches,
   Max,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
+import { SealEntryDto } from './entry-seal.dto';
 import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entry-order.util';
 import { MAX_FEELING_LENGTH, MAX_FEELINGS, MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
 
@@ -95,6 +97,18 @@ export class CreateEntryDto extends EntryDetailsDto {
   @IsOptional()
   @IsEnum(['plain', 'markdown'])
   format?: 'plain' | 'markdown';
+
+  @ApiPropertyOptional({
+    type: SealEntryDto,
+    description:
+      'Seals the entry as a time capsule until this local date and hour: its title, text, tags, mood and ' +
+      'attachments stay hidden everywhere, it stays private and cannot be edited until it opens, then it is ' +
+      'emailed to the writer and shown in Highlights.',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SealEntryDto)
+  seal?: SealEntryDto;
 }
 
 export class UpdateEntryDto extends EntryDetailsDto {

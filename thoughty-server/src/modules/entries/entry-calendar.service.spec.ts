@@ -21,6 +21,17 @@ describe('EntryCalendarService', () => {
     service = new EntryCalendarService(entryRepository as never, entrySearch as never);
   });
 
+  it('shows a sealed time capsule on its day without its title, text or mood', async () => {
+    qb.getRawAndEntities.mockResolvedValue({
+      entities: [{ id: 7, diaryId: 2, date: '2026-10-01', index: 1, timeOfDay: null, title: 'Leaked', mood: 4, sealedUntil: new Date('2030-01-01T08:00:00Z') }],
+      raw: [{ e_id: 7, content_start: 'Leaked text' }],
+    });
+
+    const { entries } = await service.getMonth(4, { month: '2026-10' });
+
+    expect(entries).toEqual([{ id: 7, diary_id: 2, date: '2026-10-01', index: 1, time_of_day: null, title: null, snippet: '', mood: null, sealed: true }]);
+  });
+
   it("summarizes the writer's entries of the month in day order", async () => {
     qb.getRawAndEntities.mockResolvedValue({
       entities: [
@@ -48,7 +59,7 @@ describe('EntryCalendarService', () => {
     expect(result).toEqual({
       month: '2026-10',
       entries: [
-        { id: 7, diary_id: 2, date: '2026-10-01', index: 1, time_of_day: null, title: 'Harbor run', snippet: 'Ran along the harbor.', mood: 4 },
+        { id: 7, diary_id: 2, date: '2026-10-01', index: 1, time_of_day: null, title: 'Harbor run', snippet: 'Ran along the harbor.', mood: 4, sealed: false },
         {
           id: 9,
           diary_id: null,
@@ -58,6 +69,7 @@ describe('EntryCalendarService', () => {
           title: null,
           snippet: 'Evening A quiet night at home, reading by the window until late.',
           mood: null,
+          sealed: false,
         },
       ],
     });

@@ -9,6 +9,7 @@ export interface EntriesCommandTestBed {
   entryTaggingService: Record<string, jest.Mock>;
   configService: Record<string, jest.Mock>;
   entryMentions: Record<string, jest.Mock>;
+  timeCapsules: Record<string, jest.Mock>;
 }
 
 /**
@@ -50,6 +51,10 @@ export function createEntriesCommandTestBed(): EntriesCommandTestBed {
     save: jest.fn((_userId: number, value: unknown) => entryRepository.save(value)),
   };
 
+  const timeCapsules = {
+    createSealed: jest.fn(async (_userId: number, written: object) => ({ id: 99, ...written })),
+  };
+
   const service = new EntriesCommandService(
     entryRepository as never,
     revisionRepository as never,
@@ -57,7 +62,8 @@ export function createEntriesCommandTestBed(): EntriesCommandTestBed {
     entryTaggingService as never,
     configService as never,
     entryMentions as never,
+    timeCapsules as never,
   );
 
-  return { service, entryRepository, revisionRepository, diaryRepository, entryTaggingService, configService, entryMentions };
+  return { service, entryRepository, revisionRepository, diaryRepository, entryTaggingService, configService, entryMentions, timeCapsules };
 }

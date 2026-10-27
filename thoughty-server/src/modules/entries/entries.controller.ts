@@ -198,6 +198,7 @@ export class EntriesController {
   @ApiOperation({ summary: 'Update an existing entry' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Entry updated', type: EntryMutationResponseDto })
+  @ApiResponse({ status: 409, description: 'The entry is a sealed time capsule' })
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -218,7 +219,10 @@ export class EntriesController {
   @ApiResponse({ status: 200, description: 'Task updated', type: EntryMutationResponseDto })
   @ApiResponse({ status: 400, description: 'The entry is not Markdown' })
   @ApiResponse({ status: 404, description: 'Entry not found' })
-  @ApiResponse({ status: 409, description: 'The line is not a task list item (the entry changed elsewhere)' })
+  @ApiResponse({
+    status: 409,
+    description: 'The line is not a task list item (the entry changed elsewhere), or the entry is a sealed time capsule',
+  })
   async setTask(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,
@@ -227,10 +231,29 @@ export class EntriesController {
     return this.entriesService.setTask(user.userId, id, dto);
   }
 
+  @Post(':id/unseal')
+  @ApiOperation({
+    summary: 'Open a sealed time capsule early',
+    description:
+      'Opens one of your sealed entries now instead of on its date: its title, text, tags, mood and ' +
+      'attachments come back, and it can be edited again. Opening early sends no email.',
+  })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiResponse({ status: 201, description: 'The entry, opened', type: EntryMutationResponseDto })
+  @ApiResponse({ status: 404, description: 'Entry not found' })
+  @ApiResponse({ status: 409, description: 'The entry is not sealed' })
+  async unseal(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<EntryMutationResponseDto> {
+    return this.entriesService.unseal(user.userId, id);
+  }
+
   @Patch(':id/visibility')
   @ApiOperation({ summary: 'Toggle visibility of an entry' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Visibility updated', type: EntryMutationResponseDto })
+  @ApiResponse({ status: 409, description: 'The entry is a sealed time capsule, which stays private' })
   async updateVisibility(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseIntPipe) id: number,

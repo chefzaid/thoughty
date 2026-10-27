@@ -9,6 +9,7 @@ import { Entry, EntryRevision, User } from '@/database/entities';
 import { EntriesQueryService } from './entries-query.service';
 import { EntrySearchService } from './entry-search.service';
 import type { GetEntriesQueryDto } from './dto';
+import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 
 describePostgres('PostgreSQL full-text entry search', () => {
   let database: PostgresTestDatabase;
@@ -22,7 +23,7 @@ describePostgres('PostgreSQL full-text entry search', () => {
     database = await createPostgresTestDatabase();
     dataSource = database.dataSource;
     entries = dataSource.getRepository(Entry);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries));
+    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), new EntrySearchService(entries), timeCapsuleServiceOn(dataSource));
   }, POSTGRES_SETUP_TIMEOUT_MS);
   afterAll(async () => { await database?.drop(); });
 

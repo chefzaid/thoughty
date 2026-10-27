@@ -29,6 +29,13 @@ export interface EntryData {
   format?: EntryFormat;
   visibility?: EntryVisibility;
   diaryName?: string;
+  /** When a sealed time capsule opens; exports write it so the file says the entry is sealed. */
+  sealedUntil?: Date | null;
+}
+
+/** When a sealed entry opens, as the exports write it (ISO 8601 in UTC), or null for an open entry. */
+export function sealedUntilText(entry: Pick<EntryData, 'sealedUntil'>): string | null {
+  return entry.sealedUntil ? entry.sealedUntil.toISOString() : null;
 }
 
 export function normalizeEntryDate(date: string | Date): string {

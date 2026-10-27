@@ -4,6 +4,7 @@ import {
   moodFields,
   normalizeEntryDate,
   type ParsedEntry,
+  sealedUntilText,
   sortEntries,
 } from './file-converter-entry.util';
 
@@ -31,6 +32,10 @@ export function generateJsonFile(entries: EntryData[], includeVisibility = false
     }
     if (entry.diaryName) {
       obj.diary = entry.diaryName;
+    }
+    const sealedUntil = sealedUntilText(entry);
+    if (sealedUntil) {
+      obj.sealedUntil = sealedUntil;
     }
     return obj;
   });

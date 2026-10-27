@@ -58,7 +58,7 @@ describe('BookEntrySourceService', () => {
       const selection = await service.select(7, { diaryId: 2, dateFrom: '2024-01-01' });
 
       expect(queryBuilder.where).toHaveBeenCalledWith('e.user_id = :userId', { userId: 7 });
-      expect(conditions()).toEqual(['e.is_archived = false', 'e.diary_id = :diaryId', 'e.date >= :dateFrom']);
+      expect(conditions()).toEqual(['e.sealed_until IS NULL', 'e.is_archived = false', 'e.diary_id = :diaryId', 'e.date >= :dateFrom']);
       expect(selection).toEqual({ entries: [], source: { kind: 'journal', diaryId: 2 }, defaultTitle: 'Home' });
     });
   });
@@ -74,6 +74,7 @@ describe('BookEntrySourceService', () => {
       expect(savedSearches.findOwn).toHaveBeenCalledWith(7, 4);
       expect(entrySearch.prepare).not.toHaveBeenCalled();
       expect(conditions()).toEqual([
+        'e.sealed_until IS NULL',
         'e.tags @> :tagList',
         'e.diary_id = :diaryId',
         'e.is_favorite = true',

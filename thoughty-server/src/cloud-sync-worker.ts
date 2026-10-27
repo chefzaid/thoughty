@@ -8,6 +8,7 @@ import { OnThisDayDeliveryWorkerService } from './modules/on-this-day-email/on-t
 import { MonthlyRecapDeliveryWorkerService } from './modules/monthly-recap-email/monthly-recap-delivery-worker.service';
 import { RecycleBinPurgeWorkerService } from './modules/recycle-bin/recycle-bin-purge-worker.service';
 import { AccountPurgeWorkerService } from './modules/account-purge/account-purge-worker.service';
+import { TimeCapsuleDeliveryWorkerService } from './modules/time-capsules/time-capsule-delivery-worker.service';
 
 const logger = new JsonLogger('CloudSyncWorkerBootstrap');
 
@@ -36,6 +37,7 @@ async function bootstrap(): Promise<void> {
   await app.get(MemoirDeliveryWorkerService).start();
   await app.get(OnThisDayDeliveryWorkerService).start();
   await app.get(MonthlyRecapDeliveryWorkerService).start();
+  await app.get(TimeCapsuleDeliveryWorkerService).start();
   await app.get(RecycleBinPurgeWorkerService).start();
   await app.get(AccountPurgeWorkerService).start();
 }

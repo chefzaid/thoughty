@@ -8,6 +8,8 @@ import { ConfigService } from '@/modules/config';
 import { CreateEntryDto, UpdateEntryDto, BulkOperationDto } from './dto';
 import { EntryTaggingService } from './entry-tagging.service';
 import { EntryMentionsService } from './entry-mentions.service';
+import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
+import { assertEntryNotSealed } from '@/modules/time-capsules/time-capsule.guard';
 
 const DEFAULT_MAX_PINNED_ENTRIES = 3;
 
@@ -55,6 +57,7 @@ export class EntriesCommandService {
     private readonly entryTaggingService: EntryTaggingService,
     private readonly configService: ConfigService,
     private readonly entryMentions: EntryMentionsService,
+    private readonly timeCapsules: TimeCapsuleService,
   ) {}
 
   private sanitizeTagName(tag?: string | null): string {
@@ -72,7 +75,7 @@ export class EntriesCommandService {
     const nextIndex = countResult + 1;
 
     // A new entry is numbered after the day's entries whatever its time, so existing links keep their targets
-    const entry = await this.entryMentions.save(userId, {
+    const written = {
       userId,
       date: dateStr,
       index: nextIndex,
@@ -85,7 +88,10 @@ export class EntriesCommandService {
       format: dto.format || 'plain',
       visibility: dto.visibility || 'private',
       diaryId: targetDiaryId,
-    });
+    };
+    const entry = dto.seal
+      ? await this.timeCapsules.createSealed(userId, written, dto.seal)
+      : await this.entryMentions.save(userId, written);
 
     return { success: true, entryId: entry.id };
   }
@@ -116,6 +122,7 @@ export class EntriesCommandService {
     if (!entry) {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
+    assertEntryNotSealed(entry);
 
     await this.revisionRepository.save(entryRevisionSnapshot(entry));
 
@@ -175,6 +182,7 @@ export class EntriesCommandService {
     if (!entry) {
       throw apiError(NotFoundException, 'ENTRY_NOT_FOUND');
     }
+    assertEntryNotSealed(entry);
 
     entry.visibility = visibility;
     const updated = await this.entryRepository.save(entry);
@@ -272,14 +280,16 @@ export class EntriesCommandService {
     }
 
     const validIds = entries.map((entry) => entry.id);
+    // Sealed time capsules stay private and keep their tags as written until they open
+    const openEntries = entries.filter((entry) => !entry.sealedUntil);
 
     switch (dto.action) {
       case 'delete':
         return this.bulkDelete(userId, entries, validIds);
       case 'visibility':
-        return this.bulkUpdateVisibility(userId, validIds, dto.visibility);
+        return this.bulkUpdateVisibility(userId, openEntries.map((entry) => entry.id), dto.visibility);
       case 'tags':
-        return this.bulkAddTags(entries, dto.tags);
+        return this.bulkAddTags(openEntries, dto.tags);
       case 'move':
         return this.bulkMove(userId, validIds, dto.diaryId);
       case 'archive':
@@ -420,7 +430,9 @@ export class EntriesCommandService {
       throw apiError(BadRequestException, 'VALIDATION_FAILED', 'Visibility value is required');
     }
 
-    await this.entryRepository.update({ id: In(validIds), userId }, { visibility });
+    if (validIds.length > 0) {
+      await this.entryRepository.update({ id: In(validIds), userId }, { visibility });
+    }
     return { success: true, affectedCount: validIds.length };
   }
 

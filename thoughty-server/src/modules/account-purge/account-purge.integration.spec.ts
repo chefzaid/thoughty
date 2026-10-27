@@ -96,6 +96,15 @@ describePostgres('PostgreSQL account purge', () => {
       `INSERT INTO monthly_recap_emails (user_id, enabled, delivery_hour, time_zone, diary_id, next_send_at) VALUES ($1, TRUE, 8, 'Europe/Paris', $2, NOW())`,
       [userId, diaryId],
     );
+    const sealedId = await one(
+      `INSERT INTO entries (user_id, diary_id, date, content, sealed_until) VALUES ($1, $2, '2026-01-04', '', NOW() + INTERVAL '1 year') RETURNING id`,
+      [userId, diaryId],
+    );
+    await dataSource.query(
+      `INSERT INTO time_capsules (entry_id, user_id, opens_on, open_hour, time_zone, open_at, sealed_content)
+       VALUES ($1, $2, CURRENT_DATE + 365, 9, 'Europe/Paris', NOW() + INTERVAL '1 year', 'Dear future me')`,
+      [sealedId, userId],
+    );
     const personId = await one(`INSERT INTO people (user_id, name) VALUES ($1, 'Marie') RETURNING id`, [userId]);
     await dataSource.query(`INSERT INTO person_handles (user_id, handle, person_id) VALUES ($1, 'marie', $2)`, [userId, personId]);
     await dataSource.query(`INSERT INTO entry_people (entry_id, person_id) VALUES ($1, $2)`, [entryId, personId]);
@@ -159,7 +168,8 @@ describePostgres('PostgreSQL account purge', () => {
 
     // The friend's own account is untouched.
     expect(await remainingRows(friendId)).toEqual(expect.objectContaining({
-      'entries.user_id': 2,
+      'entries.user_id': 3,
+      'time_capsules.user_id': 1,
       'attachments.user_id': 2,
       'settings.user_id': 1,
       'feature_requests.user_id': 1,
@@ -176,7 +186,7 @@ describePostgres('PostgreSQL account purge', () => {
 
     expect(removeStoredFiles).not.toHaveBeenCalled();
     expect((await dataSource.query('SELECT id FROM users ORDER BY id')).map((row: { id: number }) => row.id)).toEqual([liveId, recentId]);
-    expect(await remainingRows(recentId)).toEqual(expect.objectContaining({ 'entries.user_id': 2 }));
+    expect(await remainingRows(recentId)).toEqual(expect.objectContaining({ 'entries.user_id': 3, 'time_capsules.user_id': 1 }));
   });
 
   it('uses the configured grace period', async () => {

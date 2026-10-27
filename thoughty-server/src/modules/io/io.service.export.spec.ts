@@ -6,9 +6,10 @@ describe('IoService', () => {
   let entryRepository: any;
   let settingRepository: any;
   let diaryRepository: any;
+  let timeCapsules: Record<string, jest.Mock>;
 
   beforeEach(async () => {
-    ({ service, entryRepository, settingRepository, diaryRepository } = await createIoServiceTestBed());
+    ({ service, entryRepository, settingRepository, diaryRepository, timeCapsules } = await createIoServiceTestBed());
   });
 
   afterEach(() => {
@@ -178,6 +179,35 @@ describe('IoService', () => {
       expect(result.contentType).toBe('application/epub+zip');
       expect(Buffer.isBuffer(result.content)).toBe(true);
       expect((result.content as Buffer).subarray(0, 2).toString()).toBe('PK');
+    });
+
+    it('keeps sealed time capsules as written, marked sealed, in data files', async () => {
+      settingRepository.find.mockResolvedValue([]);
+      diaryRepository.find.mockResolvedValue([]);
+      const sealedUntil = new Date('2031-10-27T08:00:00Z');
+      const sealedRow = { ...mockEntry, id: 2, content: '', tags: [], sealedUntil };
+      entryRepository.createQueryBuilder().getMany.mockResolvedValue([sealedRow]);
+      timeCapsules.reveal.mockResolvedValueOnce([{ ...sealedRow, content: 'Dear future me', tags: ['future-self'] }]);
+
+      const result = await service.export(1, undefined, false, 'json');
+
+      expect(timeCapsules.reveal).toHaveBeenCalledWith([sealedRow]);
+      expect(JSON.parse(result.content as string).entries[0]).toMatchObject({
+        content: 'Dear future me',
+        tags: ['future-self'],
+        sealedUntil: '2031-10-27T08:00:00.000Z',
+      });
+    });
+
+    it('leaves sealed time capsules out of the PDF, HTML and EPUB reading copies', async () => {
+      const sealedRow = { ...mockEntry, id: 2, content: 'Should never show', sealedUntil: new Date('2031-10-27T08:00:00Z') };
+      entryRepository.createQueryBuilder().getMany.mockResolvedValue([mockEntry, sealedRow]);
+
+      const result = await service.export(1, undefined, false, 'html');
+
+      expect(result.content).toContain('Test entry content');
+      expect(result.content).not.toContain('Should never show');
+      expect(timeCapsules.reveal).not.toHaveBeenCalled();
     });
 
     it('should title document exports with the diary name and username author', async () => {

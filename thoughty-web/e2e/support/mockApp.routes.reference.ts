@@ -4,6 +4,7 @@ import {
   unique,
 } from './mockApp.shared';
 import { fulfillJson, sortStrings, toEntryResponse, type RouteContext } from './mockApp.route-utils';
+import { isMockSealed, mockOpenedCapsules } from './mockApp.routes.time-capsules';
 import { buildMockGoals } from './mockApp.goals';
 import { buildMockStreak } from './mockApp.streak';
 
@@ -260,7 +261,7 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
     const scopedEntries = searchParams.get('diaryId')
       ? state.entries.filter((entry) => String(entry.diaryId ?? 1) === searchParams.get('diaryId'))
       : state.entries;
-    const sorted = sortEntries(scopedEntries);
+    const sorted = sortEntries(scopedEntries.filter((entry) => !isMockSealed(entry)));
     const randomEntry = sorted[0] ?? null;
     const onThisDayEntry = sorted.at(-1) ?? null;
     const now = new Date();
@@ -269,6 +270,7 @@ async function handleEntryReferenceRoutes({ route, pathname, searchParams, state
       randomEntry: randomEntry ? toEntryResponse(randomEntry, state) : null,
       onThisDay: onThisDayEntry ? { '1': [toEntryResponse(onThisDayEntry, state)] } : {},
       currentDate: { month: String(now.getMonth() + 1).padStart(2, '0'), day: String(now.getDate()).padStart(2, '0'), year: now.getFullYear() },
+      openedCapsules: mockOpenedCapsules(scopedEntries, state),
     });
     return true;
   }

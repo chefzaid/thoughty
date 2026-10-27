@@ -52,8 +52,27 @@ export function toRevisionResponse(revision: MockEntryRevision): components['sch
   };
 }
 
-/** An entry exactly as the API serializes it (`EntryResponseDto`), so the mock cannot drift from the contract. */
+/**
+ * An entry exactly as the API serializes it (`EntryResponseDto`), so the mock cannot drift from the contract.
+ * A sealed time capsule shows only its date, diary, flags and when it opens.
+ */
 export function toEntryResponse(entry: MockEntry, state: MockAppState): components['schemas']['EntryResponseDto'] {
+  const response = openEntryResponse(entry, state);
+  return entry.capsule && !entry.capsule.openedAt
+    ? {
+        ...response,
+        title: null,
+        mood: null,
+        feelings: [],
+        tags: [],
+        content: '',
+        ...(response.attachments ? { attachments: [] } : {}),
+        sealed_until: entry.capsule.openAt,
+      }
+    : response;
+}
+
+function openEntryResponse(entry: MockEntry, state: MockAppState): components['schemas']['EntryResponseDto'] {
   const diary = state.diaries.find((candidate) => candidate.id === (entry.diaryId ?? 1));
 
   return {
@@ -79,6 +98,7 @@ export function toEntryResponse(entry: MockEntry, state: MockAppState): componen
     diary_color: diary?.color ?? undefined,
     ...(entry.attachments ? { attachments: entry.attachments } : {}),
     created_at: entry.createdAt ?? `${entry.date}T12:00:00.000Z`,
+    sealed_until: null,
   };
 }
 

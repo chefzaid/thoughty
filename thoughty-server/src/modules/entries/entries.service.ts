@@ -24,6 +24,7 @@ import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
 import { EntryCalendarService } from './entry-calendar.service';
+import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
 @Injectable()
 export class EntriesService {
@@ -34,6 +35,7 @@ export class EntriesService {
     private readonly entryListCacheService: EntryListCacheService,
     private readonly entryTaskListService: EntryTaskListService,
     private readonly entryCalendarService: EntryCalendarService,
+    private readonly timeCapsuleService: TimeCapsuleService,
   ) {}
 
   async getEntries(userId: number, query: GetEntriesQueryDto): Promise<EntriesListResponseDto> {
@@ -144,6 +146,13 @@ export class EntriesService {
     const result = await this.entriesCommandService.togglePinned(userId, id, isPinned);
     this.entryListCacheService.invalidateUser(userId);
     return { success: result.success, entry: toEntryResponse(result.entry) };
+  }
+
+  /** Opens a sealed time capsule before its date, at the writer's request; nothing is emailed. */
+  async unseal(userId: number, id: number): Promise<EntryMutationResponseDto> {
+    const entry = await this.timeCapsuleService.openEarly(userId, id);
+    this.entryListCacheService.invalidateUser(userId);
+    return { success: true, entry: toEntryResponse(entry) };
   }
 
   async getHighlights(userId: number, query: GetHighlightsQueryDto): Promise<EntryHighlightsResponseDto> {

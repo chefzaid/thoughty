@@ -27,6 +27,7 @@ describe('EntriesController', () => {
       toggleFavorite: jest.fn(),
       toggleArchived: jest.fn(),
       togglePinned: jest.fn(),
+      unseal: jest.fn(),
       getRevisions: jest.fn(),
       getTagUsage: jest.fn(),
       deleteTag: jest.fn(),
@@ -283,6 +284,16 @@ describe('EntriesController', () => {
       const result = await controller.toggleArchived(mockUser as any, 1, dto as any);
       expect(entriesService.toggleArchived).toHaveBeenCalledWith(1, 1, false);
       expect(result).toBe(expected);
+    });
+  });
+
+  describe('unseal', () => {
+    it('opens the current user’s sealed entry through entriesService.unseal', async () => {
+      const expected = { success: true, entry: { id: 1, sealed_until: null } };
+      entriesService.unseal!.mockResolvedValue(expected);
+
+      await expect(controller.unseal(mockUser as any, 1)).resolves.toBe(expected);
+      expect(entriesService.unseal).toHaveBeenCalledWith(1, 1);
     });
   });
 

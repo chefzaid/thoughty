@@ -66,6 +66,17 @@ export class EntryResponseDto {
   @ApiProperty()
   created_at: Date;
 
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description:
+      'While the entry is a sealed time capsule, when it opens; null otherwise. A sealed entry comes with ' +
+      'an empty text and no title, tags, mood, feelings or attachments.',
+    example: null,
+  })
+  sealed_until: Date | null;
+
   @ApiPropertyOptional({
     type: [String],
     description:
@@ -101,6 +112,26 @@ export class EntryHighlightsResponseDto {
 
   @ApiProperty({ type: EntryHighlightsDateDto })
   currentDate: EntryHighlightsDateDto;
+
+  @ApiProperty({
+    type: () => [OpenedTimeCapsuleDto],
+    description: 'Time capsules opened in the last seven days, newest first',
+  })
+  openedCapsules: OpenedTimeCapsuleDto[];
+}
+
+export class OpenedTimeCapsuleDto {
+  @ApiProperty({ type: EntryResponseDto })
+  entry: EntryResponseDto;
+
+  @ApiProperty({ description: 'When the writer sealed it' })
+  sealed_at: Date;
+
+  @ApiProperty({ description: 'When it opened' })
+  opened_at: Date;
+
+  @ApiProperty({ description: 'Whether the writer opened it before its date', example: false })
+  opened_early: boolean;
 }
 
 export class EntriesListResponseDto {

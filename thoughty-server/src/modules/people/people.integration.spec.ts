@@ -16,6 +16,7 @@ import { IoService } from '@/modules/io/io.service';
 import { RecycleBinService } from '@/modules/recycle-bin/recycle-bin.service';
 import { SavedSearchesService } from '@/modules/saved-searches';
 import { PeopleService } from './people.service';
+import { timeCapsuleServiceOn } from '@/modules/time-capsules/time-capsules.test-helpers';
 
 const anyFilters = {
   search: '',
@@ -56,9 +57,10 @@ describePostgres('PostgreSQL people', () => {
       { resolveSavedTags: async (_user: number, _text: string, tags: string[]) => tags } as never,
       configService as never,
       mentions,
+      timeCapsuleServiceOn(dataSource),
     );
     const search = new EntrySearchService(entries);
-    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search);
+    queries = new EntriesQueryService(entries, dataSource.getRepository(EntryRevision), search, timeCapsuleServiceOn(dataSource));
     calendar = new EntryCalendarService(entries, search);
     bin = new RecycleBinService(
       dataSource,
@@ -68,7 +70,7 @@ describePostgres('PostgreSQL people', () => {
       configService as never,
       cache,
     );
-    io = new IoService(entries, dataSource.getRepository(Setting), dataSource.getRepository(Diary), dataSource.getRepository(User), mentions);
+    io = new IoService(entries, dataSource.getRepository(Setting), dataSource.getRepository(Diary), dataSource.getRepository(User), mentions, timeCapsuleServiceOn(dataSource));
     savedSearches = new SavedSearchesService(dataSource.getRepository(SavedSearch), dataSource.getRepository(BookVersion));
     people = new PeopleService(dataSource.getRepository(Person), cache);
   }, POSTGRES_SETUP_TIMEOUT_MS);

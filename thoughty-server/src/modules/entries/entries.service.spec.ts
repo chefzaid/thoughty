@@ -7,6 +7,7 @@ import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
 import { EntryCalendarService } from './entry-calendar.service';
 import type { Entry } from '@/database/entities';
+import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
 /** A saved entry as TypeORM returns it, without the relations a mutation does not load. */
 const savedEntry = (fields: Partial<Entry> = {}) =>
@@ -38,6 +39,7 @@ describe('EntriesService', () => {
   let entriesCommandService: Record<string, jest.Mock>;
   let entryListCacheService: Record<string, jest.Mock>;
   let entryTaskListService: Record<string, jest.Mock>;
+  let timeCapsuleService: Record<string, jest.Mock>;
   let entryCalendarService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
@@ -84,6 +86,10 @@ describe('EntriesService', () => {
       getMonth: jest.fn(),
     };
 
+    timeCapsuleService = {
+      openEarly: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         EntriesService,
@@ -93,6 +99,7 @@ describe('EntriesService', () => {
         { provide: EntryListCacheService, useValue: entryListCacheService },
         { provide: EntryTaskListService, useValue: entryTaskListService },
         { provide: EntryCalendarService, useValue: entryCalendarService },
+        { provide: TimeCapsuleService, useValue: timeCapsuleService },
       ],
     }).compile();
 
@@ -279,6 +286,16 @@ describe('EntriesService', () => {
 
     expect(entriesCommandService.togglePinned).toHaveBeenCalledWith(1, 1, true);
     expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, is_pinned: true }) });
+  });
+
+  it('opens a sealed time capsule early and invalidates cached lists', async () => {
+    timeCapsuleService.openEarly.mockResolvedValue(savedEntry({ content: 'Dear future me' }));
+
+    const result = await service.unseal(1, 1);
+
+    expect(timeCapsuleService.openEarly).toHaveBeenCalledWith(1, 1);
+    expect(entryListCacheService.invalidateUser).toHaveBeenCalledWith(1);
+    expect(result).toEqual({ success: true, entry: expect.objectContaining({ id: 1, content: 'Dear future me', sealed_until: null }) });
   });
 
   it('delegates deleteAll to EntriesCommandService', async () => {

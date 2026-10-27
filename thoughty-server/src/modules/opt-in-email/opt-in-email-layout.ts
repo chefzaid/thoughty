@@ -105,11 +105,19 @@ export interface EmailDocument {
   bodyHtml: string;
   /** Why the email arrives. */
   footer: string;
-  unsubscribeLabel: string;
-  unsubscribeUrl: string;
+  /** Opt-in emails link to turning them off; a one-off email the writer scheduled (a time capsule) has nothing to turn off. */
+  unsubscribeLabel?: string;
+  unsubscribeUrl?: string;
 }
 
-/** The accessible HTML page every opt-in email shares: heading, intro, its sections, and the footer with its unsubscribe link. */
+function unsubscribeLinkHtml(email: Pick<EmailDocument, 'unsubscribeLabel' | 'unsubscribeUrl'>): string {
+  return email.unsubscribeUrl && email.unsubscribeLabel
+    ? `
+        <p style="font-size: 13px;"><a href="${escapeHtml(email.unsubscribeUrl)}" style="color: #4338ca; text-decoration: underline;">${escapeHtml(email.unsubscribeLabel)}</a></p>`
+    : '';
+}
+
+/** The accessible HTML page every email about the journal shares: heading, intro, its sections, and the footer with any unsubscribe link. */
 export function renderEmailDocument(email: EmailDocument): string {
   return `<!DOCTYPE html>
 <html lang="${email.language}">
@@ -123,8 +131,7 @@ export function renderEmailDocument(email: EmailDocument): string {
       <h1 style="color: #1a1a1a; font-size: 24px; margin: 0 0 8px;">${escapeHtml(email.heading)}</h1>
       <p style="color: #4a4a4a; font-size: 16px; margin: 0 0 16px;">${escapeHtml(email.intro)}</p>${email.bodyHtml}
       <footer style="border-top: 1px solid #ddd; padding-top: 16px;">
-        <p style="color: #4a4a4a; font-size: 13px; line-height: 1.5;">${escapeHtml(email.footer)}</p>
-        <p style="font-size: 13px;"><a href="${escapeHtml(email.unsubscribeUrl)}" style="color: #4338ca; text-decoration: underline;">${escapeHtml(email.unsubscribeLabel)}</a></p>
+        <p style="color: #4a4a4a; font-size: 13px; line-height: 1.5;">${escapeHtml(email.footer)}</p>${unsubscribeLinkHtml(email)}
       </footer>
     </main>
   </body>
@@ -132,13 +139,13 @@ export function renderEmailDocument(email: EmailDocument): string {
 `;
 }
 
-/** The plain-text alternative: the heading, intro and sections as paragraphs, then the footer and unsubscribe link. */
+/** The plain-text alternative: the heading, intro and sections as paragraphs, then the footer and any unsubscribe link. */
 export function renderEmailText(email: Omit<EmailDocument, 'bodyHtml' | 'language' | 'subject'>, sections: string[]): string {
   return [
     email.heading,
     email.intro,
     ...sections,
     email.footer,
-    `${email.unsubscribeLabel}: ${email.unsubscribeUrl}`,
+    ...(email.unsubscribeUrl && email.unsubscribeLabel ? [`${email.unsubscribeLabel}: ${email.unsubscribeUrl}`] : []),
   ].join('\n\n') + '\n';
 }

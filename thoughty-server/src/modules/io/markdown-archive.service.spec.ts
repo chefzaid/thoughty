@@ -6,6 +6,8 @@ import { Diary, Entry } from '@/database/entities';
 import { AttachmentsService } from '@/modules/attachments';
 import { ConfigService } from '@/modules/config';
 import { MarkdownArchiveService } from './markdown-archive.service';
+import { noTimeCapsules } from '@/modules/time-capsules/time-capsules.test-helpers';
+import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
 describe('MarkdownArchiveService', () => {
   let service: MarkdownArchiveService;
@@ -14,6 +16,7 @@ describe('MarkdownArchiveService', () => {
   let diaryRepository: { find: jest.Mock };
   let attachmentsService: { getFileBuffer: jest.Mock };
   let configService: { getConfig: jest.Mock };
+  let timeCapsules: { reveal: jest.Mock };
 
   const diaries = [
     { id: 1, userId: 7, name: 'Journal', position: 0 },
@@ -59,9 +62,23 @@ describe('MarkdownArchiveService', () => {
         { provide: getRepositoryToken(Diary), useValue: diaryRepository },
         { provide: AttachmentsService, useValue: attachmentsService },
         { provide: ConfigService, useValue: configService },
+        noTimeCapsules(),
       ],
     }).compile();
     service = moduleRef.get(MarkdownArchiveService);
+    timeCapsules = moduleRef.get(TimeCapsuleService) as unknown as { reveal: jest.Mock };
+  });
+
+  it('writes a sealed time capsule as it was sealed, marked sealed_until', async () => {
+    const sealedUntil = new Date('2031-10-27T08:00:00Z');
+    entries = [{ ...baseEntry, id: 1, diaryId: 1, date: '2026-10-27', index: 1, content: '', sealedUntil }];
+    timeCapsules.reveal.mockImplementationOnce(async (loaded: Entry[]) => loaded.map((entry) => ({ ...entry, content: 'Dear future me' })));
+
+    const { zip } = await buildArchive();
+
+    const file = await zip.file('Journal/2026/2026-10-27.md')!.async('string');
+    expect(file).toContain('sealed_until: "2031-10-27T08:00:00.000Z"');
+    expect(file).toContain('Dear future me');
   });
 
   it('writes one Markdown file per entry in diary and year folders, with attachments beside them', async () => {

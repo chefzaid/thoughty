@@ -48,6 +48,7 @@ describe('toEntryResponse', () => {
       diary_icon: '✈️',
       diary_color: '#2A9D8F',
       created_at: new Date('2026-10-21T08:30:00Z'),
+      sealed_until: null,
     });
   });
 
@@ -59,6 +60,28 @@ describe('toEntryResponse', () => {
     expect(response).toEqual(expect.objectContaining({ title: null, time_of_day: null, mood: null, feelings: [] }));
     expect(response.diary_name).toBeUndefined();
     expect(response).not.toHaveProperty('attachments');
+  });
+
+  it('shows a sealed time capsule only by its date, diary, flags and opening time', () => {
+    const sealedUntil = new Date('2030-01-01T08:00:00Z');
+    const attachment = { id: 5, originalFilename: 'letter.jpg' } as Attachment;
+
+    const response = toEntryResponse(entity({ sealedUntil, attachments: [attachment] }));
+
+    expect(response).toEqual(expect.objectContaining({
+      id: 7,
+      date: '2026-10-21',
+      time_of_day: '08:30',
+      is_favorite: true,
+      title: null,
+      content: '',
+      tags: [],
+      mood: null,
+      feelings: [],
+      attachments: [],
+      sealed_until: sealedUntil,
+    }));
+    expect(toEntryResponse(entity({ sealedUntil }))).not.toHaveProperty('attachments');
   });
 
   it('sends loaded attachments in the API shape', () => {

@@ -118,6 +118,19 @@ describe('RecycleBinService', () => {
       });
     });
 
+    it('shows a sealed time capsule in the bin by its date and opening time only', async () => {
+      const sealedUntil = new Date('2030-01-01T08:00:00Z');
+      entryRepository.createQueryBuilder.mockReturnValue(queryBuilder({
+        many: [trashed({ title: 'Dear future me', content: 'Secret', tags: ['future-self'], sealedUntil })],
+        count: 1,
+      }));
+      attachmentRepository.createQueryBuilder.mockReturnValue(queryBuilder({ raw: [] }));
+
+      const [entry] = (await service.list(7)).entries;
+
+      expect(entry).toEqual(expect.objectContaining({ title: null, content: '', tags: [], sealedUntil: '2030-01-01T08:00:00.000Z' }));
+    });
+
     it('reports one page for an empty bin without counting files', async () => {
       entryRepository.createQueryBuilder.mockReturnValue(queryBuilder());
 

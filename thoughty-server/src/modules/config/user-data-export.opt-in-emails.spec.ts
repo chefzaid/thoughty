@@ -12,7 +12,8 @@ describe('UserDataExportService opt-in email settings', () => {
     // Every repository before the two opt-in email ones, in constructor order.
     const others = Array.from({ length: 16 }, emptyRepository);
     const Service = UserDataExportService as unknown as new (...repositories: unknown[]) => UserDataExportService;
-    return new Service(...others, onThisDayEmail, monthlyRecapEmail);
+    const timeCapsules = { reveal: async (entries: unknown[]) => entries };
+    return new Service(...others, onThisDayEmail, monthlyRecapEmail, emptyRepository(), timeCapsules);
   };
 
   it.each(['onThisDayEmail', 'monthlyRecapEmail'] as const)('includes the %s setting, and null when it was never saved', async (key) => {

@@ -621,6 +621,26 @@ export interface paths {
         patch: operations["EntriesController_setTask"];
         trace?: never;
     };
+    "/api/entries/{id}/unseal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Open a sealed time capsule early
+         * @description Opens one of your sealed entries now instead of on its date: its title, text, tags, mood and attachments come back, and it can be edited again. Opening early sends no email.
+         */
+        post: operations["EntriesController_unseal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/entries/{id}/visibility": {
         parameters: {
             query?: never;
@@ -2537,6 +2557,7 @@ export interface components {
          *         }
          *       ],
          *       "created_at": "2026-06-24T10:00:00.000Z",
+         *       "sealed_until": null,
          *       "search_matches": [
          *         "morning run",
          *         "swimming"
@@ -2583,6 +2604,12 @@ export interface components {
             attachments?: components["schemas"]["AttachmentResponseDto"][];
             /** Format: date-time */
             created_at: string;
+            /**
+             * Format: date-time
+             * @description While the entry is a sealed time capsule, when it opens; null otherwise. A sealed entry comes with an empty text and no title, tags, mood, feelings or attachments.
+             * @example null
+             */
+            sealed_until: string | null;
             /**
              * @description With a search: the words and phrases of this entry's title and text that match it, as written, longest first, for highlighting. Empty when only a tag matched.
              * @example [
@@ -2632,6 +2659,7 @@ export interface components {
          *             }
          *           ],
          *           "created_at": "2026-06-24T10:00:00.000Z",
+         *           "sealed_until": null,
          *           "search_matches": [
          *             "morning run",
          *             "swimming"
@@ -2672,7 +2700,8 @@ export interface components {
          *       "time_of_day": "08:30",
          *       "title": "Morning walk by the river",
          *       "snippet": "A slow walk along the river before work…",
-         *       "mood": 4
+         *       "mood": 4,
+         *       "sealed": false
          *     }
          */
         EntryCalendarItemDto: {
@@ -2705,6 +2734,11 @@ export interface components {
              * @example 4
              */
             mood: number | null;
+            /**
+             * @description Whether the entry is a sealed time capsule, which shows no title, text or mood
+             * @example false
+             */
+            sealed: boolean;
         };
         /**
          * @example {
@@ -2718,7 +2752,8 @@ export interface components {
          *           "time_of_day": "08:30",
          *           "title": "Morning walk by the river",
          *           "snippet": "A slow walk along the river before work…",
-         *           "mood": 4
+         *           "mood": 4,
+         *           "sealed": false
          *         }
          *       ]
          *     }
@@ -2789,6 +2824,7 @@ export interface components {
          *           }
          *         ],
          *         "created_at": "2026-06-24T10:00:00.000Z",
+         *         "sealed_until": null,
          *         "search_matches": [
          *           "morning run",
          *           "swimming"
@@ -2820,6 +2856,74 @@ export interface components {
             day: string;
             /** @example 2026 */
             year: number;
+        };
+        /**
+         * @example {
+         *       "entry": {
+         *         "id": 1,
+         *         "user_id": 1,
+         *         "diary_id": 1,
+         *         "date": "2026-06-24",
+         *         "index": 1,
+         *         "title": "Morning walk by the river",
+         *         "time_of_day": "08:30",
+         *         "mood": 4,
+         *         "feelings": [
+         *           "calm",
+         *           "grateful"
+         *         ],
+         *         "tags": [
+         *           "reflection"
+         *         ],
+         *         "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *         "format": "plain",
+         *         "visibility": "private",
+         *         "is_favorite": true,
+         *         "is_archived": true,
+         *         "is_pinned": true,
+         *         "diary_name": "Daily Journal",
+         *         "diary_icon": "journal",
+         *         "diary_color": "#2A9D8F",
+         *         "attachments": [
+         *           {
+         *             "id": 1,
+         *             "original_filename": "Daily Journal",
+         *             "stored_filename": "Daily Journal",
+         *             "mimetype": "example",
+         *             "size": 1,
+         *             "transcript": "example",
+         *             "transcribed_at": "2026-06-24T10:00:00.000Z"
+         *           }
+         *         ],
+         *         "created_at": "2026-06-24T10:00:00.000Z",
+         *         "sealed_until": null,
+         *         "search_matches": [
+         *           "morning run",
+         *           "swimming"
+         *         ]
+         *       },
+         *       "sealed_at": "2026-06-24T10:00:00.000Z",
+         *       "opened_at": "2026-06-24T10:00:00.000Z",
+         *       "opened_early": false
+         *     }
+         */
+        OpenedTimeCapsuleDto: {
+            entry: components["schemas"]["EntryResponseDto"];
+            /**
+             * Format: date-time
+             * @description When the writer sealed it
+             */
+            sealed_at: string;
+            /**
+             * Format: date-time
+             * @description When it opened
+             */
+            opened_at: string;
+            /**
+             * @description Whether the writer opened it before its date
+             * @example false
+             */
+            opened_early: boolean;
         };
         /**
          * @example {
@@ -2860,6 +2964,7 @@ export interface components {
          *           }
          *         ],
          *         "created_at": "2026-06-24T10:00:00.000Z",
+         *         "sealed_until": null,
          *         "search_matches": [
          *           "morning run",
          *           "swimming"
@@ -2872,7 +2977,57 @@ export interface components {
          *         "month": "01",
          *         "day": "15",
          *         "year": 2026
-         *       }
+         *       },
+         *       "openedCapsules": [
+         *         {
+         *           "entry": {
+         *             "id": 1,
+         *             "user_id": 1,
+         *             "diary_id": 1,
+         *             "date": "2026-06-24",
+         *             "index": 1,
+         *             "title": "Morning walk by the river",
+         *             "time_of_day": "08:30",
+         *             "mood": 4,
+         *             "feelings": [
+         *               "calm",
+         *               "grateful"
+         *             ],
+         *             "tags": [
+         *               "reflection"
+         *             ],
+         *             "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+         *             "format": "plain",
+         *             "visibility": "private",
+         *             "is_favorite": true,
+         *             "is_archived": true,
+         *             "is_pinned": true,
+         *             "diary_name": "Daily Journal",
+         *             "diary_icon": "journal",
+         *             "diary_color": "#2A9D8F",
+         *             "attachments": [
+         *               {
+         *                 "id": 1,
+         *                 "original_filename": "Daily Journal",
+         *                 "stored_filename": "Daily Journal",
+         *                 "mimetype": "example",
+         *                 "size": 1,
+         *                 "transcript": "example",
+         *                 "transcribed_at": "2026-06-24T10:00:00.000Z"
+         *               }
+         *             ],
+         *             "created_at": "2026-06-24T10:00:00.000Z",
+         *             "sealed_until": null,
+         *             "search_matches": [
+         *               "morning run",
+         *               "swimming"
+         *             ]
+         *           },
+         *           "sealed_at": "2026-06-24T10:00:00.000Z",
+         *           "opened_at": "2026-06-24T10:00:00.000Z",
+         *           "opened_early": false
+         *         }
+         *       ]
          *     }
          */
         EntryHighlightsResponseDto: {
@@ -2888,6 +3043,8 @@ export interface components {
                 [key: string]: components["schemas"]["EntryResponseDto"][];
             };
             currentDate: components["schemas"]["EntryHighlightsDateDto"];
+            /** @description Time capsules opened in the last seven days, newest first */
+            openedCapsules: components["schemas"]["OpenedTimeCapsuleDto"][];
         };
         /**
          * @example {
@@ -2987,6 +3144,31 @@ export interface components {
         };
         /**
          * @example {
+         *       "opensOn": "2031-10-27",
+         *       "openHour": 9,
+         *       "timeZone": "Europe/Paris"
+         *     }
+         */
+        SealEntryDto: {
+            /**
+             * @description Local day the entry opens on (YYYY-MM-DD in `timeZone`): from tomorrow up to 50 years ahead
+             * @example 2031-10-27
+             */
+            opensOn: string;
+            /**
+             * @description Local hour it opens at, 9:00 when left out
+             * @default 9
+             * @example 9
+             */
+            openHour: number;
+            /**
+             * @description IANA time zone of the writer’s clock
+             * @example Europe/Paris
+             */
+            timeZone: string;
+        };
+        /**
+         * @example {
          *       "title": "Morning walk by the river",
          *       "timeOfDay": "08:30",
          *       "mood": 4,
@@ -3001,7 +3183,12 @@ export interface components {
          *       "date": "2026-06-24",
          *       "visibility": "private",
          *       "diaryId": 1,
-         *       "format": "plain"
+         *       "format": "plain",
+         *       "seal": {
+         *         "opensOn": "2031-10-27",
+         *         "openHour": 9,
+         *         "timeZone": "Europe/Paris"
+         *       }
          *     }
          */
         CreateEntryDto: {
@@ -3046,6 +3233,8 @@ export interface components {
              * @enum {string}
              */
             format: "plain" | "markdown";
+            /** @description Seals the entry as a time capsule until this local date and hour: its title, text, tags, mood and attachments stay hidden everywhere, it stays private and cannot be edited until it opens, then it is emailed to the writer and shown in Highlights. */
+            seal?: components["schemas"]["SealEntryDto"];
         };
         /**
          * @example {
@@ -3220,6 +3409,7 @@ export interface components {
          *           }
          *         ],
          *         "created_at": "2026-06-24T10:00:00.000Z",
+         *         "sealed_until": null,
          *         "search_matches": [
          *           "morning run",
          *           "swimming"
@@ -7371,6 +7561,7 @@ export interface components {
          *       "diaryIcon": "📓",
          *       "diaryColor": "#2A9D8F",
          *       "attachmentCount": 1,
+         *       "sealedUntil": null,
          *       "deletedAt": "2026-10-22T08:30:00.000Z",
          *       "purgeAt": "2026-11-21T08:30:00.000Z"
          *     }
@@ -7421,6 +7612,12 @@ export interface components {
             attachmentCount: number;
             /**
              * Format: date-time
+             * @description When a sealed time capsule opens; null otherwise. A sealed entry shows no title, text or tags, and once restored after that time it opens on the next run of the worker.
+             * @example null
+             */
+            sealedUntil: string | null;
+            /**
+             * Format: date-time
              * @example 2026-10-22T08:30:00.000Z
              */
             deletedAt: string;
@@ -7449,6 +7646,7 @@ export interface components {
          *           "diaryIcon": "📓",
          *           "diaryColor": "#2A9D8F",
          *           "attachmentCount": 1,
+         *           "sealedUntil": null,
          *           "deletedAt": "2026-10-22T08:30:00.000Z",
          *           "purgeAt": "2026-11-21T08:30:00.000Z"
          *         }
@@ -7765,7 +7963,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "TIME_CAPSULE_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -8968,6 +9166,7 @@ export interface operations {
                      *             }
                      *           ],
                      *           "created_at": "2026-06-24T10:00:00.000Z",
+                     *           "sealed_until": null,
                      *           "search_matches": [
                      *             "morning run",
                      *             "swimming"
@@ -9012,7 +9211,12 @@ export interface operations {
                  *       "date": "2026-06-24",
                  *       "visibility": "private",
                  *       "diaryId": 1,
-                 *       "format": "plain"
+                 *       "format": "plain",
+                 *       "seal": {
+                 *         "opensOn": "2031-10-27",
+                 *         "openHour": 9,
+                 *         "timeZone": "Europe/Paris"
+                 *       }
                  *     }
                  */
                 "application/json": components["schemas"]["CreateEntryDto"];
@@ -9112,7 +9316,8 @@ export interface operations {
                      *           "time_of_day": "08:30",
                      *           "title": "Morning walk by the river",
                      *           "snippet": "A slow walk along the river before work…",
-                     *           "mood": 4
+                     *           "mood": 4,
+                     *           "sealed": false
                      *         }
                      *       ]
                      *     }
@@ -9241,6 +9446,7 @@ export interface operations {
                      *           }
                      *         ],
                      *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "sealed_until": null,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -9313,6 +9519,7 @@ export interface operations {
                      *           }
                      *         ],
                      *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "sealed_until": null,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -9325,7 +9532,57 @@ export interface operations {
                      *         "month": "01",
                      *         "day": "15",
                      *         "year": 2026
-                     *       }
+                     *       },
+                     *       "openedCapsules": [
+                     *         {
+                     *           "entry": {
+                     *             "id": 1,
+                     *             "user_id": 1,
+                     *             "diary_id": 1,
+                     *             "date": "2026-06-24",
+                     *             "index": 1,
+                     *             "title": "Morning walk by the river",
+                     *             "time_of_day": "08:30",
+                     *             "mood": 4,
+                     *             "feelings": [
+                     *               "calm",
+                     *               "grateful"
+                     *             ],
+                     *             "tags": [
+                     *               "reflection"
+                     *             ],
+                     *             "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                     *             "format": "plain",
+                     *             "visibility": "private",
+                     *             "is_favorite": true,
+                     *             "is_archived": true,
+                     *             "is_pinned": true,
+                     *             "diary_name": "Daily Journal",
+                     *             "diary_icon": "journal",
+                     *             "diary_color": "#2A9D8F",
+                     *             "attachments": [
+                     *               {
+                     *                 "id": 1,
+                     *                 "original_filename": "Daily Journal",
+                     *                 "stored_filename": "Daily Journal",
+                     *                 "mimetype": "example",
+                     *                 "size": 1,
+                     *                 "transcript": "example",
+                     *                 "transcribed_at": "2026-06-24T10:00:00.000Z"
+                     *               }
+                     *             ],
+                     *             "created_at": "2026-06-24T10:00:00.000Z",
+                     *             "sealed_until": null,
+                     *             "search_matches": [
+                     *               "morning run",
+                     *               "swimming"
+                     *             ]
+                     *           },
+                     *           "sealed_at": "2026-06-24T10:00:00.000Z",
+                     *           "opened_at": "2026-06-24T10:00:00.000Z",
+                     *           "opened_early": false
+                     *         }
+                     *       ]
                      *     }
                      */
                     "application/json": components["schemas"]["EntryHighlightsResponseDto"];
@@ -9635,6 +9892,7 @@ export interface operations {
                      *           }
                      *         ],
                      *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "sealed_until": null,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -9643,6 +9901,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["EntryMutationResponseDto"];
+                };
+            };
+            /** @description The entry is a sealed time capsule */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "The entry is a sealed time capsule",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -9741,6 +10016,7 @@ export interface operations {
                      *           }
                      *         ],
                      *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "sealed_until": null,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -9785,7 +10061,7 @@ export interface operations {
                     "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
-            /** @description The line is not a task list item (the entry changed elsewhere) */
+            /** @description The line is not a task list item (the entry changed elsewhere), or the entry is a sealed time capsule */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -9794,7 +10070,111 @@ export interface operations {
                     /**
                      * @example {
                      *       "statusCode": 409,
-                     *       "message": "The line is not a task list item (the entry changed elsewhere)",
+                     *       "message": "The line is not a task list item (the entry changed elsewhere), or the entry is a sealed time capsule",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    EntriesController_unseal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The entry, opened */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true,
+                     *       "entry": {
+                     *         "id": 1,
+                     *         "user_id": 1,
+                     *         "diary_id": 1,
+                     *         "date": "2026-06-24",
+                     *         "index": 1,
+                     *         "title": "Morning walk by the river",
+                     *         "time_of_day": "08:30",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm",
+                     *           "grateful"
+                     *         ],
+                     *         "tags": [
+                     *           "reflection"
+                     *         ],
+                     *         "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                     *         "format": "plain",
+                     *         "visibility": "private",
+                     *         "is_favorite": true,
+                     *         "is_archived": true,
+                     *         "is_pinned": true,
+                     *         "diary_name": "Daily Journal",
+                     *         "diary_icon": "journal",
+                     *         "diary_color": "#2A9D8F",
+                     *         "attachments": [
+                     *           {
+                     *             "id": 1,
+                     *             "original_filename": "Daily Journal",
+                     *             "stored_filename": "Daily Journal",
+                     *             "mimetype": "example",
+                     *             "size": 1,
+                     *             "transcript": "example",
+                     *             "transcribed_at": "2026-06-24T10:00:00.000Z"
+                     *           }
+                     *         ],
+                     *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "sealed_until": null,
+                     *         "search_matches": [
+                     *           "morning run",
+                     *           "swimming"
+                     *         ]
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["EntryMutationResponseDto"];
+                };
+            };
+            /** @description Entry not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "Entry not found",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The entry is not sealed */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "The entry is not sealed",
                      *       "error": "Conflict",
                      *       "code": "CONFLICT"
                      *     }
@@ -9870,6 +10250,7 @@ export interface operations {
                      *           }
                      *         ],
                      *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "sealed_until": null,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -9878,6 +10259,23 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["EntryMutationResponseDto"];
+                };
+            };
+            /** @description The entry is a sealed time capsule, which stays private */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "The entry is a sealed time capsule, which stays private",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
                 };
             };
         };
@@ -9948,6 +10346,7 @@ export interface operations {
                      *           }
                      *         ],
                      *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "sealed_until": null,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -10026,6 +10425,7 @@ export interface operations {
                      *           }
                      *         ],
                      *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "sealed_until": null,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -10104,6 +10504,7 @@ export interface operations {
                      *           }
                      *         ],
                      *         "created_at": "2026-06-24T10:00:00.000Z",
+                     *         "sealed_until": null,
                      *         "search_matches": [
                      *           "morning run",
                      *           "swimming"
@@ -15060,6 +15461,7 @@ export interface operations {
                      *           "diaryIcon": "📓",
                      *           "diaryColor": "#2A9D8F",
                      *           "attachmentCount": 1,
+                     *           "sealedUntil": null,
                      *           "deletedAt": "2026-10-22T08:30:00.000Z",
                      *           "purgeAt": "2026-11-21T08:30:00.000Z"
                      *         }

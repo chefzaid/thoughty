@@ -35,6 +35,9 @@ export class EntryCalendarItemDto {
 
   @ApiProperty({ type: Number, nullable: true, minimum: MIN_MOOD, maximum: MAX_MOOD, description: 'Recorded mood from 1 (very low) to 5 (very good), or null', example: 4 })
   mood: number | null;
+
+  @ApiProperty({ description: 'Whether the entry is a sealed time capsule, which shows no title, text or mood', example: false })
+  sealed: boolean;
 }
 
 export class EntryCalendarResponseDto {
