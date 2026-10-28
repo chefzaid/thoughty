@@ -125,6 +125,15 @@ export const CONTRACT_SUITES = {
     'GET /api/attachments/file/{filename}',
   ],
   media: ['POST /api/attachments/{id}/poster'],
+  sharing: [
+    'GET /api/share-links',
+    'POST /api/share-links',
+    'DELETE /api/share-links/{id}',
+    'GET /api/shared/{token}',
+    'GET /api/shared/{token}/file',
+    'GET /api/shared/{token}/attachments/{attachmentId}',
+    'GET /api/shared/{token}/attachments/{attachmentId}/poster',
+  ],
   books: [
     'GET /api/books/versions',
     'POST /api/books/versions',

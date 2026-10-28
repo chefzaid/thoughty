@@ -19,9 +19,12 @@ function getRequestId(headerValue: Request['headers'][string]): string {
   return headerValue || randomUUID();
 }
 
+/** A private share link's token is its secret: the log and the metrics name its route, never the token. */
+const SHARED_LINK_TOKEN = /^(\/api\/shared\/)[^/]+/;
+
 function getRoutePath(req: Request): string {
   const rawPath = req.originalUrl || req.url || req.path;
-  return rawPath.split('?')[0] || '/';
+  return (rawPath.split('?')[0] || '/').replace(SHARED_LINK_TOKEN, '$1:token');
 }
 
 @Injectable()

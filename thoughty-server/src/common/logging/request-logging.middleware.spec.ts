@@ -71,6 +71,22 @@ describe('RequestLoggingMiddleware', () => {
     });
   });
 
+  it('names a private share link by its route, never its token', () => {
+    const token = 'q3Jm0bX9vN2kR7sT1uW4yZ6aC8eG0iK2mO4qS6uW8yA';
+    for (const [url, path] of [
+      [`/api/shared/${token}`, '/api/shared/:token'],
+      [`/api/shared/${token}/attachments/31?x=1`, '/api/shared/:token/attachments/31'],
+    ]) {
+      const res = createResponse(404);
+      middleware.use({ headers: {}, method: 'GET', originalUrl: url } as unknown as Request, res, jest.fn());
+      res.emit('finish');
+
+      expect(logger.warn).toHaveBeenLastCalledWith('HTTP request completed', expect.objectContaining({ path }), RequestLoggingMiddleware.name);
+      expect(httpMetrics.record).toHaveBeenLastCalledWith(expect.objectContaining({ path }));
+      expect(JSON.stringify((logger.warn as jest.Mock).mock.calls)).not.toContain(token);
+    }
+  });
+
   it('logs client and server errors at warning/error levels', () => {
     const req = {
       headers: {},

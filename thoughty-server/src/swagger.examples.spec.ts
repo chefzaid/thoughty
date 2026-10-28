@@ -11,6 +11,9 @@ const FILE_DOWNLOADS = new Set([
   'GET /api/books/versions/{versionId}/download',
   'GET /api/books/export',
   'POST /api/books/export',
+  'GET /api/shared/{token}/file',
+  'GET /api/shared/{token}/attachments/{attachmentId}',
+  'GET /api/shared/{token}/attachments/{attachmentId}/poster',
 ]);
 
 describe('enrichOpenApiExamples', () => {

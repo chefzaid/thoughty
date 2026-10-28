@@ -11097,6 +11097,496 @@
           "Email unsubscribe"
         ]
       }
+    },
+    "/api/share-links": {
+      "get": {
+        "operationId": "ShareLinksController_list",
+        "parameters": [
+          {
+            "name": "kind",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "example": "entry",
+              "type": "string",
+              "enum": [
+                "entry",
+                "bookVersion"
+              ]
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "example": 42,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The links, newest first, without their tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareLinkListResponseDto"
+                },
+                "example": {
+                  "links": [
+                    {
+                      "id": 7,
+                      "kind": "entry",
+                      "targetId": 42,
+                      "label": "For Mum",
+                      "showMood": false,
+                      "showTags": false,
+                      "maxViews": 5,
+                      "viewCount": 2,
+                      "lastViewedAt": "2026-10-29T18:02:00.000Z",
+                      "expiresAt": "2026-11-04T09:30:00.000Z",
+                      "createdAt": "2026-10-28T09:30:00.000Z"
+                    }
+                  ],
+                  "limit": 100,
+                  "activeCount": 3
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entry or book version not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Entry or book version not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List the unexpired private share links of one of the writer’s entries or book versions",
+        "tags": [
+          "Share links"
+        ]
+      },
+      "post": {
+        "description": "The answer carries the link’s token this once; only its hash is kept. A sealed time capsule cannot be shared.",
+        "operationId": "ShareLinksController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShareLinkDto"
+              },
+              "example": {
+                "kind": "entry",
+                "targetId": 42,
+                "expiresAt": "2026-11-04T09:30:00.000Z",
+                "label": "For Mum",
+                "showMood": false,
+                "showTags": false,
+                "maxViews": 5
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Link made",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedShareLinkResponseDto"
+                },
+                "example": {
+                  "id": 7,
+                  "kind": "entry",
+                  "targetId": 42,
+                  "label": "For Mum",
+                  "showMood": false,
+                  "showTags": false,
+                  "maxViews": 5,
+                  "viewCount": 2,
+                  "lastViewedAt": "2026-10-29T18:02:00.000Z",
+                  "expiresAt": "2026-11-04T09:30:00.000Z",
+                  "createdAt": "2026-10-28T09:30:00.000Z",
+                  "token": "q3Jm0bX9vN2kR7sT1uW4yZ6aC8eG0iK2mO4qS6uW8yA"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid expiry or options, or the share link limit is reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "Invalid expiry or options, or the share link limit is reached",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Entry or book version not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Entry or book version not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The entry is sealed as a time capsule",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 409,
+                  "message": "The entry is sealed as a time capsule",
+                  "error": "Conflict",
+                  "code": "CONFLICT"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make a private share link for an entry or a book version",
+        "tags": [
+          "Share links"
+        ]
+      }
+    },
+    "/api/share-links/{id}": {
+      "delete": {
+        "operationId": "ShareLinksController_revoke",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Link revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponseDto"
+                },
+                "example": {
+                  "success": true
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Share link not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "Share link not found",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Revoke a private share link: it stops working at once",
+        "tags": [
+          "Share links"
+        ]
+      }
+    },
+    "/api/shared/{token}": {
+      "get": {
+        "description": "An entry (its date, title, text and files; its mood and tags only if the writer chose), counting a view, or a book version’s description.",
+        "operationId": "SharedContentController_open",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "The link’s token, as in `/s/<token>`",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The shared entry or book version",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharedContentResponseDto"
+                },
+                "example": {
+                  "kind": "entry",
+                  "expiresAt": "2026-11-04T09:30:00.000Z",
+                  "entry": {
+                    "date": "2026-10-27",
+                    "timeOfDay": "08:30",
+                    "title": "A walk by the sea",
+                    "content": "We walked to the lighthouse.",
+                    "format": "markdown",
+                    "mood": 4,
+                    "feelings": [
+                      "calm"
+                    ],
+                    "tags": [
+                      "family"
+                    ],
+                    "attachments": [
+                      {
+                        "id": 31,
+                        "name": "beach.jpg",
+                        "mimetype": "image/jpeg",
+                        "size": 48213,
+                        "hasPoster": false
+                      }
+                    ]
+                  },
+                  "bookVersion": {
+                    "title": "Summer 2026",
+                    "author": "Zaid",
+                    "format": "pdf",
+                    "filename": "summer-2026-v3.pdf",
+                    "size": 1048576
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Read what a private share link shares",
+        "tags": [
+          "Shared links"
+        ]
+      }
+    },
+    "/api/shared/{token}/file": {
+      "get": {
+        "operationId": "SharedContentController_downloadBook",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "The link’s token, as in `/s/<token>`",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The exact file stored for this version, as a download"
+          },
+          "404": {
+            "description": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Download the book version a private share link shares, counting a view",
+        "tags": [
+          "Shared links"
+        ]
+      }
+    },
+    "/api/shared/{token}/attachments/{attachmentId}": {
+      "get": {
+        "description": "Only that entry’s own attachments, by ID. A single `Range: bytes=` range is answered with 206.",
+        "operationId": "SharedContentController_attachment",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "The link’s token, as in `/s/<token>`",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File content"
+          },
+          "206": {
+            "description": "The requested byte range of the file"
+          },
+          "404": {
+            "description": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          },
+          "416": {
+            "description": "The requested range starts past the end of the file",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 416,
+                  "message": "The requested range starts past the end of the file",
+                  "error": "Range Not Satisfiable",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Serve a file of the entry a private share link shares",
+        "tags": [
+          "Shared links"
+        ]
+      }
+    },
+    "/api/shared/{token}/attachments/{attachmentId}/poster": {
+      "get": {
+        "operationId": "SharedContentController_poster",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "The link’s token, as in `/s/<token>`",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attachmentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The JPEG poster frame"
+          },
+          "404": {
+            "description": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Serve the poster frame of a video of the entry a private share link shares",
+        "tags": [
+          "Shared links"
+        ]
+      }
     }
   },
   "info": {
@@ -20546,6 +21036,559 @@
           "kind": "monthly-recap"
         }
       },
+      "ShareLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 7
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "entry",
+              "bookVersion"
+            ],
+            "example": "entry"
+          },
+          "targetId": {
+            "type": "number",
+            "example": 42
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "example": "For Mum"
+          },
+          "showMood": {
+            "type": "boolean",
+            "example": false
+          },
+          "showTags": {
+            "type": "boolean",
+            "example": false
+          },
+          "maxViews": {
+            "type": "number",
+            "nullable": true,
+            "example": 5,
+            "description": "Null for no limit"
+          },
+          "viewCount": {
+            "type": "number",
+            "example": 2,
+            "minimum": 0,
+            "description": "Times the entry was opened or the book downloaded"
+          },
+          "lastViewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2026-10-29T18:02:00.000Z"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-04T09:30:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-28T09:30:00.000Z"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "targetId",
+          "label",
+          "showMood",
+          "showTags",
+          "maxViews",
+          "viewCount",
+          "lastViewedAt",
+          "expiresAt",
+          "createdAt"
+        ],
+        "example": {
+          "id": 7,
+          "kind": "entry",
+          "targetId": 42,
+          "label": "For Mum",
+          "showMood": false,
+          "showTags": false,
+          "maxViews": 5,
+          "viewCount": 2,
+          "lastViewedAt": "2026-10-29T18:02:00.000Z",
+          "expiresAt": "2026-11-04T09:30:00.000Z",
+          "createdAt": "2026-10-28T09:30:00.000Z"
+        }
+      },
+      "ShareLinkListResponseDto": {
+        "type": "object",
+        "properties": {
+          "links": {
+            "description": "The links of this entry or book version that have not expired, newest first",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShareLinkResponseDto"
+            }
+          },
+          "limit": {
+            "type": "number",
+            "example": 100,
+            "description": "How many unexpired links a writer can have"
+          },
+          "activeCount": {
+            "type": "number",
+            "example": 3,
+            "minimum": 0,
+            "description": "The writer’s unexpired links over everything they share"
+          }
+        },
+        "required": [
+          "links",
+          "limit",
+          "activeCount"
+        ],
+        "example": {
+          "links": [
+            {
+              "id": 7,
+              "kind": "entry",
+              "targetId": 42,
+              "label": "For Mum",
+              "showMood": false,
+              "showTags": false,
+              "maxViews": 5,
+              "viewCount": 2,
+              "lastViewedAt": "2026-10-29T18:02:00.000Z",
+              "expiresAt": "2026-11-04T09:30:00.000Z",
+              "createdAt": "2026-10-28T09:30:00.000Z"
+            }
+          ],
+          "limit": 100,
+          "activeCount": 3
+        }
+      },
+      "CreateShareLinkDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "entry",
+              "bookVersion"
+            ],
+            "example": "entry",
+            "description": "What the link shares"
+          },
+          "targetId": {
+            "type": "number",
+            "example": 42,
+            "minimum": 1,
+            "description": "The entry or book version it shares; it must be the writer’s own"
+          },
+          "expiresAt": {
+            "type": "string",
+            "example": "2026-11-04T09:30:00.000Z",
+            "format": "date-time",
+            "description": "When the link stops working: at least 60 minutes and at most 366 days ahead"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "example": "For Mum",
+            "maxLength": 80,
+            "description": "The writer’s note on who it is for; never shown to the reader"
+          },
+          "showMood": {
+            "type": "boolean",
+            "example": false,
+            "description": "Show the entry’s mood and feelings to the reader (entries only)"
+          },
+          "showTags": {
+            "type": "boolean",
+            "example": false,
+            "description": "Show the entry’s tags to the reader (entries only)"
+          },
+          "maxViews": {
+            "type": "number",
+            "nullable": true,
+            "example": 5,
+            "minimum": 1,
+            "maximum": 1000,
+            "description": "How many times the entry can be opened or the book downloaded; null or left out for no limit"
+          }
+        },
+        "required": [
+          "kind",
+          "targetId",
+          "expiresAt"
+        ],
+        "example": {
+          "kind": "entry",
+          "targetId": 42,
+          "expiresAt": "2026-11-04T09:30:00.000Z",
+          "label": "For Mum",
+          "showMood": false,
+          "showTags": false,
+          "maxViews": 5
+        }
+      },
+      "CreatedShareLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 7
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "entry",
+              "bookVersion"
+            ],
+            "example": "entry"
+          },
+          "targetId": {
+            "type": "number",
+            "example": 42
+          },
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "example": "For Mum"
+          },
+          "showMood": {
+            "type": "boolean",
+            "example": false
+          },
+          "showTags": {
+            "type": "boolean",
+            "example": false
+          },
+          "maxViews": {
+            "type": "number",
+            "nullable": true,
+            "example": 5,
+            "description": "Null for no limit"
+          },
+          "viewCount": {
+            "type": "number",
+            "example": 2,
+            "minimum": 0,
+            "description": "Times the entry was opened or the book downloaded"
+          },
+          "lastViewedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "example": "2026-10-29T18:02:00.000Z"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-04T09:30:00.000Z"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-10-28T09:30:00.000Z"
+          },
+          "token": {
+            "type": "string",
+            "example": "q3Jm0bX9vN2kR7sT1uW4yZ6aC8eG0iK2mO4qS6uW8yA",
+            "description": "The link’s secret, shown this once: the reader opens `/s/<token>`. Only its hash is kept."
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "targetId",
+          "label",
+          "showMood",
+          "showTags",
+          "maxViews",
+          "viewCount",
+          "lastViewedAt",
+          "expiresAt",
+          "createdAt",
+          "token"
+        ],
+        "example": {
+          "id": 7,
+          "kind": "entry",
+          "targetId": 42,
+          "label": "For Mum",
+          "showMood": false,
+          "showTags": false,
+          "maxViews": 5,
+          "viewCount": 2,
+          "lastViewedAt": "2026-10-29T18:02:00.000Z",
+          "expiresAt": "2026-11-04T09:30:00.000Z",
+          "createdAt": "2026-10-28T09:30:00.000Z",
+          "token": "q3Jm0bX9vN2kR7sT1uW4yZ6aC8eG0iK2mO4qS6uW8yA"
+        }
+      },
+      "SharedAttachmentDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 31,
+            "description": "What `attachment:31` in the text, and the link’s attachment route, name"
+          },
+          "name": {
+            "type": "string",
+            "example": "beach.jpg"
+          },
+          "mimetype": {
+            "type": "string",
+            "example": "image/jpeg"
+          },
+          "size": {
+            "type": "number",
+            "example": 48213
+          },
+          "hasPoster": {
+            "type": "boolean",
+            "example": false,
+            "description": "Whether a video has a poster frame to show before it plays"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "mimetype",
+          "size",
+          "hasPoster"
+        ],
+        "example": {
+          "id": 31,
+          "name": "beach.jpg",
+          "mimetype": "image/jpeg",
+          "size": 48213,
+          "hasPoster": false
+        }
+      },
+      "SharedEntryDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2026-10-27",
+            "format": "date"
+          },
+          "timeOfDay": {
+            "type": "string",
+            "nullable": true,
+            "example": "08:30"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "A walk by the sea"
+          },
+          "content": {
+            "type": "string",
+            "example": "We walked to the lighthouse."
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "plain",
+              "markdown"
+            ],
+            "example": "markdown"
+          },
+          "mood": {
+            "type": "number",
+            "nullable": true,
+            "example": 4,
+            "description": "Null unless the writer chose to show it"
+          },
+          "feelings": {
+            "example": [
+              "calm"
+            ],
+            "description": "Empty unless the writer chose to show the mood",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "example": [
+              "family"
+            ],
+            "description": "Empty unless the writer chose to show them",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SharedAttachmentDto"
+            }
+          }
+        },
+        "required": [
+          "date",
+          "timeOfDay",
+          "title",
+          "content",
+          "format",
+          "mood",
+          "feelings",
+          "tags",
+          "attachments"
+        ],
+        "example": {
+          "date": "2026-10-27",
+          "timeOfDay": "08:30",
+          "title": "A walk by the sea",
+          "content": "We walked to the lighthouse.",
+          "format": "markdown",
+          "mood": 4,
+          "feelings": [
+            "calm"
+          ],
+          "tags": [
+            "family"
+          ],
+          "attachments": [
+            {
+              "id": 31,
+              "name": "beach.jpg",
+              "mimetype": "image/jpeg",
+              "size": 48213,
+              "hasPoster": false
+            }
+          ]
+        }
+      },
+      "SharedBookVersionDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "Summer 2026"
+          },
+          "author": {
+            "type": "string",
+            "nullable": true,
+            "example": "Zaid"
+          },
+          "format": {
+            "type": "string",
+            "example": "pdf"
+          },
+          "filename": {
+            "type": "string",
+            "example": "summer-2026-v3.pdf"
+          },
+          "size": {
+            "type": "number",
+            "example": 1048576,
+            "description": "Bytes"
+          }
+        },
+        "required": [
+          "title",
+          "author",
+          "format",
+          "filename",
+          "size"
+        ],
+        "example": {
+          "title": "Summer 2026",
+          "author": "Zaid",
+          "format": "pdf",
+          "filename": "summer-2026-v3.pdf",
+          "size": 1048576
+        }
+      },
+      "SharedContentResponseDto": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "entry",
+              "bookVersion"
+            ],
+            "example": "entry"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-11-04T09:30:00.000Z"
+          },
+          "entry": {
+            "nullable": true,
+            "description": "The entry, for an entry link",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SharedEntryDto"
+              }
+            ]
+          },
+          "bookVersion": {
+            "nullable": true,
+            "description": "The book file, for a book version link",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SharedBookVersionDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "expiresAt",
+          "entry",
+          "bookVersion"
+        ],
+        "example": {
+          "kind": "entry",
+          "expiresAt": "2026-11-04T09:30:00.000Z",
+          "entry": {
+            "date": "2026-10-27",
+            "timeOfDay": "08:30",
+            "title": "A walk by the sea",
+            "content": "We walked to the lighthouse.",
+            "format": "markdown",
+            "mood": 4,
+            "feelings": [
+              "calm"
+            ],
+            "tags": [
+              "family"
+            ],
+            "attachments": [
+              {
+                "id": 31,
+                "name": "beach.jpg",
+                "mimetype": "image/jpeg",
+                "size": 48213,
+                "hasPoster": false
+              }
+            ]
+          },
+          "bookVersion": {
+            "title": "Summer 2026",
+            "author": "Zaid",
+            "format": "pdf",
+            "filename": "summer-2026-v3.pdf",
+            "size": 1048576
+          }
+        }
+      },
       "ApiErrorCode": {
         "type": "string",
         "enum": [
@@ -20613,6 +21656,9 @@
           "SAVED_SEARCH_NOT_FOUND",
           "SAVED_SEARCH_NAME_TAKEN",
           "SAVED_SEARCH_LIMIT_REACHED",
+          "SHARE_LINK_NOT_FOUND",
+          "SHARE_LINK_LIMIT_REACHED",
+          "SHARE_LINK_EXPIRY_INVALID",
           "LIFE_ERA_NOT_FOUND",
           "LIFE_ERA_NAME_TAKEN",
           "LIFE_ERA_LIMIT_REACHED",

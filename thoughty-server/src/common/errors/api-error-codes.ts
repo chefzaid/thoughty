@@ -83,6 +83,11 @@ export const API_ERROR_MESSAGES = {
   SAVED_SEARCH_NAME_TAKEN: 'A saved search with this name already exists',
   SAVED_SEARCH_LIMIT_REACHED: 'Saved search limit reached',
 
+  // Private share links.
+  SHARE_LINK_NOT_FOUND: 'This link is not available',
+  SHARE_LINK_LIMIT_REACHED: 'Share link limit reached',
+  SHARE_LINK_EXPIRY_INVALID: 'Choose an expiry from one hour up to a year ahead',
+
   // Life eras.
   LIFE_ERA_NOT_FOUND: 'Life era not found',
   LIFE_ERA_NAME_TAKEN: 'A life era with this name already exists',

@@ -2234,6 +2234,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/share-links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List the unexpired private share links of one of the writer’s entries or book versions */
+        get: operations["ShareLinksController_list"];
+        put?: never;
+        /**
+         * Make a private share link for an entry or a book version
+         * @description The answer carries the link’s token this once; only its hash is kept. A sealed time capsule cannot be shared.
+         */
+        post: operations["ShareLinksController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/share-links/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke a private share link: it stops working at once */
+        delete: operations["ShareLinksController_revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read what a private share link shares
+         * @description An entry (its date, title, text and files; its mood and tags only if the writer chose), counting a view, or a book version’s description.
+         */
+        get: operations["SharedContentController_open"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/{token}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download the book version a private share link shares, counting a view */
+        get: operations["SharedContentController_downloadBook"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/{token}/attachments/{attachmentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Serve a file of the entry a private share link shares
+         * @description Only that entry’s own attachments, by ID. A single `Range: bytes=` range is answered with 206.
+         */
+        get: operations["SharedContentController_attachment"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shared/{token}/attachments/{attachmentId}/poster": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Serve the poster frame of a video of the entry a private share link shares */
+        get: operations["SharedContentController_poster"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -7989,11 +8101,382 @@ export interface components {
             kind: "on-this-day" | "monthly-recap";
         };
         /**
+         * @example {
+         *       "id": 7,
+         *       "kind": "entry",
+         *       "targetId": 42,
+         *       "label": "For Mum",
+         *       "showMood": false,
+         *       "showTags": false,
+         *       "maxViews": 5,
+         *       "viewCount": 2,
+         *       "lastViewedAt": "2026-10-29T18:02:00.000Z",
+         *       "expiresAt": "2026-11-04T09:30:00.000Z",
+         *       "createdAt": "2026-10-28T09:30:00.000Z"
+         *     }
+         */
+        ShareLinkResponseDto: {
+            /** @example 7 */
+            id: number;
+            /**
+             * @example entry
+             * @enum {string}
+             */
+            kind: "entry" | "bookVersion";
+            /** @example 42 */
+            targetId: number;
+            /** @example For Mum */
+            label: string | null;
+            /** @example false */
+            showMood: boolean;
+            /** @example false */
+            showTags: boolean;
+            /**
+             * @description Null for no limit
+             * @example 5
+             */
+            maxViews: number | null;
+            /**
+             * @description Times the entry was opened or the book downloaded
+             * @example 2
+             */
+            viewCount: number;
+            /**
+             * Format: date-time
+             * @example 2026-10-29T18:02:00.000Z
+             */
+            lastViewedAt: string | null;
+            /**
+             * Format: date-time
+             * @example 2026-11-04T09:30:00.000Z
+             */
+            expiresAt: string;
+            /**
+             * Format: date-time
+             * @example 2026-10-28T09:30:00.000Z
+             */
+            createdAt: string;
+        };
+        /**
+         * @example {
+         *       "links": [
+         *         {
+         *           "id": 7,
+         *           "kind": "entry",
+         *           "targetId": 42,
+         *           "label": "For Mum",
+         *           "showMood": false,
+         *           "showTags": false,
+         *           "maxViews": 5,
+         *           "viewCount": 2,
+         *           "lastViewedAt": "2026-10-29T18:02:00.000Z",
+         *           "expiresAt": "2026-11-04T09:30:00.000Z",
+         *           "createdAt": "2026-10-28T09:30:00.000Z"
+         *         }
+         *       ],
+         *       "limit": 100,
+         *       "activeCount": 3
+         *     }
+         */
+        ShareLinkListResponseDto: {
+            /** @description The links of this entry or book version that have not expired, newest first */
+            links: components["schemas"]["ShareLinkResponseDto"][];
+            /**
+             * @description How many unexpired links a writer can have
+             * @example 100
+             */
+            limit: number;
+            /**
+             * @description The writer’s unexpired links over everything they share
+             * @example 3
+             */
+            activeCount: number;
+        };
+        /**
+         * @example {
+         *       "kind": "entry",
+         *       "targetId": 42,
+         *       "expiresAt": "2026-11-04T09:30:00.000Z",
+         *       "label": "For Mum",
+         *       "showMood": false,
+         *       "showTags": false,
+         *       "maxViews": 5
+         *     }
+         */
+        CreateShareLinkDto: {
+            /**
+             * @description What the link shares
+             * @example entry
+             * @enum {string}
+             */
+            kind: "entry" | "bookVersion";
+            /**
+             * @description The entry or book version it shares; it must be the writer’s own
+             * @example 42
+             */
+            targetId: number;
+            /**
+             * Format: date-time
+             * @description When the link stops working: at least 60 minutes and at most 366 days ahead
+             * @example 2026-11-04T09:30:00.000Z
+             */
+            expiresAt: string;
+            /**
+             * @description The writer’s note on who it is for; never shown to the reader
+             * @example For Mum
+             */
+            label?: string | null;
+            /**
+             * @description Show the entry’s mood and feelings to the reader (entries only)
+             * @example false
+             */
+            showMood?: boolean;
+            /**
+             * @description Show the entry’s tags to the reader (entries only)
+             * @example false
+             */
+            showTags?: boolean;
+            /**
+             * @description How many times the entry can be opened or the book downloaded; null or left out for no limit
+             * @example 5
+             */
+            maxViews?: number | null;
+        };
+        /**
+         * @example {
+         *       "id": 7,
+         *       "kind": "entry",
+         *       "targetId": 42,
+         *       "label": "For Mum",
+         *       "showMood": false,
+         *       "showTags": false,
+         *       "maxViews": 5,
+         *       "viewCount": 2,
+         *       "lastViewedAt": "2026-10-29T18:02:00.000Z",
+         *       "expiresAt": "2026-11-04T09:30:00.000Z",
+         *       "createdAt": "2026-10-28T09:30:00.000Z",
+         *       "token": "q3Jm0bX9vN2kR7sT1uW4yZ6aC8eG0iK2mO4qS6uW8yA"
+         *     }
+         */
+        CreatedShareLinkResponseDto: {
+            /** @example 7 */
+            id: number;
+            /**
+             * @example entry
+             * @enum {string}
+             */
+            kind: "entry" | "bookVersion";
+            /** @example 42 */
+            targetId: number;
+            /** @example For Mum */
+            label: string | null;
+            /** @example false */
+            showMood: boolean;
+            /** @example false */
+            showTags: boolean;
+            /**
+             * @description Null for no limit
+             * @example 5
+             */
+            maxViews: number | null;
+            /**
+             * @description Times the entry was opened or the book downloaded
+             * @example 2
+             */
+            viewCount: number;
+            /**
+             * Format: date-time
+             * @example 2026-10-29T18:02:00.000Z
+             */
+            lastViewedAt: string | null;
+            /**
+             * Format: date-time
+             * @example 2026-11-04T09:30:00.000Z
+             */
+            expiresAt: string;
+            /**
+             * Format: date-time
+             * @example 2026-10-28T09:30:00.000Z
+             */
+            createdAt: string;
+            /**
+             * @description The link’s secret, shown this once: the reader opens `/s/<token>`. Only its hash is kept.
+             * @example q3Jm0bX9vN2kR7sT1uW4yZ6aC8eG0iK2mO4qS6uW8yA
+             */
+            token: string;
+        };
+        /**
+         * @example {
+         *       "id": 31,
+         *       "name": "beach.jpg",
+         *       "mimetype": "image/jpeg",
+         *       "size": 48213,
+         *       "hasPoster": false
+         *     }
+         */
+        SharedAttachmentDto: {
+            /**
+             * @description What `attachment:31` in the text, and the link’s attachment route, name
+             * @example 31
+             */
+            id: number;
+            /** @example beach.jpg */
+            name: string;
+            /** @example image/jpeg */
+            mimetype: string;
+            /** @example 48213 */
+            size: number;
+            /**
+             * @description Whether a video has a poster frame to show before it plays
+             * @example false
+             */
+            hasPoster: boolean;
+        };
+        /**
+         * @example {
+         *       "date": "2026-10-27",
+         *       "timeOfDay": "08:30",
+         *       "title": "A walk by the sea",
+         *       "content": "We walked to the lighthouse.",
+         *       "format": "markdown",
+         *       "mood": 4,
+         *       "feelings": [
+         *         "calm"
+         *       ],
+         *       "tags": [
+         *         "family"
+         *       ],
+         *       "attachments": [
+         *         {
+         *           "id": 31,
+         *           "name": "beach.jpg",
+         *           "mimetype": "image/jpeg",
+         *           "size": 48213,
+         *           "hasPoster": false
+         *         }
+         *       ]
+         *     }
+         */
+        SharedEntryDto: {
+            /**
+             * Format: date
+             * @example 2026-10-27
+             */
+            date: string;
+            /** @example 08:30 */
+            timeOfDay: string | null;
+            /** @example A walk by the sea */
+            title: string | null;
+            /** @example We walked to the lighthouse. */
+            content: string;
+            /**
+             * @example markdown
+             * @enum {string}
+             */
+            format: "plain" | "markdown";
+            /**
+             * @description Null unless the writer chose to show it
+             * @example 4
+             */
+            mood: number | null;
+            /**
+             * @description Empty unless the writer chose to show the mood
+             * @example [
+             *       "calm"
+             *     ]
+             */
+            feelings: string[];
+            /**
+             * @description Empty unless the writer chose to show them
+             * @example [
+             *       "family"
+             *     ]
+             */
+            tags: string[];
+            attachments: components["schemas"]["SharedAttachmentDto"][];
+        };
+        /**
+         * @example {
+         *       "title": "Summer 2026",
+         *       "author": "Zaid",
+         *       "format": "pdf",
+         *       "filename": "summer-2026-v3.pdf",
+         *       "size": 1048576
+         *     }
+         */
+        SharedBookVersionDto: {
+            /** @example Summer 2026 */
+            title: string;
+            /** @example Zaid */
+            author: string | null;
+            /** @example pdf */
+            format: string;
+            /** @example summer-2026-v3.pdf */
+            filename: string;
+            /**
+             * @description Bytes
+             * @example 1048576
+             */
+            size: number;
+        };
+        /**
+         * @example {
+         *       "kind": "entry",
+         *       "expiresAt": "2026-11-04T09:30:00.000Z",
+         *       "entry": {
+         *         "date": "2026-10-27",
+         *         "timeOfDay": "08:30",
+         *         "title": "A walk by the sea",
+         *         "content": "We walked to the lighthouse.",
+         *         "format": "markdown",
+         *         "mood": 4,
+         *         "feelings": [
+         *           "calm"
+         *         ],
+         *         "tags": [
+         *           "family"
+         *         ],
+         *         "attachments": [
+         *           {
+         *             "id": 31,
+         *             "name": "beach.jpg",
+         *             "mimetype": "image/jpeg",
+         *             "size": 48213,
+         *             "hasPoster": false
+         *           }
+         *         ]
+         *       },
+         *       "bookVersion": {
+         *         "title": "Summer 2026",
+         *         "author": "Zaid",
+         *         "format": "pdf",
+         *         "filename": "summer-2026-v3.pdf",
+         *         "size": 1048576
+         *       }
+         *     }
+         */
+        SharedContentResponseDto: {
+            /**
+             * @example entry
+             * @enum {string}
+             */
+            kind: "entry" | "bookVersion";
+            /**
+             * Format: date-time
+             * @example 2026-11-04T09:30:00.000Z
+             */
+            expiresAt: string;
+            /** @description The entry, for an entry link */
+            entry: components["schemas"]["SharedEntryDto"] | null;
+            /** @description The book file, for a book version link */
+            bookVersion: components["schemas"]["SharedBookVersionDto"] | null;
+        };
+        /**
          * @description Stable machine-readable code (docs/architecture.md, "API error codes"). Every error the API raises carries one; only an unexpected server failure (500) may come without it.
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "TIME_CAPSULE_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "TIME_CAPSULE_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -16384,6 +16867,429 @@ export interface operations {
                      *       "message": "The link is invalid",
                      *       "error": "Bad Request",
                      *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    ShareLinksController_list: {
+        parameters: {
+            query: {
+                kind: "entry" | "bookVersion";
+                targetId: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The links, newest first, without their tokens */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "links": [
+                     *         {
+                     *           "id": 7,
+                     *           "kind": "entry",
+                     *           "targetId": 42,
+                     *           "label": "For Mum",
+                     *           "showMood": false,
+                     *           "showTags": false,
+                     *           "maxViews": 5,
+                     *           "viewCount": 2,
+                     *           "lastViewedAt": "2026-10-29T18:02:00.000Z",
+                     *           "expiresAt": "2026-11-04T09:30:00.000Z",
+                     *           "createdAt": "2026-10-28T09:30:00.000Z"
+                     *         }
+                     *       ],
+                     *       "limit": 100,
+                     *       "activeCount": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ShareLinkListResponseDto"];
+                };
+            };
+            /** @description Entry or book version not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "Entry or book version not found",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    ShareLinksController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "kind": "entry",
+                 *       "targetId": 42,
+                 *       "expiresAt": "2026-11-04T09:30:00.000Z",
+                 *       "label": "For Mum",
+                 *       "showMood": false,
+                 *       "showTags": false,
+                 *       "maxViews": 5
+                 *     }
+                 */
+                "application/json": components["schemas"]["CreateShareLinkDto"];
+            };
+        };
+        responses: {
+            /** @description Link made */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 7,
+                     *       "kind": "entry",
+                     *       "targetId": 42,
+                     *       "label": "For Mum",
+                     *       "showMood": false,
+                     *       "showTags": false,
+                     *       "maxViews": 5,
+                     *       "viewCount": 2,
+                     *       "lastViewedAt": "2026-10-29T18:02:00.000Z",
+                     *       "expiresAt": "2026-11-04T09:30:00.000Z",
+                     *       "createdAt": "2026-10-28T09:30:00.000Z",
+                     *       "token": "q3Jm0bX9vN2kR7sT1uW4yZ6aC8eG0iK2mO4qS6uW8yA"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CreatedShareLinkResponseDto"];
+                };
+            };
+            /** @description Invalid expiry or options, or the share link limit is reached */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "Invalid expiry or options, or the share link limit is reached",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description Entry or book version not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "Entry or book version not found",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The entry is sealed as a time capsule */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 409,
+                     *       "message": "The entry is sealed as a time capsule",
+                     *       "error": "Conflict",
+                     *       "code": "CONFLICT"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    ShareLinksController_revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Link revoked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SuccessResponseDto"];
+                };
+            };
+            /** @description Share link not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "Share link not found",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    SharedContentController_open: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The link’s token, as in `/s/<token>` */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The shared entry or book version */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "kind": "entry",
+                     *       "expiresAt": "2026-11-04T09:30:00.000Z",
+                     *       "entry": {
+                     *         "date": "2026-10-27",
+                     *         "timeOfDay": "08:30",
+                     *         "title": "A walk by the sea",
+                     *         "content": "We walked to the lighthouse.",
+                     *         "format": "markdown",
+                     *         "mood": 4,
+                     *         "feelings": [
+                     *           "calm"
+                     *         ],
+                     *         "tags": [
+                     *           "family"
+                     *         ],
+                     *         "attachments": [
+                     *           {
+                     *             "id": 31,
+                     *             "name": "beach.jpg",
+                     *             "mimetype": "image/jpeg",
+                     *             "size": 48213,
+                     *             "hasPoster": false
+                     *           }
+                     *         ]
+                     *       },
+                     *       "bookVersion": {
+                     *         "title": "Summer 2026",
+                     *         "author": "Zaid",
+                     *         "format": "pdf",
+                     *         "filename": "summer-2026-v3.pdf",
+                     *         "size": 1048576
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["SharedContentResponseDto"];
+                };
+            };
+            /** @description No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    SharedContentController_downloadBook: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The link’s token, as in `/s/<token>` */
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The exact file stored for this version, as a download */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    SharedContentController_attachment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The link’s token, as in `/s/<token>` */
+                token: string;
+                attachmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description File content */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The requested byte range of the file */
+            206: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description The requested range starts past the end of the file */
+            416: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 416,
+                     *       "message": "The requested range starts past the end of the file",
+                     *       "error": "Range Not Satisfiable",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    SharedContentController_poster: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The link’s token, as in `/s/<token>` */
+                token: string;
+                attachmentId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The JPEG poster frame */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "No such link, or it expired, ran out of views, was revoked, or its entry is in the recycle bin or sealed",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];
