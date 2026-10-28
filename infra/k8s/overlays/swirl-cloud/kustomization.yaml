@@ -35,10 +35,10 @@ patches:
 images:
   - name: thoughty-server
     newName: registry.swirlit.dev/swirlit/thoughty/thoughty-server
-    newTag: 1.10.6
+    newTag: 1.11.111
   - name: thoughty-web
     newName: registry.swirlit.dev/swirlit/thoughty/thoughty-web
-    newTag: 1.10.6
+    newTag: 1.11.111
   # Client for the db-setup hook and the backup CronJob: the multi-arch index digest
   # (Alpine 3.24, built 2026-10-21); see docs/security.md (Container Images).
   - name: postgres
