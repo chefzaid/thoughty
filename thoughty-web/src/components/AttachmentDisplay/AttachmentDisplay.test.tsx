@@ -366,6 +366,22 @@ describe("AttachmentDisplay", () => {
     expect(screen.getByTitle("draft.txt")).toBeInTheDocument();
   });
 
+  it("shows the kind and size of preview and download cards in each theme's muted text", () => {
+    const attachments: Attachment[] = [
+      { id: 1, original_filename: "note.mp3", stored_filename: "uuid.mp3", mimetype: "audio/mpeg", size: 512 },
+      { id: 2, original_filename: "archive.bin", stored_filename: "uuid.bin", mimetype: "application/octet-stream", size: 1024 },
+    ];
+    const { rerender } = render(
+      <AttachmentDisplay attachments={attachments} theme="dark" t={mockT} />,
+    );
+    expect(screen.getByText("attachmentKindAudio · 512 B").parentElement).toHaveClass("text-gray-400");
+    expect(screen.getByText("(1.0 KB)")).toHaveClass("text-gray-400");
+
+    rerender(<AttachmentDisplay attachments={attachments} theme="light" t={mockT} />);
+    expect(screen.getByText("attachmentKindAudio · 512 B").parentElement).toHaveClass("text-gray-600");
+    expect(screen.getByText("(1.0 KB)")).toHaveClass("text-gray-600");
+  });
+
   it("renders in light theme", () => {
     const attachments: Attachment[] = [
       {

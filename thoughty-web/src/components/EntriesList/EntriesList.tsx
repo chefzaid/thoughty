@@ -318,7 +318,7 @@ function EntriesList({
     return (
         <div className="space-y-4">
             {isRefreshing && (
-                <div className={`rounded-lg border px-3 py-2 text-xs ${isDark ? 'border-gray-700 bg-gray-900/70 text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-500'}`}>
+                <div className={`rounded-lg border px-3 py-2 text-xs ${isDark ? 'border-gray-700 bg-gray-900/70 text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-600'}`}>
                     {t('loadingEntries')}
                 </div>
             )}

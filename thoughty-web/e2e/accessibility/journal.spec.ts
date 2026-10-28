@@ -100,6 +100,14 @@ test.describe('journal accessibility with entries', () => {
         await expectNoAccessibilityViolations(page);
       });
 
+      test(`${mode} pagination`, async ({ page }) => {
+        await setupMockApp(page, { startAuthenticated: true, config: { theme, highContrast, entriesPerPage: 2 }, initialEntries: ENTRIES });
+        await page.goto('/journal');
+        await page.getByRole('button', { name: 'All Diaries' }).click();
+        await expect(page.getByText('of 2', { exact: true })).toBeVisible();
+        await expectNoAccessibilityViolations(page);
+      });
+
       test(`${mode} Markdown composer and entry editor`, async ({ page }) => {
         await setupMockApp(page, { startAuthenticated: true, config: { theme, highContrast }, initialEntries: ENTRIES });
         await page.goto('/journal');

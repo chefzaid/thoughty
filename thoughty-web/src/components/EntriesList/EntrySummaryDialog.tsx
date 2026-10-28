@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { SummaryGuidance } from '../../services/api/aiService';
 import type { TranslationFunction as TranslationFn } from '../../types';
+import { tintedTextClass } from '../../utils/tintedText';
 
 interface EntrySummaryDialogProps {
     entryId: number;
@@ -101,8 +102,8 @@ export default function EntrySummaryDialog({
         ? 'border-gray-700 bg-gray-800 text-gray-100'
         : 'border-gray-200 bg-white text-gray-900';
     const inputClass = isDark
-        ? 'border-gray-600 bg-gray-900 text-gray-100 placeholder:text-gray-500'
-        : 'border-gray-300 bg-white text-gray-900 placeholder:text-gray-400';
+        ? 'border-gray-600 bg-gray-900 text-gray-100 placeholder:text-gray-400'
+        : 'border-gray-300 bg-white text-gray-900 placeholder:text-gray-500';
     const secondaryButtonClass = isDark
         ? 'border-gray-600 text-gray-200 hover:bg-gray-700'
         : 'border-gray-300 text-gray-700 hover:bg-gray-100';
@@ -166,7 +167,7 @@ export default function EntrySummaryDialog({
                         />
                     </label>
                     {error && (
-                        <p role="alert" className="text-sm text-red-400">{error}</p>
+                        <p role="alert" className={`text-sm ${tintedTextClass('red', isDark ? 'dark' : 'light')}`}>{error}</p>
                     )}
                     {summary && (
                         <div className={`space-y-3 border-t pt-4 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>

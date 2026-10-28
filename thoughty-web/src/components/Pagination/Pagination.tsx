@@ -1,4 +1,6 @@
-import { type Dispatch, type SetStateAction, type KeyboardEvent } from 'react';
+import { useId, type Dispatch, type SetStateAction, type KeyboardEvent } from 'react';
+
+import { mutedTextClass } from '../../utils/tintedText';
 
 interface PaginationProps {
     readonly page: number;
@@ -11,6 +13,7 @@ interface PaginationProps {
 }
 
 function Pagination({ page, totalPages, setPage, inputPage, setInputPage, theme, t }: PaginationProps) {
+    const inputId = useId();
     if (totalPages <= 1) {
         return null;
     }
@@ -19,6 +22,8 @@ function Pagination({ page, totalPages, setPage, inputPage, setInputPage, theme,
             ? 'bg-white border-gray-300 hover:bg-gray-50 text-gray-600'
             : 'bg-gray-800 border-gray-700 hover:bg-gray-700 text-gray-400'
         }`;
+
+    const labelClass = `text-sm ${mutedTextClass(theme !== 'light')}`;
 
     const inputClass = `w-16 border rounded px-2 py-1 text-center text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
             ? 'bg-gray-50 border-gray-300 text-gray-900'
@@ -56,8 +61,9 @@ function Pagination({ page, totalPages, setPage, inputPage, setInputPage, theme,
                 </svg>
             </button>
             <div className="flex items-center gap-2">
-                <span className="text-gray-400 text-sm">{t('page')}</span>
+                <label htmlFor={inputId} className={labelClass}>{t('page')}</label>
                 <input
+                    id={inputId}
                     type="number"
                     min="1"
                     max={totalPages}
@@ -67,7 +73,7 @@ function Pagination({ page, totalPages, setPage, inputPage, setInputPage, theme,
                     onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
                     className={inputClass}
                 />
-                <span className="text-gray-400 text-sm">{t('ofTotal', { total: totalPages })}</span>
+                <span className={labelClass}>{t('ofTotal', { total: totalPages })}</span>
             </div>
             <button type="button"
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}

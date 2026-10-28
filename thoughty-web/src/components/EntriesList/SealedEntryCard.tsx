@@ -3,7 +3,7 @@ import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import type { Entry, TranslationFunction } from '../../types';
 import type { Language } from '../../utils/translations';
 import { formatTimeCapsuleMoment } from '../../utils/timeCapsule';
-import { tintedTextClass } from '../../utils/tintedText';
+import { mutedTextClass, tintedTextClass } from '../../utils/tintedText';
 
 interface SealedEntryCardProps {
     readonly entry: Entry & { sealed_until: string };
@@ -37,7 +37,7 @@ export default function SealedEntryCard({ entry, theme, language, showDiaryLabel
                     <p className={`font-semibold ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
                         {t('timeCapsuleCardTitle')}
                         {showDiaryLabel && entry.diary_name && (
-                            <span className={`ml-2 text-xs font-normal ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            <span className={`ml-2 text-xs font-normal ${mutedTextClass(isDark)}`}>
                                 {entry.diary_icon} {entry.diary_name}
                             </span>
                         )}

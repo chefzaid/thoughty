@@ -1,5 +1,6 @@
 import { useId } from 'react';
 import type { TranslationFunction as TranslationFn } from '../../types';
+import { tintedTextClass } from '../../utils/tintedText';
 import {
   CARD_SIZE_IDS,
   CARD_TEXT_MAX_LENGTH,
@@ -102,7 +103,7 @@ export default function ShareImageOptions({ choices, wholeText, hasTitle, isDark
             <button
               type="button"
               onClick={() => onChange({ text: wholeText })}
-              className="text-xs font-medium text-sky-500 underline-offset-2 hover:underline"
+              className={`text-xs font-medium underline-offset-2 hover:underline ${tintedTextClass('sky', isDark ? 'dark' : 'light')}`}
             >
               {t('shareImageUseWholeEntry')}
             </button>

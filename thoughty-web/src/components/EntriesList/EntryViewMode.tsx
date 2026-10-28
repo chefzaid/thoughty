@@ -5,6 +5,7 @@ import type { RephraseMode, SummaryGuidance } from '../../services/api/aiService
 import type { Config, Entry, EntryBacklink, EntryRevision, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import { resolveLanguage } from '../../utils/language';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
+import { mutedTextClass } from '../../utils/tintedText';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
 import { extractDate } from './EntriesList.utils';
 import { IconActionButton } from './EntryActionPrimitives';
@@ -150,14 +151,14 @@ function OpenEntryViewMode({
                         t={t}
                     />
                     <span
-                        className={`text-xs font-mono ${isDark ? 'text-gray-400' : 'text-gray-500'}`}
+                        className={`text-xs font-mono ${mutedTextClass(isDark)}`}
                         title={t('entryLinkNumberHint', { reference: `[[${extractDate(entry.date)}#${entry.index ?? 1}]]` })}
                     >
                         #{entry.index}
                     </span>
                     <IconActionButton
                         onClick={() => onToggleVisibility(entry)}
-                        className={`p-1 ${entry.visibility === 'public' ? 'text-green-500 hover:bg-green-500/10' : 'text-gray-500 hover:bg-gray-500/10'}`}
+                        className={`p-1 ${entry.visibility === 'public' ? `${isDark ? 'text-green-500' : 'text-green-600'} hover:bg-green-500/10` : 'text-gray-500 hover:bg-gray-500/10'}`}
                         title={entry.visibility === 'public' ? t('publicTooltip') : t('privateTooltip')}
                     >
                         <VisibilityIcon visibility={entry.visibility} />
@@ -197,7 +198,7 @@ function OpenEntryViewMode({
                     {onDiscuss && (
                         <IconActionButton
                             onClick={() => onDiscuss(entry)}
-                            className="p-1.5 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10"
+                            className={`p-1.5 ${isDark ? 'text-cyan-400 hover:text-cyan-300' : 'text-cyan-600 hover:text-cyan-700'} hover:bg-cyan-500/10`}
                             title={t('discussEntry')}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -214,7 +215,7 @@ function OpenEntryViewMode({
                     />
                     <IconActionButton
                         onClick={() => onEdit(entry)}
-                        className="p-1.5 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                        className={`p-1.5 ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'} hover:bg-blue-500/10`}
                         title={t('edit')}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

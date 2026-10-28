@@ -56,7 +56,7 @@ export default function EntryRephraseButton({
                     }
                     setMenuOpen((current) => !current);
                 }}
-                className={`p-1.5 ${disabled ? 'cursor-wait text-indigo-300 bg-indigo-500/10' : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10'}`}
+                className={`p-1.5 ${disabled ? 'cursor-wait text-indigo-300 bg-indigo-500/10' : `${isDark ? 'text-indigo-400 hover:text-indigo-300' : 'text-indigo-600 hover:text-indigo-700'} hover:bg-indigo-500/10`}`}
                 title={loading ? t('rephrasingEntry') : t('rephraseEntry')}
                 ariaLabel={loading ? t('rephrasingEntry') : t('rephraseEntry')}
             >

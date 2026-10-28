@@ -9,6 +9,7 @@ import { normalizeFontSize, resolveFontFamily } from '../types/config';
 import { useRouteChangeFocus } from '../hooks/useRouteChangeFocus';
 import { resolveLanguage } from '../utils/language';
 import { pluralPhrase } from '../utils/pluralPhrase';
+import { tintedTextClass } from '../utils/tintedText';
 import type { TransientMessage } from '../hooks/useTransientMessage';
 
 interface AuthenticatedAppLayoutProps {
@@ -121,7 +122,7 @@ function AuthenticatedAppLayout({
         <div className="pointer-events-none fixed bottom-6 left-1/2 z-50 flex w-full max-w-sm -translate-x-1/2 flex-col gap-2 px-4">
           <AutoDismiss message={entryToast} durationMs={4000}>
             <div role="alert" aria-live="assertive" className={toastClassName}>
-              <p className="text-sm font-semibold text-amber-500">{t('entryNotFound')}</p>
+              <p className={`text-sm font-semibold ${tintedTextClass('amber', config.theme)}`}>{t('entryNotFound')}</p>
               <p className={`mt-1 text-sm ${toastTextClassName}`}>{t('entryNotFoundMessage')}</p>
             </div>
           </AutoDismiss>

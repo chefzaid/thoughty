@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, type FocusEvent, type KeyboardEvent } from 'react';
 
+import { mutedTextClass } from '../../utils/tintedText';
+
 interface ListenButtonProps {
   entryId: number;
   speaking: boolean;
@@ -86,9 +88,9 @@ function ListenButton({
   const isDark = theme !== 'light';
 
   const getButtonClass = (): string => {
-    if (isActive) return 'text-orange-500 hover:bg-orange-500/10 animate-pulse';
-    if (isPlaying) return 'text-gray-400 hover:bg-gray-500/10';
-    return 'text-gray-400 hover:text-blue-400 hover:bg-blue-500/10';
+    if (isActive) return `${isDark ? 'text-orange-500' : 'text-orange-600'} hover:bg-orange-500/10 animate-pulse`;
+    if (isPlaying) return `${mutedTextClass(isDark)} hover:bg-gray-500/10`;
+    return `${mutedTextClass(isDark)} ${isDark ? 'hover:text-blue-400' : 'hover:text-blue-700'} hover:bg-blue-500/10`;
   };
 
   return (

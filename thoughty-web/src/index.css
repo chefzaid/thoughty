@@ -80,6 +80,12 @@ body.high-contrast-mode .feed-entry {
   box-shadow: none !important;
 }
 
+/* Tailwind's default placeholder gray (gray-400) is below WCAG AA contrast on light surfaces; gray-500 reaches it. */
+.light-mode input::placeholder,
+.light-mode textarea::placeholder {
+  color: #6b7280;
+}
+
 /* Search matches: a dim yellow behind light text in the dark theme, bright yellow behind dark text in the light theme */
 .search-highlight {
   background-color: rgb(234 179 8 / 0.4);

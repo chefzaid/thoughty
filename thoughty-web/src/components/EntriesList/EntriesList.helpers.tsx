@@ -32,8 +32,8 @@ function getDragHandleClass(isDark: boolean, isDraggedEntry: boolean): string {
     }
 
     return isDark
-        ? 'text-gray-600 hover:text-gray-400 hover:bg-gray-700/70'
-        : 'text-gray-300 hover:text-gray-500 hover:bg-gray-100';
+        ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/70'
+        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100';
 }
 
 function getDropIndicatorClass(isDark: boolean): string {

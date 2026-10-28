@@ -138,6 +138,15 @@ describe('ListenButton', () => {
     expect(button.className).toContain('text-gray-400');
   });
 
+  it('draws its icon at non-text contrast in the light theme', () => {
+    const { rerender } = render(<ListenButton {...defaultProps} theme="light" />);
+    expect(screen.getByRole('button').className).toContain('text-gray-600');
+    expect(screen.getByRole('button').className).toContain('hover:text-blue-700');
+
+    rerender(<ListenButton {...defaultProps} theme="light" speaking={true} activeEntryId={1} />);
+    expect(screen.getByRole('button').className).toContain('text-orange-600');
+  });
+
   it('applies light theme styles when theme is light', async () => {
     const user = userEvent.setup();
     render(<ListenButton {...defaultProps} theme="light" />);

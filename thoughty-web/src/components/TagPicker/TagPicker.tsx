@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, type KeyboardEvent, type ChangeEvent } fro
 import TagBadge from '../TagBadge/TagBadge';
 import type { TranslationFunction } from '../../types';
 import { getTagMetadata, type TagMetadataMap } from '../../utils/tagMetadata';
+import { mutedTextClass } from '../../utils/tintedText';
 
 interface TagPickerProps {
     availableTags?: string[];
@@ -140,7 +141,7 @@ function TagPicker({
                 ))}
                 <input
                     type="text"
-                    className={`min-h-8 flex-1 min-w-[120px] outline-none bg-transparent placeholder-gray-500 ${isLight ? 'text-gray-900' : 'text-gray-100'}`}
+                    className={`min-h-8 flex-1 min-w-[120px] outline-none bg-transparent ${isLight ? 'text-gray-900 placeholder-gray-500' : 'text-gray-100 placeholder-gray-400'}`}
                     placeholder={selectedTags.length === 0 ? placeholder : ''}
                     aria-label={placeholder}
                     value={inputValue}
@@ -181,7 +182,7 @@ function TagPicker({
                         </li>
                     )}
                     {filteredTags.length === 0 && (!allowNew || !inputValue) && (
-                        <li className={`px-4 py-2 italic ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <li className={`px-4 py-2 italic ${mutedTextClass(!isLight)}`}>
                             {t('tagPickerNoTags')}
                         </li>
                     )}

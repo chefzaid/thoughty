@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { useDialogFocus } from '../../hooks/useDialogFocus';
 import type { Entry } from '../../types';
 import { downloadBlob } from '../../utils/downloadFile';
+import { mutedTextClass } from '../../utils/tintedText';
 import type { TranslationParams } from '../../utils/translations';
 
 interface ChatMessage {
@@ -226,12 +227,12 @@ function AiChatModal({ entry, isOpen, onClose, onSend, onLoadHistory, theme = 'd
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-[200px]">
           {historyLoading && (
-            <p className={`text-center text-sm italic ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+            <p className={`text-center text-sm italic ${mutedTextClass(!isLight)}`}>
               {t('aiLoadingHistory')}
             </p>
           )}
           {messages.length === 0 && !loading && !historyLoading && (
-            <p className={`text-center text-sm italic ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>
+            <p className={`text-center text-sm italic ${mutedTextClass(!isLight)}`}>
               {t('aiChatPlaceholder')}
             </p>
           )}

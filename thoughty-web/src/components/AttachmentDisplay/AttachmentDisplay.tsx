@@ -154,7 +154,7 @@ function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
                       t={t}
                     />
                   </div>
-                  <div className="mt-2 flex items-center justify-between gap-2 text-xs text-gray-500">
+                  <div className={`mt-2 flex items-center justify-between gap-2 text-xs ${mutedTextClass(isDark)}`}>
                     <span>
                       {getAttachmentKindLabel(file.mimetype, t)} ·{" "}
                       {formatAttachmentSize(file.size)}
@@ -225,7 +225,7 @@ function AttachmentDisplay({ attachments, theme, t }: AttachmentDisplayProps) {
                   <span className="truncate max-w-[150px]">
                     {file.original_filename}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className={`text-xs ${mutedTextClass(isDark)}`}>
                     ({formatAttachmentSize(file.size)})
                   </span>
                 </a>

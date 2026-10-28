@@ -145,4 +145,17 @@ describe('Pagination', () => {
     render(<Pagination {...defaultProps} />);
     expect(screen.getByText('page')).toBeInTheDocument();
   });
+
+  it('names the page number field by its label', () => {
+    render(<Pagination {...defaultProps} />);
+    expect(screen.getByRole('spinbutton', { name: 'page' })).toHaveValue(5);
+  });
+
+  it('shows the labels in the muted text of each theme', () => {
+    const { rerender } = render(<Pagination {...defaultProps} theme="light" />);
+    expect(screen.getByText('page')).toHaveClass('text-gray-600');
+    expect(screen.getByText('of 10')).toHaveClass('text-gray-600');
+    rerender(<Pagination {...defaultProps} theme="dark" />);
+    expect(screen.getByText('page')).toHaveClass('text-gray-400');
+  });
 });

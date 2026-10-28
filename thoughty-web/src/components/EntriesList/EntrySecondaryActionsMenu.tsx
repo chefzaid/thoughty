@@ -50,9 +50,9 @@ export default function EntrySecondaryActionsMenu({
     let menuButtonClass = 'text-gray-500 hover:text-gray-300 hover:bg-gray-500/10';
 
     if (menuOpen) {
-        menuButtonClass = 'text-sky-400 bg-sky-500/10';
+        menuButtonClass = `${isDark ? 'text-sky-400' : 'text-sky-700'} bg-sky-500/10`;
     } else if (shareReady) {
-        menuButtonClass = 'text-green-400 hover:bg-green-500/10';
+        menuButtonClass = `${isDark ? 'text-green-400' : 'text-green-700'} hover:bg-green-500/10`;
     }
 
     const closeMenu = useCallback(() => {

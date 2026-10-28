@@ -145,7 +145,12 @@
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
+/* Placeholders at WCAG AA contrast: slate-400 on the dark field, slate-500 on the light one */
 .form-group input::placeholder {
+    color: #94a3b8;
+}
+
+.form-group input.light::placeholder {
     color: #64748b;
 }
 

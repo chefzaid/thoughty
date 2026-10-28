@@ -10,6 +10,7 @@ import {
     moodLabelKey,
     toggleFeeling,
 } from '../../utils/entryMood';
+import { mutedTextClass } from '../../utils/tintedText';
 
 interface EntryMoodFieldProps {
     /** Prefix for the field's ids; it must not start with `entry-`, which entry cards use. */
@@ -147,7 +148,7 @@ export default function EntryMoodField({ id, mood, onMoodChange, feelings, onFee
                         >
                             {t('feelingsAdd')}
                         </button>
-                        <span className={`text-xs ${isLight ? 'text-gray-500' : 'text-gray-400'}`}>{t('feelingsLimit', { count: MAX_FEELINGS })}</span>
+                        <span className={`text-xs ${mutedTextClass(!isLight)}`}>{t('feelingsLimit', { count: MAX_FEELINGS })}</span>
                     </div>
                 </fieldset>
             )}

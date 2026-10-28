@@ -112,6 +112,27 @@ describe('EntriesList.helpers', () => {
         expect(container).toBeEmptyDOMElement();
     });
 
+    it('draws the drag handle at non-text contrast in each theme', () => {
+        const props = {
+            isDraggable: true,
+            reserveSpace: false,
+            isDraggedEntry: false,
+            isDropTarget: false,
+            dragDateMatches: false,
+            dragToReorderLabel: 'dragToReorder',
+            dropHereLabel: 'dropHere',
+            onHandlePointerDown: vi.fn(),
+            onHandleKeyDown: vi.fn(),
+            onTargetPointerEnter: vi.fn(),
+            onTargetPointerUp: vi.fn(),
+        };
+        const { rerender } = render(<EntryReorderControls {...props} isDark={true} />);
+        expect(screen.getByRole('button', { name: 'dragToReorder' })).toHaveClass('text-gray-400');
+
+        rerender(<EntryReorderControls {...props} isDark={false} />);
+        expect(screen.getByRole('button', { name: 'dragToReorder' })).toHaveClass('text-gray-600');
+    });
+
     it('handles reorder drag interactions and renders drag badges', () => {
         const onHandlePointerDown = vi.fn();
         const onHandleKeyDown = vi.fn();

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { AttachmentsService } from "../../services/api";
 import type { Attachment } from "../../types";
+import { tintedTextClass } from "../../utils/tintedText";
 
 interface AudioTranscriptProps {
   readonly attachment: Attachment;
@@ -60,7 +61,7 @@ function AudioTranscript({
           {isLoading ? t("transcribingAudio") : t("transcribeAudio")}
         </button>
         {hasError && (
-          <p className="mt-1 text-xs text-red-500" role="alert">
+          <p className={`mt-1 text-xs ${tintedTextClass("red", isDark ? "dark" : "light")}`} role="alert">
             {t("audioTranscriptionFailed")}
           </p>
         )}

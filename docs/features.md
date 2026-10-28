@@ -151,7 +151,7 @@ All AI features are optional and run through OpenRouter. A deployment can provid
 ## Accessibility and Experience
 
 - Skip links, clear landmarks, and focus moved to the content on every page change.
-- Every page is scanned with Axe against WCAG 2.2 A and AA in both themes as part of the end-to-end tests, and the journal also with high contrast.
+- Every page is scanned with Axe against WCAG 2.2 A and AA in both themes as part of the end-to-end tests, and the journal and attachment cards also with high contrast. Secondary text, placeholders, and icon-only controls reach WCAG AA contrast in both themes (4.5:1 for text, 3:1 for icons).
 - Every control works with the keyboard, including diary and entry reordering.
 - Every modal dialog (confirmations, the AI chat, attachment previews, the entry summary, the profile picture editor, the journal retag review, duplicate review, the template name, highlights, and Focus mode) takes focus when it opens, keeps Tab inside (also when leaving a previewed PDF or text file), closes with `Esc` wherever focus is, and returns focus to the control that opened it. When one dialog opens over another, `Esc` closes only the top one.
 - The same features on desktop and phone, with controls that wrap instead of scrolling off-screen.
