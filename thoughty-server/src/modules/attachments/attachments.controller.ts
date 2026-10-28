@@ -14,7 +14,6 @@ import {
   NotFoundException,
   HttpCode,
   HttpStatus,
-  HttpException,
 } from '@nestjs/common';
 import { tmpdir } from 'node:os';
 import { apiError } from '@/common/errors';
@@ -29,10 +28,10 @@ import {
 } from '@nestjs/swagger';
 import { diskStorage, memoryStorage } from 'multer';
 import { Response } from 'express';
-import { parseByteRange } from '@/common/utils';
 import { AttachmentsService, OwnedAttachmentFile } from './attachments.service';
 import { VideoPosterService } from './video-poster.service';
 import { TempUploadCleanupInterceptor } from './temp-upload-cleanup.interceptor';
+import { sendAttachmentFile } from './attachment-file-response';
 import { MAX_POSTER_SIZE, MAX_VIDEO_SIZE } from './attachment-media';
 import {
   LinkAttachmentDto,
@@ -46,25 +45,7 @@ import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/common/decorators';
 import { MULTIPART_FIELD_LIMITS } from '@/common/multipart-limits';
 
-/** `416 Range Not Satisfiable`, which Nest has no exception class for. */
-export class RangeNotSatisfiableException extends HttpException {
-  constructor(objectOrError?: object) {
-    super(
-      objectOrError ?? { statusCode: HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE, message: 'Range Not Satisfiable' },
-      HttpStatus.REQUESTED_RANGE_NOT_SATISFIABLE,
-    );
-  }
-}
-
-/** Builds a Content-Disposition header whose filename cannot break out of the header value. */
-function contentDisposition(inline: boolean, originalFilename: string): string {
-  const fallback = originalFilename.replace(/[^\w.\- ]/g, '_').slice(0, 150) || 'attachment';
-  const encoded = encodeURIComponent(originalFilename).replace(
-    /['()*]/g,
-    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
-  );
-  return `${inline ? 'inline' : 'attachment'}; filename="${fallback}"; filename*=UTF-8''${encoded}`;
-}
+export { RangeNotSatisfiableException } from './attachment-file-response';
 
 @ApiTags('Attachments')
 @ApiBearerAuth()
@@ -197,35 +178,12 @@ export class AttachmentsController {
       throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
     }
 
-    const range = parseByteRange(rangeHeader, file.size);
-    res.setHeader('Accept-Ranges', 'bytes');
-    if (range === 'unsatisfiable') {
-      res.setHeader('Content-Range', `bytes */${file.size}`);
-      throw apiError(RangeNotSatisfiableException, 'ATTACHMENT_RANGE_NOT_SATISFIABLE');
-    }
-
-    let opened: Awaited<ReturnType<AttachmentsService['openFile']>>;
-    try {
-      opened = await this.attachmentsService.openFile(file.key, range ?? undefined);
-    } catch {
-      throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
-    }
-
-    res.setHeader('Content-Type', file.contentType);
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Content-Disposition', contentDisposition(file.inline, file.originalFilename));
-    if (!file.inline) {
-      // Types such as SVG can carry script; never let one run if it is opened directly.
-      res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
-    }
-    if (range) {
-      res.status(HttpStatus.PARTIAL_CONTENT);
-      res.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${file.size}`);
-      res.setHeader('Content-Length', String(range.end - range.start + 1));
-    } else if (opened.contentLength !== undefined) {
-      res.setHeader('Content-Length', String(opened.contentLength));
-    }
-    opened.stream.on('error', () => res.destroy());
-    opened.stream.pipe(res);
+    await sendAttachmentFile(
+      res,
+      file,
+      rangeHeader,
+      (key, range) => this.attachmentsService.openFile(key, range),
+      () => apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND'),
+    );
   }
 }

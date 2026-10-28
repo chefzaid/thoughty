@@ -26,8 +26,9 @@ import type { Readable } from 'node:stream';
 import type { ByteRange } from '@/common/utils';
 import {
   ALLOWED_MIMETYPES,
-  INLINE_MIMETYPES,
   VIDEO_SIGNATURE_BYTES,
+  describeStoredFile,
+  type StoredAttachmentFile,
   detectVideoType,
   isVideoMimetype,
   maxSizeFor,
@@ -35,14 +36,7 @@ import {
 } from './attachment-media';
 
 /** A stored file its owner may read: an attachment's file or a video's poster frame. */
-export interface OwnedAttachmentFile {
-  key: string;
-  contentType: string;
-  originalFilename: string;
-  inline: boolean;
-  /** Bytes, as recorded at upload. */
-  size: number;
-}
+export type OwnedAttachmentFile = StoredAttachmentFile;
 
 /** A stored file opened for reading, whole or one byte range of it. */
 export interface OpenedAttachmentFile {
@@ -63,12 +57,6 @@ async function readHead(file: Express.Multer.File, bytes: number): Promise<Buffe
   } finally {
     await handle.close();
   }
-}
-
-/** A poster frame is named after its video, as a JPEG. */
-function posterName(originalFilename: string): string {
-  const dot = originalFilename.lastIndexOf('.');
-  return `${dot > 0 ? originalFilename.slice(0, dot) : originalFilename}-poster.jpg`;
 }
 
 @Injectable()
@@ -239,7 +227,7 @@ export class AttachmentsService implements OnModuleInit {
   /**
    * A stored file for the user who owns its attachment: the attachment's own file, or the poster
    * frame of their video. Attachments are never shown in the public feed, so nobody else may read
-   * them; a key that is not the caller's answers as missing, as does a file of a sealed time capsule
+   * them here (a private share link serves its one entry's files on a route of its own); a key that is not the caller's answers as missing, as does a file of a sealed time capsule
    * until the capsule opens. The type comes from the attachment row (limited to the upload
    * allowlist), not from storage; a poster frame is always a JPEG.
    */
@@ -255,25 +243,7 @@ export class AttachmentsService implements OnModuleInit {
     if (!attachment || attachment.entry?.sealedUntil) {
       throw apiError(NotFoundException, 'ATTACHMENT_FILE_NOT_FOUND');
     }
-    if (attachment.posterFilename === key) {
-      return {
-        key,
-        contentType: 'image/jpeg',
-        originalFilename: posterName(attachment.originalFilename),
-        inline: true,
-        size: attachment.posterSize ?? 0,
-      };
-    }
-    const contentType = ALLOWED_MIMETYPES.includes(attachment.mimetype)
-      ? attachment.mimetype
-      : 'application/octet-stream';
-    return {
-      key,
-      contentType,
-      originalFilename: attachment.originalFilename,
-      inline: INLINE_MIMETYPES.has(contentType),
-      size: attachment.size,
-    };
+    return describeStoredFile(attachment, key);
   }
 
   /** Opens a stored file, or only the bytes of `range`, as a video player asks for when it seeks. */

@@ -90,6 +90,50 @@ export function detectVideoType(head: Buffer): VideoMimeType | null {
   return null;
 }
 
+/** A stored file a reader may be served: an attachment's file or a video's poster frame. */
+export interface StoredAttachmentFile {
+  key: string;
+  contentType: string;
+  originalFilename: string;
+  inline: boolean;
+  /** Bytes, as recorded at upload. */
+  size: number;
+}
+
+/** A poster frame is named after its video, as a JPEG. */
+function posterName(originalFilename: string): string {
+  const dot = originalFilename.lastIndexOf('.');
+  return `${dot > 0 ? originalFilename.slice(0, dot) : originalFilename}-poster.jpg`;
+}
+
+/**
+ * How to serve one of an attachment's stored files: its poster frame (always a JPEG) when `key` is the
+ * poster's, else the file itself, typed from the attachment row (limited to the upload allowlist), not
+ * from storage, and inline only for types a browser cannot run script from.
+ */
+export function describeStoredFile(
+  attachment: { storedFilename: string; posterFilename: string | null; posterSize: number | null; originalFilename: string; mimetype: string; size: number },
+  key: string,
+): StoredAttachmentFile {
+  if (attachment.posterFilename === key) {
+    return {
+      key,
+      contentType: 'image/jpeg',
+      originalFilename: posterName(attachment.originalFilename),
+      inline: true,
+      size: attachment.posterSize ?? 0,
+    };
+  }
+  const contentType = ALLOWED_MIMETYPES.includes(attachment.mimetype) ? attachment.mimetype : 'application/octet-stream';
+  return {
+    key,
+    contentType,
+    originalFilename: attachment.originalFilename,
+    inline: INLINE_MIMETYPES.has(contentType),
+    size: attachment.size,
+  };
+}
+
 /** The storage keys of attachments: each file, and a video's poster frame when it has one. */
 export function storedKeysOf(
   attachments: ReadonlyArray<{ storedFilename: string; posterFilename?: string | null }>,
