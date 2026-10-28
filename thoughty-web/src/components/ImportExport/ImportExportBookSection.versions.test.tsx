@@ -51,6 +51,7 @@ function renderSection(language: Language, versions: BookVersionData[], props: P
             onCreateVersion={vi.fn()}
             onVersionDownload={vi.fn()}
             onUseVersionEntries={vi.fn()}
+            onVersionShare={vi.fn()}
             language={language}
             t={(key, params) => getTranslation(language, key, params)}
             {...props}
@@ -92,6 +93,16 @@ describe('BookSection versions', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Use the entries of version 1' }));
 
         expect(onUseVersionEntries).toHaveBeenCalledWith(picked);
+    });
+
+    it('opens the private share links of a version', () => {
+        const onVersionShare = vi.fn();
+        const shared = { ...version(1, 1, 1, []), id: 2, versionNumber: 2 };
+        renderSection('fr', [shared], { onVersionShare });
+
+        fireEvent.click(screen.getByRole('button', { name: 'Partager la version 2 en privé' }));
+
+        expect(onVersionShare).toHaveBeenCalledWith(shared);
     });
 
     it('keeps the book actions off until the source names its entries', () => {

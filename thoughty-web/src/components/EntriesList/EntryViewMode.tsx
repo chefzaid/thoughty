@@ -8,6 +8,7 @@ import type { TagMetadataMap } from '../../utils/tagMetadata';
 import { mutedTextClass } from '../../utils/tintedText';
 import VisibilityIcon from '../VisibilityIcon/VisibilityIcon';
 import { extractDate } from './EntriesList.utils';
+import { formatEntryDay } from '../ShareLinks/shareLinkText';
 import { IconActionButton } from './EntryActionPrimitives';
 import EntryRephraseButton from './EntryRephraseButton';
 import EntrySecondaryActionsMenu from './EntrySecondaryActionsMenu';
@@ -21,6 +22,7 @@ import {
 } from './EntryViewModeSections';
 import useEntryViewModeState from './useEntryViewModeState';
 import SealedEntryCard from './SealedEntryCard';
+import AuthenticatedShareLinkDialog from '../ShareLinks/AuthenticatedShareLinkDialog';
 
 
 interface EntryViewModeProps {
@@ -110,6 +112,7 @@ function OpenEntryViewMode({
 }: Readonly<EntryViewModeProps>) {
     const [summaryOpen, setSummaryOpen] = useLocalState(false);
     const [shareImage, setShareImage] = useLocalState<{ excerpt?: string } | null>(null);
+    const [sharePrivatelyOpen, setSharePrivatelyOpen] = useLocalState(false);
     const isDark = config.theme !== 'light';
     const archiveActionLabel = entry.is_archived ? t('unarchive') : t('archive');
     const entryPermalink = getEntryPermalink?.(entry.id);
@@ -232,6 +235,7 @@ function OpenEntryViewMode({
                             await onShareEntry(entry);
                         } : undefined}
                         onShareImage={() => setShareImage({ excerpt: selectedExcerpt(globalThis.getSelection?.()?.toString(), toCardText(entry.content, entry.format)) })}
+                        onSharePrivately={() => setSharePrivatelyOpen(true)}
                         onToggleHistory={onFetchHistory ? handleToggleHistory : undefined}
                         onSummarize={onSummarize ? () => setSummaryOpen(true) : undefined}
                         onToggleArchived={() => onToggleArchived(entry)}
@@ -267,6 +271,16 @@ function OpenEntryViewMode({
                 onClose={() => setShareImage(null)}
                 t={t}
             />
+            {sharePrivatelyOpen && (
+                <AuthenticatedShareLinkDialog
+                    target={{ kind: 'entry', id: entry.id }}
+                    subject={entry.title?.trim() || formatEntryDay(entry.date, resolveLanguage(config.language))}
+                    isDark={isDark}
+                    language={resolveLanguage(config.language)}
+                    onClose={() => setSharePrivatelyOpen(false)}
+                    t={t}
+                />
+            )}
             {onSummarize && (
                 <EntrySummaryDialog
                     entryId={entry.id}

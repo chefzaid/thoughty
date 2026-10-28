@@ -3,6 +3,7 @@ import type { CloudExportFormat, TranslationFunction } from '../../types';
 import type { CloudFileInfo, CloudProviderType, SyncFrequency, SyncScheduleConfig } from '../../services/api/cloudSyncService';
 import { CLOUD_PROVIDER_ICONS, CLOUD_PROVIDER_NAMES } from '../CloudProviderIcons';
 import { CLOUD_FORMAT_OPTIONS } from './ImportExport.types';
+import { formatFileSize } from '../../utils/fileSize';
 import './ImportExportCloudSection.css';
 const SCHEDULE_OPTIONS: ReadonlyArray<{ value: SyncFrequency; labelKey: string }> = [
     { value: 'every_6h', labelKey: 'cloudScheduleEvery6h' },
@@ -21,15 +22,6 @@ function formatCloudDate(dateStr: string): string {
     }
 }
 
-function formatFileSize(bytes: number): string {
-    if (bytes < 1024) {
-        return `${bytes} B`;
-    }
-    if (bytes < 1024 * 1024) {
-        return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
 
 export function CloudImportSection({
     cloudLoading,

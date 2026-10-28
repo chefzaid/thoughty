@@ -1,4 +1,6 @@
-import type { RefObject } from 'react';
+import { useMemo, useState, type RefObject } from 'react';
+import { createShareLinksService } from '../../services/api/shareLinksService';
+import ShareLinkDialog from '../ShareLinks/ShareLinkDialog';
 import type { CloudProviderType } from '../../services/api/cloudSyncService';
 import type { ImportExportSection, TranslationFunction } from '../../types';
 import type { Language } from '../../utils/translations';
@@ -6,7 +8,7 @@ import { BookSection } from './ImportExportBookSection';
 import type { MessageState } from './ImportExport.types';
 import { useImportExportBook } from './useImportExportBook';
 import { BookPreviewDialog } from '../BookPreview/BookPreviewDialog';
-import { BOOK_FORMAT_OPTIONS } from './ImportExport.types';
+import { BOOK_FORMAT_OPTIONS, type BookVersionData } from './ImportExport.types';
 
 export function ImportExportBookPanel({
     activeSection,
@@ -42,6 +44,9 @@ export function ImportExportBookPanel({
         t,
     });
 
+    const shareLinks = useMemo(() => createShareLinksService(authFetch), [authFetch]);
+    const [sharedVersion, setSharedVersion] = useState<BookVersionData | null>(null);
+
     const formatLabelKey = BOOK_FORMAT_OPTIONS.find((option) => option.value === book.options.format)?.labelKey;
     const formatNotice = book.options.format !== 'pdf' && formatLabelKey
         ? t('bookPagePreviewFormatNotice', { format: t(formatLabelKey) })
@@ -74,6 +79,7 @@ export function ImportExportBookPanel({
             onCreateVersion={book.handleCreateVersion}
             onVersionDownload={book.handleVersionDownload}
             onUseVersionEntries={book.pickVersionEntries}
+            onVersionShare={setSharedVersion}
             language={language}
             t={t}
         />
@@ -86,6 +92,18 @@ export function ImportExportBookPanel({
             onDownload={book.downloadPagePreview}
             t={t}
         />
+        {sharedVersion && (
+            <ShareLinkDialog
+                isOpen
+                target={{ kind: 'bookVersion', id: sharedVersion.id }}
+                subject={`${t('bookVersionNumber', { version: sharedVersion.versionNumber })} · ${sharedVersion.title}`}
+                isDark={!isLight}
+                language={language}
+                service={shareLinks}
+                onClose={() => setSharedVersion(null)}
+                t={t}
+            />
+        )}
         </>
     );
 }

@@ -20,3 +20,4 @@ export * from './writingStreakService';
 export * from './optInEmailService';
 export * from './onThisDayEmailService';
 export * from './monthlyRecapEmailService';
+export * from './shareLinksService';

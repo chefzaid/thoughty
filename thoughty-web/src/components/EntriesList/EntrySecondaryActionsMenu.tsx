@@ -14,6 +14,8 @@ interface EntrySecondaryActionsMenuProps {
     showHistory: boolean;
     onShareEntry?: () => Promise<void>;
     onShareImage?: () => void;
+    /** Opens the dialog that makes private share links for this entry. */
+    onSharePrivately?: () => void;
     onToggleHistory?: () => Promise<void>;
     onSummarize?: () => void;
     onToggleArchived: () => void;
@@ -29,6 +31,7 @@ export default function EntrySecondaryActionsMenu({
     showHistory,
     onShareEntry,
     onShareImage,
+    onSharePrivately,
     onToggleHistory,
     onSummarize,
     onToggleArchived,
@@ -117,6 +120,11 @@ export default function EntrySecondaryActionsMenu({
         onShareImage?.();
     }, [closeMenuForDialog, onShareImage]);
 
+    const handleSharePrivately = useCallback(() => {
+        closeMenuForDialog();
+        onSharePrivately?.();
+    }, [closeMenuForDialog, onSharePrivately]);
+
     const handleDelete = useCallback(() => {
         closeMenuForDialog();
         onDelete();
@@ -181,6 +189,19 @@ export default function EntrySecondaryActionsMenu({
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 16l-5-5-8 9" />
                             </svg>
                             <span>{t('shareAsImage')}</span>
+                        </MenuActionButton>
+                    )}
+                    {onSharePrivately && (
+                        <MenuActionButton
+                            onClick={handleSharePrivately}
+                            className={secondaryActionClass}
+                            title={t('sharePrivately')}
+                        >
+                            <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                                <rect x="5" y="11" width="14" height="10" rx="2" />
+                                <path strokeLinecap="round" d="M8 11V8a4 4 0 018 0v3" />
+                            </svg>
+                            <span>{t('sharePrivately')}</span>
                         </MenuActionButton>
                     )}
                     {onToggleHistory && (

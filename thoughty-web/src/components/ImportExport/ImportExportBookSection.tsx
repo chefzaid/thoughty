@@ -73,6 +73,7 @@ export function BookSection({
     onCreateVersion,
     onVersionDownload,
     onUseVersionEntries,
+    onVersionShare,
     language,
     t,
 }: Readonly<{
@@ -101,6 +102,8 @@ export function BookSection({
     onCreateVersion: () => void;
     onVersionDownload: (version: BookVersionData) => void;
     onUseVersionEntries: (version: BookVersionData) => void;
+    /** Opens the private share links of a version. */
+    onVersionShare: (version: BookVersionData) => void;
     language: Language;
     t: TranslationFunction;
 }>) {
@@ -352,6 +355,16 @@ export function BookSection({
                                         {t('bookVersionUseEntries')}
                                     </button>
                                 )}
+                                <button
+                                    type="button"
+                                    className="io-icon-btn"
+                                    aria-label={t('shareBookVersionPrivately', { version: version.versionNumber })}
+                                    title={t('shareBookVersionPrivately', { version: version.versionNumber })}
+                                    aria-haspopup="dialog"
+                                    onClick={() => onVersionShare(version)}
+                                >
+                                    <span className="codicon codicon-lock" aria-hidden="true" />
+                                </button>
                                 <button
                                     type="button"
                                     className="io-icon-btn"
