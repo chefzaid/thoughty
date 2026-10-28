@@ -6,8 +6,8 @@ import type { Person } from '../../services/api/peopleService';
 import { findMentions } from '../../utils/mentions';
 import { buildSearchHighlightPattern, splitSearchHighlights } from '../../utils/searchHighlight';
 import { countLinesBefore, findTaskLines } from '../../utils/taskList';
-import type { Attachment, TranslationFunction } from '../../types';
-import { InlineImageContext, type InlineImageScope } from '../InlineImages/inlineImageContext';
+import type { TranslationFunction } from '../../types';
+import { InlineImageContext, type InlineImageAttachment, type InlineImageScope } from '../InlineImages/inlineImageContext';
 import type { MarkdownTaskList } from './MarkdownRenderer';
 
 const BRACKET_REFERENCE_PATTERN = /\[\[(\d{4}-\d{2}-\d{2})(?:#(\d+))?\]\]/i;
@@ -65,7 +65,9 @@ interface EntryContentRendererProps {
      * The entry's attachments, for the pictures its Markdown text places (with `t`). Without them, as in
      * the feed and highlights, a placed picture shows its alt text only.
      */
-    readonly attachments?: readonly Attachment[];
+    readonly attachments?: readonly InlineImageAttachment[];
+    /** Where a private share link serves those files, by attachment ID; without it they load with the session. */
+    readonly attachmentUrl?: (attachmentId: number) => string;
     readonly theme?: 'light' | 'dark';
 }
 
@@ -227,6 +229,7 @@ function EntryContentRenderer({
     onToggleTask,
     t,
     attachments,
+    attachmentUrl,
     theme,
 }: Readonly<EntryContentRendererProps>) {
     const highlightPattern = useMemo(
@@ -256,8 +259,8 @@ function EntryContentRenderer({
         [content, format, onToggleTask]
     );
     const inlineImages = useMemo<InlineImageScope | null>(
-        () => (attachments && t ? { attachments, theme, t } : null),
-        [attachments, theme, t]
+        () => (attachments && t ? { attachments, theme, t, fileUrlOf: attachmentUrl } : null),
+        [attachments, attachmentUrl, theme, t]
     );
     const taskListFrom = (start: number): MarkdownTaskList | undefined => (taskLines && onToggleTask
         ? { lineOffset: countLinesBefore(displayContent, start), taskLines, onToggle: onToggleTask }

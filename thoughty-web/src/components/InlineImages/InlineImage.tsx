@@ -1,10 +1,11 @@
 import { useContext, useEffect, useState } from 'react';
-import type { Attachment } from '../../types';
 import { isImageAttachment } from '../../utils/attachments';
 import { attachmentIdOf } from '../../utils/inlineImages';
 import AttachmentPreviewDialog from '../AttachmentPreview/AttachmentPreviewDialog';
 import { useAuthenticatedAttachmentUrl } from '../AttachmentPreview/useAuthenticatedAttachmentUrl';
-import { InlineImageContext, type InlineImageScope } from './inlineImageContext';
+import { InlineImageContext, type InlineImageAttachment, type InlineImageScope } from './inlineImageContext';
+
+type StoredAttachment = InlineImageAttachment & { readonly stored_filename: string };
 
 /** True once the element comes near the viewport; at once where the browser cannot tell. */
 function useNearViewport(element: HTMLElement | null): boolean {
@@ -24,7 +25,7 @@ function useNearViewport(element: HTMLElement | null): boolean {
     return near;
 }
 
-function StoredInlineImage({ attachment, alt, scope }: Readonly<{ attachment: Attachment; alt: string; scope: InlineImageScope }>) {
+function StoredInlineImage({ attachment, alt, scope }: Readonly<{ attachment: StoredAttachment; alt: string; scope: InlineImageScope }>) {
     const [frame, setFrame] = useState<HTMLButtonElement | null>(null);
     const [open, setOpen] = useState(false);
     const near = useNearViewport(frame);
@@ -69,7 +70,7 @@ function StoredInlineImage({ attachment, alt, scope }: Readonly<{ attachment: At
 
 /**
  * An image of a Markdown entry. One of the entry's own pictures shows in the journal, loaded when it
- * comes into view, and opens the preview dialog. Elsewhere, and for any source that is not one of
+ * comes into view, and opens the preview dialog; on a private share link's page it loads from the link. Elsewhere, and for any source that is not one of
  * the entry's pictures (web addresses are blocked by the page's security policy), the alt text stands in.
  */
 function InlineImage({ src, alt }: Readonly<{ src?: string; alt?: string }>) {
@@ -86,7 +87,11 @@ function InlineImage({ src, alt }: Readonly<{ src?: string; alt?: string }>) {
         // A file that is not a picture stays listed below the entry; its name stands in here
         return <span className="inline-image-alt">{text || attachment.original_filename}</span>;
     }
-    if (!attachment) {
+    if (attachment && scope.fileUrlOf) {
+        // A private share link's page: the link serves the file itself, with no session to fetch it with
+        return <img src={scope.fileUrlOf(attachment.id)} alt={text} className="inline-image-picture" loading="lazy" />;
+    }
+    if (!attachment?.stored_filename) {
         return (
             <span className="inline-image-missing">
                 <span className="codicon codicon-file-media" aria-hidden="true" />
@@ -94,7 +99,7 @@ function InlineImage({ src, alt }: Readonly<{ src?: string; alt?: string }>) {
             </span>
         );
     }
-    return <StoredInlineImage attachment={attachment} alt={text} scope={scope} />;
+    return <StoredInlineImage attachment={{ ...attachment, stored_filename: attachment.stored_filename }} alt={text} scope={scope} />;
 }
 
 export default InlineImage;
