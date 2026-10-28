@@ -48,7 +48,8 @@ flowchart TD
 | `saved-searches` | named journal filter combinations with their diary scope: list, save, rename, delete, at most 50 per writer |
 | `life-eras` | named date ranges of the writer's life: list, add, change, delete, at most 100 per writer; the journal's `eraId` filter lives in the entries module's `applyEntryListFilters`, era chapters in `buildBook`, and `books` and `memoir` read eras through `LifeErasService` |
 | `people` | people mentioned with `@handle`: list with counts, rename, merge, delete, at most 1,000 per writer; mentions are parsed and linked on every entry save by `EntryMentionsService` in the entries module (composer, edits and both imports), and the journal's `personId` filter lives in `applyEntryListFilters` |
-| `attachments` | upload validation, object storage, audio transcription |
+| `attachments` | upload validation, object storage, audio transcription; `sendAttachmentFile` (`attachment-file-response.ts`) streams a stored file with its safe headers and byte ranges for both the owner's file route and a share link's |
+| `share-links` | private share links ([ADR 0024](./adr/0024-private-share-links.md)): `ShareLinksService` makes, lists and revokes the writer's links (`/api/share-links`, at most 100 unexpired), and `SharedContentService` answers the public `GET /api/shared/:token…` routes for a reader without an account (the entry, a book version's file, the entry's own attachments), counting views, with one `404` for every refusal and the headers of `SharedResponseHeadersInterceptor` |
 | `ai` | OpenRouter credentials and usage, tag suggestions, inspiration, rephrasing, summaries, chat, semantic search, duplicates, tag organization, writing insights |
 | `stats` | statistics, heatmap, writing goal progress, daily writing streak, mood stats, connections graph, writing-tendency analysis |
 | `review` | year in review: totals, rhythm, themes, highlights, moods, and the on-request AI mood arc |
@@ -113,6 +114,7 @@ flowchart TD
     Services --> Generated[Generated OpenAPI types]
 ```
 
+- A private share link's page (`/s/<token>`) is not part of this tree: `main.tsx` renders `SharedLinkPage` on its own, lazily, with no `AuthProvider`, router, query client or app chrome, and it calls only `/api/shared/…` with plain `fetch` ([ADR 0024](./adr/0024-private-share-links.md)). The writer's side is `ShareLinkDialog` (`components/ShareLinks`), opened from an entry's More actions and from each saved book version.
 - Route files stay thin. Components render; hooks own shared state, URL parameters, and API calls.
 - Server state goes through TanStack Query. The entry list keeps the previous page on screen while the next one loads.
 - The journal sends its first list request once everything that shapes it is known: the profile config (page size; a failed config request falls back to 10 at once), the default or route diary, and on a permalink the page that holds the entry. Until then the list query is disabled and the journal shows as loading, so no request is sent with defaults and thrown away.
@@ -195,6 +197,9 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 | Saved searches | `SAVED_SEARCH_NOT_FOUND` | Saved search not found |
 |  | `SAVED_SEARCH_NAME_TAKEN` | A saved search with this name already exists |
 |  | `SAVED_SEARCH_LIMIT_REACHED` | Saved search limit reached |
+| Private share links | `SHARE_LINK_NOT_FOUND` | This link is not available |
+|  | `SHARE_LINK_LIMIT_REACHED` | Share link limit reached |
+|  | `SHARE_LINK_EXPIRY_INVALID` | Choose an expiry from one hour up to a year ahead |
 | Life eras | `LIFE_ERA_NOT_FOUND` | Life era not found |
 |  | `LIFE_ERA_NAME_TAKEN` | A life era with this name already exists |
 |  | `LIFE_ERA_LIMIT_REACHED` | Life era limit reached |
@@ -262,6 +267,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 - `attachments` owns object-storage keys and file validation. Original filenames are never storage keys.
 - `config` owns preferences and encrypted integration settings. `cloud-sync` owns job status, locking, retries, and provider sync state.
 - `memoir` owns the question catalogue and which entry answers which question. Answers are created through the `entries` service, so entry rules still apply.
+- `share-links` owns the reader's access to shared content. It reads entries, attachments and book versions itself with the share link's checks (live account, entry outside the recycle bin and not sealed), and an `entries` trigger deletes an entry's links when it is binned or sealed, so no `entries` code needs to know about links.
 - The public feed reads only entries that are both public and moderation-visible ([ADR 0013](./adr/0013-public-social-content-and-moderation.md)). New social features must not reuse private-entry assumptions without extending that ADR.
 - Repeated entry-list reads are served from a short-lived per-pod cache (30 s by default, `ENTRIES_CACHE_TTL_SECONDS`), checked on every read against the writer's version in `entry_list_versions`, which database triggers on every table the list reads move on in the commit that changes it ([ADR 0022](./adr/0022-versioned-entry-list-cache.md)). Writers never invalidate the cache themselves: a write from any service, replica, the worker or raw SQL shows in the next read. A table the list starts to read needs the trigger in the migration that adds it (`entry-list-cache.integration.spec.ts` fails otherwise).
 
@@ -306,6 +312,7 @@ Status is `Proposed` for a decision that guides upcoming work, `Accepted` for im
 | [0021](./adr/0021-in-app-book-preview-with-pdfjs.md) | Accepted | Preview Books Page by Page with a Pinned, Self-Hosted PDF.js |
 | [0022](./adr/0022-versioned-entry-list-cache.md) | Accepted | Check the Journal List Cache Against a Version the Database Keeps |
 | [0023](./adr/0023-video-attachments.md) | Accepted | Take Videos Through a Disk-Buffered Upload, With Poster Frames Drawn in the Browser |
+| [0024](./adr/0024-private-share-links.md) | Accepted | Private Share Links Read Without an Account |
 
 ## ADR Template
 

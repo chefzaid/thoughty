@@ -29,6 +29,7 @@ erDiagram
     User ||--o{ Person : mentions
     User ||--o| OnThisDayEmail : receives
     User ||--o| MonthlyRecapEmail : receives
+    User ||--o{ ShareLink : shares
     Person ||--o{ PersonHandle : "is mentioned by"
     Person ||--o{ EntryPerson : "appears in"
 
@@ -47,6 +48,8 @@ erDiagram
     Entry ||--o{ EntryLike : receives
     Entry ||--o| MemoirAnswer : answers
     Entry ||--o{ EntryPerson : mentions
+    Entry ||--o{ ShareLink : "is shared by"
+    BookVersion ||--o{ ShareLink : "is shared by"
     EntryComment ||--o{ CommentLike : receives
 ```
 
@@ -70,6 +73,7 @@ Every table except `users` references a user, and those foreign keys cascade. Ac
 | `SavedSearch` | Deleted with the user, and with it the book versions saved from it. Deleting its diary keeps the search, its book versions, and widens it to all diaries (`SET NULL`). |
 | `LifeEra` | Deleted with the user. Deleting one leaves entries untouched and sets `eraId` to null in the writer's saved searches filtered by it, in the same transaction, so they cover every date. |
 | `Person`, `PersonHandle`, `EntryPerson` | Deleted with the user. An entry's links (`entry_people`) are rebuilt from its text on every save and go with the entry when it is purged; they stay while it is in the recycle bin, which only counts leave out. Deleting a person deletes their handles and links, keeps the text, and sets `personId` to null in saved searches filtered by them; merging moves the duplicate's handles and links to the person kept and points those saved searches at them. |
+| `ShareLink` | Deleted with the user, its entry or its book version (`ON DELETE CASCADE`), and when revoked. Moving its entry to the recycle bin or sealing it deletes its links at once (trigger `trg_entries_drop_share_links`), so restoring the entry does not bring them back. Expired links are deleted as the writer next makes or lists links. |
 | `OnThisDayEmail`, `MonthlyRecapEmail` | Deleted with the user. Deleting its diary widens the email to all diaries (`SET NULL`). Unsubscribing only turns it off and keeps the hour, zone and diary. |
 | Everything else | Deleted with the user. Votes also go with their request. |
 
@@ -183,6 +187,18 @@ Progress is computed on request (`StatsGoalService`, in `GET /api/stats` as `goa
 - A writer keeps at most 50 (`SAVED_SEARCH_LIMIT`, sent with the list). Saves take a transaction-scoped advisory lock on `(hashtext('saved_searches'), user_id)`, so concurrent saves cannot pass the limit. The diary must be the writer's own.
 - Each listed search carries `bookVersionCount`, the book versions saved from it (`scope_key` `search:<id>`), counted in one grouped query; the delete confirmation names that count, since deleting the search deletes those versions.
 - Saved searches are private: they are only read by their owner, and they are part of the data download.
+
+## Private Share Links
+
+`share_links` keeps the private share links of entries and book versions (`ShareLinksModule`, [ADR 0024](./adr/0024-private-share-links.md), migration `1787443200000-share-links`): one row per link.
+
+- The target is exactly one of `entry_id` and `book_version_id` (`chk_share_links_target`), each cascading with its row; `idx_share_links_entry` and `idx_share_links_book_version` (partial) find a target's links, and `idx_share_links_user_created` a writer's.
+- `token_hash` (`VARCHAR(64)`, lowercase hex, `chk_share_links_token_hash`, unique `uq_share_links_token_hash`) is the SHA-256 of the 256-bit token. The token itself is never stored, and the column is not selected by default.
+- `expires_at` (`TIMESTAMPTZ`, required, after `created_at`), `max_views` (null for no limit, else 1 to 1,000), `view_count` and `last_viewed_at`. A view is counted by one conditional `UPDATE` (`view_count < max_views`), so concurrent readers cannot pass the limit.
+- `label` (`VARCHAR(80)`, nullable) is the writer's note; `show_mood` and `show_tags` (both false by default, and always false for a book version, `chk_share_links_entry_options`) choose what the reader sees.
+- A writer has at most 100 unexpired links (`SHARE_LINK_LIMIT`, sent with the list), counted under a transaction-scoped advisory lock on `(hashtext('share_links'), user_id)`.
+- `trg_entries_drop_share_links` (`AFTER UPDATE OF deleted_at, sealed_until ON entries`) runs `share_links_drop_for_hidden_entry()`, which deletes an entry's links when `deleted_at` or `sealed_until` goes from null to a value.
+- Links are part of the data download, without their token or hash.
 
 ## Life Eras
 
