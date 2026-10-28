@@ -30,6 +30,7 @@ import {
   OnThisDayEmail,
   MonthlyRecapEmail,
   TimeCapsule,
+  ShareLink,
 } from './entities';
 import { buildPostgresConnectionOptions } from './postgres-connection-options';
 import { buildPostgresPoolOptions } from './postgres-pool-options';
@@ -84,6 +85,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
           OnThisDayEmail,
           MonthlyRecapEmail,
           TimeCapsule,
+          ShareLink,
         ],
         extra: buildPostgresPoolOptions({
           POSTGRES_POOL_MAX: configService.get<string>('POSTGRES_POOL_MAX'),
@@ -124,6 +126,7 @@ import { buildPostgresPoolOptions } from './postgres-pool-options';
       OnThisDayEmail,
       MonthlyRecapEmail,
       TimeCapsule,
+      ShareLink,
     ]),
   ],
   exports: [TypeOrmModule],

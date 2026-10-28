@@ -24,7 +24,7 @@ describe('UserDataExportService time capsules', () => {
     // Constructor order: settings, user, diaries, entries, then 12 more repositories and the two opt-in emails
     const repositories = [emptyRepository(), emptyRepository(), emptyRepository(), entryRepository, ...Array.from({ length: 14 }, emptyRepository)];
     const Service = UserDataExportService as unknown as new (...dependencies: unknown[]) => UserDataExportService;
-    const service = new Service(...repositories, capsuleRepository, timeCapsules);
+    const service = new Service(...repositories, capsuleRepository, timeCapsules, emptyRepository());
 
     const data = await service.downloadData(1);
 

@@ -17,6 +17,7 @@ import {
   OnThisDayEmail,
   MonthlyRecapEmail,
   TimeCapsule,
+  ShareLink,
   Setting,
   User,
   UserFollow,
@@ -88,6 +89,7 @@ describe('UserDataExportService', () => {
         { provide: getRepositoryToken(MonthlyRecapEmail), useValue: monthlyRecapEmailRepository },
         { provide: getRepositoryToken(TimeCapsule), useValue: { find: jest.fn().mockResolvedValue([]) } },
         noTimeCapsules(),
+        { provide: getRepositoryToken(ShareLink), useValue: { find: jest.fn().mockResolvedValue([]) } },
       ],
     }).compile();
 

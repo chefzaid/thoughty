@@ -24,3 +24,4 @@ export * from './on-this-day-email.entity';
 export * from './opt-in-email-setting.base';
 export * from './monthly-recap-email.entity';
 export * from './time-capsule.entity';
+export * from './share-link.entity';

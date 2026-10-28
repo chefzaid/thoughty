@@ -20,6 +20,7 @@ import {
   LifeEra,
   Person,
   TimeCapsule,
+  ShareLink,
 } from '@/database/entities';
 import { ConfigController } from './config.controller';
 import { ConfigService } from './config.service';
@@ -49,6 +50,7 @@ import { TimeCapsulesModule } from '@/modules/time-capsules/time-capsules.module
       LifeEra,
       Person,
       TimeCapsule,
+      ShareLink,
     ]),
     TimeCapsulesModule,
   ],

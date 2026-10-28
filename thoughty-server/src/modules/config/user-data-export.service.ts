@@ -19,6 +19,7 @@ import {
   LifeEra,
   Person,
   Setting,
+  ShareLink,
   TimeCapsule,
   User,
   UserFollow,
@@ -84,10 +85,12 @@ export class UserDataExportService {
     @InjectRepository(TimeCapsule)
     private readonly timeCapsuleRepository: Repository<TimeCapsule>,
     private readonly timeCapsules: TimeCapsuleService,
+    @InjectRepository(ShareLink)
+    private readonly shareLinkRepository: Repository<ShareLink>,
   ) {}
 
   async downloadData(userId: number): Promise<Record<string, unknown>> {
-    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules] = await Promise.all([
+    const [user, diaries, entries, revisions, attachments, settings, social, memoir, yearReviewMoods, savedSearches, lifeEras, people, onThisDayEmail, monthlyRecapEmail, capsules, shareLinks] = await Promise.all([
       this.userRepository.findOne({ where: { id: userId } }),
       this.diaryRepository.find({ where: { userId }, order: { position: 'ASC' } }),
       // Entries in the recycle bin are still personal data until they are removed for good, and sealed
@@ -107,6 +110,8 @@ export class UserDataExportService {
       this.onThisDayEmailRepository.findOne({ where: { userId } }),
       this.monthlyRecapEmailRepository.findOne({ where: { userId } }),
       this.timeCapsuleRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
+      // The token's hash is never selected; the token itself was never kept
+      this.shareLinkRepository.find({ where: { userId }, order: { createdAt: 'ASC', id: 'ASC' } }),
     ]);
 
     const safeUser = user
@@ -230,6 +235,19 @@ export class UserDataExportService {
         openAt: capsule.openAt,
         openedAt: capsule.openedAt,
         sealedAt: capsule.createdAt,
+      })),
+      // Private share links, without their tokens: what each shares, until when, and how often it was read
+      shareLinks: shareLinks.map((link) => ({
+        entryId: link.entryId,
+        bookVersionId: link.bookVersionId,
+        label: link.label,
+        showMood: link.showMood,
+        showTags: link.showTags,
+        maxViews: link.maxViews,
+        viewCount: link.viewCount,
+        lastViewedAt: link.lastViewedAt,
+        expiresAt: link.expiresAt,
+        createdAt: link.createdAt,
       })),
     };
   }

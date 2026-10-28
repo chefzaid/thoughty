@@ -76,10 +76,15 @@ describePostgres('PostgreSQL account purge', () => {
     await dataSource.query(`INSERT INTO ai_chat_histories (user_id, entry_id, messages) VALUES ($1, $2, '[]')`, [userId, entryId]);
     await dataSource.query(`INSERT INTO ai_usage_events (user_id, credential_source, model) VALUES ($1, 'server', 'm')`, [userId]);
     await dataSource.query(`INSERT INTO cloud_sync_jobs (user_id, provider) VALUES ($1, 'dropbox')`, [userId]);
-    await dataSource.query(
+    const bookVersionId = await one(
       `INSERT INTO book_versions (user_id, diary_id, scope_key, version_number, title, format, filename, content_type, content, manifest, chapter_count, entry_count, added_entry_count)
-       VALUES ($1, $2, 'all', 1, 'Book', 'md', 'book.md', 'text/markdown', 'x'::bytea, '{}', 0, 0, 0)`,
+       VALUES ($1, $2, 'all', 1, 'Book', 'md', 'book.md', 'text/markdown', 'x'::bytea, '{}', 0, 0, 0) RETURNING id`,
       [userId, diaryId],
+    );
+    await dataSource.query(
+      `INSERT INTO share_links (user_id, entry_id, book_version_id, token_hash, expires_at)
+       VALUES ($1, $2, NULL, $4, NOW() + INTERVAL '7 days'), ($1, NULL, $3, $5, NOW() + INTERVAL '7 days')`,
+      [userId, entryId, bookVersionId, `${userId}`.padStart(64, 'a'), `${userId}`.padStart(64, 'b')],
     );
     await dataSource.query(`INSERT INTO memoir_programs (user_id, diary_id, delivery_weekday, next_delivery_at) VALUES ($1, $2, 1, NOW())`, [userId, diaryId]);
     await dataSource.query(`INSERT INTO memoir_answers (user_id, question_id, entry_id) VALUES ($1, 'q1', $2)`, [userId, entryId]);
@@ -178,6 +183,7 @@ describePostgres('PostgreSQL account purge', () => {
       'time_capsules.user_id': 1,
       'attachments.user_id': 3,
       'settings.user_id': 1,
+      'share_links.user_id': 2,
       'feature_requests.user_id': 1,
     }));
   });
