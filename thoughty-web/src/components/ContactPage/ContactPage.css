@@ -9,7 +9,9 @@
     grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem);
     gap: clamp(2rem, 6vw, 5rem);
     align-items: center;
-    padding: 5rem clamp(1.25rem, 5vw, 5rem) 3rem;
+    width: min(var(--pub-width), calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 5rem 0 3rem;
 }
 
 .contact-copy {
@@ -18,7 +20,7 @@
 
 .contact-copy h1 {
     margin: 0;
-    font-family: Baskerville, Georgia, serif;
+    font-family: var(--pub-serif);
     font-size: clamp(3.8rem, 9vw, 6.7rem);
     line-height: 0.94;
     letter-spacing: 0;
@@ -26,13 +28,9 @@
 
 .contact-copy p:not(.intro-eyebrow) {
     margin: 1.35rem 0 0;
-    color: #334155;
+    color: var(--pub-text);
     font-size: 1.08rem;
     line-height: 1.75;
-}
-
-.intro-page.dark .contact-copy p:not(.intro-eyebrow) {
-    color: #e2ded2;
 }
 
 .contact-copy .intro-btn {
@@ -64,13 +62,9 @@
 .contact-form label {
     display: grid;
     gap: 0.35rem;
-    color: #334155;
+    color: var(--pub-text);
     font-size: 0.9rem;
     font-weight: 800;
-}
-
-.intro-page.dark .contact-form label {
-    color: #e2ded2;
 }
 
 .contact-form input,
@@ -125,11 +119,5 @@
     .contact-hero {
         grid-template-columns: 1fr;
         min-height: auto;
-    }
-}
-
-@media (max-width: 720px) {
-    .contact-hero {
-        padding-inline: 1rem;
     }
 }

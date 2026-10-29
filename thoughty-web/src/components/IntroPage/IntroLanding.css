@@ -1,10 +1,9 @@
 /* Presentation page at /. Colors come from the public page tokens in IntroPage.css. */
 .landing-page {
-    --landing-width: 1160px;
+    --landing-width: var(--pub-width);
     overflow-x: clip;
 }
 
-.landing-page h1,
 .landing-page h2 {
     font-family: var(--pub-serif);
     letter-spacing: 0;

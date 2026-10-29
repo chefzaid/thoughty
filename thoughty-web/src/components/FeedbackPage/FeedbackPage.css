@@ -9,7 +9,9 @@
     grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem);
     gap: clamp(2rem, 6vw, 5rem);
     align-items: center;
-    padding: 5rem clamp(1.25rem, 5vw, 5rem) 3rem;
+    width: min(var(--pub-width), calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 5rem 0 3rem;
 }
 
 .feedback-copy {
@@ -18,7 +20,7 @@
 
 .feedback-copy h1 {
     margin: 0;
-    font-family: Baskerville, Georgia, serif;
+    font-family: var(--pub-serif);
     font-size: clamp(3.8rem, 9vw, 6.7rem);
     line-height: 0.94;
     letter-spacing: 0;
@@ -26,13 +28,9 @@
 
 .feedback-copy p:not(.intro-eyebrow) {
     margin: 1.35rem 0 0;
-    color: #334155;
+    color: var(--pub-text);
     font-size: 1.08rem;
     line-height: 1.75;
-}
-
-.intro-page.dark .feedback-copy p:not(.intro-eyebrow) {
-    color: #e2ded2;
 }
 
 .feedback-copy .intro-btn {
@@ -64,13 +62,9 @@
 .feedback-form label {
     display: grid;
     gap: 0.35rem;
-    color: #334155;
+    color: var(--pub-text);
     font-size: 0.9rem;
     font-weight: 800;
-}
-
-.intro-page.dark .feedback-form label {
-    color: #e2ded2;
 }
 
 .feedback-form input,
@@ -169,12 +163,8 @@
 
 .feedback-idea p {
     margin: 0.65rem 0 0;
-    color: #475569;
+    color: var(--pub-text);
     line-height: 1.65;
-}
-
-.intro-page.dark .feedback-idea p {
-    color: #d9d3c2;
 }
 
 .feedback-vote {
@@ -193,15 +183,10 @@
 }
 
 .feedback-board-message {
-  display: block;
+    display: block;
     margin: 0;
     padding: 1.25rem 0;
-    color: #475569;
-}
-
-.intro-page.dark .feedback-board-message {
-  display: block;
-    color: #d9d3c2;
+    color: var(--pub-text);
 }
 
 .feedback-board-message.error {
@@ -236,10 +221,6 @@
 }
 
 @media (max-width: 720px) {
-    .feedback-hero {
-        padding-inline: 1rem;
-    }
-
     .feedback-idea {
         grid-template-columns: 1fr;
     }

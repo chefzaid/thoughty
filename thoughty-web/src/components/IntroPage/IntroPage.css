@@ -16,6 +16,8 @@
     --pub-shadow: 0 24px 60px rgba(49, 30, 110, 0.14);
     --pub-gradient: linear-gradient(120deg, #2563eb 0%, #7c3aed 50%, #c026d3 100%);
     --pub-serif: Baskerville, Georgia, serif;
+    /* Every public page lines its content up on this width. */
+    --pub-width: 1160px;
     min-height: 100vh;
     background: var(--pub-bg);
     color: var(--pub-ink);
@@ -37,6 +39,13 @@
     --pub-button-hover: #6d28d9;
     --pub-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
     --pub-gradient: linear-gradient(120deg, #93c5fd 0%, #c4b5fd 50%, #f0abfc 100%);
+}
+
+/* Page and section titles are set in the serif on every public page; card titles stay in the sans. */
+.intro-page h1,
+.intro-page .section-heading h2 {
+    font-family: var(--pub-serif);
+    letter-spacing: 0;
 }
 
 .intro-eyebrow,
@@ -97,7 +106,7 @@
 }
 
 .landing-section {
-    width: min(1100px, calc(100% - 2rem));
+    width: min(var(--pub-width), calc(100% - 2rem));
     margin: 5rem auto 0;
 }
 
@@ -145,10 +154,12 @@
 .about-hero {
     min-height: 72vh;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(18rem, 28rem);
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 30rem);
     gap: clamp(2rem, 6vw, 5rem);
     align-items: center;
-    padding: 5rem clamp(1.25rem, 5vw, 5rem) 3rem;
+    width: min(var(--pub-width), calc(100% - 2rem));
+    margin: 0 auto;
+    padding: 5rem 0 3rem;
 }
 
 .about-copy {
@@ -158,8 +169,8 @@
 .about-copy h1 {
     margin: 0;
     font-family: var(--pub-serif);
-    font-size: clamp(4rem, 10vw, 7.4rem);
-    line-height: 0.92;
+    font-size: clamp(3.8rem, 9vw, 6.7rem);
+    line-height: 0.94;
     letter-spacing: 0;
 }
 
@@ -205,8 +216,10 @@
 }
 
 .legal-page {
+    width: min(var(--pub-width), calc(100% - 2rem));
     min-height: 100vh;
-    padding: 5rem clamp(1.25rem, 5vw, 5rem) 2rem;
+    margin: 0 auto;
+    padding: 5rem 0 2rem;
 }
 
 .legal-hero {
@@ -216,7 +229,7 @@
 .legal-hero h1 {
     margin: 0;
     font-family: var(--pub-serif);
-    font-size: clamp(3.6rem, 9vw, 6.5rem);
+    font-size: clamp(3.8rem, 9vw, 6.7rem);
     line-height: 0.94;
     letter-spacing: 0;
 }
@@ -289,14 +302,6 @@
     .feature-list,
     .about-values {
         grid-template-columns: 1fr;
-    }
-
-    .about-hero {
-        padding-inline: 1rem;
-    }
-
-    .legal-page {
-        padding-inline: 1rem;
     }
 
     .section-heading h2 {
