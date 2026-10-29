@@ -9,14 +9,14 @@
   display: grid;
   margin: 0;
   justify-items: center;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .achievements-karma-value {
-  font-size: 2rem;
+  font-size: 1.875rem;
   font-weight: 800;
   letter-spacing: 0;
   line-height: 1.1;
@@ -57,13 +57,13 @@
 
 .achievements-stats dd {
   margin: 0.1rem 0 0;
-  font-size: 1.1rem;
+  font-size: 1.125rem;
   font-weight: 700;
 }
 
 .achievements-note {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .profile-page.dark .achievements-note,
@@ -138,11 +138,11 @@
   min-width: 0;
   flex: 1 1 auto;
   gap: 0.2rem;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 
 .achievement-text > span {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 
 .achievement-text progress {

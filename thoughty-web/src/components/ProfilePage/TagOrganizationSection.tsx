@@ -75,7 +75,7 @@ function TagOrganizationSection({
         <svg xmlns="http://www.w3.org/2000/svg" className="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h10M7 12h6m-6 5h10M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z" />
         </svg>
-        <h3 className="section-title">{t('tagOrganization')}</h3>
+        <h2 className="section-title">{t('tagOrganization')}</h2>
       </div>
       <div className="section-content">
         {tags.length === 0 ? (

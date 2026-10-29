@@ -42,12 +42,14 @@ function StatsRoute({
         theme={theme}
         t={t}
       />
-      <YearReviewTeaser
-        theme={theme}
-        onOpen={() => navigate(`${getPathForView('review')}${currentDiaryId ? `?diary=${currentDiaryId}` : ''}`)}
-        t={t}
-      />
       <Stats
+        teaser={(
+          <YearReviewTeaser
+            theme={theme}
+            onOpen={() => navigate(`${getPathForView('review')}${currentDiaryId ? `?diary=${currentDiaryId}` : ''}`)}
+            t={t}
+          />
+        )}
         theme={theme}
         t={t}
         diaryId={currentDiaryId}

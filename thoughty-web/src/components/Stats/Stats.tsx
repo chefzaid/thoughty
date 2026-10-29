@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -13,6 +13,7 @@ import {
 import './Stats.css';
 import { useAuth } from '../../contexts/AuthContext';
 import type { components } from '../../generated/openapi';
+import PageHeader from '../PageHeader/PageHeader';
 import TagBadge from '../TagBadge/TagBadge';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import StatsActivityHeatmap from './StatsActivityHeatmap';
@@ -46,6 +47,8 @@ interface StatsProps {
     readonly onManageDiaries?: () => void;
     readonly tagMetadata?: TagMetadataMap;
     readonly language?: string;
+    /** Shown after the summary numbers, or under the title while they load. */
+    readonly teaser?: ReactNode;
 }
 
 type StatsData = components['schemas']['StatsResponseDto'];
@@ -99,7 +102,7 @@ const EMPTY_STATS: StatsData = {
     goals: [],
 };
 
-function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetadata, language }: StatsProps) {
+function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetadata, language, teaser }: StatsProps) {
     const { authFetch } = useAuth();
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -221,9 +224,13 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
     const goals = effectiveStats.goals ?? EMPTY_STATS.goals;
     const diaryGoal = diaryId ? goals.find((goal) => goal.diaryId === diaryId) : undefined;
 
+    const header = <PageHeader title={t('stats')} subtitle={t('statsOverview')} theme={themeClass} />;
+
     if (loading) {
         return (
             <div className="stats-container">
+                {header}
+                {teaser}
                 <div className="stats-loading">
                     <div className="spinner"></div>
                     <p>{t('loadingStats')}</p>
@@ -235,6 +242,8 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
     if (error || !stats) {
         return (
             <div className="stats-container">
+                {header}
+                {teaser}
                 <div className="stats-error">
                     <p>{t(error ?? 'statsLoadError')}</p>
                     <button type="button" onClick={fetchStats}>{t('retry')}</button>
@@ -245,10 +254,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
 
     return (
         <div className={`stats-container ${themeClass}`}>
-            <div className="stats-header">
-                <h1>{t('stats')}</h1>
-                <p>{t('statsOverview')}</p>
-            </div>
+            {header}
 
             {/* Summary Cards */}
             <div className="stats-summary">
@@ -285,6 +291,8 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
                     <div className="stat-label">{t('avgReadingTime')}</div>
                 </div>
             </div>
+
+            {teaser}
 
             {/* Charts Grid */}
             <div className="charts-grid">
@@ -397,7 +405,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
                             {/* Tags per Year Breakdown */}
                             <div className={`chart-card ${themeClass}`}>
                                 <div className="chart-header">
-                                    <h3>{t('topTagsByYear')}</h3>
+                                    <h2>{t('topTagsByYear')}</h2>
                                     <StatsPagination
                                         page={tagsYearPage}
                                         totalPages={totalTagsYearPages}

@@ -4,6 +4,7 @@ import { useTransientMessage } from '../../hooks/useTransientMessage';
 import type { AnswerMemoirRequest, MemoirChapter, StartMemoirRequest, UpdateMemoirRequest } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
+import PageHeader from '../PageHeader/PageHeader';
 import MemoirAnswerForm from './MemoirAnswerForm';
 import MemoirChapters from './MemoirChapters';
 import MemoirIntro from './MemoirIntro';
@@ -114,10 +115,7 @@ function MemoirPage({
 
   return (
     <section className={`memoir-page ${theme}`} aria-labelledby="memoir-heading">
-      <header className="memoir-header">
-        <h1 id="memoir-heading">{t('memoir')}</h1>
-        <p>{t('memoirTagline')}</p>
-      </header>
+      <PageHeader title={t('memoir')} titleId="memoir-heading" subtitle={t('memoirTagline')} theme={theme} />
 
       {memoir.loading && (
         <output className="memoir-state">

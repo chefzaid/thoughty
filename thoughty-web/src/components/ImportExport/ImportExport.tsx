@@ -8,6 +8,7 @@ import { ImportExportBookPanel } from './ImportExportBookPanel';
 import { AppImportPanel } from './appImport/AppImportPanel';
 import { useImportExportCloud } from './useImportExportCloud';
 import AutoDismiss from '../AutoDismiss/AutoDismiss';
+import PageHeader from '../PageHeader/PageHeader';
 import { useTransientMessage } from '../../hooks/useTransientMessage';
 import { downloadBlob } from '../../utils/downloadFile';
 import { pluralPhrase } from '../../utils/pluralPhrase';
@@ -273,12 +274,17 @@ function ImportExport({
     }
 
     if (loading) {
-        return <div className={`import-export ${isLight ? 'light' : 'dark'}`}>{t('loading')}...</div>;
+        return (
+            <div className={`import-export ${isLight ? 'light' : 'dark'}`}>
+                <PageHeader title={t('importExport')} theme={isLight ? 'light' : 'dark'} />
+                {t('loading')}...
+            </div>
+        );
     }
 
     return (
         <div className={`import-export ${isLight ? 'light' : 'dark'}`}>
-            <h2>{t('importExport')}</h2>
+            <PageHeader title={t('importExport')} theme={isLight ? 'light' : 'dark'} />
 
             <RouteActions
                 activeSection={activeSection}

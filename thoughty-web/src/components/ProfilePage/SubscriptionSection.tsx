@@ -65,7 +65,7 @@ function SubscriptionSection({ localConfig, handleChange, isDark, t }: Subscript
         <svg xmlns="http://www.w3.org/2000/svg" className="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h.01M11 15h2M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" />
         </svg>
-        <h3 className="section-title">{t('subscriptionManagement')}</h3>
+        <h2 className="section-title">{t('subscriptionManagement')}</h2>
       </div>
 
       <div className="section-content">
@@ -124,7 +124,7 @@ function SubscriptionSection({ localConfig, handleChange, isDark, t }: Subscript
 
         <div className="billing-history">
           <div className="billing-history-header">
-            <h4>{t('billingHistory')}</h4>
+            <h3>{t('billingHistory')}</h3>
             <span>{t('billingHistoryDescription')}</span>
           </div>
           <table>

@@ -97,7 +97,7 @@ function AiCredentialPanel({
     <div className="ai-credential-panel">
       <div className="ai-credential-heading">
         <div>
-          <h4 className="ai-credential-title">{t("openRouterApiKey")}</h4>
+          <h3 className="ai-credential-title">{t("openRouterApiKey")}</h3>
           <div className={`ai-credential-status ${status?.source || "none"}`}>
             <span className="ai-status-dot" aria-hidden="true" />
             <span>{statusLabel}</span>
@@ -175,7 +175,7 @@ function AiCredentialPanel({
         <div className="ai-usage-dashboard">
           <div className="ai-usage-heading">
             <div>
-              <h4>{t("usageDashboard")}</h4>
+              <h3>{t("usageDashboard")}</h3>
               <span>
                 {t("thoughtyUsagePeriod", {
                   days: usage?.thoughty.periodDays ?? 30,
@@ -225,7 +225,7 @@ function AiCredentialPanel({
                 </div>
               </dl>
               <div className="ai-provider-usage">
-                <h5>{usage.provider.label || t("openRouterKeyUsage")}</h5>
+                <h4>{usage.provider.label || t("openRouterKeyUsage")}</h4>
                 <dl>
                   <div>
                     <dt>{t("allTimeCost")}</dt>

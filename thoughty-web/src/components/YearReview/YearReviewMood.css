@@ -1,8 +1,7 @@
 /* Mood */
 .review-mood-summary {
   margin: 0 0 0.75rem;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.15rem;
+  font-size: 1.125rem;
   line-height: 1.5;
 }
 
@@ -46,7 +45,7 @@
   margin: 0.5rem 0 0;
   padding: 0;
   list-style: none;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
 }
 
 .review-mood-month {
@@ -64,7 +63,7 @@
   padding: 0.2rem 0.65rem;
   border: 1px solid rgba(148, 163, 184, 0.45);
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 

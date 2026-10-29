@@ -5,7 +5,7 @@
 
 .life-eras-count {
     margin-left: auto;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
 }
 
 .life-eras.dark .life-eras-count,
@@ -24,7 +24,7 @@
 
 .life-era-muted {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
 }
 
 .life-era-list {
@@ -62,7 +62,7 @@
 .life-era-dates,
 .life-era-note {
     margin: 0.125rem 0 0;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     overflow-wrap: anywhere;
 }
 
@@ -106,6 +106,7 @@
 .life-era-form-title {
     margin-bottom: 0.75rem;
     font-weight: 600;
+    font-size: 1rem;
 }
 
 .life-era-form-grid {

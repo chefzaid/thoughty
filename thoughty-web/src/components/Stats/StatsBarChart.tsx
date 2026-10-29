@@ -62,7 +62,7 @@ export default function StatsBarChart({
     return (
         <div className={`chart-card ${themeClass}`}>
             <div className="chart-header">
-                <h3 id={titleId}>{title}</h3>
+                <h2 id={titleId}>{title}</h2>
                 <div className="chart-header-actions">
                     {controls}
                     <button

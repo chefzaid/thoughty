@@ -105,7 +105,7 @@ export default function StatsGoalPanel({ goals, diaryId, themeClass, language, t
 
     return (
         <section className={`chart-card goal-card ${themeClass}`} aria-labelledby="writing-goal-heading">
-            <h3 id="writing-goal-heading">{t('diaryGoal')}</h3>
+            <h2 id="writing-goal-heading">{t('diaryGoal')}</h2>
             {body}
         </section>
     );

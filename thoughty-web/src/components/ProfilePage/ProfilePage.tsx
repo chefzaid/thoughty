@@ -4,7 +4,7 @@ import ProfilePictureEditor from '../ProfilePictureEditor/ProfilePictureEditor';
 import './ProfilePage.css';
 
 // Import section components
-import ProfilePageHeader from './ProfilePageHeader';
+import PageHeader from '../PageHeader/PageHeader';
 import ProfileHeaderCard from './ProfileHeaderCard';
 import PersonalSection from './PersonalSection';
 import AppearanceSection from './AppearanceSection';
@@ -210,7 +210,7 @@ function ProfilePage({ config, onUpdateConfig, onDownloadData, onBack, t, stats,
         isDark={isDark}
       />
 
-      <ProfilePageHeader onBack={onBack} isDark={isDark} t={t} />
+      <PageHeader title={t('profile')} back={{ label: t('back'), onClick: onBack }} theme={isDark ? 'dark' : 'light'} />
 
       <ProfileHeaderCard
         localConfig={localConfig}

@@ -1,6 +1,7 @@
 import { useState, useRef, type ComponentPropsWithoutRef, type CSSProperties } from 'react';
 import './DiaryManager.css';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
+import PageHeader from '../PageHeader/PageHeader';
 import DiaryGoalField from './DiaryGoalField';
 import DiaryIconPicker from './DiaryIconPicker';
 import DiaryColorField from './DiaryColorField';
@@ -199,15 +200,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
 
     return (
         <div className={`diary-manager ${isLight ? 'light' : 'dark'}`}>
-            <div className="diary-manager-header">
-                <button type="button" className="back-btn" onClick={onBack}>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    {t('journal')}
-                </button>
-                <h2>{t('manageDiaries')}</h2>
-            </div>
+            <PageHeader title={t('manageDiaries')} back={{ label: t('journal'), onClick: onBack }} theme={isLight ? 'light' : 'dark'} />
 
             {error && (
                 <div className="error-message">
@@ -218,7 +211,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
 
             {/* Create New Diary Form */}
             <div className="create-diary-section">
-                <h3>{t('newDiary')}</h3>
+                <h2>{t('newDiary')}</h2>
                 <form onSubmit={handleCreate} className="create-diary-form" noValidate>
                     <div className="form-row">
                         <DiaryIconPicker
@@ -268,7 +261,7 @@ function DiaryManager({ diaries, onCreateDiary, onUpdateDiary, onDeleteDiary, on
 
             {/* Diaries List */}
             <div className="diaries-list">
-                <h3>{t('diaries')}</h3>
+                <h2>{t('diaries')}</h2>
                 {diaries.length === 0 ? (
                     <p className="no-diaries">{t('noDiaries')}</p>
                 ) : (

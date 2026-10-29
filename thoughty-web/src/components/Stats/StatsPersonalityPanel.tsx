@@ -91,9 +91,9 @@ export default function StatsPersonalityPanel({
             aria-labelledby="personality-insights-heading"
         >
             <div className="personality-panel-header">
-                <h3 id="personality-insights-heading">
+                <h2 id="personality-insights-heading">
                     {t('personalityInsights')}
-                </h3>
+                </h2>
                 <div className="personality-controls">
                     <label>
                         <span>{t('personalityFromDate')}</span>

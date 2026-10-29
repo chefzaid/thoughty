@@ -1,47 +1,17 @@
-.leaderboard-title {
-  display: grid;
-  gap: 0.25rem;
-  justify-items: start;
-}
-
-.leaderboard-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.2rem 0.4rem 0.2rem 0;
-  border: 0;
-  background: transparent;
-  color: #9ca3af;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.leaderboard-page.light .leaderboard-back,
-.leaderboard-page.light .leaderboard-note,
 .leaderboard-page.light .leaderboard-empty,
 .leaderboard-page.light .leaderboard-meta time {
   color: #4b5563;
-}
-
-.leaderboard-back:focus-visible {
-  outline: 3px solid #38bdf8;
-  outline-offset: 2px;
 }
 
 .leaderboard-periods {
   grid-template-columns: repeat(4, minmax(0, auto));
 }
 
-.leaderboard-note {
-  margin: 0.5rem 0 1rem;
-  color: #9ca3af;
-  font-size: 0.8rem;
-}
-
 .leaderboard-grid {
   display: grid;
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  align-items: start;
+  gap: 1rem;
 }
 
 .leaderboard-section {
@@ -58,14 +28,14 @@
 
 .leaderboard-section h2 {
   margin: 0 0 0.75rem;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .leaderboard-empty {
   margin: 0;
   color: #9ca3af;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 
 .leaderboard-list {
@@ -86,7 +56,7 @@
 .leaderboard-list > li::before {
   color: #9ca3af;
   content: counter(leaderboard-rank) '.';
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.75rem;
 }
@@ -135,7 +105,7 @@
   gap: 0.35rem 0.6rem;
   grid-column: 2;
   margin: 0.4rem 0 0;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .leaderboard-meta time {
@@ -146,7 +116,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 

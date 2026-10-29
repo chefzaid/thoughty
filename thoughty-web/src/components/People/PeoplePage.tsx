@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 
+import PageHeader from '../PageHeader/PageHeader';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import type { Person } from '../../services/api/peopleService';
 import type { TranslationFunction } from '../../types';
@@ -66,11 +67,8 @@ export default function PeoplePage({ theme = 'dark', language: languageSetting, 
   };
 
   return (
-    <div className={`mx-auto grid w-full max-w-3xl gap-4 pb-12 pt-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
-      <header>
-        <h1 ref={headingRef} tabIndex={-1} className="font-serif text-3xl font-bold outline-none">{t('people')}</h1>
-        <p className={`mt-1 max-w-2xl text-sm leading-relaxed ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{t('peopleIntro')}</p>
-      </header>
+    <div className={`grid w-full gap-4 [&>.page-header]:mb-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+      <PageHeader title={t('people')} subtitle={t('peopleIntro')} titleRef={headingRef} theme={isDark ? 'dark' : 'light'} />
       <p className="sr-only" role="status" aria-live="polite">{status}</p>
 
       {list.isLoading && <p className={muted}>{t('peopleLoading')}</p>}

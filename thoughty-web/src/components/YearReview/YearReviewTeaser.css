@@ -4,32 +4,34 @@
   gap: 1rem;
   align-items: center;
   justify-content: space-between;
-  width: min(100%, 64rem);
-  margin: 0 auto 1rem;
-  padding: 1rem 1.25rem;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  border-radius: 0.75rem;
-  background: linear-gradient(135deg, rgba(180, 83, 9, 0.28), rgba(31, 41, 55, 0.9));
+  width: 100%;
+  margin: 0 0 2rem;
+  padding: 1.5rem;
+  /* The same card as the charts around it on the stats page; the button carries the review's amber. */
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  border-radius: 1rem;
+  background: rgba(31, 41, 55, 0.5);
+  backdrop-filter: blur(10px);
   color: #f3f4f6;
 }
 
 .review-teaser.light {
-  border-color: #fcd34d;
-  background: linear-gradient(135deg, #fffbeb, #ffffff);
+  border-color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   color: #111827;
 }
 
 .review-teaser h2 {
   margin: 0;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .review-teaser p {
   margin: 0.25rem 0 0;
   max-width: 40rem;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   line-height: 1.5;
 }
 
@@ -40,7 +42,7 @@
   border-radius: 0.5rem;
   background: #b45309;
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
 }

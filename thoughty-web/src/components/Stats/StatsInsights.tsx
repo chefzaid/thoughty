@@ -67,7 +67,7 @@ function ToneMoodCard({
         <section className={`chart-card tone-mood-card ${themeClass}`} aria-labelledby="tone-mood-heading">
             <div className="chart-header tone-mood-header">
                 <div>
-                    <h3 id="tone-mood-heading">{t('toneMoodInsights')}</h3>
+                    <h2 id="tone-mood-heading">{t('toneMoodInsights')}</h2>
                     <p className="tone-mood-description">{t('toneMoodInsightsDescription')}</p>
                 </div>
                 {analysis && (
@@ -93,7 +93,7 @@ function ToneMoodCard({
                     <p className="tone-mood-summary">{analysis.summary}</p>
                     <div className="tone-mood-breakdowns">
                         <div className="tone-mood-breakdown">
-                            <h4>{t('moodMix')}</h4>
+                            <h3>{t('moodMix')}</h3>
                             <InsightBreakdown
                                 breakdown={analysis.moodBreakdown}
                                 analyzedEntries={analysis.analyzedEntries}
@@ -101,7 +101,7 @@ function ToneMoodCard({
                             />
                         </div>
                         <div className="tone-mood-breakdown">
-                            <h4>{t('toneMix')}</h4>
+                            <h3>{t('toneMix')}</h3>
                             <InsightBreakdown
                                 breakdown={analysis.toneBreakdown}
                                 analyzedEntries={analysis.analyzedEntries}
@@ -130,7 +130,7 @@ function SubjectCard({
         <section className={`chart-card subject-insights-card ${themeClass}`} aria-labelledby="subject-insights-heading">
             <div className="chart-header tone-mood-header">
                 <div>
-                    <h3 id="subject-insights-heading">{t('subjectsDiscussed')}</h3>
+                    <h2 id="subject-insights-heading">{t('subjectsDiscussed')}</h2>
                     <p className="tone-mood-description">{t('subjectsDiscussedDescription')}</p>
                 </div>
                 {analysis && (

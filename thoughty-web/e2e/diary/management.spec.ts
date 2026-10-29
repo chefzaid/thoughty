@@ -47,7 +47,7 @@ test.describe('Diary management', () => {
     await expect(page.getByText('Personal')).toHaveCount(0);
     await expect.poll(() => state.entries.find((entry) => entry.id === 301)?.diaryId).toBe(3);
 
-    await page.locator('.diary-manager-header .back-btn').click();
+    await page.locator('.diary-manager .page-back').click();
     await expect(page).toHaveURL(/\/journal\?diary=all$/);
   });
 

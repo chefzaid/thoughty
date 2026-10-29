@@ -80,7 +80,7 @@ export default function ShareLinkDialog({ isOpen, target, subject, isDark, langu
             >
                 <header className={`flex items-center justify-between gap-3 border-b px-5 py-4 ${dividerClass}`}>
                     <div className="min-w-0">
-                        <h3 id={titleId} className="text-base font-semibold">{t('sharePrivatelyTitle')}</h3>
+                        <h3 id={titleId} className="text-lg font-semibold">{t('sharePrivatelyTitle')}</h3>
                         <p className={`truncate text-sm ${mutedClass}`}>{subject}</p>
                     </div>
                     <button

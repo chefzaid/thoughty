@@ -70,7 +70,7 @@ function MoodOverTime({ months, language, t, themeClass }: Readonly<{ months: Mo
     return (
         <div className="mood-panel-section">
             <div className="chart-header">
-                <h4>{t('statsMoodOverTime')}</h4>
+                <h3>{t('statsMoodOverTime')}</h3>
                 {totalPages > 1 && (
                     <div className="pagination-controls">
                         <button
@@ -161,7 +161,7 @@ function StatsMoodPanel({ moods, themeClass, language, t }: StatsMoodPanelProps)
         <section className={`chart-card mood-card ${themeClass}`} aria-labelledby="stats-mood-heading">
             <div className="chart-header tone-mood-header">
                 <div>
-                    <h3 id="stats-mood-heading">{t('statsMoodTitle')}</h3>
+                    <h2 id="stats-mood-heading">{t('statsMoodTitle')}</h2>
                     <p className="tone-mood-description">{t('statsMoodIntro')}</p>
                 </div>
             </div>
@@ -193,7 +193,7 @@ function StatsMoodPanel({ moods, themeClass, language, t }: StatsMoodPanelProps)
                     <div className="tone-mood-breakdowns">
                         {hasMoods && (
                             <div className="tone-mood-breakdown">
-                                <h4>{t('statsMoodByWeekday')}</h4>
+                                <h3>{t('statsMoodByWeekday')}</h3>
                                 <ul className="tone-mood-list">
                                     {moods.weekdays.map((weekday, index) => {
                                         // The list is Monday first; weekdayName counts from Sunday
@@ -219,7 +219,7 @@ function StatsMoodPanel({ moods, themeClass, language, t }: StatsMoodPanelProps)
                             </div>
                         )}
                         <div className="tone-mood-breakdown">
-                            <h4>{t('statsTopFeelings')}</h4>
+                            <h3>{t('statsTopFeelings')}</h3>
                             {hasFeelings ? (
                                 <ul className="tone-mood-list">
                                     {moods.topFeelings.map((feeling) => {

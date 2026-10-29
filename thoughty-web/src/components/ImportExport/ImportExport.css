@@ -1,14 +1,5 @@
 .import-export {
-    padding: 2rem;
     width: 100%;
-    max-width: 100%;
-    margin: 0 auto;
-}
-
-.import-export h2 {
-    margin-bottom: 2rem;
-    font-size: 1.75rem;
-    font-weight: 600;
 }
 
 .io-route-actions {
@@ -18,10 +9,10 @@
     margin-bottom: 1.5rem;
 }
 
-.import-export h3 {
+.import-export h2 {
     margin-bottom: 0.5rem;
-    font-size: 1.25rem;
-    font-weight: 500;
+    font-size: 1.125rem;
+    font-weight: 600;
 }
 
 .io-grid {
@@ -46,7 +37,7 @@
 
 .section-description {
     color: var(--text-secondary, rgba(255, 255, 255, 0.6));
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     margin-bottom: 1.25rem;
 }
 
@@ -58,7 +49,7 @@
     padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 8px;
-    font-size: 0.95rem;
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -110,6 +101,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
     background: rgba(255, 255, 255, 0.05);
     border: 2px dashed rgba(255, 255, 255, 0.2);
     border-radius: 8px;
@@ -136,10 +128,10 @@
     margin-top: 1rem;
 }
 
-.preview-box h4 {
+.preview-box h3 {
     margin-bottom: 1rem;
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .preview-stats {
@@ -154,7 +146,7 @@
 }
 
 .preview-stats .stat-value {
-    font-size: 1.75rem;
+    font-size: 1.875rem;
     font-weight: 600;
     color: #a5b4fc;
 }
@@ -164,7 +156,7 @@
 }
 
 .preview-stats .stat-label {
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     color: var(--text-secondary, rgba(255, 255, 255, 0.6));
 }
 
@@ -180,6 +172,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    font-size: 0.875rem;
     cursor: pointer;
 }
 
@@ -217,7 +210,7 @@
 
 .export-option-group--format > label {
     min-width: 4.25rem;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     font-weight: 500;
 }
 
@@ -241,7 +234,7 @@
     border: 1px solid rgba(148, 163, 184, 0.4);
     border-radius: 6px;
     color: #f8fafc;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
 }
 
 .export-option-group--format .format-select:focus {
@@ -297,7 +290,7 @@
 }
 
 .format-field label {
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-secondary, rgba(255, 255, 255, 0.7));
 }
@@ -330,8 +323,8 @@
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 6px;
     color: inherit;
-    font-size: 0.9rem;
-    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.875rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 
 .format-field input:focus,
@@ -452,10 +445,6 @@
 
 /* Responsive */
 @media (max-width: 600px) {
-    .import-export {
-        padding: 1rem;
-    }
-
     .io-grid {
         grid-template-columns: 1fr;
     }

@@ -86,7 +86,8 @@
 }
 
 .journal-retag-header h2 {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .journal-retag-header p {
@@ -144,7 +145,7 @@
 
 .journal-retag-summary {
   color: #9ca3af;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .journal-retag-themes {
@@ -180,7 +181,7 @@
 .journal-retag-mode button {
   min-height: 2.25rem;
   padding: 0 0.75rem;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
 }
 
 .journal-retag-mode button[aria-pressed="true"] {
@@ -222,7 +223,7 @@
   border-top: 1px solid rgba(107, 114, 128, 0.35);
   padding: 1rem 1.25rem;
   color: #9ca3af;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .journal-retag-apply {

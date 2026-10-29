@@ -8,7 +8,7 @@
 .book-source__note {
     margin: 0;
     color: var(--text-secondary, rgba(255, 255, 255, 0.72));
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 }
 
 .book-source__note--error {
@@ -30,7 +30,7 @@
 
 .book-picked__clear {
     padding: 0.35rem 0.75rem;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 }
 
 .book-picked__list {
@@ -78,7 +78,7 @@
 .book-picked__meta,
 .book-picked__excerpt {
     color: var(--text-secondary, rgba(255, 255, 255, 0.72));
-    font-size: 0.8rem;
+    font-size: 0.75rem;
 }
 
 .book-picked__item--missing .book-picked__meta {
@@ -103,7 +103,7 @@
     flex: 0 0 auto;
     margin-left: auto;
     padding: 0.35rem 0.75rem;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 }
 
 @media (max-width: 760px) {

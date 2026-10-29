@@ -10,7 +10,7 @@
   gap: 1rem;
 }
 
-.correlation-header h3 {
+.correlation-header h2 {
   margin: 0;
 }
 
@@ -23,7 +23,7 @@
 
 .correlation-sample {
   flex: 0 0 auto;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   opacity: 0.72;
 }
 
@@ -147,14 +147,14 @@ button.correlation-node:disabled {
 }
 
 .correlation-edge strong {
-  font-size: 0.78rem;
+  font-size: 0.75rem;
 }
 
 .correlation-edge span {
   grid-column: 1 / -1;
   overflow: hidden;
   color: inherit;
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;

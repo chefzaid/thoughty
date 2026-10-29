@@ -170,7 +170,7 @@ export function AppImportPanel({ diaryId, diaryName, language, onImported, t }: 
 
   return (
     <section className="app-import" aria-labelledby="app-import-title">
-      <h4 id="app-import-title">{t('appImportTitle')}</h4>
+      <h3 id="app-import-title">{t('appImportTitle')}</h3>
       <p className="section-description">{t('appImportDescription')}</p>
 
       {(state.step === 'idle' || state.step === 'unreadable') && (

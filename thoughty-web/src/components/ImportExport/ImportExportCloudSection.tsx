@@ -50,7 +50,7 @@ export function CloudImportSection({
 
     return (
         <div className="cloud-import-section">
-            <h4>{t('cloudImportFromCloud')}</h4>
+            <h3>{t('cloudImportFromCloud')}</h3>
             <p className="section-description">{t('cloudSelectFileToImport')}</p>
             <div className="cloud-import-providers">
                 {connectedProviders.map((provider) => {
@@ -139,7 +139,7 @@ export function CloudSyncSection({
 
     return (
         <section className="io-section cloud-sync-section">
-            <h3>{t('cloudSync')}</h3>
+            <h2>{t('cloudSync')}</h2>
             <p className="section-description">{t('cloudSyncDescription')}</p>
             <div className="cloud-sync-grid">
                 {connectedProviders.map((provider) => {
@@ -178,7 +178,7 @@ export function CloudSyncSection({
                             </div>
 
                             <div className="cloud-sync-schedule">
-                                <h4>{t('cloudSchedule')}</h4>
+                                <h3>{t('cloudSchedule')}</h3>
                                 <p className="section-description">{t('cloudScheduleDescription')}</p>
                                 {schedule?.enabled && <div className="cloud-schedule-status active"><span className="cloud-schedule-status-dot" />{t('cloudScheduleEnabled')}</div>}
                                 {schedule?.lastSyncAt && <div className="cloud-schedule-meta">{t('cloudLastSync', { date: formatCloudDate(schedule.lastSyncAt) })}</div>}

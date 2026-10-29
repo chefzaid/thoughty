@@ -434,7 +434,7 @@ function EntryForm({
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-all ${markdownToggleClass}`}
                         title={format === 'markdown' ? t('markdownEnabled') : t('markdownDisabled')}
                     >
-                        <span className="text-sm font-bold" style={{ fontFamily: 'monospace' }}>MD</span>
+                        <span className="font-mono text-sm font-bold">MD</span>
                     </button>
                     <FocusModeLauncher
                         text={newEntryText}

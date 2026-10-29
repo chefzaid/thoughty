@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import type { Diary, TranslationFunction } from '../../types';
 import { resolveLanguage } from '../../utils/language';
+import PageHeader from '../PageHeader/PageHeader';
 import YearReviewCharts from './YearReviewCharts';
 import YearReviewHero from './YearReviewHero';
 import YearReviewHighlights from './YearReviewHighlights';
@@ -76,27 +77,30 @@ function YearReviewPage({ theme, language: rawLanguage, diaries, year, diaryId, 
 
   return (
     <div className={`review-page ${theme === 'light' ? 'light' : 'dark'}`}>
-      <header className="review-header">
-        <h1>{t('reviewTitle', { year: activeYear })}</h1>
-        <div className="review-filters review-print-hidden">
-          <label className="review-field">
-            <span>{t('reviewYearLabel')}</span>
-            <select value={activeYear} onChange={(event) => onChangeYear(Number(event.target.value))}>
-              {years.map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
-          </label>
-          <label className="review-field">
-            <span>{t('reviewScopeLabel')}</span>
-            <select
-              value={diaryId ?? 'all'}
-              onChange={(event) => onChangeDiary(event.target.value === 'all' ? null : Number(event.target.value))}
-            >
-              <option value="all">{t('allDiaries')}</option>
-              {diaries.map((diary) => <option key={diary.id} value={diary.id}>{diary.name}</option>)}
-            </select>
-          </label>
-        </div>
-      </header>
+      <PageHeader
+        title={t('reviewTitle', { year: activeYear })}
+        theme={theme === 'light' ? 'light' : 'dark'}
+        actions={(
+          <div className="review-filters review-print-hidden">
+            <label className="review-field">
+              <span>{t('reviewYearLabel')}</span>
+              <select value={activeYear} onChange={(event) => onChangeYear(Number(event.target.value))}>
+                {years.map((option) => <option key={option} value={option}>{option}</option>)}
+              </select>
+            </label>
+            <label className="review-field">
+              <span>{t('reviewScopeLabel')}</span>
+              <select
+                value={diaryId ?? 'all'}
+                onChange={(event) => onChangeDiary(event.target.value === 'all' ? null : Number(event.target.value))}
+              >
+                <option value="all">{t('allDiaries')}</option>
+                {diaries.map((diary) => <option key={diary.id} value={diary.id}>{diary.name}</option>)}
+              </select>
+            </label>
+          </div>
+        )}
+      />
       {body}
     </div>
   );

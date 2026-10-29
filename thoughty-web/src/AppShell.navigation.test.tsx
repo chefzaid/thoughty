@@ -134,7 +134,7 @@ describe('AppShell navigation flows', () => {
       expect(globalThis.location.search).toContain('from=stats');
     });
 
-    const diaryManagerBackButton = document.querySelector('.diary-manager-header .back-btn') as HTMLButtonElement | null;
+    const diaryManagerBackButton = document.querySelector('.diary-manager .page-back') as HTMLButtonElement | null;
     expect(diaryManagerBackButton).not.toBeNull();
     if (!diaryManagerBackButton) {
       throw new Error('Diary manager back button not found');

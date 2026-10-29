@@ -281,7 +281,7 @@ function CloudProvidersSection({ t, isDark }: Readonly<CloudProvidersSectionProp
         <svg xmlns="http://www.w3.org/2000/svg" className="section-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
         </svg>
-        <h3 className="section-title">{t('cloudProviders')}</h3>
+        <h2 className="section-title">{t('cloudProviders')}</h2>
       </div>
       <div className="section-content">
         <p className="setting-description" style={{ marginBottom: '1rem' }}>

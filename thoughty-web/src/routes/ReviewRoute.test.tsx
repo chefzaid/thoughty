@@ -23,7 +23,9 @@ vi.mock('../components/YearReview/YearReviewPage', () => ({
     </>
   ),
 }));
-vi.mock('../components/Stats/Stats', () => ({ default: () => <p>stats</p> }));
+vi.mock('../components/Stats/Stats', () => ({
+  default: ({ teaser }: { teaser?: React.ReactNode }) => <>{teaser}<p>stats</p></>,
+}));
 
 function LocationProbe() {
   const location = useLocation();

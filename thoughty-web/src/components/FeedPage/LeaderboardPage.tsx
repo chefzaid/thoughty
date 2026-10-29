@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { useFeedService } from '../../hooks/useFeedService';
 import type { Leaderboard, LeaderboardPeriod } from '../../services/api';
+import PageHeader from '../PageHeader/PageHeader';
 import { FeedAvatar } from './FeedAuthor';
 import './FeedPage.css';
 import './LeaderboardPage.css';
@@ -82,29 +83,28 @@ function LeaderboardPage({ theme = 'dark', onBack, t }: LeaderboardPageProps) {
 
   return (
     <section className={`feed-page leaderboard-page ${theme}`} aria-labelledby="leaderboard-heading">
-      <header className="feed-header">
-        <div className="leaderboard-title">
-          <button type="button" className="leaderboard-back" onClick={onBack}>
-            <span className="codicon codicon-arrow-left" aria-hidden="true" />
-            {t('backToFeed')}
-          </button>
-          <h1 id="leaderboard-heading">{t('leaderboard')}</h1>
-        </div>
-        <fieldset className="feed-scope leaderboard-periods" aria-label={t('leaderboardPeriod')}>
-          {PERIODS.map((option) => (
-            <button
-              key={option.period}
-              type="button"
-              className={period === option.period ? 'active' : ''}
-              aria-pressed={period === option.period}
-              onClick={() => setPeriod(option.period)}
-            >
-              {t(option.label)}
-            </button>
-          ))}
-        </fieldset>
-      </header>
-      <p className="leaderboard-note">{t('leaderboardNote')}</p>
+      <PageHeader
+        title={t('leaderboard')}
+        titleId="leaderboard-heading"
+        subtitle={t('leaderboardNote')}
+        back={{ label: t('backToFeed'), onClick: onBack }}
+        theme={theme}
+        actions={(
+          <fieldset className="feed-scope leaderboard-periods" aria-label={t('leaderboardPeriod')}>
+            {PERIODS.map((option) => (
+              <button
+                key={option.period}
+                type="button"
+                className={period === option.period ? 'active' : ''}
+                aria-pressed={period === option.period}
+                onClick={() => setPeriod(option.period)}
+              >
+                {t(option.label)}
+              </button>
+            ))}
+          </fieldset>
+        )}
+      />
 
       {!leaderboard && !error && (
         <output className="feed-state">

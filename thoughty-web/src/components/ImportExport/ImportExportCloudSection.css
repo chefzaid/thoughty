@@ -60,7 +60,7 @@
 }
 
 .cloud-upload-row label {
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     color: rgba(255, 255, 255, 0.6);
     min-width: 4rem;
 }
@@ -71,7 +71,7 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.15);
     color: inherit;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 }
 
 .cloud-sync-schedule {
@@ -81,9 +81,9 @@
     border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.cloud-sync-schedule h4 {
-    font-size: 0.95rem;
-    font-weight: 500;
+.cloud-sync-schedule h3 {
+    font-size: 1rem;
+    font-weight: 600;
     margin-bottom: 0.5rem;
 }
 
@@ -91,7 +91,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     margin-bottom: 0.5rem;
     padding: 0.4rem 0.75rem;
     border-radius: 6px;
@@ -111,7 +111,7 @@
 }
 
 .cloud-schedule-meta {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.5);
     margin-bottom: 0.5rem;
 }
@@ -130,9 +130,9 @@
     border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.cloud-import-section h4 {
+.cloud-import-section h3 {
     font-size: 1rem;
-    font-weight: 500;
+    font-weight: 600;
     margin-bottom: 0.25rem;
 }
 
@@ -167,7 +167,7 @@
 }
 
 .cloud-file-name {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     font-weight: 500;
     display: block;
     white-space: nowrap;
@@ -185,7 +185,7 @@
     text-align: center;
     padding: 1rem;
     color: rgba(255, 255, 255, 0.5);
-    font-size: 0.9rem;
+    font-size: 0.875rem;
 }
 
 /* Light theme overrides */

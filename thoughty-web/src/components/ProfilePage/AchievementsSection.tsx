@@ -85,7 +85,7 @@ function AchievementsSection({ t }: Readonly<{ t: TranslationFunction }>) {
     <section className="profile-section achievements-section" aria-labelledby="achievements-heading">
       <div className="section-header">
         <span className="codicon codicon-verified-filled section-icon" aria-hidden="true" />
-        <h3 id="achievements-heading" className="section-title">{t('achievements')}</h3>
+        <h2 id="achievements-heading" className="section-title">{t('achievements')}</h2>
       </div>
       <div className="section-content">
         {!achievements && !error && <p className="achievements-note">{t('loading')}</p>}

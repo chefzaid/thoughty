@@ -49,7 +49,7 @@ export default function StatsCorrelationGraph({
     >
       <div className="correlation-header">
         <div>
-          <h3 id="correlation-heading">{t("correlationGraph")}</h3>
+          <h2 id="correlation-heading">{t("correlationGraph")}</h2>
           <p>{t("correlationGraphDescription")}</p>
         </div>
         <span className="correlation-sample">

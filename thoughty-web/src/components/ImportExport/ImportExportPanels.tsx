@@ -64,7 +64,7 @@ export function ExportSection({
 }>) {
     return (
         <section ref={sectionRef} className={`io-section ${activeSection === 'export' ? 'is-route-target' : ''}`} id="export-section">
-            <h3>{t('export')}</h3>
+            <h2>{t('export')}</h2>
             <p className="section-description">{t('exportDescription', { diaryName: diaryName || '' })}</p>
             <div className="export-controls">
                 <div className="export-option-row export-option-row--split">
@@ -128,7 +128,7 @@ export function ImportSection({
 }>) {
     return (
         <section ref={sectionRef} className={`io-section ${activeSection === 'import' ? 'is-route-target' : ''}`} id="import-section">
-            <h3>{t('import')}</h3>
+            <h2>{t('import')}</h2>
             <p className="section-description">{t('importDescription', { diaryName: diaryName || '' })}</p>
 
             <div className="file-upload">
@@ -143,7 +143,7 @@ export function ImportSection({
 
             {preview && (
                 <div className="preview-box">
-                    <h4>{t('previewSummary')}</h4>
+                    <h3>{t('previewSummary')}</h3>
                     <div className="preview-stats">
                         <div className="stat">
                             <span className="stat-value">{preview.totalCount}</span>
@@ -189,7 +189,7 @@ export function FormatSection({
 }>) {
     return (
         <section className="io-section format-section">
-            <h3>{t('formatSettings')}</h3>
+            <h2>{t('formatSettings')}</h2>
             <p className="section-description">{t('formatDescription')}</p>
             <div className="format-grid">
                 <div className="format-row format-row--separators">
@@ -257,7 +257,7 @@ export function DangerZoneSection({
 }>) {
     return (
         <section className="io-section danger-zone">
-            <h3>{t('dangerZone')}</h3>
+            <h2>{t('dangerZone')}</h2>
             <p className="section-description">{t('deleteAllDescription', { diaryName: diaryName || '' })}</p>
             <div className="danger-actions">
                 {confirmDeleteAll && (

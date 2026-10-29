@@ -1,9 +1,7 @@
 .memoir-page {
   display: grid;
-  width: min(100%, 64rem);
+  width: 100%;
   gap: 1rem;
-  margin: 0 auto;
-  padding: 0.5rem 0 3rem;
   color: #f3f4f6;
 }
 
@@ -11,22 +9,19 @@
   color: #111827;
 }
 
-.memoir-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
+/* The grid gap adds to the header's own margin; together they match the other pages. */
+.memoir-page > .page-header {
+  margin-bottom: 0.5rem;
 }
 
-.memoir-header p,
 .memoir-hint,
 .memoir-week-note,
 .memoir-state {
   margin: 0.25rem 0 0;
   color: #9ca3af;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
-.memoir-page.light .memoir-header p,
 .memoir-page.light .memoir-hint,
 .memoir-page.light .memoir-week-note,
 .memoir-page.light .memoir-state {
@@ -55,8 +50,8 @@
 
 .memoir-card h2 {
   margin: 0 0 0.6rem;
-  font-size: 1.1rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .memoir-intro {
@@ -90,7 +85,7 @@
   border-radius: 999px;
   background: rgba(180, 83, 9, 0.25);
   color: #fcd34d;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -122,7 +117,7 @@
 
 .memoir-field label,
 .memoir-answer-label {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
 }
 
@@ -156,7 +151,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .memoir-checkbox input {
@@ -184,7 +179,7 @@
   padding: 0.5rem 0.95rem;
   border: 1px solid transparent;
   border-radius: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -246,7 +241,7 @@
   border-radius: 0.35rem;
   background: transparent;
   color: #fbbf24;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -270,9 +265,9 @@
 .memoir-eyebrow {
   margin: 0;
   color: #fbbf24;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
@@ -282,8 +277,7 @@
 
 .memoir-week-question {
   margin: 0.35rem 0 0.5rem;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-size: 1.35rem;
+  font-size: 1.25rem;
   line-height: 1.45;
 }
 
@@ -334,7 +328,7 @@
 
 .memoir-stats dd {
   margin: 0.1rem 0 0;
-  font-size: 1.15rem;
+  font-size: 1.125rem;
   font-weight: 700;
 }
 
@@ -344,7 +338,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 
 .memoir-chapter-progress li {
@@ -369,7 +363,7 @@
   border: 1px solid rgba(251, 191, 36, 0.4);
   border-radius: 0.5rem;
   background: rgba(251, 191, 36, 0.1);
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .memoir-page.light .memoir-notice {
@@ -380,7 +374,7 @@
 .memoir-error {
   margin: 0;
   color: #fca5a5;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .memoir-page.light .memoir-error {
@@ -390,7 +384,7 @@
 .memoir-success {
   margin: 0;
   color: #6ee7b7;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
 }
 
 .memoir-page.light .memoir-success {

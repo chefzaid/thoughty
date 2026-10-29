@@ -167,7 +167,7 @@ test.describe('Route navigation', () => {
 
     await expect(page).toHaveURL(/\/diaries\?from=stats&diary=1|\/diaries\?diary=1&from=stats/);
 
-    await page.locator('.diary-manager-header .back-btn').click();
+    await page.locator('.diary-manager .page-back').click();
 
     await expect(page).toHaveURL(/\/stats\?diary=1$/);
     await expect(page.getByRole('heading', { name: /Stats/i })).toBeVisible();

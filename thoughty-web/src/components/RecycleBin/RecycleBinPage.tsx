@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
+import PageHeader from '../PageHeader/PageHeader';
 import type { RecycleBinRestoreResult, ServiceResult, TrashedEntry } from '../../services/api';
 import type { Diary, TranslationFunction } from '../../types';
 import { formatTimeOfDay } from '../../utils/entryTime';
@@ -206,29 +207,27 @@ function RecycleBinPage({ theme, language: rawLanguage, diaries, page, onChangeP
 
   return (
     <div className={`recycle-bin-page ${theme === 'light' ? 'light' : 'dark'}`}>
-      <header className="recycle-bin-header">
-        <div>
-          <h1>{t('recycleBinTitle')}</h1>
-          <p className="recycle-bin-intro">{t('recycleBinIntro', { days: data?.retentionDays ?? RETENTION_DAYS })}</p>
-        </div>
-        <div className="recycle-bin-toolbar">
-          <button type="button" className="recycle-bin-secondary" onClick={onBack}>
-            <span className="codicon codicon-arrow-left" aria-hidden="true" />
-            {t('recycleBinBack')}
-          </button>
-          <button
-            type="button"
-            className="recycle-bin-primary"
-            disabled={isEmpty || busy}
-            onClick={() => void perform(restoreAll, describeRestore)}
-          >
-            {t('recycleBinRestoreAll')}
-          </button>
-          <button type="button" className="recycle-bin-danger" disabled={isEmpty || busy} onClick={() => setPending({ kind: 'empty' })}>
-            {t('recycleBinEmpty')}
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        title={t('recycleBinTitle')}
+        subtitle={t('recycleBinIntro', { days: data?.retentionDays ?? RETENTION_DAYS })}
+        back={{ label: t('recycleBinBack'), onClick: onBack }}
+        theme={theme === 'light' ? 'light' : 'dark'}
+        actions={(
+          <>
+            <button
+              type="button"
+              className="recycle-bin-primary"
+              disabled={isEmpty || busy}
+              onClick={() => void perform(restoreAll, describeRestore)}
+            >
+              {t('recycleBinRestoreAll')}
+            </button>
+            <button type="button" className="recycle-bin-danger" disabled={isEmpty || busy} onClick={() => setPending({ kind: 'empty' })}>
+              {t('recycleBinEmpty')}
+            </button>
+          </>
+        )}
+      />
       <div className="recycle-bin-notice" role="status" aria-live="polite">
         {notice && <p className={notice.tone === 'error' ? 'recycle-bin-error' : undefined}>{notice.text}</p>}
       </div>

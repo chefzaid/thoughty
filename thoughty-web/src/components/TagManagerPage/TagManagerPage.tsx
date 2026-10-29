@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import TagOrganizationSection from '../ProfilePage/TagOrganizationSection';
+import PageHeader from '../PageHeader/PageHeader';
 import './TagManagerPage.css';
 import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import type { ProfileConfig, TranslationFunction } from '../ProfilePage/types';
@@ -161,18 +162,20 @@ function TagManagerPage({
 
   return (
     <div className={`profile-page ${isDark ? 'dark' : 'light'}`}>
-      <div className={`tag-manager-header ${isDark ? 'dark' : 'light'}`}>
-        <div>
-          <h1 className="profile-page-title">{t('tags')}</h1>
-          <p className="profile-page-subtitle">{t('tagOrganizationDescription')}</p>
-        </div>
-        <div className="tag-manager-header-actions">
-          <JournalRetagReview isDark={isDark} language={resolveLanguage(config.language)} onApplied={onRetagApplied} t={t} />
-          <button type="button" onClick={handleSave} className="btn-save">
-            {t('saveSettings')}
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        className="tag-manager-header"
+        title={t('tags')}
+        subtitle={t('tagOrganizationDescription')}
+        theme={isDark ? 'dark' : 'light'}
+        actions={(
+          <>
+            <JournalRetagReview isDark={isDark} language={resolveLanguage(config.language)} onApplied={onRetagApplied} t={t} />
+            <button type="button" onClick={handleSave} className="btn-save">
+              {t('saveSettings')}
+            </button>
+          </>
+        )}
+      />
 
       <form className={`tag-manager-create ${isDark ? 'dark' : 'light'}`} onSubmit={handleCreateTag}>
         <label className="tag-manager-field tag-manager-create-field">

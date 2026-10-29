@@ -4,7 +4,7 @@
 }
 
 #book-section .export-option-group > label {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     font-weight: 500;
     white-space: nowrap;
 }
@@ -18,7 +18,7 @@
     border: 1px solid rgba(148, 163, 184, 0.4);
     border-radius: 6px;
     color: #f8fafc;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
 }
 
 #book-section .export-option-group input[type="text"]:focus,
@@ -126,7 +126,7 @@
     flex: 1 1 15rem;
     align-self: center;
     color: var(--text-secondary, rgba(255, 255, 255, 0.72));
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 }
 
 .import-export.light .book-cloud-hint {
@@ -240,14 +240,14 @@
     max-width: 14rem;
     overflow: hidden;
     color: var(--text-secondary, rgba(255, 255, 255, 0.72));
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .book-cover-image__error {
     color: #f87171;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
 }
 
 .io-icon-btn {
@@ -310,7 +310,7 @@
 .book-progress__label {
     flex: 0 0 auto;
     color: var(--text-secondary, rgba(255, 255, 255, 0.72));
-    font-size: 0.85rem;
+    font-size: 0.875rem;
     font-weight: 500;
 }
 
@@ -334,9 +334,10 @@
     margin-top: 1.25rem;
 }
 
-.book-version-history h4 {
+.book-version-history h3 {
     margin: 0 0 0.7rem;
     font-size: 1rem;
+    font-weight: 600;
 }
 
 .book-version-list {
@@ -373,7 +374,7 @@
 .book-version-item__meta,
 .book-version-item__changes {
     color: var(--text-secondary, rgba(255, 255, 255, 0.72));
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     overflow-wrap: anywhere;
 }
 
@@ -431,7 +432,7 @@
 .book-field-hint {
     margin: 0 0 0.75rem;
     color: var(--text-secondary, rgba(255, 255, 255, 0.72));
-    font-size: 0.85rem;
+    font-size: 0.875rem;
 }
 
 .import-export.light .book-field-hint {

@@ -1,7 +1,5 @@
 .diary-manager {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 1.5rem;
+    width: 100%;
 }
 
 .diary-manager.light {
@@ -10,50 +8,6 @@
 
 .diary-manager.dark {
     color: #f3f4f6;
-}
-
-.diary-manager-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-
-.diary-manager-header h2 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-.back-btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 0.5rem;
-    background: transparent;
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: all 0.2s;
-}
-
-.diary-manager.light .back-btn {
-    color: #4b5563;
-}
-
-.diary-manager.dark .back-btn {
-    color: #9ca3af;
-}
-
-.back-btn:hover {
-    background: #dbeafe;
-    color: #1d4ed8;
-}
-
-.back-btn svg {
-    width: 1.25rem;
-    height: 1.25rem;
 }
 
 .error-message {
@@ -93,8 +47,8 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.create-diary-section h3,
-.diaries-list h3 {
+.create-diary-section h2,
+.diaries-list h2 {
     font-size: 1.125rem;
     font-weight: 600;
     margin: 0 0 1rem 0;

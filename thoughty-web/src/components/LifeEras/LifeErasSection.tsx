@@ -65,7 +65,7 @@ function LifeErasSection({ isDark, language, t }: LifeErasSectionProps) {
     <section ref={sectionRef} id={LIFE_ERAS_SECTION_ID} className={`profile-section life-eras ${theme}`} aria-labelledby={`${LIFE_ERAS_SECTION_ID}-title`}>
       <div className="section-header">
         <span className="codicon codicon-milestone section-icon" aria-hidden="true" />
-        <h3 ref={headingRef} id={`${LIFE_ERAS_SECTION_ID}-title`} className="section-title" tabIndex={-1}>{t('lifeEras')}</h3>
+        <h2 ref={headingRef} id={`${LIFE_ERAS_SECTION_ID}-title`} className="section-title" tabIndex={-1}>{t('lifeEras')}</h2>
         {list.data && <span className="life-eras-count">{t('lifeErasCount', { count: eras.length, limit })}</span>}
       </div>
       <div className="section-content">

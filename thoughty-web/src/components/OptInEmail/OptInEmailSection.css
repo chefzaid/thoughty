@@ -14,7 +14,7 @@
 .opt-in-email-notice,
 .opt-in-email-error {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
 }
 
 .opt-in-email.dark .opt-in-email-muted {

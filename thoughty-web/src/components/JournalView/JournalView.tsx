@@ -141,6 +141,8 @@ function JournalView({
 
   return (
     <MentionPeopleContext.Provider value={mentionPeople}>
+      {/* The diary tabs are the journal's visible header; the title is there for screen readers. */}
+      <h1 className="sr-only">{t('journal')}</h1>
       <DiaryTabs
         {...diaryTabs}
         onDiaryChange={(id: number | null) => { diaryTabs.onDiaryChange(id); pagination.setPage(1); }}

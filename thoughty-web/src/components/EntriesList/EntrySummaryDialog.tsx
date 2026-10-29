@@ -127,7 +127,7 @@ export default function EntrySummaryDialog({
                 className={`relative z-10 m-0 p-0 flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-lg border shadow-2xl ${panelClass}`}
             >
                 <header className={`flex items-center justify-between border-b px-5 py-4 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
-                    <h3 id={titleId} className="text-base font-semibold">
+                    <h3 id={titleId} className="text-lg font-semibold">
                         {t('entrySummary')}
                     </h3>
                     <button

@@ -115,7 +115,7 @@ export function BookSection({
 
     return (
         <section ref={sectionRef} className={`io-section ${activeSection === 'book' ? 'is-route-target' : ''}`} id="book-section">
-            <h3>{t('book')}</h3>
+            <h2>{t('book')}</h2>
             <p className="section-description">{t('bookDescription', { diaryName: diaryName || '' })}</p>
 
             <div className="export-controls book-controls">
@@ -318,7 +318,7 @@ export function BookSection({
             </div>
 
             <div className="book-version-history">
-                <h4>{t('bookVersionHistory')}</h4>
+                <h3>{t('bookVersionHistory')}</h3>
                 {versions.length === 0 ? (
                     <p className="section-description">{t('bookVersionEmpty')}</p>
                 ) : (
@@ -383,7 +383,7 @@ export function BookSection({
 
             {preview && (
                 <div className="preview-box">
-                    <h4>{t('bookOutline')}</h4>
+                    <h3>{t('bookOutline')}</h3>
                     <div className="preview-stats">
                         <div className="stat">
                             <span className="stat-value">{preview.chapterCount}</span>

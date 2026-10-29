@@ -1,25 +1,5 @@
 .stats-container {
-    padding: 1rem 0;
-}
-
-.stats-header {
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.stats-header h1 {
-    font-size: 2.25rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #60a5fa, #a78bfa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: 0.5rem;
-}
-
-.stats-header p {
-    font-size: 0.875rem;
-    opacity: 0.7;
+    width: 100%;
 }
 
 /* Summary Cards */
@@ -53,7 +33,7 @@
 }
 
 .stat-card .stat-value {
-    font-size: 2.5rem;
+    font-size: 1.875rem;
     font-weight: 700;
     background: linear-gradient(135deg, #3b82f6, #8b5cf6);
     -webkit-background-clip: text;
@@ -113,11 +93,10 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
-.chart-card h3 {
-    font-size: 1rem;
+.chart-card h2 {
+    font-size: 1.125rem;
     font-weight: 600;
     margin-bottom: 1rem;
-    opacity: 0.9;
 }
 
 .tone-mood-header {
@@ -137,12 +116,12 @@
     gap: 0.5rem;
     padding: 0.7rem 0.9rem;
     border-radius: 999px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     white-space: nowrap;
 }
 
 .tone-mood-sample strong {
-    font-size: 1.1rem;
+    font-size: 1.125rem;
 }
 
 .tone-mood-sample.dark {
@@ -193,7 +172,7 @@
 
 .tone-mood-summary {
     margin: 0 0 1.25rem;
-    font-size: 0.95rem;
+    font-size: 1rem;
     line-height: 1.6;
     opacity: 0.92;
     max-width: 60rem;
@@ -205,12 +184,13 @@
     gap: 1.5rem;
 }
 
-.tone-mood-breakdown h4 {
+.tone-mood-breakdown h3 {
     margin: 0 0 0.85rem;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     letter-spacing: 0.05em;
     opacity: 0.72;
     text-transform: uppercase;
+    font-weight: 600;
 }
 
 .tone-mood-list {
@@ -263,15 +243,15 @@
 
 .tone-mood-unavailable {
     margin: 0;
-    font-size: 0.95rem;
+    font-size: 1rem;
     opacity: 0.76;
 }
 
-.chart-card.dark h3 {
+.chart-card.dark h2 {
     color: #f3f4f6;
 }
 
-.chart-card.light h3 {
+.chart-card.light h2 {
     color: #111827;
 }
 
@@ -317,7 +297,7 @@
     margin-top: 1.5rem;
 }
 
-.tag-breakdown h3 {
+.tag-breakdown h2 {
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 1rem;
@@ -375,7 +355,7 @@
     margin-bottom: 1rem;
 }
 
-.chart-header h3 {
+.chart-header h2 {
     margin-bottom: 0;
 }
 

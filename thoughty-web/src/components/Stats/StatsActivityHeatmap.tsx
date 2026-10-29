@@ -188,7 +188,7 @@ export default function StatsActivityHeatmap({
     return (
         <section className={`chart-card heatmap-card ${themeClass}`} aria-labelledby="journal-activity-heading">
             <div className="chart-header heatmap-header">
-                <h3 id="journal-activity-heading">{t('journalActivityByDay')}</h3>
+                <h2 id="journal-activity-heading">{t('journalActivityByDay')}</h2>
                 <div className="heatmap-legend">
                     <span>{t('lessActivity')}</span>
                     <div className="heatmap-legend-scale" aria-hidden="true">

@@ -4,7 +4,7 @@
     background: rgba(239, 68, 68, 0.05);
 }
 
-.danger-zone h3 {
+.danger-zone h2 {
     color: #f87171;
 }
 
@@ -30,6 +30,6 @@
     border-color: rgba(239, 68, 68, 0.2);
 }
 
-.import-export.light .danger-zone h3 {
+.import-export.light .danger-zone h2 {
     color: #b91c1c;
 }

@@ -103,7 +103,7 @@ function ShareImagePanel({ entry, initialExcerpt, isDark, language, onClose, t }
         className={`relative z-10 m-0 flex max-h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg border p-0 shadow-2xl ${panelClass}`}
       >
         <header className={`flex items-center justify-between border-b px-5 py-4 ${borderClass}`}>
-          <h3 id={titleId} className="text-base font-semibold">{t('shareAsImage')}</h3>
+          <h3 id={titleId} className="text-lg font-semibold">{t('shareAsImage')}</h3>
           <button
             ref={closeRef}
             type="button"

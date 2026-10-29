@@ -93,7 +93,7 @@ function OptInEmailSection({ sectionId, switchName, queryKey, createService, cop
     <section id={sectionId} className={`profile-section opt-in-email ${theme}`} aria-labelledby={`${sectionId}-title`}>
       <div className="section-header">
         <span className="codicon codicon-mail section-icon" aria-hidden="true" />
-        <h3 id={`${sectionId}-title`} className="section-title">{t(copy.title)}</h3>
+        <h2 id={`${sectionId}-title`} className="section-title">{t(copy.title)}</h2>
       </div>
       <div className="section-content">
         <p className="opt-in-email-muted">{t(copy.intro)}</p>

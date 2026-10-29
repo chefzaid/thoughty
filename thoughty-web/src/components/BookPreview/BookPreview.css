@@ -57,7 +57,7 @@
 
 .book-reader__title {
     margin: 0;
-    font-size: 1.15rem;
+    font-size: 1.125rem;
     font-weight: 600;
 }
 
@@ -80,7 +80,7 @@
     border-radius: 8px;
     background: var(--reader-control-bg);
     color: var(--reader-control-text);
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
 }
@@ -142,7 +142,7 @@
     align-items: center;
     gap: 0.5rem;
     min-width: 0;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
 }
 
 .book-reader__jump select {

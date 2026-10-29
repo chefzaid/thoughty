@@ -21,8 +21,8 @@
 
 .feed-following-header h2 {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 700;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .feed-following-header p {
@@ -30,7 +30,7 @@
   gap: 1rem;
   margin: 0;
   color: #9ca3af;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .feed-page.light .feed-following-header p,
@@ -41,7 +41,7 @@
 .feed-following-note {
   margin: 0.6rem 0 0;
   color: #9ca3af;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 
 .feed-following-list {
@@ -76,7 +76,7 @@
 
 .feed-following-name {
   overflow: hidden;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;

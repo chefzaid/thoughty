@@ -52,7 +52,7 @@
 
 .heatmap-month-label {
     width: var(--heatmap-cell-size);
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     line-height: 1;
     opacity: 0.72;
     text-align: left;
@@ -67,7 +67,7 @@
 }
 
 .heatmap-weekday-label {
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     line-height: 1;
     opacity: 0.72;
 }

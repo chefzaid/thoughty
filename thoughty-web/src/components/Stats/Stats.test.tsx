@@ -207,6 +207,18 @@ describe('Stats Component', () => {
         expect(charts.length).toBeGreaterThan(0);
     });
 
+    it('shows the year in review invitation after the summary numbers', async () => {
+        (globalThis.fetch as Mock).mockResolvedValue({ ok: true, json: async () => mockStatsData });
+
+        render(<Stats {...defaultProps} teaser={<p>Your year in review</p>} />);
+
+        const summary = (await screen.findByText('Years Active')).closest('.stats-summary') as HTMLElement;
+        const teaser = screen.getByText('Your year in review');
+        expect(summary.compareDocumentPosition(teaser)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+        expect(screen.getByRole('heading', { level: 1, name: 'Stats' }).compareDocumentPosition(summary))
+            .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    });
+
     it('renders tag breakdown table', async () => {
         (globalThis.fetch as Mock).mockResolvedValue({
             ok: true,

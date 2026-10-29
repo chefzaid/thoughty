@@ -91,7 +91,8 @@
 }
 
 .duplicate-review-header h2 {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 600;
 }
 
 .duplicate-review-header p {
@@ -151,7 +152,7 @@
 .duplicate-scan-count,
 .duplicate-scan-limit {
   color: #9ca3af;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .duplicate-group {
@@ -162,7 +163,7 @@
 
 .duplicate-group-summary strong {
   color: #5eead4;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
 }
 
 .duplicate-review-dialog.light .duplicate-group-summary strong {

@@ -6,6 +6,7 @@ import type { PublicFeedEntry, PublicFeedScope } from '../../services/api';
 import { resolveLanguage } from '../../utils/language';
 import { pluralPhrase } from '../../utils/pluralPhrase';
 import EntryContentRenderer from '../EntryContentRenderer/EntryContentRenderer';
+import PageHeader from '../PageHeader/PageHeader';
 import ListenButton from '../ListenButton/ListenButton';
 import ShareImageDialog from '../ShareImageCard/ShareImageDialog';
 import { formatCardDate } from '../ShareImageCard/shareCardLayout';
@@ -140,31 +141,35 @@ function FeedPage({ theme = 'dark', language, readDates = true, ttsVoiceUri, onO
 
   return (
     <section className={`feed-page ${theme}`} aria-labelledby="feed-heading">
-      <header className="feed-header">
-        <div className="feed-title">
-          <h1 id="feed-heading">{t('feed')}</h1>
-          {onOpenLeaderboard && (
-            <button type="button" className="feed-leaderboard-link" onClick={onOpenLeaderboard}>
-              <span className="codicon codicon-star-full" aria-hidden="true" />
-              {t('leaderboard')}
-            </button>
-          )}
-        </div>
-        <fieldset className="feed-scope" aria-label={t('feedScope')}>
-          {SCOPES.map((option) => (
-            <button
-              key={option.scope}
-              type="button"
-              className={scope === option.scope ? 'active' : ''}
-              aria-pressed={scope === option.scope}
-              onClick={() => changeScope(option.scope)}
-            >
-              <span className={`codicon codicon-${option.icon}`} aria-hidden="true" />
-              {t(option.label)}
-            </button>
-          ))}
-        </fieldset>
-      </header>
+      <PageHeader
+        title={t('feed')}
+        titleId="feed-heading"
+        theme={theme}
+        actions={(
+          <>
+            {onOpenLeaderboard && (
+              <button type="button" className="feed-leaderboard-link" onClick={onOpenLeaderboard}>
+                <span className="codicon codicon-star-full" aria-hidden="true" />
+                {t('leaderboard')}
+              </button>
+            )}
+            <fieldset className="feed-scope" aria-label={t('feedScope')}>
+              {SCOPES.map((option) => (
+                <button
+                  key={option.scope}
+                  type="button"
+                  className={scope === option.scope ? 'active' : ''}
+                  aria-pressed={scope === option.scope}
+                  onClick={() => changeScope(option.scope)}
+                >
+                  <span className={`codicon codicon-${option.icon}`} aria-hidden="true" />
+                  {t(option.label)}
+                </button>
+              ))}
+            </fieldset>
+          </>
+        )}
+      />
 
       {scope === 'following' && (
         <FollowingPanel
