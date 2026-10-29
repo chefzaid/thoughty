@@ -93,6 +93,27 @@ describe('ImportExport', () => {
         expect((screen.getByLabelText('includeVisibilityShort') as HTMLInputElement).checked).toBe(true);
     });
 
+    it('opens at the top of the page and scrolls only to a section asked for', async () => {
+        (globalThis.fetch as Mock).mockResolvedValue({ ok: true, json: async () => mockFormatConfig });
+        const originalScrollIntoView = HTMLElement.prototype.scrollIntoView;
+        const scrollIntoView = vi.fn();
+        HTMLElement.prototype.scrollIntoView = scrollIntoView;
+
+        const { unmount } = render(<ImportExport theme="dark" t={mockT} initialSection="export" />);
+        await screen.findByRole('heading', { name: 'export' });
+        expect(scrollIntoView).not.toHaveBeenCalled();
+
+        fireEvent.click(screen.getByRole('button', { name: 'import' }));
+        expect(scrollIntoView).toHaveBeenCalledTimes(1);
+        unmount();
+
+        scrollIntoView.mockClear();
+        render(<ImportExport theme="dark" t={mockT} initialSection="book" />);
+        await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' }));
+        expect(scrollIntoView.mock.contexts[0]).toHaveAttribute('id', 'book-section');
+        HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+    });
+
     it('reports route state changes when presets are updated', async () => {
         const onRouteStateChange = vi.fn();
         (globalThis.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => mockFormatConfig });

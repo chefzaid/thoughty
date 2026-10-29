@@ -21,6 +21,9 @@ if (!globalThis.speechSynthesis) {
   });
 }
 
+// jsdom has no layout, so it does not implement scrolling; a route change scrolls the window to the top
+globalThis.scrollTo = vi.fn() as typeof globalThis.scrollTo;
+
 interface DatePickerProps {
   id?: string;
   selected: Date | null;

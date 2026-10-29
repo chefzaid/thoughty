@@ -52,6 +52,7 @@ function ImportExport({
     const exportSectionRef = useRef<HTMLElement | null>(null);
     const importSectionRef = useRef<HTMLElement | null>(null);
     const bookSectionRef = useRef<HTMLElement | null>(null);
+    const openedRef = useRef(false);
     const isLight = theme === 'light';
 
     function showMessage(type: MessageState['type'], text: string, durationMs = 4000): void {
@@ -87,6 +88,12 @@ function ImportExport({
     }, [initialIncludeVisibility]);
 
     useEffect(() => {
+        // The page opens at its top like every other page; only a section picked later, or asked for
+        // by a link (the memoir's book link opens `?section=book`), is scrolled to once it is shown.
+        if (loading) return;
+        const opening = !openedRef.current;
+        openedRef.current = true;
+        if (opening && activeSection === 'export') return;
         const sectionRefs = {
             export: exportSectionRef,
             import: importSectionRef,
@@ -96,7 +103,7 @@ function ImportExport({
         if (target && typeof target.scrollIntoView === 'function') {
             target.scrollIntoView({ block: 'start', behavior: 'smooth' });
         }
-    }, [activeSection]);
+    }, [activeSection, loading]);
 
     useEffect(() => {
         void (async () => {

@@ -76,6 +76,50 @@ describe('AuthenticatedAppLayout', () => {
     expect(main).toHaveFocus();
   });
 
+  it('opens every new view at the top of the page, without scrolling to the focused content', () => {
+    // The skip link test above leaves `#main-content` in the address
+    globalThis.history.replaceState(null, '', '/');
+    const scrollTo = vi.mocked(globalThis.scrollTo);
+    const focus = vi.spyOn(HTMLElement.prototype, 'focus');
+    const { rerender } = render(
+      <AuthenticatedAppLayout {...defaultProps}>
+        <div>Journal content</div>
+      </AuthenticatedAppLayout>,
+    );
+    scrollTo.mockClear();
+
+    rerender(
+      <AuthenticatedAppLayout {...defaultProps} currentView="people">
+        <div>People content</div>
+      </AuthenticatedAppLayout>,
+    );
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, left: 0, behavior: 'instant' });
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    focus.mockRestore();
+  });
+
+  it('leaves the scrolling to a page opened on a place in it', () => {
+    const scrollTo = vi.mocked(globalThis.scrollTo);
+    const { rerender } = render(
+      <AuthenticatedAppLayout {...defaultProps}>
+        <div>Journal content</div>
+      </AuthenticatedAppLayout>,
+    );
+    scrollTo.mockClear();
+    globalThis.history.replaceState(null, '', '#life-eras');
+
+    rerender(
+      <AuthenticatedAppLayout {...defaultProps} currentView="profile">
+        <div>Profile content</div>
+      </AuthenticatedAppLayout>,
+    );
+
+    expect(scrollTo).not.toHaveBeenCalled();
+    expect(screen.getByRole('main')).toHaveFocus();
+    globalThis.history.replaceState(null, '', '/');
+  });
+
   it.each([
     ['en', 1, 'Move 1 entry to the recycle bin? You can restore it from there for 30 days.'],
     ['en', 2, 'Move 2 entries to the recycle bin? You can restore them from there for 30 days.'],
