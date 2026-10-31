@@ -5,6 +5,7 @@ import type { RephraseMode, SummaryGuidance } from '../../services/api/aiService
 import type { Attachment, Config, Diary, Entry, EntryBacklink, EntryRevision, GroupedEntries, SourceEntryInfo, TranslationFunction as TranslationFn } from '../../types';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
 import EntryViewMode from './EntryViewMode';
+import EntryDayHeading from './EntryDayHeading';
 import { resolveLanguage } from '../../utils/language';
 import { isManuallyOrdered } from '../../utils/entryTime';
 import { type BulkAction, type BulkActionOptions, BulkActionBar } from './BulkActionBar';
@@ -358,9 +359,12 @@ function EntriesList({
             <div className="space-y-8">
                 {displayGroups.map((group) => (
                     <div key={group.key} className="space-y-4">
-                        <h2 className={`text-xl font-bold border-b pb-2 ${isDark ? 'text-gray-300 border-gray-700' : 'text-gray-800 border-gray-300'}`}>
-                            {group.label}
-                        </h2>
+                        <EntryDayHeading
+                            label={group.label}
+                            dayEntries={!rankedOrder && group.date !== null ? groupedEntries[group.date] : undefined}
+                            config={config}
+                            t={t}
+                        />
                         <div className="space-y-4">
                             {group.entries.map((entry) => {
                                 const date = group.date ?? extractDate(entry.date);

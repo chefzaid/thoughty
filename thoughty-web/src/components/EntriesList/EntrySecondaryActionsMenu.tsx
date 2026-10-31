@@ -5,6 +5,7 @@ import {
     MenuActionButton,
 } from './EntryActionPrimitives';
 import useDismissibleMenu from './useDismissibleMenu';
+import PrintIcon from '../PrintSheet/PrintIcon';
 
 interface EntrySecondaryActionsMenuProps {
     isDark: boolean;
@@ -16,6 +17,8 @@ interface EntrySecondaryActionsMenuProps {
     onShareImage?: () => void;
     /** Opens the dialog that makes private share links for this entry. */
     onSharePrivately?: () => void;
+    /** Opens the dialog that prints this entry. */
+    onPrint?: () => void;
     onToggleHistory?: () => Promise<void>;
     onSummarize?: () => void;
     /** Copies the entry's text, tags and format into the new entry form. */
@@ -34,6 +37,7 @@ export default function EntrySecondaryActionsMenu({
     onShareEntry,
     onShareImage,
     onSharePrivately,
+    onPrint,
     onToggleHistory,
     onSummarize,
     onUseAsStartingPoint,
@@ -128,6 +132,11 @@ export default function EntrySecondaryActionsMenu({
         onSharePrivately?.();
     }, [closeMenuForDialog, onSharePrivately]);
 
+    const handlePrint = useCallback(() => {
+        closeMenuForDialog();
+        onPrint?.();
+    }, [closeMenuForDialog, onPrint]);
+
     // The form takes focus, or a dialog asks first and gives focus back to the menu button
     const handleUseAsStartingPoint = useCallback(() => {
         closeMenuForDialog();
@@ -211,6 +220,16 @@ export default function EntrySecondaryActionsMenu({
                                 <path strokeLinecap="round" d="M8 11V8a4 4 0 018 0v3" />
                             </svg>
                             <span>{t('sharePrivately')}</span>
+                        </MenuActionButton>
+                    )}
+                    {onPrint && (
+                        <MenuActionButton
+                            onClick={handlePrint}
+                            className={secondaryActionClass}
+                            title={t('printEntry')}
+                        >
+                            <PrintIcon className="h-4 w-4 flex-shrink-0" />
+                            <span>{t('printEntry')}</span>
                         </MenuActionButton>
                     )}
                     {onToggleHistory && (

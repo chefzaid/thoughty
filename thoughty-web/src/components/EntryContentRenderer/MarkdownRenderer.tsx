@@ -117,7 +117,8 @@ function MarkdownRenderer({ content, components, taskList, mentionPeople = NO_PE
     const remarkPlugins = useMemo(() => [remarkGfm, remarkMentions(mentionPeople, mentionTitle)], [mentionPeople, mentionTitle]);
 
     return (
-        <span className="markdown-content">
+        // Marked once rendered, unlike the plain text that stands in while this loads (the print view waits for it)
+        <span className="markdown-content" data-markdown="">
             <TaskListContext.Provider value={taskList}>
                 <Markdown remarkPlugins={remarkPlugins} components={resolvedComponents} urlTransform={urlTransform}>
                     {content}

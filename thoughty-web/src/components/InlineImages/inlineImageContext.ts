@@ -15,6 +15,8 @@ export interface InlineImageScope {
      * journal, they are loaded with the writer's session.
      */
     readonly fileUrlOf?: (attachmentId: number) => string;
+    /** Loads those files at once rather than as they come into view, as the print view needs. */
+    readonly eager?: boolean;
 }
 
 /**

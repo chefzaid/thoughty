@@ -68,6 +68,8 @@ interface EntryContentRendererProps {
     readonly attachments?: readonly InlineImageAttachment[];
     /** Where a private share link serves those files, by attachment ID; without it they load with the session. */
     readonly attachmentUrl?: (attachmentId: number) => string;
+    /** Loads the pictures from `attachmentUrl` at once instead of as they come into view (the print view). */
+    readonly eagerImages?: boolean;
     readonly theme?: 'light' | 'dark';
 }
 
@@ -230,6 +232,7 @@ function EntryContentRenderer({
     t,
     attachments,
     attachmentUrl,
+    eagerImages,
     theme,
 }: Readonly<EntryContentRendererProps>) {
     const highlightPattern = useMemo(
@@ -259,8 +262,8 @@ function EntryContentRenderer({
         [content, format, onToggleTask]
     );
     const inlineImages = useMemo<InlineImageScope | null>(
-        () => (attachments && t ? { attachments, theme, t, fileUrlOf: attachmentUrl } : null),
-        [attachments, attachmentUrl, theme, t]
+        () => (attachments && t ? { attachments, theme, t, fileUrlOf: attachmentUrl, eager: eagerImages } : null),
+        [attachments, attachmentUrl, eagerImages, theme, t]
     );
     const taskListFrom = (start: number): MarkdownTaskList | undefined => (taskLines && onToggleTask
         ? { lineOffset: countLinesBefore(displayContent, start), taskLines, onToggle: onToggleTask }

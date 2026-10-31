@@ -88,8 +88,8 @@ function InlineImage({ src, alt }: Readonly<{ src?: string; alt?: string }>) {
         return <span className="inline-image-alt">{text || attachment.original_filename}</span>;
     }
     if (attachment && scope.fileUrlOf) {
-        // A private share link's page: the link serves the file itself, with no session to fetch it with
-        return <img src={scope.fileUrlOf(attachment.id)} alt={text} className="inline-image-picture" loading="lazy" />;
+        // A private share link's page, or the print view: the file is already at hand, with no session to fetch it with
+        return <img src={scope.fileUrlOf(attachment.id)} alt={text} className="inline-image-picture" loading={scope.eager ? 'eager' : 'lazy'} />;
     }
     if (!attachment?.stored_filename) {
         return (

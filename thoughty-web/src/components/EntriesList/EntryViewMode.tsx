@@ -23,6 +23,7 @@ import {
 import useEntryViewModeState from './useEntryViewModeState';
 import SealedEntryCard from './SealedEntryCard';
 import AuthenticatedShareLinkDialog from '../ShareLinks/AuthenticatedShareLinkDialog';
+import PrintEntriesDialog from '../PrintSheet/PrintEntriesDialog';
 
 
 interface EntryViewModeProps {
@@ -115,6 +116,7 @@ function OpenEntryViewMode({
     const [summaryOpen, setSummaryOpen] = useLocalState(false);
     const [shareImage, setShareImage] = useLocalState<{ excerpt?: string } | null>(null);
     const [sharePrivatelyOpen, setSharePrivatelyOpen] = useLocalState(false);
+    const [printOpen, setPrintOpen] = useLocalState(false);
     const isDark = config.theme !== 'light';
     const archiveActionLabel = entry.is_archived ? t('unarchive') : t('archive');
     const entryPermalink = getEntryPermalink?.(entry.id);
@@ -238,6 +240,7 @@ function OpenEntryViewMode({
                         } : undefined}
                         onShareImage={() => setShareImage({ excerpt: selectedExcerpt(globalThis.getSelection?.()?.toString(), toCardText(entry.content, entry.format)) })}
                         onSharePrivately={() => setSharePrivatelyOpen(true)}
+                        onPrint={() => setPrintOpen(true)}
                         onToggleHistory={onFetchHistory ? handleToggleHistory : undefined}
                         onSummarize={onSummarize ? () => setSummaryOpen(true) : undefined}
                         onUseAsStartingPoint={onUseAsStartingPoint ? () => onUseAsStartingPoint(entry) : undefined}
@@ -283,6 +286,9 @@ function OpenEntryViewMode({
                     onClose={() => setSharePrivatelyOpen(false)}
                     t={t}
                 />
+            )}
+            {printOpen && (
+                <PrintEntriesDialog what="entry" entries={[entry]} config={config} onClose={() => setPrintOpen(false)} t={t} />
             )}
             {onSummarize && (
                 <EntrySummaryDialog
