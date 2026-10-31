@@ -488,3 +488,54 @@ Concrete product features that build on what exists. Each one fills a gap visibl
 
 - [ ] Calendar import (ICS or Google Calendar) to show the day's events next to an entry and to suggest what to write about.
 - [ ] Personal access tokens with scopes for a small public API, so power users can create entries from iOS Shortcuts, Zapier or scripts.
+
+## Everyday Ideas (added 2026-10-31)
+
+Small, relatable additions that reuse what already exists (entries, tags, moods, people, eras, highlights, books, emails). Each should fit in one loop iteration, needs no new external service, and works the same in English and French.
+
+### Writing in the moment
+
+- [ ] Quick capture from anywhere: `Ctrl+Shift+N` (or a small button in the navigation) opens a one-line box on any page; Enter saves it as a private entry in the default diary for today, without leaving the page, and **Open in full** carries the text to the composer.
+- [ ] Undo after delete: deleting an entry (alone or in bulk) shows a short toast "Moved to the recycle bin · Undo" for a few seconds, so a slip doesn't need a trip to the bin.
+- [ ] Reply to your past self: **Write a reply** on any older entry opens the composer with a short quote of it and a `[[date#n]]` link, so the two entries show each other in their backlinks.
+- [ ] Prompt cards without AI: a deck of short, hand-written questions by theme (gratitude, decisions, people, places, small joys), **Draw a card** in the composer, never repeating a card until the deck is used up. Costs nothing and works without an AI key.
+- [ ] Timed sprints in focus mode: next to the word goal, a 5/10/15-minute timer that ends with a gentle "time's up — keep going or stop here" instead of a sound.
+- [ ] Start from an entry: **Use as a starting point** on an entry copies its text, tags and format into a new draft, for recurring things like a weekly plan or a packing list.
+
+### Rereading and remembering
+
+- [ ] Remind me to reread: on any entry, pick a date (in a week, a month, a year, or custom); on that day the entry appears in Highlights with "You asked to reread this".
+- [ ] Surprise me, here: a **Random entry** button in the filter tools that picks one entry among the current filters (a tag, an era, a person, a mood), not only from the whole journal.
+- [ ] Read like a book: a quiet reader for the current filters or a month, one entry after another with only previous/next, the date and the text, for evenings when you want to reread rather than manage.
+- [ ] Open tasks across the journal: one view listing every unticked `- [ ]` item from Markdown entries, newest first, each with its entry date and a link, ticked off in place.
+- [ ] Print an entry or a day: a clean print layout (date, title, text, pictures) from **More actions**, without the app around it.
+
+### Insight without AI
+
+- [ ] When you write: a small chart of the hours of the day and days of the week you write most, from entry times (and creation times when no time was set).
+- [ ] Personal records: longest entry, most entries in a day, longest streak, earliest and latest hour written, and first entry, each linking to the entry, as a playful card in Stats.
+- [ ] Tags on your good days: for writers who record moods, the tags that appear most on good-mood days and on low-mood days, as two short lists with entry counts and no judgement in the wording.
+- [ ] Words you use most this month, leaving out common words in English and French, as a simple ranked list rather than a word cloud, scoped to the current diary.
+
+### Comfort and privacy
+
+- [ ] Privacy blur: a keyboard shortcut and a button that blur every entry text on screen at once (titles stay readable), for when someone walks by; pressing it again shows them.
+- [ ] Quiet mode: one setting that hides streaks, badges, karma, counts and goal progress for writers who find numbers stressful, while keeping everything else.
+- [ ] Reading comfort: line spacing and letter spacing settings next to the font settings, and an easy-to-read font option (self-hosted, so the CSP stays as it is).
+- [ ] A kinder low day: after a writer records a very low mood, offer (never force) to reread up to three past entries they marked as favorites or tagged with gratitude, with a one-tap "not now".
+
+### People and memoir
+
+- [ ] Birthdays and anniversaries on people: an optional date on a person, shown in Highlights on the day with how many entries mention them and the most recent one.
+- [ ] A book about someone: **Make a book** on a person's view builds a book from every entry that mentions them (the saved-search source already supports a person filter), a gift idea for family.
+- [ ] Ask me later: on a weekly memoir question, **Not this week** puts it back in the queue a few weeks later instead of skipping it for good.
+
+### Books
+
+- [ ] Dedication and epigraph pages: optional short texts after the title page, in every book format.
+- [ ] A closing page: an optional "About this book" page at the end listing the date range, number of entries and when the book was made, so printed copies carry their own context.
+
+### Bringing notes in
+
+- [ ] Daily-notes folder import: a ZIP of Markdown files named by date (`2024-03-14.md`, the Obsidian and Logseq daily-notes layout), one entry per file on that date, with tags from `#tags` and front matter when present.
+- [ ] Google Keep import: Keep's Takeout JSON, notes as entries on their creation date, labels as tags, checklists as Markdown task lists, and pictures as attachments.
