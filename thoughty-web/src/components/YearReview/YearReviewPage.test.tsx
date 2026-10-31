@@ -38,7 +38,7 @@ const review = (overrides: Partial<YearReview> = {}): YearReview => ({
 
 function renderPage(props: Partial<YearReviewPageProps> = {}) {
   const handlers = { onChangeYear: vi.fn(), onChangeDiary: vi.fn(), onOpenEntry: vi.fn() };
-  render(
+  const view = render(
     <QueryClientProvider client={createTestQueryClient()}>
       <YearReviewPage
         language="en"
@@ -51,7 +51,7 @@ function renderPage(props: Partial<YearReviewPageProps> = {}) {
       />
     </QueryClientProvider>,
   );
-  return handlers;
+  return { ...handlers, unmount: view.unmount };
 }
 
 describe('YearReviewPage', () => {
@@ -255,5 +255,15 @@ describe('YearReviewPage', () => {
 
     expect(print).toHaveBeenCalled();
     print.mockRestore();
+  });
+
+  it('marks the page for its booklet print rules only while it is shown', async () => {
+    const { unmount } = renderPage();
+    const root = document.documentElement;
+
+    expect(root).toHaveClass('year-review-active');
+    expect(await screen.findByText('214')).toBeInTheDocument();
+    unmount();
+    expect(root).not.toHaveClass('year-review-active');
   });
 });

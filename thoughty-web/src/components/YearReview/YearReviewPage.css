@@ -360,24 +360,29 @@
   }
 }
 
-/* A small booklet: light pages, no controls, one section per page where it fits */
+/* A small booklet: light pages, no controls, one section per page where it fits. Only while the review is
+   on screen (YearReviewPage marks <html>), so printing any other page of the app is left alone. */
 @media print {
-  @page {
+  @page year-review {
     size: A5;
     margin: 12mm;
   }
 
-  html,
-  body {
+  html.year-review-active,
+  html.year-review-active body {
     background: #fff !important;
   }
 
-  body * {
+  html.year-review-active body {
+    page: year-review;
+  }
+
+  html.year-review-active body * {
     visibility: hidden;
   }
 
-  .review-page,
-  .review-page * {
+  html.year-review-active .review-page,
+  html.year-review-active .review-page * {
     visibility: visible;
   }
 

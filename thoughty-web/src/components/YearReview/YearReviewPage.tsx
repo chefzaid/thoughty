@@ -12,6 +12,9 @@ import { defaultReviewYear } from './yearReviewFormat';
 import { useYearReview } from './useYearReview';
 import './YearReviewPage.css';
 
+/** Marks the page while the review is shown, so that its booklet print rules apply to it and nowhere else. */
+const ACTIVE_CLASS = 'year-review-active';
+
 export interface YearReviewPageProps {
   readonly theme?: 'light' | 'dark';
   readonly language?: string;
@@ -31,6 +34,12 @@ function YearReviewPage({ theme, language: rawLanguage, diaries, year, diaryId, 
   const activeYear = year ?? defaultReviewYear();
   const { review, mood } = useYearReview(activeYear, diaryId);
   const data = review.data;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add(ACTIVE_CLASS);
+    return () => root.classList.remove(ACTIVE_CLASS);
+  }, []);
 
   // Without a requested year, an empty default year gives way to the latest year with entries
   useEffect(() => {
