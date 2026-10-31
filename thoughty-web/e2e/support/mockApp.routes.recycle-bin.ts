@@ -1,5 +1,5 @@
 import { sortEntries, type MockAppState, type MockTrashedEntry } from './mockApp.shared';
-import { fulfillJson, type RouteContext } from './mockApp.route-utils';
+import { fulfillApiError, fulfillJson, type RouteContext } from './mockApp.route-utils';
 import { isMockSealed } from './mockApp.routes.time-capsules';
 
 const RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -25,8 +25,11 @@ function toTrashedEntryResponse(entry: MockTrashedEntry, state: MockAppState) {
   };
 }
 
-/** Puts entries back at the end of their day; entries of a missing diary go to the default one. */
-function restore(state: MockAppState, ids: Set<number> | null) {
+/**
+ * Puts entries back at the end of their day, or with `inPlace` where they were in it (the entries after it move
+ * down one), as the API does; entries of a missing diary go to the default one.
+ */
+function restore(state: MockAppState, ids: Set<number> | null, inPlace = false) {
   const restoring = state.trash
     .filter((entry) => !ids || ids.has(entry.id))
     .sort((left, right) => left.date.localeCompare(right.date) || left.index - right.index);
@@ -38,7 +41,11 @@ function restore(state: MockAppState, ids: Set<number> | null) {
     if (!hasDiary) {
       movedToDefaultCount += 1;
     }
-    const index = state.entries.filter((candidate) => candidate.date === entry.date).length + 1;
+    const sameDay = state.entries.filter((candidate) => candidate.date === entry.date);
+    const index = inPlace ? Math.min(Math.max(entry.index, 1), sameDay.length + 1) : sameDay.length + 1;
+    state.entries = state.entries.map((candidate) => (
+      candidate.date === entry.date && candidate.index >= index ? { ...candidate, index: candidate.index + 1 } : candidate
+    ));
     state.entries.push({ ...entry, index, diaryId: hasDiary ? entry.diaryId : defaultDiaryId });
   }
 
@@ -76,14 +83,15 @@ export async function handleRecycleBinRoutes({ route, request, pathname, searchP
   }
 
   if ((pathname === '/api/recycle-bin/restore' || pathname === '/api/recycle-bin/delete') && request.method() === 'POST') {
-    const ids = new Set((request.postDataJSON() as { ids: number[] }).ids);
+    const body = request.postDataJSON() as { ids: number[]; inPlace?: boolean };
+    const ids = new Set(body.ids);
     if (!state.trash.some((entry) => ids.has(entry.id))) {
-      await fulfillJson(route, { message: 'No matching entries in the recycle bin' }, { status: 404 });
+      await fulfillApiError(route, 404, 'RECYCLE_BIN_ENTRIES_NOT_FOUND', 'No matching entries in the recycle bin');
       return true;
     }
 
     if (pathname.endsWith('/restore')) {
-      await fulfillJson(route, restore(state, ids));
+      await fulfillJson(route, restore(state, ids, body.inPlace === true));
     } else {
       const before = state.trash.length;
       state.trash = state.trash.filter((entry) => !ids.has(entry.id));

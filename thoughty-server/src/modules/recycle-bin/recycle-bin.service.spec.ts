@@ -55,6 +55,7 @@ describe('RecycleBinService', () => {
       find: jest.fn().mockResolvedValue([]),
       count: jest.fn().mockResolvedValue(0),
       update: jest.fn().mockResolvedValue({ affected: 1 }),
+      increment: jest.fn().mockResolvedValue({ affected: 1 }),
     };
     manager = {
       getRepository: jest.fn().mockReturnValue(managerEntries),
@@ -155,6 +156,32 @@ describe('RecycleBinService', () => {
       expect(selection.setLock).toHaveBeenCalledWith('pessimistic_write');
       const updates = managerEntries.update.mock.calls.map(([criteria, values]) => [criteria.id, values.index, values.deletedAt]);
       expect(updates).toEqual([[12, 3, null], [14, 4, null], [15, 1, null]]);
+      expect(managerEntries.increment).not.toHaveBeenCalled();
+    });
+
+    it('puts entries back where they were in their day for an undo, moving the later entries down', async () => {
+      managerEntries.createQueryBuilder
+        .mockReturnValueOnce(queryBuilder({
+          // Days of 1-3 entries became days of 1 and 0: positions 1 and 3, a 9 past the end, and a lone one
+          many: [
+            trashed({ id: 12, index: 1 }),
+            trashed({ id: 14, index: 3 }),
+            trashed({ id: 16, index: 9 }),
+            trashed({ id: 15, date: '2026-10-21', index: 1 }),
+          ],
+        }))
+        .mockReturnValueOnce(queryBuilder({ raw: [{ date: '2026-10-20', count: '1' }] }));
+
+      await service.restore(7, [12, 14, 16, 15], { inPlace: true });
+
+      const updates = managerEntries.update.mock.calls.map(([criteria, values]) => [criteria.id, values.index]);
+      expect(updates).toEqual([[12, 1], [14, 3], [16, 4], [15, 1]]);
+      expect(managerEntries.increment).toHaveBeenCalledTimes(1);
+      expect(managerEntries.increment).toHaveBeenCalledWith(
+        { userId: 7, date: '2026-10-20', deletedAt: expect.anything(), index: expect.objectContaining({ _type: 'moreThanOrEqual', _value: 1 }) },
+        'index',
+        1,
+      );
     });
 
     it('sends entries of a missing diary to the default diary and drops import references taken again', async () => {

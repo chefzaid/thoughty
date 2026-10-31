@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import { useApiServices } from './useApiServices';
 import type { Notifier } from './useAppNotice';
 
-export const useDeleteModal = (onDelete: () => void, { notify, t }: Notifier) => {
+/** The delete confirmation for one entry; `onDelete` hears which entry went to the recycle bin. */
+export const useDeleteModal = (onDelete: (entryId: number) => void, { notify, t }: Notifier) => {
   const { entriesService } = useApiServices();
 
   const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
@@ -20,7 +21,7 @@ export const useDeleteModal = (onDelete: () => void, { notify, t }: Notifier) =>
 
     const success = await entriesService.deleteEntry(entryToDelete);
     if (success) {
-      onDelete();
+      onDelete(entryToDelete);
     } else {
       notify(t('entryDeleteFailed'));
     }

@@ -94,7 +94,7 @@ An entry is identified by `id`, but its journal `date` (chosen by the writer, no
 
 Deleting entries (singly, in bulk, or with delete-all) sets `entries.deleted_at`, a TypeORM delete date column. TypeORM leaves these rows out of entity queries and joins. **Raw SQL, `update`, and `delete` calls must add `deleted_at IS NULL` themselves**, as the tag usage, achievements, and public feed queries do. An entry in the bin is visible only through `/api/recycle-bin`.
 
-- Related rows stay in place while the entry is in the bin. Restoring puts it back at the end of its day, in its diary or in the default diary when that diary is gone.
+- Related rows stay in place while the entry is in the bin, and so does its `index`, the place it had in its day. Restoring puts it back at the end of its day, or with `inPlace` (the journal's Undo right after a delete) at that index, moving the live entries from there on down one; either way in its diary, or in the default diary when that diary is gone.
 - Entries stay 30 days. The worker purges older ones hourly in batches of 100 with `FOR UPDATE SKIP LOCKED`, then removes their attachment objects after commit. Deleting forever from the bin takes the same path.
 - The partial index `idx_entries_user_deleted_at` on `(user_id, deleted_at) WHERE deleted_at IS NOT NULL` serves the bin listing and the purge.
 

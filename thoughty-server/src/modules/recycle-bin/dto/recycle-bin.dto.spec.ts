@@ -1,5 +1,5 @@
 import { invalidPropertiesLikeApi, parseLikeApi } from '@/common/validation/dto-validation.test-helpers';
-import { RecycleBinQueryDto, RecycleBinSelectionDto } from './recycle-bin.dto';
+import { RecycleBinQueryDto, RecycleBinRestoreDto, RecycleBinSelectionDto } from './recycle-bin.dto';
 
 const invalidSelection = (ids: unknown) => invalidPropertiesLikeApi(RecycleBinSelectionDto, { ids });
 
@@ -19,5 +19,12 @@ describe('recycle bin DTOs', () => {
     await expect(invalidSelection([true])).resolves.toEqual(['ids']);
     await expect(invalidSelection(3)).resolves.toEqual(['ids']);
     await expect(invalidSelection(Array.from({ length: 101 }, (_, index) => index + 1))).resolves.toEqual(['ids']);
+  });
+
+  it('restores at the end of the day unless an in-place undo is asked for', async () => {
+    await expect(parseLikeApi(RecycleBinRestoreDto, { ids: [3] })).resolves.toEqual({ ids: [3] });
+    await expect(parseLikeApi(RecycleBinRestoreDto, { ids: [3], inPlace: true })).resolves.toEqual({ ids: [3], inPlace: true });
+    await expect(invalidPropertiesLikeApi(RecycleBinRestoreDto, { ids: [3], inPlace: 'yes' })).resolves.toEqual(['inPlace']);
+    await expect(invalidPropertiesLikeApi(RecycleBinRestoreDto, { ids: [] })).resolves.toEqual(['ids']);
   });
 });

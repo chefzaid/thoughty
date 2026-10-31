@@ -49,6 +49,17 @@ describe('useAppNotice', () => {
     act(() => result.current.toast.hide());
     expect(result.current.toast.visible).toBe(false);
   });
+
+  it('shows a message with its action, and drops the action with the next plain message', () => {
+    const { result } = renderHook(() => useAppNotice((key: string) => key, 'en'));
+    const action = { label: 'Undo', run: vi.fn() };
+
+    act(() => result.current.notifier.notify('Entry moved to the recycle bin', action));
+    expect(result.current).toMatchObject({ text: 'Entry moved to the recycle bin', action });
+
+    act(() => result.current.notifier.notify('Failed to delete entry.'));
+    expect(result.current.action).toBeNull();
+  });
 });
 
 describe.each([

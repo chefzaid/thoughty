@@ -2061,7 +2061,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Restore entries to their diary, or to the default diary when theirs is gone */
+        /**
+         * Restore entries to their diary, or to the default diary when theirs is gone
+         * @description Entries go back at the end of their day, or with `inPlace` where they were in it (the undo after a delete).
+         */
         post: operations["RecycleBinController_restore"];
         delete?: never;
         options?: never;
@@ -7815,10 +7818,11 @@ export interface components {
          *       "ids": [
          *         12,
          *         15
-         *       ]
+         *       ],
+         *       "inPlace": true
          *     }
          */
-        RecycleBinSelectionDto: {
+        RecycleBinRestoreDto: {
             /**
              * @description Entries in the recycle bin
              * @example [
@@ -7827,6 +7831,12 @@ export interface components {
              *     ]
              */
             ids: number[];
+            /**
+             * @description Put each entry back where it was in its day (an undo right after deleting it) instead of at the end of the day
+             * @default false
+             * @example true
+             */
+            inPlace: boolean;
         };
         /**
          * @example {
@@ -7845,6 +7855,24 @@ export interface components {
              * @example 0
              */
             movedToDefaultCount: number;
+        };
+        /**
+         * @example {
+         *       "ids": [
+         *         12,
+         *         15
+         *       ]
+         *     }
+         */
+        RecycleBinSelectionDto: {
+            /**
+             * @description Entries in the recycle bin
+             * @example [
+             *       12,
+             *       15
+             *     ]
+             */
+            ids: number[];
         };
         /**
          * @example {
@@ -16188,10 +16216,11 @@ export interface operations {
                  *       "ids": [
                  *         12,
                  *         15
-                 *       ]
+                 *       ],
+                 *       "inPlace": true
                  *     }
                  */
-                "application/json": components["schemas"]["RecycleBinSelectionDto"];
+                "application/json": components["schemas"]["RecycleBinRestoreDto"];
             };
         };
         responses: {

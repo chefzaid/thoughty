@@ -373,8 +373,14 @@ describeContract('organize', (context) => {
     });
     await call('POST /api/recycle-bin/restore', {
       as: alice,
-      json: { ids: [binned[0]] },
+      json: { ids: [binned[0]], inPlace: true },
       status: 200,
+    });
+    await call('POST /api/recycle-bin/restore', {
+      as: alice,
+      json: { ids: [binned[1]], inPlace: 'yes' },
+      status: 400,
+      code: 'VALIDATION_FAILED',
     });
     await call('POST /api/recycle-bin/delete', {
       as: bob,

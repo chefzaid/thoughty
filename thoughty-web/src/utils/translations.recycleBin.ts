@@ -39,7 +39,10 @@ export type RecycleBinTranslationKey =
   | 'recycleBinPagination'
   | 'recycleBinPage'
   | 'recycleBinPrevious'
-  | 'recycleBinNext';
+  | 'recycleBinNext'
+  | 'recycleBinMovedHere_one'
+  | 'recycleBinMovedHere_other'
+  | 'recycleBinUndo';
 
 export const recycleBinTranslations: Record<Language, Record<RecycleBinTranslationKey, string>> = {
   en: {
@@ -82,6 +85,9 @@ export const recycleBinTranslations: Record<Language, Record<RecycleBinTranslati
     recycleBinPage: 'Page {page} of {total}',
     recycleBinPrevious: 'Previous',
     recycleBinNext: 'Next',
+    recycleBinMovedHere_one: 'Entry moved to the recycle bin',
+    recycleBinMovedHere_other: '{count} entries moved to the recycle bin',
+    recycleBinUndo: 'Undo',
   },
   fr: {
     recycleBin: 'Corbeille',
@@ -123,5 +129,8 @@ export const recycleBinTranslations: Record<Language, Record<RecycleBinTranslati
     recycleBinPage: 'Page {page} sur {total}',
     recycleBinPrevious: 'Précédente',
     recycleBinNext: 'Suivante',
+    recycleBinMovedHere_one: 'Entrée placée dans la corbeille',
+    recycleBinMovedHere_other: '{count} entrées placées dans la corbeille',
+    recycleBinUndo: 'Annuler',
   },
 };

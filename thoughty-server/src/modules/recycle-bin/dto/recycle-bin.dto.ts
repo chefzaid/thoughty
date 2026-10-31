@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ArrayMaxSize, ArrayMinSize, IsArray, IsOptional, Max, Min } from 'class-validator';
-import { StrictInt } from '@/common/validation';
+import { StrictBoolean, StrictInt } from '@/common/validation';
 
 /** How long a deleted entry stays in the recycle bin before it is removed for good. */
 export const RECYCLE_BIN_RETENTION_DAYS = 30;
@@ -30,6 +30,17 @@ export class RecycleBinSelectionDto {
   @StrictInt({ each: true })
   @Min(1, { each: true })
   ids!: number[];
+}
+
+export class RecycleBinRestoreDto extends RecycleBinSelectionDto {
+  @ApiPropertyOptional({
+    example: true,
+    default: false,
+    description: 'Put each entry back where it was in its day (an undo right after deleting it) instead of at the end of the day',
+  })
+  @IsOptional()
+  @StrictBoolean()
+  inPlace?: boolean;
 }
 
 export class TrashedEntryDto {

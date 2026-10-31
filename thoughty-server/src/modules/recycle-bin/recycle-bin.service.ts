@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { apiError } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, IsNull, Not, Repository, type EntityManager, type SelectQueryBuilder } from 'typeorm';
+import { DataSource, In, IsNull, MoreThanOrEqual, Not, Repository, type EntityManager, type SelectQueryBuilder } from 'typeorm';
 import { Attachment, Diary, Entry } from '@/database/entities';
 import { AttachmentsService, storedKeysOf } from '@/modules/attachments';
 import { ConfigService } from '@/modules/config';
@@ -18,6 +18,11 @@ const PURGE_BATCH_SIZE = 100;
 
 type BinScope = (qb: SelectQueryBuilder<Entry>) => SelectQueryBuilder<Entry>;
 
+export interface RestoreOptions {
+  /** Puts each entry back where it was in its day instead of at the end of it: the undo right after a delete. */
+  readonly inPlace?: boolean;
+}
+
 /** When an entry deleted at `deletedAt` leaves the recycle bin for good. */
 export function purgeDateFor(deletedAt: Date): Date {
   return new Date(deletedAt.getTime() + RECYCLE_BIN_RETENTION_DAYS * DAY_MS);
@@ -25,7 +30,7 @@ export function purgeDateFor(deletedAt: Date): Date {
 
 /**
  * Deleted entries wait here for 30 days with their revisions, attachments, chat, and memoir
- * link. Restoring puts them back at the end of their day; removing them, by hand or once the
+ * link. Restoring puts them back at the end of their day (or, for an undo, where they were in it); removing them, by hand or once the
  * 30 days are up, deletes the rows and their files in object storage.
  */
 @Injectable()
@@ -66,7 +71,7 @@ export class RecycleBinService {
   }
 
   /** Restores the chosen entries, or every entry in the bin when no IDs are given. */
-  async restore(userId: number, ids?: number[]): Promise<RecycleBinRestoreResponseDto> {
+  async restore(userId: number, ids?: number[], options: RestoreOptions = {}): Promise<RecycleBinRestoreResponseDto> {
     return this.dataSource.transaction(async (manager) => {
       const qb = manager
         .getRepository(Entry)
@@ -86,7 +91,7 @@ export class RecycleBinService {
       if (trashed.length === 0) {
         throw apiError(NotFoundException, 'RECYCLE_BIN_ENTRIES_NOT_FOUND');
       }
-      return this.putBack(manager, userId, trashed);
+      return this.putBack(manager, userId, trashed, options.inPlace === true);
     });
   }
 
@@ -156,11 +161,18 @@ export class RecycleBinService {
   }
 
   /**
-   * Puts entries back at the end of their day, in their original order. An entry whose diary is
-   * gone goes to the default diary; one whose import reference is taken again (the export was
-   * imported after the delete) loses the reference; a pinned one stays pinned while the limit allows.
+   * Puts entries back at the end of their day, in their original order, or with `inPlace` at the
+   * position they held in it (the entries after it move down one; deleting closed that gap). An
+   * entry whose diary is gone goes to the default diary; one whose import reference is taken again
+   * (the export was imported after the delete) loses the reference; a pinned one stays pinned while
+   * the limit allows.
    */
-  private async putBack(manager: EntityManager, userId: number, trashed: Entry[]): Promise<RecycleBinRestoreResponseDto> {
+  private async putBack(
+    manager: EntityManager,
+    userId: number,
+    trashed: Entry[],
+    inPlace: boolean,
+  ): Promise<RecycleBinRestoreResponseDto> {
     const entries = manager.getRepository(Entry);
     const diaries = await manager.find(Diary, { where: { userId } });
     const diaryIds = new Set(diaries.map((diary) => diary.id));
@@ -181,8 +193,12 @@ export class RecycleBinService {
 
     let movedToDefaultCount = 0;
     for (const entry of trashed) {
-      const index = (dayCounts.get(entry.date) ?? 0) + 1;
-      dayCounts.set(entry.date, index);
+      const dayCount = dayCounts.get(entry.date) ?? 0;
+      const index = inPlace ? Math.min(Math.max(entry.index, 1), dayCount + 1) : dayCount + 1;
+      if (index <= dayCount) {
+        await entries.increment({ userId, date: entry.date, deletedAt: IsNull(), index: MoreThanOrEqual(index) }, 'index', 1);
+      }
+      dayCounts.set(entry.date, dayCount + 1);
 
       const diaryId = entry.diaryId !== null && diaryIds.has(entry.diaryId) ? entry.diaryId : defaultDiaryId;
       if (diaryId !== entry.diaryId) {

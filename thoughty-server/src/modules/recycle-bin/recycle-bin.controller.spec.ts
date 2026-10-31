@@ -22,7 +22,10 @@ describe('RecycleBinController', () => {
     recycleBinService.restore.mockResolvedValue({ success: true, restoredCount: 2, movedToDefaultCount: 0 });
 
     await controller.restore(user as never, { ids: [3, 4] });
-    expect(recycleBinService.restore).toHaveBeenLastCalledWith(7, [3, 4]);
+    expect(recycleBinService.restore).toHaveBeenLastCalledWith(7, [3, 4], { inPlace: false });
+
+    await controller.restore(user as never, { ids: [3], inPlace: true });
+    expect(recycleBinService.restore).toHaveBeenLastCalledWith(7, [3], { inPlace: true });
 
     await controller.restoreAll(user as never);
     expect(recycleBinService.restore).toHaveBeenLastCalledWith(7);

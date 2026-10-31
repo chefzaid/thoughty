@@ -6,6 +6,7 @@ import { useAppNotice } from './useAppNotice';
 import { useAppRouteState } from './useAppRouteState';
 import { useAppShellEffects } from './useAppShellEffects';
 import { useAppShellRouting } from './useAppShellRouting';
+import { useDeleteUndo } from './useDeleteUndo';
 import { useEntryNavigation } from './useEntryNavigation';
 import {
   useApiServices,
@@ -110,15 +111,22 @@ export function useAppShellModel(): AppShellModel {
 
   const entryEditState = useEntryEdit(config, entriesState.fetchEntries, notifier);
 
+  const { refreshEntryQueries } = entriesState;
+  // An undone delete brings the entries back to every view measured from them (calendar, writing streak)
+  const offerDeleteUndo = useDeleteUndo(useCallback(() => { void refreshEntryQueries(); }, [refreshEntryQueries]), notifier);
+
   // A deleted entry leaves every view measured from the entries (calendar, writing streak) too
-  const deleteModalState = useDeleteModal(() => { void entriesState.refreshEntryQueries(); }, notifier);
+  const deleteModalState = useDeleteModal((entryId) => {
+    void refreshEntryQueries();
+    offerDeleteUndo([entryId]);
+  }, notifier);
 
   const handleMakeBook = useCallback((entryIds: number[]) => {
     const { state, ...to } = buildBookConverterRoute(currentDiaryId, entryIds);
     navigate(to, { state });
   }, [currentDiaryId, navigate]);
 
-  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier, handleMakeBook);
+  const bulkSelectState = useBulkSelect(entriesState.fetchEntries, entriesState.entries, notifier, handleMakeBook, offerDeleteUndo);
 
   const handleNavigateToFirst = useCallback(async (year: number, month: number | null) => {
     const data = await entriesState.entriesService.navigateToFirst(year, month, entriesState.getLimit());

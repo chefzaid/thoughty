@@ -6,6 +6,7 @@ import {
   RecycleBinDeleteResponseDto,
   RecycleBinListResponseDto,
   RecycleBinQueryDto,
+  RecycleBinRestoreDto,
   RecycleBinRestoreResponseDto,
   RecycleBinSelectionDto,
 } from './dto';
@@ -27,14 +28,17 @@ export class RecycleBinController {
 
   @Post('restore')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Restore entries to their diary, or to the default diary when theirs is gone' })
+  @ApiOperation({
+    summary: 'Restore entries to their diary, or to the default diary when theirs is gone',
+    description: 'Entries go back at the end of their day, or with `inPlace` where they were in it (the undo after a delete).',
+  })
   @ApiResponse({ status: 200, description: 'Entries restored', type: RecycleBinRestoreResponseDto })
   @ApiResponse({ status: 404, description: 'None of the entries are in the recycle bin' })
   async restore(
     @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: RecycleBinSelectionDto,
+    @Body() dto: RecycleBinRestoreDto,
   ): Promise<RecycleBinRestoreResponseDto> {
-    return this.recycleBinService.restore(user.userId, dto.ids);
+    return this.recycleBinService.restore(user.userId, dto.ids, { inPlace: dto.inPlace === true });
   }
 
   @Post('restore-all')

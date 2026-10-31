@@ -19,6 +19,8 @@ import {
   renameTag,
   deleteTag,
   navigateToFirst,
+  offerDeleteUndo,
+  refreshEntryQueries,
   navigate,
 } from './useAppShellModel.test-helpers';
 import type { MockedRoutesProps } from './useAppShellModel.test-helpers';
@@ -32,6 +34,7 @@ vi.mock('./useAppRouteState', async () => (await import('./useAppShellModel.test
 vi.mock('./useAppShellEffects', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.appShellEffects);
 vi.mock('./useAppShellRouting', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.appShellRouting);
 vi.mock('./useEntryNavigation', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.entryNavigation);
+vi.mock('./useDeleteUndo', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.deleteUndo);
 vi.mock('./useAppState', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.appState);
 vi.mock('../utils/tagMetadata', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.tagMetadata);
 vi.mock('../utils/appShellProps', async () => (await import('./useAppShellModel.test-helpers')).mockedModules.appShellProps);
@@ -133,7 +136,21 @@ describe('useAppShellModel', () => {
     expect(mocks.useEntries).toHaveBeenCalledWith(true, expect.anything(), expect.anything(), notifier, expect.anything());
     expect(mocks.useEntryEdit).toHaveBeenCalledWith(expect.anything(), expect.any(Function), notifier);
     expect(mocks.useDeleteModal).toHaveBeenCalledWith(expect.any(Function), notifier);
-    expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier, expect.any(Function));
+    expect(mocks.useBulkSelect).toHaveBeenCalledWith(expect.any(Function), expect.anything(), notifier, expect.any(Function), offerDeleteUndo);
+    expect(mocks.useDeleteUndo).toHaveBeenCalledWith(expect.any(Function), notifier);
+  });
+
+  it('offers to undo a delete, and refreshes the journal when the entries come back', () => {
+    renderHook(() => useAppShellModel());
+    const onDelete = mocks.useDeleteModal.mock.calls.at(-1)![0] as (entryId: number) => void;
+    const onRestored = mocks.useDeleteUndo.mock.calls.at(-1)![0] as () => void;
+
+    act(() => onDelete(42));
+    expect(refreshEntryQueries).toHaveBeenCalledTimes(1);
+    expect(offerDeleteUndo).toHaveBeenCalledWith([42]);
+
+    act(() => onRestored());
+    expect(refreshEntryQueries).toHaveBeenCalledTimes(2);
   });
 
   it('opens the book converter of the current diary on the entries picked in the journal', () => {

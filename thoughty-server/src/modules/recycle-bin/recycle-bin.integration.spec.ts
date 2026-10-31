@@ -121,6 +121,24 @@ describePostgres('PostgreSQL recycle bin', () => {
     expect(first.id).toBeLessThan(second.id);
   });
 
+  it('undoes a delete by putting the entries back where they were in their day', async () => {
+    const written = [];
+    for (const [index, content] of ['One', 'Two', 'Three', 'Four', 'Five'].entries()) {
+      written.push(await write(content, { index: index + 1 }));
+    }
+    const [, two, , four] = written;
+
+    await commands.bulkOperation(userId, { ids: [two.id, four.id], action: 'delete' });
+    expect(await journal()).toEqual(['One#1', 'Three#2', 'Five#3']);
+
+    await bin.restore(userId, [four.id, two.id], { inPlace: true });
+    expect(await journal()).toEqual(['One#1', 'Two#2', 'Three#3', 'Four#4', 'Five#5']);
+
+    await commands.delete(userId, written[0].id);
+    await bin.restore(userId, [written[0].id], { inPlace: true });
+    expect(await journal()).toEqual(['One#1', 'Two#2', 'Three#3', 'Four#4', 'Five#5']);
+  });
+
   it('restores into the default diary when the original diary is gone, and drops an import reference that is taken again', async () => {
     const imported = await write('Imported', { importRef: 'dayone:abc' });
     const gone = await dataSource.getRepository(Diary).save({ userId, name: 'Gone', position: 9 });

@@ -76,7 +76,7 @@ describe("useEntryActions", () => {
         await result.current.confirmDelete();
       });
 
-      expect(onDeleteMock).toHaveBeenCalled();
+      expect(onDeleteMock).toHaveBeenCalledWith(123);
       expect(result.current.deleteModalOpen).toBe(false);
       expect(result.current.entryToDelete).toBeNull();
     });
@@ -298,6 +298,40 @@ describe("useEntryActions", () => {
       expect(result.current.selectedIds.size).toBe(0);
       expect(result.current.bulkMode).toBe(false);
       expect(onComplete).toHaveBeenCalled();
+    });
+
+    it("hands the deleted entries over for an undo, oldest day first and in their order within the day", async () => {
+      const mockBulkOperation = vi.fn().mockResolvedValue({ success: true, affectedCount: 4 });
+      await createEntriesServiceMock({ bulkOperation: mockBulkOperation });
+      const listed = [
+        { id: 7, date: "2024-02-01T00:00:00.000Z", index: 2 },
+        { id: 3, date: "2024-02-01", index: 1 },
+        { id: 9, date: "2024-01-31", index: 12 },
+      ].map((entry) => ({ ...entry, content: "", tags: [], visibility: "private" as const }));
+      const onDeleted = vi.fn();
+      const { result } = renderHook(() => useBulkSelect(vi.fn(), listed, notifier, undefined, onDeleted));
+
+      act(() => {
+        for (const id of [7, 5, 3, 9]) result.current.toggleSelect(id);
+      });
+      await act(async () => {
+        await result.current.executeBulkAction("delete");
+      });
+
+      expect(onDeleted).toHaveBeenCalledWith([9, 3, 7, 5]);
+    });
+
+    it("offers no undo for a bulk action other than delete", async () => {
+      await createEntriesServiceMock({ bulkOperation: vi.fn().mockResolvedValue({ success: true, affectedCount: 1 }) });
+      const onDeleted = vi.fn();
+      const { result } = renderHook(() => useBulkSelect(vi.fn(), [], notifier, undefined, onDeleted));
+
+      act(() => result.current.toggleSelect(1));
+      await act(async () => {
+        await result.current.executeBulkAction("archive", { isArchived: true });
+      });
+
+      expect(onDeleted).not.toHaveBeenCalled();
     });
 
     it("executeBulkAction notifies on failure", async () => {

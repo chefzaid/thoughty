@@ -496,7 +496,7 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 ### Writing in the moment
 
 - [ ] Quick capture from anywhere: `Ctrl+Shift+N` (or a small button in the navigation) opens a one-line box on any page; Enter saves it as a private entry in the default diary for today, without leaving the page, and **Open in full** carries the text to the composer.
-- [ ] Undo after delete: deleting an entry (alone or in bulk) shows a short toast "Moved to the recycle bin · Undo" for a few seconds, so a slip doesn't need a trip to the bin.
+- [x] Undo after delete: deleting an entry (alone or in bulk) shows a toast "Entry moved to the recycle bin · Undo" ("3 entries…" in bulk) for 10 seconds, pausing while hovered or focused, and Undo puts exactly those entries back where they were in their day (`inPlace` restore); delete all entries keeps the recycle bin's Restore all instead of an undo.
 - [ ] Reply to your past self: **Write a reply** on any older entry opens the composer with a short quote of it and a `[[date#n]]` link, so the two entries show each other in their backlinks.
 - [ ] Prompt cards without AI: a deck of short, hand-written questions by theme (gratitude, decisions, people, places, small joys), **Draw a card** in the composer, never repeating a card until the deck is used up. Costs nothing and works without an AI key.
 - [ ] Timed sprints in focus mode: next to the word goal, a 5/10/15-minute timer that ends with a gentle "time's up — keep going or stop here" instead of a sound.

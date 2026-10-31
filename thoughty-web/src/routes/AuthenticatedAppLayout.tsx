@@ -4,6 +4,7 @@ import AutoDismiss from '../components/AutoDismiss/AutoDismiss';
 import ConfirmModal from '../components/ConfirmModal/ConfirmModal';
 import Footer from '../components/Footer/Footer';
 import AiChatModal from '../components/AiChatModal/AiChatModal';
+import NoticeToast from '../components/NoticeToast/NoticeToast';
 import type { ViewType, Config, Entry } from '../types';
 import { normalizeFontSize, resolveFontFamily } from '../types/config';
 import { useRouteChangeFocus } from '../hooks/useRouteChangeFocus';
@@ -11,6 +12,7 @@ import { resolveLanguage } from '../utils/language';
 import { pluralPhrase } from '../utils/pluralPhrase';
 import { tintedTextClass } from '../utils/tintedText';
 import type { TransientMessage } from '../hooks/useTransientMessage';
+import type { NoticeAction } from '../hooks/useAppNotice';
 
 interface AuthenticatedAppLayoutProps {
   readonly children: ReactNode;
@@ -33,6 +35,8 @@ interface AuthenticatedAppLayoutProps {
   /** The outcome of an entry action, such as a failed save or a bulk summary. */
   readonly notice: TransientMessage;
   readonly noticeText: string;
+  /** The button the notice offers, such as Undo after entries went to the recycle bin. */
+  readonly noticeAction?: NoticeAction | null;
   readonly chatEntry: Entry | null;
   readonly onCloseChat: () => void;
   readonly onLoadChatHistory: (entryId: number) => Promise<Array<{ role: 'user' | 'assistant'; content: string }>>;
@@ -59,6 +63,7 @@ function AuthenticatedAppLayout({
   entryToast,
   notice,
   noticeText,
+  noticeAction = null,
   chatEntry,
   onCloseChat,
   onLoadChatHistory,
@@ -126,11 +131,7 @@ function AuthenticatedAppLayout({
               <p className={`mt-1 text-sm ${toastTextClassName}`}>{t('entryNotFoundMessage')}</p>
             </div>
           </AutoDismiss>
-          <AutoDismiss message={notice} durationMs={6000}>
-            <div role="alert" aria-live="assertive" className={toastClassName}>
-              <p className="text-sm font-medium">{noticeText}</p>
-            </div>
-          </AutoDismiss>
+          <NoticeToast notice={notice} text={noticeText} action={noticeAction} theme={config.theme} className={toastClassName} />
         </div>
 
         {chatEntry && (

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { getTranslation } from '../utils/translations';
@@ -158,6 +158,24 @@ describe('AuthenticatedAppLayout', () => {
     vi.advanceTimersByTime(6000);
     expect(hide).toHaveBeenCalled();
     vi.useRealTimers();
+  });
+
+  it('offers the notice action, such as Undo after a delete, as a status message', () => {
+    const run = vi.fn();
+    render(
+      <AuthenticatedAppLayout
+        {...defaultProps}
+        notice={{ visible: true, showCount: 1, show: vi.fn(), hide: vi.fn() }}
+        noticeText="Entrée placée dans la corbeille"
+        noticeAction={{ label: 'Annuler', run }}
+      >
+        <div>Journal content</div>
+      </AuthenticatedAppLayout>,
+    );
+
+    expect(screen.getByRole('status')).toHaveTextContent('Entrée placée dans la corbeille');
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    expect(run).toHaveBeenCalledTimes(1);
   });
 
   it('shows no notice until an entry action reports one', () => {

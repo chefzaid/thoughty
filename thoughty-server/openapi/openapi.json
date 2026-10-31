@@ -10301,6 +10301,7 @@
     },
     "/api/recycle-bin/restore": {
       "post": {
+        "description": "Entries go back at the end of their day, or with `inPlace` where they were in it (the undo after a delete).",
         "operationId": "RecycleBinController_restore",
         "parameters": [],
         "requestBody": {
@@ -10308,13 +10309,14 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RecycleBinSelectionDto"
+                "$ref": "#/components/schemas/RecycleBinRestoreDto"
               },
               "example": {
                 "ids": [
                   12,
                   15
-                ]
+                ],
+                "inPlace": true
               }
             }
           }
@@ -20609,7 +20611,7 @@
           "retentionDays": 30
         }
       },
-      "RecycleBinSelectionDto": {
+      "RecycleBinRestoreDto": {
         "type": "object",
         "properties": {
           "ids": {
@@ -20622,6 +20624,12 @@
             "items": {
               "type": "number"
             }
+          },
+          "inPlace": {
+            "type": "boolean",
+            "example": true,
+            "default": false,
+            "description": "Put each entry back where it was in its day (an undo right after deleting it) instead of at the end of the day"
           }
         },
         "required": [
@@ -20631,7 +20639,8 @@
           "ids": [
             12,
             15
-          ]
+          ],
+          "inPlace": true
         }
       },
       "RecycleBinRestoreResponseDto": {
@@ -20660,6 +20669,31 @@
           "success": true,
           "restoredCount": 2,
           "movedToDefaultCount": 0
+        }
+      },
+      "RecycleBinSelectionDto": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "example": [
+              12,
+              15
+            ],
+            "description": "Entries in the recycle bin",
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "example": {
+          "ids": [
+            12,
+            15
+          ]
         }
       },
       "RecycleBinDeleteResponseDto": {

@@ -118,7 +118,7 @@ test.describe('People', () => {
     const name = page.getByRole('textbox', { name: 'Name shown for @marie' });
     await name.fill('Marie Curie');
     await name.press('Enter');
-    await expect(page.getByRole('status')).toHaveText('Renamed to Marie Curie.');
+    await expect(page.locator('#main-content').getByRole('status')).toHaveText('Renamed to Marie Curie.');
     await expect(page.getByRole('button', { name: 'Rename Marie Curie', exact: true })).toBeFocused();
     expect(state.people.find((person) => person.id === 1)?.name).toBe('Marie Curie');
 
@@ -127,7 +127,7 @@ test.describe('People', () => {
     await expectNoAxeViolations(page, '[role="dialog"]');
     await merge.getByRole('combobox', { name: 'Person to merge' }).selectOption({ label: 'MarieC (@mariec)' });
     await merge.getByRole('button', { name: 'Merge' }).click();
-    await expect(page.getByRole('status')).toHaveText('MarieC was merged into Marie Curie.');
+    await expect(page.locator('#main-content').getByRole('status')).toHaveText('MarieC was merged into Marie Curie.');
     await expect(page.getByRole('list', { name: '2 people' }).getByRole('listitem').first()).toContainText('@marie, @mariec');
     expect(state.savedSearches[0]?.filters.personId).toBe(1);
 
@@ -135,7 +135,7 @@ test.describe('People', () => {
     const confirm = page.getByRole('alertdialog', { name: 'Delete Paul?' });
     await expect(confirm).toContainText('Your entries keep the text @paul');
     await confirm.getByRole('button', { name: 'Delete' }).click();
-    await expect(page.getByRole('status')).toHaveText('Paul was deleted.');
+    await expect(page.locator('#main-content').getByRole('status')).toHaveText('Paul was deleted.');
     expect(state.people.map((person) => person.name)).toEqual(['Marie Curie']);
 
     await page.getByRole('link', { name: 'Marie Curie' }).click();

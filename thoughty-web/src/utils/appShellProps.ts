@@ -37,7 +37,7 @@ type EntryEditState = ReturnType<typeof import('../hooks/useAppState').useEntryE
 type EntryFormState = ReturnType<typeof import('../hooks/useAppState').useEntryForm>;
 
 interface BuildAuthenticatedLayoutPropsParams {
-  appNotice: Pick<AppNotice, 'text' | 'toast'>;
+  appNotice: Pick<AppNotice, 'text' | 'toast' | 'action'>;
   avatarUrl?: string;
   bulkSelectState: Pick<BulkSelectState, 'bulkModalOpen' | 'cancelBulkModal' | 'confirmBulkDelete' | 'selectedIds'>;
   chatEntry: Entry | null;
@@ -126,6 +126,7 @@ export function buildAuthenticatedLayoutProps({
     entryToast,
     notice: appNotice.toast,
     noticeText: appNotice.text,
+    noticeAction: appNotice.action,
     chatEntry,
     onCloseChat: () => setChatEntry(null),
     onLoadChatHistory: handleLoadAiChatHistory,

@@ -23,6 +23,7 @@ export const mocks = {
   useBulkSelect: vi.fn(),
   useConfig: vi.fn(),
   useDeleteModal: vi.fn(),
+  useDeleteUndo: vi.fn(),
   useDiaries: vi.fn(),
   useEntries: vi.fn(),
   useEntryEdit: vi.fn(),
@@ -38,6 +39,7 @@ export const mockedModules = {
   appShellEffects: { useAppShellEffects: mocks.useAppShellEffects },
   appShellRouting: { useAppShellRouting: mocks.useAppShellRouting },
   entryNavigation: { useEntryNavigation: mocks.useEntryNavigation },
+  deleteUndo: { useDeleteUndo: mocks.useDeleteUndo },
   appState: {
     useApiServices: mocks.useApiServices,
     useBulkSelect: mocks.useBulkSelect,
@@ -94,6 +96,8 @@ export const getChatHistory = vi.fn().mockResolvedValue([{ role: 'assistant', co
 export const renameTag = vi.fn().mockResolvedValue({ success: true });
 export const deleteTag = vi.fn().mockResolvedValue({ success: true, affectedCount: 2 });
 export const fetchTagUsage = vi.fn().mockResolvedValue([{ tag: 'current', count: 2 }]);
+export const offerDeleteUndo = vi.fn();
+export const refreshEntryQueries = vi.fn().mockResolvedValue(undefined);
 export const navigateToFirst = vi.fn().mockResolvedValue({ found: true, page: 4, entryId: 77 });
 
 export type MockedLayoutProps = ReturnType<typeof mocks.buildAuthenticatedLayoutProps>;
@@ -146,6 +150,7 @@ export function stubShellModelHooks() {
     handleUpdateDiary: vi.fn(),
   });
   mocks.useEntries.mockReturnValue({
+    refreshEntryQueries,
     activeTargetId: null,
     allTags: ['current', 'later'],
     availableMonths: ['2024-01'],
@@ -243,6 +248,7 @@ export function stubShellModelHooks() {
     setEditText,
     setEditVisibility: vi.fn(),
   });
+  mocks.useDeleteUndo.mockReturnValue(offerDeleteUndo);
   mocks.useDeleteModal.mockReturnValue({
     cancelDelete: vi.fn(),
     confirmDelete: vi.fn(),

@@ -45,14 +45,33 @@ const rephraseSelectedEntry = async (
 };
 
 /**
+ * The entries oldest day first and in their order within the day, so restoring them one after the other puts
+ * each back in its place. Entries the list no longer shows keep their place at the end.
+ */
+const inDayOrder = (ids: number[], entries: Entry[]): number[] => {
+  const listed = new Map(entries.map((entry) => [entry.id, entry]));
+  const place = (id: number): [string, number] | null => {
+    const entry = listed.get(id);
+    return entry ? [normalizeStoredEntryDate(entry.date), entry.index ?? 0] : null;
+  };
+  return [...ids].sort((left, right) => {
+    const [a, b] = [place(left), place(right)];
+    if (!a || !b) return Number(!a) - Number(!b);
+    return a[0] === b[0] ? a[1] - b[1] : a[0].localeCompare(b[0]);
+  });
+};
+
+/**
  * The journal's bulk selection and its actions. `onMakeBook` receives the selected entries for the book
- * converter (Make a book); without it that action does nothing.
+ * converter (Make a book); without it that action does nothing. `onDeleted` hears which entries went to the
+ * recycle bin, oldest day first and in their order within the day.
  */
 export const useBulkSelect = (
   onComplete: () => void,
   entries: Entry[],
   { notify, t, language }: Notifier,
   onMakeBook?: (entryIds: number[]) => void,
+  onDeleted?: (entryIds: number[]) => void,
 ) => {
   const { entriesService, aiService } = useApiServices();
 
@@ -157,10 +176,13 @@ export const useBulkSelect = (
       setSelectedIds(new Set());
       setBulkMode(false);
       onComplete();
+      if (action === 'delete') {
+        onDeleted?.(inDayOrder(ids, entries));
+      }
     } else {
       notify(t('bulkOperationFailed'));
     }
-  }, [entriesService, executeBulkRephrase, notify, onComplete, selectedIds, t]);
+  }, [entries, entriesService, executeBulkRephrase, notify, onComplete, onDeleted, selectedIds, t]);
 
   const requestBulkAction = useCallback((action: BulkAction, options?: BulkOptions) => {
     if (selectedIds.size === 0) {

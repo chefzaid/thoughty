@@ -25,7 +25,7 @@ export function createLayoutParams(
   overrides: Partial<BuildAuthenticatedLayoutPropsParams> = {},
 ): BuildAuthenticatedLayoutPropsParams {
   return {
-    appNotice: { text: '', toast: { visible: false, showCount: 0, show: vi.fn(), hide: vi.fn() } },
+    appNotice: { text: '', action: null, toast: { visible: false, showCount: 0, show: vi.fn(), hide: vi.fn() } },
     avatarUrl: 'https://example.com/avatar.png',
     bulkSelectState: {
       bulkModalOpen: false,

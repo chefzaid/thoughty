@@ -18,12 +18,14 @@ describe('recycleBinService', () => {
     const service = createRecycleBinService(authFetch);
 
     await service.restore([3, 4]);
+    await service.restore([6], { inPlace: true });
     await service.restoreAll();
     await service.deletePermanently([5]);
     await service.empty();
 
     expect(authFetch.mock.calls.map(([url, options]) => [url, options.method, options.body])).toEqual([
       ['/api/recycle-bin/restore', 'POST', '{"ids":[3,4]}'],
+      ['/api/recycle-bin/restore', 'POST', '{"ids":[6],"inPlace":true}'],
       ['/api/recycle-bin/restore-all', 'POST', undefined],
       ['/api/recycle-bin/delete', 'POST', '{"ids":[5]}'],
       ['/api/recycle-bin', 'DELETE', undefined],
