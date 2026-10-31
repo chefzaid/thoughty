@@ -353,6 +353,18 @@ export function useEntryNavigation({
     await executeEntryNavigation(date, index);
   }, [clearJournalPermalink, executeEntryNavigation, needsJournalResetForPermalink, resetJournalFiltersForPermalink, setSourceEntry]);
 
+  /**
+   * Shows an entry on a page of the list as it is filtered now (the random entry), leaving the filters,
+   * the diary and the search alone, unlike a permalink, which opens its entry among all entries.
+   */
+  const handleOpenEntryInList = useCallback((entryId: number, entryPage: number) => {
+    clearJournalPermalink();
+    setPendingEntryTarget(null);
+    setActiveTargetId(null);
+    setPage(entryPage);
+    setTargetEntryId(entryId);
+  }, [clearJournalPermalink, setActiveTargetId, setPage, setTargetEntryId]);
+
   useEffect(() => {
     if (!pendingEntryTarget || loading || entries.length === 0) {
       return;
@@ -427,6 +439,7 @@ export function useEntryNavigation({
     entryToast,
     handleBackToSource,
     handleNavigateToEntry,
+    handleOpenEntryInList,
     handleShareEntry,
   };
 }

@@ -505,7 +505,7 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 ### Rereading and remembering
 
 - [ ] Remind me to reread: on any entry, pick a date (in a week, a month, a year, or custom); on that day the entry appears in Highlights with "You asked to reread this".
-- [ ] Surprise me, here: a **Random entry** button in the filter tools that picks one entry among the current filters (a tag, an era, a person, a mood), not only from the whole journal.
+- [x] Surprise me, here: a **Random entry** button in the filter tools picks one entry among the current filters (a tag, an era, a person, a mood, a search, the diary), not only from the whole journal, opens it on its page of the filtered list without resetting the filters, and offers **Another one** that moves on (`GET /api/entries/random`).
 - [ ] Read like a book: a quiet reader for the current filters or a month, one entry after another with only previous/next, the date and the text, for evenings when you want to reread rather than manage.
 - [ ] Open tasks across the journal: one view listing every unticked `- [ ]` item from Markdown entries, newest first, each with its entry date and a link, ticked off in place.
 - [ ] Print an entry or a day: a clean print layout (date, title, text, pictures) from **More actions**, without the app around it.

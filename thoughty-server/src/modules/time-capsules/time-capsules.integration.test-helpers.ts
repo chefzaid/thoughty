@@ -3,6 +3,7 @@ import { Attachment, CommentLike, Diary, Entry, EntryComment, EntryLike, EntryRe
 import { EntriesCommandService } from '@/modules/entries/entries-command.service';
 import { EntriesQueryService } from '@/modules/entries/entries-query.service';
 import { EntriesService } from '@/modules/entries/entries.service';
+import { EntryRandomService } from '@/modules/entries/entry-random.service';
 import { EntryCalendarService } from '@/modules/entries/entry-calendar.service';
 import { EntryListCacheService } from '@/modules/entries/entry-list-cache.service';
 import { EntryLookupService } from '@/modules/entries/entry-lookup.service';
@@ -45,6 +46,7 @@ export function buildTimeCapsuleBed(dataSource: DataSource) {
     cache,
     new EntryTaskListService(dataSource),
     new EntryCalendarService(entries, search),
+    new EntryRandomService(entries, search),
     timeCapsules,
   );
   const likes = new LikesService(dataSource.getRepository(EntryLike), dataSource.getRepository(CommentLike), comments, entries);

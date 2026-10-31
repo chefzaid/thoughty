@@ -446,6 +446,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/entries/random": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A random entry among the journal filters
+         * @description Picks one entry, every match equally likely, among those the journal list shows with the same filters, and gives the page of that list (at its page size and order) that shows it. Sealed time capsules and entries in the recycle bin are never picked; with `excludeId`, that entry comes back only when it is the only match.
+         */
+        get: operations["EntriesController_getRandomEntry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/entries/first": {
         parameters: {
             query?: never;
@@ -2909,6 +2929,33 @@ export interface components {
             month: string;
             /** @description The month's entries that match the filters, by day and then in each day's order */
             entries: components["schemas"]["EntryCalendarItemDto"][];
+        };
+        /**
+         * @example {
+         *       "id": 42,
+         *       "date": "2024-03-10",
+         *       "index": 1,
+         *       "page": 3
+         *     }
+         */
+        RandomEntryResponseDto: {
+            /** @example 42 */
+            id: number;
+            /**
+             * @description Entry date (YYYY-MM-DD)
+             * @example 2024-03-10
+             */
+            date: string;
+            /**
+             * @description Same-day index, as cross-references use it
+             * @example 1
+             */
+            index: number;
+            /**
+             * @description The page of the filtered journal list, at the requested page size and order, that shows the entry
+             * @example 3
+             */
+            page: number;
         };
         /**
          * @example {
@@ -8504,7 +8551,7 @@ export interface components {
          * @example VALIDATION_FAILED
          * @enum {string}
          */
-        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "TIME_CAPSULE_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
+        ApiErrorCode: "VALIDATION_FAILED" | "UNAUTHORIZED" | "FORBIDDEN" | "NOT_FOUND" | "CONFLICT" | "PAYLOAD_TOO_LARGE" | "RATE_LIMITED" | "SERVICE_UNAVAILABLE" | "BAD_GATEWAY" | "INTERNAL_ERROR" | "AUTH_INVALID_CREDENTIALS" | "AUTH_ACCOUNT_DELETED" | "AUTH_EMAIL_TAKEN" | "AUTH_USERNAME_TAKEN" | "AUTH_INVALID_REQUEST" | "AUTH_INVALID_TOKEN" | "AUTH_GOOGLE_NOT_CONFIGURED" | "AUTH_GOOGLE_INVALID_CREDENTIAL" | "AUTH_GOOGLE_EMAIL_UNVERIFIED" | "AUTH_KEYCLOAK_TOKEN_MISSING" | "AUTH_KEYCLOAK_TOKEN_INVALID" | "AUTH_KEYCLOAK_IDENTITY_INCOMPLETE" | "AUTH_REFRESH_TOKEN_MISSING" | "AUTH_REFRESH_TOKEN_INVALID" | "AUTH_REFRESH_TOKEN_EXPIRED" | "AUTH_SESSION_NOT_FOUND" | "AUTH_SESSION_IS_CURRENT" | "AUTH_CURRENT_REFRESH_TOKEN_REQUIRED" | "USER_NOT_FOUND" | "AUTH_INVALID_PASSWORD" | "AUTH_PASSWORD_REQUIRED" | "AUTH_PASSWORD_NOT_SET" | "AUTH_CURRENT_PASSWORD_INCORRECT" | "AUTH_INVALID_RESET_TOKEN" | "AUTH_INVALID_VERIFICATION_TOKEN" | "EMAIL_DELIVERY_NOT_CONFIGURED" | "AUTH_2FA_PASSWORD_ACCOUNTS_ONLY" | "AUTH_2FA_EMAIL_NOT_VERIFIED" | "AUTH_2FA_ALREADY_ENABLED" | "AUTH_2FA_NOT_ENABLED" | "AUTH_2FA_CODE_NOT_SENT" | "AUTH_2FA_INVALID_CHALLENGE" | "AUTH_INVALID_2FA_CODE" | "AUTH_2FA_CHALLENGE_USED" | "AUTH_2FA_UNAVAILABLE" | "ENTRY_NOT_FOUND" | "ENTRIES_NOT_FOUND" | "ENTRY_PIN_LIMIT_REACHED" | "ENTRY_REVISION_NOT_FOUND" | "ENTRY_TASKS_MARKDOWN_ONLY" | "ENTRY_TASK_CHANGED" | "ENTRY_SEALED" | "ENTRY_NOT_SEALED" | "ENTRY_RANDOM_NO_MATCH" | "TIME_CAPSULE_DATE_INVALID" | "TAG_RENAME_SAME_NAME" | "TAG_NOT_FOUND" | "RECYCLE_BIN_ENTRIES_NOT_FOUND" | "DIARY_NOT_FOUND" | "DIARY_NAME_TAKEN" | "DIARY_DEFAULT_NOT_DELETABLE" | "SETTINGS_RESERVED" | "SAVED_SEARCH_NOT_FOUND" | "SAVED_SEARCH_NAME_TAKEN" | "SAVED_SEARCH_LIMIT_REACHED" | "SHARE_LINK_NOT_FOUND" | "SHARE_LINK_LIMIT_REACHED" | "SHARE_LINK_EXPIRY_INVALID" | "LIFE_ERA_NOT_FOUND" | "LIFE_ERA_NAME_TAKEN" | "LIFE_ERA_LIMIT_REACHED" | "LIFE_ERA_DATES_INVALID" | "PERSON_NOT_FOUND" | "PERSON_MERGE_SAME" | "ATTACHMENT_NOT_FOUND" | "ATTACHMENT_FILE_NOT_FOUND" | "ATTACHMENT_FILE_MISSING" | "ATTACHMENT_TYPE_NOT_ALLOWED" | "ATTACHMENT_TOO_LARGE" | "ATTACHMENT_EXPORT_TOO_LARGE" | "ATTACHMENT_NOT_AUDIO" | "ATTACHMENT_CONTENT_MISMATCH" | "ATTACHMENT_NOT_VIDEO" | "ATTACHMENT_RANGE_NOT_SATISFIABLE" | "TRANSCRIPTION_FAILED" | "IMPORT_CONTENT_REQUIRED" | "IMPORT_FILE_TOO_LARGE" | "IMPORT_TOO_MANY_ENTRIES" | "APP_IMPORT_IN_PROGRESS" | "BOOK_COVER_INVALID" | "BOOK_TOO_LARGE_FOR_VERSION" | "BOOK_VERSION_NOT_FOUND" | "BOOK_SAVED_SEARCH_REQUIRED" | "BOOK_SAVED_SEARCH_SEMANTIC" | "BOOK_PICKED_ENTRIES_REQUIRED" | "BOOK_PICKED_ENTRIES_LIMIT" | "BOOK_PICKED_ENTRIES_UNAVAILABLE" | "BOOK_AI_NARRATIVE_KEY_REQUIRED" | "BOOK_AI_FRAMING_KEY_REQUIRED" | "AI_KEY_NOT_CONFIGURED" | "AI_KEY_REJECTED" | "AI_PERSONAL_KEY_REQUIRED" | "AI_CONTENT_REQUIRED" | "AI_TAGGED_ENTRIES_REQUIRED" | "AI_PROVIDER_FAILED" | "CLOUD_NOT_CONNECTED" | "CLOUD_CONNECTION_EXPIRED" | "CLOUD_UNKNOWN_PROVIDER" | "CLOUD_PROVIDER_NOT_CONFIGURED" | "CLOUD_AUTHORIZATION_REJECTED" | "CLOUD_PROVIDER_FAILED" | "MEMOIR_UNKNOWN_QUESTION" | "MEMOIR_NOT_STARTED" | "MEMOIR_ALREADY_STARTED" | "MEMOIR_DIARY_REQUIRED" | "MEMOIR_ANSWER_EMPTY" | "MEMOIR_ALREADY_ANSWERED" | "ON_THIS_DAY_UNSUBSCRIBE_INVALID" | "EMAIL_UNSUBSCRIBE_INVALID" | "STATS_INVALID_DATE_RANGE" | "REVIEW_YEAR_EMPTY" | "REVIEW_MOOD_UNAVAILABLE" | "SOCIAL_CANNOT_FOLLOW_SELF" | "SOCIAL_CANNOT_LIKE_OWN_ENTRY" | "SOCIAL_CANNOT_LIKE_OWN_COMMENT" | "COMMENT_NOT_FOUND" | "FEATURE_REQUEST_NOT_FOUND";
         /**
          * @example {
          *       "statusCode": 401,
@@ -9896,6 +9943,95 @@ export interface operations {
                      *       "message": "The month is not YYYY-MM, or a filter is invalid",
                      *       "error": "Bad Request",
                      *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+        };
+    };
+    EntriesController_getRandomEntry: {
+        parameters: {
+            query?: {
+                /** @description Full-text search over content and tags, with English and French word forms and accents ignored. Supports "exact phrases" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts. */
+                search?: string;
+                /** @description Comma-separated entry IDs to include, in relevance order */
+                ids?: string;
+                /** @description Comma-separated list of tags to filter by */
+                tags?: string;
+                visibility?: "public" | "private";
+                /** @description Filter by favorites only */
+                favorites?: boolean;
+                /** @description Filter by archive state */
+                archiveStatus?: "all" | "active" | "archived";
+                /** @description Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; "any" for entries with a mood, or "none" for entries without one */
+                mood?: string;
+                /** @description Diary ID */
+                diaryId?: number;
+                /** @description Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing) */
+                eraId?: number;
+                /** @description Person ID: only entries that mention the person */
+                personId?: number;
+                /** @description Order of search results: best match first, or by date as without a search */
+                sort?: "relevance" | "date";
+                /** @description Filter by date (YYYY-MM-DD) */
+                date?: string;
+                limit?: number;
+                /** @description The entry picked last time: another one is picked when the filters match any other, so asking again moves on */
+                excludeId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The picked entry and its page */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "id": 42,
+                     *       "date": "2024-03-10",
+                     *       "index": 1,
+                     *       "page": 3
+                     *     }
+                     */
+                    "application/json": components["schemas"]["RandomEntryResponseDto"];
+                };
+            };
+            /** @description A filter is invalid */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 400,
+                     *       "message": "A filter is invalid",
+                     *       "error": "Bad Request",
+                     *       "code": "VALIDATION_FAILED"
+                     *     }
+                     */
+                    "application/json": components["schemas"]["ApiErrorResponse"];
+                };
+            };
+            /** @description No entry matches the filters */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "statusCode": 404,
+                     *       "message": "No entry matches the filters",
+                     *       "error": "Not Found",
+                     *       "code": "NOT_FOUND"
                      *     }
                      */
                     "application/json": components["schemas"]["ApiErrorResponse"];

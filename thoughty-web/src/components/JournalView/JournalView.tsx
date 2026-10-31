@@ -25,6 +25,7 @@ import { peopleByHandle } from '../../utils/mentions';
 import PersonFilterBanner from './PersonFilterBanner';
 import { usePersonFilterRoute } from './usePersonFilterRoute';
 import { useStartFromEntry } from './useStartFromEntry';
+import RandomEntryButton from './RandomEntryButton';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
 interface ThoughtOfDayProps {
@@ -39,6 +40,7 @@ type EntriesListProps = Omit<ComponentProps<typeof EntriesList>, 'config' | 't' 
 type PaginationProps = Pick<ComponentProps<typeof Pagination>, 'page' | 'totalPages' | 'setPage' | 'inputPage' | 'setInputPage'>;
 type YearMonthNavigatorProps = Pick<ComponentProps<typeof YearMonthNavigator>, 'availableYears' | 'availableMonths' | 'onNavigate'>;
 type DuplicateReviewProps = Omit<ComponentProps<typeof DuplicateReview>, 'theme' | 'language' | 't'>;
+type RandomEntryProps = Pick<ComponentProps<typeof RandomEntryButton>, 'query' | 'listEmpty' | 'onOpen'>;
 
 interface JournalViewProps {
   diaryTabs: DiaryTabsProps;
@@ -49,6 +51,7 @@ interface JournalViewProps {
   pagination: PaginationProps;
   yearMonthNavigator: YearMonthNavigatorProps;
   duplicateReview: DuplicateReviewProps;
+  randomEntry: RandomEntryProps;
   onOpenRecycleBin: () => void;
   /** Opens the profile's life eras. */
   onManageLifeEras: () => void;
@@ -69,6 +72,7 @@ function JournalView({
   pagination,
   yearMonthNavigator,
   duplicateReview,
+  randomEntry,
   onOpenRecycleBin,
   onManageLifeEras,
   onManagePeople,
@@ -147,6 +151,11 @@ function JournalView({
     filters.setPage(1);
     layoutRoute.setLayout('list');
   };
+  /** A random entry opens in the list, on its page among the same filters. */
+  const openRandomEntry = (entryId: number, page: number) => {
+    if (showCalendar) layoutRoute.setLayout('list');
+    randomEntry.onOpen(entryId, page);
+  };
 
   return (
     <MentionPeopleContext.Provider value={mentionPeople}>
@@ -204,6 +213,15 @@ function JournalView({
           onOpenHighlights={() => thoughtOfDay.setOpen(true)}
           actions={(
             <>
+              <RandomEntryButton
+                query={randomEntry.query}
+                listEmpty={randomEntry.listEmpty}
+                onOpen={openRandomEntry}
+                onNotify={onNotify}
+                language={language}
+                theme={config.theme}
+                t={t}
+              />
               <SavedSearches
                 filters={filters}
                 currentDiaryId={diaryTabs.currentDiaryId}

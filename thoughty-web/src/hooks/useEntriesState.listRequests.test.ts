@@ -64,6 +64,24 @@ describe("journal list requests", () => {
     services.fetchDiaries.mockResolvedValue([]);
   });
 
+  it("gives the list's query, which it asks with, sending the search order only with a search", async () => {
+    const list = renderEntries({ config: { entriesPerPage: 5 }, configLoaded: true, filtersReady: true });
+
+    act(() => {
+      list.result.current.setSearchSort("date");
+      list.result.current.setFilterTags(["walks"]);
+      list.result.current.setFilterDateObj(new Date(2024, 2, 9));
+      list.result.current.setFilterVisibility("private");
+    });
+    expect(list.result.current.listQuery).toMatchObject({
+      page: 1, limit: 5, search: "", sort: undefined, filterTags: ["walks"], filterDate: "2024-03-09", filterVisibility: "private",
+    });
+
+    act(() => list.result.current.setSearch("harbor"));
+    expect(list.result.current.listQuery).toMatchObject({ search: "harbor", sort: "date" });
+    await waitFor(() => expect(services.fetchEntries).toHaveBeenLastCalledWith(list.result.current.listQuery));
+  });
+
   it("waits for the config and asks once with the user's page size", async () => {
     const list = renderEntries({ config: {}, configLoaded: false, filtersReady: true });
 

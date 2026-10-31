@@ -42,7 +42,7 @@ flowchart TD
 | Module | Responsibility |
 |---|---|
 | `auth` | SSO exchange, local and Google sign-in, tokens and sessions, email verification, 2FA, password recovery, account deletion |
-| `entries` | entry CRUD (title, time, mood, feelings), full-text search, revisions, tags, visibility, favorites, pins, archive, reordering, task list ticks, backlinks, highlights, the calendar month (`GET /api/entries/calendar?month=YYYY-MM`: short summaries of a month's entries under the same filters as the list, which share `EntryFilterQueryDto` and `applyEntryListFilters`), delete-all |
+| `entries` | entry CRUD (title, time, mood, feelings), full-text search, revisions, tags, visibility, favorites, pins, archive, reordering, task list ticks, backlinks, highlights, the calendar month (`GET /api/entries/calendar?month=YYYY-MM`: short summaries of a month's entries under the same filters as the list, which share `EntryFilterQueryDto` and `applyEntryListFilters`), a random entry among the list's filters (`GET /api/entries/random`: the list query without its page plus `excludeId`, answered with the entry's id, date, index and the page of the filtered list that shows it; PostgreSQL numbers the matches in the list's order with `ROW_NUMBER()` and picks with `ORDER BY random() LIMIT 1`, so only one row leaves the database; sealed capsules are never picked and `ENTRY_RANDOM_NO_MATCH` (404) says nothing matched), delete-all |
 | `recycle-bin` | deleted entries kept for 30 days: list, restore, delete forever, empty, and the hourly purge |
 | `diaries` | diary containers, ordering, default diary, writing goals, moving entries when a diary is deleted |
 | `saved-searches` | named journal filter combinations with their diary scope: list, save, rename, delete, at most 50 per writer |
@@ -186,6 +186,7 @@ Every error the API raises has Nest's usual body plus a stable, machine-readable
 |  | `ENTRY_TASK_CHANGED` | That line is no longer a task. Reload the entry and try again. |
 |  | `ENTRY_SEALED` | This entry is sealed as a time capsule until it opens |
 |  | `ENTRY_NOT_SEALED` | This entry is not sealed |
+|  | `ENTRY_RANDOM_NO_MATCH` | No entry matches these filters |
 |  | `TIME_CAPSULE_DATE_INVALID` | Choose an opening date from tomorrow up to 50 years ahead |
 |  | `TAG_RENAME_SAME_NAME` | New tag name must be different |
 |  | `TAG_NOT_FOUND` | No entries found with that tag |

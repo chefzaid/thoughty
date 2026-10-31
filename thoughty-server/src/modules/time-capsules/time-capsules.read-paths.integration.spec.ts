@@ -87,6 +87,7 @@ describePostgres('PostgreSQL time capsules: every entry read path', () => {
       ]),
       '/api/entries/dates': [() => bed.journal.getDates(writerId)],
       '/api/entries/calendar': [() => bed.journal.getCalendarMonth(writerId, { month: date.slice(0, 7) })],
+      '/api/entries/random': [() => bed.journal.getRandomEntry(writerId, { date }), () => bed.journal.getRandomEntry(writerId, { tags: 'lighthouse-keeper' })],
       '/api/entries/first': [() => bed.journal.getFirstEntry(writerId, { year: date.slice(0, 4), month: date.slice(5, 7) } as never)],
       '/api/entries/by-date': [() => bed.journal.getEntryByDate(writerId, { date, index: 1 } as never), () => bed.journal.getEntryByDate(writerId, { id: sealedId } as never)],
       '/api/entries/highlights': [() => bed.journal.getHighlights(writerId, {})],
@@ -101,6 +102,8 @@ describePostgres('PostgreSQL time capsules: every entry read path', () => {
     // The journal still lists it, as a placeholder that says when it opens
     const listed = (await bed.journal.getEntries(writerId, { page: 1, limit: 50 })).entries.find((entry) => entry.id === sealedId);
     expect(listed).toMatchObject({ content: '', title: null, tags: [], sealed_until: expect.any(Date) });
+    // A random pick never opens it, even when it is the one left after the entry picked last
+    await expect(bed.journal.getRandomEntry(writerId, { excludeId: openId })).resolves.toMatchObject({ id: openId });
     for (const [path, reads] of Object.entries(readers)) {
       for (const read of reads) {
         const answer = await answerOf(read);

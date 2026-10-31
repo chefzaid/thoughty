@@ -156,6 +156,10 @@ export const MockSavedSearches = ({ currentDiaryId, diaries, notify }: {
   </div>
 );
 
+export const MockRandomEntryButton = ({ listEmpty, onOpen }: { listEmpty: boolean; onOpen: (entryId: number, page: number) => void }) => (
+  <button type="button" data-testid="random-entry" data-list-empty={String(listEmpty)} onClick={() => onOpen(7, 3)}>Random entry</button>
+);
+
 export const MockDuplicateReview = ({ diaryId }: { diaryId: number | null }) => (
   <div data-testid="duplicate-review">{diaryId}</div>
 );
@@ -308,6 +312,14 @@ export const createProps = (overrides: PropsOverrides = {}): JournalViewProps =>
       availableMonths: ['January', 'February', 'March'],
       onNavigate: vi.fn(),
     },
+    randomEntry: {
+      query: {
+        page: 1, limit: 10, search: '', filterTags: [], filterDate: '', filterVisibility: '',
+        favorites: false, archiveStatus: 'active', diaryId: 1, entryIds: null,
+      },
+      listEmpty: false,
+      onOpen: vi.fn(),
+    },
     onOpenRecycleBin: vi.fn(),
     onManageLifeEras: vi.fn(),
     onManagePeople: vi.fn(),
@@ -327,5 +339,6 @@ export const createProps = (overrides: PropsOverrides = {}): JournalViewProps =>
     entriesList: { ...base.entriesList, ...overrides.entriesList },
     pagination: { ...base.pagination, ...overrides.pagination },
     yearMonthNavigator: { ...base.yearMonthNavigator, ...overrides.yearMonthNavigator },
+    randomEntry: { ...base.randomEntry, ...overrides.randomEntry },
   };
 };

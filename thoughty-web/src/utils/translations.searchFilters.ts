@@ -21,7 +21,13 @@ export type SearchFiltersTranslationKey =
   | "searchingSemantic"
   | "semanticSearchError"
   | "semanticSearchCount"
-  | "semanticSearchLimited";
+  | "semanticSearchLimited"
+  | "randomEntry"
+  | "randomEntryAnother"
+  | "randomEntryHint"
+  | "randomEntryEmpty"
+  | "randomEntryOpened"
+  | "randomEntryFailed";
 
 export const searchFiltersTranslations: Record<Language, Record<SearchFiltersTranslationKey, string>> = {
   en: {
@@ -46,6 +52,12 @@ export const searchFiltersTranslations: Record<Language, Record<SearchFiltersTra
     semanticSearchCount:
       "Closest matches: {matches}. Entries analyzed: {analyzed}.",
     semanticSearchLimited: "Only the 100 newest entries were analyzed.",
+    randomEntry: "Random entry",
+    randomEntryAnother: "Another one",
+    randomEntryHint: "Open an entry picked at random among the current filters",
+    randomEntryEmpty: "No entry matches these filters, so there is nothing to pick from.",
+    randomEntryOpened: "Showing a random entry from {date}.",
+    randomEntryFailed: "No entry could be picked right now. Try again.",
   },
   fr: {
     searchPlaceholder: "Rechercher...",
@@ -70,5 +82,11 @@ export const searchFiltersTranslations: Record<Language, Record<SearchFiltersTra
       "Résultats proches : {matches}. Entrées analysées : {analyzed}.",
     semanticSearchLimited:
       "Seules les 100 entrées les plus récentes ont été analysées.",
+    randomEntry: "Entrée au hasard",
+    randomEntryAnother: "Une autre",
+    randomEntryHint: "Ouvrir une entrée tirée au hasard parmi les filtres actuels",
+    randomEntryEmpty: "Aucune entrée ne correspond à ces filtres : il n’y a rien à tirer au sort.",
+    randomEntryOpened: "Entrée au hasard du {date}.",
+    randomEntryFailed: "Impossible de tirer une entrée pour le moment. Réessayez.",
   },
 };

@@ -34,6 +34,8 @@ import {
   GetHighlightsQueryDto,
   GetEntryCalendarQueryDto,
   EntryCalendarResponseDto,
+  GetRandomEntryQueryDto,
+  RandomEntryResponseDto,
   DeleteAllQueryDto,
   EntriesListResponseDto,
   EntryDatesResponseDto,
@@ -94,6 +96,25 @@ export class EntriesController {
     @Query() query: GetEntryCalendarQueryDto,
   ): Promise<EntryCalendarResponseDto> {
     return this.entriesService.getCalendarMonth(user.userId, query);
+  }
+
+  @Get('random')
+  @ApiOperation({
+    summary: 'A random entry among the journal filters',
+    description:
+      'Picks one entry, every match equally likely, among those the journal list shows with the same filters, ' +
+      'and gives the page of that list (at its page size and order) that shows it. Sealed time capsules and ' +
+      'entries in the recycle bin are never picked; with `excludeId`, that entry comes back only when it is ' +
+      'the only match.',
+  })
+  @ApiResponse({ status: 200, description: 'The picked entry and its page', type: RandomEntryResponseDto })
+  @ApiResponse({ status: 400, description: 'A filter is invalid' })
+  @ApiResponse({ status: 404, description: 'No entry matches the filters' })
+  async getRandomEntry(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetRandomEntryQueryDto,
+  ): Promise<RandomEntryResponseDto> {
+    return this.entriesService.getRandomEntry(user.userId, query);
   }
 
   @Get('first')

@@ -103,6 +103,10 @@ export function createRoutesParams(
       filterVisibility: 'all',
       groupedEntries: {},
       inputPage: '1',
+      listQuery: {
+        page: 1, limit: 10, search: '', filterTags: [], filterDate: '', filterVisibility: '',
+        favorites: false, archiveStatus: 'active', diaryId: null, entryIds: null,
+      },
       loading: false,
       page: 1,
       rankedResults: false,
@@ -201,6 +205,7 @@ export function createRoutesParams(
     entryNavigationState: {
       handleBackToSource: vi.fn().mockResolvedValue(undefined),
       handleNavigateToEntry: vi.fn().mockResolvedValue(undefined),
+      handleOpenEntryInList: vi.fn(),
       handleShareEntry: vi.fn().mockResolvedValue(true),
     },
     handleDiscuss: vi.fn(),

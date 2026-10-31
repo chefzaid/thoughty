@@ -34,6 +34,7 @@ export const CONTRACT_SUITES = {
     'POST /api/entries',
     'GET /api/entries/dates',
     'GET /api/entries/calendar',
+    'GET /api/entries/random',
     'GET /api/entries/first',
     'GET /api/entries/by-date',
     'GET /api/entries/highlights',

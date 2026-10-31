@@ -179,6 +179,25 @@ describeContract('entries', (context) => {
     ).toEqual([ids.reference]);
   });
 
+  it('picks a random entry among the list filters, with its page, and moves on from the last one', async () => {
+    const { alice, bob } = context;
+    const random = (as: typeof alice, overrides: Record<string, string>, status: number) => {
+      const query = journalQuery(overrides);
+      query.delete('page');
+      const code = ({ 400: 'VALIDATION_FAILED', 404: 'ENTRY_RANDOM_NO_MATCH' } as const)[status as 400 | 404];
+      return call('GET /api/entries/random', { as, query, status, code });
+    };
+    const walks = await random(alice, { tags: 'walks', limit: '1' }, 200);
+    expect([ids.walk, ids.second]).toContain((walks.body as { id: number }).id);
+    expect(walks.body).toMatchObject({ date: '2024-03-10', page: expect.any(Number) });
+    const next = await random(alice, { tags: 'walks', excludeId: String((walks.body as { id: number }).id) }, 200);
+    expect((next.body as { id: number }).id).not.toBe((walks.body as { id: number }).id);
+    expect((await random(alice, { tags: 'river' }, 200)).body).toMatchObject({ id: ids.walk, index: 1, page: 1 });
+    await random(alice, { tags: 'river', favorites: 'true' }, 404);
+    await random(bob, { tags: 'river' }, 404);
+    await random(alice, { excludeId: 'last' }, 400);
+  });
+
   it('edits an entry, keeps its revisions and refuses another writer’s', async () => {
     const { alice, bob } = context;
     const update = {

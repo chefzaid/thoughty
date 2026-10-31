@@ -12,8 +12,8 @@ import {
 } from './dto';
 import { toEntryResponse } from './entry-response.mapper';
 import { addSameDayOrder } from '@/common/utils';
-import { applyEntryListFilters, parseEntryIdsFilter } from './entry-list-filters';
-import { EntrySearchService, type PreparedEntrySearch } from './entry-search.service';
+import { applyEntryListFilters, entrySearchRank, parseEntryIdsFilter } from './entry-list-filters';
+import { EntrySearchService } from './entry-search.service';
 import { ENTRY_WORDS_SQL } from '@/modules/stats/stats-sql';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
@@ -90,10 +90,7 @@ export class EntriesQueryService {
     }
 
     if (prepared?.kind === 'text') {
-      qb.addSelect(this.searchRankExpression(prepared), 'search_rank');
-      if (prepared.exactQuery) {
-        qb.setParameter('exactQuery', prepared.exactQuery);
-      }
+      qb.addSelect(entrySearchRank(qb, prepared), 'search_rank');
     }
 
     if (date) {
@@ -147,18 +144,6 @@ export class EntriesQueryService {
       totalPages: Math.ceil(total / limit),
       allTags,
     };
-  }
-
-  /**
-   * Relevance of an entry to the search: tag matches weigh more than content matches, and
-   * ts_rank's normalization 1 keeps long entries from winning by length alone. Entries that
-   * hold the last word whole rank above those that only hold a longer word it starts.
-   */
-  private searchRankExpression(prepared: Extract<PreparedEntrySearch, { kind: 'text' }>): string {
-    const matchRank = 'ts_rank(e.search_vector, CAST(:searchQuery AS tsquery), 1)';
-    return prepared.exactQuery
-      ? `${matchRank} + ts_rank(e.search_vector, CAST(:exactQuery AS tsquery), 1)`
-      : matchRank;
   }
 
   async getDates(userId: number): Promise<{ dates: string[] }> {

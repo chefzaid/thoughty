@@ -93,3 +93,21 @@ export function applyEntryListFilters(
     qb.andWhere('EXISTS (SELECT 1 FROM entry_people ep WHERE ep.entry_id = e.id AND ep.person_id = :personId)', { personId });
   }
 }
+
+/**
+ * The relevance of an entry to a word search, as the journal list ranks results: tag matches weigh more
+ * than content matches, and ts_rank's normalization 1 keeps long entries from winning by length alone.
+ * Entries that hold the last word whole rank above those that only hold a longer word it starts. It reads
+ * the `searchQuery` parameter `applyEntryListFilters` sets, and sets `exactQuery` on the query when needed.
+ */
+export function entrySearchRank(
+  qb: SelectQueryBuilder<Entry>,
+  prepared: Extract<PreparedEntrySearch, { kind: 'text' }>,
+): string {
+  const matchRank = 'ts_rank(e.search_vector, CAST(:searchQuery AS tsquery), 1)';
+  if (!prepared.exactQuery) {
+    return matchRank;
+  }
+  qb.setParameter('exactQuery', prepared.exactQuery);
+  return `${matchRank} + ts_rank(e.search_vector, CAST(:exactQuery AS tsquery), 1)`;
+}

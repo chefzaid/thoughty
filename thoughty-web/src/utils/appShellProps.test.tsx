@@ -100,6 +100,10 @@ describe('appShellProps', () => {
         filterVisibility: 'all',
         groupedEntries: {},
         inputPage: '1',
+        listQuery: {
+          page: 1, limit: 10, search: '', filterTags: [], filterDate: '', filterVisibility: '',
+          favorites: false, archiveStatus: 'active', diaryId: null, entryIds: null,
+        },
         loading: false,
         page: 1,
         rankedResults: true,
@@ -212,5 +216,6 @@ describe('appShellProps', () => {
     expect(props.journalRouteProps.entriesList.onCancelEdit).toBe(handleCancelEdit);
     expect(props.journalRouteProps.entriesList.rankedOrder).toBe(true);
     expect(props.journalRouteProps.filters.searchSort).toBe('date');
+    expect(props.journalRouteProps.randomEntry).toMatchObject({ listEmpty: true, query: { page: 1, limit: 10 } });
   });
 });

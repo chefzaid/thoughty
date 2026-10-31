@@ -1733,6 +1733,218 @@
         ]
       }
     },
+    "/api/entries/random": {
+      "get": {
+        "description": "Picks one entry, every match equally likely, among those the journal list shows with the same filters, and gives the page of that list (at its page size and order) that shows it. Sealed time capsules and entries in the recycle bin are never picked; with `excludeId`, that entry comes back only when it is the only match.",
+        "operationId": "EntriesController_getRandomEntry",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Full-text search over content and tags, with English and French word forms and accents ignored. Supports \"exact phrases\" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts.",
+            "schema": {
+              "maxLength": 500,
+              "example": "\"morning run\" -rain OR swim",
+              "type": "string"
+            }
+          },
+          {
+            "name": "ids",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated entry IDs to include, in relevance order",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated list of tags to filter by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "visibility",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "public",
+                "private"
+              ]
+            }
+          },
+          {
+            "name": "favorites",
+            "required": false,
+            "in": "query",
+            "description": "Filter by favorites only",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "archiveStatus",
+            "required": false,
+            "in": "query",
+            "description": "Filter by archive state",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "active",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "mood",
+            "required": false,
+            "in": "query",
+            "description": "Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; \"any\" for entries with a mood, or \"none\" for entries without one",
+            "schema": {
+              "example": "4,5",
+              "type": "string"
+            }
+          },
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "eraId",
+            "required": false,
+            "in": "query",
+            "description": "Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing)",
+            "schema": {
+              "example": 3,
+              "type": "number"
+            }
+          },
+          {
+            "name": "personId",
+            "required": false,
+            "in": "query",
+            "description": "Person ID: only entries that mention the person",
+            "schema": {
+              "example": 12,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "description": "Order of search results: best match first, or by date as without a search",
+            "schema": {
+              "default": "relevance",
+              "type": "string",
+              "enum": [
+                "relevance",
+                "date"
+              ]
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Filter by date (YYYY-MM-DD)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "excludeId",
+            "required": false,
+            "in": "query",
+            "description": "The entry picked last time: another one is picked when the filters match any other, so asking again moves on",
+            "schema": {
+              "example": 42,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The picked entry and its page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RandomEntryResponseDto"
+                },
+                "example": {
+                  "id": 42,
+                  "date": "2024-03-10",
+                  "index": 1,
+                  "page": 3
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A filter is invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "A filter is invalid",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No entry matches the filters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No entry matches the filters",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "A random entry among the journal filters",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
     "/api/entries/first": {
       "get": {
         "operationId": "EntriesController_getFirstEntry",
@@ -12558,6 +12770,42 @@
           ]
         }
       },
+      "RandomEntryResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number",
+            "example": 42
+          },
+          "date": {
+            "type": "string",
+            "description": "Entry date (YYYY-MM-DD)",
+            "example": "2024-03-10"
+          },
+          "index": {
+            "type": "number",
+            "description": "Same-day index, as cross-references use it",
+            "example": 1
+          },
+          "page": {
+            "type": "number",
+            "description": "The page of the filtered journal list, at the requested page size and order, that shows the entry",
+            "example": 3
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "index",
+          "page"
+        ],
+        "example": {
+          "id": 42,
+          "date": "2024-03-10",
+          "index": 1,
+          "page": 3
+        }
+      },
       "FirstEntryResponseDto": {
         "type": "object",
         "properties": {
@@ -21679,6 +21927,7 @@
           "ENTRY_TASK_CHANGED",
           "ENTRY_SEALED",
           "ENTRY_NOT_SEALED",
+          "ENTRY_RANDOM_NO_MATCH",
           "TIME_CAPSULE_DATE_INVALID",
           "TAG_RENAME_SAME_NAME",
           "TAG_NOT_FOUND",

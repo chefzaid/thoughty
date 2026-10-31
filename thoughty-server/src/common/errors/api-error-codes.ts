@@ -67,6 +67,7 @@ export const API_ERROR_MESSAGES = {
   ENTRY_TASK_CHANGED: 'That line is no longer a task. Reload the entry and try again.',
   ENTRY_SEALED: 'This entry is sealed as a time capsule until it opens',
   ENTRY_NOT_SEALED: 'This entry is not sealed',
+  ENTRY_RANDOM_NO_MATCH: 'No entry matches these filters',
   TIME_CAPSULE_DATE_INVALID: 'Choose an opening date from tomorrow up to 50 years ahead',
   TAG_RENAME_SAME_NAME: 'New tag name must be different',
   TAG_NOT_FOUND: 'No entries found with that tag',

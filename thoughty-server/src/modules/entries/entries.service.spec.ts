@@ -6,6 +6,7 @@ import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
 import { EntryCalendarService } from './entry-calendar.service';
+import { EntryRandomService } from './entry-random.service';
 import type { Entry } from '@/database/entities';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
@@ -41,6 +42,7 @@ describe('EntriesService', () => {
   let entryTaskListService: Record<string, jest.Mock>;
   let timeCapsuleService: Record<string, jest.Mock>;
   let entryCalendarService: Record<string, jest.Mock>;
+  let entryRandomService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
     entriesQueryService = {
@@ -84,6 +86,10 @@ describe('EntriesService', () => {
       getMonth: jest.fn(),
     };
 
+    entryRandomService = {
+      pick: jest.fn(),
+    };
+
     timeCapsuleService = {
       openEarly: jest.fn(),
     };
@@ -97,6 +103,7 @@ describe('EntriesService', () => {
         { provide: EntryListCacheService, useValue: entryListCacheService },
         { provide: EntryTaskListService, useValue: entryTaskListService },
         { provide: EntryCalendarService, useValue: entryCalendarService },
+        { provide: EntryRandomService, useValue: entryRandomService },
         { provide: TimeCapsuleService, useValue: timeCapsuleService },
       ],
     }).compile();
@@ -125,6 +132,15 @@ describe('EntriesService', () => {
 
     await expect(service.getEntries(1, { page: 1, limit: 10 })).resolves.toBe(expected);
     expect(entriesQueryService.getEntries).not.toHaveBeenCalled();
+  });
+
+  it('delegates the random entry to EntryRandomService without the list cache', async () => {
+    const expected = { id: 4, date: '2026-10-02', index: 1, page: 2 };
+    entryRandomService.pick.mockResolvedValue(expected);
+
+    await expect(service.getRandomEntry(1, { tags: 'walks', excludeId: 3 })).resolves.toBe(expected);
+    expect(entryRandomService.pick).toHaveBeenCalledWith(1, { tags: 'walks', excludeId: 3 });
+    expect(entryListCacheService.getOrLoad).not.toHaveBeenCalled();
   });
 
   it('delegates the calendar month to EntryCalendarService without the list cache', async () => {

@@ -10,6 +10,8 @@ import {
   GetHighlightsQueryDto,
   GetEntryCalendarQueryDto,
   EntryCalendarResponseDto,
+  GetRandomEntryQueryDto,
+  RandomEntryResponseDto,
   BulkOperationDto,
   EntriesListResponseDto,
   EntryBacklinksResponseDto,
@@ -24,6 +26,7 @@ import { EntriesCommandService } from './entries-command.service';
 import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
 import { EntryCalendarService } from './entry-calendar.service';
+import { EntryRandomService } from './entry-random.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
 @Injectable()
@@ -35,6 +38,7 @@ export class EntriesService {
     private readonly entryListCacheService: EntryListCacheService,
     private readonly entryTaskListService: EntryTaskListService,
     private readonly entryCalendarService: EntryCalendarService,
+    private readonly entryRandomService: EntryRandomService,
     private readonly timeCapsuleService: TimeCapsuleService,
   ) {}
 
@@ -50,6 +54,10 @@ export class EntriesService {
 
   async getCalendarMonth(userId: number, query: GetEntryCalendarQueryDto): Promise<EntryCalendarResponseDto> {
     return this.entryCalendarService.getMonth(userId, query);
+  }
+
+  async getRandomEntry(userId: number, query: GetRandomEntryQueryDto): Promise<RandomEntryResponseDto> {
+    return this.entryRandomService.pick(userId, query);
   }
 
   async getFirstEntry(

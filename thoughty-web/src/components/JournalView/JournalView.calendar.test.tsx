@@ -18,6 +18,7 @@ vi.mock('../YearMonthNavigator/YearMonthNavigator', async () => ({ default: (awa
 vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockBackToTopButton }));
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
 vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import('./JournalView.test-helpers')).MockSavedSearches }));
+vi.mock('./RandomEntryButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockRandomEntryButton }));
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 vi.mock('../People/usePeople', async () => ({ usePeopleList: (await import('./JournalView.test-helpers')).mockUsePeopleList }));
 
@@ -74,6 +75,21 @@ describe('JournalView calendar layout', () => {
     fireEvent.click(screen.getByRole('button', { name: 'journalLayoutList' }));
     expect(location()).toBe('?diary=1');
     expect(screen.getByTestId('entries-list')).toBeInTheDocument();
+  });
+
+  it('opens a random entry in the list, from the calendar too, among the same filters', () => {
+    const props = createProps({ randomEntry: { listEmpty: true } });
+    renderJournal(props, '?diary=1&layout=calendar&month=2019-07');
+
+    expect(screen.getByTestId('random-entry')).toHaveAttribute('data-list-empty', 'true');
+    fireEvent.click(screen.getByTestId('random-entry'));
+    expect(props.randomEntry.onOpen).toHaveBeenCalledWith(7, 3);
+    expect(location()).toBe('?diary=1');
+    expect(screen.getByTestId('entries-list')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('random-entry'));
+    expect(props.randomEntry.onOpen).toHaveBeenCalledTimes(2);
+    expect(location()).toBe('?diary=1');
   });
 
   it('opens a calendar link on its month and moves between months in place', () => {

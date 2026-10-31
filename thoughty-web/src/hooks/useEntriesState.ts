@@ -7,6 +7,8 @@ import { compareSameDayEntries, reassignSameDayIndexes } from '../utils/entryTim
 import type { MoodFilter } from '../utils/entryMood';
 import { setTaskLine } from '../utils/taskList';
 import type { Notifier } from './useAppNotice';
+import type { EntryListQuery } from '../services/api/entryListQuery';
+import { formatEntryDate } from '../utils/entryDate';
 import { PEOPLE_QUERY_KEY } from '../utils/mentions';
 
 export type EntrySearchMode = 'keyword' | 'semantic';
@@ -92,52 +94,30 @@ export const useEntries = (
   /** Keyword results are shown in the server's order (best match first) instead of grouped by day. */
   const rankedResults = effectiveKeywordSearch.trim() !== '' && searchSort === 'relevance';
 
-  const entriesQueryKey = useMemo(() => [
-    'app',
-    ENTRIES_QUERY_KEY,
-    {
-      page,
-      limit: getLimit(),
-      search: effectiveKeywordSearch,
-      searchSort: effectiveKeywordSearch.trim() ? searchSort : null,
-      semanticEntryIds,
-      filterTags,
-      filterDate: filterDateObj
-        ? `${filterDateObj.getFullYear()}-${String(filterDateObj.getMonth() + 1).padStart(2, '0')}-${String(filterDateObj.getDate()).padStart(2, '0')}`
-        : '',
-      filterVisibility,
-      filterFavorites,
-      filterArchiveStatus,
-      filterMood,
-      filterEraId,
-      filterPersonId,
-      currentDiaryId,
-    },
-  ] as const, [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterEraId, filterFavorites, filterMood, filterPersonId, filterTags, filterVisibility, getLimit, page, searchSort, semanticEntryIds]);
+  /** The list's page and filters, as `GET /api/entries` reads them; the random entry picks among the same. */
+  const listQuery = useMemo((): EntryListQuery => ({
+    page,
+    limit: getLimit(),
+    search: effectiveKeywordSearch,
+    // Sent only with a search, so changing it alone does not read the list again
+    sort: effectiveKeywordSearch.trim() ? searchSort : undefined,
+    filterTags,
+    filterDate: filterDateObj ? formatEntryDate(filterDateObj) : '',
+    filterVisibility: filterVisibility === 'all' ? '' : filterVisibility,
+    favorites: filterFavorites,
+    archiveStatus: filterArchiveStatus,
+    mood: filterMood,
+    eraId: filterEraId,
+    personId: filterPersonId,
+    diaryId: currentDiaryId,
+    entryIds: semanticEntryIds,
+  }), [currentDiaryId, effectiveKeywordSearch, filterArchiveStatus, filterDateObj, filterEraId, filterFavorites, filterMood, filterPersonId, filterTags, filterVisibility, getLimit, page, searchSort, semanticEntryIds]);
+  const entriesQueryKey = useMemo(() => ['app', ENTRIES_QUERY_KEY, listQuery] as const, [listQuery]);
 
   const entriesQuery = useQuery({
     queryKey: entriesQueryKey,
     queryFn: async (): Promise<{ entries: Entry[]; totalPages: number; allTags: string[] }> => {
-      const filterDate = filterDateObj
-        ? `${filterDateObj.getFullYear()}-${String(filterDateObj.getMonth() + 1).padStart(2, '0')}-${String(filterDateObj.getDate()).padStart(2, '0')}`
-        : '';
-
-      const result = await entriesService.fetchEntries({
-        page,
-        limit: getLimit(),
-        search: effectiveKeywordSearch,
-        sort: searchSort,
-        filterTags,
-        filterDate,
-        filterVisibility: filterVisibility === 'all' ? '' : filterVisibility,
-        favorites: filterFavorites,
-        archiveStatus: filterArchiveStatus,
-        mood: filterMood,
-        eraId: filterEraId,
-        personId: filterPersonId,
-        diaryId: currentDiaryId,
-        entryIds: semanticEntryIds,
-      });
+      const result = await entriesService.fetchEntries(listQuery);
 
       return result ?? { entries: [], totalPages: 1, allTags: [] };
     },
@@ -426,6 +406,7 @@ export const useEntries = (
 
   return {
     entries,
+    listQuery,
     setEntries,
     groupedEntries,
     loading,
