@@ -103,12 +103,14 @@ describe('FocusMode', () => {
         await user.tab();
         expect(screen.getByLabelText('Session goal in words')).toHaveFocus();
         await user.tab();
+        expect(screen.getByLabelText('Timed sprint')).toHaveFocus();
+        await user.tab();
         expect(screen.getByRole('button', { name: 'Done' })).toHaveFocus();
         await user.tab();
         expect(screen.getByRole('textbox', { name: 'Entry text' })).toHaveFocus();
         await user.keyboard('{ArrowLeft}');
 
-        expect(journalShortcut.mock.calls.map(([event]) => (event as KeyboardEvent).key)).toEqual(['Tab', 'Tab', 'Tab']);
+        expect(journalShortcut.mock.calls.map(([event]) => (event as KeyboardEvent).key)).toEqual(['Tab', 'Tab', 'Tab', 'Tab']);
         document.removeEventListener('keydown', journalShortcut);
     });
 

@@ -499,7 +499,7 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 - [x] Undo after delete: deleting an entry (alone or in bulk) shows a toast "Entry moved to the recycle bin · Undo" ("3 entries…" in bulk) for 10 seconds, pausing while hovered or focused, and Undo puts exactly those entries back where they were in their day (`inPlace` restore); delete all entries keeps the recycle bin's Restore all instead of an undo.
 - [ ] Reply to your past self: **Write a reply** on any older entry opens the composer with a short quote of it and a `[[date#n]]` link, so the two entries show each other in their backlinks.
 - [ ] Prompt cards without AI: a deck of short, hand-written questions by theme (gratitude, decisions, people, places, small joys), **Draw a card** in the composer, never repeating a card until the deck is used up. Costs nothing and works without an AI key.
-- [ ] Timed sprints in focus mode: next to the word goal, a 5/10/15-minute timer that ends with a gentle "time's up — keep going or stop here" instead of a sound.
+- [x] Timed sprints in focus mode: next to the word goal, an Off/5/10/15-minute sprint (last length remembered in the browser) with a quiet mm:ss countdown on the wall clock, one announcement at halfway and at the end, and a gentle "Time's up — keep going or stop here" note with the sprint's word count instead of a sound.
 - [x] Start from an entry: **More actions › Use as a starting point** on an entry copies its text (tasks unticked, inline pictures as alt text), tags and format into a new draft with the default visibility, for recurring things like a weekly plan or a packing list; it scrolls to and focuses the composer, and asks before replacing a draft.
 
 ### Rereading and remembering

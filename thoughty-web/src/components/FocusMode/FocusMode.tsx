@@ -5,11 +5,14 @@ import type { FontFamilyPreference, TranslationFunction } from '../../types';
 import { normalizeFontSize, resolveFontColor, resolveFontFamily } from '../../types/config';
 import { countEntryWords } from '../../utils/entryMetrics';
 import { resolveLanguage } from '../../utils/language';
+import { pluralPhrase } from '../../utils/pluralPhrase';
 import MentionSuggestions from '../People/MentionSuggestions';
 import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
 import { belowCaretLine, centerCaretLine } from './typewriter';
 import { isFocusModeShortcut } from './focusModeShortcut';
 import { MAX_WORD_GOAL, parseWordGoal, readSavedGoal, saveGoal, wordsPhrase } from './focusModeSession';
+import { SprintCountdown, SprintEndNotice, SprintPicker } from './FocusSprint';
+import { useFocusSprint } from './useFocusSprint';
 import './FocusMode.css';
 
 /** The writing text is larger than the base size, as on a page held at reading distance. */
@@ -30,8 +33,9 @@ interface FocusModeProps {
 }
 
 /**
- * Full-screen, distraction-free writing: only the text, a live word count, and an optional word
- * goal for the session. The caret's line stays near the middle of the screen (typewriter scrolling).
+ * Full-screen, distraction-free writing: only the text, a live word count, an optional word goal
+ * for the session, and an optional timed sprint that ends with a quiet note instead of a sound.
+ * The caret's line stays near the middle of the screen (typewriter scrolling).
  * Typing `@` offers the writer's people as in the composer, in a list just under the caret's line.
  * Esc, the Done button, or the shortcut leave it, and the text stays in the composer or editor.
  */
@@ -103,12 +107,20 @@ export default function FocusMode({
     }, []);
 
     const words = countEntryWords(text);
+    const sprint = useFocusSprint(words);
+    const uiLanguage = resolveLanguage(language);
     const goal = parseWordGoal(goalInput);
     const written = Math.max(0, words - wordsAtStart);
     const reached = goal !== null && written >= goal;
     const progressText = goal === null
         ? ''
         : t('focusModeGoalProgress', { written: written.toLocaleString(language), goal: goal.toLocaleString(language) });
+    const sprintWordsText = pluralPhrase(t, 'focusModeSprintWords', sprint.wordsInSprint, uiLanguage);
+    const sprintAnnouncement = {
+        running: '',
+        halfway: t('focusModeSprintHalfway'),
+        ended: `${t('focusModeSprintEnded')}. ${sprintWordsText}`,
+    }[sprint.stage ?? 'running'];
 
     const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
         if (isFocusModeShortcut(event)) {
@@ -133,7 +145,10 @@ export default function FocusMode({
         >
             <header className="focus-mode-bar">
                 <h2 id={titleId} className="focus-mode-title">{t('focusMode')}</h2>
-                <p className="focus-mode-count">{wordsPhrase(t, words, language)}</p>
+                <div className="focus-mode-stats">
+                    <p className="focus-mode-count">{wordsPhrase(t, words, language)}</p>
+                    {sprint.sprint && <SprintCountdown key={sprint.sprint.startedAt} sprint={sprint.sprint} t={t} />}
+                </div>
                 <div className="focus-mode-goal">
                     <label htmlFor={goalId}>{t('focusModeGoalLabel')}</label>
                     <input
@@ -151,6 +166,7 @@ export default function FocusMode({
                         }}
                     />
                 </div>
+                <SprintPicker minutes={sprint.minutes} onChoose={sprint.choose} language={uiLanguage} t={t} />
                 <button type="button" className="focus-mode-done" onClick={onClose} title={t('focusModeLeave')}>
                     {t('focusModeDone')}
                 </button>
@@ -181,11 +197,24 @@ export default function FocusMode({
                     suggestions={mentions.suggestions}
                     placement={suggestionsPlacement}
                     theme={theme}
-                    language={resolveLanguage(language)}
+                    language={uiLanguage}
                     t={t}
                 />
             </div>
             <footer className="focus-mode-footer">
+                {sprint.stage === 'ended' && (
+                    <SprintEndNotice
+                        words={sprint.wordsInSprint}
+                        onKeepGoing={() => {
+                            sprint.keepGoing();
+                            // The notice and its buttons go; writing picks up where the caret was
+                            textareaRef.current?.focus();
+                        }}
+                        onStop={onClose}
+                        language={uiLanguage}
+                        t={t}
+                    />
+                )}
                 <p id={`${titleId}-hint`} className="focus-mode-hint">{t('focusModeHint')}</p>
                 {goal !== null && (
                     <div className="focus-mode-progress">
@@ -205,6 +234,8 @@ export default function FocusMode({
                 )}
                 {/* Announced once when the goal is reached, never on every word */}
                 <p role="status" className="focus-mode-reached">{reached ? t('focusModeGoalReached') : ''}</p>
+                {/* The sprint's halfway point and end, each said once; the countdown itself stays quiet */}
+                <p role="status" className="focus-mode-sprint-status sr-only">{sprintAnnouncement}</p>
             </footer>
         </div>,
         document.body,
