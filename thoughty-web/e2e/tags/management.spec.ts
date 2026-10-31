@@ -1,5 +1,6 @@
 import { expect, test } from '../support/test';
 
+import { pauseClock } from '../support/clock';
 import { setupMockApp } from '../support/mockApp';
 
 test.describe('Tag management', () => {
@@ -35,7 +36,7 @@ test.describe('Tag management', () => {
     const focusNameInput = page.getByLabel('Name focus');
     await focusNameInput.fill('focus-updated');
     // Freeze time so the confirmation cannot expire before it is asserted.
-    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+    await pauseClock(page);
     await page.getByRole('button', { name: 'Save Changes' }).click();
 
     await expect(page.getByRole('status').filter({ hasText: 'Settings saved successfully' })).toBeVisible();

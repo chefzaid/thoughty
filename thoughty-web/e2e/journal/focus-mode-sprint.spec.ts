@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { test, expect, type Page } from '../support/test';
+import { pauseClock } from '../support/clock';
 import { setupMockApp } from '../support/mockApp';
 
 const MINUTE = 60_000;
@@ -22,6 +23,8 @@ test.describe('Focus mode timed sprints', () => {
     await setupMockApp(page, { startAuthenticated: true });
     await page.goto('/journal');
     await page.locator('form').first().locator('textarea').fill('Before the sprint.');
+    // The sprint starts on a stopped clock, so the countdown reads exactly what runFor moved it by
+    await pauseClock(page);
     const { form, dialog } = await openFocusMode(page);
 
     await dialog.getByLabel('Timed sprint').selectOption({ label: '5 minutes' });
@@ -59,6 +62,8 @@ test.describe('Focus mode timed sprints', () => {
     await page.clock.install();
     await setupMockApp(page, { startAuthenticated: true, config: { theme: 'light' } });
     await page.goto('/journal');
+    await page.locator('form').first().locator('textarea').waitFor();
+    await pauseClock(page);
 
     let { dialog } = await openFocusMode(page);
     await dialog.getByLabel('Timed sprint').selectOption({ label: '10 minutes' });
@@ -75,6 +80,8 @@ test.describe('Focus mode timed sprints', () => {
 
     const notice = dialog.getByRole('region', { name: "Time's up — keep going or stop here" });
     await expect(notice).toContainText('4 words written in this sprint');
+    // axe schedules its checks with setTimeout, so it only finishes once time flows again
+    await page.clock.resume();
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
       .include('.focus-mode')

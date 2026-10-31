@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '../support/test';
 
+import { pauseClock } from '../support/clock';
 import { setupMockApp } from '../support/mockApp';
 import type { MockEntry } from '../support/mockApp.shared';
 
@@ -72,6 +73,9 @@ test.describe('Undo after delete', () => {
     await page.clock.install();
     const { state } = await setupMockApp(page, { startAuthenticated: true, initialEntries: entries });
     await page.goto('/journal');
+    await page.locator(`#entry-${morning.id}`).getByLabel('More actions').waitFor();
+    // Undo's countdown starts on a stopped clock, so only runFor moves it
+    await pauseClock(page);
 
     await deleteWithPointer(page, morning.id);
     await expect(undoButton(page)).toBeVisible();
@@ -102,8 +106,12 @@ test.describe('Undo after delete', () => {
 
     await expect(undoButton(page)).toBeFocused();
     await expect(page.getByText(evening.content)).toHaveCount(0);
+    // Undo waits while it has focus. The clock stops only now: React Query hands the journal its
+    // answers on setTimeout, so the deleted entry would stay on screen on a stopped clock.
+    await pauseClock(page);
     await page.clock.runFor(60_000);
     await expect(undoButton(page)).toBeFocused();
+    await page.clock.resume();
 
     await page.keyboard.press('Enter');
     await expect(page.getByRole('alert')).toHaveText('1 entry back in your journal.');

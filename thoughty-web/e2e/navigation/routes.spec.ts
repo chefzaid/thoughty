@@ -1,4 +1,5 @@
 import { test, expect } from '../support/test';
+import { pauseClock } from '../support/clock';
 import { setupMockApp } from '../support/mockApp';
 import { fulfillJson } from '../support/mockApp.route-utils';
 
@@ -89,7 +90,7 @@ test.describe('Route navigation', () => {
 
     await page.goto('/journal?entry=999');
     await lookupRequested;
-    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+    await pauseClock(page);
     lookupsReleased = true;
     heldLookups.forEach((answer) => answer());
 
