@@ -55,6 +55,7 @@ interface EntryViewModeProps {
     onDiscuss?: (entry: Entry) => void;
     onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
     onSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
+    onUseAsStartingPoint?: (entry: Entry) => void;
     searchTerm?: string;
     showDiaryLabel: boolean;
     tagMetadata: TagMetadataMap;
@@ -105,6 +106,7 @@ function OpenEntryViewMode({
     onDiscuss,
     onRephrase,
     onSummarize,
+    onUseAsStartingPoint,
     searchTerm,
     showDiaryLabel,
     tagMetadata,
@@ -238,6 +240,7 @@ function OpenEntryViewMode({
                         onSharePrivately={() => setSharePrivatelyOpen(true)}
                         onToggleHistory={onFetchHistory ? handleToggleHistory : undefined}
                         onSummarize={onSummarize ? () => setSummaryOpen(true) : undefined}
+                        onUseAsStartingPoint={onUseAsStartingPoint ? () => onUseAsStartingPoint(entry) : undefined}
                         onToggleArchived={() => onToggleArchived(entry)}
                         onDelete={() => onDelete(entry.id)}
                         t={t}

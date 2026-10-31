@@ -30,6 +30,15 @@ export function inlineImageMarkdown(target: number | string, alt: string): strin
   return `![${escaped}](${ATTACHMENT_SCHEME}${destination})`;
 }
 
+/**
+ * Each inline image replaced by its alt text, as the server does for readers who cannot see the
+ * attachment: still escaped in Markdown, without its escapes in plain text. A picture with no alt
+ * text leaves nothing.
+ */
+export function inlineImagesToAltText(text: string, format: 'plain' | 'markdown'): string {
+  return text.replaceAll(INLINE_IMAGE, (_raw: string, alt: string) => (format === 'markdown' ? alt : alt.replaceAll(/\\(.)/g, '$1')));
+}
+
 function decodedName(target: string): string | null {
   if (ATTACHMENT_ID.test(target)) return null;
   try {

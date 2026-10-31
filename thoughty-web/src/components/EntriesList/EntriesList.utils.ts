@@ -105,3 +105,16 @@ export function groupRankedEntries(entries: readonly Entry[]): EntryDisplayGroup
     }
     return groups;
 }
+
+/** Whether the entries come from more than one diary, so each card names its diary. */
+export function spansSeveralDiaries(entries: readonly Entry[]): boolean {
+    const diaryKeys = new Set<string>();
+    for (const entry of entries) {
+        if (entry.diary_id !== undefined && entry.diary_id !== null) {
+            diaryKeys.add(`id:${entry.diary_id}`);
+        } else if (entry.diary_name) {
+            diaryKeys.add(`name:${entry.diary_name}`);
+        }
+    }
+    return diaryKeys.size > 1;
+}

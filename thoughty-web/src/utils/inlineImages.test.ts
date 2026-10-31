@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     attachmentIdOf,
     inlineImageMarkdown,
+    inlineImagesToAltText,
     insertAtSelection,
     keepAttachmentSources,
     placedAttachmentIds,
@@ -59,5 +60,11 @@ describe('inline images', () => {
         const text = '![Pier](attachment:pier.png) ![bad](attachment:%E0%A4%A)';
         await expect(storePlacedFiles(text, [pier], async () => null)).resolves.toEqual({ text, remaining: [] });
         await expect(storePlacedFiles('none', [pier], async () => null)).resolves.toEqual({ text: 'none', remaining: [pier] });
+    });
+
+    it('turns the pictures a text places into their alt text, escaped only in Markdown', () => {
+        const text = 'Before ![The \\[old\\] pier](attachment:7) and ![](attachment:pier.png) ![Web](https://example.com/a.png)';
+        expect(inlineImagesToAltText(text, 'markdown')).toBe('Before The \\[old\\] pier and  ![Web](https://example.com/a.png)');
+        expect(inlineImagesToAltText(text, 'plain')).toBe('Before The [old] pier and  ![Web](https://example.com/a.png)');
     });
 });

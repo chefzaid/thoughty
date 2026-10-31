@@ -70,6 +70,7 @@ const translations: Record<string, string> = {
     shareEntry: 'Share entry',
     entryLinkCopied: 'Entry link copied',
     moreActions: 'More actions',
+    useAsStartingPoint: 'Use as a starting point',
     listen: 'Listen',
     stopListening: 'Stop listening',
     listenThisEntry: 'Read this entry',

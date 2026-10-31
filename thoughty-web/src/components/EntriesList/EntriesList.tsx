@@ -16,6 +16,7 @@ import {
     getEntryDragHighlightClass,
     getSelectedRingClass,
     groupRankedEntries,
+    spansSeveralDiaries,
     type EntryDisplayGroup,
 } from './EntriesList.utils';
 
@@ -86,6 +87,8 @@ interface EntriesListProps {
     onDiscuss?: (entry: Entry) => void;
     onRephrase?: (entry: Entry, mode: RephraseMode) => Promise<void>;
     onSummarize?: (entryId: number, guidance: SummaryGuidance) => Promise<string | null>;
+    /** Copies an entry's text, tags and format into the new entry form. */
+    onUseAsStartingPoint?: (entry: Entry) => void;
     t: TranslationFn;
 }
 
@@ -154,6 +157,7 @@ function EntriesList({
     onDiscuss,
     onRephrase,
     onSummarize,
+    onUseAsStartingPoint,
     t,
 }: Readonly<EntriesListProps>) {
     const [dragEntryId, setDragEntryId] = useLocalState<number | null>(null);
@@ -282,21 +286,7 @@ function EntriesList({
         ),
         [speechDates, groupedEntries],
     );
-    const showDiaryAccent = useMemo(() => {
-        const diaryKeys = new Set<string>();
-        for (const entry of entries) {
-            if (entry.diary_id !== undefined && entry.diary_id !== null) {
-                diaryKeys.add(`id:${entry.diary_id}`);
-                continue;
-            }
-
-            if (entry.diary_name) {
-                diaryKeys.add(`name:${entry.diary_name}`);
-            }
-        }
-
-        return diaryKeys.size > 1;
-    }, [entries]);
+    const showDiaryAccent = useMemo(() => spansSeveralDiaries(entries), [entries]);
 
     const showInitialLoading = loading && entries.length === 0;
     const isRefreshing = loading && entries.length > 0;
@@ -478,6 +468,7 @@ function EntriesList({
                                                     onDiscuss={onDiscuss}
                                                     onRephrase={onRephrase}
                                                     onSummarize={onSummarize}
+                                                    onUseAsStartingPoint={onUseAsStartingPoint}
                                                     searchTerm={searchTerm}
                                                     showDiaryLabel={showDiaryAccent}
                                                     tagMetadata={tagMetadata}

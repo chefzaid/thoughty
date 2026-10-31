@@ -84,6 +84,10 @@ export type JournalTranslationKey =
   | "shareEntry"
   | "entryLinkCopied"
   | "moreActions"
+  | "useAsStartingPoint"
+  | "startFromEntryReplaceTitle"
+  | "startFromEntryReplaceMessage"
+  | "startFromEntryReplaceConfirm"
   | "dragToReorder"
   | "history"
   | "viewHistory"
@@ -180,6 +184,11 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     shareEntry: "Share entry",
     entryLinkCopied: "Entry link copied",
     moreActions: "More actions",
+    useAsStartingPoint: "Use as a starting point",
+    startFromEntryReplaceTitle: "Replace your draft?",
+    startFromEntryReplaceMessage:
+      "The new entry form already holds a draft. Starting from this entry replaces its text, title, tags, time and mood with this entry's text, tags and format, every task unticked.",
+    startFromEntryReplaceConfirm: "Replace draft",
     dragToReorder: "Drag to reorder",
     history: "History",
     viewHistory: "View history",
@@ -276,6 +285,11 @@ export const journalTranslations: Record<Language, Record<JournalTranslationKey,
     shareEntry: "Partager l'entrée",
     entryLinkCopied: "Lien de l'entrée copié",
     moreActions: "Plus d'actions",
+    useAsStartingPoint: "Utiliser comme point de départ",
+    startFromEntryReplaceTitle: "Remplacer votre brouillon ?",
+    startFromEntryReplaceMessage:
+      "Le formulaire de nouvelle entrée contient déjà un brouillon. Partir de cette entrée remplace son texte, son titre, ses tags, son heure et son humeur par le texte, les tags et le format de cette entrée, toutes les tâches décochées.",
+    startFromEntryReplaceConfirm: "Remplacer le brouillon",
     dragToReorder: "Glisser pour réorganiser",
     history: "Historique",
     viewHistory: "Voir l'historique",

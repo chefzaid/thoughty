@@ -28,6 +28,14 @@ export function setTaskLine(content: string, line: number, checked: boolean): st
     return lines.join('\n');
 }
 
+/** The content with every task list item unticked, for a fresh checklist. */
+export function untickTasks(content: string): string {
+    return content.split('\n').map((text) => {
+        const match = TASK_LINE_PATTERN.exec(text);
+        return match ? `${match[1]} ${match[3]}` : text;
+    }).join('\n');
+}
+
 /** How many lines come before a position in the text, to turn a line inside a part into a line of the whole. */
 export function countLinesBefore(content: string, position: number): number {
     let count = 0;

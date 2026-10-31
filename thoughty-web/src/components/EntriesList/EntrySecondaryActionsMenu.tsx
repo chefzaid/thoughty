@@ -18,6 +18,8 @@ interface EntrySecondaryActionsMenuProps {
     onSharePrivately?: () => void;
     onToggleHistory?: () => Promise<void>;
     onSummarize?: () => void;
+    /** Copies the entry's text, tags and format into the new entry form. */
+    onUseAsStartingPoint?: () => void;
     onToggleArchived: () => void;
     onDelete: () => void;
     t: TranslationFn;
@@ -34,6 +36,7 @@ export default function EntrySecondaryActionsMenu({
     onSharePrivately,
     onToggleHistory,
     onSummarize,
+    onUseAsStartingPoint,
     onToggleArchived,
     onDelete,
     t,
@@ -124,6 +127,12 @@ export default function EntrySecondaryActionsMenu({
         closeMenuForDialog();
         onSharePrivately?.();
     }, [closeMenuForDialog, onSharePrivately]);
+
+    // The form takes focus, or a dialog asks first and gives focus back to the menu button
+    const handleUseAsStartingPoint = useCallback(() => {
+        closeMenuForDialog();
+        onUseAsStartingPoint?.();
+    }, [closeMenuForDialog, onUseAsStartingPoint]);
 
     const handleDelete = useCallback(() => {
         closeMenuForDialog();
@@ -227,6 +236,19 @@ export default function EntrySecondaryActionsMenu({
                                 <path strokeLinecap="round" d="M10 11h7M10 15h7" />
                             </svg>
                             <span>{t('summarizeEntry')}</span>
+                        </MenuActionButton>
+                    )}
+                    {onUseAsStartingPoint && (
+                        <MenuActionButton
+                            onClick={handleUseAsStartingPoint}
+                            className={secondaryActionClass}
+                            title={t('useAsStartingPoint')}
+                        >
+                            <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                                <rect x="8" y="8" width="12" height="12" rx="2" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2" />
+                            </svg>
+                            <span>{t('useAsStartingPoint')}</span>
                         </MenuActionButton>
                     )}
                     <MenuActionButton

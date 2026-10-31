@@ -289,6 +289,24 @@ describe('EntryViewMode', () => {
         expect(onShareEntry).toHaveBeenCalledWith(mockEntries[0]);
     });
 
+    it('uses the entry as a starting point from the secondary actions menu, focus back on the menu button', async () => {
+        const onUseAsStartingPoint = vi.fn();
+        const user = userEvent.setup();
+        const { unmount } = renderEntryViewMode({ onUseAsStartingPoint });
+
+        await user.click(screen.getByLabelText('More actions'));
+        await user.click(screen.getByRole('menuitem', { name: 'Use as a starting point' }));
+
+        expect(onUseAsStartingPoint).toHaveBeenCalledWith(mockEntries[0]);
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+        expect(screen.getByLabelText('More actions')).toHaveFocus();
+        unmount();
+
+        renderEntryViewMode();
+        await user.click(screen.getByLabelText('More actions'));
+        expect(screen.queryByRole('menuitem', { name: 'Use as a starting point' })).not.toBeInTheDocument();
+    });
+
     it('opens the rephrase menu and calls the selected mode', async () => {
         const onRephrase = vi.fn().mockResolvedValue(undefined);
         const user = userEvent.setup();

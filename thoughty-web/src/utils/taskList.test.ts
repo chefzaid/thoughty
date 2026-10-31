@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { countLinesBefore, findTaskLines, setTaskLine } from './taskList';
+import { countLinesBefore, findTaskLines, setTaskLine, untickTasks } from './taskList';
 
 describe('taskList', () => {
     const content = ['# Errands', '- [ ] Call the bank', '- [x] Post the letter', '  * [X] Nested', '> 1. [ ] Quoted', '- [link](https://example.com)', 'Plain'].join('\n');
@@ -26,5 +26,10 @@ describe('taskList', () => {
         expect(countLinesBefore('one\ntwo\nthree', 0)).toBe(0);
         expect(countLinesBefore('one\ntwo\nthree', 4)).toBe(1);
         expect(countLinesBefore('one\ntwo\nthree', 9)).toBe(2);
+    });
+
+    it('unticks every task and leaves the other lines alone', () => {
+        expect(untickTasks('Plan\n- [x] Pack\n> * [X] Quoted\n1. [ ] First\n- [x]no space\nNote [x]'))
+            .toBe('Plan\n- [ ] Pack\n> * [ ] Quoted\n1. [ ] First\n- [x]no space\nNote [x]');
     });
 });
