@@ -5382,6 +5382,40 @@
                       6,
                       2
                     ]
+                  },
+                  "records": {
+                    "longestEntry": {
+                      "entryId": 42,
+                      "date": "2024-03-02",
+                      "index": 2,
+                      "words": 1240
+                    },
+                    "busiestDay": {
+                      "date": "2025-06-14",
+                      "entries": 5
+                    },
+                    "longestStreak": {
+                      "days": 12,
+                      "startDate": "2025-03-01",
+                      "endDate": "2025-03-12"
+                    },
+                    "earliestEntry": {
+                      "entryId": 42,
+                      "date": "2024-03-02",
+                      "index": 2,
+                      "time": "05:12"
+                    },
+                    "latestEntry": {
+                      "entryId": 42,
+                      "date": "2024-03-02",
+                      "index": 2,
+                      "time": "05:12"
+                    },
+                    "firstEntry": {
+                      "entryId": 42,
+                      "date": "2024-03-02",
+                      "index": 2
+                    }
                   }
                 }
               }
@@ -16840,6 +16874,271 @@
           ]
         }
       },
+      "StatsLongestEntryDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "example": 42
+          },
+          "date": {
+            "type": "string",
+            "example": "2024-03-02",
+            "format": "date"
+          },
+          "index": {
+            "type": "number",
+            "example": 2,
+            "description": "The entry’s number on its day, as cross-references write it"
+          },
+          "words": {
+            "type": "number",
+            "example": 1240,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "entryId",
+          "date",
+          "index",
+          "words"
+        ],
+        "example": {
+          "entryId": 42,
+          "date": "2024-03-02",
+          "index": 2,
+          "words": 1240
+        }
+      },
+      "StatsBusiestDayDto": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "example": "2025-06-14",
+            "format": "date"
+          },
+          "entries": {
+            "type": "number",
+            "example": 5,
+            "minimum": 1
+          }
+        },
+        "required": [
+          "date",
+          "entries"
+        ],
+        "example": {
+          "date": "2025-06-14",
+          "entries": 5
+        }
+      },
+      "StatsLongestStreakDto": {
+        "type": "object",
+        "properties": {
+          "days": {
+            "type": "number",
+            "example": 12,
+            "minimum": 1,
+            "description": "Days in a row with at least one entry"
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2025-03-01",
+            "format": "date",
+            "description": "The first day of the run"
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2025-03-12",
+            "format": "date",
+            "description": "The last day of the run"
+          }
+        },
+        "required": [
+          "days",
+          "startDate",
+          "endDate"
+        ],
+        "example": {
+          "days": 12,
+          "startDate": "2025-03-01",
+          "endDate": "2025-03-12"
+        }
+      },
+      "StatsTimeRecordDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "example": 42
+          },
+          "date": {
+            "type": "string",
+            "example": "2024-03-02",
+            "format": "date"
+          },
+          "index": {
+            "type": "number",
+            "example": 2,
+            "description": "The entry’s number on its day, as cross-references write it"
+          },
+          "time": {
+            "type": "string",
+            "example": "05:12",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "description": "Local time of day, `HH:MM`"
+          }
+        },
+        "required": [
+          "entryId",
+          "date",
+          "index",
+          "time"
+        ],
+        "example": {
+          "entryId": 42,
+          "date": "2024-03-02",
+          "index": 2,
+          "time": "05:12"
+        }
+      },
+      "StatsRecordEntryDto": {
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "number",
+            "example": 42
+          },
+          "date": {
+            "type": "string",
+            "example": "2024-03-02",
+            "format": "date"
+          },
+          "index": {
+            "type": "number",
+            "example": 2,
+            "description": "The entry’s number on its day, as cross-references write it"
+          }
+        },
+        "required": [
+          "entryId",
+          "date",
+          "index"
+        ],
+        "example": {
+          "entryId": 42,
+          "date": "2024-03-02",
+          "index": 2
+        }
+      },
+      "StatsRecordsDto": {
+        "type": "object",
+        "properties": {
+          "longestEntry": {
+            "nullable": true,
+            "description": "The entry with the most words",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsLongestEntryDto"
+              }
+            ]
+          },
+          "busiestDay": {
+            "nullable": true,
+            "description": "The day with the most entries",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsBusiestDayDto"
+              }
+            ]
+          },
+          "longestStreak": {
+            "nullable": true,
+            "description": "The most days in a row with an entry",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsLongestStreakDto"
+              }
+            ]
+          },
+          "earliestEntry": {
+            "nullable": true,
+            "description": "The entry written earliest in the day: its typed time, or its creation time in the writer’s time zone",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsTimeRecordDto"
+              }
+            ]
+          },
+          "latestEntry": {
+            "nullable": true,
+            "description": "The entry written latest in the day, read the same way",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsTimeRecordDto"
+              }
+            ]
+          },
+          "firstEntry": {
+            "nullable": true,
+            "description": "The first entry, by date and then in the day’s order",
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsRecordEntryDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "longestEntry",
+          "busiestDay",
+          "longestStreak",
+          "earliestEntry",
+          "latestEntry",
+          "firstEntry"
+        ],
+        "example": {
+          "longestEntry": {
+            "entryId": 42,
+            "date": "2024-03-02",
+            "index": 2,
+            "words": 1240
+          },
+          "busiestDay": {
+            "date": "2025-06-14",
+            "entries": 5
+          },
+          "longestStreak": {
+            "days": 12,
+            "startDate": "2025-03-01",
+            "endDate": "2025-03-12"
+          },
+          "earliestEntry": {
+            "entryId": 42,
+            "date": "2024-03-02",
+            "index": 2,
+            "time": "05:12"
+          },
+          "latestEntry": {
+            "entryId": 42,
+            "date": "2024-03-02",
+            "index": 2,
+            "time": "05:12"
+          },
+          "firstEntry": {
+            "entryId": 42,
+            "date": "2024-03-02",
+            "index": 2
+          }
+        }
+      },
       "StatsResponseDto": {
         "type": "object",
         "properties": {
@@ -16972,6 +17271,14 @@
                 "$ref": "#/components/schemas/StatsWritingTimesDto"
               }
             ]
+          },
+          "records": {
+            "description": "Personal records, each linking to its entry or day; the times are read in the writer’s time zone (`timeZone`)",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsRecordsDto"
+              }
+            ]
           }
         },
         "required": [
@@ -16988,7 +17295,8 @@
           "correlations",
           "moods",
           "goals",
-          "writingTimes"
+          "writingTimes",
+          "records"
         ],
         "example": {
           "totalThoughts": 120,
@@ -17160,6 +17468,40 @@
               6,
               2
             ]
+          },
+          "records": {
+            "longestEntry": {
+              "entryId": 42,
+              "date": "2024-03-02",
+              "index": 2,
+              "words": 1240
+            },
+            "busiestDay": {
+              "date": "2025-06-14",
+              "entries": 5
+            },
+            "longestStreak": {
+              "days": 12,
+              "startDate": "2025-03-01",
+              "endDate": "2025-03-12"
+            },
+            "earliestEntry": {
+              "entryId": 42,
+              "date": "2024-03-02",
+              "index": 2,
+              "time": "05:12"
+            },
+            "latestEntry": {
+              "entryId": 42,
+              "date": "2024-03-02",
+              "index": 2,
+              "time": "05:12"
+            },
+            "firstEntry": {
+              "entryId": 42,
+              "date": "2024-03-02",
+              "index": 2
+            }
           }
         }
       },

@@ -4,6 +4,7 @@ import DiaryTabs from '../components/DiaryTabs/DiaryTabs';
 import Stats from '../components/Stats/Stats';
 import YearReviewTeaser from '../components/YearReview/YearReviewTeaser';
 import { getPathForView } from '../types';
+import { ENTRY_PERMALINK_PARAM } from '../utils/appRouting';
 import type { Diary } from '../types';
 import type { TagMetadataMap } from '../utils/tagMetadata';
 
@@ -54,6 +55,7 @@ function StatsRoute({
         t={t}
         diaryId={currentDiaryId}
         onOpenJournalDay={onOpenJournalDay}
+        onOpenEntry={(entryId) => navigate(`${getPathForView('journal')}?${ENTRY_PERMALINK_PARAM}=${entryId}`)}
         onManageDiaries={onManageDiaries}
         tagMetadata={tagMetadata}
         language={language}

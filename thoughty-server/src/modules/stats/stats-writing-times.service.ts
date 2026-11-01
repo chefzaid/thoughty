@@ -3,18 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import type { StatsWritingTimesDto } from './dto';
+import { ENTRY_LOCAL_HOUR_SQL, ENTRY_LOCAL_WEEKDAY_SQL } from './stats-sql';
 
-/*
- * An entry's time of day was typed by the writer on their own clock, so it is already local and its
- * weekday is that of its date. Without one, the entry counts when it was created: `created_at` holds
- * the database session's wall clock (`now()` without a zone), so it is read back in that zone
- * (`::timestamptz`) and turned into the writer's.
+/**
+ * When the writer writes: their entries by hour of the day and by weekday, in their time zone (a typed
+ * time as it is, otherwise the creation time converted; see `stats-sql.ts`).
  */
-const CREATED_LOCAL_SQL = '(e.created_at::timestamptz AT TIME ZONE :timeZone)';
-const HOUR_SQL = `CASE WHEN e.time_of_day IS NULL THEN EXTRACT(HOUR FROM ${CREATED_LOCAL_SQL}) ELSE EXTRACT(HOUR FROM e.time_of_day) END::int`;
-const WEEKDAY_SQL = `CASE WHEN e.time_of_day IS NULL THEN EXTRACT(ISODOW FROM ${CREATED_LOCAL_SQL}) ELSE EXTRACT(ISODOW FROM e.date) END::int`;
-
-/** When the writer writes: their entries by hour of the day and by weekday, in their time zone. */
 @Injectable()
 export class StatsWritingTimesService {
   constructor(
@@ -26,8 +20,8 @@ export class StatsWritingTimesService {
   async analyze(userId: number, diaryId?: number, timeZone = 'UTC'): Promise<StatsWritingTimesDto> {
     const query = this.entryRepository
       .createQueryBuilder('e')
-      .select(HOUR_SQL, 'hour')
-      .addSelect(WEEKDAY_SQL, 'weekday')
+      .select(ENTRY_LOCAL_HOUR_SQL, 'hour')
+      .addSelect(ENTRY_LOCAL_WEEKDAY_SQL, 'weekday')
       .addSelect('COUNT(*)', 'entries')
       .where('e.user_id = :userId', { userId })
       .setParameter('timeZone', timeZone)

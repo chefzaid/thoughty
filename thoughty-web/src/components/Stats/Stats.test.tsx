@@ -330,6 +330,34 @@ describe('Stats Component', () => {
         expect(onOpenJournalDay).toHaveBeenCalledWith('2024-01-18');
     });
 
+    it('opens a record’s entry, and the day of the busiest day', async () => {
+        const user = userEvent.setup();
+        const onOpenEntry = vi.fn();
+        const onOpenJournalDay = vi.fn();
+        (globalThis.fetch as Mock).mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                ...mockStatsData,
+                records: {
+                    longestEntry: { entryId: 7, date: '2024-01-18', index: 3, words: 420 },
+                    busiestDay: { date: '2024-01-18', entries: 4 },
+                    longestStreak: null,
+                    earliestEntry: null,
+                    latestEntry: null,
+                    firstEntry: { entryId: 2, date: '2024-01-16', index: 1 },
+                },
+            }),
+        });
+
+        render(<Stats {...defaultProps} t={englishT} language="en" onOpenEntry={onOpenEntry} onOpenJournalDay={onOpenJournalDay} />);
+
+        const records = await screen.findByRole('region', { name: 'Personal records' });
+        await user.click(within(records).getByRole('button', { name: 'Longest entry January 18, 2024 · #3' }));
+        await user.click(within(records).getByRole('button', { name: 'Busiest day January 18, 2024' }));
+        expect(onOpenEntry).toHaveBeenCalledWith(7);
+        expect(onOpenJournalDay).toHaveBeenCalledWith('2024-01-18');
+    });
+
     it('applies theme classes', async () => {
         (globalThis.fetch as Mock).mockResolvedValue({
             ok: true,

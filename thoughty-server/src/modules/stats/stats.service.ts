@@ -8,6 +8,7 @@ import { StatsCorrelationService } from './stats-correlation.service';
 import { StatsMoodService } from './stats-mood.service';
 import { StatsGoalService } from './stats-goal.service';
 import { StatsWritingTimesService } from './stats-writing-times.service';
+import { StatsRecordsService } from './stats-records.service';
 import { ENTRY_WORDS_SQL } from './stats-sql';
 import { writersDayOr } from '@/common/utils/writers-day.util';
 
@@ -23,11 +24,12 @@ export class StatsService {
     private readonly statsMoodService: StatsMoodService,
     private readonly statsGoalService: StatsGoalService,
     private readonly statsWritingTimesService: StatsWritingTimesService,
+    private readonly statsRecordsService: StatsRecordsService,
   ) {}
 
   /**
    * `today` is the writer's own day, which writing goals are measured up to; the UTC day without it.
-   * `timeZone` is the writer's, which the writing times are read in; UTC without it.
+   * `timeZone` is the writer's, which the writing times and the records' times are read in; UTC without it.
    */
   async getStats(userId: number, diaryId?: number, today?: string, timeZone?: string): Promise<StatsResponseDto> {
     // Build base query builder
@@ -155,16 +157,22 @@ export class StatsService {
       averageWordsPerEntry > 0
         ? Math.max(1, Math.ceil(averageWordsPerEntry / WORDS_PER_MINUTE))
         : 0;
-    const recentEntries =
-      totalThoughts > 0
-        ? await createQb()
-            .select(['e.id', 'e.content', 'e.date', 'e.tags'])
-            .orderBy('e.date', 'DESC')
-            .addOrderBy('e.id', 'DESC')
-            .take(40)
-            .getMany()
-        : [];
-    const journalAnalysis = await this.statsJournalAnalysisService.analyze(userId, recentEntries);
+    const analyzeRecentEntries = async () => {
+      const recentEntries =
+        totalThoughts > 0
+          ? await createQb()
+              .select(['e.id', 'e.content', 'e.date', 'e.tags'])
+              .orderBy('e.date', 'DESC')
+              .addOrderBy('e.id', 'DESC')
+              .take(40)
+              .getMany()
+          : [];
+      return this.statsJournalAnalysisService.analyze(userId, recentEntries);
+    };
+    const [journalAnalysis, records] = await Promise.all([
+      analyzeRecentEntries(),
+      this.statsRecordsService.analyze(userId, diaryId, thoughtsPerDay, timeZone),
+    ]);
 
     return {
       totalThoughts,
@@ -183,6 +191,7 @@ export class StatsService {
       moods,
       goals,
       writingTimes,
+      records,
     };
   }
 }

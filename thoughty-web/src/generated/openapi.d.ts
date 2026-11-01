@@ -5134,6 +5134,169 @@ export interface components {
         };
         /**
          * @example {
+         *       "entryId": 42,
+         *       "date": "2024-03-02",
+         *       "index": 2,
+         *       "words": 1240
+         *     }
+         */
+        StatsLongestEntryDto: {
+            /** @example 42 */
+            entryId: number;
+            /**
+             * Format: date
+             * @example 2024-03-02
+             */
+            date: string;
+            /**
+             * @description The entry’s number on its day, as cross-references write it
+             * @example 2
+             */
+            index: number;
+            /** @example 1240 */
+            words: number;
+        };
+        /**
+         * @example {
+         *       "date": "2025-06-14",
+         *       "entries": 5
+         *     }
+         */
+        StatsBusiestDayDto: {
+            /**
+             * Format: date
+             * @example 2025-06-14
+             */
+            date: string;
+            /** @example 5 */
+            entries: number;
+        };
+        /**
+         * @example {
+         *       "days": 12,
+         *       "startDate": "2025-03-01",
+         *       "endDate": "2025-03-12"
+         *     }
+         */
+        StatsLongestStreakDto: {
+            /**
+             * @description Days in a row with at least one entry
+             * @example 12
+             */
+            days: number;
+            /**
+             * Format: date
+             * @description The first day of the run
+             * @example 2025-03-01
+             */
+            startDate: string;
+            /**
+             * Format: date
+             * @description The last day of the run
+             * @example 2025-03-12
+             */
+            endDate: string;
+        };
+        /**
+         * @example {
+         *       "entryId": 42,
+         *       "date": "2024-03-02",
+         *       "index": 2,
+         *       "time": "05:12"
+         *     }
+         */
+        StatsTimeRecordDto: {
+            /** @example 42 */
+            entryId: number;
+            /**
+             * Format: date
+             * @example 2024-03-02
+             */
+            date: string;
+            /**
+             * @description The entry’s number on its day, as cross-references write it
+             * @example 2
+             */
+            index: number;
+            /**
+             * @description Local time of day, `HH:MM`
+             * @example 05:12
+             */
+            time: string;
+        };
+        /**
+         * @example {
+         *       "entryId": 42,
+         *       "date": "2024-03-02",
+         *       "index": 2
+         *     }
+         */
+        StatsRecordEntryDto: {
+            /** @example 42 */
+            entryId: number;
+            /**
+             * Format: date
+             * @example 2024-03-02
+             */
+            date: string;
+            /**
+             * @description The entry’s number on its day, as cross-references write it
+             * @example 2
+             */
+            index: number;
+        };
+        /**
+         * @example {
+         *       "longestEntry": {
+         *         "entryId": 42,
+         *         "date": "2024-03-02",
+         *         "index": 2,
+         *         "words": 1240
+         *       },
+         *       "busiestDay": {
+         *         "date": "2025-06-14",
+         *         "entries": 5
+         *       },
+         *       "longestStreak": {
+         *         "days": 12,
+         *         "startDate": "2025-03-01",
+         *         "endDate": "2025-03-12"
+         *       },
+         *       "earliestEntry": {
+         *         "entryId": 42,
+         *         "date": "2024-03-02",
+         *         "index": 2,
+         *         "time": "05:12"
+         *       },
+         *       "latestEntry": {
+         *         "entryId": 42,
+         *         "date": "2024-03-02",
+         *         "index": 2,
+         *         "time": "05:12"
+         *       },
+         *       "firstEntry": {
+         *         "entryId": 42,
+         *         "date": "2024-03-02",
+         *         "index": 2
+         *       }
+         *     }
+         */
+        StatsRecordsDto: {
+            /** @description The entry with the most words */
+            longestEntry: components["schemas"]["StatsLongestEntryDto"] | null;
+            /** @description The day with the most entries */
+            busiestDay: components["schemas"]["StatsBusiestDayDto"] | null;
+            /** @description The most days in a row with an entry */
+            longestStreak: components["schemas"]["StatsLongestStreakDto"] | null;
+            /** @description The entry written earliest in the day: its typed time, or its creation time in the writer’s time zone */
+            earliestEntry: components["schemas"]["StatsTimeRecordDto"] | null;
+            /** @description The entry written latest in the day, read the same way */
+            latestEntry: components["schemas"]["StatsTimeRecordDto"] | null;
+            /** @description The first entry, by date and then in the day’s order */
+            firstEntry: components["schemas"]["StatsRecordEntryDto"] | null;
+        };
+        /**
+         * @example {
          *       "totalThoughts": 120,
          *       "averageWordsPerEntry": 184,
          *       "averageReadingTimeMinutes": 1,
@@ -5303,6 +5466,40 @@ export interface components {
          *           6,
          *           2
          *         ]
+         *       },
+         *       "records": {
+         *         "longestEntry": {
+         *           "entryId": 42,
+         *           "date": "2024-03-02",
+         *           "index": 2,
+         *           "words": 1240
+         *         },
+         *         "busiestDay": {
+         *           "date": "2025-06-14",
+         *           "entries": 5
+         *         },
+         *         "longestStreak": {
+         *           "days": 12,
+         *           "startDate": "2025-03-01",
+         *           "endDate": "2025-03-12"
+         *         },
+         *         "earliestEntry": {
+         *           "entryId": 42,
+         *           "date": "2024-03-02",
+         *           "index": 2,
+         *           "time": "05:12"
+         *         },
+         *         "latestEntry": {
+         *           "entryId": 42,
+         *           "date": "2024-03-02",
+         *           "index": 2,
+         *           "time": "05:12"
+         *         },
+         *         "firstEntry": {
+         *           "entryId": 42,
+         *           "date": "2024-03-02",
+         *           "index": 2
+         *         }
          *       }
          *     }
          */
@@ -5386,6 +5583,8 @@ export interface components {
             goals: components["schemas"]["DiaryGoalProgressDto"][];
             /** @description The hours and weekdays the writer writes most, in their time zone (`timeZone`) */
             writingTimes: components["schemas"]["StatsWritingTimesDto"];
+            /** @description Personal records, each linking to its entry or day; the times are read in the writer’s time zone (`timeZone`) */
+            records: components["schemas"]["StatsRecordsDto"];
         };
         /**
          * @example {
@@ -13194,6 +13393,40 @@ export interface operations {
                      *           6,
                      *           2
                      *         ]
+                     *       },
+                     *       "records": {
+                     *         "longestEntry": {
+                     *           "entryId": 42,
+                     *           "date": "2024-03-02",
+                     *           "index": 2,
+                     *           "words": 1240
+                     *         },
+                     *         "busiestDay": {
+                     *           "date": "2025-06-14",
+                     *           "entries": 5
+                     *         },
+                     *         "longestStreak": {
+                     *           "days": 12,
+                     *           "startDate": "2025-03-01",
+                     *           "endDate": "2025-03-12"
+                     *         },
+                     *         "earliestEntry": {
+                     *           "entryId": 42,
+                     *           "date": "2024-03-02",
+                     *           "index": 2,
+                     *           "time": "05:12"
+                     *         },
+                     *         "latestEntry": {
+                     *           "entryId": 42,
+                     *           "date": "2024-03-02",
+                     *           "index": 2,
+                     *           "time": "05:12"
+                     *         },
+                     *         "firstEntry": {
+                     *           "entryId": 42,
+                     *           "date": "2024-03-02",
+                     *           "index": 2
+                     *         }
                      *       }
                      *     }
                      */

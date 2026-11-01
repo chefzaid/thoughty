@@ -63,13 +63,32 @@ export function currentRun(met: ReadonlySet<string>, periodStart: string, step: 
   return run;
 }
 
-function longestRun(metPeriods: string[], step: number): number {
-  let longest = 0;
-  let run = 0;
+/** A run of periods in a row: how many, and the first and last of them. */
+export interface PeriodRun {
+  length: number;
+  start: string;
+  end: string;
+}
+
+/**
+ * The longest run of periods `step` days apart in `periods` (sorted oldest first), the earliest of
+ * runs that are as long; null when there are no periods.
+ */
+export function longestRun(periods: readonly string[], step: number): PeriodRun | null {
+  let longest: PeriodRun | null = null;
+  let start = '';
+  let length = 0;
   let previous: string | undefined;
-  for (const period of metPeriods) {
-    run = previous !== undefined && addDays(previous, step) === period ? run + 1 : 1;
-    longest = Math.max(longest, run);
+  for (const period of periods) {
+    if (previous !== undefined && addDays(previous, step) === period) {
+      length += 1;
+    } else {
+      start = period;
+      length = 1;
+    }
+    if (length > (longest?.length ?? 0)) {
+      longest = { length, start, end: period };
+    }
     previous = period;
   }
   return longest;
@@ -101,7 +120,7 @@ export function measureDiaryGoal(
     progress,
     met: progress >= target,
     currentStreak: currentRun(met, periodStart, step),
-    longestStreak: longestRun(metPeriods, step),
+    longestStreak: longestRun(metPeriods, step)?.length ?? 0,
     metPeriods,
   };
 }

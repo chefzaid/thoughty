@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsDateString, IsOptional, Matches, Min } from 'class-validator';
 import { DiaryGoalProgressDto } from './stats-goal.dto';
 import { StatsWritingTimesDto } from './stats-writing-times.dto';
+import { StatsRecordsDto } from './stats-records.dto';
 import { StrictInt } from '@/common/validation';
 
 export class ToneMoodAnalysisDto {
@@ -302,4 +303,10 @@ export class StatsResponseDto {
     description: 'The hours and weekdays the writer writes most, in their time zone (`timeZone`)',
   })
   writingTimes!: StatsWritingTimesDto;
+
+  @ApiProperty({
+    type: StatsRecordsDto,
+    description: 'Personal records, each linking to its entry or day; the times are read in the writer’s time zone (`timeZone`)',
+  })
+  records!: StatsRecordsDto;
 }

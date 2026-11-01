@@ -60,6 +60,14 @@ const stats = {
         metPeriods: ['2024-01-08'],
     }],
     writingTimes: { hours: Array.from({ length: 24 }, (_, hour) => (hour === 21 ? 64 : 0)), weekdays: [0, 64, 0, 0, 0, 0, 0] },
+    records: {
+        longestEntry: { entryId: 1, date: '2024-01-15', index: 1, words: 812 },
+        busiestDay: { date: '2024-01-15', entries: 2 },
+        longestStreak: { days: 9, startDate: '2024-01-07', endDate: '2024-01-15' },
+        earliestEntry: { entryId: 2, date: '2024-01-15', index: 2, time: '06:05' },
+        latestEntry: { entryId: 1, date: '2024-01-15', index: 1, time: '21:40' },
+        firstEntry: { entryId: 3, date: '2023-02-01', index: 1 },
+    },
 };
 
 const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
@@ -99,5 +107,15 @@ describe('Stats in quiet mode', () => {
         expect(within(times).getByRole('img', { name: 'Entries by hour of the day: 9 PM: most often' })).toBeInTheDocument();
         expect(within(times).getByText('Tuesday: most often')).toBeInTheDocument();
         expect(within(times).queryByText(/64/)).not.toBeInTheDocument();
+
+        // The records keep the hours and the first entry, which say when, and leave out how much
+        const records = screen.getByRole('region', { name: 'Personal records' });
+        expect(within(records).getByText('6:05 AM')).toBeInTheDocument();
+        expect(within(records).getByText('9:40 PM')).toBeInTheDocument();
+        expect(within(records).getByText('February 1, 2023')).toBeInTheDocument();
+        expect(within(records).queryByText('Longest entry')).not.toBeInTheDocument();
+        expect(within(records).queryByText('Busiest day')).not.toBeInTheDocument();
+        expect(within(records).queryByText('Longest streak')).not.toBeInTheDocument();
+        expect(within(records).queryByText(/812|9 days/)).not.toBeInTheDocument();
     });
 });

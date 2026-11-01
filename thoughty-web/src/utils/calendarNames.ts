@@ -14,3 +14,14 @@ export function monthName(month: number, language: Language, width: 'long' | 'sh
 export function hourName(hour: number, language: Language): string {
   return new Intl.DateTimeFormat(language, { hour: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, 0, 1, hour)));
 }
+
+/** A `YYYY-MM-DD` day written out in full in the interface language ("3 March 2024", "3 mars 2024"). */
+export function longDayName(day: string, language: Language): string {
+  return new Intl.DateTimeFormat(language, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${day}T00:00:00Z`));
+}
+
+/** Two `YYYY-MM-DD` days as one span ("March 1 – 12, 2025", with thin spaces), or one day when they are the same. */
+export function longDaySpan(first: string, last: string, language: Language): string {
+  return new Intl.DateTimeFormat(language, { dateStyle: 'long', timeZone: 'UTC' })
+    .formatRange(new Date(`${first}T00:00:00Z`), new Date(`${last}T00:00:00Z`));
+}

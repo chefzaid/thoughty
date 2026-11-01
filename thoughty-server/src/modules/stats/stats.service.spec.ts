@@ -7,6 +7,7 @@ import { StatsCorrelationService } from './stats-correlation.service';
 import { StatsMoodService } from './stats-mood.service';
 import { StatsGoalService } from './stats-goal.service';
 import { StatsWritingTimesService } from './stats-writing-times.service';
+import { StatsRecordsService } from './stats-records.service';
 
 describe('StatsService', () => {
   let service: StatsService;
@@ -16,6 +17,7 @@ describe('StatsService', () => {
   let statsMoodService: { analyze: jest.Mock };
   let statsGoalService: { analyze: jest.Mock };
   let statsWritingTimesService: { analyze: jest.Mock };
+  let statsRecordsService: { analyze: jest.Mock };
 
   beforeEach(async () => {
     const mockQueryBuilder = {
@@ -65,6 +67,17 @@ describe('StatsService', () => {
       analyze: jest.fn().mockResolvedValue({ hours: Array.from({ length: 24 }, () => 0), weekdays: [0, 0, 0, 0, 0, 0, 0] }),
     };
 
+    statsRecordsService = {
+      analyze: jest.fn().mockResolvedValue({
+        longestEntry: null,
+        busiestDay: null,
+        longestStreak: null,
+        earliestEntry: null,
+        latestEntry: null,
+        firstEntry: null,
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StatsService,
@@ -74,6 +87,7 @@ describe('StatsService', () => {
         { provide: StatsMoodService, useValue: statsMoodService },
         { provide: StatsGoalService, useValue: statsGoalService },
         { provide: StatsWritingTimesService, useValue: statsWritingTimesService },
+        { provide: StatsRecordsService, useValue: statsRecordsService },
       ],
     }).compile();
 
@@ -301,6 +315,27 @@ describe('StatsService', () => {
 
       await service.getStats(1);
       expect(statsWritingTimesService.analyze).toHaveBeenLastCalledWith(1, undefined, undefined);
+    });
+
+    it('finds the records in the diary, from its entries per day, in the writer’s time zone', async () => {
+      const mockQb = entryRepository.createQueryBuilder();
+      mockQb.getRawMany
+        .mockResolvedValueOnce([]) // perYear
+        .mockResolvedValueOnce([]) // perMonth
+        .mockResolvedValueOnce([{ day: '2026-10-27', count: '3' }, { day: '2026-10-26', count: '1' }])
+        .mockResolvedValue([]);
+      const records = {
+        longestEntry: { entryId: 4, date: '2026-10-26', index: 1, words: 7 },
+        busiestDay: { date: '2026-10-27', entries: 3 },
+        longestStreak: { days: 2, startDate: '2026-10-26', endDate: '2026-10-27' },
+        earliestEntry: { entryId: 5, date: '2026-10-27', index: 2, time: '06:45' },
+        latestEntry: { entryId: 6, date: '2026-10-27', index: 1, time: '21:15' },
+        firstEntry: { entryId: 4, date: '2026-10-26', index: 1 },
+      };
+      statsRecordsService.analyze.mockResolvedValue(records);
+
+      await expect(service.getStats(1, 3, '2026-10-27', 'Pacific/Kiritimati')).resolves.toEqual(expect.objectContaining({ records }));
+      expect(statsRecordsService.analyze).toHaveBeenCalledWith(1, 3, { '2026-10-27': 3, '2026-10-26': 1 }, 'Pacific/Kiritimati');
     });
 
     it('should include AI tone, mood, and subject analysis when available', async () => {

@@ -523,7 +523,7 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 ### Insight without AI
 
 - [x] When you write: a small chart in Stats of the hours of the day and days of the week you write most, from entry times (and creation times, in the writer's time zone, when no time was set), scoped to the diary, with a table view and words instead of counts in quiet mode.
-- [ ] Personal records: longest entry, most entries in a day, longest streak, earliest and latest hour written, and first entry, each linking to the entry, as a playful card in Stats.
+- [x] Personal records: longest entry, busiest day, longest streak, earliest and latest hour written, and first entry, as a playful card in Stats; entries open through their permalink, the busiest day and the streak's first day in the journal; quiet mode keeps only the hours and the first entry.
 - [ ] Tags on your good days: for writers who record moods, the tags that appear most on good-mood days and on low-mood days, as two short lists with entry counts and no judgement in the wording.
 - [ ] Words you use most this month, leaving out common words in English and French, as a simple ranked list rather than a word cloud, scoped to the current diary.
 

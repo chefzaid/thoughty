@@ -1,3 +1,5 @@
+import { buildMockRecords } from "./mockApp.records";
+
 interface StatsEntry {
   id: number;
   date: string;
@@ -8,6 +10,7 @@ interface StatsEntry {
   feelings?: string[];
   time_of_day?: string | null;
   createdAt?: string;
+  capsule?: { openedAt: string | null };
 }
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -194,5 +197,6 @@ export function buildStats(entries: StatsEntry[], timeZone?: string) {
     correlations: buildMockCorrelations(entries),
     moods: buildMockMoods(entries),
     writingTimes: buildMockWritingTimes(entries, timeZone),
+    records: buildMockRecords(entries, timeZone),
   };
 }

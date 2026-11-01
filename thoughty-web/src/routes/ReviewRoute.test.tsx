@@ -24,7 +24,13 @@ vi.mock('../components/YearReview/YearReviewPage', () => ({
   ),
 }));
 vi.mock('../components/Stats/Stats', () => ({
-  default: ({ teaser }: { teaser?: React.ReactNode }) => <>{teaser}<p>stats</p></>,
+  default: ({ teaser, onOpenEntry }: { teaser?: React.ReactNode; onOpenEntry: (entryId: number) => void }) => (
+    <>
+      {teaser}
+      <p>stats</p>
+      <button type="button" onClick={() => onOpenEntry(31)}>open record</button>
+    </>
+  ),
 }));
 
 function LocationProbe() {
@@ -89,5 +95,15 @@ describe('StatsRoute', () => {
     fireEvent.click(screen.getByRole('button', { name: 'reviewTeaserAction' }));
 
     expect(screen.getByRole('status')).toHaveTextContent(/^\/review$/);
+  });
+
+  it('opens a record’s entry through its permalink', () => {
+    renderAt('/stats', (
+      <StatsRoute diaries={[]} currentDiaryId={4} onDiaryChange={vi.fn()} onManageDiaries={vi.fn()} t={(key) => key} />
+    ));
+
+    fireEvent.click(screen.getByRole('button', { name: 'open record' }));
+
+    expect(screen.getByRole('status')).toHaveTextContent('/journal?entry=31');
   });
 });

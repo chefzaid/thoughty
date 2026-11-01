@@ -26,6 +26,7 @@ import StatsPagination from './StatsPagination';
 import StatsBarChart, { type StatsChartPoint } from './StatsBarChart';
 import StatsSummaryCards from './StatsSummaryCards';
 import StatsWritingTimes from './StatsWritingTimes';
+import StatsRecords from './StatsRecords';
 import QuietModeNote from '../QuietMode/QuietModeNote';
 import { useQuietMode } from '../QuietMode/quietMode';
 import { monthName } from '../../utils/calendarNames';
@@ -49,6 +50,8 @@ interface StatsProps {
     readonly t: (key: string, params?: Record<string, string | number>) => string;
     readonly diaryId?: number | null;
     readonly onOpenJournalDay?: (date: string) => void | Promise<void>;
+    /** Opens one entry through its permalink, for the personal records. */
+    readonly onOpenEntry?: (entryId: number) => void;
     readonly onManageDiaries?: () => void;
     readonly tagMetadata?: TagMetadataMap;
     readonly language?: string;
@@ -109,9 +112,17 @@ const EMPTY_STATS: StatsData = {
         hours: Array.from({ length: 24 }, () => 0),
         weekdays: [0, 0, 0, 0, 0, 0, 0],
     },
+    records: {
+        longestEntry: null,
+        busiestDay: null,
+        longestStreak: null,
+        earliestEntry: null,
+        latestEntry: null,
+        firstEntry: null,
+    },
 };
 
-function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetadata, language, teaser }: StatsProps) {
+function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenEntry, onManageDiaries, tagMetadata, language, teaser }: StatsProps) {
     const { authFetch } = useAuth();
     // Quiet mode keeps the readings of the journal (insights, moods, personality, links) and leaves out its counts and goals
     const quiet = useQuietMode();
@@ -336,6 +347,16 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
                     themeClass={themeClass}
                     language={uiLanguage}
                     t={t}
+                />
+
+                {/* Quiet mode keeps the records that say when, not how much */}
+                <StatsRecords
+                    records={stats.records ?? EMPTY_STATS.records}
+                    themeClass={themeClass}
+                    language={uiLanguage}
+                    t={t}
+                    onOpenEntry={onOpenEntry}
+                    onOpenJournalDay={onOpenJournalDay}
                 />
 
                 {!quiet && stats.totalThoughts > 0 && (

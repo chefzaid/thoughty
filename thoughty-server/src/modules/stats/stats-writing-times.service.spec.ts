@@ -55,7 +55,7 @@ describe('StatsWritingTimesService', () => {
 
     const [hourSql] = query.select.mock.calls[0] as [string];
     const [weekdaySql] = query.addSelect.mock.calls[0] as [string];
-    expect(hourSql).toContain('EXTRACT(HOUR FROM e.time_of_day)');
+    expect(hourSql).toContain('ELSE e.time_of_day END');
     expect(hourSql).toContain('e.created_at::timestamptz AT TIME ZONE :timeZone');
     expect(weekdaySql).toContain('EXTRACT(ISODOW FROM e.date)');
   });

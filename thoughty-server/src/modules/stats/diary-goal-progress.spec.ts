@@ -1,4 +1,4 @@
-import { currentRun, measureDiaryGoal, mondayOf, type DayWriting } from './diary-goal-progress';
+import { currentRun, longestRun, measureDiaryGoal, mondayOf, type DayWriting } from './diary-goal-progress';
 
 const days = (writing: Record<string, Partial<DayWriting>>) =>
   new Map(Object.entries(writing).map(([day, value]) => [day, { entries: 0, words: 0, ...value }]));
@@ -28,6 +28,23 @@ describe('currentRun', () => {
   it('starts from nothing after a missed period, and steps by weeks', () => {
     expect(currentRun(met, '2026-10-29', 1)).toBe(0);
     expect(currentRun(new Set(['2026-10-12', '2026-10-19']), '2026-10-26', 7)).toBe(2);
+  });
+});
+
+describe('longestRun', () => {
+  it('finds the longest run with its first and last day, the earliest of equal runs', () => {
+    expect(longestRun(['2026-02-27', '2026-02-28', '2026-03-01', '2026-03-05', '2026-03-06', '2026-03-07'], 1)).toEqual({
+      length: 3,
+      start: '2026-02-27',
+      end: '2026-03-01',
+    });
+    expect(longestRun(['2026-10-01', '2026-10-03', '2026-10-04'], 1)).toEqual({ length: 2, start: '2026-10-03', end: '2026-10-04' });
+  });
+
+  it('steps by weeks, counts a lone period as a run of one, and finds none in no periods', () => {
+    expect(longestRun(['2026-10-12', '2026-10-19', '2026-11-02'], 7)).toEqual({ length: 2, start: '2026-10-12', end: '2026-10-19' });
+    expect(longestRun(['2026-10-12'], 1)).toEqual({ length: 1, start: '2026-10-12', end: '2026-10-12' });
+    expect(longestRun([], 1)).toBeNull();
   });
 });
 

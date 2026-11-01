@@ -11,6 +11,7 @@ import { StatsMoodService } from './stats-mood.service';
 import { StatsGoalService } from './stats-goal.service';
 import { StatsStreakService } from './stats-streak.service';
 import { StatsWritingTimesService } from './stats-writing-times.service';
+import { StatsRecordsService } from './stats-records.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Diary, Entry]), AiModule],
@@ -24,6 +25,7 @@ import { StatsWritingTimesService } from './stats-writing-times.service';
     StatsGoalService,
     StatsStreakService,
     StatsWritingTimesService,
+    StatsRecordsService,
   ],
   exports: [StatsService],
 })

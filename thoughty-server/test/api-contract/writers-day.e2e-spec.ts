@@ -107,4 +107,47 @@ describeContract('writers-day', (context) => {
       await call('GET /api/stats', { as: carol, query: { timeZone }, status: 400, code: 'VALIDATION_FAILED' });
     }
   });
+
+  it('finds the personal records with links to their entries, the hours read in the writer’s time zone', async () => {
+    const dana = await registerWriter(context.client, 'dana');
+    const write = async (json: Record<string, unknown>) => {
+      const response = await call('POST /api/entries', {
+        as: dana,
+        json: { tags: [], visibility: 'private', format: 'plain', ...json },
+        status: 201,
+      });
+      return (response.body as { entryId: number }).entryId;
+    };
+    const evening = await write({ text: 'A long evening entry with seven words', date: '2026-10-27', timeOfDay: '21:15' });
+    const morning = await write({ text: 'Early', date: '2026-10-28', timeOfDay: '06:45' });
+    const now = await write({ text: 'Now', date: '2026-10-28' });
+    // In the recycle bin: earlier in the day, in the past and longer than any other, so it holds no record
+    const binned = await write({ text: 'word '.repeat(20), date: '2020-01-01', timeOfDay: '00:05' });
+    await call('DELETE /api/entries/{id}', { as: dana, params: { id: binned }, status: 200 });
+
+    const toTime = ({ hour, minute }: { hour: number; minute: number }) =>
+      `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+    for (const timeZone of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
+      const before = toTime(zonedParts(new Date(), timeZone));
+      const response = await call('GET /api/stats', { as: dana, query: { today: utcDay(), timeZone }, status: 200 });
+      const after = toTime(zonedParts(new Date(), timeZone));
+      const { records } = response.body as { records: Record<string, unknown> };
+      expect(records).toMatchObject({
+        longestEntry: { entryId: evening, date: '2026-10-27', index: 1, words: 7 },
+        busiestDay: { date: '2026-10-28', entries: 2 },
+        longestStreak: { days: 2, startDate: '2026-10-27', endDate: '2026-10-28' },
+        firstEntry: { entryId: evening, date: '2026-10-27', index: 1 },
+      });
+      // The entry written now counts at the time it is in that zone (read on either side of the call)
+      const expected = [before, after].map((time) => {
+        const times = [
+          { entryId: evening, date: '2026-10-27', index: 1, time: '21:15' },
+          { entryId: morning, date: '2026-10-28', index: 1, time: '06:45' },
+          { entryId: now, date: '2026-10-28', index: 2, time },
+        ].sort((left, right) => left.time.localeCompare(right.time));
+        return { earliestEntry: times[0], latestEntry: times.at(-1) };
+      });
+      expect(expected).toContainEqual({ earliestEntry: records.earliestEntry, latestEntry: records.latestEntry });
+    }
+  });
 });

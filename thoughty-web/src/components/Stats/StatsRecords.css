@@ -1,0 +1,108 @@
+/* Personal records: one tile per record, each with its own colour */
+.records-card {
+    grid-column: 1 / -1;
+}
+
+.records-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 13rem), 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.records-item {
+    --record-color: #0ea5e9;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.9rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid color-mix(in srgb, var(--record-color) 35%, transparent);
+    background: color-mix(in srgb, var(--record-color) 9%, transparent);
+}
+
+.records-item-longest { --record-color: #8b5cf6; }
+.records-item-busiest { --record-color: #ec4899; }
+.records-item-streak { --record-color: #f97316; }
+.records-item-earliest { --record-color: #eab308; }
+.records-item-latest { --record-color: #6366f1; }
+.records-item-first { --record-color: #22c55e; }
+
+.records-icon {
+    flex-shrink: 0;
+    font-size: 1.4rem;
+    color: var(--record-color);
+    transition: transform 0.2s ease;
+}
+
+.records-item:hover .records-icon {
+    transform: rotate(-10deg) scale(1.12);
+}
+
+.records-body {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.records-title {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+.records-value {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+}
+
+.records-link {
+    justify-self: start;
+    padding: 0.1rem 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 0.85rem;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+    cursor: pointer;
+}
+
+.records-link.dark {
+    color: #93c5fd;
+}
+
+.records-link.light {
+    color: #1d4ed8;
+}
+
+.records-link:disabled {
+    cursor: default;
+    text-decoration: none;
+    opacity: 0.8;
+}
+
+.records-link:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .records-icon {
+        transition: none;
+    }
+
+    .records-item:hover .records-icon {
+        transform: none;
+    }
+}
