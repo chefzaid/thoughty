@@ -168,6 +168,7 @@ export interface MockAppState {
     streakCard?: boolean;
     /** Off unless turned on, as the API answers it for a new account. */
     quietMode?: boolean;
+    defaultVisibility?: "public" | "private";
     ttsVoiceUri?: string;
     openRouterModel?: string;
     /** Prompt card ids drawn since their deck was last used up, comma-separated. */
