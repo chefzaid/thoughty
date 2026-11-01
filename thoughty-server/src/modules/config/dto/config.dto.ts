@@ -16,6 +16,8 @@ const ToSettingText = () =>
 
 export const BOOLEAN_TEXT = ['true', 'false'] as const;
 export const SMALL_NUMBER = /^\d{1,3}$/;
+/** Prompt card ids (`theme-number`), comma-separated, or empty. */
+export const PROMPT_CARD_IDS = /^(?:[a-zA-Z]{1,20}-\d{1,3}(?:,[a-zA-Z]{1,20}-\d{1,3})*)?$/;
 
 function SettingText(maxLength: number, description: string, pattern?: RegExp) {
   return applyDecorators(
@@ -149,6 +151,13 @@ export class UpdateConfigDto {
   @SettingText(500_000, 'Custom entry templates as serialized JSON')
   entryTemplates?: string;
 
+  @SettingText(
+    2000,
+    'Prompt cards drawn since their deck was last used up (`theme-number`, comma-separated), so none repeats until then',
+    PROMPT_CARD_IDS,
+  )
+  promptCardsDrawn?: string;
+
   @SettingChoice(['free', 'plus', 'pro'], 'Subscription plan')
   subscriptionPlan?: string;
 
@@ -188,6 +197,7 @@ export const USER_CONFIG_KEYS: ReadonlySet<string> = new Set<keyof UpdateConfigD
   'autoTagMaxTags',
   'tagMetadata',
   'entryTemplates',
+  'promptCardsDrawn',
   'subscriptionPlan',
   'paymentMethodLabel',
 ]);

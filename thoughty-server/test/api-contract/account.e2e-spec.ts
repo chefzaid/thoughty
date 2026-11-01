@@ -34,6 +34,7 @@ describeContract('account', (context) => {
         streakCard: true,
         quietMode: true,
         readDates: false,
+        promptCardsDrawn: 'gratitude-3,smallJoys-12',
       },
       status: 200,
     });
@@ -46,6 +47,7 @@ describeContract('account', (context) => {
       highContrast: 'false',
       streakCard: 'true',
       quietMode: 'true',
+      promptCardsDrawn: 'gratitude-3,smallJoys-12',
     });
     const other = await call('GET /api/config', { as: bob, status: 200 });
     // Quiet mode is off until the writer turns it on
@@ -56,6 +58,7 @@ describeContract('account', (context) => {
       status: 400,
       code: 'VALIDATION_FAILED',
     });
+    await call('POST /api/config', { as: alice, json: { promptCardsDrawn: 'gratitude-3;' }, status: 400, code: 'VALIDATION_FAILED' });
     await call('GET /api/config', { status: 401, code: 'UNAUTHORIZED' });
     await call('GET /api/config/feature-flags', { as: alice, status: 200 });
   });

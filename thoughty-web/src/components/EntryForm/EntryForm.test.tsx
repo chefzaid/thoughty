@@ -309,6 +309,36 @@ describe('EntryForm', () => {
         });
     });
 
+    describe('Prompt cards', () => {
+        it('draws a card without AI and adds its question to the draft as the AI questions are', async () => {
+            vi.spyOn(Math, 'random').mockReturnValue(0);
+            const setNewEntryText = vi.fn();
+            const onPromptCardsDrawnChange = vi.fn();
+            const user = userEvent.setup();
+            render(
+                <EntryForm
+                    {...defaultProps}
+                    newEntryText="Existing draft"
+                    setNewEntryText={setNewEntryText}
+                    t={(key, params) => getTranslation('en', key, params)}
+                    promptCardsDrawn="gratitude-1"
+                    onPromptCardsDrawnChange={onPromptCardsDrawnChange}
+                />,
+            );
+            expect(screen.queryByRole('button', { name: 'Get Inspired' })).not.toBeInTheDocument();
+
+            await user.click(screen.getByRole('button', { name: 'Draw a card' }));
+            expect(onPromptCardsDrawnChange).toHaveBeenCalledWith('gratitude-1,gratitude-2');
+            await user.click(screen.getByRole('button', { name: 'Write about this' }));
+
+            const updateDraft = setNewEntryText.mock.calls[0]?.[0] as ((current: string) => string) | undefined;
+            expect(updateDraft?.('Existing draft')).toBe(
+                'Existing draft\n\nWhat do you own that you would quietly miss if it vanished tomorrow?',
+            );
+            vi.restoreAllMocks();
+        });
+    });
+
     describe('Visibility', () => {
         it('falls back to private visibility when the value is null', async () => {
             const setVisibility = vi.fn();

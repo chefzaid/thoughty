@@ -2,14 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
 import { aiActionButtonClass } from './aiActionButton';
+import { useAnchoredPanel } from './useAnchoredPanel';
 import { tintedTextClass } from '../../utils/tintedText';
-
-interface InspirationPanelPosition {
-    left: number;
-    width: number;
-    top?: number;
-    bottom?: number;
-}
 
 interface GetInspiredMenuProps {
     onGenerate: () => Promise<string | null>;
@@ -28,15 +22,9 @@ export default function GetInspiredMenu({
     const [question, setQuestion] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
-    const panelRef = useRef<HTMLDivElement>(null);
-    const buttonRef = useRef<HTMLButtonElement>(null);
     const requestIdRef = useRef(0);
-    const [menuPosition, setMenuPosition] = useState<InspirationPanelPosition>({
-        left: 16,
-        top: 16,
-        width: 352,
-    });
+    const close = useCallback(() => setOpen(false), []);
+    const { anchorRef: menuRef, panelRef, buttonRef, position: menuPosition } = useAnchoredPanel(open, close);
     const isLight = theme === 'light';
 
     const loadQuestion = useCallback(async () => {
@@ -81,60 +69,6 @@ export default function GetInspiredMenu({
         setOpen(false);
         setQuestion(null);
     }, [onSelect]);
-
-    const updateMenuPosition = useCallback(() => {
-        const button = buttonRef.current;
-        if (!button) {
-            return;
-        }
-
-        const bounds = button.getBoundingClientRect();
-        const viewportPadding = 16;
-        const width = Math.min(352, globalThis.innerWidth - (viewportPadding * 2));
-        const left = Math.min(
-            Math.max(viewportPadding, bounds.left),
-            globalThis.innerWidth - width - viewportPadding,
-        );
-        const opensDownward = bounds.bottom + 288 <= globalThis.innerHeight - viewportPadding;
-
-        setMenuPosition({
-            left,
-            width,
-            ...(opensDownward
-                ? { top: bounds.bottom + 8 }
-                : { bottom: globalThis.innerHeight - bounds.top + 8 }),
-        });
-    }, []);
-
-    useEffect(() => {
-        if (!open) {
-            return undefined;
-        }
-
-        updateMenuPosition();
-        const handlePointerDown = (event: MouseEvent) => {
-            const target = event.target as Node;
-            if (!menuRef.current?.contains(target) && !panelRef.current?.contains(target)) {
-                setOpen(false);
-            }
-        };
-        const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                setOpen(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handlePointerDown);
-        globalThis.addEventListener('keydown', handleKeyDown);
-        globalThis.addEventListener('resize', updateMenuPosition);
-        globalThis.addEventListener('scroll', updateMenuPosition, true);
-        return () => {
-            document.removeEventListener('mousedown', handlePointerDown);
-            globalThis.removeEventListener('keydown', handleKeyDown);
-            globalThis.removeEventListener('resize', updateMenuPosition);
-            globalThis.removeEventListener('scroll', updateMenuPosition, true);
-        };
-    }, [open, updateMenuPosition]);
 
     useEffect(() => {
         requestIdRef.current += 1;

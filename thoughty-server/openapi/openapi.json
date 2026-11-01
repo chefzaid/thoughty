@@ -3721,6 +3721,7 @@
                   "openRouterBookModel": "example",
                   "tagMetadata": "reflection",
                   "entryTemplates": "example",
+                  "promptCardsDrawn": "example",
                   "subscriptionPlan": "free",
                   "paymentMethodLabel": "example",
                   "fontSize": "example",
@@ -3788,6 +3789,7 @@
                 "autoTagMaxTags": "reflection",
                 "tagMetadata": "reflection",
                 "entryTemplates": "example",
+                "promptCardsDrawn": "example",
                 "subscriptionPlan": "free",
                 "paymentMethodLabel": "example"
               }
@@ -15175,6 +15177,12 @@
             "maxLength": 500000,
             "description": "Custom entry templates as serialized JSON"
           },
+          "promptCardsDrawn": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Prompt cards drawn since their deck was last used up (`theme-number`, comma-separated), so none repeats until then",
+            "pattern": "^(?:[a-zA-Z]{1,20}-\\d{1,3}(?:,[a-zA-Z]{1,20}-\\d{1,3})*)?$"
+          },
           "subscriptionPlan": {
             "type": "string",
             "enum": [
@@ -15265,6 +15273,7 @@
           "openRouterBookModel": "example",
           "tagMetadata": "reflection",
           "entryTemplates": "example",
+          "promptCardsDrawn": "example",
           "subscriptionPlan": "free",
           "paymentMethodLabel": "example",
           "fontSize": "example",
@@ -15527,6 +15536,12 @@
             "maxLength": 500000,
             "description": "Custom entry templates as serialized JSON"
           },
+          "promptCardsDrawn": {
+            "type": "string",
+            "maxLength": 2000,
+            "description": "Prompt cards drawn since their deck was last used up (`theme-number`, comma-separated), so none repeats until then",
+            "pattern": "^(?:[a-zA-Z]{1,20}-\\d{1,3}(?:,[a-zA-Z]{1,20}-\\d{1,3})*)?$"
+          },
           "subscriptionPlan": {
             "type": "string",
             "enum": [
@@ -15573,6 +15588,7 @@
           "autoTagMaxTags": "reflection",
           "tagMetadata": "reflection",
           "entryTemplates": "example",
+          "promptCardsDrawn": "example",
           "subscriptionPlan": "free",
           "paymentMethodLabel": "example"
         }

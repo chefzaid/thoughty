@@ -170,6 +170,8 @@ export interface MockAppState {
     quietMode?: boolean;
     ttsVoiceUri?: string;
     openRouterModel?: string;
+    /** Prompt card ids drawn since their deck was last used up, comma-separated. */
+    promptCardsDrawn?: string;
   };
   diaries: MockDiary[];
   entries: MockEntry[];

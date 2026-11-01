@@ -28,6 +28,8 @@ export interface Config {
   autoTagMaxTags?: string | number;
   tagMetadata?: string;
   entryTemplates?: string;
+  /** Prompt card ids drawn since their deck was last used up, comma-separated. */
+  promptCardsDrawn?: string;
   subscriptionPlan?: 'free' | 'plus' | 'pro';
   paymentMethodLabel?: string;
 }

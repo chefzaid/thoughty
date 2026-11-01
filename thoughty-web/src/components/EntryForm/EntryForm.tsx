@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo, useState, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
+import { Suspense, lazy, type ComponentPropsWithoutRef, type Dispatch, type SetStateAction } from 'react';
 import TagPicker from '../TagPicker/TagPicker';
 import AttachmentUpload from '../AttachmentUpload/AttachmentUpload';
 import TypedDatePicker from '../TypedDatePicker/TypedDatePicker';
@@ -10,6 +10,8 @@ import { resolveFontColor } from '../../types/config';
 import type { EntryTemplate, EntryTemplateDraft } from '../../utils/entryTemplates';
 import AiSparkleIcon from '../AiSparkleIcon/AiSparkleIcon';
 import GetInspiredMenu from './GetInspiredMenu';
+import PromptCardsMenu from '../PromptCards/PromptCardsMenu';
+import { appendPrompt } from './appendPrompt';
 import { useAutoGrowTextarea } from '../../hooks/useAutoGrowTextarea';
 import { aiActionButtonClass } from './aiActionButton';
 import { tintedTextClass } from '../../utils/tintedText';
@@ -18,7 +20,7 @@ import EntryMoodField from './EntryMoodField';
 import { MAX_ENTRY_TITLE_LENGTH } from '../../utils/entryTime';
 import MarkdownHelp from '../MarkdownEditor/MarkdownHelp';
 import FocusModeLauncher from '../FocusMode/FocusModeLauncher';
-import TemplateNameDialog from './TemplateNameDialog';
+import EntryTemplateBar from './EntryTemplateBar';
 import type { FontFamilyPreference } from '../../types';
 import MentionSuggestions from '../People/MentionSuggestions';
 import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
@@ -62,6 +64,9 @@ interface EntryFormProps {
     readonly fixingWriting?: boolean;
     readonly onFixWriting?: () => Promise<boolean> | boolean;
     readonly onGetInspiration?: () => Promise<string | null>;
+    /** The prompt cards drawn so far (the `promptCardsDrawn` setting), and saving them; Draw a card needs no AI. */
+    readonly promptCardsDrawn?: string;
+    readonly onPromptCardsDrawnChange?: (drawn: string) => void;
     readonly onSubmit: NonNullable<ComponentPropsWithoutRef<'form'>['onSubmit']>;
     readonly theme?: 'light' | 'dark';
     readonly t: (key: string, params?: Record<string, string | number>) => string;
@@ -129,6 +134,8 @@ function EntryForm({
     fixingWriting = false,
     onFixWriting,
     onGetInspiration,
+    promptCardsDrawn,
+    onPromptCardsDrawnChange,
     onSubmit,
     theme,
     t,
@@ -153,23 +160,11 @@ function EntryForm({
     const mentionSuggestions = (
         <MentionSuggestions suggestions={mentions.suggestions} theme={theme} language={resolveLanguage(language)} t={t} />
     );
-    const [selectedTemplateId, setSelectedTemplateId] = useState('');
-    const [isNamingTemplate, setIsNamingTemplate] = useState(false);
     const writingTextColor = resolveFontColor(fontColor, theme);
-    const selectedTemplate = useMemo(
-        () => entryTemplates.find((template) => template.id === selectedTemplateId),
-        [entryTemplates, selectedTemplateId],
-    );
 
     const { inputClass, containerClass, markdownToggleClass } = entryFormClasses({ theme, format, visibility });
 
-    const applyTemplate = (templateId: string): void => {
-        setSelectedTemplateId(templateId);
-        const template = entryTemplates.find((candidate) => candidate.id === templateId);
-        if (!template) {
-            return;
-        }
-
+    const applyTemplate = (template: EntryTemplate): void => {
         setNewEntryText(template.content);
         setTags(template.tags);
         setVisibility(template.visibility);
@@ -184,91 +179,26 @@ function EntryForm({
         if (value) setVisibility('private');
     };
 
-    const saveCurrentDraftAsTemplate = async (name: string): Promise<boolean> => {
-        if (!onSaveTemplate) {
-            return false;
-        }
-
-        const saved = await onSaveTemplate({
-            name,
-            content: newEntryText,
-            tags,
-            visibility: visibility ?? 'private',
-            format,
-        });
-        if (saved) {
-            setIsNamingTemplate(false);
-        }
-        return saved;
-    };
-
-    const deleteSelectedTemplate = async (): Promise<void> => {
-        if (!selectedTemplate || selectedTemplate.builtIn || !onDeleteTemplate) {
-            return;
-        }
-
-        if (await onDeleteTemplate(selectedTemplate.id)) {
-            setSelectedTemplateId('');
-        }
-    };
+    const saveDraftAsTemplate = onSaveTemplate && ((name: string) => onSaveTemplate({
+        name,
+        content: newEntryText,
+        tags,
+        visibility: visibility ?? 'private',
+        format,
+    }));
 
     return (
         <div className={containerClass} data-focus-mode-scope="">
             <form onSubmit={onSubmit} className="space-y-4 overflow-visible">
-                {(entryTemplates.length > 0 || onSaveTemplate) && (
-                    <div className="flex flex-wrap items-center gap-2">
-                        {entryTemplates.length > 0 && (
-                            <select
-                                value={selectedTemplateId}
-                                onChange={(event) => applyTemplate(event.target.value)}
-                                className={`min-w-0 flex-1 basis-56 border rounded-lg px-3 h-10 text-sm focus:ring-1 focus:ring-blue-500 outline-none ${theme === 'light'
-                                    ? 'bg-gray-50 border-gray-300 text-gray-900'
-                                    : 'bg-gray-900 border-gray-700 text-gray-100'
-                                    }`}
-                                aria-label={t('entryTemplate')}
-                                title={t('entryTemplate')}
-                            >
-                                <option value="">{t('noEntryTemplate')}</option>
-                                {entryTemplates.map((template) => (
-                                    <option key={template.id} value={template.id}>
-                                        {template.name}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
-                        {onSaveTemplate && (
-                            <button
-                                type="button"
-                                onClick={() => setIsNamingTemplate(true)}
-                                disabled={newEntryText.trim() === ''}
-                                aria-haspopup="dialog"
-                                className={`inline-flex h-10 shrink-0 items-center gap-2 px-3 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-sm ${tintedTextClass('emerald', theme)} hover:bg-emerald-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
-                                title={t('saveEntryTemplate')}
-                            >
-                                <span className="codicon codicon-save" aria-hidden="true" />
-                                {t('saveEntryTemplate')}
-                            </button>
-                        )}
-                        {selectedTemplate && !selectedTemplate.builtIn && onDeleteTemplate && (
-                            <button
-                                type="button"
-                                onClick={() => void deleteSelectedTemplate()}
-                                className={`h-10 shrink-0 px-3 rounded-lg border border-red-500/40 bg-red-500/10 ${tintedTextClass('red', theme)} hover:bg-red-500/20 transition-all`}
-                                title={t('deleteEntryTemplate')}
-                            >
-                                {t('deleteEntryTemplate')}
-                            </button>
-                        )}
-                        {isNamingTemplate && (
-                            <TemplateNameDialog
-                                theme={theme}
-                                t={t}
-                                onCancel={() => setIsNamingTemplate(false)}
-                                onSave={saveCurrentDraftAsTemplate}
-                            />
-                        )}
-                    </div>
-                )}
+                <EntryTemplateBar
+                    templates={entryTemplates}
+                    onApply={applyTemplate}
+                    onSave={saveDraftAsTemplate}
+                    onDelete={onDeleteTemplate}
+                    canSave={newEntryText.trim() !== ''}
+                    theme={theme}
+                    t={t}
+                />
                 {setTitle && (
                     <div>
                         <label htmlFor="composer-title" className="sr-only">{t('entryTitleLabel')}</label>
@@ -418,12 +348,20 @@ function EntryForm({
                             <span>{fixingWriting ? t('fixingWriting') : t('fixWriting')}</span>
                         </button>
                     )}
+                    {onPromptCardsDrawnChange && (
+                        <PromptCardsMenu
+                            language={resolveLanguage(language)}
+                            drawn={promptCardsDrawn}
+                            onDrawnChange={onPromptCardsDrawnChange}
+                            onSelect={(question) => setNewEntryText((current) => appendPrompt(current, question))}
+                            theme={theme}
+                            t={t}
+                        />
+                    )}
                     {onGetInspiration && (
                         <GetInspiredMenu
                             onGenerate={onGetInspiration}
-                            onSelect={(question) => setNewEntryText((current) => (
-                                current.trim() ? `${current}\n\n${question}` : question
-                            ))}
+                            onSelect={(question) => setNewEntryText((current) => appendPrompt(current, question))}
                             theme={theme}
                             t={t}
                         />

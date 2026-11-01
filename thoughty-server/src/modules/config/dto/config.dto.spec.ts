@@ -47,6 +47,7 @@ describe('UpdateConfigDto', () => {
       autoTagMaxTags: '0',
       tagMetadata: '{}',
       entryTemplates: '[]',
+      promptCardsDrawn: 'gratitude-3,smallJoys-12',
       subscriptionPlan: 'pro',
       paymentMethodLabel: 'Visa ending 1111',
     });
@@ -59,6 +60,11 @@ describe('UpdateConfigDto', () => {
       streakCard: 'false',
       quietMode: 'true',
     });
+  });
+
+  it('accepts the prompt cards drawn, or none', async () => {
+    await expect(validate({ promptCardsDrawn: 'people-1,places-12,smallJoys-7' })).resolves.toBeDefined();
+    await expect(validate({ promptCardsDrawn: '' })).resolves.toBeDefined();
   });
 
   it('accepts an http(s) avatar and an empty one', async () => {
@@ -94,6 +100,10 @@ describe('UpdateConfigDto', () => {
     ['name', 'x'.repeat(201)],
     ['tagMetadata', { work: { color: '#fff' } }],
     ['entryTemplates', ['a']],
+    ['promptCardsDrawn', 'gratitude-3,'],
+    ['promptCardsDrawn', 'gratitude 3'],
+    ['promptCardsDrawn', ['gratitude-3']],
+    ['promptCardsDrawn', `gratitude-1${',gratitude-1'.repeat(200)}`],
   ])('rejects an invalid %s', async (key, value) => {
     await expect(validate({ [key]: value })).rejects.toThrow(BadRequestException);
   });

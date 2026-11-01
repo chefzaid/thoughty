@@ -52,6 +52,18 @@ describe('appShellProps', () => {
     expect(updateConfig).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the prompt cards drawn in user config, quietly', () => {
+    const updateConfig = vi.fn().mockResolvedValue(false);
+    const saveConfig = vi.fn();
+    const config = { theme: 'dark' as const, name: 'Zaid', promptCardsDrawn: 'people-2' };
+    const { entryForm } = buildAuthenticatedRoutesProps(createRoutesParams({ updateConfig, saveConfig, config })).journalRouteProps;
+
+    expect(entryForm.promptCardsDrawn).toBe('people-2');
+    entryForm.onPromptCardsDrawnChange?.('people-2,places-5');
+    expect(updateConfig).toHaveBeenCalledWith({ ...config, promptCardsDrawn: 'people-2,places-5' });
+    expect(saveConfig).not.toHaveBeenCalled();
+  });
+
   it('gives the feed the reading-aloud settings', () => {
     const readingProps = buildAuthenticatedRoutesProps(createRoutesParams({
       config: { theme: 'light', name: 'Zaid', language: 'fr', readDates: false, ttsVoiceUri: 'voice-1' },

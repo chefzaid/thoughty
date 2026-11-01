@@ -340,6 +340,9 @@ export function buildAuthenticatedRoutesProps({
         fixingWriting: entryFormState.fixingWriting,
         onFixWriting: entryFormState.handleFixWriting,
         onGetInspiration: handleGetInspiration,
+        promptCardsDrawn: config.promptCardsDrawn,
+        // A draw that fails to save only lets a card come back sooner, so it needs no message
+        onPromptCardsDrawnChange: (promptCardsDrawn: string) => void updateConfig({ ...config, promptCardsDrawn }),
         onSubmit: entryFormState.handleSubmit,
         pendingFiles: entryFormState.pendingFiles,
         uploadedAttachments: entryFormState.uploadedAttachments,

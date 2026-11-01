@@ -10,6 +10,7 @@ import { writingTimesTranslations, type WritingTimesTranslationKey } from "./tra
 import { recordsTranslations, type RecordsTranslationKey } from "./translations.records";
 import { taskListTranslations, type TaskListTranslationKey } from "./translations.taskList";
 import { openTasksTranslations, type OpenTasksTranslationKey } from "./translations.openTasks";
+import { promptCardsTranslations, type PromptCardsTranslationKey } from "./translations.promptCards";
 import { inlineImagesTranslations, type InlineImagesTranslationKey } from "./translations.inlineImages";
 import { videoAttachmentsTranslations, type VideoAttachmentsTranslationKey } from "./translations.videoAttachments";
 import { printTranslations, type PrintTranslationKey } from "./translations.print";
@@ -69,6 +70,7 @@ export type TranslationKey =
   | RecordsTranslationKey
   | TaskListTranslationKey
   | OpenTasksTranslationKey
+  | PromptCardsTranslationKey
   | InlineImagesTranslationKey
   | VideoAttachmentsTranslationKey
   | PrintTranslationKey
@@ -133,6 +135,7 @@ export const translations: Translations = {
     ...recordsTranslations.en,
     ...taskListTranslations.en,
     ...openTasksTranslations.en,
+    ...promptCardsTranslations.en,
     ...inlineImagesTranslations.en,
     ...videoAttachmentsTranslations.en,
     ...printTranslations.en,
@@ -190,6 +193,7 @@ export const translations: Translations = {
     ...recordsTranslations.fr,
     ...taskListTranslations.fr,
     ...openTasksTranslations.fr,
+    ...promptCardsTranslations.fr,
     ...inlineImagesTranslations.fr,
     ...videoAttachmentsTranslations.fr,
     ...printTranslations.fr,

@@ -3956,6 +3956,7 @@ export interface components {
          *       "openRouterBookModel": "example",
          *       "tagMetadata": "reflection",
          *       "entryTemplates": "example",
+         *       "promptCardsDrawn": "example",
          *       "subscriptionPlan": "free",
          *       "paymentMethodLabel": "example",
          *       "fontSize": "example",
@@ -4025,6 +4026,8 @@ export interface components {
             tagMetadata?: string;
             /** @description Custom entry templates as serialized JSON */
             entryTemplates?: string;
+            /** @description Prompt cards drawn since their deck was last used up (`theme-number`, comma-separated), so none repeats until then */
+            promptCardsDrawn?: string;
             /**
              * @description Subscription plan
              * @enum {string}
@@ -4093,6 +4096,7 @@ export interface components {
          *       "autoTagMaxTags": "reflection",
          *       "tagMetadata": "reflection",
          *       "entryTemplates": "example",
+         *       "promptCardsDrawn": "example",
          *       "subscriptionPlan": "free",
          *       "paymentMethodLabel": "example"
          *     }
@@ -4170,6 +4174,8 @@ export interface components {
             tagMetadata?: string;
             /** @description Custom entry templates as serialized JSON */
             entryTemplates?: string;
+            /** @description Prompt cards drawn since their deck was last used up (`theme-number`, comma-separated), so none repeats until then */
+            promptCardsDrawn?: string;
             /**
              * @description Subscription plan
              * @enum {string}
@@ -12078,6 +12084,7 @@ export interface operations {
                      *       "openRouterBookModel": "example",
                      *       "tagMetadata": "reflection",
                      *       "entryTemplates": "example",
+                     *       "promptCardsDrawn": "example",
                      *       "subscriptionPlan": "free",
                      *       "paymentMethodLabel": "example",
                      *       "fontSize": "example",
@@ -12136,6 +12143,7 @@ export interface operations {
                  *       "autoTagMaxTags": "reflection",
                  *       "tagMetadata": "reflection",
                  *       "entryTemplates": "example",
+                 *       "promptCardsDrawn": "example",
                  *       "subscriptionPlan": "free",
                  *       "paymentMethodLabel": "example"
                  *     }
