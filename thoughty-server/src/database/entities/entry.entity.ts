@@ -100,7 +100,7 @@ export class Entry {
   @Column({ name: 'is_pinned', type: 'boolean', default: false })
   isPinned: boolean;
 
-  /** Source app and entry ID (`dayone:<uuid>`) for entries brought in by an app import. */
+  /** Source app and entry ID (`dayone:<uuid>`, `daily-notes:<path>`) for entries brought in by an app import. */
   @Column({ name: 'import_ref', type: 'varchar', length: 120, nullable: true })
   importRef: string | null;
 

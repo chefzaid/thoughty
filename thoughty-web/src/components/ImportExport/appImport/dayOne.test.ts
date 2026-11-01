@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ZipEntry } from '../../../utils/zipReader';
 import { cleanDayOneText, isDayOneJournal, parseDayOneJournal, splitDayOneTitle, unescapeDayOneMarkdown } from './dayOne';
 
-const zipEntry = (name: string): ZipEntry => ({ name, size: 10, compressedSize: 10, method: 0, encrypted: false, localHeaderOffset: 0 });
+const zipEntry = (name: string): ZipEntry => ({ name, size: 10, compressedSize: 10, method: 0, encrypted: false, localHeaderOffset: 0, symlink: false, utf8Name: true });
 
 describe('unescapeDayOneMarkdown', () => {
   it('drops escapes that change nothing', () => {

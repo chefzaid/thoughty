@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildZip } from '../test/zipFixture';
-import { readZipEntries, readZipFile, readZipText, ZipFormatError } from './zipReader';
+import { readZipEntries, readZipFile, readZipText, safeZipPath, ZipFormatError, ZipLimitError } from './zipReader';
 
 const photo = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3, 4]);
 const journal = JSON.stringify({ entries: [{ text: 'Été à la mer' }] });
@@ -68,5 +68,48 @@ describe('zipReader', () => {
     await expect(readZipFile(archive, { ...entry!, encrypted: true })).rejects.toThrow('encrypted');
     await expect(readZipFile(archive, { ...entry!, method: 12 })).rejects.toThrow('unsupported compression');
     await expect(readZipFile(archive, { ...entry!, localHeaderOffset: 5 })).rejects.toThrow('Damaged');
+  });
+
+  it('marks symbolic links and names that are not UTF-8', async () => {
+    const archive = new Blob([await buildZip([
+      { name: 'notes/2024-03-14.md', data: '/etc/passwd', symlink: true },
+      { name: 'ignored', nameBytes: new Uint8Array([0x82, 0x74, 0x82, 0xe9, 0x2e, 0x6d, 0x64]), data: 'Été' },
+      { name: 'Été.md', data: 'Été' },
+    ]) as BlobPart]);
+
+    const entries = await readZipEntries(archive);
+
+    expect(entries.map(({ symlink, utf8Name }) => ({ symlink, utf8Name }))).toEqual([
+      { symlink: true, utf8Name: true },
+      { symlink: false, utf8Name: false },
+      { symlink: false, utf8Name: true },
+    ]);
+    expect(entries[2]!.name).toBe('Été.md');
+  });
+
+  it('refuses archives past the limits the caller sets before reading their directory', async () => {
+    const archive = new Blob([await buildZip([
+      { name: 'a.md', data: 'a' },
+      { name: 'b.md', data: 'b' },
+    ]) as BlobPart]);
+
+    await expect(readZipEntries(archive, { maxEntries: 1 })).rejects.toBeInstanceOf(ZipLimitError);
+    await expect(readZipEntries(archive, { maxDirectoryBytes: 10 })).rejects.toBeInstanceOf(ZipLimitError);
+    await expect(readZipEntries(archive, { maxEntries: 2, maxDirectoryBytes: 1000 })).resolves.toHaveLength(2);
+  });
+
+  it('stops unpacking a file that grows past the size the archive gives it', async () => {
+    const archive = new Blob([await buildZip([{ name: 'bomb.md', data: 'x'.repeat(100_000), declaredSize: 10 }]) as BlobPart]);
+    const [entry] = await readZipEntries(archive);
+
+    expect(entry!.size).toBe(10);
+    await expect(readZipText(archive, entry!)).rejects.toThrow('larger than the archive says');
+  });
+
+  it('accepts only relative paths that stay inside the archive', () => {
+    expect(safeZipPath('vault/./daily//2024-03-14.md')).toEqual(['vault', 'daily', '2024-03-14.md']);
+    for (const unsafe of ['/etc/2024-03-14.md', '../2024-03-14.md', 'a/../../b.md', String.raw`a\b.md`, 'C:/x.md', 'a\u0000.md', '', './']) {
+      expect(safeZipPath(unsafe)).toBeNull();
+    }
   });
 });

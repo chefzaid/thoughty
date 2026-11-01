@@ -555,5 +555,5 @@ Small, relatable additions that reuse what already exists (entries, tags, moods,
 
 ### Bringing notes in
 
-- [ ] Daily-notes folder import: a ZIP of Markdown files named by date (`2024-03-14.md`, the Obsidian and Logseq daily-notes layout), one entry per file on that date, with tags from `#tags` and front matter when present.
+- [x] Daily-notes folder import: a ZIP of Markdown files named by date (`2024-03-14.md` or Logseq's `2024_03_14.md`, at any depth), read in the browser, one private Markdown entry per note on that date in the page's diary, with tags from front matter, `tags::` and `#tags`, `[[date]]` links kept, embedded pictures inline and other files attached, other Markdown files counted as left out, and re-imports skipped by `daily-notes:<path>`.
 - [ ] Google Keep import: Keep's Takeout JSON, notes as entries on their creation date, labels as tags, checklists as Markdown task lists, and pictures as attachments.

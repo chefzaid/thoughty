@@ -1,8 +1,9 @@
 import { readZipEntries, readZipText, ZipFormatError, type ZipEntry } from '../../../utils/zipReader';
 import { baseName } from './appImportMedia';
-import type { AppExport, ImportedEntry } from './appImportTypes';
+import type { AppExport, AppImportKind, ImportedEntry } from './appImportTypes';
 import { isDayOneJournal, parseDayOneJournal, type DayOneMediaLookup } from './dayOne';
 import { isJourneyEntry, JOURNEY_JOURNAL, parseJourneyEntry } from './journey';
+import { NoDailyNotesError, readDailyNotesArchive } from './readDailyNotes';
 
 /** The file is neither a Day One nor a Journey export. */
 export class UnsupportedExportError extends Error {}
@@ -95,12 +96,19 @@ async function readArchive(archive: Blob): Promise<AppExport> {
   throw new UnsupportedExportError('No Day One or Journey entries in this archive');
 }
 
-/** Reads a Day One export (ZIP, or its JSON alone) or a Journey ZIP export. */
-export async function readAppExport(file: File): Promise<AppExport> {
+/**
+ * Reads a Day One export (ZIP, or its JSON alone) or a Journey ZIP export, or, when the writer chose
+ * daily notes, a ZIP of Markdown files named by date.
+ */
+export async function readAppExport(file: File, kind: AppImportKind = 'apps'): Promise<AppExport> {
   const signature = new Uint8Array(await file.slice(0, 2).arrayBuffer());
-  if (signature[0] === ZIP_SIGNATURE[0] && signature[1] === ZIP_SIGNATURE[1]) {
+  const isZip = signature[0] === ZIP_SIGNATURE[0] && signature[1] === ZIP_SIGNATURE[1];
+  if (kind === 'daily-notes' && !isZip) {
+    throw new NoDailyNotesError('Daily notes come as a ZIP archive');
+  }
+  if (isZip) {
     try {
-      return await readArchive(file);
+      return await (kind === 'daily-notes' ? readDailyNotesArchive(file) : readArchive(file));
     } catch (error) {
       throw error instanceof ZipFormatError ? new UnsupportedExportError(error.message) : error;
     }

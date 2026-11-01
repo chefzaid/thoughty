@@ -6355,7 +6355,7 @@
                 "source": "dayone",
                 "entries": [
                   {
-                    "sourceId": "example",
+                    "sourceId": "journals/2024_03_14.md",
                     "date": "2024-03-05",
                     "timeOfDay": "08:30",
                     "title": "Morning walk by the river",
@@ -6408,7 +6408,7 @@
             "bearer": []
           }
         ],
-        "summary": "Import a batch of entries from another journaling app (Day One, Journey)",
+        "summary": "Import a batch of entries from another journaling app (Day One, Journey, Obsidian or Logseq daily notes)",
         "tags": [
           "Import/Export"
         ]
@@ -19620,7 +19620,8 @@
         "properties": {
           "sourceId": {
             "type": "string",
-            "description": "ID of the entry in the source app; an entry already imported is not imported again"
+            "description": "ID of the entry in the source app (for daily notes, the note's path in the archive); an entry already imported is not imported again",
+            "example": "journals/2024_03_14.md"
           },
           "date": {
             "type": "string",
@@ -19669,7 +19670,7 @@
           "tags"
         ],
         "example": {
-          "sourceId": "example",
+          "sourceId": "journals/2024_03_14.md",
           "date": "2024-03-05",
           "timeOfDay": "08:30",
           "title": "Morning walk by the river",
@@ -19689,8 +19690,10 @@
             "type": "string",
             "enum": [
               "dayone",
-              "journey"
-            ]
+              "journey",
+              "daily-notes"
+            ],
+            "description": "Day One, Journey, or a folder of daily notes named by date (Obsidian, Logseq)"
           },
           "entries": {
             "type": "array",
@@ -19715,7 +19718,7 @@
           "source": "dayone",
           "entries": [
             {
-              "sourceId": "example",
+              "sourceId": "journals/2024_03_14.md",
               "date": "2024-03-05",
               "timeOfDay": "08:30",
               "title": "Morning walk by the river",

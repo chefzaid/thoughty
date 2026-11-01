@@ -212,6 +212,58 @@ describeContract('io', (context) => {
     });
   });
 
+  it('imports daily notes by their path in the archive into the chosen diary, inline pictures included, once', async () => {
+    const { alice } = context;
+    const diary = await call('POST /api/diaries', {
+      as: alice,
+      json: { name: 'Obsidian', visibility: 'private', goalType: null, goalTarget: null },
+      status: 201,
+    });
+    const diaryId = (diary.body as { id: number }).id;
+    // What the browser sends for `Vault/journals/2024_03_14.md` and `Vault/Daily Notes/2024-03-15.md` (a hash for the space)
+    const notes = {
+      source: 'daily-notes',
+      diaryId,
+      journalsAsDiaries: false,
+      entries: [
+        { sourceId: 'Vault/journals/2024_03_14.md', date: '2024-03-14', content: '- Pier ![pier.png](attachment:pier.png)\n- [[2024-03-13]]', tags: ['work'] },
+        { sourceId: '2024-03-15.0f3a9c2b5d7e1a46', date: '2024-03-15', content: '# Friday #weather', tags: ['weather'] },
+      ],
+    };
+    const imported = await call('POST /api/io/import/entries', { as: alice, json: notes, status: 200 });
+    const [pierNote] = (imported.body as { entries: { entryId: number }[] }).entries;
+    const again = await call('POST /api/io/import/entries', { as: alice, json: notes, status: 200 });
+    expect(again.body).toMatchObject({ importedCount: 0, alreadyImportedCount: 2 });
+
+    const attached = await call('POST /api/io/import/attachments', {
+      as: alice,
+      multipart: {
+        fields: { entryIds: String(pierNote!.entryId) },
+        files: [{ field: 'files', buffer: PNG_PIXEL, filename: 'pier.png', contentType: 'image/png' }],
+      },
+      status: 200,
+    });
+    const [photo] = (attached.body as { attachments: { id: number }[] }).attachments;
+    const listed = await call('GET /api/entries', {
+      as: alice,
+      query: new URLSearchParams({ page: '1', limit: '10', diaryId: String(diaryId), archiveStatus: 'active' }),
+      status: 200,
+    });
+    const entries = (listed.body as { entries: { date: string; content: string; tags: string[]; visibility: string }[] }).entries;
+    expect(entries.map(({ date, content, tags, visibility }) => ({ date, content, tags, visibility }))).toEqual([
+      { date: '2024-03-15', content: '# Friday #weather', tags: ['weather'], visibility: 'private' },
+      { date: '2024-03-14', content: `- Pier ![pier.png](attachment:${photo!.id})\n- [[2024-03-13]]`, tags: ['work'], visibility: 'private' },
+    ]);
+
+    await call('POST /api/io/import/entries', {
+      as: alice,
+      json: { ...notes, entries: [{ ...notes.entries[0]!, sourceId: 'Daily Notes/2024-03-14.md' }] },
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
+    await call('POST /api/io/import/entries', { as: alice, json: { ...notes, source: 'obsidian' }, status: 400, code: 'VALIDATION_FAILED' });
+  });
+
   it('shows what an import adds in the journal list straight away, photos included', async () => {
     const { alice } = context;
     type Listed = { total: number; entries: { id: number; attachments: { id: number }[] }[] };

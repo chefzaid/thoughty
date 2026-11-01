@@ -53,7 +53,7 @@ flowchart TD
 | `ai` | OpenRouter credentials and usage, tag suggestions, inspiration, rephrasing, summaries, chat, semantic search, duplicates, tag organization, writing insights |
 | `stats` | statistics, heatmap, writing goal progress, daily writing streak, mood stats (with the tags beside good and low moods), the words used most this month, connections graph, writing-tendency analysis |
 | `review` | year in review: totals, rhythm, themes, highlights, moods, and the on-request AI mood arc |
-| `io` | import and export formats, TXT format settings, Day One and Journey imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
+| `io` | import and export formats, TXT format settings, Day One, Journey and daily-notes (Obsidian, Logseq) imports parsed in the browser ([ADR 0020](./adr/0020-browser-side-app-imports-and-streamed-archives.md)), the streamed Markdown folder export |
 | `books` | book composition, covers, previews, saved versions; `BookEntrySourceService` selects entries from the journal, a saved search (through `saved-searches` and the entry list filters of `entries`) or hand-picked IDs |
 | `cloud-sync` | provider connections, file browsing, schedules, queued jobs |
 | `config` | user preferences and profile, encrypted settings, data export, the feature-flag endpoint (no feature reads flags yet) |

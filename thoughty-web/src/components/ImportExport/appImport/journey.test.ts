@@ -4,7 +4,7 @@ import type { ZipEntry } from '../../../utils/zipReader';
 import { htmlToMarkdown, looksLikeHtml } from './htmlToMarkdown';
 import { isJourneyEntry, journeyMood, parseJourneyEntry } from './journey';
 
-const zipEntry = (name: string): ZipEntry => ({ name, size: 10, compressedSize: 10, method: 0, encrypted: false, localHeaderOffset: 0 });
+const zipEntry = (name: string): ZipEntry => ({ name, size: 10, compressedSize: 10, method: 0, encrypted: false, localHeaderOffset: 0, symlink: false, utf8Name: true });
 
 describe('htmlToMarkdown', () => {
   it('turns paragraphs, line breaks, emphasis, and headings into Markdown', () => {

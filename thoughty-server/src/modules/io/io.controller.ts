@@ -124,7 +124,7 @@ export class IoController {
   @Post('import/entries')
   @HttpCode(HttpStatus.OK)
   @Throttle(throttleDefault(RATE_LIMITS.importWrite))
-  @ApiOperation({ summary: 'Import a batch of entries from another journaling app (Day One, Journey)' })
+  @ApiOperation({ summary: 'Import a batch of entries from another journaling app (Day One, Journey, Obsidian or Logseq daily notes)' })
   @ApiResponse({ status: 200, description: 'Entry ID for each source entry', type: AppImportResponseDto })
   async importAppEntries(
     @CurrentUser() user: AuthenticatedUser,

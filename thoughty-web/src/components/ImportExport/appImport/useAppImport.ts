@@ -1,14 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { AppImportService } from '../../../services/api/appImportService';
-import type { AppExport } from './appImportTypes';
+import type { AppExport, AppImportKind } from './appImportTypes';
 import { readAppExport, UnsupportedExportError } from './readAppExport';
+import { ExportTooLargeError, NoDailyNotesError } from './readDailyNotes';
 import { runAppImport, type AppImportOptions, type AppImportProgress, type AppImportSummary } from './runAppImport';
+
+/** Why a chosen file could not be imported: not the kind of export chosen, too large to read at once, or damaged. */
+export type UnreadableReason = 'unsupported' | 'tooLarge' | 'damaged';
+
+function unreadableReason(error: unknown): UnreadableReason {
+  if (error instanceof UnsupportedExportError || error instanceof NoDailyNotesError) {
+    return 'unsupported';
+  }
+  return error instanceof ExportTooLargeError ? 'tooLarge' : 'damaged';
+}
 
 export type AppImportState =
   | { readonly step: 'idle' }
   | { readonly step: 'reading'; readonly fileName: string }
-  | { readonly step: 'unreadable'; readonly unsupported: boolean }
+  | { readonly step: 'unreadable'; readonly reason: UnreadableReason }
   | { readonly step: 'ready'; readonly data: AppExport }
   | { readonly step: 'importing'; readonly data: AppExport; readonly progress: AppImportProgress }
   | { readonly step: 'done'; readonly summary: AppImportSummary | null; readonly error?: string };
@@ -20,13 +31,13 @@ export function useAppImport(service: AppImportService, onImported?: () => void)
 
   useEffect(() => () => controller.current?.abort(), []);
 
-  const chooseFile = useCallback(async (file: File) => {
+  const chooseFile = useCallback(async (file: File, kind: AppImportKind) => {
     setState({ step: 'reading', fileName: file.name });
     try {
-      setState({ step: 'ready', data: await readAppExport(file) });
+      setState({ step: 'ready', data: await readAppExport(file, kind) });
     } catch (error) {
       console.error('Reading the export failed:', error);
-      setState({ step: 'unreadable', unsupported: error instanceof UnsupportedExportError });
+      setState({ step: 'unreadable', reason: unreadableReason(error) });
     }
   }, []);
 

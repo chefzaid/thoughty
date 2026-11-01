@@ -18,15 +18,20 @@ import { MAX_ENTRY_TITLE_LENGTH, TIME_OF_DAY_PATTERN } from '@/common/utils/entr
 import { MAX_MOOD, MIN_MOOD } from '@/common/utils/entry-mood.util';
 import { StrictBoolean, StrictInt } from '@/common/validation';
 
-export const APP_IMPORT_SOURCES = ['dayone', 'journey'] as const;
+export const APP_IMPORT_SOURCES = ['dayone', 'journey', 'daily-notes'] as const;
 export type AppImportSource = (typeof APP_IMPORT_SOURCES)[number];
 export const MAX_APP_IMPORT_ENTRIES = 200;
 export const MAX_IMPORT_FILES = 8;
 
 export class AppImportEntryDto {
-  @ApiProperty({ description: 'ID of the entry in the source app; an entry already imported is not imported again' })
+  @ApiProperty({
+    description:
+      'ID of the entry in the source app (for daily notes, the note\'s path in the archive); an entry already imported ' +
+      'is not imported again',
+    example: 'journals/2024_03_14.md',
+  })
   @IsString()
-  @Matches(/^[A-Za-z0-9._:-]{1,100}$/)
+  @Matches(/^[A-Za-z0-9._:/-]{1,100}$/)
   sourceId: string;
 
   @ApiProperty({ description: 'Local day the entry was written', example: '2024-03-05' })
@@ -87,7 +92,10 @@ export class AppImportEntryDto {
 }
 
 export class AppImportDto {
-  @ApiProperty({ enum: APP_IMPORT_SOURCES })
+  @ApiProperty({
+    enum: APP_IMPORT_SOURCES,
+    description: 'Day One, Journey, or a folder of daily notes named by date (Obsidian, Logseq)',
+  })
   @IsIn(APP_IMPORT_SOURCES)
   source: AppImportSource;
 

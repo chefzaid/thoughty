@@ -1341,7 +1341,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Import a batch of entries from another journaling app (Day One, Journey) */
+        /** Import a batch of entries from another journaling app (Day One, Journey, Obsidian or Logseq daily notes) */
         post: operations["IoController_importAppEntries"];
         delete?: never;
         options?: never;
@@ -6536,7 +6536,7 @@ export interface components {
         };
         /**
          * @example {
-         *       "sourceId": "example",
+         *       "sourceId": "journals/2024_03_14.md",
          *       "date": "2024-03-05",
          *       "timeOfDay": "08:30",
          *       "title": "Morning walk by the river",
@@ -6550,7 +6550,10 @@ export interface components {
          *     }
          */
         AppImportEntryDto: {
-            /** @description ID of the entry in the source app; an entry already imported is not imported again */
+            /**
+             * @description ID of the entry in the source app (for daily notes, the note's path in the archive); an entry already imported is not imported again
+             * @example journals/2024_03_14.md
+             */
             sourceId: string;
             /**
              * @description Local day the entry was written
@@ -6584,7 +6587,7 @@ export interface components {
          *       "source": "dayone",
          *       "entries": [
          *         {
-         *           "sourceId": "example",
+         *           "sourceId": "journals/2024_03_14.md",
          *           "date": "2024-03-05",
          *           "timeOfDay": "08:30",
          *           "title": "Morning walk by the river",
@@ -6602,8 +6605,11 @@ export interface components {
          *     }
          */
         AppImportDto: {
-            /** @enum {string} */
-            source: "dayone" | "journey";
+            /**
+             * @description Day One, Journey, or a folder of daily notes named by date (Obsidian, Logseq)
+             * @enum {string}
+             */
+            source: "dayone" | "journey" | "daily-notes";
             entries: components["schemas"]["AppImportEntryDto"][];
             /** @description Diary for the entries; defaults to the default diary */
             diaryId?: number;
@@ -14729,7 +14735,7 @@ export interface operations {
                  *       "source": "dayone",
                  *       "entries": [
                  *         {
-                 *           "sourceId": "example",
+                 *           "sourceId": "journals/2024_03_14.md",
                  *           "date": "2024-03-05",
                  *           "timeOfDay": "08:30",
                  *           "title": "Morning walk by the river",

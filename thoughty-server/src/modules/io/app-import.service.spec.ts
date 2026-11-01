@@ -163,6 +163,26 @@ describe('AppImportService', () => {
       expect(result.alreadyImportedCount).toBe(1);
     });
 
+    it('keys daily notes by their path in the archive', async () => {
+      entryRepository.find.mockResolvedValue([{ id: 41, importRef: 'daily-notes:journals/2024_03_14.md' }]);
+
+      const result = await service.importEntries(
+        7,
+        batch(
+          [entry({ sourceId: 'journals/2024_03_14.md', date: '2024-03-14' }), entry({ sourceId: 'Daily/2024-03-15.md', date: '2024-03-15' })],
+          { source: 'daily-notes' },
+        ),
+      );
+
+      expect(entryRepository.save.mock.calls[0][0]).toEqual([
+        expect.objectContaining({ importRef: 'daily-notes:Daily/2024-03-15.md', date: '2024-03-15', format: 'markdown' }),
+      ]);
+      expect(result.entries.map((item) => [item.sourceId, item.entryId, item.alreadyImported])).toEqual([
+        ['journals/2024_03_14.md', 41, true],
+        ['Daily/2024-03-15.md', 100, false],
+      ]);
+    });
+
     it('writes nothing when the whole batch was imported before', async () => {
       entryRepository.find.mockResolvedValue([{ id: 40, importRef: 'dayone:A1' }]);
 

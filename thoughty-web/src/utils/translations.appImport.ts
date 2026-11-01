@@ -39,11 +39,24 @@ export type AppImportTranslationKey =
   | 'appImportMoreFailed_one'
   | 'appImportMoreFailed_other'
   | 'appImportAnother'
+  | 'appImportKindLegend'
+  | 'appImportKindApps'
+  | 'appImportKindDailyNotes'
+  | 'appImportDailyNotesDescription'
+  | 'appImportNoDailyNotes'
+  | 'appImportTooLarge'
+  | 'appImportFoundDailyNotes'
+  | 'appImportStatSkippedNotes'
+  | 'appImportSkippedUndated'
+  | 'appImportSkippedEmpty'
+  | 'appImportSkippedTooLarge'
+  | 'appImportSkippedUnsafe'
+  | 'appImportDailyNotesDiary'
   | 'formatMarkdownFolder';
 
 export const appImportTranslations: Record<Language, Record<AppImportTranslationKey, string>> = {
   en: {
-    appImportTitle: 'From Day One or Journey',
+    appImportTitle: 'From another app',
     appImportDescription:
       'Bring your journal over from another app, with its photos and recordings. Export it from Day One (JSON, as a .zip) or Journey (ZIP), then choose the file. It is read in your browser; only the entries and their files are sent.',
     appImportChoose: 'Choose an export',
@@ -82,10 +95,24 @@ export const appImportTranslations: Record<Language, Record<AppImportTranslation
     appImportMoreFailed_one: '…and {count} more',
     appImportMoreFailed_other: '…and {count} more',
     appImportAnother: 'Import another export',
+    appImportKindLegend: 'What are you importing?',
+    appImportKindApps: 'Day One or Journey',
+    appImportKindDailyNotes: 'Daily notes (Obsidian, Logseq)',
+    appImportDailyNotesDescription:
+      'Choose a .zip of your daily notes: the daily notes folder of an Obsidian vault, or the journals folder of a Logseq graph (the whole vault or graph works too). Each note named by its day, such as 2024-03-14.md or 2024_03_14.md, becomes a Markdown entry on that day, with its tags and the pictures it embeds. It is read in your browser; only the entries and their files are sent.',
+    appImportNoDailyNotes: 'No daily notes in this file. Choose a .zip holding Markdown notes named by their day, such as 2024-03-14.md or 2024_03_14.md.',
+    appImportTooLarge: 'This archive is too large to import at once (over 50,000 files, or over 200 MB of notes). Zip the daily notes folder on its own, or split it into several archives.',
+    appImportFoundDailyNotes: 'Found in your daily notes',
+    appImportStatSkippedNotes: 'Notes left out',
+    appImportSkippedUndated: 'Not named by a day: {count}',
+    appImportSkippedEmpty: 'Empty: {count}',
+    appImportSkippedTooLarge: 'Over 5 MB: {count}',
+    appImportSkippedUnsafe: 'Links, or paths and names that cannot be trusted: {count}',
+    appImportDailyNotesDiary: 'The entries go into {diaryName}, the diary chosen for this page.',
     formatMarkdownFolder: 'Markdown folder with attachments (.zip)',
   },
   fr: {
-    appImportTitle: 'Depuis Day One ou Journey',
+    appImportTitle: 'Depuis une autre application',
     appImportDescription:
       'Récupérez votre journal tenu dans une autre application, avec ses photos et enregistrements. Exportez-le depuis Day One (JSON, en .zip) ou Journey (ZIP), puis choisissez le fichier. Il est lu dans votre navigateur ; seuls les entrées et leurs fichiers sont envoyés.',
     appImportChoose: 'Choisir un export',
@@ -124,6 +151,20 @@ export const appImportTranslations: Record<Language, Record<AppImportTranslation
     appImportMoreFailed_one: '…et {count} autre',
     appImportMoreFailed_other: '…et {count} autres',
     appImportAnother: 'Importer un autre export',
+    appImportKindLegend: 'Que voulez-vous importer ?',
+    appImportKindApps: 'Day One ou Journey',
+    appImportKindDailyNotes: 'Notes quotidiennes (Obsidian, Logseq)',
+    appImportDailyNotesDescription:
+      'Choisissez un .zip de vos notes quotidiennes : le dossier des notes quotidiennes d’un coffre Obsidian, ou le dossier journals d’un graphe Logseq (le coffre ou le graphe entier convient aussi). Chaque note nommée par son jour, comme 2024-03-14.md ou 2024_03_14.md, devient une entrée Markdown à ce jour, avec ses tags et les images qu’elle intègre. Il est lu dans votre navigateur ; seuls les entrées et leurs fichiers sont envoyés.',
+    appImportNoDailyNotes: 'Aucune note quotidienne dans ce fichier. Choisissez un .zip de notes Markdown nommées par leur jour, comme 2024-03-14.md ou 2024_03_14.md.',
+    appImportTooLarge: 'Cette archive est trop volumineuse pour être importée en une fois (plus de 50 000 fichiers, ou plus de 200 Mo de notes). Compressez le dossier des notes quotidiennes seul, ou répartissez-le en plusieurs archives.',
+    appImportFoundDailyNotes: 'Dans vos notes quotidiennes',
+    appImportStatSkippedNotes: 'Notes ignorées',
+    appImportSkippedUndated: 'Pas nommées par un jour : {count}',
+    appImportSkippedEmpty: 'Vides : {count}',
+    appImportSkippedTooLarge: 'Plus de 5 Mo : {count}',
+    appImportSkippedUnsafe: 'Liens, ou chemins et noms non fiables : {count}',
+    appImportDailyNotesDiary: 'Les entrées vont dans {diaryName}, le journal choisi pour cette page.',
     formatMarkdownFolder: 'Dossier Markdown avec pièces jointes (.zip)',
   },
 };

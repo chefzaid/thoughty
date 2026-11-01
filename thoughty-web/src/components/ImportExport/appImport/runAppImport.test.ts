@@ -106,7 +106,7 @@ describe('runAppImport', () => {
       ['b.jpeg', 'image/jpeg', 1000],
     ]);
     expect(entryIds).toEqual([100, 100, 101]);
-    expect(summary).toEqual({ imported: 2, alreadyImported: 0, attached: 3, failedFiles: [], createdDiaries: [], stopped: false });
+    expect(summary).toEqual({ imported: 2, alreadyImported: 0, attached: 3, failedFiles: [], createdDiaries: [], stopped: false, skippedNotes: 0 });
     expect(onProgress).toHaveBeenLastCalledWith({ phase: 'files', done: 3, total: 3 });
   });
 
@@ -317,5 +317,41 @@ describe('runAppImport', () => {
     await runAppImport({ ...exportOf([entry('A')]), archive: null }, { journalsAsDiaries: false }, service, onProgress, new AbortController().signal);
 
     expect(uploadAttachments).not.toHaveBeenCalled();
+  });
+
+  it('refuses a file by the size the archive gives it, before unpacking it', async () => {
+    acceptEntries();
+    const huge = (name: string, size: number, mimetype: string): ImportedMedia => ({ ...media('a.jpeg', mimetype), name, file: { ...files.get('a.jpeg')!, size } });
+
+    const summary = await runAppImport(
+      exportOf([entry('A', { media: [huge('huge.jpeg', 65 * 1024 * 1024, 'image/jpeg'), huge('long.mov', 51 * 1024 * 1024, 'video/quicktime')] })]),
+      { journalsAsDiaries: false },
+      service,
+      onProgress,
+      new AbortController().signal,
+    );
+
+    expect(shrinkPhoto).not.toHaveBeenCalled();
+    expect(uploadAttachments).not.toHaveBeenCalled();
+    expect(summary.failedFiles).toEqual([
+      { name: 'huge.jpeg', reason: 'tooLarge' },
+      { name: 'long.mov', reason: 'tooLarge' },
+    ]);
+  });
+
+  it('reports how many daily notes were left out', async () => {
+    acceptEntries();
+
+    const summary = await runAppImport(
+      { ...exportOf([entry('2024-03-14.md', { journal: '' })]), source: 'daily-notes', journals: [], skippedNotes: { undated: 3, empty: 2, tooLarge: 1, unsafe: 1 } },
+      { journalsAsDiaries: false },
+      service,
+      onProgress,
+      new AbortController().signal,
+    );
+
+    expect(importEntries.mock.calls[0]![0]).toEqual(expect.objectContaining({ source: 'daily-notes', journalsAsDiaries: false }));
+    expect(importEntries.mock.calls[0]![0].entries[0]).not.toHaveProperty('journal');
+    expect(summary).toEqual(expect.objectContaining({ imported: 1, skippedNotes: 7 }));
   });
 });

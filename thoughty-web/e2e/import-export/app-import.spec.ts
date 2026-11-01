@@ -43,7 +43,7 @@ test.describe('Import from other journaling apps', () => {
       if (request.url().endsWith('/api/attachments/upload')) videoUploads.push(request.url());
     });
     await page.goto('/import-export?section=import');
-    const panel = page.getByRole('region', { name: 'From Day One or Journey' });
+    const panel = page.getByRole('region', { name: 'From another app' });
     const archive = { name: 'Day One export.zip', mimeType: 'application/zip', buffer: await dayOneExport() };
 
     await panel.getByLabel('Choose an export').setInputFiles(archive);
@@ -104,7 +104,7 @@ test.describe('Import from other journaling apps', () => {
       { name: '1588325160000-ab-1.jpg', data: jpeg, store: true },
     ]));
     await page.goto('/import-export?diary=2&section=import');
-    const panel = page.getByRole('region', { name: 'From Day One or Journey' });
+    const panel = page.getByRole('region', { name: 'From another app' });
 
     await panel.getByLabel('Choose an export').setInputFiles({ name: 'journey.zip', mimeType: 'application/zip', buffer: archive });
     await expect(panel.getByText('Found in your Journey export')).toBeVisible();
@@ -122,7 +122,7 @@ test.describe('Import from other journaling apps', () => {
   test('explains when a file is not an export it knows', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true });
     await page.goto('/import-export?section=import');
-    const panel = page.getByRole('region', { name: 'From Day One or Journey' });
+    const panel = page.getByRole('region', { name: 'From another app' });
 
     await panel.getByLabel('Choose an export').setInputFiles({ name: 'notes.zip', mimeType: 'application/zip', buffer: Buffer.from(await buildZip([{ name: 'notes.txt', data: 'hello' }])) });
 
@@ -148,7 +148,7 @@ test.describe('Import from other journaling apps', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await setupMockApp(page, { startAuthenticated: true });
     await page.goto('/import-export?section=import');
-    const panel = page.getByRole('region', { name: 'From Day One or Journey' });
+    const panel = page.getByRole('region', { name: 'From another app' });
 
     await panel.getByLabel('Choose an export').setInputFiles({ name: 'export.zip', mimeType: 'application/zip', buffer: await dayOneExport() });
     await expect(panel.getByRole('button', { name: 'Start the import' })).toBeVisible();

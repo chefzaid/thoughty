@@ -15,6 +15,8 @@ const MAX_ENTRY_CHARACTERS = 50_000;
 const MAX_FILES_PER_REQUEST = 8;
 // The ingress accepts 10 MB per request; leave room for the multipart framing
 const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
+// The largest photo the browser tries to scale down to the attachment limit
+const MAX_SHRINKABLE_PHOTO_BYTES = 64 * 1024 * 1024;
 
 export interface AppImportOptions {
   readonly diaryId?: number | null;
@@ -38,6 +40,8 @@ export interface AppImportSummary {
   readonly failedFiles: ReadonlyArray<{ readonly name: string; readonly reason: FailedFileReason }>;
   readonly createdDiaries: string[];
   readonly stopped: boolean;
+  /** Daily notes left out of the import (not named by a day, empty, too large, unsafe). */
+  readonly skippedNotes: number;
 }
 
 
@@ -103,6 +107,11 @@ function toRequestEntry(entry: ImportedEntry, journalsAsDiaries: boolean): AppIm
 
 /** The file ready to upload, re-encoded when the server cannot take it as it is. */
 async function prepareFile(archive: Blob, media: ImportedMedia): Promise<File | FailedFileReason> {
+  const isPhoto = media.mimetype.startsWith('image/');
+  // Checked on the size the archive gives before unpacking, which can never grow past it
+  if (media.file.size > (isPhoto ? MAX_SHRINKABLE_PHOTO_BYTES : maxAttachmentBytes(media.mimetype))) {
+    return 'tooLarge';
+  }
   let blob: Blob;
   try {
     blob = await readZipFile(archive, media.file, media.mimetype);
@@ -110,7 +119,6 @@ async function prepareFile(archive: Blob, media: ImportedMedia): Promise<File | 
     return 'unreadable';
   }
 
-  const isPhoto = media.mimetype.startsWith('image/');
   if (media.convert || (isPhoto && blob.size > MAX_ATTACHMENT_BYTES)) {
     const jpeg = await shrinkPhoto(blob, MAX_ATTACHMENT_BYTES);
     if (!jpeg) {
@@ -191,7 +199,9 @@ export async function runAppImport(
     attached = await uploadFiles(data.archive, pendingFiles, service, onProgress, signal, failedFiles);
   }
 
-  return { imported, alreadyImported, attached, failedFiles, createdDiaries, stopped: signal.aborted };
+  const skipped = data.skippedNotes;
+  const skippedNotes = skipped ? skipped.undated + skipped.empty + skipped.tooLarge + skipped.unsafe : 0;
+  return { imported, alreadyImported, attached, failedFiles, createdDiaries, stopped: signal.aborted, skippedNotes };
 }
 
 async function uploadFiles(

@@ -5,12 +5,27 @@ import { createAppImportService } from '../../../services/api/appImportService';
 import type { TranslationFunction } from '../../../types';
 import { pluralPhrase } from '../../../utils/pluralPhrase';
 import type { Language } from '../../../utils/translations';
-import type { AppExport, AppImportSource } from './appImportTypes';
+import type { AppExport, AppImportKind, AppImportSource, SkippedNotes } from './appImportTypes';
 import type { AppImportProgress, AppImportSummary, FailedFileReason } from './runAppImport';
-import { useAppImport } from './useAppImport';
+import { useAppImport, type UnreadableReason } from './useAppImport';
 import './AppImportPanel.css';
 
-const SOURCE_NAMES: Record<AppImportSource, string> = { dayone: 'Day One', journey: 'Journey' };
+const SOURCE_NAMES: Record<Exclude<AppImportSource, 'daily-notes'>, string> = { dayone: 'Day One', journey: 'Journey' };
+const KINDS: ReadonlyArray<{ kind: AppImportKind; label: string; description: string; accept: string }> = [
+  { kind: 'apps', label: 'appImportKindApps', description: 'appImportDescription', accept: '.zip,.json,application/zip,application/json' },
+  { kind: 'daily-notes', label: 'appImportKindDailyNotes', description: 'appImportDailyNotesDescription', accept: '.zip,application/zip' },
+];
+const UNREADABLE_KEYS: Record<UnreadableReason, Record<AppImportKind, string>> = {
+  unsupported: { apps: 'appImportUnsupported', 'daily-notes': 'appImportNoDailyNotes' },
+  tooLarge: { apps: 'appImportTooLarge', 'daily-notes': 'appImportTooLarge' },
+  damaged: { apps: 'appImportReadError', 'daily-notes': 'appImportReadError' },
+};
+const SKIPPED_NOTE_KEYS: Record<keyof SkippedNotes, string> = {
+  undated: 'appImportSkippedUndated',
+  empty: 'appImportSkippedEmpty',
+  tooLarge: 'appImportSkippedTooLarge',
+  unsafe: 'appImportSkippedUnsafe',
+};
 const FAILURE_KEYS: Record<FailedFileReason, string> = {
   tooLarge: 'appImportReasonTooLarge',
   unreadable: 'appImportReasonUnreadable',
@@ -55,29 +70,45 @@ function ExportPreview({
   const formatDay = (date: string) => new Intl.DateTimeFormat(language, { dateStyle: 'long', timeZone: 'UTC' }).format(new Date(`${date}T00:00:00Z`));
   const first = data.entries[0];
   const last = data.entries.at(-1);
+  const dailyNotes = data.source === 'daily-notes';
+  const skippedNotes = Object.entries(data.skippedNotes ?? {}).filter(([, count]) => count > 0) as Array<[keyof SkippedNotes, number]>;
 
   return (
     <div className="preview-box app-import-box">
-      <p className="app-import-heading">{t('appImportFoundFrom', { source: SOURCE_NAMES[data.source] })}</p>
+      <p className="app-import-heading">
+        {data.source === 'daily-notes' ? t('appImportFoundDailyNotes') : t('appImportFoundFrom', { source: SOURCE_NAMES[data.source] })}
+      </p>
       <div className="preview-stats">
         <Stat value={data.entries.length} label={t('appImportStatEntries')} language={language} />
-        <Stat value={data.journals.length} label={t('appImportStatJournals')} language={language} />
+        {!dailyNotes && <Stat value={data.journals.length} label={t('appImportStatJournals')} language={language} />}
         <Stat value={mediaCount} label={t('appImportStatMedia')} language={language} />
         {data.skippedMedia > 0 && <Stat value={data.skippedMedia} label={t('appImportStatSkipped')} language={language} />}
+        {skippedNotes.length > 0 && (
+          <Stat value={skippedNotes.reduce((sum, [, count]) => sum + count, 0)} label={t('appImportStatSkippedNotes')} language={language} />
+        )}
       </div>
+      {skippedNotes.length > 0 && (
+        <ul className="app-import-failures" aria-label={t('appImportStatSkippedNotes')}>
+          {skippedNotes.map(([reason, count]) => <li key={reason}>{t(SKIPPED_NOTE_KEYS[reason], { count: count.toLocaleString(language) })}</li>)}
+        </ul>
+      )}
       {first && last && <p className="app-import-note">{t('appImportRange', { first: formatDay(first.date), last: formatDay(last.date) })}</p>}
 
-      <fieldset className="app-import-destination">
-        <legend>{t('appImportDestination')}</legend>
-        <label className="checkbox-label">
-          <input type="radio" name="app-import-destination" checked={!journalsAsDiaries} onChange={() => setJournalsAsDiaries(false)} />
-          {t('appImportIntoDiary', { diaryName: diaryLabel })}
-        </label>
-        <label className="checkbox-label">
-          <input type="radio" name="app-import-destination" checked={journalsAsDiaries} onChange={() => setJournalsAsDiaries(true)} />
-          {t('appImportJournalsAsDiaries', { journals: data.journals.join(', ') })}
-        </label>
-      </fieldset>
+      {dailyNotes ? (
+        <p className="app-import-note">{t('appImportDailyNotesDiary', { diaryName: diaryLabel })}</p>
+      ) : (
+        <fieldset className="app-import-destination">
+          <legend>{t('appImportDestination')}</legend>
+          <label className="checkbox-label">
+            <input type="radio" name="app-import-destination" checked={!journalsAsDiaries} onChange={() => setJournalsAsDiaries(false)} />
+            {t('appImportIntoDiary', { diaryName: diaryLabel })}
+          </label>
+          <label className="checkbox-label">
+            <input type="radio" name="app-import-destination" checked={journalsAsDiaries} onChange={() => setJournalsAsDiaries(true)} />
+            {t('appImportJournalsAsDiaries', { journals: data.journals.join(', ') })}
+          </label>
+        </fieldset>
+      )}
       <p className="app-import-note">{t('appImportPrivacyNote')}</p>
 
       <div className="app-import-actions">
@@ -131,6 +162,7 @@ function ImportResult({
           <Stat value={summary.imported} label={t('appImportResultImported')} language={language} />
           <Stat value={summary.alreadyImported} label={t('appImportResultAlready')} language={language} />
           <Stat value={summary.attached} label={t('appImportResultAttached')} language={language} />
+          {summary.skippedNotes > 0 && <Stat value={summary.skippedNotes} label={t('appImportStatSkippedNotes')} language={language} />}
         </div>
       )}
       {summary && summary.createdDiaries.length > 0 && (
@@ -154,32 +186,49 @@ function ImportResult({
   );
 }
 
-/** Imports a Day One or Journey export, read in the browser, with its photos and recordings. */
+/**
+ * Imports a Day One or Journey export, or a ZIP of Obsidian or Logseq daily notes, read in the browser,
+ * with its photos and recordings.
+ */
 export function AppImportPanel({ diaryId, diaryName, language, onImported, t }: AppImportPanelProps) {
   const service = useAuthenticatedService(createAppImportService);
   const { state, chooseFile, start, stop, reset } = useAppImport(service, onImported);
+  const [kind, setKind] = useState<AppImportKind>('apps');
   const diaryLabel = diaryId && diaryName ? diaryName : t('appImportDefaultDiary');
+  const chosen = KINDS.find((option) => option.kind === kind) ?? KINDS[0]!;
+  const choosing = state.step === 'idle' || state.step === 'unreadable';
 
   const handleFile = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (file) {
-      void chooseFile(file);
+      void chooseFile(file, kind);
     }
   };
 
   return (
     <section className="app-import" aria-labelledby="app-import-title">
       <h3 id="app-import-title">{t('appImportTitle')}</h3>
-      <p className="section-description">{t('appImportDescription')}</p>
+      {choosing && (
+        <fieldset className="app-import-destination app-import-kind">
+          <legend>{t('appImportKindLegend')}</legend>
+          {KINDS.map((option) => (
+            <label key={option.kind} className="checkbox-label">
+              <input type="radio" name="app-import-kind" checked={kind === option.kind} onChange={() => { setKind(option.kind); reset(); }} />
+              {t(option.label)}
+            </label>
+          ))}
+        </fieldset>
+      )}
+      <p className="section-description">{t(chosen.description)}</p>
 
-      {(state.step === 'idle' || state.step === 'unreadable') && (
+      {choosing && (
         <div className="file-upload app-import-file">
           <input
             type="file"
             id="app-import-file"
             className="app-import-input"
-            accept=".zip,.json,application/zip,application/json"
+            accept={chosen.accept}
             onChange={handleFile}
           />
           <label htmlFor="app-import-file" className="file-label">
@@ -191,7 +240,7 @@ export function AppImportPanel({ diaryId, diaryName, language, onImported, t }: 
         </div>
       )}
       {state.step === 'unreadable' && (
-        <p className="message error" role="alert">{t(state.unsupported ? 'appImportUnsupported' : 'appImportReadError')}</p>
+        <p className="message error" role="alert">{t(UNREADABLE_KEYS[state.reason][kind])}</p>
       )}
       {state.step === 'reading' && <p className="app-import-note" role="status">{t('appImportReading', { name: state.fileName })}</p>}
       {state.step === 'ready' && (

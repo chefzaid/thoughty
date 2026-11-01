@@ -6,6 +6,12 @@ export interface ZipFixtureFile {
   data: string | Uint8Array;
   /** Stored files are copied as they are; others are deflated. */
   store?: boolean;
+  /** Marks the file as a Unix symbolic link, whose data is the path it points at. */
+  symlink?: boolean;
+  /** The name's bytes as written, for names that are not UTF-8; `name` is then ignored. */
+  nameBytes?: Uint8Array;
+  /** The uncompressed size the archive claims, when it should lie about it. */
+  declaredSize?: number;
 }
 
 const CRC_TABLE = Array.from({ length: 256 }, (_, index) => {
@@ -44,18 +50,20 @@ export async function buildZip(files: ZipFixtureFile[], options: { zip64?: boole
   for (const file of files) {
     const raw = typeof file.data === 'string' ? encoder.encode(file.data) : file.data;
     const body = file.store ? raw : await deflateRaw(raw);
-    const name = encoder.encode(file.name);
+    const name = file.nameBytes ?? encoder.encode(file.name);
     const checksum = crc32(raw);
     const method = file.store ? 0 : 8;
+    const size = file.declaredSize ?? raw.length;
+    const flags = file.nameBytes ? 0 : 0x0800;
 
     parts.push(record(30, (view) => {
       view.setUint32(0, 0x04034b50, true);
       view.setUint16(4, 20, true);
-      view.setUint16(6, 0x0800, true);
+      view.setUint16(6, flags, true);
       view.setUint16(8, method, true);
       view.setUint32(14, checksum, true);
       view.setUint32(18, body.length, true);
-      view.setUint32(22, raw.length, true);
+      view.setUint32(22, size, true);
       view.setUint16(26, name.length, true);
     }), name, body);
 
@@ -63,22 +71,24 @@ export async function buildZip(files: ZipFixtureFile[], options: { zip64?: boole
       ? record(28, (view) => {
         view.setUint16(0, 0x0001, true);
         view.setUint16(2, 24, true);
-        view.setBigUint64(4, BigInt(raw.length), true);
+        view.setBigUint64(4, BigInt(size), true);
         view.setBigUint64(12, BigInt(body.length), true);
         view.setBigUint64(20, BigInt(offset), true);
       })
       : new Uint8Array(0);
     central.push(record(46, (view) => {
       view.setUint32(0, 0x02014b50, true);
-      view.setUint16(4, 45, true);
+      // Made on Unix (3), with the file's mode in the upper half of its external attributes
+      view.setUint16(4, (3 << 8) | 45, true);
       view.setUint16(6, 45, true);
-      view.setUint16(8, 0x0800, true);
+      view.setUint16(8, flags, true);
       view.setUint16(10, method, true);
       view.setUint32(16, checksum, true);
       view.setUint32(20, options.zip64 ? 0xffffffff : body.length, true);
-      view.setUint32(24, options.zip64 ? 0xffffffff : raw.length, true);
+      view.setUint32(24, options.zip64 ? 0xffffffff : size, true);
       view.setUint16(28, name.length, true);
       view.setUint16(30, extra.length, true);
+      view.setUint32(38, ((file.symlink ? 0o120777 : 0o100644) << 16) >>> 0, true);
       view.setUint32(42, options.zip64 ? 0xffffffff : offset, true);
     }), name, extra);
 

@@ -1,5 +1,5 @@
 import { sortEntries } from "./mockApp.shared";
-import { fulfillJson, type RouteContext } from "./mockApp.route-utils";
+import { fulfillApiError, fulfillJson, type RouteContext } from "./mockApp.route-utils";
 import { mockDiary } from "./mockApp.diaries";
 
 interface AppImportPayload {
@@ -16,6 +16,9 @@ interface AppImportPayload {
   }>;
 }
 
+// What `AppImportEntryDto` accepts as a source ID: a daily note's path, or the day and hash that stand for it
+const SOURCE_ID = /^[A-Za-z0-9._:/-]{1,100}$/;
+
 /** Splits a multipart body into its entry IDs and the name and type of each file. */
 function readMultipart(body: string): { entryIds: number[]; files: Array<{ name: string; type: string }> } {
   const entryIds = /name="entryIds"\r\n\r\n([^\r]*)/.exec(body)?.[1] ?? "";
@@ -30,6 +33,11 @@ export async function handleAppImportRoutes({ route, request, pathname, state }:
   if (pathname === "/api/io/import/entries" && request.method() === "POST") {
     const payload = request.postDataJSON() as AppImportPayload;
     state.appImport.entryPayloads.push(payload);
+    const refused = payload.entries.find((item) => !SOURCE_ID.test(item.sourceId));
+    if (refused) {
+      await fulfillApiError(route, 400, "VALIDATION_FAILED", `entries.sourceId must match ${SOURCE_ID}: ${refused.sourceId}`);
+      return true;
+    }
     const createdDiaries: string[] = [];
     let importedCount = 0;
 

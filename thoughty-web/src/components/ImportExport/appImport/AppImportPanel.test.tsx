@@ -6,6 +6,7 @@ import type { ZipEntry } from '../../../utils/zipReader';
 import { AppImportPanel } from './AppImportPanel';
 import type { AppExport, ImportedEntry } from './appImportTypes';
 import { readAppExport, UnsupportedExportError } from './readAppExport';
+import { ExportTooLargeError, NoDailyNotesError } from './readDailyNotes';
 import { runAppImport, type AppImportProgress, type AppImportSummary } from './runAppImport';
 
 const service = { importEntries: vi.fn(), uploadAttachments: vi.fn() };
@@ -23,7 +24,7 @@ vi.mock('./runAppImport', async (importOriginal) => ({
 const t = (key: string, params?: Record<string, string | number>) =>
   params ? `${key} ${Object.values(params).join(' | ')}` : key;
 
-const file: ZipEntry = { name: 'photos/a.jpeg', size: 1, compressedSize: 1, method: 0, encrypted: false, localHeaderOffset: 0 };
+const file: ZipEntry = { name: 'photos/a.jpeg', size: 1, compressedSize: 1, method: 0, encrypted: false, localHeaderOffset: 0, symlink: false, utf8Name: true };
 const entry = (date: string, mediaCount = 0): ImportedEntry => ({
   sourceId: date,
   date,
@@ -48,6 +49,15 @@ const summary: AppImportSummary = {
   failedFiles: [],
   createdDiaries: ['Travel'],
   stopped: false,
+  skippedNotes: 0,
+};
+const dailyNotesExport: AppExport = {
+  source: 'daily-notes',
+  archive: new Blob(['zip']),
+  entries: [{ ...entry('2024-03-13', 1), journal: '' }, { ...entry('2024-03-14'), journal: '' }],
+  journals: [],
+  skippedMedia: 0,
+  skippedNotes: { undated: 12, empty: 1, tooLarge: 0, unsafe: 2 },
 };
 
 function chooseExport(name = 'export.zip', label = 'appImportChoose') {
@@ -205,5 +215,56 @@ describe('AppImportPanel', () => {
     expect(screen.queryByText('appImportStatSkipped')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'cancel' }));
     expect(screen.getByLabelText('appImportChoose')).toBeInTheDocument();
+  });
+
+  it('reads a ZIP of daily notes once that choice is made, into the page’s diary, and counts the notes left out', async () => {
+    vi.mocked(readAppExport).mockResolvedValue(dailyNotesExport);
+    vi.mocked(runAppImport).mockResolvedValue({ ...summary, createdDiaries: [], skippedNotes: 15 });
+    render(<AppImportPanel diaryId={4} diaryName="Notes" language="en" t={t} />);
+    expect(screen.getByLabelText('appImportKindApps')).toBeChecked();
+    expect(screen.getByLabelText('appImportChoose')).toHaveAttribute('accept', '.zip,.json,application/zip,application/json');
+
+    fireEvent.click(screen.getByLabelText('appImportKindDailyNotes'));
+    expect(screen.getByText('appImportDailyNotesDescription')).toBeInTheDocument();
+    expect(screen.getByLabelText('appImportChoose')).toHaveAttribute('accept', '.zip,application/zip');
+    chooseExport('vault.zip');
+
+    expect(await screen.findByText('appImportFoundDailyNotes')).toBeInTheDocument();
+    expect(vi.mocked(readAppExport).mock.calls[0]![1]).toBe('daily-notes');
+    expect(screen.queryByText('appImportStatJournals')).not.toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: /appImportJournalsAsDiaries/ })).not.toBeInTheDocument();
+    expect(screen.getByText('appImportDailyNotesDiary Notes')).toBeInTheDocument();
+    expect(screen.getByText('appImportStatSkippedNotes').previousSibling).toHaveTextContent('15');
+    expect(screen.getByRole('list', { name: 'appImportStatSkippedNotes' })).toHaveTextContent('appImportSkippedUndated 12appImportSkippedEmpty 1appImportSkippedUnsafe 2');
+
+    fireEvent.click(screen.getByRole('button', { name: 'appImportStart' }));
+
+    expect(runAppImport).toHaveBeenCalledWith(dailyNotesExport, { diaryId: 4, journalsAsDiaries: false }, service, expect.any(Function), expect.any(AbortSignal));
+    expect(await screen.findByText('appImportDone')).toBeInTheDocument();
+    expect(screen.getByText('appImportStatSkippedNotes').previousSibling).toHaveTextContent('15');
+  });
+
+  it('explains why a daily notes archive cannot be read, and clears the message for another choice', async () => {
+    vi.mocked(readAppExport)
+      .mockRejectedValueOnce(new NoDailyNotesError('none'))
+      .mockRejectedValueOnce(new ExportTooLargeError('big'));
+    render(<AppImportPanel language="en" t={t} />);
+    fireEvent.click(screen.getByLabelText('appImportKindDailyNotes'));
+
+    chooseExport('notes.zip');
+    expect(await screen.findByRole('alert')).toHaveTextContent('appImportNoDailyNotes');
+    chooseExport('huge.zip');
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('appImportTooLarge'));
+
+    fireEvent.click(screen.getByLabelText('appImportKindApps'));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it.each(['en', 'fr'] as const)('names the daily notes choice in %s', (language) => {
+    const translate = (key: string, params?: Record<string, string | number>) => getTranslation(language, key, params);
+    render(<AppImportPanel language={language} t={translate} />);
+
+    expect(screen.getByRole('region', { name: translate('appImportTitle') })).toBeInTheDocument();
+    expect(screen.getByLabelText(language === 'en' ? 'Daily notes (Obsidian, Logseq)' : 'Notes quotidiennes (Obsidian, Logseq)')).not.toBeChecked();
   });
 });

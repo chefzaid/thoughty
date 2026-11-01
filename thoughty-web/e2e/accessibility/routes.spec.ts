@@ -56,7 +56,7 @@ const AUTHENTICATED_ROUTES: Record<string, RouteContent> = {
   ],
   '/review': (page) => [page.getByText('Write your first entry to start your year in review.')],
   '/import-export': (page) => [
-    page.getByRole('region', { name: 'From Day One or Journey' }),
+    page.getByRole('region', { name: 'From another app' }),
     page.getByRole('heading', { name: 'Import from Cloud' }),
     page.getByRole('textbox', { name: 'Dedication' }),
   ],
@@ -197,7 +197,7 @@ test.describe('route accessibility', () => {
     test(`${theme} Day One import preview and result`, async ({ page }) => {
       await setupMockApp(page, { startAuthenticated: true, config: { theme } });
       await page.goto('/import-export?section=import');
-      const panel = page.getByRole('region', { name: 'From Day One or Journey' });
+      const panel = page.getByRole('region', { name: 'From another app' });
       const archive = await buildZip([
         { name: 'Journal.json', data: JSON.stringify({ metadata: {}, entries: [{ uuid: 'A', creationDate: '2024-03-05T10:00:00Z', text: 'Hello' }] }) },
         { name: 'Travel.json', data: JSON.stringify({ metadata: {}, entries: [{ uuid: 'B', creationDate: '2024-03-06T10:00:00Z', text: 'Bye' }] }) },
