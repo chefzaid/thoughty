@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { useRememberedCaret, type TextSelection } from '../../hooks/useRememberedCaret';
 import type { Attachment, TranslationFunction } from '../../types';
 import { isImageAttachment } from '../../utils/attachments';
 import { inlineImageMarkdown, insertAtSelection } from '../../utils/inlineImages';
@@ -35,64 +36,44 @@ function candidatesOf(pendingFiles: readonly File[], attachments: readonly Attac
 export function useInlineImageInsert({ text, setText, pendingFiles, attachments, theme, t }: InlineImageInsertOptions) {
     const fieldRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-    const selection = useRef({ start: text.length, end: text.length });
+    const selection = useRef<TextSelection>({ start: text.length, end: text.length });
     const pendingCaret = useRef<number | null>(null);
     const [initialKey, setInitialKey] = useState<string | null | undefined>(undefined);
     const candidates = useMemo(() => candidatesOf(pendingFiles, attachments), [attachments, pendingFiles]);
 
-    const lastCaret = useRef<{ start: number; end: number } | null>(null);
-
-    // Where the writer left the caret, from their own typing and clicks only: re-rendering the editor
-    // (attaching a file, for one) can move the field's selection back to its start without them.
-    useEffect(() => {
-        const wrapper = fieldRef.current;
-        if (!wrapper) return undefined;
-        const remember = (event: Event) => {
-            if (event.target instanceof HTMLTextAreaElement) {
-                lastCaret.current = { start: event.target.selectionStart, end: event.target.selectionEnd };
-            }
-        };
-        const events = ['keyup', 'mouseup', 'input'];
-        for (const name of events) wrapper.addEventListener(name, remember, true);
-        return () => {
-            for (const name of events) wrapper.removeEventListener(name, remember, true);
-        };
-    }, []);
+    const caret = useRememberedCaret(fieldRef);
 
     const open = useCallback((target?: InlineImageTarget) => {
-        const field = fieldRef.current?.querySelector('textarea') ?? null;
-        textareaRef.current = field;
-        // The caret as it is when the field has focus, else where the writer left it, else the end
-        const live = field && document.activeElement === field ? { start: field.selectionStart, end: field.selectionEnd } : null;
-        selection.current = live ?? lastCaret.current ?? { start: Number.MAX_SAFE_INTEGER, end: Number.MAX_SAFE_INTEGER };
+        textareaRef.current = caret.field();
+        selection.current = caret.selection();
         if (!target) {
             setInitialKey(null);
         } else {
             setInitialKey('pending' in target ? `pending-${target.pending}` : `attachment-${target.attachment}`);
         }
-    }, []);
+    }, [caret]);
 
     const close = useCallback(() => setInitialKey(undefined), []);
 
     const insert = useCallback((candidate: InlineImageCandidate, alt: string) => {
-        const { text: next, caret } = insertAtSelection(text, selection.current, inlineImageMarkdown(candidate.target, alt));
-        pendingCaret.current = caret;
-        lastCaret.current = { start: caret, end: caret };
+        const { text: next, caret: placed } = insertAtSelection(text, selection.current, inlineImageMarkdown(candidate.target, alt));
+        pendingCaret.current = placed;
+        caret.remember(placed);
         setText(next);
         setInitialKey(undefined);
-    }, [setText, text]);
+    }, [caret, setText, text]);
 
     // The caret goes after the picture once the field shows the new text (the editor shows it a
     // moment later, which puts the caret at its end). Closing the dialog has already put focus back
     // in the field; if the writer has moved on by then (to the tags, or Save), focus and the page
     // stay where they are: taking focus back would scroll the page up to the field.
     useEffect(() => {
-        const caret = pendingCaret.current;
-        if (caret === null) return undefined;
+        const placed = pendingCaret.current;
+        if (placed === null) return undefined;
         const timeoutId = globalThis.setTimeout(() => {
             pendingCaret.current = null;
             const field = textareaRef.current;
-            if (field && document.activeElement === field) field.setSelectionRange(caret, caret);
+            if (field && document.activeElement === field) field.setSelectionRange(placed, placed);
         }, 0);
         return () => globalThis.clearTimeout(timeoutId);
     }, [text]);

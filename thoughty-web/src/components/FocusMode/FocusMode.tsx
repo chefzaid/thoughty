@@ -21,6 +21,8 @@ import { MAX_WORD_GOAL, parseWordGoal, readSavedGoal, saveGoal, wordsPhrase } fr
 import { SprintCountdown, SprintEndNotice, SprintPicker } from './FocusSprint';
 import { useFocusSprint } from './useFocusSprint';
 import { useQuietMode } from '../QuietMode/quietMode';
+import { useDictationField } from '../Dictation/useDictationField';
+import { stopActiveDictation } from '../Dictation/useDictation';
 import './FocusMode.css';
 
 /** The writing text is larger than the base size, as on a page held at reading distance. */
@@ -66,6 +68,7 @@ export default function FocusMode({
 }: FocusModeProps) {
     const dialogRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const writingRef = useRef<HTMLDivElement>(null);
     const titleId = useId();
     const goalId = useId();
     const [goalInput, setGoalInput] = useState(readSavedGoal);
@@ -77,6 +80,12 @@ export default function FocusMode({
     const [suggestionsPlacement, setSuggestionsPlacement] = useState<ReturnType<typeof belowCaretLine> | null>(null);
 
     useDialogFocus({ isOpen: true, dialogRef, initialFocusRef: textareaRef, onClose });
+
+    // Dictation into the composer or editor underneath stops; focus mode has its own
+    useEffect(() => stopActiveDictation(), []);
+    const dictation = useDictationField({
+        fieldRef: writingRef, text, setText: onTextChange, language, theme, buttonClassName: 'focus-mode-done focus-mode-dictate', t,
+    });
 
     const keepCaretCentered = useCallback((smooth: boolean) => {
         if (textareaRef.current) {
@@ -185,11 +194,12 @@ export default function FocusMode({
                     </div>
                 )}
                 <SprintPicker minutes={sprint.minutes} onChoose={sprint.choose} language={uiLanguage} t={t} />
+                {dictation.button}
                 <button type="button" className="focus-mode-done" onClick={onClose} title={t('focusModeLeave')}>
                     {t('focusModeDone')}
                 </button>
             </header>
-            <div className="focus-mode-writing" {...mentions.wrapperProps}>
+            <div ref={writingRef} className="focus-mode-writing" {...mentions.wrapperProps}>
                 <textarea
                     ref={textareaRef}
                     className="focus-mode-text privacy-text"
@@ -220,6 +230,7 @@ export default function FocusMode({
                 />
             </div>
             <footer className="focus-mode-footer">
+                {dictation.preview}
                 {sprint.stage === 'ended' && (
                     <SprintEndNotice
                         words={quiet ? null : sprint.wordsInSprint}

@@ -154,6 +154,17 @@ body.high-contrast-mode .focus-mode {
   border-color: var(--focus-mode-accent);
 }
 
+/* The dictation toggle, pressed while listening */
+.focus-mode-dictate {
+  padding: 0.3rem 0.6rem;
+  font-weight: 400;
+}
+
+.focus-mode-dictate[aria-pressed='true'] {
+  border-color: var(--focus-mode-accent);
+  color: var(--focus-mode-accent);
+}
+
 .focus-mode-done:focus-visible,
 .focus-mode-goal input:focus-visible,
 .focus-mode-goal select:focus-visible {

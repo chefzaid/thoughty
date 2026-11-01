@@ -17,6 +17,7 @@ import MentionSuggestions from '../People/MentionSuggestions';
 import { useMentionAutocomplete } from '../People/useMentionAutocomplete';
 import { resolveLanguage } from '../../utils/language';
 import { useInlineImageInsert } from '../InlineImages/useInlineImageInsert';
+import { useDictationField } from '../Dictation/useDictationField';
 
 const LazyMDEditor = lazy(() => import('../MarkdownEditor/MarkdownEditor'));
 
@@ -214,6 +215,9 @@ export function EditForm({
         theme: config.theme,
         t,
     });
+    const dictation = useDictationField({
+        fieldRef: inlineImages.fieldRef, text: editText, setText: setEditText, language: config.language, theme: config.theme, t,
+    });
     const mentionSuggestions = (
         <MentionSuggestions suggestions={mentions.suggestions} theme={config.theme} language={resolveLanguage(config.language)} t={t} />
     );
@@ -285,6 +289,7 @@ export function EditForm({
                     </div>
                 )}
             </div>
+            {dictation.preview}
             {setEditMood && setEditFeelings && (
                 <EntryMoodField
                     id={`${fieldId}-mood`}
@@ -348,6 +353,7 @@ export function EditForm({
                     language={config.language}
                     t={t}
                 />
+                {dictation.button}
                 {onAddEditFile && (
                     <AttachmentUpload
                         pendingFiles={editPendingFiles || []}
