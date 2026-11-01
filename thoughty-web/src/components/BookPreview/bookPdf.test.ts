@@ -56,6 +56,19 @@ describe('openBookPdf', () => {
         expect(pdfjs.getDocument).toHaveBeenCalledWith(expect.objectContaining({ useWasm: false, useWorkerFetch: false }));
         expect(pdf.pageCount).toBe(6);
         expect(pdf.chapters).toEqual([]);
+        expect(pdf.sections).toEqual({});
+    });
+
+    it('finds the book’s own pages by the names the server gives them, skipping those it cannot resolve', async () => {
+        const document = fakeDocument([]);
+        const destinations: Record<string, Array<ReturnType<typeof ref>>> = { dedication: [ref(20)], contents: [ref(30)], epigraph: [ref(99)] };
+        document.getDestination.mockImplementation(async (name: string) => destinations[name] ?? null);
+        load(document);
+
+        const pdf = await openBookPdf(new ArrayBuffer(4));
+
+        expect(pdf.sections).toEqual({ dedication: 3, contents: 4 });
+        expect(document.getDestination).toHaveBeenCalledWith('epigraph');
     });
 
     it('reads the chapters from the outline, skipping items that name no page', async () => {

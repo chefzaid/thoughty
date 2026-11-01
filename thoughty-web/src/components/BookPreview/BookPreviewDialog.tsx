@@ -101,6 +101,7 @@ export function BookPreviewDialog({
                 {ready && (
                     <BookPreviewToolbar
                         chapters={reader.chapters}
+                        sections={reader.sections}
                         pageNumber={reader.pageNumber}
                         pageCount={reader.pageCount}
                         zoom={reader.zoom}

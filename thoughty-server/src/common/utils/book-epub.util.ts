@@ -48,7 +48,28 @@ const EPUB_STYLES = [
   '.inline-image{white-space:normal}',
   '.chapter-framing{font-style:italic;color:#444;margin:1.4em 0}',
   '.chapter-summary{border-top:1px solid #ccc;padding-top:1em}',
+  '.dedication,.epigraph{padding:6em 1.5em 0;font-style:italic}',
+  '.dedication{text-align:center}',
+  '.dedication p,.epigraph p{white-space:pre-line}',
 ].join('\n');
+
+/** The book's own pages after the title page, in reading order, with their file names and navigation labels. */
+const FRONT_PAGES = [
+  { kind: 'dedication', label: 'Dedication' },
+  { kind: 'epigraph', label: 'Epigraph' },
+] as const;
+
+function frontPages(book: Book) {
+  return FRONT_PAGES.flatMap((page) => {
+    const text = book[page.kind];
+    return text ? [{ ...page, text, href: `${page.kind}.xhtml` }] : [];
+  });
+}
+
+function buildFrontPage(page: ReturnType<typeof frontPages>[number]): string {
+  const paragraphs = page.text.split('\n\n').map((paragraph) => `<p>${escapeXml(paragraph)}</p>`);
+  return xhtmlDocument(page.label, [`<section class="${page.kind}" epub:type="${page.kind}">`, ...paragraphs, '</section>'].join('\n'));
+}
 
 function buildTitlePage(book: Book): string {
   const palette = BOOK_COVER_PALETTES[book.cover?.theme ?? 'classic'];
@@ -156,6 +177,7 @@ function collectBookImages(book: Book): EmbeddedBookImage[] {
 function buildNav(book: Book, includeToc: boolean): string {
   const items = [
     '<li><a href="title.xhtml">Title Page</a></li>',
+    ...frontPages(book).map((page) => `<li><a href="${page.href}">${page.label}</a></li>`),
     ...book.chapters.map(
       (chapter, index) =>
         `<li><a href="chapter-${index + 1}.xhtml">${escapeXml(chapter.title)}</a></li>`,
@@ -212,12 +234,14 @@ function buildOpf(book: Book, identifier: string): string {
     '<item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>',
     '<item id="title" href="title.xhtml" media-type="application/xhtml+xml"/>',
     '<item id="styles" href="styles.css" media-type="text/css"/>',
+    ...frontPages(book).map((page) => `<item id="${page.kind}" href="${page.href}" media-type="application/xhtml+xml"/>`),
     coverManifest,
     imageManifest,
     chapterManifest,
     '</manifest>',
     '<spine>',
     '<itemref idref="title"/>',
+    ...frontPages(book).map((page) => `<itemref idref="${page.kind}"/>`),
     '<itemref idref="nav"/>',
     chapterSpine,
     '</spine>',
@@ -250,6 +274,9 @@ export async function renderBookEpub(book: Book, options: RenderBookOptions = {}
   zip.file('OEBPS/content.opf', buildOpf(book, randomUUID()));
   zip.file('OEBPS/nav.xhtml', buildNav(book, includeToc));
   zip.file('OEBPS/title.xhtml', buildTitlePage(book));
+  for (const page of frontPages(book)) {
+    zip.file(`OEBPS/${page.href}`, buildFrontPage(page));
+  }
   zip.file('OEBPS/styles.css', EPUB_STYLES);
   if (book.cover?.image) {
     const extension = book.cover.image.mimeType === 'image/png' ? 'png' : 'jpg';

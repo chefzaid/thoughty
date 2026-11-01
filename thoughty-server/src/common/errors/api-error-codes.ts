@@ -128,6 +128,8 @@ export const API_ERROR_MESSAGES = {
   BOOK_PICKED_ENTRIES_LIMIT: 'Too many picked entries for one book',
   BOOK_PICKED_ENTRIES_UNAVAILABLE:
     'Some picked entries no longer exist or are in the recycle bin. Remove them and try again.',
+  BOOK_DEDICATION_TOO_LONG: 'The dedication is too long',
+  BOOK_EPIGRAPH_TOO_LONG: 'The epigraph is too long',
   BOOK_AI_NARRATIVE_KEY_REQUIRED:
     'AI narrative requires an OpenRouter API key on the server. Disable the AI narrative option to download a plain book.',
   BOOK_AI_FRAMING_KEY_REQUIRED:

@@ -92,7 +92,17 @@ describe('BooksController query flags over HTTP', () => {
     expect(booksService.export.mock.calls[0][1]).not.toHaveProperty('provider');
   });
 
-  it.each(['narrative=yes', 'includeToc=', 'narrative=true&narrative=false', 'diaryId=', 'diaryId=1.5', 'savedSearchId=0'])(
+  it('passes the dedication and epigraph on as written, line breaks and accents included', async () => {
+    const query = new URLSearchParams({ dedication: 'Pour Hélène,\nqui écoutait.', epigraph: '« Moments »\n— Pavese' });
+    await request(app.getHttpServer()).get(`/api/books/export?${query}`).expect(200);
+
+    expect(booksService.export).toHaveBeenCalledWith(
+      HTTP_SPEC_USER.userId,
+      expect.objectContaining({ dedication: 'Pour Hélène,\nqui écoutait.', epigraph: '« Moments »\n— Pavese' }),
+    );
+  });
+
+  it.each(['narrative=yes', 'dedication=a&dedication=b', 'includeToc=', 'narrative=true&narrative=false', 'diaryId=', 'diaryId=1.5', 'savedSearchId=0'])(
     'refuses %s with VALIDATION_FAILED',
     async (query) => {
       const response = await request(app.getHttpServer()).get(`/api/books/export?${query}`).expect(400);

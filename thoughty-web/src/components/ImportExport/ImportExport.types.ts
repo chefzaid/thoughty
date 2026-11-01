@@ -68,6 +68,10 @@ export const BOOK_SOURCE_OPTIONS: ReadonlyArray<{ value: BookSource; labelKey: s
     { value: 'entries', labelKey: 'bookSourceEntries' },
 ];
 
+/** The longest dedication and epigraph the API takes (`BOOK_DEDICATION_TOO_LONG`, `BOOK_EPIGRAPH_TOO_LONG`). */
+export const BOOK_DEDICATION_MAX_LENGTH = 300;
+export const BOOK_EPIGRAPH_MAX_LENGTH = 500;
+
 export interface BookOptions {
     source: BookSource;
     /** The saved search a saved-search book is built from. */
@@ -76,6 +80,10 @@ export interface BookOptions {
     entryIds: number[];
     title: string;
     author: string;
+    /** A short dedication on its own page after the title page; empty for none. */
+    dedication: string;
+    /** A short epigraph on its own page after the dedication; empty for none. */
+    epigraph: string;
     format: BookFormat;
     chapterMode: BookChapterMode;
     chapterOrder: BookChapterOrder;
@@ -97,6 +105,8 @@ export const DEFAULT_BOOK_OPTIONS: BookOptions = {
     entryIds: [],
     title: '',
     author: '',
+    dedication: '',
+    epigraph: '',
     format: 'pdf',
     chapterMode: 'tags',
     chapterOrder: 'alpha',

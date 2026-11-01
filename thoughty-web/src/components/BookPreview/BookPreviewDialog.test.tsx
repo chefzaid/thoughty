@@ -21,6 +21,7 @@ function fakePdf(overrides: Partial<BookPdf> = {}) {
             { title: 'Chapter 2: travel', pageNumber: 4 },
             { title: 'Chapter 3: work', pageNumber: 6 },
         ],
+        sections: { contents: 2 },
         pageSize: vi.fn(async () => ({ width: 794, height: 1123 })),
         renderPage: vi.fn(() => ({ done: Promise.resolve(), cancel })),
         pageText: vi.fn(async (page: number) => `Text of page ${page}`),

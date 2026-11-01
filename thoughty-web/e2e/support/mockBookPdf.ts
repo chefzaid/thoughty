@@ -9,6 +9,8 @@ interface MockPdfBook {
   author: string;
   includeToc: boolean;
   chapters: MockPdfChapter[];
+  dedication?: string;
+  epigraph?: string;
 }
 
 const PAGE_WIDTH = 595;
@@ -72,14 +74,25 @@ function contentStream(page: MockPage, pageNumber: number): string {
   return commands.join("\n");
 }
 
+/** A dedication or epigraph alone on its page, line by line. */
+function textPage(text: string): MockPage {
+  return { lines: text.split("\n").flatMap((line) => (line.trim() ? wrap(line) : [""]).map((part) => ({ text: part, size: 13 }))) };
+}
+
 /**
- * A real, multi-page PDF laid out like the server's book: a title page, a table of contents with
- * chapter page numbers, each chapter starting on a new page, page numbers from page 2, and one
- * outline item per chapter ("Chapter N: title") pointing at its first page.
+ * A real, multi-page PDF laid out like the server's book: a title page, its dedication and epigraph
+ * pages, a table of contents with chapter page numbers, each chapter starting on a new page, page
+ * numbers from page 2, one outline item per chapter ("Chapter N: title") pointing at its first page,
+ * and the server's named destinations for the book's own pages (`BOOK_PDF_DESTINATIONS`).
  */
 export function buildMockBookPdf(book: MockPdfBook): Buffer {
   const pages: MockPage[] = [{ lines: [{ text: book.title, size: 28 }, { text: `by ${book.author}`, size: 14 }] }];
+  const named: Array<[string, number]> = [];
+  for (const [name, text] of [["dedication", book.dedication], ["epigraph", book.epigraph]] as const) {
+    if (text) named.push([name, pages.push(textPage(text)) - 1]);
+  }
   const tocIndex = book.includeToc && book.chapters.length > 0 ? pages.push({ lines: [] }) - 1 : -1;
+  if (tocIndex >= 0) named.push(["contents", tocIndex]);
   const chapterStarts: number[] = [];
   book.chapters.forEach((chapter, index) => {
     chapterStarts.push(pages.length + 1);
@@ -99,7 +112,8 @@ export function buildMockBookPdf(book: MockPdfBook): Buffer {
   const pageObject = (index: number) => 5 + index * 2;
   const outlineObject = (index: number) => 5 + pages.length * 2 + index;
   const count = book.chapters.length;
-  objects[1] = `<< /Type /Catalog /Pages 2 0 R${count ? " /Outlines 4 0 R /PageMode /UseOutlines" : ""} >>`;
+  const dests = named.map(([name, index]) => `/${name} [${pageObject(index)} 0 R /XYZ null null null]`).join(" ");
+  objects[1] = `<< /Type /Catalog /Pages 2 0 R${count ? " /Outlines 4 0 R /PageMode /UseOutlines" : ""}${dests ? ` /Dests << ${dests} >>` : ""} >>`;
   objects[2] = `<< /Type /Pages /Kids [${pages.map((_, index) => `${pageObject(index)} 0 R`).join(" ")}] /Count ${pages.length} >>`;
   objects[3] = "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";
   objects[4] = count

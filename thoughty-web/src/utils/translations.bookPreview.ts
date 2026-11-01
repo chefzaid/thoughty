@@ -15,6 +15,8 @@ export type BookPreviewTranslationKey =
   | "bookPagePreviewNext"
   | "bookPagePreviewJump"
   | "bookPagePreviewTitlePage"
+  | "bookPagePreviewDedication"
+  | "bookPagePreviewEpigraph"
   | "bookPagePreviewContents"
   | "bookPagePreviewChapterOption"
   | "bookPagePreviewZoomIn"
@@ -41,6 +43,8 @@ export const bookPreviewTranslations: Record<Language, Record<BookPreviewTransla
     bookPagePreviewNext: "Next page",
     bookPagePreviewJump: "Go to",
     bookPagePreviewTitlePage: "Title page",
+    bookPagePreviewDedication: "Dedication",
+    bookPagePreviewEpigraph: "Epigraph",
     bookPagePreviewContents: "Table of contents",
     bookPagePreviewChapterOption: "{title} (page {page})",
     bookPagePreviewZoomIn: "Zoom in",
@@ -67,6 +71,8 @@ export const bookPreviewTranslations: Record<Language, Record<BookPreviewTransla
     bookPagePreviewNext: "Page suivante",
     bookPagePreviewJump: "Aller à",
     bookPagePreviewTitlePage: "Page de titre",
+    bookPagePreviewDedication: "Dédicace",
+    bookPagePreviewEpigraph: "Épigraphe",
     bookPagePreviewContents: "Table des matières",
     bookPagePreviewChapterOption: "{title} (page {page})",
     bookPagePreviewZoomIn: "Zoom avant",

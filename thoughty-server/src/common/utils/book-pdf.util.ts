@@ -20,6 +20,17 @@ const TOC_LINE_GAP = 6;
 const TOC_PAGE_NUM_WIDTH = 40;
 const FRAMING_FONT_SIZE = 10;
 const ENTRY_IMAGE_HEIGHT = 220;
+const FRONT_PAGE_FONT_SIZE = 13;
+
+/**
+ * The named destinations a book's own pages carry, so a reader (the app's page preview among them)
+ * can tell which page is which; chapters are in the outline.
+ */
+export const BOOK_PDF_DESTINATIONS = {
+  dedication: 'dedication',
+  epigraph: 'epigraph',
+  contents: 'contents',
+} as const;
 
 interface TocLinePosition {
   pageIndex: number;
@@ -53,11 +64,33 @@ function renderTitlePage(doc: PDFKit.PDFDocument, book: Book): void {
 }
 
 /**
+ * The dedication or epigraph alone on a page, a third of the way down, in italics: a dedication
+ * centred, an epigraph in a narrower column. Answers the page's index, which carries no page number.
+ */
+function renderFrontPage(doc: PDFKit.PDFDocument, kind: 'dedication' | 'epigraph', text: string): number {
+  doc.addPage();
+  doc.addNamedDestination(BOOK_PDF_DESTINATIONS[kind]);
+  const pageIndex = doc.bufferedPageRange().count - 1;
+  const inset = kind === 'epigraph' ? PAGE_MARGIN : 0;
+  const width = doc.page.width - doc.page.margins.left - doc.page.margins.right - inset * 2;
+  doc.font('Helvetica-Oblique').fontSize(kind === 'dedication' ? FRONT_PAGE_FONT_SIZE + 1 : FRONT_PAGE_FONT_SIZE).fillColor('#333333');
+  doc.text(text, doc.page.margins.left + inset, doc.page.height / 3, {
+    width,
+    align: kind === 'dedication' ? 'center' : 'left',
+    lineGap: 3,
+    paragraphGap: 8,
+  });
+  doc.fillColor('#000000');
+  return pageIndex;
+}
+
+/**
  * Render the table of contents and record where each chapter line was drawn,
  * so the chapter page numbers can be filled in after the chapters are rendered.
  */
 function renderTableOfContents(doc: PDFKit.PDFDocument, book: Book): TocLinePosition[] {
   doc.addPage();
+  doc.addNamedDestination(BOOK_PDF_DESTINATIONS.contents);
   doc.font('Helvetica-Bold').fontSize(CHAPTER_FONT_SIZE).text('Table of Contents');
   doc.moveDown(1);
   doc.font('Helvetica').fontSize(BODY_FONT_SIZE);
@@ -218,10 +251,13 @@ function renderChapter(
   return startPageNumber;
 }
 
-function renderPageNumbers(doc: PDFKit.PDFDocument): void {
+/** Numbers every page from the second, as printed books count them, except the dedication and epigraph pages. */
+function renderPageNumbers(doc: PDFKit.PDFDocument, unnumbered: ReadonlySet<number>): void {
   const range = doc.bufferedPageRange();
-  // Skip the title page; numbering starts on page 2
   for (let i = 1; i < range.start + range.count; i++) {
+    if (unnumbered.has(i)) {
+      continue;
+    }
     doc.switchToPage(i);
     const bottomMargin = doc.page.margins.bottom;
     doc.page.margins.bottom = 0;
@@ -236,8 +272,8 @@ function renderPageNumbers(doc: PDFKit.PDFDocument): void {
 }
 
 /**
- * Render a book as a PDF document with a title page, table of contents
- * (with chapter page numbers), one section per chapter, and centered page numbers.
+ * Render a book as a PDF document with a title page, its dedication and epigraph pages, table of
+ * contents (with chapter page numbers), one section per chapter, and centered page numbers.
  */
 export function renderBookPdf(book: Book, options: RenderBookOptions = {}): Promise<Buffer> {
   const includeDates = options.includeDates !== false;
@@ -261,6 +297,13 @@ export function renderBookPdf(book: Book, options: RenderBookOptions = {}): Prom
     doc.on('error', reject);
 
     renderTitlePage(doc, book);
+    const unnumbered = new Set<number>();
+    if (book.dedication) {
+      unnumbered.add(renderFrontPage(doc, 'dedication', book.dedication));
+    }
+    if (book.epigraph) {
+      unnumbered.add(renderFrontPage(doc, 'epigraph', book.epigraph));
+    }
 
     let tocPositions: TocLinePosition[] = [];
     if (includeToc && book.chapters.length > 0) {
@@ -275,7 +318,7 @@ export function renderBookPdf(book: Book, options: RenderBookOptions = {}): Prom
     if (tocPositions.length > 0) {
       fillTocPageNumbers(doc, tocPositions, chapterPageNumbers);
     }
-    renderPageNumbers(doc);
+    renderPageNumbers(doc, unnumbered);
 
     doc.end();
   });

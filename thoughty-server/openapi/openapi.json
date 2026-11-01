@@ -6450,6 +6450,28 @@
             }
           },
           {
+            "name": "dedication",
+            "required": false,
+            "in": "query",
+            "description": "A short dedication on its own page after the title page; line breaks are kept. Longer than 300 characters (once trimmed) is a 400 BOOK_DEDICATION_TOO_LONG",
+            "schema": {
+              "maxLength": 300,
+              "example": "For Marie, who listened.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "epigraph",
+            "required": false,
+            "in": "query",
+            "description": "A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks are kept. Longer than 500 characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG",
+            "schema": {
+              "maxLength": 500,
+              "example": "We do not remember days, we remember moments.\n— Cesare Pavese",
+              "type": "string"
+            }
+          },
+          {
             "name": "dateFrom",
             "required": false,
             "in": "query",
@@ -6849,6 +6871,28 @@
             }
           },
           {
+            "name": "dedication",
+            "required": false,
+            "in": "query",
+            "description": "A short dedication on its own page after the title page; line breaks are kept. Longer than 300 characters (once trimmed) is a 400 BOOK_DEDICATION_TOO_LONG",
+            "schema": {
+              "maxLength": 300,
+              "example": "For Marie, who listened.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "epigraph",
+            "required": false,
+            "in": "query",
+            "description": "A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks are kept. Longer than 500 characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG",
+            "schema": {
+              "maxLength": 500,
+              "example": "We do not remember days, we remember moments.\n— Cesare Pavese",
+              "type": "string"
+            }
+          },
+          {
             "name": "dateFrom",
             "required": false,
             "in": "query",
@@ -7143,6 +7187,28 @@
             }
           },
           {
+            "name": "dedication",
+            "required": false,
+            "in": "query",
+            "description": "A short dedication on its own page after the title page; line breaks are kept. Longer than 300 characters (once trimmed) is a 400 BOOK_DEDICATION_TOO_LONG",
+            "schema": {
+              "maxLength": 300,
+              "example": "For Marie, who listened.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "epigraph",
+            "required": false,
+            "in": "query",
+            "description": "A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks are kept. Longer than 500 characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG",
+            "schema": {
+              "maxLength": 500,
+              "example": "We do not remember days, we remember moments.\n— Cesare Pavese",
+              "type": "string"
+            }
+          },
+          {
             "name": "dateFrom",
             "required": false,
             "in": "query",
@@ -7410,6 +7476,28 @@
             "in": "query",
             "description": "Author name shown on the title page (defaults to the username)",
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dedication",
+            "required": false,
+            "in": "query",
+            "description": "A short dedication on its own page after the title page; line breaks are kept. Longer than 300 characters (once trimmed) is a 400 BOOK_DEDICATION_TOO_LONG",
+            "schema": {
+              "maxLength": 300,
+              "example": "For Marie, who listened.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "epigraph",
+            "required": false,
+            "in": "query",
+            "description": "A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks are kept. Longer than 500 characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG",
+            "schema": {
+              "maxLength": 500,
+              "example": "We do not remember days, we remember moments.\n— Cesare Pavese",
               "type": "string"
             }
           },
@@ -7699,6 +7787,28 @@
             "in": "query",
             "description": "Author name shown on the title page (defaults to the username)",
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dedication",
+            "required": false,
+            "in": "query",
+            "description": "A short dedication on its own page after the title page; line breaks are kept. Longer than 300 characters (once trimmed) is a 400 BOOK_DEDICATION_TOO_LONG",
+            "schema": {
+              "maxLength": 300,
+              "example": "For Marie, who listened.",
+              "type": "string"
+            }
+          },
+          {
+            "name": "epigraph",
+            "required": false,
+            "in": "query",
+            "description": "A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks are kept. Longer than 500 characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG",
+            "schema": {
+              "maxLength": 500,
+              "example": "We do not remember days, we remember moments.\n— Cesare Pavese",
               "type": "string"
             }
           },
@@ -23208,6 +23318,8 @@
           "BOOK_PICKED_ENTRIES_REQUIRED",
           "BOOK_PICKED_ENTRIES_LIMIT",
           "BOOK_PICKED_ENTRIES_UNAVAILABLE",
+          "BOOK_DEDICATION_TOO_LONG",
+          "BOOK_EPIGRAPH_TOO_LONG",
           "BOOK_AI_NARRATIVE_KEY_REQUIRED",
           "BOOK_AI_FRAMING_KEY_REQUIRED",
           "AI_KEY_NOT_CONFIGURED",

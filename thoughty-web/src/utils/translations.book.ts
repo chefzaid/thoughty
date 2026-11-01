@@ -32,6 +32,12 @@ export type BookTranslationKey =
   | "bookNarrative"
   | "bookChapterFraming"
   | "bookEmbedImages"
+  | "bookPages"
+  | "bookPagesHint"
+  | "bookDedicationLabel"
+  | "bookDedicationPlaceholder"
+  | "bookEpigraphLabel"
+  | "bookEpigraphPlaceholder"
   | "bookCover"
   | "bookCoverTheme"
   | "bookCoverThemeClassic"
@@ -114,6 +120,12 @@ export const bookTranslations: Record<Language, Record<BookTranslationKey, strin
     bookNarrative: "Weave thoughts into flowing prose with AI",
     bookChapterFraming: "Add AI chapter introductions and summaries",
     bookEmbedImages: "Include image attachments",
+    bookPages: "Book pages",
+    bookPagesHint: "Optional pages of your own, in every format. The dedication and the epigraph follow the title page; a dedication takes up to {dedicationMax} characters, an epigraph up to {epigraphMax}.",
+    bookDedicationLabel: "Dedication",
+    bookDedicationPlaceholder: "For Marie, who listened.",
+    bookEpigraphLabel: "Epigraph",
+    bookEpigraphPlaceholder: "A quotation, and who said it",
     bookCover: "Cover",
     bookCoverTheme: "Cover color theme",
     bookCoverThemeClassic: "Classic",
@@ -199,6 +211,12 @@ export const bookTranslations: Record<Language, Record<BookTranslationKey, strin
     bookChapterFraming:
       "Ajouter des introductions et résumés de chapitre par IA",
     bookEmbedImages: "Inclure les images jointes",
+    bookPages: "Pages du livre",
+    bookPagesHint: "Des pages bien à vous, facultatives, dans tous les formats. La dédicace et l’épigraphe suivent la page de titre ; une dédicace compte jusqu’à {dedicationMax} caractères, une épigraphe jusqu’à {epigraphMax}.",
+    bookDedicationLabel: "Dédicace",
+    bookDedicationPlaceholder: "Pour Marie, qui savait écouter.",
+    bookEpigraphLabel: "Épigraphe",
+    bookEpigraphPlaceholder: "Une citation, et qui l’a dite",
     bookCover: "Couverture",
     bookCoverTheme: "Thème coloré de la couverture",
     bookCoverThemeClassic: "Classique",

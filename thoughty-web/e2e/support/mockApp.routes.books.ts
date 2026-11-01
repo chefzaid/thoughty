@@ -10,6 +10,11 @@ type BookPreview = components["schemas"]["BookPreviewResponseDto"];
 type BookSource = MockBookVersion["source"];
 
 const MAX_PICKED_ENTRIES = 500;
+/** The book's own pages and their limits, as `BooksService` checks them once trimmed. */
+const BOOK_PAGE_TEXTS = [
+  { name: "dedication", max: 300, code: "BOOK_DEDICATION_TOO_LONG" },
+  { name: "epigraph", max: 500, code: "BOOK_EPIGRAPH_TOO_LONG" },
+] as const;
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
 interface BookSelection {
@@ -139,10 +144,21 @@ function buildChapters(entries: MockEntry[], params: URLSearchParams, title: str
   return result.map(([, chapter]) => chapter);
 }
 
+function bookPageTexts(params: URLSearchParams): { dedication?: string; epigraph?: string } {
+  const texts: { dedication?: string; epigraph?: string } = {};
+  for (const { name, max, code } of BOOK_PAGE_TEXTS) {
+    const text = params.get(name)?.trim();
+    if (text && text.length > max) throw new BookRefusal(400, code, `The ${name} can be at most ${max} characters long`);
+    if (text) texts[name] = text;
+  }
+  return texts;
+}
+
 function buildBook(state: MockAppState, params: URLSearchParams) {
+  const pages = bookPageTexts(params);
   const selection = selectEntries(state, params);
   const title = params.get("title")?.trim() || selection.defaultTitle || "My Book of Thoughts";
-  return { title, source: selection.source, chapters: buildChapters(selection.entries, params, title, state.lifeEras) };
+  return { title, ...pages, source: selection.source, chapters: buildChapters(selection.entries, params, title, state.lifeEras) };
 }
 
 function toPreview(book: ReturnType<typeof buildBook>): BookPreview {
@@ -174,8 +190,19 @@ function exportBook(state: MockAppState, params: URLSearchParams) {
   const embed = readQueryFlag(params, "embedImages", false);
   const chapters = book.chapters.map((chapter) => ({ title: chapter.title, paragraphs: chapter.entries.map((entry) => bookInlineImages(entry, embed)) }));
   const body = format === "pdf"
-    ? buildMockBookPdf({ title: book.title, author: params.get("author")?.trim() || "testuser", includeToc: readQueryFlag(params, "includeToc", true), chapters })
-    : [`# ${book.title}`, ...chapters.map((chapter) => `## ${chapter.title}\n\n${chapter.paragraphs.join("\n\n")}`)].join("\n\n");
+    ? buildMockBookPdf({
+      title: book.title,
+      author: params.get("author")?.trim() || "testuser",
+      includeToc: readQueryFlag(params, "includeToc", true),
+      chapters,
+      dedication: book.dedication,
+      epigraph: book.epigraph,
+    })
+    : [
+      `# ${book.title}`,
+      ...[book.dedication, book.epigraph].filter(Boolean),
+      ...chapters.map((chapter) => `## ${chapter.title}\n\n${chapter.paragraphs.join("\n\n")}`),
+    ].join("\n\n");
   return {
     body,
     contentType: BOOK_CONTENT_TYPES[format] ?? "application/octet-stream",

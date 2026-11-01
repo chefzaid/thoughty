@@ -38,6 +38,10 @@ export interface Book {
   generatedAt: string;
   chapters: BookChapter[];
   cover?: BookCover;
+  /** A short dedication, on its own page after the title page. */
+  dedication?: string;
+  /** A short epigraph (a quotation and who said it), on its own page after the dedication. */
+  epigraph?: string;
 }
 
 export interface BuildBookOptions {

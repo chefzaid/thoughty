@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { apiError } from '@/common/errors';
+import { apiError, type ApiErrorCode } from '@/common/errors';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '@/database/entities';
@@ -13,6 +13,9 @@ import {
   renderBookEpub,
   hydrateBookImages,
   inlineImagesToAltText,
+  MAX_BOOK_DEDICATION_LENGTH,
+  MAX_BOOK_EPIGRAPH_LENGTH,
+  normalizeBookPageText,
 } from '@/common/utils';
 import { BookQueryDto, BookPreviewResponseDto } from './dto';
 import type { BookVersionManifest, BookVersionSource } from '@/database/entities';
@@ -41,6 +44,15 @@ interface SourcedBook {
 }
 
 const DEFAULT_BOOK_TITLE = 'My Book of Thoughts';
+
+/** A dedication or epigraph as the book prints it, refused with `code` when it is longer than `maxLength`. */
+function bookPageText(text: string | undefined, maxLength: number, code: ApiErrorCode, name: string): string | undefined {
+  const normalized = normalizeBookPageText(text);
+  if (normalized && normalized.length > maxLength) {
+    throw apiError(BadRequestException, code, `The ${name} can be at most ${maxLength} characters long`);
+  }
+  return normalized;
+}
 
 @Injectable()
 export class BooksService {
@@ -77,6 +89,9 @@ export class BooksService {
   }
 
   private async buildSourcedBook(userId: number, query: BookQueryDto): Promise<SourcedBook> {
+    // Checked first, so a refused text costs no query
+    const dedication = bookPageText(query.dedication, MAX_BOOK_DEDICATION_LENGTH, 'BOOK_DEDICATION_TOO_LONG', 'dedication');
+    const epigraph = bookPageText(query.epigraph, MAX_BOOK_EPIGRAPH_LENGTH, 'BOOK_EPIGRAPH_TOO_LONG', 'epigraph');
     const [{ entries, source, defaultTitle }, author, eras] = await Promise.all([
       this.entrySource.select(userId, query),
       this.resolveAuthor(userId, query.author),
@@ -96,7 +111,7 @@ export class BooksService {
       eras,
       today: query.today,
     });
-    return { book, source };
+    return { book: { ...book, dedication, epigraph }, source };
   }
 
   async preview(userId: number, query: BookQueryDto): Promise<BookPreviewResponseDto> {

@@ -2,6 +2,7 @@ import { BOOK_COVER_PALETTES } from './book-cover-style.util';
 import { bookImageDataUri, escapeBookImageMarkdownText, type EmbeddedBookImage } from './book-image.util';
 import { bookEntryMarkdown, inlineImageCaption, layoutBookEntry } from './book-inline-image.util';
 import { escapeHtml } from './sanitize.util';
+import { bookPageMarkdownLines } from './book-pages.util';
 import {
   type Book,
   type BookChapter,
@@ -39,6 +40,11 @@ export function renderBookMarkdown(book: Book, options: RenderBookOptions = {}):
       lines.push(`*by ${book.author}*`, '');
     }
     lines.push(`*${book.generatedAt}*`, '');
+  }
+  for (const text of [book.dedication, book.epigraph]) {
+    if (text) {
+      lines.push('---', '', ...bookPageMarkdownLines(text), '');
+    }
   }
 
   if (includeToc && book.chapters.length > 0) {
@@ -101,6 +107,10 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     '.entry-image img{display:block;max-width:100%;max-height:34em;margin:0 auto;object-fit:contain}',
     '.entry-image figcaption{color:#666;font-size:0.8em;margin-top:0.4em}',
     '.inline-image{white-space:normal}',
+    '.dedication,.epigraph{min-height:30em;padding:10em 3em 0;box-sizing:border-box;font-style:italic;page-break-after:always}',
+    '.dedication{text-align:center;font-size:1.15em}',
+    '.epigraph{max-width:28em;margin:0 auto}',
+    '.dedication p,.epigraph p{white-space:pre-line}',
     '</style>',
     '</head>',
     '<body>',
@@ -118,6 +128,8 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
     parts.push(`<p class="author">by ${escapeHtml(book.author)}</p>`);
   }
   parts.push(`<p class="date">${escapeHtml(book.generatedAt)}</p>`, '</div>');
+  renderHtmlBookPage(parts, 'dedication', book.dedication);
+  renderHtmlBookPage(parts, 'epigraph', book.epigraph);
 
   if (includeToc && book.chapters.length > 0) {
     parts.push('<nav class="toc">', '<h2>Table of Contents</h2>', '<ol>');
@@ -131,6 +143,15 @@ export function renderBookHtml(book: Book, options: RenderBookOptions = {}): str
 
   parts.push('</body>', '</html>');
   return parts.join('\n');
+}
+
+/** The dedication or epigraph on its own page; each paragraph keeps its line breaks. */
+function renderHtmlBookPage(parts: string[], kind: 'dedication' | 'epigraph', text: string | undefined): void {
+  if (!text) {
+    return;
+  }
+  const paragraphs = text.split('\n\n').map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`);
+  parts.push(`<section class="${kind}">`, ...paragraphs, '</section>');
 }
 
 function renderHtmlEntryImages(parts: string[], entry: BookEntry, images: EmbeddedBookImage[] = entry.images ?? []): void {

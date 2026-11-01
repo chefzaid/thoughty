@@ -6,6 +6,12 @@ export interface BookPdfChapter {
     readonly pageNumber: number;
 }
 
+/** The book's own pages the server names in the PDF (its named destinations), in reading order. */
+export const BOOK_PDF_SECTIONS = ['dedication', 'epigraph', 'contents'] as const;
+export type BookPdfSection = (typeof BOOK_PDF_SECTIONS)[number];
+/** The page each of the book's own pages is on (1-based), for those it has. */
+export type BookPdfSections = Readonly<Partial<Record<BookPdfSection, number>>>;
+
 /** A page being drawn; `cancel` stops it so the canvas can take the next page. */
 export interface BookPdfRender {
     readonly done: Promise<void>;
@@ -16,6 +22,7 @@ export interface BookPdfRender {
 export interface BookPdf {
     readonly pageCount: number;
     readonly chapters: readonly BookPdfChapter[];
+    readonly sections: BookPdfSections;
     /** The page's width and height in CSS pixels at 100%. */
     pageSize(pageNumber: number): Promise<{ width: number; height: number }>;
     /** Draws the page on the canvas at `scale` (1 = 100%), sharp on high-density screens. */
@@ -73,6 +80,18 @@ async function readChapters(document: PDFDocumentProxy): Promise<BookPdfChapter[
     return chapters.filter((chapter): chapter is BookPdfChapter => chapter !== null);
 }
 
+/** The book's own pages from the PDF's named destinations; a name it lacks, or cannot resolve, is left out. */
+async function readSections(document: PDFDocumentProxy): Promise<BookPdfSections> {
+    const pages = await Promise.all(BOOK_PDF_SECTIONS.map(async (name) => {
+        try {
+            return [name, await destinationPage(document, name)] as const;
+        } catch {
+            return [name, null] as const;
+        }
+    }));
+    return Object.fromEntries(pages.filter(([, pageNumber]) => pageNumber !== null));
+}
+
 export async function openBookPdf(data: ArrayBuffer): Promise<BookPdf> {
     const pdfjs = await loadPdfJs();
     const loadingTask = pdfjs.getDocument({
@@ -82,8 +101,9 @@ export async function openBookPdf(data: ArrayBuffer): Promise<BookPdf> {
     });
     const document = await loadingTask.promise;
     let chapters: BookPdfChapter[];
+    let sections: BookPdfSections;
     try {
-        chapters = await readChapters(document);
+        [chapters, sections] = await Promise.all([readChapters(document), readSections(document)]);
     } catch (error) {
         await loadingTask.destroy();
         throw error;
@@ -92,6 +112,7 @@ export async function openBookPdf(data: ArrayBuffer): Promise<BookPdf> {
     return {
         pageCount: document.numPages,
         chapters,
+        sections,
         async pageSize(pageNumber) {
             const viewport = (await document.getPage(pageNumber)).getViewport({ scale: CSS_PIXELS_PER_POINT });
             return { width: viewport.width, height: viewport.height };

@@ -10,6 +10,7 @@
 }
 
 #book-section .export-option-group input[type="text"],
+#book-section .export-option-group textarea,
 #book-section .format-select {
     flex: 1 1 auto;
     min-width: 0;
@@ -22,6 +23,7 @@
 }
 
 #book-section .export-option-group input[type="text"]:focus,
+#book-section .export-option-group textarea:focus,
 #book-section .format-select:focus {
     outline: none;
     border-color: #6366f1;
@@ -45,6 +47,7 @@
 }
 
 .import-export.light #book-section .export-option-group input[type="text"],
+.import-export.light #book-section .export-option-group textarea,
 .import-export.light #book-section .format-select {
     background: #ffffff;
     border-color: #d1d5db;
@@ -90,9 +93,28 @@
 }
 
 #book-section .book-field input[type="text"],
+#book-section .book-field textarea,
 #book-section .book-field .format-select {
     width: 100%;
     max-width: none;
+}
+
+#book-section .book-field textarea {
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.book-pages-controls {
+    margin: 0;
+    padding: 0 0 0.9rem;
+    border: 0;
+    border-bottom: 1px solid var(--border-color, rgba(148, 163, 184, 0.22));
+}
+
+.book-pages-controls > legend {
+    padding: 0 0.4rem 0 0;
+    font-weight: 600;
 }
 
 #book-section .book-checkbox-row,

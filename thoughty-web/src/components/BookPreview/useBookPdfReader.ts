@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { isCancelledRender, openBookPdf, type BookPdf } from './bookPdf';
+import { isCancelledRender, openBookPdf, type BookPdf, type BookPdfSections } from './bookPdf';
 
 /** Zoom steps, as multiples of "fit page" (the whole page visible). */
 export const BOOK_ZOOM_STEPS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3] as const;
@@ -32,6 +32,7 @@ function useElementSize(ref: RefObject<HTMLElement | null>, enabled: boolean): E
 
 /** Breathing room around the page inside the reader's viewport, in CSS pixels. */
 const PAGE_GUTTER = 24;
+const NO_SECTIONS: BookPdfSections = {};
 
 /** The scale that shows the whole page in the viewport, or 100% before the viewport is measured. */
 function fitScale(page: ElementSize, viewport: ElementSize): number {
@@ -142,6 +143,7 @@ export function useBookPdfReader(file: Blob | null) {
         canvasRef,
         changeZoom,
         chapters: pdf?.chapters ?? [],
+        sections: pdf?.sections ?? NO_SECTIONS,
         goToPage,
         pageCount,
         pageNumber,

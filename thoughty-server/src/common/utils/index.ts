@@ -18,4 +18,5 @@ export * from './time-zone.util';
 export * from './writers-day.util';
 export * from './inline-image.util';
 export * from './book-inline-image.util';
+export * from './book-pages.util';
 export * from './byte-range.util';

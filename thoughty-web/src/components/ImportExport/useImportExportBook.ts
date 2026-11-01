@@ -92,6 +92,8 @@ export function useImportExportBook({
         appendBookSourceParams(params, options, diaryId);
         if (options.title.trim()) params.append('title', options.title.trim());
         if (options.author.trim()) params.append('author', options.author.trim());
+        if (options.dedication.trim()) params.append('dedication', options.dedication.trim());
+        if (options.epigraph.trim()) params.append('epigraph', options.epigraph.trim());
         if (options.format !== 'pdf') params.append('format', options.format);
         if (options.chapterMode !== 'tags') params.append('chapterMode', options.chapterMode);
         if (options.chapterOrder !== 'alpha') params.append('chapterOrder', options.chapterOrder);

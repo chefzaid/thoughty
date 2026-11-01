@@ -127,6 +127,30 @@ describeContract('books', (context) => {
     });
   });
 
+  it('prints the dedication and epigraph escaped, and refuses them over their limits', async () => {
+    const { alice } = context;
+    const html = await call('GET /api/books/export', {
+      as: alice,
+      query: { ...PLAIN_BOOK, format: 'html', dedication: 'For <b>Marie</b>', epigraph: 'Moments\n— Pavese' },
+      status: 200,
+      contentType: /^text\/html/,
+    });
+    expect(html.text).toContain('<section class="dedication">\n<p>For &lt;b&gt;Marie&lt;/b&gt;</p>');
+    expect(html.text).toContain('<p>Moments\n— Pavese</p>');
+    await call('GET /api/books/preview', {
+      as: alice,
+      query: { ...PLAIN_BOOK, dedication: 'a'.repeat(301) },
+      status: 400,
+      code: 'BOOK_DEDICATION_TOO_LONG',
+    });
+    await call('GET /api/books/export', {
+      as: alice,
+      query: { ...PLAIN_BOOK, epigraph: 'a'.repeat(501) },
+      status: 400,
+      code: 'BOOK_EPIGRAPH_TOO_LONG',
+    });
+  });
+
   it('makes a book of hand-picked entries, never another writer’s', async () => {
     const { alice, bob } = context;
     const picked = await call('GET /api/books/picked-entries', {

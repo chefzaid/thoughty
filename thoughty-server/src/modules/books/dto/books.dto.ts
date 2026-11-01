@@ -1,6 +1,7 @@
 import { IsString, IsOptional, IsIn, Matches, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PickType } from '@nestjs/swagger';
 import { StrictBoolean, StrictInt, WritersDay } from '@/common/validation';
+import { MAX_BOOK_DEDICATION_LENGTH, MAX_BOOK_EPIGRAPH_LENGTH } from '@/common/utils/book-pages.util';
 import { BookSourceQueryDto, BookVersionSourceDto } from './book-source.dto';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -33,6 +34,28 @@ export class BookQueryDto extends BookSourceQueryDto {
   @IsString()
   @MaxLength(200)
   author?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'A short dedication on its own page after the title page; line breaks are kept. Longer than ' +
+      `${MAX_BOOK_DEDICATION_LENGTH} characters (once trimmed) is a 400 BOOK_DEDICATION_TOO_LONG`,
+    maxLength: MAX_BOOK_DEDICATION_LENGTH,
+    example: 'For Marie, who listened.',
+  })
+  @IsOptional()
+  @IsString()
+  dedication?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'A short epigraph (a quotation and who said it) on its own page after the dedication; line breaks ' +
+      `are kept. Longer than ${MAX_BOOK_EPIGRAPH_LENGTH} characters (once trimmed) is a 400 BOOK_EPIGRAPH_TOO_LONG`,
+    maxLength: MAX_BOOK_EPIGRAPH_LENGTH,
+    example: 'We do not remember days, we remember moments.\n— Cesare Pavese',
+  })
+  @IsOptional()
+  @IsString()
+  epigraph?: string;
 
   @ApiPropertyOptional({ description: 'Journal books: only include entries on or after this date (YYYY-MM-DD)' })
   @IsOptional()

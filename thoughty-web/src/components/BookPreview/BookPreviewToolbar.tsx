@@ -1,9 +1,10 @@
 import type { TranslationFunction } from '../../types';
-import type { BookPdfChapter } from './bookPdf';
+import type { BookPdfChapter, BookPdfSections } from './bookPdf';
 import { bookJumpTargets, currentJumpTarget } from './bookJumpTargets';
 
 export function BookPreviewToolbar({
     chapters,
+    sections,
     pageNumber,
     pageCount,
     zoom,
@@ -14,6 +15,7 @@ export function BookPreviewToolbar({
     t,
 }: Readonly<{
     chapters: readonly BookPdfChapter[];
+    sections: BookPdfSections;
     pageNumber: number;
     pageCount: number;
     zoom: number;
@@ -23,7 +25,7 @@ export function BookPreviewToolbar({
     onZoom: (step: -1 | 0 | 1) => void;
     t: TranslationFunction;
 }>) {
-    const targets = bookJumpTargets(chapters, t);
+    const targets = bookJumpTargets(chapters, sections, t);
     const selected = currentJumpTarget(targets, pageNumber);
 
     return (
