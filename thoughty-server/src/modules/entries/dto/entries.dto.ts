@@ -8,3 +8,4 @@ export * from './entry-calendar.dto';
 export * from './entry-random.dto';
 export * from './entry-revision.dto';
 export * from './entry-open-tasks.dto';
+export * from './entry-reader.dto';

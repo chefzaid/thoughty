@@ -4,6 +4,22 @@ import type { EntryFilterQueryDto } from './dto';
 import { escapeLikePattern } from './entry-search-query';
 import type { PreparedEntrySearch } from './entry-search.service';
 
+/** The first day of the month after `YYYY-MM`, as `YYYY-MM-DD`. */
+function nextMonthStart(month: string): string {
+  const [year, monthNumber] = month.split('-').map(Number);
+  return monthNumber === 12
+    ? `${year + 1}-01-01`
+    : `${year}-${String(monthNumber + 1).padStart(2, '0')}-01`;
+}
+
+/** Narrows a query on entries aliased `e` to the days of one month (`YYYY-MM`). */
+export function applyEntryMonthFilter(qb: SelectQueryBuilder<Entry>, month: string): void {
+  qb.andWhere('e.date >= :monthStart AND e.date < :nextMonthStart', {
+    monthStart: `${month}-01`,
+    nextMonthStart: nextMonthStart(month),
+  });
+}
+
 /** At most this many entry IDs (a meaning search's matches) narrow a request. */
 const MAX_FILTER_ENTRY_IDS = 50;
 

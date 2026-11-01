@@ -69,6 +69,8 @@ export const API_ERROR_MESSAGES = {
   ENTRY_SEALED: 'This entry is sealed as a time capsule until it opens',
   ENTRY_NOT_SEALED: 'This entry is not sealed',
   ENTRY_RANDOM_NO_MATCH: 'No entry matches these filters',
+  ENTRY_READER_NO_MATCH: 'No entry to read with these filters',
+  ENTRY_READER_NOT_FOUND: 'This entry is not among the entries being read',
   TIME_CAPSULE_DATE_INVALID: 'Choose an opening date from tomorrow up to 50 years ahead',
   REREAD_DATE_INVALID: 'Choose a day to reread it from tomorrow up to 50 years ahead',
   TAG_RENAME_SAME_NAME: 'New tag name must be different',

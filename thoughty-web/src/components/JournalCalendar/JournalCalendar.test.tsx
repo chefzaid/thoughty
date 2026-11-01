@@ -41,11 +41,12 @@ interface HarnessProps {
   readonly onMonthChange?: (month: CalendarMonth) => void;
   readonly onOpenDay?: (date: string) => void;
   readonly onOpenEntry?: (entry: EntryCalendarItem) => void;
+  readonly onReadMonth?: (month: string) => void;
   readonly theme?: 'light' | 'dark';
   readonly era?: LifeEra | null;
 }
 
-function Harness({ initialMonth = null, selectedDate = null, onMonthChange, onOpenDay = vi.fn(), onOpenEntry = vi.fn(), theme = 'dark', era = null }: HarnessProps) {
+function Harness({ initialMonth = null, selectedDate = null, onMonthChange, onOpenDay = vi.fn(), onOpenEntry = vi.fn(), onReadMonth = vi.fn(), theme = 'dark', era = null }: HarnessProps) {
   const [month, setMonth] = useState<CalendarMonth | null>(initialMonth);
   return (
     <JournalCalendar
@@ -57,6 +58,7 @@ function Harness({ initialMonth = null, selectedDate = null, onMonthChange, onOp
       availableYears={[2026, 2019]}
       onOpenDay={onOpenDay}
       onOpenEntry={onOpenEntry}
+      onReadMonth={onReadMonth}
       language="en"
       theme={theme}
       t={t}
@@ -115,6 +117,26 @@ describe('JournalCalendar', () => {
     expect(today).toHaveAttribute('tabindex', '0');
     expect(busy).toHaveAttribute('tabindex', '-1');
     expect(calendarService.fetchMonth).toHaveBeenCalledWith({ ...FILTERS, month: '2026-10' });
+  });
+
+  it('reads the month shown in the reader, and says when it has nothing to read', async () => {
+    const onReadMonth = vi.fn();
+    renderCalendar({ onReadMonth });
+
+    const read = screen.getByRole('button', { name: 'Read this month' });
+    expect(read).toHaveAttribute('data-entry-reader-trigger');
+    await screen.findByRole('gridcell', { name: 'Tuesday, October 20, 2026: 4 entries' });
+    expect(read).toHaveAttribute('aria-disabled', 'false');
+    expect(read).toHaveAttribute('title', 'Read October 2026 like a book');
+    fireEvent.click(read);
+    expect(onReadMonth).toHaveBeenCalledWith('2026-10');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next month' }));
+    await screen.findByText('No entries this month match the filters.');
+    expect(read).toHaveAttribute('aria-disabled', 'true');
+    expect(read).toHaveAttribute('title', 'No entries this month match the filters.');
+    fireEvent.click(read);
+    expect(onReadMonth).toHaveBeenCalledTimes(1);
   });
 
   it('names a sealed time capsule only as one', async () => {

@@ -15,6 +15,7 @@ describe('EntriesController', () => {
       getCalendarMonth: jest.fn(),
       getOpenTasks: jest.fn(),
       getRandomEntry: jest.fn(),
+      readEntry: jest.fn(),
       getFirstEntry: jest.fn(),
       getEntryByDate: jest.fn(),
       getBacklinks: jest.fn(),
@@ -103,6 +104,18 @@ describe('EntriesController', () => {
 
       const result = await controller.getRandomEntry(mockUser as any, query);
       expect(entriesService.getRandomEntry).toHaveBeenCalledWith(1, query);
+      expect(result).toBe(expected);
+    });
+  });
+
+  describe('readEntry', () => {
+    it("delegates to entriesService.readEntry with the writer's id", async () => {
+      const query = { month: '2026-10', entryId: 9 } as any;
+      const expected = { entry: { id: 9 }, previousId: null, nextId: 10, position: 1, total: 2 };
+      entriesService.readEntry!.mockResolvedValue(expected);
+
+      const result = await controller.readEntry(mockUser as any, query);
+      expect(entriesService.readEntry).toHaveBeenCalledWith(1, query);
       expect(result).toBe(expected);
     });
   });

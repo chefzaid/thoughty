@@ -24,3 +24,4 @@ export * from './monthlyRecapEmailService';
 export * from './shareLinksService';
 export * from './rereadReminderService';
 export * from './openTasksService';
+export * from './entryReaderService';

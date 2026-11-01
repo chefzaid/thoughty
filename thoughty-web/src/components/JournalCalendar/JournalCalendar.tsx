@@ -15,6 +15,7 @@ import type { Language } from '../../utils/translations';
 import CalendarEraBanner from './CalendarEraBanner';
 import CalendarGrid from './CalendarGrid';
 import { useCalendarMonth } from './useCalendarMonth';
+import { READER_TRIGGER_ATTRIBUTE } from '../EntryReader/readerTrigger';
 
 interface JournalCalendarProps {
   /** The month in the journal URL; without one, the month of the date filter, else this month. */
@@ -30,6 +31,8 @@ interface JournalCalendarProps {
   readonly availableYears: readonly number[];
   readonly onOpenDay: (date: string) => void;
   readonly onOpenEntry: (entry: EntryCalendarItem) => void;
+  /** Reads the month shown (`YYYY-MM`) in the reader, under the same filters. */
+  readonly onReadMonth: (month: string) => void;
   readonly language: Language;
   readonly theme: Theme;
   readonly t: TranslationFunction;
@@ -58,6 +61,7 @@ function JournalCalendar({
   availableYears,
   onOpenDay,
   onOpenEntry,
+  onReadMonth,
   language,
   theme,
   t,
@@ -105,6 +109,10 @@ function JournalCalendar({
     { labelKey: 'calendarNextYear', symbol: '»', months: 12 },
   ] as const;
   const mutedText = isLight ? 'text-gray-600' : 'text-gray-400';
+  const textButtonClass = `h-9 rounded-md border px-3 text-sm font-medium ${isLight
+    ? 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100'
+    : 'border-gray-700 bg-gray-900 text-gray-300 hover:bg-gray-800'}`;
+  const monthEmpty = loading || failed || total === 0;
 
   return (
     <section
@@ -141,12 +149,22 @@ function JournalCalendar({
           </select>
           <button
             type="button"
-            className={`h-9 rounded-md border px-3 text-sm font-medium ${isLight
-              ? 'border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100'
-              : 'border-gray-700 bg-gray-900 text-gray-300 hover:bg-gray-800'}`}
+            className={textButtonClass}
             onClick={() => goToDate(today)}
           >
             {t('calendarToday')}
+          </button>
+          <button
+            type="button"
+            {...{ [READER_TRIGGER_ATTRIBUTE]: '' }}
+            className={`${textButtonClass} ${monthEmpty ? 'cursor-not-allowed opacity-50' : ''}`}
+            aria-disabled={monthEmpty}
+            aria-haspopup="dialog"
+            title={!loading && !failed && total === 0 ? t('calendarMonthEmpty') : t('readerMonthOf', { month: monthTitle(shown, language) })}
+            onClick={() => { if (!monthEmpty) onReadMonth(formatCalendarMonth(shown)); }}
+          >
+            <span className="codicon codicon-book mr-1.5 align-[-0.15em]" aria-hidden="true" />
+            {t('readerMonth')}
           </button>
         </div>
       </div>

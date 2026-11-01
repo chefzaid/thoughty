@@ -19,6 +19,7 @@ vi.mock('../BackToTopButton/BackToTopButton', async () => ({ default: (await imp
 vi.mock('../DuplicateReview/DuplicateReview', async () => ({ default: (await import('./JournalView.test-helpers')).MockDuplicateReview }));
 vi.mock('../SavedSearches/SavedSearches', async () => ({ default: (await import('./JournalView.test-helpers')).MockSavedSearches }));
 vi.mock('./RandomEntryButton', async () => ({ default: (await import('./JournalView.test-helpers')).MockRandomEntryButton }));
+vi.mock('../EntryReader/EntryReader', async () => ({ default: (await import('./JournalView.test-helpers')).MockEntryReader }));
 vi.mock('../LifeEras/useLifeEras', async () => ({ useLifeEraList: (await import('./JournalView.test-helpers')).mockUseLifeEraList }));
 vi.mock('../People/usePeople', async () => ({ usePeopleList: (await import('./JournalView.test-helpers')).mockUsePeopleList }));
 
@@ -89,6 +90,41 @@ describe('JournalView calendar layout', () => {
 
     fireEvent.click(screen.getByTestId('random-entry'));
     expect(props.randomEntry.onOpen).toHaveBeenCalledTimes(2);
+    expect(location()).toBe('?diary=1');
+  });
+
+  it('reads the current filters from the toolbar, and a month of the calendar under its filters', () => {
+    const props = createProps({
+      filters: { search: 'harbor', filterTags: ['walks'], filterFavorites: true },
+      randomEntry: { query: { ...createProps().randomEntry.query, page: 3, search: 'harbor', filterTags: ['walks'], favorites: true, filterDate: '2026-10-21' } },
+    });
+    renderJournal(props, '?diary=1');
+
+    const read = screen.getByRole('button', { name: 'readerOpen' });
+    expect(read).toHaveAttribute('aria-disabled', 'false');
+    fireEvent.click(read);
+    expect(new URLSearchParams(location() ?? '').get('read')).toBe('first');
+    // The list's day, filters and diary, but not its page, size or order
+    expect(new URLSearchParams(location() ?? '').get('readIn')).toBe('search=harbor&tags=walks&date=2026-10-21&favorites=true&archiveStatus=active&diaryId=1');
+    expect(screen.getByTestId('entry-reader')).toHaveAttribute('data-entry-id', 'first');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Turn the page' }));
+    expect(location()).toContain('read=9');
+    expect(screen.getByTestId('entry-reader')).toHaveAttribute('data-entry-id', '9');
+    fireEvent.click(screen.getByRole('button', { name: 'Close the reader' }));
+    expect(location()).toBe('?diary=1');
+    expect(screen.queryByTestId('entry-reader')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'journalLayoutCalendar' }));
+    act(() => calendar().onReadMonth('2026-09'));
+    expect(screen.getByTestId('entry-reader')).toHaveAttribute('data-scope', 'search=harbor&tags=walks&month=2026-09&favorites=true&archiveStatus=active&diaryId=1');
+  });
+
+  it('says when the filtered list has nothing to read', () => {
+    renderJournal(createProps({ randomEntry: { listEmpty: true } }));
+    const read = screen.getByRole('button', { name: 'readerOpen' });
+    expect(read).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(read);
     expect(location()).toBe('?diary=1');
   });
 

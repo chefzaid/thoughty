@@ -26,6 +26,10 @@ import PersonFilterBanner from './PersonFilterBanner';
 import { usePersonFilterRoute } from './usePersonFilterRoute';
 import { useComposerSeed } from './useComposerSeed';
 import RandomEntryButton from './RandomEntryButton';
+import EntryReader from '../EntryReader/EntryReader';
+import ReadEntriesButton from '../EntryReader/ReadEntriesButton';
+import { useEntryReaderRoute } from '../EntryReader/useEntryReaderRoute';
+import { readerScopeFromList, readerScopeOfMonth } from '../../services/api/entryReaderService';
 
 type DiaryTabsProps = Pick<ComponentProps<typeof DiaryTabs>, 'diaries' | 'currentDiaryId' | 'onDiaryChange' | 'onManageDiaries'>;
 interface ThoughtOfDayProps {
@@ -88,6 +92,7 @@ function JournalView({
     thoughtOfDay.setOpen(false);
   }, [thoughtOfDay]);
   const layoutRoute = useJournalLayoutRoute();
+  const reader = useEntryReaderRoute();
   const showCalendar = layoutRoute.layout === 'calendar';
   const language = resolveLanguage(config.language);
   const theme = config.theme ?? 'dark';
@@ -152,6 +157,9 @@ function JournalView({
     filters.setPage(1);
     layoutRoute.setLayout('list');
   };
+  /** The reader reads the list's entries as they are filtered now, or a month of the calendar. */
+  const readCurrentFilters = () => reader.open(readerScopeFromList(randomEntry.query));
+  const readMonth = (month: string) => reader.open(readerScopeOfMonth({ ...calendarFilters, month }));
   /** A random entry opens in the list, on its page among the same filters. */
   const openRandomEntry = (entryId: number, page: number) => {
     if (showCalendar) layoutRoute.setLayout('list');
@@ -214,6 +222,12 @@ function JournalView({
           onOpenHighlights={() => thoughtOfDay.setOpen(true)}
           actions={(
             <>
+              <ReadEntriesButton
+                listEmpty={randomEntry.listEmpty}
+                onRead={readCurrentFilters}
+                theme={config.theme}
+                t={t}
+              />
               <RandomEntryButton
                 query={randomEntry.query}
                 listEmpty={randomEntry.listEmpty}
@@ -281,6 +295,7 @@ function JournalView({
           availableYears={yearMonthNavigator.availableYears}
           onOpenDay={openCalendarDay}
           onOpenEntry={(entry) => layoutRoute.openEntry(entry.id)}
+          onReadMonth={readMonth}
           language={language}
           theme={theme}
           t={t}
@@ -316,6 +331,17 @@ function JournalView({
 
           {entriesList.entries.length > 0 && <BackToTopButton theme={config.theme} t={t} />}
         </>
+      )}
+
+      {reader.isOpen && (
+        <EntryReader
+          scope={reader.scope}
+          entryId={reader.entryId}
+          onShow={reader.show}
+          onClose={reader.close}
+          config={config}
+          t={t}
+        />
       )}
     </MentionPeopleContext.Provider>
   );

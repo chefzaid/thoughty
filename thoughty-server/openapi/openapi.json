@@ -2046,6 +2046,252 @@
         ]
       }
     },
+    "/api/entries/reader": {
+      "get": {
+        "description": "An entry among those the journal list shows with the same filters (optionally only one day or one month of them), whole, with the entries before and after it oldest first, its place and how many are read. Without `entryId`, the oldest. Sealed time capsules and entries in the recycle bin are left out.",
+        "operationId": "EntriesController_readEntry",
+        "parameters": [
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Full-text search over content and tags, with English and French word forms and accents ignored. Supports \"exact phrases\" in quotes, a leading minus to exclude a word or phrase, and OR between alternatives; the last word also matches the longer words it starts.",
+            "schema": {
+              "maxLength": 500,
+              "example": "\"morning run\" -rain OR swim",
+              "type": "string"
+            }
+          },
+          {
+            "name": "ids",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated entry IDs to include, in relevance order",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tags",
+            "required": false,
+            "in": "query",
+            "description": "Comma-separated list of tags to filter by",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "visibility",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "public",
+                "private"
+              ]
+            }
+          },
+          {
+            "name": "favorites",
+            "required": false,
+            "in": "query",
+            "description": "Filter by favorites only",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "archiveStatus",
+            "required": false,
+            "in": "query",
+            "description": "Filter by archive state",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "active",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "mood",
+            "required": false,
+            "in": "query",
+            "description": "Filter by recorded mood: one or more levels from 1 (very low) to 5 (very good), comma-separated; \"any\" for entries with a mood, or \"none\" for entries without one",
+            "schema": {
+              "example": "4,5",
+              "type": "string"
+            }
+          },
+          {
+            "name": "diaryId",
+            "required": false,
+            "in": "query",
+            "description": "Diary ID",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "eraId",
+            "required": false,
+            "in": "query",
+            "description": "Life era ID: only entries dated within the era (from its start to its end, with no end while it is ongoing)",
+            "schema": {
+              "example": 3,
+              "type": "number"
+            }
+          },
+          {
+            "name": "personId",
+            "required": false,
+            "in": "query",
+            "description": "Person ID: only entries that mention the person",
+            "schema": {
+              "example": 12,
+              "type": "number"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Only this day's entries (YYYY-MM-DD), as the list's date filter",
+            "schema": {
+              "example": "2026-10-21",
+              "type": "string"
+            }
+          },
+          {
+            "name": "month",
+            "required": false,
+            "in": "query",
+            "description": "Only this month's entries (YYYY-MM), as the calendar shows them",
+            "schema": {
+              "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+              "example": "2026-10",
+              "type": "string"
+            }
+          },
+          {
+            "name": "entryId",
+            "required": false,
+            "in": "query",
+            "description": "The entry to show; without it, the oldest one that matches",
+            "schema": {
+              "example": 42,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The entry and its neighbours",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EntryReaderResponseDto"
+                },
+                "example": {
+                  "entry": {
+                    "id": 1,
+                    "user_id": 1,
+                    "diary_id": 1,
+                    "date": "2026-06-24",
+                    "index": 1,
+                    "title": "Morning walk by the river",
+                    "time_of_day": "08:30",
+                    "mood": 4,
+                    "feelings": [
+                      "calm",
+                      "grateful"
+                    ],
+                    "tags": [
+                      "reflection"
+                    ],
+                    "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+                    "format": "plain",
+                    "visibility": "private",
+                    "is_favorite": true,
+                    "is_archived": true,
+                    "is_pinned": true,
+                    "diary_name": "Daily Journal",
+                    "diary_icon": "journal",
+                    "diary_color": "#2A9D8F",
+                    "attachments": [
+                      {
+                        "id": 1,
+                        "original_filename": "Daily Journal",
+                        "stored_filename": "Daily Journal",
+                        "mimetype": "example",
+                        "size": 1,
+                        "poster_filename": "Daily Journal",
+                        "transcript": "example",
+                        "transcribed_at": "2026-06-24T10:00:00.000Z"
+                      }
+                    ],
+                    "created_at": "2026-06-24T10:00:00.000Z",
+                    "sealed_until": null,
+                    "reread_on": null,
+                    "search_matches": [
+                      "morning run",
+                      "swimming"
+                    ]
+                  },
+                  "previousId": 41,
+                  "nextId": 43,
+                  "position": 3,
+                  "total": 12
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A filter, the day, the month or the entry ID is invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 400,
+                  "message": "A filter, the day, the month or the entry ID is invalid",
+                  "error": "Bad Request",
+                  "code": "VALIDATION_FAILED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No entry matches, or the entry asked for is not among them",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiErrorResponse"
+                },
+                "example": {
+                  "statusCode": 404,
+                  "message": "No entry matches, or the entry asked for is not among them",
+                  "error": "Not Found",
+                  "code": "NOT_FOUND"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "One entry of the journal filters, read like a book",
+        "tags": [
+          "Entries"
+        ]
+      }
+    },
     "/api/entries/first": {
       "get": {
         "operationId": "EntriesController_getFirstEntry",
@@ -13799,6 +14045,99 @@
           "page": 3
         }
       },
+      "EntryReaderResponseDto": {
+        "type": "object",
+        "properties": {
+          "entry": {
+            "description": "The entry, whole, with its diary and attachments",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EntryResponseDto"
+              }
+            ]
+          },
+          "previousId": {
+            "type": "number",
+            "nullable": true,
+            "description": "The entry before it (older), or null for the first",
+            "example": 41
+          },
+          "nextId": {
+            "type": "number",
+            "nullable": true,
+            "description": "The entry after it (newer), or null for the last",
+            "example": 43
+          },
+          "position": {
+            "type": "number",
+            "description": "Its place among the entries read, from 1 for the oldest",
+            "example": 3
+          },
+          "total": {
+            "type": "number",
+            "description": "How many entries are read",
+            "example": 12
+          }
+        },
+        "required": [
+          "entry",
+          "previousId",
+          "nextId",
+          "position",
+          "total"
+        ],
+        "example": {
+          "entry": {
+            "id": 1,
+            "user_id": 1,
+            "diary_id": 1,
+            "date": "2026-06-24",
+            "index": 1,
+            "title": "Morning walk by the river",
+            "time_of_day": "08:30",
+            "mood": 4,
+            "feelings": [
+              "calm",
+              "grateful"
+            ],
+            "tags": [
+              "reflection"
+            ],
+            "content": "Today I wrote a thoughtful journal entry about focus and calm.",
+            "format": "plain",
+            "visibility": "private",
+            "is_favorite": true,
+            "is_archived": true,
+            "is_pinned": true,
+            "diary_name": "Daily Journal",
+            "diary_icon": "journal",
+            "diary_color": "#2A9D8F",
+            "attachments": [
+              {
+                "id": 1,
+                "original_filename": "Daily Journal",
+                "stored_filename": "Daily Journal",
+                "mimetype": "example",
+                "size": 1,
+                "poster_filename": "Daily Journal",
+                "transcript": "example",
+                "transcribed_at": "2026-06-24T10:00:00.000Z"
+              }
+            ],
+            "created_at": "2026-06-24T10:00:00.000Z",
+            "sealed_until": null,
+            "reread_on": null,
+            "search_matches": [
+              "morning run",
+              "swimming"
+            ]
+          },
+          "previousId": 41,
+          "nextId": 43,
+          "position": 3,
+          "total": 12
+        }
+      },
       "FirstEntryResponseDto": {
         "type": "object",
         "properties": {
@@ -23547,6 +23886,8 @@
           "ENTRY_SEALED",
           "ENTRY_NOT_SEALED",
           "ENTRY_RANDOM_NO_MATCH",
+          "ENTRY_READER_NO_MATCH",
+          "ENTRY_READER_NOT_FOUND",
           "TIME_CAPSULE_DATE_INVALID",
           "REREAD_DATE_INVALID",
           "TAG_RENAME_SAME_NAME",

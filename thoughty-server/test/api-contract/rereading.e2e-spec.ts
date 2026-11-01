@@ -105,4 +105,24 @@ describeContract('rereading', (context) => {
       code: 'ENTRY_NOT_FOUND',
     });
   });
+
+  it('reads the filtered entries oldest first, one at a time with their neighbours, and only the writer’s', async () => {
+    const { alice, bob } = context;
+    const first = await createEntry(context, alice, { text: 'Lighthouse at dusk', tags: ['lighthouse'], date: '2023-06-02' });
+    const second = await createEntry(context, alice, { text: 'Lighthouse in the fog', tags: ['lighthouse'], date: '2023-06-20' });
+    const other = await createEntry(context, alice, { text: 'Not a lighthouse day', tags: ['errands'], date: '2023-06-10' });
+    const read = (as: typeof alice, query: Record<string, string>, status: number) => {
+      const code = ({ 400: 'VALIDATION_FAILED', 404: query.entryId ? 'ENTRY_READER_NOT_FOUND' : 'ENTRY_READER_NO_MATCH' } as const)[status as 400 | 404];
+      return call('GET /api/entries/reader', { as, query: new URLSearchParams(query), status, code });
+    };
+
+    const opened = await read(alice, { tags: 'lighthouse', month: '2023-06', archiveStatus: 'active' }, 200);
+    expect(opened.body).toMatchObject({ entry: { id: first, content: 'Lighthouse at dusk' }, previousId: null, nextId: second, position: 1, total: 2 });
+    const next = await read(alice, { tags: 'lighthouse', entryId: String(second) }, 200);
+    expect(next.body).toMatchObject({ entry: { id: second }, previousId: first, nextId: null, position: 2, total: 2 });
+    await read(alice, { tags: 'lighthouse', month: '2023-01' }, 404);
+    await read(alice, { tags: 'lighthouse', entryId: String(other) }, 404);
+    await read(bob, { entryId: String(first) }, 404);
+    await read(alice, { month: '2023-6' }, 400);
+  });
 });

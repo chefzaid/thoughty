@@ -6,6 +6,10 @@ export const ENTRY_PERMALINK_PARAM = 'entry';
 export const JOURNAL_LAYOUT_PARAM = 'layout';
 /** The month the journal calendar shows (`YYYY-MM`). */
 export const JOURNAL_MONTH_PARAM = 'month';
+/** `read=<id>` shows that entry in the reader (`read=first` its first entry), over the journal. */
+export const ENTRY_READER_PARAM = 'read';
+/** The filters the reader reads (its query string, `readIn=tags%3Dwalks%26month%3D2026-10`), so a reload reads the same. */
+export const ENTRY_READER_SCOPE_PARAM = 'readIn';
 /** `person=<id>` shows the journal entries that mention the person. */
 export const JOURNAL_PERSON_PARAM = 'person';
 

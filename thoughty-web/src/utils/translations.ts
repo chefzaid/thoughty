@@ -16,6 +16,7 @@ import { videoAttachmentsTranslations, type VideoAttachmentsTranslationKey } fro
 import { printTranslations, type PrintTranslationKey } from "./translations.print";
 import { rereadReminderTranslations, type RereadReminderTranslationKey } from "./translations.rereadReminder";
 import { focusModeTranslations, type FocusModeTranslationKey } from "./translations.focusMode";
+import { readerTranslations, type ReaderTranslationKey } from "./translations.reader";
 import { privacyBlurTranslations, type PrivacyBlurTranslationKey } from "./translations.privacyBlur";
 import { quietModeTranslations, type QuietModeTranslationKey } from "./translations.quietMode";
 import { entryTemplatesTranslations, type EntryTemplatesTranslationKey } from "./translations.entryTemplates";
@@ -76,6 +77,7 @@ export type TranslationKey =
   | PrintTranslationKey
   | RereadReminderTranslationKey
   | FocusModeTranslationKey
+  | ReaderTranslationKey
   | PrivacyBlurTranslationKey
   | QuietModeTranslationKey
   | EntryTemplatesTranslationKey
@@ -141,6 +143,7 @@ export const translations: Translations = {
     ...printTranslations.en,
     ...rereadReminderTranslations.en,
     ...focusModeTranslations.en,
+    ...readerTranslations.en,
     ...privacyBlurTranslations.en,
     ...quietModeTranslations.en,
     ...entryTemplatesTranslations.en,
@@ -199,6 +202,7 @@ export const translations: Translations = {
     ...printTranslations.fr,
     ...rereadReminderTranslations.fr,
     ...focusModeTranslations.fr,
+    ...readerTranslations.fr,
     ...privacyBlurTranslations.fr,
     ...quietModeTranslations.fr,
     ...entryTemplatesTranslations.fr,

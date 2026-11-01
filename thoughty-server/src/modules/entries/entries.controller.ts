@@ -36,6 +36,8 @@ import {
   EntryCalendarResponseDto,
   GetRandomEntryQueryDto,
   RandomEntryResponseDto,
+  GetEntryReaderQueryDto,
+  EntryReaderResponseDto,
   GetOpenTasksQueryDto,
   OpenTasksResponseDto,
   DeleteAllQueryDto,
@@ -135,6 +137,24 @@ export class EntriesController {
     @Query() query: GetRandomEntryQueryDto,
   ): Promise<RandomEntryResponseDto> {
     return this.entriesService.getRandomEntry(user.userId, query);
+  }
+
+  @Get('reader')
+  @ApiOperation({
+    summary: 'One entry of the journal filters, read like a book',
+    description:
+      'An entry among those the journal list shows with the same filters (optionally only one day or one ' +
+      'month of them), whole, with the entries before and after it oldest first, its place and how many are ' +
+      'read. Without `entryId`, the oldest. Sealed time capsules and entries in the recycle bin are left out.',
+  })
+  @ApiResponse({ status: 200, description: 'The entry and its neighbours', type: EntryReaderResponseDto })
+  @ApiResponse({ status: 400, description: 'A filter, the day, the month or the entry ID is invalid' })
+  @ApiResponse({ status: 404, description: 'No entry matches, or the entry asked for is not among them' })
+  async readEntry(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: GetEntryReaderQueryDto,
+  ): Promise<EntryReaderResponseDto> {
+    return this.entriesService.readEntry(user.userId, query);
   }
 
   @Get('first')

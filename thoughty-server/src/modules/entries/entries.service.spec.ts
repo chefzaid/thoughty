@@ -7,6 +7,7 @@ import { EntryListCacheService } from './entry-list-cache.service';
 import { EntryTaskListService } from './entry-task-list.service';
 import { EntryCalendarService } from './entry-calendar.service';
 import { EntryRandomService } from './entry-random.service';
+import { EntryReaderService } from './entry-reader.service';
 import { EntryOpenTasksService } from './entry-open-tasks.service';
 import type { Entry } from '@/database/entities';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
@@ -44,6 +45,7 @@ describe('EntriesService', () => {
   let timeCapsuleService: Record<string, jest.Mock>;
   let entryCalendarService: Record<string, jest.Mock>;
   let entryRandomService: Record<string, jest.Mock>;
+  let entryReaderService: Record<string, jest.Mock>;
   let entryOpenTasksService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
@@ -92,6 +94,10 @@ describe('EntriesService', () => {
       pick: jest.fn(),
     };
 
+    entryReaderService = {
+      read: jest.fn(),
+    };
+
     entryOpenTasksService = {
       list: jest.fn(),
     };
@@ -110,6 +116,7 @@ describe('EntriesService', () => {
         { provide: EntryTaskListService, useValue: entryTaskListService },
         { provide: EntryCalendarService, useValue: entryCalendarService },
         { provide: EntryRandomService, useValue: entryRandomService },
+        { provide: EntryReaderService, useValue: entryReaderService },
         { provide: EntryOpenTasksService, useValue: entryOpenTasksService },
         { provide: TimeCapsuleService, useValue: timeCapsuleService },
       ],
@@ -147,6 +154,15 @@ describe('EntriesService', () => {
 
     await expect(service.getRandomEntry(1, { tags: 'walks', excludeId: 3 })).resolves.toBe(expected);
     expect(entryRandomService.pick).toHaveBeenCalledWith(1, { tags: 'walks', excludeId: 3 });
+    expect(entryListCacheService.getOrLoad).not.toHaveBeenCalled();
+  });
+
+  it('delegates the reader to EntryReaderService without the list cache', async () => {
+    const expected = { entry: { id: 4 }, previousId: 3, nextId: null, position: 2, total: 2 };
+    entryReaderService.read.mockResolvedValue(expected);
+
+    await expect(service.readEntry(1, { month: '2026-10', entryId: 4 })).resolves.toBe(expected);
+    expect(entryReaderService.read).toHaveBeenCalledWith(1, { month: '2026-10', entryId: 4 });
     expect(entryListCacheService.getOrLoad).not.toHaveBeenCalled();
   });
 

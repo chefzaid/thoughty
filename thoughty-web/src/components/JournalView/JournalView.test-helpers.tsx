@@ -173,6 +173,26 @@ export const listLayoutRoute = {
   openEntry: vi.fn(),
 };
 
+/** The reader closed, for the specs that render the journal without a router. */
+export const closedReaderRoute = {
+  isOpen: false,
+  entryId: null,
+  scope: '',
+  open: vi.fn(),
+  show: vi.fn(),
+  close: vi.fn(),
+};
+
+/** Stands in for the reader, showing what it reads and offering its callbacks. */
+export const MockEntryReader = ({ scope, entryId, onShow, onClose }: {
+  scope: string; entryId: number | null; onShow: (entryId: number | null) => void; onClose: () => void;
+}) => (
+  <div role="dialog" data-testid="entry-reader" data-scope={scope} data-entry-id={entryId ?? 'first'}>
+    <button type="button" onClick={() => onShow(9)}>Turn the page</button>
+    <button type="button" onClick={onClose}>Close the reader</button>
+  </div>
+);
+
 export const mockT = vi.fn((key: string) => key);
 export const mockConfig: Config = {
   theme: 'dark',

@@ -5,20 +5,12 @@ import { Entry } from '@/database/entities';
 import { addSameDayOrder } from '@/common/utils';
 import { plainExcerpt } from '@/common/utils/plain-excerpt.util';
 import type { EntryCalendarResponseDto, GetEntryCalendarQueryDto } from './dto';
-import { applyEntryListFilters } from './entry-list-filters';
+import { applyEntryListFilters, applyEntryMonthFilter } from './entry-list-filters';
 import { EntrySearchService } from './entry-search.service';
 
 /** Characters of the text read for a snippet, and the length of the snippet itself. */
 const SNIPPET_SOURCE_LENGTH = 400;
 const SNIPPET_LENGTH = 100;
-
-/** The first day of the month after `YYYY-MM`, as `YYYY-MM-DD`. */
-function nextMonthStart(month: string): string {
-  const [year, monthNumber] = month.split('-').map(Number);
-  return monthNumber === 12
-    ? `${year + 1}-01-01`
-    : `${year}-${String(monthNumber + 1).padStart(2, '0')}-01`;
-}
 
 /**
  * The journal calendar: a month's entries that match the journal filters, as short summaries (title,
@@ -40,11 +32,8 @@ export class EntryCalendarService {
       .select(['e.id', 'e.diaryId', 'e.date', 'e.index', 'e.timeOfDay', 'e.title', 'e.mood', 'e.sealedUntil'])
       .addSelect('LEFT(e.content, :snippetSource)', 'content_start')
       .setParameter('snippetSource', SNIPPET_SOURCE_LENGTH)
-      .where('e.user_id = :userId', { userId })
-      .andWhere('e.date >= :monthStart AND e.date < :nextMonthStart', {
-        monthStart: `${month}-01`,
-        nextMonthStart: nextMonthStart(month),
-      });
+      .where('e.user_id = :userId', { userId });
+    applyEntryMonthFilter(qb, month);
 
     const prepared = search ? await this.entrySearch.prepare(search) : null;
     applyEntryListFilters(qb, query, prepared);

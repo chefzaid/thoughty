@@ -12,6 +12,8 @@ import {
   EntryCalendarResponseDto,
   GetRandomEntryQueryDto,
   RandomEntryResponseDto,
+  GetEntryReaderQueryDto,
+  EntryReaderResponseDto,
   GetOpenTasksQueryDto,
   OpenTasksResponseDto,
   BulkOperationDto,
@@ -30,6 +32,7 @@ import { EntryTaskListService } from './entry-task-list.service';
 import { EntryOpenTasksService } from './entry-open-tasks.service';
 import { EntryCalendarService } from './entry-calendar.service';
 import { EntryRandomService } from './entry-random.service';
+import { EntryReaderService } from './entry-reader.service';
 import { TimeCapsuleService } from '@/modules/time-capsules/time-capsules.service';
 
 @Injectable()
@@ -43,6 +46,7 @@ export class EntriesService {
     private readonly entryOpenTasksService: EntryOpenTasksService,
     private readonly entryCalendarService: EntryCalendarService,
     private readonly entryRandomService: EntryRandomService,
+    private readonly entryReaderService: EntryReaderService,
     private readonly timeCapsuleService: TimeCapsuleService,
   ) {}
 
@@ -62,6 +66,10 @@ export class EntriesService {
 
   async getRandomEntry(userId: number, query: GetRandomEntryQueryDto): Promise<RandomEntryResponseDto> {
     return this.entryRandomService.pick(userId, query);
+  }
+
+  async readEntry(userId: number, query: GetEntryReaderQueryDto): Promise<EntryReaderResponseDto> {
+    return this.entryReaderService.read(userId, query);
   }
 
   async getFirstEntry(
