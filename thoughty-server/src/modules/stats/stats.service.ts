@@ -7,6 +7,7 @@ import { StatsJournalAnalysisService } from './stats-journal-analysis.service';
 import { StatsCorrelationService } from './stats-correlation.service';
 import { StatsMoodService } from './stats-mood.service';
 import { StatsGoalService } from './stats-goal.service';
+import { StatsWritingTimesService } from './stats-writing-times.service';
 import { ENTRY_WORDS_SQL } from './stats-sql';
 import { writersDayOr } from '@/common/utils/writers-day.util';
 
@@ -21,10 +22,14 @@ export class StatsService {
     private readonly statsCorrelationService: StatsCorrelationService,
     private readonly statsMoodService: StatsMoodService,
     private readonly statsGoalService: StatsGoalService,
+    private readonly statsWritingTimesService: StatsWritingTimesService,
   ) {}
 
-  /** `today` is the writer's own day, which writing goals are measured up to; the UTC day without it. */
-  async getStats(userId: number, diaryId?: number, today?: string): Promise<StatsResponseDto> {
+  /**
+   * `today` is the writer's own day, which writing goals are measured up to; the UTC day without it.
+   * `timeZone` is the writer's, which the writing times are read in; UTC without it.
+   */
+  async getStats(userId: number, diaryId?: number, today?: string, timeZone?: string): Promise<StatsResponseDto> {
     // Build base query builder
     const createQb = () => {
       const qb = this.entryRepository
@@ -50,6 +55,7 @@ export class StatsService {
       correlations,
       moods,
       goals,
+      writingTimes,
     ] = await Promise.all([
       createQb().getCount(),
       createQb()
@@ -100,6 +106,7 @@ export class StatsService {
       this.statsCorrelationService.analyze(userId, diaryId),
       this.statsMoodService.analyze(userId, diaryId),
       this.statsGoalService.analyze(userId, diaryId, writersDayOr(today)),
+      this.statsWritingTimesService.analyze(userId, diaryId, timeZone),
     ]);
 
     const thoughtsPerYear: Record<string, number> = {};
@@ -175,6 +182,7 @@ export class StatsService {
       correlations,
       moods,
       goals,
+      writingTimes,
     };
   }
 }

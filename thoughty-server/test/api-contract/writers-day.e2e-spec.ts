@@ -1,4 +1,5 @@
-import { describeContract } from './contract-suite';
+import { zonedParts } from '../../src/common/utils/time-zone.util';
+import { describeContract, registerWriter } from './contract-suite';
 import { createEntry } from './contract-fixtures';
 
 interface Highlights {
@@ -72,5 +73,38 @@ describeContract('writers-day', (context) => {
     });
     expect(String(book.headers['content-disposition'])).toBe(`attachment; filename="thoughty_book_Days_${today}.md"`);
     expect(book.text).toContain(`*${today}*`);
+  });
+
+  it('reads when the writer writes in their own time zone: typed times as they are, creation times converted', async () => {
+    const carol = await registerWriter(context.client, 'carol');
+    // Tuesday 27 October 2026 at 21:15, as the writer typed it
+    await call('POST /api/entries', {
+      as: carol,
+      json: { text: 'A typed time', tags: [], date: '2026-10-27', timeOfDay: '21:15', visibility: 'private', format: 'plain' },
+      status: 201,
+    });
+    await createEntry(context, carol, { text: 'Written just now, without a time' });
+
+    for (const timeZone of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
+      const before = zonedParts(new Date(), timeZone);
+      const response = await call('GET /api/stats', { as: carol, query: { today: utcDay(), timeZone }, status: 200 });
+      const after = zonedParts(new Date(), timeZone);
+      const { writingTimes } = response.body as { writingTimes: { hours: number[]; weekdays: number[] } };
+      // The entry written now counts at the hour and weekday it is in that zone (read on either side of the call)
+      const expected = [before, after].map((now) => {
+        const hours = Array.from({ length: 24 }, () => 0);
+        const weekdays = Array.from({ length: 7 }, () => 0);
+        hours[21] += 1;
+        weekdays[1] += 1;
+        hours[now.hour] += 1;
+        weekdays[(now.weekday + 6) % 7] += 1;
+        return { hours, weekdays };
+      });
+      expect(expected).toContainEqual(writingTimes);
+    }
+
+    for (const timeZone of ['Mars/Olympus', '+05:30', '']) {
+      await call('GET /api/stats', { as: carol, query: { timeZone }, status: 400, code: 'VALIDATION_FAILED' });
+    }
   });
 });

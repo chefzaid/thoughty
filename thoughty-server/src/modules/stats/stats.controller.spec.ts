@@ -42,16 +42,16 @@ describe('StatsController', () => {
       statsService.getStats!.mockResolvedValue(expected);
 
       const result = await controller.getStats(mockUser as any, {});
-      expect(statsService.getStats).toHaveBeenCalledWith(1, undefined, undefined);
+      expect(statsService.getStats).toHaveBeenCalledWith(1, undefined, undefined, undefined);
       expect(result).toBe(expected);
     });
 
-    it('passes the diary and the writer’s day to the service', async () => {
+    it('passes the diary, the writer’s day and time zone to the service', async () => {
       const expected = { totalEntries: 10 };
       statsService.getStats!.mockResolvedValue(expected);
 
-      const result = await controller.getStats(mockUser as any, { diaryId: 5, today: '2026-10-27' });
-      expect(statsService.getStats).toHaveBeenCalledWith(1, 5, '2026-10-27');
+      const result = await controller.getStats(mockUser as any, { diaryId: 5, today: '2026-10-27', timeZone: 'Pacific/Kiritimati' });
+      expect(statsService.getStats).toHaveBeenCalledWith(1, 5, '2026-10-27', 'Pacific/Kiritimati');
       expect(result).toBe(expected);
     });
   });

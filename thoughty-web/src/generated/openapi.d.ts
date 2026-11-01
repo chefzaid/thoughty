@@ -5050,6 +5050,90 @@ export interface components {
         };
         /**
          * @example {
+         *       "hours": [
+         *         0,
+         *         0,
+         *         0,
+         *         0,
+         *         0,
+         *         0,
+         *         1,
+         *         3,
+         *         2,
+         *         0,
+         *         0,
+         *         0,
+         *         1,
+         *         0,
+         *         0,
+         *         0,
+         *         0,
+         *         0,
+         *         1,
+         *         2,
+         *         4,
+         *         6,
+         *         3,
+         *         1
+         *       ],
+         *       "weekdays": [
+         *         4,
+         *         3,
+         *         5,
+         *         2,
+         *         3,
+         *         6,
+         *         2
+         *       ]
+         *     }
+         */
+        StatsWritingTimesDto: {
+            /**
+             * @description Entries in each hour of the day, from 00:00 to 23:00
+             * @example [
+             *       0,
+             *       0,
+             *       0,
+             *       0,
+             *       0,
+             *       0,
+             *       1,
+             *       3,
+             *       2,
+             *       0,
+             *       0,
+             *       0,
+             *       1,
+             *       0,
+             *       0,
+             *       0,
+             *       0,
+             *       0,
+             *       1,
+             *       2,
+             *       4,
+             *       6,
+             *       3,
+             *       1
+             *     ]
+             */
+            hours: number[];
+            /**
+             * @description Entries on each weekday, Monday first
+             * @example [
+             *       4,
+             *       3,
+             *       5,
+             *       2,
+             *       3,
+             *       6,
+             *       2
+             *     ]
+             */
+            weekdays: number[];
+        };
+        /**
+         * @example {
          *       "totalThoughts": 120,
          *       "averageWordsPerEntry": 184,
          *       "averageReadingTimeMinutes": 1,
@@ -5182,7 +5266,44 @@ export interface components {
          *             "2026-10-19"
          *           ]
          *         }
-         *       ]
+         *       ],
+         *       "writingTimes": {
+         *         "hours": [
+         *           0,
+         *           0,
+         *           0,
+         *           0,
+         *           0,
+         *           0,
+         *           1,
+         *           3,
+         *           2,
+         *           0,
+         *           0,
+         *           0,
+         *           1,
+         *           0,
+         *           0,
+         *           0,
+         *           0,
+         *           0,
+         *           1,
+         *           2,
+         *           4,
+         *           6,
+         *           3,
+         *           1
+         *         ],
+         *         "weekdays": [
+         *           4,
+         *           3,
+         *           5,
+         *           2,
+         *           3,
+         *           6,
+         *           2
+         *         ]
+         *       }
          *     }
          */
         StatsResponseDto: {
@@ -5263,6 +5384,8 @@ export interface components {
             moods: components["schemas"]["StatsMoodDto"];
             /** @description Writing goal progress: the diary’s own goal, or every diary’s that has one for all diaries */
             goals: components["schemas"]["DiaryGoalProgressDto"][];
+            /** @description The hours and weekdays the writer writes most, in their time zone (`timeZone`) */
+            writingTimes: components["schemas"]["StatsWritingTimesDto"];
         };
         /**
          * @example {
@@ -12885,6 +13008,8 @@ export interface operations {
                 diaryId?: number;
                 /** @description The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out */
                 today?: string;
+                /** @description The writer’s IANA time zone, which the hours and weekdays of `writingTimes` are read in for entries without a time of day; UTC when left out */
+                timeZone?: string;
             };
             header?: never;
             path?: never;
@@ -13032,7 +13157,44 @@ export interface operations {
                      *             "2026-10-19"
                      *           ]
                      *         }
-                     *       ]
+                     *       ],
+                     *       "writingTimes": {
+                     *         "hours": [
+                     *           0,
+                     *           0,
+                     *           0,
+                     *           0,
+                     *           0,
+                     *           0,
+                     *           1,
+                     *           3,
+                     *           2,
+                     *           0,
+                     *           0,
+                     *           0,
+                     *           1,
+                     *           0,
+                     *           0,
+                     *           0,
+                     *           0,
+                     *           0,
+                     *           1,
+                     *           2,
+                     *           4,
+                     *           6,
+                     *           3,
+                     *           1
+                     *         ],
+                     *         "weekdays": [
+                     *           4,
+                     *           3,
+                     *           5,
+                     *           2,
+                     *           3,
+                     *           6,
+                     *           2
+                     *         ]
+                     *       }
                      *     }
                      */
                     "application/json": components["schemas"]["StatsResponseDto"];

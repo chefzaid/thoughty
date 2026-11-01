@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, Min } from 'class-validator';
 import type { DiaryGoalType } from '@/database/entities';
 import { DIARY_GOAL_TYPES } from '@/modules/diaries/dto';
-import { StrictInt, WritersDay } from '@/common/validation';
+import { StrictInt, WritersDay, WritersTimeZone } from '@/common/validation';
 
 export class StatsQueryDto {
   @ApiPropertyOptional({ example: 3, minimum: 1, description: 'Limit the statistics to one diary' })
@@ -19,6 +19,18 @@ export class StatsQueryDto {
   @IsOptional()
   @WritersDay()
   today?: string;
+}
+
+/** `GET /api/stats`: the diary and day of every stats query, and the time zone the writing times are read in. */
+export class StatsOverviewQueryDto extends StatsQueryDto {
+  @ApiPropertyOptional({
+    example: 'Europe/Paris',
+    maxLength: 64,
+    description: 'The writer’s IANA time zone, which the hours and weekdays of `writingTimes` are read in for entries without a time of day; UTC when left out',
+  })
+  @IsOptional()
+  @WritersTimeZone()
+  timeZone?: string;
 }
 
 export class DiaryGoalProgressDto {

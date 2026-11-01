@@ -59,6 +59,7 @@ const stats = {
         longestStreak: 1,
         metPeriods: ['2024-01-08'],
     }],
+    writingTimes: { hours: Array.from({ length: 24 }, (_, hour) => (hour === 21 ? 64 : 0)), weekdays: [0, 64, 0, 0, 0, 0, 0] },
 };
 
 const t = (key: string, params?: Record<string, string | number>) => getTranslation('en', key, params);
@@ -92,5 +93,11 @@ describe('Stats in quiet mode', () => {
         expect(within(mood).queryByText('37')).not.toBeInTheDocument();
         expect(within(mood).queryByText('23')).not.toBeInTheDocument();
         expect(mood.querySelector('.tone-mood-highlights')).toHaveClass('single');
+
+        // When the writer writes stays as a shape, said in words rather than counts
+        const times = screen.getByRole('region', { name: 'When you write' });
+        expect(within(times).getByRole('img', { name: 'Entries by hour of the day: 9 PM: most often' })).toBeInTheDocument();
+        expect(within(times).getByText('Tuesday: most often')).toBeInTheDocument();
+        expect(within(times).queryByText(/64/)).not.toBeInTheDocument();
     });
 });

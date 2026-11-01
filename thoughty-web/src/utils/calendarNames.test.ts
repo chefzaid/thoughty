@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { monthName, weekdayName } from './calendarNames';
+import { hourName, monthName, weekdayName } from './calendarNames';
 
 describe('calendarNames', () => {
   it('names months in the interface language', () => {
@@ -14,5 +14,11 @@ describe('calendarNames', () => {
     expect(weekdayName(1, 'fr')).toBe('lundi');
     expect(weekdayName(1, 'en', 'short')).toBe('Mon');
     expect(weekdayName(3, 'fr', 'short')).toBe('mer.');
+  });
+
+  it('names hours of the day in the interface language, whatever the browser’s zone', () => {
+    expect(hourName(0, 'en')).toBe('12 AM');
+    expect(hourName(21, 'en')).toBe('9 PM');
+    expect(hourName(21, 'fr')).toBe('21 h');
   });
 });

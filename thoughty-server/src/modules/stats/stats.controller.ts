@@ -4,6 +4,7 @@ import { StatsService } from './stats.service';
 import {
   PersonalityAnalysisRequestDto,
   PersonalityAnalysisResponseDto,
+  StatsOverviewQueryDto,
   StatsQueryDto,
   StatsResponseDto,
   WritingStreakResponseDto,
@@ -34,9 +35,9 @@ export class StatsController {
   })
   async getStats(
     @CurrentUser() user: AuthenticatedUser,
-    @Query() query: StatsQueryDto,
+    @Query() query: StatsOverviewQueryDto,
   ): Promise<StatsResponseDto> {
-    return this.statsService.getStats(user.userId, query.diaryId, query.today);
+    return this.statsService.getStats(user.userId, query.diaryId, query.today, query.timeZone);
   }
 
   @Get('streak')

@@ -6,6 +6,7 @@ import { StatsJournalAnalysisService } from './stats-journal-analysis.service';
 import { StatsCorrelationService } from './stats-correlation.service';
 import { StatsMoodService } from './stats-mood.service';
 import { StatsGoalService } from './stats-goal.service';
+import { StatsWritingTimesService } from './stats-writing-times.service';
 
 describe('StatsService', () => {
   let service: StatsService;
@@ -14,6 +15,7 @@ describe('StatsService', () => {
   let statsCorrelationService: { analyze: jest.Mock };
   let statsMoodService: { analyze: jest.Mock };
   let statsGoalService: { analyze: jest.Mock };
+  let statsWritingTimesService: { analyze: jest.Mock };
 
   beforeEach(async () => {
     const mockQueryBuilder = {
@@ -59,6 +61,9 @@ describe('StatsService', () => {
     };
 
     statsGoalService = { analyze: jest.fn().mockResolvedValue([]) };
+    statsWritingTimesService = {
+      analyze: jest.fn().mockResolvedValue({ hours: Array.from({ length: 24 }, () => 0), weekdays: [0, 0, 0, 0, 0, 0, 0] }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -68,6 +73,7 @@ describe('StatsService', () => {
         { provide: StatsCorrelationService, useValue: statsCorrelationService },
         { provide: StatsMoodService, useValue: statsMoodService },
         { provide: StatsGoalService, useValue: statsGoalService },
+        { provide: StatsWritingTimesService, useValue: statsWritingTimesService },
       ],
     }).compile();
 
@@ -284,6 +290,17 @@ describe('StatsService', () => {
         jest.useRealTimers();
       }
       expect(statsGoalService.analyze).toHaveBeenLastCalledWith(1, undefined, '2026-03-04');
+    });
+
+    it('reads the writing times in the diary and the writer’s time zone', async () => {
+      const writingTimes = { hours: Array.from({ length: 24 }, (_, hour) => (hour === 21 ? 2 : 0)), weekdays: [0, 2, 0, 0, 0, 0, 0] };
+      statsWritingTimesService.analyze.mockResolvedValue(writingTimes);
+
+      await expect(service.getStats(1, 3, '2026-10-27', 'Pacific/Pago_Pago')).resolves.toEqual(expect.objectContaining({ writingTimes }));
+      expect(statsWritingTimesService.analyze).toHaveBeenCalledWith(1, 3, 'Pacific/Pago_Pago');
+
+      await service.getStats(1);
+      expect(statsWritingTimesService.analyze).toHaveBeenLastCalledWith(1, undefined, undefined);
     });
 
     it('should include AI tone, mood, and subject analysis when available', async () => {

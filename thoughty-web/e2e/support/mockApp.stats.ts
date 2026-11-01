@@ -6,6 +6,32 @@ interface StatsEntry {
   tags: string[];
   mood?: number | null;
   feelings?: string[];
+  time_of_day?: string | null;
+  createdAt?: string;
+}
+
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/**
+ * When the writer writes, as the server reads it: a typed time of day as it is, on its date's weekday;
+ * without one, the creation time in the writer's time zone (`timeZone`, UTC without it).
+ */
+export function buildMockWritingTimes(entries: StatsEntry[], timeZone = "UTC") {
+  const hours = Array.from({ length: 24 }, () => 0);
+  const weekdays = Array.from({ length: 7 }, () => 0);
+  const zoned = new Intl.DateTimeFormat("en-US", { timeZone, hourCycle: "h23", hour: "numeric", weekday: "short" });
+  for (const entry of entries) {
+    if (entry.time_of_day) {
+      hours[Number(entry.time_of_day.slice(0, 2))]++;
+      weekdays[(new Date(`${entry.date}T00:00:00Z`).getUTCDay() + 6) % 7]++;
+      continue;
+    }
+    // Entries without a creation time were created at noon UTC on their date, as the entry responses say
+    const parts = zoned.formatToParts(new Date(entry.createdAt ?? `${entry.date}T12:00:00.000Z`));
+    hours[Number(parts.find((part) => part.type === "hour")?.value)]++;
+    weekdays[WEEKDAYS.indexOf(parts.find((part) => part.type === "weekday")?.value ?? "")]++;
+  }
+  return { hours, weekdays };
 }
 
 const roundMood = (value: number) => Math.round(value * 10) / 10;
@@ -115,7 +141,7 @@ function buildMockCorrelations(entries: StatsEntry[]) {
   };
 }
 
-export function buildStats(entries: StatsEntry[]) {
+export function buildStats(entries: StatsEntry[], timeZone?: string) {
   const thoughtsPerYear: Record<string, number> = {};
   const thoughtsPerMonth: Record<string, number> = {};
   const thoughtsPerDay: Record<string, number> = {};
@@ -167,5 +193,6 @@ export function buildStats(entries: StatsEntry[]) {
         : null,
     correlations: buildMockCorrelations(entries),
     moods: buildMockMoods(entries),
+    writingTimes: buildMockWritingTimes(entries, timeZone),
   };
 }

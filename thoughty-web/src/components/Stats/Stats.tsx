@@ -25,11 +25,13 @@ import StatsGoalPanel from './StatsGoalPanel';
 import StatsPagination from './StatsPagination';
 import StatsBarChart, { type StatsChartPoint } from './StatsBarChart';
 import StatsSummaryCards from './StatsSummaryCards';
+import StatsWritingTimes from './StatsWritingTimes';
 import QuietModeNote from '../QuietMode/QuietModeNote';
 import { useQuietMode } from '../QuietMode/quietMode';
 import { monthName } from '../../utils/calendarNames';
 import { writersToday } from '../../utils/entryDate';
 import { resolveLanguage } from '../../utils/language';
+import { browserTimeZone } from '../../utils/timeZone';
 
 // Register Chart.js components
 ChartJS.register(
@@ -103,12 +105,18 @@ const EMPTY_STATS: StatsData = {
         topFeelings: [],
     },
     goals: [],
+    writingTimes: {
+        hours: Array.from({ length: 24 }, () => 0),
+        weekdays: [0, 0, 0, 0, 0, 0, 0],
+    },
 };
 
 function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetadata, language, teaser }: StatsProps) {
     const { authFetch } = useAuth();
     // Quiet mode keeps the readings of the journal (insights, moods, personality, links) and leaves out its counts and goals
     const quiet = useQuietMode();
+    // The writing times are read in the writer's own time zone
+    const timeZone = useMemo(() => browserTimeZone(), []);
     const [stats, setStats] = useState<StatsData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -125,6 +133,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
             if (diaryId) params.append('diaryId', diaryId.toString());
             // Writing goals are measured up to the writer's own day
             params.append('today', writersToday());
+            params.append('timeZone', timeZone);
             const response = await authFetch(`/api/stats?${params}`);
             if (!response.ok) throw new Error('Failed to fetch stats');
             const data = await response.json() as StatsData;
@@ -136,7 +145,7 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
         } finally {
             setLoading(false);
         }
-    }, [authFetch, diaryId]);
+    }, [authFetch, diaryId, timeZone]);
 
     useEffect(() => {
         fetchStats();
@@ -319,6 +328,15 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onManageDiaries, tagMetada
                         onOpenJournalDay={onOpenJournalDay}
                     />
                 )}
+
+                {/* Quiet mode keeps the rhythm of writing, which measures when rather than how much, without its counts */}
+                <StatsWritingTimes
+                    writingTimes={stats.writingTimes ?? EMPTY_STATS.writingTimes}
+                    timeZone={timeZone}
+                    themeClass={themeClass}
+                    language={uiLanguage}
+                    t={t}
+                />
 
                 {!quiet && stats.totalThoughts > 0 && (
                     <>

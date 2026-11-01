@@ -6,6 +6,7 @@ import { recycleBinTranslations, type RecycleBinTranslationKey } from "./transla
 import { searchTranslations, type SearchTranslationKey } from "./translations.search";
 import { entryTitleTimeTranslations, type EntryTitleTimeTranslationKey } from "./translations.entryTitleTime";
 import { moodTranslations, type MoodTranslationKey } from "./translations.mood";
+import { writingTimesTranslations, type WritingTimesTranslationKey } from "./translations.writingTimes";
 import { taskListTranslations, type TaskListTranslationKey } from "./translations.taskList";
 import { inlineImagesTranslations, type InlineImagesTranslationKey } from "./translations.inlineImages";
 import { videoAttachmentsTranslations, type VideoAttachmentsTranslationKey } from "./translations.videoAttachments";
@@ -62,6 +63,7 @@ export type TranslationKey =
   | SearchTranslationKey
   | EntryTitleTimeTranslationKey
   | MoodTranslationKey
+  | WritingTimesTranslationKey
   | TaskListTranslationKey
   | InlineImagesTranslationKey
   | VideoAttachmentsTranslationKey
@@ -123,6 +125,7 @@ export const translations: Translations = {
     ...searchTranslations.en,
     ...entryTitleTimeTranslations.en,
     ...moodTranslations.en,
+    ...writingTimesTranslations.en,
     ...taskListTranslations.en,
     ...inlineImagesTranslations.en,
     ...videoAttachmentsTranslations.en,
@@ -177,6 +180,7 @@ export const translations: Translations = {
     ...searchTranslations.fr,
     ...entryTitleTimeTranslations.fr,
     ...moodTranslations.fr,
+    ...writingTimesTranslations.fr,
     ...taskListTranslations.fr,
     ...inlineImagesTranslations.fr,
     ...videoAttachmentsTranslations.fr,
