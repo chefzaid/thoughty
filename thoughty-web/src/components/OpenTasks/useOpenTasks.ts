@@ -8,16 +8,19 @@ import { createEntriesService, createOpenTasksService, type OpenTask } from '../
 export const OPEN_TASKS_QUERY_KEY = ['openTasks'] as const;
 export const OPEN_TASKS_PAGE_SIZE = 50;
 
-/** One page of the open tasks of a diary (or all of them), and ticking one in its entry. */
-export function useOpenTasks(page: number, diaryId: number | null) {
+/**
+ * One page of the open tasks of a diary (or all of them), and ticking one in its entry. With `after`, the
+ * page that follows the task it names, so tasks ticked on the page before do not move it.
+ */
+export function useOpenTasks(page: number, diaryId: number | null, after: string | null) {
   const service = useAuthenticatedService(createOpenTasksService);
   const entriesService = useAuthenticatedService(createEntriesService);
   const queryClient = useQueryClient();
 
   const tasks = useQuery({
-    queryKey: [...OPEN_TASKS_QUERY_KEY, diaryId, page],
+    queryKey: [...OPEN_TASKS_QUERY_KEY, diaryId, page, after],
     queryFn: async () => {
-      const result = await service.fetchPage(page, OPEN_TASKS_PAGE_SIZE, diaryId);
+      const result = await service.fetchPage(page, OPEN_TASKS_PAGE_SIZE, diaryId, after);
       if (!result.data) {
         throw new Error(result.error ?? 'openTasksLoadError');
       }

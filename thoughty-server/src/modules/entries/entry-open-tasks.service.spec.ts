@@ -7,7 +7,7 @@ describe('EntryOpenTasksService', () => {
   let service: EntryOpenTasksService;
 
   const entry = (id: number, content: string, overrides: Record<string, unknown> = {}) =>
-    ({ id, date: '2026-10-21', title: null, content, ...overrides });
+    ({ id, date: '2026-10-21', timeOfDay: null, index: 1, title: null, content, ...overrides });
 
   beforeEach(() => {
     qb = createQueryBuilder({ offset: jest.fn(() => qb) });
@@ -18,7 +18,7 @@ describe('EntryOpenTasksService', () => {
   it("reads the writer's Markdown entries with an empty box, newest first, outside time capsules", async () => {
     qb.getMany.mockResolvedValue([]);
 
-    await expect(service.list(4, {})).resolves.toEqual({ tasks: [], total: 0, page: 1, totalPages: 0 });
+    await expect(service.list(4, {})).resolves.toEqual({ tasks: [], total: 0, page: 1, totalPages: 0, nextCursor: null });
 
     expect(qb.select).toHaveBeenCalledWith(['e.id', 'e.date', 'e.timeOfDay', 'e.index', 'e.title', 'e.content']);
     expect(qb.where).toHaveBeenCalledWith('e.user_id = :userId', { userId: 4 });
@@ -51,6 +51,7 @@ describe('EntryOpenTasksService', () => {
       total: 3,
       page: 1,
       totalPages: 1,
+      nextCursor: null,
     });
   });
 
@@ -65,5 +66,46 @@ describe('EntryOpenTasksService', () => {
     expect(result.totalPages).toBe(3);
     expect(result.page).toBe(3);
     expect(result.tasks.map((task) => task.text)).toEqual(['Task 198', 'Task 199', 'Last one', 'Really last']);
+  });
+
+  it('hands the cursor of the last task on a page that has tasks after it', async () => {
+    qb.getMany.mockResolvedValue([entry(9, '- [ ] One\n- [ ] Two', { index: 2, timeOfDay: '09:30' }), entry(5, '- [ ] Three')]);
+
+    await expect(service.list(4, { limit: 2 })).resolves.toMatchObject({ total: 3, totalPages: 2, nextCursor: '2026-10-21_09:30_2_9_1' });
+    await expect(service.list(4, { page: 2, limit: 2 })).resolves.toMatchObject({ page: 2, nextCursor: null });
+    await expect(service.list(4, { page: 5, limit: 2 })).resolves.toMatchObject({ tasks: [], page: 5, nextCursor: null });
+  });
+
+  it('starts the next page after the cursor, so tasks ticked on the page before skip none', async () => {
+    // Page 1 held One to Four (limit 4); One, Two and Four were ticked since, so an offset of 4 would skip Five to Seven
+    qb.getMany.mockResolvedValue([
+      entry(9, '- [x] One\n- [x] Two\n- [ ] Three', { date: '2026-10-22', index: 1 }),
+      entry(8, '- [x] Four\n- [ ] Five\n- [ ] Six', { index: 1 }),
+      entry(7, '- [ ] Seven\n- [ ] Eight\n- [ ] Nine\n- [ ] Ten', { index: 2 }),
+    ]);
+    const after = '2026-10-21__1_8_0';
+
+    const next = await service.list(4, { after, limit: 4, page: 9 });
+
+    expect(next.tasks.map((task) => task.text)).toEqual(['Five', 'Six', 'Seven', 'Eight']);
+    expect(next).toMatchObject({ total: 7, page: 2, totalPages: 3, nextCursor: '2026-10-21__2_7_1' });
+    await expect(service.list(4, { after: next.nextCursor!, limit: 4 })).resolves.toMatchObject({
+      page: 3,
+      totalPages: 3,
+      nextCursor: null,
+    });
+  });
+
+  it('counts the page from the tasks left before the cursor, and none past the end', async () => {
+    qb.getMany.mockResolvedValue([entry(9, '- [ ] Left', { date: '2026-10-22' }), entry(8, '- [ ] Last')]);
+
+    await expect(service.list(4, { after: '2026-10-23__1_1_0', limit: 1 })).resolves.toMatchObject({ page: 1, totalPages: 2 });
+    await expect(service.list(4, { after: '2026-10-21__1_8_0', limit: 1 })).resolves.toMatchObject({
+      tasks: [],
+      total: 2,
+      page: 3,
+      totalPages: 2,
+      nextCursor: null,
+    });
   });
 });

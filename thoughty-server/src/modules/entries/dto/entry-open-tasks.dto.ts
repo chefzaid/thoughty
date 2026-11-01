@@ -1,7 +1,8 @@
 // The open tasks across the journal: the unticked task list items of Markdown entries.
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, Max, Min } from 'class-validator';
+import { IsOptional, Matches, Max, Min } from 'class-validator';
 import { StrictInt } from '@/common/validation';
+import { OPEN_TASK_CURSOR_PATTERN } from '../entry-open-tasks.cursor';
 
 /** Open tasks on one page, at most. */
 export const OPEN_TASKS_MAX_LIMIT = 100;
@@ -25,6 +26,16 @@ export class GetOpenTasksQueryDto {
   @Min(1)
   @Max(OPEN_TASKS_MAX_LIMIT)
   limit?: number = 50;
+
+  @ApiPropertyOptional({
+    description:
+      'The `nextCursor` of the page before: this page then starts right after its last task, even when tasks on it '
+      + 'were ticked meanwhile, and `page` is left out',
+    example: '2026-10-21__1_42_3',
+  })
+  @IsOptional()
+  @Matches(OPEN_TASK_CURSOR_PATTERN, { message: 'after must be the nextCursor of a page of open tasks' })
+  after?: string;
 }
 
 export class OpenTaskDto {
@@ -57,9 +68,17 @@ export class OpenTasksResponseDto {
   @ApiProperty({ description: 'Unticked tasks in all, across the pages', example: 3 })
   total: number;
 
-  @ApiProperty({ example: 1 })
+  @ApiProperty({ description: 'This page, counted from the tasks before it when read with `after`', example: 1 })
   page: number;
 
   @ApiProperty({ example: 1 })
   totalPages: number;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Send it as `after` to read the next page; null when no task follows this page',
+    example: '2026-10-21__1_42_3',
+  })
+  nextCursor: string | null;
 }

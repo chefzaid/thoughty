@@ -34,6 +34,7 @@ const tasksPage = (overrides: Partial<OpenTasksPageData> = {}): OpenTasksPageDat
   total: 3,
   page: 1,
   totalPages: 1,
+  nextCursor: null,
   ...overrides,
 });
 
@@ -43,7 +44,7 @@ function renderPage(props: Partial<OpenTasksPageProps> = {}, { quiet = false } =
     <QueryClientProvider client={createTestQueryClient()}>
       <QuietModeContext.Provider value={quiet}>
         <MemoryRouter>
-          <OpenTasksPage language="en" diaryId={null} page={1} onChangePage={onChangePage} t={t} {...props} />
+          <OpenTasksPage language="en" diaryId={null} page={1} after={null} onChangePage={onChangePage} t={t} {...props} />
         </MemoryRouter>
       </QuietModeContext.Provider>
     </QueryClientProvider>,
@@ -62,7 +63,7 @@ describe('OpenTasksPage', () => {
     renderPage({ diaryId: 2 });
 
     const errands = await screen.findByRole('article', { name: 'October 21, 2026 · Errands' });
-    expect(services.fetchPage).toHaveBeenCalledWith(1, 50, 2);
+    expect(services.fetchPage).toHaveBeenCalledWith(1, 50, 2, null);
     expect(within(errands).getByRole('link', { name: 'openTasksOpenEntryOf October 21, 2026' })).toHaveAttribute('href', '/journal?entry=9');
     const bank = within(errands).getByRole('checkbox', { name: 'Call the bank' });
     expect(bank).not.toBeChecked();
@@ -159,19 +160,33 @@ describe('OpenTasksPage', () => {
     expect(await screen.findByRole('checkbox', { name: 'Call the bank' })).toBeInTheDocument();
   });
 
-  it('moves between pages, and from a page past the end to the last one', async () => {
-    services.fetchPage.mockResolvedValue({ data: tasksPage({ total: 120, totalPages: 3, page: 2 }), error: null });
+  it('goes back a page by its offset, and on to the next one after the last task shown', async () => {
+    services.fetchPage.mockResolvedValue({ data: tasksPage({ total: 120, totalPages: 3, page: 2, nextCursor: '2026-10-19__1_4_0' }), error: null });
     const { onChangePage } = renderPage({ page: 2 });
 
     const pages = await screen.findByRole('navigation', { name: 'openTasksPagination' });
+    expect(services.fetchPage).toHaveBeenCalledWith(2, 50, null, null);
     expect(pages).toHaveTextContent('openTasksPage 2 | 3');
     fireEvent.click(within(pages).getByRole('button', { name: 'openTasksPrevious' }));
     fireEvent.click(within(pages).getByRole('button', { name: 'openTasksNext' }));
-    expect(onChangePage.mock.calls).toEqual([[1], [3]]);
+    expect(onChangePage.mock.calls).toEqual([[1], [3, { after: '2026-10-19__1_4_0' }]]);
+  });
+
+  it('reads a page after its cursor and numbers it as the server counts it, with no Next on the last one', async () => {
+    // A whole page was ticked before Next: the tasks before the cursor now fill one page, not two
+    services.fetchPage.mockResolvedValue({ data: tasksPage({ total: 53, totalPages: 2, page: 2 }), error: null });
+    const { onChangePage } = renderPage({ page: 3, after: '2026-10-22__1_12_4' });
+
+    const pages = await screen.findByRole('navigation', { name: 'openTasksPagination' });
+    expect(services.fetchPage).toHaveBeenCalledWith(3, 50, null, '2026-10-22__1_12_4');
+    expect(pages).toHaveTextContent('openTasksPage 2 | 2');
+    expect(within(pages).getByRole('button', { name: 'openTasksNext' })).toBeDisabled();
+    fireEvent.click(within(pages).getByRole('button', { name: 'openTasksPrevious' }));
+    expect(onChangePage.mock.calls).toEqual([[1]]);
   });
 
   it('goes back to the last page that still has tasks', async () => {
-    services.fetchPage.mockResolvedValue({ data: tasksPage({ total: 3, totalPages: 1 }), error: null });
+    services.fetchPage.mockResolvedValue({ data: tasksPage({ total: 3, totalPages: 1, page: 4 }), error: null });
     const { onChangePage } = renderPage({ page: 4 });
 
     await waitFor(() => expect(onChangePage).toHaveBeenCalledWith(1, { replace: true }));

@@ -1768,6 +1768,16 @@
               "default": 50,
               "type": "number"
             }
+          },
+          {
+            "name": "after",
+            "required": false,
+            "in": "query",
+            "description": "The `nextCursor` of the page before: this page then starts right after its last task, even when tasks on it were ticked meanwhile, and `page` is left out",
+            "schema": {
+              "example": "2026-10-21__1_42_3",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1790,7 +1800,8 @@
                   ],
                   "total": 3,
                   "page": 1,
-                  "totalPages": 1
+                  "totalPages": 1,
+                  "nextCursor": "2026-10-21__1_42_3"
                 }
               }
             }
@@ -13713,18 +13724,26 @@
           },
           "page": {
             "type": "number",
+            "description": "This page, counted from the tasks before it when read with `after`",
             "example": 1
           },
           "totalPages": {
             "type": "number",
             "example": 1
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true,
+            "description": "Send it as `after` to read the next page; null when no task follows this page",
+            "example": "2026-10-21__1_42_3"
           }
         },
         "required": [
           "tasks",
           "total",
           "page",
-          "totalPages"
+          "totalPages",
+          "nextCursor"
         ],
         "example": {
           "tasks": [
@@ -13738,7 +13757,8 @@
           ],
           "total": 3,
           "page": 1,
-          "totalPages": 1
+          "totalPages": 1,
+          "nextCursor": "2026-10-21__1_42_3"
         }
       },
       "RandomEntryResponseDto": {

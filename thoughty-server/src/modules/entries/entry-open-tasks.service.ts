@@ -4,6 +4,12 @@ import { Repository } from 'typeorm';
 import { Entry } from '@/database/entities';
 import { addSameDayOrder, findTaskListItems } from '@/common/utils';
 import type { GetOpenTasksQueryDto, OpenTaskDto, OpenTasksResponseDto } from './dto';
+import {
+  compareOpenTaskPositions,
+  formatOpenTaskCursor,
+  parseOpenTaskCursor,
+  type OpenTaskPosition,
+} from './entry-open-tasks.cursor';
 
 /** Entries read at a time while the tasks are counted. */
 export const OPEN_TASKS_BATCH_SIZE = 200;
@@ -26,12 +32,19 @@ export class EntryOpenTasksService {
     private readonly entryRepository: Repository<Entry>,
   ) {}
 
+  /**
+   * One page of open tasks. With `after` (the `nextCursor` of the page before), the page starts right
+   * after that task wherever it now stands, so ticking tasks on one page never skips any on the next:
+   * an offset would have moved up by the tasks ticked. `page` (an offset) still opens a page directly.
+   */
   async list(userId: number, query: GetOpenTasksQueryDto): Promise<OpenTasksResponseDto> {
-    const page = query.page ?? 1;
     const limit = query.limit ?? DEFAULT_LIMIT;
-    const first = (page - 1) * limit;
+    const after = query.after ? parseOpenTaskCursor(query.after) : null;
+    const first = after ? 0 : ((query.page ?? 1) - 1) * limit;
     const tasks: OpenTaskDto[] = [];
+    let last: OpenTaskPosition | null = null;
     let total = 0;
+    let before = 0;
 
     for (let offset = 0; ; offset += OPEN_TASKS_BATCH_SIZE) {
       const entries = await this.findCandidates(userId, query.diaryId, offset);
@@ -40,10 +53,14 @@ export class EntryOpenTasksService {
           if (item.checked) {
             continue;
           }
-          if (total >= first && tasks.length < limit) {
-            tasks.push({ entryId: entry.id, date: entry.date, title: entry.title, line: item.line, text: item.text });
-          }
           total += 1;
+          const position = { date: entry.date, timeOfDay: entry.timeOfDay, index: entry.index, id: entry.id, line: item.line };
+          if (after && compareOpenTaskPositions(position, after) <= 0) {
+            before += 1;
+          } else if (total - before > first && tasks.length < limit) {
+            tasks.push({ entryId: entry.id, date: entry.date, title: entry.title, line: item.line, text: item.text });
+            last = position;
+          }
         }
       }
       if (entries.length < OPEN_TASKS_BATCH_SIZE) {
@@ -51,7 +68,15 @@ export class EntryOpenTasksService {
       }
     }
 
-    return { tasks, total, page, totalPages: Math.ceil(total / limit) };
+    const following = total - before - first - tasks.length;
+    const nextCursor = last && following > 0 ? formatOpenTaskCursor(last) : null;
+    if (!after) {
+      const page = query.page ?? 1;
+      return { tasks, total, page, totalPages: Math.ceil(total / limit), nextCursor };
+    }
+    // The tasks before the cursor fill the pages before this one, so the page numbers stay whole
+    const pagesBefore = Math.ceil(before / limit);
+    return { tasks, total, page: pagesBefore + 1, totalPages: pagesBefore + Math.ceil((total - before) / limit), nextCursor };
   }
 
   /** A batch of the writer's Markdown entries, outside time capsules, whose text holds an empty box. */

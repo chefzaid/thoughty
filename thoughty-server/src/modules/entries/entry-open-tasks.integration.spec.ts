@@ -98,6 +98,28 @@ describePostgres('PostgreSQL open tasks across the journal', () => {
     expect(last.tasks.map((task) => task.text)).toEqual(['Task 5', 'Task 4', 'Task 3', 'Task 2', 'Task 1']);
   });
 
+  it('starts the next page right after the last task read, whatever was ticked on the page before', async () => {
+    await write('- [ ] Oldest', { date: '2026-09-01' });
+    await write('- [ ] Five\n- [ ] Six', { date: '2026-10-01', timeOfDay: '18:00' });
+    const morning = await write('- [ ] Three\n- [ ] Four', { date: '2026-10-01', timeOfDay: '08:00' });
+    await write('- [ ] One\n- [ ] Two', { date: '2026-10-02' });
+    const first = await openTasks.list(writerId, { limit: 4 });
+    expect(first.tasks.map((task) => task.text)).toEqual(['One', 'Two', 'Three', 'Four']);
+
+    // Both tasks of the page's last entry and one more are ticked: that entry drops out of the list
+    for (const task of first.tasks.slice(1)) {
+      await bed.journal.setTask(writerId, task.entryId, { line: task.line, checked: true, text: task.text });
+    }
+    expect((await entries.findOneByOrFail({ id: morning.id })).content).toBe('- [x] Three\n- [x] Four');
+    expect((await openTasks.list(writerId, { page: 2, limit: 4 })).tasks).toEqual([]);
+
+    const next = await openTasks.list(writerId, { after: first.nextCursor!, limit: 4 });
+
+    expect(next.tasks.map((task) => task.text)).toEqual(['Five', 'Six', 'Oldest']);
+    expect(next).toMatchObject({ total: 4, page: 2, totalPages: 2, nextCursor: null });
+    expect(first.nextCursor).toBe(`2026-10-01_08:00_1_${morning.id}_1`);
+  });
+
   it('ticks a task from the list through the entry, with its history, and refuses a line that moved', async () => {
     const entry = await write('- [ ] One\n- [ ] Two');
     const [first] = (await openTasks.list(writerId, {})).tasks;

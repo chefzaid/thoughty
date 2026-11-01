@@ -110,6 +110,52 @@ test.describe('Open tasks', () => {
     expect(state.entries[0]?.content).toContain('- [ ] Call the **bank**');
   });
 
+  test('skips no task on the next page after ticking some on this one, and keeps that page on reload', async ({ page }) => {
+    // 55 tasks, five per entry, newest first: the first page holds Task 1 to Task 50
+    const many: MockEntry[] = Array.from({ length: 11 }, (_, entry) => ({
+      id: 900 + entry,
+      date: `2026-08-${String(30 - entry).padStart(2, '0')}`,
+      index: 1,
+      content: Array.from({ length: 5 }, (_, task) => `- [ ] Task ${entry * 5 + task + 1}`).join('\n'),
+      tags: [],
+      visibility: 'private',
+      format: 'markdown',
+      diaryId: 1,
+    }));
+    await setupMockApp(page, { startAuthenticated: true, initialEntries: many });
+    await page.goto('/tasks?diary=all');
+
+    const pages = page.getByRole('navigation', { name: 'Open task pages' });
+    await expect(pages).toContainText('Page 1 of 2');
+    for (const name of ['Task 1', 'Task 49', 'Task 50']) {
+      const box = page.getByRole('checkbox', { name, exact: true });
+      await box.check();
+      await expect(box).toBeChecked();
+    }
+    await expect(page.getByRole('status').getByText('Ticked off: Task 50')).toBeVisible();
+    await expect(page.getByText('52 open tasks')).toBeVisible();
+
+    await pages.getByRole('button', { name: 'Next' }).click();
+    await expect(page).toHaveURL(/\/tasks\?diary=all&page=2$/);
+    const boxes = page.getByRole('checkbox');
+    await expect(boxes).toHaveCount(5);
+    await expect(boxes.first()).toHaveAccessibleName('Task 51');
+    await expect(boxes.last()).toHaveAccessibleName('Task 55');
+    await expect(pages).toContainText('Page 2 of 2');
+    await expect(pages.getByRole('button', { name: 'Next' })).toBeDisabled();
+
+    await page.reload();
+    await expect(boxes.first()).toHaveAccessibleName('Task 51');
+    await expect(boxes).toHaveCount(5);
+
+    // Back on the first page by its offset, the three left over from page 2 show there instead
+    await pages.getByRole('button', { name: 'Previous' }).click();
+    await expect(page).toHaveURL(/\/tasks\?diary=all$/);
+    await expect(boxes).toHaveCount(50);
+    await expect(boxes.first()).toHaveAccessibleName('Task 2');
+    await expect(boxes.last()).toHaveAccessibleName('Task 53');
+  });
+
   test('says there is nothing to do yet', async ({ page }) => {
     await setupMockApp(page, { startAuthenticated: true, initialEntries: [plain] });
     await page.goto('/tasks?diary=all');

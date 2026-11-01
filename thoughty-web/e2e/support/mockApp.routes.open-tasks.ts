@@ -30,6 +30,22 @@ export function mockOpenTasks(content: string): Array<{ line: number; text: stri
   return tasks;
 }
 
+/** Where a task stands, as the API's cursor writes it: entry date, time of day, same-day order, id and line. */
+type TaskPosition = [date: string, time: string, index: number, id: number, line: number];
+const CURSOR = /^(\d{4}-\d{2}-\d{2})_(\d{2}:\d{2})?_(\d{1,10})_(\d{1,10})_(\d{1,7})$/;
+
+const parseCursor = (cursor: string): TaskPosition | null => {
+  const match = CURSOR.exec(cursor);
+  return match ? [match[1]!, match[2] ?? '', Number(match[3]), Number(match[4]), Number(match[5])] : null;
+};
+
+/** Negative when `a` comes first: newest date first, then the rest ascending, as the API orders tasks. */
+const comparePositions = (a: TaskPosition, b: TaskPosition): number => {
+  if (a[0] !== b[0]) return b[0].localeCompare(a[0]);
+  if (a[1] !== b[1]) return a[1].localeCompare(b[1]);
+  return a[2] - b[2] || a[3] - b[3] || a[4] - b[4];
+};
+
 const positiveInt = (value: string | null): number | null => {
   if (value === null) return null;
   return /^\d+$/.test(value) && Number(value) > 0 ? Number(value) : Number.NaN;
@@ -44,8 +60,10 @@ export async function handleOpenTaskRoutes({ route, request, pathname, searchPar
   const page = positiveInt(searchParams.get('page')) ?? 1;
   const limit = positiveInt(searchParams.get('limit')) ?? 50;
   const diaryId = positiveInt(searchParams.get('diaryId'));
-  if (Number.isNaN(page) || Number.isNaN(limit) || Number.isNaN(diaryId) || limit > 100) {
-    await fulfillApiError(route, 400, 'VALIDATION_FAILED', 'The diary, page or page size is invalid');
+  const afterParam = searchParams.get('after');
+  const after = afterParam === null ? null : parseCursor(afterParam);
+  if (Number.isNaN(page) || Number.isNaN(limit) || Number.isNaN(diaryId) || limit > 100 || (afterParam !== null && !after)) {
+    await fulfillApiError(route, 400, 'VALIDATION_FAILED', 'The diary, page, page size or cursor is invalid');
     return true;
   }
 
@@ -53,17 +71,22 @@ export async function handleOpenTaskRoutes({ route, request, pathname, searchPar
     && (diaryId === null || (entry.diaryId ?? 1) === diaryId);
   const entries = sortEntries(state.entries.filter(inScope));
   const tasks = entries.flatMap((entry) => mockOpenTasks(entry.content).map((task) => ({
-    entryId: entry.id,
-    date: entry.date,
-    title: entry.title ?? null,
-    ...task,
+    position: [entry.date, entry.time_of_day || '', entry.index, entry.id, task.line] as TaskPosition,
+    task: { entryId: entry.id, date: entry.date, title: entry.title ?? null, ...task },
   })));
 
+  // With a cursor the page starts right after it, so tasks ticked on the page before skip none
+  const before = after ? tasks.filter(({ position }) => comparePositions(position, after) <= 0).length : 0;
+  const start = after ? before : (page - 1) * limit;
+  const shown = tasks.slice(start, start + limit);
+  const last = shown.at(-1);
+  const pagesBefore = Math.ceil(before / limit);
   await fulfillJson(route, {
-    tasks: tasks.slice((page - 1) * limit, page * limit),
+    tasks: shown.map(({ task }) => task),
     total: tasks.length,
-    page,
-    totalPages: Math.ceil(tasks.length / limit),
+    page: after ? pagesBefore + 1 : page,
+    totalPages: after ? pagesBefore + Math.ceil((tasks.length - before) / limit) : Math.ceil(tasks.length / limit),
+    nextCursor: last && start + shown.length < tasks.length ? last.position.join('_') : null,
   });
   return true;
 }

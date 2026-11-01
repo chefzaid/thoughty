@@ -6,16 +6,18 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 
 describe('openTasksService', () => {
   it('asks for one page of the open tasks, of one diary or all of them', async () => {
-    const page = { tasks: [], total: 0, page: 2, totalPages: 0 };
+    const page = { tasks: [], total: 0, page: 2, totalPages: 0, nextCursor: null };
     const authFetch = vi.fn().mockImplementation(() => Promise.resolve(json(page)));
     const service = createOpenTasksService(authFetch);
 
     await expect(service.fetchPage(2, 50, null)).resolves.toEqual({ data: page, error: null });
     await service.fetchPage(1, 50, 7);
+    await service.fetchPage(2, 50, 7, '2026-10-21_09:30_1_42_3');
 
     expect(authFetch.mock.calls.map(([url]) => url)).toEqual([
       '/api/entries/open-tasks?page=2&limit=50',
       '/api/entries/open-tasks?page=1&limit=50&diaryId=7',
+      '/api/entries/open-tasks?after=2026-10-21_09%3A30_1_42_3&limit=50&diaryId=7',
     ]);
   });
 

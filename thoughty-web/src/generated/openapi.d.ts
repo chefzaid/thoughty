@@ -3051,7 +3051,8 @@ export interface components {
          *       ],
          *       "total": 3,
          *       "page": 1,
-         *       "totalPages": 1
+         *       "totalPages": 1,
+         *       "nextCursor": "2026-10-21__1_42_3"
          *     }
          */
         OpenTasksResponseDto: {
@@ -3062,10 +3063,18 @@ export interface components {
              * @example 3
              */
             total: number;
-            /** @example 1 */
+            /**
+             * @description This page, counted from the tasks before it when read with `after`
+             * @example 1
+             */
             page: number;
             /** @example 1 */
             totalPages: number;
+            /**
+             * @description Send it as `after` to read the next page; null when no task follows this page
+             * @example 2026-10-21__1_42_3
+             */
+            nextCursor: string | null;
         };
         /**
          * @example {
@@ -10543,6 +10552,8 @@ export interface operations {
                 diaryId?: number;
                 page?: number;
                 limit?: number;
+                /** @description The `nextCursor` of the page before: this page then starts right after its last task, even when tasks on it were ticked meanwhile, and `page` is left out */
+                after?: string;
             };
             header?: never;
             path?: never;
@@ -10569,7 +10580,8 @@ export interface operations {
                      *       ],
                      *       "total": 3,
                      *       "page": 1,
-                     *       "totalPages": 1
+                     *       "totalPages": 1,
+                     *       "nextCursor": "2026-10-21__1_42_3"
                      *     }
                      */
                     "application/json": components["schemas"]["OpenTasksResponseDto"];

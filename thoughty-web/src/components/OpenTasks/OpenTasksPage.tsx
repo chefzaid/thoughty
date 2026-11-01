@@ -21,11 +21,19 @@ export interface OpenTasksPageProps {
   readonly diaryId: number | null;
   /** The page from the URL, starting at 1. */
   readonly page: number;
-  readonly onChangePage: (page: number, options?: { replace?: boolean }) => void;
+  /** The cursor the page starts after, when reached with Next; null to open `page` by its offset. */
+  readonly after: string | null;
+  readonly onChangePage: (page: number, options?: ChangePageOptions) => void;
   readonly t: TranslationFunction;
 }
 
 type Notice = { tone: 'status' | 'error'; text: string } | null;
+
+export interface ChangePageOptions {
+  readonly replace?: boolean;
+  /** Start the page right after this cursor (the `nextCursor` of the page before). */
+  readonly after?: string;
+}
 
 interface TaskGroupProps {
   readonly group: OpenTaskGroup;
@@ -85,16 +93,20 @@ function TaskGroup({ group, language, ticked, busy, onToggle, t }: TaskGroupProp
 
 interface TaskListProps {
   readonly data: OpenTasksPageData;
-  readonly page: number;
   readonly language: Language;
-  readonly onChangePage: (page: number) => void;
+  readonly onChangePage: (page: number, options?: ChangePageOptions) => void;
   readonly onToggle: (task: OpenTask, checked: boolean) => Promise<boolean>;
   readonly onNotice: (notice: Notice) => void;
   readonly t: TranslationFunction;
 }
 
-/** One page of open tasks; what was ticked here stays shown as ticked until the page or diary changes. */
-function TaskList({ data, page, language, onChangePage, onToggle, onNotice, t }: TaskListProps) {
+/**
+ * One page of open tasks; what was ticked here stays shown as ticked until the page or diary changes.
+ * Next starts after the last task shown, so the ones ticked here cannot make it skip any; Previous opens
+ * the page before by its offset, which ticking can only make overlap this one, never leave a gap.
+ */
+function TaskList({ data, language, onChangePage, onToggle, onNotice, t }: TaskListProps) {
+  const { page, nextCursor } = data;
   const quiet = useQuietMode();
   const [ticked, setTicked] = useState<ReadonlyMap<string, boolean>>(new Map());
   const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
@@ -135,13 +147,18 @@ function TaskList({ data, page, language, onChangePage, onToggle, onNotice, t }:
           />
         ))}
       </ul>
-      {data.totalPages > 1 && (
+      {(data.totalPages > 1 || page > 1) && (
         <nav className="open-tasks-pagination" aria-label={t('openTasksPagination')}>
           <button type="button" className="open-tasks-button" disabled={page <= 1} onClick={() => onChangePage(page - 1)}>
             {t('openTasksPrevious')}
           </button>
           <span>{t('openTasksPage', { page: Math.min(page, data.totalPages), total: data.totalPages })}</span>
-          <button type="button" className="open-tasks-button" disabled={page >= data.totalPages} onClick={() => onChangePage(page + 1)}>
+          <button
+            type="button"
+            className="open-tasks-button"
+            disabled={!nextCursor}
+            onClick={() => nextCursor && onChangePage(page + 1, { after: nextCursor })}
+          >
             {t('openTasksNext')}
           </button>
         </nav>
@@ -151,18 +168,19 @@ function TaskList({ data, page, language, onChangePage, onToggle, onNotice, t }:
 }
 
 /** Every unticked task of the writer's Markdown entries, newest first, each ticked off in place. */
-function OpenTasksPage({ theme, language: rawLanguage, diaryId, page, onChangePage, t }: OpenTasksPageProps) {
+function OpenTasksPage({ theme, language: rawLanguage, diaryId, page, after, onChangePage, t }: OpenTasksPageProps) {
   const language = resolveLanguage(rawLanguage);
-  const { tasks, setTask } = useOpenTasks(page, diaryId);
+  const { tasks, setTask } = useOpenTasks(page, diaryId, after);
   const [notice, setNotice] = useState<Notice>(null);
   const data = tasks.data;
 
   // A page emptied by ticking elsewhere gives way to the last page that still has tasks
+  const placeholder = tasks.isPlaceholderData;
   useEffect(() => {
-    if (data && data.totalPages > 0 && page > data.totalPages) {
+    if (data && !placeholder && data.totalPages > 0 && data.page > data.totalPages) {
       onChangePage(data.totalPages, { replace: true });
     }
-  }, [data, onChangePage, page]);
+  }, [data, onChangePage, placeholder]);
 
   const toggle = async (task: OpenTask, checked: boolean) => {
     const result = await setTask(task, checked);
@@ -187,9 +205,8 @@ function OpenTasksPage({ theme, language: rawLanguage, diaryId, page, onChangePa
   } else {
     body = (
       <TaskList
-        key={`${diaryId ?? 'all'}-${page}-${tasks.dataUpdatedAt}`}
+        key={`${diaryId ?? 'all'}-${page}-${after ?? ''}-${tasks.dataUpdatedAt}`}
         data={data}
-        page={page}
         language={language}
         onChangePage={onChangePage}
         onToggle={toggle}

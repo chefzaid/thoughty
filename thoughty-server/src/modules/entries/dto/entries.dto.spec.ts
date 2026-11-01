@@ -97,6 +97,12 @@ describe('GetOpenTasksQueryDto', () => {
     await expect(invalidProperties(GetOpenTasksQueryDto, { diaryId: '0', page: '0', limit: '101' })).resolves.toEqual(['diaryId', 'page', 'limit']);
     await expect(invalidProperties(GetOpenTasksQueryDto, { page: '1.5', limit: 'all' })).resolves.toEqual(['page', 'limit']);
   });
+
+  it('takes the cursor of a page as `after`, and nothing else there', async () => {
+    await expect(invalidProperties(GetOpenTasksQueryDto, { after: '2026-10-21_09:30_1_42_3', limit: '50' })).resolves.toEqual([]);
+    await expect(invalidProperties(GetOpenTasksQueryDto, { after: '50' })).resolves.toEqual(['after']);
+    await expect(invalidProperties(GetOpenTasksQueryDto, { after: ['2026-10-21__1_42_3', '2026-10-21__1_42_4'] })).resolves.toEqual(['after']);
+  });
 });
 
 describe('entry diary and IDs in JSON bodies', () => {

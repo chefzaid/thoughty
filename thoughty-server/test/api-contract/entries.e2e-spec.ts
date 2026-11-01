@@ -323,7 +323,10 @@ describeContract('entries', (context) => {
       total: 2,
       page: 1,
       totalPages: 1,
+      nextCursor: null,
     });
+    const firstPage = await call('GET /api/entries/open-tasks', { as: alice, query: { limit: '1' }, status: 200 });
+    expect(firstPage.body).toMatchObject({ tasks: [{ text: 'buy bread' }], totalPages: 2, nextCursor: expect.any(String) });
     await call('PATCH /api/entries/{id}/tasks', {
       as: alice,
       params: { id: ids.tasks },
@@ -339,12 +342,20 @@ describeContract('entries', (context) => {
     });
     const after = await call('GET /api/entries/open-tasks', { as: alice, status: 200 });
     expect(after.body).toMatchObject({ tasks: [{ line: 1, text: 'call mum' }], total: 1 });
+    // The next page starts after the task the first page ended on, though that one is ticked now
+    const next = await call('GET /api/entries/open-tasks', {
+      as: alice,
+      query: { limit: '1', after: firstPage.body.nextCursor },
+      status: 200,
+    });
+    expect(next.body).toMatchObject({ tasks: [{ text: 'call mum' }], page: 1, totalPages: 1, nextCursor: null });
     // Unticked again, so the next test finds the entry as it was written
     await call('PATCH /api/entries/{id}/tasks', { as: alice, params: { id: ids.tasks }, json: { line: 0, checked: false }, status: 200 });
 
     const others = await call('GET /api/entries/open-tasks', { as: bob, status: 200 });
-    expect(others.body).toEqual({ tasks: [], total: 0, page: 1, totalPages: 0 });
+    expect(others.body).toEqual({ tasks: [], total: 0, page: 1, totalPages: 0, nextCursor: null });
     await call('GET /api/entries/open-tasks', { as: alice, query: { limit: '101' }, status: 400, code: 'VALIDATION_FAILED' });
+    await call('GET /api/entries/open-tasks', { as: alice, query: { after: '2' }, status: 400, code: 'VALIDATION_FAILED' });
   });
 
   it('ticks a Markdown task and refuses one in a plain entry', async () => {
