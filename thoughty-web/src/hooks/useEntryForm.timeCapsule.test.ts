@@ -3,7 +3,7 @@ import { act } from "@testing-library/react";
 import { renderHook } from "./hookTestUtils";
 import { useEntryForm } from "./useEntryActions";
 import { createEntriesServiceMock } from "./useEntryActions.test-helpers";
-import { browserTimeZone } from "../utils/timeCapsule";
+import { browserTimeZone } from "../utils/timeZone";
 
 vi.mock("../contexts/AuthContext", async () => (await import("./useEntryActions.test-helpers")).authContextMock());
 vi.mock("../services/api", async () => (await import("./useEntryActions.test-helpers")).apiModuleMock());
@@ -33,6 +33,27 @@ describe("useEntryForm time capsules", () => {
       seal: { opensOn: nextYear, openHour: 18, timeZone: browserTimeZone() },
     }));
     expect(result.current.timeCapsule).toBeNull();
+  });
+
+  it("seals the entry in UTC when the browser cannot tell its time zone", async () => {
+    const createEntry = vi.fn().mockResolvedValue({ success: true, entryId: 42 });
+    await createEntriesServiceMock({ createEntry });
+    const { result } = renderHook(() => useEntryForm(config, 1, vi.fn()));
+
+    act(() => {
+      result.current.setNewEntryText("Dear future me");
+      result.current.setTags(["future-self"]);
+      result.current.setTimeCapsule({ opensOn: nextYear, openHour: 9 });
+    });
+    const noIntl = vi.spyOn(Intl, "DateTimeFormat").mockImplementation(() => { throw new Error("no Intl"); });
+    await act(async () => {
+      await result.current.handleSubmit(event);
+    });
+    noIntl.mockRestore();
+
+    expect(createEntry).toHaveBeenCalledWith(expect.objectContaining({
+      seal: { opensOn: nextYear, openHour: 9, timeZone: "UTC" },
+    }));
   });
 
   it("sends no capsule for an ordinary entry, and refuses an opening date out of range", async () => {

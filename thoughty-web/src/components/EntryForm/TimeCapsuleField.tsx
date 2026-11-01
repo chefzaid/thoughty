@@ -1,10 +1,10 @@
 import { useId } from 'react';
 import {
-    browserTimeZone,
     defaultTimeCapsule,
     timeCapsuleDateBounds,
     type TimeCapsuleDraft,
 } from '../../utils/timeCapsule';
+import { browserTimeZone } from '../../utils/timeZone';
 
 interface TimeCapsuleFieldProps {
     /** Prefix for the field's ids; it must not start with `entry-`, which entry cards use. */

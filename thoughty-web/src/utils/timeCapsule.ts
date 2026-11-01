@@ -36,11 +36,6 @@ export function isValidTimeCapsuleDate(opensOn: string, today: Date): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(opensOn) && opensOn >= min && opensOn <= max;
 }
 
-/** The IANA time zone of the writer's clock, which the capsule opens in. */
-export function browserTimeZone(): string {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-}
-
 /** When a capsule opens, as the reader's language writes a date and time ("27 October 2031 at 09:00"). */
 export function formatTimeCapsuleMoment(iso: string, language: Language): string {
   return new Intl.DateTimeFormat(language, { dateStyle: 'long', timeStyle: 'short' }).format(new Date(iso));

@@ -6,7 +6,6 @@ import {
   isSealedEntry,
   isValidTimeCapsuleDate,
   timeCapsuleDateBounds,
-  browserTimeZone,
 } from './timeCapsule';
 
 describe('time capsule utils', () => {
@@ -33,6 +32,5 @@ describe('time capsule utils', () => {
     expect(isSealedEntry({ sealed_until: '2031-10-27T08:00:00Z' })).toBe(true);
     expect(isSealedEntry({ sealed_until: null })).toBe(false);
     expect(isSealedEntry({})).toBe(false);
-    expect(browserTimeZone()).toEqual(expect.any(String));
   });
 });
