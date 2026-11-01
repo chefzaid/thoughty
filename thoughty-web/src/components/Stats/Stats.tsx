@@ -12,7 +12,6 @@ import {
 } from 'chart.js';
 import './Stats.css';
 import { useAuth } from '../../contexts/AuthContext';
-import type { components } from '../../generated/openapi';
 import PageHeader from '../PageHeader/PageHeader';
 import TagBadge from '../TagBadge/TagBadge';
 import type { TagMetadataMap } from '../../utils/tagMetadata';
@@ -28,6 +27,8 @@ import StatsBarChart, { type StatsChartPoint } from './StatsBarChart';
 import StatsSummaryCards from './StatsSummaryCards';
 import StatsWritingTimes from './StatsWritingTimes';
 import StatsRecords from './StatsRecords';
+import StatsTopWords from './StatsTopWords';
+import { EMPTY_STATS, type StatsData } from './emptyStats';
 import QuietModeNote from '../QuietMode/QuietModeNote';
 import { useQuietMode } from '../QuietMode/quietMode';
 import { monthName } from '../../utils/calendarNames';
@@ -53,6 +54,8 @@ interface StatsProps {
     readonly onOpenJournalDay?: (date: string) => void | Promise<void>;
     /** Opens the journal filtered to one tag, for the tags beside the moods. */
     readonly onOpenJournalTag?: (tag: string) => void;
+    /** Opens the journal searched for one word, for the words used most. */
+    readonly onSearchJournal?: (word: string) => void;
     /** Opens one entry through its permalink, for the personal records. */
     readonly onOpenEntry?: (entryId: number) => void;
     readonly onManageDiaries?: () => void;
@@ -61,8 +64,6 @@ interface StatsProps {
     /** Shown after the summary numbers, or under the title while they load. */
     readonly teaser?: ReactNode;
 }
-
-type StatsData = components['schemas']['StatsResponseDto'];
 
 interface YearTagData {
     year: string;
@@ -84,50 +85,8 @@ const TAG_COLORS = [
     'rgba(20, 184, 166, 0.7)',
     'rgba(234, 179, 8, 0.7)',
 ];
-const EMPTY_STATS: StatsData = {
-    totalThoughts: 0,
-    averageWordsPerEntry: 0,
-    averageReadingTimeMinutes: 0,
-    uniqueTagsCount: 0,
-    thoughtsPerYear: {},
-    thoughtsPerMonth: {},
-    thoughtsPerDay: {},
-    thoughtsPerTag: {},
-    tagsPerYear: {},
-    tagsPerMonth: {},
-    toneMoodAnalysis: null,
-    subjectAnalysis: null,
-    correlations: {
-        analyzedEntries: 0,
-        entryConnections: [],
-        tagConnections: [],
-    },
-    moods: {
-        recordedEntries: 0,
-        averageMood: null,
-        levels: [0, 0, 0, 0, 0],
-        months: [],
-        weekdays: [],
-        topFeelings: [],
-        goodMoodTags: [],
-        lowMoodTags: [],
-    },
-    goals: [],
-    writingTimes: {
-        hours: Array.from({ length: 24 }, () => 0),
-        weekdays: [0, 0, 0, 0, 0, 0, 0],
-    },
-    records: {
-        longestEntry: null,
-        busiestDay: null,
-        longestStreak: null,
-        earliestEntry: null,
-        latestEntry: null,
-        firstEntry: null,
-    },
-};
 
-function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onOpenEntry, onManageDiaries, tagMetadata, language, teaser }: StatsProps) {
+function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onSearchJournal, onOpenEntry, onManageDiaries, tagMetadata, language, teaser }: StatsProps) {
     const { authFetch } = useAuth();
     // Quiet mode keeps the readings of the journal (insights, moods, personality, links) and leaves out its counts and goals
     const quiet = useQuietMode();
@@ -372,6 +331,11 @@ function Stats({ theme, t, diaryId, onOpenJournalDay, onOpenJournalTag, onOpenEn
                     onOpenEntry={onOpenEntry}
                     onOpenJournalDay={onOpenJournalDay}
                 />
+
+                {/* A server from before the words used most sends none */}
+                {stats.topWords && (
+                    <StatsTopWords topWords={stats.topWords} themeClass={themeClass} language={uiLanguage} t={t} onSearchJournal={onSearchJournal} />
+                )}
 
                 {!quiet && stats.totalThoughts > 0 && (
                     <>

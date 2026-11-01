@@ -8,6 +8,7 @@ import { StatsMoodService } from './stats-mood.service';
 import { StatsGoalService } from './stats-goal.service';
 import { StatsWritingTimesService } from './stats-writing-times.service';
 import { StatsRecordsService } from './stats-records.service';
+import { StatsTopWordsService } from './stats-top-words.service';
 
 describe('StatsService', () => {
   let service: StatsService;
@@ -18,6 +19,7 @@ describe('StatsService', () => {
   let statsGoalService: { analyze: jest.Mock };
   let statsWritingTimesService: { analyze: jest.Mock };
   let statsRecordsService: { analyze: jest.Mock };
+  let statsTopWordsService: { analyze: jest.Mock };
 
   beforeEach(async () => {
     const mockQueryBuilder = {
@@ -80,6 +82,8 @@ describe('StatsService', () => {
       }),
     };
 
+    statsTopWordsService = { analyze: jest.fn().mockResolvedValue({ month: '2026-03', words: [] }) };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         StatsService,
@@ -90,6 +94,7 @@ describe('StatsService', () => {
         { provide: StatsGoalService, useValue: statsGoalService },
         { provide: StatsWritingTimesService, useValue: statsWritingTimesService },
         { provide: StatsRecordsService, useValue: statsRecordsService },
+        { provide: StatsTopWordsService, useValue: statsTopWordsService },
       ],
     }).compile();
 
@@ -306,6 +311,22 @@ describe('StatsService', () => {
         jest.useRealTimers();
       }
       expect(statsGoalService.analyze).toHaveBeenLastCalledWith(1, undefined, '2026-03-04');
+    });
+
+    it('ranks the words of the diary’s month, in the writer’s month or the UTC one without it', async () => {
+      const topWords = { month: '2026-10', words: [{ word: 'garden', count: 3 }] };
+      statsTopWordsService.analyze.mockResolvedValue(topWords);
+
+      await expect(service.getStats(1, 3, '2026-10-31')).resolves.toEqual(expect.objectContaining({ topWords }));
+      expect(statsTopWordsService.analyze).toHaveBeenCalledWith(1, 3, '2026-10-31');
+
+      jest.useFakeTimers({ now: new Date('2026-11-01T00:30:00.000Z') });
+      try {
+        await service.getStats(1);
+      } finally {
+        jest.useRealTimers();
+      }
+      expect(statsTopWordsService.analyze).toHaveBeenLastCalledWith(1, undefined, '2026-11-01');
     });
 
     it('reads the writing times in the diary and the writer’s time zone', async () => {

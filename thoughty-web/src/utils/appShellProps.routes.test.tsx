@@ -148,6 +148,7 @@ describe('appShellProps', () => {
     props.statsRouteProps.onDiaryChange(8);
     props.statsRouteProps.onOpenJournalDay?.('2024-01-22');
     props.statsRouteProps.onOpenJournalTag?.('family');
+    props.statsRouteProps.onSearchJournal?.('jardin');
     props.tasksRouteProps.onManageDiaries();
     props.tasksRouteProps.onDiaryChange(10);
     props.importExportRouteProps.onManageDiaries();
@@ -177,6 +178,9 @@ describe('appShellProps', () => {
     // A tag opened from the moods shows every entry with it, whatever day was chosen before
     expect(props.journalRouteProps.filters.setFilterTags).toHaveBeenCalledWith(['family']);
     expect(props.journalRouteProps.filters.setFilterDateObj).toHaveBeenLastCalledWith(null);
+    // A word from the words used most opens a keyword search for it, over every date
+    expect(props.journalRouteProps.filters.setSearchMode).toHaveBeenCalledWith('keyword');
+    expect(props.journalRouteProps.filters.setSearch).toHaveBeenCalledWith('jardin');
     expect(props.journalRouteProps.filters.setPage).toHaveBeenCalledWith(1);
     expect(handleViewChange).toHaveBeenCalledWith('journal');
     expect(handleImportExportRouteStateChange).toHaveBeenCalledWith({

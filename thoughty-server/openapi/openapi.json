@@ -5534,7 +5534,7 @@
             "name": "today",
             "required": false,
             "in": "query",
-            "description": "The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out",
+            "description": "The writer’s own day (the UTC day or the one before or after it), which writing goals, the writing streak and the month of the words used most are measured up to; the server’s UTC day when left out",
             "schema": {
               "format": "date",
               "example": "2026-10-27",
@@ -5777,6 +5777,15 @@
                       "date": "2024-03-02",
                       "index": 2
                     }
+                  },
+                  "topWords": {
+                    "month": "2026-11",
+                    "words": [
+                      {
+                        "word": "jardin",
+                        "count": 6
+                      }
+                    ]
                   }
                 }
               }
@@ -5813,7 +5822,7 @@
             "name": "today",
             "required": false,
             "in": "query",
-            "description": "The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out",
+            "description": "The writer’s own day (the UTC day or the one before or after it), which writing goals, the writing streak and the month of the words used most are measured up to; the server’s UTC day when left out",
             "schema": {
               "format": "date",
               "example": "2026-10-27",
@@ -18030,6 +18039,61 @@
           }
         }
       },
+      "StatsTopWordDto": {
+        "type": "object",
+        "properties": {
+          "word": {
+            "type": "string",
+            "example": "jardin",
+            "description": "The word in lower case, with its accents"
+          },
+          "count": {
+            "type": "number",
+            "example": 6,
+            "minimum": 2,
+            "description": "How many times the word is used in this month’s entries"
+          }
+        },
+        "required": [
+          "word",
+          "count"
+        ],
+        "example": {
+          "word": "jardin",
+          "count": 6
+        }
+      },
+      "StatsTopWordsDto": {
+        "type": "object",
+        "properties": {
+          "month": {
+            "type": "string",
+            "example": "2026-11",
+            "pattern": "^\\d{4}-\\d{2}$",
+            "description": "The writer’s month (`YYYY-MM`), from `today`"
+          },
+          "words": {
+            "description": "Up to ten words used at least twice in entry texts dated from the first of the month to today; most used first, then in alphabetical order",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StatsTopWordDto"
+            }
+          }
+        },
+        "required": [
+          "month",
+          "words"
+        ],
+        "example": {
+          "month": "2026-11",
+          "words": [
+            {
+              "word": "jardin",
+              "count": 6
+            }
+          ]
+        }
+      },
       "StatsResponseDto": {
         "type": "object",
         "properties": {
@@ -18170,6 +18234,14 @@
                 "$ref": "#/components/schemas/StatsRecordsDto"
               }
             ]
+          },
+          "topWords": {
+            "description": "The words used most in this month’s entries, in the writer’s month (`today`), without common English and French words",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StatsTopWordsDto"
+              }
+            ]
           }
         },
         "required": [
@@ -18187,7 +18259,8 @@
           "moods",
           "goals",
           "writingTimes",
-          "records"
+          "records",
+          "topWords"
         ],
         "example": {
           "totalThoughts": 120,
@@ -18405,6 +18478,15 @@
               "date": "2024-03-02",
               "index": 2
             }
+          },
+          "topWords": {
+            "month": "2026-11",
+            "words": [
+              {
+                "word": "jardin",
+                "count": 6
+              }
+            ]
           }
         }
       },

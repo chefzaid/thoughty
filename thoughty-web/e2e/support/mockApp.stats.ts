@@ -1,4 +1,5 @@
 import { buildMockRecords } from "./mockApp.records";
+import { buildMockTopWords } from "./mockApp.top-words";
 
 interface StatsEntry {
   id: number;
@@ -163,7 +164,7 @@ function buildMockCorrelations(entries: StatsEntry[]) {
   };
 }
 
-export function buildStats(entries: StatsEntry[], timeZone?: string) {
+export function buildStats(entries: StatsEntry[], timeZone: string | undefined, today: string) {
   const thoughtsPerYear: Record<string, number> = {};
   const thoughtsPerMonth: Record<string, number> = {};
   const thoughtsPerDay: Record<string, number> = {};
@@ -217,5 +218,6 @@ export function buildStats(entries: StatsEntry[], timeZone?: string) {
     moods: buildMockMoods(entries),
     writingTimes: buildMockWritingTimes(entries, timeZone),
     records: buildMockRecords(entries, timeZone),
+    topWords: buildMockTopWords(entries, today),
   };
 }

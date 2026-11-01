@@ -11,6 +11,7 @@ import { Diary, User } from '@/database/entities';
 import { BookEntrySourceService } from '@/modules/books/book-entry-source.service';
 import { EntrySearchService } from '@/modules/entries/entry-search.service';
 import { StatsMoodService } from '@/modules/stats/stats-mood.service';
+import { StatsTopWordsService } from '@/modules/stats/stats-top-words.service';
 import { buildTimeCapsuleBed } from './time-capsules.integration.test-helpers';
 
 /** Words only the sealed entry holds, in its title, text, tag, feeling and mention. */
@@ -44,6 +45,7 @@ describePostgres('PostgreSQL time capsules: every entry read path', () => {
   let writerId: number;
   let sealedId: number;
   let openId: number;
+  let sealedDate: string;
 
   beforeAll(async () => {
     database = await createPostgresTestDatabase();
@@ -55,6 +57,7 @@ describePostgres('PostgreSQL time capsules: every entry read path', () => {
     await dataSource.getRepository(Diary).save({ userId: writerId, name: 'Journal', isDefault: true, position: 0 });
     // A year ago today, so On this day would show it (the 28th for a 29 February)
     const lastYear = `${new Date().getFullYear() - 1}${new Date().toISOString().slice(4, 10).replace('-02-29', '-02-28')}`;
+    sealedDate = lastYear;
     ({ entryId: sealedId } = await bed.journal.create(writerId, {
       text: 'Dear me, remember marzipan at the harbor with @Rosalind. See [[2025-01-01]].',
       title: 'Thalassa',
@@ -122,15 +125,17 @@ describePostgres('PostgreSQL time capsules: every entry read path', () => {
     }
   });
 
-  it('shows no word of it in people, mood stats, books, the recycle bin, or the journal writes that read entries', async () => {
+  it('shows no word of it in people, mood stats, the words used most, books, the recycle bin, or the journal writes that read entries', async () => {
     await expect(answerOf(() => bed.people.list(writerId))).resolves.not.toContain('Rosalind');
     const elsewhere = [
       await answerOf(() => new StatsMoodService(bed.entries).analyze(writerId)),
+      // The words used most of the sealed entry's own month
+      await answerOf(() => new StatsTopWordsService(bed.entries).analyze(writerId, undefined, sealedDate)),
       await answerOf(() => books.describePickedEntries(writerId, String(sealedId))),
       await answerOf(() => books.select(writerId, { source: 'journal' } as never)),
     ];
     for (const secret of SECRETS) expect(elsewhere.join('\n')).not.toContain(secret);
-    expect(JSON.parse(elsewhere[1])).toEqual({ entries: [], missingIds: [sealedId] });
+    expect(JSON.parse(elsewhere[2])).toEqual({ entries: [], missingIds: [sealedId] });
     await expect(bed.journal.update(writerId, sealedId, { text: 'x', tags: [], date: '2025-01-01' })).rejects.toMatchObject({ response: { code: 'ENTRY_SEALED' } });
     await expect(bed.journal.updateVisibility(writerId, sealedId, 'public')).rejects.toMatchObject({ response: { code: 'ENTRY_SEALED' } });
 

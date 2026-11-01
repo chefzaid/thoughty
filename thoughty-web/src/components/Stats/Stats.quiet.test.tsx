@@ -62,6 +62,7 @@ const stats = {
         metPeriods: ['2024-01-08'],
     }],
     writingTimes: { hours: Array.from({ length: 24 }, (_, hour) => (hour === 21 ? 64 : 0)), weekdays: [0, 64, 0, 0, 0, 0, 0] },
+    topWords: { month: '2024-01', words: [{ word: 'jardin', count: 17 }] },
     records: {
         longestEntry: { entryId: 1, date: '2024-01-15', index: 1, words: 812 },
         busiestDay: { date: '2024-01-15', entries: 2 },
@@ -123,5 +124,10 @@ describe('Stats in quiet mode', () => {
         expect(within(records).queryByText('Busiest day')).not.toBeInTheDocument();
         expect(within(records).queryByText('Longest streak')).not.toBeInTheDocument();
         expect(within(records).queryByText(/812|9 days/)).not.toBeInTheDocument();
+
+        // The words used most keep their order without how many times each is used
+        const words = screen.getByRole('region', { name: 'Words you use most' });
+        expect(within(words).getByText('jardin')).toBeInTheDocument();
+        expect(within(words).queryByText(/17/)).not.toBeInTheDocument();
     });
 });

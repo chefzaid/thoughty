@@ -9,6 +9,7 @@ import { StatsMoodService } from './stats-mood.service';
 import { StatsGoalService } from './stats-goal.service';
 import { StatsWritingTimesService } from './stats-writing-times.service';
 import { StatsRecordsService } from './stats-records.service';
+import { StatsTopWordsService } from './stats-top-words.service';
 import { ENTRY_WORDS_SQL } from './stats-sql';
 import { writersDayOr } from '@/common/utils/writers-day.util';
 
@@ -25,13 +26,16 @@ export class StatsService {
     private readonly statsGoalService: StatsGoalService,
     private readonly statsWritingTimesService: StatsWritingTimesService,
     private readonly statsRecordsService: StatsRecordsService,
+    private readonly statsTopWordsService: StatsTopWordsService,
   ) {}
 
   /**
-   * `today` is the writer's own day, which writing goals are measured up to; the UTC day without it.
+   * `today` is the writer's own day, which writing goals and the month of the words used most are measured
+   * up to; the UTC day without it.
    * `timeZone` is the writer's, which the writing times and the records' times are read in; UTC without it.
    */
   async getStats(userId: number, diaryId?: number, today?: string, timeZone?: string): Promise<StatsResponseDto> {
+    const writersDay = writersDayOr(today);
     // Build base query builder
     const createQb = () => {
       const qb = this.entryRepository
@@ -58,6 +62,7 @@ export class StatsService {
       moods,
       goals,
       writingTimes,
+      topWords,
     ] = await Promise.all([
       createQb().getCount(),
       createQb()
@@ -107,8 +112,9 @@ export class StatsService {
         .getRawOne(),
       this.statsCorrelationService.analyze(userId, diaryId),
       this.statsMoodService.analyze(userId, diaryId),
-      this.statsGoalService.analyze(userId, diaryId, writersDayOr(today)),
+      this.statsGoalService.analyze(userId, diaryId, writersDay),
       this.statsWritingTimesService.analyze(userId, diaryId, timeZone),
+      this.statsTopWordsService.analyze(userId, diaryId, writersDay),
     ]);
 
     const thoughtsPerYear: Record<string, number> = {};
@@ -192,6 +198,7 @@ export class StatsService {
       goals,
       writingTimes,
       records,
+      topWords,
     };
   }
 }

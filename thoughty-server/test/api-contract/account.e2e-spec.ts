@@ -153,6 +153,38 @@ describeContract('account', (context) => {
     expect((one.body as { moods: unknown }).moods).toMatchObject({ goodMoodTags: [{ tag: 'sea', entries: 2 }], lowMoodTags: [] });
   });
 
+  it('ranks the words of the writer’s month, per diary, without the recycle bin, sealed capsules or other writers', async () => {
+    const { bob } = context;
+    const frank = await registerWriter(context.client, 'frank');
+    const notes = await call('POST /api/diaries', {
+      as: frank,
+      json: { name: 'Notes', visibility: 'private', goalType: null, goalTarget: null },
+      status: 201,
+    });
+    const notesId = (notes.body as { id: number }).id;
+    await createEntry(context, frank, { text: 'The garden after the rain, with @Marie.', format: 'markdown' });
+    await createEntry(context, frank, { text: 'Le jardin sous la pluie ; l’odeur du jardin. **Garden** again.', format: 'markdown' });
+    await createEntry(context, frank, { text: 'Notes notes', diaryId: notesId });
+    // Last month, the recycle bin, a sealed capsule and another writer stay out
+    await createEntry(context, frank, { text: 'Pumpkin pumpkin', date: todayIso(-40) });
+    const binned = await createEntry(context, frank, { text: 'Binned binned' });
+    await call('DELETE /api/entries/{id}', { as: frank, params: { id: binned }, status: 200 });
+    await call('POST /api/entries', {
+      as: frank,
+      json: { text: 'Secret secret', tags: [], date: todayIso(), visibility: 'private', format: 'plain', seal: { opensOn: todayIso(365), timeZone: 'UTC' } },
+      status: 201,
+    });
+    await createEntry(context, bob, { text: 'Garden garden garden' });
+
+    const all = await call('GET /api/stats', { as: frank, query: { today: todayIso() }, status: 200 });
+    expect((all.body as { topWords: unknown }).topWords).toEqual({
+      month: todayIso().slice(0, 7),
+      words: [{ word: 'garden', count: 2 }, { word: 'jardin', count: 2 }, { word: 'notes', count: 2 }],
+    });
+    const one = await call('GET /api/stats', { as: frank, query: { diaryId: String(notesId), today: todayIso() }, status: 200 });
+    expect((one.body as { topWords: unknown }).topWords).toEqual({ month: todayIso().slice(0, 7), words: [{ word: 'notes', count: 2 }] });
+  });
+
   it('reviews a year for all diaries or one, and refuses another writer’s diary', async () => {
     const { alice, bob } = context;
     const year = String(new Date().getFullYear());

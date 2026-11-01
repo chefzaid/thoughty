@@ -15,6 +15,7 @@ interface StatsRouteProps {
   readonly onManageDiaries: () => void;
   readonly onOpenJournalDay?: (date: string) => void | Promise<void>;
   readonly onOpenJournalTag?: (tag: string) => void;
+  readonly onSearchJournal?: (word: string) => void;
   readonly theme?: 'light' | 'dark';
   readonly t: (key: string, params?: Record<string, string | number>) => string;
   readonly tagMetadata?: TagMetadataMap;
@@ -28,6 +29,7 @@ function StatsRoute({
   onManageDiaries,
   onOpenJournalDay,
   onOpenJournalTag,
+  onSearchJournal,
   theme,
   t,
   tagMetadata,
@@ -58,6 +60,7 @@ function StatsRoute({
         diaryId={currentDiaryId}
         onOpenJournalDay={onOpenJournalDay}
         onOpenJournalTag={onOpenJournalTag}
+        onSearchJournal={onSearchJournal}
         onOpenEntry={(entryId) => navigate(`${getPathForView('journal')}?${ENTRY_PERMALINK_PARAM}=${entryId}`)}
         onManageDiaries={onManageDiaries}
         tagMetadata={tagMetadata}

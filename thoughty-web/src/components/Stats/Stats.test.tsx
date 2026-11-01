@@ -365,6 +365,28 @@ describe('Stats Component', () => {
         expect(onOpenJournalDay).toHaveBeenCalledWith('2024-01-18');
     });
 
+    it('lists the words used most this month, each searching the journal, and leaves the card out for a server without them', async () => {
+        const user = userEvent.setup();
+        const onSearchJournal = vi.fn();
+        (globalThis.fetch as Mock).mockResolvedValueOnce({
+            ok: true,
+            json: async () => ({ ...mockStatsData, topWords: { month: '2024-01', words: [{ word: 'river', count: 4 }] } }),
+        });
+
+        const { unmount } = render(<Stats {...defaultProps} t={englishT} language="en" onSearchJournal={onSearchJournal} />);
+
+        const words = await screen.findByRole('region', { name: 'Words you use most' });
+        expect(words).toHaveTextContent('in January');
+        await user.click(within(words).getByRole('button', { name: 'Search the journal for river' }));
+        expect(onSearchJournal).toHaveBeenCalledWith('river');
+        unmount();
+
+        (globalThis.fetch as Mock).mockResolvedValueOnce({ ok: true, json: async () => mockStatsData });
+        render(<Stats {...defaultProps} t={englishT} language="en" />);
+        await screen.findByRole('region', { name: 'Personal records' });
+        expect(screen.queryByRole('region', { name: 'Words you use most' })).not.toBeInTheDocument();
+    });
+
     it('applies theme classes', async () => {
         (globalThis.fetch as Mock).mockResolvedValue({
             ok: true,

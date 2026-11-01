@@ -14,7 +14,7 @@ export class StatsQueryDto {
   @ApiPropertyOptional({
     example: '2026-10-27',
     format: 'date',
-    description: 'The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out',
+    description: 'The writer’s own day (the UTC day or the one before or after it), which writing goals, the writing streak and the month of the words used most are measured up to; the server’s UTC day when left out',
   })
   @IsOptional()
   @WritersDay()

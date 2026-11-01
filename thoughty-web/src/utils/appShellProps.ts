@@ -252,6 +252,14 @@ export function buildAuthenticatedRoutesProps({
         entriesState.setPage(1);
         routingState.handleViewChange('journal');
       },
+      // The journal's search has no month filter, so a word opens its results from every month
+      onSearchJournal: (word: string) => {
+        entriesState.setSearchMode('keyword');
+        entriesState.setSearch(word);
+        entriesState.setFilterDateObj(null);
+        entriesState.setPage(1);
+        routingState.handleViewChange('journal');
+      },
       theme: config.theme,
       language: config.language,
       t,

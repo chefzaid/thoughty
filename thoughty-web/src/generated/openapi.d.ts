@@ -5551,6 +5551,44 @@ export interface components {
         };
         /**
          * @example {
+         *       "word": "jardin",
+         *       "count": 6
+         *     }
+         */
+        StatsTopWordDto: {
+            /**
+             * @description The word in lower case, with its accents
+             * @example jardin
+             */
+            word: string;
+            /**
+             * @description How many times the word is used in this month’s entries
+             * @example 6
+             */
+            count: number;
+        };
+        /**
+         * @example {
+         *       "month": "2026-11",
+         *       "words": [
+         *         {
+         *           "word": "jardin",
+         *           "count": 6
+         *         }
+         *       ]
+         *     }
+         */
+        StatsTopWordsDto: {
+            /**
+             * @description The writer’s month (`YYYY-MM`), from `today`
+             * @example 2026-11
+             */
+            month: string;
+            /** @description Up to ten words used at least twice in entry texts dated from the first of the month to today; most used first, then in alphabetical order */
+            words: components["schemas"]["StatsTopWordDto"][];
+        };
+        /**
+         * @example {
          *       "totalThoughts": 120,
          *       "averageWordsPerEntry": 184,
          *       "averageReadingTimeMinutes": 1,
@@ -5766,6 +5804,15 @@ export interface components {
          *           "date": "2024-03-02",
          *           "index": 2
          *         }
+         *       },
+         *       "topWords": {
+         *         "month": "2026-11",
+         *         "words": [
+         *           {
+         *             "word": "jardin",
+         *             "count": 6
+         *           }
+         *         ]
          *       }
          *     }
          */
@@ -5851,6 +5898,8 @@ export interface components {
             writingTimes: components["schemas"]["StatsWritingTimesDto"];
             /** @description Personal records, each linking to its entry or day; the times are read in the writer’s time zone (`timeZone`) */
             records: components["schemas"]["StatsRecordsDto"];
+            /** @description The words used most in this month’s entries, in the writer’s month (`today`), without common English and French words */
+            topWords: components["schemas"]["StatsTopWordsDto"];
         };
         /**
          * @example {
@@ -13676,7 +13725,7 @@ export interface operations {
             query?: {
                 /** @description Limit the statistics to one diary */
                 diaryId?: number;
-                /** @description The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out */
+                /** @description The writer’s own day (the UTC day or the one before or after it), which writing goals, the writing streak and the month of the words used most are measured up to; the server’s UTC day when left out */
                 today?: string;
                 /** @description The writer’s IANA time zone, which the hours and weekdays of `writingTimes` are read in for entries without a time of day; UTC when left out */
                 timeZone?: string;
@@ -13910,6 +13959,15 @@ export interface operations {
                      *           "date": "2024-03-02",
                      *           "index": 2
                      *         }
+                     *       },
+                     *       "topWords": {
+                     *         "month": "2026-11",
+                     *         "words": [
+                     *           {
+                     *             "word": "jardin",
+                     *             "count": 6
+                     *           }
+                     *         ]
                      *       }
                      *     }
                      */
@@ -13923,7 +13981,7 @@ export interface operations {
             query?: {
                 /** @description Limit the statistics to one diary */
                 diaryId?: number;
-                /** @description The writer’s own day (the UTC day or the one before or after it), which writing goals and the writing streak are measured up to; the server’s UTC day when left out */
+                /** @description The writer’s own day (the UTC day or the one before or after it), which writing goals, the writing streak and the month of the words used most are measured up to; the server’s UTC day when left out */
                 today?: string;
             };
             header?: never;

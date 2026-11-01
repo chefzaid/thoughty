@@ -29,7 +29,7 @@ async function handleStatsAndAiRoutes({ route, request, pathname, searchParams, 
 
     const today = searchParams.get('today') ?? new Date().toISOString().slice(0, 10);
     await fulfillJson(route, {
-      ...buildStats(filteredEntries, searchParams.get('timeZone') ?? undefined),
+      ...buildStats(filteredEntries, searchParams.get('timeZone') ?? undefined, today),
       goals: buildMockGoals(state.entries, state.diaries, diaryId ? Number(diaryId) : null, today),
     });
     return true;

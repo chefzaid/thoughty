@@ -3,6 +3,7 @@ import { IsDateString, IsOptional, Matches, Min } from 'class-validator';
 import { DiaryGoalProgressDto } from './stats-goal.dto';
 import { StatsWritingTimesDto } from './stats-writing-times.dto';
 import { StatsRecordsDto } from './stats-records.dto';
+import { StatsTopWordsDto } from './stats-top-words.dto';
 import { StrictInt } from '@/common/validation';
 
 export class ToneMoodAnalysisDto {
@@ -329,4 +330,10 @@ export class StatsResponseDto {
     description: 'Personal records, each linking to its entry or day; the times are read in the writer’s time zone (`timeZone`)',
   })
   records!: StatsRecordsDto;
+
+  @ApiProperty({
+    type: StatsTopWordsDto,
+    description: 'The words used most in this month’s entries, in the writer’s month (`today`), without common English and French words',
+  })
+  topWords!: StatsTopWordsDto;
 }
